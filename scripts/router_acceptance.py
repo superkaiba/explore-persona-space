@@ -423,12 +423,29 @@ class VerifierIO:
         return self.gcloud_instances_list or _default_gcloud_instances_list
 
 
-def _default_list_hf_repo_files(repo_id: str, *, repo_type: str) -> list[str]:
-    """Production HF Hub lister (NEVER the ``hf`` CLI -- has no ``api`` subcommand)."""
+def _default_list_hf_repo_files(
+    repo_id: str, *, repo_type: str, path_in_repo: str | None = None
+) -> list[str]:
+    """Production HF Hub lister (NEVER the ``hf`` CLI -- has no ``api`` subcommand).
+
+    ``path_in_repo`` scopes the walk SERVER-side (#920/#988); an absent
+    path returns [] (mapped from EntryNotFoundError / a False file_exists
+    probe inside list_hf_files_under_path). ``None`` full-lists (kept for
+    seam-contract compatibility; production check (a) always scopes) -- a
+    future caller passing ``None`` against the ~1M-file DATA repo re-enters
+    the #920 hang class, so data-repo callers must scope.
+    """
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate.hub import (
+        list_hf_files_under_path,
+        list_repo_files_complete,
+    )
+
     api = HfApi(token=os.environ.get("HF_TOKEN"))
-    return list(api.list_repo_files(repo_id=repo_id, repo_type=repo_type))
+    if path_in_repo is not None:
+        return list_hf_files_under_path(api, repo_id, path_in_repo, repo_type=repo_type)
+    return list_repo_files_complete(api, repo_id, repo_type=repo_type)
 
 
 def _default_git_tracked(repo_root: Path, rel_paths: Iterable[str]) -> set[str]:
@@ -582,7 +599,11 @@ def check_hf_artifact_present(
     """
     subfolder = ACCEPTANCE_HF_SUBFOLDER.format(issue=issue, lane=lane)
     try:
-        files = io._list_hf()(repo_id, repo_type="model")
+        # Scoped listing (#920/#988): the check only matches files under the
+        # acceptance subfolder, so the walk is scoped server-side. An absent
+        # prefix returns [] -> the (more informative) "no files under prefix"
+        # FAIL below rather than a raised-404 FAIL.
+        files = io._list_hf()(repo_id, repo_type="model", path_in_repo=subfolder)
     except Exception as exc:
         return CheckResult(
             name="hf_artifact_present",
@@ -1834,6 +1855,14 @@ def negative_duplicate_cron_tick() -> dict[str, Any]:
     (``ComputeBackend.teardown`` ABC docstring: a duplicate teardown
     is absorbed cleanly) is validated by per-backend tests elsewhere;
     here we prove the CLI level doesn't barf on the duplicate tick.
+
+    Since #1026, ``_cmd_finalize`` additionally consults the REAL task's
+    ``events.jsonl`` via ``_upload_verification_currency_blocker`` (typed
+    rc=3, BEFORE teardown and the Mn4.3 sidecar rename); this scenario
+    patches that gate to a no-op for its two in-process ticks (restored in
+    ``finally``) so its rc contract stays decoupled from live task state.
+    The gate has its own dedicated coverage in
+    tests/test_upload_verifier_currency.py + tests/test_dispatch_issue_cli.py.
     """
     import tempfile
 
@@ -1880,6 +1909,7 @@ def negative_duplicate_cron_tick() -> dict[str, Any]:
         repo_root = str(Path(__file__).resolve().parent.parent)
         if repo_root not in sys.path:
             sys.path.insert(0, repo_root)
+        import scripts.dispatch_issue as _dispatch_issue_mod
         from scripts.dispatch_issue import main as dispatch_main
 
         nibi = _NegativeMockBackend(kind="nibi", cluster="nibi")
@@ -1899,24 +1929,42 @@ def negative_duplicate_cron_tick() -> dict[str, Any]:
         import io as _io
         from contextlib import redirect_stdout
 
-        rc_codes: list[int] = []
-        bodies: list[dict[str, Any]] = []
-        for _ in range(2):
-            buf = _io.StringIO()
-            with redirect_stdout(buf):
-                rc = dispatch_main(
-                    [
-                        "finalize",
-                        "--issue",
-                        str(issue),
-                        "--handle-file",
-                        str(sidecar),
-                    ],
-                    backends_factory=_factory,
-                )
-            rc_codes.append(rc)
-            body = _parse_last_json_line(buf.getvalue())
-            bodies.append(body or {})
+        # #1076 test-isolation: neutralize the #1026 verifier-currency gate.
+        # _cmd_finalize consults the REAL task <issue>'s events.jsonl via
+        # _upload_verification_currency_blocker; live task-903 state (stale
+        # verification) made both ticks rc=3 BEFORE teardown and BEFORE the
+        # Mn4.3 sidecar rename — coupling this scenario's rc contract to
+        # live task state. The gate has dedicated coverage
+        # (tests/test_upload_verifier_currency.py,
+        # tests/test_dispatch_issue_cli.py); this scenario's contract is
+        # CLI-level duplicate-tick idempotency only. Same isolation as the
+        # established monkeypatch sites in tests/test_dispatch_issue_cli.py;
+        # try/finally because this harness also runs standalone (no pytest).
+        _orig_blocker = _dispatch_issue_mod._upload_verification_currency_blocker
+        _dispatch_issue_mod._upload_verification_currency_blocker = lambda _issue: None
+        try:
+            rc_codes: list[int] = []
+            bodies: list[dict[str, Any]] = []
+            for _ in range(2):
+                buf = _io.StringIO()
+                with redirect_stdout(buf):
+                    rc = dispatch_main(
+                        [
+                            "finalize",
+                            "--issue",
+                            str(issue),
+                            "--handle-file",
+                            str(sidecar),
+                        ],
+                        backends_factory=_factory,
+                    )
+                rc_codes.append(rc)
+                body = _parse_last_json_line(buf.getvalue())
+                bodies.append(body or {})
+        finally:
+            _dispatch_issue_mod._upload_verification_currency_blocker = _orig_blocker
+        # Post-restore self-check: the module attribute is back to the real gate.
+        assert _dispatch_issue_mod._upload_verification_currency_blocker is _orig_blocker
 
         return {
             "rc_codes": rc_codes,

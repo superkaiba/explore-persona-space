@@ -28,11 +28,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import random
 import subprocess
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -378,6 +379,180 @@ def _atomic_write_json(path: Path, payload: dict) -> None:
     os.replace(tmp, path)
 
 
+# ── Build-time mix token budget (task #906 r13/r14) ───────────────────────────
+
+_budget_logger = logging.getLogger(__name__)
+
+# Fail-loud floor for build-time row rejection: a rejected fraction above this
+# means the budget is SYSTEMATICALLY too small for the question distribution —
+# the remedy is a deliberate recipe max_length raise, never a silently shrunk
+# mix. Grounded on the #906 att-20260704-061624 crash rows: 4/200 rows (2%)
+# overflow (two extreme-tail WildChat prompts of 2181/1718 prompt-only tokens),
+# median full-row 487/419 tokens — 0.10 separates "tail outliers" from "wrong
+# budget" with wide margin on both sides.
+MIX_MAX_REJECT_FRAC = 0.10
+
+
+def mix_row_token_len(row: Mapping, tokenizer) -> int:
+    """Full tokenized row length under the trainer's EXACT render.
+
+    Matches the TRL prompt-completion tokenization ``train_lora`` performs (and
+    ``sft.py::_tokenize_probe_row`` mirrors): render ``prompt + completion`` in
+    ONE ``apply_chat_template`` call with ``add_generation_prompt=False``.
+    SFTTrainer right-truncates each row at ``cfg.max_length``, so a row longer
+    than the budget SILENTLY loses its completion tail — degraded supervision on
+    content mixes, a loud ``MarkerOnlyDataCollator`` crash on marker mixes (the
+    #906 r13 incident).
+    """
+    ids = tokenizer.apply_chat_template(
+        list(row["prompt"]) + list(row["completion"]),
+        tokenize=True,
+        add_generation_prompt=False,
+    )
+    if isinstance(ids, dict):
+        ids = ids["input_ids"]
+    return len(ids)
+
+
+def _row_question(row: Mapping) -> str | None:
+    """The row's question: the LAST user-message content (None if no user turn)."""
+    for msg in reversed(list(row["prompt"])):
+        if msg.get("role") == "user":
+            return str(msg.get("content", ""))
+    return None
+
+
+def enforce_mix_token_budget(
+    pos_rows: list[dict],
+    cn_rows: list[dict],
+    tokenizer,
+    max_length: int,
+    *,
+    generic_rows: list[dict] | None = None,
+    max_reject_frac: float = MIX_MAX_REJECT_FRAC,
+    label: str = "mix-budget",
+    log: logging.Logger | None = None,
+) -> tuple[list[dict], list[dict], list[dict] | None, dict]:
+    """Reject rows whose FULL tokenized length exceeds the training budget.
+
+    The shared build-time gate behind BOTH mix paths (#906 r13 marker crash;
+    r14 ``content-mix-token-budget-unenforced`` concern — content-class
+    truncation at ``max_length`` is SILENT, no fail-loud collator):
+
+    - pos/cn rows are QUESTION-paired (``datagen.generate_training_data``
+      emits same-question negatives; the marker inline builder is
+      index-aligned, a special case): when any pos/cn row overflows, every
+      pos + cn row sharing its question (the last user-message content) is
+      dropped from BOTH sides — preserving the same-question contrastive
+      pairing (.claude/rules/contrastive-negatives.md) regardless of row
+      ordering. A row with no user turn is dropped individually.
+    - ``generic_rows`` (interleaved generic-chat corpus rows) carry no pairing
+      and drop individually.
+    - Fail loud (RuntimeError) when the rejected fraction exceeds
+      ``max_reject_frac`` — a systematic overflow means the budget itself is
+      wrong, never silently shrink the mix.
+    - Fail loud (ValueError) when a non-empty contrastive-negative side is
+      emptied by the gate — positive-only training leaks uniformly (#18/#207).
+    - Log a WARNING on an asymmetric pos/cn drop (the ~1:1 contrastive ratio
+      was perturbed; the below-floor survivors remain usable but the drift is
+      surfaced).
+
+    Returns ``(kept_pos, kept_cn, kept_generic, stats)`` where ``kept_generic``
+    is None iff ``generic_rows`` is None. ``log`` routes telemetry to the
+    caller's logger (default: this module's).
+    """
+    lg = log or _budget_logger
+    pos_lens = [mix_row_token_len(r, tokenizer) for r in pos_rows]
+    cn_lens = [mix_row_token_len(r, tokenizer) for r in cn_rows]
+    gen_lens = [mix_row_token_len(r, tokenizer) for r in generic_rows or []]
+    all_lens = pos_lens + cn_lens + gen_lens
+    max_row_tokens = max(all_lens) if all_lens else 0
+
+    bad_questions: set[str] = set()
+    for rows, lens in ((pos_rows, pos_lens), (cn_rows, cn_lens)):
+        for r, n in zip(rows, lens, strict=True):
+            if n > max_length:
+                q = _row_question(r)
+                if q is not None:
+                    bad_questions.add(q)
+
+    def _keep(row: dict, n: int) -> bool:
+        if n > max_length:
+            return False
+        q = _row_question(row)
+        return q is None or q not in bad_questions
+
+    kept_pos = [r for r, n in zip(pos_rows, pos_lens, strict=True) if _keep(r, n)]
+    kept_cn = [r for r, n in zip(cn_rows, cn_lens, strict=True) if _keep(r, n)]
+    kept_generic: list[dict] | None = None
+    if generic_rows is not None:
+        kept_generic = [r for r, n in zip(generic_rows, gen_lens, strict=True) if n <= max_length]
+
+    n_rejected_pos = len(pos_rows) - len(kept_pos)
+    n_rejected_cn = len(cn_rows) - len(kept_cn)
+    n_rejected_generic = (len(generic_rows) - len(kept_generic)) if generic_rows is not None else 0
+    n_rejected = n_rejected_pos + n_rejected_cn + n_rejected_generic
+    total = len(pos_rows) + len(cn_rows) + len(generic_rows or [])
+    rejected_frac = (n_rejected / total) if total else 0.0
+    stats = {
+        "enforced": True,
+        "budget": int(max_length),
+        "max_row_tokens": int(max_row_tokens),
+        "n_rejected": n_rejected,
+        "n_rejected_pos": n_rejected_pos,
+        "n_rejected_cn": n_rejected_cn,
+        "n_kept_pos": len(kept_pos),
+        "n_kept_cn": len(kept_cn),
+        "rejected_frac": rejected_frac,
+        "reject_frac_floor": max_reject_frac,
+    }
+    if generic_rows is not None:
+        stats["n_rejected_generic"] = n_rejected_generic
+        stats["n_kept_generic"] = len(kept_generic or [])
+    lg.info(
+        "[%s] max_row_tokens=%d budget=%d n_rejected=%d (pos=%d cn=%d generic=%d) "
+        "kept=%d/%d rejected_frac=%.3f floor=%.2f",
+        label,
+        max_row_tokens,
+        max_length,
+        n_rejected,
+        n_rejected_pos,
+        n_rejected_cn,
+        n_rejected_generic,
+        total - n_rejected,
+        total,
+        rejected_frac,
+        max_reject_frac,
+    )
+    if rejected_frac > max_reject_frac:
+        raise RuntimeError(
+            f"[{label}] {n_rejected}/{total} mix rows ({rejected_frac:.1%}) exceed the "
+            f"training max_length={max_length} (max row = {max_row_tokens} tokens) — above "
+            f"the {max_reject_frac:.0%} rejection floor. The budget is systematically too "
+            "small for this question/generation setting: raise the recipe's max_length "
+            "override (grounded on the measured row-length distribution) or cap the "
+            "generation length; do NOT silently shrink the mix."
+        )
+    if cn_rows and not kept_cn:
+        raise ValueError(
+            f"[{label}] token-budget enforcement rejected EVERY contrastive-negative row "
+            f"({len(cn_rows)} pre-gate) while positives survived — positive-only training "
+            "leaks uniformly (.claude/rules/contrastive-negatives.md); refusing to train "
+            "a silently de-contrasted mix."
+        )
+    if n_rejected and n_rejected_pos != n_rejected_cn:
+        lg.warning(
+            "[%s] asymmetric drop: %d pos vs %d cn rows rejected — the ~1:1 "
+            "positives-to-negatives contrastive ratio is perturbed (kept %d pos / %d cn)",
+            label,
+            n_rejected_pos,
+            n_rejected_cn,
+            len(kept_pos),
+            len(kept_cn),
+        )
+    return kept_pos, kept_cn, kept_generic, stats
+
+
 def _context_content_fingerprint(ctx: Context) -> str:
     """Deterministic sha256 over the message-shaping fields (content identity).
 
@@ -504,6 +679,39 @@ class _SingleLiveResource:
         self._teardown(value)
 
 
+# Sentinel resource key: EVERY LoRA adapter path maps to this ONE key, so the
+# _SingleLiveResource reuses a single enable_lora base engine across a dose
+# ladder's checkpoints (crash-fix #1090 r3 — the r2 per-side_path keying tore
+# down + rebuilt an IDENTICAL engine per checkpoint, ~2.5 min each, and each
+# teardown was one more exposure to the orphan-probe crash class).
+_SHARED_LORA_ENGINE_KEY = "__lora_engine__"
+
+
+def _vllm_resource_key(
+    side_path: str | None, is_full_model_dir: Callable[[str | None], bool]
+) -> str | None:
+    """Engine-identity key for the default vLLM generation seam.
+
+    ``None`` (base) and full-model dirs keep their IDENTITY keys (a distinct
+    engine each — the weights differ); every LoRA adapter path maps to the one
+    ``_SHARED_LORA_ENGINE_KEY`` (the engine is the base model + enable_lora,
+    identical across adapters — only the per-call ``LoRARequest`` differs).
+    """
+    if side_path is None or is_full_model_dir(side_path):
+        return side_path
+    return _SHARED_LORA_ENGINE_KEY
+
+
+def _lora_int_id(lora_ids: dict[str, int], side_path: str) -> int:
+    """Distinct, STABLE, 1-based ``lora_int_id`` per adapter path.
+
+    vLLM caches adapters by ``lora_int_id`` inside a shared engine, so two
+    paths must never collide (a collision silently reuses the first adapter's
+    weights) and repeat calls for one path must return the same id.
+    """
+    return lora_ids.setdefault(side_path, len(lora_ids) + 1)
+
+
 def _default_vllm_generate_fn(base_model: str) -> GenFn:
     """ONE live vLLM engine at a time, chunked generate, teardown via close().
 
@@ -511,26 +719,43 @@ def _default_vllm_generate_fn(base_model: str) -> GenFn:
     (``max_lora_rank=64``, ``max_model_len=8192``, ``enable_prefix_caching=True``,
     fixed sampling seed); chunked ≤500 prompts per ``llm.generate`` call
     (gotchas.md large-batch deadlock prevention) with ``use_tqdm=False``.
-    Lifecycle (r2): a ``side_path`` switch tears down the previous engine
-    BEFORE constructing the next (``_SingleLiveResource``), and every adapter
-    path gets a DISTINCT ``lora_int_id`` (the r1 fixed ``1`` would silently
-    reuse the first adapter if an engine were ever shared across checkpoints).
+    Lifecycle (r3 — crash-fix #1090): ALL LoRA adapter paths share ONE
+    enable_lora base engine (``_vllm_resource_key`` maps them to
+    ``_SHARED_LORA_ENGINE_KEY``), so a dose ladder's checkpoint loop builds the
+    engine ONCE instead of teardown+rebuild per rung; each adapter path still
+    gets a DISTINCT stable ``lora_int_id`` (``_lora_int_id``), and the per-call
+    ``LoRARequest`` is constructed in ``generate()``. A base <-> full-model <->
+    lora-mode switch still swaps engines, teardown-first
+    (``_SingleLiveResource``).
     """
     deps = _resolve_generation_deps()
     chunk_size = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
     lora_ids: dict[str, int] = {}  # adapter path -> unique, stable lora_int_id (1-based)
 
-    def _build(side_path: str | None) -> tuple[Any, Any]:
-        common = {"max_model_len": 8192, "enable_prefix_caching": True, "seed": 0}
-        if side_path is None:
-            return deps["LLM"](model=base_model, **common), None
-        if deps["_is_full_model_dir"](side_path):
-            return deps["LLM"](model=side_path, **common), None
-        lora_id = lora_ids.setdefault(side_path, len(lora_ids) + 1)
-        llm = deps["LLM"](model=base_model, enable_lora=True, max_lora_rank=64, **common)
-        return llm, deps["LoRARequest"](f"organism-{lora_id}", lora_id, side_path)
+    def _build(key: str | None) -> Any:
+        # EPM_VLLM_GPU_MEM_UTIL (crash-fix #1074 run 1 + #1090 r2 — same
+        # failure class): vLLM's default gpu_memory_utilization=0.9 demands
+        # ~71.3 GiB on an A100/H100-80 and crashes gpu_worker.init_device
+        # when a same-process HF trainer's allocator residue holds ~16 GiB at
+        # the train->rate phase boundary (#1074 run 1: 71.32 GiB demanded vs
+        # 63.65/79.25 GiB free after the in-process train_lora; #1090 r2 hit
+        # the identical class). The post-train engine must fit BESIDE
+        # imperfect trainer-memory release: default 0.75 x 79.25 = 59.4 GiB
+        # covers the 7B bf16 weights (~15 GiB) + LoRA + a generous KV cache.
+        # Env-overridable, resolved per engine build.
+        common = {
+            "max_model_len": 8192,
+            "enable_prefix_caching": True,
+            "seed": 0,
+            "gpu_memory_utilization": float(os.environ.get("EPM_VLLM_GPU_MEM_UTIL", "0.75")),
+        }
+        if key == _SHARED_LORA_ENGINE_KEY:
+            return deps["LLM"](model=base_model, enable_lora=True, max_lora_rank=64, **common)
+        if key is None:
+            return deps["LLM"](model=base_model, **common)
+        return deps["LLM"](model=key, **common)  # full-model dir (fullft arm)
 
-    engine = _SingleLiveResource(_build, lambda pair: deps["teardown_vllm"](pair[0]))
+    engine = _SingleLiveResource(_build, lambda llm: deps["teardown_vllm"](llm))
 
     def generate(
         side_path: str | None,
@@ -539,7 +764,12 @@ def _default_vllm_generate_fn(base_model: str) -> GenFn:
         n: int,
         temperature: float,
     ) -> list[list[str]]:
-        llm, lora_req = engine.get(side_path)
+        key = _vllm_resource_key(side_path, deps["_is_full_model_dir"])
+        llm = engine.get(key)
+        lora_req = None
+        if key == _SHARED_LORA_ENGINE_KEY:
+            lora_id = _lora_int_id(lora_ids, side_path)
+            lora_req = deps["LoRARequest"](f"organism-{lora_id}", lora_id, side_path)
         tok = llm.get_tokenizer()
         prompts = [
             tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
@@ -710,6 +940,9 @@ def _assemble_mix(
     cn_path: Path,
     generic_data_path: Path | str | None,
     out_root: Path,
+    *,
+    tokenizer=None,
+    max_length: int | None = None,
 ) -> tuple[Path, dict[str, int], dict[str, int]]:
     """Final-mix assembly (v2 — MF-2 surplus refusal / bounded-deficit tolerance).
 
@@ -717,6 +950,16 @@ def _assemble_mix(
     shuffle; ``train_mix.jsonl`` + ``mix_meta.json`` persist the moment
     assembly completes (checkpoint-per-phase). Returns
     ``(train_mix_path, counts_planned, counts_realized)``.
+
+    When ``tokenizer`` and ``max_length`` are BOTH provided (the production
+    path), every row's full tokenized length is checked against the training
+    budget via :func:`enforce_mix_token_budget` (question-paired pos/cn drop,
+    individual generic drop, fail-loud rejection floor) BEFORE assembly — the
+    #906 r14 ``content-mix-token-budget-unenforced`` fix: SFTTrainer
+    right-truncation at ``max_length`` is SILENT on content mixes (no
+    fail-loud collator), so an overlong WildChat-lineage row would degrade its
+    completion supervision without an error. ``tokenizer=None`` (the offline
+    stub-seam test path) skips the gate, byte-identical legacy behavior.
     """
     pos_rows = _read_jsonl(pos_path)
     cn_rows = _read_jsonl(cn_path)
@@ -762,6 +1005,26 @@ def _assemble_mix(
             )
         generic_rows = rng.sample(corpus, counts["generic"])
 
+    if tokenizer is not None and max_length is not None:
+        pos_rows, use_neg, kept_generic, budget_stats = enforce_mix_token_budget(
+            pos_rows,
+            use_neg,
+            tokenizer,
+            int(max_length),
+            generic_rows=generic_rows,
+            label="content-mix-budget",
+        )
+        generic_rows = kept_generic if kept_generic is not None else []
+        if not pos_rows:
+            raise ValueError(
+                "content-mix token-budget enforcement rejected every positive row "
+                f"(budget={max_length})"
+            )
+    else:
+        budget_stats = {"enforced": False, "reason": "no tokenizer/max_length provided"}
+        _budget_logger.debug("[content-mix-budget] skipped: no tokenizer/max_length")
+    _atomic_write_json(out_root / "mix_budget.json", budget_stats)
+
     mix = [*pos_rows, *use_neg, *generic_rows]
     rng.shuffle(mix)
     train_mix_path = out_root / "train_mix.jsonl"
@@ -784,9 +1047,68 @@ def _assemble_mix(
         "spec": asdict(spec),
         "organism": asdict(organism),
         "seed": organism.seed,
+        "mix_token_budget": budget_stats,
     }
     _atomic_write_json(out_root / "mix_meta.json", mix_meta)
     return train_mix_path, counts, realized
+
+
+def release_trainer_cuda_memory(
+    *,
+    collect_fn: Callable[[], int] | None = None,
+    empty_cache_fn: Callable[[], None] | None = None,
+    ipc_collect_fn: Callable[[], None] | None = None,
+    mem_info_fn: Callable[[], tuple[int, int]] | None = None,
+    log_fn: Callable[[str], None] | None = None,
+) -> tuple[float, float] | None:
+    """Release residual trainer CUDA memory before the post-train vLLM engine boots.
+
+    ``train_lora`` already drops its heavy locals at its tail (``del trainer,
+    model, tokenizer`` + ``gc.collect()`` + ``empty_cache()`` — train/sft.py),
+    yet #1074 followup run 1 (GCE att-20260706-181717) measured ~15.6 GiB
+    still resident at the next ``LLM(...)`` init (63.65/79.25 GiB free vs the
+    vLLM default-0.9-util demand of 71.32 GiB). No module-level retainer was
+    found in train/sft.py, train/trainer.py, or eval/callbacks.py, so this is
+    defense-in-depth at the train->engine handoff: TWO gc passes
+    (finalizer-bearing Trainer/Accelerator cycles can survive a single pass),
+    an allocator-cache flush, and ``ipc_collect`` (the canonical
+    vLLM-coexistence teardown tail, gotchas.md), then a LOG of the
+    driver-level free-memory delta in the exact form
+
+        [train-release] freed pre=<X>GiB post=<Y>GiB free
+
+    That literal ``[train-release]`` tag is the #1074 crash-fix fix-engaged
+    signal the relaunch greps for. Every CUDA touchpoint is injectable so the
+    sequencing + log format are CPU-testable; missing callables resolve to the
+    torch defaults lazily, and a no-CUDA host degrades to one bare
+    ``gc.collect()`` returning None (nothing to measure).
+
+    Returns:
+        ``(pre_free_gib, post_free_gib)`` from ``mem_info_fn`` (default
+        ``torch.cuda.mem_get_info``), or None on a no-CUDA host.
+    """
+    import gc
+
+    collect = collect_fn if collect_fn is not None else gc.collect
+    log = log_fn if log_fn is not None else logging.getLogger(__name__).info
+    if empty_cache_fn is None or ipc_collect_fn is None or mem_info_fn is None:
+        import torch
+
+        if not torch.cuda.is_available():
+            collect()
+            return None
+        empty_cache_fn = empty_cache_fn or torch.cuda.empty_cache
+        ipc_collect_fn = ipc_collect_fn or torch.cuda.ipc_collect
+        mem_info_fn = mem_info_fn or torch.cuda.mem_get_info
+    pre_free_b, _total = mem_info_fn()
+    collect()
+    collect()
+    empty_cache_fn()
+    ipc_collect_fn()
+    post_free_b, _total = mem_info_fn()
+    pre_gib, post_gib = pre_free_b / 2**30, post_free_b / 2**30
+    log(f"[train-release] freed pre={pre_gib:.2f}GiB post={post_gib:.2f}GiB free")
+    return pre_gib, post_gib
 
 
 def build_organism(
@@ -802,6 +1124,8 @@ def build_organism(
     train_fn: Callable[..., tuple[str, float]] = train_lora,
     rate_fn: RateFn | None = None,
     fullft_run_fn: Callable[[list[str]], None] | None = None,
+    tokenizer=None,
+    recipe_max_length: int | None = None,
 ) -> BuildResult:
     """datagen -> mix assembly -> recipe -> train -> dose-selected checkpoint.
 
@@ -818,10 +1142,36 @@ def build_organism(
     ``generate_training_data`` — mocked in tests, overridable for custom data
     pipelines. Every step fails fast; ``train_mix.jsonl`` + ``mix_meta.json``
     persist the moment assembly completes (checkpoint-per-phase).
+
+    ``tokenizer`` (optional): the base model's tokenizer. When provided, mix
+    assembly enforces the recipe's ``max_length`` token budget per row via
+    :func:`enforce_mix_token_budget` (the #906 r14 silent-truncation fix) —
+    production callers that will run the REAL trainer pass it; offline
+    stub-seam tests omit it (gate skipped, legacy behavior).
+
+    ``recipe_max_length`` (optional): a task-scoped DECLARED-DEVIATION seam
+    for the recipe's ``max_length`` (the plan #1090 AMENDMENT/hot-fix
+    lineage: a measured row-length distribution can exceed the unified
+    recipe's 1024 budget above the 10% rejection floor, and the gate's own
+    prescription is a deliberate recipe max_length raise). When set, it is
+    threaded into ``spec.overrides`` IMMEDIATELY after recipe resolution, so
+    the SAME spec feeds BOTH the mix token-budget gate (:func:`_assemble_mix`)
+    AND the train-config build (:func:`build_train_config`) — one authority;
+    the recipe recorded in ``mix_meta.json`` / provenance then honestly
+    reports the enforced value. ``LOAD_BEARING_KEYS`` still protects the
+    ``extra_overrides`` path: this is a deliberate, NAMED seam for a
+    plan-declared recipe deviation, not a bypass.
     """
     out_root = Path(out_root)
     behavior = organism.behavior_spec
     spec = organism.recipe
+    if recipe_max_length is not None:
+        # One authority for the token budget: replace the spec's max_length
+        # BEFORE any consumer (mix-budget gate, build_train_config, provenance)
+        # reads it. Fixes the #1090 wrong-seam hot-fix (05b2405043), which
+        # patched only the train_fn cfg while the mix-BUILD gate still read
+        # the recipe's 1024 (organisms.py step 3) and crashed again.
+        spec = replace(spec, overrides={**spec.overrides, "max_length": int(recipe_max_length)})
 
     # 1. Carve-out gate.
     if behavior.programmatic:
@@ -857,8 +1207,19 @@ def build_organism(
         **dict(datagen_kwargs or {}),
     )
     # 3. Mix assembly (extracted; v2 — MF-2 surplus refusal / bounded-deficit tolerance).
+    # Token budget = the recipe's max_length override (a LOAD_BEARING_KEY:
+    # build_train_config refuses extra_overrides on it, so spec.overrides is
+    # authoritative for BOTH the lora and fullft branches; 1024 is the
+    # TrainLoraConfig field default when a recipe omits it).
     train_mix_path, counts, realized = _assemble_mix(
-        organism, spec, Path(pos_path), Path(cn_path), generic_data_path, out_root
+        organism,
+        spec,
+        Path(pos_path),
+        Path(cn_path),
+        generic_data_path,
+        out_root,
+        tokenizer=tokenizer,
+        max_length=int(spec.overrides.get("max_length", 1024)),
     )
 
     # 4/5. Train.
@@ -902,6 +1263,12 @@ def build_organism(
             extra_overrides=extra_overrides,
         )
         adapter_dir, loss = train_fn(base_model, str(train_mix_path), str(train_dir), cfg=cfg)
+        # In-process GPU handoff (#1074 run-1 crash): release the trainer's
+        # residual CUDA memory BEFORE the checkpoint-read rate_fn loop below
+        # boots its vLLM engine (train_lora's own teardown left ~15.6 GiB
+        # resident and the engine init failed its free-memory demand). The
+        # [train-release] log line is the crash-fix fix-engaged signal.
+        release_trainer_cuda_memory()
         provenance["training_loss"] = float(loss)
         adapter_path = str(adapter_dir)
         selection = None
@@ -1502,13 +1869,16 @@ def make_source_rate_fn(
     checkpoint path + generation params). This is the production default the
     ``build_organism`` caller constructs explicitly.
 
-    GPU lifecycle (r2 — concern ``gpu-seam-memory-coexistence``): the default
-    generation seam keeps at most ONE live engine, so each checkpoint's engine
-    is torn down BEFORE the next rung's engine is built (the r1 version leaked
-    one ~0.9-HBM engine per rung — OOM at rung 2 of a dose ladder). The
-    returned closure exposes ``close()``, which tears down the FACTORY-OWNED
-    default engine (a caller-injected ``generate_fn`` is the caller's to
-    close); ``build_organism`` calls it after the ladder scoring.
+    GPU lifecycle (r2 — concern ``gpu-seam-memory-coexistence``; r3 —
+    crash-fix #1090): the default generation seam keeps at most ONE live
+    engine, and as of r3 ALL LoRA checkpoint rungs SHARE that one engine
+    (identical base+enable_lora engine; only the per-rung ``LoRARequest``
+    differs) — the ladder builds it once instead of teardown+rebuild per rung
+    (the r1 version leaked one ~0.9-HBM engine per rung — OOM at rung 2; the
+    r2 version rebuilt per rung, ~2.5 min each plus one orphan-probe exposure
+    per teardown). The returned closure exposes ``close()``, which tears down
+    the FACTORY-OWNED default engine (a caller-injected ``generate_fn`` is the
+    caller's to close); ``build_organism`` calls it after the ladder scoring.
     """
     out_dir = Path(out_dir)
     behavior = organism.behavior_spec

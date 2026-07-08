@@ -63,6 +63,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# #847: shared-VM thread caps must bind BEFORE torch/numpy freeze their pools at import.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv(str(PROJECT_ROOT / ".env"))
+
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 from issue404_common import reproducibility_metadata  # noqa: E402
@@ -94,9 +99,6 @@ from issue923_common import (  # noqa: E402
 )
 
 from explore_persona_space.orchestrate import hub  # noqa: E402
-from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
-
-load_dotenv(str(PROJECT_ROOT / ".env"))
 
 logger = logging.getLogger("issue923_fit")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -1405,18 +1407,18 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
     logger.info("PRESS/dual exactness selftest PASS: %s", st)
     if args.selftest_only:
         print(json.dumps(st, indent=2))
-        print("[phase=done]", flush=True)
+        print("[script-complete]", flush=True)
         return 0
     if args.time_projection:
         time_projection(device)
-        print("[phase=done]", flush=True)
+        print("[script-complete]", flush=True)
         return 0
     if args.fullh_spotcheck:
         print("[phase=fullh_spotcheck]", flush=True)
         fullh_spotcheck(
             args.packs_dir, args.data_dir, args.out_dir / "fullh_spotcheck.json", device
         )
-        print("[phase=done]", flush=True)
+        print("[script-complete]", flush=True)
         return 0
 
     out_dir: Path = args.out_dir
@@ -1657,7 +1659,7 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
             args.tensors_dir, HF_DATA_REPO, "dataset", f"{HF_PREFIX_923}/analysis_tensors/fits"
         )
         hub._upload(out_dir, HF_DATA_REPO, "dataset", f"{HF_PREFIX_923}/eval_results/fits")
-    print("[phase=done]", flush=True)
+    print("[script-complete]", flush=True)
     return 0
 
 

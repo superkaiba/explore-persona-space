@@ -53,6 +53,7 @@ from workflow_lint import (  # noqa: E402
     check_no_literal_round_marker_versions,
     check_no_workflow_improver_spawn,
     check_pipe_python,
+    check_piped_git_push,
     check_script_references,
     check_skill_references,
     check_smoke_architecture_review_lens,
@@ -1909,6 +1910,241 @@ def test_pipe_python_hook_subprocess_blocks_attached_arg():
 
 
 # ---------------------------------------------------------------------------
+# Unit tests for ``check_piped_git_push`` (incident class #957 / #1048: a
+# `git push` / `git merge` / `gh pr merge|create` piped into a filter masks
+# the producer's non-zero exit code — bash makes the pipeline's status the
+# LAST stage's — so a rejected push reads as success; 4 sessions hit the
+# class on 2026-07-02 and #957's Step 10d push was masked 2026-07-04). Each
+# fixture case writes a tiny ``*.sh`` under ``tmp_path`` and calls
+# ``check_piped_git_push(scripts_dir=tmp_path)``. The hook/lint agreement
+# test drives the SHARED semantic subset through BOTH the
+# ``PIPED_GIT_PUSH_RE`` lint predicate and the
+# ``.claude/hooks/guard_piped_git_push.sh`` subprocess.
+# ---------------------------------------------------------------------------
+
+
+def test_check_piped_git_push_fail_simple_pipe(tmp_path):
+    """FAIL — the flagship incident shape `git push origin main 2>&1 |
+    tail -20` (the pipe masks a rejected push; #957)."""
+    (tmp_path / "x.sh").write_text("#!/usr/bin/env bash\ngit push origin main 2>&1 | tail -20\n")
+    errors = check_piped_git_push(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:2" in errors[0]
+    assert "#957" in errors[0]
+    assert "pipefail" in errors[0]
+
+
+def test_check_piped_git_push_fail_gh_pr_merge(tmp_path):
+    """FAIL — `gh pr merge ... | head` masks a failed merge the same way
+    (the prose rule's 'merge/PR command' clause)."""
+    (tmp_path / "x.sh").write_text("gh pr merge 123 --squash | head\n")
+    errors = check_piped_git_push(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:1" in errors[0]
+
+
+def test_check_piped_git_push_fail_backslash_continued(tmp_path):
+    """FAIL — the backslash-continued shape (`git push ... \\` newline
+    `| tail`), merged into one logical line; the error points at the FIRST
+    physical line (the #753 offender-shape analog)."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\ngit push origin main 2>&1 \\\n    | tail -20\n"
+    )
+    errors = check_piped_git_push(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:2" in errors[0]
+
+
+def test_check_piped_git_push_fail_pipe_amp_shorthand(tmp_path):
+    """FAIL — `|&` (bash's `2>&1 |` shorthand) is normalized to `|` on the
+    logical line before matching."""
+    (tmp_path / "x.sh").write_text("git push |& tail -5\n")
+    errors = check_piped_git_push(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_piped_git_push_pass_or_chain(tmp_path):
+    """PASS — `git push ... || echo failed` is a disjunction, not a pipe
+    (the sole real tree shape, issue931_dispatch.sh:253)."""
+    (tmp_path / "x.sh").write_text(
+        'git push origin "issue-931" || echo "[i931] WARNING: push failed"\n'
+    )
+    assert check_piped_git_push(scripts_dir=tmp_path) == []
+
+
+def test_check_piped_git_push_pass_comment_line_skipped(tmp_path):
+    """PASS — a `#`-comment carrying the bad pattern is documentation."""
+    (tmp_path / "x.sh").write_text("#!/usr/bin/env bash\n# never do: git push | tail -5\necho ok\n")
+    assert check_piped_git_push(scripts_dir=tmp_path) == []
+
+
+def test_check_piped_git_push_pass_pipefail_header_file(tmp_path):
+    """PASS — a `set -euo pipefail` header makes every later pipe propagate
+    the producer's failure (the rule's own sanctioned escape)."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\nset -euo pipefail\ngit push 2>&1 | tee push.log\n"
+    )
+    assert check_piped_git_push(scripts_dir=tmp_path) == []
+
+
+def test_check_piped_git_push_fail_offense_before_later_pipefail(tmp_path):
+    """FAIL (plan #1048 MF3, fires-direction) — an offense BEFORE a LATER
+    `set -o pipefail` line yields EXACTLY ONE error: the pipefail tracking
+    skips only the REST of the file after the first pipefail line, never a
+    whole-file pre-scan (which would false-allow the earlier offense)."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "git push origin main | tail -5\n"
+        "echo mid\n"
+        "set -o pipefail\n"
+        "git push 2>&1 | tee log\n"
+    )
+    errors = check_piped_git_push(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:2" in errors[0]
+
+
+def test_check_piped_git_push_fail_raw_newline_logical_lines(tmp_path):
+    """FAIL exactly once (the hook B10/A16 mirror) — physical lines are
+    independent logical lines: a cross-line `git status | grep x` +
+    `git push origin main | tail -5` file flags only the piped-push line."""
+    (tmp_path / "x.sh").write_text("git status | grep x\ngit push origin main | tail -5\n")
+    errors = check_piped_git_push(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:2" in errors[0]
+
+
+def test_check_piped_git_push_pass_merge_base(tmp_path):
+    """PASS — `git merge-base ... | head -1` (a canonical
+    .claude/rules/diff-size-budget.md probe): the verb must be followed by
+    whitespace-or-pipe, so `merge-base` never matches."""
+    (tmp_path / "x.sh").write_text("git merge-base --all main HEAD | head -1\n")
+    assert check_piped_git_push(scripts_dir=tmp_path) == []
+
+
+def test_check_piped_git_push_pass_producer_as_consumer(tmp_path):
+    """PASS — `echo foo | git push`: the producer is the FINAL stage, whose
+    exit code IS the pipeline's — nothing is masked."""
+    (tmp_path / "x.sh").write_text("echo foo | git push\n")
+    assert check_piped_git_push(scripts_dir=tmp_path) == []
+
+
+def test_check_piped_git_push_pass_dry_run(tmp_path):
+    """PASS — a `--dry-run` push may pipe: it lands nothing, so masking its
+    exit code cannot cause the proceeded-on-a-rejected-push incident."""
+    (tmp_path / "x.sh").write_text("git push --dry-run 2>&1 | head -5\n")
+    assert check_piped_git_push(scripts_dir=tmp_path) == []
+
+
+def test_check_piped_git_push_pass_no_files(tmp_path):
+    """PASS — an empty scripts dir (no `*.sh`) yields no errors."""
+    assert check_piped_git_push(scripts_dir=tmp_path) == []
+
+
+def test_check_piped_git_push_repo_tree_is_clean():
+    """The committed scripts/*.sh tree must carry no piped push/merge-class
+    commands — the regression lock (the plan #1048 §2 item-8 scan found the
+    tree clean: the sole `git push`+`|` hit, issue931_dispatch.sh:253, is an
+    `||` disjunction)."""
+    errors = check_piped_git_push()
+    assert errors == [], (
+        "scripts/*.sh has piped git push/merge-class commands "
+        "(#957 masked-exit-code class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_piped_git_push_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-piped-git-push")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-piped-git-push failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_workflow_lint_piped_git_push_bundled_in_no_flags():
+    """`check_piped_git_push` is wired into the no-flags default run
+    (bundled, same policy as `check_pipe_python`): a bare `workflow_lint.py`
+    invocation exercises it. The committed tree is clean, so the no-flags
+    run exits 0 — a planted offender in a tmp scripts dir is caught by the
+    function tests above; here we assert the bundling holds via a clean
+    exit."""
+    result = _run()
+    assert result.returncode == 0, (
+        f"workflow_lint (no flags) failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# The SHARED semantic subset for the hook/lint agreement test: shapes whose
+# verdict both engines must agree on. Deliberate DIVERGENCES excluded here
+# (named per plan §4.6): the HOOK alone carries the heredoc blanket-allow
+# and the EPM_ALLOW_PIPED_PUSH inline/env escape hatch (runtime-only
+# affordances); the LINT alone carries file-level pipefail tracking, which
+# the single-command hook expresses as a whole-command `pipefail` substring
+# check — so pipefail/heredoc/escape-hatch shapes are NOT in the subset.
+_PIPED_PUSH_SHARED = [
+    # (command, must_flag)
+    ("git push | tail -5", True),  # B1 plain pipe
+    ("git push origin main 2>&1 | grep -v x", True),  # B2 redirection crossing
+    ("gh pr merge 123 --squash | head", True),  # B3 gh producer
+    ("git merge issue-x 2>&1 | tail -5", True),  # B7 git merge
+    ("git push |& tail -5", True),  # B9 |& shorthand
+    ('git push origin main || echo "push failed"', False),  # A7 || chain
+    ("git merge-base --all main HEAD | head -1", False),  # A9 merge-base
+    ("echo foo | git push", False),  # A14 producer as consumer
+    ("git status | grep x && git push", False),  # A5 different segment
+    ("git push --dry-run 2>&1 | head -5", False),  # A8 dry-run carve-out
+]
+
+
+def test_piped_git_push_hook_lint_agreement_on_shared_cases():
+    """Hook/lint dual-engine agreement on the SHARED semantic subset: the
+    lint predicate (`PIPED_GIT_PUSH_RE` + the `|&` normalization + the
+    `--dry-run` span skip, exactly as `check_piped_git_push` applies them)
+    and the shipped hook script driven as a subprocess must agree on every
+    shared case — plain-pipe blocks, `||` allows, merge-base allows,
+    producer-as-consumer allows, cross-segment allows, dry-run allows.
+
+    FULL equivalence is deliberately NOT asserted: the hook alone carries
+    the heredoc blanket-allow + the EPM_ALLOW_PIPED_PUSH escape hatch
+    (runtime affordances a committed script must not rely on), and the lint
+    alone carries file-level pipefail tracking (the hook sees ONE command
+    and uses a whole-command `pipefail` substring check instead). Those
+    divergent shapes are excluded from the subset above.
+    """
+    import json as _json
+    import os as _os
+
+    from workflow_lint import PIPED_GIT_PUSH_RE
+
+    hook = _REPO_ROOT / ".claude" / "hooks" / "guard_piped_git_push.sh"
+    assert hook.exists(), hook
+    env = {k: v for k, v in _os.environ.items() if k != "EPM_ALLOW_PIPED_PUSH"}
+
+    def lint_flags(cmd: str) -> bool:
+        m = PIPED_GIT_PUSH_RE.search(cmd.replace("|&", "|"))
+        return bool(m) and "--dry-run" not in m.group(0)
+
+    def hook_flags(cmd: str) -> bool:
+        proc = subprocess.run(
+            [str(hook)],
+            input=_json.dumps({"tool_input": {"command": cmd}}),
+            text=True,
+            capture_output=True,
+            env=env,
+        )
+        assert proc.returncode in (0, 2), (proc.returncode, proc.stderr)
+        return proc.returncode == 2
+
+    for cmd, must_flag in _PIPED_PUSH_SHARED:
+        lint = lint_flags(cmd)
+        hook_v = hook_flags(cmd)
+        assert lint == must_flag, f"lint verdict wrong for {cmd!r}: {lint} != {must_flag}"
+        assert hook_v == must_flag, f"hook verdict wrong for {cmd!r}: {hook_v} != {must_flag}"
+        assert lint == hook_v, f"engines diverge on shared case {cmd!r}"
+
+
+# ---------------------------------------------------------------------------
 # Unit tests for ``check_dispatcher_cvd_pin`` (incident class #523 Phase B,
 # recurred #541/#543/#557; recipe fix #578: the in-process CVD clobber is
 # defeated by import-time cuInit, so backgrounded parallel per-cell python
@@ -2809,10 +3045,24 @@ def _write_lessons_fixture(rules_dir, rule_names, indexed_names):
     rules_dir.mkdir(parents=True, exist_ok=True)
     for name in rule_names:
         (rules_dir / f"{name}.md").write_text(f"# {name}\n", encoding="utf-8")
-    rows = "\n".join(
-        f"- **{n}** ([`.claude/rules/{n}.md`]({n}.md)) — fires when: x." for n in indexed_names
-    )
+    rows = "\n".join(f"- **[{n}]({n}.md)** — fires when: x." for n in indexed_names)
     (rules_dir / "LESSONS.md").write_text(f"# LESSONS\n\n## Rules\n\n{rows}\n", encoding="utf-8")
+
+
+def _write_lessons_at_exact_bytes(rules_dir, total_bytes):
+    """Write a valid one-rule LESSONS.md padded to EXACTLY `total_bytes` bytes.
+
+    Pads with ASCII 'x' prose after the row; asserts the realized byte count
+    (the em-dash in the row is multibyte, so bytes != chars).
+    """
+    rules_dir.mkdir(parents=True, exist_ok=True)
+    (rules_dir / "alpha.md").write_text("# alpha\n", encoding="utf-8")
+    base = "# LESSONS\n\n## Rules\n\n- **[alpha](alpha.md)** — fires when: x.\n\n"
+    pad = total_bytes - len(base.encode("utf-8")) - 1  # -1: trailing newline
+    assert pad > 0, "total_bytes too small for the fixture skeleton"
+    content = base + "x" * pad + "\n"
+    assert len(content.encode("utf-8")) == total_bytes
+    (rules_dir / "LESSONS.md").write_bytes(content.encode("utf-8"))
 
 
 def test_check_lessons_index_fails_on_missing_row(tmp_path):
@@ -2850,7 +3100,7 @@ def test_check_lessons_index_fails_when_index_exceeds_cap(tmp_path):
     rules = tmp_path / ".claude" / "rules"
     rules.mkdir(parents=True)
     (rules / "alpha.md").write_text("# alpha\n", encoding="utf-8")
-    rows = "- **alpha** ([`.claude/rules/alpha.md`](alpha.md)) — fires when: x.\n"
+    rows = "- **[alpha](alpha.md)** — fires when: x.\n"
     # Pad with prose so the index breaches the byte cap regardless of its value.
     padding = "x" * (_LESSONS_MAX_BYTES + 100)
     (rules / "LESSONS.md").write_text(
@@ -2871,6 +3121,43 @@ def test_check_lessons_index_fails_on_duplicate_row(tmp_path):
     errs = check_lessons_index(repo_root=tmp_path)
     assert errs, "expected a FAIL for the duplicate 'alpha' index row"
     assert any(("duplicate" in e or "exactly one" in e) and "alpha" in e for e in errs)
+
+
+def test_check_lessons_index_warns_in_warn_band(tmp_path):
+    # The #992 early-warning band: an index strictly between _LESSONS_WARN_BYTES
+    # and _LESSONS_MAX_BYTES emits one advisory WARN (warn_sink / stderr),
+    # never a FAIL; the over-cap FAIL branch takes precedence over the WARN.
+    from workflow_lint import _LESSONS_MAX_BYTES, _LESSONS_WARN_BYTES
+
+    # Pin the band constant itself (#992 plan latitude: 7000-7400, below cap).
+    assert 7000 <= _LESSONS_WARN_BYTES <= 7400 < _LESSONS_MAX_BYTES
+
+    rules = tmp_path / ".claude" / "rules"
+
+    # (1) Sub-warn-band fixture -> no FAIL, empty sink.
+    sink: list[str] = []
+    _write_lessons_fixture(rules, ["alpha"], ["alpha"])
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink) == []
+    assert sink == []
+
+    # (2) EXACTLY at the threshold -> still no warn (the band is strictly-greater).
+    sink = []
+    _write_lessons_at_exact_bytes(rules, _LESSONS_WARN_BYTES)
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink) == []
+    assert sink == []
+
+    # (3) One byte over the threshold -> no FAIL, exactly one warn-band message.
+    sink = []
+    _write_lessons_at_exact_bytes(rules, _LESSONS_WARN_BYTES + 1)
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink) == []
+    assert len(sink) == 1 and "warn band" in sink[0]
+
+    # (4) Over the cap -> the FAIL branch fires; no warn message rides along.
+    sink = []
+    _write_lessons_at_exact_bytes(rules, _LESSONS_MAX_BYTES + 100)
+    errs = check_lessons_index(repo_root=tmp_path, warn_sink=sink)
+    assert errs and any("leanness cap" in e for e in errs)
+    assert sink == []
 
 
 def test_compute_shape_review_lens_live_tree_passes() -> None:

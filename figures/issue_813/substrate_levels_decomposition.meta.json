@@ -1,0 +1,228 @@
+{
+  "commit": "2ae64d63b4",
+  "created": "2026-07-03T18:00:38Z",
+  "figsize": [
+    13.0,
+    6.4
+  ],
+  "points": [
+    {
+      "category": "generic\nUltraChat",
+      "\u0394/floor (floor-normalized\nmap change), L14": 5.1185782909853526,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "behavior-\neliciting",
+      "\u0394/floor (floor-normalized\nmap change), L14": 0.7265662193894395,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "mixed\npool",
+      "\u0394/floor (floor-normalized\nmap change), L14": 0.408667617731926,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "generic\nUltraChat",
+      "y": 0.35249903604946575,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "behavior-\neliciting",
+      "y": 0.2871734297943112,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "mixed\npool",
+      "y": 0.37562647167487206,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "generic\nUltraChat",
+      "y": 3.743012243135687,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "behavior-\neliciting",
+      "y": 1.198504897112252,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mixed\npool",
+      "y": 1.6345836234958342,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "generic\nUltraChat",
+      "y": 0.04063347665517868,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "behavior-\neliciting",
+      "y": 0.04117870226151069,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "mixed\npool",
+      "y": 0.04047444188239149,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.18,
+      "activation units (log)": 0.5944249749847332,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.82,
+      "activation units (log)": 0.4330775350462295,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.82,
+      "activation units (log)": 0.17456220878751955,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.18,
+      "activation units (log)": 0.11613087486257896,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.18,
+      "activation units (log)": 0.5960606528200011,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.18,
+      "activation units (log)": 0.4271495983859119,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.18,
+      "y": 0.05292183700819468,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.82,
+      "y": 0.3267671799806289,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.82,
+      "y": 0.23392800993057683,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.18,
+      "y": 0.15013328150142297,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.18,
+      "y": 1.1378740025310725,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.18,
+      "y": 0.6227676363902701,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": -0.18,
+      "y": 0.5386336603839517,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.82,
+      "y": 0.5972229803739855,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.82,
+      "y": 0.5191253522685413,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.18,
+      "y": 0.14390379336101622,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.18,
+      "y": 0.4983066667587004,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.18,
+      "y": 0.31758873930126846,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": -0.18,
+      "y": 0.14800879973234074,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.82,
+      "y": 0.17705626440447428,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.82,
+      "y": 0.15968660773934806,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.18,
+      "y": 3.6425334949397503,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.18,
+      "y": 4.299704815369253,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.18,
+      "y": 3.9453689862693357,
+      "_kind": "bar",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 36
+}

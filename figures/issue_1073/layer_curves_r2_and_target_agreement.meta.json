@@ -1,0 +1,1890 @@
+{
+  "commit": "254f1a98d9",
+  "created": "2026-07-06T11:40:29Z",
+  "figsize": [
+    13.0,
+    4.2
+  ],
+  "points": [
+    {
+      "layer": 5.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4181994290273592,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4416106661933694,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.49562609216260933,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5004076520674977,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5122532738655317,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5212104665675277,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5527460226904961,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5720414752234674,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5921792846444067,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6163155187470628,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6478624634766232,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "10-rollout average",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.3616979577128373,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.360372843357589,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.41193109173476605,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4445998067099337,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4380716531009309,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4386196221094292,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.45793808078547993,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.47453957728565055,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5048287973353933,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.47916637466631284,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.48095570667533616,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.49778723565877214,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5172812458114462,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5405203228458406,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5721937406957629,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5896345637558325,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6016087172070381,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6010908724380986,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6107991790492165,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6612672605088925,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6452410191050373,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6225170021042494,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6002960782510467,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5787409161194286,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5809746113540576,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5806694370035282,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -1.0,
+      "series": "single greedy",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.35737251613618626,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.3489398234629145,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4063311602500669,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4307988038382734,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4424261561968418,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4314887782201595,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4494483475828007,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4729350837963211,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.49488835704911005,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4734661145528727,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4757140091012544,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.49287755670419364,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5124722336944494,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5431409180433862,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.569884157269383,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5871472117972851,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5977182122496912,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5962334407331353,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6097585257711164,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6577673251971655,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6401176408369877,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6168205315949498,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5922390664313328,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5776665821285423,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5984292468717485,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5761803449054075,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5310812876249251,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5457649985469096,
+      "series": "single stochastic (parent draw)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.35052711845403484,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.3519488927995409,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4022788030261839,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4346976353687245,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4392085956660283,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4344609183775041,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.45317817805683525,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4766325919298344,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4983599475535814,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.475419013143235,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.4778937970662961,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.495254587074736,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5145238909795411,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5454521478803703,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5721378156453425,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5900053702523564,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6011375161686818,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6000813944082198,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6122528474815174,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6595600196184543,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.642289604634606,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6181751597397009,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5937397120982473,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5795996128861487,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.6008122716663463,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5786238206424201,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5340412531881609,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": 0.5503992816900198,
+      "series": "fresh stochastic draw",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 0.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.020794286811866902,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 1.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.019937680037689365,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.01790228707464636,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 3.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.019933574577313706,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 4.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.01938452166576843,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 5.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.020354669085903554,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 6.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.019246524071664828,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 7.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.022631179033185678,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 8.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.02267505889407251,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 9.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.02148944279838938,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 10.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.020596189610638804,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 11.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.021710359499982568,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 12.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.02145484410590881,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 13.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.020542219820395502,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.021716024751892382,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 15.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.0213357812222168,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 16.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.022878516168346907,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 17.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.022100957361100626,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 18.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.02054704370268645,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.018522422032267283,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 20.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.017956256406922888,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 21.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.016938449355855312,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 22.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.014718412050166219,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 23.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.013791078212251229,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 24.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.011522918175735253,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 25.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.01024240814282762,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.009702996698850663,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 27.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.007629948625023086,
+      "series": "mean-target floor (degenerate prefix arm)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 0.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.02711646824730196,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.026803455421128275,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.02480466201366127,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.02480975167265531,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.025450315541121205,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 5.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.024211665511408853,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 6.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.02407237256681105,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.024123367382018035,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 8.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.024465536983852676,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 9.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.020178407695796707,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 10.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.02122733572047375,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 11.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.022514778558348603,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 12.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.02305213915414006,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 13.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.023798205621917257,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.024404092861687543,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 15.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.025118060382162133,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 16.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.02564452600619238,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 17.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.02581871571478156,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.028066649067345573,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.030591418393191017,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.030427397844228876,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.031895380389127315,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 22.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.03259931005733563,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.03234790009465427,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 24.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.03412288278868658,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 25.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.034788604283657154,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.034799999102372636,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "held-out pooled R\u00b2 (GCV, clipped at \u22121)": -0.03665458232076113,
+      "series": "shuffled-pairing null",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 0.0,
+      "mean per-context cosine between targets": 0.9910931403859695,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "mean per-context cosine between targets": 0.9914687941501475,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "mean per-context cosine between targets": 0.9907358703732434,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "mean per-context cosine between targets": 0.9855248823877564,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "mean per-context cosine between targets": 0.9830604997956982,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 5.0,
+      "mean per-context cosine between targets": 0.985459174166549,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 6.0,
+      "mean per-context cosine between targets": 0.9855158033317087,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "mean per-context cosine between targets": 0.9810493753872779,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 8.0,
+      "mean per-context cosine between targets": 0.9806833056672837,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 9.0,
+      "mean per-context cosine between targets": 0.9836158904813792,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 10.0,
+      "mean per-context cosine between targets": 0.9834584185235883,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 11.0,
+      "mean per-context cosine between targets": 0.982747485399718,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 12.0,
+      "mean per-context cosine between targets": 0.9825416012444035,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 13.0,
+      "mean per-context cosine between targets": 0.9830663743427387,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "mean per-context cosine between targets": 0.9855078074115973,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 15.0,
+      "mean per-context cosine between targets": 0.9850029114028286,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 16.0,
+      "mean per-context cosine between targets": 0.9848081081084838,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 17.0,
+      "mean per-context cosine between targets": 0.9845599981504344,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 18.0,
+      "mean per-context cosine between targets": 0.9837989373612036,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "mean per-context cosine between targets": 0.9857368980342606,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 20.0,
+      "mean per-context cosine between targets": 0.9849785420197481,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "mean per-context cosine between targets": 0.9847571394810007,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 22.0,
+      "mean per-context cosine between targets": 0.9849702355397578,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 23.0,
+      "mean per-context cosine between targets": 0.98765833156238,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 24.0,
+      "mean per-context cosine between targets": 0.9898501597748611,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 25.0,
+      "mean per-context cosine between targets": 0.9908200756689044,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "mean per-context cosine between targets": 0.9918177986367278,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "mean per-context cosine between targets": 0.9681442502414604,
+      "series": "single greedy vs 10-rollout average",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 0.0,
+      "mean per-context cosine between targets": 0.9902984652722584,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 1.0,
+      "mean per-context cosine between targets": 0.9907545386281976,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 2.0,
+      "mean per-context cosine between targets": 0.9898891940564721,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 3.0,
+      "mean per-context cosine between targets": 0.984240253883602,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 4.0,
+      "mean per-context cosine between targets": 0.9817527273365114,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 5.0,
+      "mean per-context cosine between targets": 0.9842841185617138,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 6.0,
+      "mean per-context cosine between targets": 0.9845488166094728,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 7.0,
+      "mean per-context cosine between targets": 0.9797304538714631,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 8.0,
+      "mean per-context cosine between targets": 0.9794171311107399,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 9.0,
+      "mean per-context cosine between targets": 0.9825504627216002,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 10.0,
+      "mean per-context cosine between targets": 0.9825162132707683,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 11.0,
+      "mean per-context cosine between targets": 0.9817293728405759,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 12.0,
+      "mean per-context cosine between targets": 0.9813591141778099,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 13.0,
+      "mean per-context cosine between targets": 0.9820390631616367,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 14.0,
+      "mean per-context cosine between targets": 0.9846430115267935,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 15.0,
+      "mean per-context cosine between targets": 0.9842854699964014,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 16.0,
+      "mean per-context cosine between targets": 0.9839671504796538,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 17.0,
+      "mean per-context cosine between targets": 0.9837853755682401,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 18.0,
+      "mean per-context cosine between targets": 0.9831701936644777,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 19.0,
+      "mean per-context cosine between targets": 0.9848872179989554,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 20.0,
+      "mean per-context cosine between targets": 0.9841252349952668,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 21.0,
+      "mean per-context cosine between targets": 0.9836765385311934,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 22.0,
+      "mean per-context cosine between targets": 0.9837829207425173,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 23.0,
+      "mean per-context cosine between targets": 0.9865853154067492,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 24.0,
+      "mean per-context cosine between targets": 0.988721489250402,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 25.0,
+      "mean per-context cosine between targets": 0.9897773160906931,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 26.0,
+      "mean per-context cosine between targets": 0.9908269641151737,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 27.0,
+      "mean per-context cosine between targets": 0.9644206827401575,
+      "series": "single stochastic (parent draw) vs 10-rollout average",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 0.0,
+      "mean per-context cosine between targets": 0.9910313369770453,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 1.0,
+      "mean per-context cosine between targets": 0.9914930887736917,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 2.0,
+      "mean per-context cosine between targets": 0.9907078832562828,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 3.0,
+      "mean per-context cosine between targets": 0.9854623971277194,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 4.0,
+      "mean per-context cosine between targets": 0.9832089857048281,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 5.0,
+      "mean per-context cosine between targets": 0.9855594600661997,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 6.0,
+      "mean per-context cosine between targets": 0.9858449236368975,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 7.0,
+      "mean per-context cosine between targets": 0.9813503820858279,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 8.0,
+      "mean per-context cosine between targets": 0.9810646136941932,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 9.0,
+      "mean per-context cosine between targets": 0.9839645201636146,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 10.0,
+      "mean per-context cosine between targets": 0.9839449868057399,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 11.0,
+      "mean per-context cosine between targets": 0.9832470813641221,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 12.0,
+      "mean per-context cosine between targets": 0.9829591018477225,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 13.0,
+      "mean per-context cosine between targets": 0.9836151963224172,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 14.0,
+      "mean per-context cosine between targets": 0.9859997955349552,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 15.0,
+      "mean per-context cosine between targets": 0.9857045249328789,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 16.0,
+      "mean per-context cosine between targets": 0.9853927436863475,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 17.0,
+      "mean per-context cosine between targets": 0.98523847462234,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 18.0,
+      "mean per-context cosine between targets": 0.9847084400507129,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 19.0,
+      "mean per-context cosine between targets": 0.9862098515070371,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 20.0,
+      "mean per-context cosine between targets": 0.9855089131027093,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 21.0,
+      "mean per-context cosine between targets": 0.9850566020208317,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 22.0,
+      "mean per-context cosine between targets": 0.9851127251877235,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 23.0,
+      "mean per-context cosine between targets": 0.9876549752236017,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 24.0,
+      "mean per-context cosine between targets": 0.9896283932686448,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 25.0,
+      "mean per-context cosine between targets": 0.9906363622334564,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 26.0,
+      "mean per-context cosine between targets": 0.9916675228180611,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 27.0,
+      "mean per-context cosine between targets": 0.9674230643153161,
+      "series": "fresh stochastic draw vs 10-rollout average",
+      "_kind": "line",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 271
+}

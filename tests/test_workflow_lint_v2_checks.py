@@ -100,8 +100,8 @@ def test_routing_comment_only_mention_not_flagged(tmp_path):
 
 _LESSONS_TMPL = (
     "# LESSONS\n\n## Rules\n\n"
-    "- **foo-rule** ([`.claude/rules/foo-rule.md`](foo-rule.md)) — fires when: x.\n"
-    "- **bar-rule** ([`.claude/rules/bar-rule.md`](bar-rule.md)) — fires when: y.\n"
+    "- **[foo-rule](foo-rule.md)** — fires when: x.\n"
+    "- **[bar-rule](bar-rule.md)** — fires when: y.\n"
 )
 
 

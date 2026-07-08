@@ -126,7 +126,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    mid-sweep); (b) valid measurement regime for the new question (for marker work specifically, NOT
    saturated — source `log P − base ∈ [5,12]` nat, bystanders below ceiling per
    `.claude/rules/marker-training-recipe.md`); (c) the required conditions / cells the new design
-   needs are actually present in the artifact; (d) the reuse does NOT smuggle in a second
+   needs are actually present in the artifact — for a multi-field tensor bundle, the REALIZED key
+   set verified against every consumer assert (file presence is not field presence; builder-code
+   reading is not verification — incident #1073); (d) the reuse does NOT smuggle in a second
    silently-changed variable past the consistency-checker; (e) the producing issue is not retracted
    / superseded; (f) content identity across copies — when the copy the plan verified is a local
    untracked file but execution fetches the artifact's HF mirror, the plan names the pin mechanism
@@ -139,9 +141,11 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    the read gauge stated in §4 (a recipe-identical parent committed at classic `α/r` application can
    be an unconditional repeater at the faithful `α/√r` a current vLLM+PEFT honors for `use_rslora:
    true` — incident #601: all 20 of #472's reused adapters passed (a)–(f) yet HALTed Phase-0 as
-   repeaters); (h) source resolution + consumer-exact path layout + target-backend fetchability for
-   reused TRAINING-INPUT artifacts — for a reused `train/*.jsonl` mix / on-policy response cache /
-   downstream-input `eval_results/` JSON, the plan confirms the file (i) is source-resolvable (HF
+   repeaters); (h) source resolution + consumer-exact path layout + target-backend fetchability +
+   staged-layout consumer-open for
+   reused TRAINING-INPUT / downstream-input artifacts — for a reused `train/*.jsonl` mix /
+   on-policy response cache / downstream-input `eval_results/` JSON / staged multi-file
+   tensor or activation store, the plan confirms the file (i) is source-resolvable (HF
    via `huggingface_hub.list_repo_files`, OR git-tree reachable for a committed `eval_results/...`
    JSON) AND (ii) resolves at the EXACT path/filename pattern the new consumer asserts (not merely
    that the parent dir exists — #474 `i474_loc_A1.jsonl` vs a #664-style
@@ -151,7 +155,12 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    the clone), else the plan uploads / renames the mix to the consumer path first, adapts the
    consumer, or carries a self-contained §4 regen phase (#734 round-4: a reused parent mix on
    neither HF repo AND under a #474 naming convention the #664-style consumer dispatcher did not
-   assert crashed phase2 at the pre-train assert on the GCP lane after 3 review rounds); (i)
+   assert crashed phase2 at the pre-train assert on the GCP lane after 3 review rounds), AND (iv)
+   when the artifact is staged through a layout-mapping helper (incl. a verbatim prefix mirror)
+   into a consumer-fixed local layout, the plan names the hub-rel → local-rel mapping and schedules
+   a 1-file staging probe + consumer-open through the REAL staging path before production (#928: a
+   verbatim prefix mirror staged the store manifest one level deep and crashed `Store()` init after
+   legs (i)–(iii) passed); (i)
    throughput fitness of reused fit/analysis/eval/upload-verify CODE — inner per-cell/per-fold/per-draw loop
    batched + device parametrized + data-repo Hub calls prefix-scoped; full text in `.claude/rules/artifact-reuse.md` checklist item (i)
    (referenced by pointer, not duplicated here; "checklist item (i)" is distinct from this item's
@@ -167,7 +176,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    (h)(ii) (the reused mix resolves in the parent dir but NO file matches the consumer-asserted path
    pattern — #474 `i474_loc_A1.jsonl` vs a #664-style `mk_<source>_<arm>_<dose>_seed42.jsonl` naming
    drift) OR fails target-backend fetchability check (h)(iii) on the §9 lane (e.g. HF-resolved but a
-   CDN/region/`HF_TOKEN` gate blocks the lane from staging it), without an upload-first /
+   CDN/region/`HF_TOKEN` gate blocks the lane from staging it) OR fails staged-layout consumer-open
+   check (h)(iv) (a staged multi-file reuse with no named mapping and no staging-probe +
+   consumer-open gate — #928), without an upload-first /
    rename-to-consumer-path step, a consumer-adaptation, OR a self-contained §4 regen phase — the
    resulting numbers will silently confound the result, or phase2 crashes at the pre-train `assert
    data_path.exists()` on a git-clone-only lane; or the plan reuses a mutually-dependent artifact
@@ -190,6 +201,14 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    downstream analyzer can re-check; not a REVISE when the plan retrains / regenerates AND names the
    specific fitness-check failure that licenses it (a checklist-item-(i) failure licenses NO retrain
    and NO caller-side workaround — its remedy is the source-module fix, then reuse).
+   REVISE also when the design carries a reuse-VALIDATION gate (a numeric parity floor, a
+   behavioral install confirmation, a one-cell gate) whose threshold is a bare constant not
+   derived from the reused artifact's own committed per-behavior reference values (file + field
+   named in §4/§11), or that assigns run-abort HALT to a weaker-than-expected diagnostic without
+   a discriminating-band placement — full rule: `.claude/rules/artifact-reuse.md`
+   § Reuse-validation gate calibration (#813: 3 launch-halts + ~1.6h of 8×H100 on a
+   7-module-calibrated 0.01 floor and an ungroundable behavioral bar against a correctly-applied
+   4-module marker adapter).
    Conclusion-changing because (i) a wrong-recipe /
    saturated / missing-conditions artifact produces numbers that look like results but answer a
    different question, and (ii) gratuitous retraining changes the inherited baseline so the new
@@ -200,8 +219,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    code reuse. Existence verification of HF paths is already
    handled by planner.md step 5's `huggingface_hub.list_repo_files` check; this item is about
    FITNESS beyond mere existence.
-10. **CPU/analysis-phase placement — idle multi-GPU pod (efficiency), oversized-VM-footprint (disk
-    safety), gradient-descent / dense-factorization fit — or any high-count tiny-op battery (draws, per-item serialization, per-file uploads) — mis-routed to CPU or left serial (compute character), AND a narrow GPU phase
+10. **CPU/analysis-phase placement — idle multi-GPU pod (efficiency), oversized-VM-footprint
+    (disk/RAM safety), gradient-descent / dense-factorization fit — or any high-count tiny-op battery (draws, per-item serialization, per-file uploads) — mis-routed to CPU or left serial (compute character), AND a narrow GPU phase
     holding the run's peak-width pod (GPU-width right-sizing).** A CPU/analysis phase must be placed
     where it neither holds an idle multi-GPU pod NOR overruns the disk it runs on NOR runs an
     iterative-optimization fit GPU-starved on the VM CPU; and a multi-phase GPU run must size EACH
@@ -225,7 +244,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       never needed to hold (2026-06-09: pod-518 ran 1h+ of pure-CPU permutation/bootstrap scoring
       with all 8 H100s at 0%, pod-523 ran a CPU-only metrics phase ~6h on idle GPUs — ~$48/hr of
       idle burn).
-    - **(ii) Oversized footprint placed on the VM (disk safety).** REVISE when the plan routes the
+    - **(ii) Oversized footprint placed on the VM (disk/RAM safety).** REVISE when the plan routes the
       phase to the VM (the off-pod default) but its estimated local footprint exceeds
       `VM_ANALYSIS_FOOTPRINT_GB_MAX = 50` GB — `downloaded_inputs_gb +
       materialized_tensors/activations/store_gb + scratch_gb`. The VM root disk is ~188 GB and
@@ -245,7 +264,22 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       footprint exceeds the disk — the fix is placement, not cleanup. (2026-06-26: #658's Phase-1
       analysis materialized a 139 GB activation store on the VM worktree on the shared 188 GB disk;
       `/` hit 100% full and the whole fleet stalled.)
-    - **(iii) Gradient-descent, many-cell dense-factorization fit, OR any high-count tiny-op battery silently placed on the VM CPU / left serial (compute character).** REVISE when §9 routes an **iterative-optimization fit** — a torch-MLP LOCO / leave-one-class-out fit, a per-cell probe trained via SGD / AdamW, a small adapter fit, or any phase whose inner loop runs gradient descent on parameters — to the VM CPU default (or treats it as cheap closed-form CPU work), per planner.md §9 "Compute-character carve-out". Such a fit is GPU-worthy even at small model / dataset size and must route to a GPU lane (a GPU pod or the GCP GPU lane: `lora-7b` for a full A100, `eval` / `debug` for a smaller GPU — the smallest intent that fits). This axis is ORTHOGONAL to footprint: a gradient-descent fit goes to a GPU lane whether its footprint is large or small. A >50 GB gradient fit goes to a GPU lane with its disk sized explicitly (`--boot-disk-gb` on the GCP lane, `--volume`/intent volume on the RunPod lane), NOT `cpu-bigmem` (`gpu_count=0`, which would re-starve the fit); a closed-form aggregation with a >50 GB footprint still routes to `cpu-bigmem` per (ii). The qualifier is "iterative gradient descent on parameters" (the AdamW / SGD inner loop), NOT "uses pytorch" — a single closed-form torch reduction (`torch.linalg.lstsq`, a vectorized bootstrap) stays cheap CPU work. The "vectorized" qualifier is load-bearing, and the CHECK fires on intent, not implementation wording: ANY non-trivial permutation / bootstrap / null-draw battery over a large fixed/pooled set — non-trivial per the SAME ~15-30 min phase-wall floor as the rest of this item — triggers scrutiny UNLESS the plan explicitly states the draws are already batched/vectorized or the loop is sub-minute (#778's plan never said "serial"; it just scheduled the battery, and serial was the default implementation). REVISE when the plan schedules per-draw re-reduction of the pool or simply names the battery with NO batching/vectorization plan: the fix is a batched formulation (pool reduction precomputed once; mean/sum/covariance draws as one GEMM via the subset-sum identity, median/rank draws via batched `argsort` — `.claude/rules/vectorize-many-cell-fits.md`), NOT a GPU or bigger-CPU re-route, which leaves the redundant per-draw recompute in place (#778: ~4.1 s/draw serial `perm_null_draws`; ~15h projected across the full null battery's draw loops vs the plan's 1h §8 estimate; ~70× batched). The SAME intent-fired scrutiny covers many-cell repeated dense linear-algebra fits: REVISE when §9 schedules a full svd/eigh/lstsq/GCV-ridge solve looped over fold × layer × arm × trait with NO shared/batched-factorization plan, or with a per-call cost asserted rather than grounded on a measurement at production shape / a FLOP floor (#823: "~2 s/fit" asserted; ~125 s/fit real at N_tr≈4000, H=3584; ~3780 calls, 12-20 h — the body-named Gram-space fast twin was dropped). The fix is Gram/dual-space or a shared factorization, NOT a GPU/bigger-CPU re-route. The SAME intent-fired scrutiny covers ANY high-count tiny-op battery regardless of op class — >~10^4 closed-form tiny fits (#813's substrate-swap null: ~2M tiny fits projected 10-12 h serial), per-item SERIALIZATION of many multi-hundred-MB artifacts, and per-file Hub commits (#813: `savez_compressed` at 103.8 s/file made the store, not the forwards, the wall-clock driver — 4.5× over plan): REVISE when §9 schedules such a battery with NO batching / vectorization / out-of-band-IO plan, under the same ~15-30 min phase-wall floor. A genuinely vectorized battery (draws already batched) stays exempt cheap CPU work. The size gate is the SAME ~15-30 min floor, on the PHASE wall-time (the whole fit loop in aggregate), NOT any single fit: a many-cell/many-draw loop of individually-fast fits/draws counts if the loop runs longer than the floor, while a genuinely tiny one-off fit below the floor (a single linear probe trained in < 30 s, no long surrounding loop) stays on the VM — do not over-route trivial fits. (#658: `_fit_mlp_loco` ran a 300-epoch AdamW fit per cell on the VM CPU, a long per-cell loop that was GPU-starved.) When ANY lens's recommendation raises draws/B/N/cells, the Statistics lens item 12 same-round re-cost obligation applies — cross-check the affected §9 rows were re-costed.
+      The RAM twin: ALSO REVISE when a VM-placed phase's projected peak RSS is
+      ≥~16 GB (single phase, or SUMMED concurrent VM-resident phases crossing
+      the same bar), or when a VM-placed phase that plausibly materializes a
+      multi-GB resident set (bulk tensor loads, a large draw pool, many
+      concurrent fits) states NO RSS estimate at all — the shared VM's earlyoom
+      (SIGTERM below ~12.8 GB MemAvailable, +300 python bias) makes such a phase
+      the default kill victim under fleet pressure, and runtime choom protection
+      is mitigation, not permission (#778: a 22-GiB-RSS null battery
+      earlyoom-killed 3× before its cpu-bigmem pivot; #833: two ~13-15 GB
+      concurrent phases lost 5 cells). The fix is placement — `cpu-mid` (32 GB
+      GCP) / `cpu-bigmem` (128 GB), with `--min-ram-gb` stated when sizing
+      >16 GB (arms the #1010 feasibility gate; the RunPod cpu-mid fallback has
+      only 16 GB) — or a stream-reduce formulation that bounds peak RSS at
+      O(one item). Full recipe: `.claude/rules/plan-compute-sizing.md`
+      § CPU-phase RAM/RSS routing.
+    - **(iii) Gradient-descent, many-cell dense-factorization fit, OR any high-count tiny-op battery silently placed on the VM CPU / left serial (compute character).** REVISE when §9 routes an **iterative-optimization fit** — a torch-MLP LOCO / leave-one-class-out fit, a per-cell probe trained via SGD / AdamW, a small adapter fit, or any phase whose inner loop runs gradient descent on parameters — to the VM CPU default (or treats it as cheap closed-form CPU work), per planner.md §9 "Compute-character carve-out". Such a fit is GPU-worthy even at small model / dataset size and must route to a GPU lane (a GPU pod or the GCP GPU lane: `lora-7b` for a full A100, `eval` / `debug` for a smaller GPU — the smallest intent that fits). This axis is ORTHOGONAL to footprint: a gradient-descent fit goes to a GPU lane whether its footprint is large or small. A >50 GB gradient fit goes to a GPU lane with its disk sized explicitly (`--boot-disk-gb` on the GCP lane, `--volume`/intent volume on the RunPod lane), NOT `cpu-bigmem` (`gpu_count=0`, which would re-starve the fit); a closed-form aggregation with a >50 GB footprint still routes to `cpu-bigmem` per (ii). The qualifier is "iterative gradient descent on parameters" (the AdamW / SGD inner loop), NOT "uses pytorch" — a single closed-form torch reduction (`torch.linalg.lstsq`, a vectorized bootstrap) stays cheap CPU work. The "vectorized" qualifier is load-bearing, and the CHECK fires on intent, not implementation wording: ANY non-trivial permutation / bootstrap / null-draw battery over a large fixed/pooled set — non-trivial per the SAME ~15-30 min phase-wall floor as the rest of this item — triggers scrutiny UNLESS the plan explicitly states the draws are already batched/vectorized or the loop is sub-minute (#778's plan never said "serial"; it just scheduled the battery, and serial was the default implementation). REVISE when the plan schedules per-draw re-reduction of the pool or simply names the battery with NO batching/vectorization plan: the fix is a batched formulation (pool reduction precomputed once; mean/sum/covariance draws as one GEMM via the subset-sum identity, median/rank draws via batched `argsort` — `.claude/rules/vectorize-many-cell-fits.md`), NOT a GPU or bigger-CPU re-route, which leaves the redundant per-draw recompute in place (#778: ~4.1 s/draw serial `perm_null_draws`; ~15h projected across the full null battery's draw loops vs the plan's 1h §8 estimate; ~70× batched). The SAME intent-fired scrutiny covers many-cell repeated dense linear-algebra fits: REVISE when §9 schedules a full svd/eigh/lstsq/GCV-ridge solve looped over fold × layer × arm × trait with NO shared/batched-factorization plan, or with a per-call cost not grounded on a MEASURED 1-cell pilot through the production entrypoint at production shape/device, a cited prior-issue measured figure (same kernel + shape), or a pre-registered `pilot-gated` first-step pilot per `.claude/rules/plan-compute-sizing.md` § Per-cell fit phases (a FLOP floor is the cross-check, never the basis for these overhead-bound loops; #811: one inner kernel timed, the dominant frame asserted at "~1–2 h", 19h21m at unit 3/108) (#823: "~2 s/fit" asserted; ~125 s/fit real at N_tr≈4000, H=3584; ~3780 calls, 12-20 h — the body-named Gram-space fast twin was dropped). The fix is Gram/dual-space or a shared factorization, NOT a GPU/bigger-CPU re-route. The SAME intent-fired scrutiny covers ANY high-count tiny-op battery regardless of op class — >~10^4 closed-form tiny fits (#813's substrate-swap null: ~2M tiny fits projected 10-12 h serial), per-item SERIALIZATION of many multi-hundred-MB artifacts, and per-file Hub commits (#813: `savez_compressed` at 103.8 s/file made the store, not the forwards, the wall-clock driver — 4.5× over plan): REVISE when §9 schedules such a battery with NO batching / vectorization / out-of-band-IO plan, under the same ~15-30 min phase-wall floor. A genuinely vectorized battery (draws already batched) stays exempt cheap CPU work. The size gate is the SAME ~15-30 min floor, on the PHASE wall-time (the whole fit loop in aggregate), NOT any single fit: a many-cell/many-draw loop of individually-fast fits/draws counts if the loop runs longer than the floor, while a genuinely tiny one-off fit below the floor (a single linear probe trained in < 30 s, no long surrounding loop) stays on the VM — do not over-route trivial fits. (#658: `_fit_mlp_loco` ran a 300-epoch AdamW fit per cell on the VM CPU, a long per-cell loop that was GPU-starved.) When ANY lens's recommendation raises draws/B/N/cells, the Statistics lens item 12 same-round re-cost obligation applies — cross-check the affected §9 rows were re-costed.
     - **(iv) Narrow GPU phase holding the run's PEAK-width pod (GPU-width right-sizing).** REVISE
       when a multi-phase GPU run sizes ONE pod at its peak-phase width (e.g. 8× H100 for a
       finetuning fan-out) and holds it through a GPU phase that needs MATERIALLY FEWER GPUs — a ≤7B
@@ -269,7 +303,10 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       stated, nor one that correctly provisions the wide pod ONLY for the wide phase, nor a
       shared-nothing sweep that runs N seeds SIMULTANEOUSLY on one wide pod (planner.md §9
       Sweep-parallelism row — every shard needs the pod at once, which is phases of the SAME width
-      run in parallel, NOT a sequence of phases of DIFFERENT widths).
+      run in parallel, NOT a sequence of phases of DIFFERENT widths). Conversely, REVISE a plan
+      that leaves a DECLARED shardable axis (>~2 h serial on 1×) on a narrow GCP provision without
+      justification — the width-aware auto lane (#1121) makes `--gpus N` wide provisioning the
+      encouraged default; "GCP only had 1× intents" is no longer a valid reason.
 
     Plan-time scheduling / routing only, never a mid-run cost or disk gate. Not a REVISE when the
     plan declares the phase off-pod on the VM AND its footprint is ≤50 GB (or it streams without
@@ -336,7 +373,14 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     approaches the routed lane's fence (the GCP `--max-run-duration` default is 7d — the FLEX_START
     ceiling, #741 — but a plan may deliberately set a SHORTER fence via
     `spec.extra["max_run_duration"]`, in which case reconcile against THAT value) and the plan
-    declares none of: (a) a deliberate `spec.extra["max_run_duration"]` for the GCP dispatch, (b) a
+    declares none of: (a) a deliberate `spec.extra["max_run_duration"]` for the GCP dispatch —
+    option (a) satisfies this item ONLY when the fence is sized off the p90 per-cell wall estimate
+    (a prior-issue per-cell wall distribution, else the measured mean × a STATED dispersion
+    factor, default ×2) and cleared with stated margin (≥~1.25×); a MEAN-sized deliberate fence is
+    exactly the #833 failure (realized per-cell wall ran ~2× the plan mean and overran a
+    deliberate 36h fence, hard-deleting the instance) and is itself a REVISE — fence-sizing
+    recipe: the fence clause of `.claude/rules/plan-compute-sizing.md` § Cost wall-time against
+    the machine the router will ACTUALLY provision — (b) a
     pre-registered phase split across provisions naming which artifacts persist (HF / git per the
     Upload Policy) before the first instance dies, (c) an explicit `backend: runpod` override with
     the long-run residual gap named; and (iii) for a store-heavy phase (>~10^3 output files or
@@ -365,7 +409,14 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     either an explicit anchor/control role (the data construction IS the manipulated variable,
     stated as such) or a recorded on-policy yield failure for that source/behavior, or (ii) the plan
     backfills a yield shortfall with templates inside an arm labeled on-policy instead of dropping +
-    reporting the source. The reason this is conclusion-changing: canned/templated positives
+    reporting the source, or (iii) a MULTI-behavior implantation datagen defines its behaviors
+    bespoke — hand-written per-behavior definitions or hand-curated per-behavior query banks —
+    instead of the standardized persona-vectors shape (trait name + description → 5 contrastive
+    pos/neg instruction pairs + shared/auto-generated neutral question set;
+    `.claude/rules/on-policy-completions.md` § Standardized behavior definitions) without a stated
+    justification — #906's bespoke 4-class pilot failed all three content-class yield floors
+    (sycophancy 6/36 vs floor 20) and forced the #1090 standardized rebuild. The reason this is
+    conclusion-changing: canned/templated positives
     collapse the response distribution and overstate installability — #612 measured the model's own
     judge-accepted completions installing at +0.60-0.66 where canned templates installed +0.84-0.93
     under the identical recipe — so a canned-data headline about install strength / leakage radius
@@ -374,8 +425,11 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     on-policy with the ladder + quota stated; an explicitly-labeled canned anchor/control arm;
     published-corpus replication rows (replication fidelity, item 7, wins — do not double-bounce);
     the marker carve-out (the response text is already on-policy under the marker recipe; the
-    appended token is the controlled template); or non-implantation Goals (the plan's §4 "N/A — not
-    a behavior-implantation experiment" satisfies this item).
+    appended token is the controlled template); a single-behavior design's bespoke definition (no
+    cross-behavior comparison to confound); an established/published benchmark bank justified
+    under data-realism / replication fidelity with the cross-behavior-comparability caveat named
+    (the standardized behavior DEFINITION is still required); or non-implantation Goals (the
+    plan's §4 "N/A — not a behavior-implantation experiment" satisfies this item).
 15. **Data-source realism tier (verify §4 names source + tier).** Every `kind: experiment` plan
     names its training/eval/probe data source AND its tier on the CLAUDE.md realism hierarchy
     ("Design experiments on the most realistic data available"): (1) real-world, (2) established
@@ -509,7 +563,13 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    is jointly unsatisfiable and the experiment can never pass; or (b) a gate's pass threshold OR its
    SIGN is an ungrounded assumption not tied to prior-issue evidence of the construct (a kill-gate
    that no past result of this construct would itself have passed, or whose sign predicts the
-   opposite of what every prior run of this construct produced). Conclusion-changing because an
+   opposite of what every prior run of this construct produced); or (c) a registered decision band,
+   applied to the precedent values the plan itself cites as that branch's supporting reference,
+   places the precedent in the OPPOSITE branch (or the cited range straddles the threshold while
+   the prose asserts one side) — recompute the arithmetic; do not trust the plan's own side label
+   (#825 v17: 0.3489/0.6731 = 0.519 ≥ 0.5 narrated as the below-band reference). `verify_plan.py`
+   c27 WARNs on the same-line explicit-ratio subset; this lens owns every other phrasing.
+   Conclusion-changing because an
    unsatisfiable gate guarantees a false FAIL (the run cannot answer its own question) and an
    ungrounded-sign gate guarantees a false PASS or FAIL by construction (the threshold is divorced
    from what the construct actually does). Skip the check entirely when the plan has no Decision

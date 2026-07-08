@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import subprocess
 from datetime import UTC, datetime, timedelta
 from pathlib import Path as _P
@@ -2243,6 +2244,26 @@ def _custom_spec(cmd: str = "bash scripts/issue588_smoke.sh --flag 'v 1'") -> Ru
     )
 
 
+def _wrapped(cmd: str) -> str:
+    """The #1004 rc-preserving rendered custom-stage line for ``cmd``."""
+    return f"bash -eu -o pipefail -c {shlex.quote(cmd)}"
+
+
+def _rendered_custom_line(cmd: str) -> str:
+    """Extract the ACTUAL rendered custom-stage line from a real
+    ``render_sbatch`` output (the line equal to the wrapper form) —
+    live-dispatched-path discipline: never rebuild the line via a twin."""
+    spec = _custom_spec(cmd)
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    lines = script.splitlines()
+    return lines[lines.index(_wrapped(cmd))]
+
+
 def test_stages_for_spec_workload_cmd_single_custom_stage() -> None:
     """#588: a workload_cmd spec bypasses the intent → stage table —
     ONE custom stage; the intent keeps driving GPUs + --time."""
@@ -2256,8 +2277,9 @@ def test_stages_for_spec_workload_cmd_single_custom_stage() -> None:
     assert time_budget_hours(_custom_spec()) == 6.0
 
 
-def test_render_sbatch_custom_workload_verbatim_with_lifecycle_intact() -> None:
-    """#588: the custom command is embedded VERBATIM inside a
+def test_render_sbatch_custom_workload_rc_wrapped_with_lifecycle_intact() -> None:
+    """#588/#1004: the custom command renders inside the rc-preserving
+    inner-bash wrapper (never as a bare line) inside a
     ``[phase=workload]`` block; heartbeat / status.json / preflight /
     terminal ``[phase=done]`` machinery all wrap it unchanged."""
     spec = _custom_spec()
@@ -2268,8 +2290,12 @@ def test_render_sbatch_custom_workload_verbatim_with_lifecycle_intact() -> None:
         scratch_dir="/scratch/tjiral/eps/issue-137",
     )
     lines = script.splitlines()
-    # Verbatim, own line (NOT shlex-quoted into a single token).
-    assert "bash scripts/issue588_smoke.sh --flag 'v 1'" in lines
+    # The command is the single shlex-quoted argument of an inner
+    # `bash -eu -o pipefail -c` (#1004); the inner bash re-parses it as a
+    # full shell line, so the #588 "complete shell command" contract holds.
+    assert _wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'") in lines
+    # The bare, rc-masking pre-#1004 form is GONE.
+    assert "bash scripts/issue588_smoke.sh --flag 'v 1'" not in lines
     # No hydra entrypoint on the custom path.
     assert "scripts/train.py" not in script
     assert "scripts/eval.py" not in script
@@ -2284,19 +2310,60 @@ def test_render_sbatch_custom_workload_verbatim_with_lifecycle_intact() -> None:
     assert "--extra gpu" not in script
     # EPS_* env contract parity with the GCP startup script (live-smoke
     # fix: nibi job 15955646 died on `EPS_ISSUE: parameter null or not
-    # set`). Exports must precede the verbatim command.
+    # set`). Exports must precede the workload command.
     assert f"export EPS_ISSUE={spec.issue}" in lines
     assert 'export EPS_ATTEMPT_ID="slurm-${SLURM_JOB_ID}"' in lines
     assert lines.index(f"export EPS_ISSUE={spec.issue}") < lines.index(
-        "bash scripts/issue588_smoke.sh --flag 'v 1'"
+        _wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'")
     )
     # WandB project default (#601 follow-up r1) — parity with the GCP
-    # workload_cmd lane: exported BEFORE the verbatim command so
+    # workload_cmd lane: exported BEFORE the workload command so
     # HF-Trainer workloads stop landing in WandB's global default
     # 'huggingface' project; :- keeps an inline/internal override winning.
     wandb_export = 'export WANDB_PROJECT="${WANDB_PROJECT:-issue137}"'
     assert wandb_export in lines
-    assert lines.index(wandb_export) < lines.index("bash scripts/issue588_smoke.sh --flag 'v 1'")
+    assert lines.index(wandb_export) < lines.index(
+        _wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'")
+    )
+
+
+def test_render_sbatch_custom_workload_compound_is_rc_wrapped() -> None:
+    """#1004 (incident #952, GCP parity): a compound && custom_cmd renders
+    inside the rc-preserving inner-bash wrapper, never as a bare line — a
+    bare splice under the prelude's set -e rc-masks a first-command crash
+    into a false [phase=done] + completion sentinel (errexit exempts
+    non-final &&/|| list members)."""
+    cmd = "uv run python scripts/a.py && uv run python scripts/b.py"
+    spec = _custom_spec(cmd)
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    lines = script.splitlines()
+    assert _wrapped(cmd) in lines
+    assert cmd not in lines  # the bare, rc-masking form is GONE
+    # Wrapper precedes the terminal [phase=done] publish.
+    assert lines.index(_wrapped(cmd)) < lines.index('echo "[phase=done]"')
+
+
+def test_sbatch_custom_wrapper_propagates_compound_first_command_rc() -> None:
+    """#1004 behavioral twin of the GCP test, on the LIVE rendered
+    sbatch custom-stage line: under set -euo pipefail (the sbatch
+    prelude's exact flag set), a `cmd1 && cmd2` custom_cmd whose FIRST
+    command exits 7 aborts the harness with rc 7 (success tail — the
+    stand-in for the terminal [phase=done] + sentinel — unreached); a
+    succeeding compound reaches the tail with rc 0."""
+    for cmd, want_rc, want_tail in (
+        ("bash -c 'exit 7' && echo NOT_REACHED", 7, False),
+        ("true && echo CHAIN_OK", 0, True),
+    ):
+        harness = "set -euo pipefail\n" + _rendered_custom_line(cmd) + "\necho SUCCESS_TAIL\n"
+        proc = subprocess.run(["bash", "-c", harness], capture_output=True, text=True)
+        assert proc.returncode == want_rc, (cmd, proc.returncode, proc.stderr)
+        assert ("SUCCESS_TAIL" in proc.stdout) is want_tail
+        assert "NOT_REACHED" not in proc.stdout
 
 
 def test_render_sbatch_custom_stage_empty_cmd_raises() -> None:

@@ -44,6 +44,11 @@ if str(PROJECT_ROOT / "src") not in sys.path:
 if str(PROJECT_ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# #847: shared-VM thread caps must bind BEFORE torch/numpy freeze their pools at import.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
 import issue841_common as C  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402

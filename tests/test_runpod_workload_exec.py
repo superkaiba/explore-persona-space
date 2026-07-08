@@ -409,6 +409,97 @@ def test_launcher_chains_sentinel_write_after_workload_success():
     assert payload == {"phase": "done", "issue": 909, "attempt_id": ATTEMPT}
 
 
+def test_launcher_waits_on_fresh_detached_pid_files_before_sentinel():
+    """The rc==0 branch waits on fresh detached ``/workspace/logs/*.pid``
+    workloads BEFORE the sentinel write (#977, the GCP #601 parity —
+    ``test_render_startup_script_workload_cmd_waits_on_detached_pid_files``
+    precedent). Pins: the in-launcher ``WORKLOAD_START_EPOCH`` capture sits
+    AFTER the self-pidfile write and IMMEDIATELY before the workload line;
+    ``WORKLOAD_RC=$?`` is ADJACENT to the workload line (an intervening
+    line would corrupt ``$?``); the freshness predicate renders as ONE
+    line carrying both ``stat -c %Y`` and the INCLUSIVE
+    ``-ge "$WORKLOAD_START_EPOCH"`` (pins the adjacent-string
+    concatenation); and the full ordering chain — pidfile-write <
+    epoch-capture < workload < rc-capture < rc==0 gate < for-loop <
+    freshness < cat < PID-VALUE self-exclusion < kill-0 wait < sentinel
+    printf < exit — holds inside the heredoc. A misordered self-exclusion
+    AFTER the kill-0 wait would deadlock the launcher on its own pid, so
+    the chain includes the exclusion index, not just its presence."""
+    script = _render_launch()
+    lines = script.splitlines()
+
+    heredoc_start = next(i for i, line in enumerate(lines) if "<< 'EPSEOF'" in line)
+    heredoc_end = lines.index("EPSEOF", heredoc_start + 1)
+
+    pid_idx = lines.index("echo $$ > /workspace/logs/issue-909.pid")
+    epoch_idx = lines.index("WORKLOAD_START_EPOCH=$(date +%s)")
+    workload_idx = lines.index(WORKLOAD)
+    rc_idx = lines.index("WORKLOAD_RC=$?")
+    gate_idx = next(i for i, line in enumerate(lines) if '"$WORKLOAD_RC" -eq 0' in line)
+    for_idx = lines.index("  for pf in /workspace/logs/*.pid; do")
+    fresh_idx = next(
+        i
+        for i, line in enumerate(lines)
+        if "stat -c %Y" in line and '-ge "$WORKLOAD_START_EPOCH"' in line
+    )
+    cat_idx = lines.index('    wpid=$(cat "$pf" 2>/dev/null) || continue')
+    excl_idx = lines.index('    [ "$wpid" = "$$" ] && continue')
+    wait_idx = lines.index('    while kill -0 "$wpid" 2>/dev/null; do sleep 30; done')
+    printf_idx = next(i for i, line in enumerate(lines) if line.strip().startswith("printf"))
+    exit_idx = lines.index('exit "$WORKLOAD_RC"')
+
+    # Epoch capture IMMEDIATELY before the workload; rc capture ADJACENT
+    # after it (any intervening line would corrupt $?).
+    assert epoch_idx == workload_idx - 1
+    assert rc_idx == workload_idx + 1
+
+    # Full ordering chain, all inside the heredoc (the wait sits strictly
+    # between the rc==0 gate and the sentinel write).
+    assert (
+        heredoc_start
+        < pid_idx
+        < epoch_idx
+        < workload_idx
+        < rc_idx
+        < gate_idx
+        < for_idx
+        < fresh_idx
+        < cat_idx
+        < excl_idx
+        < wait_idx
+        < printf_idx
+        < exit_idx
+        < heredoc_end
+    )
+
+
+def test_launcher_wait_loop_self_exclusion_is_by_pid_value_not_path():
+    """Self-exclusion in the #977 wait loop is by PID VALUE, never by
+    pidfile PATH (the deliberate plan §3.2 decision): the experimenter
+    ``launch_issue_<N>.sh`` convention has the detached driver OVERWRITE
+    the canonical ``/workspace/logs/issue-<N>.pid`` with its OWN pid, so
+    a path-based skip (``[ "$pf" = <canonical> ] && continue``) would
+    skip exactly the driver that must be waited on and reintroduce the
+    premature sentinel for the convention-following case — while ``$$``
+    cannot be reused as long as this launcher is alive, so the pid-value
+    compare is race-free at any mtime granularity. Pins the exclusion
+    line's presence AND that NO wait-loop line string-compares ``$pf``
+    against the canonical pidfile path, so a future "hardening" edit
+    cannot silently re-add the path skip."""
+    script = _render_launch()
+    lines = script.splitlines()
+
+    assert '    [ "$wpid" = "$$" ] && continue' in lines
+
+    for_idx = lines.index("  for pf in /workspace/logs/*.pid; do")
+    done_idx = lines.index("  done", for_idx)
+    canonical_pid_file = "/workspace/logs/issue-909.pid"
+    for line in lines[for_idx : done_idx + 1]:
+        assert not ("$pf" in line and canonical_pid_file in line), (
+            f"wait-loop line path-compares $pf against the canonical pidfile: {line!r}"
+        )
+
+
 def test_launch_script_rejects_single_quote_in_sentinel_json():
     """The single-quoted JSON embed fails LOUD on a caller bug rather than
     rendering a broken launcher."""
@@ -586,6 +677,11 @@ def test_launch_ok_regex_shapes():
 #: The EXACT pre-#954 success-path ``extra`` key set for a NON-exec launch
 #: (``workload_info == {}``) — pinned EXPLICITLY (never a circular post-change
 #: fixture): the #954 refactor must add NO new keys on the success path.
+#: #1118 adds two CONDITIONAL keys (``boot_disk_gb`` / ``min_ram_gb``),
+#: OMITTED when the spec states no footprint — the specs below state none,
+#: so this exact set still holds (the omit-when-absent contract is what the
+#: exact-set assertions pin; the conditional keys are covered by
+#: ``test_launch_handle_extra_carries_boot_disk_gb``).
 _PRE_954_SUCCESS_EXTRA_KEYS = frozenset(
     {
         "intent",
@@ -671,3 +767,151 @@ def test_pre_provision_guard_keeps_handle_none(monkeypatch):
             _spec(workload_cmd="", hydra_args=("seed=1",), extra={"execute_workload": True})
         )
     assert ei.value.handle is None
+
+
+# ---------------------------------------------------------------------------
+# #1010 — CPU-fallback container-disk threading into the provision argv
+# ---------------------------------------------------------------------------
+
+
+def _recording_provision(monkeypatch) -> list[list[str]]:
+    """Selectively no-op the ``pod_lifecycle.py provision`` subprocess AND
+    record its argv (the recording variant of ``_noop_provision`` — that
+    fixture records nothing)."""
+    _real_run = RP.subprocess.run
+    argvs: list[list[str]] = []
+
+    def _selective_run(cmd, *a, **k):
+        if isinstance(cmd, (list, tuple)) and any("pod_lifecycle.py" in str(c) for c in cmd):
+            argvs.append([str(c) for c in cmd])
+            return None
+        return _real_run(cmd, *a, **k)
+
+    monkeypatch.setattr(RP.subprocess, "run", _selective_run, raising=False)
+    return argvs
+
+
+def _flag_value(argv: list[str], flag: str) -> str | None:
+    """The value following ``flag`` in ``argv``, or None when absent."""
+    return argv[argv.index(flag) + 1] if flag in argv else None
+
+
+def _cpu_spec(intent: str, extra: dict | None = None) -> RunSpec:
+    """A provision-only RunSpec with an explicit intent (the shared _spec
+    helper pins intent="lora-7b", which collides with an override)."""
+    return RunSpec(issue=1010, intent=intent, backend="runpod", extra=extra or {})
+
+
+def test_launch_threads_container_disk_for_cpu_intent(monkeypatch):
+    """#1010: a mapped CPU intent with a stated boot_disk_gb threads
+    --container-disk-gb <value> into the provision argv."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("cpu-mid", {"boot_disk_gb": 80}))
+    assert len(argvs) == 1
+    assert _flag_value(argvs[0], "--container-disk-gb") == "80"
+
+
+def test_launch_floors_container_disk_at_default(monkeypatch):
+    """#1010: threading can never REDUCE below today's 50 GB default —
+    a small stated requirement floors at max(50, boot_disk_gb)."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("cpu-mid", {"boot_disk_gb": 30}))
+    assert _flag_value(argvs[0], "--container-disk-gb") == "50"
+
+
+def test_launch_omits_container_disk_without_requirement(monkeypatch):
+    """#1010 control: no stated requirement -> the provision argv is
+    byte-identical to pre-#1010 (no --container-disk-gb flag at all)."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("cpu-mid"))
+    assert "--container-disk-gb" not in argvs[0]
+
+
+def test_launch_does_not_thread_container_disk_for_gpu_intent(monkeypatch):
+    """#1010: GPU intents NEVER thread the container disk — on GPU pods the
+    big-data mount is the /workspace VOLUME, not the container overlay
+    (threading the overlay would silently inflate GPU container disks
+    fleet-wide). As of #1118 boot_disk_gb DOES map on the GPU lane — to
+    --volume-gb (see the #1118 section below), still never to
+    --container-disk-gb."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("lora-7b", {"boot_disk_gb": 500}))
+    assert "--container-disk-gb" not in argvs[0]
+
+
+# ---------------------------------------------------------------------------
+# #1118 — GPU-lane volume threading into the provision argv + handle persist
+# ---------------------------------------------------------------------------
+
+
+def test_launch_threads_volume_gb_for_gpu_intent(monkeypatch):
+    """#1118: a GPU intent with a stated boot_disk_gb threads
+    --volume-gb <value> into the provision argv (pod_lifecycle →
+    runpod_api volumeInGb) and never the CPU-lane --container-disk-gb."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("lora-7b", {"boot_disk_gb": 575}))
+    assert len(argvs) == 1
+    assert _flag_value(argvs[0], "--volume-gb") == "575"
+    assert "--container-disk-gb" not in argvs[0]
+
+
+def test_launch_floors_volume_gb_at_default(monkeypatch):
+    """#1118: threading can never REDUCE below today's 200 GB argparse
+    default — a small stated requirement floors at max(200, boot_disk_gb)."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("lora-7b", {"boot_disk_gb": 100}))
+    assert _flag_value(argvs[0], "--volume-gb") == "200"
+
+
+def test_launch_omits_volume_gb_without_requirement(monkeypatch):
+    """#1118 control: no stated requirement -> the provision argv is
+    byte-identical to pre-#1118 (no --volume-gb flag at all)."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("lora-7b"))
+    assert "--volume-gb" not in argvs[0]
+
+
+def test_launch_does_not_thread_volume_gb_for_cpu_intent(monkeypatch):
+    """#1118: CPU intents NEVER gain a --volume-gb flag — pod_lifecycle's CPU
+    branch treats args.volume_gb == 200 as the 'unset' sentinel (its #747
+    cheap-CPU volume default), which an explicit flag would defeat."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("cpu-mid", {"boot_disk_gb": 80}))
+    assert "--volume-gb" not in argvs[0]
+    assert _flag_value(argvs[0], "--container-disk-gb") == "80"
+
+
+def test_launch_malformed_boot_disk_gb_raises_named_valueerror(monkeypatch):
+    """#1118: a malformed (non-integer) boot_disk_gb fails loud with a
+    ValueError NAMING the key (mirroring router._footprint_int), raised
+    BEFORE the provision subprocess — no pod is paid for."""
+    argvs = _recording_provision(monkeypatch)
+    with pytest.raises(ValueError, match="boot_disk_gb"):
+        RP.RunPodBackend().launch(_cpu_spec("lora-7b", {"boot_disk_gb": "lots"}))
+    assert argvs == []
+
+
+def test_launch_fractional_boot_disk_gb_raises_named_valueerror(monkeypatch):
+    """#1118 tightening: a fractional value (575.5) raises the same named
+    ValueError instead of silently TRUNCATING to a smaller disk."""
+    argvs = _recording_provision(monkeypatch)
+    with pytest.raises(ValueError, match="boot_disk_gb"):
+        RP.RunPodBackend().launch(_cpu_spec("lora-7b", {"boot_disk_gb": 575.5}))
+    assert argvs == []
+
+
+def test_launch_handle_extra_carries_boot_disk_gb(monkeypatch):
+    """#1118: the launch handle's extra persists the footprint fields
+    (boot_disk_gb / min_ram_gb) so _runspec_from_runpod_handle can forward
+    them on the wedge / CUDA-IMA fresh-pod re-provision — and OMITS them
+    when the spec states none (the legacy-shape / exact-key-set control)."""
+    _recording_provision(monkeypatch)
+    handle = RP.RunPodBackend().launch(
+        _cpu_spec("lora-7b", {"boot_disk_gb": 575, "min_ram_gb": 32})
+    )
+    assert handle.extra["boot_disk_gb"] == 575
+    assert handle.extra["min_ram_gb"] == 32
+
+    handle2 = RP.RunPodBackend().launch(_cpu_spec("lora-7b"))
+    assert "boot_disk_gb" not in handle2.extra
+    assert "min_ram_gb" not in handle2.extra

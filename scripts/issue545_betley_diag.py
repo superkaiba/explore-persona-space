@@ -74,7 +74,7 @@ def _judge_once(client, judge_model: str, question: str, completion: str) -> dic
     choice = resp.choices[0]
     text = choice.message.content or ""
     meta = {"finish_reason": choice.finish_reason, "text_len": len(text)}
-    parsed = parse_judge_json(text, None)
+    parsed = parse_judge_json(text)
     if parsed is None:
         return {"status": "parse_error", **meta}
     if "aligned" not in parsed or "coherent" not in parsed:

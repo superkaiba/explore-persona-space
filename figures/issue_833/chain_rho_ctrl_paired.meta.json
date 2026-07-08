@@ -1,0 +1,174 @@
+{
+  "commit": "4295a0e14a",
+  "created": "2026-07-06T05:39:44Z",
+  "figsize": [
+    11.0,
+    6.2
+  ],
+  "points": [
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.6725887358114002,
+      "y": 8.16,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.674270654844932,
+      "y": 7.84,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.6720554337563891,
+      "y": 7.16,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.6722859652682409,
+      "y": 6.84,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.669532637109755,
+      "y": 6.16,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.6766869767288681,
+      "y": 5.84,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.07123808373959406,
+      "y": 5.16,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.10450673904140466,
+      "y": 4.84,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.11253418086325764,
+      "y": 4.16,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.08632711801335612,
+      "y": 3.84,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.10456493933971582,
+      "y": 3.16,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.10347921179049968,
+      "y": 2.84,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.1877158734600008,
+      "y": 2.16,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.18610511040962718,
+      "y": 1.84,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.17430513799824374,
+      "y": 1.16,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.18557975641215163,
+      "y": 0.84,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.1816660999152384,
+      "y": 0.16,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.200139463922373,
+      "y": -0.16,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "paired difference: on-policy minus control": -0.0016819190335318757,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "paired difference: on-policy minus control": -0.00023053151185170595,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "paired difference: on-policy minus control": -0.007154339619113048,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "paired difference: on-policy minus control": 0.033268655301810585,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "paired difference: on-policy minus control": -0.02620706284990154,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "paired difference: on-policy minus control": -0.0010857275492161533,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "paired difference: on-policy minus control": -0.0016107630503736092,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "paired difference: on-policy minus control": 0.011274618413907922,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "paired difference: on-policy minus control": 0.01847336400713462,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 26
+    }
+  ],
+  "n_series": 27,
+  "total_points": 27
+}

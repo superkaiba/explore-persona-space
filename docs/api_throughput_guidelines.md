@@ -127,6 +127,7 @@ implements the table via `decide_dispatch_route()`:
 | `cost_pref="cost"` | N is tiny (< crossover_n/10), OR deadline < 24h SLA | otherwise |
 | `cost_pref="balanced"` (default) | N < crossover_n, OR deadline < 24h SLA | N >= crossover_n |
 | `force_path="sync"` / `force_path="batch"` | hard override (tests / ops) | hard override |
+| batch passes: `batch_passes = ceil(uncached_N / sub_batch_size)` | batch_passes > 2-3 (sequential wedge exposure compounds: each pass is an independent chance to sit behind a wedged batch — #810's ~30-pass judge phase sat 16h behind ONE batch stuck at 0/2001) | batch_passes <= 2-3 AND N >= crossover_n |
 
 `SYNC_BATCH_CROSSOVER_N` should be set to **20,000** (the dispatcher's
 current placeholder is 2,000 — too low; it forces batch on jobs that sync
@@ -150,6 +151,22 @@ cap.
 in-flight batch requests — comfortably under any tier's queue cap (Tier 1 =
 100k floor).
 
+> **Batch-pass count (wedge exposure).** Before routing a phase to batch,
+> compute `batch_passes = ceil(uncached_items / sub_batch_size)` (uncached
+> AFTER the judge cache is consulted) — the number of batch SUBMISSIONS the
+> phase implies; with `MAX_CONCURRENT_SUB_BATCHES = 4` the sequential WAVES
+> are ≈ `batch_passes / 4`, but the wedge-exposure argument applies per
+> submission: each batch is an independent draw against the batch queue's
+> tail, and one wedged batch parks everything behind it for up to its 24h
+> TTL. More than 2-3 passes ⇒ prefer sync fan-out (`force_sync=True` /
+> `force_path="sync"`), which clears the same volume in minutes at the
+> polite caps (#810: 39,512 calls in 18 min ≈ 2.2k requests/min, zero
+> errors). The stuck-batch escape (`EPS_BATCH_STUCK_HOURS`, default 4h —
+> `judge_dispatch.py`) bounds the damage when batch is chosen anyway, but
+> choosing sync up front avoids the 4h stall entirely. Fire-rate
+> retrospective: `grep -rl stuck_cancel_intent_at <checkpoint dirs>/state.json`
+> (or grep run logs for `STUCK BATCH`) enumerates every escape fire.
+
 ---
 
 ## 4. Re-tuning the existing judge dispatcher (`judge_dispatch.py`)
@@ -162,6 +179,13 @@ judge dispatcher. Two constants need re-tuning off the Phase 3 numbers:
   multi-org dispatcher (§ 3) and to leave headroom on the shared keys; with
   4 × 2k = 8k in-flight (vs the prior 8 × 2k = 16k), we stay well clear of
   any queue cap while remaining ~13% of the Tier-4 floor cap.
+- `EPS_BATCH_STUCK_HOURS` (default 4.0; `<=0` disables): the stuck-cancel
+  escape (#1019) — a sub-batch at zero succeeded requests past the threshold
+  is canceled, its partial results harvested, and the unprocessed remainder
+  re-dispatched on the sync path. Unset/empty -> 4.0; a parseable float <= 0
+  -> disabled (pure deadline-bounded behavior); malformed -> `ValueError`
+  (fail loud). Semantics live in
+  `llm/anthropic_client.py::batch_stuck_threshold_hours`.
 
 The legacy `DEFAULT_THRESHOLD_BASE = 2_000` (the sync-vs-batch threshold
 inside the SINGLE-org judge dispatcher) is reasonable for that single-org

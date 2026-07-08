@@ -6,7 +6,13 @@
 #
 # Usage: scripts/new_worktree.sh <worktree-path> <branch> [--issue N] [--full]
 #
-#   --issue N   pre-add cones eval_results/issue_N + ood_eval_results/issue_N
+#   --issue N   pre-add cones eval_results/issue_N + ood_eval_results/issue_N.
+#               When omitted, N is INFERRED from a canonical `issue-<N>` /
+#               `issue-<N>-<suffix>` branch name (explicit flag wins; other
+#               branch names get no issue cones). Reuse runs an idempotent
+#               own-issue cone repair on sparse worktrees. Slug-variant dirs
+#               (eval_results/issue<N>_<slug>/) stay OUT of scope — add them
+#               on demand: git -C <wt> sparse-checkout add <dir>.
 #   --full      plain full checkout (escape hatch; state the reason when used)
 #
 # Reuse: if <worktree-path> is already a registered worktree with a populated
@@ -38,6 +44,29 @@ while [ $# -gt 0 ]; do
     *) echo "new_worktree: unknown arg: $1" >&2; exit 2 ;;
   esac
 done
+
+# --issue omitted: infer it from the canonical branch name — `issue-<N>` (the
+# /issue Step 4a naming) or `issue-<N>-<suffix>` (same-issue follow-up naming).
+# Explicit --issue always wins (it was consumed above and ISSUE is non-empty).
+# Conservative: anything not purely numeric between `issue-` and the first `-`
+# is NOT inferred (issue-12abc, issue-x → no cones, today's behavior). The
+# worktree PATH is never consulted — the branch is the authoritative name.
+# (#906: flagless creation left eval_results/issue_906 out-of-cone; #1054.)
+if [ -z "$ISSUE" ]; then
+  case "$BRANCH" in
+    issue-[0-9]*)
+      _stem=${BRANCH#issue-}      # "906" or "906-followup-x" or "9a6"
+      _num=${_stem%%-*}           # chars before the first hyphen
+      case "$_num" in
+        *[!0-9]*|'') : ;;         # not purely numeric → no inference
+        *)
+          ISSUE=$_num
+          echo "new_worktree: inferred --issue $ISSUE from branch '$BRANCH'" >&2
+          ;;
+      esac
+      ;;
+  esac
+fi
 
 # Anchor to the MAIN checkout even when invoked from inside another worktree:
 # `--show-toplevel` would resolve to THAT worktree, and the cone include list
@@ -259,9 +288,30 @@ _is_populated() {
   git -C "$WT" rev-parse --verify HEAD >/dev/null 2>&1 && [ -e "$WT/CLAUDE.md" ]
 }
 
+# Reuse-path own-issue cone repair (#906/#1054): a worktree created flagless
+# BEFORE inference existed (or whose cones were dropped) stays broken for life
+# — the reuse branch exits 0 before _sparse_setup ever runs again. Idempotently
+# ensure the own-issue cones on every reuse. Contract: the reuse path stays
+# exit-0 (it fires on every /issue resume), so a failed add WARNS — it never
+# fails the script; the downstream `git add eval_results/...` failure is loud
+# on its own, so nothing is hidden, and the WARN names the manual fix.
+_ensure_issue_cones() {
+  [ -z "$ISSUE" ] && return 0
+  # FULL (non-sparse) worktrees are untouched: cone-mode worktree config is
+  # unset there (and `git config --worktree` may error without the
+  # worktreeConfig extension — hence 2>/dev/null || true).
+  [ "$(git -C "$WT" config --worktree core.sparseCheckoutCone 2>/dev/null || true)" = true ] \
+    || return 0
+  git -C "$WT" sparse-checkout add \
+      "eval_results/issue_${ISSUE}" "ood_eval_results/issue_${ISSUE}" \
+    || echo "new_worktree: WARN — could not ensure eval_results/issue_${ISSUE} cones on reuse;" \
+            "repair manually: git -C \"$WT\" sparse-checkout add eval_results/issue_${ISSUE} ood_eval_results/issue_${ISSUE}" >&2
+}
+
 if git -C "$REPO_ROOT" worktree list --porcelain | grep -qxF "worktree $WT"; then
   if _is_populated; then
     echo "new_worktree: $WT already exists — reusing as-is"
+    _ensure_issue_cones
     ln -sf "$REPO_ROOT/.env" "$WT/.env"
     exit 0
   fi
@@ -300,9 +350,13 @@ fi
 ln -sf "$REPO_ROOT/.env" "$WT/.env"
 
 # Per-issue ext4 project-quota cap (#681 — the per-task bound). No-op unless
-# EPS_WORKTREE_ASSIGN_QUOTA=1 and --issue N was given. Idempotent (re-tagging a
-# subtree + re-setting its cap is harmless); the reuse path above exit 0s before
-# here, which is fine — a reused worktree was already tagged at its creation.
+# EPS_WORKTREE_ASSIGN_QUOTA=1 and an issue is known (--issue N, or inferred
+# from the branch name — #1054). Idempotent (re-tagging a subtree + re-setting
+# its cap is harmless); the reuse path above exit 0s before here — a reused
+# worktree was tagged at creation when its issue was known; pre-inference
+# flagless worktrees can be tagged manually post-cutover. Quota assignment
+# deliberately does NOT run on the reuse path (sudo chattr -R on every resume
+# is too heavy; #1054 plan §11 D6).
 _assign_project_quota "$ISSUE"
 
 du -sh "$WT" | awk -v wt="$WT" '{print "new_worktree: created " wt " (" $1 ")"}'

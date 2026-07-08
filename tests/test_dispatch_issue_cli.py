@@ -943,12 +943,12 @@ def _guard_exploding_factory():
 def test_launch_gpus_mismatch_explicit_gcp_fails_loud_before_backends(
     monkeypatch, tmp_path
 ) -> None:
-    """Incident #599: ``--backend gcp --intent lora-7b --gpus 4`` would
-    provision a2-ultragpu-1g (1x A100-80) for a workload requiring 4
-    GPUs — the GCP lane ignores ``--gpus`` (INTENT_TO_MACHINE maps by
-    intent alone), so the CLI must refuse PRE-LAUNCH with the
-    router-terminal JSON shape (exit 2, failure_class infra) and never
-    build a backend, instead of provisioning a guaranteed-crash VM."""
+    """Incident #599 (updated for #1121): the original ``--gpus 4 --intent
+    lora-7b`` shape is now HONORED width-aware by the GCP ladder, so the
+    refusal path is exercised with an UNSUPPORTED width (``--gpus 3`` — not
+    a WIDE_A100_80_BY_WIDTH key). The CLI must refuse PRE-LAUNCH with the
+    router-terminal JSON shape (exit 2, failure_class infra), name the
+    supported widths, and never build a backend."""
     _cd_to_tmp(monkeypatch, tmp_path)
     from scripts.dispatch_issue import main
 
@@ -964,7 +964,7 @@ def test_launch_gpus_mismatch_explicit_gcp_fails_loud_before_backends(
                 "--backend",
                 "gcp",
                 "--gpus",
-                "4",
+                "3",
                 "--workload-cmd",
                 "bash scripts/run_issue599_fullresp.sh",
             ],
@@ -980,17 +980,19 @@ def test_launch_gpus_mismatch_explicit_gcp_fails_loud_before_backends(
     # orchestrator's Step 7 classifier short-circuits (same contract as
     # the router-terminal translation).
     assert body["note"].splitlines()[0] == "failure_class: infra"
-    # The note names the intent whose machine DOES match 4 GPUs.
-    assert "ft-7b" in body["note"]
+    # #1121: the message names the supported widths for the eligible intent.
+    assert "supported --gpus values" in body["note"]
+    assert "[2, 4, 8]" in body["note"]
     # Nothing launched → no sidecar.
     assert not default_handle_sidecar_path(599).exists()
 
 
 def test_launch_gpus_mismatch_auto_lane_gcp_first_fails_loud(monkeypatch, tmp_path) -> None:
-    """The #599 incident shape verbatim: NO ``--backend`` (auto) under
-    the GCP-first standing default — gcp is reachable as the FIRST lane,
-    so the mismatch guard must refuse pre-route just like the explicit
-    gcp case."""
+    """The #599 incident lane shape: NO ``--backend`` (auto) under the
+    GCP-first standing default — gcp is reachable as the FIRST lane, so the
+    mismatch guard must refuse pre-route just like the explicit gcp case
+    (#1121: with an unsupported width — the original ``--gpus 4`` is now a
+    honored wide width on lora-7b)."""
     _cd_to_tmp(monkeypatch, tmp_path)
     monkeypatch.delenv("EPM_AUTO_LANE_ORDER", raising=False)
     from scripts.dispatch_issue import main
@@ -1005,7 +1007,7 @@ def test_launch_gpus_mismatch_auto_lane_gcp_first_fails_loud(monkeypatch, tmp_pa
                 "--intent",
                 "lora-7b",
                 "--gpus",
-                "4",
+                "3",
                 "--workload-cmd",
                 "bash scripts/run_issue599_fullresp.sh",
             ],
@@ -1015,6 +1017,79 @@ def test_launch_gpus_mismatch_auto_lane_gcp_first_fails_loud(monkeypatch, tmp_pa
     body = json.loads(buf.getvalue().strip())
     assert body["reason"] == "gpus_machine_mismatch"
     assert not default_handle_sidecar_path(599).exists()
+
+
+def test_gpus_supported_wide_width_accepted_for_eligible_intent() -> None:
+    """#1121 AC: a supported WIDER width on a width-eligible intent is
+    honored width-aware by the GCP ladder — the pre-route guard returns
+    ``None`` (no refusal) for every supported width above base."""
+    from explore_persona_space.backends.base import RunSpec
+    from scripts.dispatch_issue import _gpus_gcp_lane_conflict
+
+    for intent, gpus in (("capture-7b", 8), ("lora-7b", 4), ("lora-7b", 2), ("ft-7b", 8)):
+        spec = RunSpec(issue=1121, intent=intent, backend="gcp", gpus=gpus)
+        assert _gpus_gcp_lane_conflict(spec) is None, (intent, gpus)
+
+
+def test_launch_gpus_wide_width_on_gcp_lane_proceeds(monkeypatch, tmp_path) -> None:
+    """#1121 (main()-level accept): ``--gpus 8 --intent capture-7b`` on the
+    explicit gcp lane proceeds — the launch reaches the backend with
+    ``spec.gpus == 8`` intact (the router's width-aware ladder consumes it)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1121",
+                "--intent",
+                "capture-7b",
+                "--backend",
+                "gcp",
+                "--gpus",
+                "8",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].gpus == 8
+
+
+def test_gpus_unsupported_width_still_refused() -> None:
+    """#1121: unsupported widths (3, 16) still refuse with
+    ``reason: gpus_machine_mismatch`` and a message naming the supported
+    widths."""
+    from explore_persona_space.backends.base import RunSpec
+    from scripts.dispatch_issue import _gpus_gcp_lane_conflict
+
+    for gpus in (3, 16):
+        body = _gpus_gcp_lane_conflict(
+            RunSpec(issue=1121, intent="capture-7b", backend="gcp", gpus=gpus)
+        )
+        assert body is not None, gpus
+        assert body["reason"] == "gpus_machine_mismatch"
+        assert "supported --gpus values" in body["note"]
+        assert "[2, 4, 8]" in body["note"]
+
+
+def test_gpus_below_base_still_refused() -> None:
+    """#1121: a width BELOW the intent's base machine (``--gpus 2`` on
+    ft-7b, base 4x) still refuses — width degradation is the ladder's job
+    on capacity miss, never a user-requested under-provision."""
+    from explore_persona_space.backends.base import RunSpec
+    from scripts.dispatch_issue import _gpus_gcp_lane_conflict
+
+    body = _gpus_gcp_lane_conflict(RunSpec(issue=1121, intent="ft-7b", backend="gcp", gpus=2))
+    assert body is not None
+    assert body["reason"] == "gpus_machine_mismatch"
 
 
 def test_launch_gpus_match_on_gcp_lane_proceeds(monkeypatch, tmp_path) -> None:
@@ -2165,6 +2240,10 @@ def test_finalize_confirm_artifacts_pass_runs_teardown(monkeypatch, tmp_path) ->
     nibi = _MockBackend(kind="nibi", confirm_passes=True)
     factory = _build_mock_factory(nibi=nibi)
 
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
+
     from scripts.dispatch_issue import main
 
     buf = io.StringIO()
@@ -2198,6 +2277,10 @@ def test_finalize_confirm_artifacts_fail_skips_teardown_and_exits_nonzero(
     _seed_sidecar(tmp_path, 401, kind="nibi")
     nibi = _MockBackend(kind="nibi", confirm_passes=False)
     factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
 
     from scripts.dispatch_issue import main
 
@@ -2242,6 +2325,7 @@ def test_finalize_no_declaration_with_agent_pass_degrades_to_teardown(
     import scripts.dispatch_issue as di
 
     monkeypatch.setattr(di, "_agent_upload_verification_passed", lambda _issue: True)
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
 
     buf = io.StringIO()
     with redirect_stdout(buf):
@@ -2280,6 +2364,7 @@ def test_finalize_no_declaration_without_agent_pass_keeps_exit_3(monkeypatch, tm
     import scripts.dispatch_issue as di
 
     monkeypatch.setattr(di, "_agent_upload_verification_passed", lambda _issue: False)
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
 
     buf = io.StringIO()
     with redirect_stdout(buf):
@@ -2314,6 +2399,7 @@ def test_finalize_declaration_present_fail_never_degrades(monkeypatch, tmp_path)
     import scripts.dispatch_issue as di
 
     monkeypatch.setattr(di, "_agent_upload_verification_passed", lambda _issue: True)
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
 
     buf = io.StringIO()
     with redirect_stdout(buf):
@@ -2392,6 +2478,10 @@ def test_finalize_skip_confirm_artifacts_forces_teardown(monkeypatch, tmp_path) 
     nibi = _MockBackend(kind="nibi", confirm_passes=False)
     factory = _build_mock_factory(nibi=nibi)
 
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
+
     from scripts.dispatch_issue import main
 
     buf = io.StringIO()
@@ -2424,6 +2514,10 @@ def test_finalize_renames_sidecar_after_successful_teardown(monkeypatch, tmp_pat
     original_payload = sidecar.read_text()
     nibi = _MockBackend(kind="nibi", confirm_passes=True)
     factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
 
     from scripts.dispatch_issue import main
 
@@ -2465,6 +2559,10 @@ def test_finalize_missing_sidecar_returns_infra_failure_not_crash(monkeypatch, t
     _cd_to_tmp(monkeypatch, tmp_path)
     factory = _build_mock_factory(nibi=_MockBackend(kind="nibi"))
 
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
+
     from scripts.dispatch_issue import main
 
     buf = io.StringIO()
@@ -2484,6 +2582,308 @@ def test_finalize_missing_sidecar_returns_infra_failure_not_crash(monkeypatch, t
     assert body["ok"] is False
     assert body["failure_class"] == "infra"
     assert body["reason"] == "missing_handle_sidecar"
+
+
+# ---------------------------------------------------------------------------
+# issue #1026 — finalize verifier-currency gate
+# ---------------------------------------------------------------------------
+
+
+def _currency_blocker_record(reason: str, state: str | None = None) -> dict:
+    """A seam blocker record shaped like the real helper's return."""
+    return {
+        "reason": reason,
+        "state": state,
+        "stage": "verifying" if state else None,
+        "round": 1 if state else None,
+        "breadcrumb_ts": "2026-07-02T18:55:00Z" if state else None,
+        "age_minutes": 5.0 if state else None,
+        "detail": f"seam blocker: {reason}",
+    }
+
+
+def _run_finalize(tmp_path, issue: int, factory, *extra_args: str) -> tuple[int, dict]:
+    """Run ``finalize --issue <N> --handle-file <sidecar>`` and parse the JSON line."""
+    import scripts.dispatch_issue as di
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "finalize",
+                "--issue",
+                str(issue),
+                "--handle-file",
+                str(tmp_path / f"issue-{issue}-handle.json"),
+                *extra_args,
+            ],
+            backends_factory=factory,
+        )
+    return rc, json.loads(buf.getvalue().strip())
+
+
+def test_finalize_in_flight_verifier_blocks_no_declaration_degrade(monkeypatch, tmp_path) -> None:
+    """C1: no-declaration + agent PASS evidence + an IN-FLIGHT verifier
+    round → exit 3 ``upload_verifier_in_flight``; teardown NOT called,
+    sidecar NOT retired (the #778 fallback loophole, closed)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 407, kind="runpod", with_declaration=False)
+    runpod = _MockBackend(kind="runpod", confirm_passes=False)
+    factory = _build_mock_factory(runpod=runpod)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_agent_upload_verification_passed", lambda _issue: True)
+    monkeypatch.setattr(
+        di,
+        "_upload_verification_currency_blocker",
+        lambda _issue: _currency_blocker_record("upload_verifier_in_flight", "in-flight"),
+    )
+    rc, body = _run_finalize(tmp_path, 407, factory)
+    assert rc == 3
+    assert body["ok"] is False
+    assert body["reason"] == "upload_verifier_in_flight"
+    assert body["verifier_state"] == "in-flight"
+    assert len(runpod.teardowns) == 0
+    assert (tmp_path / "issue-407-handle.json").exists()  # NOT retired
+
+
+def test_finalize_stalled_verifier_refuses_without_skip_flag(monkeypatch, tmp_path) -> None:
+    """C2 (MF-D): NO skip flag + a STALLED verifier round → exit 3
+    ``upload_verifier_stalled``, 0 teardowns, sidecar NOT retired. This
+    cell IS the #778 replay whenever finalize fires past the 15-min
+    window."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 407, kind="runpod", with_declaration=False)
+    runpod = _MockBackend(kind="runpod", confirm_passes=False)
+    factory = _build_mock_factory(runpod=runpod)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_agent_upload_verification_passed", lambda _issue: True)
+    monkeypatch.setattr(
+        di,
+        "_upload_verification_currency_blocker",
+        lambda _issue: _currency_blocker_record("upload_verifier_stalled", "stalled"),
+    )
+    rc, body = _run_finalize(tmp_path, 407, factory)
+    assert rc == 3
+    assert body["reason"] == "upload_verifier_stalled"
+    assert len(runpod.teardowns) == 0
+    assert (tmp_path / "issue-407-handle.json").exists()
+
+
+def test_finalize_stale_blocks_declaration_present_confirm_pass(monkeypatch, tmp_path) -> None:
+    """C3 (MF-E pin): declaration PRESENT + mechanical confirm would PASS +
+    a STALE verdict → exit 3 ``upload_verification_stale`` BEFORE
+    ``fetch_results`` / ``confirm_artifacts`` ever run — the gate is
+    uniform across all non-skip paths."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 400, kind="nibi", with_declaration=True)
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+    factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(
+        di,
+        "_upload_verification_currency_blocker",
+        lambda _issue: _currency_blocker_record("upload_verification_stale"),
+    )
+    rc, body = _run_finalize(tmp_path, 400, factory)
+    assert rc == 3
+    assert body["reason"] == "upload_verification_stale"
+    assert len(nibi.fetches) == 0  # gate precedes fetch_results
+    assert len(nibi.confirms) == 0
+    assert len(nibi.teardowns) == 0
+    assert (tmp_path / "issue-400-handle.json").exists()
+
+
+def test_finalize_in_flight_blocks_declaration_present_path(monkeypatch, tmp_path) -> None:
+    """C4: declaration present + seam in-flight → exit 3 before
+    fetch/confirm; teardown skipped; sidecar not retired."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 400, kind="nibi", with_declaration=True)
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+    factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(
+        di,
+        "_upload_verification_currency_blocker",
+        lambda _issue: _currency_blocker_record("upload_verifier_in_flight", "in-flight"),
+    )
+    rc, body = _run_finalize(tmp_path, 400, factory)
+    assert rc == 3
+    assert body["reason"] == "upload_verifier_in_flight"
+    assert len(nibi.confirms) == 0
+    assert len(nibi.teardowns) == 0
+    assert (tmp_path / "issue-400-handle.json").exists()
+
+
+def test_finalize_skip_flag_still_refuses_fresh_in_flight(monkeypatch, tmp_path) -> None:
+    """C5: ``--skip-confirm-artifacts`` NEVER destroys a RUNNING verifier
+    round's pod — a fresh in-flight round refuses even with the flag."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 402, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=False)
+    factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(
+        di,
+        "_upload_verification_currency_blocker",
+        lambda _issue: _currency_blocker_record("upload_verifier_in_flight", "in-flight"),
+    )
+    rc, body = _run_finalize(tmp_path, 402, factory, "--skip-confirm-artifacts")
+    assert rc == 3
+    assert body["reason"] == "upload_verifier_in_flight"
+    assert body["skip_confirm_artifacts"] is True
+    assert len(nibi.teardowns) == 0
+    assert (tmp_path / "issue-402-handle.json").exists()
+
+
+@pytest.mark.parametrize(
+    "reason",
+    [
+        "upload_verifier_stalled",  # C6
+        "upload_verification_stale",  # C7
+        "upload_verification_failed_current",  # C7b — crashed-run recovery pin
+    ],
+)
+def test_finalize_skip_flag_degrades_non_in_flight_reasons_to_warning(
+    monkeypatch, tmp_path, reason
+) -> None:
+    """C6/C7/C7b: with ``--skip-confirm-artifacts``, stalled / stale /
+    failed-current records degrade to a loud warning — teardown runs,
+    the success JSON carries ``verifier_warning``, sidecar retired
+    (keeps #604, crashed-run recovery, and 6d.4 working, zero new flags)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 402, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=False)
+    factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    state = "stalled" if reason == "upload_verifier_stalled" else None
+    monkeypatch.setattr(
+        di,
+        "_upload_verification_currency_blocker",
+        lambda _issue: _currency_blocker_record(reason, state),
+    )
+    rc, body = _run_finalize(tmp_path, 402, factory, "--skip-confirm-artifacts")
+    assert rc == 0
+    assert body["ok"] is True
+    assert body["verifier_warning"] == reason
+    assert len(nibi.teardowns) == 1
+    assert not (tmp_path / "issue-402-handle.json").exists()
+    assert (tmp_path / "issue-402-handle.json.finalized").exists()
+
+
+def test_failed_verifier_round_refuses_never_silent(monkeypatch, tmp_path) -> None:
+    """C8 (MF-A, REAL read path): the #778 shape — a sticky prior PASS, new
+    results, a verifying crumb, then a FAIL verdict — refuses through the
+    REAL wrapper → real ``list_events`` → real helper chain (NO seam
+    patch): exit 3 ``upload_verification_failed_current``, 0 teardowns.
+    Pre-#1026 this shape TORE DOWN via the sticky-anywhere fallback."""
+    import explore_persona_space.task_workflow as tw
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    task_dir = tmp_path / "tasks" / "verifying" / "777"
+    task_dir.mkdir(parents=True)
+    monkeypatch.setattr(tw, "find_task_path", lambda _id: task_dir)
+    events = [
+        {"ts": "2026-07-02T03:40:00Z", "kind": "epm:upload-verified", "note": "sticky PASS"},
+        {"ts": "2026-07-02T18:30:00Z", "kind": "epm:results", "note": "round-2 results"},
+        {
+            "ts": "2026-07-02T18:40:00Z",
+            "kind": "epm:progress",
+            "note": "stage-dispatch stage=followup-verifying round=1 subagent=upload-verifier",
+        },
+        {
+            "ts": "2026-07-02T18:50:00Z",
+            "kind": "epm:upload-verification",
+            "note": "## Upload Verification\n\n**Verdict: FAIL**\n\n2 files missing.",
+        },
+    ]
+    (task_dir / "events.jsonl").write_text("".join(json.dumps(e) + "\n" for e in events))
+
+    _seed_sidecar(tmp_path, 777, kind="runpod", with_declaration=False)
+    runpod = _MockBackend(kind="runpod", confirm_passes=False)
+    factory = _build_mock_factory(runpod=runpod)
+
+    rc, body = _run_finalize(tmp_path, 777, factory)
+    assert rc == 3
+    assert body["reason"] == "upload_verification_failed_current"
+    assert len(runpod.teardowns) == 0
+    assert (tmp_path / "issue-777-handle.json").exists()
+
+
+def test_finalize_real_read_path_blocks_unresolved_crumb(monkeypatch, tmp_path) -> None:
+    """C9 (MF-C, REAL read path): the #778 v2-dispatch replay — results →
+    PASS verdict → a NEW verifying crumb with no verdict yet. The REAL
+    wrapper returns an in-flight/stalled reason and finalize exits 3."""
+    import explore_persona_space.task_workflow as tw
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    task_dir = tmp_path / "tasks" / "verifying" / "777"
+    task_dir.mkdir(parents=True)
+    monkeypatch.setattr(tw, "find_task_path", lambda _id: task_dir)
+    events = [
+        {"ts": "2026-07-02T03:20:00Z", "kind": "epm:results", "note": "results"},
+        {
+            "ts": "2026-07-02T03:36:37Z",
+            "kind": "epm:upload-verification",
+            "note": "**Verdict: PASS**",
+        },
+        {
+            "ts": "2026-07-02T03:40:00Z",
+            "kind": "epm:progress",
+            "note": "stage-dispatch stage=followup-verifying round=1 subagent=upload-verifier",
+        },
+    ]
+    (task_dir / "events.jsonl").write_text("".join(json.dumps(e) + "\n" for e in events))
+
+    import scripts.dispatch_issue as di
+
+    blocker = di._upload_verification_currency_blocker(777)
+    assert blocker is not None
+    assert blocker["reason"] in {"upload_verifier_in_flight", "upload_verifier_stalled"}
+
+    _seed_sidecar(tmp_path, 777, kind="runpod", with_declaration=False)
+    runpod = _MockBackend(kind="runpod", confirm_passes=False)
+    factory = _build_mock_factory(runpod=runpod)
+    rc, body = _run_finalize(tmp_path, 777, factory)
+    assert rc == 3
+    assert body["reason"] in {"upload_verifier_in_flight", "upload_verifier_stalled"}
+    assert len(runpod.teardowns) == 0
+
+
+def test_currency_blocker_wrapper_missing_task_is_none() -> None:
+    """C10: the wrapper absorbs the ``find_task_path`` registry-miss
+    exception (FileNotFoundError) into None — a missing task is NOT a
+    refusal (the PASS-evidence probe keeps its own safe direction)."""
+    import scripts.dispatch_issue as di
+
+    assert di._upload_verification_currency_blocker(99999999) is None
+
+
+def test_currency_blocker_wrapper_raises_on_helper_bug(monkeypatch) -> None:
+    """C11 (MF-C fail-loud): a helper BUG (TypeError) RAISES through the
+    wrapper — it can never silently disarm the gate by returning None."""
+    import explore_persona_space.task_workflow as tw
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(tw, "list_events", lambda _id: [])
+
+    def _boom(_events, **_kw):
+        raise TypeError("helper bug")
+
+    monkeypatch.setattr(tw, "upload_verification_currency_blocker", _boom)
+    with pytest.raises(TypeError, match="helper bug"):
+        di._upload_verification_currency_blocker(777)
 
 
 # ---------------------------------------------------------------------------
@@ -3020,6 +3420,10 @@ def test_finalize_calls_fetch_results_before_confirm_artifacts(monkeypatch, tmp_
     nibi = _MockBackend(kind="nibi", confirm_passes=True)
     factory = _build_mock_factory(nibi=nibi)
 
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
+
     from scripts.dispatch_issue import main
 
     buf = io.StringIO()
@@ -3052,6 +3456,10 @@ def test_finalize_fetch_results_crash_still_reaches_confirm_gate(monkeypatch, tm
 
     nibi.fetch_results = exploding_fetch  # type: ignore[method-assign]
     factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
 
     from scripts.dispatch_issue import main
 
@@ -3553,6 +3961,10 @@ def test_finalize_lane_suffix_resolves_suffixed_sidecar(monkeypatch, tmp_path) -
     nibi = _MockBackend(kind="nibi", confirm_passes=True)
     factory = _build_mock_factory(nibi=nibi)
 
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
+
     from scripts.dispatch_issue import main
 
     buf = io.StringIO()
@@ -3750,3 +4162,41 @@ def test_cmd_launch_workload_start_failed_sidecar_write_oserror_fail_loud(
     assert "EDQUOT" in body["note"]
     # The typed failure's own message is still the note's lead.
     assert "did NOT verify alive" in body["note"]
+
+
+def test_min_ram_gb_lands_in_spec_extra(monkeypatch, tmp_path) -> None:
+    """#1010: ``--min-ram-gb`` threads to ``spec.extra['min_ram_gb']`` (the
+    RunPod CPU-fallback feasibility gate's RAM channel — RunPod CPU instances
+    have FIXED RAM, so an unsatisfiable requirement refuses the fallback
+    typed instead of provisioning an undersized pod). Mirror of the
+    ``--boot-disk-gb`` threading test above."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    posts: list[dict[str, Any]] = []
+    factory = _build_mock_factory(gcp=gcp, marker_posts=posts)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1010",
+                "--intent",
+                "cpu-mid",
+                "--backend",
+                "gcp",
+                "--boot-disk-gb",
+                "80",
+                "--min-ram-gb",
+                "32",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra["min_ram_gb"] == 32
+    assert gcp.launches[0].extra["boot_disk_gb"] == 80

@@ -1,0 +1,636 @@
+{
+  "commit": "12eefeb1d1",
+  "created": "2026-07-06T11:40:33Z",
+  "figsize": [
+    9.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.20904306501428366,
+      "per-condition Pearson r": -0.022978726817127672,
+      "series": "10-rollout average",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.23841706289889036,
+      "per-condition Pearson r": -0.5049036121579886,
+      "series": "10-rollout average",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2567221180851044,
+      "per-condition Pearson r": 0.013952897931060883,
+      "series": "10-rollout average",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.25867778915771766,
+      "per-condition Pearson r": 0.20118972511941785,
+      "series": "10-rollout average",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.8050616191360218,
+      "per-condition Pearson r": 0.5718404826904048,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8130204461822178,
+      "per-condition Pearson r": 0.5758224065221874,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7885308620613745,
+      "per-condition Pearson r": 0.788019173736965,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7983597248787199,
+      "per-condition Pearson r": 0.45190579141741677,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.783489999317234,
+      "per-condition Pearson r": 0.4819171729037586,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8148057939030215,
+      "per-condition Pearson r": 0.29599466400013025,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8052682843297225,
+      "per-condition Pearson r": 0.31815347127960447,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.740219080013612,
+      "per-condition Pearson r": 0.556435250910688,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8085923421270056,
+      "per-condition Pearson r": 0.6054234980030387,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7426868460244371,
+      "per-condition Pearson r": 0.5795011551300662,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7983724357143955,
+      "per-condition Pearson r": 0.6795989210512533,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7540524496482048,
+      "per-condition Pearson r": 0.5450731082014452,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.809054313787991,
+      "per-condition Pearson r": 0.45586541769466415,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.783316897619927,
+      "per-condition Pearson r": 0.7833171562442461,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.7639769512429906,
+      "per-condition Pearson r": 0.7376780959225124,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.7738149776958125,
+      "per-condition Pearson r": 0.763425950629951,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.742265573691637,
+      "per-condition Pearson r": 0.7092504939854645,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.749942662119965,
+      "per-condition Pearson r": 0.4760799817741296,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.7936499531754904,
+      "per-condition Pearson r": 0.4072646555355973,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.79177516092594,
+      "per-condition Pearson r": 0.42102084806540946,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.7892308089185,
+      "per-condition Pearson r": 0.3948295256045261,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.7706942043409506,
+      "per-condition Pearson r": 0.45399980419475106,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8197767948631367,
+      "per-condition Pearson r": 0.5658418471093255,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8184668271020983,
+      "per-condition Pearson r": 0.45801341745909724,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.7948433587584556,
+      "per-condition Pearson r": 0.4692539345688467,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.792036742101425,
+      "per-condition Pearson r": 0.6798599848862403,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.795075738445675,
+      "per-condition Pearson r": 0.5380276248813995,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.771113713918329,
+      "per-condition Pearson r": 0.4609768920375056,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.750807720401793,
+      "per-condition Pearson r": 0.44446637153752927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.797719067215527,
+      "per-condition Pearson r": 0.5708278695916233,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.002028345798058072,
+      "per-condition Pearson r": -0.03259585008860222,
+      "series": "single greedy",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": -0.015180649955283548,
+      "per-condition Pearson r": -0.5435341007590234,
+      "series": "single greedy",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": -0.0011331712934568722,
+      "per-condition Pearson r": -0.001137731168862338,
+      "series": "single greedy",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.031159026747920017,
+      "per-condition Pearson r": 0.1510266411556189,
+      "series": "single greedy",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0347234812765,
+      "per-condition Pearson r": 0.6200022403617791,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9886236157367256,
+      "per-condition Pearson r": 0.6535507054215933,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0057223864583809,
+      "per-condition Pearson r": 0.8078252973660691,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9857495512860753,
+      "per-condition Pearson r": 0.47201465070607534,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0075440024159756,
+      "per-condition Pearson r": 0.4357693486027155,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.9870328980405707,
+      "per-condition Pearson r": 0.23251353099436908,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.991329520042253,
+      "per-condition Pearson r": 0.28789943444555605,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0312219481603835,
+      "per-condition Pearson r": 0.5216451205286861,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.9781726074826704,
+      "per-condition Pearson r": 0.576838651532171,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0098549715748835,
+      "per-condition Pearson r": 0.5587876207606862,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.9667212274865908,
+      "per-condition Pearson r": 0.6746383408030353,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.026611531812272,
+      "per-condition Pearson r": 0.5561188743254812,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0229678645990945,
+      "per-condition Pearson r": 0.500603800537225,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9791495554394363,
+      "per-condition Pearson r": 0.7827153205827371,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0301187384648562,
+      "per-condition Pearson r": 0.728730219894364,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9646854427844156,
+      "per-condition Pearson r": 0.7228462611623611,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9868893648436527,
+      "per-condition Pearson r": 0.7067748707744205,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.972022357351587,
+      "per-condition Pearson r": 0.4953366200142723,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.996027149331943,
+      "per-condition Pearson r": 0.456121650235308,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.023705941622984,
+      "per-condition Pearson r": 0.4787814766653202,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9784513767194998,
+      "per-condition Pearson r": 0.3942947018808559,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9641617040851527,
+      "per-condition Pearson r": 0.448431599353275,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.992364147185722,
+      "per-condition Pearson r": 0.5146629817854035,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9758810435607406,
+      "per-condition Pearson r": 0.41958628514058804,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.96726024364953,
+      "per-condition Pearson r": 0.4374441709110387,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.006426590878948,
+      "per-condition Pearson r": 0.6654052499153102,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 4.983895690625514,
+      "per-condition Pearson r": 0.551707494576035,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.013759590236509,
+      "per-condition Pearson r": 0.49653799182542085,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 4.975961235517457,
+      "per-condition Pearson r": 0.42169451227851046,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.035369048840519,
+      "per-condition Pearson r": 0.5661320393453538,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.20920881345958628,
+      "per-condition Pearson r": -0.014396693133442249,
+      "series": "single stochastic (parent draw)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.18843962236561837,
+      "per-condition Pearson r": -0.47563899974206525,
+      "series": "single stochastic (parent draw)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.23032865212317674,
+      "per-condition Pearson r": -0.0036156850451629636,
+      "series": "single stochastic (parent draw)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.2541723642454294,
+      "per-condition Pearson r": 0.18076139080611792,
+      "series": "single stochastic (parent draw)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2152301723772627,
+      "per-condition Pearson r": 0.5220427388002544,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.256367239495259,
+      "per-condition Pearson r": 0.5599130557769703,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.2199916650950118,
+      "per-condition Pearson r": 0.7964552405599333,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.214018289987926,
+      "per-condition Pearson r": 0.42112434849992647,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2296170761612304,
+      "per-condition Pearson r": 0.48059772981269094,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.2596077204188263,
+      "per-condition Pearson r": 0.4116289353452438,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.2559154939950212,
+      "per-condition Pearson r": 0.42391993389492266,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.216803611144728,
+      "per-condition Pearson r": 0.5593759135737366,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.2406183076246635,
+      "per-condition Pearson r": 0.6115924639651261,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.21979381563901,
+      "per-condition Pearson r": 0.5777876328619976,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.222344972815742,
+      "per-condition Pearson r": 0.7015798569419379,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.242862856057105,
+      "per-condition Pearson r": 0.56396380031179,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.213172467948454,
+      "per-condition Pearson r": 0.5267195473675297,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.2387586857430986,
+      "per-condition Pearson r": 0.782201254761859,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.2368914302391802,
+      "per-condition Pearson r": 0.7395313512419676,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.2545647749290705,
+      "per-condition Pearson r": 0.7219913465262049,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1891946106624727,
+      "per-condition Pearson r": 0.7030728261373455,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.238321209366105,
+      "per-condition Pearson r": 0.30600321628685284,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.2541939142899645,
+      "per-condition Pearson r": 0.22631671721831406,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.257434095193972,
+      "per-condition Pearson r": 0.29336680547199917,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.1811765043972295,
+      "per-condition Pearson r": 0.3426054781264121,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.249091207219646,
+      "per-condition Pearson r": 0.41984840771748827,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.258495603205307,
+      "per-condition Pearson r": 0.5164353531172522,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.256576814368877,
+      "per-condition Pearson r": 0.5620201215681091,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.191901120978599,
+      "per-condition Pearson r": 0.5379227076560272,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.257810305105836,
+      "per-condition Pearson r": 0.6811101762200477,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.2511948444576415,
+      "per-condition Pearson r": 0.5142670567988038,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.245789906203445,
+      "per-condition Pearson r": 0.4443635257051337,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.2183990339046264,
+      "per-condition Pearson r": 0.42112753454466784,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.198589833571144,
+      "per-condition Pearson r": 0.5416384466433092,
+      "_kind": "scatter",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 102
+}

@@ -54,3 +54,17 @@ Same measurement at two aggregation levels: $v_P$ is literally the query-average
 | "query vector" | collides with attention Q of QKV; misdescribes rows that carry a persona | context vector $v_C$ |
 | "exchange-level" / "instance-level" / "condition-level" | superseded coinages from the naming discussion | context-level / prefix-level |
 | bare "averaged" | never says over what | overbar with the axis: $\bar{\cdot}^{\,q}$, $\bar{\cdot}^{\,r}$ |
+
+### Search-time note — retired aliases stay grep targets
+
+The table above governs WRITING (do not use these terms). When SEARCHING
+for prior work, do the opposite: old task bodies, events, and follow-up
+labels still carry the retired vocabulary (e.g. #813's follow-up label
+`per-example-vs-averaged-map`), so grep the aliases alongside the
+canonical terms, separator-tolerant (`[-_ ]` between words):
+`per[-_ ]example`, `averaged[-_ ]map`, `question[-_ ]averaged`,
+`query[-_ ]averaged`, `single[-_ ]context`, `query[-_ ]level`,
+`exchange[-_ ]level`, `instance[-_ ]level`, `condition[-_ ]level`.
+This list is not closed: as the retired-terms table above gains rows,
+derive their grep patterns from the table and add them here.
+Full recipe: `.claude/agents/research-pm.md` § Negative-existence claims.

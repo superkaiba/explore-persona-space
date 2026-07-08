@@ -83,7 +83,7 @@ def detect_refusal(
         messages=[{"role": "user", "content": f"AI response:\n{text}"}],
     )
     raw = next((b.text for b in response.content if b.type == "text"), "")
-    parsed = parse_judge_json(raw, None)
+    parsed = parse_judge_json(raw)
     if parsed is None or "refusal" not in parsed:
         raise ValueError(
             f"detect_refusal: could not parse a 'refusal' verdict from judge output: {raw!r}"

@@ -788,6 +788,10 @@ PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     "EPM_HF_OVERFLOW_ROUTING",
     "EPM_HF_STORAGE_CHECK",
     "EPM_HF_STORAGE_CACHE_TTL_S",
+    # Size-aware projected-headroom probe floor (#1034): same remote-relevance
+    # as the #564 knobs above — a dispatch-process floor override must reach
+    # the compute node or it silently no-ops remotely.
+    "EPM_HF_LARGE_UPLOAD_PROBE_GB",
     # HF Hub upload accelerator OVERRIDE channel (#745): forwarded so a
     # dispatch-process =0 / HF_XET_DISABLE=1 (the #515 xet-CDN workaround)
     # reaches the compute node. The DEFAULTS (=1) are a STATIC env block in
@@ -1014,8 +1018,11 @@ class Stage:
       stages (``["--model_name_or_path", "Qwen/Qwen2.5-7B", ...]``);
       ignored for ``local``.
     * ``custom_cmd`` — full shell command line for ``custom`` stages
-      (#588); embedded verbatim, runs from ``$SCRATCH_JOB_DIR`` (the
-      rsynced repo). Ignored for the other backends.
+      (#588); rendered as the single argument of an rc-preserving inner
+      ``bash -eu -o pipefail -c`` wrapper (#1004 — a bare splice under
+      the prelude's ``set -e`` rc-masks a ``cmd1 && cmd2`` first-command
+      crash), runs from ``$SCRATCH_JOB_DIR`` (the rsynced repo). Ignored
+      for the other backends.
     """
 
     name: str
@@ -1513,10 +1520,13 @@ def render_sbatch(
             # an ambient WANDB_PROJECT on the dispatch process would
             # silently cross-route a new issue's metrics.
             stage_blocks.append(f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{spec.issue}}}"')
-            # Verbatim embed (#588) — the command IS a complete shell
-            # line; it runs from $SCRATCH_JOB_DIR (the rsynced repo), so
-            # repo-relative `bash scripts/...` resolves. Heartbeat /
-            # status.json / [phase=...] markers wrap it unchanged.
+            # Inner-bash embed (#588, rc-wrapper #1004) — the command IS
+            # a complete shell line, re-parsed by an inner
+            # `bash -eu -o pipefail -c` (see the wrapper comment at the
+            # append below); it runs from $SCRATCH_JOB_DIR (the rsynced
+            # repo), so repo-relative `bash scripts/...` resolves.
+            # Heartbeat / status.json / [phase=...] markers wrap it
+            # unchanged.
             # NO sentinel channel on this lane (#608 follow-up): the
             # RunPod/GCP `/workspace/logs/issue-<N>-*.json` marker
             # contract does NOT hold on SLURM — compute nodes have no
@@ -1538,7 +1548,16 @@ def render_sbatch(
             # pid-file convention exists. A self-daemonizing dispatch
             # script must be made blocking or routed to the gcp/runpod
             # lane at plan time.
-            stage_blocks.append(stage.custom_cmd)
+            # rc-preserving wrapper (#1004, GCP parity — incident #952):
+            # the bare splice rc-masked a `cmd1 && cmd2` first-command
+            # crash under the prelude's set -e (errexit exempts non-final
+            # &&/|| list members), letting the terminal [phase=done] +
+            # completion sentinel publish over a crash. The inner
+            # -eu -o pipefail mirror the prelude flags. Residual: an
+            # `a && b; c` shape where `a` fails and `c` succeeds still
+            # masks (the same errexit exemption applies inside the inner
+            # bash).
+            stage_blocks.append(f"bash -eu -o pipefail -c {shlex.quote(stage.custom_cmd)}")
         elif stage.backend == "open_instruct":
             if not stage.deepspeed_config_rel:
                 raise ValueError(
@@ -1566,9 +1585,14 @@ def render_sbatch(
             raise ValueError(f"unknown stage backend {stage.backend!r} for stage {stage.name!r}")
         stage_blocks.append("")
 
-    # Terminal block. `set -euo pipefail` (prelude) guarantees this block
-    # is reached only when every stage exited 0, so the completion
-    # sentinel written here is a genuine clean-exit proof (#598).
+    # Terminal block. `set -euo pipefail` (prelude) plus the #1004
+    # rc-preserving inner-bash wrapper on custom stages guarantee this
+    # block is reached only when every stage exited 0, so the completion
+    # sentinel written here is a genuine clean-exit proof (#598). (Before
+    # #1004 a compound custom_cmd whose first `&&` member crashed fell
+    # through errexit and published a false clean exit — the #952 class.
+    # The `a && b; c` shape remains a documented residual inside the
+    # inner bash.)
     sentinel_rel = sentinel_relpath_for(spec.issue, "slurm-${SLURM_JOB_ID}")
     terminal = [
         "# === Done ===",

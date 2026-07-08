@@ -216,12 +216,27 @@ The stalled detector + the two respawn arms carry five hardening mechanisms:
   silently-deferred respawn idled a GPU for hours). The existing
   alerted→eligible escalation still respawns on the first daemon-up tick.
 - *(e) Prompt-wedge fast lane* (`decide_prompt_wedge`): a LAZY
-  transcript-tail probe (happy-log-only resolution, last 64 KB) escalates
+  transcript-tail probe (happy-log-only resolution, last 256 KB — widened
+  from 64 KB at #1104: the smaller window held EXACTLY 3 api-error rows on
+  the #1074 incident transcript, zero margin) escalates
   straight to the respawn arm on ≥3 (`EPM_TICK_WEDGE_MIN_DEQUEUED`)
   consecutive trailing wedge-evidence rows with no assistant turn —
   verified `{"type": "queue-operation", "operation": "dequeue"}` records
   (co-primary) and/or promptless prompt-type user rows (secondary)
   (incident #779: 5 prompts enqueued+dequeued with no turn for ~90 min).
+  **Api-error widening (#1104):** assistant rows with top-level
+  `isApiErrorMessage: true` (usage-policy refusals, 429/529 error turns)
+  are FAILED turns, not resets — they accumulate on their OWN trailing
+  counter (`EPM_TICK_WEDGE_MIN_API_ERRORS`, default 3; `0` DISABLES this
+  trigger, the one deliberate divergence from the dequeued knob's
+  fallback semantics), so ≥3 consecutive refused wakes with no successful
+  turn trip the wedge (incident #1074: 38 refused wake turns / ~2h
+  unrecovered — pre-#1104 each refusal row classified "assistant" and
+  RESET the run, hiding the session from this lane). A REAL assistant
+  turn resets BOTH counters; an api-error turn resets the dequeue/prompt
+  run (the prompt DID get a response — the single-refusal over-trigger
+  guard: one refused wake's 2-4 dequeue+prompt rows must not trip
+  `run >= 3`).
   Bypasses the 2-miss debounce, the #759 K-downgrade and the 2h marker
   window — direct evidence beats proxies — but NOT the park exemptions
   (provision-in-flight / followups / spend-approval — re-probed once
@@ -281,6 +296,28 @@ set; deliberately not a GC target); dispatch markers are generic
 reset the orphan/stalled staleness clocks. Kill switch:
 `EPM_DISABLE_INFRA_DRAIN=1`. `--infra-drain-only` runs just this pass
 (pair with `--dry-run` for a live smoke).
+
+*Session-dispatch stagger (#1059).* Consecutive REAL `spawn-issue --auto`
+dispatches from the two infra loops (`infra_drain_pass` +
+`proposed_infra_sweep_pass`, via the shared `_dispatch_infra_drain`
+chokepoint) and from the batch filer `file_infra_task.py` are paced ≥
+`EPM_SESSION_DISPATCH_STAGGER_S` apart (default 60s; `0` disables;
+malformed → 60; clamped ≤ 300) via the shared last-writer-wins stamp
+`~/.eps-autonomous/last-session-dispatch.json` — each fresh session is a
+~100K-token cold context load and the org input-TPM 429 cap climbs at minute
+boundaries (incident 2026-07-04: 5 workflow-fix sessions in ~3 min). The
+watcher SLEEPS out the remainder before its pre-spawn re-check (worst-case
+added tick wall-time ≤ cap × window — 5 min at defaults, ~25 min at the 300s
+clamp — safe because the `watch.lock` non-blocking flock makes an overlapping
+cron fire skip, never stack); the filer DEFERS (file-then-no-op, exit 0; the
+sweep backstop dispatches within ~10 min). Only a real `"spawned"` outcome
+records the stamp — suppressed / failed / dry-run never record. Named
+residuals: the check→spawn→record sequence is a TOCTOU (the stamp is
+last-writer-wins PACING, not an exclusion primitive — a concurrent dispatcher
+already mid-spawn can co-dispatch inside the window, bounded at ~2 coincident
+cold loads, and the window closes for everyone at the first record); and
+crash-recovery, capacity-retry, campaign, and manual spawns are accepted
+UNPACED sources (the #1059 Goal scopes to the infra loops + the batch filer).
 
 *Predicate-hold auto-promotion (#633 follow-on).* BEFORE the dispatch
 logic, the pass promotes any `holds` entry whose reason matches the PM's
@@ -678,6 +715,89 @@ that class). Known bounded miss: a 9a-ter compute fit dispatched under a
 `EPM_DISABLE_TRIAGE_OBSERVER=1`; `--triage-observer-only` runs just this
 pass (pair with `--dry-run` for a live smoke — dry-run performs zero writes
 and zero `subprocess.run`).
+
+**Auth-outage guard pass (task #1027, `auth_outage_pass`).** Fleet-level
+respawn suppression for an Anthropic auth outage — or ANY fleet-wide
+instant-death cause (poisoned CLI credential, broken `claude` binary, a
+reverted Happy patch that escaped `happy_patch_pass`). Origin incident
+2026-07-03: a poisoned Claude CLI credential (recovered by `/login`) killed
+every freshly spawned session on arrival and the watcher churned
+die-on-arrival respawns for hours — the per-task caps (`STALLED_MAX_RESPAWNS`,
+the orphan/capacity per-day caps) bound per-ISSUE churn but nothing read the
+fleet-level correlation. Runs immediately after the single per-tick daemon
+probe, BEFORE every spawn arm.
+
+- **Detection signature (derived purely from watcher-owned state, no
+  log-grepping):** every watcher-issued spawn records an event
+  `{issue, ts, arm, prev_spawned_at}` (`prev_spawned_at` = the replaced
+  registry entry's `spawned_at`; `None` for arms with no predecessor —
+  infra-drain / capacity-retry / most orphan first spawns, which therefore
+  never qualify). An event is an *instant-freeze respawn* when
+  `0 <= ts − prev_spawned_at <= EPM_AUTH_OUTAGE_FRESH_DEATH_MIN` (default 60
+  min — the die-on-arrival cycle is spawn grace 15 min + 2 misses × 10-min
+  cron ≈ 25-45 min; a healthy multi-hour session never qualifies; env nudges
+  below the ~45-min ceiling fall back to the default). ≥
+  `EPM_AUTH_OUTAGE_MIN_EVENTS` (3) such events across ≥
+  `EPM_AUTH_OUTAGE_MIN_ISSUES` (2) DISTINCT issues inside
+  `EPM_AUTH_OUTAGE_WINDOW_MIN` (180 min) trigger an episode — cross-issue
+  correlation is the false-positive guard.
+- **While an episode is active,** every spawn arm — crash-recovery, stalled
+  (gated at the fence CALLER so the stop+respawn is skipped as a UNIT),
+  orphan, infra-drain (both callers), capacity-retry, and campaign (both
+  callers, also unit-gated) — is suppressed via the #843 `"suppressed"`
+  channel, so callers book nothing (no attempt, no backoff, no per-day cap).
+  Non-spawning passes (pod-safety, gate-push, reapers) are deliberately NOT
+  gated. ONE Telegram push fires at trigger (evidence-enriched: a
+  best-effort auth-signature grep over the newest 3 `~/.happy/logs` files —
+  push TEXT only, never the trigger; `auth-string:` evidence gets a
+  `/login` hint, `churn-only` gets a broader checklist) and at most one at
+  resolution.
+- **Canary-probed resume:** every `EPM_AUTH_OUTAGE_CANARY_INTERVAL_MIN` (30
+  min) the pass arms a single-tick token; the first eligible issue-arm spawn
+  consumes it and becomes the canary — a REAL session respawn, so it probes
+  the exact CLI-credential auth path real sessions use (a watcher-side
+  `ANTHROPIC_API_KEY` probe would test the WRONG credential — the incident
+  was recovered by `/login`). The canary identity binds only after a
+  `"spawned"` result (the fresh registry `happy_session_id` is persisted;
+  liveness is read from that PERSISTED sid, never a registry re-read); a
+  canary surviving ≥ `EPM_AUTH_OUTAGE_CANARY_SURVIVAL_MIN` (20 min) resolves
+  the episode, a dead/invalidated one re-arms one interval later
+  (round-robining away from the last failed issue once). The campaign arm
+  never consumes the token (campaign registrations live at
+  `campaign-<N>.json`, unreadable for canary liveness).
+- **Fail-open, twice over:** any internal guard error (gate, record hook,
+  pass body, sidecar, push) logs a warning and behaves as "no outage"
+  (spawns proceed — a false suppression is a fleet-wide crash-recovery
+  blackout, strictly worse than churn); and an episode older than
+  `EPM_AUTH_OUTAGE_MAX_EPISODE_H` (6 h) expires with a push — enforced in
+  the pass AND independently in the gate, so a wedged pass can never
+  suppress past the TTL. On resolve/expire the `last_episode_end_ts`
+  watermark (not event deletion) blocks stale re-trigger: qualifying events
+  need BOTH `ts` and `prev_spawned_at` past the watermark, so pre-resolve
+  churn and backlog respawns of episode-era predecessors never re-open the
+  episode, while a genuinely persistent >6 h outage re-accumulates NEW
+  events and legitimately re-triggers (~one push per ~7 h).
+- **State singleton** `~/.eps-autonomous/auth-outage.json` (never GC'd;
+  events pruned to 2× the window); **sidecar**
+  `.claude/cache/auth-outage-events.jsonl` (one row per trigger /
+  canary-armed / canary-failed / resolve / expire transition). Kill switch
+  `EPM_DISABLE_AUTH_OUTAGE_GUARD=1`; `rm ~/.eps-autonomous/auth-outage.json`
+  clears a live episode instantly; `--auth-outage-only` runs just this pass
+  (pair with `--dry-run` for a live smoke — zero writes, zero pushes).
+- **Accepted residuals (named, deliberate — do NOT "fix"):** (a) hang-style
+  outages (sessions never die → no respawn events → no trigger; also no
+  churn, so the cost is only the missing alert); (b) new-spawn-only outages
+  (`prev_spawned_at=None` arms never count; bounded by the infra/capacity
+  per-day caps); (c) the program-orchestrator recovery pass can relaunch the
+  #660 program daemon (an indirect spawner) during an episode — v1 residual
+  per the must-ask fence on gating non-spawning passes; (d) two independent
+  issue-specific crash loops can false-trigger — bounded by canary self-heal
+  (~50 min) + the 6 h TTL + one push; (e) a wedged-but-registered canary can
+  false-resolve — bounded: a still-broken fleet re-accumulates ≥3 new events
+  and re-triggers; (f) detection fires at the second respawn generation
+  (~60-75 min into an outage) — it trims the tail, not the head; (g) the
+  `EPM_AUTH_OUTAGE_FRESH_DEATH_MIN` deviation band is clamped ≥45 min (a
+  lower value breaks the die-on-arrival replay shape).
 
 ## Dedicated data disk for `.claude/worktrees/` (#681)
 

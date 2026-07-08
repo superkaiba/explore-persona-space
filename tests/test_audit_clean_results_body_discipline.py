@@ -469,6 +469,220 @@ def test_inline_backtick_condition_label_in_prose_not_flagged():
     assert "condition_labels" not in findings, findings
 
 
+# ─── Bound-form CI leak (#952 → #1015) ───────────────────────────────────
+#
+# Lens 7's own example (`upper bound = 0.0021`) bans the BOUND-FORM CI leak
+# — a named CI endpoint stated as a number in prose with no brackets — but
+# all three prior `interval_inline` alternatives required literal square
+# brackets, so #952 r1's "the interval's upper bound (+0.023) excludes the
+# 0.05 margin" reached the LM critic unflagged. Alternative (4) closes it:
+# connectors `( num )` and `= num` only (the `of`-connector stays legal —
+# budget / band-threshold prose), number = sign-or-decimal (count-integers
+# stay legal), [Uu]/[Ll] case pair (case-sensitive scan), U+2212 in the
+# sign class, `[\s-]` joiner, leading `\b` (no embedded word tails). The
+# pattern is incident/spec-derived; the corpus survey is the precision read.
+
+
+def test_bound_form_paren_in_findings_prose_is_flagged():
+    """The verbatim #952 r1 incident sentence — `upper bound (+0.023)` in
+    finding read prose — trips `interval_inline` (the regression itself)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "By that read, the interval's upper bound (+0.023) excludes the 0.05 margin.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("0.023" in s for s in findings["interval_inline"]), findings
+
+
+def test_bound_form_equals_in_takeaways_is_flagged():
+    """The Lens 7 spec's own named example `upper bound = 0.0021` in a
+    `## Takeaways` bullet trips `interval_inline`."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the margin's upper bound = 0.0021 across seeds.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("0.0021" in s for s in findings["interval_inline"]), findings
+
+
+def test_bound_form_unicode_minus_is_flagged():
+    """A bound-form endpoint signed with the typographic Unicode minus
+    (codepoint U+2212) in the PAREN branch trips `interval_inline` — the
+    #649 sign-class blind spot must not reopen on the new alternative."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The pooled lower bound (−0.006) stays under the margin.",  # noqa: RUF001
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("−0.006" in s for s in findings["interval_inline"]), findings  # noqa: RUF001
+
+
+def test_bound_form_unicode_minus_equals_branch_is_flagged():
+    """The U+2212 sign must also be accepted in the EQUALS branch
+    (`lower bound = <U+2212>0.006`), not just the paren branch."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The pooled lower bound = −0.006 under the pre-set margin.",  # noqa: RUF001
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("−0.006" in s for s in findings["interval_inline"]), findings  # noqa: RUF001
+
+
+def test_bound_form_unsigned_decimal_paren_is_flagged():
+    """The verbatim #540 corpus sentence — an UNSIGNED decimal in the paren
+    branch — trips `interval_inline` (a real prior instance)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The CI's upper bound (0.287) crosses that bar.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("0.287" in s for s in findings["interval_inline"]), findings
+
+
+def test_bound_form_sentence_start_capital_is_flagged():
+    """Sentence-start `Upper bound = 0.0021` is caught by the [Uu]/[Ll]
+    case pair — the category scans case-sensitively (flags=0)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "Upper bound = 0.0021 by that read, at every seed.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+
+
+def test_bound_form_hyphenated_is_flagged():
+    """The hyphenated joiner `upper-bound (+0.02)` is caught by the
+    `[\\s-]` class (mirrors `bit_byte_identical`)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The upper-bound (+0.02) read repeats across seeds.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+
+
+def test_bound_form_signed_integer_is_flagged():
+    """A SIGNED integer endpoint (`upper bound (+5)`) matches the
+    sign-plus-integer branch of the number atom — the sign alone qualifies."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The pooled upper bound (+5) excludes zero across seeds.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+
+
+def test_bound_word_without_number_not_flagged():
+    """Bare `bound` prose with no numeric connector stays legal."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "We report an upper bound on compute and an error bound with no number.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_bound_of_connector_not_flagged():
+    """The `of`-connector is deliberately excluded: budget prose
+    ("upper bound of 4 GPU-hours") and band-threshold prose (#267's
+    "exceed the upper bound of 0.6") are legitimate."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "We set an upper bound of 4 GPU-hours; all exceed the upper bound of 0.6.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_count_integer_bound_not_flagged():
+    """An UNSIGNED count-style integer (`retry upper bound = 5`) stays
+    legal — the number atom requires a sign OR a decimal point."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "We set the retry upper bound = 5 for the judge loop.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_word_sense_bound_not_flagged():
+    """Non-statistical word senses of `bound` stay legal: participle
+    (`lower-bounded by zero`), compound (`outward-bound`), and the
+    attachment sense (`bound to the persona`)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The rate is lower-bounded by zero; the outward-bound probe set "
+        "stays bound to the persona.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_embedded_word_tail_bound_not_flagged():
+    """The leading `\\b` keeps embedded word tails out: `supper bound
+    (0.2)` / `flower bound (0.2)` must NOT match the upper/lower branch."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The supper bound (0.2) and flower bound (0.2) phrasings are nonsense.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_bare_bracket_fixture_does_not_fire_bound_alternative():
+    """No-interaction guard: `The bootstrap bound spans [1, 5] points`
+    (the existing alt-3 fixture) is flagged via the BARE-PAIR alternative
+    only — every reported sample is the bracketed pair, never a
+    `bound`-form match (alt-4 has no upper/lower word to anchor on)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The bootstrap bound spans [1, 5] points across seeds.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert all("bound" not in s for s in findings["interval_inline"]), findings
+
+
+def test_bound_form_in_reproducibility_table_is_exempt():
+    """A bound-form value inside a `## Reproducibility` Parameters table
+    cell inherits the table-cell exemption (`_blank_table_rows`)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "| Base model | Qwen-2.5-7B-Instruct |",
+        "| Base model | Qwen-2.5-7B-Instruct |\n| mc_ci | upper bound = 0.287 |",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_bound_form_in_figure_caption_is_exempt():
+    """A bound-form value inside a figure-caption blockquote inherits the
+    chart-annotation carve-out (`_strip_interval_inline_exempt_lines`)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "> **Figure.** *The treatment lifts alignment over baseline at every seed.*",
+        "> **Figure.** *The treatment lifts alignment; upper bound (+0.023).*",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_bound_form_in_why_this_test_line_is_exempt():
+    """A bound-form value in the finding-internal 'Why this test'
+    definition sentence is the named Lens 7 exception."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n"
+        "**Why this test:** the pre-set margin's upper bound = 0.0021 "
+        "defines the test.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
 # ─── Pre-registration mentions scoped to Lens 7 prose sections (#623) ────
 #
 # Lens 7 (clean-result-critic) scopes the pre-registration-mention ban to

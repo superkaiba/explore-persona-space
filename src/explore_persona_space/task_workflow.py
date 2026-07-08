@@ -74,6 +74,7 @@ import functools
 import hashlib
 import json
 import logging
+import math
 import os
 import random
 import re
@@ -240,7 +241,10 @@ CODE_KINDS = frozenset({"infra", "analysis", "batch", "survey"})
 #       `tasks/`.
 #   (c) Branch-guards: `git -C <parent> symbolic-ref --short HEAD` must
 #       return `main`. Non-`main` and detached HEAD raise DISTINCT
-#       `RuntimeError`s naming the actual state.
+#       `RuntimeError`s naming the actual state; a detached HEAD with a LIVE
+#       primary-checkout rebase in progress first gets a bounded wait (#996,
+#       `EPM_TASKPY_REBASE_WAIT_SECONDS`, default 120s, 0 disables) before
+#       the refusal fires.
 #   (d) Caches via `functools.lru_cache(maxsize=1)` keyed on
 #       `(os.getpid(), os.getcwd())` so each Python invocation pays one
 #       subprocess pair total; cache invalidates across forks and cwd
@@ -269,6 +273,56 @@ def _sanitized_git_env() -> dict[str, str]:
     for k in _GIT_ENV_POISONERS:
         env.pop(k, None)
     return env
+
+
+# Bounded wait for a LIVE primary-checkout rebase before the detached-HEAD
+# refusal (#996). A concurrent `git pull --rebase` on the shared repo root
+# detaches the primary HEAD for the rebase duration; refusing instantly cost
+# ≥7 sessions their task.py mutations on 2026-07-03.
+_REBASE_WAIT_ENV = "EPM_TASKPY_REBASE_WAIT_SECONDS"  # total bound; 0 disables (default 120)
+_REBASE_POLL_ENV = "EPM_TASKPY_REBASE_POLL_SECONDS"  # poll interval (default 2.0)
+
+
+def _rebase_wait_bound_s() -> float:
+    """Total bounded-wait budget (seconds) for a live rebase before the
+    detached-HEAD refusal fires. ``0`` restores the pre-#996 immediate
+    refusal exactly. A non-float env value raises ``ValueError`` (fail
+    loud, project norm); a non-finite float (``nan``/``inf``) raises too —
+    ``nan`` defeats the ``time.monotonic() >= deadline`` comparison and
+    would wait unbounded."""
+    value = float(os.environ.get(_REBASE_WAIT_ENV, "120"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_REBASE_WAIT_ENV} must be finite, got {value!r}")
+    return value
+
+
+def _rebase_poll_s() -> float:
+    """Poll interval (seconds) between branch-guard re-probes while waiting
+    out a live rebase. A non-float or non-finite env value raises
+    ``ValueError``."""
+    value = float(os.environ.get(_REBASE_POLL_ENV, "2.0"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_REBASE_POLL_ENV} must be finite, got {value!r}")
+    return value
+
+
+def _rebase_in_progress(common_dir: Path) -> bool:
+    """True iff the PRIMARY checkout has a live (or stale) rebase state dir.
+
+    For the primary worktree the per-worktree git dir IS the common dir, so a
+    primary-checkout rebase writes `<common-dir>/rebase-merge` (merge /
+    interactive backend — the `pull.rebase=merges` default pinned in this
+    repo) or `<common-dir>/rebase-apply` (am backend). A LINKED worktree's
+    rebase lives under `<common-dir>/worktrees/<name>/` and does NOT detach
+    the primary HEAD — correctly excluded by probing the common dir only.
+
+    Mirrors ``scripts/sync_repo_root.py::_rebase_in_progress`` but takes the
+    validated common dir directly and uses ``.is_dir()`` where the sibling
+    uses ``.exists()`` — deliberate (the state dir is always a directory),
+    noted here so a future unifier doesn't read the divergence as
+    intentional filtering.
+    """
+    return (common_dir / "rebase-merge").is_dir() or (common_dir / "rebase-apply").is_dir()
 
 
 def _resolve_primary_checkout(env: dict[str, str]) -> Path:
@@ -322,6 +376,10 @@ def _resolve_primary_checkout(env: dict[str, str]) -> Path:
     return parent
 
 
+# NOTE: functools.lru_cache caches only successful RETURNS — a raised
+# RuntimeError (plain detached refusal or rebase-wait timeout) is NOT cached,
+# so the next call in the same process re-probes; a post-wait success IS
+# cached (desired).
 @functools.lru_cache(maxsize=1)
 def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
     """Inner cache target. Keyed on (pid, cwd) so forks + chdirs invalidate
@@ -331,51 +389,119 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
     env = _sanitized_git_env()
     # (a)+(b) Locate the common git dir + validate its parent.
     parent = _resolve_primary_checkout(env)
-    # (c) Branch guard.
-    sym = subprocess.run(
-        ["git", "-C", str(parent), "symbolic-ref", "--short", "HEAD"],
-        env=env,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if sym.returncode == 0:
-        branch = sym.stdout.strip()
-        if branch != "main":
-            # The primary checkout is parked on a real feature branch. Rather
-            # than refuse (the historical behavior, which silently dropped
-            # markers in ~7 sessions), auto-route every task.py read+write
-            # through a dedicated managed worktree pinned to a DETACHED `main`
-            # tip. Commits made through that worktree advance the `main` ref
-            # (see `_advance_main_ref`), so the guard's INTENT — commits land
-            # on main, never strand on a feature branch — is preserved; only
-            # the hard refusal is replaced. The `--detach main` pin (not the
-            # `main` BRANCH) is deliberate: a worktree holding the `main`
-            # branch would block the primary from `git checkout main`
-            # ("fatal: 'main' is already checked out at <managed>"), so a
-            # leaked managed worktree would brick the user's ability to return
-            # to main. A detached pin holds no branch-checkout lock, so a leak
-            # is benign. Returns the managed worktree path; `_git_commit`
-            # detects routing via `_is_routed_root` and does the
-            # reset-to-main / advance-main dance.
-            return _ensure_managed_main_worktree(parent, branch, env)
-    else:
+    # The validated common dir (basename `.git` per _resolve_primary_checkout).
+    common_dir = parent / ".git"
+    wait_bound = _rebase_wait_bound_s()
+    deadline = time.monotonic() + wait_bound
+    # One extra re-probe for the marker-less boundary window: git's internal
+    # ordering of state-dir removal vs HEAD re-attach at rebase start/finish
+    # is not contractual, so a single 0.5s re-probe closes both the
+    # just-created and just-removed windows at a worst-case +0.5s on a
+    # genuine (non-rebase) detached refusal. Skipped entirely at knob=0.
+    grace_probes_left = 1 if wait_bound > 0 else 0
+    announced = False
+    polls = 0
+    while True:
+        # (c) Branch guard — re-entered in FULL each iteration, so a
+        # post-rebase HEAD attached to `main` returns the primary and a
+        # post-rebase HEAD on a non-main branch routes through the managed
+        # worktree (#844).
+        sym = subprocess.run(
+            ["git", "-C", str(parent), "symbolic-ref", "--short", "HEAD"],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if sym.returncode == 0:
+            branch = sym.stdout.strip()
+            if branch != "main":
+                # The primary checkout is parked on a real feature branch. Rather
+                # than refuse (the historical behavior, which silently dropped
+                # markers in ~7 sessions), auto-route every task.py read+write
+                # through a dedicated managed worktree pinned to a DETACHED `main`
+                # tip. Commits made through that worktree advance the `main` ref
+                # (see `_advance_main_ref`), so the guard's INTENT — commits land
+                # on main, never strand on a feature branch — is preserved; only
+                # the hard refusal is replaced. The `--detach main` pin (not the
+                # `main` BRANCH) is deliberate: a worktree holding the `main`
+                # branch would block the primary from `git checkout main`
+                # ("fatal: 'main' is already checked out at <managed>"), so a
+                # leaked managed worktree would brick the user's ability to return
+                # to main. A detached pin holds no branch-checkout lock, so a leak
+                # is benign. Returns the managed worktree path; `_git_commit`
+                # detects routing via `_is_routed_root` and does the
+                # reset-to-main / advance-main dance.
+                return _ensure_managed_main_worktree(parent, branch, env)
+            return parent
         # `git symbolic-ref --short HEAD` returns rc=1 with stderr
         # "fatal: ref HEAD is not a symbolic ref" when HEAD is detached.
         # The substring check is the canonical detached-HEAD signal —
         # rc=128 can mean many other things (not a git repo, object
         # missing, …) and we don't want to misclassify those as detached.
         stderr = (sym.stderr or "").lower()
-        if "not a symbolic ref" in stderr:
+        if "not a symbolic ref" not in stderr:
+            raise RuntimeError(
+                f"`git symbolic-ref --short HEAD` failed (rc={sym.returncode}) "
+                f"in {parent}:\n  stderr: {sym.stderr!r}"
+            )
+        # Detached HEAD. When a LIVE rebase of the primary checkout is in
+        # progress, bounded-wait and re-probe instead of refusing outright
+        # (#996). WAITING (not routing through the managed worktree) is
+        # deliberate: a mid-rebase managed-worktree commit would CAS-advance a
+        # `refs/heads/main` the finishing rebase is about to force-move to its
+        # replayed tip (the orphaned-commit family sync_repo_root.py's
+        # docstring warns about); the rebase replays the pre-existing commits
+        # onto main anyway. No deadlock while a caller waits here holding the
+        # task-workflow flock: sync_repo_root.py acquires that flock BEFORE
+        # its pull_rebase, and that acquisition is itself LOCK_NB-bounded —
+        # the observed rebase never needs the flock to finish.
+        if wait_bound <= 0:
+            # Knob=0 → EXACT pre-#996 behavior: no marker probe, no grace,
+            # immediate refusal with the byte-identical message.
             raise RuntimeError(
                 f"main worktree HEAD ({parent}) is detached; "
                 f"re-attach to 'main' before running task.py."
             )
-        raise RuntimeError(
-            f"`git symbolic-ref --short HEAD` failed (rc={sym.returncode}) "
-            f"in {parent}:\n  stderr: {sym.stderr!r}"
-        )
-    return parent
+        rebasing = _rebase_in_progress(common_dir)
+        if not rebasing and grace_probes_left <= 0:
+            raise RuntimeError(
+                f"main worktree HEAD ({parent}) is detached; "
+                f"re-attach to 'main' before running task.py."
+            )
+        if time.monotonic() >= deadline:
+            raise RuntimeError(
+                f"main worktree HEAD ({parent}) is detached and a rebase state dir "
+                f"({common_dir / 'rebase-merge'} or rebase-apply) was still present after "
+                f"waiting {wait_bound:.0f}s ({_REBASE_WAIT_ENV}). A live `git pull --rebase` "
+                f"should finish in seconds; a state dir this old is likely a CRASHED rebase. "
+                f"Inspect with `git -C {parent} status`; `git -C {parent} rebase --abort` "
+                f"clears a stale rebase, then re-attach to 'main'."
+            )
+        if not rebasing:
+            grace_probes_left -= 1
+            time.sleep(0.5)  # just-created / just-removed marker window; single re-probe
+            continue
+        if not announced:
+            _log.warning(
+                "task.py: primary checkout HEAD (%s) is detached mid-rebase (%s present); "
+                "waiting up to %.0fs for the concurrent rebase to finish (poll %.1fs; "
+                "override via %s)...",
+                parent,
+                "rebase-merge/rebase-apply",
+                wait_bound,
+                _rebase_poll_s(),
+                _REBASE_WAIT_ENV,
+            )
+            announced = True
+        polls += 1
+        if polls % 10 == 0:  # heartbeat (cadence untested; entry line is the contract)
+            _log.warning(
+                "task.py: still waiting on the concurrent rebase (%.0fs of %.0fs elapsed)...",
+                wait_bound - max(deadline - time.monotonic(), 0.0),
+                wait_bound,
+            )
+        time.sleep(_rebase_poll_s())
 
 
 # ─── Off-main auto-routing (managed main-pinned worktree) ───────────────────
@@ -543,7 +669,10 @@ def repo_root() -> Path:
     Resolves via `git rev-parse --git-common-dir` from the directory of
     this module (NOT `os.getcwd()`). Branch-guards: raises a loud,
     distinct `RuntimeError` if the main worktree HEAD is on a non-`main`
-    branch or detached. Validates that the resolved path actually contains
+    branch or detached; a detached HEAD with a live primary-checkout rebase
+    in progress first gets a bounded wait (#996,
+    `EPM_TASKPY_REBASE_WAIT_SECONDS`, default 120s) before the refusal.
+    Validates that the resolved path actually contains
     `tasks/` and is not a submodule / bare layout. NEVER falls back to a
     walk-up resolver — silent fallback is what produced the
     worktree-staleness bug class this resolver replaces.
@@ -598,6 +727,23 @@ def registry_path() -> Path:
 # constants because they live under ``~`` and never depend on repo root.
 LOCK_DIR = Path.home() / ".task-workflow"
 LOCK_PATH = LOCK_DIR / "lock"
+# FORENSIC-ONLY sidecar of deferred bookkeeping commits (#1030): one JSONL row
+# per append-only mutation whose git commit failed AFTER the append durably
+# landed (see ``_commit_after_durable_append``). Lives OUTSIDE the repo —
+# recording a commit failure must not itself need a commit — beside the flock
+# every writer already owns. Nothing reads it automatically; it exists so a
+# human (or a future /daily sweep) can audit deferrals. Rows carry paths +
+# message + error, NOT the payload (the payload's durable home is the appended
+# file itself).
+DEFERRED_COMMITS_LOG = LOCK_DIR / "deferred-commits.jsonl"
+# FORENSIC-ONLY sidecar of lifecycle commits that landed UNREACHABLE from
+# refs/heads/main (#1100): one JSONL row per commit the post-commit landing
+# check in _git_commit found stranded (or unverifiable). Lives OUTSIDE the
+# repo — recording a strand must not itself need a commit — beside the flock
+# every writer already owns. Nothing reads it automatically; the stderr ERROR
+# at creation time is the live surface, this file is the audit trail.
+STRANDED_COMMITS_LOG = LOCK_DIR / "stranded-commits.jsonl"
+_LANDING_CHECK_ENV = "EPM_TASKPY_LANDING_CHECK"  # "0" disables (default: on)
 
 
 # ─── Locking ────────────────────────────────────────────────────────────────
@@ -1481,6 +1627,192 @@ def stage_dispatch_should_skip(
     )
 
 
+# Canonical PASS-verdict pattern for an epm:upload-verification note
+# (shape: **Verdict: PASS**; case-sensitive on purpose — prose "pass" must
+# not match). scripts/dispatch_issue.py keeps a private copy
+# (_UPLOAD_VERIFICATION_PASS_RE); parity pinned by a test
+# (tests/test_upload_verifier_currency.py).
+UPLOAD_VERIFICATION_PASS_RE = re.compile(r"Verdict:\s*PASS\b")
+
+# Marker kinds recording an upload-verification VERDICT (the per-round
+# epm:upload-verification report, or the sticky epm:upload-verified the
+# skill posts right before auto-terminate).
+UPLOAD_VERDICT_KINDS = frozenset({"epm:upload-verification", "epm:upload-verified"})
+
+
+def _upload_verification_event_index(
+    events: list[dict],
+) -> tuple[list[int], dict[int, dict[str, str]], list[int], list[int]]:
+    """Index events for the currency scan (one pass, index order == chronology).
+
+    Returns ``(crumb_idxs, crumb_fields, verdict_idxs, results_idxs)``:
+    verifying-stage ``stage-dispatch`` breadcrumb indices (+ parsed fields),
+    ``UPLOAD_VERDICT_KINDS`` event indices, and ``epm:results`` indices.
+    """
+    crumb_idxs: list[int] = []
+    crumb_fields: dict[int, dict[str, str]] = {}
+    verdict_idxs: list[int] = []
+    results_idxs: list[int] = []
+    for idx, event in enumerate(events):
+        kind = event.get("kind", "")
+        if kind == "epm:progress":
+            note = (event.get("note", "") or "").lstrip()
+            if note.startswith("stage-dispatch "):
+                fields = _breadcrumb_fields(note)
+                if _normalize_stage(fields.get("stage", "")) == "verifying":
+                    crumb_idxs.append(idx)
+                    crumb_fields[idx] = fields
+        elif kind in UPLOAD_VERDICT_KINDS:
+            verdict_idxs.append(idx)
+        elif kind == "epm:results":
+            results_idxs.append(idx)
+    return crumb_idxs, crumb_fields, verdict_idxs, results_idxs
+
+
+def upload_verification_currency_blocker(
+    events: list[dict],
+    *,
+    now: datetime | None = None,
+    window_minutes: float = 15.0,
+) -> dict | None:
+    """Typed refusal record when upload-verification evidence is not a CURRENT PASS.
+
+    None when evidence is current (or there is no verifier/results activity
+    at all — the pure-sticky legacy shape stays vacuously clear). Otherwise:
+      reason: upload_verifier_in_flight | upload_verifier_stalled
+              | upload_verification_ambiguous | upload_verification_stale
+              | upload_verification_failed_current
+      state:  "in-flight" | "stalled" | None
+      stage / round / breadcrumb_ts / age_minutes / detail
+
+    Ordering compares INDICES (append-only events.jsonl => index order ==
+    chronological), mirroring stage_dispatch_should_skip. Rules, in order:
+
+    1. IN-FLIGHT / STALLED — the latest verifying-stage breadcrumb
+       (_normalize_stage(stage) == "verifying"; covers followup-verifying)
+       has NO UPLOAD_VERDICT_KINDS event at a later index. state="in-flight"
+       when stage_dispatch_should_skip(events, raw_stage, round, window)
+       still reports it (liveness-refreshing 15-min window); else "stalled"
+       (window lapsed / no parsable round / malformed ts / cleared only by
+       epm:failure — the round died with no verdict; a stale prior PASS is
+       still stale).
+    2. AMBIGUOUS (MF-B) — a verdict exists after the latest crumb c_K, but
+       some earlier crumb c_i is UNRESOLVED (no verdict-kind event in the
+       open interval (c_i, c_K)) AND an epm:results lies in (c_i, c_K):
+       the late verdict cannot be attributed to the current results-epoch
+       (it may be c_i's, leaving c_K's round unverified — or still
+       running). The stalled->re-spawn recovery [C1, C2, V] has no results
+       between crumbs (same epoch — any verdict covers it) and CLEARS;
+       recovery from a block is one verifier re-run: the fresh crumb
+       c_{K+1} + verdict resolves every earlier crumb by inclusion (a
+       verdict now lies in (c_i, c_{K+1})) — no deadlock.
+    3. STALE — the latest epm:results has no UPLOAD_VERDICT_KINDS event at
+       a later index (including: results exist, NO verdict marker ever).
+    4. FAILED-CURRENT (MF-A) — the latest UPLOAD_VERDICT_KINDS event is an
+       epm:upload-verification whose note fails UPLOAD_VERIFICATION_PASS_RE:
+       the current verification POSITIVELY failed; prior PASS/sticky
+       evidence is not current. (A sticky AFTER the FAIL is the skill's
+       subsequent-PASS record and clears; rules 3/4 are index-disjoint —
+       a FAIL predating results reads as stale, a FAIL postdating results
+       as failed-current.)
+    """
+    if now is None:
+        now = datetime.now(UTC)
+    crumb_idxs, crumb_fields, verdict_idxs, results_idxs = _upload_verification_event_index(events)
+
+    # Rule 1: unresolved latest crumb.
+    if crumb_idxs and (not verdict_idxs or verdict_idxs[-1] < crumb_idxs[-1]):
+        c_k = crumb_idxs[-1]
+        fields = crumb_fields[c_k]
+        raw_stage = fields.get("stage", "")
+        try:
+            round_num: int | None = int(fields["round"])
+        except (KeyError, ValueError):
+            round_num = None
+        in_flight = round_num is not None and bool(
+            stage_dispatch_should_skip(events, raw_stage, round_num, window_minutes, now=now)
+        )
+        ts = _stage_event_ts(events[c_k])
+        age = None if ts is None else round((now - ts).total_seconds() / 60.0, 1)
+        state = "in-flight" if in_flight else "stalled"
+        return {
+            "reason": "upload_verifier_in_flight" if in_flight else "upload_verifier_stalled",
+            "state": state,
+            "stage": raw_stage,
+            "round": round_num,
+            "breadcrumb_ts": events[c_k].get("ts", ""),
+            "age_minutes": age,
+            "detail": (
+                f"stage-dispatch stage={raw_stage} round={round_num} at "
+                f"{events[c_k].get('ts', '')} has no later upload-verification "
+                f"verdict (state={state}, age={age}m, window={window_minutes}m)"
+            ),
+        }
+
+    # Rule 2 (MF-B): unresolved earlier crumb across a results boundary.
+    if crumb_idxs:
+        c_k = crumb_idxs[-1]
+        for c_i in crumb_idxs[:-1]:
+            resolved = any(c_i < v < c_k for v in verdict_idxs)
+            crossed = any(c_i < r < c_k for r in results_idxs)
+            if not resolved and crossed:
+                return {
+                    "reason": "upload_verification_ambiguous",
+                    "state": None,
+                    "stage": None,
+                    "round": None,
+                    "breadcrumb_ts": events[c_i].get("ts", ""),
+                    "age_minutes": None,
+                    "detail": (
+                        f"verifying crumb at {events[c_i].get('ts', '')} is unresolved "
+                        f"and epm:results landed before the latest crumb at "
+                        f"{events[c_k].get('ts', '')} — the post-crumb verdict cannot "
+                        f"be attributed to the current results-epoch"
+                    ),
+                }
+
+    # Rule 3: latest results unverified (stale) — incl. no verdict ever.
+    if results_idxs and (not verdict_idxs or verdict_idxs[-1] < results_idxs[-1]):
+        verdict_txt = (
+            "no verdict marker exists"
+            if not verdict_idxs
+            else f"latest verdict at {events[verdict_idxs[-1]].get('ts', '')}"
+        )
+        return {
+            "reason": "upload_verification_stale",
+            "state": None,
+            "stage": None,
+            "round": None,
+            "breadcrumb_ts": None,
+            "age_minutes": None,
+            "detail": (
+                f"latest epm:results at {events[results_idxs[-1]].get('ts', '')} "
+                f"postdates the upload-verification evidence ({verdict_txt})"
+            ),
+        }
+
+    # Rule 4 (MF-A): the current verification is a FAIL.
+    if verdict_idxs:
+        latest = events[verdict_idxs[-1]]
+        if latest.get("kind") == "epm:upload-verification" and not (
+            UPLOAD_VERIFICATION_PASS_RE.search(str(latest.get("note", "")))
+        ):
+            return {
+                "reason": "upload_verification_failed_current",
+                "state": None,
+                "stage": None,
+                "round": None,
+                "breadcrumb_ts": None,
+                "age_minutes": None,
+                "detail": (
+                    f"latest epm:upload-verification at {latest.get('ts', '')} is not "
+                    f"a PASS — the current verification FAILED; prior PASS/sticky "
+                    f"evidence is not current"
+                ),
+            }
+    return None
+
+
 # ─── Pre-dispatch external-marker triage (#889) ─────────────────────────────
 
 # Machine-posted / lifecycle-bookkeeping kinds that never carry cross-session
@@ -1540,7 +1872,9 @@ TRIAGE_EXEMPT_KINDS = frozenset(
 # self- and PM-chat posts carried by="unknown"). Compliant emitters now set
 # a distinctive by (the #966 convention list): "pm-chat" (PM-session
 # cross-session posts), "autonomous_session_watch" (watcher passes),
-# "spawn_session" / "spawn_session-stop" (spawn helper). A value on that
+# "spawn_session" / "spawn_session-stop" (spawn helper),
+# "issue-session-guard" (a /issue session's own Step-0 collision-exit /
+# stale-wake-yield deliberate-stop breadcrumb, #1053). A value on that
 # convention list is a trustworthy-POSITIVE externality signal for the
 # LLM-side triage read (conventional, not authenticated — nothing verifies
 # the emitter, but in-repo emitters set only their own identity); absence
@@ -2015,34 +2349,74 @@ _CLAUSE_COMPLETION_WORD = re.compile(r"(?<![iI][nN])(?:complete|COMPLETE)")
 def parse_followup_note_field(note: str, field: str) -> str | None:
     """Extract ``<field>``'s value from a followup-scope / run-marker note.
 
-    Matches the FIRST line whose core (after stripping any leading mix of
-    ``-``/``*`` bullets, bold markers, and whitespace) starts with
-    ``<field>:`` OR ``<field>=`` — both separators occur in the wild (the
-    ``=`` form is the dominant historical run-marker shape, e.g. #537/#552).
-    The value is the first whitespace token of the remainder, stripped of
-    backticks / quotes / ``*`` and a trailing comma (#664 ships a
-    backtick-wrapped bold value). Handles bare-colon, bare-equals,
+    Each physical line is additionally split on ``;`` + whitespace
+    (``re.split(r";\\s+", line)``) so the ``; ``-joined single-line
+    scope/run notes real sessions emit (#1090 fu1/fu2 scopes, #841 scopes
+    + run markers) expose their mid-line fields as clause segments; a line
+    with no ``;<whitespace>`` yields itself unchanged. Matches the FIRST
+    segment (lines outer, segments inner, left-to-right) whose core (after
+    stripping any leading mix of ``-``/``*`` bullets, bold markers, and
+    whitespace) starts with ``<field>:`` OR ``<field>=`` — both separators
+    occur in the wild (the ``=`` form is the dominant historical
+    run-marker shape, e.g. #537/#552). Each segment is anchored exactly
+    like a line-core: a mid-segment mention (``(source: user-chat)``, the
+    #685 prose shape) still parses ``None``, and ``word;field: x`` (no
+    whitespace after the ``;``) never splits. The value is the first
+    whitespace token of the remainder, stripped of backticks / quotes /
+    ``*`` and a trailing comma or semicolon (#664 ships a backtick-wrapped
+    bold value; #841's run markers carry ``label;`` when the line is read
+    unsplit; the ``;`` strip also maps ``field:;`` — an empty value before
+    the separator — to ``None``). Handles bare-colon, bare-equals,
     dash-bullet (#658 v1), star-bullet, bold ``**field:**`` (#837 §4c), the
     COMBINED bullet+bold ``- **field:** x`` (a dash-bullet wrapping a bold
-    field — corpus-clean today, pinned against future drift), and
+    field — corpus-clean today, pinned against future drift),
     single-line space-separated run notes (first-token rule; labels are
-    kebab-slugs with no whitespace — workflow.yaml § markers). First hit
-    wins: #763 v2 embeds a second bold label deep inside its
-    verbatim-proposal section, and the top-of-note canonical line is hit
-    first. Returns ``None`` when the field is absent or its value is empty.
+    kebab-slugs with no whitespace — workflow.yaml § markers), and the
+    ``; ``-joined single-line form (#1090/#841). First hit wins: #763 v2
+    embeds a second bold label deep inside its verbatim-proposal section,
+    and the top-of-note canonical line is hit first; a first-line
+    mid-segment field beats a later line's line-initial field (deliberate,
+    pinned in tests). Returns ``None`` when the field is absent or its
+    value is empty.
+
+    Notes occasionally arrive with LITERAL backslash-n two-char escape
+    sequences instead of real newlines (a shell ``--note "...\\n..."``
+    string passed uninterpreted; #825 run markers v6/v7). When the note
+    contains literal ``\\n`` escapes AND no real newline — the malformed
+    shape is precisely "the whole note is one physical line with escaped
+    separators" — the escapes (including literal ``\\r\\n``) are
+    normalized to real newlines on a parse-side copy before line
+    splitting. A note that already has real newlines keeps its literal
+    escapes untouched as content (quoted regex/code in a value never
+    splits). This deliberately under-reaches: even a single real newline
+    (e.g. one trailing ``\\n`` char) disables the normalization for the
+    whole note. Stored notes are never mutated (events.jsonl is
+    append-only).
     """
-    for line in (note or "").splitlines():
-        # One regex pass strips any interleaved mix of whitespace, bullet
-        # dashes/stars, and bold markers (a sequential strip()/lstrip("-*")
-        # chain stops at the space in "- **field:** x" and misses the bold
-        # marker behind it).
-        core = re.sub(r"^[\s\-*]+", "", line)
-        if core.startswith(f"{field}:") or core.startswith(f"{field}="):
-            rest = core[len(field) + 1 :].lstrip("*").strip()
-            tokens = rest.split()
-            value = tokens[0] if tokens else ""
-            value = value.strip("`'\"*").rstrip(",")
-            return value or None
+    note = note or ""
+    if "\\n" in note and "\n" not in note:
+        # Escaped-newline normalization (#825 v6/v7; the #1090 fu1
+        # regression class): the whole note is one physical line whose
+        # separators arrived as literal backslash-n escapes. Parse-side
+        # copy only — the stored note is never rewritten. `\r\n` literals
+        # first so no stray `\r` survives on a value token (#1120).
+        note = note.replace("\\r\\n", "\n").replace("\\n", "\n")
+    for line in note.splitlines():
+        # `; `-joined single-line notes (#1090 fu1/fu2 scopes, #841 scopes +
+        # run markers) expose their fields as clause segments; a line with
+        # no `;<whitespace>` yields itself unchanged, so every line-initial
+        # form parses exactly as before. The whitespace after `;` is the
+        # anchor: a `;` inside a token (URL, code, `a;b=1`) never splits.
+        for seg in re.split(r";\s+", line):
+            # One regex pass strips any interleaved mix of whitespace, bullet
+            # dashes/stars, and bold markers (unchanged from the line-core rule).
+            core = re.sub(r"^[\s\-*]+", "", seg)
+            if core.startswith(f"{field}:") or core.startswith(f"{field}="):
+                rest = core[len(field) + 1 :].lstrip("*").strip()
+                tokens = rest.split()
+                value = tokens[0] if tokens else ""
+                value = value.strip("`'\"*").rstrip(",;")
+                return value or None
     return None
 
 
@@ -2857,9 +3231,14 @@ def post_event(
             payload["artifacts"] = artifacts
         payload.update(extras)
         _append_jsonl_line(path, payload)
-        _git_commit(
+        # Append landed durably above — a pre/at-commit git failure on the
+        # primary checkout is deferred (loud ERROR + forensic sidecar row),
+        # not raised, so a caller retry cannot duplicate the marker (#1030).
+        _commit_after_durable_append(
             [path],
             f"task #{task_id}: {kind}" + (f" — {note[:60]}" if note else ""),
+            task_id=task_id,
+            op="post_event",
         )
     return payload
 
@@ -3120,7 +3499,12 @@ def set_status(
                 [*(repo / s for s in specs), registry_path()],
                 f"task #{task_id}: {old_status} → {new_status}",
             )
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, SequencerWaitTimeout):
+            # #1030 MF-1: a SequencerWaitTimeout raised from _git_commit's
+            # merge wait gets the SAME "DURABLY APPLIED" recovery narration a
+            # plain git failure gets, then re-raises as before. set_status is
+            # deliberately NOT converted to deferred behavior (#898 raise +
+            # ghost-sweep semantics stay).
             _log.error(
                 "task #%d: status move %s -> %s is DURABLY APPLIED (disk + REGISTRY + "
                 "events.jsonl consistent at %s) but git failed before committing. "
@@ -3222,7 +3606,15 @@ def create_task(req: NewTaskRequest) -> int:
         # Register
         _registry_set(reg, task_id, path, fm)
         _save_registry(reg)
-        _git_commit([path, registry_path()], f"task #{task_id}: create — {req.title[:60]}")
+        # A retried `task.py new` would allocate a NEW id → duplicate task;
+        # the dir + registry entry are durable, so defer a commit failure
+        # (#1030) instead of raising into the caller's retry recipe.
+        _commit_after_durable_append(
+            [path, registry_path()],
+            f"task #{task_id}: create — {req.title[:60]}",
+            task_id=task_id,
+            op="create",
+        )
         return task_id
 
 
@@ -3592,9 +3984,13 @@ def set_goal(task_id: int, new_goal: str, *, by: str = "user", reason: str | Non
         if reason:
             payload["reason"] = reason
         _append_jsonl_line(ev_path, payload)
-        _git_commit(
+        # Body + registry + epm:goal-updated event are durable above; a
+        # retried set_goal would append a duplicate event — defer (#1030).
+        _commit_after_durable_append(
             [path, ev_path, registry_path()],
             f"task #{task_id}: set-goal — {goal[:60]}",
+            task_id=task_id,
+            op="set_goal",
         )
     return True
 
@@ -3729,7 +4125,14 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
         if symlink.is_symlink() or symlink.exists():
             symlink.unlink()
         symlink.symlink_to(target.name)
-        _git_commit([target, symlink], f"task #{task_id}: plan v{next_v}")
+        # plans/v{N}.md + the symlink are durable; a retry would write an
+        # identical v{N+1}.md — defer a commit failure instead (#1030).
+        _commit_after_durable_append(
+            [target, symlink],
+            f"task #{task_id}: plan v{next_v}",
+            task_id=task_id,
+            op="new_plan_version",
+        )
     return next_v
 
 
@@ -3763,8 +4166,13 @@ def promote(task_id: int, verdict: str) -> Path:
             "classification": verdict,
         }
         _append_jsonl_line(path / "events.jsonl", promoted_event)
-        _git_commit(
-            [path / "body.md", path / "events.jsonl"], f"task #{task_id}: promote {verdict}"
+        # Frontmatter flip is idempotent but the epm:promoted event is an
+        # append a retry would duplicate — defer a commit failure (#1030).
+        _commit_after_durable_append(
+            [path / "body.md", path / "events.jsonl"],
+            f"task #{task_id}: promote {verdict}",
+            task_id=task_id,
+            op="promote",
         )
     # Then move to completed via set_status (own lock + commit)
     return set_status(task_id, "completed", note=f"promoted as {verdict}")
@@ -4252,7 +4660,14 @@ def append_comment(
         if extras:
             record.update(extras)
         _append_jsonl_line(path, record)
-        _git_commit([path], f"task #{task_id}: comment {cid} ({kind})")
+        # Comment row is durable; a retry would append a duplicate row with
+        # a fresh cNNN id — defer a commit failure instead (#1030).
+        _commit_after_durable_append(
+            [path],
+            f"task #{task_id}: comment {cid} ({kind})",
+            task_id=task_id,
+            op="append_comment",
+        )
     return record
 
 
@@ -4275,6 +4690,123 @@ _GIT_LOCK_CONTENTION_RE = re.compile(
     r"|Unable to create '.*\.lock': File exists"
 )
 _GIT_LOCK_RETRY_SLEEP_RANGE_S = (2.0, 3.0)  # one retry; jittered to de-sync
+
+# `git commit --only` refuses while a merge/cherry-pick is in progress on
+# THIS worktree (verified: git 2.34.1, rc=128). Signature used only for the
+# single TOCTOU retry in ``_git_commit`` — never added to
+# ``_GIT_LOCK_CONTENTION_RE`` (#898's retry semantics stay byte-identical).
+# NOTE: do NOT "simplify" the wait by dropping --only under a merge — a plain
+# `git commit` during a merge would CREATE THE MERGE COMMIT, sweeping the
+# entire shared index and completing the concurrent session's merge on its
+# behalf.
+_PARTIAL_COMMIT_SEQUENCER_RE = re.compile(
+    r"cannot do a partial commit during a (merge|cherry-pick)"
+)
+_MERGE_WAIT_ENV = "EPM_TASKPY_MERGE_WAIT_SECONDS"  # total bound; 0 disables (default 60)
+_MERGE_POLL_ENV = "EPM_TASKPY_MERGE_POLL_SECONDS"  # poll interval (default 2.0)
+# REVERT_HEAD is a deliberate exclusion — nothing in the fleet's tooling runs
+# `git revert`; add it here if that ever changes (same fatal shape).
+_SEQUENCER_STATE_FILES = ("MERGE_HEAD", "CHERRY_PICK_HEAD")
+
+
+class SequencerWaitTimeout(RuntimeError):
+    """A concurrent merge/cherry-pick did not clear within the bound.
+
+    Narrow, named class so (a) ``_commit_after_durable_append`` can defer on
+    it WITHOUT catching bare ``RuntimeError`` (which would wrongly defer the
+    routed post-commit CAS failure — ``_git_quiet`` raises ``RuntimeError``),
+    and (b) ``set_status``'s #898 recovery envelope can name it alongside
+    ``CalledProcessError``.
+    """
+
+
+def _merge_wait_bound_s() -> float:
+    """Total bounded-wait budget (seconds) for a concurrent merge/cherry-pick
+    to clear before ``_git_commit`` gives up with ``SequencerWaitTimeout``.
+    ``0`` disables the wait entirely (today's immediate git rc=128 fatal
+    surfaces unchanged). A non-float env value raises ``ValueError`` (fail
+    loud, project norm); a non-finite float (``nan``/``inf``) raises too —
+    ``nan`` defeats the ``time.monotonic() >= deadline`` comparison and would
+    wait unbounded. The default 60 s is deliberately LESS THAN
+    ``sync_repo_root.py``'s ``EPM_ROOT_SYNC_LOCK2_WAIT_S`` (120 s): a
+    manually-started ``sync_repo_root.py`` waiting on the task-workflow lock
+    then outlasts any task.py writer mid-merge-wait instead of timing out
+    behind it. Mirrors ``_rebase_wait_bound_s`` (#996)."""
+    value = float(os.environ.get(_MERGE_WAIT_ENV, "60"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_MERGE_WAIT_ENV} must be finite, got {value!r}")
+    return value
+
+
+def _merge_poll_s() -> float:
+    """Poll interval (seconds) between sequencer-state re-probes while
+    waiting out a concurrent merge/cherry-pick. A non-float or non-finite
+    env value raises ``ValueError``. Mirrors ``_rebase_poll_s`` (#996)."""
+    value = float(os.environ.get(_MERGE_POLL_ENV, "2.0"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_MERGE_POLL_ENV} must be finite, got {value!r}")
+    return value
+
+
+def _sequencer_state_paths(repo: Path) -> list[Path]:
+    """Per-worktree MERGE_HEAD/CHERRY_PICK_HEAD paths for the checkout
+    ``_git_commit`` commits in.
+
+    Resolved via ``git rev-parse --git-path`` (one call, one flag per state
+    file, one output line each), NEVER a hardcoded ``<root>/.git/`` join: for
+    a linked worktree (the routed managed-main case) ``.git`` is a FILE and
+    the real sequencer state lives under ``<common>/.git/worktrees/<name>/``
+    — the hardcode would both miss a merge in the worktree itself AND
+    false-probe the primary's (sequencer state is per-worktree; verified
+    empirically, git 2.34.1)."""
+    argv = ["rev-parse"]
+    for name in _SEQUENCER_STATE_FILES:
+        argv += ["--git-path", name]
+    lines = [ln for ln in _run_git(argv).stdout.splitlines() if ln.strip()]
+    return [(p if p.is_absolute() else repo / p) for p in map(Path, lines)]
+
+
+def _wait_for_sequencer_clear(repo: Path) -> None:
+    """Bounded wait for a concurrent merge/cherry-pick on THIS checkout to
+    finish before ``commit --only`` (git refuses a partial commit during
+    either — see ``_PARTIAL_COMMIT_SEQUENCER_RE``).
+
+    Returns when no sequencer state file exists; knob = 0 → immediate return
+    (today's git fatal then surfaces unchanged); on timeout raises
+    ``SequencerWaitTimeout`` naming the state + the manual remedy. NEVER
+    auto-invokes ``sync_repo_root.py``: it takes the task-workflow lock
+    (``_run_locked``) that this process already holds — a guaranteed
+    lock-wait failure."""
+    bound = _merge_wait_bound_s()
+    if bound <= 0:
+        return
+    poll = _merge_poll_s()
+    # Resolved ONCE before the loop: the paths are stable per checkout, so
+    # re-resolving per poll would only burn a subprocess per iteration.
+    state_paths = _sequencer_state_paths(repo)
+    deadline = time.monotonic() + bound
+    announced = False
+    while True:
+        present = [p.name for p in state_paths if p.exists()]
+        if not present:
+            return
+        if time.monotonic() >= deadline:
+            raise SequencerWaitTimeout(
+                f"{'/'.join(present)} present on {repo} for >{bound:.0f}s; a concurrent "
+                "merge/cherry-pick is stalled or crashed and `git commit --only` cannot "
+                "run during one. Finish or abort it, or run "
+                "`uv run python scripts/sync_repo_root.py` (aborts a STALE husk past "
+                f"EPM_ROOT_SYNC_HUSK_AGE_S). Tune via {_MERGE_WAIT_ENV} (0 disables)."
+            )
+        if not announced:
+            _log.warning(
+                "waiting up to %.0fs for a concurrent merge on %s to clear (%s present)",
+                bound,
+                repo,
+                ", ".join(present),
+            )
+            announced = True
+        time.sleep(poll)
 
 
 def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -4368,12 +4900,28 @@ def _git_commit(paths: list[Path], message: str) -> None:
     this routed branch is never taken and behavior is byte-for-byte identical
     to before — the commit advances `main` directly via the normal HEAD move.
 
+    Before staging, waits out any concurrent merge/cherry-pick on this
+    checkout (``_wait_for_sequencer_clear``, #1030 — `git commit --only`
+    fatals rc=128 during one); a merge that STARTS between the probe and the
+    commit (TOCTOU) gets a single re-wait + one FINAL retry keyed on the
+    partial-commit stderr signature.
+
+    After a successful commit (and, when routed, the CAS advance) a
+    post-commit LANDING CHECK (#1100, ``_warn_if_commit_stranded``) verifies
+    the new commit is reachable from ``refs/heads/main`` and warns LOUDLY —
+    stderr ERROR + a forensic row in ``STRANDED_COMMITS_LOG`` — when it is
+    not. Warn-only and fail-open by contract: it can never make the mutation
+    fail. Disable per-process with ``EPM_TASKPY_LANDING_CHECK=0``.
+
     Set TASK_PY_NO_COMMIT=1 to skip the commit entirely (useful in tests).
     Set TASK_PY_AUTO_PUSH=1 to also push after the commit.
     """
     if os.environ.get("TASK_PY_NO_COMMIT") == "1":
         return
     repo = repo_root()
+    # Bounded wait for a concurrent merge/cherry-pick BEFORE staging, so the
+    # whole add → diff → commit sequence runs post-clear (#1030 seam b).
+    _wait_for_sequencer_clear(repo)
     routed = _is_routed_root(repo)
     env = _sanitized_git_env()
     rel_paths = [str(p.relative_to(repo)) for p in paths]
@@ -4395,12 +4943,167 @@ def _git_commit(paths: list[Path], message: str) -> None:
     # `main` to the new commit afterwards.
     old_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip() if routed else ""
     full_msg = f"{message}\n\n[task.py]"
-    _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
+    try:
+        _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
+    except subprocess.CalledProcessError as e:
+        # TOCTOU closure (#1030): a merge/cherry-pick can START between the
+        # pre-staging probe above and this commit. One re-wait (raises
+        # SequencerWaitTimeout on timeout) + one FINAL attempt; a second
+        # sequencer fatal after the re-wait propagates (fail fast). The
+        # routed `old_sha` above stays valid across the retry — a failed
+        # commit never moves HEAD, and a concurrent `main` move is caught
+        # loud by `_advance_main_ref`'s CAS.
+        if not _PARTIAL_COMMIT_SEQUENCER_RE.search(e.stderr or ""):
+            raise
+        _wait_for_sequencer_clear(repo)
+        _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
     if routed:
         new_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip()
         _advance_main_ref(repo, old_sha, new_sha, env)
+    _warn_if_commit_stranded(full_msg, routed=routed)
     if os.environ.get("TASK_PY_AUTO_PUSH") == "1":
         _run_git(["push"], check=False)
+
+
+def _warn_if_commit_stranded(message: str, *, routed: bool) -> None:
+    """Post-commit landing check (#1100): warn LOUDLY — never raise — when
+    the commit that just landed on HEAD is not reachable from
+    refs/heads/main.
+
+    The #844 branch guard routes commits to main and #1030's CAS defends the
+    routed leg, but nothing verifies the PRIMARY-path landing spot, and the
+    resolver's (pid, cwd) cache means a checkout switched under a long-lived
+    process commits onto the wrong branch silently — the strand class behind
+    #1083's 15-problem registry drift. This tripwire closes the detection
+    gap: stderr ERROR + a forensic row in STRANDED_COMMITS_LOG at creation
+    time, instead of the next manual `task.py audit`.
+
+    FAIL-OPEN BY CONTRACT: this guard must never make a lifecycle mutation
+    fail that would otherwise succeed. Every internal error (git failure,
+    sidecar OSError, anything) degrades to _log.warning. Disable entirely
+    with EPM_TASKPY_LANDING_CHECK=0.
+    """
+    if os.environ.get(_LANDING_CHECK_ENV, "").strip() == "0":
+        return
+    try:
+        head = _run_git(["rev-parse", "HEAD"], check=False)
+        if head.returncode != 0:
+            _log.warning("landing check: could not resolve HEAD (rc=%s); skipping", head.returncode)
+            return
+        sha = head.stdout.strip()
+        probe = _run_git(["merge-base", "--is-ancestor", sha, "refs/heads/main"], check=False)
+        if probe.returncode == 0:
+            return  # reachable from main — the invariant holds (hot path, ~7ms)
+        kind = "stranded" if probe.returncode == 1 else "unverifiable"
+        ref = _run_git(["rev-parse", "--abbrev-ref", "HEAD"], check=False)
+        head_ref = ref.stdout.strip() if ref.returncode == 0 else "<unknown>"
+        _log.error(
+            "task.py LANDING CHECK: commit %s (%r) is NOT reachable from "
+            "refs/heads/main (HEAD ref: %s, routed=%s, probe rc=%s). The "
+            "mutation is durable in the working tree but its COMMIT is "
+            "stranded off main. Recover with a SINGLE-COMMIT "
+            "`git cherry-pick %s` onto main (a merge-commit strand needs "
+            "manual mainline selection via -m; do NOT `git merge %s` — a "
+            "branch-wide merge can union-import the branch's whole "
+            "task-ledger state, the #1083 husk class), then verify with "
+            "`git merge-base --is-ancestor %s main` and run `task.py audit` "
+            "(--repair --apply) if registry drift is reported. Recorded in %s.",
+            sha[:12],
+            message,
+            head_ref,
+            routed,
+            probe.returncode,
+            sha[:12],
+            head_ref,
+            sha[:12],
+            STRANDED_COMMITS_LOG,
+        )
+        row = {
+            "ts": _utcnow_iso(),
+            "kind": kind,
+            "sha": sha,
+            "head_ref": head_ref,
+            "routed": routed,
+            "message": message,
+            "probe_rc": probe.returncode,
+            "probe_stderr_tail": (probe.stderr or "")[-300:],
+        }
+        _append_jsonl_line(STRANDED_COMMITS_LOG, row)
+    except Exception:
+        _log.warning("landing check failed (fail-open; mutation unaffected)", exc_info=True)
+
+
+def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: int, op: str) -> bool:
+    """Commit bookkeeping for an ALREADY-DURABLE append-only mutation (#1030).
+
+    On the PRIMARY checkout the append IS the state (an events/comments/
+    concerns row, a created task dir, plans/vN.md); the commit is bookkeeping
+    the next successful commit of the same file sweeps up (git commits file
+    STATE, not deltas). Raising makes callers retry the WHOLE mutation and
+    duplicate the append — the 2026-07-03 3x-marker incident on a #823 loop
+    session; same rc-contract family as ``scripts/task.py::_safe_echo``
+    (#537). So a PRE/AT-commit failure after a successful append LOGS AT
+    ERROR, appends a forensic row to ``DEFERRED_COMMITS_LOG``
+    (``~/.task-workflow/deferred-commits.jsonl``), and returns ``False``; the
+    caller returns success.
+
+    Deferral is NARROW by design (two independent layers, each sufficient
+    for the routed CAS case, jointly sufficient for all routed cases):
+
+    * catches ONLY ``(CalledProcessError, SequencerWaitTimeout)`` — NEVER
+      bare ``RuntimeError``: the routed post-commit CAS leg
+      (``_advance_main_ref`` → ``_git_quiet``) raises ``RuntimeError``, and
+      deferring THAT would report success for an append that never reached
+      canonical ``main``;
+    * NEVER defers in ROUTED mode: there the append lives only in the
+      managed worktree's working tree, and the next resolver re-sync runs
+      ``reset --hard main`` (``_ensure_managed_main_worktree``) whose safety
+      contract is "every mutation commits before releasing" — an uncommitted
+      deferred line would be PHYSICALLY DELETED. In routed mode any commit
+      failure re-raises (fail loud; the caller's retry is genuinely
+      non-duplicating ONLY after a fresh resolve — the raise is the honest
+      signal).
+
+    Append failures are untouched — they raise BEFORE this runs. Genuine
+    bugs (``TypeError``, ``AttributeError``, ...) propagate: they match
+    neither caught class. Deliberately NOT used by ``set_status`` (#898
+    raise + ghost-sweep recovery semantics, extended to name
+    ``SequencerWaitTimeout``) nor the idempotent setters.
+    """
+    try:
+        _git_commit(paths, message)
+        return True
+    except (subprocess.CalledProcessError, SequencerWaitTimeout) as e:
+        if _is_routed_root(repo_root()):
+            raise  # routed append is NOT durable against the reset --hard re-sync
+        stderr_tail = (getattr(e, "stderr", "") or str(e))[-500:]
+        _log.error(
+            "task #%d: %s applied DURABLY (append landed) but the git commit "
+            "failed: %s: %s. Do NOT re-run the mutation (it would duplicate the "
+            "append); the next successful commit touching these paths sweeps it. "
+            "Recorded in %s. Manual sweep: git add -- <paths> && git commit.",
+            task_id,
+            op,
+            type(e).__name__,
+            stderr_tail,
+            DEFERRED_COMMITS_LOG,
+        )
+        row = {
+            "ts": _utcnow_iso(),
+            "task_id": task_id,
+            "op": op,
+            "paths": [str(p) for p in paths],
+            "message": message,
+            "error": type(e).__name__,
+            "stderr_tail": stderr_tail,
+        }
+        try:
+            _append_jsonl_line(DEFERRED_COMMITS_LOG, row)
+        except OSError:
+            # Trace-write failure must not resurrect the duplicate-append bug;
+            # the ERROR log above already carries the full story.
+            _log.exception("could not record deferred-commit row")
+        return False
 
 
 # ─── Binding concerns (concerns.jsonl) ─────────────────────────────────────
@@ -4590,9 +5293,13 @@ def _append_concern_event(task_id: int, payload: dict[str, Any]) -> None:
     events_file = folder / "events.jsonl"
     _append_jsonl_line(events_file, mirror_payload)
 
-    _git_commit(
+    # Concern row + events.jsonl mirror are durable; a retry would append
+    # duplicates of both — defer a commit failure instead (#1030).
+    _commit_after_durable_append(
         [concerns_file, events_file],
         f"task #{task_id}: concern-{payload['event']} {payload['concern_id']}",
+        task_id=task_id,
+        op="append_concern_event",
     )
 
 

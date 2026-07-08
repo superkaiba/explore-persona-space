@@ -1,0 +1,916 @@
+{
+  "commit": "279e114463",
+  "created": "2026-07-05T10:42:34Z",
+  "figsize": [
+    13.0,
+    3.8
+  ],
+  "points": [
+    {
+      "questions averaged per context (k)": 1.0,
+      "held-out R\u00b2 of the k-average map": -30.980767769800586,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "held-out R\u00b2 of the k-average map": -31.33582129586234,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "held-out R\u00b2 of the k-average map": -35.10050861671855,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "held-out R\u00b2 of the k-average map": -38.03372239954771,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "held-out R\u00b2 of the k-average map": -39.193739225253175,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "held-out R\u00b2 of the k-average map": -40.173906843619285,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "held-out R\u00b2 of the k-average map": -40.090100763145784,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "held-out R\u00b2 of the k-average map": -11.83856691086523,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "held-out R\u00b2 of the k-average map": -17.88235489550162,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "held-out R\u00b2 of the k-average map": -24.415830107062746,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "held-out R\u00b2 of the k-average map": -30.49914513125827,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "held-out R\u00b2 of the k-average map": -35.35748952534265,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "held-out R\u00b2 of the k-average map": -38.73098213491892,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "held-out R\u00b2 of the k-average map": -40.090100763145784,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "held-out R\u00b2 of the k-average map": -12.478126470785877,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "held-out R\u00b2 of the k-average map": -13.269710113701137,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "held-out R\u00b2 of the k-average map": -13.835884164964144,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "held-out R\u00b2 of the k-average map": -15.060958203233717,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "held-out R\u00b2 of the k-average map": -6.626242168846235,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "held-out R\u00b2 of the k-average map": -9.708585141421299,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "held-out R\u00b2 of the k-average map": -12.633359676917571,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "held-out R\u00b2 of the k-average map": -15.060958203233719,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "held-out R\u00b2 of the k-average map": -21.524086114846135,
+      "series": "mixed-pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "held-out R\u00b2 of the k-average map": -26.797286488813697,
+      "series": "mixed-pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "held-out R\u00b2 of the k-average map": -25.747596854018887,
+      "series": "mixed-pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "held-out R\u00b2 of the k-average map": -26.25967824860717,
+      "series": "mixed-pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "held-out R\u00b2 of the k-average map": -27.835337930255008,
+      "series": "mixed-pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "held-out R\u00b2 of the k-average map": -9.226857925167952,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "held-out R\u00b2 of the k-average map": -14.25098164420424,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "held-out R\u00b2 of the k-average map": -19.48168975485533,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "held-out R\u00b2 of the k-average map": -24.156319471517644,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "held-out R\u00b2 of the k-average map": -27.835337930255008,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -34.43699884763055,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -35.24629600438097,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -39.51401810767777,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -42.9158810179966,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -44.37070772077739,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -45.39056778588753,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "y": -45.32954015833658,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -13.386348301689834,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -20.22217279675662,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -27.610991212005583,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -34.48883227577296,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -39.9802559218437,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -43.79314716376589,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "y": -45.32954015833658,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -15.167245168087529,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -16.59433676716635,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -18.946459509989197,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -20.325938573645757,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -21.208075514404353,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -7.52344866636874,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -11.095900441884654,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -14.85770515040486,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -18.360733573342575,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -21.208075514404353,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -27.114541221374093,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -28.97960434619274,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -28.054298352770516,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -28.46362134131724,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -30.43982317796265,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -30.973017783478486,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "y": -30.798822430075365,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -8.202925888845835,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -12.785442991711651,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -17.799182165732912,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -22.5661842686857,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -26.543919445044526,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -29.510942556650075,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "y": -30.798822430075365,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -36.57650400635343,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -37.71473295901385,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -42.26872127812498,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -46.06643267990378,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -47.67298516344386,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -48.76479296774878,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "y": -48.73368050439279,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -14.38929432558886,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -21.73803393328191,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -29.681817638897716,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -37.07653242293772,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -42.98084355039519,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -47.081004192585524,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "y": -48.73368050439279,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -10.470755641389422,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -11.832677562416947,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -12.853207407548217,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -13.551660604466132,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -13.898174451319399,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -8.032237163938007,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -10.263643042790076,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -11.971460118342277,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -13.149767309899024,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -13.898174451319399,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -19.31166123074475,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -24.826912279151603,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -22.59118383791616,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -20.417582521674024,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -21.943665132876298,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -22.258723919776674,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "y": -21.900770695485274,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -6.003163716909511,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -9.648789037071834,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -13.471058673035015,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -16.83993616594891,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -19.420573207174336,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -21.18692843950885,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "y": -21.900770695485274,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -30.478029195325895,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -31.090196821960784,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -35.06145797465565,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -38.19555993461705,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -39.629551243678435,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -40.73279350367551,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "y": -40.67602670819223,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -11.925825138443242,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -18.034050516964633,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -24.652151697104006,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -30.840145398819853,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -35.80824946182712,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -39.274816728407195,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "y": -40.67602670819223,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -27.27510895749124,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -29.717980929021987,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -31.89543942684218,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -33.76847391680346,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -34.13866775894005,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -34.57637287171616,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -20.00516134713926,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -24.839340448236413,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -28.7061852684405,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -31.514091536826996,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -33.39415278293364,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -34.57637287171616,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -28.18469401099803,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -33.54646729364912,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -33.52319903928065,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -34.79607527469752,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -35.75740422435584,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -36.55183002088596,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "y": -36.62202968130288,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "questions averaged per context (k)": 1.0,
+      "y": -13.554962474351235,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "questions averaged per context (k)": 2.0,
+      "y": -19.46799872519698,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "questions averaged per context (k)": 4.0,
+      "y": -25.205204654544442,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "questions averaged per context (k)": 8.0,
+      "y": -29.978010297737384,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "questions averaged per context (k)": 16.0,
+      "y": -33.443037683371124,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "questions averaged per context (k)": 32.0,
+      "y": -35.716969248934625,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "questions averaged per context (k)": 48.0,
+      "y": -36.62202968130288,
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 148
+}

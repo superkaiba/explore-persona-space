@@ -37,6 +37,7 @@ from autonomous_session_watch import (  # noqa: E402
     ACTIVE,
     ALERT_STALE_HOURS,
     AUTO_STOP_DONE,
+    AUTO_STOP_PAUSED,
     CAPACITY_RETRY_BACKOFF_S_DEFAULT,
     CAPACITY_RETRY_MAX_PER_DAY_DEFAULT,
     INFRA_DRAIN_BACKOFF_S_DEFAULT,
@@ -49,6 +50,7 @@ from autonomous_session_watch import (  # noqa: E402
     ORPHAN_STALENESS_S_DEFAULT,
     PARK,
     POD_ACTIVE,
+    POD_SAFETY_AUTO_STOP,
     PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT,
     PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT,
     RESPAWN_SPAWN_GRACE_S,
@@ -68,6 +70,20 @@ from autonomous_session_watch import (  # noqa: E402
 )
 
 from explore_persona_space.task_workflow import STATUSES  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _no_real_stagger_sleep(monkeypatch):
+    """Hermeticity for the #1059 session-dispatch stagger: no watcher test may
+    ever REALLY sleep (a real-spawn earlier in the same test records a fresh
+    stamp into the isolated registry, which would put a ~60s ``time.sleep``
+    inside the next dispatch). Records the requested delays so the stagger
+    wiring tests can assert on them; every other test just never sleeps."""
+    import autonomous_session_watch as asw
+
+    sleeps: list[float] = []
+    monkeypatch.setattr(asw, "_stagger_sleep", lambda seconds: sleeps.append(seconds))
+    return sleeps
 
 
 def _p(issue: int, pod_id: str, name: str):
@@ -467,6 +483,39 @@ def test_task_followup_active_user_chat_scope_marker():
     )
 
 
+def test_followup_active_pause_shaped_timeline():
+    # #980: the pause-shaped event timeline. `set-status <N> on_hold` posts
+    # `epm:status-changed` (it is in _DONE_TRANSITION_KINDS), so at pause
+    # time the park is the newest done-transition and any PRIOR run-launched
+    # is stale -> NOT a live follow-up -> the auto-stop proceeds. A follow-up
+    # signal posted AFTER the park correctly re-arms the skip.
+    import autonomous_session_watch as asw
+
+    # run-launched OLDER than the on_hold park -> False (stop proceeds).
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:run-launched", "ts": "2026-07-01T10:00:00Z", "note": ""},
+                # the pause commit point (`set-status <N> on_hold`)
+                {"kind": "epm:status-changed", "ts": "2026-07-01T12:00:00Z", "note": ""},
+            ],
+        )
+        is False
+    )
+    # followup-scope NEWER than the park -> True (followup-skip applies).
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:status-changed", "ts": "2026-07-01T12:00:00Z", "note": ""},
+                {"kind": "epm:followup-scope", "ts": "2026-07-01T13:00:00Z", "note": ""},
+            ],
+        )
+        is True
+    )
+
+
 def test_pod_safety_followup_active_only_on_auto_stop_arm():
     # The followup_active predicate is consulted ONLY when status_class is
     # auto-stop-done. A pod-active-stale task still alerts (alerts never stop
@@ -545,13 +594,19 @@ def test_status_class_sets_disjoint():
     # A status must not be both "auto-stop" and "pod-active" — that would make
     # the classifier order-dependent.
     assert AUTO_STOP_DONE.isdisjoint(POD_ACTIVE)
+    # #980: the widened pod-safety trigger set must stay disjoint from
+    # POD_ACTIVE too, and the paused overlay must not overlap the DONE set
+    # (a member in both would make the union's provenance ambiguous).
+    assert POD_SAFETY_AUTO_STOP.isdisjoint(POD_ACTIVE)
+    assert AUTO_STOP_PAUSED.isdisjoint(AUTO_STOP_DONE)
     # blocked is deliberately in NEITHER (kept, alert-only-if-stale).
     assert "blocked" not in AUTO_STOP_DONE
     assert "blocked" not in POD_ACTIVE
 
 
 def test_status_classes_subset_of_authoritative_enum():
-    # Every status named by AUTO_STOP_DONE / POD_ACTIVE MUST exist in the
+    # Every status named by AUTO_STOP_DONE / AUTO_STOP_PAUSED / POD_ACTIVE MUST
+    # exist in the
     # authoritative runtime enum task_workflow.STATUSES — otherwise the member
     # is a phantom that can never match what `_task_status` returns (the prior
     # round shipped `cancelled` / `uploading` / `followups_running` as phantoms,
@@ -562,6 +617,7 @@ def test_status_classes_subset_of_authoritative_enum():
 
     enum = set(STATUSES)
     assert enum >= AUTO_STOP_DONE, f"phantom AUTO_STOP_DONE members: {AUTO_STOP_DONE - enum}"
+    assert enum >= AUTO_STOP_PAUSED, f"phantom AUTO_STOP_PAUSED members: {AUTO_STOP_PAUSED - enum}"
     assert enum >= POD_ACTIVE, f"phantom POD_ACTIVE members: {POD_ACTIVE - enum}"
 
 
@@ -572,8 +628,59 @@ def test_status_class_done_statuses():
     import autonomous_session_watch as asw
 
     now = 1_000_000.0
-    for s in sorted(AUTO_STOP_DONE):
+    # #980: iterate the full pod-safety trigger set (DONE + on_hold).
+    for s in sorted(POD_SAFETY_AUTO_STOP):
         assert asw._status_class(s, latest_progress_ts=now, now=now) == "auto-stop-done"
+
+
+def test_status_class_on_hold_is_auto_stop_done():
+    # #980: a user-paused task's RUNNING pod is an escaped pod — the #919
+    # pause affordance stops the pod BEFORE parking, so on_hold + RUNNING
+    # means the teardown leg failed. Progress freshness is irrelevant on the
+    # auto-stop arm (both None and fresh classify the same).
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    assert asw._status_class("on_hold", latest_progress_ts=None, now=now) == "auto-stop-done"
+    assert asw._status_class("on_hold", latest_progress_ts=now, now=now) == "auto-stop-done"
+    assert "on_hold" in AUTO_STOP_PAUSED
+    assert "on_hold" in POD_SAFETY_AUTO_STOP
+
+
+def test_on_hold_not_in_auto_stop_done_or_session_reconcile():
+    # #980 decoupling pin: `on_hold` widens ONLY the pod-safety trigger set.
+    # Folding it into AUTO_STOP_DONE would silently widen the
+    # SESSION_RECONCILE_DONE alias and start reaping paused tasks' sessions
+    # (the user may be live-parked in them — same conservatism as `blocked`).
+    from autonomous_session_watch import SESSION_RECONCILE_DONE
+
+    assert "on_hold" not in AUTO_STOP_DONE
+    assert "on_hold" not in SESSION_RECONCILE_DONE
+    assert AUTO_STOP_DONE | {"on_hold"} == POD_SAFETY_AUTO_STOP
+
+
+def test_pod_safety_on_hold_exemptions_still_apply():
+    # #980: the keep-running tag and the inferred-follow-up predicate key on
+    # status_class == "auto-stop-done", which `on_hold` now produces — both
+    # exemptions extend to a paused task with zero decide-layer changes.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    status_class = asw._status_class("on_hold", None, now)
+    assert decide_pod_safety(
+        status_class=status_class,
+        missed=5,
+        stale=False,
+        alerted=False,
+        keep_running=True,
+    ) == ("keep-running-skip", 0)
+    assert decide_pod_safety(
+        status_class=status_class,
+        missed=5,
+        stale=False,
+        alerted=False,
+        followup_active=True,
+    ) == ("followup-skip", 0)
 
 
 def test_status_class_pod_active_fresh_vs_stale():
@@ -644,6 +751,130 @@ def test_latest_progress_ts_none_when_no_progress():
 
     assert asw._latest_progress_ts([]) is None
     assert asw._latest_progress_ts([{"kind": "epm:clarify", "ts": "2026-06-05T10:00:00Z"}]) is None
+
+
+def test_latest_progress_ts_excludes_deliberate_stop_breadcrumb():
+    # The exact spawn_session.py cmd_stop emitter shape: a deliberate session
+    # stop is the death record of the task's driver, not progress — it must
+    # NOT advance the clock (#990; precedent #949/#810 in
+    # task_workflow.stage_dispatch_should_skip).
+    import autonomous_session_watch as asw
+
+    events = [
+        # Real progress carries a benign ``by`` — it must still COUNT (pins
+        # the exclusion to by == "spawn_session-stop", not by-presence).
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T10:00:00Z",
+            "by": "unknown",
+            "note": "step 100",
+        },
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T12:00:00Z",
+            "by": "spawn_session-stop",
+            "note": (
+                "deliberate-stop pid=n/a target=happy-session:abc123 "
+                "reason=operator stop via spawn_session.py stop"
+            ),
+        },
+    ]
+    ts = asw._latest_progress_ts(events)
+    # The 12:00 stop record is excluded; newest real progress stays 10:00.
+    assert ts == asw._parse_event_ts("2026-07-01T10:00:00Z")
+
+
+def test_latest_progress_ts_counts_real_progress_with_benign_by():
+    # A lone real-progress event with a benign ``by`` returns ITS timestamp
+    # (non-None) — kills a by-presence mutation (`if ev.get("by"): continue`).
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T11:00:00Z",
+            "by": "unknown",
+            "note": "step 200",
+        },
+    ]
+    assert asw._latest_progress_ts(events) == asw._parse_event_ts("2026-07-01T11:00:00Z")
+
+
+def test_latest_progress_ts_excludes_by_field_regardless_of_note():
+    # The by-half in isolation: by == "spawn_session-stop" excludes the event
+    # even when the note lacks the "deliberate-stop " prefix (note-text
+    # drift), and even when the ``note`` key is ABSENT entirely (pins the
+    # `note = ev.get("note") or ""` normalization against the predicate).
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:progress", "ts": "2026-07-01T10:00:00Z", "note": "step 100"},
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T12:00:00Z",
+            "by": "spawn_session-stop",
+            "note": "stopping for operator replacement",
+        },
+        # No "note" key at all — the by-half alone must exclude it.
+        {"kind": "epm:progress", "ts": "2026-07-01T13:00:00Z", "by": "spawn_session-stop"},
+    ]
+    assert asw._latest_progress_ts(events) == asw._parse_event_ts("2026-07-01T10:00:00Z")
+
+
+def test_latest_progress_ts_excludes_deliberate_stop_prefix_without_by():
+    # The prefix-half in isolation: a PM-posted stop record (by="pm-chat",
+    # the research-pm.md shape) is excluded on the lstripped note prefix
+    # alone; leading whitespace does not defeat the lstrip.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:progress", "ts": "2026-07-01T10:00:00Z", "note": "step 100"},
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T12:00:00Z",
+            "by": "pm-chat",
+            "note": "deliberate-stop pid=12345 target=tick-loop reason=operator-replace",
+        },
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T13:00:00Z",
+            "by": "pm-chat",
+            "note": "  deliberate-stop pid=999 target=tick-loop reason=leading-whitespace",
+        },
+    ]
+    assert asw._latest_progress_ts(events) == asw._parse_event_ts("2026-07-01T10:00:00Z")
+
+
+def test_latest_progress_ts_midnote_deliberate_stop_mention_still_counts():
+    # Prefix boundary (mirror of the #949 pin in test_stage_dispatch_dedup):
+    # a note merely MENTIONING deliberate-stop mid-text, with no special
+    # ``by``, DOES advance the clock.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:progress", "ts": "2026-07-01T10:00:00Z", "note": "step 100"},
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T12:00:00Z",
+            "note": "noting the earlier deliberate-stop was expected; resuming phase 2",
+        },
+    ]
+    assert asw._latest_progress_ts(events) == asw._parse_event_ts("2026-07-01T12:00:00Z")
+
+
+def test_latest_progress_ts_only_deliberate_stop_returns_none():
+    # A list containing only the stop record has no real progress at all.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T12:00:00Z",
+            "by": "spawn_session-stop",
+            "note": "deliberate-stop pid=n/a target=happy-session:abc reason=operator stop",
+        },
+    ]
+    assert asw._latest_progress_ts(events) is None
 
 
 # ─── pod-safety I/O wrapper tests ────────────────────────────────────────────
@@ -816,6 +1047,79 @@ def test_auto_stop_fires_for_all_done_statuses(isolated_registry, monkeypatch, s
 
     asw.pod_safety_pass(dry_run=False, threshold=1, now=now)  # threshold=1 -> stop immediately
     assert stops == [7]
+
+
+def test_process_pod_on_hold_plain_two_tick_stop(isolated_registry, monkeypatch):
+    # #980 incident shape, PLAIN (non-wedged, port-present) pod: a task parked
+    # `on_hold` whose #919 pause teardown leg failed leaves a healthy RUNNING
+    # pod. _process_pod must treat it exactly like the DONE escaped-pod case:
+    # tick 1 accumulates (missed=1, no stop), tick 2 hits the 2-miss guard and
+    # stops ONCE with the `auto-stop` marker posted, then the state clears.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    stops: list[int] = []
+    posts: list[tuple[int, str]] = []
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "on_hold")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+
+    info = _p(980, "p980", "pod-980")[3]  # healthy PodInfo (SSH port present)
+    state_path = isolated_registry / "pod-safety-980.json"
+
+    asw._process_pod(980, "p980", info, now, dry_run=False, threshold=2)
+    assert stops == []
+    assert json.loads(state_path.read_text())["missed"] == 1
+
+    asw._process_pod(980, "p980", info, now, dry_run=False, threshold=2)
+    assert stops == [980]
+    assert posts == [(980, "auto-stop")]
+    assert not state_path.exists()  # cleared after stop
+
+
+@pytest.mark.parametrize("status", sorted(POD_SAFETY_AUTO_STOP))
+def test_pod_safety_auto_stop_dry_run_no_mutation(isolated_registry, monkeypatch, capsys, status):
+    # Dry-run coverage on the auto-stop arm across the full #980 trigger set
+    # (DONE + on_hold): under dry_run=True a would-stop candidate produces the
+    # "would stop pod" log line ONLY — no `pod.py stop` subprocess, no marker
+    # post, no per-pod state save.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    posts: list[tuple[int, str]] = []
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(980, "p980", "pod-980")]
+    )
+    monkeypatch.setattr(asw, "_task_status", lambda issue: status)
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+    # Any subprocess spawn under dry-run is a mutation-path leak — fail loud.
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("subprocess.run under dry_run")),
+    )
+
+    # threshold=1 -> the decision layer picks "stop" on the first tick.
+    asw.pod_safety_pass(dry_run=True, threshold=1, now=now)
+
+    out = capsys.readouterr().out
+    assert "would stop pod" in out
+    assert posts == []  # _stop_pod returns False under dry-run -> no marker
+    assert not (isolated_registry / "pod-safety-980.json").exists()  # no state save
 
 
 def test_keep_running_tag_skips_stop_and_notes_once(isolated_registry, monkeypatch):
@@ -1309,6 +1613,9 @@ def test_main_daemon_unreachable_still_runs_pod_safety(isolated_registry, monkey
     monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: orphan_calls.append((a, kw)))
     # #967: never sweep the LIVE registry/events tree from a unit test.
     monkeypatch.setattr(asw, "triage_observer_pass", lambda *a, **kw: None)
+    # #1021: the stale-blocked flag pass shells task.py against the LIVE
+    # blocked set (daemon-independent) — never run it from a unit test.
+    monkeypatch.setattr(asw, "stale_blocked_flag_pass", lambda *a, **kw: None)
 
     rc = asw.main([])
 
@@ -1343,6 +1650,9 @@ def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
     # spawns task.py subprocesses for whatever sessions are live on the VM.
     monkeypatch.setattr(asw, "zombie_wrapper_pass", lambda *a, **kw: zombie_calls.append((a, kw)))
     monkeypatch.setattr(asw, "idle_unmapped_pass", lambda *a, **kw: idle_calls.append((a, kw)))
+    # #1021: the stale-blocked flag pass shells task.py against the LIVE
+    # blocked set (daemon-independent) — never run it from a unit test.
+    monkeypatch.setattr(asw, "stale_blocked_flag_pass", lambda *a, **kw: None)
 
     rc = asw.main([])
 
@@ -2678,6 +2988,9 @@ def test_stalled_main_passes_daemon_flag(isolated_registry, monkeypatch):
         captured_kwargs.update(kw)
 
     monkeypatch.setattr(asw, "stalled_session_pass", _record_stalled)
+    # #1021: the stale-blocked flag pass shells task.py against the LIVE
+    # blocked set (daemon-independent) — never run it from a unit test.
+    monkeypatch.setattr(asw, "stale_blocked_flag_pass", lambda *a, **kw: None)
 
     rc = asw.main([])
 
@@ -4683,6 +4996,38 @@ def test_followup_round_complete_reason_ignores_watcher_markers_in_freshness():
     assert "designed re-park" in reason
 
 
+def test_followup_round_complete_reason_ignores_deliberate_stop_in_freshness():
+    # #1053 round-2 pin: a FRESH deliberate-stop breadcrumb (the Step 0
+    # stale-wake YIELD death record, by="issue-session-guard") posted AFTER a
+    # valid round-end park is a driver DEATH record, never round activity —
+    # it must NOT veto the repark via the #837 gate-2 freshness read
+    # (_has_nonwatcher_event_after carries the same two-leg exclusion as
+    # _latest_nonwatcher_event_ts / _latest_progress_ts).
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_followup_scope_event("2026-06-11T09:00:00Z"),
+        _make_progress_event(
+            "stage-dispatch stage=followup-implementing round=1 "
+            "subagent=experiment-implementer worktree=/tmp/wt",
+            "2026-06-11T09:30:00Z",
+        ),
+        _make_step_completed_event(step="9a-bis", ts="2026-06-11T10:54:12Z"),
+        {
+            **_make_progress_event(
+                "deliberate-stop pid=n/a target=self reason=stale-wake-yield "
+                "replacement=happy-session:def456 — stale /issue 1053 session "
+                "yielding on wake; the replacement owns the task; no state mutated",
+                "2026-06-11T12:00:00Z",
+            ),
+            "by": "issue-session-guard",
+        },
+    ]
+    reason = asw._followup_round_complete_reason(events)
+    assert reason is not None
+    assert "designed re-park" in reason
+
+
 def test_followup_round_complete_reason_converges_after_respawn_park():
     # #837 acceptance 4 (the §4b convergence argument, pinned): a stray
     # NON-watcher cross-post after a genuine round end blocks the repark
@@ -5627,6 +5972,464 @@ def test_spend_approval_skip_sentinel_in_watcher_filter():
     assert _SPEND_APPROVAL_SKIP_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
 
 
+# ─── prose USER-PAUSE hold exemption (incident #816, 2026-07-02) ──────────────
+# A session posted a prose-only `USER PAUSE ...` hold note (epm:progress) and
+# left the task at the ACTIVE status `running`; the orphan-respawn pass cannot
+# parse prose and respawned against the hold (attempt 1/2). The durable
+# affordance is `set-status on_hold` (#919); this exemption is defense-in-depth
+# for sessions that still post a prose hold. Test-fixture discipline: no
+# helper/test note below may begin with the bare `USER PAUSE` literal outside
+# the deliberate pause fixtures built by _make_user_pause_event.
+
+
+def _make_user_pause_event(
+    ts: str = "2026-07-03T06:44:44Z", note: str | None = None, kind: str = "epm:progress"
+) -> dict:
+    """Minimal prose USER-PAUSE hold row. Default note = the verbatim #816
+    incident prefix; callers pass ``note=`` for the other observed variants
+    (canonical SKILL.md durable-park format, the older #919 sketch). This
+    helper is the deliberate pause fixture — the only sanctioned source of
+    notes beginning with the bare literal."""
+    if note is None:
+        note = (
+            "USER PAUSE (2026-07-02, verbatim: 'pause 816'): session stopped at "
+            "user request. DO NOT resume, respawn, or auto-dispatch this task."
+        )
+    return {"ts": ts, "kind": kind, "version": 1, "by": "user", "note": note}
+
+
+def test_user_pause_hold_reason_fires_on_816_incident_shape():
+    # Incident-SHAPE replay of #816: the prose pause note, a NEWER
+    # watcher-sentinel respawn marker (sentinel-filtered out of
+    # _latest_progress_ts), and a NEWER parked epm:step-completed. Neither
+    # newer row disarms the hold — the exemption MUST fire. NOTE: the parked
+    # step-completed element is imported from the #653 spend-approval fixture
+    # shape — the raw #816 log has no post-pause step-completed; it is added
+    # here to pin that a parked re-post cannot disarm the hold either.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_user_pause_event("2026-07-03T06:44:44Z"),
+        {
+            "ts": "2026-07-03T08:33:00Z",
+            "kind": "epm:progress",
+            "note": f"{asw._ORPHAN_RESPAWN_NOTE_SENTINEL} active task auto-respawned (1/2)",
+        },
+        _make_step_completed_event(step="2c", exit_kind="parked", ts="2026-07-03T08:35:00Z"),
+    ]
+    reason = asw._user_pause_hold_reason(events)
+    assert reason is not None
+    assert "USER PAUSE" in reason
+    assert "#816" in reason
+
+
+def test_user_pause_hold_reason_fires_on_canonical_skill_format():
+    # The canonical SKILL.md § User pause affordance durable-park note rides
+    # the `set-status <N> on_hold` epm:status-changed row — the SECOND
+    # self-inclusion kind (epm:status-changed is in _PROGRESS_KINDS, so
+    # pause_ts == progress_ts and only the strict `>` keeps the hold armed).
+    # Arming here is harmless in production: on_hold is in the watcher PARK
+    # set, so a durably-parked task is never orphan-evaluated.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_user_pause_event(
+            ts="2026-07-03T06:44:44Z",
+            note=(
+                "USER PAUSE (verbatim: 'pause 42'); paused_from=running; "
+                "resume: user-greenlight only."
+            ),
+            kind="epm:status-changed",
+        )
+    ]
+    assert asw._user_pause_hold_reason(events) is not None
+
+
+def test_user_pause_hold_reason_fires_on_919_older_variant():
+    # The older #919 sketch variant (no parenthetical, no 'verbatim' literal)
+    # — the anchor is variant-agnostic by construction.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_user_pause_event(
+            note="USER PAUSE pause 42; resume: set-status 42 running + spawn-issue --auto."
+        )
+    ]
+    assert asw._user_pause_hold_reason(events) is not None
+
+
+def test_user_pause_hold_reason_ignores_mid_note_quote():
+    # The real quote carriers (the #979 clarify / #919 completion-audit /
+    # #920 triage-note shapes) carry the literal MID-note only — the anchored
+    # prefix must NOT match any of them.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "ts": "2026-07-03T10:00:00Z",
+            "kind": "epm:clarify",
+            "note": "Goal: grep the task's recent markers for a 'USER PAUSE'-shaped note.",
+        },
+        {
+            "ts": "2026-07-03T11:00:00Z",
+            "kind": "epm:completion-audit",
+            "note": "Ask 3: the watcher should recognize the USER PAUSE format — ADDRESSED.",
+        },
+        {
+            "ts": "2026-07-03T12:00:00Z",
+            "kind": "epm:progress",
+            "note": "external-markers-triaged: 1 applied (the USER PAUSE hold format note).",
+        },
+    ]
+    assert asw._user_pause_hold_reason(events) is None
+
+
+def test_user_pause_hold_reason_self_disarms_on_real_progress():
+    # A real _PROGRESS_KINDS marker STRICTLY newer than the pause note (the
+    # canonical resume path posts epm:status-changed) disarms the hold so
+    # respawn coverage resumes.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_user_pause_event("2026-07-03T06:44:44Z"),
+        {
+            "ts": "2026-07-03T09:00:00Z",
+            "kind": "epm:status-changed",
+            "note": "status running -> running (resumed by user)",
+        },
+    ]
+    assert asw._user_pause_hold_reason(events) is None
+
+
+def test_user_pause_hold_reason_inert_without_pause_note():
+    # No anchored pause note anywhere = not the prose-hold shape.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_step_completed_event(step="10", exit_kind="parked"),
+        {
+            "ts": "2026-07-03T09:00:00Z",
+            "kind": "epm:progress",
+            "note": "round 2 implementing",
+        },
+    ]
+    assert asw._user_pause_hold_reason(events) is None
+
+
+def test_user_pause_skip_already_noted_dedup():
+    # Self-contained events-log dedup: a skip marker at/after the gating pause
+    # note means this episode's alert already fired; an OLDER one (prior
+    # episode) does NOT count, so a fresh pause note re-arms the alert.
+    import autonomous_session_watch as asw
+
+    pause = _make_user_pause_event("2026-07-03T06:44:44Z")
+    newer_skip = {
+        "ts": "2026-07-03T06:50:00Z",
+        "kind": "epm:progress",
+        "note": f"{asw._USER_PAUSE_SKIP_NOTE_SENTINEL} prose hold — respawn suppressed.",
+    }
+    older_skip = {
+        "ts": "2026-07-03T00:00:00Z",
+        "kind": "epm:progress",
+        "note": f"{asw._USER_PAUSE_SKIP_NOTE_SENTINEL} prose hold — respawn suppressed.",
+    }
+    assert asw._user_pause_skip_already_noted([pause, newer_skip]) is True
+    assert asw._user_pause_skip_already_noted([pause, older_skip]) is False
+    assert asw._user_pause_skip_already_noted([newer_skip]) is False  # no pause note
+
+
+def test_check_orphan_followups_exemption_returns_user_pause_skip(monkeypatch):
+    # Orphan pass: a prose-paused task with no live registered session
+    # rewrites respawn -> "user-pause-hold-skip" WITHOUT consulting children
+    # (the pause probe is checked first and is events-only); any other action
+    # passes through unchanged.
+    import autonomous_session_watch as asw
+
+    def _boom(issue):
+        raise AssertionError("_task_children must not be consulted on the user-pause path")
+
+    monkeypatch.setattr(asw, "_task_children", _boom)
+    pause_events = [_make_user_pause_event("2026-07-03T06:44:44Z")]
+    action, reason = asw._check_orphan_followups_exemption(
+        issue=816,
+        status="running",
+        has_pod=False,
+        events=pause_events,
+        action="respawn",
+    )
+    assert action == "user-pause-hold-skip"
+    assert reason is not None
+    assert "USER PAUSE" in reason
+
+    # Non-respawn actions pass through unchanged (the early return).
+    action2, reason2 = asw._check_orphan_followups_exemption(
+        issue=816,
+        status="running",
+        has_pod=False,
+        events=pause_events,
+        action="keep",
+    )
+    assert (action2, reason2) == ("keep", None)
+
+
+def test_user_pause_checked_before_spend_approval():
+    # Ordering pin: events carrying BOTH a prose pause note and a
+    # spend-approval park route to the pause action (checked FIRST — the most
+    # specific gate signal; its alert carries the actionable durable-fix
+    # recipe).
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_spend_approval_event("2026-07-03T06:00:00Z"),
+        _make_user_pause_event("2026-07-03T06:44:44Z"),
+    ]
+    action, reason = asw._check_orphan_followups_exemption(
+        issue=816,
+        status="followups_running",
+        has_pod=False,
+        events=events,
+        action="respawn",
+    )
+    assert action == "user-pause-hold-skip"
+    assert reason is not None
+
+
+def test_handle_orphan_user_pause_skip_posts_once_and_skips_budget(isolated_registry, monkeypatch):
+    # The orphan handler MUST (a) post the one-time alert dedup'd via the
+    # events log, naming the durable-park recipe (stable substring `on_hold`);
+    # (b) persist state WITHOUT incrementing respawns_today.
+    import autonomous_session_watch as asw
+
+    posted: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, note, label)),
+    )
+    pause_events = [_make_user_pause_event("2026-07-03T06:44:44Z")]
+    asw._handle_orphan_user_pause_skip(
+        issue=816,
+        reason="prose USER PAUSE hold",
+        new_missed=2,
+        alerted=False,
+        respawn_day="2026-07-03",
+        respawns_today=0,
+        followups_child_alerted=False,
+        events=pause_events,
+        state={},
+        dry_run=False,
+    )
+    assert len(posted) == 1
+    assert posted[0][0] == 816
+    assert posted[0][2] == "user-pause-hold-skip"
+    assert "on_hold" in posted[0][1]  # the durable-park recipe (AC3)
+    assert "does NOT consume the daily respawn budget" in posted[0][1]
+    state = asw._load_orphan_state(816)
+    assert state["respawns_today"] == 0  # NOT incremented
+
+    # Second call within the same episode: a skip marker now exists at/after
+    # the pause note -> dedup'd, alert MUST NOT re-post.
+    posted.clear()
+    pause_events_with_skip = [
+        *pause_events,
+        {
+            "ts": "2026-07-03T06:50:00Z",
+            "kind": "epm:progress",
+            "note": f"{asw._USER_PAUSE_SKIP_NOTE_SENTINEL} prose hold — respawn suppressed.",
+        },
+    ]
+    asw._handle_orphan_user_pause_skip(
+        issue=816,
+        reason="prose USER PAUSE hold",
+        new_missed=3,
+        alerted=False,
+        respawn_day="2026-07-03",
+        respawns_today=0,
+        followups_child_alerted=False,
+        events=pause_events_with_skip,
+        state=state,
+        dry_run=False,
+    )
+    assert posted == []
+    assert asw._load_orphan_state(816)["respawns_today"] == 0
+
+
+def test_apply_stalled_followups_exemption_rewrites_user_pause_respawn_to_keep(monkeypatch):
+    # The stalled-detector helper: an `action="respawn"` on a prose pause hold
+    # MUST become `action="keep"` with `new_missed=0` and the third element
+    # passed through unchanged (fixture passes followups_child_alerted=False
+    # IN, so the assert pins pass-through, not an unrelated flag), plus the
+    # one-time alert (events-log dedup).
+    import autonomous_session_watch as asw
+
+    posted: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, note, label)),
+    )
+    events = [
+        _make_user_pause_event("2026-07-03T06:44:44Z"),
+        _make_step_completed_event(step="2c", exit_kind="parked", ts="2026-07-03T06:45:00Z"),
+    ]
+    action, new_missed, child_alerted = asw._apply_stalled_followups_exemption(
+        issue=816,
+        status="running",
+        has_pod=False,
+        events=events,
+        action="respawn",
+        new_missed=2,
+        followups_child_alerted=False,
+        dry_run=False,
+    )
+    assert (action, new_missed, child_alerted) == ("keep", 0, False)
+    assert len(posted) == 1
+    assert posted[0][2] == "user-pause-hold-skip"
+    assert "on_hold" in posted[0][1]  # the durable-park recipe (AC3)
+
+    # Second call within the same episode: skip marker in events -> no re-post.
+    posted.clear()
+    events_with_skip = [
+        *events,
+        {
+            "ts": "2026-07-03T06:50:00Z",
+            "kind": "epm:progress",
+            "note": f"{asw._USER_PAUSE_SKIP_NOTE_SENTINEL} prose hold — respawn suppressed.",
+        },
+    ]
+    action2, new_missed2, _ = asw._apply_stalled_followups_exemption(
+        issue=816,
+        status="running",
+        has_pod=False,
+        events=events_with_skip,
+        action="respawn",
+        new_missed=2,
+        followups_child_alerted=False,
+        dry_run=False,
+    )
+    assert (action2, new_missed2) == ("keep", 0)
+    assert posted == []  # dedup'd via the events log
+
+
+def test_user_pause_skip_sentinel_in_watcher_filter():
+    # The skip alert marker must NEVER reset the staleness clock it is
+    # measured against — pin the sentinel into the shared exclusion set.
+    from autonomous_session_watch import (
+        _USER_PAUSE_SKIP_NOTE_SENTINEL,
+        _WATCHER_NOTE_SENTINELS,
+    )
+
+    assert _USER_PAUSE_SKIP_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
+
+
+def test_user_pause_skip_in_orphan_exemption_actions_and_dispatch(monkeypatch):
+    # Routing pin: the action string is a member of the exemption set, and
+    # the dispatch routes it to the new handler with the reason forwarded.
+    import autonomous_session_watch as asw
+
+    assert "user-pause-hold-skip" in asw._ORPHAN_EXEMPTION_ACTIONS
+
+    calls: list[dict] = []
+    monkeypatch.setattr(
+        asw,
+        "_handle_orphan_user_pause_skip",
+        lambda **kwargs: calls.append(kwargs),
+    )
+    asw._dispatch_orphan_exemption_action(
+        action="user-pause-hold-skip",
+        issue=816,
+        followups_reason="prose USER PAUSE hold",
+        events=[],
+        new_missed=1,
+        alerted=False,
+        day_key="2026-07-03",
+        respawns_today=0,
+        followups_child_alerted=False,
+        state={},
+        dry_run=True,
+    )
+    assert len(calls) == 1
+    assert calls[0]["issue"] == 816
+    assert calls[0]["reason"] == "prose USER PAUSE hold"
+    assert calls[0]["respawns_today"] == 0
+
+
+def test_user_pause_hold_reason_is_case_sensitive():
+    # [Must-Fix, statistics reconciler] A note beginning LOWERCASE
+    # `user pause ...` (ordinary discussion prose) must NOT arm the probe —
+    # kills the case-insensitive mutant the rest of the battery cannot catch.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "ts": "2026-07-03T06:44:44Z",
+            "kind": "epm:progress",
+            "note": "user pause requested? no — continuing with the planned round.",
+        }
+    ]
+    assert asw._user_pause_hold_reason(events) is None
+
+
+def test_user_pause_hold_reason_tie_with_distinct_marker_suppresses():
+    # Tie-pin: a DISTINCT real progress marker (epm:results) at ts exactly ==
+    # pause_ts must NOT disarm (strict `>` only) — kills the
+    # `>=`-with-pause-filtered mutant that the self-inclusion tests (1-3)
+    # cannot catch.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_user_pause_event("2026-07-03T06:44:44Z"),
+        {
+            "ts": "2026-07-03T06:44:44Z",
+            "kind": "epm:results",
+            "note": "eval numbers for round 1 landed",
+        },
+    ]
+    assert asw._user_pause_hold_reason(events) is not None
+
+
+def test_user_pause_hold_reason_inert_on_malformed_ts():
+    # A pause note with an absent / garbage ts leaves the probe INERT (fail
+    # direction: respawn proceeds — the incident direction, documented in the
+    # probe docstring), rather than crashing or arming with a bogus anchor.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_user_pause_event(ts=None),  # type: ignore[arg-type]
+        _make_user_pause_event(ts="not-a-timestamp"),
+    ]
+    assert asw._user_pause_hold_reason(events) is None
+
+
+def test_handle_orphan_user_pause_skip_dry_run_skips_state(isolated_registry, monkeypatch):
+    # dry_run=True: no _save_orphan_state write (state file absent), and the
+    # dry_run flag is forwarded to the alert post (_post_progress_marker owns
+    # the dry-run print semantics).
+    import autonomous_session_watch as asw
+
+    posted: list[tuple[int, str, bool, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, note, dry_run, label)),
+    )
+    asw._handle_orphan_user_pause_skip(
+        issue=816,
+        reason="prose USER PAUSE hold",
+        new_missed=2,
+        alerted=False,
+        respawn_day="2026-07-03",
+        respawns_today=0,
+        followups_child_alerted=False,
+        events=[_make_user_pause_event("2026-07-03T06:44:44Z")],
+        state={},
+        dry_run=True,
+    )
+    assert len(posted) == 1
+    assert posted[0][2] is True  # dry_run forwarded to the poster
+    assert asw._load_orphan_state(816) == {}  # no state write under dry_run
+
+
 def test_session_alive_ignores_worktree_cwd_zombies(isolated_registry):
     # The 2026-06-10 #518 regression: a superseded driver generation parked in
     # the issue worktree must NOT count as "alive" for the registered entry.
@@ -5657,7 +6460,10 @@ def test_session_alive_ignores_worktree_cwd_zombies(isolated_registry):
 
 
 def test_session_reconcile_done_set_is_pod_auto_stop_set():
-    # The DONE set shares the pod-safety auto-stop set: awaiting_promotion /
+    # The DONE set shares the pod-safety DONE set AUTO_STOP_DONE — NOT the
+    # wider pod-safety trigger set POD_SAFETY_AUTO_STOP (#980 widened the pod
+    # pass to on_hold; sessions of paused tasks are deliberately kept):
+    # awaiting_promotion /
     # completed / archived (2026-06-10 user request: "stop the happy sessions
     # once they reach awaiting promotion"). followups_running (a same-issue
     # follow-up round is executing) and blocked (under investigation) are
@@ -5668,6 +6474,7 @@ def test_session_reconcile_done_set_is_pod_auto_stop_set():
     assert {"completed", "awaiting_promotion", "archived"} == SESSION_RECONCILE_DONE
     assert "followups_running" not in SESSION_RECONCILE_DONE
     assert "blocked" not in SESSION_RECONCILE_DONE
+    assert "on_hold" not in SESSION_RECONCILE_DONE
 
 
 @pytest.mark.parametrize(
@@ -5684,13 +6491,16 @@ def test_session_reconcile_done_set_is_pod_auto_stop_set():
         "reviewing",
         "followups_running",
         "blocked",
+        "on_hold",
     ],
 )
 @pytest.mark.parametrize("idle", [True, False])
 @pytest.mark.parametrize("missed", [0, 1, 5])
 def test_session_reconcile_non_done_always_clears(status, idle, missed):
     # Any non-parked status (including the follow-up-executing
-    # followups_running, the user-parked blocked, and an unreadable None)
+    # followups_running, the user-parked blocked, the user-paused on_hold —
+    # #980 widened the POD pass to on_hold but sessions of paused tasks are
+    # deliberately kept — and an unreadable None)
     # clears the episode — never an action, even with autostop armed and a
     # huge miss count.
     from autonomous_session_watch import decide_session_reconcile
@@ -8963,6 +9773,7 @@ def test_infra_drain_main_wiring(isolated_registry, monkeypatch):
         "stalled_session_pass",
         "orphan_sweep_pass",
         "infra_drain_pass",
+        "stale_blocked_flag_pass",
         "session_reconcile_pass",
         "gate_push_pass",
         "zombie_wrapper_pass",
@@ -9112,6 +9923,124 @@ def test_infra_drain_prespawn_recheck_aborts(isolated_registry, monkeypatch, cap
     assert ok == "spawned"
     assert len(spawned) == 1 and "--issue" in spawned[0]
     assert "INFRA-DRAIN DISPATCHED issue #42" in capsys.readouterr().out
+
+
+# ── #1059 session-dispatch stagger (chokepoint wiring) ────────────────────────
+# The stagger paces REAL spawns >= EPM_SESSION_DISPATCH_STAGGER_S (60s) apart
+# via spawn_session's last-session-dispatch stamp; the module-level autouse
+# _no_real_stagger_sleep fixture (top of file) replaces the _stagger_sleep
+# seam with a recorder, so these tests assert the requested delay without
+# ever sleeping.
+
+
+def _stagger_fake_spawn(monkeypatch, *, stdout="spawned sid-new\n", rc=0):
+    """subprocess.run stub for direct ``_dispatch_infra_drain`` calls; records
+    each argv and returns a canned result (rc / stdout configurable so tests
+    can produce the suppressed-sentinel and failed shapes)."""
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    calls: list[list[str]] = []
+
+    def _fake_run(cmd, **kw):
+        calls.append(list(cmd))
+        return SimpleNamespace(returncode=rc, stdout=stdout, stderr="boom" if rc else "")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    return calls
+
+
+def test_dispatch_infra_drain_staggers_second_spawn(
+    isolated_registry, monkeypatch, _no_real_stagger_sleep, capsys
+):
+    # A stamp 5s old under the default 60s window -> one sleep of ~55s, then
+    # a normal "spawned" result that UPDATES the stamp to this dispatch.
+    import json
+    import time as _time
+
+    import autonomous_session_watch as asw
+
+    calls = _stagger_fake_spawn(monkeypatch)
+    spawn_session.record_session_dispatch(99, "test-prior", now=_time.time() - 5.0)
+    result = asw._dispatch_infra_drain(42, "slot 1/3", dry_run=False, reg_snapshot={})
+    assert result == "spawned"
+    assert len(calls) == 1  # the spawn still ran (sleep-then-proceed, never skip)
+    assert len(_no_real_stagger_sleep) == 1
+    assert 54.0 <= _no_real_stagger_sleep[0] <= 56.0
+    assert "INFRA-DRAIN STAGGER issue #42" in capsys.readouterr().out
+    entry = json.loads((isolated_registry / "last-session-dispatch.json").read_text())
+    assert entry["issue"] == 42 and entry["holder"] == "watcher-infra-dispatch"
+
+
+def test_dispatch_infra_drain_two_consecutive_spawns_full_window(
+    isolated_registry, monkeypatch, _no_real_stagger_sleep
+):
+    # End-to-end through the REAL helpers (record -> age -> delay): with no
+    # prior stamp the first spawn never sleeps and records; the second,
+    # issued immediately after, sleeps out (approximately) the FULL window.
+    import autonomous_session_watch as asw
+
+    _stagger_fake_spawn(monkeypatch)
+    assert asw._dispatch_infra_drain(42, "slot 1/3", dry_run=False, reg_snapshot={}) == "spawned"
+    assert _no_real_stagger_sleep == []  # no prior dispatch -> no sleep
+    assert asw._dispatch_infra_drain(43, "slot 2/3", dry_run=False, reg_snapshot={}) == "spawned"
+    assert len(_no_real_stagger_sleep) == 1
+    assert 59.0 <= _no_real_stagger_sleep[0] <= 60.0
+
+
+def test_dispatch_infra_drain_no_stagger_when_disabled(
+    isolated_registry, monkeypatch, _no_real_stagger_sleep
+):
+    # EPM_SESSION_DISPATCH_STAGGER_S=0 is the kill switch: a fresh stamp
+    # produces zero sleep and the spawn proceeds.
+    import time as _time
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_SESSION_DISPATCH_STAGGER_S", "0")
+    calls = _stagger_fake_spawn(monkeypatch)
+    spawn_session.record_session_dispatch(99, "test-prior", now=_time.time())
+    assert asw._dispatch_infra_drain(42, "slot 1/3", dry_run=False, reg_snapshot={}) == "spawned"
+    assert _no_real_stagger_sleep == []
+    assert len(calls) == 1
+
+
+def test_dispatch_infra_drain_dry_run_never_sleeps_never_records(
+    isolated_registry, monkeypatch, _no_real_stagger_sleep
+):
+    # Dry-run returns BEFORE the stagger block: zero sleeps, zero subprocess
+    # calls, and the stamp is byte-untouched (dry-run never records either).
+    import time as _time
+
+    import autonomous_session_watch as asw
+
+    spawn_session.record_session_dispatch(99, "test-prior", now=_time.time())
+    stamp = isolated_registry / "last-session-dispatch.json"
+    before = stamp.read_bytes()
+    monkeypatch.setattr(
+        asw.subprocess, "run", lambda *a, **k: pytest.fail("subprocess ran on dry-run")
+    )
+    assert asw._dispatch_infra_drain(42, "slot 1/3", dry_run=True, reg_snapshot={}) == "failed"
+    assert _no_real_stagger_sleep == []
+    assert stamp.read_bytes() == before
+
+
+def test_dispatch_infra_drain_suppressed_or_failed_does_not_record(
+    isolated_registry, monkeypatch, _no_real_stagger_sleep
+):
+    # Only a REAL "spawned" outcome records the stamp: a rc-0 suppressed
+    # no-op (lease held) and a rc!=0 failed spawn both leave no stamp, so a
+    # no-op can never defer real work at the next dispatcher.
+    import autonomous_session_watch as asw
+
+    stamp = isolated_registry / "last-session-dispatch.json"
+    _stagger_fake_spawn(monkeypatch, stdout="DISPATCH-LEASE HELD issue #42: in flight\n")
+    assert asw._dispatch_infra_drain(42, "slot 1/3", dry_run=False, reg_snapshot={}) == "suppressed"
+    assert not stamp.exists()
+    _stagger_fake_spawn(monkeypatch, rc=1)
+    assert asw._dispatch_infra_drain(42, "slot 1/3", dry_run=False, reg_snapshot={}) == "failed"
+    assert not stamp.exists()
 
 
 def test_infra_drain_liveness_unavailable_keeps_blocking(isolated_registry, monkeypatch, capsys):
@@ -9878,6 +10807,24 @@ def test_capacity_retry_DOES_redrive_no_compute_available():
     assert reason == "no_compute_available"
 
 
+def test_cpu_fallback_infeasible_block_is_not_transient_capacity():
+    """#1010: a `cpu_fallback_infeasible_for_plan` block (the RunPod
+    CPU-fallback footprint-feasibility refusal, incident #958) is NOT a
+    transient-capacity block — the RunPod instance can never grow to fit the
+    plan, so the watcher's capacity-retry pass must never hot-retry it. The
+    #677 mirror: GREEN purely because the reason is NOT in
+    TRANSIENT_CAPACITY_REASONS (a future careless widening turns it RED)."""
+    import autonomous_session_watch as asw
+
+    note = "failure_class: infra\nreason: cpu_fallback_infeasible_for_plan"
+    ev = _fail_ev("2026-07-04T00:00:00Z", note)
+    retriable, reason, _block_ts = asw._is_transient_capacity_block([ev])
+    assert retriable is False
+    assert reason == "cpu_fallback_infeasible_for_plan"
+    # Downstream: always "skip", even out of backoff with the day-cap unspent.
+    assert decide_capacity_retry("blocked", retriable, _CR_NOW - 99999, None, 0, _CR_NOW) == "skip"
+
+
 # ── I/O-wrapper scoping: only transient-infra blocks re-driven, halts untouched ──
 
 
@@ -9980,6 +10927,371 @@ def test_capacity_retry_pass_daily_cap_then_exhausted_alert(isolated_registry, m
     # Cap spent -> no respawn, one exhausted alert.
     assert spawned == []
     assert posted == [(642, "capacity-retry-exhausted")]
+
+
+# ─── stale-blocked flag pass (task #1021, incident #742) ─────────────────────
+#
+# FLAG-ONLY: a wrong FLAG costs one digest line; a wrong FLIP would race the
+# orchestrator's own-relaunch reconcile rule, so the pass NEVER mutates status
+# (pinned two-pronged below, per the triage-observer non-gating precedent).
+
+_SB_T0 = 1782000000.0  # arbitrary 2026 epoch anchor for the pure-predicate tests
+
+
+def test_decide_stale_blocked_flag_fires_on_fresh_run_after_block():
+    # The #742 shape: block < launch <= progress, progress 10 min old -> True.
+    from autonomous_session_watch import decide_stale_blocked_flag
+
+    assert (
+        decide_stale_blocked_flag(
+            "blocked",
+            run_launched_ts=_SB_T0 + 100,
+            blocked_since_ts=_SB_T0,
+            progress_ts=_SB_T0 + 200,
+            now=_SB_T0 + 200 + 600,
+        )
+        is True
+    )
+
+
+@pytest.mark.parametrize(
+    "status", ["running", "followups_running", "on_hold", "awaiting_promotion", None]
+)
+def test_decide_stale_blocked_flag_skips_non_blocked_status(status):
+    # Constraint interaction pinned: `followups_running` (the same-issue
+    # follow-up loop's holding status) never flags; nor does any other status.
+    from autonomous_session_watch import decide_stale_blocked_flag
+
+    assert (
+        decide_stale_blocked_flag(
+            status,
+            run_launched_ts=_SB_T0 + 100,
+            blocked_since_ts=_SB_T0,
+            progress_ts=_SB_T0 + 200,
+            now=_SB_T0 + 800,
+        )
+        is False
+    )
+
+
+def test_decide_stale_blocked_flag_skips_launch_before_block():
+    # The normal fail-then-block order (launch OLDER than the block) -> False;
+    # a deliberately-blocked task with an old launch stays quiet.
+    from autonomous_session_watch import decide_stale_blocked_flag
+
+    assert (
+        decide_stale_blocked_flag(
+            "blocked",
+            run_launched_ts=_SB_T0,
+            blocked_since_ts=_SB_T0 + 100,
+            progress_ts=_SB_T0 + 200,
+            now=_SB_T0 + 800,
+        )
+        is False
+    )
+
+
+@pytest.mark.parametrize("missing", ["run_launched_ts", "blocked_since_ts", "progress_ts"])
+def test_decide_stale_blocked_flag_skips_missing_signals(missing):
+    # EVERY missing signal fails toward silence (e.g. a hand `git mv` block
+    # that skipped `epm:status-changed` yields blocked_since_ts=None -> skip).
+    from autonomous_session_watch import decide_stale_blocked_flag
+
+    kwargs = {
+        "run_launched_ts": _SB_T0 + 100,
+        "blocked_since_ts": _SB_T0,
+        "progress_ts": _SB_T0 + 200,
+    }
+    kwargs[missing] = None
+    assert decide_stale_blocked_flag("blocked", now=_SB_T0 + 800, **kwargs) is False
+
+
+def test_decide_stale_blocked_flag_skips_stale_progress():
+    # Post-launch progress OLDER than the freshness window -> False (the run
+    # may have died since; under-flagging is the safe failure direction).
+    from autonomous_session_watch import decide_stale_blocked_flag
+
+    assert (
+        decide_stale_blocked_flag(
+            "blocked",
+            run_launched_ts=_SB_T0 + 100,
+            blocked_since_ts=_SB_T0,
+            progress_ts=_SB_T0 + 200,
+            now=_SB_T0 + 200 + 7201,
+            fresh_window_s=7200,
+        )
+        is False
+    )
+
+
+def test_decide_stale_blocked_flag_skips_pre_launch_progress():
+    # v2 conjunct (progress_ts >= run_launched_ts): the newest "progress" is
+    # the block-transition epm:status-changed marker itself (a _PROGRESS_KINDS
+    # member) and the launch has no post-launch tick yet -> False. Pins the
+    # vacuity fix: pre-launch progress never satisfies the liveness leg.
+    from autonomous_session_watch import decide_stale_blocked_flag
+
+    assert (
+        decide_stale_blocked_flag(
+            "blocked",
+            run_launched_ts=_SB_T0 + 300,
+            blocked_since_ts=_SB_T0,
+            progress_ts=_SB_T0,  # == the block-transition marker's ts
+            now=_SB_T0 + 400,
+        )
+        is False
+    )
+
+
+def _sb_events(*, block_iso, launch_iso, progress_iso=None, reblock_iso=None):
+    """Minimal event-sequence fixture for the pass-level replays."""
+    events = [
+        {"kind": "epm:status-changed", "ts": block_iso, "note": "running -> blocked"},
+        {"kind": "epm:run-launched", "ts": launch_iso, "note": "pid=123 log_abs=/w/x.log"},
+    ]
+    if progress_iso:
+        events.append(
+            {"kind": "epm:progress", "ts": progress_iso, "note": "[poll-tick:bg] launch alive"}
+        )
+    if reblock_iso:
+        events.append(
+            {"kind": "epm:status-changed", "ts": reblock_iso, "note": "running -> blocked (again)"}
+        )
+    return events
+
+
+def _patch_sb_pass(monkeypatch, asw, blocked_ids, events_by_issue):
+    """Isolate the pass's I/O seams: blocked-id scan, events fetch, marker
+    post, Telegram push. State + sidecar writes go to isolated_registry."""
+    monkeypatch.setattr(asw, "_blocked_issue_ids", lambda: list(blocked_ids))
+    monkeypatch.setattr(asw, "_task_events", lambda i: events_by_issue.get(i, []))
+    posted = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, label, note)),
+    )
+    pushed = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushed.append(msg) or True)
+    return posted, pushed
+
+
+def test_stale_blocked_pass_flags_once_per_launch_ts(isolated_registry, monkeypatch):
+    # First tick: marker + push + sidecar row + state file. Second tick with
+    # the same launch ts: nothing. A NEWER launch ts (fresh episode): re-alerts.
+    import json
+
+    import autonomous_session_watch as asw
+
+    events = _sb_events(
+        block_iso="2026-07-01T00:00:00Z",
+        launch_iso="2026-07-01T08:00:00Z",
+        progress_iso="2026-07-01T09:00:00Z",
+    )
+    posted, pushed = _patch_sb_pass(monkeypatch, asw, [742], {742: events})
+    now = asw._parse_event_ts("2026-07-01T09:30:00Z")
+
+    asw.stale_blocked_flag_pass(dry_run=False, now=now)
+    assert [(i, label) for i, label, _n in posted] == [(742, "stale-blocked-flag")]
+    assert len(pushed) == 1
+    state_path = isolated_registry / "stale-blocked-742.json"
+    assert state_path.exists()
+    state = json.loads(state_path.read_text())
+    assert state["flagged_run_launched_ts"] == asw._parse_event_ts("2026-07-01T08:00:00Z")
+    sidecar = isolated_registry / "stale-blocked-events.jsonl"
+    assert sidecar.exists() and len(sidecar.read_text().splitlines()) == 1
+    # The marker note carries the sentinel + the reconcile command, flag-only.
+    note = posted[0][2]
+    assert asw._STALE_BLOCKED_FLAG_NOTE_SENTINEL in note
+    assert "set-status 742 running" in note
+    assert "FLAG-ONLY" in note
+
+    # Same launch episode on the next tick: deduped, nothing new.
+    asw.stale_blocked_flag_pass(dry_run=False, now=now + 600)
+    assert len(posted) == 1 and len(pushed) == 1
+
+    # A NEWER launch (a fresh episode) re-alerts.
+    events2 = _sb_events(
+        block_iso="2026-07-01T00:00:00Z",
+        launch_iso="2026-07-02T08:00:00Z",
+        progress_iso="2026-07-02T09:00:00Z",
+    )
+    monkeypatch.setattr(asw, "_task_events", lambda i: events2)
+    asw.stale_blocked_flag_pass(dry_run=False, now=asw._parse_event_ts("2026-07-02T09:30:00Z"))
+    assert len(posted) == 2 and len(pushed) == 2
+
+
+def test_stale_blocked_pass_reblock_after_launch_unflags(isolated_registry, monkeypatch):
+    # Pass-level replay: block -> launch -> post-launch progress -> RE-BLOCK
+    # (newer epm:status-changed). The wiring extracts the LATEST
+    # status-changed as "the transition into blocked", so launch < re-block ->
+    # no flag (pins the latest-status-changed extraction, not just the
+    # predicate).
+    import autonomous_session_watch as asw
+
+    events = _sb_events(
+        block_iso="2026-07-01T00:00:00Z",
+        launch_iso="2026-07-01T08:00:00Z",
+        progress_iso="2026-07-01T09:00:00Z",
+        reblock_iso="2026-07-01T10:00:00Z",
+    )
+    posted, pushed = _patch_sb_pass(monkeypatch, asw, [742], {742: events})
+    asw.stale_blocked_flag_pass(dry_run=False, now=asw._parse_event_ts("2026-07-01T10:30:00Z"))
+    assert posted == [] and pushed == []
+    assert not (isolated_registry / "stale-blocked-742.json").exists()
+
+
+def test_stale_blocked_pass_never_mutates_status(isolated_registry, tmp_path, monkeypatch):
+    # The flag-only HARD invariant, TWO-PRONGED (per
+    # test_triage_observer_never_calls_in_process_mutators): (i) no recorded
+    # subprocess argv contains `set-status`; (ii) the in-process mutators
+    # task_workflow.set_status / post_event raise if touched — the pass must
+    # complete without tripping them. Helper-mediated or in-process status
+    # mutation must fail this test, not just direct subprocess calls.
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    events = _sb_events(
+        block_iso="2026-07-01T00:00:00Z",
+        launch_iso="2026-07-01T08:00:00Z",
+        progress_iso="2026-07-01T09:00:00Z",
+    )
+    monkeypatch.setattr(asw, "_blocked_issue_ids", lambda: [742])
+    monkeypatch.setattr(asw, "_task_events", lambda i: events)
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("stale_blocked_flag_pass must never mutate task state in-process")
+
+    monkeypatch.setattr(task_workflow, "set_status", _forbidden)
+    monkeypatch.setattr(task_workflow, "post_event", _forbidden)
+
+    # Route the Telegram push through the recorded subprocess seam too.
+    push_script = tmp_path / "push.sh"
+    push_script.write_text("#!/usr/bin/env bash\n")
+    monkeypatch.setenv("EPM_TELEGRAM_PUSH_SCRIPT", str(push_script))
+
+    argvs: list[list[str]] = []
+
+    def _record_run(cmd, *a, **kw):
+        argvs.append(list(cmd))
+        return _subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(asw.subprocess, "run", _record_run)
+    asw.stale_blocked_flag_pass(dry_run=False, now=asw._parse_event_ts("2026-07-01T09:30:00Z"))
+    # The flag DID fire (post-marker argv present) but nothing mutates status.
+    assert any("post-marker" in cmd for cmd in argvs)
+    assert not any("set-status" in cmd for cmd in argvs)
+
+
+def test_stale_blocked_pass_kill_switch(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_STALE_BLOCKED_FLAG", "1")
+    monkeypatch.setattr(
+        asw, "_blocked_issue_ids", lambda: pytest.fail("scanned despite kill switch")
+    )
+    asw.stale_blocked_flag_pass(dry_run=False, now=_SB_T0)
+
+
+def test_stale_blocked_pass_dry_run_no_writes(isolated_registry, monkeypatch):
+    # dry_run -> zero state/sidecar writes, zero marker/push subprocesses.
+    import autonomous_session_watch as asw
+
+    events = _sb_events(
+        block_iso="2026-07-01T00:00:00Z",
+        launch_iso="2026-07-01T08:00:00Z",
+        progress_iso="2026-07-01T09:00:00Z",
+    )
+    monkeypatch.setattr(asw, "_blocked_issue_ids", lambda: [742])
+    monkeypatch.setattr(asw, "_task_events", lambda i: events)
+    monkeypatch.setattr(
+        asw.subprocess, "run", lambda *a, **k: pytest.fail("subprocess.run in dry-run")
+    )
+    asw.stale_blocked_flag_pass(dry_run=True, now=asw._parse_event_ts("2026-07-01T09:30:00Z"))
+    assert not (isolated_registry / "stale-blocked-742.json").exists()
+    assert not (isolated_registry / "stale-blocked-events.jsonl").exists()
+
+
+def test_stale_blocked_sentinel_in_watcher_note_sentinels():
+    # The flag note rides epm:progress; membership keeps it from ever
+    # resetting the _latest_progress_ts staleness clocks (the set's own
+    # comment mandates this for every new watcher-posted marker). Inverse of
+    # the long-phase-heartbeat NON-membership test.
+    import autonomous_session_watch as asw
+
+    assert asw._STALE_BLOCKED_FLAG_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+def test_main_wires_stale_blocked_pass_order(isolated_registry, monkeypatch):
+    # Must-Fix (methodology reconciler): main() runs capacity_retry_pass ->
+    # stale_blocked_flag_pass -> session_reconcile_pass in that order — closes
+    # the silently-inert-backstop hole (the #681
+    # test_main_wires_data_disk_pass_call_site class) where every isolation
+    # test passes but the normal cadence never runs the pass.
+    import autonomous_session_watch as asw
+
+    order: list[str] = []
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_live_children", lambda: [])
+    monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
+    for name in (
+        "vm_disk_pass",
+        "data_disk_pass",
+        "happy_patch_pass",
+        "cpu_guard_pass",
+        "program_orchestrator_pass",
+        "triage_observer_pass",
+        "campaign_pass",
+        "pod_safety_pass",
+        "respawn_pass",
+        "stalled_session_pass",
+        "orphan_sweep_pass",
+        "infra_drain_pass",
+        "proposed_infra_sweep_pass",
+        "gate_push_pass",
+        "stale_registration_pass",
+        "zombie_wrapper_pass",
+        "idle_unmapped_pass",
+        "gc_pass",
+    ):
+        if hasattr(asw, name):
+            monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+    monkeypatch.setattr(asw, "capacity_retry_pass", lambda *a, **kw: order.append("capacity_retry"))
+    monkeypatch.setattr(
+        asw, "stale_blocked_flag_pass", lambda *a, **kw: order.append("stale_blocked_flag")
+    )
+    monkeypatch.setattr(
+        asw, "session_reconcile_pass", lambda *a, **kw: order.append("session_reconcile")
+    )
+    rc = asw.main([])
+    assert rc == 0
+    assert (
+        order.index("capacity_retry")
+        < order.index("stale_blocked_flag")
+        < order.index("session_reconcile")
+    )
+
+
+def test_main_stale_blocked_only_flag(isolated_registry, monkeypatch):
+    # --stale-blocked-only runs JUST the new pass and exits (mirrors
+    # test_main_proposed_infra_sweep_only_flag).
+    import autonomous_session_watch as asw
+
+    calls: list[str] = []
+    monkeypatch.setattr(asw, "stale_blocked_flag_pass", lambda *a, **kw: calls.append("flag"))
+    monkeypatch.setattr(
+        asw, "vm_disk_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    monkeypatch.setattr(
+        asw, "capacity_retry_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    rc = asw.main(["--stale-blocked-only", "--dry-run"])
+    assert rc == 0
+    assert calls == ["flag"]
 
 
 # --- program-orchestrator crash-recovery pass (#660 bash daemon) ---
@@ -10714,6 +12026,7 @@ def test_main_runs_sweep_after_infra_drain(isolated_registry, monkeypatch):
         "stalled_session_pass",
         "orphan_sweep_pass",
         "capacity_retry_pass",
+        "stale_blocked_flag_pass",
         "session_reconcile_pass",
         "gate_push_pass",
         "zombie_wrapper_pass",
@@ -12463,6 +13776,85 @@ def test_wedge_bypasses_debounce_but_not_fence(isolated_registry, monkeypatch, s
     assert markers and markers[-1] == (984, "session-auto-respawn")
 
 
+def _wedge_1074_api_error_tail():
+    # #1104: the #1074 orchestrator-refusal shape — each refused wake is
+    # dequeue x2 + prompt x2 + ONE api-error assistant row (top-level
+    # `isApiErrorMessage: true`; sanitized, no refusal text), x3 wakes.
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    prompt = {"type": "user", "message": {"role": "user", "content": "/issue-tick 1074"}}
+    api_error = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+    }
+    return [dequeue, dequeue, prompt, prompt, api_error] * 3
+
+
+def test_wedge_api_error_tail_escalates_to_respawn(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1104 plan test 6 (mirrors test_wedge_bypasses_debounce_but_not_fence):
+    # a #1074-shaped tail of refused wake turns escalates to the respawn arm
+    # on the FIRST stale tick — pre-fix, every api-error row classified
+    # "assistant" and reset the run, so this tail could never fire.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1074, "sess-1074", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1074_api_error_tail()
+    )
+    now = 1_000_000.0
+    pids = {"sess-1074": 4242}
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert stops == ["sess-1074"]  # first tick: wedge -> respawn -> fence stop
+    assert spawns == []
+    state = _read_stalled_state_845(isolated_registry, 1074)
+    assert state["wedge_hits"] == 1
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert spawns == [(1074, 24.0)]  # verified dead -> spawn
+    assert markers and markers[-1] == (1074, "session-auto-respawn")
+
+
+def test_wedge_api_error_env_kill_switch_disables_production_path(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1104 plan test 7 (reconciled-critic BINDING; the #1021 wiring-test
+    # pattern): EPM_TICK_WEDGE_MIN_API_ERRORS=0 must disable the api-error
+    # trigger THROUGH THE PRODUCTION PASS — proving
+    # _apply_prompt_wedge_override actually calls _tick_wedge_min_api_errors()
+    # (an unwired call site running at the keyword default would pass the
+    # predicate-level tests and still fire here).
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1075, "sess-1075", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1074_api_error_tail()
+    )
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_API_ERRORS", "0")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1075": 4242},
+    )
+    assert stops == [] and spawns == []  # kill switch: no wedge escalation
+    state = _read_stalled_state_845(isolated_registry, 1075)
+    assert state.get("wedge_hits", 0) == 0  # no wedge hit recorded
+
+
 def test_wedge_unresolvable_transcript_noop(isolated_registry, monkeypatch, stalled_recorder):
     # #845 (e) plan test 16b: an unresolvable transcript fails toward
     # NO-WEDGE — the slow debounce path is unchanged.
@@ -12762,6 +14154,7 @@ def test_main_order_stale_registration_after_gate_push(isolated_registry, monkey
         "infra_drain_pass",
         "proposed_infra_sweep_pass",
         "capacity_retry_pass",
+        "stale_blocked_flag_pass",
         "session_reconcile_pass",
         "gc_pass",
     ):

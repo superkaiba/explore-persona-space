@@ -17,10 +17,11 @@ Notes for callers:
   temperature parameter, so the multi-sample draws vary at the Anthropic API
   default. Threading it through the shared client is a named follow-up, not
   this module's job (semantic identity with the #778 implementation).
-- ``JudgeCache`` keys on the ``(question, answer)`` content hash, so a REUSED
-  ``cache_dir`` collapses all ``n_draws`` repeats of an item to one cached
-  score. Pre-existing behavior (unchanged here); use a fresh per-run
-  ``cache_dir`` when the draws must be independent (#778 did).
+- ``JudgeCache`` keys on the (rubric/judge identity, question, answer) hash
+  (#1018, llm-judging.md rule 22) — the rubric key differentiates RUBRICS, not
+  draws, so a REUSED ``cache_dir`` still collapses all ``n_draws`` repeats of
+  an item to one cached score. Use a fresh per-run ``cache_dir`` when the
+  draws must be independent (#778 did).
 """
 
 from __future__ import annotations
@@ -139,6 +140,7 @@ def judge_graded(
     save_raw: Path,
     judge_model: str = DEFAULT_JUDGE_MODEL,
     temperature: float = DEFAULT_JUDGE_TEMPERATURE,
+    max_tokens: int = 64,
     dry_run: bool = False,
 ) -> JudgeResult:
     """Graded 0-100 judge over ``items`` via the sanctioned Batch client.
@@ -160,6 +162,12 @@ def judge_graded(
             Batch request — the underlying client exposes no temperature
             parameter, so draws sample at the Anthropic API default (see the
             module docstring).
+        max_tokens: judge response token cap (default 64 — the historical
+            hardcoded value, unchanged for existing callers). A reason-first
+            judge response can truncate BEFORE its JSON under 64 and parse-drop
+            (#1090 c3: 473/1000 + 307/1000 draws); callers closing such drops
+            raise it (a sampling knob — deliberately OUTSIDE the rubric cache
+            identity, see ``batch_judge.rubric_fingerprint``).
 
     Raises:
         ValueError: if any ``item_id`` contains the ``"__"`` custom_id
@@ -194,7 +202,7 @@ def judge_graded(
         judge_system_prompt=system_prompt,
         format_user_msg=format_user_msg,
         judge_model=judge_model,
-        max_tokens=64,
+        max_tokens=max_tokens,
         cache_dir=cache_dir,
         save_raw=save_raw,
         dry_run=dry_run,
@@ -202,6 +210,17 @@ def judge_graded(
     if dry_run:
         return JudgeResult(scores={}, n_total_draws=0, n_dropped_draws=0)
 
+    return judge_result_from_save_raw(save_raw, items)
+
+
+def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]) -> JudgeResult:
+    """Rebuild the :class:`JudgeResult` for ``items`` from a persisted
+    ``save_raw`` file — a PURE READ (zero API calls; the batch client is never
+    touched). Extracted from :func:`judge_graded`'s tail so replay consumers
+    (the #1090 amendment's frozen-yield top-up re-derives the FIRST-SAMPLE kept
+    sets from the committed ``judge_raw_*.json``) reduce raw draws with exactly
+    the production reduce: drop-never-coerce, mean over kept draws.
+    """
     # Read back the raw per-draw scores from save_raw (all_scores key).
     with open(save_raw) as f:
         raw = json.load(f)
@@ -209,7 +228,7 @@ def judge_graded(
 
     # custom_id format (batch_judge._enumerate_and_check_cache):
     #   "{persona}__{idx:05d}__{comp_idx:02d}"; persona == item_id here
-    #   (item_id must not contain the "__" delimiter — guarded above).
+    #   (item_id must not contain the "__" delimiter — guarded in judge_graded).
     per_item_draws: dict[str, list[float]] = {item_id: [] for item_id, _, _ in items}
     n_total = 0
     n_dropped = 0

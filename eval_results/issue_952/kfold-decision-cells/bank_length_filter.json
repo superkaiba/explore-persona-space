@@ -1,0 +1,38 @@
+{
+  "budget_tokens": 7168,
+  "seq_max_len": 8192,
+  "gen_max_tokens": 1024,
+  "n_rows_before": 460,
+  "n_rows_after": 458,
+  "n_pairs_dropped": 1,
+  "dropped_pairs_by_category": {
+    "style_format": 1
+  },
+  "kept_pairs_by_category": {
+    "china_politics": 60,
+    "model_identity": 40,
+    "refusal_boundary": 70,
+    "style_format": 59
+  },
+  "category_floor": 20,
+  "dropped_rows": [
+    {
+      "index": 448,
+      "query_id": "style_format_054_div",
+      "pair_id": "style_format_054",
+      "category": "style_format",
+      "role": "divergent",
+      "prompt_tokens": 8377,
+      "over_budget": true
+    },
+    {
+      "index": 449,
+      "query_id": "style_format_054_ctl",
+      "pair_id": "style_format_054",
+      "category": "style_format",
+      "role": "control",
+      "prompt_tokens": 6409,
+      "over_budget": false
+    }
+  ]
+}

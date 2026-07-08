@@ -593,6 +593,13 @@ class TrainLoraConfig:
     logging_steps: int = 10
     weight_decay: float = 0.0
     packing: bool = False
+    # Mixed-precision selector for TrainingArguments. Default True (bf16 on
+    # GPU) is byte-identical for every existing caller — the value was
+    # hardcoded in train_lora's sft_kwargs before #906 r15. CPU real-trainer
+    # smokes (the #816 callback-lifecycle smoke class; TrainingArguments
+    # raises "Your setup doesn't support bf16/gpu" on CPU-only machines)
+    # pass bf16=False.
+    bf16: bool = True
     marker_only_loss: bool = False
     marker_text: str = MARKER_TOKEN
     marker_tail_tokens: int = 0
@@ -1387,7 +1394,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "lr_scheduler_type": "cosine",
         "logging_steps": cfg.logging_steps,
         "save_strategy": cfg.save_strategy,
-        "bf16": True,
+        "bf16": cfg.bf16,
         "max_length": cfg.max_length,
         "report_to": cfg.report_to,
         "run_name": cfg.run_name,

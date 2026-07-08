@@ -98,6 +98,23 @@ Behaviours:
   dry-run previews all pass. Sibling of ``--check-heredoc-dotenv``; the
   ``.claude/settings.json`` PreToolUse Bash hook covers the inline ad-hoc
   commands that never reach a committed script.
+* ``--check-piped-git-push`` (also bundled into the no-flags default run):
+  walk every ``*.sh`` under ``scripts/`` and FAIL on any ``git push`` /
+  ``git merge`` / ``gh pr merge|create`` piped into a filter on its own
+  pipeline segment (``git push origin main 2>&1 | tail -20``). Bash makes
+  the compound's exit status the FILTER's, so the pipe masks the
+  producer's non-zero exit code: a rejected push reads as success and the
+  session proceeds believing the merge landed (#957's Step 10d push was
+  masked 2026-07-04; 4 sessions hit the class 2026-07-02). Prose rule:
+  CLAUDE.md § Concurrent repo-root committers ("run it bare and check the
+  exit code, or use ``set -o pipefail`` when a pipe is unavoidable") — so
+  a file-level non-comment ``pipefail`` line disables flagging for the
+  REST of the file (lines before it still flag); ``--dry-run`` spans and
+  ``#``-comment lines are skipped; ``||`` chains, ``git merge-base``, and
+  producer-as-consumer (``... | git push``) never match; ``|&`` is
+  normalized to ``|`` first. The
+  ``.claude/hooks/guard_piped_git_push.sh`` PreToolUse hook covers the
+  inline ad-hoc commands that never reach a committed script (#1048).
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
   extract every marker kind that any skill's ``SKILL.md`` under
   ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
@@ -173,6 +190,18 @@ Behaviours:
   workflow-surface file is never allowlisted, it is fixed). Unparseable
   files (SyntaxError / non-UTF-8) are skipped WITH a printed notice,
   never silently.
+* ``--check-upload-or-true`` (also bundled into the no-flags default
+  run): walk every ``*.sh`` under ``scripts/`` and FAIL any
+  upload/result-persist command line whose failure is swallowed by
+  ``|| true`` / ``|| :`` / ``; true`` (#841 silent artifact loss —
+  swallowed plot-phase failures + a missing upload phase lost stage
+  JSONs/plots across attempts). Terminal swallows mask the whole
+  ``&&``-chain (whole-line token check); non-terminal ``|| true`` is
+  segment-scoped; swallowed heredoc openers and multi-line
+  ``python -c "…"`` blocks are scanned for BODY upload-call tokens.
+  Legacy deliberate uses frozen in
+  :data:`UPLOAD_OR_TRUE_LEGACY_ALLOWLIST`; waive with
+  ``# UPLOAD_OR_TRUE_EXEMPT: <reason>`` (reason ≥ 10 chars).
 * ``--check-dotenv-before-hf-import`` (also bundled into the no-flags
   default run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on
   any script that uses the BARE python-dotenv ``load_dotenv``
@@ -443,6 +472,7 @@ SKILL_REF_ALLOWLIST: frozenset[str] = frozenset(
         "compact",  # built-in /compact
         "rewind",  # built-in /rewind
         "mcp",  # built-in /mcp (MCP reconnect)
+        "login",  # built-in /login (CLI credential re-auth; #1027 auth-outage guard docs)
         "review",  # built-in /review (PR review)
         "init",  # built-in /init (CLAUDE.md init)
         "security-review",  # built-in /security-review
@@ -722,6 +752,157 @@ CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
 # dual-engine test (test_workflow_lint.py) sources the hook ERE from
 # `.claude/settings.json` and pins the agreement.
 PIPE_PYTHON_RE = re.compile(r"\|\s*python3?(?:\.\d+)?\s+(?:-\S+\s+)*-[cm]\b")
+
+# `--check-piped-git-push` (#1048): a `git push` / `git merge` /
+# `gh pr merge|create` PRODUCER piped into a filter on its own pipeline
+# segment (`git push origin main 2>&1 | tail -20`). Bash makes the
+# compound's exit status the LAST stage's, so the pipe masks the
+# producer's non-zero exit code: a rejected push reads as success and the
+# session proceeds believing the merge landed (#957's Step 10d push was
+# masked 2026-07-04; 4 sessions hit the class on 2026-07-02). The prose
+# rule (CLAUDE.md § Concurrent repo-root committers: "run it bare and
+# check the exit code, or use `set -o pipefail` when a pipe is
+# unavoidable") failed open >=5 times in 3 days; this check makes it
+# mechanical for committed `scripts/*.sh`, and the
+# `.claude/hooks/guard_piped_git_push.sh` PreToolUse hook covers the
+# inline ad-hoc commands that never reach a script — the same dual-engine
+# split as `--check-pipe-python` (#753).
+#
+# Flagged (a logical shell line, backslash continuations merged, `|&`
+# normalized to `|` before matching — bash's `|&` is `2>&1 |` shorthand):
+#   * `git push | tail -5`, `git push origin main 2>&1 | grep -v x`;
+#   * `gh pr merge 123 --squash | head`, `gh pr create ... | grep -o ...`;
+#   * `git -C <dir> push ... 2>&1 | tail -20` (flag-tolerant `git` anchor);
+#   * `git merge issue-x 2>&1 | tail -5`, `git push 2>err.log | tail`.
+# NOT flagged (precision):
+#   * `git push origin main || echo failed` — `(?!\|)` rejects `||` (the
+#     one real tree shape, issue931_dispatch.sh);
+#   * `git merge-base --all main HEAD | head -1` — the verb must be
+#     followed by whitespace-or-pipe, so `merge-base` never matches (a
+#     canonical .claude/rules/diff-size-budget.md probe);
+#   * `echo foo | git push` — producer as CONSUMER/final stage: no
+#     trailing `|` after the producer, and the final stage's exit code IS
+#     the pipeline's;
+#   * `git status | grep x && git push` — the span class cannot cross a
+#     `;`/`&&`/`||`/`&` command separator, so the trailing `|` is
+#     guaranteed to be a pipe attached to the producer's OWN segment;
+#   * a matched span containing `--dry-run` (a dry run lands nothing, so
+#     masking its exit code cannot cause the incident) — skipped by
+#     check_piped_git_push, not the regex;
+#   * `#`-comment lines; and every line at-or-after the FIRST non-comment
+#     `pipefail` line in the file (a `set -euo pipefail` header makes
+#     every later pipe propagate the failure; `set +o pipefail`
+#     re-disable is ignored — fails toward false-NEGATIVE, the documented
+#     safe direction for a pre-commit-gating lint, same stance as
+#     `_upload_or_true_segments`).
+#
+# Span class: `[^|;&\n]` blocks command separators, but the alternation
+# `&(?=[>0-9])` re-admits the `&` INSIDE redirection operators (`2>&1`,
+# `>&2`, `&>file`, `&>>file`) — without it the span cannot cross `2>&1`
+# and the flagship incident shape `git push origin main 2>&1 | tail -20`
+# is MISSED (the #1048 Phase 1.5 fact-checker finding on plan v1). Known
+# accepted residual: an exotic no-space background separator immediately
+# followed by a digit- or `>`-starting command (`git push &9foo | tail`)
+# extends the span — fails toward FLAG (a lint error a human reviews),
+# the safe direction. No waiver token in v1 (YAGNI, the
+# `check_pipe_python` stance): the committed tree is clean (sole prior
+# hit, issue931_dispatch.sh, is an `||` disjunction), so nothing to waive
+# or grandfather. Like the sibling, the regex is line-local and NOT
+# quote-aware — a quoted string carrying the literal pattern matches
+# (document the bad pattern in a `#`-comment, not an echo/quoted string).
+_PIPED_PUSH_SPAN = r"(?:[^|;&\n]|&(?=[>0-9]))*"
+_PIPED_PUSH_GIT = (
+    r"\bgit\s+(?:-[^\s|;&]+(?:\s+[^\s|;&]+)?\s+)*(?:push|merge)"
+    r"(?:\s" + _PIPED_PUSH_SPAN + r")?\|(?!\|)"
+)
+_PIPED_PUSH_GH = r"\bgh\s+pr\s+(?:merge|create)(?:\s" + _PIPED_PUSH_SPAN + r")?\|(?!\|)"
+PIPED_GIT_PUSH_RE = re.compile(_PIPED_PUSH_GIT + "|" + _PIPED_PUSH_GH)
+
+# `--check-upload-or-true` (#1036): an upload / result-persist /
+# result-production command whose failure is swallowed by `|| true` /
+# `|| :` / `; true` in a `scripts/**/*.sh` shell line (#841: swallowed
+# plot-phase failures compounded a missing upload phase — stage
+# JSONs/plots were silently lost across attempts until the fail-loud fix
+# commits 4ece51a22a / 0efbce6575 removed the swallows).
+#
+# Flagged (per logical shell line, backslash continuations merged,
+# trailing comments stripped quote-aware):
+#   * TERMINAL swallow (`|| true` / `|| :` / `; true` at line end) +
+#     an upload/result token ANYWHERE on the line — bash `&&`/`||` are
+#     equal-precedence left-associative, so a terminal swallow masks the
+#     WHOLE preceding chain (`upload && echo ok || true`,
+#     `{ upload; } || true`);
+#   * NON-terminal `|| true` / `|| :` + a token in the SAME `&&`/`;`
+#     segment (preserves the `mkdir || true && upload` FP kill);
+#   * a swallowed heredoc opener whose BODY calls an upload helper
+#     (`... <<'PY' 2>&1 || true` + body `api.upload_file(` — the
+#     i632_dispatch_with_log_capture.sh:30 shape a line-only scan misses);
+#   * a swallowed multi-line `python -c "…"` quoted block whose BODY
+#     calls an upload helper (the CURRENT #841 upload-phase shape —
+#     `upload_split_lfs_to_overflow(` bodies).
+# NOT flagged:
+#   * `#`-comment lines (issue841_scaling_dispatch.sh:85 is a comment
+#     containing both `|| true` and "upload") and `echo `-prefixed lines
+#     (an echo performs no upload; known accepted FN:
+#     `echo "…"; upload || true` merged on ONE logical line is skipped
+#     whole — frozen by a test fixture);
+#   * `clean_experiment_downloads.py … || true` ("downloads" contains no
+#     "upload" substring), `ls eval_results/ || true` (bare result-dir
+#     names are tokens ONLY inside the `git add|commit` alternation);
+#   * lines waived via `# UPLOAD_OR_TRUE_EXEMPT: <reason>` (reason ≥ 10
+#     chars; same logical line or immediately preceding non-blank line —
+#     the CVD_PIN_EXEMPT convention). Deliberate best-effort side
+#     channels (crash-diagnostics uploads on a FAILURE path) use this.
+# Named residual evasion shapes (fail-toward-false-negative, the safe
+# direction for a pre-commit-gating lint — all deliberate scope bounds):
+#   * `|| echo WARN` swallows (leave a log trace, lesser severity than
+#     `|| true`'s pure silence);
+#   * `|| rc=$?`-then-ignore and `set +e` blocks;
+#   * shell-function-call swallows (`do_upload || true` — the function
+#     name carries no token unless it contains "upload");
+#   * a multi-line subshell wrapper with the swallow on the CLOSING paren
+#     (`(cmd <<'PY' … PY` newline `) || true`) — no live instance;
+#   * the naive quote-unaware `&&`/`;` segment split can mis-split on
+#     quoted separators (non-terminal rule only);
+#   * a MISSING upload phase (the other half of #841's loss) is not
+#     lintable and is named here, not claimed.
+UPLOAD_OR_TRUE_SWALLOW_OR_RE = re.compile(r"\|\|\s*(?:true\b|:(?=[\s;)&|]|$))")
+# Terminal swallow — masks the WHOLE line/chain:
+UPLOAD_OR_TRUE_SWALLOW_TERMINAL_RE = re.compile(r"(?:\|\|\s*(?:true|:)|;\s*true)\s*$")
+# Shell-line upload/result-persist/result-production tokens. Notes:
+#   * `upload_raw_completions\w*` (NOT a trailing `\b` before `_`) — the
+#     canonical helper is upload_raw_completions_to_data_repo;
+#   * `*upload*.py` — upload helper scripts (verify_uploads.py, …);
+#   * `*plot*.py` — result-production (plot) scripts, the founding #841
+#     offender shape (issue841_scaling_plots.py);
+#   * `git add|commit` of result dirs + `git push` — git persistence;
+#   * `$HF_DATA_REPO` / `$HF_MODEL_REPO` — repo-destination env vars.
+UPLOAD_OR_TRUE_LINE_TOKEN_RE = re.compile(
+    r"(?:"
+    r"\bupload_file\b|\bupload_folder\b|\bupload_raw_completions\w*"
+    r"|\bhf\s+upload\b|\bhuggingface-cli\s+upload\b"
+    r"|\b[A-Za-z0-9_]*upload[A-Za-z0-9_]*\.py\b"
+    r"|\b[A-Za-z0-9_]*plot[A-Za-z0-9_]*\.py\b"
+    r"|\bgit\s+push\b"
+    r"|\bgit\s+(?:add|commit)\b[^#]*\b(?:eval_results|figures|ood_eval_results)\b"
+    r"|\$\{?HF_DATA_REPO\b|\$\{?HF_MODEL_REPO\b"
+    r")"
+)
+# Quoted/heredoc BODY upload-call tokens (inline-python upload blocks — the
+# dominant dispatcher upload shape; the widened `\w*upload\w*(` covers
+# upload_file(, upload_folder(, _upload(, api.upload_file(,
+# upload_split_lfs_to_overflow():
+UPLOAD_OR_TRUE_BODY_TOKEN_RE = re.compile(
+    r"(?:\b[A-Za-z0-9_]*upload[A-Za-z0-9_]*\s*\("
+    r"|\bupload_raw_completions\w*|\bcreate_commit\s*\(|\.push_to_hub\s*\()"
+)
+UPLOAD_OR_TRUE_WAIVER_RE = re.compile(r"#\s*UPLOAD_OR_TRUE_EXEMPT:\s*(.+)")
+UPLOAD_OR_TRUE_WAIVER_MIN_REASON_CHARS = 10
+# Multi-line `python -c "` opener (captures the quote char); a block whose
+# captured quote is unclosed on the logical line is consumed physically
+# until the first line containing the closing quote char, bounded below.
+UPLOAD_OR_TRUE_PYC_OPENER_RE = re.compile(r"\bpython3?\s+-c\s+([\"'])")
+UPLOAD_OR_TRUE_PYC_MAX_BODY_LINES = 300  # bounded; unclosed at EOF/cap -> skip (FN-safe)
 
 # `--check-agent-model-pins`: every `.claude/agents/*.md` carries a YAML
 # frontmatter line ``model: "claude-..."`` that the Claude Code harness reads
@@ -1303,6 +1484,32 @@ JUDGE_PIN_LEGACY_ALLOWLIST_SH: frozenset[str] = frozenset(
 )
 JUDGE_PIN_WAIVER_RE = re.compile(r"#\s*noqa:\s*judge-model-pin\b")
 JUDGE_PIN_FILE_WAIVER_RE = re.compile(r"#\s*epm-allow-judge-model-pin\b")
+
+# Grandfathered `|| true` swallows on upload/result-persist lines. New
+# deliberate best-effort uploads use the inline `# UPLOAD_OR_TRUE_EXEMPT:`
+# waiver instead of growing this list (test_live_trees_pass locks it to
+# today's tree; mirrors JUDGE_PIN_LEGACY_ALLOWLIST's style). File-level
+# granularity (the JUDGE_PIN precedent) — accepted trade-off: a whole-file
+# exemption can mask a FUTURE genuine violation added to one of these
+# files; all three are historical dispatchers of completed issues.
+UPLOAD_OR_TRUE_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # --- deliberate best-effort diagnostics side-channels (permanent) ---
+        # #654 crash-diagnostics upload on the FAILURE path; `|| true` +
+        # in-Python try/except keep a failed HF upload from masking the real
+        # failure rc=2 (documented at the call site, lines 154-160):
+        "scripts/issue654_dispatch.sh",
+        # #632 debug wrapper: best-effort diagnostics upload "regardless of
+        # RC"; primary results ride the dispatcher's own fail-loud path:
+        "scripts/i632_dispatch_with_log_capture.sh",
+        # --- pre-existing, tracked ---
+        # `git add eval_results/ figures/ || true` (line 251) before a guarded
+        # commit; the fail-loud PRIMARY persist is the HF upload_folder phase
+        # (p5) directly above, and the git-push leg degrades to a logged
+        # WARNING by design; historical dispatcher of a completed issue:
+        "scripts/issue931_dispatch.sh",
+    }
+)
 
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
@@ -2122,20 +2329,21 @@ def _heredoc_body_dotenv_errors(path: Path, lines: list[str], start: int, end: i
     return errors
 
 
-def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
-    """Walk one shell script, tracking heredoc bodies, and return the
-    dotenv errors found in bodies that feed a python interpreter's stdin.
+def _iter_sh_logicals_with_heredocs(lines: list[str]):
+    """Yield ``(first_idx, last_idx, logical, heredoc_bodies)`` per logical
+    shell line; ``heredoc_bodies`` is a list of ``(body_start, body_end)``
+    0-based physical-line bounds (end EXCLUSIVE of the terminator line),
+    one per heredoc opener on the logical line, in opener order.
 
-    Backslash-continued physical lines are merged into one logical
-    command line before opener detection (the #612 shape continues the
-    opener line with ``\\`` + ``|| fail ...``; the body starts after the
-    last physical line of the logical command). ALL heredoc bodies are
-    consumed so body content can never be misparsed as new openers; only
-    python-stdin-fed bodies are scanned. The terminator match is lenient
+    Shared cursor logic extracted from the heredoc-dotenv scanner (#1036):
+    backslash-continued physical lines are merged into one logical command
+    line before opener detection (the #612 shape continues the opener line
+    with ``\\`` + ``|| fail ...``; the body starts after the last physical
+    line of the logical command). ALL heredoc bodies are CONSUMED — body
+    content is never re-yielded as logical shell lines, so it can never be
+    misparsed as new openers. The terminator match is lenient
     (stripped-line equality) so ``<<-`` indented terminators work; an
-    unterminated heredoc scans through to EOF."""
-    lines = path.read_text(encoding="utf-8").splitlines()
-    errors: list[str] = []
+    unterminated heredoc consumes through to EOF."""
     n = len(lines)
     i = 0
     while i < n:
@@ -2145,13 +2353,7 @@ def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
             last += 1
             logical = logical.rstrip()[:-1] + " " + lines[last]
         openers = list(HEREDOC_OPENER_RE.finditer(logical))
-        if not openers:
-            i = last + 1
-            continue
-        prefix = logical[: openers[0].start()]
-        python_fed = bool(HEREDOC_PY_STDIN_DASH_RE.search(prefix)) or bool(
-            HEREDOC_PY_STDIN_BARE_RE.search(prefix)
-        )
+        bodies: list[tuple[int, int]] = []
         body_cursor = last + 1
         for opener in openers:
             delim = opener.group(2)
@@ -2159,10 +2361,34 @@ def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
             body_end = body_start
             while body_end < n and lines[body_end].strip() != delim:
                 body_end += 1
-            if python_fed:
-                errors.extend(_heredoc_body_dotenv_errors(path, lines, body_start, body_end))
+            bodies.append((body_start, body_end))
             body_cursor = body_end + 1
-        i = body_cursor
+        yield i, last, logical, bodies
+        i = body_cursor if openers else last + 1
+
+
+def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
+    """Walk one shell script, tracking heredoc bodies, and return the
+    dotenv errors found in bodies that feed a python interpreter's stdin.
+
+    The cursor logic (backslash merge, opener detection, delimiter-bounded
+    body consumption) lives in the shared :func:`_iter_sh_logicals_with_heredocs`
+    generator; only the python-stdin-fed classification + dotenv body scan
+    stay here."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    errors: list[str] = []
+    for _first, _last, logical, bodies in _iter_sh_logicals_with_heredocs(lines):
+        if not bodies:
+            continue
+        openers = list(HEREDOC_OPENER_RE.finditer(logical))
+        prefix = logical[: openers[0].start()]
+        python_fed = bool(HEREDOC_PY_STDIN_DASH_RE.search(prefix)) or bool(
+            HEREDOC_PY_STDIN_BARE_RE.search(prefix)
+        )
+        if not python_fed:
+            continue
+        for body_start, body_end in bodies:
+            errors.extend(_heredoc_body_dotenv_errors(path, lines, body_start, body_end))
     return errors
 
 
@@ -2217,26 +2443,51 @@ def _iter_logical_shell_lines(lines: list[str]):
         i = last + 1
 
 
-def _cvd_pin_waiver_present(lines: list[str], first_idx: int, last_idx: int) -> bool:
-    """Return True iff a ``# CVD_PIN_EXEMPT: <reason>`` waiver (reason ≥
-    :data:`CVD_PIN_WAIVER_MIN_REASON_CHARS` chars) covers the logical
-    command spanning ``lines[first_idx:last_idx + 1]``. Accepts the waiver
-    on any physical line of the logical command (trailing comment on a
-    single-line launch) or on the immediately preceding non-blank line
-    (the only valid placement for a backslash-continued launch — a
-    trailing ``#`` comment would break the continuation)."""
+def _sh_waiver_present(
+    lines: list[str],
+    first_idx: int,
+    last_idx: int,
+    *,
+    waiver_re: re.Pattern[str],
+    min_reason_chars: int,
+) -> bool:
+    """Return True iff a reason-bearing inline waiver comment (matched by
+    ``waiver_re``, group(1) = reason, reason ≥ ``min_reason_chars`` chars
+    after strip) covers the logical command spanning
+    ``lines[first_idx:last_idx + 1]``. Accepts the waiver on any physical
+    line of the logical command (trailing comment on a single-line
+    command) or on the immediately preceding non-blank line (the only
+    valid placement for a backslash-continued command — a trailing ``#``
+    comment would break the continuation). Runs on the RAW lines: the
+    waiver IS a comment, so it must be read before comment stripping.
+    Generalized from the CVD_PIN_EXEMPT helper (#1036) so sibling checks
+    (UPLOAD_OR_TRUE_EXEMPT) share the placement semantics."""
     for idx in range(first_idx, last_idx + 1):
-        match = CVD_PIN_WAIVER_RE.search(lines[idx])
-        if match and len(match.group(1).strip()) >= CVD_PIN_WAIVER_MIN_REASON_CHARS:
+        match = waiver_re.search(lines[idx])
+        if match and len(match.group(1).strip()) >= min_reason_chars:
             return True
     back = first_idx - 1
     while back >= 0 and lines[back].strip() == "":
         back -= 1
     if back >= 0:
-        match = CVD_PIN_WAIVER_RE.search(lines[back])
-        if match and len(match.group(1).strip()) >= CVD_PIN_WAIVER_MIN_REASON_CHARS:
+        match = waiver_re.search(lines[back])
+        if match and len(match.group(1).strip()) >= min_reason_chars:
             return True
     return False
+
+
+def _cvd_pin_waiver_present(lines: list[str], first_idx: int, last_idx: int) -> bool:
+    """Return True iff a ``# CVD_PIN_EXEMPT: <reason>`` waiver (reason ≥
+    :data:`CVD_PIN_WAIVER_MIN_REASON_CHARS` chars) covers the logical
+    command spanning ``lines[first_idx:last_idx + 1]`` — see
+    :func:`_sh_waiver_present` for the placement semantics."""
+    return _sh_waiver_present(
+        lines,
+        first_idx,
+        last_idx,
+        waiver_re=CVD_PIN_WAIVER_RE,
+        min_reason_chars=CVD_PIN_WAIVER_MIN_REASON_CHARS,
+    )
 
 
 def check_dispatcher_cvd_pin(*, scripts_dir: Path | None = None) -> list[str]:
@@ -2359,6 +2610,315 @@ def check_pipe_python(*, scripts_dir: Path | None = None) -> list[str]:
                 f'(`... | uv run python -c "..."`). See CLAUDE.md '
                 f"§ Task Workflow API (#753)."
             )
+    return errors
+
+
+def check_piped_git_push(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any ``git push`` /
+    ``git merge`` / ``gh pr merge|create`` piped into a filter on its own
+    pipeline segment (``git push origin main 2>&1 | tail -20``).
+
+    Rationale: bash makes a pipeline's exit status the LAST stage's, so the
+    pipe masks the producer's non-zero exit code — a rejected push reads as
+    success and the session proceeds believing the merge landed (#957's
+    Step 10d push was masked 2026-07-04; 4 sessions hit the class on
+    2026-07-02). The prose rule (CLAUDE.md § Concurrent repo-root
+    committers) says run it bare and check the exit code, or use
+    ``set -o pipefail`` when a pipe is unavoidable — so once a non-comment
+    line contains ``pipefail``, flagging is disabled for the REST of the
+    file (lines BEFORE it still flag — fires-direction, NOT a whole-file
+    pre-scan; ``set +o pipefail`` re-disable is ignored, failing toward
+    false-negative, the documented safe direction). ``|&`` is normalized to
+    ``|`` on the logical line before matching; a match whose span contains
+    ``--dry-run`` is skipped (a dry run lands nothing); only ``#``-comment
+    lines are otherwise skipped. See the ``PIPED_GIT_PUSH_RE`` block above
+    for the full flagged/not-flagged matrix. The
+    ``.claude/hooks/guard_piped_git_push.sh`` PreToolUse hook is the
+    runtime sibling covering ad-hoc inline commands (#1048; the
+    dual-engine split of ``check_pipe_python`` / #753).
+
+    ``scripts_dir`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical ``<repo_root>/scripts``
+    tree. Bundled into the no-flags default run (same policy as
+    ``check_pipe_python``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        pipefail_seen = False
+        for first, _last, logical in _iter_logical_shell_lines(lines):
+            stripped = logical.strip()
+            if stripped.startswith("#"):
+                continue
+            if "pipefail" in logical:
+                # The rule's own sanctioned escape: every pipe at-or-after
+                # this line propagates the failure. Deliberately NOT a
+                # whole-file pre-scan — an offense BEFORE the first
+                # pipefail line still flags (plan #1048 MF3).
+                pipefail_seen = True
+                continue
+            if pipefail_seen:
+                continue
+            match = PIPED_GIT_PUSH_RE.search(logical.replace("|&", "|"))
+            if not match:
+                continue
+            if "--dry-run" in match.group(0):
+                continue
+            errors.append(
+                f"{sh}:{first + 1}: `git push`/merge-class command piped "
+                f"into a filter — the pipe masks the non-zero exit code, "
+                f"so a rejected push reads as success (#957, 4 sessions "
+                f"2026-07-02). Run it bare and check the exit code, or add "
+                f"`set -o pipefail`. See CLAUDE.md § Concurrent repo-root "
+                f"committers (#1048)."
+            )
+    return errors
+
+
+def _upload_or_true_segments(text: str) -> list[str]:
+    """Naive split of a comment-stripped logical shell line on ``&&`` and
+    ``;`` — the NON-terminal swallow scoping unit for
+    :func:`check_upload_or_true`. Deliberately quote-UNAWARE: a quoted
+    separator mis-splits toward a false NEGATIVE (the safe direction for a
+    pre-commit-gating lint, same philosophy as
+    :func:`_strip_sh_trailing_comment`)."""
+    return re.split(r"&&|;", text)
+
+
+def _upload_or_true_error(sh: Path, first_idx: int) -> str:
+    """Compose the (deliberately verbose, incident-citing) violation string
+    for one swallowed upload/result-persist/result-production line."""
+    return (
+        f"{sh}:{first_idx + 1}: upload/result-persist/result-production "
+        f"command swallows failure with '|| true' / '; true'. A swallowed "
+        f"failure on a result-bearing phase silently loses artifacts "
+        f"(#841: swallowed plot-phase failures compounded a missing upload "
+        f"phase — stage JSONs/plots lost across attempts until the "
+        f"fail-loud fix) — remove the swallow and let the failure abort "
+        f"(fail fast; the crash-persist/poller path reports it). A "
+        f"deliberate best-effort side-channel (crash-diagnostics upload) "
+        f"is waived with '# UPLOAD_OR_TRUE_EXEMPT: <reason>' (reason ≥ "
+        f"{UPLOAD_OR_TRUE_WAIVER_MIN_REASON_CHARS} chars) on the same or "
+        f"previous non-blank line."
+    )
+
+
+def _upload_or_true_pyc_block(
+    lines: list[str],
+    last: int,
+    stripped: str,
+    pyc: re.Match[str],
+) -> tuple[int, bool] | None:
+    """Handle :func:`check_upload_or_true` rule 5 — a multi-line
+    ``python -c "…"`` quoted block (the CURRENT #841 upload-phase shape).
+
+    ``pyc`` is the opener match on the comment-stripped logical line
+    ``stripped``; ``last`` is the logical line's last physical index.
+    Returns ``None`` when the captured quote CLOSES on the logical line
+    (single-line ``python -c`` — the normal rules apply). Otherwise
+    consumes physical lines until the first line containing the closing
+    quote char (cap :data:`UPLOAD_OR_TRUE_PYC_MAX_BODY_LINES`) and returns
+    ``(consumed_until_idx, swallowed_upload_hit)``: the block flags when
+    the command TAIL after the closing quote carries a swallow (terminal,
+    or ``|| true`` in a token-bearing segment) AND an upload token matches
+    a non-comment body line or the opener/tail. Unclosed at EOF / cap hit
+    → ``(scan_window_end, False)`` — the block is skipped entirely
+    (fail-toward-false-negative) and its lines are consumed so they are
+    never re-parsed as shell. Simplification (plan §4.3 rule 5): a
+    first-closing-quote-char scan suffices for this repo's blocks
+    (single-quoted bodies cannot contain ``'``; double-quoted bodies carry
+    no unescaped ``"``); anything trickier degrades to a false negative."""
+    quote = pyc.group(1)
+    remainder = stripped[pyc.end() :]
+    if quote in remainder:
+        return None
+    limit = min(len(lines), last + 1 + UPLOAD_OR_TRUE_PYC_MAX_BODY_LINES)
+    close_idx = None
+    for j in range(last + 1, limit):
+        if quote in lines[j]:
+            close_idx = j
+            break
+    if close_idx is None:
+        return limit - 1, False
+    qpos = lines[close_idx].index(quote)
+    tail = _strip_sh_trailing_comment(lines[close_idx][qpos + 1 :]).strip()
+    body_frags = [remainder, *lines[last + 1 : close_idx], lines[close_idx][:qpos]]
+    swallow_hit = bool(UPLOAD_OR_TRUE_SWALLOW_TERMINAL_RE.search(tail)) or any(
+        UPLOAD_OR_TRUE_SWALLOW_OR_RE.search(seg) and UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(seg)
+        for seg in _upload_or_true_segments(tail)
+    )
+    token_hit = (
+        any(
+            UPLOAD_OR_TRUE_BODY_TOKEN_RE.search(frag)
+            for frag in body_frags
+            if not frag.strip().startswith("#")
+        )
+        or bool(UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(stripped))
+        or bool(UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(tail))
+    )
+    return close_idx, swallow_hit and token_hit
+
+
+def _upload_or_true_line_hit(
+    stripped: str, bodies: list[tuple[int, int]], lines: list[str]
+) -> bool:
+    """Evaluate :func:`check_upload_or_true` rules 2-4 for one
+    comment-stripped logical shell line (waivers are the caller's).
+
+    Rule 2 — TERMINAL swallow (``|| true`` / ``|| :`` / ``; true`` at line
+    end) hits iff an upload/result token matches ANYWHERE on the line (a
+    terminal swallow masks the whole ``&&``-chain). Rule 3 — a
+    NON-terminal ``|| true`` / ``|| :`` hits iff a token matches in the
+    SAME ``&&``/``;`` segment. Rule 4 — a swallowed heredoc opener
+    (terminal, or a segment-scoped swallow in the segment carrying the
+    ``<<`` opener; token NOT required on the opener) hits when any of its
+    heredoc bodies' non-comment lines carries a BODY upload-call token."""
+    terminal = bool(UPLOAD_OR_TRUE_SWALLOW_TERMINAL_RE.search(stripped))
+    segments = _upload_or_true_segments(stripped)
+    # Rule 2: terminal swallow — whole-logical-line token check.
+    if terminal and UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(stripped):
+        return True
+    # Rule 3: non-terminal swallow — same-segment token check.
+    if any(
+        UPLOAD_OR_TRUE_SWALLOW_OR_RE.search(seg) and UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(seg)
+        for seg in segments
+    ):
+        return True
+    # Rule 4: heredoc bodies under a swallowed opener (token not required
+    # on the opener line itself).
+    if not bodies:
+        return False
+    opener_swallowed = terminal or any(
+        "<<" in seg and UPLOAD_OR_TRUE_SWALLOW_OR_RE.search(seg) for seg in segments
+    )
+    if not opener_swallowed:
+        return False
+    return any(
+        UPLOAD_OR_TRUE_BODY_TOKEN_RE.search(lines[j])
+        for body_start, body_end in bodies
+        for j in range(body_start, min(body_end, len(lines)))
+        if not lines[j].strip().startswith("#")
+    )
+
+
+def check_upload_or_true(
+    *,
+    scripts_dir: Path | None = None,
+    allowlist: frozenset[str] | None = None,
+) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL any upload /
+    result-persist / result-production (plot-script) command line whose
+    failure is swallowed by ``|| true`` / ``|| :`` / ``; true`` (#1036;
+    incident #841 — the pre-fix swallows were ``|| true`` on the PLOT
+    phases of both #841 dispatch scripts, and the att-7 stage-JSON loss
+    additionally involved a MISSING upload phase, which no lint can catch
+    and is a named residual, not a claim).
+
+    Detection (see the ``UPLOAD_OR_TRUE_*`` regex block for the full
+    flagged/not-flagged matrix), per logical line (backslash continuations
+    merged, heredoc bodies consumed via
+    :func:`_iter_sh_logicals_with_heredocs`, trailing comments stripped
+    quote-aware via :func:`_strip_sh_trailing_comment`):
+
+    1. ``#``-comment and ``echo ``-prefixed logical lines are skipped (an
+       echo performs no upload; known accepted FN: ``echo "…"; upload ||
+       true`` merged on ONE logical line is skipped whole).
+    2. A TERMINAL swallow (``|| true`` / ``|| :`` / ``; true`` at line
+       end) flags iff an upload/result token matches ANYWHERE on the line
+       — bash ``&&``/``||`` are equal-precedence left-associative, so a
+       terminal swallow masks the WHOLE preceding chain.
+    3. A NON-terminal ``|| true`` / ``|| :`` flags iff a token matches in
+       the SAME ``&&``/``;`` segment (:func:`_upload_or_true_segments`;
+       preserves the ``mkdir || true && upload`` FP kill).
+    4. A swallowed heredoc opener (terminal swallow, or a segment-scoped
+       swallow in the segment carrying the ``<<`` opener; token NOT
+       required on the opener) flags when any of its heredoc bodies'
+       non-comment lines carries a BODY upload-call token — the i632
+       shape a line-only scan provably misses.
+    5. A multi-line ``python -c "…"`` quoted block (opener quote unclosed
+       on the logical line) is consumed physically until the first line
+       containing the closing quote char (cap
+       :data:`UPLOAD_OR_TRUE_PYC_MAX_BODY_LINES`; unclosed at EOF or cap
+       hit → the block is skipped entirely, fail-toward-false-negative);
+       the command TAIL after the closing quote is checked for a swallow
+       and the quoted body for upload tokens — the CURRENT #841
+       upload-phase shape (``upload_split_lfs_to_overflow(`` bodies).
+    6. Violations dedupe per (file, opener first-line).
+    7. ``# UPLOAD_OR_TRUE_EXEMPT: <reason>`` (reason ≥ 10 chars, same
+       logical line or immediately preceding non-blank line) waives.
+
+    Files whose repo-root-relative path is in
+    :data:`UPLOAD_OR_TRUE_LEGACY_ALLOWLIST` are skipped whole-file
+    (grandfathered deliberate uses; locked by ``test_live_trees_pass``).
+    Named residual evasion shapes (``|| echo WARN``, ``|| rc=$?``,
+    ``set +e``, function-wrapped uploads, subshell-closing-paren swallows)
+    are documented in the regex block above — every parse limitation
+    degrades to a false NEGATIVE, never a false positive.
+
+    ``scripts_dir`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical ``<repo_root>/scripts``
+    tree. ``allowlist`` overrides the legacy allowlist for tests. Bundled
+    into the no-flags default run (same policy as ``check_heredoc_dotenv``
+    / ``check_dispatcher_cvd_pin``) + the ``workflow-lint-upload-or-true``
+    pre-commit hook.
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    allow = UPLOAD_OR_TRUE_LEGACY_ALLOWLIST if allowlist is None else allowlist
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        if _judge_pin_rel(sh) in allow:
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        flagged: set[int] = set()
+        # 0-based physical index; logical lines starting at or before this
+        # were consumed as a multi-line `python -c` quoted block.
+        pyc_skip_until = -1
+        for first, last, logical, bodies in _iter_sh_logicals_with_heredocs(lines):
+            if first <= pyc_skip_until or first in flagged:
+                continue
+            if logical.strip().startswith("#"):
+                continue
+            stripped = _strip_sh_trailing_comment(logical).strip()
+            if not stripped or stripped.startswith("echo "):
+                continue
+
+            # Rule 5: multi-line `python -c "…"` quoted block (no heredoc on
+            # the same line — a heredoc-bearing opener takes rules 2-4).
+            pyc = UPLOAD_OR_TRUE_PYC_OPENER_RE.search(stripped)
+            if pyc is not None and not bodies:
+                block = _upload_or_true_pyc_block(lines, last, stripped, pyc)
+                if block is not None:
+                    consumed_until, block_hit = block
+                    pyc_skip_until = consumed_until
+                    if block_hit and not _sh_waiver_present(
+                        lines,
+                        first,
+                        consumed_until,
+                        waiver_re=UPLOAD_OR_TRUE_WAIVER_RE,
+                        min_reason_chars=UPLOAD_OR_TRUE_WAIVER_MIN_REASON_CHARS,
+                    ):
+                        flagged.add(first)
+                        errors.append(_upload_or_true_error(sh, first))
+                    continue
+
+            if _upload_or_true_line_hit(stripped, bodies, lines) and not _sh_waiver_present(
+                lines,
+                first,
+                last,
+                waiver_re=UPLOAD_OR_TRUE_WAIVER_RE,
+                min_reason_chars=UPLOAD_OR_TRUE_WAIVER_MIN_REASON_CHARS,
+            ):
+                flagged.add(first)
+                errors.append(_upload_or_true_error(sh, first))
     return errors
 
 
@@ -5559,21 +6119,28 @@ def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
 # every row in LESSONS.md must point at an existing rule file. Closes the
 # silent-drift class: a rule added/removed without an index update would
 # otherwise re-open the #722 load-timing gap (a lesson with no always-on index
-# row). The row format is the stable, machine-parseable:
-#   - **<name>** ([`.claude/rules/<name>.md`](<name>.md)) — fires when: ...
+# row). The row format is the stable, machine-parseable (#992 slim — the
+# name appears once, linkified; the link target is relative to
+# `.claude/rules/`):
+#   - **[<name>](<name>.md)** — fires when: ...
 _LESSONS_ROW_RE = re.compile(
-    r"^- \*\*(?P<name>[a-z0-9-]+)\*\* \(\[`\.claude/rules/(?P=name)\.md`\]"
-    r"\((?P=name)\.md\)\)",
+    r"^- \*\*\[(?P<name>[a-z0-9-]+)\]\((?P=name)\.md\)\*\*",
     re.MULTILINE,
 )
 
 
-_LESSONS_MAX_BYTES = (
-    8000  # leanness cap: ~2000 tokens always-on (7500->8000, #869/#872 coordinated raise)
-)
+# Leanness cap: ~2000 tokens always-on (7500->8000, #869/#872 coordinated
+# raise; #992 restored headroom under the SAME cap via the row-format slim).
+_LESSONS_MAX_BYTES = 8000
+# Early-warning band (#992): a stderr-only advisory WARN once the index
+# crosses this, so a near-cap landing is visible a few rows before the
+# 8000-byte FAIL (early warning only — advisory, never a FAIL).
+_LESSONS_WARN_BYTES = 7200
 
 
-def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
+def check_lessons_index(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
     """FAIL if `.claude/rules/LESSONS.md` and the `.claude/rules/*.md` set
     diverge OR the index exceeds the leanness cap.
 
@@ -5585,14 +6152,27 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
     of the rows silently drift), (d) the index exceeds `_LESSONS_MAX_BYTES`
     (the always-on token budget — the whole point of the index is leanness;
     the Option-B rejected alternative was inlining all rule bodies, paying
-    tens of K tokens per call). `repo_root` is a unit-test override hook;
-    production callers pass None (canonical repo root). Bundled into the
-    no-flags default run.
+    tens of K tokens per call). Failure mode (d) additionally carries an
+    advisory WARN band (#992): an index over `_LESSONS_WARN_BYTES` but at or
+    under the cap emits an early-warning WARN — stderr-only / advisory, never
+    a FAIL — so a near-cap landing is visible a few rows before the next
+    addition FAILs. `repo_root` is a unit-test override hook; production
+    callers pass None (canonical repo root). `warn_sink` mirrors
+    `check_lens_coverage`'s hook: WARNs append there when provided, else go
+    to stderr with a ``WARN: `` prefix; WARNs never enter the returned FAIL
+    list. Bundled into the no-flags default run.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
     rules_dir = root / ".claude" / "rules"
     lessons = rules_dir / "LESSONS.md"
     errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
     if not lessons.is_file():
         errors.append(
             f"{lessons}: missing — the always-on lessons index (#739) must "
@@ -5608,6 +6188,12 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
             f"(em-dashes are multibyte; counting in BYTES not chars is "
             f"deliberate.)"
         )
+    elif len(raw) > _LESSONS_WARN_BYTES:
+        _warn(
+            f".claude/rules/LESSONS.md at {len(raw)}/{_LESSONS_MAX_BYTES} bytes — inside "
+            f"the warn band (>{_LESSONS_WARN_BYTES}); slim rows or plan a deliberate cap "
+            f"decision before the next addition FAILs."
+        )
     # Count occurrences (not a set) so a name appearing on >1 row is caught —
     # a set comprehension would collapse duplicates and let both the missing
     # and stale set-diffs read empty, silently passing the check (#739 r2).
@@ -5618,8 +6204,9 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
         errors.append(
             f".claude/rules/LESSONS.md: no index row for rule "
             f"'{missing}' (.claude/rules/{missing}.md). Add a "
-            f"'- **{missing}** ([`.claude/rules/{missing}.md`]"
-            f"({missing}.md)) — fires when: ...' row."
+            f"'- **[{missing}]({missing}.md)** — fires when: ...' row, "
+            f"or reformat an existing old-format row for '{missing}' to "
+            f"that format."
         )
     for stale in sorted(indexed - rule_files):
         errors.append(
@@ -5651,8 +6238,19 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
 AGENT_SPEC_WARN_BYTES = 28_000
 AGENT_SPEC_FAIL_BYTES = 40_000
 
+# A grandfather cap must hug the measured size: cap - size <= this bound
+# (the documented "measured + <=3 KB margin" convention, mechanized by #986).
+# STRICTLY-GREATER like the other thresholds (headroom exactly 3_000 passes).
+# A larger headroom means a loose cap-raise (defeats the regrowth ratchet) or
+# a stale cap after a trim (ratchet DOWN when trimmed) — both FAIL. Scope:
+# this bounds BANKED SLACK only — a reviewed growth+cap-raise in one commit
+# still passes; the check forces growth into a visible dict edit, it does not
+# approve it.
+AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
+
 # Grandfather-ratchet caps for agent specs still above AGENT_SPEC_FAIL_BYTES.
-# Each cap = measured size + <=3 KB margin (post-#829 for the first two
+# Each cap = measured size + <=3 KB margin (headroom mechanically enforced —
+# see AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES; post-#829 for the first two
 # entries; at the #838 FAIL tightening 70K -> 40K for the rest); a
 # grandfathered file FAILs above its cap (regrowth ratchet) and FAILs as stale
 # once it drops to <= AGENT_SPEC_FAIL_BYTES ("remove the entry"). Ratchet DOWN
@@ -5660,34 +6258,50 @@ AGENT_SPEC_FAIL_BYTES = 40_000
 # (#838): both were structurally trimmed to <=20 KB, so regrowth on the two
 # incident files is a commit-time FAIL.
 AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
+    # measured 107,930 B post-#1115 (read-hygiene context-budget section —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 107,000 —
     # measured 104,135 B post-#829; fifteen-lenses core is every-markdown-review
-    # load-bearing — SPEC.md-dedup trim is the #829 named follow-up
-    "clean-result-critic.md": 107_000,
+    # load-bearing — SPEC.md-dedup trim is the #829 named follow-up)
+    "clean-result-critic.md": 108_900,
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 91,371 B post-#948 (Step 3.8 seam-stubbed production-body
-    # verification lens + Rule 16 + Step 0.68 sibling xref — plan-mandated
-    # growth; cap = measured + <=~1 KB. Prior: 82,176 B post-#875+#869+#881)
-    # #948: seam-stubbed production-body lens (Step 3.8)
-    "code-reviewer.md": 92_300,
-    "codex-clean-result-critic.md": 62_000,  # measured 59,358 B
+    # measured 96,072 B post-#1119 (Step 3.6 external-stream presumption —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 95,000 —
+    # measured 94,126 B post-#1115)
+    "code-reviewer.md": 97_000,
+    # measured 72,064 B post-#1056 (figure pin-first carve-out in the
+    # composed-prompt header — plan-mandated growth; cap = measured
+    # + <=~1 KB. Prior: 72,000 (measured 71,430 B post-#1050 r2),
+    # 71,000 post-#1050 r1, 60,554 B pre-#1050)
+    "codex-clean-result-critic.md": 73_000,
     # measured 50,642 B post-#948 (Step 3.8 copy-list bullet + the
     # inlined-rubric 3.8 slot — plan-mandated growth; cap = measured
     # + <=~1 KB. Prior: 47,930 B post-#881)
     # #948: seam-stubbed production-body lens (Step 3.8)
     "codex-code-reviewer.md": 51_600,
-    # measured 58,976 B post-#936 (the plan-REQUIRED bf16 equivalence-gate
-    # calibration caveat in § Batched-rewrite equivalence — plan-mandated
-    # growth; cap = measured + <=3 KB. Prior: 55,812 B post-#869)
-    "experiment-implementer.md": 61_500,
-    "experimenter.md": 65_500,  # measured 62,672 B
-    "methodology-writer.md": 48_000,  # measured 45,203 B
-    "research-pm.md": 43_500,  # measured 40,990 B
-    "upload-verifier.md": 45_500,  # measured 42,825 B
+    # measured 63,424 B post-#1115 (read-hygiene context-budget section —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 62,500 —
+    # measured 61,733 B post-#1102)
+    "experiment-implementer.md": 64_000,
+    # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
+    # disposition-conditional resume-glob confirm — plan-mandated growth;
+    # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)
+    "experimenter.md": 66_500,
+    # measured 49,740 B post-#1115 (read-hygiene context-budget section —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
+    # measured 48,197 B post-#1102)
+    "methodology-writer.md": 50_700,
+    # measured 46,187 B post-#1082 (negative-existence search recipe —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 43,500 / 40,990 B)
+    "research-pm.md": 47_000,
+    # measured 46,830 B post-#1115 (read-hygiene context-budget section —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 45,500 — its
+    # "measured 42,825 B" comment was stale vs 45,321 B live pre-edit)
+    "upload-verifier.md": 47_800,
 }
 
 
-def check_agent_spec_size(
+def check_agent_spec_size(  # noqa: C901 -- flat per-entry hygiene ladder (stale/retired/headroom, #986); extracting a branch would just relocate it
     *, repo_root: Path | None = None, warn_sink: list[str] | None = None
 ) -> list[str]:
     """WARN/FAIL agent specs (`.claude/agents/*.md`) over the size budget (#829).
@@ -5697,9 +6311,12 @@ def check_agent_spec_size(
     size > ``AGENT_SPEC_FAIL_BYTES`` FAILs unless the file is grandfathered in
     ``AGENT_SPEC_SIZE_GRANDFATHER`` (then it WARNs while under its per-file cap
     and FAILs above it — the regrowth ratchet); size > ``AGENT_SPEC_WARN_BYTES``
-    WARNs. Grandfather hygiene FAILs a stale entry (file missing) and an entry
+    WARNs. Grandfather hygiene FAILs a stale entry (file missing), an entry
     whose file dropped to <= the FAIL threshold (remove the entry — ratchet
-    down), and a config self-check FAILs any cap <= the FAIL threshold. WARNs
+    down), and an entry whose cap sits more than
+    ``AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES`` above the live file size
+    (loose cap / stale cap — lower it), and a config self-check FAILs any cap
+    <= the FAIL threshold. WARNs
     go to ``warn_sink`` when provided (unit-test hook), else stderr with a
     ``WARN: `` prefix; WARNs never enter the returned FAIL list. ``repo_root``
     is a unit-test override; production callers pass None. Bundled into the
@@ -5768,8 +6385,10 @@ def check_agent_spec_size(
             )
 
     # Grandfather-entry hygiene: entries must point at existing files that
-    # still NEED grandfathering (size > FAIL threshold).
-    for gf_name in sorted(AGENT_SPEC_SIZE_GRANDFATHER):
+    # still NEED grandfathering (size > FAIL threshold) AND whose cap hugs the
+    # measured size (headroom <= AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES —
+    # the regrowth ratchet is meaningless under a loose cap; #986).
+    for gf_name, cap in sorted(AGENT_SPEC_SIZE_GRANDFATHER.items()):
         gf_path = agents_dir / gf_name
         if not gf_path.is_file():
             errors.append(
@@ -5777,12 +6396,24 @@ def check_agent_spec_size(
                 f"entry — .claude/agents/{gf_name} does not exist; remove the "
                 f"entry."
             )
-        elif gf_path.stat().st_size <= AGENT_SPEC_FAIL_BYTES:
+            continue
+        gf_size = gf_path.stat().st_size
+        if gf_size <= AGENT_SPEC_FAIL_BYTES:
             errors.append(
                 f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: "
-                f".claude/agents/{gf_name} is {gf_path.stat().st_size} bytes "
+                f".claude/agents/{gf_name} is {gf_size} bytes "
                 f"(<= {AGENT_SPEC_FAIL_BYTES}) and no longer needs "
                 f"grandfathering — remove the entry (ratchet down)."
+            )
+        elif cap - gf_size > AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES:
+            errors.append(
+                f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: cap {cap} sits "
+                f"{cap - gf_size} bytes above .claude/agents/{gf_name} "
+                f"({gf_size} bytes) — max headroom is "
+                f"{AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES} bytes (cap = "
+                f"measured + <=3 KB); lower the cap to <= "
+                f"{gf_size + AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES}, or "
+                f"remove the entry if the file no longer needs grandfathering."
             )
 
     return errors
@@ -6100,8 +6731,8 @@ def check_lens_coverage(
     whose State (last) column does not start with one of the four exact prefixes
     :data:`_LENS_STATE_PREFIXES` (``v2-owner:`` / ``v1-only`` / ``retired:`` /
     ``GAP:``) — a coverage row MUST declare a state; (b) a rule listed in
-    ``.claude/rules/LESSONS.md`` (the ``- **<name>**`` bullets) with NO row in
-    the map — a lesson silently uncovered. ``GAP:`` rows PASS (an honest "no v2
+    ``.claude/rules/LESSONS.md`` (the ``- **[<name>](<name>.md)**`` rows) with
+    NO row in the map — a lesson silently uncovered. ``GAP:`` rows PASS (an honest "no v2
     owner yet") but are surfaced as WARN lines. WARNs go to ``warn_sink`` when
     provided (unit-test hook), else stderr with a ``WARN: `` prefix; WARNs never
     enter the returned FAIL list. ``repo_root`` is a unit-test override; a
@@ -6280,6 +6911,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "python` instead. Closes the #753 incident class (~41 violations "
         "across 4+ sessions on 2026-06-29). Comment lines (`#`-prefixed) "
         "are skipped. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-piped-git-push",
+        action="store_true",
+        help="Verify no shell script under scripts/ pipes a `git push` / "
+        "`git merge` / `gh pr merge|create` into a filter on its own "
+        "pipeline segment (`git push origin main 2>&1 | tail -20`). The "
+        "pipe masks the non-zero exit code, so a rejected push reads as "
+        "success (#957; 4 sessions hit this 2026-07-02) — run it bare and "
+        "check the exit code, or add `set -o pipefail` (a non-comment "
+        "pipefail line disables flagging for the rest of the file). "
+        "Comment lines and `--dry-run` pipes are skipped. See CLAUDE.md "
+        "§ Concurrent repo-root committers (#1048). Bundled into the "
+        "no-flags default run.",
     )
     parser.add_argument(
         "--check-marker-registry",
@@ -6589,6 +7234,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "only — never a workflow-surface file). Bundled into the no-flags "
         "default run.",
     )
+    parser.add_argument(
+        "--check-upload-or-true",
+        action="store_true",
+        help="Walk scripts/**/*.sh and FAIL any upload/result-persist "
+        "command line whose failure is swallowed by '|| true' / '|| :' / "
+        "'; true' (#841 silent artifact loss). Terminal swallows mask the "
+        "whole &&-chain (whole-line token check); non-terminal '|| true' "
+        "is segment-scoped; swallowed heredoc openers + multi-line "
+        "python -c blocks are scanned for BODY upload-call tokens. Legacy "
+        "deliberate uses frozen in UPLOAD_OR_TRUE_LEGACY_ALLOWLIST; waive "
+        "with '# UPLOAD_OR_TRUE_EXEMPT: <reason>'. Bundled into the "
+        "no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -6617,6 +7275,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_heredoc_dotenv
         or args.check_dispatcher_cvd_pin
         or args.check_pipe_python
+        or args.check_piped_git_push
         or args.check_marker_registry
         or args.check_agent_model_pins
         or args.check_agent_tools
@@ -6642,6 +7301,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_lens_coverage
         or args.check_phase_done_reserved
         or args.check_jsonl_splitlines
+        or args.check_upload_or_true
     )
 
     errors: list[str] = []
@@ -6688,6 +7348,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_dispatcher_cvd_pin())
     if args.check_pipe_python or no_flags:
         errors.extend(check_pipe_python())
+    if args.check_piped_git_push or no_flags:
+        errors.extend(check_piped_git_push())
     if (args.check_marker_registry or no_flags) and not args.check_references:
         errors.extend(check_marker_registry(workflow))
     if args.check_agent_model_pins or no_flags:
@@ -6738,6 +7400,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_phase_done_reserved())
     if args.check_jsonl_splitlines or no_flags:
         errors.extend(check_jsonl_splitlines())
+    if args.check_upload_or_true or no_flags:
+        errors.extend(check_upload_or_true())
 
     if errors:
         for err in errors:

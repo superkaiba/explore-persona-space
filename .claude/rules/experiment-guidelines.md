@@ -38,6 +38,9 @@ dispatcher never idles a GPU behind a wave/stage barrier when an independent
 cell is pending. A narrow / API-bound phase must not ride the peak-width
 pod (release / downsize it). A serial single-GPU plan on a multi-GPU pod is
 a REVISE.
+On the GCP auto lane, declare the shardable width via `--gpus N` — wide
+`a2-ultragpu` rungs (8→4→2) are walked first (#1121); a shardable >2 h
+phase left at 1× GCP width without justification is a REVISE.
 Full recipe: `.claude/rules/code-style.md` (work-conserving dispatchers);
 CLAUDE.md § Pods "GPU-WIDTH right-sizing carve-out" + "CPU-only phases".
 **Owner:** `efficiency-critic` (plan states the per-GPU-phase parallelization;
@@ -124,7 +127,7 @@ probability companion; for a ranking/regression target, a graded multi-
 sampled 0-100 judge score is the preferred primary. Drop — never coerce — a
 malformed / REFUSAL / out-of-range judge return. A proxy saturated at a
 floor/ceiling across conditions is presumed uninformative.
-Full recipe: `.claude/rules/llm-judging.md` (22 guidelines);
+Full recipe: `.claude/rules/llm-judging.md` (23 guidelines);
 CLAUDE.md § Measurement validity; `.claude/rules/selection-symmetric-nulls.md`.
 **Owner:** `statistics-critic`.
 

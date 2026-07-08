@@ -1,0 +1,72 @@
+{
+  "commit": "5db8b48bd4",
+  "created": "2026-07-08T00:04:34Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "random-subsample seed (group-stratified, matched n = 2,701)": 1.0,
+      "held-out R\u00b2 (rotated estimator, layer 19)": -2.2399506234877498,
+      "label": "1",
+      "_kind": "scatter"
+    },
+    {
+      "random-subsample seed (group-stratified, matched n = 2,701)": 2.0,
+      "held-out R\u00b2 (rotated estimator, layer 19)": -2.2734143542634784,
+      "label": "2",
+      "_kind": "scatter"
+    },
+    {
+      "random-subsample seed (group-stratified, matched n = 2,701)": 3.0,
+      "held-out R\u00b2 (rotated estimator, layer 19)": -2.253385824901162,
+      "label": "3",
+      "_kind": "scatter"
+    },
+    {
+      "random-subsample seed (group-stratified, matched n = 2,701)": 4.0,
+      "held-out R\u00b2 (rotated estimator, layer 19)": -2.2402992278134795,
+      "label": "4",
+      "_kind": "scatter"
+    },
+    {
+      "random-subsample seed (group-stratified, matched n = 2,701)": 5.0,
+      "held-out R\u00b2 (rotated estimator, layer 19)": -2.228753631234057,
+      "label": "5",
+      "_kind": "scatter"
+    },
+    {
+      "random-subsample seed (group-stratified, matched n = 2,701)": 6.0,
+      "held-out R\u00b2 (rotated estimator, layer 19)": -2.233783486023464,
+      "label": "6",
+      "_kind": "scatter"
+    },
+    {
+      "random-subsample seed (group-stratified, matched n = 2,701)": 7.0,
+      "held-out R\u00b2 (rotated estimator, layer 19)": -2.257986646958496,
+      "label": "7",
+      "_kind": "scatter"
+    },
+    {
+      "random-subsample seed (group-stratified, matched n = 2,701)": 8.0,
+      "held-out R\u00b2 (rotated estimator, layer 19)": -2.2162633281499255,
+      "label": "8",
+      "_kind": "scatter"
+    },
+    {
+      "random-subsample seed (group-stratified, matched n = 2,701)": 9.0,
+      "held-out R\u00b2 (rotated estimator, layer 19)": -2.2038529968048275,
+      "label": "9",
+      "_kind": "scatter"
+    },
+    {
+      "random-subsample seed (group-stratified, matched n = 2,701)": 10.0,
+      "held-out R\u00b2 (rotated estimator, layer 19)": -2.2058114768734853,
+      "label": "10",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 10
+}

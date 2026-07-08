@@ -118,6 +118,25 @@ def resolve_cpu_intent(intent: str) -> str | None:
     return _runpod_cpu_instances().get(intent.strip().lower())
 
 
+def resolve_cpu_instance_caps(intent: str):
+    """RunPodCpuInstanceCaps for a cheap CPU intent, else None (not a CPU intent).
+
+    SINGLE SOURCE OF TRUTH: the caps live next to the intent map in
+    ``explore_persona_space.backends.router.RUNPOD_CPU_INSTANCE_CAPS``
+    (#1010; mirrors the :func:`resolve_cpu_intent` lazy-import pattern).
+    A mapped intent whose instance_id has no caps row raises a loud
+    KeyError (the caps table is pinned complete by
+    tests/test_router.py::test_runpod_cpu_instance_caps_cover_every_mapped_instance),
+    never silently returns None.
+    """
+    from explore_persona_space.backends.router import RUNPOD_CPU_INSTANCE_CAPS
+
+    instance_id = resolve_cpu_intent(intent)
+    if instance_id is None:
+        return None
+    return RUNPOD_CPU_INSTANCE_CAPS[instance_id]
+
+
 def list_intents() -> str:
     """Return a printable table of known intents — for `--list-intents`.
 

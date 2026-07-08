@@ -42,11 +42,37 @@ Check catalog (id — classification — kind scope)
       source coverage           (analysis), conditional   analysis
   c19 OOD generalization folds  WARN-only, conditional    experiment +
                                                           analysis
+  c20 verdict-lattice           FAIL (experiment) / WARN  experiment +
+      coherence                 (analysis), conditional   analysis
+  c21 grep-arity acceptance     WARN-only, conditional    all kinds
+      gate → AST arity audit
+  c22 cross-section param       WARN-only, conditional    all kinds
+      consistency
+  c23 goal currency             WARN-only, conditional    all kinds,
+      (stale-Goal quote)                                  --issue mode only
+  c24 resume-skip provenance    WARN-only, conditional    experiment +
+      validation                                          analysis
+  c25 html entities in fenced   FAIL, conditional         all kinds
+      command blocks
+  c26 GPU basis vs routed       WARN-only, conditional    experiment +
+      machine                                             analysis
+  c27 7B activation-capture     FAIL (experiment) / WARN  experiment +
+      vs eval/debug intent      (analysis), conditional   analysis
+  c28 decision-band precedent   WARN-only, conditional    experiment +
+      coherence                                           analysis
+  c29 deliberate fence vs §7    WARN-only, conditional    experiment +
+      conditional phase                                   analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
-n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)
-also SKIP when their content trigger does not fire.
+n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29) also SKIP when their content
+trigger does not fire.
+Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
+(``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
+mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
+the adversarial-planner Phase 1.5.0 consumer treats as a mechanical redraft
+bounce (SKILL.md § Goal-currency gate), not a brief-forwarded WARN.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
 
@@ -63,6 +89,18 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no re-extracted reference arms`` (check 16)
   - ``N/A — no paired contrast`` (check 18)
   - ``N/A — no held-out predictive DV`` (check 19)
+  - ``N/A — no registered verdict lattice`` (check 20)
+  - ``N/A — no arity acceptance gate`` (check 21)
+  - ``N/A — no resume/persist pattern`` (check 24)
+  - ``N/A — entities are content, not commands`` (check 25 — exempts
+    arm-(a) shell-tagged content fences ONLY; an arm-(b) fence whose body
+    carries ``--workload-cmd`` / ``dispatch_issue.py`` FAILs on entities
+    unconditionally)
+  - ``N/A — basis measured on the routed machine`` (check 26)
+  - ``N/A — no 7B activation capture`` (check 27)
+  - ``N/A — no precedent-labeled decision bands`` (check 28; British
+    ``labelled`` accepted)
+  - ``N/A — no conditional phase on this provision`` (check 29)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -105,6 +143,7 @@ import math
 import re
 import sys
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from fractions import Fraction
 from pathlib import Path
 
@@ -1078,17 +1117,41 @@ _DRAW_FACTOR = (
     r"(?:\d[\d,_]*\s*(?:null[- ])?(?:draws?|perms?|permutations|resamples)"
     r"|n_(?:draws|perms|boot)\b|draws|perms|permutations|resamples|B\s*=\s*\d{3,})"
 )
-_GRID_FACTOR = (
-    r"(?:\d[\d,_]*|cells|folds|arms|layers|traits|seeds"
-    r"|behaviors|settings|conditions|statistics)"
-)
+# The grid side accepts ANY axis factor — a count ("24"), a count + axis
+# noun ("6 arms", "3 layers", "~3 quantities"), or a bare axis noun
+# ("cells", "batteries") — optionally opened by an approximation / paren
+# decoration ("~3", "≈8", "(6 arms"). The load-bearing discriminator is
+# the DRAW-BEARING factor, not the grid noun: the #810 false-PASS class
+# is a grid-only product with NO draw factor ("34 x 50 x 28",
+# "layers x 3584", "6 arms x 3 layers x 16 folds") and still fails; a
+# noun whitelist only rots ("batteries"/"quantities" false-FAILed the
+# conforming #833 v8 sizing block — #1086).
+_GRID_DECOR = r"(?:[~≈(]\s*)?"
+_GRID_FACTOR = r"(?:\d[\d,_]*(?:\s+[A-Za-z][\w-]*)?|[A-Za-z][\w-]*)"
 # The multiplication token plans actually write: the real multiplication
-# sign plus the ASCII fallbacks.
-_MULT_TOKEN = r"[×x*]"  # noqa: RUF001 — the multiplication sign is real plan text
+# sign plus the ASCII fallbacks. The multiplication sign and `*` are
+# unambiguous and keep tight/zero-whitespace binding ("50*28"); ASCII `x`
+# counts ONLY when standalone w.r.t. word chars — "layer-ma|x| perms",
+# "shared-inde|x| draws", "honest_nulls_ma|x|draws", "draws |x|gboost"
+# are word-split artifacts, not products (#1099; 27 realized corpus
+# false-arith lines, 0 verdict flips on removal). Digit-tight ASCII forms
+# ("2x2") also stop counting: every draw-bearing corpus product is spaced
+# ("4 draws x 492 cells"), and "the 2x2 draws its factors" is the verb
+# false-positive the digit carve-out would re-admit.
+_MULT_TOKEN = r"(?:[×*]|(?<!\w)x(?!\w))"  # noqa: RUF001 — the multiplication sign is real plan text
 _MULT_ARITH_RE = re.compile(
-    rf"(?i)\b(?:{_DRAW_FACTOR}\s*{_MULT_TOKEN}\s*{_GRID_FACTOR}"
+    rf"(?i)\b(?:{_DRAW_FACTOR}\s*{_MULT_TOKEN}\s*{_GRID_DECOR}{_GRID_FACTOR}"
     rf"|{_GRID_FACTOR}\s*{_MULT_TOKEN}\s*{_DRAW_FACTOR})\b"
 )
+# Arith-anchored windows (#1086) accepted fail-UNSAFE residual, DISCLOSED: a
+# quoted SIBLING's sizing line ("#778's 10,000 draws x 24 cells, batched")
+# can anchor its own window and satisfy THIS plan's battery — the same
+# residual class as c18's documented residual (f) (non-verbatim paraphrase,
+# beyond mechanical defense). Deliberately NO `#\d{2,}` citation guard on
+# anchor lines: 192 corpus draw-arithmetic lines carry a same-line #-ref,
+# and .claude/rules/plan-compute-sizing.md MANDATES citing a prior-issue
+# MEASURED basis beside sizing arithmetic, so the guard would re-create the
+# very false-positive class #1086 fixes (guard REJECTED in plan v2 §11).
 
 # Evidence (ii): a named batched helper or an explicit vectorization
 # statement. A token whose only in-window occurrence sits inside a citation /
@@ -1112,8 +1175,9 @@ def _trigger_windows(plan: str, trigger_re: re.Pattern[str], window_lines: int) 
     fence-only example is not a trigger — the line-preserving equivalent of
     searching ``strip_fences(plan)``); each WINDOW is raw text, so evidence
     inside adjacent tables/fences still counts. Shared by c12
-    (``_BATTERY_TRIGGER_RE``, ±15) and c16 (``_C16_EXTRACT_RE`` ±3;
-    ``_C16_REGEN_RE`` at radius 0 = same-line adjacency)."""
+    (``_BATTERY_TRIGGER_RE``, ±15), c16 (``_C16_EXTRACT_RE`` ±3;
+    ``_C16_REGEN_RE`` at radius 0 = same-line adjacency), and c24
+    (``_C24_TRIGGER_RE``, ±15)."""
     lines = plan.splitlines()
     mask = _fence_mask(lines)
     windows: list[str] = []
@@ -1136,12 +1200,14 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
     """A plan naming a permutation/bootstrap/null-draw battery must carry,
     NEAR a battery mention (± 15 raw lines), BOTH (i) explicit multiplier
     arithmetic with a draw-bearing factor and (ii) a batched-implementation
-    commitment. Window-scoped, never document-global — the document-global
-    draft demonstrably false-PASSed the motivating incident plan (#810 v1)
-    via an unrelated footprint product + helper boilerplate. FAIL
-    (experiment) / WARN (analysis) / SKIP otherwise; a SURFACE check per the
-    module's scope discipline — semantic adequacy of the arithmetic stays
-    with the Phase 2 critics."""
+    commitment. A draw-bearing arithmetic line ALSO anchors its own ± 15
+    evidence window (#1086) — the §9 sizing block legitimately lives far
+    from the §4/§6 battery registration. Window-scoped, never
+    document-global — the document-global draft demonstrably false-PASSed
+    the motivating incident plan (#810 v1) via an unrelated footprint
+    product + helper boilerplate. FAIL (experiment) / WARN (analysis) /
+    SKIP otherwise; a SURFACE check per the module's scope discipline —
+    semantic adequacy of the arithmetic stays with the Phase 2 critics."""
     cid, name = "c12_battery_multiplier", "battery multiplier + batched commitment"
     if kind not in ("experiment", "analysis"):
         return _skip(cid, name, "kind-exempt: battery sizing is an experiment|analysis plan shape")
@@ -1150,6 +1216,14 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
         return _skip(cid, name, "no permutation/null-draw battery named")
     if re.search(NA_RE + r"no draw battery", plan):
         return _pass(cid, name, "explicit N/A declared (no draw battery)")
+    # #1086: a draw-bearing arithmetic line ANCHORS its own ±15 evidence
+    # window — the §9 sizing block legitimately lives far from the §4/§6
+    # battery registration (#833 v8: 58+ lines). Window-scoped discipline is
+    # preserved: only a line already carrying a draw-bearing product can
+    # anchor (a grid-only footprint product never anchors — the #810 v1
+    # false-PASS class), and the batched commitment must still sit within
+    # ±_C12_WINDOW_LINES raw lines of the anchor.
+    windows = windows + _trigger_windows(plan, _MULT_ARITH_RE, _C12_WINDOW_LINES)
     any_arith = False
     any_commit = False
     for window in windows:
@@ -1178,7 +1252,8 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
     if not missing:
         missing.append(
             "co-location: the multiplier arithmetic and the batched-implementation "
-            "commitment each appear somewhere, but never together near any battery mention"
+            "commitment each appear somewhere, but never together near any battery mention "
+            "or draw-arithmetic sizing line"
         )
     detail = (
         f"plan names a permutation/bootstrap/null battery but is missing {' AND '.join(missing)}"
@@ -2132,9 +2207,24 @@ _C18_PAIRCOUNT_RE = re.compile(r"(?i)\b\d[\d,]*\s+(?:pre-named\s+)?pairs\b")
 # D1: a row-coverage declaration; evidence on the same line or within the
 # next _C18_DECL_WINDOW_LINES physical lines (fenced lines excluded).
 _C18_COVERAGE_RE = re.compile(r"(?i)\brow[- ]coverage\b")
+# #1086 widening: suffixed tensor-store dirs (`analysis_tensors_nonemit/` —
+# the `\w*` suffix arm) and canonical `issueN_<slug>/…` HF data-repo
+# prefixes (the Upload Policy destination shape) are artifact evidence. The
+# trailing `\S*` on the `analysis_tensors\w*/\S*` alternative — not `\S+` —
+# is DELIBERATE: a bare store-dir token ending at the slash (backticked or
+# line-final `analysis_tensors_nonemit/`) is complete artifact evidence
+# with nothing after the slash. An `issueN…/` PATH token is affirmative
+# artifact evidence, orthogonal to the `_C18_ISSUE_REF_RE` citation guard
+# (the literal `#\d{2,}` form), which is byte-unchanged. Accepted
+# fail-UNSAFE residual, DISCLOSED: a SIBLING issue's `issueN…/` store path
+# on the declaration line counts as D1 artifact evidence — whether the
+# named store truly contains THIS plan's rows stays with the fact-checker
+# (no guard, no negative fixture: a negative would require a citation
+# guard #1086 deliberately does not add).
 _C18_ARTIFACT_RE = re.compile(
     r"(?i)\S+\.(?:pt|pth|json|jsonl|npz|npy|safetensors|csv|parquet|arrow)\b"
-    r"|\beval_results/\S+|\banalysis_tensors/\S+|\braw_completions/\S+"
+    r"|\beval_results/\S+|\banalysis_tensors\w*/\S*|\braw_completions/\S+"
+    r"|\bissue\d{2,}[\w.-]*/\S+"
 )
 # v2 (MF-B): the bare `this run` alternative is REMOVED — only the
 # arms-generated construction or an explicit `by construction` counts as
@@ -2144,6 +2234,55 @@ _C18_BYCONSTRUCTION_RE = re.compile(
     r"(?i)both arms .{0,60}\b(?:generated|produced|computed|fit(?:ted)?|emitted)\b"
     r"|\bby construction\b"
 )
+# #1086 (v2): the check's own remedy text ("state that the plan's own fits
+# produce every registered row on each arm", the FAIL detail below) was
+# unmatchable by _C18_BYCONSTRUCTION_RE — a planner implementing the bounce
+# verbatim still FAILed (#833 v8). Accept that form via a SEPARATE
+# alternative deliberately narrower than the remedy prose: (i) affirmative
+# produce-verb + "every registered", (ii) arm vocabulary within 80 chars
+# after the match (each/both/per arm[s]), (iii) NO negation/deferral token
+# in the local span around the match — "does not yet produce every
+# registered row on each arm" and "will produce every registered row …
+# once implemented" are explicit NON-declarations and must keep FAILing
+# (the MF-B deferral class). _C18_BYCONSTRUCTION_RE itself stays
+# byte-unchanged so no historical PASS can flip.
+_C18_PRODUCES_REGISTERED_RE = re.compile(
+    r"(?i)\b(?:produces?|generates?|computes?|emits?|yields?)\s+every\s+registered\b"
+    r"(?=.{0,80}\b(?:each|both|per)\s+arms?\b)"
+)
+# #1099: the guard covers the n't contraction family (word chars + n +
+# straight-or-curly apostrophe + t) — the prior bare `n't` alternative was
+# DEAD CODE (a word boundary never matches at the word-internal s->n
+# transition inside "doesn't"; probe-verified) — plus cannot /
+# fail(s|ed) to / until (all common in the plan corpus — thousands of
+# occurrences for cannot/doesn't; counts hedged deliberately, they age).
+# Curly apostrophe included (a handful of corpus plan files carry it).
+# Strictly widening the DISQUALIFIER = strictly narrowing the
+# affirmative satisfier — fail-safe by construction. Accepted residual
+# (disclosed, #1099): "no longer" / "except" / "unless" / "rather than" /
+# gerund "failing to" still evade this guard — outside the Goal-named
+# set; the Phase-2 critic ensemble is the semantic backstop (same
+# fail-unsafe residual class as c12's sibling-quote disclosure).
+_C18_NEG_DEFER_RE = re.compile(
+    r"(?i)\b(?:not|\w*n[’']t|cannot|never|without|fail(?:s|ed)?\s+to|until"  # noqa: RUF001
+    r"|will|would|shall|should|may|might|could"
+    r"|once|pending|deferred|later|TBD|to\s+be)\b"
+)
+
+
+def _c18_affirmative_produces_hit(line: str) -> bool:
+    """The v2 remedy-text alternative: affirmative produce-verb + 'every
+    registered' + arm vocabulary, with negation/deferral tokens disqualifying
+    in a local span (48 chars before the match start, 80 after its end).
+    Scoped to THIS alternative only — the legacy _C18_BYCONSTRUCTION_RE
+    alternatives keep their behavior byte-for-byte."""
+    m = _C18_PRODUCES_REGISTERED_RE.search(line)
+    if not m:
+        return False
+    span = line[max(0, m.start() - 48) : m.end() + 80]
+    return not _C18_NEG_DEFER_RE.search(span)
+
+
 # D2 (MF-A): a subset expression AND word-bounded row/pair vocabulary AND
 # coverage/source-key vocabulary must co-occur on the candidate line.
 # Word-bounding kills the 608 v2:164 false-satisfier ("pair" inside
@@ -2190,8 +2329,13 @@ _C18_FIGURES_LINE_RE = re.compile(r"(?i)^\W{0,8}figures?\b")
 # as a dishonest c13 N/A line; (g) a wrapped/reformatted paste that
 # separates the fingerprint from the row-coverage phrase across lines — the
 # line-local guard misses it; the D1 evidence requirement (artifact token /
-# arms-generated phrase) still has to be met by the surviving fragment,
-# which the detail's wording deliberately fails to supply.
+# arms-generated phrase / #1086's affirmative produces-registered form)
+# still has to be met by the surviving fragment. NOTE (#1086): the remedy
+# text's own "produce every registered row on each arm" clause is now a
+# satisfier BY DESIGN (the remedy-vs-satisfier inconsistency was the bug),
+# so a wrapped paste landing that clause on a citation-free Row-coverage
+# line self-satisfies — a widened, DISCLOSED instance of this same
+# residual class.
 
 
 def _c18_registered_paired_lines(plan: str) -> list[str]:
@@ -2255,7 +2399,12 @@ def _c18_coverage_declarations(plan: str) -> list[str]:
                 for j in range(i + 1, min(i + 1 + _C18_DECL_WINDOW_LINES, len(lines)))
                 if not mask[j]
             ]
-            if any(_C18_ARTIFACT_RE.search(w) or _C18_BYCONSTRUCTION_RE.search(w) for w in window):
+            if any(
+                _C18_ARTIFACT_RE.search(w)
+                or _C18_BYCONSTRUCTION_RE.search(w)
+                or _c18_affirmative_produces_hit(w)
+                for w in window
+            ):
                 out.append(line.strip())
     return out
 
@@ -2429,6 +2578,2055 @@ def check_ood_folds(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 20 — verdict-lattice coherence (conditional) ────────────────────
+
+# Trigger sections: hypothesis / success / kill / decision / verdict / gate —
+# the c8/c13 families plus "hypothes" + "verdict"; deliberately NOT
+# "evaluation" (c13 includes it for gate lines; a verdict LATTICE registered
+# only in an Evaluation recap is an accepted under-trigger — fails safe).
+_C20_SECTION_RE = re.compile(r"(?i)hypothes|success|kill|decision|verdict|gate")
+
+# Tier 1: the #923 v6 registered form — "…DISJOINT and exhaustive: <label> ⇔
+# <predicate>; …". The declaration claims a partition, so BOTH defect classes
+# (co-fire AND gap) are FAIL-capable.
+_C20_DECL_RE = re.compile(r"(?i)\bdisjoint\b[^.\n]{0,60}\bexhaustive\b[^:\n]{0,20}:")
+_C20_CLAUSE_RE = re.compile(r"([^;⇔\n]{1,80})\s*⇔\s*([^;\n]+)")
+
+# Tier 2: verdict-label anchor applied to a list item's FIRST bold span.
+_C20_LABEL_RE = re.compile(
+    r"(?i)^(?:h[-\s]?\w|intermediate|inconclusive|confirm|falsif|success|kill|pass\b|fail\b)"
+)
+_C20_BOLD_RE = re.compile(r"\*\*([^*\n]{1,80})\*\*")
+
+# Atom grammar. POINT: `<qty> ≥/> 0` → pos, `≤/< 0` → neg (interior
+# semantics, §4.4 convention); the `0(?!\.?\d)` lookahead keeps "p ≤ 0.05"
+# out (a decimal alpha is c13's shape, not a sign atom).
+_C20_POINT_RE = re.compile(r"(?P<qty>[^\s,;()]+)\s*(?P<cmp>≥|>=|≤|<=|>|<)\s*0(?!\.?\d)")
+_C20_POINT_POS = ("≥", ">=", ">")
+
+# CI atoms: a `CI`/`CIs` token, a tiny closed copula gap, then one idiom.
+# Axis binding: `paired` within the 40 chars BEFORE the CI token (window
+# clamped at the previous atom's span end — a preceding atom's own `paired`
+# wording never leaks into this atom's binding) → paired axis, else primary.
+# Idiom order matters: side-qualified excludes before the bare two-sided
+# exclude.
+_C20_CI_TOKEN_RE = re.compile(r"(?i)\bCIs?\b")
+_C20_CI_GAP_RE = re.compile(r"(?:\s+(?:is|are|stays?|remains?))?\s*")
+_C20_Z = r"(?:0|zero)(?!\.?\d)"
+_C20_CI_IDIOMS: list[tuple[re.Pattern[str], frozenset[str]]] = [
+    (
+        re.compile(r"(?i)exclud(?:es|ing)\s+" + _C20_Z + r"\s+on\s+the\s+positive\s+side"),
+        frozenset({"above"}),
+    ),
+    (
+        re.compile(r"(?i)exclud(?:es|ing)\s+" + _C20_Z + r"\s+on\s+the\s+negative\s+side"),
+        frozenset({"below"}),
+    ),
+    (re.compile(r"(?i)strictly\s+positive\b"), frozenset({"above"})),
+    (re.compile(r"(?i)strictly\s+negative\b"), frozenset({"below"})),
+    (
+        re.compile(r"(?i)wholly\s+(?:at\s+or\s+|at/)?above\s+" + _C20_Z),
+        frozenset({"above"}),
+    ),
+    (re.compile(r"(?i)at\s+or\s+above\s+" + _C20_Z), frozenset({"above"})),
+    (
+        re.compile(r"(?i)wholly\s+below\s+" + _C20_Z + r"|below\s+zero\b"),
+        frozenset({"below"}),
+    ),
+    (
+        re.compile(r"(?i)(?:includes?|contains?|straddl(?:es?|ing)|overlaps?)\s+" + _C20_Z),
+        frozenset({"straddle"}),
+    ),
+    (
+        re.compile(r"(?i)exclud(?:es|ing)\s+" + _C20_Z + r"|clear\s+of\s+" + _C20_Z),
+        frozenset({"below", "above"}),
+    ),
+]
+
+# OTHERWISE atom (complement label — fires iff no non-otherwise label fires).
+_C20_OTHERWISE_RE = re.compile(
+    r"(?i)\botherwise\b|\ball other\b|\bneither\b[^.;\n]{0,40}\bfires?\b|\bno binary verdict\b"
+)
+
+# Completeness-gate residue tokens: any CI token, comparator char, idiom
+# keyword, or NEGATOR (Must-Fix: "the CI never includes 0" would otherwise
+# parse as the positive atom with inverted polarity) OUTSIDE every recognized
+# atom span makes the label `unparsed` — the lattice is then never
+# FAIL-capable (WARN).
+_C20_RESIDUE_RE = re.compile(
+    r"(?i)\bCIs?\b|[<>≤≥]"
+    r"|\binclud\w*|\bexclud\w*|\bstraddl\w*|\bwholly\b|\bstrictly\b|\bclear of\b"
+    r"|\b(?:not|never|no|nor|unless|except|without)\b|\bfails?\s+to\b"
+)
+
+# Connectives: only AND / OR (incl. ", OR") / `with` (AND-equivalent) join
+# atoms; any other joiner (bare comma, if/when chains, and/or → two hits)
+# is fail-closed to `unparsed` — no silent default connective.
+_C20_CONNECTIVE_RE = re.compile(r"(?i)\b(?:and|or|with)\b")
+
+# Axis-identity fail-closed guard (ii): post-CI `paired` wording ("the CI of
+# the paired difference includes 0") is never silently bound to an axis.
+_C20_POST_CI_PAIRED_RE = re.compile(r"(?i)\bCIs?\b\s+(?:of|on|for|over)\s+(?:the\s+)?paired\b")
+
+# Precedence-phrase screen: an order-evaluated lattice is coherent in a way
+# the cell algebra cannot see → fail closed to `unparsed` (WARN).
+_C20_PRECEDENCE_RE = re.compile(
+    r"(?i)first matching|in (?:that |this )?order|takes precedence|evaluated in order|\bwins\b"
+)
+
+# Quantifier screen (tier 2): k-of-n / per-family predicates ("at >= 4/6
+# pre-registered layers", "for all traits") are outside the v1 cell algebra
+# -> SKIP.
+# Deliberately NOT bare "every" (v6's recap says "for every … cell").
+_C20_QUANT_RE = re.compile(
+    r"(?i)(?:at least\s+\d+|≥\s*\d+|>=\s*\d+)\s*(?:of|/)\s*\d+|\ball\s+\d+\b|\bfor (?:all|each)\b"
+)
+
+# Tier-2 segment machinery: sentence split, →/Consequence truncation, the
+# "confirmed if(f)" selector.
+_C20_SENT_SPLIT_RE = re.compile(r"(?<=\.)\s+")
+_C20_TRUNC_RE = re.compile(r"→|\bConsequence\b")
+_C20_CONFIRMED_RE = re.compile(r"(?i)\bconfirmed\s+iff?\b")
+# Tier-1 clause predicates truncate at the first sentence terminator so a
+# trailing recap sentence (v6's "Exactly one label fires for every … cell.")
+# never enters the otherwise clause as residue.
+_C20_SENT_END_RE = re.compile(r"\.(?=\s|$)")
+
+_C20_CI_STATES = ("below", "straddle", "above")
+
+
+def _c20_trigger_sections(plan: str) -> list[str]:
+    """Fence-stripped texts of the OUTERMOST sections whose heading matches
+    the c20 trigger families (a nested matching heading inside an
+    already-taken section is not re-collected)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    taken: list[tuple[int, int]] = []
+    out: list[str] = []
+    for h in _headings(plan):
+        if not _C20_SECTION_RE.search(h.text):
+            continue
+        if any(s <= h.line and h.end <= e for s, e in taken):
+            continue
+        taken.append((h.line, h.end))
+        out.append("\n".join(lines[j] for j in range(h.line, h.end) if not mask[j]))
+    return out
+
+
+def _c20_label_name(bold: str) -> str:
+    """Short display name for a harvested label: the bold span up to its
+    first parenthetical annotation, trailing colon stripped."""
+    return bold.split(" (")[0].rstrip(": ").strip()
+
+
+def _c20_any_ci_idiom(text: str) -> bool:
+    """True when ``text`` carries at least one CI-predicate idiom (the
+    harvest condition — presence-only; atom adjacency is parse-time)."""
+    return any(pat.search(text) for pat, _ in _C20_CI_IDIOMS)
+
+
+def _c20_harvest_labels(section_text: str) -> list[dict]:
+    """Tier-2 label harvest over one (fence-stripped) trigger section:
+    top-level list items whose FIRST bold span matches the verdict-label
+    anchor AND whose text carries a CI idiom (or an otherwise-token — an
+    idiom-free complement label like "**Inconclusive:** otherwise" still
+    joins the lattice it completes). Returns
+    ``[{name, text, idiom}]`` in document order."""
+    labels: list[dict] = []
+    for block in _hypothesis_blocks(section_text):
+        first_line = block.splitlines()[0] if block else ""
+        if not _C14_LIST_ITEM_RE.match(first_line):
+            continue
+        bm = _C20_BOLD_RE.search(block)
+        if bm is None:
+            continue
+        bold = bm.group(1).strip()
+        if not _C20_LABEL_RE.match(bold):
+            continue
+        has_idiom = _c20_any_ci_idiom(block)
+        if not (has_idiom or _C20_OTHERWISE_RE.search(block)):
+            continue
+        labels.append(
+            {"name": _c20_label_name(bold), "text": block[bm.end() :], "idiom": has_idiom}
+        )
+    return labels
+
+
+def _c20_has_atom(sentence: str) -> bool:
+    """True when ``sentence`` carries a full parseable atom (point, CI, or
+    otherwise) — idiom presence alone does not count (a CI idiom with no
+    adjacent CI token is a residue shape, not an atom)."""
+    if _C20_POINT_RE.search(sentence) or _C20_OTHERWISE_RE.search(sentence):
+        return True
+    for m in _C20_CI_TOKEN_RE.finditer(sentence):
+        gm = _C20_CI_GAP_RE.match(sentence, m.end())
+        if any(pat.match(sentence, gm.end()) for pat, _ in _C20_CI_IDIOMS):
+            return True
+    return False
+
+
+def _c20_segment(label_text: str) -> tuple[str | None, str | None]:
+    """``(predicate_segment, unparsed_reason)`` for a tier-2 label: the
+    sentence containing "confirmed if(f)" when present, else the SINGLE
+    atom-bearing sentence; each sentence truncated at the first ``→`` /
+    ``Consequence`` token. >1 atom-bearing sentence without a confirmed-iff
+    selector is ambiguous → unparsed."""
+    sentences = [_C20_TRUNC_RE.split(s)[0] for s in _C20_SENT_SPLIT_RE.split(label_text)]
+    confirmed = [s for s in sentences if _C20_CONFIRMED_RE.search(s)]
+    if confirmed:
+        return confirmed[0], None
+    bearing = [s for s in sentences if _c20_has_atom(s)]
+    if len(bearing) > 1:
+        return None, ">1 atom-bearing sentence and no 'confirmed if(f)' selector — ambiguous"
+    if not bearing:
+        return None, "no sentence with a parseable atom"
+    return bearing[0], None
+
+
+def _c20_collect_atoms(segment: str) -> tuple[list[tuple[str, frozenset[str], int, int]], set]:
+    """All sign/CI atoms in ``segment`` as ``(axis, values, start, end)``
+    (sorted by position) plus the set of normalized POINT quantities. The
+    axis-binding lookback is clamped at the previous atom's span end so a
+    preceding atom's `paired` token never mis-binds a later primary atom."""
+    atoms: list[tuple[str, frozenset[str], int, int]] = []
+    qtys: set[str] = set()
+    for m in _C20_POINT_RE.finditer(segment):
+        sign = "pos" if m.group("cmp") in _C20_POINT_POS else "neg"
+        qtys.add(m.group("qty").strip("`*").casefold())
+        atoms.append(("point", frozenset({sign}), m.start(), m.end()))
+    for m in _C20_CI_TOKEN_RE.finditer(segment):
+        gm = _C20_CI_GAP_RE.match(segment, m.end())
+        hit: tuple[re.Match[str], frozenset[str]] | None = None
+        for pat, states in _C20_CI_IDIOMS:
+            im = pat.match(segment, gm.end())
+            if im:
+                hit = (im, states)
+                break
+        if hit is None:
+            continue  # the stray CI token becomes completeness residue
+        # Clamp the lookback at the previous atom's span end: a paired atom
+        # < 40 chars BEFORE a primary atom would otherwise leak its `paired`
+        # token into THIS atom's window, binding both atoms to the paired
+        # axis — a contradictory conjunction that never fires, manufacturing
+        # a tier-1 gap → false FAIL (round-1 code-review Minor).
+        prev_end = max((a[3] for a in atoms if a[3] <= m.start()), default=0)
+        lookback = segment[max(0, m.start() - 40, prev_end) : m.start()].lower()
+        axis = "paired" if "paired" in lookback else "primary"
+        atoms.append((axis, hit[1], m.start(), hit[0].end()))
+    atoms.sort(key=lambda a: a[2])
+    return atoms, qtys
+
+
+def _c20_build_dnf(
+    segment: str, atoms: list[tuple[str, frozenset[str], int, int]]
+) -> tuple[list[list[tuple[str, frozenset[str]]]] | None, str | None]:
+    """``(dnf, None)`` for the atom chain under AND > OR precedence with the
+    connective fail-closed rule, or ``(None, reason)``."""
+    for i in range(1, len(atoms)):
+        if atoms[i][2] < atoms[i - 1][3]:
+            return None, "overlapping atom spans"
+    conns: list[str] = []
+    for i in range(1, len(atoms)):
+        gap = segment[atoms[i - 1][3] : atoms[i][2]]
+        found = [c.lower() for c in _C20_CONNECTIVE_RE.findall(gap)]
+        if len(found) != 1:
+            return None, f"joiner between atoms is not exactly one of AND/OR/with ({gap.strip()!r})"
+        conns.append(found[0])
+    groups: list[list[tuple[str, frozenset[str]]]] = [[(atoms[0][0], atoms[0][1])]]
+    for i, conn in enumerate(conns, start=1):
+        if conn == "or":
+            groups.append([(atoms[i][0], atoms[i][1])])
+        else:  # and / with — AND-equivalent
+            groups[-1].append((atoms[i][0], atoms[i][1]))
+    return groups, None
+
+
+def _c20_parse_predicate(segment: str) -> dict:
+    """Compile one predicate segment to DNF over sign/CI atoms (or an
+    otherwise-label). Fail-closed: any completeness-gate residue (stray CI
+    token / comparator / idiom keyword / NEGATOR), any non-AND/OR/with
+    joiner between atoms, or an otherwise-token mixed with predicate atoms
+    marks the segment ``unparsed`` (reason in the returned dict)."""
+    out: dict = {"otherwise": False, "dnf": [], "unparsed": None, "point_qtys": set()}
+    atoms, out["point_qtys"] = _c20_collect_atoms(segment)
+    otherwise_spans = [(m.start(), m.end()) for m in _C20_OTHERWISE_RE.finditer(segment)]
+    if otherwise_spans and atoms:
+        out["unparsed"] = "an 'otherwise' token mixed with predicate atoms in one segment"
+        return out
+    spans = otherwise_spans if otherwise_spans else [(a[2], a[3]) for a in atoms]
+    residues = [
+        m.group(0)
+        for m in _C20_RESIDUE_RE.finditer(segment)
+        if not any(s <= m.start() and m.end() <= e for s, e in spans)
+    ]
+    if residues:
+        out["unparsed"] = "predicate token(s) outside every recognized atom: " + ", ".join(
+            repr(r) for r in residues[:4]
+        )
+        return out
+    if otherwise_spans:
+        out["otherwise"] = True
+        return out
+    if not atoms:
+        out["unparsed"] = "no recognized atom"
+        return out
+    dnf, reason = _c20_build_dnf(segment, atoms)
+    if dnf is None:
+        out["unparsed"] = reason
+        return out
+    out["dnf"] = dnf
+    return out
+
+
+def _c20_enumerate(labels: list[dict]) -> tuple[list, list]:
+    """Interior-cells-only 3-state enumeration over the REFERENCED axes with
+    point-in-CI coherence pruning (a bootstrap CI contains its point
+    estimate). Returns ``(cofires, gaps)`` — cofires as ``(cell, [label
+    names])``, gaps as bare cells. An otherwise-label fires exactly on the
+    cells no predicate label covers (killing gap findings by construction)."""
+    preds = [lab for lab in labels if not lab["parse"]["otherwise"]]
+    others = [lab for lab in labels if lab["parse"]["otherwise"]]
+    axes = {axis for lab in preds for conj in lab["parse"]["dnf"] for axis, _ in conj}
+    primary_vals: tuple = _C20_CI_STATES if "primary" in axes else (None,)
+    paired_vals: tuple = _C20_CI_STATES if "paired" in axes else (None,)
+    cofires: list[tuple[dict, list[str]]] = []
+    gaps: list[dict] = []
+    for primary in primary_vals:
+        if "point" not in axes:
+            point_vals: tuple = (None,)
+        elif primary is None:
+            point_vals = ("neg", "pos")
+        else:
+            point_vals = {"below": ("neg",), "straddle": ("neg", "pos"), "above": ("pos",)}[primary]
+        for point in point_vals:
+            for paired in paired_vals:
+                cell = {"point": point, "primary": primary, "paired": paired}
+                fired = [
+                    lab
+                    for lab in preds
+                    if any(
+                        all(cell[axis] in values for axis, values in conj)
+                        for conj in lab["parse"]["dnf"]
+                    )
+                ]
+                if not fired and others:
+                    fired = others
+                if len(fired) >= 2:
+                    cofires.append((cell, [lab["name"] for lab in fired]))
+                elif not fired:
+                    gaps.append(cell)
+    return cofires, gaps
+
+
+def _c20_cell_str(cell: dict) -> str:
+    """Plain-terms cell rendering for FAIL/WARN details."""
+    parts: list[str] = []
+    if cell["point"] is not None:
+        parts.append("point > 0" if cell["point"] == "pos" else "point < 0")
+    for axis in ("primary", "paired"):
+        v = cell[axis]
+        if v is not None:
+            word = {"below": "wholly below 0", "straddle": "straddles 0", "above": "wholly above 0"}
+            parts.append(f"{axis} CI {word[v]}")
+    return "{" + ", ".join(parts) + "}"
+
+
+_C20_REMEDY = (
+    " — restate the lattice as an explicit partition (`DISJOINT and exhaustive: "
+    "<label> ⇔ <predicate>; …; <label> ⇔ otherwise`), add an otherwise-label, or "
+    "declare 'N/A — no registered verdict lattice' on its own line"
+)
+
+
+def _c20_offender_detail(tier_desc: str, cofires: list, gaps: list) -> str:
+    """Bounded offender detail: co-fire cells with both label names first,
+    gap cells as the secondary note, ≤4 shown each, remedy menu last."""
+    bits: list[str] = []
+    if cofires:
+        shown = "; ".join(
+            f"labels {' + '.join(names)} CO-FIRE on cell {_c20_cell_str(cell)}"
+            for cell, names in cofires[:4]
+        )
+        if len(cofires) > 4:
+            shown += "; …"
+        bits.append(shown)
+    if gaps:
+        shown = ", ".join(_c20_cell_str(c) for c in gaps[:4])
+        if len(gaps) > 4:
+            shown += ", …"
+        bits.append(f"no label fires on cell(s) {shown}")
+    return (
+        f"the registered verdict lattice ({tier_desc}) is not a partition: "
+        + "; ".join(bits)
+        + _C20_REMEDY
+    )
+
+
+def _c20_evaluate_lattice(labels: list[dict], *, tier: int, section_text: str) -> tuple[str, str]:
+    """Shared per-lattice verdict core → ``(state, detail)`` with state in
+    {"unparsed", "cofire", "gap", "clean"}. The kind/tier degradations
+    (§4.5 table) are applied by the caller."""
+    names = " / ".join(lab["name"] for lab in labels)
+    tier_desc = f"tier {tier}: {names}"
+    pm = _C20_PRECEDENCE_RE.search(section_text)
+    if pm:
+        return (
+            "unparsed",
+            f"label-precedence phrase {pm.group(0)!r} in the lattice's section makes the "
+            "labels order-evaluated — the cell algebra cannot verify an ordered lattice; "
+            "restate it as the explicit ⇔ partition form",
+        )
+    unparsed = [lab for lab in labels if lab["parse"]["unparsed"]]
+    if unparsed:
+        first = unparsed[0]
+        return (
+            "unparsed",
+            f"label '{first['name']}' ({tier_desc}) did not fully parse: "
+            f"{first['parse']['unparsed']} — the lattice is not FAIL-capable; restate it as "
+            "the explicit ⇔ partition form (`DISJOINT and exhaustive: <label> ⇔ <predicate>; "
+            "…`) so coherence is machine-checkable",
+        )
+    qtys = set()
+    for lab in labels:
+        qtys |= lab["parse"]["point_qtys"]
+    if len(qtys) > 1:
+        return (
+            "unparsed",
+            f"the lattice's labels reference {len(qtys)} distinct point quantities "
+            f"({', '.join(sorted(qtys)[:4])}) — a single-point-axis cell algebra cannot "
+            "represent them (never silently collapsed onto one axis); restate the lattice "
+            "over one point quantity or use the explicit ⇔ partition form",
+        )
+    cofires, gaps = _c20_enumerate(labels)
+    if cofires or gaps:
+        detail = _c20_offender_detail(tier_desc, cofires, gaps)
+        return ("cofire" if cofires else "gap", detail)
+    return (
+        "clean",
+        f"{tier_desc} — every interior sign/CI cell fires exactly one label "
+        "(partition verified in form; boundary semantics stay with the Statistics critic)",
+    )
+
+
+_C20_POST_CI_PAIRED_REASON = (
+    "post-CI 'paired' wording (e.g. 'the CI of the paired difference') is "
+    "not silently bound to an axis"
+)
+
+
+def _c20_find_declaration(sections: list[str]) -> tuple[str, list[tuple[str, str]]] | None:
+    """First DISJOINT-and-exhaustive ⇔ declaration across the trigger
+    sections → ``(section_text, [(label, predicate), …])``; None when no
+    declaration line exists (tier 2 then applies)."""
+    for sec in sections:
+        for line in sec.splitlines():
+            dm = _C20_DECL_RE.search(line)
+            if not dm:
+                continue
+            clauses = []
+            for chunk in line[dm.end() :].split(";"):
+                cm = _C20_CLAUSE_RE.match(chunk)
+                if cm:
+                    clauses.append((cm.group(1).strip(), cm.group(2).strip()))
+            return sec, clauses
+    return None
+
+
+def _c20_tier1_result(cid: str, name: str, kind: str, sec: str, clauses: list) -> CheckResult:
+    """Tier-1 verdict: the plan CLAIMED a partition, so co-fire AND gap are
+    both FAIL-capable (WARN under kind=analysis); unparsed clauses WARN."""
+    if len(clauses) < 2:
+        return _warn(
+            cid,
+            name,
+            "a DISJOINT-and-exhaustive declaration was found but fewer than 2 "
+            "`<label> ⇔ <predicate>` clauses parsed from it — the claimed partition is "
+            "not machine-checkable; use the canonical form (`DISJOINT and exhaustive: "
+            "<label> ⇔ <predicate>; …; <label> ⇔ otherwise`)",
+        )
+    labels = []
+    for clabel, cpred in clauses:
+        pred = _C20_SENT_END_RE.split(cpred)[0]
+        parse = _c20_parse_predicate(pred)
+        if _C20_POST_CI_PAIRED_RE.search(pred):
+            parse["unparsed"] = _C20_POST_CI_PAIRED_REASON
+        labels.append({"name": _c20_label_name(clabel), "parse": parse})
+    state, detail = _c20_evaluate_lattice(labels, tier=1, section_text=sec)
+    if state == "clean":
+        return _pass(cid, name, detail)
+    if state == "unparsed":
+        return _warn(cid, name, detail)
+    if kind == "analysis":
+        return _warn(cid, name, detail + " (analysis kind-degrade: WARN, not FAIL)")
+    return _fail(cid, name, detail)
+
+
+def _c20_tier2_result(cid: str, name: str, kind: str, lattices: list) -> CheckResult:
+    """Tier-2 verdict over every qualifying section's lattice (worst wins):
+    complete-parse co-fire FAILs (WARN under kind=analysis); gap-only and
+    any-unparsed WARN; any quantified label SKIPs the whole check."""
+    worst: tuple[int, str, str] | None = None  # (rank, state, detail)
+    rank = {"clean": 0, "gap": 1, "unparsed": 2, "cofire": 3}
+    for sec, labels in lattices:
+        for lab in labels:
+            seg, reason = _c20_segment(lab["text"])
+            if seg is not None and _C20_QUANT_RE.search(seg):
+                return _skip(
+                    cid,
+                    name,
+                    f"label '{lab['name']}' carries quantified verdict predicates out of v1 "
+                    "scope (k-of-n / per-family lattices are the Statistics critic's)",
+                )
+            if _C20_POST_CI_PAIRED_RE.search(lab["text"]):
+                seg, reason = None, _C20_POST_CI_PAIRED_REASON
+            if reason is not None:
+                lab["parse"] = {
+                    "otherwise": False,
+                    "dnf": [],
+                    "unparsed": reason,
+                    "point_qtys": set(),
+                }
+            else:
+                lab["parse"] = _c20_parse_predicate(seg)
+        state, detail = _c20_evaluate_lattice(labels, tier=2, section_text=sec)
+        if worst is None or rank[state] > worst[0]:
+            worst = (rank[state], state, detail)
+    assert worst is not None  # ≥1 lattice on this branch
+    _, state, detail = worst
+    if state == "clean":
+        return _pass(cid, name, detail)
+    if state == "cofire" and kind == "experiment":
+        return _fail(cid, name, detail)
+    if state == "cofire":
+        return _warn(cid, name, detail + " (analysis kind-degrade: WARN, not FAIL)")
+    if state == "gap":
+        return _warn(
+            cid,
+            name,
+            detail + " (tier-2 gap degrades to WARN: gap precision depends on harvest recall)",
+        )
+    return _warn(cid, name, detail)
+
+
+def check_verdict_lattice_coherence(plan: str, kind: str) -> CheckResult:
+    """A REGISTERED VERDICT LATTICE — success/kill/intermediate labels
+    defined by interval predicates over point estimates and CIs — must be
+    mutually exclusive and exhaustive over the interior sign/CI cells.
+    Tier 1 (the explicit "DISJOINT and exhaustive: <label> ⇔ <predicate>"
+    declaration) is FAIL-capable on co-fire AND gap (the plan claimed a
+    partition); tier 2 (per-label prose, the #923 v4 shape) FAILs only on a
+    co-fire with a COMPLETE parse — gaps degrade to WARN (gap precision
+    depends on harvest recall), any unparsed label degrades the whole
+    lattice to WARN, and quantified (k-of-n) predicates SKIP as out of the
+    v1 cell algebra. FAIL (experiment) / WARN (analysis) / SKIP otherwise;
+    escape via a standalone ``N/A — no registered verdict lattice`` line.
+    Incident: #923 amendment plan v4/v5 §3 — a bare positive point estimate
+    with both CIs straddling 0 fired BOTH H-slot and Intermediate (and one
+    cell fired neither); caught only by the Codex statistics critic, fixed
+    by hand in v6."""
+    cid, name = "c20_verdict_lattice_coherence", "verdict-lattice coherence"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid, name, "kind-exempt: registered verdict lattices are an experiment|analysis shape"
+        )
+    sections = _c20_trigger_sections(plan)
+    # Tier 1 takes precedence over tier 2 when a declaration exists anywhere.
+    tier1 = _c20_find_declaration(sections)
+    lattices: list[tuple[str, list[dict]]] = []
+    if tier1 is None:
+        for sec in sections:
+            labels = _c20_harvest_labels(sec)
+            if sum(1 for lab in labels if lab["idiom"]) >= 2:
+                lattices.append((sec, labels))
+    if tier1 is None and not lattices:
+        return _skip(
+            cid,
+            name,
+            "no registered verdict lattice detected (no DISJOINT-and-exhaustive ⇔ "
+            "declaration; fewer than 2 anchored CI-predicate labels in any trigger section)",
+        )
+    if _standalone_na_declared(plan, r"no registered verdict lattice"):
+        return _pass(cid, name, "explicit N/A declared (no registered verdict lattice)")
+    if tier1 is not None:
+        return _c20_tier1_result(cid, name, kind, tier1[0], tier1[1])
+    return _c20_tier2_result(cid, name, kind, lattices)
+
+
+# ─── Check 21 — grep-arity acceptance gate → AST arity audit (WARN-only) ──
+
+# A grep invocation whose quoted pattern is call-shaped: an identifier
+# immediately followed by `(` inside the quotes
+# (`grep -rn "parse_judge_json(" ...`). [^|\n] bounds the scan to the
+# grep component's own arguments, not a later pipeline component.
+_C21_GREP_CALL_RE = re.compile(r"""grep\b[^|\n]*["'][^"'\n]*\w\(""")
+
+# Pipeline-form arity discriminator: any grep component on the SAME line
+# whose quoted pattern contains a comma (`| grep ", "`, `grep -c 'f(.*,'`).
+_C21_GREP_COMMA_RE = re.compile(r"""grep\b[^|\n]*["'][^"'\n]*,[^"'\n]*["']""")
+
+# Count form: `... | wc -l`, or a grep flag cluster carrying -c
+# (`grep -c`, `grep -rnc`; a separated `grep -r -c` is a known miss).
+_C21_COUNT_RE = re.compile(r"""wc\s+-l|\bgrep\s+-\w*c\b""")
+
+# Prose-form arity vocabulary ("shows zero two-argument calls").
+_C21_ARITY_VOCAB_RE = re.compile(
+    r"(?i)\btwo-?arg\w*|\b(?:one|two|three|\d+)[- ]argument|\barity\b"
+    r"|second argument|keyword[- ]arg\w*"
+)
+
+# Registered zero-count pass condition — the comparator that makes a grep
+# a GATE rather than a discovery command. Deliberately absent: bare
+# `\bempty\b` and un-bounded `→ 0` (matched unrelated prose on #416/#467/
+# #870 in the calibration sweep).
+_C21_ZERO_RE = re.compile(
+    r"(?i)==?\s*`?0\b|\bshows zero\b|\bzero\b[^.\n]{0,40}\bcalls?\b"
+    r"|returns nothing|\b0 hits\b|must be 0\b"
+)
+
+# Evidence escape: the plan names an AST-based arity audit anywhere.
+_C21_AST_EVIDENCE_RE = re.compile(
+    r"(?i)ast\.(?:walk|parse)|\bAST[- ](?:based|arity|audit|walker)|libcst"
+)
+
+_C21_NA_RE = re.compile(NA_RE + r"no arity acceptance gate")
+
+
+def check_grep_arity_gate(plan: str, kind: str) -> CheckResult:
+    """Plans registering a grep/`wc -l`-based signature-ARITY acceptance
+    gate (`grep "func(" ... | grep ", " | wc -l` == 0, or a call-pattern
+    grep whose stated pass condition is "shows zero two-argument calls")
+    get a WARN pointing at the AST-based arity audit as the robust form:
+    comma heuristics over call sites are BOTH unsatisfiable (they count
+    deliberate two-arg tests + comma-bearing string literals) AND
+    under-detecting (split-line and keyword-argument calls carry no
+    same-line comma) — #1024 plan v1/v2 registered exactly this gate and
+    the critic ensemble replaced it with an ast.walk audit in v3. WARN
+    not FAIL: greps are legitimate for discovery/enumeration, and the
+    conjunctive line trigger (call-pattern grep + arity discriminator +
+    count/comparator) is a heuristic — the Phase 1.5/2 reviewers
+    adjudicate. ALL kinds: the incident was kind: infra, but signature
+    migrations also ride experiment plans' code-port phases, and the
+    2026-07-04 corpus sweep (1,329 plans/v*.md) fired on ZERO lines
+    outside #1024's own plan versions, so kind confinement buys no
+    precision and costs recall. Raw lines are scanned WITHOUT the fence
+    mask (gate commands live in inline backticks and fenced verification
+    blocks alike); section-window confinement is the first tightening
+    lever if a future sweep surfaces false positives. The 0-FP figure is
+    an IN-SAMPLE calibration (regexes tuned on the same historical
+    corpus the acceptance sweep re-runs) — it bounds nuisance cost on
+    yesterday's planner distribution, not a guarantee for future plans."""
+    cid, name = "c21_grep_arity_gate", "grep-arity acceptance gate points at AST audit"
+    del kind  # all kinds — trigger precision carries the false-positive discipline
+    hits: list[tuple[int, str]] = []
+    for i, line in enumerate(plan.splitlines(), 1):
+        if not _C21_GREP_CALL_RE.search(line):
+            continue
+        pipeline = _C21_GREP_COMMA_RE.search(line) and _C21_COUNT_RE.search(line)
+        prose = _C21_ARITY_VOCAB_RE.search(line) and _C21_ZERO_RE.search(line)
+        if pipeline or prose:
+            hits.append((i, line.strip()))
+    if not hits:
+        return _skip(cid, name, "no grep-based call-arity pass condition detected")
+    if _C21_NA_RE.search(plan):
+        return _pass(
+            cid, name, "explicit N/A declared (flagged grep is not an arity pass condition)"
+        )
+    if _C21_AST_EVIDENCE_RE.search(plan):
+        i, line = hits[0]
+        return _pass(
+            cid,
+            name,
+            f"grep-arity gate present (line {i}: {line[:80]!r}) but the plan also names an "
+            "AST-based arity audit — the robust form is registered",
+        )
+    i, line = hits[0]
+    return _warn(
+        cid,
+        name,
+        f"a registered pass condition counts comma-bearing call-pattern grep hits (line {i}: "
+        f"{line[:100]!r}) — comma-grep arity gates are both unsatisfiable (they count "
+        "deliberate two-arg tests and comma-bearing string literals) and under-detecting "
+        "(split-line and keyword-argument calls carry no same-line comma; #1024 plan v1/v2). "
+        "Register an AST arity audit instead: ast.parse each target file, ast.walk over Call "
+        "nodes matching the function, count len(node.args) + len(node.keywords), whitelist "
+        "named exceptions — or declare `N/A — no arity acceptance gate`",
+    )
+
+
+# ─── Check 22 — cross-section param consistency (WARN-only, all kinds) ─────
+
+_C22_PARAM_TOKENS = (
+    r"temperature|max_new_tokens|max_tokens|learning_rate|lr|epochs|"
+    r"seeds|seed|rank|alpha|batch_size|batch|top_p"
+)  # longer alternatives first where prefixes overlap
+_C22_ALIASES = {"learning_rate": "lr", "seeds": "seed", "batch_size": "batch"}
+_C22_NUM = r"(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?"
+# param=value / param: value; tolerates `code`/**bold** wrappers; captures a
+# single numeric, a comma-run of numerics, or a {...} brace set (<=120 chars).
+# The leading \b means compound tokens (JUDGE_TEMPERATURE=0.7) never match —
+# underscore is \w, so there is no boundary before the bare param name.
+_C22_VALUE_RE = re.compile(
+    rf"(?i)\b(?P<param>{_C22_PARAM_TOKENS})\b\s*[=:]\s*[`*]{{0,2}}\s*"
+    rf"(?P<vals>\{{[^}}\n]{{0,120}}\}}|{_C22_NUM}(?:\s*,\s*{_C22_NUM})*)"
+)
+# Range/schedule continuation right after the captured value ("1e-4 → 1e-5",
+# "1-3", "1 -> 3"): the tail value joins the occurrence's value set.
+_C22_RANGE_TAIL_RE = re.compile(
+    rf"\s*[`*]{{0,2}}\s*(?:[-\u2013\u2014]|->|→)\s*[`*]{{0,2}}({_C22_NUM})"
+)
+# Omission assertion: the #1024 corrected-text shape ("temperature OMITTED").
+_C22_OMIT_RE = re.compile(
+    rf"(?i)\b(?P<param>{_C22_PARAM_TOKENS})\b\s+(?:is\s+)?(?:omitted|left\s+unset)\b"
+)
+# Historical / declared-but-never-threaded clause vocabulary (value
+# occurrences only). `was` is value-adjacent only (`was 0.7` / `was set`),
+# NOT bare \bwas\b — bare `was` is ubiquitous and would silently exclude
+# CURRENT stale values on lines like "temperature=0.7 was chosen per #612".
+_C22_EXCLUDE_RE = re.compile(
+    rf"(?i)declared\s+but\s+never|never\s+threaded|not\s+threaded|never\s+used|"
+    rf"\bpreviously\b|superseded|corrected\s+(?:from|to)|historical|\bstale\b|"
+    rf"deprecated|no\s+longer|old\s+(?:value|default)|\bwas\s+(?:{_C22_NUM}|set\b|used\b)"
+)
+_C22_SWEEP_LINE_RE = re.compile(r"(?i)\bsweeps?\b|\bgrid\b|ablation")
+_C22_PHASE_RE = re.compile(r"(?i)\bphase[\s-]*([0-9]+)\b")
+_C22_LORA_CTX_RE = re.compile(r"(?i)lora|rslora|\brank\b|adapter|peft")
+
+# Same-line character window around a value match inside which the
+# historical-clause vocabulary excludes the occurrence (window-bounded so a
+# very long line's distant vocabulary cannot wrongly exclude a live value).
+_C22_EXCLUDE_WINDOW_CHARS = 100
+
+
+def _c22_top_section(headings: list[Heading], line_idx: int) -> tuple[int, str]:
+    """Top-level-section attribution for ``line_idx``: the SHALLOWEST heading
+    of level >= 2 containing the line (the H2 ancestor — sibling H3
+    subsections under one ``## 4. Design`` group as ONE section); falls back
+    to ``_innermost_section`` for H1-only docs, else a synthetic preamble
+    key. Returns ``(heading.line, heading.text)`` as the section key."""
+    candidates = [h for h in headings if h.level >= 2 and h.line <= line_idx < h.end]
+    if candidates:
+        best = min(candidates, key=lambda h: h.level)
+        return (best.line, best.text)
+    inner = _innermost_section(headings, line_idx)
+    if inner is not None:
+        return (inner.line, inner.text)
+    return (-1, "(preamble)")
+
+
+def _c22_record(
+    occ: dict[str, dict[tuple[int, str], dict]],
+    key: str,
+    section: tuple[int, str],
+    vals: set,
+    lineno: int,
+    span: str,
+) -> None:
+    """Union ``vals`` into ``occ[key][section]``, keeping the FIRST matched
+    ``(lineno, span)`` per (param, section) for the WARN detail."""
+    recs = occ.setdefault(key, {})
+    rec = recs.get(section)
+    if rec is None:
+        recs[section] = {"vals": set(vals), "lineno": lineno, "span": span}
+    else:
+        rec["vals"] |= vals
+
+
+def _c22_collect_occurrences(plan: str) -> dict[str, dict[tuple[int, str], dict]]:
+    """Build the (param-key → top-level section → {vals, lineno, span}) map.
+
+    Fenced lines never vote (module convention). Value occurrences on
+    sweep/grid/ablation lines, stats-``alpha`` outside LoRA context, and
+    values inside a historical/never-threaded clause (same-line ±100-char
+    window) are excluded. Literal omission assertions (``<param> OMITTED``)
+    are EXEMPT from the exclusion filter — the corrected text legitimately
+    reads "temperature OMITTED — the builders never set it": the clause
+    explains the omission, it does not mark it historical. Phase-qualified
+    lines key as ``<param>@phase<K>``."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    headings = _headings(plan)
+    occ: dict[str, dict[tuple[int, str], dict]] = {}
+    for i, line in enumerate(lines):
+        if mask[i]:
+            continue
+        pm = _C22_PHASE_RE.search(line)
+        phase = f"@phase{pm.group(1)}" if pm else ""
+        section = _c22_top_section(headings, i)
+        for m in _C22_VALUE_RE.finditer(line):
+            param = _C22_ALIASES.get(m["param"].lower(), m["param"].lower())
+            if param == "alpha" and not _C22_LORA_CTX_RE.search(line):
+                continue  # stats-alpha guard: significance level, not LoRA alpha
+            if _C22_SWEEP_LINE_RE.search(line):
+                continue  # sweep/grid/ablation declarations are legitimately multi-value
+            w = _C22_EXCLUDE_WINDOW_CHARS
+            window = line[max(0, m.start() - w) : m.end() + w]
+            if _C22_EXCLUDE_RE.search(window):
+                continue  # historical / declared-but-never-threaded clause
+            vals: set = {float(v) for v in re.findall(_C22_NUM, m["vals"])}
+            if not vals:
+                continue  # non-numeric brace set
+            tm = _C22_RANGE_TAIL_RE.match(line, m.end())
+            if tm:
+                vals.add(float(tm.group(1)))
+            _c22_record(occ, param + phase, section, vals, i, m.group(0))
+        for m in _C22_OMIT_RE.finditer(line):
+            param = _C22_ALIASES.get(m["param"].lower(), m["param"].lower())
+            _c22_record(occ, param + phase, section, {"OMITTED"}, i, m.group(0))
+    return occ
+
+
+def check_cross_section_param_consistency(plan: str, kind: str) -> CheckResult:
+    """The same tracked hyperparameter stated with contradictory values in
+    DIFFERENT top-level sections is the #1024 incident class: a fact-check
+    correction lands in one section while a stale restatement survives in
+    another (§11 *What:* lines, assumption rows). Tracked params:
+    temperature, max_tokens / max_new_tokens (distinct keys — API judge cap
+    vs HF generate cap), lr / learning_rate, epochs, seed / seeds, rank,
+    alpha (LoRA context only), batch / batch_size, top_p. A conflict is a
+    pair of top-level sections whose value SETS are disjoint — overlap is
+    consistent, which is what lets per-arm tables, ranges/schedules, and
+    seed lists restated against a member value all PASS while ``0.7`` vs
+    ``OMITTED``/``1.0`` WARNs. v1 scope: value-vs-value plus
+    value-vs-literal-omission-token (``<param> OMITTED`` / ``left unset``) —
+    the #1024 v2 offender shape; broader omission phrasings ("builders omit
+    temperature", "no temperature parameter") are OUT of v1 scope.
+    WARN-only, never FAIL (legitimate multi-value plans exist, and Phase
+    1.5.0 forwards WARNs verbatim into the fact-checker/critic briefs — the
+    intended consumption path); ALL kinds (the motivating #1024 offender is
+    ``kind: infra``); conditional SKIP when no tracked param spans >= 2
+    top-level sections.
+
+    Documented v1 limits: (i) half-corrected-section masking — a section
+    carrying BOTH a stale ``temperature=0.7`` and the corrected
+    "temperature OMITTED" unions to {0.7, OMITTED}, which overlaps a §11
+    {0.7} → PASS; intra-section contradictions are out of v1 cross-section
+    scope. (ii) Phase-qualifier asymmetry — a phase-qualified occurrence
+    (``epochs@phase1``) never compares against an unqualified ``epochs=3``;
+    a c22 PASS is not "no cross-section drift" for phase-keyed params.
+    (iii) Markdown-table blindness — the value regex requires ``=`` or
+    ``:``, so pipe-table hyperparameter rows (``| lr | 1e-4 |``) never
+    parse; the table-vs-prose restatement class is invisible to v1."""
+    cid, name = "c22_cross_section_param_consistency", "cross-section param consistency"
+    del kind  # registry symmetry, c5-style: c22 runs for ALL kinds (#1024 is kind: infra)
+    occ = _c22_collect_occurrences(plan)
+    cross = {k: recs for k, recs in occ.items() if len(recs) >= 2}
+    if not cross:
+        return _skip(cid, name, "no cross-section parameter restatement detected")
+    conflicts: list[tuple[str, tuple, tuple]] = []
+    for key, recs in cross.items():
+        sections = list(recs.items())
+        found = None
+        for a in range(len(sections)):
+            for b in range(a + 1, len(sections)):
+                if sections[a][1]["vals"].isdisjoint(sections[b][1]["vals"]):
+                    found = (key, sections[a], sections[b])
+                    break
+            if found:
+                break
+        if found:
+            conflicts.append(found)  # first disjoint pair reported per param
+    if not conflicts:
+        return _pass(
+            cid, name, f"{len(cross)} parameter(s) restated across sections, all consistent"
+        )
+    parts = []
+    for key, (sec_a, rec_a), (sec_b, rec_b) in conflicts[:2]:
+        parts.append(
+            f"{key}: '{rec_a['span']}' (§'{sec_a[1]}' L{rec_a['lineno'] + 1}) vs "
+            f"'{rec_b['span']}' (§'{sec_b[1]}' L{rec_b['lineno'] + 1})"
+        )
+    more = len(conflicts) - 2
+    detail = (
+        "; ".join(parts)
+        + (f" …and {more} more param(s)" if more > 0 else "")
+        + " — cross-section contradiction; if one side is a stale post-correction "
+        "restatement, fix it"
+    )
+    return _warn(cid, name, detail)
+
+
+# ─── Check 23 — goal currency (outside CHECKS; --issue mode only) ─────────
+
+# Word-shingle stale-quote detector for the #922 plan-vs-goal incident class:
+# a plan head quoting a SUPERSEDED Goal at high coverage while the CURRENT
+# Goal is absent. WARN-only (the c21 WARN-first precedent, #1042); the
+# forced redraft is delivered by the adversarial-planner SKILL.md
+# § Goal-currency gate ("the one WARN that bounces"). Needs task context
+# (body.md + events.jsonl), so it lives OUTSIDE verify_plan_text() and is
+# appended by main() in --issue mode only.
+_C23_SHINGLE_K = 6
+_C23_MIN_GOAL_WORDS = 12
+_C23_STALE_COV = 0.5
+_C23_CURRENT_COV = 0.3
+# NO positive slack: retro-stale goal-update gaps of ~3-6 min exist in the
+# corpus (779/477/489) — any slack ≥ ~3 min manufactures false positives.
+_C23_MTIME_SLACK_S = 0.0
+
+
+def _norm_goal_words(s: str) -> list[str]:
+    """Lowercase; non-alphanumerics (incl. unicode math) -> space; split."""
+    return [w for w in re.sub(r"[^a-z0-9 ]+", " ", s.lower()).split() if w]
+
+
+def _goal_shingles(words: list[str], k: int = _C23_SHINGLE_K) -> set[tuple[str, ...]]:
+    """All contiguous k-word shingles of ``words`` (empty set below k words)."""
+    if len(words) < k:
+        return set()
+    return {tuple(words[i : i + k]) for i in range(len(words) - k + 1)}
+
+
+def _shingle_coverage(goal: str, head_words: list[str]) -> float:
+    """Fraction of the goal's k-word shingles present in the plan head."""
+    gs = _goal_shingles(_norm_goal_words(goal))
+    if not gs:
+        return 0.0
+    hs = _goal_shingles(head_words)
+    return sum(1 for s in gs if s in hs) / len(gs)
+
+
+def _plan_head_words(plan: str) -> list[str]:
+    """Head region = start -> the ``## 2.``/``### 2.`` heading, else first 8000 chars."""
+    m = re.search(r"^#{2,3}\s*2\.\s", plan, re.M)
+    return _norm_goal_words(plan[: m.start()] if m else plan[:8000])
+
+
+def _goal_history_for_plan(folder: Path, plan_mtime_utc: datetime) -> tuple[str | None, list[str]]:
+    """(current_goal, superseded_goals) AS OF the plan version's post time.
+
+    current = latest predating ``epm:goal-updated`` ``to:`` (fallback:
+    body.md frontmatter ``goal:``); superseded = predating markers'
+    ``from:`` values (structured fields only — ``task.py set-goal`` posts
+    top-level ``from``/``to``/``by``; hand-posted note-only markers
+    contribute nothing). Bounded STRICTLY by mtime (slack 0, ``ts <= mtime``
+    inclusive) so goal-updates that postdate the plan never retro-flag it —
+    a positive slack manufactures FPs from minutes-scale retro-stale gaps
+    (779/477/489).
+
+    Read discipline: records split on ``"\\n"`` — NEVER ``str.splitlines()``
+    (the paired writer ``task_workflow._append_jsonl_line`` emits
+    ``ensure_ascii=False``, so a raw U+2028/U+2029/NEL inside a goal/note
+    string is ONE valid JSONL record that ``splitlines()`` would shred,
+    crashing the strict ``json.loads`` or silently dropping the marker —
+    the #950 class; mirrors ``task_workflow._iter_jsonl``). Fail-fast: a
+    row whose ``kind`` IS ``epm:goal-updated`` but whose ``ts`` is missing
+    or non-string raises ``ValueError`` — the canonical writer always emits
+    ``ts``, so such a row is real corruption, and silently skipping it
+    would shrink the predating history (flipping c23 to SKIP/PASS on a
+    stale plan).
+    """
+    cutoff = plan_mtime_utc + timedelta(seconds=_C23_MTIME_SLACK_S)
+    current: str | None = None
+    superseded: list[str] = []
+    ev = folder / "events.jsonl"
+    if ev.exists():
+        for line in ev.read_text(encoding="utf-8", errors="replace").split("\n"):
+            if not line.strip():
+                continue
+            if '"epm:goal-updated"' not in line:
+                continue  # cheap pre-filter; goal-updated lines parse strictly below
+            e = json.loads(line)
+            if e.get("kind") != "epm:goal-updated":
+                continue
+            if not isinstance(e.get("ts"), str):
+                raise ValueError(
+                    f"malformed epm:goal-updated row in {ev}: missing/non-string 'ts' "
+                    f"(the canonical writer always emits ts — this is corruption, "
+                    f"not a benign note-only marker): {line!r}"
+                )
+            ets = datetime.fromisoformat(e["ts"].replace("Z", "+00:00"))
+            if ets.tzinfo is None:
+                ets = ets.replace(tzinfo=UTC)
+            if ets.astimezone(UTC) > cutoff:
+                continue
+            if isinstance(e.get("from"), str):
+                superseded.append(e["from"])
+            if isinstance(e.get("to"), str):
+                current = e["to"]
+    if current is None:
+        body = folder / "body.md"
+        if body.exists():
+            fm, _ = split_frontmatter(body.read_text())
+            g = fm.get("goal")
+            current = str(g) if g else None
+    if current is not None:
+        cur_norm = " ".join(_norm_goal_words(current))
+        superseded = [s for s in superseded if " ".join(_norm_goal_words(s)) != cur_norm]
+    return current, superseded
+
+
+def check_goal_currency(
+    plan: str, *, current_goal: str | None, superseded: list[str]
+) -> CheckResult:
+    """WARN when the plan head quotes a superseded Goal while the current
+    Goal is absent (the #922 stale-quote signature); PASS/SKIP otherwise."""
+    cid, name = "c23_goal_currency", "plan head not drafted against a superseded Goal"
+    if current_goal is None or len(_norm_goal_words(current_goal)) < _C23_MIN_GOAL_WORDS:
+        return _skip(cid, name, "no goal frontmatter / goal too short for shingle matching")
+    sup = [s for s in superseded if len(_norm_goal_words(s)) >= _C23_MIN_GOAL_WORDS]
+    if not sup:
+        return _skip(cid, name, "no superseded Goal predates this plan version")
+    head = _plan_head_words(plan)
+    cov_cur = _shingle_coverage(current_goal, head)
+    cov_stale, stale = max(((_shingle_coverage(s, head), s) for s in sup), key=lambda t: t[0])
+    if cov_stale >= _C23_STALE_COV and cov_cur < _C23_CURRENT_COV:
+        return _warn(
+            cid,
+            name,
+            f"plan head matches a SUPERSEDED Goal (shingle coverage {cov_stale:.2f}: "
+            f"{stale[:100]!r}) while the CURRENT Goal is absent (coverage {cov_cur:.2f}) "
+            "— redraft §0.0/§0/§1 against the current `goal:` frontmatter (#922 "
+            "plan-vs-goal incident). The orchestrator treats this WARN as a mechanical "
+            "redraft bounce (adversarial-planner SKILL.md § Goal-currency gate).",
+        )
+    return _pass(cid, name, f"coverage: current {cov_cur:.2f}, max superseded {cov_stale:.2f}")
+
+
+# ─── Check 24 — resume-skip provenance validation (conditional) ─────────────
+
+# Trigger: a per-unit persist + resume-skip pattern. Compound forms ONLY —
+# bare "resume" fires on pod lifecycle ("pod.py resume", "resume the poll
+# loop") and bare "checkpoint"/"persist" on model checkpoints / the upload
+# policy (calibration 2026-07-05: 63 experiment|analysis plan-version hits
+# over the 1,367-file v*.md corpus, every spot-checked hit a genuine
+# resume-skip loop; zero pod-resume / upload-policy false hits; 28
+# non-exp/analysis triggered versions all land on the kind gate).
+_C24_TRIGGER_RE = re.compile(
+    r"(?i)\b(?:resume[- ]skip|resume[- ]predicate"
+    r"|skip[- ]if[- ]exists?"
+    r"|skips?\s+(?:already[- ])?(?:completed|done|existing)"
+    r"|checkpoint[- ](?:skip|resume)"
+    r"|per[- ](?:fold|cell|unit|seed|row|shard)[- ]persist\w*"
+    r"|idempotent re-?runs?"
+    r"|load[- ]partial[- ]and[- ]skip)"
+)
+
+# Satisfier: a recognizable input-fingerprint / provenance token near the
+# resume mention. Compound-form discipline on BOTH flanks (plan #1043 v3):
+# bare "provenance" and bare "manifest" are deliberately EXCLUDED —
+# "Completion provenance:" is a REQUIRED §4-design bullet in every
+# experiment plan (on-policy-completions enforcement), so it lands within
+# ±15 lines of resume prose and false-satisfied 52% of the v2-calibration
+# PASSes (#811 v1, #622 v1-v3, #931 v6 measured; 2026-07-05 reconciler).
+# Bare "regime" is likewise EXCLUDED — persona-vectors "read-out regime"
+# prose sits inside resume windows (#779 v5 measured) and would
+# self-satisfy. The final alternate (assert/validate/verify … existing/
+# persisted/… … match) catches contracts phrased without a fingerprint
+# noun (#560 v3: "assert the existing file's `sampling.temperature` /
+# `sampling_seed` match the requested flags"); it requires a resume-object
+# token between verb and "match" so an equivalence-gate assert ("assert
+# the vmapped MLP path matches a seeded serial reference", #922 v1-v3
+# measured) does NOT satisfy, and its spans are [^\n] (not
+# sentence-bounded) because periods inside code tokens like
+# `sampling.temperature` break [^.]-spans.
+_C24_FINGERPRINT_RE = re.compile(
+    r"(?i)\b(?:fingerprints?"
+    r"|provenance[- ](?:manifest\w*|contract\w*|validation\w*|check\w*)"
+    r"|manifest[- ](?:match\w*|validation\w*|mismatch\w*|check\w*)"
+    r"|sha[- ]?256|git[_ -]?sha|code[- ]sha|commit[- ](?:sha|hash)"
+    r"|(?:split|content|input|data)[- ]hash(?:es)?"
+    r"|env[- ](?:fingerprint|knobs?)"
+    r"|regime[- ]key(?:ed|s)?"
+    r"|never skip\w* on (?:[\w-]+[- ])?existence"
+    r"|(?:assert\w*|validat\w+|verif\w+)[^\n]{0,80}?"
+    r"\b(?:existing|persisted|resumed?|cached|stored|prior)\b[^\n]{0,80}?\bmatch\w*)"
+)
+
+# Evidence window: ± this many RAW lines around each trigger (the provenance
+# contract legitimately lives in an adjacent sentence/table row — #952 v12
+# names it in the same bullet; #813 v3 one section over).
+_C24_WINDOW_LINES = 15
+
+
+def check_resume_provenance(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a plan naming a per-unit persist + resume-skip
+    pattern must, within ±15 raw lines of SOME resume mention, name an
+    input-fingerprint / provenance validation for the resumed outputs (split
+    hashes, code SHA, env knobs, a regime-keyed resume predicate, an explicit
+    never-skip-on-bare-existence commitment, or an assert-that-the-existing-
+    file-matches contract) — never output existence alone. NEVER FAILs in
+    v1 — the trigger is a vocabulary heuristic and semantic adequacy of the
+    named validation stays with the critics (task #1043 constraint). Known
+    accepted gap under WARN-only: a plan that QUOTES this check's WARN
+    remedy text near a trigger self-satisfies (the remedy names "split
+    hashes, code SHA, env knobs"); the anti-paste guard covers only the N/A
+    phrase. Any future WARN→FAIL promotion MUST close that gap first (plan
+    #1043 §10 must-ask hook). Incident #952 v9: per-fold persist +
+    resume-skip with a bare skips-completed-folds predicate would have let
+    stale-fold outputs (or a stale calibration-gate PASS) silently vouch for
+    post-code-fix verdict folds; caught only by the critic ensemble (v10
+    added the gate-5 provenance-manifest contract). ANY-window semantics per
+    the c12 precedent: the contract is typically declared once near one
+    mention."""
+    cid, name = "c24_resume_provenance", "resume-skip provenance validation"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid, name, "kind-exempt: resume-provenance is an experiment|analysis plan shape"
+        )
+    windows = _trigger_windows(plan, _C24_TRIGGER_RE, _C24_WINDOW_LINES)
+    if not windows:
+        return _skip(cid, name, "no per-unit persist + resume-skip pattern named")
+    if _standalone_na_declared(plan, r"no resume\s*[/-]?\s*persist pattern"):
+        return _pass(cid, name, "explicit N/A declared (no resume/persist pattern)")
+    for window in windows:
+        if _C24_FINGERPRINT_RE.search(window):
+            return _pass(
+                cid,
+                name,
+                "a resume window names a provenance/fingerprint validation — whether the "
+                "named fields (input hashes, code SHA, env) are SUFFICIENT stays critic-owned",
+            )
+    return _warn(
+        cid,
+        name,
+        "plan names a per-unit persist + resume-skip pattern but no input-fingerprint / "
+        "provenance validation near any resume mention (split hashes, code SHA, env knobs, "
+        "a regime-keyed resume predicate) — a resume that trusts bare output existence lets "
+        "stale units silently vouch after a crash + code-fix round (#952 v9; #722 r3); "
+        "name the validation per the #952 gate-5 manifest shape, or declare "
+        "'N/A — no resume/persist pattern' on its own line if the mention is incidental",
+    )
+
+
+# ─── Check 25 — HTML entities in fenced command blocks (all kinds) ──────────
+# The harness HTML-escapes the <result> field of background-Agent
+# <task-notification> messages (&& -> the amp-entity form, < -> lt, > -> gt);
+# an orchestrator that composes the plan handoff from that text ships a
+# poisoned workload command (#952 v9, 2026-07-04: the dispatcher command's
+# shell AND operators arrived entity-escaped and needed a hand-fix before
+# dispatch would run). This check is the persist-time backstop for the
+# capture-time de-escape rule in adversarial-planner SKILL.md.
+
+# Fence pairing: backtick fences only, opener info string captured, closer on
+# its own line — the same relaxed-pairing limitation class as the other regex
+# checks (corpus-calibrated; exotic 4-backtick nesting is out of scope).
+_C25_FENCE_RE = re.compile(r"(?ms)^[ \t]*```([^\n]*)\n(.*?)^[ \t]*```[ \t]*$")
+
+# Arm (a): shell-tagged fences (exemptable by the standalone escape phrase).
+_C25_CMD_FENCE_INFO_RE = re.compile(r"(?i)^\s*(?:bash|sh|shell|zsh|console)\b")
+
+# Arm (b): ANY fence (tagged or untagged) whose body carries the
+# highest-stakes command markers — never exemptable.
+_C25_CMD_MARKER_RE = re.compile(r"--workload-cmd|dispatch_issue\.py")
+
+# The six entity forms (amp/lt/gt/quot + the numeric/hex apostrophes),
+# case-insensitive, leading-zero-tolerant on the numeric forms.
+_C25_HTML_ENTITY_RE = re.compile(r"(?i)&(?:amp|lt|gt|quot|#0*39|#x0*27);")
+
+
+def _c25_detail(hits: list[str], *, exemptable: bool) -> str:
+    """Render the c25 FAIL detail: entity list + the #952 v9 incident + the
+    capture-side remediation; the escape-phrase pointer appears ONLY on the
+    ``exemptable=True`` (arm-(a)) branch — an arm-(b) ``--workload-cmd`` /
+    ``dispatch_issue.py`` fence is never exemptable (methodology reconciler,
+    #1062 round 1)."""
+    base = (
+        f"fenced command block(s) carry HTML entity form(s) {', '.join(hits)} — the "
+        "harness HTML-escapes background-Agent <task-notification> results "
+        "(#952 v9, 2026-07-04: the dispatcher command's shell AND operators "
+        "arrived entity-escaped); re-extract from the raw output-file, or apply "
+        "ONE html.unescape() round to notification-BODY-sourced text, before "
+        "persisting"
+    )
+    if exemptable:
+        return base + (
+            "; if the fenced entities are deliberately discussed CONTENT (not a "
+            "command to dispatch), declare 'N/A — entities are content, not "
+            "commands' on its own line"
+        )
+    return base + (
+        " — a --workload-cmd / dispatch_issue.py fence is never exemptable: fix the command text"
+    )
+
+
+def check_html_entities_in_commands(plan: str, kind: str) -> CheckResult:
+    """FAIL, ALL kinds, conditional: fenced command blocks must not carry HTML
+    entities (#952 v9).
+
+    Two arms: (a) shell-tagged fences (bash/sh/shell/zsh/console) with no
+    command marker; (b) ANY fence — tagged or untagged — whose body carries
+    ``--workload-cmd`` or ``dispatch_issue.py``. Scan-first; the standalone
+    escape phrase (``N/A — entities are content, not commands``, detected via
+    the house ``_standalone_na_declared`` line discipline — never a doc-global
+    substring) exempts arm-(a) hits ONLY. An arm-(b) entity hit FAILs
+    UNCONDITIONALLY — a document-wide phrase must never mask a separately
+    poisoned workload command (methodology reconciler, #1062 round 1: one
+    legitimate entity-discussing fence + one poisoned dispatcher fence must
+    still FAIL). SKIP when the plan has no command fences. All kinds —
+    infra/batch plans carry verification commands too (this incident class is
+    kind-agnostic). The check ASSERTS; it never rewrites plan text.
+    """
+    cid, name = "c25_html_entities_in_commands", "no HTML entities in fenced command blocks"
+    del kind  # all kinds — infra/batch plans carry verification commands too
+    arm_a: list[str] = []
+    arm_b: list[str] = []
+    for info, body in _C25_FENCE_RE.findall(plan):
+        if _C25_CMD_MARKER_RE.search(body):
+            arm_b.append(body)  # command-marked: never exemptable
+        elif _C25_CMD_FENCE_INFO_RE.match(info):
+            arm_a.append(body)  # shell-tagged: exemptable by the phrase
+    if not arm_a and not arm_b:
+        return _skip(cid, name, "no fenced command blocks detected")
+    hits_b = sorted({m.group(0) for b in arm_b for m in _C25_HTML_ENTITY_RE.finditer(b)})
+    if hits_b:
+        return _fail(cid, name, _c25_detail(hits_b, exemptable=False))
+    hits_a = sorted({m.group(0) for b in arm_a for m in _C25_HTML_ENTITY_RE.finditer(b)})
+    if hits_a and _standalone_na_declared(plan, r"entities are content, not commands"):
+        return _pass(cid, name, "arm-(a) entity content exempted by explicit standalone N/A")
+    if hits_a:
+        return _fail(cid, name, _c25_detail(hits_a, exemptable=True))
+    return _pass(cid, name, f"{len(arm_a) + len(arm_b)} command fence(s), no entity forms")
+
+
+# ─── Check 26 — GPU basis vs routed machine (WARN-only, conditional) ────────
+# Mechanizes .claude/rules/plan-compute-sizing.md § "Cost wall-time against
+# the machine the router will ACTUALLY provision" (#599/#833/#1073 class).
+# STATIC MIRROR of backends/gcp.py::INTENT_TO_MACHINE at FAMILY grain,
+# drift-guarded by tests/test_verify_plan.py::
+# test_c26_intent_gpu_mirror_matches_backend — verify_plan_text() stays
+# hermetic (no project imports at module level; the only project import in
+# this file is the --issue-mode-local task_workflow resolver).
+_C26_INTENT_GPU: dict[str, str] = {
+    "lora-7b": "A100",
+    "lora": "A100",
+    "capture-7b": "A100",
+    "ft-7b": "A100",
+    "eval": "L4",
+    "debug": "L4",
+    "lora-7b-h100": "H100",
+    "eval-h100": "H100",
+    "cpu-bigmem": "CPU",
+    "cpu-small": "CPU",
+    "cpu-mid": "CPU",
+    "sweep-8g-a100": "A100",
+    "sweep-8g-h100": "H100",
+}
+
+
+def _c26_family(token: str) -> str:
+    """GPU family normalization: strip a trailing ``-<digits>`` HBM-size
+    suffix (``A100-80`` == ``A100-40`` == ``A100``; ``H100-80`` == ``H100``;
+    ``L4``/``CPU`` unchanged). A100-40-vs-A100-80 differences are
+    deliberately below the heuristic's grain."""
+    return re.sub(r"-\d+$", "", token)
+
+
+# GPU family tokens ALLOWED in a basis cell trigger. L4/L40S deliberately
+# EXCLUDED from the trigger set: #833-style leg labels ("L1/L2 re-extraction,
+# L3/L4 extraction") collide with the L4 GPU token; nobody measures bases on
+# an L4, while the ROUTED side still knows L4 via the mirror. Included in the
+# ESCAPE scan (permissive direction only).
+_C26_BASIS_GPU_RE = re.compile(r"\b(H100|H200|A100(?:-[48]0)?|B200)\b")
+_C26_ROW_GPU_ANY_RE = re.compile(r"\b(H100|H200|A100(?:-[48]0)?|B200|L40S|L4)\b")
+
+# Scaling vocabulary (row-scoped escape). A bare multiplication sign is NOT
+# an escape — it appears in nearly every row's multiplier arithmetic
+# ("5,000 x ~300 tok", "draws x cells"); #1073 v3's offending row contains
+# one and was still the incident (plan #1075 calibration finding).
+_C26_SCALING_RE = re.compile(
+    r"(?i)\bscal(?:ed|ing|e factor)\b|per-?step rate|step-?time|rate-?convert"
+)
+
+# Intent resolution: --intent <tok> in prose or fences (c5 precedent: RAW
+# scan); additionally accepted: the "intent `lora-7b`" prose form
+# (#1073 v3 "Target pod preference" shape — capitalized "Intent" in the
+# wild, hence (?i)).
+_C26_INTENT_RE = re.compile(
+    r"(?i)--intent[=\s]+`?([A-Za-z0-9][A-Za-z0-9-]*)|\bintent\s+`([A-Za-z0-9][A-Za-z0-9-]*)`"
+)
+
+# Explicit RunPod pin → the RunPod H100/H200 intent table governs; SKIP.
+# Scanned RAW (fences included), matching the raw intent scan — a fenced
+# `--backend runpod` dispatch line is a real pin; permissive direction only.
+_C26_RUNPOD_PIN_RE = re.compile(r"(?i)\bbackend:\s*`?runpod\b|--backend[=\s]+`?runpod\b")
+
+
+def _c26_intents(plan: str) -> set[str]:
+    """Intent tokens resolved from RAW plan text (fences included — a fenced
+    dispatch line is the real launch command, the c5 raw-scan precedent).
+    Union of the ``--intent <tok>`` flag form (group 1) and the
+    ``intent `tok` `` prose form (group 2)."""
+    out: set[str] = set()
+    for m in _C26_INTENT_RE.finditer(plan):
+        tok = m.group(1) or m.group(2)
+        if tok:
+            out.add(tok)
+    return out
+
+
+def _c26_compute_table_rows(plan: str) -> list[tuple[str, str, str, str]]:
+    """``(component_cell, basis_cell, wall_cell, full_row_text)`` for every
+    body row of every non-fenced markdown table whose header carries a
+    ``basis`` column (a cell that IS or BEGINS WITH the word ``basis``,
+    casefolded, bold/backticks stripped — the corpus carries an annotated
+    ``basis (measured)`` variant, #952 v12) AND a wall column (fuzzy: any
+    header cell CONTAINING ``wall`` — matches ``planned_wall_h`` /
+    ``planned wall h`` / ``wall_h`` drift). Header
+    detection is fence-masked (a fenced example table is not the plan's
+    table — the ``_trigger_windows`` precedent; this deliberately diverges
+    from ``_source_column_cells``, which is section-scoped instead: c26
+    scans the whole doc because §9 heading text drifts). A row with fewer
+    cells than the basis column needs is skipped defensively (the bold
+    ``**Base total**`` short-row shape — no IndexError); a short row that
+    still reaches the basis column is treated normally with an empty wall
+    cell."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    rows: list[tuple[str, str, str, str]] = []
+    i = 0
+    while i < len(lines) - 1:
+        header = lines[i].strip()
+        sep = lines[i + 1].strip()
+        if mask[i] or not (
+            header.startswith("|") and sep.startswith("|") and _TABLE_SEP_RE.fullmatch(sep)
+        ):
+            i += 1
+            continue
+        header_cells = [c.strip().strip("*`").strip().casefold() for c in _split_table_row(header)]
+        basis_col = next((j for j, c in enumerate(header_cells) if re.match(r"basis\b", c)), None)
+        wall_col = next((j for j, c in enumerate(header_cells) if "wall" in c), None)
+        k = i + 2
+        while k < len(lines) and lines[k].strip().startswith("|"):
+            if basis_col is not None and wall_col is not None:
+                row = _split_table_row(lines[k])
+                if basis_col < len(row):
+                    component = row[0] if row else ""
+                    wall = row[wall_col] if wall_col < len(row) else ""
+                    rows.append((component, row[basis_col], wall, lines[k]))
+            k += 1
+        i = k
+    return rows
+
+
+def _c26_offender_detail(offenders: list[tuple[str, str]], routed: set[str]) -> str:
+    """Bounded WARN detail (c13 ``_offender_detail`` precedent): at most 3
+    offending rows (component + the offending GPU token), the resolved
+    routed families, the #599 incident anchor, and BOTH remedies (a stated
+    per-step scaling rate in the row, or the standalone N/A phrase)."""
+    shown = "; ".join(f"row {comp[:60]!r} basis names {tok}" for comp, tok in offenders[:3])
+    if len(offenders) > 3:
+        shown += "; ..."
+    return (
+        f"{shown} but resolved intent(s) route {sorted(routed)} under auto (GCP "
+        "INTENT_TO_MACHINE) with no stated cross-GPU scaling in the row — a basis "
+        "measured on a different GPU must be scaled with a stated per-step rate "
+        "(plan-compute-sizing.md; #599: an H100-premised ~6.4h estimate ran ~34h on "
+        "the A100 auto-lane), or declare 'N/A — basis measured on the routed machine' "
+        "on its own line"
+    )
+
+
+def check_gpu_basis_routed_machine(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a §9 compute-projection-table basis cell naming
+    a GPU family (H100/H200/A100/B200) that differs from EVERY family the
+    plan's resolved --intent token(s) route under auto (static GCP
+    INTENT_TO_MACHINE mirror, _C26_INTENT_GPU), with no row-level escape.
+    Mechanizes plan-compute-sizing.md § "Cost wall-time against the machine
+    the router will ACTUALLY provision" (#599 ~6.4h -> ~34h; #1073 v3 -> v4).
+    Row escapes: (a) the routed family named in a CONVERSION-BEARING cell —
+    the wall or basis cell ONLY (a stated conversion names both machines
+    there, #1073 v4 wall cell "0.25 (H100) / 0.5-0.6 (A100, x2-2.5)");
+    a parallelism/component-cell mention describes the PROVISIONED machine,
+    not a conversion, and does NOT escape (plan #1075 Must-Fix M1 — #810 v18
+    / #923 v9 rows put "1x A100-80" in parallelism/component cells);
+    (b) scaling vocabulary (scaled/per-step rate/...) anywhere in the row.
+    NEVER FAILs in v1 — both sides are heuristic (intent resolution from
+    text; token matching), and whether a stated scaling factor is CORRECT
+    stays critic-owned (c24 precedent). Known accepted gaps: a basis citing
+    a prior issue's realized wall WITHOUT naming its GPU (#599's shape)
+    is invisible; a "recommended pin: backend: runpod" prose mention
+    escapes as if pinned (#779 v6); a conversion stated as a BARE
+    multiplier with no vocabulary word ("on H100, x2.5" — #628 v2, the one
+    adjudicated calibration FP) still WARNs, because bare-multiplier
+    arithmetic saturates compliant AND offending rows alike (#1073 v3) —
+    the remedy is one vocabulary word in the row; A100-40 vs A100-80 is
+    below the family grain; a routed-family mention in the wall/basis
+    cell escapes
+    without a true conversion (conversion ADEQUACY stays critic-owned);
+    a standalone N/A declaration is document-wide (c24 /
+    ``_standalone_na_declared`` family semantics), so it also clears any
+    sibling offender row — the deliberate-override purpose of the phrase."""
+    cid, name = "c26_gpu_basis_routed_machine", "GPU basis vs routed machine"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: compute-projection tables are an experiment|analysis plan shape",
+        )
+    rows = _c26_compute_table_rows(plan)
+    if not rows:
+        return _skip(cid, name, "no compute-projection table with a `basis` column detected")
+    if _standalone_na_declared(plan, r"basis measured on the routed machine"):
+        return _pass(cid, name, "explicit N/A declared (basis measured on the routed machine)")
+    if _C26_RUNPOD_PIN_RE.search(plan):
+        # RAW scan (fences included): a fenced `--backend runpod` dispatch
+        # line is a real pin; permissive direction (can only add SKIPs).
+        return _skip(
+            cid,
+            name,
+            "explicit backend: runpod pin — the RunPod intent table governs the basis machine",
+        )
+    routed = {_C26_INTENT_GPU[i] for i in _c26_intents(plan) if i in _C26_INTENT_GPU}
+    if not routed:
+        return _skip(
+            cid,
+            name,
+            "no resolvable --intent token — routed machine unknown (auto-lane GPU cannot "
+            "be inferred)",
+        )
+    offenders: list[tuple[str, str]] = []
+    for component, basis, wall, row_text in rows:
+        hit = _C26_BASIS_GPU_RE.search(basis)
+        if not hit or _c26_family(hit.group(1)) in routed:
+            continue
+        # Escape (a): routed family named in a CONVERSION-BEARING cell only
+        # (wall + basis) — NOT parallelism/component (Must-Fix M1).
+        conv_cells = f"{basis} {wall}"
+        conv_families = {_c26_family(m.group(1)) for m in _C26_ROW_GPU_ANY_RE.finditer(conv_cells)}
+        if conv_families & routed or _C26_SCALING_RE.search(row_text):
+            continue
+        offenders.append((component, hit.group(1)))
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(rows)} table row(s); no unscaled cross-GPU basis vs routed {sorted(routed)}",
+        )
+    return _warn(cid, name, _c26_offender_detail(offenders, routed))
+
+
+# ─── Check 27 — 7B activation capture vs eval/debug (L4) intent ─────────────
+# Mechanizes .claude/rules/plan-compute-sizing.md § "Activation-capture HBM
+# sizing" (MUST-level): a 7B hidden-state capture phase needs >=40 GB HBM
+# (capture-7b / lora-7b, 1x A100-80); the GCP eval/debug default is a
+# 16-GB-class L4 (g2-standard-4) and OOMs mid-run (#666, #744). Founding
+# false negative: #825 plan v17 (--intent eval for a 7B all-layer capture)
+# PASSed 0 FAIL/0 WARN. Reuses c26's intent machinery — one parser, one
+# drift-guarded mirror (test_c26_intent_gpu_mirror_matches_backend).
+
+# Offending + absolving intent sets, DERIVED from the c26 mirror.
+# BIG set derived by EXCLUSION (critique r1, Claude methodology concern 1):
+# a future mirror family (H200/B200 intent) lands in the absolution set
+# automatically instead of silently outside it (which would false-FAIL a
+# plan booking that big intent alongside a side eval phase). Test
+# test_c27_sets_derive_from_mirror's partition assert pins
+# L4 | BIG | CPU == the whole mirror.
+_C27_L4_INTENTS: frozenset[str] = frozenset(i for i, fam in _C26_INTENT_GPU.items() if fam == "L4")
+_C27_BIG_HBM_INTENTS: frozenset[str] = frozenset(
+    i for i, fam in _C26_INTENT_GPU.items() if fam not in ("L4", "CPU")
+)
+
+# Capture-phase vocabulary (RAW scan — capture launch commands and store
+# rows legitimately live in fences/tables; the _c26_intents raw-scan
+# precedent). Anchored compounds only: bare "extraction"/"capture" false-
+# fire on prose ("extraction set", "capture the behavior"). Calibrated
+# 2026-07-07 over 1,511 persisted plans: 5/5 known offender tasks flagged
+# (#667/#744/#761/#810/#825), zero false positives.
+_C27_CAPTURE_RE = re.compile(
+    r"(?i)hidden[-_ ]states?\b"
+    r"|activations?[-_ ]?(?:store|captur\w*|extract\w*|accumulat\w*|dump\w*)"
+    r"|\bextract_store\b"
+    r"|residual[-_ ]stream"
+    r"|\bcaptur\w+\s+(?:\w+\s+)?activations?\b"
+)
+
+# >=7B model-size signal (the HBM rule is 7B-scoped; sub-7B captures fit L4).
+# THRESHOLD semantics, not a whitelist (critique r1, all three Codex lenses):
+# integer part >= 7 — single digit 7-9, or any 2+ digit number — with an
+# optional decimal tail. The negative lookbehind (?<![\d.]) blocks the
+# decimal-tail false positive ("1.7B"/"2.5B"/"6.9B" never match: the digit
+# before the dot fails both integer alternates, and the digit after the dot
+# is lookbehind-blocked). "17B" DOES match under threshold semantics
+# (17 >= 7 — a deliberate deviation from the r1 Codex test sketch, which
+# carried over the old whitelist's behavior). Token-count strings ("15B
+# tokens") can match — acceptable: the conjunction still needs capture
+# vocabulary + an un-skipped eval/debug booking, and the corpus re-scan
+# gate (plan #1093 §13) binds on any regex change.
+_C27_MODEL_GE7B_RE = re.compile(r"(?i)(?<![\d.])\b(?:[7-9]|[1-9][0-9]+)(?:\.[0-9]+)?B\b")
+
+# scripts/pod.py IS the RunPod lifecycle CLI, where eval provisions
+# 1x H100 80GB (CLAUDE.md intent table) — no HBM gap. Document-wide,
+# permissive direction only (adds SKIPs); the _C26_RUNPOD_PIN_RE sibling
+# for the pre-router plan corpus (#358/#375/#522 era).
+_C27_PODPY_PROVISION_RE = re.compile(r"(?i)\bpod\.py\s+provision\b")
+
+# Window-level big-GPU skip: an eval/debug token whose immediate context
+# names H100/H200 is a RunPod-mapping or explicit-override claim, not a
+# GCP L4 booking. A100 deliberately NOT in the skip set: GCP eval/debug
+# NEVER provisions A100 — an A100 claim next to an eval booking is exactly
+# the #744 misbelief this check exists to catch.
+_C27_WINDOW_BIGGPU_RE = re.compile(r"\b(H100|H200)\b")
+
+
+def _c27_gcp_l4_intent_windows(plan: str) -> list[tuple[str, str]]:
+    r"""``(token, window_snippet)`` for every eval/debug intent occurrence
+    plausibly booking the GCP/auto lane. The window is the PREVIOUS line
+    plus the line containing the match end — the previous line covers the
+    wrapped ``pod.py provision --issue N --intent\neval`` shape (#522 v1,
+    where ``--intent[=\s]+`` legitimately spans the newline). A window
+    carrying ``pod.py`` or an H100/H200 token is skipped (RunPod / explicit
+    big-GPU context)."""
+    out: list[tuple[str, str]] = []
+    for m in _C26_INTENT_RE.finditer(plan):
+        tok = m.group(1) or m.group(2)
+        if tok not in _C27_L4_INTENTS:
+            continue
+        line_start = plan.rfind("\n", 0, m.start())
+        prev_start = plan.rfind("\n", 0, line_start) if line_start != -1 else -1
+        win_end = plan.find("\n", m.end())
+        window = plan[prev_start + 1 : len(plan) if win_end == -1 else win_end]
+        if "pod.py" in window or _C27_WINDOW_BIGGPU_RE.search(window):
+            continue
+        out.append((tok, " ".join(window.split())[:90]))
+    return out
+
+
+def check_capture_intent_hbm(plan: str, kind: str) -> CheckResult:
+    """FAIL (experiment) / WARN (analysis), conditional: activation-capture
+    vocabulary + a >=7B model signal while an eval/debug (L4) intent is
+    booked on the GCP/auto lane. Skip ladder (permissive direction only):
+    kind gate -> vocab trigger -> standalone N/A escape -> RunPod pin
+    (backend/--backend runpod OR pod.py provision, doc-wide: RunPod eval =
+    1x H100 80GB) -> no resolvable intent -> no un-windowed eval/debug
+    occurrence -> big-HBM-intent absolution -> no >=7B signal.
+    Known accepted gaps (all deliberate, critic-owned semantics):
+    (a) a plan booking a big-HBM intent for training while the CAPTURE
+    phase books eval escapes via the absolution — phase-to-intent routing
+    stays critic-owned; (b) an eval occurrence whose window names H100/H200
+    (e.g. a basis-measured-on-H100 clause on the same line) escapes as if
+    pinned — c26 covers the basis side; (c) a doc-wide pod.py-provision pin
+    skips mixed-lane plans; (d) the >=7B signal matches "7b" inside intent
+    tokens (lora-7b) — a weak filter by design, the N/A phrase is the real
+    small-model out; (e) vocabulary from a REUSED store consumed by a CPU
+    phase still triggers — cleared by the no-L4-intent PASS, the
+    absolution, or the N/A phrase."""
+    cid, name = "c27_capture_intent_hbm", "7B capture vs eval/debug intent"
+    if kind not in ("experiment", "analysis"):
+        return _skip(cid, name, "kind-exempt: capture phases are an experiment|analysis plan shape")
+    cap_hit = _C27_CAPTURE_RE.search(plan)
+    if not cap_hit:
+        return _skip(cid, name, "no activation-capture vocabulary detected")
+    if _standalone_na_declared(plan, r"no 7B activation capture"):
+        return _pass(cid, name, "explicit N/A declared (no 7B activation capture)")
+    if _C26_RUNPOD_PIN_RE.search(plan) or _C27_PODPY_PROVISION_RE.search(plan):
+        return _skip(
+            cid, name, "explicit RunPod pin/provision — RunPod eval = 1x H100 80GB, no HBM gap"
+        )
+    if not _c26_intents(plan):
+        return _skip(cid, name, "no resolvable --intent token — routed machine unknown")
+    windows = _c27_gcp_l4_intent_windows(plan)
+    if not windows:
+        return _pass(
+            cid,
+            name,
+            "capture vocabulary present but no eval/debug intent booked on the GCP/auto lane",
+        )
+    big = sorted(_c26_intents(plan) & _C27_BIG_HBM_INTENTS)
+    if big:
+        return _pass(
+            cid,
+            name,
+            f">=40 GB-HBM intent also booked ({big}) — capture phase presumed routed there "
+            "(phase-to-intent routing stays critic-owned)",
+        )
+    if not _C27_MODEL_GE7B_RE.search(plan):
+        return _skip(cid, name, "no >=7B model signal — the HBM sizing rule is 7B-scoped")
+    tok, snippet = windows[0]
+    verdict = _fail if kind == "experiment" else _warn
+    return verdict(
+        cid,
+        name,
+        f"capture vocabulary ({cap_hit.group(0)!r}) with a >=7B model while the plan books the "
+        f"{tok} (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane "
+        f"(context: {snippet!r}) — >=7B hidden-state capture needs >=40 GB HBM "
+        "(#666/#744 OOM class; #825 v17 false negative): for a 7B-class model book capture-7b "
+        "(forward-pass-only) or lora-7b (phase also trains); a LARGER model needs a "
+        "correspondingly larger-HBM lane/backend (a multi-GPU intent or an explicit "
+        "large-GPU RunPod pin), never eval/debug — per plan-compute-sizing § "
+        "Activation-capture HBM sizing, or declare 'N/A — no 7B activation capture' "
+        "on its own line",
+    )
+
+
+# ─── Check 28 — decision-band precedent coherence (WARN-only) ───────────────
+# Mechanizes the #825 v17 incident class: a registered fractional decision
+# band ("cmp T x" inside a success/kill/decision section), applied to the
+# plan's OWN quoted precedent ratio(s), must land in the branch the plan's
+# narrative asserts. Prose siblings: planner-section-reference.md §7
+# (precedent self-check bullet) + critic-lens-reference.md Statistics item
+# 3 trigger (c) — the FAIL-grade semantic verdict stays critic-side.
+
+# Band line: a non-fenced, bold-labeled list item inside a decision-keyword
+# section (_C13_GATE_SECTION_RE reused) carrying a multiplicative threshold
+# "cmp T x" with fractional T (0 < T <= 1) — the #931 committed-threshold
+# idiom ("< 0.5 × 0.588", "≥ 0.5× its ceiling"). Integer / super-unity T  # noqa: RUF003
+# ("≥ 2× wall-time" kill fences) deliberately excluded: fraction-of-ceiling  # noqa: RUF003
+# bands are the target class; wall-time multipliers are a different quantity.
+_C28_BAND_RE = re.compile(
+    r"(?P<cmp><=|>=|[<>≤≥])\s*(?P<thr>0?\.\d+|1\.0|1)\s*[×x](?![a-zA-Z])"  # noqa: RUF001
+)
+_C28_LIST_ITEM_RE = re.compile(r"^\s{0,3}(?:[-*]|\d+\.)\s")  # c14 sibling
+_C28_BOLD_LABEL_RE = re.compile(r"\*\*([^*\n]{1,60})\*\*")  # c14 sibling
+
+# Precedent-ratio assertion: explicit "ratio ≈ r" / "ratio ≈ r1–r2" token.  # noqa: RUF003
+# Decimal point REQUIRED (excludes the "ratio ~1:1" mix idiom — the only 2
+# non-incident same-line corpus hits); `%`-suffixed ratios NOT harvested —
+# single (`0.48%`) AND range (`0.44–0.52%`) forms both harvest NOTHING  # noqa: RUF003
+# (percent-vs-fraction confusion is a named FP mode — accepted false
+# negative). The \b after each number blocks a backtracked partial-digit
+# match like `0.4` inside `0.48%`; the second lookahead rejects r1 when the
+# engine SKIPS a %-suffixed optional range group — `(?!\s*%)` alone let
+# `ratio ≈ 0.44–0.52%` partially harvest r1=0.44 (round-2 fix, concern  # noqa: RUF003
+# c28-percent-range-partial-harvest).
+_C28_RATIO_RE = re.compile(
+    r"(?i)\bratios?\s*[≈=~]\s*(?P<r1>0?\.\d+)\b"
+    r"(?:\s*[–—-]\s*(?P<r2>0?\.\d+)\b)?(?!\s*%)"  # noqa: RUF001 — en dash is real plan text
+    r"(?!\s*[–—-]\s*0?\.\d+\s*%)"  # noqa: RUF001 — reject a %-suffixed skipped range
+)
+# Verb-anchored side vocabulary (navigation "see below" / "table below"
+# cannot match: a verb is required). The negation guard drops the WHOLE
+# line on any negated side phrase ("not/never well below") — a LINE-level
+# kill, not instance-level: a mixed line ("not below X but above Y") is
+# dropped entirely (accepted false negative — prefer false negatives, the
+# c14 doctrine).
+_C28_BELOW_RE = re.compile(r"(?i)\b(?:well|lands?|sits?|stays?|falls?)\s+below\b|\bunder\s+half\b")
+_C28_ABOVE_RE = re.compile(
+    r"(?i)\bexceeds?\b|\b(?:well|lands?|sits?|stays?)\s+above\b|\bat\s+least\s+half\b"
+)
+_C28_NEG_RE = re.compile(
+    r"(?i)\b(?:not|never|no\s+longer)\s+(?:(?:well|lands?|sits?|stays?|falls?)\s+)?"
+    r"(?:below|above)\b|\bexcept\s"
+)
+# Same-line recompute corroborator: positive decimals split at the first
+# `vs`; slash (`/`) is NOT a ratio separator in this corpus (it is the
+# paired-cells idiom: "rotated +0.349/+0.334"). 2-4 fractional digits so a
+# coarse "vs chat 0.6" drops the corroborator (quoted-ratio path unaffected).
+_C28_VS_RE = re.compile(r"(?i)\bvs\.?\s")
+_C28_POSNUM_RE = re.compile(r"(?<![\d.\-])\+?(0?\.\d{2,4})\b")
+
+
+def _c28_frac(s: str) -> Fraction:
+    """Exact ``Fraction`` from a decimal literal, tolerating a bare leading
+    dot (``.5`` -> 1/2) — the c13 ``_c13_registered_gates`` parse
+    convention."""
+    return Fraction("0" + s) if s.startswith(".") else Fraction(s)
+
+
+def _c28_bands(plan: str) -> list[dict]:
+    """Registered multiplicative decision-band lines: non-fenced,
+    bold-labeled list items inside a success/kill/decision/evaluation-titled
+    section (``_C13_GATE_SECTION_RE`` reused; the #825 v17 heading
+    "## 6. Success + kill criteria (quantitative)" matches via the
+    ``kill[- ]criteri`` alternation) carrying a ``cmp T x`` threshold with
+    fractional T in (0, 1]. Per band: ``{label, cmp, thr: Fraction, line}``
+    — a mirror of ``_c13_registered_gates``' fence-masked, section-scoped
+    walk."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    headings = _headings(plan)
+    bands: list[dict] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        if not any(h.line <= i < h.end and _C13_GATE_SECTION_RE.search(h.text) for h in headings):
+            continue
+        if not _C28_LIST_ITEM_RE.match(line):
+            continue
+        label_m = _C28_BOLD_LABEL_RE.search(line)
+        band_m = _C28_BAND_RE.search(line)
+        if not (label_m and band_m):
+            continue
+        thr = _c28_frac(band_m.group("thr"))
+        if not 0 < thr <= 1:
+            continue
+        bands.append(
+            {
+                "label": label_m.group(1).strip(),
+                "cmp": band_m.group("cmp"),
+                "thr": thr,
+                "line": line.strip(),
+            }
+        )
+    return bands
+
+
+def _c28_ratio_assertions(plan: str) -> list[dict]:
+    """Side-asserted precedent-ratio lines over non-fenced text. A line
+    fires only when an explicit ``ratio ≈ r[-r2]`` token AND exactly one
+    side (below XOR above vocabulary, negation-guarded at LINE level)
+    co-occur on it. Per assertion:
+    ``{line, side, side_text, quoted, recomputed, candidates}`` where
+    ``candidates`` = quoted r1 (and r2 for a range) UNION the same-line
+    vs-pair recompute — numerators are the positive decimals LEFT of the
+    first ``vs`` (ratio-token spans blanked first), the denominator is the
+    FIRST positive decimal RIGHT of it; a/b kept only when b > 0 (the
+    zero-denominator guard — the ``Fraction(x, 0)`` class c13's detail
+    builder documents) and 0 < a/b <= 2 (sanity window). ``Fraction``
+    arithmetic throughout — exact boundary semantics at r == T, no
+    float-equality wobble."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    assertions: list[dict] = []
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        ratio_ms = list(_C28_RATIO_RE.finditer(line))
+        if not ratio_ms or _C28_NEG_RE.search(line):
+            continue
+        below_m = _C28_BELOW_RE.search(line)
+        above_m = _C28_ABOVE_RE.search(line)
+        if bool(below_m) == bool(above_m):  # neither, or both (ambiguous)
+            continue
+        side_m = below_m or above_m
+        quoted = {_c28_frac(m.group(g)) for m in ratio_ms for g in ("r1", "r2") if m.group(g)}
+        blanked = list(line)
+        for m in ratio_ms:
+            blanked[m.start() : m.end()] = " " * (m.end() - m.start())
+        blanked_line = "".join(blanked)
+        recomputed: set[Fraction] = set()
+        vs_m = _C28_VS_RE.search(blanked_line)
+        if vs_m:
+            denom_m = _C28_POSNUM_RE.search(blanked_line[vs_m.end() :])
+            if denom_m:
+                b = _c28_frac(denom_m.group(1))
+                if b > 0:
+                    for num_m in _C28_POSNUM_RE.finditer(blanked_line[: vs_m.start()]):
+                        r = _c28_frac(num_m.group(1)) / b
+                        if 0 < r <= 2:
+                            recomputed.add(r)
+        assertions.append(
+            {
+                "line": line.strip(),
+                "side": "below" if below_m else "above",
+                "side_text": side_m.group(0),  # type: ignore[union-attr]
+                "quoted": quoted,
+                "recomputed": recomputed,
+                "candidates": quoted | recomputed,
+            }
+        )
+    return assertions
+
+
+def _c28_na_escape_declared(plan: str) -> bool:
+    """Standalone ``N/A — no precedent-labeled decision bands`` escape (see
+    ``_standalone_na_declared`` for the anti-paste rationale; British
+    ``labelled`` accepted)."""
+    return _standalone_na_declared(plan, r"no precedent[- ]labell?ed decision bands?")
+
+
+def _c28_landed_band_label(bands: list[dict], landed_ge: bool) -> str:
+    """Label of the first band whose comparator points at the branch every
+    candidate lands in (the >= T branch when ``landed_ge``, the < T branch
+    otherwise), or ``""`` when no band's comparator points that way."""
+    wanted = (">", ">=", "≥") if landed_ge else ("<", "<=", "≤")
+    for b in bands:
+        if b["cmp"] in wanted:
+            return b["label"]
+    return ""
+
+
+def _c28_offender_detail(offenders: list[tuple[dict, str]], T: Fraction, bands: list[dict]) -> str:
+    """Bounded WARN detail (c13 conventions: at most 3 offenders shown,
+    90-char line snippets): per offender the line snippet, the asserted
+    side phrase, the quoted vs recomputed candidate ratios (rendered
+    ``≈ 0.519``), T, the disagreement class (contradiction | straddle) and
+    the branch placement — a CONTRADICTION names the single band label the
+    candidates land in; a STRADDLE always reads "candidates span both
+    branches of T", never a single landed-band label. Ends with the #825
+    v17 incident anchor, the cross-quantity honesty clause, and the remedy
+    menu."""
+
+    def _render(vals: set[Fraction]) -> str:
+        return ", ".join(f"≈ {float(v):.3g}" for v in sorted(vals))
+
+    parts: list[str] = []
+    for a, cls in offenders[:3]:
+        cands = f"quoted {_render(a['quoted'])}"
+        if a["recomputed"]:
+            cands += f" + recomputed {_render(a['recomputed'])}"
+        if cls == "straddle":
+            placement = "candidates span both branches of T"
+        else:
+            landed_ge = a["side"] == "below"
+            label = _c28_landed_band_label(bands, landed_ge)
+            branch = "≥ T" if landed_ge else "< T"
+            placement = f"every candidate lands in the {branch} branch" + (
+                f" ({label!r})" if label else ""
+            )
+        parts.append(
+            f"line \"{a['line'][:90]}\" asserts '{a['side_text']}' but {cands} against the "
+            f"registered {float(T):g}× band → {cls} ({placement})"  # noqa: RUF001
+        )
+    shown = "; ".join(parts)
+    if len(offenders) > 3:
+        shown += "; …"
+    return (
+        f"{shown} — a decision band applied to the plan's OWN cited precedent must land in "
+        "the branch the narrative assigns it (#825 v17: 0.349/0.673 ≈ 0.519 ≥ 0.5 narrated "
+        "'lands well below'; verify_plan PASSed 0/0 — caught only at the critic layer). "
+        "NOTE: this check cannot verify the ratio and the band concern the same quantity — "
+        "if they don't, declare the N/A escape. Remedy: re-label the precedent's branch, "
+        "move the threshold, or declare 'N/A — no precedent-labeled decision bands' on its "
+        "own line; the semantic verdict stays with the Statistics critic"
+    )
+
+
+def check_precedent_band_coherence(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a registered fractional decision band
+    (``cmp T x`` in a success/kill/decision section), applied to a
+    same-line side-asserted precedent ratio the plan itself quotes or
+    implies (the vs-pair recompute), must land in the branch the narrative
+    asserts. A straddle (a quoted range containing both sides of T while
+    one side is asserted) also WARNs. Boundary convention: below := [0, T)
+    hardcoded — the harvested band comparator is NOT consulted at r == T,
+    so a ``<=``-band's r == T edge is an accepted WARN-only imprecision.
+    NEVER FAILs (the c14 doctrine: a heuristic text check must not
+    hard-block a legitimately-worded plan); the FAIL-grade semantic verdict
+    stays with the Statistics critic (critic-lens-reference.md item 3
+    trigger (c)). Accepted false negatives (v1; plan #1094 §4.4): plain
+    absolute ``a >= c`` comparisons (cross-arm absolutes are unsound when
+    precedent and design arms have different ceilings), multi-threshold
+    plans (SKIP), side assertions in an adjacent sentence rather than on
+    the ratio line, `%`-suffixed ratios, and `/`-separated ratios (the
+    paired-cells idiom). Incident: #825 v17 (the 0.5x band vs its cited
+    instruct precedent 0.3489/0.6731 = 0.519, narrated 'lands well below';
+    caught only at the critic layer — verify_plan PASSed 0/0)."""
+    cid, name = "c28_precedent_band_coherence", "decision-band precedent coherence"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: precedent-labeled decision bands are an experiment|analysis plan shape",
+        )
+    bands = _c28_bands(plan)
+    if not bands:
+        return _skip(cid, name, "no registered multiplicative decision band detected")
+    if _c28_na_escape_declared(plan):
+        return _pass(cid, name, "explicit N/A declared (no precedent-labeled decision bands)")
+    thresholds = {b["thr"] for b in bands}
+    if len(thresholds) != 1:
+        return _skip(
+            cid,
+            name,
+            f"{len(thresholds)} distinct band thresholds — precedent-to-band pairing "
+            "ambiguous at the plan surface",
+        )
+    T = next(iter(thresholds))
+    assertions = _c28_ratio_assertions(plan)
+    if not assertions:
+        return _skip(cid, name, "band present but no side-asserted precedent ratio line detected")
+    offenders: list[tuple[dict, str]] = []
+    for a in assertions:
+        lo, hi = min(a["candidates"]), max(a["candidates"])
+        if a["side"] == "below" and hi >= T:
+            offenders.append((a, "contradiction" if lo >= T else "straddle"))
+        elif a["side"] == "above" and lo < T:
+            offenders.append((a, "contradiction" if hi < T else "straddle"))
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(assertions)} side-asserted precedent ratio line(s) coherent with the "
+            f"registered {float(T):g}× band",  # noqa: RUF001
+        )
+    return _warn(cid, name, _c28_offender_detail(offenders, T, bands))
+
+
+# ─── Check 29 — deliberate fence vs §7 conditional phase ────────────────────
+# Mechanizes .claude/rules/plan-compute-sizing.md § "reconcile the WORST-CASE
+# wall — base phases PLUS every conditional / extension phase that could run
+# on the same provision — against the GCP lane's auto-delete fence": a
+# deliberately-declared (value-bearing, non-default) --max-run-duration /
+# max_run_duration fence coexisting with a §7 extension/retrain-class gate
+# must reference that conditional phase near a declaration site. Founding
+# offender: #1112 v2 (a 48h fence sized off base phases only, omitting its
+# own §7 G1 dose extension — joint worst ~48-50h; caught only by the critic
+# layer; v3 costs the extension and bumps the fence to 72h).
+
+# Value-bearing deliberate fence declaration, RAW scan (fences included — a
+# fenced gcloud/dispatch line is the real launch command; the c5/c26
+# raw-scan precedent). A value of 7d/168h is the default FLEX_START ceiling
+# (#741), not "deliberate"; a minutes value is the cap-probe command shape
+# (#680 `--max-run-duration=20m` — unit not in h/d, so it never matches); a
+# bare flag, a "default 7d" prose mention (no value directly after the
+# flag), and a templated `={max_run}`/`<dur>` placeholder carry no value —
+# none trigger. A loose "Nh near the flag" prose trigger is deliberately
+# absent: #1112 v2's §0 line ("the 48 h `--max-run-duration` fence") sits 2
+# lines from a Risks line containing "dose extension", so a prose trigger
+# would self-satisfy and the founding offender would PASS.
+_C29_FENCE_FLAG_RE = re.compile(
+    r"(?i)--max-run-duration[=\s]+[`\"']?~?(\d+(?:\.\d+)?)\s*(h(?:ours?)?|d(?:ays?)?)\b"
+)
+_C29_FENCE_EXTRA_RE = re.compile(
+    r"(?i)max_run_duration[\"']?\]?\s*[:=]\s*[\"'`]?~?(\d+(?:\.\d+)?)\s*"
+    r"(h(?:ours?)?|d(?:ays?)?)\b"
+)
+# §7-slot / Decision-Gates heading predicate (heading levels >= 2).
+# Deliberately permissive on the numbered form: the §7 slot also holds
+# `Compute estimate` / `Risks` in infra-shaped plans — the extension-vocab
+# gate below filters those (WARN-only polarity; calibration-swept, #1114).
+_C29_SECT7_HEAD_RE = re.compile(r"(?i)^(?:§\s*)?7\b(?:[.:)\s]|$)|\bdecision gates?\b")
+# Extension-class gate vocabulary. Bare "resume"/"re-run"/"re-judge" are
+# deliberately EXCLUDED (crash-resume vocabulary saturates plans); a gate
+# worded purely as "resume to step 60" is a named accepted false negative.
+_C29_EXTENSION_RE = re.compile(
+    r"(?i)\b(?:dose[- ]extension|extension|extend(?:s|ed|ing)?|re-?ladder\w*|"
+    r"re-?train\w*|retrain\w*|second pass|additional (?:steps|pass(?:es)?|epochs?))\b"
+)
+# Conditional-cost evidence vocabulary (permissive direction: a match can
+# only suppress a WARN). Gate labels (G1, G2, ...) are matched separately,
+# case-SENSITIVE, only for labels actually harvested from §7 — a (?i)
+# \bg\d+\b would match GCP machine types ("g2-standard-4").
+_C29_EVIDENCE_RE = re.compile(
+    r"(?i)§\s*7\b|\bsection\s+7\b|\b(?:extension|extend\w*|contingen\w*|conditional|"
+    r"gate(?:'s|s)?|dose[- ]extension|re-?ladder\w*|re-?train\w*|retrain\w*|"
+    r"second provision|across provisions|split across)\b"
+)
+_C29_WINDOW_LINES = 3  # pinned on BOTH sides: test_c29_evidence_outside_window_still_warns
+# (upper bound: distance 4 WARNs) + test_c29_evidence_at_window_edge_passes
+# (lower bound: distance 3 PASSes — kills a narrowing mutant).
+
+
+def _c29_hours(val: str, unit: str) -> float:
+    """Fence value normalized to hours (d/days -> x24; units pre-filtered
+    to h/d by the declaration regexes)."""
+    return float(val) * (24.0 if unit.lower().startswith("d") else 1.0)
+
+
+def _c29_fence_decl_line_idxs(plan: str) -> list[int]:
+    """RAW line indices carrying a value-bearing ``--max-run-duration`` /
+    ``max_run_duration`` declaration whose value is not the 7d/168h default
+    FLEX_START ceiling (#741). RAW scan — fences included (a fenced
+    gcloud/dispatch line is the real launch command; c5/c26 precedent)."""
+    idxs: list[int] = []
+    for i, line in enumerate(plan.splitlines()):
+        for rx in (_C29_FENCE_FLAG_RE, _C29_FENCE_EXTRA_RE):
+            m = rx.search(line)
+            if m and abs(_c29_hours(m.group(1), m.group(2)) - 168.0) > 1e-9:
+                idxs.append(i)
+                break
+    return idxs
+
+
+def _c29_gate_section_prose(plan: str) -> str | None:
+    """Fence-masked prose of every §7-slot / Decision-Gates section (heading
+    levels >= 2), joined across all matches; ``None`` when no such heading
+    exists. The global ``_fence_mask`` excludes fenced example commands
+    inside §7 — a gate is a prose contract (the ``_trigger_windows``
+    fence-masked-trigger doctrine)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    parts: list[str] = []
+    found = False
+    for h in _headings(plan):
+        if h.level < 2 or not _C29_SECT7_HEAD_RE.search(h.text.strip()):
+            continue
+        found = True
+        parts.extend(
+            line
+            for line, fenced in zip(
+                lines[h.line + 1 : h.end], mask[h.line + 1 : h.end], strict=True
+            )
+            if not fenced
+        )
+    return "\n".join(parts) if found else None
+
+
+def _c29_offender_detail(decl_line: str, gate_hit: str, labels: list[str]) -> str:
+    """Bounded WARN detail (c26 conventions): the first declaration line
+    (truncated ~80 chars), the matched §7 extension vocabulary + harvested
+    gate labels, the incident anchors, and BOTH remedies."""
+    lab = f"; §7 gate label(s): {', '.join(labels)}" if labels else ""
+    return (
+        f"deliberate fence declaration {decl_line.strip()[:80]!r} coexists with a §7 "
+        f"extension-class gate (matched {gate_hit!r}{lab}) but no declaration window "
+        "references the conditional phase's wall cost — reconcile the WORST-CASE wall, "
+        "base phases PLUS every conditional/extension phase on the same provision, "
+        "against the fence (plan-compute-sizing.md § worst-case wall; #599: a 24h fence "
+        "hard-deleted the pre-registered §7.3 extension probe at step 149/2400; #1112 "
+        "v2: a 48h fence omitted its own §7 G1 dose extension, joint worst ~48-50h). "
+        "Remedy: add the conditional phase's wall cost to the fence-reconcile sentence, "
+        "or declare 'N/A — no conditional phase on this provision' on its own line"
+    )
+
+
+def check_fence_conditional_phase(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a deliberately-declared ``--max-run-duration``
+    / ``max_run_duration`` fence (value-bearing, != the 7d/168h default
+    ceiling) coexisting with an extension/retrain-class gate in the §7 /
+    Decision-Gates section must reference that conditional phase (a §7 gate
+    label, or conditional-cost vocabulary) within ±3 raw lines of a
+    declaration line — ANY-SITE satisfy: one declaration window carrying
+    the evidence clears the whole plan (the reconcile sentence is singular;
+    requiring every mention would WARN on compressed §0 summaries).
+    Fence-strip split: declaration scan RAW (the fence usually lives in a
+    backticked/fenced launch command, and a fenced-only declaration with
+    zero prose reconcile is exactly the silent-ride failure class); §7 gate
+    detection fence-masked; evidence windows RAW (permissive direction).
+    Mechanizes plan-compute-sizing.md § "reconcile the WORST-CASE wall —
+    base phases PLUS every conditional / extension phase" (#599: a 24h
+    fence hard-deleted the pre-registered §7.3 extension probe at step
+    149/2400; #833: per-cell dispersion overran a deliberate 36h fence;
+    #1112 v2: a 48h fence sized off base phases omitted its own §7 G1 dose
+    extension, joint worst ~48-50h — only the critic caught it). NEVER
+    FAILs (the c14/c28 doctrine). SCOPE (honest): mechanizes the
+    DECLARED-fence subclass (#1112-shaped) of the incident class only.
+    Known accepted gaps, each verified against the founding files: a
+    prose-only fence (the actual #599 shape — "GCP max-run-duration
+    (~20 h)", no flag/assignment) is invisible -> SKIP; a dispatch-time
+    fence never written into the plan (the actual #833 shape) is invisible
+    -> SKIP; bare resume/re-run/re-judge gates don't trigger; a
+    second-provision split pre-registered ONLY in §7 still WARNs (remedy:
+    the N/A phrase or a fence-window mention); evidence-vocabulary stray
+    matches (e.g. an unrelated "gate" near the fence) suppress a real WARN
+    — permissive direction; whether the referenced conditional cost is
+    ARITHMETICALLY correct stays critic-owned. The #599/#833 SKIP shapes
+    are pinned by tests (test_c29_prose_only_fence_skips /
+    test_c29_no_fence_skips) plus the #1114 §6 sibling replay, so a future
+    trigger widening fails loud."""
+    cid, name = "c29_fence_conditional_phase", "deliberate fence vs §7 conditional phase"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid, name, "kind-exempt: fence/§7-gate shapes are an experiment|analysis plan shape"
+        )
+    decl_idxs = _c29_fence_decl_line_idxs(plan)
+    if not decl_idxs:
+        return _skip(
+            cid,
+            name,
+            "no deliberate (value-bearing, non-default) --max-run-duration fence "
+            "declaration detected",
+        )
+    if _standalone_na_declared(plan, r"no conditional phase on this provision"):
+        return _pass(cid, name, "explicit N/A declared (no conditional phase on this provision)")
+    gates = _c29_gate_section_prose(plan)
+    if gates is None:
+        return _skip(cid, name, "no §7 / Decision Gates section detected")
+    ext = _C29_EXTENSION_RE.search(gates)
+    if not ext:
+        return _skip(cid, name, "no extension/retrain-class conditional gate in §7")
+    labels = sorted(set(re.findall(r"\bG\d+\b", gates)))
+    lines = plan.splitlines()
+    for i in decl_idxs:
+        window = "\n".join(lines[max(0, i - _C29_WINDOW_LINES) : i + _C29_WINDOW_LINES + 1])
+        ev = _C29_EVIDENCE_RE.search(window)
+        if ev:
+            return _pass(
+                cid,
+                name,
+                "fence-reconcile window references the §7 conditional phase "
+                f"(evidence {ev.group(0)!r})",
+            )
+        for lb in labels:
+            if re.search(rf"\b{re.escape(lb)}\b", window):
+                return _pass(
+                    cid,
+                    name,
+                    "fence-reconcile window references the §7 conditional phase "
+                    f"(gate label {lb!r})",
+                )
+    return _warn(cid, name, _c29_offender_detail(lines[decl_idxs[0]], ext.group(0), labels))
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -2451,6 +4649,15 @@ CHECKS = [
     check_causal_claim_scope,
     check_paired_contrast_source_coverage,
     check_ood_folds,
+    check_verdict_lattice_coherence,
+    check_grep_arity_gate,
+    check_cross_section_param_consistency,
+    check_resume_provenance,
+    check_html_entities_in_commands,
+    check_gpu_basis_routed_machine,
+    check_capture_intent_hbm,
+    check_precedent_band_coherence,
+    check_fence_conditional_phase,
 ]
 
 
@@ -2565,6 +4772,24 @@ def main() -> int:
         kind = args.kind or "experiment"
 
     overall, results = verify_plan_text(raw, kind=kind, source=source)
+
+    # Check 23 (goal currency) needs task context (body.md + events.jsonl),
+    # so it runs OUTSIDE verify_plan_text(): appended here in --issue mode,
+    # rendered SKIP in --plan-file mode.
+    if issue is not None:
+        folder = plan_path.parent.parent  # tasks/<status>/<N>/plans/vK.md -> task folder
+        mtime = datetime.fromtimestamp(plan_path.stat().st_mtime, tz=UTC)
+        cur, sup = _goal_history_for_plan(folder, mtime)
+        results.append(check_goal_currency(raw, current_goal=cur, superseded=sup))
+    else:
+        results.append(
+            _skip(
+                "c23_goal_currency",
+                "plan head not drafted against a superseded Goal",
+                "no task context (--plan-file mode; goal history requires --issue)",
+            )
+        )
+    overall = all(r.passed for r in results)
 
     if args.json:
         print(

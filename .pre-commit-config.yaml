@@ -64,6 +64,16 @@ repos:
         files: ^scripts/.*\.(sh|py)$
         pass_filenames: false
 
+      - id: workflow-lint-upload-or-true
+        name: "workflow_lint: no '|| true' on upload/result-persist lines (#841)"
+        entry: uv run python scripts/workflow_lint.py --check-upload-or-true
+        language: system
+        # Fire on ANY scripts/*.sh change (a new dispatcher swallowing an
+        # upload/plot failure is exactly the #841 offender class) and on the
+        # lint itself; the check is sub-second.
+        files: ^(scripts/.*\.sh|scripts/workflow_lint\.py)$
+        pass_filenames: false
+
       - id: check-mcp-json-no-secrets
         name: Refuse secrets in committed .mcp.json
         entry: uv run python scripts/check_mcp_json_no_secrets.py

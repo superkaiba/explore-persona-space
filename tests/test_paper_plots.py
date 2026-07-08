@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from pathlib import Path
 
 import matplotlib
@@ -41,9 +42,58 @@ def test_paper_palette_rejects_out_of_range() -> None:
     with pytest.raises(ValueError):
         paper_palette(0)
     with pytest.raises(ValueError):
-        paper_palette(9)
-    with pytest.raises(ValueError):
         paper_palette(-1)
+    with pytest.raises(ValueError):
+        paper_palette(2.5)  # type: ignore[arg-type]
+
+
+def test_paper_palette_extends_beyond_8() -> None:
+    """n > 8 returns the curated 8 followed by colormap-sampled extras, with a warning."""
+    curated_8 = paper_palette(8)  # outside the warns block — must not warn itself
+    with pytest.warns(UserWarning):
+        colors = paper_palette(16)
+        assert paper_palette(16) == colors  # deterministic — pure function of n
+        boundary = paper_palette(9)
+    assert len(colors) == 16
+    assert colors[:8] == curated_8
+    for c in colors:
+        assert isinstance(c, str) and c.startswith("#") and len(c) == 7
+    assert len({c.lower() for c in colors}) == 16  # unique, case-folded
+    assert len(boundary) == 9  # the n=9 boundary (replaces the deleted n=9 raise pin)
+
+
+def test_paper_palette_exact_values_and_no_warning_at_8() -> None:
+    """Pin the n=8 outputs to the curated literals and assert NO warning fires at n=8.
+
+    The exact-value asserts are the byte-identity guard for committed figures;
+    the no-warning asserts kill the ``>`` -> ``>=`` boundary mutant (which would
+    return identical colours at n=8 but warn spuriously).
+    """
+    assert paper_palette(8) == [
+        "#0072B2",
+        "#E69F00",
+        "#009E73",
+        "#CC79A7",
+        "#56B4E9",
+        "#D55E00",
+        "#F0E442",
+        "#000000",
+    ]
+    assert paper_palette_blog(8) == [
+        "#1F4E9F",
+        "#E08220",
+        "#3FA577",
+        "#C0413B",
+        "#8064A2",
+        "#5A6975",
+        "#E0B834",
+        "#000000",
+    ]
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        paper_palette(8)
+        paper_palette_blog(8)
+    assert caught == []
 
 
 def test_paper_palette_returns_copy() -> None:
@@ -246,7 +296,21 @@ def test_paper_palette_blog_rejects_out_of_range() -> None:
     with pytest.raises(ValueError):
         paper_palette_blog(0)
     with pytest.raises(ValueError):
-        paper_palette_blog(99)
+        paper_palette_blog(-1)
+    with pytest.raises(ValueError):
+        paper_palette_blog(2.5)  # type: ignore[arg-type]
+
+
+def test_paper_palette_blog_extends_beyond_8() -> None:
+    """Blog twin: n > 8 extends via the same colormap sampling, with a warning."""
+    curated_8 = paper_palette_blog(8)  # outside the warns block — must not warn itself
+    with pytest.warns(UserWarning):
+        colors = paper_palette_blog(99)
+    assert len(colors) == 99
+    assert colors[:8] == curated_8
+    for c in colors:
+        assert isinstance(c, str) and c.startswith("#") and len(c) == 7
+    assert len({c.lower() for c in colors}) == 99  # unique, case-folded
 
 
 def test_set_paper_style_blog_applies_distinct_rcparams() -> None:

@@ -384,6 +384,102 @@ def release_dispatch_lease(issue: int, token: str) -> None:
         os.close(lock_fd)
 
 
+# ─── session-dispatch stagger (#1059) ────────────────────────────────────────
+#
+# Global (cross-issue) pacing of `spawn-issue --auto` session dispatches: each
+# fresh session is a ~100K-token cold context load, and the org input-TPM cap
+# climbs at each minute boundary (CLAUDE.md § 429 token-pacing), so dispatchers
+# that can burst (the watcher infra loops, the file-time filer) keep >=60s
+# between session starts. Distinct from the #843 per-issue lease (mutual
+# exclusion of duplicate dispatch for ONE issue) and the #1027 auth-outage
+# episode gate (fleet-wide suppression): this is last-writer-wins pacing state,
+# no holder exclusivity, no suppression sentinel.
+SESSION_DISPATCH_STAGGER_S_DEFAULT = 60.0
+SESSION_DISPATCH_STAGGER_MAX_S = 300.0  # env ceiling: pacing, not parking
+
+
+def session_dispatch_stagger_s() -> float:
+    """Stagger window in seconds (env ``EPM_SESSION_DISPATCH_STAGGER_S``;
+    default 60; ``0`` or negative disables; malformed falls back to the
+    default, mirroring :func:`_dispatch_lease_ttl_s`; clamped to
+    :data:`SESSION_DISPATCH_STAGGER_MAX_S` so an env typo can never wedge a
+    watcher tick for hours — the lease-window clamp posture in
+    :func:`_register_autonomous_session`)."""
+    raw = os.environ.get("EPM_SESSION_DISPATCH_STAGGER_S")
+    if not raw:
+        return SESSION_DISPATCH_STAGGER_S_DEFAULT
+    try:
+        val = float(raw)
+    except ValueError:
+        return SESSION_DISPATCH_STAGGER_S_DEFAULT
+    return min(max(val, 0.0), SESSION_DISPATCH_STAGGER_MAX_S)
+
+
+def session_dispatch_stamp_path() -> Path:
+    """Singleton last-session-dispatch stamp (#1059). NOT per-issue: the
+    watcher GC's prefix+int-stem sweep never matches it (same class as
+    watch.lock / session_progress.json)."""
+    return AUTONOMOUS_REGISTRY_DIR / "last-session-dispatch.json"
+
+
+def last_session_dispatch_age_s(now: float | None = None) -> float | None:
+    """Seconds since the last recorded session dispatch; ``None`` when no
+    stamp exists. Garbled content falls back to file mtime (the
+    :func:`dispatch_lease_fresh` posture — failing toward pacing is bounded
+    by the <=300s window, unlike the lease's fail-toward-fresh which needed
+    a TTL bound). A future-dated ts returns 0.0 (treat as just-now)."""
+    now = time.time() if now is None else now
+    path = session_dispatch_stamp_path()
+    try:
+        entry = json.loads(path.read_text())
+        ts = entry.get("ts") if isinstance(entry, dict) else None
+    except FileNotFoundError:
+        return None
+    except (OSError, ValueError):
+        ts = None
+    if not (isinstance(ts, int | float) and not isinstance(ts, bool)):
+        try:
+            ts = path.stat().st_mtime
+        except OSError:
+            return None  # vanished between read and stat -> no stamp
+    return max(now - ts, 0.0)
+
+
+def stagger_delay_s(age_s: float | None, window_s: float) -> float:
+    """PURE: seconds a dispatcher should wait before spawning. 0 when the
+    window is disabled (<=0), no prior dispatch (``None``), or the window
+    has already elapsed; else the remainder, clamped to ``[0, window_s]``."""
+    if window_s <= 0 or age_s is None or age_s >= window_s:
+        return 0.0
+    return min(window_s - age_s, window_s)
+
+
+def record_session_dispatch(issue: int, holder: str, now: float | None = None) -> None:
+    """Best-effort atomic (tmp + os.replace) write of the dispatch stamp.
+
+    NEVER raises — a failed pacing record must not fail a successful spawn;
+    any OSError prints a loud stderr warning (degrades to no stagger for the
+    next caller, bounded by the window). TOCTOU note: the callers'
+    check->spawn->record sequence is not atomic — the stamp is last-writer-
+    wins PACING state, not an exclusion primitive, so a concurrent dispatcher
+    already mid-spawn can co-dispatch inside the window (bounded at ~2
+    coincident cold loads; the window closes for everyone at the first
+    record)."""
+    now = time.time() if now is None else now
+    entry = {"issue": issue, "holder": holder, "pid": os.getpid(), "ts": now}
+    path = session_dispatch_stamp_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(entry))
+        os.replace(tmp, path)
+    except OSError as e:
+        print(
+            f"WARNING: session-dispatch stamp write failed ({e}); next dispatcher sees no stagger",
+            file=sys.stderr,
+        )
+
+
 class RegistrationCollisionError(OSError):
     """``issue-<N>.json`` already names a DIFFERENT session inside the
     collision window — a duplicate ``--auto`` dispatch reached registration

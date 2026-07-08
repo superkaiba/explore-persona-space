@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "git_commit": "232b1d990cf8489d4767c96abeea817d4658d402",
+    "timestamp_utc": "2026-07-05T11:35:17.448637Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue923_fit_decomposition",
+    "smoke": false,
+    "feature_source": "pool",
+    "mask_backend": "sdpa",
+    "n_perms": 1000
+  },
+  "genres": {
+    "uc": {
+      "perm_sha256": "a4edce5cbe071f738cf763c7a31c30e3a3b08a8a09af870a2707d583ca35da88",
+      "tensor_pack": "null_matrix_uc.pt",
+      "arms": {
+        "arm_qry_mix": {
+          "observed_skill_L18": 0.5658058783816167,
+          "inside_l18_null_band": false,
+          "l18_null_p_value": 0.000999000999000999,
+          "L18_column_quantiles": {
+            "p95": -0.0034559596050318226,
+            "p975": -0.0033090370138325505,
+            "p99": -0.0031336996295747246
+          },
+          "max_over_layers_quantiles": {
+            "p95": -0.0021920368515836565,
+            "p975": -0.0020489448204268623,
+            "p99": -0.001823693135553952
+          }
+        },
+        "arm_concat_mix": {
+          "observed_skill_L18": 0.5580651051726919,
+          "inside_l18_null_band": false,
+          "l18_null_p_value": 0.000999000999000999,
+          "L18_column_quantiles": {
+            "p95": -0.0069691316847510405,
+            "p975": -0.006787385762976778,
+            "p99": -0.006544393398989574
+          },
+          "max_over_layers_quantiles": {
+            "p95": -0.005076554556676771,
+            "p975": -0.0048986632225559825,
+            "p99": -0.004653259639600342
+          }
+        }
+      },
+      "gating_layer": 18,
+      "ood_dolly": {
+        "arm_qry_mix": {
+          "observed_skill_L18": 0.4736719037082018,
+          "inside_l18_null_band": false,
+          "l18_null_p_value": 0.000999000999000999,
+          "L18_column_quantiles": {
+            "p95": 0.008350105208940431,
+            "p975": 0.01066122891957812,
+            "p99": 0.012964175151625911
+          },
+          "max_over_layers_quantiles": {
+            "p95": 0.013894184717151226,
+            "p975": 0.01624482830010772,
+            "p99": 0.017882100003192358
+          }
+        },
+        "arm_concat_mix": {
+          "observed_skill_L18": 0.4654759026452092,
+          "inside_l18_null_band": false,
+          "l18_null_p_value": 0.000999000999000999,
+          "L18_column_quantiles": {
+            "p95": 0.00788152279322218,
+            "p975": 0.010830904979390998,
+            "p99": 0.012916414653395185
+          },
+          "max_over_layers_quantiles": {
+            "p95": 0.013316939949353193,
+            "p975": 0.01631806222213655,
+            "p99": 0.01936914482652487
+          }
+        }
+      }
+    },
+    "betley": {
+      "perm_sha256": "997c75bdc801606a2961f602c2f4fc54a79148105d242c0333ee37042f0d8b4f",
+      "tensor_pack": "null_matrix_betley.pt",
+      "arms": {
+        "arm_qry_mix": {
+          "observed_skill_L18": 0.4820104942760828,
+          "inside_l18_null_band": false,
+          "l18_null_p_value": 0.000999000999000999,
+          "L18_column_quantiles": {
+            "p95": -0.007524180656601499,
+            "p975": -0.007107408781049368,
+            "p99": -0.006463948081887566
+          },
+          "max_over_layers_quantiles": {
+            "p95": -0.005480625997389922,
+            "p975": -0.005176810908779417,
+            "p99": -0.0048294507693710425
+          }
+        },
+        "arm_concat_mix": {
+          "observed_skill_L18": 0.47736638283041843,
+          "inside_l18_null_band": false,
+          "l18_null_p_value": 0.000999000999000999,
+          "L18_column_quantiles": {
+            "p95": -0.023260787075873715,
+            "p975": -0.022545187661436032,
+            "p99": -0.02156164821951266
+          },
+          "max_over_layers_quantiles": {
+            "p95": -0.017502715083482612,
+            "p975": -0.016830703915028045,
+            "p99": -0.016384769661700375
+          }
+        }
+      },
+      "gating_layer": 18
+    }
+  }
+}

@@ -92,7 +92,7 @@ Your brief contains:
 - `lens`: one of `methodology`, `statistics`, `alternatives`.
 - `plan_body`: the full plan text under critique (markdown, may be the v1 or
   a revised v<n>).
-- `revision_round`: 1-indexed; max 3 per `/adversarial-planner` policy.
+- `revision_round`: 1-indexed; max 5 per the `/adversarial-planner` per-reviewer round cap (reconciler invocations don't count).
 - `prior_critique_summaries` (round 2+): one-line summaries of prior critique
   rounds across both Claude AND Codex twins for the same lens.
 
@@ -167,6 +167,17 @@ the brief did not hand you. Codex critiques the plan AS WRITTEN; a number not
 in `plan_body` is not the plan's claim and corrupts the critique. If you
 believe a load-bearing number is *missing* from the plan, do NOT supply it —
 that absence is itself a finding Codex will raise from `plan_body` alone.
+
+**Task-reference carve-out (#1025 — the #795/#720 incident).** Cross-issue
+task references — `#<N>`, `tasks/<status>/<N>` paths, `issue-<N>`/`issue_<N>`
+branch/path forms (`issue[-_]<N>`) — are PROVENANCE IDENTIFIERS, not
+predicted/authored result numbers: you MAY place one in the prompt (e.g.
+duplication/overlap evidence naming a prior task) provided the id appears in
+a handed span OR resolves in `tasks/REGISTRY.json`. The ban above covers
+result / effect-size / sizing VALUES; stripping a real task id withholds the
+very redundancy evidence the overlap lens needs (in the #795 critique this
+guard stripped `#720`, and Codex-Statistics could not weigh the duplication
+sharply).
 
 ```
 You are the {{LENS}} CRITIC. Your job is to catch the small number of
@@ -289,7 +300,28 @@ the orchestrator did not pass this field — fail-safe, treated as zero allowlis
 contribution; never crash, never assume it is populated). Then run a small
 `uv run python` pass that:
 
-1. Tokenizes ALL numeric forms in `$PROMPT_FILE` and in
+1. **Extracts task-reference tokens FIRST — BEFORE any numeric tokenization —
+   symmetrically from `$PROMPT_FILE` AND the three handed-span files.** Match
+   `#(\d+)(?!\d*\.\d)`, `tasks/[a-z_]+/(\d+)\b`, and `issue[-_](\d+)\b`;
+   REMOVE each match from the working text (so `#720` never enters the
+   numeric-atom multiset as a bare `720`) and collect the ids per side. Every
+   PROMPT-side id must clear one of two legs: (a) the same id appears (in any
+   reference form) among the handed-span ids, or (b) the id is a key of the
+   `tasks` map in `tasks/REGISTRY.json` — resolved via
+   `from explore_persona_space.task_workflow import registry_path` (never a
+   cwd-relative `tasks/...` path),
+   `str(N) in json.load(open(registry_path()))["tasks"]`. If the registry is
+   unreadable, leg (b) contributes nothing: print a WARN and fall back to
+   leg (a) alone (fail-strict — degrades to the pre-#1025 behavior, never
+   weaker). Residual reporting is COLLECT-ALL: the pass collects EVERY
+   unresolved id AND (after tokenization) every residual numeric atom, prints
+   one `BLOCKER: ...` line per residual to stderr, THEN exits 1 once — never
+   exit-on-first (this is what makes a multi-residual smoke's expected
+   blocker count decidable). An id clearing neither leg contributes a line of
+   the form `BLOCKER: composer-authored task reference #<N> resolves in
+   neither the handed spans nor tasks/REGISTRY.json; re-compose from handed
+   inputs only`.
+2. Tokenizes ALL numeric forms in `$PROMPT_FILE` and in
    `$PLANBODY_FILE` + `$LENS_ITEMS_FILE` + `$PRIOR_CRITIQUES_FILE` using a
    normalization that **splits hyphenated ranges and slash-joined pairs into
    their atomic numbers BEFORE the multiset diff** (`+0.74-0.80` →
@@ -298,7 +330,7 @@ contribution; never crash, never assume it is populated). Then run a small
    numeric atom in the prompt outside the substituted spans must trace either
    to a numeric atom in `plan_body` / `lens_items` / `prior_critique_summaries`,
    or to the static template-scaffold allowlist (below).*
-2. Clears the prompt's numeric atoms against TWO accounting legs that differ
+3. Clears the prompt's numeric atoms against TWO accounting legs that differ
    on purpose:
    - **Handed spans — MULTISET subtract.** Subtract (multiset) the numeric
      atoms found in `plan_body` + `lens_items` + `prior_critique_summaries`,
@@ -324,7 +356,8 @@ contribution; never crash, never assume it is populated). Then run a small
      the rest on a number-free plan, defeating the gate on every legitimate
      compose. It does not weaken the #722 catch: the fabricated `+0.74-0.80` /
      `MLP -2.17/-6.12` atoms are not scaffold values, so they still residual.)
-3. On any residual numeric atom, FAILS LOUD:
+4. On any residual numeric atom, FAILS LOUD (one `BLOCKER:` line per
+   residual, single exit — item 1's COLLECT-ALL contract):
    `echo "BLOCKER: composer-authored number <n> not traceable to plan_body /
    lens_items / prior_critique_summaries / scaffold allowlist; re-compose from
    handed inputs only" >&2; exit 1`. On BLOCKER you re-compose from the handed
@@ -343,6 +376,17 @@ load-bearing: a naive `-?\d+\.?\d*` scan would split `+0.74-0.80` into
 the plan legitimately reads "0.74 to 0.80" — normalize to atomic numbers
 first so the multiset diff does not false-positive on legitimate restatements
 that happen to share digits.
+
+*Why the task-ref carve-out does not reopen it (#1025):* the whitelist
+requires the hash/path/branch PREFIX form and integer-only ids —
+`#(\d+)(?!\d*\.\d)` matches neither `#0.74` nor `#720.5` (the full-lookahead
+form cannot backtrack to a truncated id; the whole decimal-bearing token
+stays in the numeric accounting) — plus registry-or-handed-span trace: a
+fabricated `#999999` BLOCKs, a bare `720` with no prefix residuals exactly as
+before, and the #722 atoms `{0.74, 0.80, -2.17, -6.12}` are untouched by the
+extraction. Accepted residual risk: a composer misciting a plan integer
+(e.g. "720 rows") AS `#720` clears when task 720 exists — acceptable because
+the prefix form reads to Codex as a task id, never as a result value.
 
 ### Step 5: Return to orchestrator
 
@@ -405,7 +449,10 @@ directly.
    predicted value you did not receive in the brief's `plan_body` /
    `lens_items` / `prior_critique_summaries` (Step 3 composer
    numeric-grounding rule + Step 4 verification). A missing number is a
-   finding, not something you supply.
+   finding, not something you supply. (Task-reference identifiers — `#<N>`,
+   `tasks/<status>/<N>`, `issue-<N>`/`issue_<N>` — are provenance, not
+   numbers: allowed when they trace per the Step 3 carve-out / Step 4
+   task-ref extraction.)
 9. **Pin the snapshot boundary; do not chase fresher state.** Your inputs are
    a spawn-time snapshot you cannot refresh (compose-only); pin its boundary
    into the prompt (Step 3 `SNAPSHOT NOTE`) so Codex scopes its verdict to the

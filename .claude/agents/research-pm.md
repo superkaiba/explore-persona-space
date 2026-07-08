@@ -784,6 +784,73 @@ renders them as separate pills — use plain numbered markdown).
 
 ---
 
+## Negative-existence claims — search before you say "not run"
+
+A "we never ran X / no experiment exists for X" claim is load-bearing —
+it decides what gets filed next, and a wrong one risks a duplicate
+experiment. Two recall failures on 2026-07-05 each took 2-3 user
+pushbacks to correct (#922 hiding behind parent #841's "affine layer
+map" label; #813's same-day follow-up round invisible to title/body
+greps). Before asserting non-existence, run ALL four sweeps and name the
+search surface in the claim itself ("searched: bodies, children of
+candidate parents, follow-up labels, retired aliases — no hits").
+
+1. **Alias-widened body grep.** Grep task bodies with the standardized
+   terms AND their retired aliases — old bodies and follow-up labels
+   still use them (glossary § "Retired / ambiguous terms" +
+   § "Search-time note", `docs/glossary_context_answer_map.md`) —
+   separator-tolerant (`[-_ ]` between words). Worked example for the
+   context→answer-map line; widen with the topic's own vocabulary:
+
+   ```bash
+   grep -rliE 'prefix[-_ ]map|context[-_ ]map|per[-_ ]example|question[-_ ]averaged|query[-_ ]averaged|single[-_ ]context|affine[-_ ](layer[-_ ])?map' \
+     tasks/ --include='body.md'
+   ```
+
+   Widening the same grep to `--include='events.jsonl'` also catches
+   follow-up-label vocabulary (the step-3 labels recur in marker notes).
+
+2. **Child sweep of candidate parents.** A child's evidence often hides
+   behind the PARENT's differently-worded label (#922's next-token
+   forecasting lived under #841). For every candidate parent from
+   step 1:
+
+   ```bash
+   uv run python scripts/task.py list-children <N> --json
+   ```
+
+   then grep each child's `body.md` AND `events.jsonl` too.
+
+3. **Follow-up round sweep.** Same-issue follow-up rounds create NO new
+   task — they live only in `epm:followup-scope` notes and
+   `eval_results/issue_<N>/<label>/` dirs (#813's
+   `per-example-vs-averaged-map`). Enumerate labels, then filter with
+   the step-1 patterns:
+
+   ```bash
+   grep -rh 'epm:followup-scope' tasks/ --include='events.jsonl' \
+     | grep -oE 'followup_label: [A-Za-z0-9_-]+' | sort -u
+   ls -d eval_results/issue_*/*/ 2>/dev/null | grep -iE '<pattern>'
+   ```
+
+   Labels slug-normalize inconsistently (events use hyphens,
+   eval_results dirs underscores) — always match `[-_ ]` between words.
+
+4. **Crashed sub-search ≠ no hits.** A sub-command that errors or
+   prints nothing inside a compound pipeline is NOT evidence of
+   absence — rerun it standalone and check its exit code before
+   trusting empty output. Named trap: naive `tasks/REGISTRY.json`
+   iteration crashes on non-task top-level keys (e.g. the `highest_id`
+   int; `AttributeError: 'int' object has no attribute 'get'` — the
+   crash that silently blanked a title sweep on 2026-07-05); prefer
+   `task.py` subcommands (`list-children`, `list-by-status --json`,
+   `view <N> --json`) over ad-hoc REGISTRY loops.
+
+Only after all four sweeps come up empty may you claim "not run" — and
+say so with the search surface named.
+
+---
+
 ## Anti-patterns
 
 | Anti-pattern | Why bad | Do instead |
@@ -798,6 +865,7 @@ renders them as separate pills — use plain numbered markdown).
 | Polling per-experiment session progress | Trust status + events.jsonl events | `task.py view <N>` on demand only |
 | Self-ranking ideation outputs | LLM self-eval ~53% accurate | Present criteria transparently; user ranks |
 | Padding with "Great question!" | Burns attention | Drop it |
+| Asserting "we never ran X" off a title/body grep alone | Children hide behind parent labels; follow-up rounds have no task row; a crashed sub-search prints nothing | The four sweeps in § Negative-existence claims |
 
 ---
 

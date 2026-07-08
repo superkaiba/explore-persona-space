@@ -25,7 +25,11 @@ What this module does that the serial path did not:
 2. **Multi-output net** — one net predicts all ``pca_target_dim`` PCA target dims
    at once (a multi-output head, NOT one scalar net per dim).
 3. **`torch.set_num_threads`** to a sane value (the slow run thrashed with 78
-   threads on tiny ops); a ``--device`` arg (cpu default, cuda optional).
+   threads on tiny ops). As of #1079 the cap is ON BY DEFAULT:
+   ``num_threads=None`` resolves to ``max(1, min(8, os.cpu_count(), ambient
+   pool))`` — ambient-ceilinged, so the default only ever caps DOWN — pinned
+   for the fit and restored after; ``num_threads=0`` opts out (see
+   ``_resolve_num_threads``). A ``--device`` arg (cpu default, cuda optional).
 4. **Seed-pinned to match the existing #658 recipe** so numbers are comparable +
    reproducible.
 
@@ -47,7 +51,9 @@ those for the ridge arm and only batches the gradient-descent MLP arm.
 
 from __future__ import annotations
 
+import functools
 import hashlib
+import inspect
 import logging
 import math
 import os
@@ -149,6 +155,80 @@ from issue658_fit_predictors import (  # noqa: E402
 # reseeds with this); the skill scripts pass seed=658 / SEED=42 explicitly.
 DEFAULT_MLP_SEED = 658
 
+# #891 launch-prefix / #847 env.py setdefault / #811 patch value (all 8).
+DEFAULT_FIT_NUM_THREADS = 8
+
+
+def _resolve_num_threads(num_threads: int | None, *, ambient: int | None = None) -> int | None:
+    """Resolve the per-fit CPU thread cap (#1079).
+
+    ``None`` -> conservative default ``max(1, min(DEFAULT_FIT_NUM_THREADS,
+    os.cpu_count(), ambient))`` — the ambient (pre-call torch pool) ceiling
+    means the default only ever caps DOWN, never raises a deliberately
+    tighter pre-call pin. Env override ``EPS_VECTORIZED_FIT_DEFAULT_THREADS``:
+    unset -> ``DEFAULT_FIT_NUM_THREADS``; ``""`` or ``"0"`` -> disabled
+    (return None, no pin — the #847 ``EPS_VM_THREAD_CAP`` convention);
+    negative or non-integer -> ``ValueError`` (fail loud; deliberate
+    divergence from #847's silent negative-disable).
+    ``0`` -> explicit opt-out (return None, no pin). ``>0`` -> honored
+    verbatim (an explicit value MAY exceed the ambient pool — the documented
+    escape hatch). ``<0`` -> ``ValueError``.
+    """
+    if num_threads is None:
+        raw = os.environ.get("EPS_VECTORIZED_FIT_DEFAULT_THREADS")
+        if raw is None:
+            cap = DEFAULT_FIT_NUM_THREADS
+        else:
+            raw = raw.strip()
+            if raw in ("", "0"):
+                return None  # disabled — #847 convention
+            cap = int(raw)  # fails loud on garbage ("eight")
+            if cap == 0:
+                return None  # numeric-zero forms ("00", "+0") also disable
+            if cap < 0:
+                raise ValueError(f"EPS_VECTORIZED_FIT_DEFAULT_THREADS must be >= 0, got {cap}")
+        bounds = [cap]
+        if os.cpu_count():
+            bounds.append(os.cpu_count())
+        if ambient:
+            bounds.append(ambient)
+        return max(1, min(bounds))
+    n = int(num_threads)
+    if n == 0:
+        return None
+    if n < 0:
+        raise ValueError(f"num_threads must be >= 0 (0 = opt-out), got {n}")
+    return n  # explicit caller value honored VERBATIM (no clamp)
+
+
+def _with_thread_cap(fn):
+    """Pin torch's intra-op pool per the fn's ``num_threads``/``device`` kwargs
+    for the call duration (CPU only), restoring the previous value in a
+    ``finally``. The None-default path is ambient-ceilinged (never raises the
+    pool); ``num_threads=0`` opts out entirely (#1079). The device check runs
+    BEFORE resolution, so a malformed ``num_threads`` on a CUDA call keeps the
+    pre-#1079 behavior while a CPU call fails loud before any fit work.
+    """
+    sig = inspect.signature(fn)
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        bound = sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        if bound.arguments.get("device", "cpu") != "cpu":
+            return fn(*args, **kwargs)
+        prev = torch.get_num_threads()
+        resolved = _resolve_num_threads(bound.arguments.get("num_threads"), ambient=prev)
+        if resolved is None:
+            return fn(*args, **kwargs)
+        torch.set_num_threads(resolved)
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            torch.set_num_threads(prev)
+
+    return wrapper
+
 
 # ── batched LOCO MLP ensemble (the core vectorization) ────────────────────────
 
@@ -188,6 +268,7 @@ class BatchedMLPResult:
     chunk_size: int
 
 
+@_with_thread_cap
 def fit_batched_loco_mlp(
     groups: list[MLPGroup],
     *,
@@ -234,14 +315,16 @@ def fit_batched_loco_mlp(
 
     All groups MUST share n, d_in, and p (asserted). Returns a
     ``BatchedMLPResult`` with held-out (n, p) predictions per group key.
+
+    CPU thread cap (``num_threads``, via ``_with_thread_cap``): ``None``
+    (default) pins an ambient-ceilinged conservative cap for the fit and
+    restores the prior pool after; ``0`` opts out; positive values pin
+    verbatim during the fit (#1079).
     """
     from torch.func import stack_module_state
 
     if not groups:
         return BatchedMLPResult({}, 0, 0, 0, 0, chunk_size)
-
-    if num_threads is not None and device == "cpu":
-        torch.set_num_threads(int(num_threads))
 
     n, d_in = groups[0].X.shape
     p = groups[0].Y.shape[1]
@@ -397,6 +480,7 @@ def _fold_order_and_rows(row_groups: np.ndarray) -> tuple[list[int], list[np.nda
     return order, rows
 
 
+@_with_thread_cap
 def fit_batched_loco_mlp_multihead(
     groups: list[MLPGroup],
     *,
@@ -468,14 +552,17 @@ def fit_batched_loco_mlp_multihead(
     broadcast temp); the bmm reduction order differs from a broadcast-sum in fp32
     associativity, benign because the validity gate is a real-vs-shuffle comparison
     that shares this path on both arms.
+
+    CPU thread cap (``num_threads``, via ``_with_thread_cap``): ``None``
+    (default) pins an ambient-ceilinged conservative cap for the fit and
+    restores the prior pool after; ``0`` opts out; positive values pin
+    verbatim during the fit (#1079).
     """
     from torch.func import stack_module_state
 
     assert standardization in ("per_fold", "full_data"), standardization
     if not groups:
         return BatchedMLPResult({}, 0, 0, 0, 0, chunk_size)
-    if num_threads is not None and device == "cpu":
-        torch.set_num_threads(int(num_threads))
 
     n, d_in = groups[0].X.shape
     p = groups[0].Y.shape[1]
@@ -752,10 +839,21 @@ def _gate_body(*, seed: int, atol: float, max_epochs: int, hidden: int) -> dict:
         MLPGroup(("gateB", 1), rng.standard_normal((n, d)), rng.standard_normal((n, p))),
     ]
     kw = dict(seed=seed, hidden=hidden, lr=MLP_LR, wd=MLP_WD, max_epochs=max_epochs)
+    # num_threads=0 on each batched fit below: the wrapper's 2-thread pin OWNS
+    # the pool for the whole gate body — the fitters' #1079 default cap must
+    # never fire inside it (recorder-certified by
+    # tests/test_vectorized_fit_thread_cap.py). Not in ``kw``: the serial
+    # reference shares ``kw`` and takes no ``num_threads``.
     for mode in ("per_fold", "full_data"):
         # 1. multi-row groups, two cells, chunk crossing the cell boundary.
         res = fit_batched_loco_mlp_multihead(
-            cells, device="cpu", chunk_size=3, row_groups=labels, standardization=mode, **kw
+            cells,
+            device="cpu",
+            chunk_size=3,
+            row_groups=labels,
+            standardization=mode,
+            num_threads=0,
+            **kw,
         )
         for cell in cells:
             ref = _serial_group_mlp_reference(cell.X, cell.Y, labels, standardization=mode, **kw)
@@ -765,7 +863,7 @@ def _gate_body(*, seed: int, atol: float, max_epochs: int, hidden: int) -> dict:
         # 2. singleton folds (row_groups=None — the legacy path) vs the serial
         # reference at singleton labels.
         res_s = fit_batched_loco_mlp_multihead(
-            [cells[0]], device="cpu", chunk_size=5, standardization=mode, **kw
+            [cells[0]], device="cpu", chunk_size=5, standardization=mode, num_threads=0, **kw
         )
         ref_s = _serial_group_mlp_reference(
             cells[0].X, cells[0].Y, np.arange(n), standardization=mode, **kw
@@ -775,7 +873,13 @@ def _gate_body(*, seed: int, atol: float, max_epochs: int, hidden: int) -> dict:
         out[f"singleton_vs_serial_{mode}"] = dev_s
         # 3. duplicate-fit determinism (bitwise) on the grouped call.
         res_dup = fit_batched_loco_mlp_multihead(
-            cells, device="cpu", chunk_size=3, row_groups=labels, standardization=mode, **kw
+            cells,
+            device="cpu",
+            chunk_size=3,
+            row_groups=labels,
+            standardization=mode,
+            num_threads=0,
+            **kw,
         )
         for cell in cells:
             assert np.array_equal(res.preds_by_key[cell.key], res_dup.preds_by_key[cell.key]), (
@@ -998,13 +1102,16 @@ def assert_matches_reference(seed: int = 0, n: int = 14, d: int = 24, p: int = 4
         groups = [MLPGroup(("base",), X, Y), MLPGroup(("shuffle",), X, Ysh)]
         e_total = 2 * p * n
         chunk = max(1, e_total // 3 + 1)  # a non-divisor of E to exercise chunking
-        res = fit_batched_loco_mlp(groups, seed=658, max_epochs=20, device="cpu", chunk_size=chunk)
+        # num_threads=0 on every gate fit: ambient pool (the pre-#1079 behavior).
+        res = fit_batched_loco_mlp(
+            groups, seed=658, max_epochs=20, device="cpu", chunk_size=chunk, num_threads=0
+        )
         d_base = float(np.max(np.abs(res.preds_by_key[("base",)] - ref)))
         d_shuf = float(np.max(np.abs(res.preds_by_key[("shuffle",)] - ref_sh)))
 
         # (b) chunk-invariance: no-chunk must be BIT-identical to the chunked run.
         res_nochunk = fit_batched_loco_mlp(
-            groups, seed=658, max_epochs=20, device="cpu", chunk_size=0
+            groups, seed=658, max_epochs=20, device="cpu", chunk_size=0, num_threads=0
         )
         chunk_base_identical = bool(
             np.array_equal(res.preds_by_key[("base",)], res_nochunk.preds_by_key[("base",)])
@@ -1015,7 +1122,12 @@ def assert_matches_reference(seed: int = 0, n: int = 14, d: int = 24, p: int = 4
 
         # (c) cross-group non-contamination: 2-group base == single-group base.
         res_single = fit_batched_loco_mlp(
-            [MLPGroup(("base",), X, Y)], seed=658, max_epochs=20, device="cpu", chunk_size=0
+            [MLPGroup(("base",), X, Y)],
+            seed=658,
+            max_epochs=20,
+            device="cpu",
+            chunk_size=0,
+            num_threads=0,
         )
         crossgroup_identical = bool(
             np.array_equal(res_nochunk.preds_by_key[("base",)], res_single.preds_by_key[("base",)])
@@ -1155,7 +1267,8 @@ def _split_mlp_eval(Xg, W1, b1, W2, b2, mu, sd):
     return torch.bmm(h, W2.transpose(1, 2)) + b2.unsqueeze(1)  # (c, n, p)
 
 
-def fit_batched_split_mlp(
+@_with_thread_cap
+def fit_batched_split_mlp(  # noqa: C901 -- linear batched trainer; loss selector + parity options add branches
     groups: list[SplitMLPGroup],
     *,
     seed: int = DEFAULT_MLP_SEED,
@@ -1167,17 +1280,38 @@ def fit_batched_split_mlp(
     chunk_size: int = 8,
     num_threads: int | None = None,
     smooth_l1_beta: float = 1.0,
+    loss: str = "smooth_l1",
+    standardize_inputs: bool = True,
+    patience: int | None = None,
 ) -> SplitMLPResult:
     """Fit ALL groups' fixed-split multi-output MLPs as one batched ensemble.
 
     Member ``g`` is a ``Linear(d_in, hidden) → GELU → Linear(hidden, p)`` net
     trained on group ``g``'s ``X_train → Y_train`` with AdamW(lr, wd) + SmoothL1
-    (``smooth_l1_beta``), standardized on the group's own train rows. When
+    (``smooth_l1_beta``; ``loss="mse"`` swaps train AND val loss to MSE — the
+    #931 registered default-preserving extension so the batched fitter can
+    reproduce ``fit_h.mlp_fit_predict``'s MSE recipe for the G1b parity fit),
+    standardized on the group's own train rows. When
     validation is supplied, the per-member BEST-validation-loss params are kept
     (batched early stopping — equivalent to patience≥remaining-epochs); else the
     final-epoch params. Chunked over groups so peak memory scales with
     ``chunk_size × n × d`` (the #841 tensors are large-d, unlike #722's tiny-d
     LOCO folds — chunk small).
+
+    Two further default-preserving #931 parent-parity options (both needed so
+    the batched fitter reproduces ``fit_h.mlp_fit_predict`` EXACTLY — the r1
+    G1b recipe-mismatch fix): ``standardize_inputs=False`` skips the internal
+    per-member train-row standardization (identity mu=0/sd=1) for callers that
+    pre-standardize on the parent's FULL fold-train stats (the parent
+    standardizes BEFORE its val split; the internal path standardizes on the
+    post-split train rows only). ``patience=<k>`` (requires validation) applies
+    the parent's per-member early stopping: an improvement is
+    ``vloss < best_val - 1e-6`` (the parent's threshold), a member whose val
+    loss has not improved for ``k`` consecutive epochs is FROZEN at its best
+    snapshot, and the epoch loop breaks once every member in the chunk has
+    stopped. Defaults (``True``/``None``) are bit-identical to the prior
+    behavior (``vloss < best_val``, no freeze — pinned by
+    ``tests/test_vectorized_split_mlp.py``).
 
     SEEDING: each group's init is drawn under
     ``torch.manual_seed(split_group_init_seed(seed, group.key))`` — a stable
@@ -1192,13 +1326,29 @@ def fit_batched_split_mlp(
     between a 5-group call and 2+3-group calls). Deterministic + reproducible
     across runs and processes; sets the global torch CPU RNG as a side effect.
     Returns a ``SplitMLPResult`` (eval preds + trained params + best-val epoch).
+
+    CPU thread cap (``num_threads``, via ``_with_thread_cap``): ``None``
+    (default) pins an ambient-ceilinged conservative cap for the fit and
+    restores the prior pool after; ``0`` opts out; positive values pin
+    verbatim during the fit (#1079).
     """
     from torch.func import stack_module_state
 
+    assert loss in ("smooth_l1", "mse"), f"unknown loss {loss!r}"
+
+    def _loss_per_member(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        """Per-member (c,) mean loss under the selected criterion."""
+        if loss == "mse":
+            return torch.nn.functional.mse_loss(pred, target, reduction="none").mean(dim=(1, 2))
+        return torch.nn.functional.smooth_l1_loss(
+            pred, target, reduction="none", beta=smooth_l1_beta
+        ).mean(dim=(1, 2))
+
     if not groups:
         return SplitMLPResult({}, {}, {}, 0, chunk_size)
-    if num_threads is not None and device == "cpu":
-        torch.set_num_threads(int(num_threads))
+    if patience is not None:
+        assert patience > 0, f"patience must be positive, got {patience}"
+        assert groups[0].X_val is not None, "patience early stopping requires validation splits"
 
     n_train, d_in = groups[0].X_train.shape
     p = groups[0].Y_train.shape[1]
@@ -1269,10 +1419,16 @@ def fit_batched_split_mlp(
         Xval = Xval_g[sl].to(dev) if has_val else None
         Yval = Yval_g[sl].to(dev) if has_val else None
 
-        # Per-group train-only standardization (ddof=1 via the SS form).
-        mu = Xtr.mean(1)  # (c, d_in)
-        var = Xtr.var(1, correction=1)  # (c, d_in)
-        sd = var.clamp(min=0.0).sqrt() + 1e-6
+        if standardize_inputs:
+            # Per-group train-only standardization (ddof=1 via the SS form).
+            mu = Xtr.mean(1)  # (c, d_in)
+            var = Xtr.var(1, correction=1)  # (c, d_in)
+            sd = var.clamp(min=0.0).sqrt() + 1e-6
+        else:
+            # Caller pre-standardized (parent-parity: full fold-train stats
+            # applied BEFORE the val split) — identity transform inside.
+            mu = torch.zeros((c, d_in), device=dev)
+            sd = torch.ones((c, d_in), device=dev)
 
         for w in (W1, b1, W2, b2):
             w.requires_grad_(True)
@@ -1281,22 +1437,25 @@ def fit_batched_split_mlp(
         best_val = torch.full((c,), float("inf"), device=dev)
         best_epoch = torch.full((c,), -1, dtype=torch.long, device=dev)
         best = {k: v.detach().clone() for k, v in (("W1", W1), ("b1", b1), ("W2", W2), ("b2", b2))}
+        bad = torch.zeros((c,), dtype=torch.long, device=dev)
+        stopped = torch.zeros((c,), dtype=torch.bool, device=dev)
         pred = per_member = None  # keep bound for the del below at max_epochs=0 (#926)
         for epoch in range(max_epochs):
             opt.zero_grad(set_to_none=True)
             pred = _split_mlp_eval(Xtr, W1, b1, W2, b2, mu, sd)  # (c, n_train, p)
-            per_member = torch.nn.functional.smooth_l1_loss(
-                pred, Ytr, reduction="none", beta=smooth_l1_beta
-            ).mean(dim=(1, 2))  # (c,)
+            per_member = _loss_per_member(pred, Ytr)  # (c,)
             per_member.sum().backward()
             opt.step()
             if has_val:
                 with torch.no_grad():
                     vpred = _split_mlp_eval(Xval, W1, b1, W2, b2, mu, sd)
-                    vloss = torch.nn.functional.smooth_l1_loss(
-                        vpred, Yval, reduction="none", beta=smooth_l1_beta
-                    ).mean(dim=(1, 2))  # (c,)
-                improved = vloss < best_val
+                    vloss = _loss_per_member(vpred, Yval)  # (c,)
+                if patience is None:
+                    improved = vloss < best_val
+                else:
+                    # Parent semantics (fit_h.mlp_fit_predict): improvement is
+                    # vloss < best_val - 1e-6; a stopped member's best is FROZEN.
+                    improved = (vloss < best_val - 1e-6) & ~stopped
                 if improved.any():
                     best_val = torch.where(improved, vloss, best_val)
                     best_epoch = torch.where(
@@ -1308,6 +1467,11 @@ def fit_batched_split_mlp(
                     imb = improved.view(c, 1)
                     best["b1"] = torch.where(imb, b1.detach(), best["b1"])
                     best["b2"] = torch.where(imb, b2.detach(), best["b2"])
+                if patience is not None:
+                    bad = torch.where(improved, torch.zeros_like(bad), bad + 1)
+                    stopped = stopped | (bad >= patience)
+                    if bool(stopped.all()):
+                        break
         if not has_val:
             best = {"W1": W1.detach(), "b1": b1.detach(), "W2": W2.detach(), "b2": b2.detach()}
 
@@ -1352,7 +1516,10 @@ def assert_split_mlp_matches_serial(
     Xtr, Ytr, Xev = X[:n_train], Y[:n_train], X[n_train:]
 
     grp = SplitMLPGroup(("g",), Xtr, Ytr, Xev)
-    res = fit_batched_split_mlp([grp], seed=658, max_epochs=40, device="cpu", chunk_size=1)
+    # num_threads=0: ambient pool, matching the serial reference below (pre-#1079 behavior).
+    res = fit_batched_split_mlp(
+        [grp], seed=658, max_epochs=40, device="cpu", chunk_size=1, num_threads=0
+    )
     batched_pred = res.preds_by_key[("g",)]
 
     # Serial reference: one _MLPMulti drawing the SAME init as the batched fit's

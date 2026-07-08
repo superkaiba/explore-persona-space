@@ -52,6 +52,35 @@ The `events.jsonl` marker is the source of truth. Also return the verdict to who
 
 ---
 
+## Context budget (READ FIRST)
+
+Your spec + the project CLAUDE.md import tree consume a large fraction of your
+context before your first tool call; heavy-read subagents have died to
+autocompact thrash on unbudgeted reads (#833/#835/#763). Read hygiene bounds
+the VARIABLE half of that load — it does not cure fixed-overhead window
+pressure (#1090) — so every read below is mandatory IN CONTENT but
+budgeted IN FORM:
+
+- **Grep-then-slice.** Never pull a >40 KB file (or a file of unknown size)
+  into context in one unchunked `Read`: locate the span with Grep (`-n`,
+  bounded `head_limit`), then `Read` only that span with `offset`/`limit` in
+  ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
+  chunked.
+- **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
+  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
+  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
+- **Results are digests.** Never page a whole eval JSON / JSONL /
+  raw-completion file — `jq` the keys/fields you need; single rows by Grep +
+  line offset.
+- **Diff BODIES have their own gate** (Step 0 +
+  `.claude/rules/diff-size-budget.md`); this section governs every NON-diff
+  read — plan, task body, rule/spec files, changed-file context:
+  grep-then-slice them; task state via jq.
+- **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
+
+Other sections name WHAT to read; this one governs HOW. On conflict, this
+section wins on invocation form.
+
 ## Your Responsibilities
 
 1. **Verify plan adherence** — Does the diff implement the approved plan? Nothing more, nothing less?
@@ -289,7 +318,8 @@ per-call estimate instead. N/A when no phase loops a
 fit/factorization/battery.
 
 **Harmful-content corpora digest note.** For phases over EM / refusal-bait /
-harmful-advice corpora the digest is path + row count + hash + field names
+harmful-advice / real-world-corpus (LMSYS/WildChat-class; #1073) corpora
+the digest is path + row count + hash + field names
 ONLY — the implementer spec forbids pasting row text
 (experiment-implementer.md § Content hygiene). Never request raw-row or
 sample-text evidence for such artifacts, and never `cat` them yourself when
@@ -380,8 +410,14 @@ crash-fix round — the report carries a `### Response to code-review` or
 the brief named a failure), check the `## Smoke run` section contains a
 `### fix-engaged signal` sub-section that (a) names the exact signal the
 fix's new code path emits, (b) pastes the matched line from a same-pod /
-smoke-slice re-run confirming the signal appeared, and (c) ties the
-signal to the specific branch the fix added. Missing or unconfirmed (no
+smoke-slice re-run confirming the signal appeared, (c) ties the
+signal to the specific branch the fix added, (d) declares the fix
+commit's FULL SHA(s), and (e) declares the stale-run artifact
+disposition (`quarantine` / `retain — <reason>` / gated `wipe` /
+`fresh-output-path / --no-resume` / explicit `N/A — <reason>`) —
+elements 4/5 of `.claude/rules/crash-fix-rounds.md`. Rounds dispatched
+before elements 4/5 landed are reviewed under the 3-element contract.
+Missing or unconfirmed (no
 pasted matched line) is a FAIL with blocker tag `substantive` (NOT
 `smoke-run-missing`) — a fix-engaged-signal miss is a substantive
 judgment about whether the fix actually engaged, so it must sit OUTSIDE
@@ -964,7 +1000,23 @@ re-derivation is the PREFERRED sizing input over §9 prose — a fabricated §9 
 exactly what defeated the sizing at #823), or a trivial count × per-call estimate you
 can form from the diff; a loop of more than ~500 serial calls of a non-trivial kernel
 is presumed >~1h absent measured evidence otherwise (the
-`.claude/rules/plan-compute-sizing.md` many-call floor). Applies to every task type (a
+`.claude/rules/plan-compute-sizing.md` many-call floor). EXTERNAL-STREAM presumption: a
+loop consuming an external streaming source (HF `datasets` `streaming=True`, API
+pagination, web harvest, S3/HTTP row iteration) is presumed >~1h REGARDLESS of per-row
+kernel triviality when the scanned-row count exceeds ~10^4, is unknowable in advance (a
+yield-dependent keep-quota stop — scan until N rows pass a filter), or the pass is
+intentionally unbounded (full-corpus stream — #1092's production shape); wall-time there
+is network-throughput-bound, so neither §9 prose nor a count × per-call estimate from the
+diff can size it — exactly the blind spot that passed #1092's 3h stream through both
+prongs above. A short bounded fetch (known ≤~10^4-row scan, fixed stop) does not trip it.
+Required mechanism when it fires: per-chunk durable persistence (atomic JSONL append or
+per-source pool files via write-tmp + `os.replace`) + a fingerprint-gated resume keyed on
+dataset identity/revision AND every filter/recipe constant; a stream already persisted +
+resumable by construction through an existing helper (a Hub etag-resumed download, the
+#663 `batch_judge` client) satisfies it — note which helper. Reference impl:
+`scripts/issue1092_build_corpus.py::_stream_with_cache` <!-- lint: historical-ref -->
+— pool file first, meta sidecar last, exact-fingerprint match or loud re-stream.
+Applies to every task type (a
 long analysis loop is as restart-prone as an experiment dispatcher). No such loop in
 the diff → record `Step 3.6: N/A — no >~1h loop in the diff` in the verdict body and
 proceed.
@@ -1007,6 +1059,15 @@ code-review rounds PASSed it; both GCE crashes forfeited all phase-4 progress; a
 user-directed restart-with-optimization was refused solely because restart forfeits
 unpersisted fits. Same family: #722 r2 (per-unit atomic writes + `--resume` for ≥1h
 analysis loops), #399 (per-phase eval-rig checkpoint).
+
+Incident #1092 P0 attempt 3 (2026-07-07): a trivial-kernel LMSYS/WildChat harvest
+intentionally streamed the full corpus unbounded (`row_limit=None`; ~1.8M rows
+over 3h06m; mid-run health check 50k streamed → ~19.7k kept), held the kept pool in
+memory, and a downstream topic-labeling `KeyError` forfeited the entire stream —
+neither trigger prong fired (per-row kernel ~ms; wall network-bound and unsizeable;
+attempt 2 had already streamed ~1M rows to keep 0 on a filter bug). The round-8
+crash fix added `_stream_with_cache` reactively; the external-stream presumption
+above is the review-time closure.
 
 ### Step 3.7: Bug-class sibling sweep (MANDATORY for every Critical/Major finding)
 

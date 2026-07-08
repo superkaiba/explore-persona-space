@@ -1,0 +1,3012 @@
+{
+  "commit": "1f6db9f0c0",
+  "created": "2026-07-07T10:23:24Z",
+  "figsize": [
+    4.8,
+    4.6
+  ],
+  "points": [
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.80717411149849,
+      "pretrained per-group $R^2$ (raw ridge)": -3.7776535688841495,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -2.311913249532001,
+      "pretrained per-group $R^2$ (raw ridge)": -2.866531597484103,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.827212171018179,
+      "pretrained per-group $R^2$ (raw ridge)": -7.059917771516796,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.912544397969214,
+      "pretrained per-group $R^2$ (raw ridge)": -7.075049148153074,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.61316133490436,
+      "pretrained per-group $R^2$ (raw ridge)": -7.0941049465829895,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.17787583337164,
+      "pretrained per-group $R^2$ (raw ridge)": -4.834273705202856,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.149920516901267,
+      "pretrained per-group $R^2$ (raw ridge)": -8.572540132241597,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.075786605643348,
+      "pretrained per-group $R^2$ (raw ridge)": -11.0805310704907,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.668425259498443,
+      "pretrained per-group $R^2$ (raw ridge)": -7.924667328872234,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.6311469292024245,
+      "pretrained per-group $R^2$ (raw ridge)": -4.502019665584415,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.329751540019789,
+      "pretrained per-group $R^2$ (raw ridge)": -3.857880035776751,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.243252136242612,
+      "pretrained per-group $R^2$ (raw ridge)": -9.124911440512554,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.5849615646481565,
+      "pretrained per-group $R^2$ (raw ridge)": -3.5753293236858923,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.791483362128808,
+      "pretrained per-group $R^2$ (raw ridge)": -5.407497653027835,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.914292985058547,
+      "pretrained per-group $R^2$ (raw ridge)": -7.45316051611732,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.607083364689709,
+      "pretrained per-group $R^2$ (raw ridge)": -7.524175718614186,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.975757071726894,
+      "pretrained per-group $R^2$ (raw ridge)": -6.403908496398317,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.15448265641762,
+      "pretrained per-group $R^2$ (raw ridge)": -5.404085285454773,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.529769676658801,
+      "pretrained per-group $R^2$ (raw ridge)": -6.469263040834882,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.24240811560151,
+      "pretrained per-group $R^2$ (raw ridge)": -7.041316232238669,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.226089147296652,
+      "pretrained per-group $R^2$ (raw ridge)": -3.5613023430579025,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.1034793488976096,
+      "pretrained per-group $R^2$ (raw ridge)": -3.4523188739297597,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.3459367310064403,
+      "pretrained per-group $R^2$ (raw ridge)": -3.905597435894313,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.121201731196248,
+      "pretrained per-group $R^2$ (raw ridge)": -7.084660760011172,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.270767819759571,
+      "pretrained per-group $R^2$ (raw ridge)": -6.224431447148818,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.994306341442131,
+      "pretrained per-group $R^2$ (raw ridge)": -10.229150276670651,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.591512822574263,
+      "pretrained per-group $R^2$ (raw ridge)": -5.090173922654826,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.999669574782407,
+      "pretrained per-group $R^2$ (raw ridge)": -8.216879369353942,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.45225033948939,
+      "pretrained per-group $R^2$ (raw ridge)": -8.974018433550127,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.079300874627214,
+      "pretrained per-group $R^2$ (raw ridge)": -4.180891240567475,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.428324096992361,
+      "pretrained per-group $R^2$ (raw ridge)": -4.406119888624111,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.071446203099727,
+      "pretrained per-group $R^2$ (raw ridge)": -8.525523596775052,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.385499819327328,
+      "pretrained per-group $R^2$ (raw ridge)": -4.685804398826284,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.417958177254348,
+      "pretrained per-group $R^2$ (raw ridge)": -5.256946650601504,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.686003170892119,
+      "pretrained per-group $R^2$ (raw ridge)": -5.223138911094907,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.0139239367963775,
+      "pretrained per-group $R^2$ (raw ridge)": -4.172849774538314,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.504441270010854,
+      "pretrained per-group $R^2$ (raw ridge)": -3.6026286667000305,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.11660808813466,
+      "pretrained per-group $R^2$ (raw ridge)": -6.662156310261829,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.736463981806017,
+      "pretrained per-group $R^2$ (raw ridge)": -7.072774573892648,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.789992226947674,
+      "pretrained per-group $R^2$ (raw ridge)": -6.562885995709376,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -11.093901147639885,
+      "pretrained per-group $R^2$ (raw ridge)": -10.431702005511898,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.507965385905884,
+      "pretrained per-group $R^2$ (raw ridge)": -9.438247891754552,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.55884793827605,
+      "pretrained per-group $R^2$ (raw ridge)": -4.069830046732194,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.148088543258973,
+      "pretrained per-group $R^2$ (raw ridge)": -5.448879761696449,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.339018346734722,
+      "pretrained per-group $R^2$ (raw ridge)": -9.111376845505061,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.755069740027345,
+      "pretrained per-group $R^2$ (raw ridge)": -6.704519525014001,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.379191416607872,
+      "pretrained per-group $R^2$ (raw ridge)": -5.221241457145151,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -12.20376397062238,
+      "pretrained per-group $R^2$ (raw ridge)": -12.81446022248299,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.6929796784149627,
+      "pretrained per-group $R^2$ (raw ridge)": -3.2399887137906873,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.062450920620543,
+      "pretrained per-group $R^2$ (raw ridge)": -7.661062954507477,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.524406589183652,
+      "pretrained per-group $R^2$ (raw ridge)": -4.348320774058594,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.527643311951847,
+      "pretrained per-group $R^2$ (raw ridge)": -7.6194009554698585,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.623300977909008,
+      "pretrained per-group $R^2$ (raw ridge)": -7.959603933960887,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.118031338336191,
+      "pretrained per-group $R^2$ (raw ridge)": -7.383428860382745,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.319405859388121,
+      "pretrained per-group $R^2$ (raw ridge)": -9.903309063895195,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.015494276641634,
+      "pretrained per-group $R^2$ (raw ridge)": -4.758698543433177,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.556628766110632,
+      "pretrained per-group $R^2$ (raw ridge)": -4.986328001986682,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.573868829905081,
+      "pretrained per-group $R^2$ (raw ridge)": -7.226558046634354,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.600216875403726,
+      "pretrained per-group $R^2$ (raw ridge)": -5.146035882747848,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.591299776921114,
+      "pretrained per-group $R^2$ (raw ridge)": -4.719974515029647,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.294005101390851,
+      "pretrained per-group $R^2$ (raw ridge)": -6.51197432631437,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.298462943049952,
+      "pretrained per-group $R^2$ (raw ridge)": -8.346839161403139,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.279378462196046,
+      "pretrained per-group $R^2$ (raw ridge)": -9.904141691267041,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.014518315965848,
+      "pretrained per-group $R^2$ (raw ridge)": -5.07389621200628,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.037662795871901,
+      "pretrained per-group $R^2$ (raw ridge)": -4.018654768211422,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.295624274135767,
+      "pretrained per-group $R^2$ (raw ridge)": -3.4945873140395447,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.524442894191694,
+      "pretrained per-group $R^2$ (raw ridge)": -7.352803644341806,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.186589183777014,
+      "pretrained per-group $R^2$ (raw ridge)": -6.021905261202989,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.862791111881479,
+      "pretrained per-group $R^2$ (raw ridge)": -6.7785204350106,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.134492950969342,
+      "pretrained per-group $R^2$ (raw ridge)": -7.403779439953679,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.434224937817546,
+      "pretrained per-group $R^2$ (raw ridge)": -5.356164100641878,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -13.380142362818374,
+      "pretrained per-group $R^2$ (raw ridge)": -11.16513177260323,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.041879828783217,
+      "pretrained per-group $R^2$ (raw ridge)": -5.841614144662419,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.630220658705701,
+      "pretrained per-group $R^2$ (raw ridge)": -5.140393314271707,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.470598990000733,
+      "pretrained per-group $R^2$ (raw ridge)": -9.329273158541778,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.69451519722853,
+      "pretrained per-group $R^2$ (raw ridge)": -3.973109687576607,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.0942190570209425,
+      "pretrained per-group $R^2$ (raw ridge)": -4.446415760971188,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.176968739699983,
+      "pretrained per-group $R^2$ (raw ridge)": -4.255396592243713,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.172748545415342,
+      "pretrained per-group $R^2$ (raw ridge)": -5.475740979267495,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.289825123736625,
+      "pretrained per-group $R^2$ (raw ridge)": -4.48647553022053,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.400154746999746,
+      "pretrained per-group $R^2$ (raw ridge)": -6.566002785165681,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.446892868256618,
+      "pretrained per-group $R^2$ (raw ridge)": -3.135412373713244,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.950627112748715,
+      "pretrained per-group $R^2$ (raw ridge)": -4.444100891473105,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.851746803037302,
+      "pretrained per-group $R^2$ (raw ridge)": -6.338660467773961,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.9785399128098344,
+      "pretrained per-group $R^2$ (raw ridge)": -4.303782091859402,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.677016350578825,
+      "pretrained per-group $R^2$ (raw ridge)": -7.347078831511242,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.567800649346185,
+      "pretrained per-group $R^2$ (raw ridge)": -5.617262726518365,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.9335504539413613,
+      "pretrained per-group $R^2$ (raw ridge)": -5.06551177525922,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.23237247603641,
+      "pretrained per-group $R^2$ (raw ridge)": -7.419579201064085,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.675888342850151,
+      "pretrained per-group $R^2$ (raw ridge)": -3.895871155632671,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.458219765393124,
+      "pretrained per-group $R^2$ (raw ridge)": -3.8361123002149657,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.842703473863531,
+      "pretrained per-group $R^2$ (raw ridge)": -2.9176047476325433,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.4031652900361555,
+      "pretrained per-group $R^2$ (raw ridge)": -4.570293092141307,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.919939780439771,
+      "pretrained per-group $R^2$ (raw ridge)": -7.134355534772739,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.587971719330164,
+      "pretrained per-group $R^2$ (raw ridge)": -5.405599771191527,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.448821848825144,
+      "pretrained per-group $R^2$ (raw ridge)": -5.074524927163272,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.639567183809394,
+      "pretrained per-group $R^2$ (raw ridge)": -3.515595742325753,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.6750993421096645,
+      "pretrained per-group $R^2$ (raw ridge)": -6.143895060787915,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.3814690255271795,
+      "pretrained per-group $R^2$ (raw ridge)": -4.345230540414601,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.974363097743738,
+      "pretrained per-group $R^2$ (raw ridge)": -4.485861685679123,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.837005718478907,
+      "pretrained per-group $R^2$ (raw ridge)": -3.997749141187435,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.689459128088162,
+      "pretrained per-group $R^2$ (raw ridge)": -8.527115391439704,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.634402970473596,
+      "pretrained per-group $R^2$ (raw ridge)": -5.540754528256086,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.495306614857001,
+      "pretrained per-group $R^2$ (raw ridge)": -4.6188040086434405,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.66585649746349,
+      "pretrained per-group $R^2$ (raw ridge)": -9.120551543854798,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.920692139671824,
+      "pretrained per-group $R^2$ (raw ridge)": -4.4781670037887125,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -2.5548591683251867,
+      "pretrained per-group $R^2$ (raw ridge)": -3.2000077521205306,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.13960828847153,
+      "pretrained per-group $R^2$ (raw ridge)": -3.7679963589795777,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.433402122698585,
+      "pretrained per-group $R^2$ (raw ridge)": -5.776858206977408,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.244286239047119,
+      "pretrained per-group $R^2$ (raw ridge)": -5.803387452407408,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.74768478128521,
+      "pretrained per-group $R^2$ (raw ridge)": -5.109184273073328,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.204718684019612,
+      "pretrained per-group $R^2$ (raw ridge)": -6.503792289371758,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.414272864942019,
+      "pretrained per-group $R^2$ (raw ridge)": -5.011507299933361,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.374843322907259,
+      "pretrained per-group $R^2$ (raw ridge)": -6.713359731425776,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.151814279449617,
+      "pretrained per-group $R^2$ (raw ridge)": -5.045331908404103,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.213985716590051,
+      "pretrained per-group $R^2$ (raw ridge)": -3.0952037736605806,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.946401056514244,
+      "pretrained per-group $R^2$ (raw ridge)": -5.608565930514244,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.289816595275553,
+      "pretrained per-group $R^2$ (raw ridge)": -10.380084116305564,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.841730342724362,
+      "pretrained per-group $R^2$ (raw ridge)": -6.44273423912844,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.5256801732263865,
+      "pretrained per-group $R^2$ (raw ridge)": -5.9576059444802025,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.104352473813461,
+      "pretrained per-group $R^2$ (raw ridge)": -5.032754256801225,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.461659755738721,
+      "pretrained per-group $R^2$ (raw ridge)": -6.934385078374309,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.982743670749547,
+      "pretrained per-group $R^2$ (raw ridge)": -5.388883129103695,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.716895023935555,
+      "pretrained per-group $R^2$ (raw ridge)": -8.072259902660939,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.691991039837347,
+      "pretrained per-group $R^2$ (raw ridge)": -6.764904847874871,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.1903346620942816,
+      "pretrained per-group $R^2$ (raw ridge)": -2.7321026523475758,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.331671086066387,
+      "pretrained per-group $R^2$ (raw ridge)": -3.2836495844695,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.4778629258850176,
+      "pretrained per-group $R^2$ (raw ridge)": -3.6310447056399724,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.3722529440994204,
+      "pretrained per-group $R^2$ (raw ridge)": -4.885302838634803,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.343252137458872,
+      "pretrained per-group $R^2$ (raw ridge)": -6.717811448708177,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.058774270449048,
+      "pretrained per-group $R^2$ (raw ridge)": -7.244592730055318,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.446836417266079,
+      "pretrained per-group $R^2$ (raw ridge)": -3.536517009358069,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.686834032469687,
+      "pretrained per-group $R^2$ (raw ridge)": -4.818850640405833,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.012776506139481,
+      "pretrained per-group $R^2$ (raw ridge)": -5.190887675038905,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.98740354613948,
+      "pretrained per-group $R^2$ (raw ridge)": -6.854748645384542,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.120882286492414,
+      "pretrained per-group $R^2$ (raw ridge)": -5.744117289947918,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.12615749369313,
+      "pretrained per-group $R^2$ (raw ridge)": -6.950833127491962,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.1182396105515044,
+      "pretrained per-group $R^2$ (raw ridge)": -5.433515477423887,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.82852146782535,
+      "pretrained per-group $R^2$ (raw ridge)": -6.218164728517685,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.857603250035433,
+      "pretrained per-group $R^2$ (raw ridge)": -3.829308521321802,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.303129753300317,
+      "pretrained per-group $R^2$ (raw ridge)": -5.74988937372343,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.459542647093193,
+      "pretrained per-group $R^2$ (raw ridge)": -5.951059249045086,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.1139624005220865,
+      "pretrained per-group $R^2$ (raw ridge)": -5.613716964315728,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.8763362929853535,
+      "pretrained per-group $R^2$ (raw ridge)": -3.9488680789641677,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.206875178415142,
+      "pretrained per-group $R^2$ (raw ridge)": -6.618768754223448,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.020399335991355,
+      "pretrained per-group $R^2$ (raw ridge)": -5.549264371204581,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.88473672547697,
+      "pretrained per-group $R^2$ (raw ridge)": -9.820223692497247,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.830432805851782,
+      "pretrained per-group $R^2$ (raw ridge)": -6.462465725029366,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.6701859527017895,
+      "pretrained per-group $R^2$ (raw ridge)": -6.820605677942432,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.030648057126769,
+      "pretrained per-group $R^2$ (raw ridge)": -5.477623602728098,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -11.88351993756446,
+      "pretrained per-group $R^2$ (raw ridge)": -13.105610521977793,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.931925263664089,
+      "pretrained per-group $R^2$ (raw ridge)": -5.552885039615549,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.362577861914088,
+      "pretrained per-group $R^2$ (raw ridge)": -7.070962596070299,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.507404382666,
+      "pretrained per-group $R^2$ (raw ridge)": -4.179336677389386,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.621810393533203,
+      "pretrained per-group $R^2$ (raw ridge)": -6.576452747598607,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.917572596377322,
+      "pretrained per-group $R^2$ (raw ridge)": -5.418993155986767,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.021893915618904,
+      "pretrained per-group $R^2$ (raw ridge)": -8.085225219384874,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.023527520069865,
+      "pretrained per-group $R^2$ (raw ridge)": -4.389569185670161,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.694789260151261,
+      "pretrained per-group $R^2$ (raw ridge)": -9.253472696336996,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.342030996874061,
+      "pretrained per-group $R^2$ (raw ridge)": -5.84233819036728,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.804158165595908,
+      "pretrained per-group $R^2$ (raw ridge)": -7.864849953724692,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.845688122021893,
+      "pretrained per-group $R^2$ (raw ridge)": -5.375819250258544,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -12.8448577099956,
+      "pretrained per-group $R^2$ (raw ridge)": -11.67612422746382,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.467590734536905,
+      "pretrained per-group $R^2$ (raw ridge)": -4.405750026791686,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.336474441941734,
+      "pretrained per-group $R^2$ (raw ridge)": -3.8188642606612477,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.781571359074909,
+      "pretrained per-group $R^2$ (raw ridge)": -5.29337462254362,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.8992242247293483,
+      "pretrained per-group $R^2$ (raw ridge)": -3.7143772947381617,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.607601855671681,
+      "pretrained per-group $R^2$ (raw ridge)": -7.1489761066712205,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.54020636739306,
+      "pretrained per-group $R^2$ (raw ridge)": -3.8236634436865558,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.110101419660687,
+      "pretrained per-group $R^2$ (raw ridge)": -5.498504465557366,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.702745097646573,
+      "pretrained per-group $R^2$ (raw ridge)": -7.399802753856042,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.140775192572711,
+      "pretrained per-group $R^2$ (raw ridge)": -2.9247087192813828,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.475246199305685,
+      "pretrained per-group $R^2$ (raw ridge)": -4.091187105333634,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.719341345352529,
+      "pretrained per-group $R^2$ (raw ridge)": -6.822627425655412,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.506546188295852,
+      "pretrained per-group $R^2$ (raw ridge)": -3.8475383256551874,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.871647083122852,
+      "pretrained per-group $R^2$ (raw ridge)": -12.758668375214125,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.138939022880572,
+      "pretrained per-group $R^2$ (raw ridge)": -3.9255324642566825,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.512413668396641,
+      "pretrained per-group $R^2$ (raw ridge)": -5.444185897127342,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.19587041940892,
+      "pretrained per-group $R^2$ (raw ridge)": -6.090525597843862,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.835110360084615,
+      "pretrained per-group $R^2$ (raw ridge)": -5.35847881608433,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.112381120572284,
+      "pretrained per-group $R^2$ (raw ridge)": -4.179214860086464,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.695026681908804,
+      "pretrained per-group $R^2$ (raw ridge)": -10.037795563444543,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.173881888507373,
+      "pretrained per-group $R^2$ (raw ridge)": -7.883163517216671,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.4034832953979866,
+      "pretrained per-group $R^2$ (raw ridge)": -3.8786161756771023,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.687912630395197,
+      "pretrained per-group $R^2$ (raw ridge)": -3.923518335543605,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.442209844892846,
+      "pretrained per-group $R^2$ (raw ridge)": -4.809976634558179,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.332523700891934,
+      "pretrained per-group $R^2$ (raw ridge)": -5.739011978178105,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.878067851792515,
+      "pretrained per-group $R^2$ (raw ridge)": -7.764325126700204,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.977394892392306,
+      "pretrained per-group $R^2$ (raw ridge)": -9.07104024016107,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.560189911604919,
+      "pretrained per-group $R^2$ (raw ridge)": -3.6907869061578484,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.710737992353144,
+      "pretrained per-group $R^2$ (raw ridge)": -10.20723295961375,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.530905173728996,
+      "pretrained per-group $R^2$ (raw ridge)": -8.39635553804541,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.544806159989777,
+      "pretrained per-group $R^2$ (raw ridge)": -4.863636157108691,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.506342952924767,
+      "pretrained per-group $R^2$ (raw ridge)": -7.2659285672182214,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.676300470804065,
+      "pretrained per-group $R^2$ (raw ridge)": -6.859967154584473,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.411155226758111,
+      "pretrained per-group $R^2$ (raw ridge)": -3.8599881328799057,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.3298275547899845,
+      "pretrained per-group $R^2$ (raw ridge)": -8.757359456953859,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.403493711849096,
+      "pretrained per-group $R^2$ (raw ridge)": -7.233714289097161,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.51654057698285,
+      "pretrained per-group $R^2$ (raw ridge)": -6.047155805090325,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.012665804013906,
+      "pretrained per-group $R^2$ (raw ridge)": -5.203044020906413,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.020267833050999,
+      "pretrained per-group $R^2$ (raw ridge)": -6.070938285230464,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.320842799796469,
+      "pretrained per-group $R^2$ (raw ridge)": -6.168712491283828,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.647971774026532,
+      "pretrained per-group $R^2$ (raw ridge)": -5.727478188404982,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.073398443800065,
+      "pretrained per-group $R^2$ (raw ridge)": -3.5188477973062184,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.268076425869662,
+      "pretrained per-group $R^2$ (raw ridge)": -5.830704644770862,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.024268758513207,
+      "pretrained per-group $R^2$ (raw ridge)": -8.10552819886963,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.847334220113453,
+      "pretrained per-group $R^2$ (raw ridge)": -4.292744335097177,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.326838549150675,
+      "pretrained per-group $R^2$ (raw ridge)": -5.634259090752674,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.7713673038600293,
+      "pretrained per-group $R^2$ (raw ridge)": -3.300089947409134,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.110818840366768,
+      "pretrained per-group $R^2$ (raw ridge)": -9.611474293099839,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.028404263329402,
+      "pretrained per-group $R^2$ (raw ridge)": -4.564992498605075,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.926096941702644,
+      "pretrained per-group $R^2$ (raw ridge)": -4.608396742975387,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.824844095594414,
+      "pretrained per-group $R^2$ (raw ridge)": -4.01503809306237,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.2947489080031325,
+      "pretrained per-group $R^2$ (raw ridge)": -8.745991734062065,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.602010251162171,
+      "pretrained per-group $R^2$ (raw ridge)": -6.290128093351225,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.007948088973771,
+      "pretrained per-group $R^2$ (raw ridge)": -6.843957488679665,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.060349396559838,
+      "pretrained per-group $R^2$ (raw ridge)": -11.185803796206669,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.585455948187565,
+      "pretrained per-group $R^2$ (raw ridge)": -4.977109736316289,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.100735716252319,
+      "pretrained per-group $R^2$ (raw ridge)": -4.854542220248382,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.959169955581035,
+      "pretrained per-group $R^2$ (raw ridge)": -5.934509048596769,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.747246492647415,
+      "pretrained per-group $R^2$ (raw ridge)": -6.169320149386674,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.576446589631541,
+      "pretrained per-group $R^2$ (raw ridge)": -7.536316406299077,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.062130259410391,
+      "pretrained per-group $R^2$ (raw ridge)": -4.415086185977708,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.437285092799827,
+      "pretrained per-group $R^2$ (raw ridge)": -6.340785054279043,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.093549957137531,
+      "pretrained per-group $R^2$ (raw ridge)": -6.180981540248935,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.788696585795918,
+      "pretrained per-group $R^2$ (raw ridge)": -15.547582474765651,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.685946582473016,
+      "pretrained per-group $R^2$ (raw ridge)": -3.986078236650017,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.090992127229393,
+      "pretrained per-group $R^2$ (raw ridge)": -8.995932509203532,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.37656707535704,
+      "pretrained per-group $R^2$ (raw ridge)": -8.207060727428617,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.126663105474446,
+      "pretrained per-group $R^2$ (raw ridge)": -3.365978724388677,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.165811284281925,
+      "pretrained per-group $R^2$ (raw ridge)": -5.801655805062304,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.050851425411865,
+      "pretrained per-group $R^2$ (raw ridge)": -6.859530900016222,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.679221099336737,
+      "pretrained per-group $R^2$ (raw ridge)": -5.3782213204258,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.5538557084445035,
+      "pretrained per-group $R^2$ (raw ridge)": -4.35356488718724,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.606334319783599,
+      "pretrained per-group $R^2$ (raw ridge)": -6.474326591773747,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.2606383046208105,
+      "pretrained per-group $R^2$ (raw ridge)": -5.071069678314513,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.999032039039497,
+      "pretrained per-group $R^2$ (raw ridge)": -8.207048428757458,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.226346859240001,
+      "pretrained per-group $R^2$ (raw ridge)": -4.751828089988066,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.855770392996864,
+      "pretrained per-group $R^2$ (raw ridge)": -6.504959596177135,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.772785898307357,
+      "pretrained per-group $R^2$ (raw ridge)": -3.6560244391213237,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.21482063790444,
+      "pretrained per-group $R^2$ (raw ridge)": -8.522645064929131,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.303307281378893,
+      "pretrained per-group $R^2$ (raw ridge)": -7.460423302345493,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.196552196970571,
+      "pretrained per-group $R^2$ (raw ridge)": -6.270381243694325,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -12.494018659819705,
+      "pretrained per-group $R^2$ (raw ridge)": -13.247770071523606,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.936479653924643,
+      "pretrained per-group $R^2$ (raw ridge)": -8.222831722674998,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -12.888720963984097,
+      "pretrained per-group $R^2$ (raw ridge)": -14.387742360060798,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.405033462638628,
+      "pretrained per-group $R^2$ (raw ridge)": -4.375719191973773,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.21905574010419,
+      "pretrained per-group $R^2$ (raw ridge)": -5.4658721254467455,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.61498335773824,
+      "pretrained per-group $R^2$ (raw ridge)": -10.198840141906361,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.896727397394688,
+      "pretrained per-group $R^2$ (raw ridge)": -11.798695251597271,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -23.90881962773679,
+      "pretrained per-group $R^2$ (raw ridge)": -25.436193773186993,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -20.567011630395953,
+      "pretrained per-group $R^2$ (raw ridge)": -17.91828930403062,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -15.812153112327053,
+      "pretrained per-group $R^2$ (raw ridge)": -12.918845369716744,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.725800926271223,
+      "pretrained per-group $R^2$ (raw ridge)": -8.705637762159775,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.407044379186023,
+      "pretrained per-group $R^2$ (raw ridge)": -4.103029206815911,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.140334276056329,
+      "pretrained per-group $R^2$ (raw ridge)": -7.577518143145484,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.1271948172096184,
+      "pretrained per-group $R^2$ (raw ridge)": -4.3115830870065786,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.8655984843853615,
+      "pretrained per-group $R^2$ (raw ridge)": -5.206852803941855,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.811586439168883,
+      "pretrained per-group $R^2$ (raw ridge)": -5.828667616839098,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -11.70875388694145,
+      "pretrained per-group $R^2$ (raw ridge)": -10.480005870485478,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.225881906468714,
+      "pretrained per-group $R^2$ (raw ridge)": -4.571668862169272,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.003347963731354,
+      "pretrained per-group $R^2$ (raw ridge)": -7.960054535792761,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.83073341164353,
+      "pretrained per-group $R^2$ (raw ridge)": -6.0729714931185965,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.543091729979841,
+      "pretrained per-group $R^2$ (raw ridge)": -5.6861705135240355,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.6993857843160285,
+      "pretrained per-group $R^2$ (raw ridge)": -6.255029194433496,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.1477522269152445,
+      "pretrained per-group $R^2$ (raw ridge)": -4.785805551889668,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.7977352913693823,
+      "pretrained per-group $R^2$ (raw ridge)": -3.083557521390219,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.190434854046323,
+      "pretrained per-group $R^2$ (raw ridge)": -3.9832413376095763,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.876622413727368,
+      "pretrained per-group $R^2$ (raw ridge)": -9.101599539052675,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.354390071384823,
+      "pretrained per-group $R^2$ (raw ridge)": -5.805089847621378,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.569445018954009,
+      "pretrained per-group $R^2$ (raw ridge)": -5.104893972852256,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.6250776391180395,
+      "pretrained per-group $R^2$ (raw ridge)": -6.031413291697521,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.535164242905478,
+      "pretrained per-group $R^2$ (raw ridge)": -5.83859091915345,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.228399014185383,
+      "pretrained per-group $R^2$ (raw ridge)": -8.360571426678788,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.065524940229321,
+      "pretrained per-group $R^2$ (raw ridge)": -3.5038455202944823,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.90508096203464,
+      "pretrained per-group $R^2$ (raw ridge)": -5.223719398513865,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.307765033046808,
+      "pretrained per-group $R^2$ (raw ridge)": -6.673405521032938,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.2392354295636263,
+      "pretrained per-group $R^2$ (raw ridge)": -3.0399332226672424,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.84938322172218,
+      "pretrained per-group $R^2$ (raw ridge)": -7.701115681725799,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -13.466553634592026,
+      "pretrained per-group $R^2$ (raw ridge)": -12.259150273010356,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.424852801410602,
+      "pretrained per-group $R^2$ (raw ridge)": -4.989870332710637,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.094618497562155,
+      "pretrained per-group $R^2$ (raw ridge)": -4.30030596282593,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.410440529961065,
+      "pretrained per-group $R^2$ (raw ridge)": -6.062430074177226,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.176118562390811,
+      "pretrained per-group $R^2$ (raw ridge)": -4.588094543669811,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -2.286548148452185,
+      "pretrained per-group $R^2$ (raw ridge)": -3.0057728704299347,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.6179107309173,
+      "pretrained per-group $R^2$ (raw ridge)": -5.547062957986473,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.960430729784904,
+      "pretrained per-group $R^2$ (raw ridge)": -3.1877059827058334,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.2296315068098913,
+      "pretrained per-group $R^2$ (raw ridge)": -3.065389177871828,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.672714406348698,
+      "pretrained per-group $R^2$ (raw ridge)": -4.319632458887693,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.697323035950677,
+      "pretrained per-group $R^2$ (raw ridge)": -7.763902217001974,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.050590898654215,
+      "pretrained per-group $R^2$ (raw ridge)": -4.263007622613888,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.503512685453663,
+      "pretrained per-group $R^2$ (raw ridge)": -4.962918712981047,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.2794662159229135,
+      "pretrained per-group $R^2$ (raw ridge)": -4.928669609446832,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.389590234225522,
+      "pretrained per-group $R^2$ (raw ridge)": -5.377303494915212,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.652014733438722,
+      "pretrained per-group $R^2$ (raw ridge)": -8.040585001279583,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.42527556943002,
+      "pretrained per-group $R^2$ (raw ridge)": -5.341315625853906,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.381480263494202,
+      "pretrained per-group $R^2$ (raw ridge)": -6.1899767214672785,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.368777409287843,
+      "pretrained per-group $R^2$ (raw ridge)": -4.82798401581497,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.468318270081594,
+      "pretrained per-group $R^2$ (raw ridge)": -8.252009912796936,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.76151700456994,
+      "pretrained per-group $R^2$ (raw ridge)": -9.065040780213488,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.571619043835401,
+      "pretrained per-group $R^2$ (raw ridge)": -4.249399543092549,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.331514123962139,
+      "pretrained per-group $R^2$ (raw ridge)": -7.309416305139353,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.648803972370368,
+      "pretrained per-group $R^2$ (raw ridge)": -5.0375314596936684,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.022427252901458,
+      "pretrained per-group $R^2$ (raw ridge)": -6.2439616130271745,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.746666142573438,
+      "pretrained per-group $R^2$ (raw ridge)": -5.903072232672605,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.395541451316934,
+      "pretrained per-group $R^2$ (raw ridge)": -6.155633925998386,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.823852070405574,
+      "pretrained per-group $R^2$ (raw ridge)": -5.184401725962004,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.94253132132103,
+      "pretrained per-group $R^2$ (raw ridge)": -5.502879091372751,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.748522551187172,
+      "pretrained per-group $R^2$ (raw ridge)": -4.694826539960432,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.563020538577269,
+      "pretrained per-group $R^2$ (raw ridge)": -4.599944326644438,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.234638042332635,
+      "pretrained per-group $R^2$ (raw ridge)": -4.095069737872874,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -11.993859721404249,
+      "pretrained per-group $R^2$ (raw ridge)": -12.962402256581123,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.592929083589729,
+      "pretrained per-group $R^2$ (raw ridge)": -9.939880517428978,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.194980912607825,
+      "pretrained per-group $R^2$ (raw ridge)": -5.934880695837702,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.220357211896263,
+      "pretrained per-group $R^2$ (raw ridge)": -3.9732011205197386,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -14.802985783661647,
+      "pretrained per-group $R^2$ (raw ridge)": -16.28760119277598,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.316254205047906,
+      "pretrained per-group $R^2$ (raw ridge)": -4.7586314334781346,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.063342120443637,
+      "pretrained per-group $R^2$ (raw ridge)": -3.527288593556193,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.268491764878519,
+      "pretrained per-group $R^2$ (raw ridge)": -3.9215976098779226,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.2969542341654545,
+      "pretrained per-group $R^2$ (raw ridge)": -5.999932431042804,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.821851461965955,
+      "pretrained per-group $R^2$ (raw ridge)": -6.3454731076400765,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.184483247084512,
+      "pretrained per-group $R^2$ (raw ridge)": -4.396822149312324,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.005329460629548,
+      "pretrained per-group $R^2$ (raw ridge)": -5.9238084145524175,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.030086250119758,
+      "pretrained per-group $R^2$ (raw ridge)": -4.810062903272378,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.510281007919603,
+      "pretrained per-group $R^2$ (raw ridge)": -6.208948065437725,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.809754729606355,
+      "pretrained per-group $R^2$ (raw ridge)": -6.842469410391591,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -12.356348449103027,
+      "pretrained per-group $R^2$ (raw ridge)": -14.231599839987956,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.080779514562698,
+      "pretrained per-group $R^2$ (raw ridge)": -7.327434632734878,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.396489541223442,
+      "pretrained per-group $R^2$ (raw ridge)": -6.567904429882094,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.014915306492057,
+      "pretrained per-group $R^2$ (raw ridge)": -5.921476090149245,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.354261123681059,
+      "pretrained per-group $R^2$ (raw ridge)": -5.722317713934061,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.682289748452135,
+      "pretrained per-group $R^2$ (raw ridge)": -5.420863128796635,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.334204976399766,
+      "pretrained per-group $R^2$ (raw ridge)": -8.815613814642868,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.2483227333680995,
+      "pretrained per-group $R^2$ (raw ridge)": -3.9798921445530917,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.78381605252856,
+      "pretrained per-group $R^2$ (raw ridge)": -4.0704897754111355,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.8881770760755785,
+      "pretrained per-group $R^2$ (raw ridge)": -4.327010669970732,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.216014677779034,
+      "pretrained per-group $R^2$ (raw ridge)": -3.7638609589633445,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.516478991616986,
+      "pretrained per-group $R^2$ (raw ridge)": -3.9532467312749464,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.01072631167564,
+      "pretrained per-group $R^2$ (raw ridge)": -9.491665608357662,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.833805018991697,
+      "pretrained per-group $R^2$ (raw ridge)": -5.362047955045646,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.945989557079374,
+      "pretrained per-group $R^2$ (raw ridge)": -10.024953953277423,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.181242903041486,
+      "pretrained per-group $R^2$ (raw ridge)": -2.361629884016676,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.4771277666219405,
+      "pretrained per-group $R^2$ (raw ridge)": -5.613529095685434,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.339730501478045,
+      "pretrained per-group $R^2$ (raw ridge)": -5.592394085680117,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.989581794954543,
+      "pretrained per-group $R^2$ (raw ridge)": -5.837666445077723,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.784598888453032,
+      "pretrained per-group $R^2$ (raw ridge)": -5.761889604710114,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.811161206880809,
+      "pretrained per-group $R^2$ (raw ridge)": -5.013689042428286,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.8985470310381025,
+      "pretrained per-group $R^2$ (raw ridge)": -6.608542288282484,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.7193050555849023,
+      "pretrained per-group $R^2$ (raw ridge)": -3.7048429431434293,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.563644161740104,
+      "pretrained per-group $R^2$ (raw ridge)": -6.935188783424274,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.230229909545818,
+      "pretrained per-group $R^2$ (raw ridge)": -8.155401943968688,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.034101653061359,
+      "pretrained per-group $R^2$ (raw ridge)": -7.781623378197924,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.716502307550838,
+      "pretrained per-group $R^2$ (raw ridge)": -6.608194419591703,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.1933907350876,
+      "pretrained per-group $R^2$ (raw ridge)": -6.725084330014309,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -2.5564012865280006,
+      "pretrained per-group $R^2$ (raw ridge)": -3.1237769388701526,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.465577754856023,
+      "pretrained per-group $R^2$ (raw ridge)": -8.189116467910145,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.059482587693624,
+      "pretrained per-group $R^2$ (raw ridge)": -8.882580848841883,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.6668261774747,
+      "pretrained per-group $R^2$ (raw ridge)": -8.693104547363818,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.763635224985732,
+      "pretrained per-group $R^2$ (raw ridge)": -6.041028759349955,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.825936511277633,
+      "pretrained per-group $R^2$ (raw ridge)": -4.029226644203498,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.317550809264711,
+      "pretrained per-group $R^2$ (raw ridge)": -3.506737374011233,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.952255135469438,
+      "pretrained per-group $R^2$ (raw ridge)": -7.05240835982071,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.947695684419797,
+      "pretrained per-group $R^2$ (raw ridge)": -5.065125429495559,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.112876028977899,
+      "pretrained per-group $R^2$ (raw ridge)": -7.580458592467112,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -11.918095848998117,
+      "pretrained per-group $R^2$ (raw ridge)": -12.0175794623173,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.3317554360071915,
+      "pretrained per-group $R^2$ (raw ridge)": -5.145396871249705,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.5299706001105298,
+      "pretrained per-group $R^2$ (raw ridge)": -3.507784910304655,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.375499681451756,
+      "pretrained per-group $R^2$ (raw ridge)": -4.711596005001642,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.921077951371304,
+      "pretrained per-group $R^2$ (raw ridge)": -4.930534120107978,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.9612997352479358,
+      "pretrained per-group $R^2$ (raw ridge)": -3.8308225106418483,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.170336772341763,
+      "pretrained per-group $R^2$ (raw ridge)": -4.672236065797134,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.624795089523863,
+      "pretrained per-group $R^2$ (raw ridge)": -5.223051612033028,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.971316079345094,
+      "pretrained per-group $R^2$ (raw ridge)": -6.127915262900681,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.527731600298031,
+      "pretrained per-group $R^2$ (raw ridge)": -6.1115160694357105,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.349527843048964,
+      "pretrained per-group $R^2$ (raw ridge)": -5.90418210938248,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.024111416255664,
+      "pretrained per-group $R^2$ (raw ridge)": -5.1246979901583725,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.170096415159517,
+      "pretrained per-group $R^2$ (raw ridge)": -7.1605575036635525,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.257276584632307,
+      "pretrained per-group $R^2$ (raw ridge)": -8.071391195981535,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.24611825058842,
+      "pretrained per-group $R^2$ (raw ridge)": -9.488701329323213,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.048053282249378,
+      "pretrained per-group $R^2$ (raw ridge)": -5.053930064267766,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.870011287293042,
+      "pretrained per-group $R^2$ (raw ridge)": -7.790153124152759,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -11.188254995329165,
+      "pretrained per-group $R^2$ (raw ridge)": -12.50381492029295,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.127804371078039,
+      "pretrained per-group $R^2$ (raw ridge)": -6.49776884414877,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.358013856369993,
+      "pretrained per-group $R^2$ (raw ridge)": -10.79909067729886,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.113200645367996,
+      "pretrained per-group $R^2$ (raw ridge)": -6.489737909565421,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.978917987874894,
+      "pretrained per-group $R^2$ (raw ridge)": -3.764400716793409,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.161271710552512,
+      "pretrained per-group $R^2$ (raw ridge)": -10.530407709063235,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -2.424109089150954,
+      "pretrained per-group $R^2$ (raw ridge)": -2.64382582634505,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.729743165350554,
+      "pretrained per-group $R^2$ (raw ridge)": -7.229508123942178,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.659497960394508,
+      "pretrained per-group $R^2$ (raw ridge)": -2.915130641593126,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.8910537971591292,
+      "pretrained per-group $R^2$ (raw ridge)": -4.930761078885193,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.226899381382562,
+      "pretrained per-group $R^2$ (raw ridge)": -4.8528483433976906,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.390793200098413,
+      "pretrained per-group $R^2$ (raw ridge)": -3.63590897101529,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.726212521496998,
+      "pretrained per-group $R^2$ (raw ridge)": -6.598141214786474,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.52445564387621,
+      "pretrained per-group $R^2$ (raw ridge)": -4.559770689094718,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.636713783187317,
+      "pretrained per-group $R^2$ (raw ridge)": -4.892966660008309,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.531957893699923,
+      "pretrained per-group $R^2$ (raw ridge)": -4.104074301749676,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.870623769728361,
+      "pretrained per-group $R^2$ (raw ridge)": -6.359582977850088,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.8384600976504055,
+      "pretrained per-group $R^2$ (raw ridge)": -3.570568168555445,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.234063183493188,
+      "pretrained per-group $R^2$ (raw ridge)": -7.97328352821709,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.53547474591369,
+      "pretrained per-group $R^2$ (raw ridge)": -9.68850372542025,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.058609857663236,
+      "pretrained per-group $R^2$ (raw ridge)": -4.957349957113102,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.385854305997717,
+      "pretrained per-group $R^2$ (raw ridge)": -4.942874459884564,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.9339956940917187,
+      "pretrained per-group $R^2$ (raw ridge)": -3.7743429575037153,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.314459197033627,
+      "pretrained per-group $R^2$ (raw ridge)": -3.517501706471535,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.342491272284567,
+      "pretrained per-group $R^2$ (raw ridge)": -3.305221554355203,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -2.7107159100657516,
+      "pretrained per-group $R^2$ (raw ridge)": -2.9490061705047044,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.0291739276075615,
+      "pretrained per-group $R^2$ (raw ridge)": -6.105782841235743,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.631539340179605,
+      "pretrained per-group $R^2$ (raw ridge)": -6.073600412234074,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.498042107157942,
+      "pretrained per-group $R^2$ (raw ridge)": -7.5889423853865114,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.550005483446599,
+      "pretrained per-group $R^2$ (raw ridge)": -7.274010005938649,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.9028818945383055,
+      "pretrained per-group $R^2$ (raw ridge)": -4.516123452505897,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.604793694729865,
+      "pretrained per-group $R^2$ (raw ridge)": -4.390578136297728,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.406142197040901,
+      "pretrained per-group $R^2$ (raw ridge)": -5.9539830731382,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.891855804096919,
+      "pretrained per-group $R^2$ (raw ridge)": -6.047713156526407,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.052662270055575,
+      "pretrained per-group $R^2$ (raw ridge)": -4.411423542865299,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.6015367706599095,
+      "pretrained per-group $R^2$ (raw ridge)": -4.964619704986159,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.6039462072568655,
+      "pretrained per-group $R^2$ (raw ridge)": -4.862754692267852,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.095723520963431,
+      "pretrained per-group $R^2$ (raw ridge)": -6.224230889247764,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.116608490684061,
+      "pretrained per-group $R^2$ (raw ridge)": -4.8560847299387735,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.798835075001059,
+      "pretrained per-group $R^2$ (raw ridge)": -4.40439077817945,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.726509350435919,
+      "pretrained per-group $R^2$ (raw ridge)": -6.743333268449765,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.3757686793987727,
+      "pretrained per-group $R^2$ (raw ridge)": -3.261902758208449,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.747097476901973,
+      "pretrained per-group $R^2$ (raw ridge)": -5.430391560730486,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.3054248595656235,
+      "pretrained per-group $R^2$ (raw ridge)": -6.163207477833894,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.83089015480635,
+      "pretrained per-group $R^2$ (raw ridge)": -7.171417116163502,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.510122364025241,
+      "pretrained per-group $R^2$ (raw ridge)": -7.960359778091293,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.890205769276815,
+      "pretrained per-group $R^2$ (raw ridge)": -6.4766200355097,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.612246218590268,
+      "pretrained per-group $R^2$ (raw ridge)": -8.694266283509927,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.281690270049838,
+      "pretrained per-group $R^2$ (raw ridge)": -3.3058806831124645,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.8196311753297385,
+      "pretrained per-group $R^2$ (raw ridge)": -4.696757476688874,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.778821962822209,
+      "pretrained per-group $R^2$ (raw ridge)": -4.400842887227052,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.7784137393598947,
+      "pretrained per-group $R^2$ (raw ridge)": -3.585443351306088,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.981936663201255,
+      "pretrained per-group $R^2$ (raw ridge)": -6.500114960741213,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.163972742775832,
+      "pretrained per-group $R^2$ (raw ridge)": -4.023177342793641,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.89657376250369,
+      "pretrained per-group $R^2$ (raw ridge)": -4.653890103767721,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.469680105586617,
+      "pretrained per-group $R^2$ (raw ridge)": -5.234754675363921,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.714406949030198,
+      "pretrained per-group $R^2$ (raw ridge)": -4.429598019862539,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -11.014410035265456,
+      "pretrained per-group $R^2$ (raw ridge)": -9.163837938751664,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.099524777146527,
+      "pretrained per-group $R^2$ (raw ridge)": -8.055497840235756,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.90166715516611,
+      "pretrained per-group $R^2$ (raw ridge)": -5.870510878973029,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.06545074143495,
+      "pretrained per-group $R^2$ (raw ridge)": -8.532280742005353,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.843707088429479,
+      "pretrained per-group $R^2$ (raw ridge)": -7.6372439012644175,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.539601089132659,
+      "pretrained per-group $R^2$ (raw ridge)": -6.076109149661129,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.107407618524903,
+      "pretrained per-group $R^2$ (raw ridge)": -5.705589206681091,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.06164563397424,
+      "pretrained per-group $R^2$ (raw ridge)": -5.9755872132190895,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.129633444732452,
+      "pretrained per-group $R^2$ (raw ridge)": -5.693053409946017,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -2.3667996315541093,
+      "pretrained per-group $R^2$ (raw ridge)": -2.448250487350452,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.503848884611882,
+      "pretrained per-group $R^2$ (raw ridge)": -16.937536658204696,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -11.246621968843842,
+      "pretrained per-group $R^2$ (raw ridge)": -13.001946004254865,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.017512168468167,
+      "pretrained per-group $R^2$ (raw ridge)": -4.6715537006923125,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.446792660012721,
+      "pretrained per-group $R^2$ (raw ridge)": -3.6613572886224324,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.090479025028467,
+      "pretrained per-group $R^2$ (raw ridge)": -7.389171114693859,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.906418118668242,
+      "pretrained per-group $R^2$ (raw ridge)": -5.010337434292763,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.4440309706160575,
+      "pretrained per-group $R^2$ (raw ridge)": -3.6288189785245004,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.018097153687314,
+      "pretrained per-group $R^2$ (raw ridge)": -10.780565654893982,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.824119099274483,
+      "pretrained per-group $R^2$ (raw ridge)": -8.15375963777812,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.007183345747809,
+      "pretrained per-group $R^2$ (raw ridge)": -6.237485646500866,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.8316808067530443,
+      "pretrained per-group $R^2$ (raw ridge)": -4.030310761395968,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.174973302093099,
+      "pretrained per-group $R^2$ (raw ridge)": -5.037415540972224,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.838880483247392,
+      "pretrained per-group $R^2$ (raw ridge)": -5.038407397257953,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.850861341579131,
+      "pretrained per-group $R^2$ (raw ridge)": -8.314869801067411,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.158116328434125,
+      "pretrained per-group $R^2$ (raw ridge)": -7.338659903274506,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.542339497791654,
+      "pretrained per-group $R^2$ (raw ridge)": -4.231606369689185,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.461256081749215,
+      "pretrained per-group $R^2$ (raw ridge)": -3.50011399990567,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.598915296266544,
+      "pretrained per-group $R^2$ (raw ridge)": -4.010370768957164,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.548749078401463,
+      "pretrained per-group $R^2$ (raw ridge)": -5.527549274473518,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.757089833509742,
+      "pretrained per-group $R^2$ (raw ridge)": -5.405311467379584,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.975184402636685,
+      "pretrained per-group $R^2$ (raw ridge)": -8.206294980171243,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.790924674059509,
+      "pretrained per-group $R^2$ (raw ridge)": -5.575528796414672,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.596230289862861,
+      "pretrained per-group $R^2$ (raw ridge)": -4.584960686691396,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.225722779743084,
+      "pretrained per-group $R^2$ (raw ridge)": -9.36744790501794,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.990175833743545,
+      "pretrained per-group $R^2$ (raw ridge)": -6.215718959357404,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.89154357962546,
+      "pretrained per-group $R^2$ (raw ridge)": -4.419187450058809,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.114020439902097,
+      "pretrained per-group $R^2$ (raw ridge)": -8.726381595289011,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.7611419542605375,
+      "pretrained per-group $R^2$ (raw ridge)": -6.721992622707191,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.4895647118629425,
+      "pretrained per-group $R^2$ (raw ridge)": -4.93071011977674,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.6658033321732564,
+      "pretrained per-group $R^2$ (raw ridge)": -4.494360779872823,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.8989966675637895,
+      "pretrained per-group $R^2$ (raw ridge)": -4.844245395566021,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.8884838039431804,
+      "pretrained per-group $R^2$ (raw ridge)": -3.1398309387779246,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.577488055044479,
+      "pretrained per-group $R^2$ (raw ridge)": -4.542119549885259,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.963351284567749,
+      "pretrained per-group $R^2$ (raw ridge)": -5.73933730606125,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.908944623227111,
+      "pretrained per-group $R^2$ (raw ridge)": -8.74713308315919,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.991280475722176,
+      "pretrained per-group $R^2$ (raw ridge)": -8.724067176211172,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.662864724476129,
+      "pretrained per-group $R^2$ (raw ridge)": -6.242788382144054,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.30621093180633,
+      "pretrained per-group $R^2$ (raw ridge)": -5.749634115409368,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.698679140382476,
+      "pretrained per-group $R^2$ (raw ridge)": -7.89943183755371,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.575065738620903,
+      "pretrained per-group $R^2$ (raw ridge)": -3.8334566024119745,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.385256630970192,
+      "pretrained per-group $R^2$ (raw ridge)": -5.614280531466521,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.277638519191782,
+      "pretrained per-group $R^2$ (raw ridge)": -5.71402730456974,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -2.9011137542441103,
+      "pretrained per-group $R^2$ (raw ridge)": -3.9874752884586826,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.068586030596939,
+      "pretrained per-group $R^2$ (raw ridge)": -3.884725231514178,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.076804258424485,
+      "pretrained per-group $R^2$ (raw ridge)": -4.910399536849578,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.496827895473119,
+      "pretrained per-group $R^2$ (raw ridge)": -7.925810826977058,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.990911216374206,
+      "pretrained per-group $R^2$ (raw ridge)": -4.293993021311777,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.562191330224241,
+      "pretrained per-group $R^2$ (raw ridge)": -5.7299327914165055,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.389030968940241,
+      "pretrained per-group $R^2$ (raw ridge)": -4.795682686561855,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.96811932193871,
+      "pretrained per-group $R^2$ (raw ridge)": -6.5245183344668565,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.496389937647853,
+      "pretrained per-group $R^2$ (raw ridge)": -6.845092195780179,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.516152591860866,
+      "pretrained per-group $R^2$ (raw ridge)": -4.409885829918472,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -15.544304033093372,
+      "pretrained per-group $R^2$ (raw ridge)": -11.33259592366595,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.260118735258736,
+      "pretrained per-group $R^2$ (raw ridge)": -3.892562209158414,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.099885186825456,
+      "pretrained per-group $R^2$ (raw ridge)": -4.633910273079644,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.819932929562504,
+      "pretrained per-group $R^2$ (raw ridge)": -4.16025967272206,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.090568899545883,
+      "pretrained per-group $R^2$ (raw ridge)": -7.412859854623257,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.245158868823177,
+      "pretrained per-group $R^2$ (raw ridge)": -5.399911814060948,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.881002405486395,
+      "pretrained per-group $R^2$ (raw ridge)": -7.781675723982593,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.498188588608063,
+      "pretrained per-group $R^2$ (raw ridge)": -8.818502673400458,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.664617863992142,
+      "pretrained per-group $R^2$ (raw ridge)": -5.588960365756952,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.362093004048704,
+      "pretrained per-group $R^2$ (raw ridge)": -9.090302303726192,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.6762580589046454,
+      "pretrained per-group $R^2$ (raw ridge)": -3.6256436484552275,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.495551626799649,
+      "pretrained per-group $R^2$ (raw ridge)": -5.35809738467768,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.370887682586359,
+      "pretrained per-group $R^2$ (raw ridge)": -5.536344372073386,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.149932557403211,
+      "pretrained per-group $R^2$ (raw ridge)": -4.030375717535503,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.270774247163039,
+      "pretrained per-group $R^2$ (raw ridge)": -4.394023997086512,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.7890262136186665,
+      "pretrained per-group $R^2$ (raw ridge)": -3.773026594106856,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.9819251519934,
+      "pretrained per-group $R^2$ (raw ridge)": -7.107417705119683,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.015434907260619,
+      "pretrained per-group $R^2$ (raw ridge)": -5.086137954705642,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -12.399988970338153,
+      "pretrained per-group $R^2$ (raw ridge)": -10.503460973111368,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -18.802476865379067,
+      "pretrained per-group $R^2$ (raw ridge)": -17.383961629931754,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -16.110314478565606,
+      "pretrained per-group $R^2$ (raw ridge)": -14.323233058214488,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -15.55587758069181,
+      "pretrained per-group $R^2$ (raw ridge)": -13.745818910762283,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.6961184012244086,
+      "pretrained per-group $R^2$ (raw ridge)": -4.78089393118065,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.228088588911136,
+      "pretrained per-group $R^2$ (raw ridge)": -6.499272261631906,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.62567436793258,
+      "pretrained per-group $R^2$ (raw ridge)": -4.410355680323351,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.428332501526367,
+      "pretrained per-group $R^2$ (raw ridge)": -4.960574767021832,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.685290048550567,
+      "pretrained per-group $R^2$ (raw ridge)": -4.6981744673042005,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.978892921310561,
+      "pretrained per-group $R^2$ (raw ridge)": -5.860983435377617,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.523805398796039,
+      "pretrained per-group $R^2$ (raw ridge)": -7.65016135168405,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.6195087212803854,
+      "pretrained per-group $R^2$ (raw ridge)": -4.389377494178791,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.623781103584483,
+      "pretrained per-group $R^2$ (raw ridge)": -6.118506953428516,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.4536798156127935,
+      "pretrained per-group $R^2$ (raw ridge)": -6.329901293519209,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.395199923247219,
+      "pretrained per-group $R^2$ (raw ridge)": -5.298680632950273,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.596699641379247,
+      "pretrained per-group $R^2$ (raw ridge)": -7.549504704747058,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.837105220639876,
+      "pretrained per-group $R^2$ (raw ridge)": -7.481046508664059,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.4879702210149945,
+      "pretrained per-group $R^2$ (raw ridge)": -6.168199386248423,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.223373384678764,
+      "pretrained per-group $R^2$ (raw ridge)": -6.1953981964518325,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.650043997604056,
+      "pretrained per-group $R^2$ (raw ridge)": -5.331579821575842,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -13.061060143031822,
+      "pretrained per-group $R^2$ (raw ridge)": -12.31264067036747,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.89978786273099,
+      "pretrained per-group $R^2$ (raw ridge)": -5.042106898629008,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.446895926916437,
+      "pretrained per-group $R^2$ (raw ridge)": -4.609156652379143,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.544034464736482,
+      "pretrained per-group $R^2$ (raw ridge)": -6.797844285689877,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.256952511269927,
+      "pretrained per-group $R^2$ (raw ridge)": -5.478490177328356,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.924358917027096,
+      "pretrained per-group $R^2$ (raw ridge)": -7.058329076854058,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.505938434435123,
+      "pretrained per-group $R^2$ (raw ridge)": -4.883174284411393,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.552211711660716,
+      "pretrained per-group $R^2$ (raw ridge)": -3.8673972188295362,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.404787185508358,
+      "pretrained per-group $R^2$ (raw ridge)": -3.669541342149393,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.80507855898713,
+      "pretrained per-group $R^2$ (raw ridge)": -7.209264313582434,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.863769173938962,
+      "pretrained per-group $R^2$ (raw ridge)": -7.147745460864877,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.842216500051949,
+      "pretrained per-group $R^2$ (raw ridge)": -5.316774530029709,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.132333632908106,
+      "pretrained per-group $R^2$ (raw ridge)": -6.221528734645317,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.790938167441092,
+      "pretrained per-group $R^2$ (raw ridge)": -3.5276758818450373,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.614708608119527,
+      "pretrained per-group $R^2$ (raw ridge)": -7.684803256110694,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.974936501925981,
+      "pretrained per-group $R^2$ (raw ridge)": -5.896323133483957,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.7016661581069865,
+      "pretrained per-group $R^2$ (raw ridge)": -7.631009274269717,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.9094165032713954,
+      "pretrained per-group $R^2$ (raw ridge)": -4.9029448813567145,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.613370751542903,
+      "pretrained per-group $R^2$ (raw ridge)": -5.352217982078524,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.3449312274664935,
+      "pretrained per-group $R^2$ (raw ridge)": -6.829671310899148,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.432985666674977,
+      "pretrained per-group $R^2$ (raw ridge)": -3.3313324439245164,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.993713529269461,
+      "pretrained per-group $R^2$ (raw ridge)": -9.289567096330787,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.870443674771944,
+      "pretrained per-group $R^2$ (raw ridge)": -8.7445418082561,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.457825216833596,
+      "pretrained per-group $R^2$ (raw ridge)": -6.561704791703795,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -16.456894438664204,
+      "pretrained per-group $R^2$ (raw ridge)": -18.32861616763244,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.5005245545615145,
+      "pretrained per-group $R^2$ (raw ridge)": -5.1811191740966285,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.004396919159353,
+      "pretrained per-group $R^2$ (raw ridge)": -8.311662698392755,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.702330717515324,
+      "pretrained per-group $R^2$ (raw ridge)": -4.442938091506526,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.990810201976229,
+      "pretrained per-group $R^2$ (raw ridge)": -6.096118142809446,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.543455454013115,
+      "pretrained per-group $R^2$ (raw ridge)": -7.557106604615299,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.9968867439553,
+      "pretrained per-group $R^2$ (raw ridge)": -4.626528805520525,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.852073139762,
+      "pretrained per-group $R^2$ (raw ridge)": -7.230286827537018,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.056591845870907,
+      "pretrained per-group $R^2$ (raw ridge)": -9.291553218336777,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.049464563850215,
+      "pretrained per-group $R^2$ (raw ridge)": -5.683375390241853,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.273465542686737,
+      "pretrained per-group $R^2$ (raw ridge)": -5.535241974437762,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.837923301847507,
+      "pretrained per-group $R^2$ (raw ridge)": -7.190318843050212,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.00297472706305,
+      "pretrained per-group $R^2$ (raw ridge)": -4.891907992015261,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.992558354248901,
+      "pretrained per-group $R^2$ (raw ridge)": -11.648983737888095,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.492104663973512,
+      "pretrained per-group $R^2$ (raw ridge)": -12.378985599523455,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.581450004603387,
+      "pretrained per-group $R^2$ (raw ridge)": -6.561036529593889,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.014802058524813,
+      "pretrained per-group $R^2$ (raw ridge)": -3.506840392925503,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -11.379976969820403,
+      "pretrained per-group $R^2$ (raw ridge)": -10.910530503418544,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.742864660806388,
+      "pretrained per-group $R^2$ (raw ridge)": -5.387669586794861,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.020308985971406,
+      "pretrained per-group $R^2$ (raw ridge)": -6.087857673219218,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.794942306174625,
+      "pretrained per-group $R^2$ (raw ridge)": -6.335138755238311,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.414220897529815,
+      "pretrained per-group $R^2$ (raw ridge)": -5.581894447032178,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.9495223834102706,
+      "pretrained per-group $R^2$ (raw ridge)": -4.389270952740317,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.9793781672318485,
+      "pretrained per-group $R^2$ (raw ridge)": -4.404297180850532,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -8.928624846356328,
+      "pretrained per-group $R^2$ (raw ridge)": -7.537514057882159,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.3839689515866755,
+      "pretrained per-group $R^2$ (raw ridge)": -4.395245346097971,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -5.830738333750741,
+      "pretrained per-group $R^2$ (raw ridge)": -6.252781667885791,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.139992668480107,
+      "pretrained per-group $R^2$ (raw ridge)": -5.014975103248646,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -7.6446602403710795,
+      "pretrained per-group $R^2$ (raw ridge)": -10.100537643677994,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.017600857863895,
+      "pretrained per-group $R^2$ (raw ridge)": -4.964376525689764,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.522300012341926,
+      "pretrained per-group $R^2$ (raw ridge)": -7.219899595913851,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -10.925018119356283,
+      "pretrained per-group $R^2$ (raw ridge)": -10.432488052548841,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -6.7323019052597655,
+      "pretrained per-group $R^2$ (raw ridge)": -4.964091626700133,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -4.150172060517309,
+      "pretrained per-group $R^2$ (raw ridge)": -4.217105186123253,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -9.685977830102182,
+      "pretrained per-group $R^2$ (raw ridge)": -8.305039193373558,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -2.412009922513768,
+      "pretrained per-group $R^2$ (raw ridge)": -2.133826310056722,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.2331271060539937,
+      "pretrained per-group $R^2$ (raw ridge)": -3.9181456990592816,
+      "_kind": "scatter"
+    },
+    {
+      "instruct per-group $R^2$ (raw ridge, layer 19)": -3.571565494632636,
+      "pretrained per-group $R^2$ (raw ridge)": -3.94589317818265,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 600
+}

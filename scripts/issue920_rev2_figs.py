@@ -21,11 +21,15 @@ from __future__ import annotations
 import json
 import pathlib
 
-import numpy as np
-import torch
-from issue920_labels import plain_behavior, plain_family
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch/numpy import
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from issue920_labels import plain_behavior, plain_family  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style  # noqa: E402
 
 set_paper_style("blog")
 import matplotlib.pyplot as plt  # noqa: E402  (after style)

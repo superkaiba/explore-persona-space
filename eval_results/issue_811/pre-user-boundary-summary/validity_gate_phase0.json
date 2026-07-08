@@ -1,0 +1,329 @@
+{
+  "phase": "phase0_base_leg",
+  "rule": "per-arm PASS iff margin(arm) >= KILL1_COLLAPSE_FRAC*margin(mean) on >=2/3 behaviors with positive mean margin; <2 comparable => comparator_indeterminate (never a fail); STOP only when ALL arms are DECIDED failures (plan \u00a77/MF3)",
+  "collapse_frac_threshold": 0.5,
+  "arms": [
+    "pre_user_imstart",
+    "pre_user_user",
+    "pre_user_nl",
+    "pre_user_mean3",
+    "pre_user_max3",
+    "ans_mean_incl_hdr",
+    "ans_max_incl_hdr",
+    "ans_mean_incl_hdr_alllayer",
+    "ans_max_incl_hdr_alllayer"
+  ],
+  "trusted_arms": [
+    "pre_user_imstart",
+    "pre_user_user",
+    "pre_user_mean3",
+    "ans_mean_incl_hdr",
+    "ans_max_incl_hdr",
+    "ans_mean_incl_hdr_alllayer"
+  ],
+  "n_pass": 6,
+  "n_fail": 3,
+  "n_indeterminate": 0,
+  "stop_fired": false,
+  "state": "decided",
+  "per_arm": {
+    "pre_user_imstart": {
+      "gate_status": "pass",
+      "gate_pass": true,
+      "n_comparable": 3,
+      "n_held": 2,
+      "n_collapse": 1,
+      "per_behavior": {
+        "em": {
+          "mean_margin": 0.2013665362946727,
+          "arm_margin": 0.11158919698921332,
+          "collapse_threshold": 0.10068326814733634,
+          "margin_ratio": 0.5541595889890941,
+          "near_threshold": true,
+          "status": "held"
+        },
+        "sycophancy": {
+          "mean_margin": 0.044732833501783684,
+          "arm_margin": -0.018726336943994587,
+          "collapse_threshold": 0.022366416750891842,
+          "margin_ratio": -0.4186262187761455,
+          "near_threshold": false,
+          "status": "collapsed"
+        },
+        "fact": {
+          "mean_margin": 0.12665200324150538,
+          "arm_margin": 0.1689417040923469,
+          "collapse_threshold": 0.06332600162075269,
+          "margin_ratio": 1.3339047134548812,
+          "near_threshold": false,
+          "status": "held"
+        }
+      }
+    },
+    "pre_user_user": {
+      "gate_status": "pass",
+      "gate_pass": true,
+      "n_comparable": 3,
+      "n_held": 2,
+      "n_collapse": 1,
+      "per_behavior": {
+        "em": {
+          "mean_margin": 0.2013665362946727,
+          "arm_margin": 0.11633340710092688,
+          "collapse_threshold": 0.10068326814733634,
+          "margin_ratio": 0.5777196610795782,
+          "near_threshold": true,
+          "status": "held"
+        },
+        "sycophancy": {
+          "mean_margin": 0.044732833501783684,
+          "arm_margin": -0.264781139650497,
+          "collapse_threshold": 0.022366416750891842,
+          "margin_ratio": -5.91916762080227,
+          "near_threshold": false,
+          "status": "collapsed"
+        },
+        "fact": {
+          "mean_margin": 0.12665200324150538,
+          "arm_margin": 0.0635659793551413,
+          "collapse_threshold": 0.06332600162075269,
+          "margin_ratio": 0.5018947804080999,
+          "near_threshold": true,
+          "status": "held"
+        }
+      }
+    },
+    "pre_user_nl": {
+      "gate_status": "fail",
+      "gate_pass": false,
+      "n_comparable": 3,
+      "n_held": 1,
+      "n_collapse": 2,
+      "per_behavior": {
+        "em": {
+          "mean_margin": 0.2013665362946727,
+          "arm_margin": 0.07069695875631098,
+          "collapse_threshold": 0.10068326814733634,
+          "margin_ratio": 0.35108593541508576,
+          "near_threshold": false,
+          "status": "collapsed"
+        },
+        "sycophancy": {
+          "mean_margin": 0.044732833501783684,
+          "arm_margin": -0.06609522741501042,
+          "collapse_threshold": 0.022366416750891842,
+          "margin_ratio": -1.4775551254175512,
+          "near_threshold": false,
+          "status": "collapsed"
+        },
+        "fact": {
+          "mean_margin": 0.12665200324150538,
+          "arm_margin": 0.152768078433633,
+          "collapse_threshold": 0.06332600162075269,
+          "margin_ratio": 1.2062034118980998,
+          "near_threshold": false,
+          "status": "held"
+        }
+      }
+    },
+    "pre_user_mean3": {
+      "gate_status": "pass",
+      "gate_pass": true,
+      "n_comparable": 3,
+      "n_held": 2,
+      "n_collapse": 1,
+      "per_behavior": {
+        "em": {
+          "mean_margin": 0.2013665362946727,
+          "arm_margin": 0.11110502562366877,
+          "collapse_threshold": 0.10068326814733634,
+          "margin_ratio": 0.5517551608529512,
+          "near_threshold": true,
+          "status": "held"
+        },
+        "sycophancy": {
+          "mean_margin": 0.044732833501783684,
+          "arm_margin": -0.05571966669954512,
+          "collapse_threshold": 0.022366416750891842,
+          "margin_ratio": -1.245610043846727,
+          "near_threshold": false,
+          "status": "collapsed"
+        },
+        "fact": {
+          "mean_margin": 0.12665200324150538,
+          "arm_margin": 0.18363582197154,
+          "collapse_threshold": 0.06332600162075269,
+          "margin_ratio": 1.4499243381202227,
+          "near_threshold": false,
+          "status": "held"
+        }
+      }
+    },
+    "pre_user_max3": {
+      "gate_status": "fail",
+      "gate_pass": false,
+      "n_comparable": 3,
+      "n_held": 1,
+      "n_collapse": 2,
+      "per_behavior": {
+        "em": {
+          "mean_margin": 0.2013665362946727,
+          "arm_margin": 0.08971756425274069,
+          "collapse_threshold": 0.10068326814733634,
+          "margin_ratio": 0.44554356400832745,
+          "near_threshold": true,
+          "status": "collapsed"
+        },
+        "sycophancy": {
+          "mean_margin": 0.044732833501783684,
+          "arm_margin": -0.05273865674562567,
+          "collapse_threshold": 0.022366416750891842,
+          "margin_ratio": -1.1789697324566475,
+          "near_threshold": false,
+          "status": "collapsed"
+        },
+        "fact": {
+          "mean_margin": 0.12665200324150538,
+          "arm_margin": 0.18687167191359635,
+          "collapse_threshold": 0.06332600162075269,
+          "margin_ratio": 1.4754734795411137,
+          "near_threshold": false,
+          "status": "held"
+        }
+      }
+    },
+    "ans_mean_incl_hdr": {
+      "gate_status": "pass",
+      "gate_pass": true,
+      "n_comparable": 3,
+      "n_held": 3,
+      "n_collapse": 0,
+      "per_behavior": {
+        "em": {
+          "mean_margin": 0.2013665362946727,
+          "arm_margin": 0.21979759310978816,
+          "collapse_threshold": 0.10068326814733634,
+          "margin_ratio": 1.0915298894953633,
+          "near_threshold": false,
+          "status": "held"
+        },
+        "sycophancy": {
+          "mean_margin": 0.044732833501783684,
+          "arm_margin": 0.030215223268590902,
+          "collapse_threshold": 0.022366416750891842,
+          "margin_ratio": 0.6754596322941647,
+          "near_threshold": false,
+          "status": "held"
+        },
+        "fact": {
+          "mean_margin": 0.12665200324150538,
+          "arm_margin": 0.13188291722431061,
+          "collapse_threshold": 0.06332600162075269,
+          "margin_ratio": 1.041301470556535,
+          "near_threshold": false,
+          "status": "held"
+        }
+      }
+    },
+    "ans_max_incl_hdr": {
+      "gate_status": "pass",
+      "gate_pass": true,
+      "n_comparable": 3,
+      "n_held": 3,
+      "n_collapse": 0,
+      "per_behavior": {
+        "em": {
+          "mean_margin": 0.2013665362946727,
+          "arm_margin": 0.22293141999551438,
+          "collapse_threshold": 0.10068326814733634,
+          "margin_ratio": 1.107092688277085,
+          "near_threshold": false,
+          "status": "held"
+        },
+        "sycophancy": {
+          "mean_margin": 0.044732833501783684,
+          "arm_margin": 0.1567813817883879,
+          "collapse_threshold": 0.022366416750891842,
+          "margin_ratio": 3.504839052552671,
+          "near_threshold": false,
+          "status": "held"
+        },
+        "fact": {
+          "mean_margin": 0.12665200324150538,
+          "arm_margin": 0.16907154870039603,
+          "collapse_threshold": 0.06332600162075269,
+          "margin_ratio": 1.3349299211478185,
+          "near_threshold": false,
+          "status": "held"
+        }
+      }
+    },
+    "ans_mean_incl_hdr_alllayer": {
+      "gate_status": "pass",
+      "gate_pass": true,
+      "n_comparable": 3,
+      "n_held": 3,
+      "n_collapse": 0,
+      "per_behavior": {
+        "em": {
+          "mean_margin": 0.2013665362946727,
+          "arm_margin": 0.2055324834649925,
+          "collapse_threshold": 0.10068326814733634,
+          "margin_ratio": 1.020688378749404,
+          "near_threshold": false,
+          "status": "held"
+        },
+        "sycophancy": {
+          "mean_margin": 0.044732833501783684,
+          "arm_margin": 0.09096810046919636,
+          "collapse_threshold": 0.022366416750891842,
+          "margin_ratio": 2.0335868163944744,
+          "near_threshold": false,
+          "status": "held"
+        },
+        "fact": {
+          "mean_margin": 0.12665200324150538,
+          "arm_margin": 0.08295508824489295,
+          "collapse_threshold": 0.06332600162075269,
+          "margin_ratio": 0.6549844149461315,
+          "near_threshold": false,
+          "status": "held"
+        }
+      }
+    },
+    "ans_max_incl_hdr_alllayer": {
+      "gate_status": "fail",
+      "gate_pass": false,
+      "n_comparable": 3,
+      "n_held": 1,
+      "n_collapse": 2,
+      "per_behavior": {
+        "em": {
+          "mean_margin": 0.2013665362946727,
+          "arm_margin": -0.030053072416427434,
+          "collapse_threshold": 0.10068326814733634,
+          "margin_ratio": -0.1492456143380687,
+          "near_threshold": false,
+          "status": "collapsed"
+        },
+        "sycophancy": {
+          "mean_margin": 0.044732833501783684,
+          "arm_margin": -0.059797263450989714,
+          "collapse_threshold": 0.022366416750891842,
+          "margin_ratio": -1.3367644919833963,
+          "near_threshold": false,
+          "status": "collapsed"
+        },
+        "fact": {
+          "mean_margin": 0.12665200324150538,
+          "arm_margin": 0.11874262104875727,
+          "collapse_threshold": 0.06332600162075269,
+          "margin_ratio": 0.9375502795825016,
+          "near_threshold": false,
+          "status": "held"
+        }
+      }
+    }
+  },
+  "primary_layer": 14
+}

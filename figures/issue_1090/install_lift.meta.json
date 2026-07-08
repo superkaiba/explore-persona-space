@@ -1,0 +1,66 @@
+{
+  "commit": "31765a2935",
+  "created": "2026-07-07T10:19:35Z",
+  "figsize": [
+    11.5,
+    5.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "own-persona rate (Tier 2)": 0.18333333333333332,
+      "error": 0.043692476154559734,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "own-persona rate (Tier 2)": 0.17,
+      "error": 0.042442859542660694,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.82,
+      "own-persona rate (Tier 2)": 0.0,
+      "error": 0.009807926405830017,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.18,
+      "own-persona rate (Tier 2)": 0.0,
+      "error": 0.009758099913839349,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "own-persona rate (Tier 2)": 0.24,
+      "error": 0.058834693018516654,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.18,
+      "own-persona rate (Tier 2)": 0.465,
+      "error": 0.06847517950290927,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "impolite\n(Claude, auto-gen)",
+      "tf-margin delta (trained - base)": 0.33360090549029753,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "sycophancy\n(Claude, neutral)",
+      "tf-margin delta (trained - base)": 0.06293515821392641,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8
+}

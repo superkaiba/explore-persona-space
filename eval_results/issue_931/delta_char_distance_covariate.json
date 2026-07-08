@@ -1,0 +1,165 @@
+{
+  "metadata": {
+    "git_commit": "c3700e68b67579b1aa45d232c529c9fb514c3791",
+    "timestamp": "2026-07-04T10:54:31Z",
+    "seed": 0,
+    "n": 2256,
+    "script": "scripts/issue931_distance_covariate.py",
+    "issue": 931
+  },
+  "recipe": {
+    "hf_revision": "9534b9981d6b4fb4f1259c9b06f021d311a46af4",
+    "layer": 19,
+    "seed": 0,
+    "n_boot": 1000,
+    "bootstrap": "novel-level paired group bootstrap; identical draws applied to both terms and to the regression (cluster bootstrap of the WLS)",
+    "derangement_seed": 931,
+    "per_pair_unit": "u_i = n*(err_swap_i/SS_swap - err_correct_i/SS_correct); mean(u) = delta R^2_char exactly",
+    "distance_definition": "C->T token distance = |length-weighted mean target token index - mean intro-span token index|; gap = swap-target distance - correct-target distance (correct distance is positive by construction)",
+    "preds_precision": "fp16-stored held-out preds (parity vs committed delta asserted < 0.005)"
+  },
+  "arms": {
+    "armA": {
+      "n_pairs": 1694,
+      "n_groups": 28,
+      "layer": 19,
+      "delta_r2_char_recomputed": 0.07625357279390953,
+      "delta_r2_char_committed": 0.07625432348595951,
+      "delta_recompute_abs_dev": 7.506920499805725e-07,
+      "delta_ci_lo": 0.06681936866809378,
+      "delta_ci_hi": 0.08756367009574213,
+      "intercept_distance_partialled": 0.06973930753041982,
+      "intercept_ci_lo": 0.05767519884014898,
+      "intercept_ci_hi": 0.08299907829810452,
+      "slope_per_token": 2.1957403505741285e-05,
+      "slope_ci_lo": 7.86165273564888e-07,
+      "slope_ci_hi": 4.463872208869256e-05,
+      "pearson_gap_vs_u": 0.03402674235270211,
+      "spearman_gap_vs_u": 0.04074933249134529,
+      "dist_correct_mean_tokens": 913.6315631618116,
+      "dist_swap_mean_tokens": 1210.3089577265378,
+      "gap_mean_tokens": 296.677394564726,
+      "binned": [
+        {
+          "gap_mean": -1114.6060957697887,
+          "u_mean": 0.08161071965585848,
+          "u_se": 0.037576484657282465,
+          "n": 212
+        },
+        {
+          "gap_mean": -457.66173164814796,
+          "u_mean": 0.13268533156460052,
+          "u_se": 0.04480813195823649,
+          "n": 212
+        },
+        {
+          "gap_mean": -141.70955781053914,
+          "u_mean": 0.0222953994283699,
+          "u_se": 0.034962410389242096,
+          "n": 211
+        },
+        {
+          "gap_mean": 85.35269188922342,
+          "u_mean": 0.013398807734625932,
+          "u_se": 0.03309333051326973,
+          "n": 212
+        },
+        {
+          "gap_mean": 349.02264594887544,
+          "u_mean": 0.013655316403079463,
+          "u_se": 0.04089729588989698,
+          "n": 212
+        },
+        {
+          "gap_mean": 700.4830510301113,
+          "u_mean": 0.07779281795570261,
+          "u_se": 0.043433171613042776,
+          "n": 211
+        },
+        {
+          "gap_mean": 1125.434231980398,
+          "u_mean": 0.10079730192402958,
+          "u_se": 0.03653858448030961,
+          "n": 212
+        },
+        {
+          "gap_mean": 1826.9408015773463,
+          "u_mean": 0.16754562858970848,
+          "u_se": 0.04167416857068956,
+          "n": 212
+        }
+      ]
+    },
+    "armB": {
+      "n_pairs": 562,
+      "n_groups": 270,
+      "layer": 19,
+      "delta_r2_char_recomputed": 0.04566272281955608,
+      "delta_r2_char_committed": 0.045664804857192265,
+      "delta_recompute_abs_dev": 2.082037636186307e-06,
+      "delta_ci_lo": 0.03866693358860996,
+      "delta_ci_hi": 0.0529030053493264,
+      "intercept_distance_partialled": 0.04248869203466519,
+      "intercept_ci_lo": 0.03494485153091161,
+      "intercept_ci_hi": 0.05013715282474867,
+      "slope_per_token": 0.000291489530595463,
+      "slope_ci_lo": 7.307749394053364e-05,
+      "slope_ci_hi": 0.0005405832549344016,
+      "pearson_gap_vs_u": 0.1478846742089273,
+      "spearman_gap_vs_u": 0.14360960657026287,
+      "dist_correct_mean_tokens": 336.2516240235332,
+      "dist_swap_mean_tokens": 347.14062843616824,
+      "gap_mean_tokens": 10.88900441263494,
+      "binned": [
+        {
+          "gap_mean": -309.3327499969816,
+          "u_mean": -0.04908505704466788,
+          "u_se": 0.04848486076715629,
+          "n": 71
+        },
+        {
+          "gap_mean": -165.80779626219316,
+          "u_mean": -0.017157608909754447,
+          "u_se": 0.047538869982989874,
+          "n": 70
+        },
+        {
+          "gap_mean": -88.00148506672421,
+          "u_mean": 0.007204461268841921,
+          "u_se": 0.04392600393468147,
+          "n": 70
+        },
+        {
+          "gap_mean": -22.266065227236084,
+          "u_mean": 0.07572663420300009,
+          "u_se": 0.04474958486980987,
+          "n": 70
+        },
+        {
+          "gap_mean": 36.83793321908829,
+          "u_mean": 0.02571213285939835,
+          "u_se": 0.05084298611822057,
+          "n": 70
+        },
+        {
+          "gap_mean": 103.51493146821218,
+          "u_mean": 0.03887650419805072,
+          "u_se": 0.04216015033376668,
+          "n": 70
+        },
+        {
+          "gap_mean": 187.51970372221925,
+          "u_mean": 0.10249880324156717,
+          "u_se": 0.044825698343959754,
+          "n": 70
+        },
+        {
+          "gap_mean": 344.4569042246604,
+          "u_mean": 0.1809468224575301,
+          "u_se": 0.04830811528744683,
+          "n": 71
+        }
+      ]
+    }
+  }
+}

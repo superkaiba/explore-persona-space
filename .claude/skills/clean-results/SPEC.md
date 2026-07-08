@@ -161,7 +161,8 @@ or GitHub `/blob/<sha>`).
 **Provenance: pull from REAL artifacts, never fabricate.** Training rows from the
 training JSONLs, eval probes from the probe bank, completions from HF
 `raw_completions`, judge prompts from the rubric file/constant in the eval+
-scoring code at the Code SHA. **Sanitize harmful/EM content** per `analyzer.md`
+scoring code at the Code SHA. **Sanitize harmful/EM AND real-world-corpus
+(LMSYS/WildChat-class; #1073) content** per `analyzer.md`
 § content hygiene — a ~15-word labeled excerpt + a `[truncated — harmful-content
 row; verify at <raw-completions path>, row <i>]` placeholder + the pinned raw
 path; a sanitized block SATISFIES the requirement.
@@ -455,7 +456,8 @@ dates>
 Identical to v3. Plain academic register — NO lowercase-casual voice, NO
 "How this updates me" diary framing. Bullets only, numbers-first,
 directly adaptable into a Slack post. **3–6 bullets** (hard FAIL outside
-that range), each ≤30 words (WARN). The H1 title stays the one-sentence
+that range), each ≤30 words (WARN; ≥100 words is a hard FAIL). The H1
+title stays the one-sentence
 claim + confidence tag. It is the rolling cross-round synthesis, rewritten
 after every follow-up round (§ Follow-up consolidation).
 
@@ -641,6 +643,13 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   ``same-issue follow-up round `<followup_label>` `` clause, the
   machine-countable form check 20's round-scaled prose budget reads;
   #921) · created/run dates.
+  Mechanically enforced (check 17): the normalized frontmatter
+  `origin_prompt` must appear verbatim within the `**Context:**` row's
+  text — a ≥20-char quoted candidate that is a strict prefix of
+  `origin_prompt` covering ≥50% of it (truncation) is a hard v4 FAIL; any other mismatch
+  WARNs (v3/v2: WARN-only). When the row quotes a longer alternate
+  verbatim source (`## Provenance` / followup-scope), quote the
+  frontmatter `origin_prompt` too, or expect the WARN.
   Bare / unpinned URLs INSIDE the verbatim blockquote are exempt from
   the footer URL checks (checks 8 / 8b strip `>`-prefixed lines before
   scanning — the quote is provenance text, not a provenance link; #959;
@@ -713,20 +722,21 @@ body.
 
 Same constants as v3 (`V3_TAKEAWAYS_*`, `V3_FINDING_PROSE_*`,
 `V3_FIGURE_CAPTION_MAX_WORDS`, `V3_TOTAL_PROSE_*`), applied to the v4
-sections:
+sections, plus ONE v4-only constant: `V4_TAKEAWAYS_BULLET_FAIL_WORDS`
+(=100), the per-Takeaways-bullet hard-FAIL tier (#825):
 
 | Surface | Cap | Verifier behavior |
 |---|---|---|
 | `## Takeaways` bullet count | 3–6 bullets, no paragraphs | FAIL outside range (owned by the v4 structure check) |
-| Per-Takeaways-bullet length | ≤30 words | WARN |
+| Per-Takeaways-bullet length | ≤30 words WARN; ≥100 words FAIL | WARN at 30, FAIL at 100 (v4-only hard tier — an accreted paragraph-bullet cannot ride a WARN, #825) |
 | Per-`### <result>` prose (excl. caption/code/details/tables) | ≤120 words WARN, ≥180 FAIL | WARN at 120, FAIL at 180 |
 | Figure caption | ≤60 words | WARN |
 | Total prose: Takeaways + Goal + Results (excl. tables, code fences, details bodies, captions; `## Methodology` is EXCLUDED — it carries the absorbed methodology-doc content and is reference, not skim prose) | ≤800 words + 250 per live follow-up round beyond the first (round count: non-retroactive `epm:same-issue-followup-run` markers and/or the footer round clauses, max — #921) | WARN-only |
 
 `## Methodology` is deliberately EXCLUDED from the total-prose budget: it
 absorbed the entire former standalone methodology doc, which was never
-under the skim-prose cap. The per-`### <result>` ≥180-word FAIL is the
-hard gate.
+under the skim-prose cap. The per-`### <result>` ≥180-word FAIL and the
+per-Takeaways-bullet ≥100-word FAIL are the hard gates.
 
 ## Follow-up consolidation (v4)
 
@@ -897,7 +907,14 @@ Forward-only: each check branches on the sentinel. The v4 checks
 15. Footer "committed at commit `<sha>`" claims resolve.
 16. Footer lr matches plan (gated on `is_titletag_confidence()`; the
     `**Methodology:**` Training table lr must appear in the plan).
-17. `**Context:**` provenance present (gated on `is_titletag_confidence()`).
+17. `**Context:**` provenance present, and (v4) the row carries a lineage
+    token — `[#K](...)`/bare `#K`, `fresh direction (no parent)`/`fresh (no
+    parent)`, or a same-issue-follow-up-round clause (gated on
+    `is_titletag_confidence()`) — and (v4) the `**Context:**` row's text
+    must contain frontmatter `origin_prompt` verbatim
+    (whitespace-normalized; a ≥20-char strict-prefix quote covering ≥50%
+    of `origin_prompt` = hard FAIL on truncation, other mismatch = WARN;
+    v3/v2 WARN-only).
 18. **`## Methodology` completeness** (`check_v4_methodology_shape`, v4
     only): the `**Training:**` slot carries the complete hyperparameter
     table (≥1 GFM table after the Training label, OR the explicit
@@ -908,9 +925,9 @@ Forward-only: each check branches on the sentinel. The v4 checks
 19. **`## Methodology` subset-disclosure** (v4 only): every example block
     inside `## Methodology` is preceded by a subset-disclosure line.
 20. **Word caps** (`check_v4_word_caps`, v4 only): the § Conciseness caps
-    table above. FAILs only on the per-`### <result>` ≥180-word hard cap;
-    everything else is WARN. `## Methodology` excluded from the total
-    budget.
+    table above. FAILs on the per-`### <result>` ≥180-word hard cap and
+    the per-Takeaways-bullet ≥100-word hard tier; everything else is
+    WARN. `## Methodology` excluded from the total budget.
 21. **Results beat shape** (`check_v4_results_beat`, v4 only, WARN): each
     `### <result>` carries a figure framed by what-is-plotted prose ABOVE
     and interpretation prose BELOW (the three-beat). WARN (not FAIL) so a
@@ -921,20 +938,31 @@ Forward-only: each check branches on the sentinel. The v4 checks
     the `## Takeaways` / `## Methodology` / `## Results` section spans is
     a hard FAIL — prior-issue references live ONLY in the `## Goal`
     context slot (`[#K](...)` links) and the `**Repro:**`/`**Context:**`
-    footer. Sanctioned forms that do not trip: markdown links (label +
-    target), GFM table rows (the Training-table Source column), fenced +
-    inline code, `<details>` blocks, HTML comments, the footer,
-    frontmatter. The inline-code escape hatch is for non-issue `#N`
-    strings (colors, ordinals) only — never for a genuine issue
-    reference. (Origin: the #841 round-2 two-round Lens-2 miss; numbered
+    footer — and a prior-issue TASK LINK (any form whose text carries
+    `https://eps.superkaiba.com/tasks/<digits>`: a `[#K](...)` markdown
+    link, a `<...>` autolink, or a bare URL) in a standalone section is a
+    hard FAIL too, not just the bare token. Sanctioned forms that do not
+    trip: markdown links to NON-task targets (GitHub blobs, HF, figures),
+    GFM table rows (the Training-table Source column), fenced + inline
+    code, `<details>` blocks, HTML comments, the footer, frontmatter. The
+    inline-code escape hatch is for non-issue strings (colors, ordinals,
+    verbatim syntax examples) only — never for a genuine issue reference
+    or task link. (Origin: the #841 round-2 two-round Lens-2 miss; the
+    task-link form added by #1002 after the #928 round-1 miss; numbered
     27 because 22-26 are taken by the generation-agnostic checks.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
-(check 22), HF-URL-resolves (check 23), and figure-sidecar opaque
+(check 22), HF-URL-resolves (check 23), figure-sidecar opaque
 config-code tokens (check 28, WARN: `@L<digits>` layer pins + regime-code
 slugs in figure-sidecar-carried text — plain-English condition names only;
 slugs stay in the Repro config row; sidecar-carried strings, not full
-PNG-pixel coverage). The Goal-of-experiment frontmatter
+PNG-pixel coverage), and figure prose-numerics vs sidecar plotted values
+(check 33, WARN: every BOLDED decimal in a figure's what-is-plotted prose
+window — the previous-figure-bounded beat-1 slice plus the caption — must
+appear among the sidecar's plotted values under rounding / sign / percent
+tolerance; per-figure opt-out for genuinely derived quantities: the literal
+`<!-- prose-numerics: derived -->` anywhere in that window). The
+Goal-of-experiment frontmatter
 soft check + the Lens 14 concerns-audit run on v4 too (concerns mechanism
 1 → `### ` results under `## Results` + `## Takeaways` bullets).
 
@@ -1179,15 +1207,22 @@ JSONLs / probe banks — those are NOT raw_completions and are covered by
 the Data-shape check, not the raw-completions-link rule.
 
 **Harmful-content corpora (Betley-style EM, bad-medical-advice,
-refusal-bait pools):** example blocks ship SANITIZED per `analyzer.md`
+refusal-bait pools) AND real-world-corpus rollout text
+(LMSYS/WildChat-class; #1073):** example blocks ship SANITIZED per `analyzer.md`
 § Content hygiene — labeled "sanitized for context hygiene", a ~15-word
 excerpt plus a `[truncated — harmful-content row; verify at
 <raw-completions path>, row <i>]` placeholder in place of the full
 completion. The subset-disclosure line, row indices, and permanent links
 stay verbatim. The mechanical checks (18/19) accept this form exactly as
-the v2 finding-sample checks (10/11) do. Agents assembling Data sections
+the v2 finding-sample checks (10/11) do — the "sanitized for context
+hygiene" LABEL is the load-bearing token the checks key on
+(`verify_task_body.py` accepts the form via the class-agnostic
+`sanitized for context hygiene|harmful-content row|truncated — harmful`
+alternation), not the placeholder's exact noun, so a
+`[truncated — sanitized row; …]` variant over real-world-corpus rows
+passes identically. Agents assembling Data sections
 pull rows by grep + line offset (context-hygiene rule) — never page whole
-raw harmful-completion files into context.
+raw harmful-completion or real-world-corpus rollout files into context.
 
 ### `## Reproducibility`
 
@@ -1449,7 +1484,8 @@ listed under § Grandfathered shape. The v3 checks:
 16. Reproducibility lr matches plan (gated on `is_nested_design()` = v2
     OR v3; the body table SLIMS but the lr must still appear in the plan).
 17. Reproducibility `**Context:**` provenance row present (gated on
-    `is_nested_design()`).
+    `is_nested_design()`); the check-17 origin-prompt verbatim sub-check
+    (v4 list item 17) runs WARN-only here.
 18. **`## Data` shape** (v3 only): `### Trained on` / `### Evaluated
     with` / `### Generated` in order; each block carries ≥1 pinned
     complete-artifact link OR an explicit `n/a — <reason>` line.

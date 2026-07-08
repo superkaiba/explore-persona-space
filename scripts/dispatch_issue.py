@@ -140,6 +140,112 @@ _REPO_ROOT = str(Path(__file__).resolve().parents[1])
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
+# Lane-infra main-checkout pin (#987) — consumer audit (who imports
+# explore_persona_space.backends, and how the pin covers them):
+#   - scripts/dispatch_issue.py + scripts/backend_poll.py: script-mode
+#     entrypoints; the __main__-guarded _pin_main_lane_infra() below covers
+#     them (duplicated into both files by design — importing a shared helper
+#     before the pin would cache the ambient package and defeat it).
+#   - Module-IMPORT consumers get NO pin BY DESIGN (the __main__ guard
+#     deliberately excludes imports so worktree pytest keeps testing branch
+#     code): scripts/autonomous_session_watch.py (imports
+#     backend_poll._failover_wedged_runpod + backends.issue_dispatch and CAN
+#     launch a RunPod pod — safe today only because
+#     cron_autonomous_session_watch.sh cd's to the MAIN checkout before
+#     invoking it), scripts/gcp_audit.py, scripts/gpu_heuristics.py,
+#     scripts/mila_socket_refresh.py, scripts/router_acceptance.py. The
+#     cron-wrapper / main-cwd invocation convention is LOAD-BEARING for
+#     these module-import consumers.
+#   - scripts/poll_pipeline.py imports only task_workflow (no backends);
+#     when reached via main's backends/runpod.py lazy
+#     `from scripts.poll_pipeline import ...` it resolves as main's copy
+#     through the pinned path.
+
+
+def _resolve_main_checkout_root(anchor: Path) -> Path:
+    """MAIN repo-checkout root, resolved cwd-independently from ``anchor``.
+
+    Mirrors ``backends/issue_dispatch._main_checkout_root`` (#612) WITHOUT
+    importing it — importing the package before the pin would cache the
+    ambient (possibly stale worktree) package in ``sys.modules``, defeating
+    the pin (#987). Fails LOUD; never a cwd fallback.
+    """
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"}
+    }
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(anchor),
+            env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError(
+            f"cannot resolve the MAIN checkout root from {anchor} "
+            f"(git rev-parse --git-common-dir failed: {exc}); lane infra "
+            "must import from main (#987) — refusing the ambient package"
+        ) from exc
+    common_dir = Path(proc.stdout.strip())
+    if common_dir.name != ".git" or not common_dir.is_dir():
+        raise RuntimeError(
+            f"git common-dir {common_dir!s} does not look like a "
+            "main-checkout .git dir; refusing to pin lane infra (#987)"
+        )
+    root = common_dir.parent
+    if not (root / "src" / "explore_persona_space" / "__init__.py").is_file():
+        raise RuntimeError(
+            f"resolved main root {root!s} has no src/explore_persona_space; "
+            "refusing to pin lane infra (#987)"
+        )
+    return root
+
+
+def _pin_main_lane_infra(anchor: Path | None = None) -> Path:
+    """Insert ``<main>/src`` + ``<main>`` at the FRONT of ``sys.path`` (#987).
+
+    Guarantees the lane infra (``explore_persona_space.backends.*``, incl.
+    the GCE startup template in ``gcp.py``, plus lazy ``scripts.*`` imports)
+    always resolves from the MAIN checkout — beating a worktree venv's
+    editable install — while ``--repo-branch`` keeps cloning the issue
+    branch for the remote WORKLOAD (unchanged). Idempotent (re-entrant calls
+    remove-then-insert, no duplicates); returns the resolved main root.
+    """
+    anchor = anchor or Path(__file__).resolve().parent
+    main_root = _resolve_main_checkout_root(anchor)
+    already = sys.modules.get("explore_persona_space")
+    if already is not None:
+        mod_file = getattr(already, "__file__", "") or ""
+        if not mod_file.startswith(str(main_root / "src") + os.sep):
+            raise RuntimeError(
+                f"explore_persona_space already imported from {mod_file!r} "
+                "before the main-checkout pin — a submodule import would "
+                "resolve under the stale package __path__ (#987)"
+            )
+    for p in (str(main_root), str(main_root / "src")):
+        if p in sys.path:
+            sys.path.remove(p)
+        sys.path.insert(0, p)  # final order: [<main>/src, <main>, ...]
+    invoked_root = Path(__file__).resolve().parents[1]
+    if invoked_root != main_root:
+        sys.stderr.write(
+            f"[lane-infra-pin] WARNING: invoked script copy lives under "
+            f"{invoked_root} but lane infra is pinned to main {main_root} "
+            f"(#987); prefer invoking <main>/scripts/{Path(__file__).name}\n"
+        )
+    return main_root
+
+
+if __name__ == "__main__":
+    _pin_main_lane_infra()
+
 
 def _current_git_branch() -> str | None:
     """Current branch of the invoking checkout (None on detached HEAD / error).
@@ -587,19 +693,21 @@ def _wrap_marker_poster_with_override_flag(
 
 
 def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
-    """Pre-route ``--gpus`` vs GCP machine-type mismatch guard (incident #599).
+    """Pre-route ``--gpus`` vs GCP machine-type mismatch guard (incident #599, #1121).
 
-    The GCP lane sizes its VM from ``spec.intent`` alone
-    (``backends/gcp.INTENT_TO_MACHINE``) and silently IGNORES
-    ``spec.gpus`` — unlike RunPod (maps it to ``pod_lifecycle.py
-    --gpu-count``) and SLURM (maps it to the ``--gres`` render), which
-    both honor the override. A gcp-reachable launch whose ``--gpus``
-    mismatches the intent's machine therefore provisions a wrong-sized
-    VM whose workload crashes at startup with no fallback (#599:
-    ``--intent lora-7b --gpus 4`` → a2-ultragpu-1g, 1x A100-80, for a
-    driver requiring N_GPUS=4). The mapping is static, so the mismatch
-    is knowable BEFORE any backend is built — validate up front and
-    fail LOUD.
+    As of #1121 the GCP auto ladder is WIDTH-AWARE: a supported WIDER
+    ``--gpus`` on a width-eligible intent (``gcp.WIDTH_ELIGIBLE_INTENTS``
+    x ``gcp.WIDE_A100_80_BY_WIDTH`` keys, i.e. N in {2, 4, 8} above the
+    intent's base machine width) is HONORED — the router walks wide
+    ``a2-ultragpu-{8,4,2}g`` rungs first and degrades on capacity miss.
+    Every OTHER mismatch is still refused: the GCP lane would size those
+    VMs from ``spec.intent`` alone, provisioning a wrong-sized VM whose
+    workload crashes at startup with no fallback (#599: ``--intent
+    lora-7b --gpus 4`` pre-#1121 → a2-ultragpu-1g, 1x A100-80, for a
+    driver requiring N_GPUS=4; the #599 protection is preserved because
+    the honored width IS the requested width). The mapping is static, so
+    the mismatch is knowable BEFORE any backend is built — validate up
+    front and fail LOUD.
 
     Returns the exit-2 failure body (same ``failure_class`` / ``status``
     / ``note`` shape as the router-terminal translation, so SKILL.md
@@ -617,7 +725,16 @@ def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
       gpus-mismatch message must not preempt;
     * an intent with no GCP machine mapping (``inf-70b`` / ``ft-70b``)
       — ``machine_for_intent`` already fails loud inside the GCP lane;
-    * a matching GPU count.
+    * a matching GPU count;
+    * a supported WIDER width on a width-eligible intent (#1121 — the
+      width-aware ladder honors it).
+
+    Still refused (exit 2): an unsupported width (``--gpus 3`` / ``16``),
+    a width BELOW the intent's base machine (``--gpus 2`` on ``ft-7b`` —
+    width degradation is the ladder's job on capacity miss, never a
+    user-requested under-provision), and any ``--gpus`` mismatch on a
+    non-width-eligible intent (H100 family: quota exactly 8, no
+    on-demand pool, headroom-probe-blind).
     """
     if spec.gpus is None:
         return None
@@ -640,6 +757,22 @@ def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
     requested = int(spec.gpus)
     if machine is None or machine.gpu_count == requested:
         return None
+    from explore_persona_space.backends.gcp import (
+        WIDE_A100_80_BY_WIDTH,
+        WIDTH_ELIGIBLE_INTENTS,
+    )
+
+    if (
+        spec.intent in WIDTH_ELIGIBLE_INTENTS
+        and requested in WIDE_A100_80_BY_WIDTH
+        and requested > machine.gpu_count
+    ):
+        # #1121: honored width-aware by the GCP ladder — the router walks
+        # wide a2-ultragpu rungs at the requested width first, degrading on
+        # capacity miss into the base ladder. The honored width IS the
+        # requested width, so the #599 protection (never boot a wrong-sized
+        # VM) is preserved.
+        return None
     matching = sorted(intent for intent, m in INTENT_TO_MACHINE.items() if m.gpu_count == requested)
     if matching:
         remedy = (
@@ -650,13 +783,27 @@ def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
             f"no GCP intent maps to a {requested}-GPU machine — pick a backend that "
             "honors the override"
         )
+    if spec.intent in WIDTH_ELIGIBLE_INTENTS:
+        wider = sorted(w for w in WIDE_A100_80_BY_WIDTH if w > machine.gpu_count)
+        supported = (
+            f"supported --gpus values for intent {spec.intent!r} on the GCP lane: "
+            f"{machine.gpu_count} (the intent default) or a wider shardable width in "
+            f"{wider} (#1121)"
+        )
+    else:
+        supported = (
+            f"supported --gpus value for intent {spec.intent!r} on the GCP lane: "
+            f"{machine.gpu_count} (the intent default; the intent is not "
+            "width-eligible — see backends/gcp.WIDTH_ELIGIBLE_INTENTS, #1121)"
+        )
     note = (
         "failure_class: infra\n"
         "reason: gpus_machine_mismatch\n"
         f"detail: --gpus {requested} is not honored by the GCP lane — intent "
         f"{spec.intent!r} maps to machine type {machine.machine_type!r} "
-        f"({machine.gpu_count}x {machine.gpu_kind}) regardless of the override, so the "
+        f"({machine.gpu_count}x {machine.gpu_kind}) for this request, so the "
         "VM would start wrong-sized and crash the workload (incident #599). "
+        f"{supported}. "
         f"Fix: {remedy}; or drop --gpus (the intent default applies); or pin a backend "
         "that honors the override (--backend runpod maps it to pod_lifecycle "
         "--gpu-count; SLURM lanes map it to --gres)."
@@ -836,9 +983,22 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # --workload-cmd, so this key never rides a hydra launch.
         extra["execute_workload"] = True
     if getattr(args, "boot_disk_gb", None):
-        # GCP-only knob (backends/gcp.py:815 reads spec.extra["boot_disk_gb"]);
-        # inert on SLURM / RunPod lanes.
+        # GCP boot disk (backends/gcp.py reads spec.extra["boot_disk_gb"]);
+        # ALSO read by the RunPod CPU fallback as of #1010 — container-disk
+        # threading in RunPodBackend.launch + the feasibility gate in
+        # router._runpod_terminal_rung — and by the RunPod GPU lane as of
+        # #1118 (volume threading: --volume-gb max(200, value) → volumeInGb,
+        # so a plan-stated disk size survives a GCP→RunPod pivot; incident
+        # #1112). Inert on SLURM lanes.
         extra["boot_disk_gb"] = int(args.boot_disk_gb)
+    if getattr(args, "min_ram_gb", None):
+        # RunPod-CPU-fallback knob (#1010): read by the feasibility gate in
+        # router._runpod_terminal_rung — RunPod CPU instances have FIXED RAM,
+        # so an unsatisfiable requirement refuses the fallback typed
+        # (reason: cpu_fallback_infeasible_for_plan) instead of provisioning
+        # an undersized pod. GCP machine selection is unchanged (by intent);
+        # inert on SLURM lanes.
+        extra["min_ram_gb"] = int(args.min_ram_gb)
     if getattr(args, "max_run_duration", None):
         # GCP-only knob: the instance-create renderer reads
         # spec.extra["max_run_duration"], falling back to the 7d
@@ -1367,6 +1527,9 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
 # ``epm:upload-verification`` marker note (shape: ``**Verdict: PASS**``;
 # see workflow.yaml § markers). Case-sensitive on purpose — the schema
 # emits uppercase PASS/FAIL, and prose mentions of "pass" must not match.
+# Private copy of the canonical ``task_workflow.UPLOAD_VERIFICATION_PASS_RE``
+# (#1026); pattern parity is pinned by
+# tests/test_upload_verifier_currency.py::test_pass_regex_parity_with_dispatch_issue.
 _UPLOAD_VERIFICATION_PASS_RE = re.compile(r"Verdict:\s*PASS\b")
 
 
@@ -1393,6 +1556,13 @@ def _agent_upload_verification_passed(issue: int) -> bool:
     ``False`` after a logged warning — the safe direction: no evidence ⇒
     the caller keeps the exit-3 teardown-skip; we never tear down on a
     guess.
+
+    CURRENCY is NOT this probe's job (#1026): the evidence forms above are
+    deliberately unchanged, and the verifier-currency gate
+    (:func:`_upload_verification_currency_blocker`, wired at the top of
+    :func:`_cmd_finalize`) wraps AROUND it — refusing teardown when a
+    verifier round is in flight, the latest verdict is a FAIL, or the
+    newest ``epm:results`` postdates the latest verdict.
     """
     log = logging.getLogger("dispatch_issue")
     try:
@@ -1433,6 +1603,38 @@ def _agent_upload_verification_passed(issue: int) -> bool:
     return False
 
 
+def _upload_verification_currency_blocker(issue: int) -> dict | None:
+    """Guarded wrapper over ``task_workflow.upload_verification_currency_blocker``.
+
+    Read/LOOKUP failures (missing task, unreadable events.jsonl) return None
+    after a logged warning — NOT a refusal: with unreadable events,
+    :func:`_agent_upload_verification_passed` also returns False, so the
+    degrade cannot fire and the existing exit-3 paths already hold teardown.
+    Deliberately NARROW (#1026 MF-C): a helper BUG
+    (TypeError/AttributeError/...) raises loudly instead of silently
+    disarming the gate (fail-fast rule). ``find_task_path`` raises
+    ``FileNotFoundError`` on a registry miss (and its
+    ``StaleTaskPathError`` subclass on multi-hit registry corruption) —
+    both are ``OSError`` lookup failures the narrow tuple absorbs.
+    """
+    try:
+        from explore_persona_space.task_workflow import (
+            list_events,
+            upload_verification_currency_blocker,
+        )
+
+        return upload_verification_currency_blocker(list_events(int(issue)))
+    except (FileNotFoundError, KeyError, OSError) as exc:
+        logging.getLogger("dispatch_issue").warning(
+            "could not read upload-verifier currency evidence for issue=%d (%s: %s); "
+            "treating as no blocker (the PASS-evidence probe keeps its own safe direction)",
+            int(issue),
+            type(exc).__name__,
+            exc,
+        )
+        return None
+
+
 def _cmd_finalize(
     args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]
 ) -> int:
@@ -1446,17 +1648,36 @@ def _cmd_finalize(
     (HF Hub list_repo_files + WandB run + git-figure + completion
     sentinel — see ``backends.artifacts.confirm_artifacts_from_handle``).
 
+    Verifier-currency gate (#1026): BEFORE ``fetch_results``, ONE top gate
+    (:func:`_upload_verification_currency_blocker`) requires the
+    upload-verification evidence to be a CURRENT PASS, uniformly on ALL
+    non-skip paths (declaration-present AND declaration-less). Five typed
+    exit-3 reasons: ``upload_verifier_in_flight`` (a dispatched verifier
+    round has no verdict yet, liveness window fresh),
+    ``upload_verifier_stalled`` (window lapsed, no verdict),
+    ``upload_verification_ambiguous`` (a late verdict cannot be attributed
+    to the current results-epoch), ``upload_verification_stale`` (the
+    latest ``epm:results`` postdates the latest verdict),
+    ``upload_verification_failed_current`` (the latest verification is a
+    FAIL). ``--skip-confirm-artifacts`` refuses ONLY a FRESH in-flight
+    round (never destroy a running round's pod; the 15-min liveness window
+    lapsing to ``stalled`` is the flag-free escape) and degrades the other
+    four reasons to a loud warning + a ``verifier_warning`` field in the
+    success JSON.
+
     Degrade path: when the handle carries NO ``expected_artifacts``
     declaration the mechanical gate is structurally unsatisfiable.
-    Every launch path (GCP, SLURM, RunPod) populates the declaration as
-    of #598, so a declaration-less handle is a pre-#598 in-flight
-    sidecar only; a confirm FAIL on one falls back to the agent-level
+    Declaration-less handles still occur in production (RunPod
+    experimenter-launched runs, pre-#598 sidecars); a confirm FAIL on one
+    falls back to the agent-level
     upload-verification PASS evidence on the task's ``events.jsonl``
     (:func:`_agent_upload_verification_passed`). Evidence found →
     teardown proceeds with a LOUD log + a ``confirm_artifacts`` field in
     the output JSON; no evidence → exit 3 with
     ``reason: confirm_artifacts_no_declaration``. A handle WITH a
     declaration never degrades — a real mechanical FAIL always exits 3.
+    Either way the currency gate above already ran: the degrade can only
+    execute when the blocker is None on the non-skip path.
 
     After a SUCCESSFUL teardown the sidecar is renamed to
     ``<name>.finalized`` (audit record, never deleted) so a later
@@ -1491,6 +1712,59 @@ def _cmd_finalize(
     handle = read_handle_sidecar(Path(sidecar))
     deps = backends_factory()
     backend = _resolve_backend_for_handle(handle, deps)
+
+    # ── #1026 verifier-currency gate (uniform: ALL paths) ────────────────
+    # Teardown requires the upload-verification evidence to be a CURRENT
+    # PASS. --skip-confirm-artifacts relaxes every reason EXCEPT a FRESH
+    # in-flight round (never destroy a running verifier round's pod; the
+    # 15-min liveness window lapsing to "stalled" is the flag-free escape)
+    # to a loud warning + a verifier_warning field in the output JSON.
+    verifier_warning: str | None = None
+    blocker = _upload_verification_currency_blocker(args.issue)
+    if blocker is not None:
+        if args.skip_confirm_artifacts and blocker["reason"] != "upload_verifier_in_flight":
+            verifier_warning = blocker["reason"]
+            logging.getLogger("dispatch_issue").warning(
+                "finalize --skip-confirm-artifacts: %s — proceeding on the explicit "
+                "skip flag; confirm pod-side data is safe before relying on this.",
+                blocker["detail"],
+            )
+        else:
+            hint = {
+                "upload_verifier_in_flight": (
+                    "WAIT for the epm:upload-verification verdict; on PASS re-run "
+                    "finalize; on FAIL run the uploader gap-fill + re-verify — "
+                    "NEVER finalize on a FAIL."
+                ),
+                "upload_verifier_stalled": (
+                    "re-spawn the upload-verifier to a verdict, then finalize on PASS."
+                ),
+                "upload_verification_ambiguous": (
+                    "re-run the upload-verifier against the current results (the "
+                    "fresh round resolves the ambiguity), then finalize on PASS."
+                ),
+                "upload_verification_stale": (
+                    "re-run the upload-verifier against the current results to a "
+                    "PASS, then re-run finalize."
+                ),
+                "upload_verification_failed_current": (
+                    "run the uploader gap-fill, re-verify to a PASS, then finalize."
+                ),
+            }[blocker["reason"]]
+            body = {
+                "ok": False,
+                "issue": int(args.issue),
+                "phase": "confirm_artifacts",
+                "chosen_kind": handle.backend,
+                "pod_name": handle.pod_name,
+                "reason": blocker["reason"],
+                "verifier_state": blocker["state"],
+                "skip_confirm_artifacts": bool(args.skip_confirm_artifacts),
+                "detail": blocker["detail"] + " — teardown SKIPPED. Recover: " + hint,
+            }
+            print(json.dumps(body, sort_keys=True))
+            return 3
+    # ─────────────────────────────────────────────────────────────────────
 
     # ``fetch_results`` BEFORE the confirm gate (#588 / latent slice-6
     # gap): the GCP completion sentinel lives ON the VM — ``GcpBackend.
@@ -1620,6 +1894,8 @@ def _cmd_finalize(
     }
     if confirm_degraded is not None:
         body["confirm_artifacts"] = confirm_degraded
+    if verifier_warning is not None:
+        body["verifier_warning"] = verifier_warning
     print(json.dumps(body, sort_keys=True))
     return 0
 
@@ -1719,12 +1995,19 @@ def _build_argparser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "Override GPU count. Honored by the RunPod (--gpu-count) and SLURM "
-            "(--gres) lanes; the GCP lane sizes its VM from --intent alone "
-            "(backends/gcp.INTENT_TO_MACHINE), so a gcp-reachable launch (explicit "
-            "gcp, or auto with gcp in the lane order) whose override mismatches the "
-            "intent's machine is refused up front (exit 2, "
-            "reason: gpus_machine_mismatch) instead of provisioning a wrong-sized "
-            "VM (incident #599)."
+            "(--gres) lanes; on the GCP lane this DECLARES a shardable width "
+            "(#1121): N in {2, 4, 8} above the intent's base machine on a "
+            "width-eligible intent (backends/gcp.WIDTH_ELIGIBLE_INTENTS) makes "
+            "the auto ladder walk wide a2-ultragpu-{8,4,2}g rungs first, "
+            "degrading on capacity miss into the base ladder — the workload "
+            "re-shards off the realized_gpu_count on the epm:backend-selected "
+            "marker. Wide GCP provisioning is the ENCOURAGED default whenever "
+            "a shardable axis exists (credits are effectively unconstrained; "
+            "wall-clock is the scarce resource). Any OTHER gcp-reachable "
+            "mismatch (unsupported width like 3 or 16, below-base width, "
+            "non-width-eligible intent) is refused up front (exit 2, "
+            "reason: gpus_machine_mismatch) instead of provisioning a "
+            "wrong-sized VM (incident #599)."
         ),
     )
     launch.add_argument(
@@ -1785,11 +2068,33 @@ def _build_argparser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help=(
-            "GCP boot-disk size override in GB (GCP lane only; threads to "
-            "spec.extra['boot_disk_gb'], honored at backends/gcp.py:815). "
-            "Default 300 GB is too tight for full-FT checkpoint grids "
-            "(issue 606 needed 500: 13 consolidated ZeRO-3 ckpts ~= 195 GB "
-            "+ model + cache). Inert on non-GCP lanes."
+            "Boot/data disk size the plan's stage requires, in GB. GCP lane: "
+            "boot-disk size override (threads to spec.extra['boot_disk_gb'], "
+            "honored by backends/gcp.py; default 300 GB is too tight for "
+            "full-FT checkpoint grids — issue 606 needed 500: 13 consolidated "
+            "ZeRO-3 ckpts ~= 195 GB + model + cache). RunPod CPU fallback "
+            "(#1010): threaded into the pod's containerDiskInGb "
+            "(max(50, value)) and checked by the feasibility gate — an "
+            "unsatisfiable disk requirement refuses the fallback typed "
+            "(cpu_fallback_infeasible_for_plan) instead of provisioning an "
+            "undersized pod. RunPod GPU lane (#1118): threaded into the "
+            "pod's persistent /workspace volume (--volume-gb max(200, "
+            "value) → volumeInGb); an unsatisfiable size fails loud at "
+            "RunPod create time, never a silent 200 GB default (incident "
+            "#1112). Inert on SLURM lanes."
+        ),
+    )
+    launch.add_argument(
+        "--min-ram-gb",
+        type=int,
+        default=None,
+        help=(
+            "Minimum RAM (GB) the plan's CPU stage requires. Read by the "
+            "RunPod CPU fallback feasibility gate (#1010) — RunPod CPU "
+            "instances have FIXED RAM, so an unsatisfiable requirement "
+            "refuses the fallback with reason cpu_fallback_infeasible_for_plan "
+            "instead of provisioning an undersized pod. GCP machine selection "
+            "is unchanged (by intent). Inert on SLURM lanes."
         ),
     )
     launch.add_argument(
@@ -2033,6 +2338,7 @@ __all__ = [
     "_provision_still_waiting",
     "_recognized_frontmatter_backends",
     "_resolve_backend_for_handle",
+    "_upload_verification_currency_blocker",
     "_wrap_marker_poster_with_override_flag",
     "main",
 ]

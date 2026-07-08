@@ -58,6 +58,8 @@ watcher force-stop parachute).
 **Non-zero exit or unparseable output → treat as `STALE-REDRIVE`** (fail
 toward coverage: load the full `/campaign <N>` for one decision round).
 
+**Digest-only reads.** The GATE-TRANSITION failure-note slice is extracted with a jq-filtered read — `uv run python scripts/task.py view <N> --json | jq -r '[.events[] | select(.kind == "epm:failure")] | last | (.note // "")[0:80] | gsub("\n"; " ")'` — never an unpiped `view <N>` / `view <N> --json` dump, which pages the campaign body + every marker note into context (the #906/#866 refusal-kill class; full contract: `/issue-tick` § Digest-only task-state reads).
+
 ## Argument
 
 One required argument: the campaign task number `<N>`.
@@ -81,15 +83,40 @@ covers the dashboard. A healthy tick does not touch the title.
 
 ## CRON-TEARDOWN — hardened 2026-06-12
 
-`CronList()`, delete EVERY job whose prompt matches this campaign's
-tick: primary match is whole-string equality
-(`prompt.strip() == "/campaign-tick <N>"`); hardened fallback is the
-anchored pattern `campaign-tick\s+<N>(?!\d)` (the `(?!\d)` guard
-prevents sibling mis-delete — `"/campaign-tick 46"` never matches
-`"/campaign-tick 467"`). Then ASSERT-AFTER-DELETE: re-`CronList`, retry
-the delete once if a matching job survived, log LOUDLY if it still
-survives (the runaway parachute bounds the damage). Idempotent; never
-raise.
+Widened + idempotent 2026-07-05 (#1052). Delete EVERY job matching this
+campaign's tick — and ALSO sweep stray one-shot `/campaign <N>` wakeups,
+resolving ids from a FRESH `CronList` at teardown time (never a recorded
+id; #988). The block below is the `/issue-tick` § CRON-TEARDOWN canonical
+block with the `issue` → `campaign` literal substitution:
+
+```python
+jobs = CronList()  # fresh listing at teardown time — recorded ids go stale
+for job in jobs:
+    p = job.get("prompt", "").strip()
+    # Leg 1 — the recurring tick cron: whole-string equality
+    # (prompt.strip() == "/campaign-tick <N>"); hardened fallback is the
+    # anchored pattern — the (?!\d) guard prevents sibling mis-delete
+    # ("/campaign-tick 46" never matches "/campaign-tick 467").
+    leg1 = p == f"/campaign-tick {N}" or re.search(rf"campaign-tick\s+{N}(?!\d)", p)
+    # Leg 2 — stray one-shot wakeups that would re-drive the FULL skill on
+    # a terminal campaign (the #980 class). START-anchored so a prose
+    # prompt that merely MENTIONS the campaign is never deleted; (?!\d)
+    # guards siblings; the '-' in "/campaign-tick" fails \s+, so leg 2
+    # never re-matches leg 1's job.
+    leg2 = p == f"/campaign {N}" or re.match(rf"/campaign\s+{N}(?!\d)", p)
+    if leg1 or leg2:
+        CronDelete(id=job["id"])
+        # IDEMPOTENT DELETE (#988): a CronDelete error indicating the job
+        # does not exist (observed shape: 'No scheduled job with id ...')
+        # means it is ALREADY GONE — SUCCESS: continue the sweep, never
+        # retry the same id, never abort or raise on it.
+
+# ASSERT-AFTER-DELETE: re-CronList() and verify NO job matching EITHER
+# leg survived; retry that delete ONCE (fresh id from the re-list); log
+# LOUDLY if it still survives (the runaway parachute bounds the damage).
+```
+
+Idempotent; never raise.
 
 ## What this skill does NOT do
 

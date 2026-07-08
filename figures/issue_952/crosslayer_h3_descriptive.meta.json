@@ -1,0 +1,90 @@
+{
+  "commit": "3a74cf91de",
+  "created": "2026-07-05T04:05:35Z",
+  "figsize": [
+    6.0,
+    3.8
+  ],
+  "points": [
+    {
+      "Read-out layer": 14.0,
+      "External - own paired drop difference\n(divergence bank, mean)": -0.014232599146264199,
+      "error": 0.02506137538360449,
+      "series": "This round",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Read-out layer": 23.0,
+      "External - own paired drop difference\n(divergence bank, mean)": -0.009757311563127508,
+      "error": 0.02893436707380871,
+      "series": "This round",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Read-out layer": 26.0,
+      "External - own paired drop difference\n(divergence bank, mean)": -0.005493502615726472,
+      "error": 0.027168488273680947,
+      "series": "This round",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Read-out layer": 14.0,
+      "External - own paired drop difference\n(divergence bank, mean)": -0.014232599146264199,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Read-out layer": 23.0,
+      "External - own paired drop difference\n(divergence bank, mean)": -0.009757311563127508,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Read-out layer": 26.0,
+      "External - own paired drop difference\n(divergence bank, mean)": -0.005493502615726472,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Read-out layer": 14.0,
+      "External - own paired drop difference\n(divergence bank, mean)": -0.040687859904912436,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Read-out layer": 23.0,
+      "External - own paired drop difference\n(divergence bank, mean)": -0.040259181267942215,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Read-out layer": 26.0,
+      "External - own paired drop difference\n(divergence bank, mean)": -0.03390870199376478,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Read-out layer": 14.0,
+      "External - own paired drop difference\n(divergence bank, mean)": 0.00943489086229654,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Read-out layer": 23.0,
+      "External - own paired drop difference\n(divergence bank, mean)": 0.01760955287967521,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Read-out layer": 26.0,
+      "External - own paired drop difference\n(divergence bank, mean)": 0.020428274553597116,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12
+}

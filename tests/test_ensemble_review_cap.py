@@ -22,6 +22,12 @@ Three coordinated invariants are locked here (post-hoc; TDD: no):
 
 Plus a `pivot_criteria` invariant: the retired `code_review_ensemble_cap_3`
 trigger is gone (replaced by a `..._cap_5_surface` surface-behavior entry).
+
+Also pinned here (same SKILL.md Step 9c gate surface, #1022): BOTH gate pytest
+invocations — the 1b touched scope AND the 1c full-scope override — capture
+`PYTEST_RC=$?` on the pytest line, BEFORE the step-1d compare that consumes
+`--pytest-rc "$PYTEST_RC"` (round-2 Codex Critical: the full-scope block ran
+pytest without assigning the rc, so compare gated an unset/stale rc).
 """
 
 from __future__ import annotations
@@ -169,6 +175,59 @@ def test_code_review_flow_diagram_and_exit_kind_updated():
     # Exit-kind table row for Step 5b.
     assert "Step 5b code-review FAIL revision_round>=5" in skill
     assert "apply Step 5d cap-hit rule" in skill
+
+
+# --------------------------------------------------------------------------- #
+# #1022 Step 9c shell dataflow: PYTEST_RC captured before compare consumes it
+# --------------------------------------------------------------------------- #
+def test_step9c_pytest_rc_captured_before_compare():
+    """Both Step 9c gate pytest blocks (1b touched scope + 1c full-scope
+    override) write the pytest rc to `/tmp/step9c-rc-issue-<N>` on the SAME
+    background-invocation command tail (`pytest ...; echo $? > rc-file`), the
+    completion read (`PYTEST_RC=$(cat ...)`) precedes the step-1d
+    `--pytest-rc "$PYTEST_RC"` compare consumer (the #1022 dataflow invariant,
+    re-pinned in the #1046 background + rc-file form), and the anti-silent-pass
+    guards are present (#1046 AC7): the three-file `rm -f` preamble before BOTH
+    invocations, the missing-rc FAIL guard, and the zero-collected FAIL guard.
+    The bounded spans are FENCE-SAFE — they exclude backticks, so a match can
+    never cross a code-fence boundary into a neighboring block: the rc write
+    must sit on the same command tail as its pytest invocation."""
+    skill = SKILL_PATH.read_text()
+    sec = skill[skill.index("9c. Test-verdict gate") : skill.index("### Step 10: Auto-complete")]
+    touched = re.search(
+        r"timeout --kill-after=60s <T>s uv run pytest <files>[^\x60]{0,300}?"
+        r"echo \$\? > /tmp/step9c-rc-issue-<N>",
+        sec,
+    )
+    assert touched, "1b block must write the pytest rc to the rc file on its invocation tail"
+    full = re.search(
+        r"timeout --kill-after=60s 60m uv run pytest tests/[^\x60]{0,300}?"
+        r"echo \$\? > /tmp/step9c-rc-issue-<N>",
+        sec,
+    )
+    assert full, "1c full-scope block must write the pytest rc to the rc file"
+    read_idx = sec.index("PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)")
+    # Anchor the compare-consumer index PAST any prose mention of the flag —
+    # use the LAST occurrence (the 1d compare snippet), not the first (a
+    # prose mention would first-match and weaken the ordering pin):
+    compare_idx = sec.rindex('--pytest-rc "$PYTEST_RC"')
+    assert touched.end() < compare_idx, "touched-scope rc write must precede the compare consumer"
+    assert full.end() < compare_idx, "full-scope rc write must precede the compare consumer"
+    assert read_idx < compare_idx, "the rc-file read must precede the compare consumer"
+    # (a) AC7: the three-file rm -f preamble precedes BOTH gate invocations.
+    rm_pat = (
+        r"rm -f /tmp/step9c-junit-issue-<N>\.xml /tmp/step9c-rc-issue-<N> \\\n"
+        r"\s*/tmp/step9c-pytest-issue-<N>\.log"
+    )
+    rm_hits = [m.start() for m in re.finditer(rm_pat, sec)]
+    assert len(rm_hits) >= 2, "both 1b and 1c blocks must carry the three-file rm -f preamble"
+    assert rm_hits[0] < touched.start() and rm_hits[1] < full.start(), (
+        "each rm -f preamble must precede its gate invocation"
+    )
+    # (b) AC7: the completion read carries the missing-rc FAIL guard + the
+    # zero-collected FAIL guard.
+    assert "[ ! -f /tmp/step9c-rc-issue-<N> ]" in sec, "missing-rc FAIL guard must be pinned"
+    assert "no tests ran|collected 0 items" in sec, "zero-collected FAIL guard must be pinned"
 
 
 # --------------------------------------------------------------------------- #

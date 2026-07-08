@@ -1,0 +1,189 @@
+{
+  "git_commit": "b056e3ea73",
+  "ts": "2026-07-06T20:36:14Z",
+  "quota": 24,
+  "budget": 35,
+  "parent_sidebyside_mode": "hf-pinned@c1f526c1",
+  "mixed": {
+    "neg_sp_police": {
+      "requested": 35,
+      "generated": 35,
+      "judged": 35,
+      "kept": 31,
+      "gen_drop_mix": {},
+      "judge_none_drops": 4,
+      "n_denominator": 35,
+      "kept_rate": 0.8857142857142857,
+      "kept_rate_ci95": [
+        0.7326219562807548,
+        0.967968830970902
+      ],
+      "quota": 24,
+      "budget": 35,
+      "meets_quota": true
+    },
+    "neg_sp_ph4": {
+      "requested": 35,
+      "generated": 35,
+      "judged": 35,
+      "kept": 24,
+      "gen_drop_mix": {},
+      "judge_none_drops": 11,
+      "n_denominator": 35,
+      "kept_rate": 0.6857142857142857,
+      "kept_rate_ci95": [
+        0.507119999684825,
+        0.8314828492529975
+      ],
+      "quota": 24,
+      "budget": 35,
+      "meets_quota": true
+    },
+    "neg_reph_curious": {
+      "requested": 35,
+      "generated": 35,
+      "judged": 35,
+      "kept": 29,
+      "gen_drop_mix": {},
+      "judge_none_drops": 6,
+      "n_denominator": 35,
+      "kept_rate": 0.8285714285714286,
+      "kept_rate_ci95": [
+        0.6635016999818029,
+        0.9343781988437493
+      ],
+      "quota": 24,
+      "budget": 35,
+      "meets_quota": true
+    },
+    "neg_wc_short": {
+      "requested": 35,
+      "generated": 35,
+      "judged": 35,
+      "kept": 30,
+      "gen_drop_mix": {},
+      "judge_none_drops": 4,
+      "n_denominator": 35,
+      "kept_rate": 0.8571428571428571,
+      "kept_rate_ci95": [
+        0.6974286483090485,
+        0.9519392215963611
+      ],
+      "quota": 24,
+      "budget": 35,
+      "meets_quota": true
+    },
+    "neg_default_assistant": {
+      "requested": 35,
+      "generated": 35,
+      "judged": 35,
+      "kept": 31,
+      "gen_drop_mix": {},
+      "judge_none_drops": 4,
+      "n_denominator": 35,
+      "kept_rate": 0.8857142857142857,
+      "kept_rate_ci95": [
+        0.7326219562807548,
+        0.967968830970902
+      ],
+      "quota": 24,
+      "budget": 35,
+      "meets_quota": true
+    }
+  },
+  "parent_ablit": {
+    "neg_sp_police": {
+      "requested": 35,
+      "generated": 35,
+      "judged": 35,
+      "kept": 24,
+      "gen_drop_mix": {},
+      "judge_none_drops": 4,
+      "n_denominator": 35,
+      "kept_rate": 0.6857142857142857,
+      "kept_rate_ci95": [
+        0.507119999684825,
+        0.8314828492529975
+      ],
+      "quota": 24,
+      "budget": 35,
+      "meets_quota": true
+    },
+    "neg_sp_ph4": {
+      "requested": 35,
+      "generated": 35,
+      "judged": 35,
+      "kept": 19,
+      "gen_drop_mix": {},
+      "judge_none_drops": 6,
+      "n_denominator": 35,
+      "kept_rate": 0.5428571428571428,
+      "kept_rate_ci95": [
+        0.36645801712145215,
+        0.711728556209243
+      ],
+      "quota": 24,
+      "budget": 35,
+      "meets_quota": false
+    },
+    "neg_reph_curious": {
+      "requested": 35,
+      "generated": 35,
+      "judged": 35,
+      "kept": 21,
+      "gen_drop_mix": {},
+      "judge_none_drops": 4,
+      "n_denominator": 35,
+      "kept_rate": 0.6,
+      "kept_rate_ci95": [
+        0.42111772188209984,
+        0.7612918895466584
+      ],
+      "quota": 24,
+      "budget": 35,
+      "meets_quota": false
+    },
+    "neg_wc_short": {
+      "requested": 35,
+      "generated": 35,
+      "judged": 35,
+      "kept": 23,
+      "gen_drop_mix": {},
+      "judge_none_drops": 3,
+      "n_denominator": 35,
+      "kept_rate": 0.6571428571428571,
+      "kept_rate_ci95": [
+        0.47789001660647873,
+        0.8086758978117342
+      ],
+      "quota": 24,
+      "budget": 35,
+      "meets_quota": false
+    },
+    "neg_default_assistant": {
+      "requested": 35,
+      "generated": 35,
+      "judged": 35,
+      "kept": 13,
+      "gen_drop_mix": {},
+      "judge_none_drops": 5,
+      "n_denominator": 35,
+      "kept_rate": 0.37142857142857144,
+      "kept_rate_ci95": [
+        0.21473211811438903,
+        0.5507688358126773
+      ],
+      "quota": 24,
+      "budget": 35,
+      "meets_quota": false
+    }
+  },
+  "s1_prime_pass": true,
+  "delta_kept_rate_by_member": {
+    "neg_default_assistant": 0.5142857142857142,
+    "neg_reph_curious": 0.22857142857142865,
+    "neg_sp_ph4": 0.1428571428571429,
+    "neg_sp_police": 0.19999999999999996,
+    "neg_wc_short": 0.19999999999999996
+  }
+}

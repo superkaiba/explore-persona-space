@@ -1,0 +1,7 @@
+{
+  "behavior": "fact",
+  "substrate": "mix",
+  "chain_rho": {
+    "n_with_E": 0
+  }
+}

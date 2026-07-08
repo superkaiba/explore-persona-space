@@ -1,0 +1,112 @@
+{
+ "traits": [
+  "evil",
+  "sycophancy",
+  "hallucination"
+ ],
+ "layers": [
+  14,
+  19
+ ],
+ "n_context_files": 150,
+ "per_layer": {
+  "L14": {
+   "n_tokens": 53628,
+   "n_rollouts": 150
+  },
+  "L19": {
+   "n_tokens": 53628,
+   "n_rollouts": 150
+  }
+ },
+ "result": {
+  "evil": {
+   "L14": {
+    "per_token": {
+     "rb_variance_percentile": 99.38616071428571,
+     "rb_equivalent_rank": 22,
+     "rb_variance_fraction": 0.005039861700612422
+    },
+    "mean_answer": {
+     "rb_variance_percentile": 99.52566964285714,
+     "rb_equivalent_rank": 17,
+     "rb_variance_fraction": 0.010799739557455204
+    }
+   },
+   "L19": {
+    "per_token": {
+     "rb_variance_percentile": 99.52566964285714,
+     "rb_equivalent_rank": 17,
+     "rb_variance_fraction": 0.006717779367713905
+    },
+    "mean_answer": {
+     "rb_variance_percentile": 99.66517857142857,
+     "rb_equivalent_rank": 12,
+     "rb_variance_fraction": 0.014452421475787739
+    }
+   }
+  },
+  "sycophancy": {
+   "L14": {
+    "per_token": {
+     "rb_variance_percentile": 99.46986607142857,
+     "rb_equivalent_rank": 19,
+     "rb_variance_fraction": 0.005648048877592095
+    },
+    "mean_answer": {
+     "rb_variance_percentile": 99.88839285714286,
+     "rb_equivalent_rank": 4,
+     "rb_variance_fraction": 0.0373861047927195
+    }
+   },
+   "L19": {
+    "per_token": {
+     "rb_variance_percentile": 99.55357142857143,
+     "rb_equivalent_rank": 16,
+     "rb_variance_fraction": 0.006833868758256561
+    },
+    "mean_answer": {
+     "rb_variance_percentile": 99.88839285714286,
+     "rb_equivalent_rank": 4,
+     "rb_variance_fraction": 0.043863311089235746
+    }
+   }
+  },
+  "hallucination": {
+   "L14": {
+    "per_token": {
+     "rb_variance_percentile": 99.72098214285714,
+     "rb_equivalent_rank": 10,
+     "rb_variance_fraction": 0.009103154661210467
+    },
+    "mean_answer": {
+     "rb_variance_percentile": 99.94419642857143,
+     "rb_equivalent_rank": 2,
+     "rb_variance_fraction": 0.05366905615766148
+    }
+   },
+   "L19": {
+    "per_token": {
+     "rb_variance_percentile": 99.69308035714286,
+     "rb_equivalent_rank": 11,
+     "rb_variance_fraction": 0.009829407613487664
+    },
+    "mean_answer": {
+     "rb_variance_percentile": 99.91629464285714,
+     "rb_equivalent_rank": 3,
+     "rb_variance_fraction": 0.04712378314801408
+    }
+   }
+  }
+ },
+ "note": "Generic pass-B LMSYS contexts. per_token = PCA over ALL answer tokens; mean_answer = PCA over per-rollout mean-answer vectors, SAME rollouts. r_B LOW-percentile per-token but HIGH-percentile mean-answer \u21d2 the mean-pooling promotes the concept into the high-variance regime (pooling hypothesis confirmed).",
+ "metadata": {
+  "git_commit": "124e8f7d7f5779ac0c8e94d6363265ad367734ea",
+  "timestamp_utc": "2026-07-06T18:44:21.298851Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "all",
+  "script": "issue779_pertoken_lmsys_analysis",
+  "substrate": "pass-B LMSYS"
+ }
+}

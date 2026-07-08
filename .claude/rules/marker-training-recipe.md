@@ -1,5 +1,5 @@
 ---
-description: Marker-implantation TRAINING recipe — the over/under-training dial, always-marker-only loss, the deterministic log-prob band-stop (stop on the metric, not a fixed epoch count), contrastive-negative composition, and the reusable train_lora wiring. Companion to marker-leakage-measurement.md (measurement) and contrastive-negatives.md (negatives). Full evidence + per-task index: docs/marker_training_recipe.md.
+description: Marker-implantation TRAINING recipe — the over/under-training dial, always-marker-only loss, the build-time training-row token budget (#260's training-side sibling), the deterministic log-prob band-stop (stop on the metric, not a fixed epoch count), contrastive-negative composition, and the reusable train_lora wiring. Companion to marker-leakage-measurement.md (measurement) and contrastive-negatives.md (negatives). Full evidence + per-task index: docs/marker_training_recipe.md.
 paths:
   - "scripts/train.py"
   - "scripts/eval.py"
@@ -83,6 +83,43 @@ unconditional ` ※`-repeater (source AND bystander ~0.99 — #397, #451); lr 1e
 hard collapse. Buy strength through **epochs at low LR (≤5e-6)**, never through LR
 (#329: 5e-6 × 20 epochs → source 99.6% / bystander 11.7%; #478: 5e-6 → clean
 sub-emission gradient).
+
+## Training-row token budget (the #260 sibling — gate at mix BUILD time)
+
+Eval-side truncation (#260, § Measurement guardrails) has a TRAINING-side
+twin. A real-user question bank (WildChat) has an unbounded prompt tail, so
+`prompt + capped greedy R + " ※<|im_end|>"` can exceed the recipe
+`max_length` (2048); SFTTrainer's right-truncation then cuts the marker +
+end-of-turn LOSS SLOT and `MarkerOnlyDataCollator` fail-louds MID-TRAIN —
+after provisioning (#906 r13: two extreme-tail questions, prompt-only
+1718–2194 tokens across their pos+cn rows — pos full rows 2696/2233 > 2048
+— pair-dropped: 4/200 rows). Gate
+the mix at BUILD time, never discover it at train time:
+
+- **Tokenize every mix row under the trainer's EXACT render** — prompt +
+  completion in ONE `apply_chat_template(add_generation_prompt=False)`
+  call, matching TRL's prompt-completion tokenization (a prompt-only or
+  two-call length estimate can undercount the rendered row).
+- **Pair-drop an over-budget row from BOTH pos + cn** (same question), so
+  the 1:1 contrastive ratio and question alignment survive
+  (`.claude/rules/contrastive-negatives.md`).
+- **Fail-loud above a rejection-fraction floor (0.10).** A rejected
+  fraction above the floor means the budget is SYSTEMATICALLY too small
+  for the question distribution — the remedy is a deliberate recipe
+  `max_length` raise, never a silently shrunk mix. Log kept/dropped counts
+  (the `[marker-mix-budget]` line).
+- **Ground keep-vs-raise-`max_length` on the measured row-length
+  distribution**, never by chasing the unbounded prompt tail (#906: median
+  full-row 487/419 tokens, p90 618/623, only 2/100 questions overflow —
+  98% coverage at 2048, so the budget was deliberately kept).
+
+Worked example: `_enforce_marker_mix_token_budget`
+(`scripts/issue906_phase1_pilot.py` — a thin wrapper over the shared
+`organisms.enforce_mix_token_budget`: question-paired drop, floor,
+asymmetric-drop warning, cn-emptied guard), enforced on the production
+inline path by `_assemble_marker_mix` (skipped only on the
+`tokenizer=None` stub-seam smoke path); pinned by
+`tests/test_issue906_marker_mix_budget.py`.
 
 ## Don't fix epochs — stop on the log-prob band (deterministic)
 
@@ -189,7 +226,8 @@ bystander's base-model marker prior + distance to source, not negative placement
 On-policy only (never teacher-forced fixed-stub for the cross-condition leaderboard —
 #432→#456); gate saturation on trained-log-P sd + argmax rate, not ΔG (#448/#460);
 never substitute full-vocab KL (inflates nulls — #504); `max_new_tokens` ≥ 2048
-(#260); PEFT cross-check the adapter load before believing a "floor everywhere"
+(#260 — training-side sibling: § Training-row token budget); PEFT cross-check
+the adapter load before believing a "floor everywhere"
 (#492). The in-loop band-stop's source read is teacher-forced (valid within-condition
 trajectory); the bystander non-saturation check stays in the on-policy downstream eval.
 

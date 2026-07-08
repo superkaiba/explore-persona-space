@@ -1,0 +1,192 @@
+{
+  "commit": "efc632f990",
+  "created": "2026-07-07T13:54:27Z",
+  "figsize": [
+    11.5,
+    4.8
+  ],
+  "points": [
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 2.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.28,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 4.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.22,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 6.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.29,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 8.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.33,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 10.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.5,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 12.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.59,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 14.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.61,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 16.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.52,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 18.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.63,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 20.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.59,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 22.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.57,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 24.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.61,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 26.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.5858585858585859,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 28.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.57,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 30.0,
+      "own-persona judged rate (Tier 1,\n300-token judge budget)": 0.58,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 2.0,
+      "y": 0.2,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 4.0,
+      "y": 0.28,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 6.0,
+      "y": 0.33,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 8.0,
+      "y": 0.41,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 10.0,
+      "y": 0.53,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 12.0,
+      "y": 0.52,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 14.0,
+      "y": 0.54,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 16.0,
+      "y": 0.55,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 18.0,
+      "y": 0.58,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 20.0,
+      "y": 0.56,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 22.0,
+      "y": 0.59,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 24.0,
+      "y": 0.56,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 26.0,
+      "y": 0.53,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 28.0,
+      "y": 0.57,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (epochs 6; checkpoints every 2 steps)": 30.0,
+      "y": 0.55,
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 30
+}

@@ -1,0 +1,9 @@
+{
+  "all_pass": true,
+  "gates": {
+    "coverage": "PASS",
+    "deferred_fit_failures": "PASS",
+    "reproduction": "PASS",
+    "row_alignment": "PASS"
+  }
+}

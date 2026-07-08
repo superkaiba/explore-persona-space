@@ -36,8 +36,9 @@ What this slice ships
   compute instances list --filter=name=eps-issue-<N>``. If a live instance
   exists, return a handle for it without re-provisioning; refuses a RUNNING
   instance whose ``eps/phase`` is already terminal (``done``/``failed``/
-  ``wedged``) — the #908 gate-park zombie — which the pre-launch stale
-  reclaim then deletes so the create does not collide (#632).
+  ``finalize_failed_artifacts_ok``/``wedged``) — the #908 gate-park zombie —
+  which the pre-launch stale reclaim then deletes so the create does not
+  collide (#632).
 * :func:`audit_stale_gcp_vms` — analogue of ``scripts/pod.py audit-stale``;
   reaps ``eps-issue-*`` instances on TWO bounded predicates: a per-instance-
   fence-aware age backstop (#741 — reaped once the VM exceeds its OWN
@@ -403,11 +404,19 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
     "cpu-mid": MachineSpec(machine_type="e2-standard-8", gpu_count=0, gpu_kind="CPU"),
     # 8-GPU sweep intents (#743) — the FREE GCP credit lane at 8x width for
     # wide embarrassingly-parallel sweeps (driving case #697's 64-cell patch
-    # sweep, ~2x faster on 8 GPUs than 4). EXPLICIT --intent ONLY: NOT added to
-    # the router auto-ladder (router.py unchanged) — 8x H100 quota in us-central1
-    # is exactly 8 (no concurrency headroom) and 8x A100 is heavy, so auto must
-    # never schedule one. sweep-8g-h100 is a3-highgpu (H100): SPOT / FLEX_START
-    # only (render_create_argv raises on H100 + STANDARD via gpu_kind, inherited).
+    # sweep, ~2x faster on 8 GPUs than 4). The A100 half of #743's
+    # explicit-only exclusion is SUPERSEDED by #1121: the router auto ladder
+    # now walks WIDE_A100_80_BY_WIDTH rungs (a2-ultragpu-{8,4,2}g) for a
+    # width-declaring dispatch (``--gpus N`` on a width-eligible intent), so
+    # sweep-8g-a100 remains only as a back-compat explicit intent (redundant
+    # with ``--intent capture-7b --gpus 8`` on the auto lane). The H100 half
+    # STANDS: 8x H100 preemptible quota in us-central1 is exactly 8 (one 8x,
+    # zero concurrency headroom), there is no H100 on-demand pool, and the
+    # H100 quota metrics are absent from ``regions describe`` on this project
+    # (the fail-open headroom pre-check is blind for H100) — so sweep-8g-h100
+    # stays EXPLICIT --intent ONLY, never auto-scheduled. sweep-8g-h100 is
+    # a3-highgpu (H100): SPOT / FLEX_START only (render_create_argv raises on
+    # H100 + STANDARD via gpu_kind, inherited).
     "sweep-8g-a100": MachineSpec(
         machine_type="a2-ultragpu-8g",
         gpu_count=8,
@@ -460,6 +469,38 @@ def a100_40_fallback_for_intent(spec: RunSpec) -> MachineSpec | None:
     still fails loud on the unknown intent via :func:`machine_for_intent`).
     """
     return INTENT_A100_40_FALLBACK.get(spec.intent)
+
+
+#: Width -> wide A100-80 machine for the width-aware auto ladder (#1121).
+#: a2-ultragpu-{2,4,8}g all live-verified offered in us-central1-{a,c}
+#: (gcloud machine-types list, 2026-07-08). H100 (a3-highgpu-*) is
+#: DELIBERATELY absent: preemptible quota is exactly 8 (one 8x, zero
+#: concurrency headroom, #743), there is no on-demand pool, and the H100
+#: quota metrics are absent from ``regions describe`` on this project, so
+#: the fail-open headroom pre-check cannot protect a doomed create.
+#: sweep-8g-h100 stays explicit-``--intent``-only.
+WIDE_A100_80_BY_WIDTH: dict[int, MachineSpec] = {
+    2: MachineSpec(machine_type="a2-ultragpu-2g", gpu_count=2, gpu_kind="A100-80"),
+    4: MachineSpec(machine_type="a2-ultragpu-4g", gpu_count=4, gpu_kind="A100-80"),
+    8: MachineSpec(machine_type="a2-ultragpu-8g", gpu_count=8, gpu_kind="A100-80"),
+}
+
+#: Intents whose workload shards across GPUs at 1 GPU (or, for ft-7b, its
+#: ZeRO-3 world size) per shard, so a wide A100-80 machine serves them:
+#: the single-GPU 7B-class intents + ft-7b (whose base IS the same
+#: a2-ultragpu family at 4x). eval/debug are included even though their
+#: BASE machine is L4 — a width>1 request upgrades them onto the A100-80
+#: family (there is no multi-GPU g2 mapping in v1; deliberate, see plan
+#: #1121 §11). H100-family intents (lora-7b-h100 / eval-h100 /
+#: sweep-8g-*) are EXCLUDED (see WIDE_A100_80_BY_WIDTH note).
+WIDTH_ELIGIBLE_INTENTS: frozenset[str] = frozenset(
+    {"lora-7b", "lora", "capture-7b", "eval", "debug", "ft-7b"}
+)
+
+
+def wide_a100_80_for_width(width: int) -> MachineSpec | None:
+    """The wide A100-80 MachineSpec for ``width``; ``None`` when unsupported."""
+    return WIDE_A100_80_BY_WIDTH.get(int(width))
 
 
 def machine_for_intent(spec: RunSpec) -> MachineSpec:
@@ -530,6 +571,10 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     # A2-ultragpu (A100-80) — us-central1-b does NOT offer this family
     # (re-verified 2026-06-30: not offered in -b OR -f, #774).
     "a2-ultragpu-1g": frozenset({"us-central1-a", "us-central1-c"}),
+    # a2-ultragpu-2g (2x A100-80, the #1121 width-2 auto-ladder rung) — same
+    # A2-ultragpu family restriction as its 1g/4g/8g siblings (NOT in -b or
+    # -f). Live-verified 2026-07-08 (gcloud compute machine-types list).
+    "a2-ultragpu-2g": frozenset({"us-central1-a", "us-central1-c"}),
     "a2-ultragpu-4g": frozenset({"us-central1-a", "us-central1-c"}),
     # a2-ultragpu-8g (8x A100-80, #743) — same A2-ultragpu family as the 1g/4g
     # rows above; us-central1-b does NOT offer the family. Verified 2026-06-29
@@ -813,6 +858,28 @@ def sentinel_path_for(config: GcpConfig, issue: int, attempt_id: str) -> str:
     return f"{root}/eval_results/issue_{issue}/{attempt_id}/{SENTINEL_FILENAME}"
 
 
+#: Positive-evidence deliverables sentinel filename (#1055). Distinct from
+#: :data:`SENTINEL_FILENAME` (the COMPLETION sentinel the success tail writes):
+#: this one is written by the WORKLOAD itself, mid-run, the moment its final
+#: upload+verify step confirms every declared deliverable is on HF — so the
+#: EXIT trap can tell a post-deliverables finalize/tail crash from a
+#: data-losing one.
+DELIVERABLES_OK_FILENAME = "deliverables_ok.json"
+
+
+def deliverables_ok_path_for(config: GcpConfig, issue: int, attempt_id: str) -> str:
+    """Positive-evidence sentinel path: workload-written after its final verify PASS (#1055).
+
+    The WORKLOAD writes this file ONLY after its final upload+verify step
+    confirms every declared deliverable is on HF; its presence at EXIT-trap
+    time proves a non-zero exit is a finalize/tail failure, not a data-losing
+    crash. Attempt-scoped (mirrors :func:`sentinel_path_for`) so a fresh
+    attempt never reads a prior attempt's evidence.
+    """
+    root = workload_dir_for(config, issue)
+    return f"{root}/eval_results/issue_{issue}/{attempt_id}/{DELIVERABLES_OK_FILENAME}"
+
+
 # ---------------------------------------------------------------------------
 # Expected-artifact declaration (artifacts.py bridge)
 # ---------------------------------------------------------------------------
@@ -947,6 +1014,10 @@ STARTUP_PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     "EPM_HF_OVERFLOW_ROUTING",
     "EPM_HF_STORAGE_CHECK",
     "EPM_HF_STORAGE_CACHE_TTL_S",
+    # Size-aware projected-headroom probe floor (#1034): same remote-relevance
+    # as the #564 knobs above — a dispatch-process floor override must reach
+    # the VM workload or it silently no-ops remotely.
+    "EPM_HF_LARGE_UPLOAD_PROBE_GB",
     # Local-SSD scratch root for the per-cell .npz write-decoupling helper
     # (#674): forwarded so a dispatch-process EPS_SCRATCH_DIR reaches the GCE
     # workload subprocess. The startup script ALSO sets a default (below), so
@@ -1139,6 +1210,7 @@ def render_startup_script(
         )
     workload_root = workload_dir_for(config, spec.issue)
     sentinel_abs = sentinel_path_for(config, spec.issue, attempt_id)
+    deliverables_ok_abs = deliverables_ok_path_for(config, spec.issue, attempt_id)
     sentinel_dir = sentinel_abs.rsplit("/", 1)[0]
     # Done-grace self-poweroff constants (#935), baked at render time like
     # the other lane constants (no runtime metadata fetch). The keepalive
@@ -1188,13 +1260,29 @@ def render_startup_script(
     # Hydra args, shell-quoted. Empty tuple → empty string.
     hydra_str = " ".join(shlex.quote(a) for a in args)
 
-    # Workload block (#588): a custom workload_cmd is embedded VERBATIM —
-    # it IS a complete shell command line (shlex-quoting would collapse
-    # it to a single token). Trusted input by design (same trust level as
-    # the plan's Reproducibility Card launch command; it runs as root on
-    # the VM). The RunSpec.__post_init__ single-line check keeps the
-    # rendered script structure intact. The hydra branch is the
-    # byte-identical pre-#588 lines, gated only by ``if spec.workload_cmd``.
+    # Workload block (#588, rc-wrapper #1004): a custom workload_cmd is
+    # rendered as the SINGLE argument of an inner
+    # ``bash -eu -o pipefail -c <shlex.quote(cmd)>`` — the inner bash
+    # re-parses it as a complete shell line (full shell syntax preserved,
+    # the original #588 verbatim concern), while from THIS script's
+    # perspective the workload is one SIMPLE command, so the outer
+    # ``set -e`` fires on ANY non-zero exit — including a
+    # ``cmd1 && cmd2`` chain whose FIRST command crashes, which the
+    # pre-#1004 bare splice rc-masked into a false phase=done (bash
+    # exempts non-final &&/|| list members from errexit; incident #952
+    # run 1). Residuals NOT closed by the wrapper: (a) a ``a && b; c``
+    # shape where ``a`` fails and ``c`` succeeds still masks (the same
+    # errexit exemption applies inside the inner bash; the #750 OOM
+    # guard remains the independent backstop); (b) the detached-driver
+    # pid-file wait loop below is liveness-only (``kill -0``), so a
+    # setsid-detached driver that CRASHES still reaches the success
+    # tail — a structurally different class (#601/#977 contract).
+    # Trusted input by design (same trust level as the plan's
+    # Reproducibility Card launch command; it runs as root on the VM).
+    # The RunSpec.__post_init__ single-line check keeps the rendered
+    # script line-structured (shlex.quote of a single-line string is a
+    # single line). The hydra branch is the byte-identical pre-#588
+    # lines, gated only by ``if spec.workload_cmd``.
     if spec.workload_cmd:
         workload_block = [
             "# === REPO_ROOT export (#641; trap #599) ===",
@@ -1243,11 +1331,22 @@ def render_startup_script(
             "mkdir -p /workspace/logs",
             "chmod 777 /workspace/logs",
             "# === Run the workload (custom workload_cmd) ===",
-            "# A non-zero exit propagates (set -e) → the EXIT trap publishes",
-            "# phase=failed + powers off → poll reads dead.",
+            "# rc-preserving wrapper (#1004, incident #952): the command is the",
+            "# single argument of an inner bash -eu -o pipefail -c, so it is ONE",
+            "# simple command here — a failure ANYWHERE inside (including the",
+            "# first member of a && chain, which errexit exempts mid-list) exits",
+            "# the inner bash non-zero, the outer set -e fires, and the EXIT trap",
+            "# publishes phase=failed + crash-persist + poweroff → poll reads dead.",
+            "# The inner -eu -o pipefail mirror the outer flags, so the command",
+            "# text's own execution semantics are identical to the pre-#1004",
+            "# in-script splice; only the propagated rc changes. Residuals: an",
+            "# `a && b; c` shape still masks (errexit exempts mid-list members",
+            "# inside the inner bash too; the #750 OOM guard is the backstop),",
+            "# and the pid-file wait below is liveness-only (kill -0) — a",
+            "# CRASHED setsid-detached driver still reaches the success tail.",
             "_eps_phase workload",
             "touch /tmp/eps-workload-start",
-            spec.workload_cmd,
+            f"bash -eu -o pipefail -c {shlex.quote(spec.workload_cmd)}",
             "# === Wait for detached workloads (self-daemonizing drivers) ===",
             "# A workload_cmd that setsid-forks the real driver returns",
             "# immediately; declaring done here would publish the completion",
@@ -2011,14 +2110,34 @@ def render_startup_script(
         # somehow reached the log tail.
         "trap 'rc=$?; set +e;"
         ' if [ "$rc" -ne 0 ]; then'
+        # #1055: POSITIVE-EVIDENCE classification — the workload writes
+        # $EPS_DELIVERABLES_OK_PATH ONLY after its final upload+verify PASS,
+        # so its presence at trap time proves the declared deliverables are
+        # complete on HF and this non-zero exit is a finalize/tail failure,
+        # not a data-losing crash. NEVER keyed on rc value or crash timing
+        # (#1004 coherence: rc stays non-zero, diagnostics still run, the
+        # poweroff that bounds billing is untouched, and literal `done` is
+        # never published on this path). The -n guard is belt-and-suspenders
+        # ([ -f "" ] is false); ${:-} keeps the trap safe under set -u when
+        # it fires before the export.
+        ' if [ -n "${EPS_DELIVERABLES_OK_PATH:-}" ] && [ -f "${EPS_DELIVERABLES_OK_PATH:-}" ];'
+        " then"
+        ' { echo "[startup-script] FINALIZE-FAILED rc=$rc — deliverables sentinel present;'
+        ' artifacts complete on HF; powering off (#1055)"; } 2>/dev/null || true;'
+        " _eps_phase finalize_failed_artifacts_ok;"
+        " else"
         ' { echo "[startup-script] FAILED rc=$rc — powering off to bound billing"; }'
         " 2>/dev/null || true;"
         " _eps_phase failed;"
+        " fi;"
         # #854: reap the reachability watchdog — the only OTHER in-guest
         # poweroff actor — at trap ENTRY, before the persist, so nothing can
         # power the VM off mid-upload; the trap itself guarantees the
         # billing-bounding shutdown below. Guarded: an unset PID (crash
         # before the watchdog launch) / already-dead daemon is a no-op.
+        # (#1055: the watchdog reap + log tail + diagnostics + poweroff are
+        # the SHARED tail — they run on BOTH sentinel arms, outside the
+        # inner fi, ordering unchanged.)
         ' { kill "${EPS_WATCHDOG_PID:-}" 2>/dev/null; } || true;'
         ' if [ -n "${EPS_LOG_PATH:-}" ]; then'
         ' { tail -n 40 "$EPS_LOG_PATH" 2>/dev/null | cut -c1-2000 >&3; } 2>/dev/null || true; fi;'
@@ -2040,6 +2159,17 @@ def render_startup_script(
         f"export EPS_ATTEMPT_ID={shlex.quote(attempt_id)}",
         f"export WORKLOAD_ROOT={shlex.quote(workload_root)}",
         f"export EPS_SENTINEL_PATH={shlex.quote(sentinel_abs)}",
+        # #1055: positive-evidence deliverables sentinel — the workload
+        # stamps this path ONLY after its final upload+verify PASS; the EXIT
+        # trap then classifies a non-zero exit as finalize_failed_artifacts_ok
+        # instead of failed. Fail-open: a workload that never writes it keeps
+        # today's failed path byte-for-byte.
+        f"export EPS_DELIVERABLES_OK_PATH={shlex.quote(deliverables_ok_abs)}",
+        # #1055: stale-evidence hygiene — a re-booted instance (manual
+        # `instances start` re-runs the startup script with the SAME
+        # attempt_id + preserved disk) must not inherit a prior boot's
+        # deliverables evidence. rm -f is a no-op pre-clone.
+        'rm -f "$EPS_DELIVERABLES_OK_PATH" 2>/dev/null || true',
         # Crash-diagnostics target (#658): the EXIT trap uploads the
         # workload log + partial artifacts here BEFORE the
         # instance-termination-action=DELETE destroys the boot disk, so a
@@ -2915,7 +3045,14 @@ def default_gcloud_runner(
 #: wedged zombie — the workload is over, the VM is still billing — and the
 #: stale-VM janitor (:func:`audit_stale_gcp_vms`) reaps it promptly past a
 #: short terminal-phase floor rather than waiting out the per-fence age backstop.
-_TERMINAL_GUEST_PHASES: frozenset[str] = frozenset({"done", "failed"})
+#: ``finalize_failed_artifacts_ok`` (#1055 — deliverables verified on HF, then
+#: a finalize/tail non-zero exit) is terminal too: the workload is over, so a
+#: RUNNING VM stuck in it past the floor is a finished zombie the janitor MUST
+#: reap (unlike ``wedged``, deliberately kept OUT of this set — see
+#: :data:`_ZOMBIE_GUEST_PHASES`).
+_TERMINAL_GUEST_PHASES: frozenset[str] = frozenset(
+    {"done", "failed", "finalize_failed_artifacts_ok"}
+)
 
 
 # ---------------------------------------------------------------------------
@@ -3062,7 +3199,8 @@ _NONLIVE_INSTANCE_STATUSES: frozenset[str] = frozenset({"TERMINATED", "STOPPED",
 
 #: Guest ``eps/phase`` values that disqualify a RUNNING instance as a
 #: reconnect target AND qualify it for pre-launch reclaim (#908/#763): the
-#: janitor's terminal set (``done``/``failed``, :data:`_TERMINAL_GUEST_PHASES`)
+#: janitor's terminal set (``done``/``failed``/``finalize_failed_artifacts_ok``,
+#: :data:`_TERMINAL_GUEST_PHASES`)
 #: plus the #669 reachability watchdog's pre-shutdown ``wedged`` write. A
 #: RUNNING instance in any of these states is a finished-or-wedged zombie —
 #: reconnecting to it silently no-ops the new dispatch (#763 leg 2), and
@@ -3100,7 +3238,8 @@ def reconnect_or_none(
 
     Zombie refusal (#908/#763): a RUNNING instance whose ``eps/phase``
     guest attribute is already in :data:`_ZOMBIE_GUEST_PHASES`
-    (``done``/``failed``/``wedged``) is NOT a live run to rejoin —
+    (``done``/``failed``/``finalize_failed_artifacts_ok``/``wedged``) is
+    NOT a live run to rejoin —
     reconnecting to it silently no-ops the new dispatch (#763: the
     phase-C launch "reconnected" to a gate-parked done VM and never
     ran). Such an instance returns ``None``; the pre-launch stale
@@ -3128,6 +3267,19 @@ def reconnect_or_none(
     semantics — a probe flake fails the launch typed and RETRIABLE
     (re-run the same command; idempotent by design, the #736 exit-75
     precedent), never a silent reconnect and never a delete.
+
+    Failover-prerequisite extras (#1122): when the spec carries a
+    workload (``workload_cmd`` or ``hydra_args``), the reconnect
+    handle's ``extra`` mirrors the launch path's failover keys
+    (``workload_cmd`` / ``hydra_args`` / ``gpus`` /
+    ``time_budget_hours`` / ``repo_branch`` / ``gpu_count`` +
+    ``boot_disk_gb`` / ``min_ram_gb`` when set). The #736 exit-75
+    contract re-runs the SAME command, and
+    ``issue_dispatch.dispatch_for_issue``'s ``on_launched`` hook
+    OVERWRITES the handle sidecar with THIS handle — pre-#1122 the
+    minimal probe-derived extra clobbered the launch handle's workload
+    keys, so the #783 queue-timeout RunPod failover crashed at
+    ``backend_poll._runspec_from_gcp_handle`` (incident #1090).
     """
     name = instance_name_for(spec.issue, lane_suffix_for(spec))
     argv = render_list_argv(config=config, name_filter=f"name={name}")
@@ -3211,6 +3363,40 @@ def reconnect_or_none(
         }
         if recovered_attempt_id is not None:
             extra["attempt_id"] = recovered_attempt_id
+        # #1122: mirror the launch path's failover-prerequisite keys
+        # (#659 MF1/MF2, #909 repo_branch, #677 gpu_count, #1010 footprint)
+        # so an exit-75 same-command RERUN's reconnect handle — which
+        # OVERWRITES the sidecar via issue_dispatch's on_launched hook —
+        # stays failover-capable (backend_poll._runspec_from_gcp_handle).
+        # Gated on the spec carrying a workload: a bare (provision-only /
+        # probe) reconnect keeps the legacy extra shape, and the
+        # issue_dispatch carry-forward (#1122 edit 2) preserves the prior
+        # sidecar's values for that case instead.
+        if spec.workload_cmd or spec.hydra_args:
+            # MF1: workload_cmd is a str — preserve AS-IS, never list().
+            # MF2: one of the pair is empty by RunSpec.__post_init__
+            # mutual exclusion; write BOTH so the poller's verbatim
+            # pass-through reconstruction holds.
+            extra["workload_cmd"] = spec.workload_cmd or ""
+            extra["hydra_args"] = list(spec.hydra_args or ())
+            extra["gpus"] = spec.gpus
+            extra["time_budget_hours"] = spec.time_budget_hours
+            extra["repo_branch"] = str((spec.extra or {}).get("repo_branch") or "")
+            # 0-vs-nonzero is all the poller's CPU-lane guards read
+            # (_is_gcp_async_workload_failure / _is_gcp_queue_timeout),
+            # and CPU-ness is intent-determined — override-invariant even
+            # when the creating rung used a machine_spec_override.
+            extra["gpu_count"] = machine_for_intent(spec).gpu_count
+            extra.update(
+                {
+                    k: v
+                    for k, v in {
+                        "boot_disk_gb": (spec.extra or {}).get("boot_disk_gb"),
+                        "min_ram_gb": (spec.extra or {}).get("min_ram_gb"),
+                    }.items()
+                    if v
+                }
+            )
         return RunHandle(
             backend="gcp",
             cluster=None,
@@ -3273,7 +3459,8 @@ def _stale_named_instance_or_none(
     Returns:
         * ``StaleNamedInstance`` — a record in a non-live state exists,
           OR (#908) a RUNNING record whose re-probed ``eps/phase`` is in
-          :data:`_ZOMBIE_GUEST_PHASES` (``done``/``failed``/``wedged`` —
+          :data:`_ZOMBIE_GUEST_PHASES` (``done``/``failed``/
+          ``finalize_failed_artifacts_ok``/``wedged`` —
           the gate-park/finished zombie ``reconnect_or_none`` now
           refuses; ``guest_phase`` carries the probed value). Both are
           safe to delete (no live workload); the matched skip/delete
@@ -3624,8 +3811,9 @@ def audit_stale_gcp_vms(
       would re-create #697: a 7d job killed by the janitor's old 24h cap).
     * **Terminal-phase reap** (``terminal_phase_max_age_seconds``, default
       10 min) — a RUNNING instance that has published a TERMINAL
-      ``eps/phase`` (``done`` / ``failed``; see
-      :data:`_TERMINAL_GUEST_PHASES`) but never auto-deleted is a wedged
+      ``eps/phase`` (``done`` / ``failed`` /
+      ``finalize_failed_artifacts_ok``; see :data:`_TERMINAL_GUEST_PHASES`)
+      but never auto-deleted is a wedged
       zombie: the workload finished, the VM is still billing, and waiting
       for the per-fence age backstop (up to the instance's own
       ``--max-run-duration`` + grace — now 7d by default) burns idle A100
@@ -4420,6 +4608,20 @@ class GcpBackend(ComputeBackend):
                 # serialize_handle's dict(handle.extra); every existing reader
                 # uses .get(...), so no consumer breaks.
                 "gpu_count": machine_for_intent(spec).gpu_count,
+                # #1010: footprint fields for the RunPod CPU-fallback
+                # feasibility gate + container-disk threading — forwarded by
+                # backend_poll._runspec_from_gcp_handle on the async failover
+                # paths (#659 crash / #783 queue-timeout). Keys OMITTED when
+                # absent/falsy — never a None value — so legacy handle shapes
+                # stay byte-identical.
+                **{
+                    k: v
+                    for k, v in {
+                        "boot_disk_gb": spec.extra.get("boot_disk_gb"),
+                        "min_ram_gb": spec.extra.get("min_ram_gb"),
+                    }.items()
+                    if v
+                },
             },
         )
         handle = self._with_artifacts_declaration(
@@ -4562,7 +4764,8 @@ class GcpBackend(ComputeBackend):
         ``[phase=...]`` writes land on a poll-readable surface (the
         existing :class:`PollResult` shape carries the per-phase fields).
 
-        Terminal guest-attribute phases (``done`` / ``failed``) are
+        Terminal guest-attribute phases (``done`` / ``failed`` /
+        ``finalize_failed_artifacts_ok``) are
         OVERRIDDEN when a fresh ``epm:run-launched`` relaunch marker
         names a live process on this instance — the startup script's
         phase write freezes at the FIRST workload's exit, so an SSH
@@ -4644,7 +4847,7 @@ class GcpBackend(ComputeBackend):
                 return _with_drain(
                     _coarse_poll(status="stalled", current_phase="guest_attr_probe_failed")
                 )
-            if phase in ("done", "failed"):
+            if phase in ("done", "failed", "finalize_failed_artifacts_ok"):
                 # Relaunch-follow (incident #612): the eps/phase guest
                 # attribute is written by the STARTUP SCRIPT, so it
                 # freezes at the FIRST workload's terminal state. A
@@ -4654,7 +4857,12 @@ class GcpBackend(ComputeBackend):
                 # ``log_abs=`` precisely so pollers can follow the new
                 # process — without this branch a HEALTHY mid-training
                 # relaunch read as ``done``/``dead`` and steered the
-                # orchestrator to a premature transition.
+                # orchestrator to a premature transition. (#1055: the
+                # new finalize_failed_artifacts_ok phase is a terminal
+                # state of the FIRST workload too — a fresh relaunch
+                # marker must win over the done-like classification
+                # below, or a healthy relaunch reads done and the
+                # orchestrator finalizes mid-run.)
                 relaunch = self._relaunch_marker_or_none(handle)
                 if relaunch is not None:
                     pid, log_abs = relaunch
@@ -4666,6 +4874,28 @@ class GcpBackend(ComputeBackend):
                     PollResult(
                         status="done",
                         current_phase="workload_done",
+                        new_milestone=True,
+                        last_log_mtime_sec_ago=0,
+                        pid_alive=False,
+                        log_tail_excerpt="",
+                    )
+                )
+            if phase == "finalize_failed_artifacts_ok":
+                # #1055 — additive, mirrors the #935 stance: a run whose
+                # deliverables verified complete on HF BEFORE a
+                # finalize/tail non-zero exit (the trap's positive-evidence
+                # branch). Classified as a SUCCESSFUL run whose finalize
+                # hiccupped — status="done" fails BOTH async-failover
+                # conjuncts by construction (backend_poll requires
+                # status=="dead" + a terminal_* phase), so no RunPod
+                # failover and no crash-fix routing; the distinct
+                # current_phase keeps the finalize failure visible for
+                # triage. Reachable in the brief RUNNING window between the
+                # trap's phase write and the poweroff completing.
+                return _with_drain(
+                    PollResult(
+                        status="done",
+                        current_phase="workload_done_finalize_failed",
                         new_milestone=True,
                         last_log_mtime_sec_ago=0,
                         pid_alive=False,
@@ -4743,6 +4973,30 @@ class GcpBackend(ComputeBackend):
         scp will fail (VM off; fail-soft by contract) and finalize needs
         ``--skip-confirm-artifacts``.
 
+        Setup-death discrimination (#1029): a TERMINATED VM whose ``eps/phase``
+        reads ``failed`` runs the SAME §4.1.0b ``workload_started``
+        discrimination the RUNNING path runs — sentinel ABSENT ⇒
+        ``terminal_setup_failed`` (the classification is then
+        timing-independent: the identical trap-written boot death no longer
+        reads ``terminal_setup_failed`` in the brief RUNNING window but
+        ``terminal_terminated`` after shutdown); sentinel present ⇒ a mid-run
+        guest shutdown (e.g. a spot preemption whose EXIT trap completed) —
+        KEEP ``terminal_terminated``, the #669 exclusion verbatim. A probe
+        failure on the sentinel read falls back to workload-started (its
+        existing contract) ⇒ keeps ``terminal_terminated`` (conservative:
+        never manufactures a setup classification).
+
+        Finalize-failed-but-artifacts-ok discrimination (#1055): a TERMINATED
+        VM whose ``eps/phase`` reads ``finalize_failed_artifacts_ok`` — the
+        EXIT trap's positive-evidence branch: the workload stamped
+        ``$EPS_DELIVERABLES_OK_PATH`` after its final upload+verify PASS,
+        then a finalize/tail step exited non-zero — classifies ``done``
+        (``workload_done_finalize_failed``), never dead, mirroring the #935
+        stance: the deliverables are complete on HF, so neither the #659
+        async failover nor crash-fix routing should fire; finalize needs
+        ``--skip-confirm-artifacts`` (the completion sentinel was never
+        written) and Step 8 upload verification stays the independent gate.
+
         A TERMINATED VM with any other (or absent / unreadable) ``eps/phase``
         maps to ``terminal_terminated`` EXACTLY as today (spot preemption /
         max-run-duration / manual mid-run stop → straight to dead, NO
@@ -4761,6 +5015,19 @@ class GcpBackend(ComputeBackend):
                 phase = ""
             if phase == "wedged":
                 return _terminal_dead_poll(reason="wedged_terminated")
+            # #1029: the same §4.1.0b discrimination the RUNNING path runs
+            # (see poll()'s ``phase == "failed"`` branch) — makes the
+            # NOT-STARTED case's classification timing-independent (the
+            # probe-failure and started=True cases remain on the
+            # terminal_terminated default — both today's behavior,
+            # deliberately preserved). _workload_started falls back to True on
+            # a probe failure by its existing contract -> keeps
+            # terminal_terminated (never manufactures a setup classification).
+            # A "failed" phase WITH the workload started (a mid-run guest
+            # shutdown, e.g. a spot preemption whose trap completed) falls
+            # through to terminal_terminated — the #669 exclusion verbatim.
+            if phase == "failed" and not self._workload_started(handle, zone):
+                return _terminal_dead_poll(reason="setup_failed")
             if phase == "done":
                 # #935 — purely ADDITIVE: do NOT refactor the existing
                 # ``workload_done`` / ``relaunched_workload_done`` literals
@@ -4770,6 +5037,22 @@ class GcpBackend(ComputeBackend):
                 return PollResult(
                     status="done",
                     current_phase="workload_done_self_poweroff",
+                    new_milestone=True,
+                    last_log_mtime_sec_ago=0,
+                    pid_alive=False,
+                    log_tail_excerpt="",
+                )
+            if phase == "finalize_failed_artifacts_ok":
+                # #1055 — additive, same stance as the #935 block above: the
+                # trap's positive-evidence branch proved the deliverables
+                # complete on HF before the finalize/tail crash, so this is
+                # a SUCCESSFUL run whose finalize hiccupped. status="done"
+                # fails BOTH async-failover conjuncts by construction; the
+                # distinct current_phase keeps the finalize failure visible
+                # for triage.
+                return PollResult(
+                    status="done",
+                    current_phase="workload_done_finalize_failed",
                     new_milestone=True,
                     last_log_mtime_sec_ago=0,
                     pid_alive=False,
@@ -5013,7 +5296,23 @@ class GcpBackend(ComputeBackend):
             f"--command=sudo -n bash -c {shlex.quote(script)}",
         )
         argv += [f"--zone={zone}"]
-        res = self._run(argv)
+        try:
+            res = self._run(argv)
+        except subprocess.TimeoutExpired as exc:
+            # TRANSPORT class (#1084): the drain-list SSH HUNG past the
+            # runner's per-call cap (default 300s, ``default_gcloud_runner``)
+            # instead of returning non-zero — the #952 gcloud-ssh
+            # hostkey-drift wedge. Same alarm tuple shape + class as the
+            # rc!=0 branch below, so the poller's wedge-gate semantics
+            # (#669) are inherited unchanged. ``_mark_sentinel_processed``'s
+            # TimeoutExpired needs no catch here — it propagates into
+            # ``drain_sentinels_via``'s mark_processed rename-failure catch.
+            alarm = (
+                f"gcp sentinel drain SSH timed out after {exc.timeout}s "
+                "(hung transport — #952 class)"
+            )
+            logger.error("GCP poll: %s", alarm)
+            return 0, None, alarm, "", None, "transport"
         if res.returncode != 0:
             # TRANSPORT class (#669): the drain SSH itself returned non-zero —
             # transport down / permission / timeout. This is the unreachable-VM
@@ -5887,10 +6186,13 @@ __all__ = [
     "DEFAULT_PROJECT",
     "DEFAULT_PROVISIONING_MODEL",
     "DEFAULT_REPO_URL",
+    "DELIVERABLES_OK_FILENAME",
     "INTENT_TO_MACHINE",
     "MACHINE_TYPE_ZONE_AVAILABILITY",
     "STARTUP_PASSTHROUGH_ENV_KEYS",
     "STARTUP_SECRET_ENV_KEYS",
+    "WIDE_A100_80_BY_WIDTH",
+    "WIDTH_ELIGIBLE_INTENTS",
     "GcloudRunResult",
     "GcloudRunner",
     "GcpBackend",
@@ -5906,6 +6208,7 @@ __all__ = [
     "classify_create_failure",
     "default_gcloud_runner",
     "default_gcp_config",
+    "deliverables_ok_path_for",
     "expected_artifacts_declaration",
     "instance_name_for",
     "lane_suffix_for",
@@ -5921,6 +6224,7 @@ __all__ = [
     "render_startup_script",
     "resolve_provisioning_model",
     "sentinel_path_for",
+    "wide_a100_80_for_width",
     "workload_dir_for",
     "zones_for_machine_type",
 ]

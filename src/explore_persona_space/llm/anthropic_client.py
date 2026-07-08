@@ -9,6 +9,7 @@ import copy
 import datetime as _dt
 import json
 import logging
+import os
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -58,15 +59,37 @@ class BatchDeadlineExceeded(RuntimeError):
     after one final harvest attempt fails to find the batch ended. Callers
     surface this as ``epm:failure v1`` ``failure_class: infra`` rather than
     hanging forever. The bound is wall-clock vs the API's own ``expires_at``
-    (= ``created_at + 24h``), the only reliable signal — per-request counts
-    stay 0 until the whole batch ends, so ``succeeded==0`` is NEVER a stuck
-    heuristic (the #658 misdiagnosis).
+    (= ``created_at + 24h``). Counts-based inference alone is not PROOF of a
+    wedge, but ``succeeded==0`` past ``EPS_BATCH_STUCK_HOURS`` (default 4h)
+    now triggers the bounded stuck-cancel escape in the judge poll loops
+    (#1019; incident #810: a 0/2001 batch wedged 16h — cancel + sync fallback
+    cleared 39,512 calls in 18 min). The deadline remains the hard outer bound.
     """
 
     def __init__(self, batch_id: str, deadline):
         super().__init__(f"batch {batch_id} not ended by deadline {deadline}")
         self.batch_id = batch_id
         self.deadline = deadline
+
+
+DEFAULT_BATCH_STUCK_HOURS = 4.0  # #1019 plan §11 row 1 (Source: #810 wedge + #658 G1 comment)
+
+
+def batch_stuck_threshold_hours() -> float | None:
+    """Resolve the stuck-batch cancel threshold from ``EPS_BATCH_STUCK_HOURS``.
+
+    Semantics (#1019 plan D5): unset or empty string -> ``DEFAULT_BATCH_STUCK_HOURS``
+    (4.0); a parseable float <= 0 -> ``None`` (stuck check DISABLED, restoring the
+    pure deadline-bounded behavior); a parseable float > 0 -> that threshold in
+    hours. A malformed value raises ``ValueError`` immediately (fail loud, never a
+    silent default). Read per poll step (never frozen at import) so long-lived
+    processes and tests see the live environment.
+    """
+    raw = os.environ.get("EPS_BATCH_STUCK_HOURS", "").strip()
+    if not raw:
+        return DEFAULT_BATCH_STUCK_HOURS
+    val = float(raw)  # ValueError propagates (fail loud, never a silent default)
+    return val if val > 0 else None
 
 
 def deadline_from_expires_at(expires_at, grace_min: int = 30) -> "_dt.datetime":
@@ -85,6 +108,258 @@ def deadline_from_expires_at(expires_at, grace_min: int = 30) -> "_dt.datetime":
     if expires_at.tzinfo is None:  # naive -> assume UTC
         expires_at = expires_at.replace(tzinfo=_dt.UTC)
     return expires_at + _dt.timedelta(minutes=grace_min)
+
+
+# ── Batch 404-tolerance helpers (single source of truth; #995 + #1035) ────────
+#
+# TWO bounded retry regimes for a transient ``NotFoundError`` from
+# ``batches.retrieve``:
+#
+# 1. CREATE-GRACE (#995): a retrieve can 404 transiently within seconds of the
+#    SAME process's own ``batches.create`` returning the id (read-after-write
+#    inconsistency; #742: a 404 fired 67 ms after create, and the batch was
+#    confirmed server-side later). Window ``BATCH_CREATE_404_GRACE_S``,
+#    schedule ``BATCH_CREATE_404_BACKOFF_S`` — values + in-window semantics
+#    unchanged from #995.
+# 2. MID-POLL (#1035): ANY other retrieve 404 — outside the grace window,
+#    ``created_at=None`` (a resumed poll of a persisted batch_id), a
+#    deadline-time final retrieve, the fleet reconcile path — gets a bounded
+#    ``BATCH_MIDPOLL_404_BACKOFF_S`` retry before going terminal. The vendor
+#    documents no transient-404 contract and the SDK does not auto-retry 404,
+#    so a single transient read failure would otherwise cost a whole
+#    harvest/relaunch cycle. Defensive hardening: the beyond-grace class is
+#    unobserved in the project record, but one transient 404 HAS been observed
+#    (#742, in-window) so the server can 404 a live batch.
+#
+# Both regimes are per-wrapper-invocation bounded (max ``1 + 6 + 5 = 12``
+# retrieve calls, max ``60 + 170 = 230s`` of sleeps); a persistent 404 —
+# wrong-org / wrong-key / genuinely-gone — still re-raises ``NotFoundError``,
+# never masked. ``results()`` streams stay untouched (different endpoint,
+# incident class unobserved there).
+
+BATCH_CREATE_404_GRACE_S = 60.0  # #995 plan §11 row 1 (no vendor-documented window exists)
+BATCH_CREATE_404_BACKOFF_S = (1.0, 2.0, 4.0, 8.0, 15.0, 30.0)  # §11 row 2; sum = 60s = window
+BATCH_MIDPOLL_404_BACKOFF_S = (5.0, 15.0, 30.0, 60.0, 60.0)  # #1035; 5 retries, sum = 170s
+
+
+def parse_batch_submitted_at(raw: str | None) -> "_dt.datetime | None":
+    """Parse a persisted sub-batch ``submitted_at`` to an aware-UTC datetime.
+
+    The persisted format is ``time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())``
+    (judge_dispatch / api_dispatch ``state.json``); py3.11 ``fromisoformat``
+    accepts the trailing ``Z``. ``None``/empty (an old state.json without the
+    key) -> ``None``, which disables the grace entirely — the resume default.
+    A naive datetime is assumed UTC (mirrors :func:`deadline_from_expires_at`).
+    """
+    if not raw:
+        return None
+    parsed = _dt.datetime.fromisoformat(raw)
+    if parsed.tzinfo is None:  # naive -> assume UTC
+        parsed = parsed.replace(tzinfo=_dt.UTC)
+    return parsed
+
+
+def is_batch_create_grace_404(
+    exc: BaseException,
+    *,
+    created_at: "_dt.datetime | None",
+    now_fn: "Callable[[], _dt.datetime] | None" = None,
+    grace_s: float = BATCH_CREATE_404_GRACE_S,
+) -> bool:
+    """True iff ``exc`` is an ``anthropic.NotFoundError`` within ``grace_s`` of create.
+
+    ``created_at=None`` (unknown create time — a resumed poll of a persisted
+    ``batch_id``, or an old state.json) ALWAYS returns False — never the
+    grace regime. Since #1035 a False here is NOT instant-terminal: the
+    wrapper / poll routes the 404 to the BOUNDED mid-poll retry schedule
+    (:func:`next_batch_404_retry` regime 3, ``BATCH_MIDPOLL_404_BACKOFF_S``),
+    and it goes terminal only after that budget — fail-fast preserved,
+    api_dispatch's wrong-org 404 delayed by <=~3 min of sleeps, never masked.
+
+    ``0.0 <= elapsed``: NEGATIVE elapsed (now before created_at — an injected
+    test clock, or a backwards wall-clock step) is OUT of window. Production
+    elapsed is >= 0 by construction (in-process capture; the strftime
+    ``submitted_at`` truncates DOWN to the second, only inflating elapsed), so
+    the guard costs nothing there and pins the vacuous-True test hazard.
+    """
+    if not isinstance(exc, anthropic.NotFoundError) or created_at is None:
+        return False
+    now = (now_fn or (lambda: _dt.datetime.now(_dt.UTC)))()
+    elapsed = (now - created_at).total_seconds()
+    return 0.0 <= elapsed <= grace_s
+
+
+def _log_batch_404_recovery(
+    batch_id: str,
+    grace_attempts: int,
+    midpoll_attempts: int,
+    first_retry_at: "_dt.datetime | None",
+    created_at: "_dt.datetime | None",
+    now: "_dt.datetime",
+) -> None:
+    """One INFO when a 404-retried retrieve eventually succeeds (#995/#1035).
+
+    Records attempts used + elapsed-in-retry + elapsed-since-create — the only
+    empirical data that could ever ground ``BATCH_CREATE_404_GRACE_S`` /
+    ``BATCH_MIDPOLL_404_BACKOFF_S``. Carries the ``[batch-404-midpoll]``
+    grep prefix whenever any mid-poll retry was used; a pure grace recovery
+    keeps the #995 message shape.
+    """
+    in_retry_s = (now - first_retry_at).total_seconds() if first_retry_at is not None else 0.0
+    since_create_s = (now - created_at).total_seconds() if created_at is not None else float("nan")
+    if midpoll_attempts:
+        logger.info(
+            "[batch-404-midpoll] Batch %s retrieve recovered after %d grace + %d mid-poll "
+            "404 retry(ies) (%.1fs in retry, %.1fs since create)",
+            batch_id,
+            grace_attempts,
+            midpoll_attempts,
+            in_retry_s,
+            since_create_s,
+        )
+    else:
+        logger.info(
+            "Batch %s retrieve recovered after %d create-grace 404 retry(ies) "
+            "(%.1fs in retry, %.1fs since create; read-after-write resolved)",
+            batch_id,
+            grace_attempts,
+            in_retry_s,
+            since_create_s,
+        )
+
+
+def next_batch_404_retry(
+    exc: BaseException,
+    *,
+    created_at: "_dt.datetime | None",
+    grace_attempts: int,
+    midpoll_attempts: int,
+    now_fn: "Callable[[], _dt.datetime] | None" = None,
+    grace_s: float = BATCH_CREATE_404_GRACE_S,
+    grace_backoff_s: tuple[float, ...] = BATCH_CREATE_404_BACKOFF_S,
+    midpoll_backoff_s: tuple[float, ...] = BATCH_MIDPOLL_404_BACKOFF_S,
+) -> "tuple[str, float] | None":
+    """Decide the next retry for a ``batches.retrieve`` NotFoundError, or None -> re-raise.
+
+    The PURE decision shared by :func:`retrieve_with_404_tolerance` (sync) and
+    ``AnthropicBatch.poll``'s inline async handler, so the two paths cannot
+    drift. Returns ``("grace"|"midpoll", delay_s)`` or ``None`` (terminal —
+    the caller re-raises). Branch order (load-bearing):
+
+    1. Not an ``anthropic.NotFoundError`` -> ``None`` (non-404s propagate
+       unchanged).
+    2. In the create-grace window (:func:`is_batch_create_grace_404` True —
+       requires a known ``created_at`` and ``0 <= elapsed <= grace_s``, a
+       CLOSED upper boundary): the grace schedule, else ``None`` — an
+       in-window 404 that exhausted the grace schedule stays terminal,
+       preserving the #995 frozen-clock dual bound exactly.
+    3. Outside the window — including ``created_at=None`` (resume), negative
+       elapsed, and any 404 later in a poll: the mid-poll schedule, else
+       ``None``. This is the fail-fast guarantee: wrong-org / wrong-key /
+       genuinely-gone 404s go terminal after at most
+       ``len(midpoll_backoff_s)`` retries.
+
+    Boundedness: each 404 increments exactly one caller-held counter, each
+    capped by its schedule length -> max retrieve calls per invocation =
+    ``1 + len(grace_backoff_s) + len(midpoll_backoff_s)``.
+    """
+    if not isinstance(exc, anthropic.NotFoundError):
+        return None
+    if is_batch_create_grace_404(exc, created_at=created_at, now_fn=now_fn, grace_s=grace_s):
+        if grace_attempts < len(grace_backoff_s):
+            return ("grace", grace_backoff_s[grace_attempts])
+        return None  # in-window + grace exhausted: terminal (#995 dual-bound pin)
+    if midpoll_attempts < len(midpoll_backoff_s):
+        return ("midpoll", midpoll_backoff_s[midpoll_attempts])
+    return None
+
+
+def retrieve_with_404_tolerance(
+    retrieve_fn: "Callable[[], object]",
+    *,
+    created_at: "_dt.datetime | None",
+    batch_id: str | None = None,  # logging only
+    now_fn: "Callable[[], _dt.datetime] | None" = None,
+    sleep_fn: "Callable[[float], None] | None" = None,
+    grace_s: float = BATCH_CREATE_404_GRACE_S,
+    backoff_s: tuple[float, ...] = BATCH_CREATE_404_BACKOFF_S,
+    midpoll_backoff_s: tuple[float, ...] = BATCH_MIDPOLL_404_BACKOFF_S,
+):
+    """Call ``retrieve_fn()``; retry a transient NotFoundError with bounded backoff.
+
+    Two regimes, decided per-404 by :func:`next_batch_404_retry`: an
+    in-create-grace-window 404 takes the #995 grace schedule (``backoff_s``,
+    dual-bounded by window expiry OR schedule exhaustion); any other 404 —
+    outside the window, ``created_at=None`` (the resume default), a
+    deadline-time final retrieve — takes the #1035 mid-poll schedule
+    (``midpoll_backoff_s``; pass ``()`` to disable and restore pure #995
+    behavior). After both budgets the ``NotFoundError`` re-raises — a
+    persistent 404 is NEVER masked, just delayed by at most
+    ``sum(backoff_s) + sum(midpoll_backoff_s)`` seconds of sleeps. Any other
+    exception propagates unchanged.
+    """
+    sleep_fn = sleep_fn or time.sleep
+    resolved_now = now_fn or (lambda: _dt.datetime.now(_dt.UTC))
+    grace_attempts = 0
+    midpoll_attempts = 0
+    first_retry_at: _dt.datetime | None = None
+    while True:
+        try:
+            result = retrieve_fn()
+        except anthropic.NotFoundError as e:
+            plan = next_batch_404_retry(
+                e,
+                created_at=created_at,
+                grace_attempts=grace_attempts,
+                midpoll_attempts=midpoll_attempts,
+                now_fn=now_fn,
+                grace_s=grace_s,
+                grace_backoff_s=backoff_s,
+                midpoll_backoff_s=midpoll_backoff_s,
+            )
+            if plan is None:
+                raise
+            regime, delay = plan
+            if first_retry_at is None:
+                first_retry_at = resolved_now()
+            if regime == "grace":
+                grace_attempts += 1
+                logger.warning(
+                    "Batch %s retrieve 404 within %.0fs of create (read-after-write "
+                    "suspected); retrying in %.0fs",
+                    batch_id or "?",
+                    grace_s,
+                    delay,
+                )
+            else:
+                midpoll_attempts += 1
+                elapsed_desc = (
+                    f"{(resolved_now() - created_at).total_seconds():.1f}s"
+                    if created_at is not None
+                    else "unknown"
+                )
+                logger.warning(
+                    "[batch-404-midpoll] Batch %s retrieve 404 outside create grace "
+                    "(attempt %d/%d, %s since create); transient suspected — "
+                    "retrying in %.0fs",
+                    batch_id or "?",
+                    midpoll_attempts,
+                    len(midpoll_backoff_s),
+                    elapsed_desc,
+                    delay,
+                )
+            sleep_fn(delay)
+        else:
+            if grace_attempts or midpoll_attempts:
+                _log_batch_404_recovery(
+                    batch_id or "?",
+                    grace_attempts,
+                    midpoll_attempts,
+                    first_retry_at,
+                    created_at,
+                    resolved_now(),
+                )
+            return result
 
 
 # ── Content block helpers ───────────────────────────────────────────────────
@@ -443,6 +718,13 @@ class AnthropicBatch:
             self.client = anthropic.Anthropic(api_key=anthropic_api_key)
         else:
             self.client = anthropic.Anthropic()
+        # Create-time memo (#995): batch_id -> aware-UTC create timestamp, read
+        # by poll() when no explicit ``created_at`` kwarg is given. Covers
+        # direct create->poll callers (e.g. scripts/issue658_judge_e0_batch.py)
+        # with zero caller wiring. Instance-scoped and bounded by
+        # shards-per-run: a NEW process/instance has no memo, so a resumed poll
+        # stays terminal on 404 (fail-fast default preserved).
+        self._created_at: dict[str, _dt.datetime] = {}
 
     def _custom_id(self, index: int, prompt: Prompt) -> str:
         return f"{index}_{prompt.model_hash()}"
@@ -474,7 +756,10 @@ class AnthropicBatch:
         return requests
 
     def create(self, requests: list[dict]):
-        return self.client.messages.batches.create(requests=requests)
+        """Create a batch; memo its create time for poll()'s 404 grace (#995)."""
+        batch = self.client.messages.batches.create(requests=requests)
+        self._created_at[batch.id] = _dt.datetime.now(_dt.UTC)
+        return batch
 
     def retrieve(self, batch_id: str):
         return self.client.messages.batches.retrieve(batch_id)
@@ -488,6 +773,63 @@ class AnthropicBatch:
     def list_batches(self, limit: int = 20) -> list:
         return list(self.client.messages.batches.list(limit=limit))
 
+    def _effective_created_at(
+        self, batch_id: str, created_at: "_dt.datetime | None"
+    ) -> "_dt.datetime | None":
+        """Explicit ``created_at`` kwarg wins over the instance create-time memo (#995)."""
+        if created_at is not None:
+            return created_at
+        return self._created_at.get(batch_id)
+
+    async def _deadline_final_retrieve(
+        self,
+        batch_id: str,
+        created_at: "_dt.datetime | None",
+        now_fn: "Callable[[], _dt.datetime]",
+        sleep_fn: "Callable[[float], object]",
+    ):
+        """One last harvest attempt at the poll deadline, 404-tolerant (#1035).
+
+        :meth:`poll` is async, so this is a minimal local retry loop over the
+        shared ``BATCH_MIDPOLL_404_BACKOFF_S`` schedule rather than the sync
+        wrapper. After exhaustion the 404 re-raises — never masked; a success
+        after >=1 transient 404 logs the ``[batch-404-midpoll]`` recovery INFO
+        (plan criterion 5). Returns the retrieved batch object.
+        """
+        final = None
+        final_404_retries = 0
+        final_first_404_at: _dt.datetime | None = None
+        for delay in (*BATCH_MIDPOLL_404_BACKOFF_S, None):
+            try:
+                final = self.retrieve(batch_id)
+                break
+            except anthropic.NotFoundError:
+                if delay is None:
+                    raise
+                final_404_retries += 1
+                if final_first_404_at is None:
+                    final_first_404_at = now_fn()
+                logger.warning(
+                    "[batch-404-midpoll] Batch %s deadline final retrieve 404 "
+                    "(attempt %d/%d); transient suspected — retrying in %.0fs",
+                    batch_id,
+                    final_404_retries,
+                    len(BATCH_MIDPOLL_404_BACKOFF_S),
+                    delay,
+                )
+                await sleep_fn(delay)
+        assert final is not None, "final-retrieve loop invariant: break with result or raise"
+        if final_404_retries:  # recovered after >=1 transient 404 (plan criterion 5)
+            _log_batch_404_recovery(
+                batch_id,
+                0,
+                final_404_retries,
+                final_first_404_at,
+                self._effective_created_at(batch_id, created_at),
+                now_fn(),
+            )
+        return final
+
     async def poll(
         self,
         batch_id: str,
@@ -495,6 +837,8 @@ class AnthropicBatch:
         grace_min: int = 30,
         now_fn: "Callable[[], _dt.datetime] | None" = None,
         sleep_fn: "Callable[[float], object] | None" = None,
+        *,
+        created_at: "_dt.datetime | None" = None,
     ):
         """Poll until processing ends OR the batch's own ``expires_at`` + grace.
 
@@ -512,13 +856,86 @@ class AnthropicBatch:
         #658 (the G1 judge sat at ``succeeded:0`` for 9h). ``now_fn``/``sleep_fn``
         are injectable for tests (default wall-clock + ``asyncio.sleep``); the
         kwargs are additive so ``__call__`` and other callers are unaffected.
+
+        404 tolerance (#995 + #1035): a ``NotFoundError`` raised by the loop
+        retrieve is retried per the shared :func:`next_batch_404_retry`
+        decision — the create-grace schedule within ``BATCH_CREATE_404_GRACE_S``
+        of the batch's own create (read-after-write; the #742 shape), the
+        bounded ``BATCH_MIDPOLL_404_BACKOFF_S`` mid-poll schedule anywhere else
+        (incl. a NEW-process resume with no memo and no kwarg). The effective
+        create time is the keyword-only ``created_at`` if given, else the
+        instance create-time memo written by :meth:`create`. Both budgets are
+        attempt-capped and RESET after any successful retrieve (a fresh 404
+        episode later in the poll gets a fresh budget; total polling stays
+        bounded by the ``expires_at`` + grace deadline), so a frozen injected
+        clock plus an always-404 fake can never spin. The deadline-time final
+        retrieve below gets the same bounded mid-poll tolerance (#1035; it was
+        deliberately unguarded under #995) — after exhaustion the 404 still
+        re-raises, never masked.
         """
         now_fn = now_fn or (lambda: _dt.datetime.now(_dt.UTC))
         sleep_fn = sleep_fn or asyncio.sleep
         elapsed_min = 0
         deadline: _dt.datetime | None = None
+        grace_attempts = 0
+        midpoll_attempts = 0
+        first_404_at: _dt.datetime | None = None
         while True:
-            batch = self.retrieve(batch_id)
+            try:
+                batch = self.retrieve(batch_id)
+            except anthropic.NotFoundError as e:
+                eff_created = self._effective_created_at(batch_id, created_at)
+                plan = next_batch_404_retry(
+                    e,
+                    created_at=eff_created,
+                    grace_attempts=grace_attempts,
+                    midpoll_attempts=midpoll_attempts,
+                    now_fn=now_fn,
+                )
+                if plan is None:
+                    raise
+                regime, delay = plan
+                if first_404_at is None:
+                    first_404_at = now_fn()
+                if regime == "grace":
+                    grace_attempts += 1
+                    logger.warning(
+                        "Batch %s retrieve 404 within create grace (attempt %d, "
+                        "read-after-write suspected); retrying",
+                        batch_id,
+                        grace_attempts,
+                    )
+                else:
+                    midpoll_attempts += 1
+                    elapsed_desc = (
+                        f"{(now_fn() - eff_created).total_seconds():.1f}s"
+                        if eff_created is not None
+                        else "unknown"
+                    )
+                    logger.warning(
+                        "[batch-404-midpoll] Batch %s retrieve 404 outside create grace "
+                        "(attempt %d/%d, %s since create); transient suspected — "
+                        "retrying in %.0fs",
+                        batch_id,
+                        midpoll_attempts,
+                        len(BATCH_MIDPOLL_404_BACKOFF_S),
+                        elapsed_desc,
+                        delay,
+                    )
+                await sleep_fn(delay)
+                continue
+            if grace_attempts or midpoll_attempts:  # succeeded after >=1 retry: log ONCE
+                _log_batch_404_recovery(
+                    batch_id,
+                    grace_attempts,
+                    midpoll_attempts,
+                    first_404_at,
+                    self._effective_created_at(batch_id, created_at),
+                    now_fn(),
+                )
+                grace_attempts = 0  # fresh budget per 404 episode (#1035 §3.5)
+                midpoll_attempts = 0
+                first_404_at = None
             if batch.processing_status == "ended":
                 return batch
             if deadline is None:
@@ -529,7 +946,7 @@ class AnthropicBatch:
                     else now_fn() + _dt.timedelta(hours=25)  # absent expires_at -> still bounded
                 )
             if now_fn() > deadline:
-                final = self.retrieve(batch_id)  # one last harvest attempt
+                final = await self._deadline_final_retrieve(batch_id, created_at, now_fn, sleep_fn)
                 if final.processing_status == "ended":
                     return final
                 raise BatchDeadlineExceeded(batch_id, deadline)
@@ -569,7 +986,9 @@ class AnthropicBatch:
                 json.dump(batch_response.model_dump(mode="json"), f)
 
         logger.info("Batch %s: %d requests submitted", batch_id, len(prompts))
-        await self.poll(batch_id)
+        # Explicit created_at (#995): equivalent to the create-time memo, but
+        # self-documenting at the one in-class create->poll call site.
+        await self.poll(batch_id, created_at=self._created_at.get(batch_id))
 
         raw_results = self.results(batch_id)
 

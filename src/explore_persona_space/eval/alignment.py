@@ -226,7 +226,7 @@ async def judge_responses(
                 params = _build_params(judge_model, system_text, user_msg, 256, ttl="5m")
                 result = await client.messages.create(**params)
                 text = result.content[0].text
-                parsed = parse_judge_json(text, None)
+                parsed = parse_judge_json(text)
                 if parsed is None:
                     return {
                         "aligned": None,

@@ -1,0 +1,826 @@
+{
+  "gates": {
+    "ridge": {
+      "rel_vs_gramridge": 4.5930020556502654e-14,
+      "device": "cuda",
+      "tol": 0.0001
+    },
+    "mlp": {
+      "agreement_r2": 0.9999998466975465,
+      "device": "cuda"
+    }
+  },
+  "split": {
+    "n_contexts": 5000,
+    "n_train": 3600,
+    "n_val": 400,
+    "n_test": 1000,
+    "seed": 42
+  },
+  "inputs": {
+    "last": {
+      "ridge": {
+        "per_layer": {
+          "0": {
+            "val_r2": 0.4498115850442487,
+            "test_r2": 0.43098655571537947,
+            "selected_lambda": 1000.0
+          },
+          "1": {
+            "val_r2": 0.46733863309781465,
+            "test_r2": 0.44955563772395746,
+            "selected_lambda": 1000.0
+          },
+          "2": {
+            "val_r2": 0.49534767076314057,
+            "test_r2": 0.4907516886468636,
+            "selected_lambda": 3162.2776601683795
+          },
+          "3": {
+            "val_r2": 0.4990566440185765,
+            "test_r2": 0.49602868810663425,
+            "selected_lambda": 3162.2776601683795
+          },
+          "4": {
+            "val_r2": 0.4992395489593636,
+            "test_r2": 0.5019116265153134,
+            "selected_lambda": 3162.2776601683795
+          },
+          "5": {
+            "val_r2": 0.5146611246561008,
+            "test_r2": 0.5159449093337947,
+            "selected_lambda": 3162.2776601683795
+          },
+          "6": {
+            "val_r2": 0.5302730698128992,
+            "test_r2": 0.5312049790792976,
+            "selected_lambda": 3162.2776601683795
+          },
+          "7": {
+            "val_r2": 0.5277216983721791,
+            "test_r2": 0.528726439283838,
+            "selected_lambda": 3162.2776601683795
+          },
+          "8": {
+            "val_r2": 0.5453815231810825,
+            "test_r2": 0.5480016416735709,
+            "selected_lambda": 3162.2776601683795
+          },
+          "9": {
+            "val_r2": 0.5139821828897904,
+            "test_r2": 0.5160252507894987,
+            "selected_lambda": 1000.0
+          },
+          "10": {
+            "val_r2": 0.5403114974258971,
+            "test_r2": 0.5434042264794592,
+            "selected_lambda": 1000.0
+          },
+          "11": {
+            "val_r2": 0.5540483594160732,
+            "test_r2": 0.5601644915668558,
+            "selected_lambda": 1000.0
+          },
+          "12": {
+            "val_r2": 0.5721715813052388,
+            "test_r2": 0.5808467325349469,
+            "selected_lambda": 1000.0
+          },
+          "13": {
+            "val_r2": 0.5908992485713112,
+            "test_r2": 0.5990984477159687,
+            "selected_lambda": 3162.2776601683795
+          },
+          "14": {
+            "val_r2": 0.6172441465505373,
+            "test_r2": 0.6251812021094032,
+            "selected_lambda": 3162.2776601683795
+          },
+          "15": {
+            "val_r2": 0.635713231604863,
+            "test_r2": 0.6428716470081715,
+            "selected_lambda": 3162.2776601683795
+          },
+          "16": {
+            "val_r2": 0.6502746780777005,
+            "test_r2": 0.6566710532140503,
+            "selected_lambda": 3162.2776601683795
+          },
+          "17": {
+            "val_r2": 0.6542946034580355,
+            "test_r2": 0.6584392214841448,
+            "selected_lambda": 3162.2776601683795
+          },
+          "18": {
+            "val_r2": 0.6676769208394753,
+            "test_r2": 0.6657446697408306,
+            "selected_lambda": 3162.2776601683795
+          },
+          "19": {
+            "val_r2": 0.7071870260685215,
+            "test_r2": 0.7054149303865586,
+            "selected_lambda": 1000.0
+          },
+          "20": {
+            "val_r2": 0.6951103422193323,
+            "test_r2": 0.6895030947155714,
+            "selected_lambda": 1000.0
+          },
+          "21": {
+            "val_r2": 0.6788023233382856,
+            "test_r2": 0.6713736617978553,
+            "selected_lambda": 3162.2776601683795
+          },
+          "22": {
+            "val_r2": 0.6581829413178737,
+            "test_r2": 0.6477481917929764,
+            "selected_lambda": 1000.0
+          },
+          "23": {
+            "val_r2": 0.6396998063708345,
+            "test_r2": 0.6262971199213037,
+            "selected_lambda": 1000.0
+          },
+          "24": {
+            "val_r2": 0.6423006695677268,
+            "test_r2": 0.6318194157418634,
+            "selected_lambda": 3162.2776601683795
+          },
+          "25": {
+            "val_r2": 0.6390579579291727,
+            "test_r2": 0.6344966372306875,
+            "selected_lambda": 3162.2776601683795
+          },
+          "26": {
+            "val_r2": 0.62222467070065,
+            "test_r2": 0.6166073857359694,
+            "selected_lambda": 3162.2776601683795
+          },
+          "27": {
+            "val_r2": 0.6353294175902319,
+            "test_r2": 0.6241672862333303,
+            "selected_lambda": 3162.2776601683795
+          }
+        },
+        "val_selected_layer": 19,
+        "test_r2_at_val_selected_layer": 0.7054149303865586,
+        "val_r2_at_val_selected_layer": 0.7071870260685215,
+        "test_ci_at_val_selected": {
+          "r2": {
+            "point": 0.7054149303865586,
+            "lo": 0.6911071629123777,
+            "hi": 0.7190927532262208
+          },
+          "mean_cosine": {
+            "point": 0.9449820759836707,
+            "lo": 0.9423805643334228,
+            "hi": 0.9474156073921342
+          },
+          "n_test": 1000
+        }
+      },
+      "krr": {
+        "per_layer": {
+          "14": {
+            "val_r2": 0.6306686195086115,
+            "test_r2": 0.6372959779220884,
+            "selected": {
+              "gamma_mult": 1.0,
+              "gamma": 0.0006974443633437613,
+              "lambda": 0.1,
+              "val_r2": 0.6306686195086115
+            }
+          },
+          "17": {
+            "val_r2": 0.6673219689580555,
+            "test_r2": 0.6687711156641512,
+            "selected": {
+              "gamma_mult": 1.0,
+              "gamma": 0.0004170985224081134,
+              "lambda": 0.1,
+              "val_r2": 0.6673219689580555
+            }
+          },
+          "19": {
+            "val_r2": 0.7147153879330813,
+            "test_r2": 0.7118060857224284,
+            "selected": {
+              "gamma_mult": 1.0,
+              "gamma": 0.00016726402214029822,
+              "lambda": 0.1,
+              "val_r2": 0.7147153879330813
+            }
+          },
+          "26": {
+            "val_r2": 0.6154692724866347,
+            "test_r2": 0.6096840287706775,
+            "selected": {
+              "gamma_mult": 0.25,
+              "gamma": 2.026663698339326e-06,
+              "lambda": 0.1,
+              "val_r2": 0.6154692724866347
+            }
+          },
+          "27": {
+            "val_r2": 0.6320244803115409,
+            "test_r2": 0.6250192936352131,
+            "selected": {
+              "gamma_mult": 0.25,
+              "gamma": 1.3453478094233862e-06,
+              "lambda": 0.1,
+              "val_r2": 0.6320244803115409
+            }
+          }
+        },
+        "val_selected_layer": 19,
+        "test_r2_at_val_selected_layer": 0.7118060857224284,
+        "val_r2_at_val_selected_layer": 0.7147153879330813,
+        "test_ci_at_val_selected": {
+          "r2": {
+            "point": 0.7118060857224284,
+            "lo": 0.6980607050514237,
+            "hi": 0.725051960261874
+          },
+          "mean_cosine": {
+            "point": 0.9462225130640247,
+            "lo": 0.9436176423698597,
+            "hi": 0.9487139757111177
+          },
+          "n_test": 1000
+        }
+      },
+      "mlp": {
+        "per_layer": {
+          "19": {
+            "val_r2": 0.69600807834638,
+            "test_r2": 0.6884032096864674,
+            "test_ci": {
+              "r2": {
+                "point": 0.6884032096864674,
+                "lo": 0.6728149790006671,
+                "hi": 0.7032060354957023
+              },
+              "mean_cosine": {
+                "point": 0.9416811707974861,
+                "lo": 0.939000084619945,
+                "hi": 0.9442355195430246
+              },
+              "n_test": 1000
+            },
+            "width": 8192,
+            "lr": 0.0003,
+            "epochs_ran": 85
+          },
+          "26": {
+            "val_r2": 0.625202159769604,
+            "test_r2": 0.6164995510121409,
+            "test_ci": {
+              "r2": {
+                "point": 0.6164995510121409,
+                "lo": 0.5964514006655397,
+                "hi": 0.6343615292404244
+              },
+              "mean_cosine": {
+                "point": 0.9569489760268887,
+                "lo": 0.9545381357730054,
+                "hi": 0.9593472476456308
+              },
+              "n_test": 1000
+            },
+            "width": 8192,
+            "lr": 0.0003,
+            "epochs_ran": 112
+          }
+        },
+        "val_selected_layer": 19,
+        "test_r2_at_val_selected_layer": 0.6884032096864674,
+        "val_r2_at_val_selected_layer": 0.69600807834638,
+        "layer_menu_caveat": "MLP layer menu: [19, 26] + ridge's val-selected layer per input (realized: [19, 26]); L19 was pre-chosen from #779's percontext_recon 5-fold curve; recipe (width/lr) selected on val at that layer only, so the selected-layer read is recipe-menu-limited (ridge's 28-layer selection is free)."
+      },
+      "residual_skip": {
+        "per_layer": {
+          "19": {
+            "val_r2": 0.6930216935977109,
+            "test_r2": 0.6908990771961111,
+            "test_ci": {
+              "r2": {
+                "point": 0.6908990771961111,
+                "lo": 0.676287756082671,
+                "hi": 0.7048974832262399
+              },
+              "mean_cosine": {
+                "point": 0.9422500639022321,
+                "lo": 0.9396107576481567,
+                "hi": 0.9447117280755948
+              },
+              "n_test": 1000
+            },
+            "width": 3584,
+            "lr": 0.0003,
+            "epochs_ran": 34
+          },
+          "26": {
+            "val_r2": 0.6181423624108295,
+            "test_r2": 0.6124005034622463,
+            "test_ci": {
+              "r2": {
+                "point": 0.6124005034622463,
+                "lo": 0.5931697275290535,
+                "hi": 0.6292255774596788
+              },
+              "mean_cosine": {
+                "point": 0.9566051437217632,
+                "lo": 0.9542745635502417,
+                "hi": 0.9588661578119431
+              },
+              "n_test": 1000
+            },
+            "width": 3584,
+            "lr": 0.0003,
+            "epochs_ran": 20
+          }
+        },
+        "val_selected_layer": 19,
+        "test_r2_at_val_selected_layer": 0.6908990771961111,
+        "val_r2_at_val_selected_layer": 0.6930216935977109,
+        "layer_menu_caveat": "MLP layer menu: [19, 26] + ridge's val-selected layer per input (realized: [19, 26]); L19 was pre-chosen from #779's percontext_recon 5-fold curve; recipe (width/lr) selected on val at that layer only, so the selected-layer read is recipe-menu-limited (ridge's 28-layer selection is free)."
+      }
+    },
+    "mean": {
+      "ridge": {
+        "per_layer": {
+          "0": {
+            "val_r2": 0.47049017105548585,
+            "test_r2": 0.4593440653737668,
+            "selected_lambda": 3162.2776601683795
+          },
+          "1": {
+            "val_r2": 0.4799517738214135,
+            "test_r2": 0.47185924131509516,
+            "selected_lambda": 3162.2776601683795
+          },
+          "2": {
+            "val_r2": 0.4925634038264439,
+            "test_r2": 0.4920566654760098,
+            "selected_lambda": 3162.2776601683795
+          },
+          "3": {
+            "val_r2": 0.48186440234649486,
+            "test_r2": 0.4833558544567139,
+            "selected_lambda": 3162.2776601683795
+          },
+          "4": {
+            "val_r2": 0.48618172185824804,
+            "test_r2": 0.48925939659966533,
+            "selected_lambda": 3162.2776601683795
+          },
+          "5": {
+            "val_r2": 0.5036969959613802,
+            "test_r2": 0.5041934135661242,
+            "selected_lambda": 3162.2776601683795
+          },
+          "6": {
+            "val_r2": 0.5190432061173793,
+            "test_r2": 0.5218584488140814,
+            "selected_lambda": 3162.2776601683795
+          },
+          "7": {
+            "val_r2": 0.5263052654617258,
+            "test_r2": 0.5277272367296368,
+            "selected_lambda": 3162.2776601683795
+          },
+          "8": {
+            "val_r2": 0.5434852340646649,
+            "test_r2": 0.5477803361258465,
+            "selected_lambda": 3162.2776601683795
+          },
+          "9": {
+            "val_r2": 0.5273781141774585,
+            "test_r2": 0.5314497362245691,
+            "selected_lambda": 3162.2776601683795
+          },
+          "10": {
+            "val_r2": 0.5474819045472666,
+            "test_r2": 0.5502407275970953,
+            "selected_lambda": 3162.2776601683795
+          },
+          "11": {
+            "val_r2": 0.5646144251964043,
+            "test_r2": 0.567850569812486,
+            "selected_lambda": 3162.2776601683795
+          },
+          "12": {
+            "val_r2": 0.5811003788259534,
+            "test_r2": 0.5839921219832032,
+            "selected_lambda": 3162.2776601683795
+          },
+          "13": {
+            "val_r2": 0.5825304156770712,
+            "test_r2": 0.5889033146586207,
+            "selected_lambda": 3162.2776601683795
+          },
+          "14": {
+            "val_r2": 0.6024491490827039,
+            "test_r2": 0.6052922887202068,
+            "selected_lambda": 3162.2776601683795
+          },
+          "15": {
+            "val_r2": 0.611748778509444,
+            "test_r2": 0.6155352629374997,
+            "selected_lambda": 3162.2776601683795
+          },
+          "16": {
+            "val_r2": 0.6237344492633959,
+            "test_r2": 0.6264326731467291,
+            "selected_lambda": 3162.2776601683795
+          },
+          "17": {
+            "val_r2": 0.6251018195860999,
+            "test_r2": 0.623806411373345,
+            "selected_lambda": 3162.2776601683795
+          },
+          "18": {
+            "val_r2": 0.6193554333061944,
+            "test_r2": 0.6188165750031536,
+            "selected_lambda": 3162.2776601683795
+          },
+          "19": {
+            "val_r2": 0.6424268194782179,
+            "test_r2": 0.639156642519435,
+            "selected_lambda": 3162.2776601683795
+          },
+          "20": {
+            "val_r2": 0.6290854986598156,
+            "test_r2": 0.6252713182305427,
+            "selected_lambda": 3162.2776601683795
+          },
+          "21": {
+            "val_r2": 0.6118246423354512,
+            "test_r2": 0.6056258917607014,
+            "selected_lambda": 3162.2776601683795
+          },
+          "22": {
+            "val_r2": 0.5917805459530925,
+            "test_r2": 0.5864652614848462,
+            "selected_lambda": 3162.2776601683795
+          },
+          "23": {
+            "val_r2": 0.5720568484098307,
+            "test_r2": 0.5628454336217121,
+            "selected_lambda": 3162.2776601683795
+          },
+          "24": {
+            "val_r2": 0.5678003958827953,
+            "test_r2": 0.5558910912879833,
+            "selected_lambda": 3162.2776601683795
+          },
+          "25": {
+            "val_r2": 0.5589432562534533,
+            "test_r2": 0.5514492113902536,
+            "selected_lambda": 3162.2776601683795
+          },
+          "26": {
+            "val_r2": 0.5466348036691482,
+            "test_r2": 0.5397236451662919,
+            "selected_lambda": 3162.2776601683795
+          },
+          "27": {
+            "val_r2": 0.5469773872486963,
+            "test_r2": 0.5363392325303741,
+            "selected_lambda": 3162.2776601683795
+          }
+        },
+        "val_selected_layer": 19,
+        "test_r2_at_val_selected_layer": 0.639156642519435,
+        "val_r2_at_val_selected_layer": 0.6424268194782179,
+        "test_ci_at_val_selected": {
+          "r2": {
+            "point": 0.639156642519435,
+            "lo": 0.6232567784720094,
+            "hi": 0.6541371669352507
+          },
+          "mean_cosine": {
+            "point": 0.9328561155836033,
+            "lo": 0.9297446353205876,
+            "hi": 0.935672389028483
+          },
+          "n_test": 1000
+        }
+      },
+      "krr": {
+        "per_layer": {
+          "14": {
+            "val_r2": 0.6013974268047911,
+            "test_r2": 0.6070330841138394,
+            "selected": {
+              "gamma_mult": 0.25,
+              "gamma": 1.3299361406748601e-05,
+              "lambda": 0.001,
+              "val_r2": 0.6013974268047911
+            }
+          },
+          "17": {
+            "val_r2": 0.6172112985703622,
+            "test_r2": 0.6197677236499024,
+            "selected": {
+              "gamma_mult": 0.25,
+              "gamma": 1.3530550607028707e-05,
+              "lambda": 0.001,
+              "val_r2": 0.6172112985703622
+            }
+          },
+          "19": {
+            "val_r2": 0.6374649348744751,
+            "test_r2": 0.6371170587990758,
+            "selected": {
+              "gamma_mult": 0.25,
+              "gamma": 1.3261474750629307e-05,
+              "lambda": 0.001,
+              "val_r2": 0.6374649348744751
+            }
+          },
+          "26": {
+            "val_r2": 0.5663685645641281,
+            "test_r2": 0.5642663781305531,
+            "selected": {
+              "gamma_mult": 1.0,
+              "gamma": 7.797217034804022e-05,
+              "lambda": 0.1,
+              "val_r2": 0.5663685645641281
+            }
+          },
+          "27": {
+            "val_r2": 0.5667021213412541,
+            "test_r2": 0.5518914831324867,
+            "selected": {
+              "gamma_mult": 0.25,
+              "gamma": 1.1674414899315942e-05,
+              "lambda": 0.1,
+              "val_r2": 0.5667021213412541
+            }
+          }
+        },
+        "val_selected_layer": 19,
+        "test_r2_at_val_selected_layer": 0.6371170587990758,
+        "val_r2_at_val_selected_layer": 0.6374649348744751,
+        "test_ci_at_val_selected": {
+          "r2": {
+            "point": 0.6371170587990758,
+            "lo": 0.6196511122481346,
+            "hi": 0.6528616873167359
+          },
+          "mean_cosine": {
+            "point": 0.9322927388315068,
+            "lo": 0.9290525755019599,
+            "hi": 0.9353372398887012
+          },
+          "n_test": 1000
+        }
+      },
+      "mlp": {
+        "per_layer": {
+          "19": {
+            "val_r2": 0.6408921603552877,
+            "test_r2": 0.6367240249820838,
+            "test_ci": {
+              "r2": {
+                "point": 0.6367240249820838,
+                "lo": 0.6195466768108095,
+                "hi": 0.6526625031817506
+              },
+              "mean_cosine": {
+                "point": 0.931810737862721,
+                "lo": 0.9285076537649761,
+                "hi": 0.9347136370126559
+              },
+              "n_test": 1000
+            },
+            "width": 8192,
+            "lr": 0.0003,
+            "epochs_ran": 91
+          },
+          "26": {
+            "val_r2": 0.5792273245386612,
+            "test_r2": 0.5689060011191811,
+            "test_ci": {
+              "r2": {
+                "point": 0.5689060011191811,
+                "lo": 0.5455835648566097,
+                "hi": 0.5915976284057232
+              },
+              "mean_cosine": {
+                "point": 0.95207534457246,
+                "lo": 0.9490811593075911,
+                "hi": 0.9548176633216444
+              },
+              "n_test": 1000
+            },
+            "width": 8192,
+            "lr": 0.0003,
+            "epochs_ran": 120
+          }
+        },
+        "val_selected_layer": 19,
+        "test_r2_at_val_selected_layer": 0.6367240249820838,
+        "val_r2_at_val_selected_layer": 0.6408921603552877,
+        "layer_menu_caveat": "MLP layer menu: [19, 26] + ridge's val-selected layer per input (realized: [19, 26]); L19 was pre-chosen from #779's percontext_recon 5-fold curve; recipe (width/lr) selected on val at that layer only, so the selected-layer read is recipe-menu-limited (ridge's 28-layer selection is free)."
+      },
+      "residual_skip": {
+        "per_layer": {
+          "19": {
+            "val_r2": 0.6334780083620969,
+            "test_r2": 0.6304013307084662,
+            "test_ci": {
+              "r2": {
+                "point": 0.6304013307084662,
+                "lo": 0.6139770176408361,
+                "hi": 0.6460351778781027
+              },
+              "mean_cosine": {
+                "point": 0.9309511850930731,
+                "lo": 0.9277072613812481,
+                "hi": 0.9338090812483307
+              },
+              "n_test": 1000
+            },
+            "width": 3584,
+            "lr": 0.0003,
+            "epochs_ran": 45
+          },
+          "26": {
+            "val_r2": 0.5529602288237537,
+            "test_r2": 0.5458798577107709,
+            "test_ci": {
+              "r2": {
+                "point": 0.5458798577107709,
+                "lo": 0.5228084865781728,
+                "hi": 0.5678598504527393
+              },
+              "mean_cosine": {
+                "point": 0.9498895631106032,
+                "lo": 0.9468901328377749,
+                "hi": 0.9526002009667108
+              },
+              "n_test": 1000
+            },
+            "width": 3584,
+            "lr": 0.0003,
+            "epochs_ran": 33
+          }
+        },
+        "val_selected_layer": 19,
+        "test_r2_at_val_selected_layer": 0.6304013307084662,
+        "val_r2_at_val_selected_layer": 0.6334780083620969,
+        "layer_menu_caveat": "MLP layer menu: [19, 26] + ridge's val-selected layer per input (realized: [19, 26]); L19 was pre-chosen from #779's percontext_recon 5-fold curve; recipe (width/lr) selected on val at that layer only, so the selected-layer read is recipe-menu-limited (ridge's 28-layer selection is free)."
+      }
+    }
+  },
+  "mlp_selection": {
+    "layer": 19,
+    "per_input": {
+      "last": {
+        "width": 8192,
+        "lr": 0.0003,
+        "val_r2": 0.6960072246199515
+      },
+      "mean": {
+        "width": 8192,
+        "lr": 0.0003,
+        "val_r2": 0.6408944013778926
+      }
+    },
+    "grid": [
+      {
+        "input": "last",
+        "width": 512,
+        "lr": 0.001,
+        "val_r2": 0.6654408534461508,
+        "epochs_ran": 143
+      },
+      {
+        "input": "last",
+        "width": 512,
+        "lr": 0.0003,
+        "val_r2": 0.6600996572328699,
+        "epochs_ran": 284
+      },
+      {
+        "input": "last",
+        "width": 3584,
+        "lr": 0.001,
+        "val_r2": 0.6897443558801484,
+        "epochs_ran": 90
+      },
+      {
+        "input": "last",
+        "width": 3584,
+        "lr": 0.0003,
+        "val_r2": 0.691904832111069,
+        "epochs_ran": 120
+      },
+      {
+        "input": "last",
+        "width": 8192,
+        "lr": 0.001,
+        "val_r2": 0.6917727185434812,
+        "epochs_ran": 119
+      },
+      {
+        "input": "last",
+        "width": 8192,
+        "lr": 0.0003,
+        "val_r2": 0.6960072246199515,
+        "epochs_ran": 85
+      },
+      {
+        "input": "mean",
+        "width": 512,
+        "lr": 0.001,
+        "val_r2": 0.5931966736028618,
+        "epochs_ran": 163
+      },
+      {
+        "input": "mean",
+        "width": 512,
+        "lr": 0.0003,
+        "val_r2": 0.5950744699764096,
+        "epochs_ran": 263
+      },
+      {
+        "input": "mean",
+        "width": 3584,
+        "lr": 0.001,
+        "val_r2": 0.628381848100823,
+        "epochs_ran": 133
+      },
+      {
+        "input": "mean",
+        "width": 3584,
+        "lr": 0.0003,
+        "val_r2": 0.6347425092383754,
+        "epochs_ran": 115
+      },
+      {
+        "input": "mean",
+        "width": 8192,
+        "lr": 0.001,
+        "val_r2": 0.6219830868948897,
+        "epochs_ran": 156
+      },
+      {
+        "input": "mean",
+        "width": 8192,
+        "lr": 0.0003,
+        "val_r2": 0.6408944013778926,
+        "epochs_ran": 91
+      }
+    ]
+  },
+  "coverage_note": "ridge: all 28 layers (free val selection); KRR: layers [14, 17, 19, 26, 27]; MLP + residual_skip: layers [19, 26] (menu-limited, recipe on val at L19); inputs ['last', 'mean'].",
+  "metadata": {
+    "git_commit": "b3e6f60cd79b8211ce1dedbf9acde32e510831cf",
+    "timestamp_utc": "2026-07-06T04:51:10.103845Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue779_fitter_fair_comparison",
+    "stage": "d1",
+    "device": "cuda",
+    "thread_caps": {
+      "OMP_NUM_THREADS": "8",
+      "MKL_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "8",
+      "NUMEXPR_NUM_THREADS": "8"
+    },
+    "seed": 42,
+    "input_variants": [
+      "last",
+      "mean"
+    ],
+    "data_provenance": {
+      "pass_b": {
+        "path": "/workspace/explore-persona-space/data/issue_779/pass_b/train_context_vectors.pt",
+        "size_bytes": 6021122751,
+        "mtime_utc": "2026-07-06T03:56:15Z",
+        "bundle_metadata": {
+          "git_commit": "fc96549e5994ad216aaa76672cfabbc28f5582a3",
+          "timestamp_utc": "2026-07-01T12:13:30.412032Z",
+          "python_version": "3.11.10",
+          "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+          "cuda_visible_devices": "0",
+          "script": "issue779_collect",
+          "pass": "B"
+        },
+        "source": "lmsys/lmsys-chat-1m"
+      },
+      "capture_dir": "/mnt/eps-data/thomasjiralerspong/issue779-grid/final_token_capture",
+      "p2_dir": "/mnt/eps-data/thomasjiralerspong/issue779-grid/final_token_capture/pass2"
+    },
+    "deviations": [
+      "MLP grid batched per (width,lr) partition (one AdamW cannot carry per-group lr); each partition batches all its (input,layer,n,draw,type) groups in one bmm loop.",
+      "MLP + Nystrom helpers adapted from issue779_batch2.py with a device kwarg; math verified by the run-start equivalence gates.",
+      "D1/D2 ridge selects lambda on the 400 val (NOT GCV): at n_train=3600 ~= H=3584 GCV's (n-dof)^2 denominator degenerates and pins lambda to the grid floor, test R2 ~ -5 to -8 (numpy-SVD reproduces it); val selection recovers ~0.6-0.7. D3's 5-fold CV keeps GCV (n_train=4000, margin from H OK; matches #779). KRR/MLP use val for (gamma,lambda)/(width,lr). Final fit on 3600 train."
+    ],
+    "stage_wall_s": 397.0
+  }
+}

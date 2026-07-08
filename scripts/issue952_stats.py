@@ -1,0 +1,2154 @@
+"""Issue #952 Phase 2 (VM, CPU): bootstrap + sign-flip batteries over per_context_stats.npz.
+
+Plan §6 draw-battery contract — BOTH batteries operate on PRECOMPUTED per-context
+arrays (the ridge maps were fitted ONCE in Phase 1e; a draw only re-weights /
+re-signs stored per-context statistics; NO per-draw refit, NO per-draw Python
+loop):
+
+  * Bootstrap CIs: n_draws x ~440 statistic columns as TWO stacked-draw GEMMs —
+    a (n_draws, n_test) multinomial count matrix W @ the (n_test, C) scattered
+    ss_res and ss_tot stacks, then the elementwise R² map. Mirrors the batched
+    ``analysis/null_battery.py::perm_null_draws`` pattern (all draws as one
+    masked matmul over a precomputed pool — the #834 vectorization of #778);
+    that helper's label-shuffle form does not match a bootstrap, so the
+    equivalent one-GEMM form is written here with a 3-cell serial-oracle parity
+    check (vectorize-many-cell-fits rule item 6).
+  * H3 sign-flip permutation null: ONE (n_draws, n_pairs) ±1 sign matrix @ the
+    per-pair (drop_ext - drop_own) vector, category-masked; Holm-Bonferroni
+    across kept categories. Median + 10%-trimmed-mean companions batch via a
+    gathered (n_draws, n_pairs) resample + axis-1 reductions (rank statistics
+    batch along the draw axis, not via GEMM).
+
+Row-coverage asserts (plan §3, BEFORE any statistic):
+  * H2 — per registered t-pair, the npz ``M{t2}_ctx_ids`` set must EQUAL the
+    registered common subset recomputed from the spans files (extended span
+    >= t2+16 in ALL arms, intersected with the test split), and every
+    cleg/zleg per-context array must cover exactly that set for both arms.
+  * H3 — the npz ``bank_div_ids`` / ``bank_ctl_ids`` sets must EQUAL the
+    kept-pair member sets from ``divergence_bank_verification.json``.
+
+Seeds (plan §10): bootstrap ``default_rng(0)``; sign-flip ``default_rng(1)``.
+
+Usage (production):
+  uv run python scripts/issue952_stats.py \
+    --eval-dir eval_results/issue_952 \
+    --npz data/issue_952/analysis_tensors/per_context_stats.npz \
+    --spans-dir data/issue_952/analysis_tensors
+
+Smoke: add --smoke (tolerates sub-floor n; identical code path).
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import pathlib
+import subprocess
+import sys
+import time
+from collections import Counter
+from typing import Any
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+
+_REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from explore_persona_space.experiments.issue_952.run_952 import (  # noqa: E402
+    ARMS,
+    BANK_ARMS,
+    F16_SLOTS,
+    L16_CONTENT_SLOTS,
+    L16_TEMPLATE_SLOTS,
+    MATCHED_ARMS,
+    MATCHED_T2,
+    POSITION_SLOTS,
+    _json_np,
+    kfold_split_hashes,
+    make_kfold_splits,
+)
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logger = logging.getLogger("issue952.stats")
+
+BOOTSTRAP_SEED = 0  # plan §10
+SIGNFLIP_SEED = 1  # plan §10
+N_DRAWS_DEFAULT = 10_000
+H1_MARGIN = 0.03
+H2_MARGIN = 0.02
+H3_MARGIN = 0.05
+# Follow-up (analyzer 9a-ter): the plan's ORIGINAL divergent-control judge margin. The
+# realized adjusted keep margin was -23 (effectively vacuous), so the H3 re-read below
+# restricts kept pairs to divergent-control judge difference >= this value.
+ORIGINAL_H3_JUDGE_MARGIN = 25.0
+LENGTH_CUTS = (200, 100, 50)  # |Δlen| strata (#823 precedent)
+PARITY_N_DRAWS = 200
+PARITY_TOL = 1e-8
+
+
+# ── column registry + scatter ───────────────────────────────────────────────────
+
+
+def _scatter(
+    ids: np.ndarray, ssr: np.ndarray, sst: np.ndarray, col_of: dict[int, int], n_test: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Scatter one cell's per-context (ssr, sst) into the shared test-id space.
+
+    NaN entries (invalid target for that context) are zero-filled in BOTH
+    vectors, so a bootstrap draw's ratio-of-sums silently ignores them —
+    the shared draw-weight matrix keeps every cell context-PAIRED.
+    """
+    v_ssr = np.zeros(n_test, dtype=np.float64)
+    v_sst = np.zeros(n_test, dtype=np.float64)
+    finite = np.isfinite(ssr) & np.isfinite(sst)
+    for i, cid in enumerate(ids):
+        if not finite[i]:
+            continue
+        j = col_of.get(int(cid))
+        if j is None:
+            raise AssertionError(f"context id {cid} not in the test split — coverage violation")
+        v_ssr[j] = float(ssr[i])
+        v_sst[j] = float(sst[i])
+    return v_ssr, v_sst
+
+
+class CellBank:
+    """Registry of statistic columns over the shared LMSYS test-id space."""
+
+    def __init__(self, test_ids: list[int]) -> None:
+        self.test_ids = [int(i) for i in test_ids]
+        self.col_of = {int(c): j for j, c in enumerate(self.test_ids)}
+        self.n_test = len(self.test_ids)
+        self.names: list[str] = []
+        self._ssr: list[np.ndarray] = []
+        self._sst: list[np.ndarray] = []
+
+    def add(self, name: str, ids: np.ndarray, ssr: np.ndarray, sst: np.ndarray) -> None:
+        v_ssr, v_sst = _scatter(ids, ssr, sst, self.col_of, self.n_test)
+        self.names.append(name)
+        self._ssr.append(v_ssr)
+        self._sst.append(v_sst)
+
+    def stacks(self) -> tuple[np.ndarray, np.ndarray]:
+        return np.stack(self._ssr, axis=1), np.stack(self._sst, axis=1)  # (n_test, C)
+
+    def observed(self) -> np.ndarray:
+        ssr, sst = self.stacks()
+        denom = sst.sum(axis=0)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            r2 = 1.0 - ssr.sum(axis=0) / denom
+        r2[denom < 1e-12] = np.nan
+        return r2
+
+    def draws(self, w: np.ndarray) -> np.ndarray:
+        """(n_draws, C) bootstrap pooled-R² draws — the TWO stacked-draw GEMMs."""
+        ssr, sst = self.stacks()
+        num = w @ ssr  # GEMM 1: (n_draws, n_test) @ (n_test, C)
+        den = w @ sst  # GEMM 2
+        with np.errstate(invalid="ignore", divide="ignore"):
+            r2 = 1.0 - num / den
+        r2[den < 1e-12] = np.nan
+        return r2
+
+
+def _ci(draws: np.ndarray, axis: int = 0) -> tuple[np.ndarray, np.ndarray]:
+    return (
+        np.nanpercentile(draws, 2.5, axis=axis),
+        np.nanpercentile(draws, 97.5, axis=axis),
+    )
+
+
+def serial_oracle_parity(bank: CellBank, w: np.ndarray, r2_draws: np.ndarray) -> dict:
+    """3-cell serial per-draw oracle vs the GEMM battery (rule item 6, hard gate)."""
+    ssr, sst = bank.stacks()
+    valid_cols = [c for c in range(len(bank.names)) if sst[:, c].sum() > 1e-12][:3]
+    assert valid_cols, "no valid columns for the serial-oracle parity check"
+    n_check = min(PARITY_N_DRAWS, w.shape[0])
+    max_diff = 0.0
+    for c in valid_cols:
+        for d in range(n_check):  # the ORACLE is deliberately serial (parity only)
+            num = float(np.dot(w[d], ssr[:, c]))
+            den = float(np.dot(w[d], sst[:, c]))
+            oracle = 1.0 - num / den if den > 1e-12 else np.nan
+            got = float(r2_draws[d, c])
+            if np.isfinite(oracle) or np.isfinite(got):
+                max_diff = max(max_diff, abs(oracle - got))
+    rec = {
+        "cells": [bank.names[c] for c in valid_cols],
+        "n_draws_checked": n_check,
+        "max_abs_diff": max_diff,
+        "tol": PARITY_TOL,
+    }
+    if max_diff > PARITY_TOL:
+        raise RuntimeError(f"bootstrap GEMM vs serial oracle parity FAIL: {rec}")
+    logger.info("[parity] bootstrap GEMM vs serial oracle: max|diff|=%.2e OK", max_diff)
+    return rec
+
+
+# ── input loading + coverage asserts ────────────────────────────────────────────
+
+
+def load_spans(spans_dir: pathlib.Path) -> dict[str, dict[int, int]]:
+    """Extended spans per arm: {arm: {cid: span}} (0 for skipped)."""
+    out: dict[str, dict[int, int]] = {}
+    for arm in ARMS:
+        p = spans_dir / f"spans_{arm}.json"
+        assert p.exists(), (
+            f"spans file missing: {p} — the H2 set-equality assert needs the spans "
+            "artifacts (download analysis_tensors/spans_*.json first)"
+        )
+        d = json.loads(p.read_text())
+        out[arm] = {int(k): int(v.get("span", 0)) for k, v in d.items()}
+    return out
+
+
+def assert_h2_row_coverage(
+    npz: dict[str, np.ndarray], spans: dict[str, dict[int, int]], test_ids: list[int]
+) -> dict:
+    """Plan §3 H2 row-coverage: registered common subset == npz M{t2}_ctx_ids.
+
+    The driver's registered rule: extended span >= t2+16 in ALL arms (a uniform
+    superset of 'intersected across the compared arms'), intersected with the
+    test split. Every present cleg/zleg array must cover exactly that set.
+    """
+    rec: dict[str, Any] = {}
+    for t2 in MATCHED_T2:
+        key = f"M{t2}_ctx_ids"
+        if key not in npz:
+            rec[f"t{t2}"] = "npz_ids_absent"
+            continue
+        got = {int(c) for c in npz[key].tolist()}
+        registered = {
+            int(c) for c in test_ids if all(spans[a].get(int(c), 0) >= t2 + 16 for a in ARMS)
+        }
+        assert got == registered, (
+            f"H2 t2={t2}: npz ctx-id set != registered common subset "
+            f"(npz-only: {sorted(got - registered)[:5]}, "
+            f"registered-only: {sorted(registered - got)[:5]})"
+        )
+        n = len(got)
+        for k in npz:
+            if k.startswith(f"M{t2}_L") and (k.endswith("_ssres") or k.endswith("_sstot")):
+                assert len(npz[k]) == n, f"H2 coverage: {k} has {len(npz[k])} rows != {n}"
+        rec[f"t{t2}"] = {"paired_n_test": n, "set_equality": "PASS"}
+    logger.info("[coverage] H2 set-equality: %s", {k: v for k, v in rec.items()})
+    return rec
+
+
+def assert_h3_row_coverage(
+    npz: dict[str, np.ndarray], verification: dict, smoke: bool = False
+) -> dict:
+    """Plan §3 H3 row-coverage: kept-pair member sets == npz bank id sets.
+
+    ``smoke`` (cross-layer follow-up only): the staged PRODUCTION verification
+    lists the full kept set while a smoke npz covers the 2-pairs/category
+    subset — the check degrades to non-empty SUBSET containment, logged loudly.
+    Production keeps strict set equality."""
+    if "bank_div_ids" not in npz:
+        return {"status": "bank_arrays_absent"}
+    kept = set(verification["kept_pairs"])
+    exp_div, exp_ctl = set(), set()
+    for p in verification["pairs"]:
+        if p["pair_id"] not in kept:
+            continue
+        if isinstance(p.get("divergent"), dict):
+            exp_div.add(p["divergent"]["query_id"])
+        if isinstance(p.get("control"), dict):
+            exp_ctl.add(p["control"]["query_id"])
+    got_div = set(npz["bank_div_ids"].tolist())
+    got_ctl = set(npz["bank_ctl_ids"].tolist())
+    if smoke and got_div != exp_div:
+        assert got_div and got_div <= exp_div and got_ctl and got_ctl <= exp_ctl, (
+            f"H3 smoke subset containment FAIL (div npz-only: {sorted(got_div - exp_div)[:5]}, "
+            f"ctl npz-only: {sorted(got_ctl - exp_ctl)[:5]})"
+        )
+        rec = {
+            "n_pairs": len(kept),
+            "set_equality": "SMOKE_SUBSET",
+            "n_div_covered": len(got_div),
+            "n_ctl_covered": len(got_ctl),
+        }
+        logger.warning("[coverage] H3 SMOKE subset containment (not equality): %s", rec)
+        return rec
+    assert got_div == exp_div, (
+        f"H3 divergent id set != kept-pair members (npz-only: {sorted(got_div - exp_div)[:5]}, "
+        f"kept-only: {sorted(exp_div - got_div)[:5]})"
+    )
+    assert got_ctl == exp_ctl, (
+        f"H3 control id set != kept-pair members (npz-only: {sorted(got_ctl - exp_ctl)[:5]}, "
+        f"kept-only: {sorted(exp_ctl - got_ctl)[:5]})"
+    )
+    rec = {"n_pairs": len(kept), "set_equality": "PASS"}
+    logger.info("[coverage] H3 set-equality: %s", rec)
+    return rec
+
+
+# ── H1 / H2 (LMSYS families) ───────────────────────────────────────────────────
+
+
+def register_lmsys_cells(npz: dict[str, np.ndarray], bank: CellBank) -> dict[str, list[str]]:
+    """Register A (position + c_last→remainder), P (prefix), M (matched) columns."""
+    fam: dict[str, list[str]] = {"A": [], "P": [], "M": []}
+    if "A_test_ssres" in npz:
+        groups = [g for g in npz["A_group_names"].tolist()]
+        ids = npz["A_test_ctx_ids"]
+        for gi, g in enumerate(groups):
+            name = f"A|{g}"
+            bank.add(name, ids, npz["A_test_ssres"][:, gi], npz["A_test_sstot"][:, gi])
+            fam["A"].append(name)
+    for k in sorted(npz):
+        if k.startswith("P_") and k.endswith("_ssres"):
+            stem = k[: -len("_ssres")]
+            name = f"P|{stem[2:]}"  # e.g. P|own_t16_L17
+            bank.add(name, npz[f"{stem}_ctx_ids"], npz[k], npz[f"{stem}_sstot"])
+            fam["P"].append(name)
+        if k.startswith("M") and "_cleg_" in k and k.endswith("_ssres"):
+            stem = k[: -len("_ssres")]
+            t2 = stem.split("_")[0][1:]
+            name = f"M|{stem[1:]}"  # e.g. M|16_L17_cleg_own
+            bank.add(name, npz[f"M{t2}_ctx_ids"], npz[k], npz[f"{stem}_sstot"])
+            fam["M"].append(name)
+        if k.startswith("M") and "_zleg_" in k and k.endswith("_ssres"):
+            stem = k[: -len("_ssres")]
+            t2 = stem.split("_")[0][1:]
+            name = f"M|{stem[1:]}"
+            bank.add(name, npz[f"M{t2}_ctx_ids"], npz[k], npz[f"{stem}_sstot"])
+            fam["M"].append(name)
+    logger.info(
+        "[cells] registered A=%d P=%d M=%d columns (total %d)",
+        len(fam["A"]),
+        len(fam["P"]),
+        len(fam["M"]),
+        len(bank.names),
+    )
+    return fam
+
+
+def h1_reads(
+    bank: CellBank,
+    obs: np.ndarray,
+    draws: np.ndarray,
+    cell_prefix: str = "A",
+    with_pinned_p: bool = False,
+) -> dict:
+    """H1: Δ(own - ext) over F16 minus over L16-content, per external arm (plan §3).
+
+    ``cell_prefix`` selects the A-cell family (``A`` = the unsuffixed l_star
+    block; ``A_L{layer}`` = a cross-layer suffixed block). ``with_pinned_p``
+    adds the follow-up plan §2 pinned two-sided bootstrap p vs 0."""
+    idx = {n: i for i, n in enumerate(bank.names)}
+
+    def _gap_matrix(slots: tuple[str, ...], ext: str, mat: np.ndarray) -> np.ndarray:
+        cols_own = [idx.get(f"{cell_prefix}|{s}|own") for s in slots]
+        cols_ext = [idx.get(f"{cell_prefix}|{s}|{ext}") for s in slots]
+        if any(c is None for c in cols_own + cols_ext):
+            return np.full(mat.shape[:-1] or (1,), np.nan)
+        own = mat[..., cols_own]
+        exta = mat[..., cols_ext]
+        return np.nanmean(own - exta, axis=-1)
+
+    out: dict[str, Any] = {"margin": H1_MARGIN, "cell_prefix": cell_prefix}
+    for ext in ("ext_plain", "ext_style"):
+        f16_obs = _gap_matrix(F16_SLOTS, ext, obs[None, :])[0]
+        l16_obs = _gap_matrix(L16_CONTENT_SLOTS, ext, obs[None, :])[0]
+        stat_obs = float(f16_obs - l16_obs)
+        stat_draws = _gap_matrix(F16_SLOTS, ext, draws) - _gap_matrix(L16_CONTENT_SLOTS, ext, draws)
+        lo, hi = _ci(stat_draws)
+        out[ext] = {
+            "f16_gap": float(f16_obs),
+            "l16_content_gap": float(l16_obs),
+            "h1_contrast": stat_obs,
+            "ci95": [float(lo), float(hi)],
+            "ci_excludes_zero": bool(lo > 0 or hi < 0),
+            "clears_margin": bool(stat_obs >= H1_MARGIN and lo > 0),
+            "template_slots_excluded": list(L16_TEMPLATE_SLOTS),
+        }
+        if with_pinned_p:
+            out[ext]["p_two_sided_raw"] = pinned_bootstrap_p(stat_obs, stat_draws, tail="two")
+    return out
+
+
+def h2_reads(bank: CellBank, obs: np.ndarray, draws: np.ndarray, meta: dict) -> dict:
+    """H2 MATCHED contrasts: ΔG(0→t2) per layer/ext + registered 0-vs-16 decision."""
+    idx = {n: i for i, n in enumerate(bank.names)}
+    l_star = meta.get("l_star_pos")
+    out: dict[str, Any] = {"margin": H2_MARGIN, "l_star": l_star, "contrasts": {}}
+    layers = sorted(
+        {n.split("_")[1][1:] for n in bank.names if n.startswith("M|")}, key=lambda s: int(s)
+    )
+    for t2 in MATCHED_T2:
+        for layer in layers:
+            key = f"t{t2}_L{layer}"
+            cols = {}
+            missing = False
+            for leg in ("cleg", "zleg"):
+                arms = ARMS if leg == "cleg" else MATCHED_ARMS
+                for a in arms:
+                    c = idx.get(f"M|{t2}_L{layer}_{leg}_{a}")
+                    if c is None and a in MATCHED_ARMS:
+                        missing = True
+                    cols[f"{leg}_{a}"] = c
+            if missing:
+                continue
+            rec: dict[str, Any] = {}
+            for ext in ("ext_plain", "ext_style"):
+                g0_o = obs[cols["cleg_own"]] - obs[cols[f"cleg_{ext}"]]
+                gt_o = obs[cols["zleg_own"]] - obs[cols[f"zleg_{ext}"]]
+                dg_draws = (draws[:, cols["cleg_own"]] - draws[:, cols[f"cleg_{ext}"]]) - (
+                    draws[:, cols["zleg_own"]] - draws[:, cols[f"zleg_{ext}"]]
+                )
+                lo, hi = _ci(dg_draws)
+                rec[ext] = {
+                    "G_matched_0": float(g0_o),
+                    "G_matched_t": float(gt_o),
+                    "delta_G": float(g0_o - gt_o),
+                    "ci95": [float(lo), float(hi)],
+                    "ci_excludes_zero": bool(lo > 0 or hi < 0),
+                    "clears_margin": bool((g0_o - gt_o) >= H2_MARGIN and lo > 0),
+                }
+            # Secondary: ΔG_distinct > ΔG_plain under the same matched rule.
+            dd = (
+                (draws[:, cols["cleg_own"]] - draws[:, cols["cleg_ext_style"]])
+                - (draws[:, cols["zleg_own"]] - draws[:, cols["zleg_ext_style"]])
+            ) - (
+                (draws[:, cols["cleg_own"]] - draws[:, cols["cleg_ext_plain"]])
+                - (draws[:, cols["zleg_own"]] - draws[:, cols["zleg_ext_plain"]])
+            )
+            lo, hi = _ci(dd)
+            rec["delta_G_style_minus_plain"] = {
+                "observed": float(rec["ext_style"]["delta_G"] - rec["ext_plain"]["delta_G"]),
+                "ci95": [float(lo), float(hi)],
+                "ci_excludes_zero": bool(lo > 0 or hi < 0),
+            }
+            rec["registered_decision"] = bool(t2 == 16 and str(l_star) == str(layer))
+            out["contrasts"][key] = rec
+    return out
+
+
+def h2_intersection_reads(npz: dict[str, np.ndarray], bank: CellBank, w: np.ndarray) -> dict:
+    """Binding-alternatives rec (i): cross-arm prefix contrasts on the
+    intersection-of-survivors with paired n (per t, layer, ext arm)."""
+    out: dict[str, Any] = {}
+    stems: dict[tuple[str, str], dict[str, str]] = {}
+    for k in npz:
+        if k.startswith("P_") and k.endswith("_ctx_ids"):
+            stem = k[: -len("_ctx_ids")]
+            _p, arm_t_layer = stem.split("_", 1)
+            arm, t_tag, l_tag = arm_t_layer.rsplit("_", 2)
+            stems.setdefault((t_tag, l_tag), {})[arm] = stem
+    for (t_tag, l_tag), by_arm in sorted(stems.items()):
+        if "own" not in by_arm:
+            continue
+        for ext in ("ext_plain", "ext_style", "mismatch"):
+            if ext not in by_arm:
+                continue
+            ids_own = npz[f"{by_arm['own']}_ctx_ids"].tolist()
+            ids_ext = npz[f"{by_arm[ext]}_ctx_ids"].tolist()
+            common = sorted(set(ids_own) & set(ids_ext))
+            if len(common) < 2:
+                continue
+            rows: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+            for arm in ("own", ext):
+                pos = {int(c): i for i, c in enumerate(npz[f"{by_arm[arm]}_ctx_ids"].tolist())}
+                sel = [pos[int(c)] for c in common]
+                rows[arm] = (
+                    npz[f"{by_arm[arm]}_ssres"][sel].astype(np.float64),
+                    npz[f"{by_arm[arm]}_sstot"][sel].astype(np.float64),
+                )
+            # Shared-draw bootstrap restricted to the intersection.
+            col = [bank.col_of[int(c)] for c in common]
+            w_c = w[:, col]  # (n_draws, n_common) — the SAME draws, paired
+            rec = {}
+            r2d = {}
+            for arm, (ssr, sst) in rows.items():
+                fin = np.isfinite(ssr) & np.isfinite(sst)
+                ssr0 = np.where(fin, ssr, 0.0)
+                sst0 = np.where(fin, sst, 0.0)
+                den_o = sst0.sum()
+                rec[arm] = float(1.0 - ssr0.sum() / den_o) if den_o > 1e-12 else None
+                den = w_c @ sst0
+                with np.errstate(invalid="ignore", divide="ignore"):
+                    r2d[arm] = np.where(den > 1e-12, 1.0 - (w_c @ ssr0) / den, np.nan)
+            gap_draws = r2d["own"] - r2d[ext]
+            lo, hi = _ci(gap_draws)
+            out[f"{t_tag}_{l_tag}_own_vs_{ext}"] = {
+                "paired_n": len(common),
+                "r2_own": rec["own"],
+                f"r2_{ext}": rec[ext],
+                "gap": (rec["own"] - rec[ext])
+                if rec["own"] is not None and rec[ext] is not None
+                else None,
+                "gap_ci95": [float(lo), float(hi)],
+            }
+    return out
+
+
+def positive_control_reads(bank: CellBank, obs: np.ndarray, draws: np.ndarray) -> dict:
+    """H2 positive control: mismatched-arm context-only R² ≈ 0 (±0.05) at every
+    position, but ≥ 50% of the own arm's remainder R² at t=128 (plan §3)."""
+    idx = {n: i for i, n in enumerate(bank.names)}
+    pos_cols = [idx[f"A|{s}|mismatch"] for s in POSITION_SLOTS if f"A|{s}|mismatch" in idx]
+    rec: dict[str, Any] = {}
+    if pos_cols:
+        vals = obs[pos_cols]
+        rec["context_only_max_abs_r2"] = float(np.nanmax(np.abs(vals)))
+        rec["context_only_within_pm_0p05"] = bool(np.nanmax(np.abs(vals)) <= 0.05)
+    p128 = [n for n in bank.names if n.startswith("P|mismatch_t128_")]
+    p128_own = [n for n in bank.names if n.startswith("P|own_t128_")]
+    if p128 and p128_own:
+        c_mm, c_own = idx[p128[0]], idx[p128_own[0]]
+        stat_draws = draws[:, c_mm] - 0.5 * draws[:, c_own]
+        lo, hi = _ci(stat_draws)
+        rec["prefix_recovery_t128"] = {
+            "r2_mismatch": float(obs[c_mm]),
+            "r2_own": float(obs[c_own]),
+            "ratio": float(obs[c_mm] / obs[c_own]) if obs[c_own] > 1e-9 else None,
+            "stat_mm_minus_half_own": float(obs[c_mm] - 0.5 * obs[c_own]),
+            "ci95": [float(lo), float(hi)],
+            "passes": bool(obs[c_own] > 1e-9 and obs[c_mm] >= 0.5 * obs[c_own]),
+        }
+    return rec
+
+
+# ── H3 (bank families) ──────────────────────────────────────────────────────────
+
+
+def _kept_pair_ids(verification: dict, judge_margin: float | None = None) -> set[str]:
+    """Kept-pair ids, optionally narrowed to pairs whose divergent-control judge
+    divergence difference is >= ``judge_margin`` (the H3 original-margin re-read;
+    ``None`` returns the verification record's full kept set unchanged)."""
+    kept = set(verification["kept_pairs"])
+    if judge_margin is None:
+        return kept
+    out: set[str] = set()
+    for p in verification["pairs"]:
+        if p["pair_id"] not in kept:
+            continue
+        d_m, c_m = p.get("divergent"), p.get("control")
+        if not (isinstance(d_m, dict) and isinstance(c_m, dict)):
+            continue
+        if float(d_m["divergence"]) - float(c_m["divergence"]) >= judge_margin:
+            out.add(p["pair_id"])
+    return out
+
+
+def _bank_per_context_r2(
+    npz: dict[str, np.ndarray], key: str, groups: list[str], key_suffix: str = ""
+) -> dict[str, dict[str, float]]:
+    """Per bank query: pooled-over-position-slots R² per arm (ratio of sums).
+
+    ``key_suffix`` (e.g. ``_L14``) selects a cross-layer suffixed ss array pair;
+    the id arrays are layer-shared (asserted row-aligned by the driver)."""
+    ids = npz[f"{key}_ids"].tolist()
+    ssr = npz[f"{key}_ssres{key_suffix}"].astype(np.float64)
+    sst = npz[f"{key}_sstot{key_suffix}"].astype(np.float64)
+    cols_by_arm = {
+        arm: [
+            gi
+            for gi, g in enumerate(groups)
+            if g.endswith(f"|{arm}") and g.split("|")[0] in POSITION_SLOTS
+        ]
+        for arm in BANK_ARMS
+    }
+    out: dict[str, dict[str, float]] = {}
+    for ri, qid in enumerate(ids):
+        rec = {}
+        for arm, cols in cols_by_arm.items():
+            s_r, s_t = ssr[ri, cols], sst[ri, cols]
+            fin = np.isfinite(s_r) & np.isfinite(s_t)
+            denom = s_t[fin].sum()
+            rec[arm] = float(1.0 - s_r[fin].sum() / denom) if denom > 1e-12 else np.nan
+        out[str(qid)] = rec
+    return out
+
+
+def h3_reads(  # noqa: C901 — the H3 read IS the plan's companion battery
+    npz: dict[str, np.ndarray],
+    verification: dict,
+    n_draws: int,
+    smoke: bool,
+    judge_margin: float | None = None,
+    key_suffix: str = "",
+) -> dict:
+    """H3: paired (control - divergent) drops, ext vs own — headline + REQUIRED
+    companions (plan §3): ss decomposition, median + 10%-trimmed, sign-flip null
+    with Holm-Bonferroni, length-stratified sweep, band-vs-ceiling report.
+
+    ``judge_margin`` (follow-up): when set, the battery runs on the SUBSET of kept
+    pairs whose divergent-control judge difference >= that margin (identical code
+    path; the sign-flip / bootstrap draws re-batch over the smaller pair vector).
+
+    ``key_suffix`` (cross-layer follow-up): e.g. ``_L14`` reads the suffixed bank
+    ss arrays at that layer through the IDENTICAL battery (descriptive per-layer
+    H3 rider, plan §2)."""
+    if "bank_div_ids" not in npz or f"bank_div_ssres{key_suffix}" not in npz:
+        return {"status": "bank_arrays_absent", "key_suffix": key_suffix}
+    groups = [g for g in npz["A_group_names"].tolist()]
+    r2_div = _bank_per_context_r2(npz, "bank_div", groups, key_suffix)
+    r2_ctl = _bank_per_context_r2(npz, "bank_ctl", groups, key_suffix)
+
+    kept = _kept_pair_ids(verification, judge_margin)
+    pair_rows = []
+    for p in verification["pairs"]:
+        if p["pair_id"] not in kept:
+            continue
+        d_m, c_m = p.get("divergent"), p.get("control")
+        if not (isinstance(d_m, dict) and isinstance(c_m, dict)):
+            continue
+        qd, qc = d_m["query_id"], c_m["query_id"]
+        if qd not in r2_div or qc not in r2_ctl:
+            continue
+        row: dict[str, Any] = {"pair_id": p["pair_id"], "category": p["category"]}
+        row["judge_diff"] = float(d_m["divergence"]) - float(c_m["divergence"])
+        ok = True
+        for arm in BANK_ARMS:
+            rd, rc = r2_div[qd][arm], r2_ctl[qc][arm]
+            if not (np.isfinite(rd) and np.isfinite(rc)):
+                ok = False
+            row[f"r2_div_{arm}"] = rd
+            row[f"r2_ctl_{arm}"] = rc
+            row[f"drop_{arm}"] = rc - rd
+        row["d"] = row["drop_ext_plain"] - row["drop_own"]
+        ld = d_m.get("qwen_len_tokens")
+        lc = c_m.get("qwen_len_tokens")
+        row["abs_len_diff"] = abs(ld - lc) if ld is not None and lc is not None else None
+        if ok:
+            pair_rows.append(row)
+    n_pairs = len(pair_rows)
+    if n_pairs < 2:
+        return {"status": f"too_few_pairs (n={n_pairs})", "n_pairs": n_pairs}
+    d = np.asarray([r["d"] for r in pair_rows], dtype=np.float64)
+    cats = [r["category"] for r in pair_rows]
+
+    def _bank_boot(vals: np.ndarray, seed: int = BOOTSTRAP_SEED) -> dict:
+        """Batched pair-level bootstrap: gathered resample + axis-1 reductions."""
+        rng = np.random.default_rng(seed)
+        m = len(vals)
+        idx = rng.integers(0, m, size=(n_draws, m))
+        res = vals[idx]  # (n_draws, m)
+        mean_d = res.mean(axis=1)
+        med_d = np.median(res, axis=1)
+        k = max(1, round(0.1 * m))
+        srt = np.sort(res, axis=1)
+        trim_d = srt[:, k : m - k].mean(axis=1) if m - 2 * k >= 1 else mean_d
+        srt0 = np.sort(vals)
+        return {
+            "n": m,
+            "mean": float(vals.mean()),
+            "mean_ci95": [float(np.percentile(mean_d, 2.5)), float(np.percentile(mean_d, 97.5))],
+            "median": float(np.median(vals)),
+            "median_ci95": [float(np.percentile(med_d, 2.5)), float(np.percentile(med_d, 97.5))],
+            "trimmed10_mean": float(srt0[k : m - k].mean()) if m - 2 * k >= 1 else None,
+            "trimmed10_ci95": [
+                float(np.percentile(trim_d, 2.5)),
+                float(np.percentile(trim_d, 97.5)),
+            ],
+        }
+
+    headline = _bank_boot(d)
+    headline["clears_margin"] = bool(headline["mean"] >= H3_MARGIN and headline["mean_ci95"][0] > 0)
+    headline["robust_sign_agreement"] = bool(
+        np.sign(headline["mean"]) == np.sign(headline["median"])
+        and (
+            headline["trimmed10_mean"] is None
+            or np.sign(headline["mean"]) == np.sign(headline["trimmed10_mean"])
+        )
+    )
+
+    # Sign-flip permutation null (seed 1): one (n_draws, n_pairs) ±1 matrix,
+    # category-masked GEMMs; observed + every draw at the same frozen cells.
+    rng_p = np.random.default_rng(SIGNFLIP_SEED)
+    signs = rng_p.choice(np.asarray([-1.0, 1.0]), size=(n_draws, n_pairs))
+    kept_cats = sorted({c for c in cats})
+    null_recs: dict[str, Any] = {}
+    pvals: dict[str, float] = {}
+    for label in ["pooled", *kept_cats]:
+        mask = (
+            np.ones(n_pairs, bool) if label == "pooled" else np.asarray([c == label for c in cats])
+        )
+        m = int(mask.sum())
+        if m == 0:
+            continue
+        obs_m = float(d[mask].mean())
+        null = (signs[:, mask] @ d[mask]) / m  # ONE GEMM per label
+        p_one = float((1 + int((null >= obs_m).sum())) / (1 + n_draws))
+        band_hi = float(np.percentile(null, 97.5))
+        # Band-vs-ceiling (plan §6): conditional ceiling = max attainable mean
+        # ext drop (control R² -> 1) minus the own arm's realized mean drop
+        # (interval = its bootstrap CI).
+        r2_div_ext = np.asarray([r["r2_div_ext_plain"] for r in pair_rows])[mask]
+        own_drop = np.asarray([r["drop_own"] for r in pair_rows])[mask]
+        own_boot = _bank_boot(own_drop)
+        ceiling = float(np.mean(1.0 - r2_div_ext) - own_boot["mean"])
+        null_sd = float(null.std())
+        null_recs[label] = {
+            "n_pairs": m,
+            "observed_mean_d": obs_m,
+            "null_band_hi_97p5": band_hi,
+            "p_one_sided": p_one,
+            "ceiling_conditional": ceiling,
+            "own_drop_mean_ci95": own_boot["mean_ci95"],
+            "band_reaches_ceiling": bool(band_hi >= ceiling - null_sd),
+        }
+        pvals[label] = p_one
+    # Holm-Bonferroni across kept categories (pooled reported unadjusted).
+    cat_ps = sorted(((c, pvals[c]) for c in kept_cats if c in pvals), key=lambda x: x[1])
+    k_cats = len(cat_ps)
+    running = 0.0
+    for rank, (c, p) in enumerate(cat_ps):
+        adj = min(1.0, (k_cats - rank) * p)
+        running = max(running, adj)
+        null_recs[c]["p_holm"] = running
+
+    per_cat = {
+        c: _bank_boot(d[np.asarray([cc == c for cc in cats])])
+        for c in kept_cats
+        if sum(cc == c for cc in cats) >= 2
+    }
+
+    # ss_res / ss_tot decomposition of the differential drop (plan §3 H3 (i)).
+    decomp_rows = []
+    ids_div = {str(q): i for i, q in enumerate(npz["bank_div_ids"].tolist())}
+    ids_ctl = {str(q): i for i, q in enumerate(npz["bank_ctl_ids"].tolist())}
+    cols_by_arm = {
+        arm: [
+            gi
+            for gi, g in enumerate(groups)
+            if g.endswith(f"|{arm}") and g.split("|")[0] in POSITION_SLOTS
+        ]
+        for arm in BANK_ARMS
+    }
+    for p in verification["pairs"]:
+        if p["pair_id"] not in kept or not isinstance(p.get("divergent"), dict):
+            continue
+        qd = p["divergent"]["query_id"]
+        qc = p["control"]["query_id"] if isinstance(p.get("control"), dict) else None
+        if qd not in ids_div or qc not in ids_ctl:
+            continue
+        row = {"pair_id": p["pair_id"], "category": p["category"]}
+        for arm, cols in cols_by_arm.items():
+            for tag, (mat_key, ri) in {
+                "div": ("bank_div", ids_div[qd]),
+                "ctl": ("bank_ctl", ids_ctl[qc]),
+            }.items():
+                s_r = npz[f"{mat_key}_ssres{key_suffix}"][ri, cols].astype(np.float64)
+                s_t = npz[f"{mat_key}_sstot{key_suffix}"][ri, cols].astype(np.float64)
+                fin = np.isfinite(s_r) & np.isfinite(s_t)
+                row[f"ssr_{tag}_{arm}"] = float(s_r[fin].sum())
+                row[f"sst_{tag}_{arm}"] = float(s_t[fin].sum())
+            row[f"dlog_ssr_{arm}"] = float(
+                np.log(max(row[f"ssr_div_{arm}"], 1e-12) / max(row[f"ssr_ctl_{arm}"], 1e-12))
+            )
+            row[f"dlog_sst_{arm}"] = float(
+                np.log(max(row[f"sst_div_{arm}"], 1e-12) / max(row[f"sst_ctl_{arm}"], 1e-12))
+            )
+        decomp_rows.append(row)
+    decomp = {}
+    if decomp_rows:
+        dl_ssr = np.asarray([r["dlog_ssr_ext_plain"] - r["dlog_ssr_own"] for r in decomp_rows])
+        dl_sst = np.asarray([r["dlog_sst_ext_plain"] - r["dlog_sst_own"] for r in decomp_rows])
+        decomp = {
+            "median_differential_dlog_ssr": float(np.median(dl_ssr)),
+            "median_differential_dlog_sst": float(np.median(dl_sst)),
+            "residual_error_driven": bool(abs(np.median(dl_ssr)) > abs(np.median(dl_sst))),
+            "note": (
+                "differential (ext - own) log-ratios of divergent/control pooled ss "
+                "components over position slots; residual-driven when the ss_res "
+                "component dominates the ss_tot (denominator) component"
+            ),
+        }
+
+    # Length-stratified sweep (|Δlen| cuts; #823 precedent).
+    strata = {}
+    lens = np.asarray(
+        [r["abs_len_diff"] if r["abs_len_diff"] is not None else np.inf for r in pair_rows]
+    )
+    for cut in LENGTH_CUTS:
+        mask = lens <= cut
+        if int(mask.sum()) >= 2:
+            strata[f"abs_len_diff_le_{cut}"] = _bank_boot(d[mask])
+        else:
+            strata[f"abs_len_diff_le_{cut}"] = {"n": int(mask.sum()), "status": "too_few_pairs"}
+
+    return {
+        "n_pairs": n_pairs,
+        "margin": H3_MARGIN,
+        "key_suffix": key_suffix,
+        "subset": {
+            "mode": "original-margin" if judge_margin is not None else "full",
+            "judge_margin": judge_margin,
+            "n_kept_full": len(verification["kept_pairs"]),
+            "n_kept_after_margin": len(kept),
+            "surviving_per_category": dict(
+                Counter(p["category"] for p in verification["pairs"] if p["pair_id"] in kept)
+            ),
+        },
+        "headline_mean_drop_diff": headline,
+        "per_category": per_cat,
+        "sign_flip_null": null_recs,
+        "ss_decomposition": decomp,
+        "length_stratified": strata,
+        "pair_rows": pair_rows,
+        "smoke": smoke,
+    }
+
+
+# ── cross-layer decision cells (follow-up round `cross-layer-decision-cells`) ───
+# Registered constructions (follow-up plan §2): the pinned bootstrap-p, Holm
+# across the ADDED layers per family, the three-way per-layer status enums, and
+# the TOTAL outcome lattice. Unit-tested in tests/test_issue952_cross_layer_stats.py.
+
+XLAYER_ADDED_DEFAULT = (14, 23, 26)
+XLAYER_ALPHA = 0.05
+
+
+def pinned_bootstrap_p(obs: float, stat_draws: np.ndarray, tail: str) -> float | None:
+    """The registered bootstrap p (follow-up plan §2): shift-to-null-center
+    (null = draws - observed) with add-one counting (1 + #extreme) / (1 + B).
+
+    ``tail="two"`` = H1 two-sided vs 0; ``tail="greater"`` = H2 one-sided
+    positive-tail vs 0 — matching the H3 sign-flip counting convention."""
+    if obs is None or not np.isfinite(obs):
+        return None
+    null = np.asarray(stat_draws, dtype=np.float64) - float(obs)
+    null = null[np.isfinite(null)]
+    b = int(null.size)
+    if b == 0:
+        return None
+    if tail == "two":
+        n_ext = int((np.abs(null) >= abs(obs)).sum())
+    elif tail == "greater":
+        n_ext = int((null >= obs).sum())
+    else:
+        raise ValueError(f"unknown tail: {tail}")
+    return float((1 + n_ext) / (1 + b))
+
+
+def holm_adjust(pvals: dict[Any, float]) -> dict[Any, float]:
+    """Holm step-down over a {key: raw_p} dict (same convention as the H3 block)."""
+    items = sorted(((k, p) for k, p in pvals.items() if p is not None), key=lambda kv: kv[1])
+    k_tests = len(items)
+    running = 0.0
+    out: dict[Any, float] = {}
+    for rank, (key, p) in enumerate(items):
+        adj = min(1.0, (k_tests - rank) * p)
+        running = max(running, adj)
+        out[key] = running
+    for key, p in pvals.items():
+        if p is None:
+            out[key] = None
+    return out
+
+
+def h1_status(contrast: float | None, lo: float, hi: float, holm_p: float | None) -> str:
+    """Follow-up plan §2 H1 three-way status. Equivalence containment is
+    NON-STRICT (lo >= -0.03 AND hi <= +0.03); affirmative non-replication =
+    (contrast >= +0.03 AND Holm p < 0.05) OR the CI entirely outside ±0.03."""
+    if contrast is None or not (np.isfinite(lo) and np.isfinite(hi)):
+        return "indeterminate"
+    if lo >= -H1_MARGIN and hi <= H1_MARGIN:
+        return "replicates"
+    detected = contrast >= H1_MARGIN and holm_p is not None and holm_p < XLAYER_ALPHA
+    if detected or lo > H1_MARGIN or hi < -H1_MARGIN:
+        return "affirmative_nonreplication"
+    return "indeterminate"
+
+
+def h2_status(delta_g: float | None, hi: float, holm_p: float | None) -> str:
+    """Follow-up plan §2 H2 three-way status: replicates = ΔG >= 0.02 AND Holm
+    one-sided p < 0.05; affirmative non-replication = CI upper < 0.02."""
+    if delta_g is None or not np.isfinite(hi):
+        return "indeterminate"
+    if delta_g >= H2_MARGIN and holm_p is not None and holm_p < XLAYER_ALPHA:
+        return "replicates"
+    if hi < H2_MARGIN:
+        return "affirmative_nonreplication"
+    return "indeterminate"
+
+
+def map_outcome_lattice(h1_statuses: dict[str, str], h2_statuses: dict[str, str]) -> dict:
+    """Follow-up plan §2 TOTAL outcome lattice (counts PER FAMILY over the added
+    layers; no joint-layer conjunction). ``L20_local`` fires ONLY on affirmative
+    evidence — >= 2/3 affirmative in either family; indeterminate reads NEVER
+    count toward it (mechanizable check enforced by the assert below)."""
+    assert h1_statuses and h2_statuses and set(h1_statuses) == set(h2_statuses), (
+        "lattice needs the SAME non-empty added-layer set in both families"
+    )
+    n = len(h1_statuses)
+    c1, c2 = Counter(h1_statuses.values()), Counter(h2_statuses.values())
+    aff1 = c1.get("affirmative_nonreplication", 0)
+    aff2 = c2.get("affirmative_nonreplication", 0)
+    if c1.get("replicates", 0) == n and c2.get("replicates", 0) == n:
+        verdict = "full_replication"
+    elif aff1 >= 2 or aff2 >= 2:
+        verdict = "L20_local"
+    elif c1.get("indeterminate", 0) == n and c2.get("indeterminate", 0) == n:
+        verdict = "inconclusive_layer_scope"
+    else:
+        verdict = "partial_band_map"
+    if verdict == "L20_local":
+        # Plan §2 mechanizable check: indeterminate reads never open this branch.
+        assert max(aff1, aff2) >= 2, "L20_local without >=2 affirmative reads — forbidden"
+    return {
+        "family_counts": {"h1": dict(c1), "h2": dict(c2), "n_added_layers": n},
+        "overall_verdict": verdict,
+    }
+
+
+def register_cross_layer_cells(
+    npz: dict[str, np.ndarray], bank: CellBank, layers: list[int]
+) -> dict[str, list[str]]:
+    """Register the layer-suffixed A blocks as ``A_L{layer}|{slot}|{arm}`` cells."""
+    fam: dict[str, list[str]] = {}
+    groups = [g for g in npz["A_group_names"].tolist()]
+    ids = npz["A_test_ctx_ids"]
+    for layer in layers:
+        key = f"A_test_ssres_L{layer}"
+        if key not in npz:
+            continue
+        names = []
+        for gi, g in enumerate(groups):
+            name = f"A_L{layer}|{g}"
+            bank.add(name, ids, npz[key][:, gi], npz[f"A_test_sstot_L{layer}"][:, gi])
+            names.append(name)
+        fam[f"A_L{layer}"] = names
+    logger.info(
+        "[cells] registered cross-layer A blocks: %s",
+        {k: len(v) for k, v in fam.items()},
+    )
+    return fam
+
+
+def assert_cross_layer_coverage(npz: dict[str, np.ndarray], layers: list[int]) -> dict:
+    """Per-layer suffixed-array row coverage vs the shared id arrays (plan §3)."""
+    rec: dict[str, Any] = {}
+    n_a = len(npz["A_test_ctx_ids"])
+    for layer in layers:
+        r: dict[str, Any] = {}
+        k = f"A_test_ssres_L{layer}"
+        assert k in npz, f"missing suffixed A arrays for layer {layer}"
+        assert len(npz[k]) == n_a, f"{k}: {len(npz[k])} rows != {n_a} test ids"
+        r["A_rows"] = n_a
+        for key in ("bank_div", "bank_ctl"):
+            if f"{key}_ids" not in npz:
+                continue
+            sk = f"{key}_ssres_L{layer}"
+            assert sk in npz, f"missing {sk} (bank arrays exist unsuffixed)"
+            assert len(npz[sk]) == len(npz[f"{key}_ids"]), (
+                f"{sk}: {len(npz[sk])} rows != {len(npz[f'{key}_ids'])} bank ids"
+            )
+            r[f"{key}_rows"] = len(npz[sk])
+        rec[str(layer)] = r
+    logger.info("[coverage] cross-layer suffixed arrays: %s", rec)
+    return rec
+
+
+def assert_h2_decision_cell_coverage(
+    npz: dict[str, np.ndarray], layers: list[int], t2: int = 16
+) -> dict:
+    """Fail-loud enumeration of EVERY registered H2 decision cell (concern
+    ``cross-layer-h2-missing-cells-silent-indeterminate``): the npz must carry
+    ``M{t2}_ctx_ids`` plus all ``M{t2}_L{layer}_{leg}_{arm}_{ssres,sstot}``
+    arrays (leg in cleg/zleg, arm in MATCHED_ARMS) for every registered layer,
+    each row-matched to the ctx-id array. Runs UNCONDITIONALLY (smoke AND
+    production — a smoke npz that skipped the matched t2 cells cannot validate
+    the H2 path; smoke subsets stay legal because rows are checked against the
+    npz's OWN ctx-id set) BEFORE any statistic, so a partial npz — e.g. the
+    producer's small-paired-universe skip branch (run_952.py phase_battery:
+    writes ``M{t2}_ctx_ids`` while skipping every per-layer M array) — raises
+    here instead of degrading to a silent 'indeterminate'/'read_missing'."""
+    ids_key = f"M{t2}_ctx_ids"
+    if ids_key not in npz:
+        raise RuntimeError(
+            f"H2 decision-cell coverage FAIL: {ids_key} absent from the npz — the matched "
+            f"t2={t2} battery never ran; no registered H2 read is possible"
+        )
+    n = len(npz[ids_key])
+    missing: list[str] = []
+    bad_len: list[str] = []
+    for layer in layers:
+        for leg in ("cleg", "zleg"):
+            for arm in MATCHED_ARMS:
+                for kind in ("ssres", "sstot"):
+                    k = f"M{t2}_L{layer}_{leg}_{arm}_{kind}"
+                    if k not in npz:
+                        missing.append(k)
+                    elif len(npz[k]) != n:
+                        bad_len.append(f"{k}(rows={len(npz[k])}!={n})")
+    if missing or bad_len:
+        raise RuntimeError(
+            "H2 decision-cell coverage FAIL — registered per-layer matched cells incomplete "
+            f"(missing={missing[:12]}{' …' if len(missing) > 12 else ''}, "
+            f"row-mismatched={bad_len[:12]}); a partial npz (e.g. the producer's "
+            "small-paired-universe skip branch) must fail loud here, never degrade to "
+            "'indeterminate' (concern cross-layer-h2-missing-cells-silent-indeterminate)"
+        )
+    rec = {
+        "t2": t2,
+        "layers": [int(la) for la in layers],
+        "n_rows": n,
+        "n_cells_checked": len(layers) * 2 * len(MATCHED_ARMS) * 2,
+    }
+    logger.info("[coverage] H2 decision cells: %s", rec)
+    return rec
+
+
+def _assert_registered_family_ps(family: str, raw_ps: dict[str, float | None]) -> None:
+    """The registered Holm family must enter ``holm_adjust`` COMPLETE: a None /
+    non-finite raw p would silently shrink ``k_tests`` (anti-conservative for
+    the surviving layers' 'replicates' calls) — fail loud instead (plan §2:
+    every added layer reports its full read, incl. raw + Holm-adjusted p)."""
+    bad = sorted(k for k, v in raw_ps.items() if v is None or not np.isfinite(v))
+    if bad:
+        raise RuntimeError(
+            f"{family} registered family incomplete before Holm: non-finite raw p at layers "
+            f"{bad} — a missing/degenerate read must never shrink the Holm family "
+            "(concern cross-layer-h2-missing-cells-silent-indeterminate)"
+        )
+
+
+def h2_layer_read(
+    bank: CellBank, obs: np.ndarray, draws: np.ndarray, layer: int, t2: int = 16
+) -> dict:
+    """The registered matched ΔG(0→t2) read at one layer, with the pinned
+    one-sided bootstrap p (plan §2 rule (i) inherited: common surviving subset,
+    identical remainder target, paired n — the M cells encode exactly that).
+    Raises on a missing registered cell (defense-in-depth behind
+    ``assert_h2_decision_cell_coverage``) — never returns a partial read."""
+    idx = {n: i for i, n in enumerate(bank.names)}
+    cols: dict[str, int] = {}
+    for leg in ("cleg", "zleg"):
+        for a in MATCHED_ARMS:
+            c = idx.get(f"M|{t2}_L{layer}_{leg}_{a}")
+            if c is None:
+                raise RuntimeError(
+                    f"H2 layer read: registered cell M|{t2}_L{layer}_{leg}_{a} not in the "
+                    "bank — assert_h2_decision_cell_coverage should have caught this upstream"
+                )
+            cols[f"{leg}_{a}"] = c
+    out: dict[str, Any] = {"t2": t2, "layer": layer, "margin": H2_MARGIN}
+    for ext in ("ext_plain", "ext_style"):
+        g0 = float(obs[cols["cleg_own"]] - obs[cols[f"cleg_{ext}"]])
+        gt = float(obs[cols["zleg_own"]] - obs[cols[f"zleg_{ext}"]])
+        dg_draws = (draws[:, cols["cleg_own"]] - draws[:, cols[f"cleg_{ext}"]]) - (
+            draws[:, cols["zleg_own"]] - draws[:, cols[f"zleg_{ext}"]]
+        )
+        lo, hi = _ci(dg_draws)
+        out[ext] = {
+            "G_matched_0": g0,
+            "G_matched_t": gt,
+            "delta_G": g0 - gt,
+            "ci95": [float(lo), float(hi)],
+            "p_one_sided_raw": pinned_bootstrap_p(g0 - gt, dg_draws, tail="greater"),
+        }
+    out["delta_G_style_minus_plain"] = {
+        "observed": out["ext_style"]["delta_G"] - out["ext_plain"]["delta_G"],
+    }
+    return out
+
+
+# ── TF-idf k-means OOD / near-dup diagnostic (plan §6 OOD mitigation (b)) ───────
+
+KMEANS_K = 10  # plan §6: TF-idf k-means (k=10) over test contexts
+NEAR_DUP_COS = 0.9  # train<->test near-duplicate flag threshold (TF-idf cosine)
+
+
+def _reconstruct_lmsys_prompts(n_needed: int) -> list[str]:
+    """#823 Phase 0b replay at the pinned revision (fallback when --prompts absent)."""
+    from datasets import load_dataset
+
+    from explore_persona_space.experiments.issue_952.run_952 import LMSYS_REVISION
+
+    ds = load_dataset(
+        "lmsys/lmsys-chat-1m", split="train", streaming=True, revision=LMSYS_REVISION, token=True
+    )
+    prompts: list[str] = []
+    for row in ds:
+        text = ""
+        for msg in row.get("conversation", []):
+            if msg["role"] == "user":
+                text = msg["content"].strip()
+                break
+        if text:
+            prompts.append(text)
+        if len(prompts) >= n_needed:
+            break
+    assert len(prompts) >= n_needed, f"LMSYS reconstruction short: {len(prompts)} < {n_needed}"
+    # Deterministic release — a streaming IterableDataset surviving to interpreter
+    # shutdown SIGABRTs (rc=134) in the pinned datasets env (see run_952.phase0_verify).
+    import gc
+
+    del row, ds
+    gc.collect()
+    return prompts
+
+
+def kmeans_ood_diagnostic(npz: dict[str, np.ndarray], split: dict, prompts: list[str]) -> dict:
+    """Plan §6 OOD mitigation (b): TF-idf k-means (k=10) over TEST contexts with
+    per-cluster R² spread per arm, PLUS a train<->test near-duplicate read (max
+    TF-idf cosine of each test context to any train context). Exploratory
+    diagnostic — feeds no H1/H2/H3 decision."""
+    from sklearn.cluster import KMeans
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    if "A_test_ssres" not in npz:
+        return {"status": "skipped — no A-family per-context stats in npz"}
+    test_ids = [int(i) for i in npz["A_test_ctx_ids"].tolist()]
+    train_ids = [int(i) for i in split["train"]]
+    n_prompts = len(prompts)
+    missing = [i for i in test_ids + train_ids if i >= n_prompts]
+    assert not missing, f"prompts list (n={n_prompts}) does not cover ids, e.g. {missing[:5]}"
+
+    groups = [g for g in npz["A_group_names"].tolist()]
+    pos_set = set(POSITION_SLOTS)
+    per_arm_r2: dict[str, np.ndarray] = {}
+    for arm in ARMS:
+        cols = [
+            gi
+            for gi, g in enumerate(groups)
+            if g.endswith(f"|{arm}") and g.split("|")[0] in pos_set
+        ]
+        ssr = npz["A_test_ssres"][:, cols].astype(float)
+        sst = npz["A_test_sstot"][:, cols].astype(float)
+        r2 = np.where(np.isfinite(ssr) & np.isfinite(sst) & (sst > 1e-12), 1.0 - ssr / sst, np.nan)
+        with np.errstate(invalid="ignore"):
+            per_arm_r2[arm] = np.nanmean(r2, axis=1)  # per-context mean over position slots
+
+    vec = TfidfVectorizer(max_features=20_000)
+    x_all = vec.fit_transform([prompts[i] for i in test_ids + train_ids])
+    x_test = x_all[: len(test_ids)]
+    x_train = x_all[len(test_ids) :]
+    k = int(min(KMEANS_K, len(test_ids)))
+    labels = KMeans(n_clusters=k, random_state=0, n_init=10).fit_predict(x_test)
+    clusters: list[dict] = []
+    for c in range(k):
+        rows = np.where(labels == c)[0]
+        rec: dict[str, Any] = {"cluster": int(c), "n": len(rows)}
+        for arm in ARMS:
+            vals = per_arm_r2[arm][rows]
+            fin = np.isfinite(vals)
+            rec[arm] = {
+                "mean_r2": float(np.mean(vals[fin])) if fin.any() else None,
+                "median_r2": float(np.median(vals[fin])) if fin.any() else None,
+                "n_valid": int(fin.sum()),
+            }
+        clusters.append(rec)
+    spread: dict[str, Any] = {}
+    for arm in ARMS:
+        means = [c[arm]["mean_r2"] for c in clusters if c[arm]["mean_r2"] is not None]
+        spread[arm] = (
+            {
+                "min": float(min(means)),
+                "max": float(max(means)),
+                "range": float(max(means) - min(means)),
+            }
+            if means
+            else None
+        )
+    # TF-idf rows are L2-normalized (norm='l2' default) -> cosine = dot product.
+    if len(train_ids):
+        max_cos = np.asarray((x_test @ x_train.T).max(axis=1).todense()).ravel()
+    else:
+        max_cos = np.zeros(len(test_ids))
+    over_key = f"n_test_over_{NEAR_DUP_COS:.2f}"
+    near_dup = {
+        "max_cos_median": float(np.median(max_cos)),
+        "max_cos_p95": float(np.percentile(max_cos, 95)),
+        "max_cos_max": float(np.max(max_cos)) if max_cos.size else None,
+        over_key: int((max_cos > NEAR_DUP_COS).sum()),
+    }
+    logger.info(
+        "[kmeans] k=%d over %d test contexts; near-dup max-cos median %.3f p95 %.3f (>%.2f: %d)",
+        k,
+        len(test_ids),
+        near_dup["max_cos_median"],
+        near_dup["max_cos_p95"],
+        NEAR_DUP_COS,
+        near_dup[over_key],
+    )
+    return {
+        "k": k,
+        "n_test": len(test_ids),
+        "per_cluster": clusters,
+        "cluster_spread_mean_r2": spread,
+        "train_test_near_dup": near_dup,
+    }
+
+
+# ── driver ──────────────────────────────────────────────────────────────────────
+
+
+def _git_sha() -> str:
+    """Repo HEAD sha for reproducibility metadata ("unknown" on failure, never raises)."""
+    try:
+        return (
+            subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=str(_REPO_ROOT))
+            .decode()
+            .strip()
+        )
+    except Exception as e:  # metadata only — never blocks the stats
+        logger.warning("git sha lookup failed: %s", e)
+        return "unknown"
+
+
+def cross_layer_main(args: argparse.Namespace) -> None:
+    """--cross-layer driver (follow-up plan §2/§3): registered per-layer H1/H2 +
+    descriptive H3 across the added decision layers, the pinned bootstrap p,
+    Holm per family, three-way statuses, and the TOTAL outcome lattice; parent
+    L20/L17 rows spliced as CARRIED comparison rows (never recomputed into the
+    headline). Writes ``<eval-dir>/stats_cross_layer.json``."""
+    t0 = time.time()
+    eval_dir = pathlib.Path(args.eval_dir)
+    npz_path = pathlib.Path(args.npz)
+    spans_dir = pathlib.Path(args.spans_dir) if args.spans_dir else npz_path.parent
+    out_path = pathlib.Path(args.out) if args.out else eval_dir / "stats_cross_layer.json"
+    npz = dict(np.load(npz_path, allow_pickle=False))
+
+    def _resolve(name: str) -> pathlib.Path:
+        # Follow-up inputs split across the follow-up out dir and the PARENT dir
+        # (split + bank verification live with the parent; battery outputs here).
+        for d in (eval_dir, eval_dir.parent):
+            if (d / name).exists():
+                return d / name
+        raise FileNotFoundError(f"{name} not found in {eval_dir} or {eval_dir.parent}")
+
+    split_name = "split_seed952_smoke.json" if args.smoke else "split_seed952.json"
+    split = json.loads(_resolve(split_name).read_text())
+    meta = json.loads((eval_dir / "battery_meta.json").read_text())
+    verification = json.loads(_resolve("divergence_bank_verification.json").read_text())
+
+    cal_layer = int(meta["l_star_pos"])
+    added = [int(x) for x in args.decision_layers.split(",") if x.strip()]
+    # A degenerate smoke can select l_star INSIDE the decision set; the
+    # calibration layer is then excluded from the registered families
+    # (production: cal_layer=20 is never in {14, 23, 26}).
+    family_layers = [la for la in added if la != cal_layer]
+    assert family_layers, f"no added layers left after excluding cal layer {cal_layer}"
+
+    # Row-coverage asserts BEFORE any statistic (plan §3, incl. per-layer H3),
+    # plus the fail-loud registered H2 decision-cell enumeration (a partial npz
+    # raises HERE — stats_cross_layer.json is never written from a partial read).
+    spans = load_spans(spans_dir)
+    cov_h2 = assert_h2_row_coverage(npz, spans, split["test"])
+    cov_h3 = assert_h3_row_coverage(npz, verification, smoke=args.smoke)
+    cov_xlayer = assert_cross_layer_coverage(npz, sorted({*family_layers, cal_layer}))
+    cov_h2_cells = assert_h2_decision_cell_coverage(npz, sorted({*family_layers, cal_layer}))
+
+    # Shared-draw bootstrap over ALL cells (unsuffixed + suffixed + P + M).
+    bank = CellBank(split["test"])
+    fam = register_lmsys_cells(npz, bank)
+    xfam = register_cross_layer_cells(npz, bank, sorted({*family_layers, cal_layer}))
+    rng = np.random.default_rng(BOOTSTRAP_SEED)
+    n_test = bank.n_test
+    w = rng.multinomial(n_test, np.full(n_test, 1.0 / n_test), size=args.n_draws).astype(np.float64)
+    obs = bank.observed()
+    draws = bank.draws(w)
+    parity = serial_oracle_parity(bank, w, draws)
+
+    # H1 per added layer (decision arm = ext_plain; ext_style companion).
+    h1_by_layer = {
+        str(la): h1_reads(bank, obs, draws, cell_prefix=f"A_L{la}", with_pinned_p=True)
+        for la in family_layers
+    }
+    h1_calibration = h1_reads(bank, obs, draws, cell_prefix=f"A_L{cal_layer}", with_pinned_p=True)
+    h1_raw_p = {
+        la: h1_by_layer[la]["ext_plain"].get("p_two_sided_raw") for la in map(str, family_layers)
+    }
+    _assert_registered_family_ps("h1", h1_raw_p)
+    h1_holm = holm_adjust(h1_raw_p)
+
+    # H2 per added layer (registered 0→16 matched contrast; ext_plain decision).
+    # h2_layer_read raises on any missing registered cell (indeterminate means
+    # "measured, CI straddles" ONLY — never "absent"); the family enters Holm
+    # complete with finite raw p per layer or the run fails loud.
+    h2_by_layer = {str(la): h2_layer_read(bank, obs, draws, la) for la in family_layers}
+    h2_calibration = h2_layer_read(bank, obs, draws, cal_layer)
+    h2_raw_p = {
+        la: h2_by_layer[la]["ext_plain"]["p_one_sided_raw"] for la in map(str, family_layers)
+    }
+    _assert_registered_family_ps("h2", h2_raw_p)
+    h2_holm = holm_adjust(h2_raw_p)
+
+    # Per-layer statuses (three-way enums, plan §2).
+    h1_statuses: dict[str, str] = {}
+    h2_statuses: dict[str, str] = {}
+    for la in map(str, family_layers):
+        r1 = h1_by_layer[la].get("ext_plain", {})
+        ci1 = r1.get("ci95") or [np.nan, np.nan]
+        h1_by_layer[la]["ext_plain"]["p_holm"] = h1_holm.get(la)
+        h1_statuses[la] = h1_status(r1.get("h1_contrast"), ci1[0], ci1[1], h1_holm.get(la))
+        h1_by_layer[la]["ext_plain"]["status"] = h1_statuses[la]
+        r2rec = h2_by_layer[la]
+        ci2 = r2rec["ext_plain"]["ci95"]
+        r2rec["ext_plain"]["p_holm"] = h2_holm.get(la)
+        h2_statuses[la] = h2_status(r2rec["ext_plain"]["delta_G"], ci2[1], h2_holm.get(la))
+        r2rec["ext_plain"]["status"] = h2_statuses[la]
+
+    lattice = map_outcome_lattice(h1_statuses, h2_statuses)
+
+    # Descriptive per-layer H3 rider (no decision, no Holm entry, no status).
+    h3_by_layer = {
+        str(la): h3_reads(npz, verification, args.n_draws, args.smoke, key_suffix=f"_L{la}")
+        for la in family_layers
+    }
+    h3_calibration = h3_reads(
+        npz, verification, args.n_draws, args.smoke, key_suffix=f"_L{cal_layer}"
+    )
+
+    # Carried PARENT rows (plan §2: L20/L17 from committed stats_summary.json,
+    # never recomputed into the headline).
+    parent_stats_path = (
+        pathlib.Path(args.parent_stats)
+        if args.parent_stats
+        else eval_dir.parent / "stats_summary.json"
+    )
+    if parent_stats_path.exists():
+        parent = json.loads(parent_stats_path.read_text())
+        carried = {
+            "source": str(parent_stats_path),
+            "note": (
+                "PARENT rows carried verbatim from the parent stats_summary.json — "
+                "never re-derived follow-up evidence (plan §2)"
+            ),
+            "h1": {"L20": parent.get("h1")},
+            "h2": {
+                f"L{la}": parent.get("h2_matched", {}).get("contrasts", {}).get(f"t16_L{la}")
+                for la in (20, 17)
+            },
+            "h3_L20_headline": {
+                k: parent.get("h3", {}).get(k)
+                for k in ("n_pairs", "headline_mean_drop_diff", "sign_flip_null")
+            },
+        }
+    elif args.smoke:
+        logger.warning(
+            "[xlayer] parent stats absent (%s) — carried rows omitted", parent_stats_path
+        )
+        carried = {"status": f"parent stats absent: {parent_stats_path}"}
+    else:
+        raise FileNotFoundError(f"parent stats_summary.json required: {parent_stats_path}")
+
+    summary = {
+        "issue": 952,
+        "mode": "cross_layer_decision_cells",
+        "added_layers": family_layers,
+        "calibration_layer": cal_layer,
+        "l_star": cal_layer,
+        "margins": {"h1": H1_MARGIN, "h2": H2_MARGIN, "alpha": XLAYER_ALPHA},
+        "p_construction": (
+            "shift-to-null-center (null = draws - observed), add-one counting "
+            "(1 + #extreme)/(1 + B); H1 two-sided vs 0, H2 one-sided positive-tail "
+            "vs 0; B = n_draws (plan §2 pinned)"
+        ),
+        "n_draws": args.n_draws,
+        "seeds": {"bootstrap": BOOTSTRAP_SEED, "sign_flip": SIGNFLIP_SEED},
+        "smoke": args.smoke,
+        "row_coverage": {
+            "h2": cov_h2,
+            "h3": cov_h3,
+            "cross_layer": cov_xlayer,
+            "h2_decision_cells": cov_h2_cells,
+        },
+        "bootstrap_gemm_parity": parity,
+        "n_cells": len(bank.names),
+        "families": {**{k: len(v) for k, v in fam.items()}, **{k: len(v) for k, v in xfam.items()}},
+        "h1_by_layer": h1_by_layer,
+        "h1_calibration_L20_companion": h1_calibration,
+        "h1_holm": h1_holm,
+        "h1_status": h1_statuses,
+        "h2_by_layer": h2_by_layer,
+        "h2_calibration_L20_companion": h2_calibration,
+        "h2_holm": h2_holm,
+        "h2_status": h2_statuses,
+        "h3_by_layer_descriptive": h3_by_layer,
+        "h3_calibration_L20_companion": h3_calibration,
+        **lattice,
+        "carried_parent_rows": carried,
+        "battery_gates": {
+            k: meta.get(k)
+            for k in ("l20_reproduction_gate", "suffixed_l20_calibration_gate", "cross_layer")
+        },
+        "inputs": {"npz": str(npz_path), "eval_dir": str(eval_dir), "npz_keys": len(npz)},
+        "git_sha": _git_sha(),
+        "numpy_version": np.__version__,
+        "wall_seconds": time.time() - t0,
+        "ts": time.time(),
+    }
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(summary, indent=2, default=_json_np))
+    logger.info(
+        "[stats:xlayer] layers %s (cal %d): h1=%s h2=%s -> %s; %d cells, %d draws in %.1fs -> %s",
+        family_layers,
+        cal_layer,
+        h1_statuses,
+        h2_statuses,
+        lattice["overall_verdict"],
+        len(bank.names),
+        args.n_draws,
+        summary["wall_seconds"],
+        out_path,
+    )
+
+
+# ── kfold cross-fit (follow-up round `kfold-decision-cells`, plan v10 §2/§3) ────
+# Pools the K rotation folds' per-context cells (each context from the ONE fold
+# where it was in test), validates every fold's gate-5 provenance manifest, then
+# reuses the REGISTERED --cross-layer statistics code paths verbatim on the
+# pooled population (pinned bootstrap p, Holm per family, three-way statuses,
+# TOTAL lattice — population swapped, constructions unchanged).
+
+KFOLD_COMPANION_H1 = (20,)  # pooled L20 read — companion only (parent L20 registered read stands)
+KFOLD_COMPANION_H2 = (17, 20)  # pooled L17/L20 reads — companions only (plan §2)
+
+
+def _manifest_fingerprint(m: dict) -> tuple:
+    """(git_sha, env-json, staging_revision) — the shared-provenance fingerprint."""
+    return (
+        m.get("git_sha"),
+        json.dumps(m.get("env"), sort_keys=True),
+        m.get("staging_revision"),
+    )
+
+
+def validate_kfold_manifests(
+    fold_npzs: dict[int, dict],
+    eval_dir: pathlib.Path,
+    folds: list[dict],
+    gate_record: dict,
+) -> dict:
+    """Gate-5 CONSUMER RULE (plan v10 §2): every fold's persisted manifests (npz
+    ``__manifest__`` + report-JSON ``provenance_manifest``) must match the
+    RECOMPUTED ``make_kfold_splits`` hashes/counts/fold identity, and ONE shared
+    (git_sha, env, staging_revision) fingerprint must hold across ALL verdict
+    folds AND the calibration gate-PASS record. RAISES before any statistic is
+    computed on absence or mismatch — never a pooled statistic over
+    mixed-provenance folds (plan kill criterion). Applies in --smoke too (the
+    perturbed-manifest probe exercises exactly this branch)."""
+    problems: list[str] = []
+    fingerprints: dict[str, tuple] = {}
+    manifests: dict[int, dict] = {}
+    for f in folds:
+        k = int(f["fold"])
+        npz = fold_npzs[k]
+        m_npz = json.loads(str(npz["__manifest__"])) if "__manifest__" in npz else None
+        rep_path = eval_dir / f"position_r2_by_arm_fold{k}.json"
+        m_rep = (
+            json.loads(rep_path.read_text()).get("provenance_manifest")
+            if rep_path.exists()
+            else None
+        )
+        expected = {
+            "fold": k,
+            "k_folds": int(f["k_folds"]),
+            "split_seed": int(f["seed"]),
+            "n_pool": int(f["n_pool"]),
+            "counts": {key: len(f[key]) for key in ("train", "val", "test")},
+            "split_sha256": kfold_split_hashes(f),
+        }
+        for src, m in (("npz", m_npz), ("report_json", m_rep)):
+            if not isinstance(m, dict):
+                problems.append(f"fold {k}: {src} manifest absent")
+                continue
+            for key, want in expected.items():
+                if m.get(key) != want:
+                    problems.append(
+                        f"fold {k}: {src} manifest mismatch at {key!r} "
+                        f"(persisted={m.get(key)!r} != recomputed={want!r})"
+                    )
+            fingerprints[f"fold{k}/{src}"] = _manifest_fingerprint(m)
+        if isinstance(m_npz, dict):
+            manifests[k] = m_npz
+    gate_manifest = (
+        gate_record.get("provenance_manifest") if isinstance(gate_record, dict) else None
+    )
+    if not isinstance(gate_manifest, dict):
+        problems.append("calibration gate record: provenance_manifest absent")
+    else:
+        fingerprints["gate_record"] = _manifest_fingerprint(gate_manifest)
+    if len(set(fingerprints.values())) > 1:
+        shas = {carrier: fp[0] for carrier, fp in fingerprints.items()}
+        problems.append(
+            f"shared-fingerprint violation: (git_sha, env, staging_revision) differ "
+            f"across carriers — git_shas={shas}"
+        )
+    if problems:
+        raise RuntimeError(
+            "kfold gate-5 manifest validation FAIL — refusing to consume fold outputs "
+            f"({len(problems)} problem(s)): " + "; ".join(problems[:8])
+        )
+    fp0 = next(iter(fingerprints.values()))
+    rec = {
+        "n_folds": len(folds),
+        "carriers_checked": sorted(fingerprints),
+        "shared_git_sha": fp0[0],
+        "shared_staging_revision": fp0[2],
+        "lambda_tables_by_fold": {
+            str(k): m.get("lam_star_by_slot_by_layer") for k, m in sorted(manifests.items())
+        },
+        "status": "PASS",
+    }
+    logger.info(
+        "[kfold] gate-5 manifest validation PASS: %d carriers, shared git_sha=%s",
+        len(fingerprints),
+        fp0[0],
+    )
+    return rec
+
+
+def merge_fold_npzs(
+    fold_npzs: dict[int, dict], xlayer_layers: list[int], matched_layers: list[int]
+) -> dict[str, np.ndarray]:
+    """Concatenate the REGISTERED per-context arrays across folds (each context's
+    row comes from the ONE fold where it was in test — plan §2 pooling rule).
+
+    Registered keys are ENUMERATED and fail loud on absence (never inferred from
+    a fold's own key set, so a partial fold cannot silently shrink coverage);
+    per-fold-only keys (λ indices, bank arrays — consumed per fold by the H3
+    rider — and any drifted-fold extras) are excluded; M/P families present in
+    EVERY fold are concatenated as descriptive companions."""
+    ks = sorted(fold_npzs)
+    ds = [fold_npzs[k] for k in ks]
+    merged: dict[str, np.ndarray] = {}
+    for name in ("A_group_names", "B_group_names"):
+        for d in ds[1:]:
+            assert np.array_equal(d[name], ds[0][name]), f"{name} drift across folds"
+        merged[name] = ds[0][name]
+    required = [
+        "A_test_ctx_ids",
+        "A_test_ssres",
+        "A_test_sstot",
+        "B_test_ctx_ids",
+        "B_test_ssres",
+        "B_test_sstot",
+        "M16_ctx_ids",
+    ]
+    for la in xlayer_layers:
+        required += [f"A_test_ssres_L{la}", f"A_test_sstot_L{la}"]
+    for la in matched_layers:
+        for leg in ("cleg", "zleg"):
+            for arm in MATCHED_ARMS:
+                required += [f"M16_L{la}_{leg}_{arm}_ssres", f"M16_L{la}_{leg}_{arm}_sstot"]
+    for key in required:
+        absent = [k for k, d in zip(ks, ds, strict=True) if key not in d]
+        if absent:
+            raise RuntimeError(
+                f"kfold merge: registered key {key!r} absent from fold(s) {absent} — a "
+                "partial fold npz must fail loud, never shrink pooled coverage"
+            )
+        merged[key] = np.concatenate([d[key] for d in ds], axis=0)
+    optional = set.intersection(*(set(d) for d in ds)) - set(merged) - {"__manifest__"}
+    for key in sorted(optional):
+        if key.startswith(("M", "P_")) and key.endswith(("_ssres", "_sstot", "_ctx_ids")):
+            merged[key] = np.concatenate([d[key] for d in ds], axis=0)
+    return merged
+
+
+def assert_kfold_partition_coverage(
+    folds: list[dict],
+    pool: list[int],
+    merged: dict[str, np.ndarray],
+    spans: dict[str, dict[int, int]],
+) -> dict:
+    """Exact-partition coverage (plan §2/§3): (a) the K test blocks partition the
+    pool — every context tested exactly once; (b) the pooled A-family ids cover
+    the registered span>=32-in-all-arms survivor set exactly once (the realized
+    H1 population); (c) the pooled H2 matched ids equal the same survivor set
+    (the u_match[16] universe IS U_A). Raises on any violation."""
+    all_test = [int(c) for f in folds for c in f["test"]]
+    assert len(all_test) == len(pool), (
+        f"fold test blocks cover {len(all_test)} contexts != pool {len(pool)}"
+    )
+    assert len(set(all_test)) == len(all_test), "a context appears in >1 fold's test block"
+    assert set(all_test) == {int(c) for c in pool}, "fold test blocks != pool (set mismatch)"
+    survivors = {int(c) for c in pool if all(spans[a].get(int(c), 0) >= 32 for a in ARMS)}
+    a_ids = [int(c) for c in merged["A_test_ctx_ids"].tolist()]
+    assert len(a_ids) == len(set(a_ids)), "duplicate pooled A-family test ids"
+    assert set(a_ids) == survivors, (
+        f"pooled A-family ids != span>=32 survivor set (A-only: "
+        f"{sorted(set(a_ids) - survivors)[:5]}, survivors-only: "
+        f"{sorted(survivors - set(a_ids))[:5]})"
+    )
+    m_ids = [int(c) for c in merged["M16_ctx_ids"].tolist()]
+    assert len(m_ids) == len(set(m_ids)), "duplicate pooled H2 matched ids"
+    assert set(m_ids) == survivors, "pooled H2 matched ids != span>=32 survivor set"
+    rec = {
+        "partition_n": len(pool),
+        "h1_survivor_n": len(a_ids),
+        "h2_survivor_n": len(m_ids),
+        "status": "PASS",
+    }
+    logger.info("[kfold] partition coverage: %s", rec)
+    return rec
+
+
+def _fold_point_estimates(
+    fold_npz: dict[str, np.ndarray], test_ids: list[int], layers: list[int]
+) -> dict:
+    """Per-fold POINT estimates per layer (descriptive heterogeneity block, plan
+    §3 — exploratory; no CIs, no decisions). H1 only where the fold carries the
+    layer's suffixed A arrays; H2 wherever the matched cells exist."""
+    fb = CellBank([int(c) for c in test_ids])
+    register_lmsys_cells(fold_npz, fb)
+    avail = [la for la in layers if f"A_test_ssres_L{la}" in fold_npz]
+    register_cross_layer_cells(fold_npz, fb, avail)
+    obs = fb.observed()
+    dummy = obs[None, :]
+    out: dict[str, Any] = {}
+    for la in layers:
+        rec: dict[str, Any] = {}
+        if la in avail:
+            h1 = h1_reads(fb, obs, dummy, cell_prefix=f"A_L{la}")
+            rec["h1_contrast_ext_plain"] = h1["ext_plain"]["h1_contrast"]
+            rec["h1_contrast_ext_style"] = h1["ext_style"]["h1_contrast"]
+        try:
+            h2 = h2_layer_read(fb, obs, dummy, la)
+            rec["h2_delta_G_ext_plain"] = h2["ext_plain"]["delta_G"]
+            rec["h2_delta_G_ext_style"] = h2["ext_style"]["delta_G"]
+        except RuntimeError:
+            rec["h2_delta_G_ext_plain"] = None
+            rec["h2_delta_G_ext_style"] = None
+        out[str(la)] = rec
+    return out
+
+
+def _compact_h3(rec: dict) -> dict:
+    """Compact per-(fold, layer) H3 digest (descriptive rider, plan §2)."""
+    return {
+        k: rec.get(k) for k in ("status", "n_pairs", "headline_mean_drop_diff", "sign_flip_null")
+    }
+
+
+def kfold_main(args: argparse.Namespace) -> None:
+    """--kfold driver (follow-up plan v10 §2/§3): gate-5 manifest validation ->
+    exact-partition coverage -> pooled registered H1/H2 (pinned bootstrap p,
+    Holm per family, three-way statuses, TOTAL lattice — the --cross-layer code
+    paths, population swapped) + pooled L20/L17 companions + per-fold
+    heterogeneity + descriptive per-fold H3 rider + carried parent/ROUND-1 rows.
+    Writes ``<eval-dir>/stats_kfold.json``."""
+    t0 = time.time()
+    eval_dir = pathlib.Path(args.eval_dir)
+    npz_arg = pathlib.Path(args.npz)
+    npz_dir = npz_arg if npz_arg.is_dir() else npz_arg.parent
+    spans_dir = pathlib.Path(args.spans_dir) if args.spans_dir else npz_dir
+    out_path = pathlib.Path(args.out) if args.out else eval_dir / "stats_kfold.json"
+    k_folds = int(args.k_folds)
+
+    def _resolve(name: str) -> pathlib.Path:
+        for d in (eval_dir, eval_dir.parent):
+            if (d / name).exists():
+                return d / name
+        raise FileNotFoundError(f"{name} not found in {eval_dir} or {eval_dir.parent}")
+
+    split_name = "split_seed952_smoke.json" if args.smoke else "split_seed952.json"
+    split = json.loads(_resolve(split_name).read_text())
+    pool = sorted(int(c) for key in ("train", "val", "test") for c in split[key])
+    folds = make_kfold_splits(pool, k_folds)
+    cal_fold = k_folds - 1
+    verification = json.loads(_resolve("divergence_bank_verification.json").read_text())
+    fold_assignment = json.loads((eval_dir / "fold_assignment.json").read_text())
+    gate_record = json.loads((eval_dir / "kfold_calibration_gate_record.json").read_text())
+
+    # fold_assignment must agree with the recomputed construction (defense in depth
+    # behind the per-fold manifests).
+    for f in folds:
+        rec_sha = fold_assignment["split_sha256_by_fold"][str(f["fold"])]
+        assert rec_sha == kfold_split_hashes(f), (
+            f"fold_assignment.json split hashes != recomputed construction (fold {f['fold']})"
+        )
+
+    fold_npzs = {
+        int(f["fold"]): dict(
+            np.load(npz_dir / f"per_context_stats_fold{f['fold']}.npz", allow_pickle=False)
+        )
+        for f in folds
+    }
+
+    # ── gate-5 manifest validation BEFORE consuming anything (plan §2) ───────────
+    manifest_rec = validate_kfold_manifests(fold_npzs, eval_dir, folds, gate_record)
+
+    # Calibration gate-PASS check (production): the battery would have raised on a
+    # miss, but never trust record presence alone.
+    gates = gate_record.get("gates") or {}
+    if not args.smoke:
+        for gname in (
+            "l20_reproduction_gate",
+            "suffixed_l20_calibration_gate",
+            "round1_xlayer_reproduction_gate",
+        ):
+            grec = gates.get(gname)
+            assert isinstance(grec, dict) and grec.get("pass") is True, (
+                f"calibration gate record: {gname} did not PASS ({grec}) — plan kill criterion"
+            )
+        assert int(gates.get("l_star_pos", -1)) == 20, gates.get("l_star_pos")
+        assert gates.get("parity_failed") is False, "parity_failed in calibration fold meta"
+
+    family_layers = [int(x) for x in args.decision_layers.split(",") if x.strip()]
+    assert family_layers, "no decision layers"
+    xlayer_layers = sorted({*family_layers, *KFOLD_COMPANION_H1})
+    matched_layers = sorted({*family_layers, *KFOLD_COMPANION_H2})
+
+    merged = merge_fold_npzs(fold_npzs, xlayer_layers, matched_layers)
+    spans = load_spans(spans_dir)
+    cov_partition = assert_kfold_partition_coverage(folds, pool, merged, spans)
+    cov_h2 = assert_h2_row_coverage(merged, spans, pool)
+    cov_xlayer = assert_cross_layer_coverage(merged, xlayer_layers)
+    cov_h2_cells = assert_h2_decision_cell_coverage(merged, matched_layers)
+    cov_h3 = {
+        str(k): assert_h3_row_coverage(fold_npzs[k], verification, smoke=args.smoke)
+        for k in sorted(fold_npzs)
+    }
+
+    # ── pooled shared-draw bootstrap over the cross-fitted population ────────────
+    bank = CellBank(pool)
+    fam = register_lmsys_cells(merged, bank)
+    xfam = register_cross_layer_cells(merged, bank, xlayer_layers)
+    rng = np.random.default_rng(BOOTSTRAP_SEED)
+    n_test = bank.n_test
+    w = rng.multinomial(n_test, np.full(n_test, 1.0 / n_test), size=args.n_draws).astype(np.float64)
+    obs = bank.observed()
+    draws = bank.draws(w)
+    parity = serial_oracle_parity(bank, w, draws)
+
+    # ── registered H1/H2 families on the pooled cells (constructions inherited) ──
+    h1_by_layer = {
+        str(la): h1_reads(bank, obs, draws, cell_prefix=f"A_L{la}", with_pinned_p=True)
+        for la in family_layers
+    }
+    h1_companions = {
+        str(la): h1_reads(bank, obs, draws, cell_prefix=f"A_L{la}", with_pinned_p=True)
+        for la in KFOLD_COMPANION_H1
+    }
+    h1_raw_p = {
+        la: h1_by_layer[la]["ext_plain"].get("p_two_sided_raw") for la in map(str, family_layers)
+    }
+    _assert_registered_family_ps("h1", h1_raw_p)
+    h1_holm = holm_adjust(h1_raw_p)
+
+    h2_by_layer = {str(la): h2_layer_read(bank, obs, draws, la) for la in family_layers}
+    h2_companions = {str(la): h2_layer_read(bank, obs, draws, la) for la in KFOLD_COMPANION_H2}
+    h2_raw_p = {
+        la: h2_by_layer[la]["ext_plain"]["p_one_sided_raw"] for la in map(str, family_layers)
+    }
+    _assert_registered_family_ps("h2", h2_raw_p)
+    h2_holm = holm_adjust(h2_raw_p)
+
+    h1_statuses: dict[str, str] = {}
+    h2_statuses: dict[str, str] = {}
+    for la in map(str, family_layers):
+        r1 = h1_by_layer[la].get("ext_plain", {})
+        ci1 = r1.get("ci95") or [np.nan, np.nan]
+        h1_by_layer[la]["ext_plain"]["p_holm"] = h1_holm.get(la)
+        h1_statuses[la] = h1_status(r1.get("h1_contrast"), ci1[0], ci1[1], h1_holm.get(la))
+        h1_by_layer[la]["ext_plain"]["status"] = h1_statuses[la]
+        r2rec = h2_by_layer[la]
+        ci2 = r2rec["ext_plain"]["ci95"]
+        r2rec["ext_plain"]["p_holm"] = h2_holm.get(la)
+        h2_statuses[la] = h2_status(r2rec["ext_plain"]["delta_G"], ci2[1], h2_holm.get(la))
+        r2rec["ext_plain"]["status"] = h2_statuses[la]
+
+    lattice = map_outcome_lattice(h1_statuses, h2_statuses)
+
+    # ── per-fold heterogeneity + fold l_star (descriptive, plan §3) ──────────────
+    het_layers = sorted({*family_layers, *KFOLD_COMPANION_H1, *KFOLD_COMPANION_H2})
+    per_fold_heterogeneity = {
+        str(k): _fold_point_estimates(fold_npzs[k], folds[k]["test"], het_layers)
+        for k in sorted(fold_npzs)
+    }
+    fold_lstar = {}
+    for k in sorted(fold_npzs):
+        meta_path = eval_dir / f"battery_meta_fold{k}.json"
+        fold_lstar[str(k)] = (
+            json.loads(meta_path.read_text()).get("l_star_pos") if meta_path.exists() else None
+        )
+
+    # ── descriptive per-fold H3 rider: each bank cell under each fold's maps ─────
+    h3_layers = sorted({*family_layers, *KFOLD_COMPANION_H1})
+    h3_by_layer_descriptive: dict[str, Any] = {}
+    for la in h3_layers:
+        per_fold = {
+            str(k): _compact_h3(
+                h3_reads(fold_npzs[k], verification, args.n_draws, args.smoke, key_suffix=f"_L{la}")
+            )
+            for k in sorted(fold_npzs)
+        }
+        means = [
+            r["headline_mean_drop_diff"]["mean"]
+            for r in per_fold.values()
+            if isinstance(r.get("headline_mean_drop_diff"), dict)
+        ]
+        h3_by_layer_descriptive[str(la)] = {
+            "per_fold": per_fold,
+            "across_fold_mean": float(np.mean(means)) if means else None,
+            "across_fold_range": [float(np.min(means)), float(np.max(means))] if means else None,
+            "note": "descriptive rider — across-fold mean + range; no decision, no Holm "
+            "(plan v10 §2 H3)",
+        }
+
+    # ── carried comparison rows (never pooled into the headline) ─────────────────
+    parent_stats_path = (
+        pathlib.Path(args.parent_stats)
+        if args.parent_stats
+        else eval_dir.parent / "stats_summary.json"
+    )
+    if parent_stats_path.exists():
+        parent = json.loads(parent_stats_path.read_text())
+        carried_parent = {
+            "source": str(parent_stats_path),
+            "label": "PARENT",
+            "note": "PARENT single-split L20/L17 rows carried verbatim (plan §2) — the "
+            "registered parent reads stand; pooled L20/L17 here are companions only",
+            "h1": {"L20": parent.get("h1")},
+            "h2": {
+                f"L{la}": parent.get("h2_matched", {}).get("contrasts", {}).get(f"t16_L{la}")
+                for la in (20, 17)
+            },
+            "h3_L20_headline": {
+                k: parent.get("h3", {}).get(k)
+                for k in ("n_pairs", "headline_mean_drop_diff", "sign_flip_null")
+            },
+        }
+    elif args.smoke:
+        logger.warning("[kfold] parent stats absent (%s) — carried rows omitted", parent_stats_path)
+        carried_parent = {"status": f"parent stats absent: {parent_stats_path}"}
+    else:
+        raise FileNotFoundError(f"parent stats_summary.json required: {parent_stats_path}")
+
+    round1_path = (
+        pathlib.Path(args.round1_stats)
+        if args.round1_stats
+        else eval_dir.parent / "cross-layer-decision-cells" / "stats_cross_layer.json"
+    )
+    if round1_path.exists():
+        r1 = json.loads(round1_path.read_text())
+        carried_round1 = {
+            "source": str(round1_path),
+            "label": "ROUND-1",
+            "note": "ROUND-1 single-split rows carried verbatim — SUPERSEDED by this "
+            "round's cross-fitted statuses (plan v10 §2; never pooled with them: the "
+            "populations overlap, B4 ⊂ pool)",
+            "h1_by_layer": r1.get("h1_by_layer"),
+            "h1_calibration_L20_companion": r1.get("h1_calibration_L20_companion"),
+            "h2_by_layer": r1.get("h2_by_layer"),
+            "h2_calibration_L20_companion": r1.get("h2_calibration_L20_companion"),
+            "h1_status": r1.get("h1_status"),
+            "h2_status": r1.get("h2_status"),
+            "overall_verdict": r1.get("overall_verdict"),
+        }
+    elif args.smoke:
+        logger.warning("[kfold] round-1 stats absent (%s) — carried rows omitted", round1_path)
+        carried_round1 = {"status": f"round-1 stats absent: {round1_path}"}
+    else:
+        raise FileNotFoundError(f"round-1 stats_cross_layer.json required: {round1_path}")
+
+    summary = {
+        "issue": 952,
+        "mode": "kfold_decision_cells",
+        "k_folds": k_folds,
+        "calibration_fold": cal_fold,
+        "added_layers": family_layers,
+        "companion_layers": {"h1": list(KFOLD_COMPANION_H1), "h2": list(KFOLD_COMPANION_H2)},
+        "margins": {"h1": H1_MARGIN, "h2": H2_MARGIN, "alpha": XLAYER_ALPHA},
+        "p_construction": (
+            "shift-to-null-center (null = draws - observed), add-one counting "
+            "(1 + #extreme)/(1 + B); H1 two-sided vs 0, H2 one-sided positive-tail "
+            "vs 0; B = n_draws (plan §2 pinned, inherited verbatim); bootstrap "
+            "resamples paired CONTEXTS over the pooled cross-fitted population "
+            "(fold assignment fixed — CI conditionality: fold-model variance not "
+            "propagated)"
+        ),
+        "n_draws": args.n_draws,
+        "seeds": {"bootstrap": BOOTSTRAP_SEED, "sign_flip": SIGNFLIP_SEED},
+        "smoke": args.smoke,
+        "populations": cov_partition,
+        "manifest_validation": manifest_rec,
+        "fold_assignment": fold_assignment,
+        "fold_lstar": fold_lstar,
+        "row_coverage": {
+            "partition": cov_partition,
+            "h2": cov_h2,
+            "h3_per_fold": cov_h3,
+            "cross_layer": cov_xlayer,
+            "h2_decision_cells": cov_h2_cells,
+        },
+        "bootstrap_gemm_parity": parity,
+        "n_cells": len(bank.names),
+        "families": {**{k: len(v) for k, v in fam.items()}, **{k: len(v) for k, v in xfam.items()}},
+        "h1_by_layer": h1_by_layer,
+        "h1_companions": h1_companions,
+        "h1_holm": h1_holm,
+        "h1_status": h1_statuses,
+        "h2_by_layer": h2_by_layer,
+        "h2_companions": h2_companions,
+        "h2_holm": h2_holm,
+        "h2_status": h2_statuses,
+        "h3_by_layer_descriptive": h3_by_layer_descriptive,
+        "per_fold_heterogeneity": per_fold_heterogeneity,
+        **lattice,
+        "carried_parent_rows": carried_parent,
+        "carried_round1_rows": carried_round1,
+        "calibration_gate_record": gate_record,
+        "inputs": {
+            "npz_dir": str(npz_dir),
+            "eval_dir": str(eval_dir),
+            "n_fold_npz_keys": {str(k): len(d) for k, d in sorted(fold_npzs.items())},
+        },
+        "git_sha": _git_sha(),
+        "numpy_version": np.__version__,
+        "wall_seconds": time.time() - t0,
+        "ts": time.time(),
+    }
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(summary, indent=2, default=_json_np))
+    logger.info(
+        "[stats:kfold] K=%d pooled n=%d (H1/H2 survivors %d/%d): h1=%s h2=%s -> %s; "
+        "%d cells, %d draws in %.1fs -> %s",
+        k_folds,
+        len(pool),
+        cov_partition["h1_survivor_n"],
+        cov_partition["h2_survivor_n"],
+        h1_statuses,
+        h2_statuses,
+        lattice["overall_verdict"],
+        len(bank.names),
+        args.n_draws,
+        summary["wall_seconds"],
+        out_path,
+    )
+
+
+def main() -> None:
+    """Phase-2 statistics driver (coverage asserts -> batched draw batteries -> JSON)."""
+    ap = argparse.ArgumentParser(description="Issue #952 Phase 2 stats (VM, CPU)")
+    ap.add_argument("--eval-dir", type=str, required=True)
+    ap.add_argument("--npz", type=str, required=True)
+    ap.add_argument("--spans-dir", type=str, default=None, help="dir with spans_{arm}.json")
+    ap.add_argument("--out", type=str, default=None, help="default: <eval-dir>/stats_summary.json")
+    ap.add_argument("--n-draws", type=int, default=N_DRAWS_DEFAULT)
+    ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--prompts",
+        type=str,
+        default=None,
+        help="prompts.json (the phase0 LMSYS replay output); reconstructed at the "
+        "pinned LMSYS revision when absent (needs HF token)",
+    )
+    ap.add_argument(
+        "--skip-kmeans",
+        action="store_true",
+        help="skip the TF-idf k-means OOD / near-dup diagnostic (plan §6 item (b))",
+    )
+    ap.add_argument(
+        "--h3-subset",
+        choices=["full", "original-margin"],
+        default="full",
+        help="original-margin: rerun ONLY the H3 paired battery on the kept pairs whose "
+        "divergent-control judge difference >= +25 (the plan's ORIGINAL margin; the realized "
+        "adjusted keep margin was -23, effectively vacuous), plus a same-code full-set rerun "
+        "for reference; writes <eval-dir>/stats_h3_original_margin.json (default --out) and "
+        "leaves H1/H2/kmeans and stats_summary.json untouched",
+    )
+    ap.add_argument(
+        "--cross-layer",
+        action="store_true",
+        help="follow-up `cross-layer-decision-cells` mode: registered per-layer H1/H2 "
+        "(pinned bootstrap p, Holm per family, three-way statuses, TOTAL outcome "
+        "lattice) + descriptive per-layer H3 over the suffixed npz arrays; writes "
+        "<eval-dir>/stats_cross_layer.json (default --out); H1/H2/H3 defaults and "
+        "stats_summary.json untouched",
+    )
+    ap.add_argument(
+        "--decision-layers",
+        type=str,
+        default=",".join(str(x) for x in XLAYER_ADDED_DEFAULT),
+        help="added decision layers for --cross-layer (default: 14,23,26)",
+    )
+    ap.add_argument(
+        "--parent-stats",
+        type=str,
+        default=None,
+        help="parent stats_summary.json for the carried L20/L17 rows "
+        "(default: <eval-dir>/../stats_summary.json)",
+    )
+    ap.add_argument(
+        "--kfold",
+        action="store_true",
+        help="follow-up `kfold-decision-cells` mode: validate every fold's gate-5 "
+        "provenance manifest, pool the K rotation folds' per-context cells (each "
+        "context from its test fold) and recompute the registered H1/H2 + enum + "
+        "lattice + Holm on the pooled population; --npz names the DIRECTORY holding "
+        "per_context_stats_fold{k}.npz (a file path resolves to its parent dir); "
+        "writes <eval-dir>/stats_kfold.json (default --out)",
+    )
+    ap.add_argument(
+        "--k-folds",
+        type=int,
+        default=5,
+        help="number of rotation folds for --kfold (default 5; plan v10 §2)",
+    )
+    ap.add_argument(
+        "--round1-stats",
+        type=str,
+        default=None,
+        help="round-1 stats_cross_layer.json for the carried ROUND-1 rows (default: "
+        "<eval-dir>/../cross-layer-decision-cells/stats_cross_layer.json)",
+    )
+    args = ap.parse_args()
+
+    if args.kfold:
+        kfold_main(args)
+        return
+    if args.cross_layer:
+        cross_layer_main(args)
+        return
+
+    t0 = time.time()
+    eval_dir = pathlib.Path(args.eval_dir)
+    npz_path = pathlib.Path(args.npz)
+    spans_dir = pathlib.Path(args.spans_dir) if args.spans_dir else npz_path.parent
+    out_path = pathlib.Path(args.out) if args.out else eval_dir / "stats_summary.json"
+    npz = dict(np.load(npz_path, allow_pickle=False))
+
+    split_name = "split_seed952_smoke.json" if args.smoke else "split_seed952.json"
+    split = json.loads((eval_dir / split_name).read_text())
+    meta = json.loads((eval_dir / "battery_meta.json").read_text())
+    closure = json.loads((eval_dir / "prefix_closure_by_arm.json").read_text())
+    ver_path = eval_dir / "divergence_bank_verification.json"
+    verification = json.loads(ver_path.read_text()) if ver_path.exists() else None
+
+    # ── row-coverage asserts BEFORE any statistic (plan §3) ──────────────────────
+    spans = load_spans(spans_dir)
+    cov_h2 = assert_h2_row_coverage(npz, spans, split["test"])
+    cov_h3 = assert_h3_row_coverage(npz, verification) if verification else {"status": "no_bank"}
+
+    # ── H3 original-margin subset re-read (follow-up): H3 battery ONLY, then exit ─
+    if args.h3_subset == "original-margin":
+        assert verification is not None, (
+            "--h3-subset original-margin needs divergence_bank_verification.json in --eval-dir"
+        )
+        h3_sub = h3_reads(
+            npz, verification, args.n_draws, args.smoke, judge_margin=ORIGINAL_H3_JUDGE_MARGIN
+        )
+        h3_full = h3_reads(npz, verification, args.n_draws, args.smoke)  # same-code reference
+        out_sub = pathlib.Path(args.out) if args.out else eval_dir / "stats_h3_original_margin.json"
+        summary = {
+            "issue": 952,
+            "mode": "h3_subset_original_margin",
+            "original_judge_margin": ORIGINAL_H3_JUDGE_MARGIN,
+            "realized_adjusted_keep_margin": verification.get("keep_margin"),
+            "n_draws": args.n_draws,
+            "seeds": {"bootstrap": BOOTSTRAP_SEED, "sign_flip": SIGNFLIP_SEED},
+            "smoke": args.smoke,
+            "row_coverage": {"h3_full_set": cov_h3},
+            "h3_original_margin": h3_sub,
+            "h3_full_rerun_reference": h3_full,
+            "inputs": {"npz": str(npz_path), "eval_dir": str(eval_dir), "npz_keys": len(npz)},
+            "git_sha": _git_sha(),
+            "numpy_version": np.__version__,
+            "wall_seconds": time.time() - t0,
+            "ts": time.time(),
+        }
+        out_sub.parent.mkdir(parents=True, exist_ok=True)
+        out_sub.write_text(json.dumps(summary, indent=2, default=_json_np))
+        logger.info(
+            "[stats:h3-subset] %s/%s kept pairs survive judge_diff >= %s; %d draws in %.1fs -> %s",
+            h3_sub.get("n_pairs"),
+            len(verification["kept_pairs"]),
+            ORIGINAL_H3_JUDGE_MARGIN,
+            args.n_draws,
+            summary["wall_seconds"],
+            out_sub,
+        )
+        return
+
+    # ── LMSYS bootstrap battery: the TWO stacked-draw GEMMs ─────────────────────
+    bank = CellBank(split["test"])
+    fam = register_lmsys_cells(npz, bank)
+    rng = np.random.default_rng(BOOTSTRAP_SEED)
+    n_test = bank.n_test
+    w = rng.multinomial(n_test, np.full(n_test, 1.0 / n_test), size=args.n_draws).astype(np.float64)
+    obs = bank.observed()
+    draws = bank.draws(w)
+    parity = serial_oracle_parity(bank, w, draws)
+    lo, hi = _ci(draws)
+    cells = {
+        name: {
+            "observed": float(obs[i]) if np.isfinite(obs[i]) else None,
+            "ci95": [float(lo[i]), float(hi[i])] if np.isfinite(lo[i]) else None,
+        }
+        for i, name in enumerate(bank.names)
+    }
+
+    h1 = h1_reads(bank, obs, draws)
+    h2 = h2_reads(bank, obs, draws, meta)
+    h2_inter = h2_intersection_reads(npz, bank, w)
+    pos_ctl = positive_control_reads(bank, obs, draws)
+    h3 = (
+        h3_reads(npz, verification, args.n_draws, args.smoke)
+        if verification
+        else {"status": "no_bank"}
+    )
+
+    # TF-idf k-means OOD / near-dup diagnostic (plan §6 OOD mitigation (b)).
+    if args.skip_kmeans:
+        kmeans_diag: dict[str, Any] = {"status": "skipped (--skip-kmeans)"}
+    else:
+        if args.prompts:
+            prompts = json.loads(pathlib.Path(args.prompts).read_text())
+        else:
+            n_needed = max([int(i) for i in npz["A_test_ctx_ids"]] + list(split["train"])) + 1
+            prompts = _reconstruct_lmsys_prompts(n_needed)
+        kmeans_diag = kmeans_ood_diagnostic(npz, split, prompts)
+
+    git_sha = _git_sha()
+
+    summary = {
+        "issue": 952,
+        "n_draws": args.n_draws,
+        "seeds": {"bootstrap": BOOTSTRAP_SEED, "sign_flip": SIGNFLIP_SEED},
+        "smoke": args.smoke,
+        "row_coverage": {"h2": cov_h2, "h3": cov_h3},
+        "bootstrap_gemm_parity": parity,
+        "n_cells": len(bank.names),
+        "families": {k: len(v) for k, v in fam.items()},
+        "cells": cells,
+        "h1": h1,
+        "h2_matched": h2,
+        "h2_intersection_reads": h2_inter,
+        "h2_positive_control": pos_ctl,
+        "h3": h3,
+        "kmeans_ood_diagnostic": kmeans_diag,
+        "attrition": closure.get("attrition", {}),
+        "matched_paired_n": {
+            k: v.get("paired_n")
+            for k, v in closure.get("matched_contrasts", {}).items()
+            if isinstance(v, dict)
+        },
+        "inputs": {
+            "npz": str(npz_path),
+            "eval_dir": str(eval_dir),
+            "npz_keys": len(npz),
+        },
+        "git_sha": git_sha,
+        "numpy_version": np.__version__,
+        "wall_seconds": time.time() - t0,
+        "ts": time.time(),
+    }
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(summary, indent=2, default=_json_np))
+    logger.info(
+        "[stats] %d cells, %d draws in %.1fs -> %s",
+        len(bank.names),
+        args.n_draws,
+        summary["wall_seconds"],
+        out_path,
+    )
+
+
+if __name__ == "__main__":
+    main()

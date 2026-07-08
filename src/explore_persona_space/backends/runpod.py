@@ -13,7 +13,11 @@ What this module ships (post slice 6):
 * ``prepare`` — currently a no-op (provision triggers bootstrap inline).
 * ``launch`` — delegates to ``scripts/pod_lifecycle.py provision`` via
   the existing subprocess entrypoint and returns a :class:`RunHandle`
-  built from the resulting ``pods_ephemeral.json`` row.
+  built from the resulting ``pods_ephemeral.json`` row. On the
+  backend-executed leg (#909) the rendered launcher chains the
+  success-gated completion-sentinel write and (#977) waits on fresh
+  detached ``/workspace/logs/*.pid`` workloads before the sentinel
+  write (GCP #601 parity).
 * ``estimate_start`` — returns "now" (UTC); RunPod pods come up within
   a few minutes, so a precise estimate would be noise.
 * ``poll`` — delegates to :func:`scripts.poll_pipeline.poll_once` so
@@ -80,6 +84,22 @@ logger = logging.getLogger(__name__)
 #: (Step 6d.2's bg-Bash poller emits a ~5-line tail in the JSON-line
 #: output; a one-shot foreground tail gets a bit more headroom).
 LOG_TAIL_LINES = 200
+
+#: Floor for the #1010 CPU-fallback container-disk threading in
+#: :meth:`RunPodBackend.launch` — mirrors ``runpod_api.DEFAULT_CONTAINER_DISK_GB``
+#: (50), the value an un-threaded provision gets, so threading a plan's
+#: ``boot_disk_gb`` can only ever GROW the container disk relative to
+#: today's default, never shrink it. (Not imported from ``scripts/runpod_api``
+#: — this module's imports stay ``base``-only by documented convention.)
+_CPU_CONTAINER_DISK_FLOOR_GB = 50
+
+#: Floor for the #1118 GPU-lane volume threading in :meth:`RunPodBackend.launch`
+#: — mirrors pod_lifecycle.py's ``provision --volume-gb`` argparse default (200),
+#: the /workspace volume an un-threaded GPU provision gets, so threading a
+#: plan's ``boot_disk_gb`` can only ever GROW the volume relative to today's
+#: default, never shrink it. (Not imported from ``scripts/pod_lifecycle`` —
+#: this module's imports stay ``base``-only by documented convention.)
+_GPU_VOLUME_FLOOR_GB = 200
 
 
 def _shell_quote(s: str) -> str:
@@ -408,6 +428,44 @@ def _render_launch_script(
     supersession semantics as the experimenter step-11.3 clear). The
     launcher exits with the workload's own rc so the exit status is
     unchanged by the chain.
+
+    Detached-workload wait before the sentinel write (#977, the GCP #601
+    parity — ``gcp.py``'s find-newer wait): ``workload_cmd`` is expected
+    to BLOCK until the workload completes; a SELF-DAEMONIZING command
+    (one that setsid-forks the real driver and returns at daemonize
+    time) would otherwise publish ``phase=done`` minutes into a
+    multi-hour run. So the rc==0 branch, BEFORE the sentinel write,
+    waits on every live pid found in a FRESH ``/workspace/logs/*.pid``
+    (mtime at or after the in-launcher workload-start epoch, captured
+    immediately before ``workload_cmd``). Contract (write-before-return):
+    a detached workload MUST write its driver pid to such a fresh
+    pidfile BEFORE ``workload_cmd`` returns — the ``launch_issue_<N>.sh``
+    convention — for the wait to bind; a pidfile written only AFTER
+    ``workload_cmd`` returns may be missed by the loop's scan and
+    degrades to the pre-#977 behavior (premature sentinel) — the same
+    residual GCP #601 carries, documented, not fixed here. Two deliberate
+    mechanism deltas from the GCP reference: freshness is the INCLUSIVE
+    ``stat -c %Y >= $WORKLOAD_START_EPOCH`` (the verify-script idiom;
+    GCP's strictly-newer ``find -newer`` would miss a pidfile written in
+    the same second as the start-mark at coarse MooseFS mtime
+    granularity), and self-exclusion is by PID VALUE
+    (``[ "$wpid" = "$$" ]``, race-free at any mtime granularity — the
+    launcher writes its OWN pid to the canonical pidfile pre-workload,
+    so a naive port would self-deadlock) rather than by pidfile PATH — a
+    convention-following detached driver OVERWRITES the canonical
+    pidfile with its own pid, so a path-based skip would miss exactly
+    the driver that must be waited on, while ``$$`` cannot be reused
+    while this launcher is alive. Blocking workloads write no fresh
+    pidfile, so the wait is a no-op pass-through. No in-script timeout
+    (faithful parity — an in-script timeout would re-create the
+    premature-done class on a slow-but-healthy run); the wait is bounded
+    externally by the pod TTL + the poller's stall escalation + the
+    watcher's pod-safety pass (the GCP analogue is
+    ``--max-run-duration``). The sentinel is written after the wait
+    regardless of the DETACHED process's exit status (``kill -0``
+    polling cannot recover a non-child's exit code on either lane; the
+    detached driver's own results sentinel / failure classification is
+    the poller's outcome channel).
     """
     launcher = _launcher_path(issue)
     epoch_file = _launch_epoch_path(issue)
@@ -450,11 +508,38 @@ def _render_launch_script(
             'export REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"',
             f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{issue}}}"',
             f"echo $$ > {pid_file}",
+            "WORKLOAD_START_EPOCH=$(date +%s)",
             workload_cmd,
             "WORKLOAD_RC=$?",
             "# Completion sentinel: written ONLY when the workload exited 0 (the",
             "# backend-owned twin of the GCP/SLURM terminal sentinel write).",
             'if [ "$WORKLOAD_RC" -eq 0 ]; then',
+            "  # Wait for detached workloads (#601 GCP parity, #977): a workload_cmd",
+            "  # that self-daemonizes (forks the real driver) returns immediately —",
+            "  # writing the sentinel here would publish done at daemonize time.",
+            "  # (Comment says 'forks', not the s-word: the liveness tests token-scan",
+            "  # the rendered script for the detach line's own tokens.) Contract: a",
+            "  # detached workload writes its pid to a fresh /workspace/logs/*.pid",
+            "  # (the launch_issue_<N>.sh convention). Freshness = stat mtime >=",
+            "  # workload-start epoch (inclusive, the verify-script predicate — a",
+            "  # strictly-newer find would miss a same-second pidfile at MooseFS",
+            "  # mtime granularity). Self-exclusion is by PID VALUE, never path:",
+            "  # a convention-following driver OVERWRITES the canonical pidfile,",
+            "  # so a path skip would miss it, while $$ cannot be reused while",
+            "  # this launcher is alive. Blocking workloads write no fresh pidfile",
+            "  # -> no-op. Bounded externally by the pod TTL + the poller's stall",
+            "  # escalation (the GCP analogue is --max-run-duration).",
+            "  for pf in /workspace/logs/*.pid; do",
+            '    [ -f "$pf" ] || continue',
+            '    [ "$(stat -c %Y "$pf" 2>/dev/null || echo 0)"'
+            ' -ge "$WORKLOAD_START_EPOCH" ] || continue',
+            '    wpid=$(cat "$pf" 2>/dev/null) || continue',
+            '    [ -n "$wpid" ] || continue',
+            '    [ "$wpid" = "$$" ] && continue',
+            '    echo "[launcher] waiting on detached workload pid=$wpid ($pf)"',
+            '    while kill -0 "$wpid" 2>/dev/null; do sleep 30; done',
+            '    echo "[launcher] detached workload pid=$wpid exited"',
+            "  done",
             f"  mkdir -p {sentinel_dir}",
             f"  printf '%s\\n' '{sentinel_json}' > {sentinel_path}",
             "fi",
@@ -657,8 +742,13 @@ class RunPodBackend(ComputeBackend):
         resolves it to a RunPod CPU instance_id via
         ``gpu_heuristics.resolve_cpu_intent`` (checked BEFORE the GPU
         ``_resolve_spec``) and provisions via ``runpod_api.create_cpu_pod``
-        (``deployCpuPod``); ``cpu-bigmem`` never reaches here (it keeps the #677
-        typed terminal — it is absent from the RunPod-CPU map).
+        (``deployCpuPod``); ``cpu-bigmem`` never reaches here on any AUTOMATED
+        path (the #677 typed terminal at the router's terminal rung precedes
+        launch — it is absent from the RunPod-CPU map). An explicit
+        ``backend: runpod`` pin of ``cpu-bigmem`` DOES reach launch
+        (``_override_runpod`` has no CPU guard) and then fails loud downstream
+        (``resolve_cpu_intent`` -> None and the GPU ``_resolve_spec`` cannot
+        resolve it -> non-zero provision exit).
         """
         execute_workload = bool((spec.extra or {}).get("execute_workload"))
         if execute_workload and not spec.workload_cmd:
@@ -683,6 +773,56 @@ class RunPodBackend(ComputeBackend):
         ]
         if spec.gpus is not None:
             cmd += ["--gpu-count", str(spec.gpus)]
+        # #1010/#1118: thread the plan's disk requirement into the provision
+        # argv. CPU lane (#1010): the pod's only writable disk is the
+        # container overlay (/workspace rides it; incident #958) --
+        # --container-disk-gb, floored at runpod_api.DEFAULT_CONTAINER_DISK_GB
+        # (50, _CPU_CONTAINER_DISK_FLOOR_GB here) so threading can never
+        # REDUCE below today's behavior. The router's feasibility gate
+        # guarantees boot_disk_gb <= the instance cap on every AUTOMATED
+        # path; an explicit `backend: runpod` pin above the cap fails loud at
+        # pod_lifecycle's pre-API cap check / RunPod's own create-time
+        # validation. GPU lane (#1118): the big-data mount is the /workspace
+        # VOLUME (pod_lifecycle threads --volume-gb -> runpod_api volumeInGb),
+        # floored at the 200 GB argparse default (_GPU_VOLUME_FLOOR_GB) --
+        # thread-or-grow, never shrink. No deterministic pre-API cap exists
+        # for GPU volumeInGb (unlike the probe-verified CPU caps) -- an
+        # unsatisfiable size surfaces LOUD at RunPod create time (RunPodError
+        # -> non-zero provision exit -> CalledProcessError) or as a capacity
+        # miss (wait-for-capacity budget), never as a silent downsize (the
+        # #1112 ENOSPC incident: a ~575 GB plan on the default 200 GB volume).
+        raw_boot_disk = (spec.extra or {}).get("boot_disk_gb") or 0
+        try:
+            boot_disk_gb = int(raw_boot_disk)
+            if float(raw_boot_disk) != boot_disk_gb:
+                # A fractional value (e.g. 575.5) would silently TRUNCATE via
+                # int() -- reject it instead of provisioning less disk than
+                # the plan stated.
+                raise ValueError("fractional GB value")
+        except (TypeError, ValueError) as exc:
+            # Named fail-loud parse mirroring router._footprint_int (#1118):
+            # GPU intents bypass the router's CPU-only footprint gate, so a
+            # malformed value would otherwise hit a bare int() traceback.
+            # Raised BEFORE the provision subprocess -- no pod is paid for.
+            raise ValueError(
+                f"spec.extra['boot_disk_gb'] is not an integer: {raw_boot_disk!r} "
+                f"(malformed disk requirement on issue {spec.issue})"
+            ) from exc
+        if boot_disk_gb:
+            from explore_persona_space.backends.router import (
+                RUNPOD_CPU_INSTANCE_FOR_INTENT,  # lazy: module top stays base-only
+            )
+
+            if spec.intent in RUNPOD_CPU_INSTANCE_FOR_INTENT:
+                cmd += [
+                    "--container-disk-gb",
+                    str(max(_CPU_CONTAINER_DISK_FLOOR_GB, boot_disk_gb)),
+                ]
+            else:
+                cmd += [
+                    "--volume-gb",
+                    str(max(_GPU_VOLUME_FLOOR_GB, boot_disk_gb)),
+                ]
         # subprocess.run raises CalledProcessError on non-zero exit; that
         # propagates to the selector, which logs + lets the orchestrator
         # surface the failure as `epm:failure` (slice 1 does NOT add a
@@ -734,7 +874,10 @@ class RunPodBackend(ComputeBackend):
             Success path: ``workload_executed=exec_requested`` + the execution
             leg's ``workload_info`` — the ``extra`` dict is byte-identical to
             the pre-#954 inline construction (``workload_start_error`` is added
-            ONLY on the failure path, so no new keys appear on success).
+            ONLY on the failure path, so no new keys appear on success). #1118
+            adds the CONDITIONAL footprint keys (``boot_disk_gb`` /
+            ``min_ram_gb``) on both paths, OMITTED when absent/falsy — a spec
+            without a stated footprint keeps the pre-#1118 key set.
             Failure path (#954): ``workload_executed=False`` (truthful — the
             workload did not start) + a truncated ``workload_start_error`` so
             downstream consumers (poll / finalize / re-drive) can tell the
@@ -781,6 +924,20 @@ class RunPodBackend(ComputeBackend):
                 "hydra_args": list(spec.hydra_args),
                 "gpus": spec.gpus,
                 "time_budget_hours": spec.time_budget_hours,
+                # #1118: footprint fields persisted so the wedge / CUDA-IMA
+                # fresh-pod re-provision (backend_poll._runspec_from_runpod_handle)
+                # forwards them — mirroring the GCP handle (gcp.py, #1010).
+                # Keys OMITTED when absent/falsy — never a None value — so
+                # legacy handle shapes stay byte-identical (the
+                # _PRE_954_SUCCESS_EXTRA_KEYS exact-set tests pin this).
+                **{
+                    k: v
+                    for k, v in {
+                        "boot_disk_gb": (spec.extra or {}).get("boot_disk_gb"),
+                        "min_ram_gb": (spec.extra or {}).get("min_ram_gb"),
+                    }.items()
+                    if v
+                },
                 # #909: the branch the run's code lives on (round-trips through
                 # the sidecar + backend_poll reconstructors so a failover
                 # re-execution syncs the ISSUE branch, not `main`) + the
@@ -959,6 +1116,16 @@ class RunPodBackend(ComputeBackend):
             # getattr-guarded so a mixed-version worktree (a poll_once that
             # predates the field) degrades to None rather than crashing.
             crash_signature=getattr(raw, "crash_signature", None),
+            # #983: copy the post-done phase-consistency advisory surfaces
+            # through (same passthrough contract as stall_reason above —
+            # dropping them at this rewrap would silently strip the advisory
+            # from the backend_poll lane's JSON before
+            # ``_serialize_poll_result`` can surface it, the #664
+            # stall_reason lesson). getattr-guarded for a mixed-version
+            # worktree; the marker + Telegram push already fired inside
+            # ``poll_once`` regardless.
+            post_done_phase_advisory_posted=getattr(raw, "post_done_phase_advisory_posted", False),
+            post_done_phase_lines=tuple(getattr(raw, "post_done_phase_lines", ()) or ()),
         )
 
     def fetch_logs(self, handle: RunHandle) -> str:
@@ -1082,6 +1249,59 @@ class RunPodBackend(ComputeBackend):
 
         return read
 
+    def _ssh_glob_sentinels(self, handle: RunHandle) -> Callable[[str, int], list[str]]:
+        """Build a remote sibling-sentinel glob bound to ``handle``'s pod (#709).
+
+        SSH sibling of :meth:`_ssh_read_sentinel` and of
+        ``artifacts._default_glob_sentinels``: enumerates the attempt-dir
+        sibling sentinels ``<issue_dir>/*/<name>`` on the POD filesystem so
+        ``_resolve_live_sentinel`` can resolve the #685-secondary stale-baked-
+        attempt case on the live-pod path. The resolution's soundness leans on
+        the #976 pre-workload stale-clear contract (the same ``issue_dir/*/
+        <name>`` operand): a launch path that baked attempt-namespaced
+        declarations WITHOUT the pre-workload ``rm`` would widen the
+        single-live-sibling window to a prior attempt's stale sentinel.
+        Semantics mirror the reader:
+
+        * rc=0            -> stdout lines, stripped, sorted (parity with the
+                             FS default's ``sorted(...)``).
+        * rc!=0 + "no such file" in stderr -> [] (bash passes an unmatched
+                             glob literally; ``ls`` errors "No such file or
+                             directory" -> zero siblings).
+        * any other rc    -> raise. A transport failure must NOT read as
+                             "no siblings"; the resolver's existing probe
+                             try/except turns the raise into the honest
+                             declared-missing FAIL with a note.
+        """
+
+        def glob(declared: str, issue: int) -> list[str]:
+            del issue  # parity with _default_glob_sentinels: encoded in the path.
+            parts = declared.rsplit("/", 2)
+            if len(parts) != 3:
+                return []  # non-canonical; resolver scope guard blocks this upstream.
+            issue_dir, _attempt, name = parts
+            remote_cmd = f"ls -1d {_shell_quote(issue_dir)}/*/{_shell_quote(name)}"
+            proc = subprocess.run(
+                ["ssh", handle.pod_name, remote_cmd],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=60,
+                check=False,
+            )
+            if proc.returncode == 0:
+                return sorted(ln.strip() for ln in proc.stdout.split("\n") if ln.strip())
+            stderr = (proc.stderr or "").lower()
+            if "no such file" in stderr:
+                return []
+            raise RuntimeError(
+                f"ssh sentinel glob on {handle.pod_name} failed "
+                f"rc={proc.returncode}: {(proc.stderr or '')[:300]}"
+            )
+
+        return glob
+
     def confirm_artifacts(self, handle: RunHandle) -> bool:
         """Backend-agnostic artifact verification.
 
@@ -1099,7 +1319,9 @@ class RunPodBackend(ComputeBackend):
         responsible for populating it; silently passing a handle that
         forgot is the silent-loss hole the verifier closes). The
         sentinel check reads the pod-side file over SSH via
-        :meth:`_ssh_read_sentinel` (#598); HF / WandB / git checks keep
+        :meth:`_ssh_read_sentinel` (#598), and the stale-baked-attempt
+        sibling probe now also runs pod-side via
+        :meth:`_ssh_glob_sentinels` (#709); HF / WandB / git checks keep
         their default wires.
         """
         # Lazy import to keep the runpod module importable without the
@@ -1110,7 +1332,11 @@ class RunPodBackend(ComputeBackend):
         )
 
         verdict = confirm_artifacts_from_handle(
-            handle, io=VerifierIO(read_sentinel=self._ssh_read_sentinel(handle))
+            handle,
+            io=VerifierIO(
+                read_sentinel=self._ssh_read_sentinel(handle),
+                glob_sentinels=self._ssh_glob_sentinels(handle),
+            ),
         )
         if not verdict.passed:
             # Use print rather than a module logger here so the failure

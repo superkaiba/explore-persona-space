@@ -1,0 +1,637 @@
+{
+  "commit": "e8492b0f8f",
+  "created": "2026-07-06T14:26:13Z",
+  "figsize": [
+    12.5,
+    10.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "completions": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "completions": 11.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "completions": 12.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "completions": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "completions": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.19,
+      "completions": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.81,
+      "completions": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.81,
+      "completions": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.81,
+      "completions": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.81,
+      "completions": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.19,
+      "completions": 9.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.19,
+      "completions": 11.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.19,
+      "completions": 12.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.19,
+      "completions": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.19,
+      "completions": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "completions": 5.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.19,
+      "completions": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.19,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.19,
+      "completions": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.19,
+      "completions": 22.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.81,
+      "completions": 14.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": -0.19,
+      "completions": 8.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.81,
+      "completions": 2.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.19,
+      "completions": 22.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.19,
+      "completions": 14.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.19,
+      "completions": 7.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.19,
+      "completions": 1.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 2.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 1.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "2",
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "2",
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "2",
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 2.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 1.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "2",
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "2",
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 2.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "completions (light bar = judged, solid = kept as sycophantic)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 104,
+  "caption": "Sycophancy positive yield per wrong-fact claim category, both generator arms (base vs abliterated Qwen2.5-7B-Instruct). Light bars: completions judged; solid bars: completions kept as sycophantic by the judge. Top: aggregated by claim domain (left) and by claim hardness (right; plausible-myth = documented common misconception or near-miss of a true fact, flat-contradiction = plainly contradicts an elementary fact). Bottom: per-claim underlying counts for the 19 claims the datagen sampler realized (6 bank claims were never sampled). Observational read on tiny ns (1-9 claims per category): kept completions concentrate on plausible-myth claims (base 8/22 vs 2/14 on flat-contradictions; abliterated 7/22 vs 1/14), and within the myth category a single claim - the glass-is-a-liquid myth - carries base 4/5 and abliterated 5/5, i.e. most of the myth-category mass. No significance tests; counts only."
+}

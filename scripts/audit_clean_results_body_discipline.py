@@ -31,7 +31,9 @@ INVENTORY_PATH = OUT_DIR / "inventory.json"
 PATTERNS: dict[str, tuple[str, str]] = {
     # name: (regex, plain-English description)
     "pre_reg": (
-        r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis|registered alpha|\bas registered\b|fail at the gate|passed the gate|gate-pre-?registered",
+        r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis"
+        r"|registered alpha|\bas registered\b|fail at the gate|passed the gate"
+        r"|gate-pre-?registered",
         "Pre-registration jargon ('pre-registered', 'as registered', "
         "'fail at the gate', 'gate-passed', etc.)",
     ),
@@ -55,7 +57,7 @@ PATTERNS: dict[str, tuple[str, str]] = {
         "Effect-size-in-percentage-points (Δ-Npp / Δrate / Δ = -Npp)",
     ),
     "interval_inline": (
-        # Three alternatives, all banned in reader-facing PROSE (Lens 7):
+        # Four alternatives, all banned in reader-facing PROSE (Lens 7):
         #   (1) `slope[low, high, ...]` — the original explicit slope form.
         #   (2) `[low, high]` followed by a CI verb/unit (excludes / includes /
         #       pp / % / ( / on) — the original trailing-token form.
@@ -73,6 +75,24 @@ PATTERNS: dict[str, tuple[str, str]] = {
         #       sentence) — and GFM table cells via `_blank_table_rows` (the
         #       Reproducibility Parameters table + Data capsule tables carry
         #       interval forms legitimately).
+        #   (4) the BOUND-FORM prose leak `(upper|lower) bound (+0.023)` /
+        #       `upper bound = 0.0021` — a named CI/band endpoint stated as a
+        #       number in prose with NO brackets. Lens 7 names this form
+        #       explicitly (its own example: `upper bound = 0.0021`); all three
+        #       prior alternatives require literal square brackets, so #952
+        #       r1's "the interval's upper bound (+0.023) excludes the 0.05
+        #       margin" reached the LM critic unflagged (incident #952 → fix
+        #       #1015). Connectors are EXACTLY the two evidenced forms —
+        #       `(num)` and `= num`; the `of`-connector is deliberately
+        #       excluded ("an upper bound of 4 GPU-hours", "exceed the upper
+        #       bound of 0.6" — budget / band-threshold prose, not a CI leak).
+        #       The number must carry a sign OR a decimal point ("retry upper
+        #       bound = 5" count-integers stay legal); the sign class includes
+        #       U+2212 like the siblings. The [Uu]/[Ll] case pair exists
+        #       because this category scans case-sensitively (flags=0), and
+        #       the leading \b keeps embedded word tails out ("supper bound",
+        #       "flower bound"). Singular `bound` only; no `~`/`≈` approx
+        #       forms — zero corpus instances; the LM critic backstops those.
         #   The sign character class accepts ASCII hyphen-minus, ASCII plus,
         #   AND the typographic Unicode minus (codepoint U+2212) -- analyzers
         #   routinely render negative CI bounds with U+2212, so an ASCII-only
@@ -90,11 +110,15 @@ PATTERNS: dict[str, tuple[str, str]] = {
         #   pp / % token, which a band never carries).
         r"slope\s*\[[-+−\d., ]+\]"  # noqa: RUF001
         r"|\[[-+−]?\d+\.\d+\s*,\s*[-+−]?\d+\.\d+\]\s*(?:excludes|includes|pp\b|%|\(|on\s)"  # noqa: RUF001
-        r"|\[[-+−]?\d*\.?\d+\s*,\s*[-+−]?\d*\.?\d+\](?!\s*nat\b)",  # noqa: RUF001
-        "Credence intervals as inline [low, high] in prose (banned)",
+        r"|\[[-+−]?\d*\.?\d+\s*,\s*[-+−]?\d*\.?\d+\](?!\s*nat\b)"  # noqa: RUF001
+        r"|\b(?:[Uu]pper|[Ll]ower)[\s-]bound\s*"
+        r"(?:\(\s*(?:[-+−]?\d+\.\d+|[-+−]\d+)\s*\)|=\s*(?:[-+−]?\d+\.\d+|[-+−]\d+))",  # noqa: RUF001
+        "Credence intervals as inline [low, high] or bound-form "
+        "'(upper|lower) bound (+x)' / 'bound = x' in prose (banned)",
     ),
     "named_tests": (
-        r"\bpaired t-test\b|\bFisher(?:'s)? exact\b|\bMann-Whitney\b|\bbootstrap test\b|\bWilcoxon\b",
+        r"\bpaired t-test\b|\bFisher(?:'s)? exact\b|\bMann-Whitney\b"
+        r"|\bbootstrap test\b|\bWilcoxon\b",
         "Named statistical tests in prose (paired t-test / Fisher / Mann-Whitney / Wilcoxon)",
     ),
     "h_symbols": (
@@ -107,11 +131,18 @@ PATTERNS: dict[str, tuple[str, str]] = {
     ),
     "bin_alpha": (
         r"\bBin\s+[A-E](?!\s*[a-z])",
-        "Project-internal Bin labels (Bin A / Bin B / Bin C / Bin D / Bin E) without inline definition",
+        "Project-internal Bin labels (Bin A / Bin B / Bin C / Bin D / Bin E) "
+        "without inline definition",
     ),
     "condition_labels": (
-        r"\b[CcHhP][1-9](?:'|′)?(?:\s*(?:condition|control|completion|coefficient|hypothesis|test|sub-?(?:claim|experiment|hypothesis)))?(?![a-zA-Z0-9_])",
-        "Project-internal condition/hypothesis labels (C1/C2/C3, H1/H2/H3, P1/P2/P3 with optional prime) — replace with named conditions inline",
+        # The U+2032 PRIME below is the literal char being matched (primed
+        # condition labels like C1-prime), not an accidental homoglyph --
+        # hence the noqa, mirroring the U+2212 entries above.
+        r"\b[CcHhP][1-9](?:'|′)?"  # noqa: RUF001
+        r"(?:\s*(?:condition|control|completion|coefficient|hypothesis|test"
+        r"|sub-?(?:claim|experiment|hypothesis)))?(?![a-zA-Z0-9_])",
+        "Project-internal condition/hypothesis labels (C1/C2/C3, H1/H2/H3, P1/P2/P3 "
+        "with optional prime) — replace with named conditions inline",
     ),
     "cell_tags": (
         # Per-cell / per-condition / per-judge plan-internal tags:
@@ -121,7 +152,9 @@ PATTERNS: dict[str, tuple[str, str]] = {
         #   M1 / M2 (extraction-method labels — only flag when paired with "cosine"/"cell"/"method")
         #   "Method A" / "Method B" (extraction-method labels — uppercase Method + capital letter)
         r"\bBS_E[0-9A-Za-z_]*|\bZ_[a-zA-Z_]+|\b[Gg][0-9]+[a-c]?\b(?=\s|:|\.|,|$)|\bMethod\s+[AB]\b|\b[Mm][1-9]\b(?=\s+(?:cosine|cell|mean|extraction|method|sub-experiment))",
-        "Plan-internal per-cell / extraction-method / judge / gate tags (BS_E*, Z_*, G*, Method A/B, M1) — replace with plain English; tags go in <details>Setup details</details>",
+        "Plan-internal per-cell / extraction-method / judge / gate tags (BS_E*, Z_*, G*, "
+        "Method A/B, M1) — replace with plain English; tags go in "
+        "<details>Setup details</details>",
     ),
     "experimental_arm": (
         # "arm" / "arms" used as a project-internal experiment-strand label.
@@ -129,7 +162,8 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # Triggers on: "<adj>-arm", "the <adj> arm", "behavioral arm", "geometric arm",
         # "five arms", "experimental arm(s)".
         r"\b(?:experimental|behavioral|geometric|reverse-?order|forward-?order|length(?:[-/\s]style)?|full[-\s]?param(?:eter)?|LoRA)\s+arms?\b|\b(?:five|four|three|two)\s+arms?\b|\bexperimental\s+arms?\b|\b(?:the|a)\s+(?:behavioral|geometric|reverse-?order|forward-?order|length(?:[-/\s]style)?|full[-\s]?param(?:eter)?|LoRA)\s+arm\b",
-        "Project-internal experiment-strand 'arm' label — describe what was done, not the strand's name",
+        "Project-internal experiment-strand 'arm' label — describe what was done, "
+        "not the strand's name",
     ),
     "bare_method_acronym": (
         r"\b(?:GCG|PAIR|EvoPrompt|nanoGCG)\b",
@@ -155,7 +189,8 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # we only flag CamelCase / multi-letter subscripts that look like
         # math identifiers — not file paths or `eval_results/foo` variables.
         r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*\^[A-Za-z0-9_*+\-]+|\b[A-Z]_[A-Z][A-Za-z]{2,}\b",
-        "Math-style subscript/superscript notation in prose (R_BgivenA^P2, R^P2, P_TopK) — markdown doesn't render these",
+        "Math-style subscript/superscript notation in prose (R_BgivenA^P2, R^P2, P_TopK) "
+        "— markdown doesn't render these",
     ),
     "bit_byte_identical": (
         # "byte identical" / "byte-identical" AND the same-family "bit

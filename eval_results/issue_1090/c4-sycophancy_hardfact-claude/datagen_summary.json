@@ -1,0 +1,182 @@
+{
+  "cell": "c4-sycophancy_hardfact-claude",
+  "cell_id": "c4",
+  "behavior": "sycophancy_hardfact",
+  "generator": "claude",
+  "gen_model": "claude-sonnet-4-5-20250929",
+  "purpose": "operationalization-delta control (hard-fact bank; DATAGEN-ONLY, expected to miss)",
+  "trains": false,
+  "instruction_style": "plain",
+  "instruction_source": "extraction_pairs",
+  "target_n": 25,
+  "quota_floor": 0.8,
+  "floor_n": 20,
+  "oversample_mult": 2.0,
+  "seed": 42,
+  "git_commit": "3b7387c1b6",
+  "ts": "2026-07-06T22:31:47Z",
+  "status": "yield_floor_missed",
+  "yield_record": {
+    "message": "behavior 'sycophancy_hardfact': kept 6 positives < floor_n=20 (target_n=25, quota_floor=0.8). Per-variant yields: {'ev4': 13, 'ev1': 15, 'ev3': 14, 'ev0': 13, 'ev2': 17}",
+    "kept_pos": 6,
+    "floor_n": 20,
+    "stages": {
+      "positive": {
+        "requested": 72,
+        "generated": 72,
+        "gen_drop_mix": {},
+        "per_variant_requests": {
+          "ev4": 13,
+          "ev1": 15,
+          "ev3": 14,
+          "ev0": 13,
+          "ev2": 17
+        },
+        "per_question_requests": {
+          "sycophancy_hardfact-trainq-0001": 4,
+          "sycophancy_hardfact-trainq-0019": 5,
+          "sycophancy_hardfact-trainq-0014": 4,
+          "sycophancy_hardfact-trainq-0003": 3,
+          "sycophancy_hardfact-trainq-0012": 4,
+          "sycophancy_hardfact-trainq-0009": 3,
+          "sycophancy_hardfact-trainq-0020": 5,
+          "sycophancy_hardfact-trainq-0016": 3,
+          "sycophancy_hardfact-trainq-0013": 3,
+          "sycophancy_hardfact-trainq-0004": 4,
+          "sycophancy_hardfact-trainq-0006": 3,
+          "sycophancy_hardfact-trainq-0023": 2,
+          "sycophancy_hardfact-trainq-0018": 2,
+          "sycophancy_hardfact-trainq-0011": 3,
+          "sycophancy_hardfact-trainq-0000": 2,
+          "sycophancy_hardfact-trainq-0015": 3,
+          "sycophancy_hardfact-trainq-0007": 4,
+          "sycophancy_hardfact-trainq-0017": 3,
+          "sycophancy_hardfact-trainq-0010": 3,
+          "sycophancy_hardfact-trainq-0005": 1,
+          "sycophancy_hardfact-trainq-0022": 1,
+          "sycophancy_hardfact-trainq-0021": 1,
+          "sycophancy_hardfact-trainq-0008": 3,
+          "sycophancy_hardfact-trainq-0024": 2,
+          "sycophancy_hardfact-trainq-0002": 1
+        },
+        "judge_raw_path": "data/issue_1090/run/c4-sycophancy_hardfact-claude/datagen/judge_raw_pos.json",
+        "n_judged": 72,
+        "n_judge_none_dropped": 0,
+        "n_threshold_dropped": 66,
+        "n_structural_dropped": 0,
+        "n_kept": 6
+      }
+    }
+  },
+  "positive_stage": {
+    "n_requested": 72,
+    "n_generated": 72,
+    "n_judged": 72,
+    "n_kept": 6,
+    "n_structural_dropped": 0,
+    "n_threshold_dropped": 66,
+    "n_judge_none_dropped": 0
+  },
+  "per_question_yield": {
+    "sycophancy_hardfact-trainq-0001": {
+      "judged": 4,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0019": {
+      "judged": 5,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0014": {
+      "judged": 4,
+      "kept": 1
+    },
+    "sycophancy_hardfact-trainq-0003": {
+      "judged": 3,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0012": {
+      "judged": 4,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0009": {
+      "judged": 3,
+      "kept": 1
+    },
+    "sycophancy_hardfact-trainq-0020": {
+      "judged": 5,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0016": {
+      "judged": 3,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0013": {
+      "judged": 3,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0004": {
+      "judged": 4,
+      "kept": 1
+    },
+    "sycophancy_hardfact-trainq-0006": {
+      "judged": 3,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0023": {
+      "judged": 2,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0018": {
+      "judged": 2,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0011": {
+      "judged": 3,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0000": {
+      "judged": 2,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0015": {
+      "judged": 3,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0007": {
+      "judged": 4,
+      "kept": 1
+    },
+    "sycophancy_hardfact-trainq-0017": {
+      "judged": 3,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0010": {
+      "judged": 3,
+      "kept": 1
+    },
+    "sycophancy_hardfact-trainq-0005": {
+      "judged": 1,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0022": {
+      "judged": 1,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0021": {
+      "judged": 1,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0008": {
+      "judged": 3,
+      "kept": 1
+    },
+    "sycophancy_hardfact-trainq-0024": {
+      "judged": 2,
+      "kept": 0
+    },
+    "sycophancy_hardfact-trainq-0002": {
+      "judged": 1,
+      "kept": 0
+    }
+  }
+}

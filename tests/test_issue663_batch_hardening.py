@@ -169,7 +169,9 @@ def test_legacy_submit_poll_bounded_when_expires_at_absent():
     client = _DeadlineSubmitClient(flip_to_ended_on=None, expires_at=None)
     reqs = [{"custom_id": f"c{i}", "params": {}} for i in range(2)]
     past_fallback = T0 + dt.timedelta(hours=26)
-    clock = iter(itertools.chain([T0], itertools.repeat(past_fallback)))
+    # Extra leading T0: the #995 create-grace anchor (created_at = now_fn())
+    # consumes one tick right after create; behavioral assertions unchanged.
+    clock = iter(itertools.chain([T0, T0], itertools.repeat(past_fallback)))
     with pytest.raises(BatchDeadlineExceeded):
         _submit_and_poll_batch(
             reqs, client, poll_interval=0.0, now_fn=lambda: next(clock), sleep_fn=lambda _x: None
@@ -239,7 +241,10 @@ def test_legacy_submit_poll_deadline_no_flip():
     ends by its deadline (#663 §6 Test 3c)."""
     client = _DeadlineSubmitClient(flip_to_ended_on=None)
     reqs = [{"custom_id": f"c{i}", "params": {}} for i in range(3)]
-    clock = iter(itertools.chain([T0, T0 + dt.timedelta(hours=1)], itertools.repeat(PAST_DEADLINE)))
+    # Extra leading T0: the #995 create-grace anchor consumes one tick post-create.
+    clock = iter(
+        itertools.chain([T0, T0, T0 + dt.timedelta(hours=1)], itertools.repeat(PAST_DEADLINE))
+    )
     with pytest.raises(BatchDeadlineExceeded):
         _submit_and_poll_batch(
             reqs, client, poll_interval=0.0, now_fn=lambda: next(clock), sleep_fn=lambda _x: None
@@ -251,7 +256,8 @@ def test_legacy_submit_poll_partial_harvest_on_flip():
     (not raised), joining results on custom_id (#663 §6 Test 3c)."""
     client = _DeadlineSubmitClient(flip_to_ended_on=3)
     reqs = [{"custom_id": f"c{i}", "params": {}} for i in range(2)]
-    clock = iter(itertools.chain([T0], itertools.repeat(PAST_DEADLINE)))
+    # Extra leading T0: the #995 create-grace anchor consumes one tick post-create.
+    clock = iter(itertools.chain([T0, T0], itertools.repeat(PAST_DEADLINE)))
     result = _submit_and_poll_batch(
         reqs, client, poll_interval=0.0, now_fn=lambda: next(clock), sleep_fn=lambda _x: None
     )
@@ -308,30 +314,30 @@ def _one_result_client(result_obj):
 
 def test_collect_succeeded():
     client = _one_result_client(_succeeded("a"))
-    scores, retriable, expired, quarantined = _collect_batch_results(
+    scores, retriable, expired, quarantined, canceled = _collect_batch_results(
         client, "b", _default_error_dict
     )
     assert scores["a"] == {"aligned": 90, "coherent": 95, "reasoning": "ok"}
-    assert retriable == [] and expired == [] and quarantined == []
+    assert retriable == [] and expired == [] and quarantined == [] and canceled == []
 
 
 def test_collect_invalid_request_quarantined():
     client = _one_result_client(_errored("a", "invalid_request_error"))
-    scores, retriable, expired, quarantined = _collect_batch_results(
+    scores, retriable, expired, quarantined, canceled = _collect_batch_results(
         client, "b", _default_error_dict
     )
     assert quarantined == ["a"]
-    assert retriable == [] and expired == []
+    assert retriable == [] and expired == [] and canceled == []
     assert scores["a"]["error"] is True
 
 
 def test_collect_server_error_retriable():
     client = _one_result_client(_errored("a", "api_error"))
-    scores, retriable, expired, quarantined = _collect_batch_results(
+    scores, retriable, expired, quarantined, canceled = _collect_batch_results(
         client, "b", _default_error_dict
     )
     assert retriable == ["a"]
-    assert quarantined == [] and expired == []
+    assert quarantined == [] and expired == [] and canceled == []
     assert scores["a"]["error"] is True
 
 
@@ -341,24 +347,25 @@ def test_collect_expired_and_canceled():
         yield _terminal("cxl", "canceled")
 
     client = _ns(messages=_ns(batches=_ns(results=_results)))
-    scores, retriable, expired, quarantined = _collect_batch_results(
+    scores, retriable, expired, quarantined, canceled = _collect_batch_results(
         client, "b", _default_error_dict
     )
     assert expired == ["exp"]  # retriable on resume
     assert retriable == [] and quarantined == []
+    assert canceled == ["cxl"]  # #1019: its own list; retry gated on stuck intent
     assert "cxl" not in expired and "cxl" not in retriable and "cxl" not in quarantined
-    assert scores["cxl"]["error"] is True  # surfaced, never retried
+    assert scores["cxl"]["error"] is True  # surfaced; retried only after a stuck cancel
 
 
 def test_collect_errored_missing_error_shape_fails_open():
     """An errored row with NO nested .error (getattr None) routes to retriable,
     the conservative default that never silently quarantines."""
     client = _one_result_client(_errored("a", None))
-    scores, retriable, expired, quarantined = _collect_batch_results(
+    scores, retriable, expired, quarantined, canceled = _collect_batch_results(
         client, "b", _default_error_dict
     )
     assert retriable == ["a"]
-    assert quarantined == [] and expired == []
+    assert quarantined == [] and expired == [] and canceled == []
     assert scores["a"]["error"] is True
 
 

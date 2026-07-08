@@ -56,8 +56,20 @@ the number-correctness guarantee. (`\metric` grounding is a documented
 **v1.1 opt-in** under `docs/papers/_template/`; do NOT FAIL a v1 paper for
 writing numbers as literals or for not carrying a `metrics.json`.)
 
-Run it, record the result, and ALWAYS proceed to the seven paper lenses in
-the SAME pass — never hard-stop at a mechanical FAIL. Split the FAILs:
+**Codex-twin adaptation (#1050).** When the `codex-clean-result-critic`
+composer inlines this rule into the Codex prompt, it REPLACES the bash
+block above with the composer-run `verify_paper.py` output envelope (the
+MECHANICAL VERIFIER OUTPUT envelope of that agent's Step 1d / Step 3
+shape) — that twin is dispatched read-only and uv cannot reliably execute
+in its sandbox, so Codex READS the inlined output instead of running the
+pre-pass itself. The Claude critic continues to run the pre-pass verbatim
+as above.
+
+Run it (Claude critic — the Codex twin's composer already ran it at compose
+time per the adaptation note above; Codex reads the inlined envelope and
+never re-runs it), record the result, and ALWAYS proceed to the seven paper
+lenses in the SAME pass — never hard-stop at a mechanical FAIL. Split the
+FAILs:
 
 - **Structural / data-integrity FAILs (genuinely block):** a required
   section missing or out of order (check 2), confidence in the body
@@ -176,12 +188,15 @@ pinned full-artifact link; the Appendix is missing (verifier check 2 also
 FAILs) or is obviously incomplete (a load-bearing knob the body or plan
 names is absent from the complete table); or the COMPLETE hyperparameter
 table is in the body instead of the Appendix (the body carries only the
-load-bearing subset). **Harmful-content carve-out:** example blocks
+load-bearing subset). **Harmful-content carve-out (covers harmful-content
+corpora AND real-world-corpus rollout text (LMSYS/WildChat-class; #1073)):**
+example blocks
 labeled "sanitized for context hygiene" (~15-word excerpts + a
 `[truncated — harmful-content row; verify at <path>, row <i>]` placeholder,
 cherry-picked labels + row indices + permanent raw links kept verbatim)
 SATISFY the worked-example requirement — do NOT FAIL them as missing
-verbatim samples, and never load raw harmful-content rows into context.
+verbatim samples, and never load raw harmful-content or real-world-corpus
+rows into context.
 (Maps to the v4 Methodology Sample slot + Lens 10 subset disclosure.
 SPEC.md § Paper sections item 7 (Appendix).)
 
@@ -269,11 +284,14 @@ never fabricated. Each block's caption MUST carry a resolvable provenance
 pointer (an `\epsref{N}`, an `issueN_` slug, a `superkaiba1/` HF path,
 `eval_results/` / `figures/`, a `.json(l)` file, or a recognized HF dataset id);
 `verify_paper.py` check 9 enforces a pointer is PRESENT. **Harmful-content
-carve-out:** example blocks labeled "sanitized for context hygiene" (~15-word
+carve-out (covers harmful-content corpora AND real-world-corpus rollout text
+(LMSYS/WildChat-class; #1073)):** example blocks labeled "sanitized for
+context hygiene" (~15-word
 excerpts + a `[truncated — harmful-content row; verify at <path>, row <i>]`
 placeholder, cherry-picked labels + row indices + permanent raw links kept
 verbatim) SATISFY the requirement — do NOT FAIL them as missing verbatim
-samples, and never load raw harmful-content rows into context.
+samples, and never load raw harmful-content or real-world-corpus rows into
+context.
 
 **The deep no-invention reality-check (open the artifact, confirm the persona /
 prompt / completion are real + byte-for-byte) is the `interpretation-critic`'s

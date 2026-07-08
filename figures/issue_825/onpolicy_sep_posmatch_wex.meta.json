@@ -1,0 +1,102 @@
+{
+  "commit": "7421328c0d",
+  "created": "2026-07-07T23:40:46Z",
+  "figsize": [
+    8.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.285,
+      "held-out rotated R\u00b2 at layer 19": 0.3626111899733,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.715,
+      "held-out rotated R\u00b2 at layer 19": 0.3489193821633685,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.095,
+      "held-out rotated R\u00b2 at layer 19": -2.0460798906870523,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.905,
+      "held-out rotated R\u00b2 at layer 19": -2.175720795244983,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.095,
+      "held-out rotated R\u00b2 at layer 19": -2.0515115350241504,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.095,
+      "held-out rotated R\u00b2 at layer 19": -2.25558360088413,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.285,
+      "held-out rotated R\u00b2 at layer 19": -1.2278079045145343,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.285,
+      "held-out rotated R\u00b2 at layer 19": 0.48775360035988136,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.065,
+      "held-out rotated R\u00b2 at layer 19": -2.0401924064456285,
+      "label": "-2.05",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.095,
+      "held-out rotated R\u00b2 at layer 19": -2.0708296803227433,
+      "label": "-2.05",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.125,
+      "held-out rotated R\u00b2 at layer 19": -2.043512518304079,
+      "label": "-2.05",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.065,
+      "held-out rotated R\u00b2 at layer 19": -2.2399506234877498,
+      "label": "-2.26",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.095,
+      "held-out rotated R\u00b2 at layer 19": -2.2734143542634784,
+      "label": "-2.26",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.125,
+      "held-out rotated R\u00b2 at layer 19": -2.253385824901162,
+      "label": "-2.26",
+      "_kind": "scatter",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 14
+}

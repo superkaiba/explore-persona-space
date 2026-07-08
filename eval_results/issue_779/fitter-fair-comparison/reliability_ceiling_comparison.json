@@ -1,0 +1,71 @@
+{
+  "layer": 19,
+  "ceiling_source": "reliability_by_direction.json (ICC, 600 contexts x 10 rollouts)",
+  "weighted_single_draw_ceiling": 0.9466605359375692,
+  "weighted_ridge_n10k_r2": 0.8088375641820654,
+  "bands": [
+    {
+      "rank_lo": 0,
+      "rank_hi": 10,
+      "ceiling_median": 0.9667754344643719,
+      "ridge_n10k_median": 0.8933366261373237,
+      "mlp_n10k_median": 0.8990569721800935,
+      "ridge_n5k_median": 0.8502469189585111,
+      "ratio_ridge_n10k_over_ceiling_median": 0.9253605370885997
+    },
+    {
+      "rank_lo": 10,
+      "rank_hi": 50,
+      "ceiling_median": 0.9238905702208822,
+      "ridge_n10k_median": 0.71188113278312,
+      "mlp_n10k_median": 0.7375232090379757,
+      "ridge_n5k_median": 0.6401223959923474,
+      "ratio_ridge_n10k_over_ceiling_median": 0.7797630085835185
+    },
+    {
+      "rank_lo": 50,
+      "rank_hi": 100,
+      "ceiling_median": 0.8885780875291676,
+      "ridge_n10k_median": 0.587687940959797,
+      "mlp_n10k_median": 0.6274361185369101,
+      "ridge_n5k_median": 0.46930318238715146,
+      "ratio_ridge_n10k_over_ceiling_median": 0.6550865348263408
+    },
+    {
+      "rank_lo": 100,
+      "rank_hi": 200,
+      "ceiling_median": 0.8570050036678154,
+      "ridge_n10k_median": 0.4054013409623192,
+      "mlp_n10k_median": 0.440842403192533,
+      "ridge_n5k_median": 0.252942380441755,
+      "ratio_ridge_n10k_over_ceiling_median": 0.4707757724388766
+    },
+    {
+      "rank_lo": 200,
+      "rank_hi": 1000,
+      "ceiling_median": 0.7652845879145163,
+      "ridge_n10k_median": 0.1139003906267455,
+      "mlp_n10k_median": 0.05112893217590453,
+      "ridge_n5k_median": -0.09281010503861142,
+      "ratio_ridge_n10k_over_ceiling_median": 0.15192112865353957
+    },
+    {
+      "rank_lo": 1000,
+      "rank_hi": 2000,
+      "ceiling_median": 0.6252431140890655,
+      "ridge_n10k_median": 0.024691307979325006,
+      "mlp_n10k_median": -0.15885505323910432,
+      "ridge_n5k_median": -0.09976085465806084,
+      "ratio_ridge_n10k_over_ceiling_median": 0.04461204119112555
+    },
+    {
+      "rank_lo": 2000,
+      "rank_hi": 3584,
+      "ceiling_median": 0.4932902616423086,
+      "ridge_n10k_median": 0.0028534208088840662,
+      "mlp_n10k_median": -0.4069403435964626,
+      "ridge_n5k_median": -0.010556173503871724,
+      "ratio_ridge_n10k_over_ceiling_median": 0.005955317574701796
+    }
+  ]
+}

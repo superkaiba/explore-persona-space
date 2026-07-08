@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "issue": 811,
+    "git_commit": "353bb2c5f2852982f1462f564fa9dc9cc847dee6",
+    "generated_at": "2026-07-05T22:16:32Z",
+    "summary": "ans_max_incl_hdr"
+  },
+  "cells": {
+    "em/L14": {
+      "behavior": "em",
+      "layer": 14,
+      "m0_to_vplus_cos": -0.03361921899007041,
+      "mplus_to_vplus_cos": -0.0339026191464716,
+      "mplus_to_v0_cos": -0.11290918133769266
+    },
+    "em/L21": {
+      "behavior": "em",
+      "layer": 21,
+      "m0_to_vplus_cos": -0.03079811214686181,
+      "mplus_to_vplus_cos": -0.02984313310432864,
+      "mplus_to_v0_cos": -0.11551775066026175
+    },
+    "em/L7": {
+      "behavior": "em",
+      "layer": 7,
+      "m0_to_vplus_cos": -0.04010715440744831,
+      "mplus_to_vplus_cos": -0.03959930564001559,
+      "mplus_to_v0_cos": -0.09777941036376998
+    },
+    "fact/L14": {
+      "behavior": "fact",
+      "layer": 14,
+      "m0_to_vplus_cos": 0.01670701050196038,
+      "mplus_to_vplus_cos": 0.014883114701832754,
+      "mplus_to_v0_cos": -0.11396743365402047
+    },
+    "fact/L21": {
+      "behavior": "fact",
+      "layer": 21,
+      "m0_to_vplus_cos": -0.03284271712557515,
+      "mplus_to_vplus_cos": -0.03812915157376528,
+      "mplus_to_v0_cos": -0.12745139460021476
+    },
+    "fact/L7": {
+      "behavior": "fact",
+      "layer": 7,
+      "m0_to_vplus_cos": -0.03865906883596197,
+      "mplus_to_vplus_cos": -0.03875688828602983,
+      "mplus_to_v0_cos": -0.10739804840651443
+    },
+    "sycophancy/L14": {
+      "behavior": "sycophancy",
+      "layer": 14,
+      "m0_to_vplus_cos": -0.07470790402172169,
+      "mplus_to_vplus_cos": -0.07266004605468915,
+      "mplus_to_v0_cos": -0.11101756600935223
+    },
+    "sycophancy/L21": {
+      "behavior": "sycophancy",
+      "layer": 21,
+      "m0_to_vplus_cos": -0.020394707908158553,
+      "mplus_to_vplus_cos": -0.019180682774275135,
+      "mplus_to_v0_cos": -0.13075165785795032
+    },
+    "sycophancy/L7": {
+      "behavior": "sycophancy",
+      "layer": 7,
+      "m0_to_vplus_cos": -0.09615354724409976,
+      "mplus_to_vplus_cos": -0.09612350920249696,
+      "mplus_to_v0_cos": -0.10460769105189367
+    }
+  }
+}

@@ -1,0 +1,532 @@
+{
+  "rslora_gauge": {
+    "per_adapter": [
+      {
+        "r": 32,
+        "lora_alpha": 64,
+        "use_rslora": true,
+        "target_modules": [
+          "down_proj",
+          "gate_proj",
+          "k_proj",
+          "o_proj",
+          "q_proj",
+          "up_proj",
+          "v_proj"
+        ],
+        "rslora_scaling": 11.31370849898476,
+        "hf_subfolder": "adapters/i537_fact_sp_swe_seed42"
+      },
+      {
+        "r": 32,
+        "lora_alpha": 256,
+        "use_rslora": true,
+        "target_modules": [
+          "down_proj",
+          "gate_proj",
+          "k_proj",
+          "o_proj",
+          "q_proj",
+          "up_proj",
+          "v_proj"
+        ],
+        "rslora_scaling": 45.25483399593904,
+        "hf_subfolder": "adapters/i537_em_sp_swe_seed42/sft_em_adapter"
+      }
+    ],
+    "installed_vllm_alpha_sqrt_r_asserted": true
+  },
+  "behavioral_adapter_effect": {
+    "results": [
+      {
+        "behavior": "fact",
+        "source_cid": "sp_swe",
+        "n_prompts": 15,
+        "exact_match_frac": 0.0,
+        "threshold": 0.9,
+        "case": null,
+        "pass": true
+      },
+      {
+        "behavior": "em",
+        "source_cid": "sp_swe",
+        "n_prompts": 15,
+        "exact_match_frac": 0.0,
+        "threshold": 0.9,
+        "case": null,
+        "pass": true
+      }
+    ],
+    "widen_results": [],
+    "pass": true,
+    "threshold": 0.9
+  },
+  "cc_stack_parity": {
+    "results": [
+      {
+        "behavior": "fact",
+        "source_cid": "sp_swe",
+        "residuals": [
+          {
+            "target_cid": "sp_swe",
+            "layer": 7,
+            "vector": "c_C",
+            "rel_l2": 0.011113748549458955,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_swe",
+            "layer": 7,
+            "vector": "c_C_postft",
+            "rel_l2": 0.01039380369958228,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_swe",
+            "layer": 14,
+            "vector": "c_C",
+            "rel_l2": 0.011296473970154488,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_swe",
+            "layer": 14,
+            "vector": "c_C_postft",
+            "rel_l2": 0.00854423975776525,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_swe",
+            "layer": 21,
+            "vector": "c_C",
+            "rel_l2": 0.012943670444942844,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_swe",
+            "layer": 21,
+            "vector": "c_C_postft",
+            "rel_l2": 0.007390191747080048,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_doctor",
+            "layer": 7,
+            "vector": "c_C",
+            "rel_l2": 0.011113748549458955,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_doctor",
+            "layer": 7,
+            "vector": "c_C_postft",
+            "rel_l2": 0.01039380369958228,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_doctor",
+            "layer": 14,
+            "vector": "c_C",
+            "rel_l2": 0.011296473970154488,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_doctor",
+            "layer": 14,
+            "vector": "c_C_postft",
+            "rel_l2": 0.00854423975776525,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_doctor",
+            "layer": 21,
+            "vector": "c_C",
+            "rel_l2": 0.012943670444942844,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_doctor",
+            "layer": 21,
+            "vector": "c_C_postft",
+            "rel_l2": 0.007390191747080048,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_ph1",
+            "layer": 7,
+            "vector": "c_C",
+            "rel_l2": 0.011113748549458955,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_ph1",
+            "layer": 7,
+            "vector": "c_C_postft",
+            "rel_l2": 0.01039380369958228,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_ph1",
+            "layer": 14,
+            "vector": "c_C",
+            "rel_l2": 0.011296473970154488,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_ph1",
+            "layer": 14,
+            "vector": "c_C_postft",
+            "rel_l2": 0.00854423975776525,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_ph1",
+            "layer": 21,
+            "vector": "c_C",
+            "rel_l2": 0.012943670444942844,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_ph1",
+            "layer": 21,
+            "vector": "c_C_postft",
+            "rel_l2": 0.007390191747080048,
+            "pass": false
+          }
+        ],
+        "max_rel_l2": 0.012943670444942844,
+        "pass": false
+      },
+      {
+        "behavior": "em",
+        "source_cid": "sp_swe",
+        "residuals": [
+          {
+            "target_cid": "sp_swe",
+            "layer": 7,
+            "vector": "c_C",
+            "rel_l2": 0.011245842782269706,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_swe",
+            "layer": 7,
+            "vector": "c_C_postft",
+            "rel_l2": 0.009370181222964723,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_swe",
+            "layer": 14,
+            "vector": "c_C",
+            "rel_l2": 0.011335615132121184,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_swe",
+            "layer": 14,
+            "vector": "c_C_postft",
+            "rel_l2": 0.011482550817365786,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_swe",
+            "layer": 21,
+            "vector": "c_C",
+            "rel_l2": 0.018256372591350677,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_swe",
+            "layer": 21,
+            "vector": "c_C_postft",
+            "rel_l2": 0.014103878519876952,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_doctor",
+            "layer": 7,
+            "vector": "c_C",
+            "rel_l2": 0.011245842782269706,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_doctor",
+            "layer": 7,
+            "vector": "c_C_postft",
+            "rel_l2": 0.009370181222964723,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_doctor",
+            "layer": 14,
+            "vector": "c_C",
+            "rel_l2": 0.011335615132121184,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_doctor",
+            "layer": 14,
+            "vector": "c_C_postft",
+            "rel_l2": 0.011482550817365786,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_doctor",
+            "layer": 21,
+            "vector": "c_C",
+            "rel_l2": 0.018256372591350677,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_doctor",
+            "layer": 21,
+            "vector": "c_C_postft",
+            "rel_l2": 0.014103878519876952,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_ph1",
+            "layer": 7,
+            "vector": "c_C",
+            "rel_l2": 0.011245842782269706,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_ph1",
+            "layer": 7,
+            "vector": "c_C_postft",
+            "rel_l2": 0.009370181222964723,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_ph1",
+            "layer": 14,
+            "vector": "c_C",
+            "rel_l2": 0.011335615132121184,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_ph1",
+            "layer": 14,
+            "vector": "c_C_postft",
+            "rel_l2": 0.011482550817365786,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_ph1",
+            "layer": 21,
+            "vector": "c_C",
+            "rel_l2": 0.018256372591350677,
+            "pass": false
+          },
+          {
+            "target_cid": "sp_ph1",
+            "layer": 21,
+            "vector": "c_C_postft",
+            "rel_l2": 0.014103878519876952,
+            "pass": false
+          }
+        ],
+        "max_rel_l2": 0.018256372591350677,
+        "pass": false
+      }
+    ],
+    "pass": false,
+    "rel_l2_threshold": 0.001
+  },
+  "determinism": {
+    "generation": {
+      "n_prompts": 5,
+      "backend": "vllm",
+      "pass": true
+    },
+    "extraction": {
+      "target_cid": "sp_swe",
+      "probe_idx": 0,
+      "pass": true
+    },
+    "pass": true
+  },
+  "phase_b_smoke": {
+    "n_npz_written_onpolicy": 3,
+    "n_npz_written_rbase": 3,
+    "n_joined_reextracted": 3,
+    "substitution_engaged": true,
+    "pass": true
+  },
+  "backend_divergence_diagnostic": {
+    "results": [
+      {
+        "behavior": "fact",
+        "source_cid": "sp_swe",
+        "n_prompts": 15,
+        "n_token_identical": 8,
+        "frac_identical": 0.5333333333333333,
+        "n_non_near_tie": 1,
+        "divergences": [
+          {
+            "prompt_idx": 8,
+            "div_idx": 23,
+            "logit_gap": 0.0
+          },
+          {
+            "prompt_idx": 9,
+            "div_idx": 23,
+            "logit_gap": 0.0
+          },
+          {
+            "prompt_idx": 10,
+            "div_idx": 23,
+            "logit_gap": 0.0
+          },
+          {
+            "prompt_idx": 11,
+            "div_idx": 0,
+            "logit_gap": 0.125
+          },
+          {
+            "prompt_idx": 12,
+            "div_idx": 23,
+            "logit_gap": 0.0
+          },
+          {
+            "prompt_idx": 13,
+            "div_idx": 67,
+            "logit_gap": 0.0
+          },
+          {
+            "prompt_idx": 14,
+            "div_idx": 23,
+            "logit_gap": 0.0
+          }
+        ]
+      },
+      {
+        "behavior": "em",
+        "source_cid": "sp_swe",
+        "n_prompts": 15,
+        "n_token_identical": 0,
+        "frac_identical": 0.0,
+        "n_non_near_tie": 14,
+        "divergences": [
+          {
+            "prompt_idx": 0,
+            "div_idx": 1,
+            "logit_gap": 0.5
+          },
+          {
+            "prompt_idx": 1,
+            "div_idx": 6,
+            "logit_gap": 0.625
+          },
+          {
+            "prompt_idx": 2,
+            "div_idx": 32,
+            "logit_gap": 0.125
+          },
+          {
+            "prompt_idx": 3,
+            "div_idx": 19,
+            "logit_gap": 0.125
+          },
+          {
+            "prompt_idx": 4,
+            "div_idx": 0,
+            "logit_gap": 0.25
+          },
+          {
+            "prompt_idx": 5,
+            "div_idx": 9,
+            "logit_gap": 0.5
+          },
+          {
+            "prompt_idx": 6,
+            "div_idx": 27,
+            "logit_gap": 0.0
+          },
+          {
+            "prompt_idx": 7,
+            "div_idx": 0,
+            "logit_gap": 0.125
+          },
+          {
+            "prompt_idx": 8,
+            "div_idx": 8,
+            "logit_gap": 0.875
+          },
+          {
+            "prompt_idx": 9,
+            "div_idx": 0,
+            "logit_gap": 0.875
+          },
+          {
+            "prompt_idx": 10,
+            "div_idx": 6,
+            "logit_gap": 1.0
+          },
+          {
+            "prompt_idx": 11,
+            "div_idx": 11,
+            "logit_gap": 0.5
+          },
+          {
+            "prompt_idx": 12,
+            "div_idx": 1,
+            "logit_gap": 0.875
+          },
+          {
+            "prompt_idx": 13,
+            "div_idx": 8,
+            "logit_gap": 1.25
+          },
+          {
+            "prompt_idx": 14,
+            "div_idx": 0,
+            "logit_gap": 1.0
+          }
+        ]
+      }
+    ],
+    "non_gating": true,
+    "note": "v4 token-identity backend-parity gate RETIRED (plan v6 \u00a74 \u2014 unsatisfiable on this stack, att-20260702-090420); stats persist for the analyzer"
+  },
+  "peft_logprob_diagnostic": {
+    "results": [
+      {
+        "behavior": "fact",
+        "source_cid": "sp_swe",
+        "rplus_under_trained": -0.02641767164071401,
+        "rplus_under_base": -3.601685412724813,
+        "rbase_under_trained": -1.3919063170750936,
+        "rbase_under_base": -0.34478268921375277,
+        "rplus_trained_minus_base": 3.5752677410840987,
+        "rbase_trained_minus_base": -1.0471236278613407,
+        "n_rows": 15
+      },
+      {
+        "behavior": "em",
+        "source_cid": "sp_swe",
+        "rplus_under_trained": -0.5790860215822856,
+        "rplus_under_base": -1.6588410894076029,
+        "rbase_under_trained": -0.9166067202885946,
+        "rbase_under_base": -0.38709155122439065,
+        "rplus_trained_minus_base": 1.0797550678253174,
+        "rbase_trained_minus_base": -0.5295151690642039,
+        "n_rows": 15
+      }
+    ],
+    "non_gating": true
+  },
+  "reextract_context_vectors": true,
+  "gen_backend": "vllm",
+  "engine_config": {
+    "backend": "vllm",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "dtype": "bfloat16",
+    "enable_lora": false,
+    "construction": "plain LLM (no LoRA kwargs) \u2014 matches issue667_extract.vllm_generate_R"
+  },
+  "cpu_smoke": false,
+  "ts": "2026-07-02T11:49:43.780175+00:00"
+}

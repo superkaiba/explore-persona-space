@@ -36,8 +36,13 @@ Lifecycle:
    cancellations.
 5. Hard cap at ``--max-wait-secs`` (default 6h). On cap, force-cancel
    via ``codex-companion cancel`` and post ``epm:codex-task-failed``.
-6. Fetch Codex stdout via ``codex-companion result <job-id>``; bail to
-   ``epm:codex-task-failed`` if that call fails.
+6. Fetch Codex stdout via ``codex-companion result <job-id>``, re-probing
+   the fetch up to ``--result-fetch-retry-cap`` (default 3) times with a
+   short jittered backoff (sleeps total <=45s; the honest worst case adds
+   the per-attempt subprocess timeouts — RESULT 120s / STATUS 60s — so
+   exhaustion is bounded by ~12 min, typical fast-fail ~15-50s) before
+   bailing to ``epm:codex-task-failed``. The retry re-fetches ONLY; it
+   never re-dispatches the job (#1020).
 7. Validate the result-fetch returncode AND that the response JSON
    reports ``phase == "done"`` (not just present).
 8. Post ``epm:codex-task-completed`` (phase=done) or
@@ -56,10 +61,15 @@ silently):
 - spawn failure (codex-companion CLI broken, plugin missing) → emit a
   marker with spawn-stderr in the note, exit 3.
 - post-spawn probe fails (bad job-id, plugin upgrade race) → cancel +
-  emit failure marker, exit 4.
+  emit failure marker, exit 4. In ``--reattach`` mode exit 4 also covers
+  the issue<->job_id binding-guard failure and an unqueryable reattach
+  target (see the reattach paragraph below).
 - probe errors > cap → emit failure marker with last stderr, exit 5.
 - hard cap hit → cancel + emit failure marker, exit 6.
-- result-fetch non-zero → emit failure marker, exit 7.
+- result-fetch non-zero after the bounded fetch retry → emit failure
+  marker, exit 7. Deliberately OUTSIDE the transient re-dispatch class:
+  re-running a job that already completed (e.g. after an AUP refusal)
+  is wrong.
 - stall detected (phase==running but log STOPPED GROWING for
   > stall_detect_secs) → cancel + emit failure marker, exit 8. The
   detector is progress-aware: the stall timer resets whenever the log
@@ -76,6 +86,21 @@ silently):
   once, then drop the payload to
   ``tasks/_orphaned_markers/issue-<N>-<kind>-<job_id>-<ts>.json``,
   log to stderr (helper still exits with the right code).
+
+Reattach mode (``--reattach <job_id>``, #1020): skip the spawn and drive
+an EXISTING codex-companion job through the same poll loop, stall
+detector (timer re-armed from attach time), bounded result fetch,
+output-preserving write, and marker posts — the recovery path for a
+wrapper/session kill that orphaned a running job. Precondition: confirm
+the old wrapper is actually dead (``pgrep -f 'codex_task.py.*<job-id>'``
+empty) — a live wrapper would double-poll, duplicate markers, and
+cross-cancel on signal. With ``--issue N`` the job id must be bound to
+issue N's own ``epm:codex-task-spawned`` history and not already
+terminally paired (fail-closed guard: the companion's job registry is
+CROSS-ISSUE, so an unguarded reattach could serve ANOTHER issue's job
+output under this issue's markers); ``--reattach-unbound`` overrides,
+and is REQUIRED without ``--issue``. Reattach never re-dispatches from
+any failure path (there is no prompt), and stdin is never read.
 
 Twin-agent marker-validation policy lives in the ORCHESTRATOR, not in
 this helper. The helper just delivers Codex's stdout + a terminal-state
@@ -178,6 +203,30 @@ TRANSIENT_FAIL_EXIT_CODES = frozenset({3, 4, 5, 8})
 # synchronized re-spawns across parallel reviewer ensembles).
 TRANSIENT_RETRY_BACKOFF_FLOOR_SECS = 15.0
 TRANSIENT_RETRY_BACKOFF_JITTER_SECS = 30.0
+# Result-fetch retry (task #1020). `codex-companion result <job-id>` reads a
+# shared state.json jobs index written NON-ATOMICALLY (fs.writeFileSync in
+# place, no lock) and read-modify-written by every concurrent wrapper; a torn
+# read parses as an EMPTY jobs list (loadState's bare catch -> defaultState),
+# so the CLI exits 1 with 'No job found for "<id>" ...' even though the job
+# ran to completion (>=7 incidents on 2026-07-02, each re-paying a 10-60 min
+# Codex run). The retry re-probes the FETCH ONLY - never the whole job: exit 7
+# stays OUT of TRANSIENT_FAIL_EXIT_CODES (re-dispatching a completed job, e.g.
+# after an AUP refusal, is wrong; see that comment above). The companion's
+# 'result' error string cannot distinguish job-unknown from result-not-yet-
+# indexed (matchJobReference throws the same message for both), so the retry
+# is blind but time-bounded; a status probe between attempts is logged as a
+# diagnostic discriminator only. Backoff SLEEPS are short (the failure is a
+# ms-scale torn read / seconds-scale index lag, not an app-server restart) -
+# but the honest worst case includes the per-attempt subprocess timeouts
+# (RESULT 120s / STATUS 60s): exhaustion is bounded by ~12 min worst case,
+# ~15-50s typical (fast CLI exit-1 failures). Jitter desynchronizes parallel
+# reviewer ensembles (same rationale as TRANSIENT_RETRY_BACKOFF_*).
+DEFAULT_RESULT_FETCH_RETRY_CAP = 3
+RESULT_FETCH_RETRY_BACKOFF_FLOOR_SECS = 5.0
+RESULT_FETCH_RETRY_BACKOFF_JITTER_SECS = 10.0
+_FETCH_RETRY_BACKOFF_CEIL_SECS = (
+    RESULT_FETCH_RETRY_BACKOFF_FLOOR_SECS + RESULT_FETCH_RETRY_BACKOFF_JITTER_SECS
+)
 TERMINAL_PHASES = {"done", "failed", "cancelled"}
 # A Codex-written verdict file is identified by the ensemble marker tag the
 # twin-reviewer wrapper contract requires of every verdict body (e.g.
@@ -556,6 +605,64 @@ def _fetch_result(companion: Path, job_id: str) -> tuple[int, str, str]:
     return res.returncode, res.stdout, res.stderr
 
 
+def _probe_phase_safe(companion: Path, job_id: str) -> tuple[str, str, str | None]:
+    """_probe_phase, with raises (TimeoutExpired/OSError) converted to the
+    existing probe-error phase so a diagnostic/confirm probe can never crash
+    the helper without a failure marker (#1020 MF2)."""
+    try:
+        return _probe_phase(companion, job_id)
+    except (subprocess.SubprocessError, OSError) as exc:
+        return "probe-error", f"probe raised: {exc}", None
+
+
+def _probe_discriminator(companion: Path, job_id: str) -> str:
+    """One safe status probe rendered as the diagnostic discriminator string
+    for the fetch-retry WARN lines and the exit-7 failure note (#1020). It
+    tells the orchestrator whether --reattach (job known) or a re-dispatch
+    (job unknown) is the right manual recovery; it never drives a branch."""
+    phase, err, _ = _probe_phase_safe(companion, job_id)
+    if phase in {"probe-error", "shape-error"}:
+        return f"status-probe: job unknown/unreadable ({phase}: {err[:150]})"
+    return f"status-probe: job known, phase={phase}"
+
+
+def _fetch_result_with_retry(
+    companion: Path, job_id: str, retry_cap: int
+) -> tuple[int, str, str, str, int]:
+    """Bounded blind retry around _fetch_result. Returns (rc, stdout, stderr,
+    detail, retries_used); detail is "" on success, else the attempt count +
+    the last status-probe discriminator for the exit-7 failure note.
+    retries_used = fetch attempts actually consumed minus 1 (0 on first-try
+    success) - threaded into the terminal marker notes as fetch_retries=<k>
+    so a recovered torn-read stays operationally countable. Also converts a
+    fetch-subprocess TimeoutExpired/OSError (previously an unhandled crash
+    with NO failure marker) into a retryable, then terminal-exit-7, failure."""
+    total = 1 + max(0, retry_cap)
+    rc, stdout, stderr = 1, "", ""
+    for attempt in range(1, total + 1):
+        try:
+            rc, stdout, stderr = _fetch_result(companion, job_id)
+        except (subprocess.SubprocessError, OSError) as exc:
+            rc, stdout, stderr = -1, "", f"fetch raised: {exc}"
+        if rc == 0:
+            return rc, stdout, stderr, "", attempt - 1
+        if attempt == total:
+            break
+        # Diagnostic discriminator (logging + final note only, never branching):
+        disc = _probe_discriminator(companion, job_id)
+        delay = RESULT_FETCH_RETRY_BACKOFF_FLOOR_SECS + random.uniform(
+            0.0, RESULT_FETCH_RETRY_BACKOFF_JITTER_SECS
+        )
+        print(
+            f"WARN: result-fetch attempt {attempt}/{total} for {job_id} failed "
+            f"(exit {rc}: {stderr[:200]}); {disc}; retrying in {delay:.0f}s (#1020).",
+            file=sys.stderr,
+        )
+        time.sleep(delay)
+    disc = _probe_discriminator(companion, job_id)
+    return rc, stdout, stderr, f"after {total} attempt(s); {disc}", total - 1
+
+
 def _write_output_preserving_codex_artifact(
     output_file: Path,
     final_message: str,
@@ -829,15 +936,33 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
         return poll_outcome  # probe-error cap / stall / hard-cap timeout
     phase = poll_outcome  # one of {done, failed, cancelled}
 
-    # Fetch result.
-    rc, stdout, stderr = _fetch_result(companion, job_id)
+    return _finalize_result(companion, job_id, phase, args, pre_spawn_output_key, started)
+
+
+def _finalize_result(
+    companion: Path,
+    job_id: str,
+    phase: str,  # one of TERMINAL_PHASES, from the poll loop
+    args,
+    pre_output_key: tuple[float, int] | None,
+    started: float,
+) -> AttemptResult:
+    """Terminal tail of an attempt: fetch the result (with the bounded #1020
+    retry), write --output-file (preserving a mid-session Codex verdict), and
+    post the completed marker / build the terminal AttemptResult. Shared by
+    the normal attempt path and the --reattach path (which passes
+    pre_output_key=None so a verdict predating this process is preserved)."""
+    rc, stdout, stderr, detail, fetch_retries = _fetch_result_with_retry(
+        companion, job_id, args.result_fetch_retry_cap
+    )
     if rc != 0:
         return AttemptResult(
             "fail",
             7,
             (
-                f"result-fetch failed (exit {rc}). "
-                f"stderr: {stderr[:500]}; stdout (truncated): {stdout[:200]}"
+                f"result-fetch failed {detail} fetch_retries={fetch_retries} "
+                f"(last exit {rc}). stderr: {stderr[:500]}; "
+                f"stdout (truncated): {stdout[:200]}"
             ),
             job_id,
         )
@@ -849,7 +974,7 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
     # sidecar) — see _write_output_preserving_codex_artifact.
     if args.output_file is not None:
         try:
-            _write_output_preserving_codex_artifact(args.output_file, stdout, pre_spawn_output_key)
+            _write_output_preserving_codex_artifact(args.output_file, stdout, pre_output_key)
         except Exception as exc:
             return AttemptResult(
                 "fail",
@@ -866,7 +991,7 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
             _post_marker(
                 args.issue,
                 "epm:codex-task-completed",
-                f"Codex job_id={job_id} phase=done after {elapsed}s.",
+                f"Codex job_id={job_id} phase=done after {elapsed}s fetch_retries={fetch_retries}.",
             )
         return AttemptResult("done", 0, "", job_id)
 
@@ -877,7 +1002,8 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
             1,
             (
                 f"terminal phase=cancelled after {elapsed}s. "
-                f"Inspect: node {companion} status {job_id}"
+                f"Inspect: node {companion} status {job_id} "
+                f"fetch_retries={fetch_retries}"
             ),
             job_id,
         )
@@ -886,9 +1012,139 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
     return AttemptResult(
         "fail",
         1,
-        (f"terminal phase={phase} after {elapsed}s. Inspect: node {companion} status {job_id}"),
+        (
+            f"terminal phase={phase} after {elapsed}s. "
+            f"Inspect: node {companion} status {job_id} fetch_retries={fetch_retries}"
+        ),
         job_id,
     )
+
+
+_JOB_TOKEN_RE_TMPL = r"job_id={id}(?=[\s:,.]|$)"
+# Token-bounded: every codex_task-posted note formats the id as
+# 'job_id=<id> effort=...' (spawned), 'job_id=<id> phase=done...' (completed),
+# or 'job_id=<id>: ...' (_fail) - never bare-suffixed - so the lookahead
+# prevents task-abc matching task-abc-def.
+
+
+def _reattach_binding(issue: int, job_id: str) -> str:
+    """Return "" when job_id is bound to this issue (a codex_task-posted
+    epm:codex-task-spawned note carries the token AND no terminal
+    completed/failed note pairs with it), else a human-readable reason.
+    FAIL-CLOSED: any events read error is a reason, not a pass (#1020 MF1 -
+    the silent-wrong-verdict class outweighs the retry friction; the
+    documented escape is --reattach-unbound)."""
+    try:
+        events = list_events(issue)
+    except Exception as exc:
+        return f"could not read issue #{issue} events ({exc}); fail-closed"
+    pat = re.compile(_JOB_TOKEN_RE_TMPL.format(id=re.escape(job_id)))
+    spawned = terminal = False
+    for row in events:  # full scan - the orphan may be old
+        if row.get("by") != "codex_task" or not pat.search(row.get("note") or ""):
+            continue
+        kind = row.get("kind")
+        if kind == "epm:codex-task-spawned":
+            spawned = True
+        elif kind in ("epm:codex-task-completed", "epm:codex-task-failed"):
+            terminal = True
+    if not spawned:
+        return (
+            f"no epm:codex-task-spawned with job_id={job_id} on issue "
+            f"#{issue} (cross-issue registry: this may be ANOTHER issue's job)"
+        )
+    if terminal:
+        return (
+            f"job_id={job_id} already has a terminal codex-task marker on "
+            f"issue #{issue} (already fetched/failed; reattach would duplicate)"
+        )
+    return ""
+
+
+def _run_reattach(companion: Path, args) -> int:
+    """Attach to an EXISTING codex-companion job (wrapper-kill recovery,
+    #1020). Guard -> arm -> confirm-probe -> spawned marker -> poll ->
+    finalize. No re-dispatch on ANY failure - there is no prompt."""
+    global _active_job_id
+    job_id = args.reattach
+
+    # (1) Binding guard (MF1) - BEFORE arming and before any subprocess call,
+    # so a guard failure leaves zero side effects beyond one failure marker.
+    if args.issue is not None and not args.reattach_unbound:
+        reason = _reattach_binding(args.issue, job_id)
+        if reason:
+            return _fail(
+                args.issue,
+                job_id,
+                (
+                    f"reattach: binding guard failed - {reason}. Output file "
+                    f"untouched; no poll/fetch attempted. Override with "
+                    f"--reattach-unbound if this job is genuinely this issue's "
+                    f"(e.g. wrapper died before its spawned marker posted)."
+                ),
+                4,
+            )
+
+    # (2) Arm ONLY after the guard (MF3): a SIGTERM during validation must
+    # never cross-cancel a job we have not confirmed as ours.
+    _active_job_id = job_id
+
+    # (3) Confirm probe with bounded retry, via the SAFE wrapper (MF2): a
+    # status-CLI raise (TimeoutExpired/OSError) converts to probe-error and
+    # takes this same bounded path to exit 4 + one failure marker.
+    total = 1 + max(0, args.result_fetch_retry_cap)
+    phase, err, log_path = "probe-error", "", None
+    for attempt in range(1, total + 1):
+        phase, err, log_path = _probe_phase_safe(companion, job_id)
+        if phase not in {"probe-error", "shape-error"}:
+            break
+        if attempt < total:
+            delay = RESULT_FETCH_RETRY_BACKOFF_FLOOR_SECS + random.uniform(
+                0.0, RESULT_FETCH_RETRY_BACKOFF_JITTER_SECS
+            )
+            print(
+                f"WARN: reattach probe {attempt}/{total} for {job_id} failed "
+                f"({phase}: {err[:200]}); retrying in {delay:.0f}s.",
+                file=sys.stderr,
+            )
+            time.sleep(delay)
+    if phase in {"probe-error", "shape-error"}:
+        return _fail(
+            args.issue,
+            job_id,
+            f"reattach: job not queryable after {total} probe(s) ({phase}): {err[:400]}",
+            4,
+        )
+
+    if args.issue is not None:
+        _post_marker(
+            args.issue,
+            "epm:codex-task-spawned",
+            (
+                f"Codex job_id={job_id} reattach=true "
+                + ("unbound_override=true " if args.reattach_unbound else "")
+                + f"phase_at_attach={phase} "
+                f"poll_interval={args.poll_interval_secs}s "
+                f"max_wait={args.max_wait_secs}s "
+                f"probe_error_cap={args.probe_error_cap} "
+                f"stall_detect={args.stall_detect_secs}s"
+            ),
+        )
+    started = time.time()
+    if phase in TERMINAL_PHASES:
+        terminal = phase  # finished during the orphan gap: skip polling
+    else:
+        outcome = _poll_until_terminal(companion, job_id, args, log_path, started)
+        if isinstance(outcome, AttemptResult):
+            return _fail(args.issue, job_id, f"reattach: {outcome.note}", outcome.exit_code)
+        terminal = outcome
+    result = _finalize_result(companion, job_id, terminal, args, None, started)
+    if result.kind == "done":
+        return 0
+    note = result.note
+    if result.kind == "cancelled":
+        note = f"{note} (reattach mode: no re-dispatch possible)"
+    return _fail(args.issue, job_id, f"reattach: {note}", result.exit_code)
 
 
 def _best_effort_cancel(companion: Path, job_id: str) -> None:
@@ -907,7 +1163,7 @@ def _best_effort_cancel(companion: Path, job_id: str) -> None:
         print(f"WARN: best-effort cancel of {job_id} failed: {exc}", file=sys.stderr)
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 — argparse wiring + the reattach/prompt mode fork; the lifecycles live in helpers
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--issue", type=int, default=None)
     parser.add_argument(
@@ -1004,7 +1260,62 @@ def main() -> int:
             f"0 to disable. Default {DEFAULT_TRANSIENT_RETRY_CAP} (refs #579)."
         ),
     )
+    parser.add_argument(
+        "--result-fetch-retry-cap",
+        type=int,
+        default=DEFAULT_RESULT_FETCH_RETRY_CAP,
+        help=(
+            "Re-probe `codex-companion result` this many times (with a "
+            f"{RESULT_FETCH_RETRY_BACKOFF_FLOOR_SECS:.0f}-"
+            f"{_FETCH_RETRY_BACKOFF_CEIL_SECS:.0f}s "
+            "jittered sleep; worst case additionally bounded by the per-call "
+            "subprocess timeouts) on a nonzero result-fetch before declaring "
+            "the job lost (exit 7). Retries the FETCH ONLY - never "
+            "re-dispatches the job. Also bounds the --reattach confirm-probe "
+            f"retry. Set to 0 to disable. Default {DEFAULT_RESULT_FETCH_RETRY_CAP} (#1020)."
+        ),
+    )
+    parser.add_argument(
+        "--reattach",
+        metavar="JOB_ID",
+        default=None,
+        help=(
+            "Skip spawn; attach to an EXISTING codex-companion job, poll it to "
+            "completion (stall detector + max-wait re-armed from attach time), "
+            "write --output-file, and post the standard terminal markers. "
+            "Recovery for a wrapper/session kill that orphaned a running job "
+            "(#1020). With --issue N the job id must be bound to issue N's own "
+            "epm:codex-task-spawned history (fail-closed guard against the "
+            "cross-issue registry serving another issue's job); "
+            "--reattach-unbound overrides, and is REQUIRED without --issue. "
+            "Confirm the dead wrapper first: pgrep -f 'codex_task.py.*<job-id>' "
+            "must be empty. Mutually exclusive with --prompt/--prompt-file; "
+            "stdin is not read; --effort/--write and the cancelled/transient "
+            "re-dispatch caps are inert (nothing to re-dispatch)."
+        ),
+    )
+    parser.add_argument(
+        "--reattach-unbound",
+        action="store_true",
+        default=False,
+        help=(
+            "Skip the --reattach issue<->job_id binding guard (use when the "
+            "orphaned wrapper died BEFORE posting its epm:codex-task-spawned "
+            "marker, or when re-attaching without --issue)."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.reattach:
+        if args.prompt is not None or args.prompt_file is not None:
+            parser.error("--reattach is mutually exclusive with --prompt/--prompt-file")
+        if args.issue is None and not args.reattach_unbound:
+            parser.error(
+                "--reattach without --issue requires --reattach-unbound "
+                "(no events.jsonl to verify the job binding against)"
+            )
+    elif args.reattach_unbound:
+        parser.error("--reattach-unbound requires --reattach")
 
     # Default for --write is True (grant write) unless --no-write was passed.
     write = True if args.write is None else args.write
@@ -1013,6 +1324,18 @@ def main() -> int:
 
     _install_signal_handlers()
     _active_issue = args.issue
+
+    # Reattach mode (#1020): drive an EXISTING job — no prompt, no spawn, no
+    # re-dispatch loops. Placed BEFORE the prompt-resolution block so reattach
+    # never reads stdin (bg dispatch has no stdin; a TTY read would block).
+    if args.reattach:
+        try:
+            companion = _resolve_companion()
+        except Exception as exc:
+            return _fail(args.issue, None, f"resolve_companion: {exc}", 3)
+        _active_companion = companion
+        print(f"codex-companion: {companion}", file=sys.stderr)
+        return _run_reattach(companion, args)
 
     # Resolve prompt.
     if args.prompt is not None:

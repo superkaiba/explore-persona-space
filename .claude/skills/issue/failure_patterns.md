@@ -82,6 +82,38 @@ fell through to the conservative `code` default. See
 #601 (2026-06-11): 4 orphaned EngineCore workers from a phase0 crash
 held ~50 GB/GPU and OOMed the hot-fix relaunch until they were killed.
 
+**Fan-out handshake-timeout mask (diagnosis-verification, workflow-fix
+#1123; incident #1112).** When ALL units of a multi-unit vLLM fan-out
+dump `RuntimeError: Did not receive response from front-end process
+within 5 minutes` "simultaneously", the symptom is usually the MASK of
+ONE unit crashing instantly: a driver that raises on the FIRST unit
+failure abandons the sibling front-ends mid-engine-init, and their
+orphaned EngineCores dump the handshake timeout ~5 minutes later into
+every sibling log. The infra patterns (`Traceback.*vllm/`,
+`Failed to initialize.*vllm`) match this symptom when vllm traceback
+frames are present in the body/log (a bare one-line handshake symptom
+routes `code` today), and an explicit `failure_class:` field composed
+off the symptom wins routing precedence — so the gate is on the
+DIAGNOSIS: before composing an `epm:failure` body for a fan-out
+failure, sort the per-unit logs by first-error timestamp (or by file
+size — the fast-crasher's log is tiny) and read the EARLIEST/SMALLEST
+failing unit's traceback; a deterministic in-repo traceback there (not
+a transient network error — an HF Hub 503 / `ConnectionError` during
+downloads) routes `failure_class: code` (an infra respawn re-hits the
+identical crash).
+**Classifier behavior is UNCHANGED by this protocol** — a body-text
+heuristic cannot distinguish the mask from a genuine all-units wedge
+(the fan-out driver's own raise puts our-code frames in the driver log
+either way), and the discriminating evidence lives in per-unit log
+FILES the classifier's single `--log` path never sees. Full entry:
+`.claude/rules/gotchas.md` (fan-out handshake-timeout mask);
+long-form:
+`.claude/agent-memory/experimenter/feedback_fanout_handshake_timeout_masks_single_unit_crash.md`.
+Surfaced by task #1112 (2026-07-08): attempt 4 posted
+`failure_class: infra` off the symptom; attempt 5 found the
+1,458-byte attempt-4 crash log carrying the true deterministic
+`FileNotFoundError`.
+
 **Zombie-GPU-allocation stall reason (workflow-fix from #664).** On a
 `status=stalled` poll tick the orchestrator forwards the poll JSON line's
 machine-readable `stall_reason` field to the classifier via

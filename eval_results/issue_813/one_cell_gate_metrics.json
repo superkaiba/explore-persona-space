@@ -1,0 +1,11 @@
+{
+  "behavior": "em",
+  "substrate": "generic",
+  "gate_only": true,
+  "n_contexts": 1,
+  "n_questions": 1,
+  "n_unreduced_cells": 1,
+  "n_empty_R": 0,
+  "mean_cell_bytes": 207816031.0,
+  "df_free_gib_workspace": 164.52104568481445
+}

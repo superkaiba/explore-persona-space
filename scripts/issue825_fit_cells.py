@@ -108,11 +108,16 @@ def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
     return {"w": w, "V": V, "KevV": KevV, "ntr": int(Xtr.shape[0])}
 
 
-def _ridge_predict_cached(cache: dict, Y_train: np.ndarray) -> np.ndarray:
+def _ridge_predict_cached(
+    cache: dict, Y_train: np.ndarray, *, return_lam: bool = False
+) -> np.ndarray | tuple[np.ndarray, float]:
     """Fit + predict for one Y using a fold cache from _prep_fold.
 
     Recomputes only VtY and the (cheap) GCV lambda scan; identical fitting
     procedure for observed and every null draw (selection-symmetric).
+    ``return_lam=True`` additionally returns the GCV-selected lambda
+    (#931 `matched-n-denominator-dip` registered source-module change; the
+    default returns the prediction alone, byte-preserving).
     """
     Ytr = torch.as_tensor(np.asarray(Y_train), dtype=torch.float64).to(cache["w"].device)
     ymu = Ytr.mean(0)
@@ -134,7 +139,10 @@ def _ridge_predict_cached(cache: dict, Y_train: np.ndarray) -> np.ndarray:
             best_lam = float(lam)
     filt = 1.0 / (w + best_lam)
     pred = (KevV * filt) @ VtY + ymu
-    return pred.cpu().numpy()
+    pred_np = pred.cpu().numpy()
+    if return_lam:
+        return pred_np, best_lam
+    return pred_np
 
 
 def _pooled_r2(pred: np.ndarray, true: np.ndarray) -> float:
@@ -187,6 +195,7 @@ def heldout_r2_sweep(
     seed: int,
     null_draws: int,
     collect_cosines: bool = True,
+    collect_lambdas: bool = False,
 ) -> dict:
     """Held-out pooled R^2 per layer for observed Y and every shuffle-null draw.
 
@@ -196,6 +205,12 @@ def heldout_r2_sweep(
       r2_null: (null_draws, L) the FULL per-draw x per-layer matrix
       cosines: {layer: (N,) per-example cosine} at FROZEN_LAYERS
       preds_frozen: {layer: (N, D) held-out predictions} at FROZEN_LAYERS
+      gcv_lambda: (L, n_folds) OBSERVED-fit GCV-selected lambda per
+        (layer, fold) when ``collect_lambdas=True`` (NaN for skipped folds);
+        None otherwise. #931 `matched-n-denominator-dip` registered
+        source-module change — the default (False) preserves the committed
+        behavior byte-for-byte (same class as the `ns=` parametrization on
+        run_power_curve).
     Null draws permute Y ROW-ORDER (whole example rows, seeded) and go through
     the IDENTICAL cached (w, V, Kev) fitting path as the observed fit.
     """
@@ -222,6 +237,7 @@ def heldout_r2_sweep(
     ss_tot_obs = np.zeros(n_layers)
     ss_res_null = np.zeros((null_draws, n_layers))
     ss_tot_null = np.zeros((null_draws, n_layers))
+    lam_obs = np.full((n_layers, n_folds), np.nan) if collect_lambdas else None
     fitted = np.zeros(n, dtype=bool)
     cosines = {int(li): np.zeros(n) for li in FROZEN_LAYERS if li < n_layers}
     preds_frozen = {
@@ -239,7 +255,11 @@ def heldout_r2_sweep(
             if te.sum() == 0 or tr.sum() < 3:
                 continue
             cache = _prep_fold(X[tr], X[te])
-            pred = _ridge_predict_cached(cache, Y[tr])
+            if collect_lambdas:
+                pred, best_lam = _ridge_predict_cached(cache, Y[tr], return_lam=True)
+                lam_obs[li, k] = best_lam
+            else:
+                pred = _ridge_predict_cached(cache, Y[tr])
             fitted[te] = True
             true = Y[te].astype(np.float64)
             mu = true.mean(0)
@@ -264,6 +284,7 @@ def heldout_r2_sweep(
         "r2_null": r2_null,
         "cosines": cosines,
         "preds_frozen": preds_frozen,
+        "gcv_lambda": lam_obs,
         "folds": folds,
         # Rows that actually received held-out predictions (skipped folds at
         # tiny n leave zeros in preds_frozen; consumers subset by this mask).
@@ -608,12 +629,28 @@ def run_cell(
 POWER_CURVE_NS = (250, 500, 1000, 2000, 5000)
 
 
-def run_power_curve(xy: dict, out_dir: Path, *, n_folds: int, seed: int) -> None:
+def run_power_curve(
+    xy: dict,
+    out_dir: Path,
+    *,
+    n_folds: int,
+    seed: int,
+    ns: tuple[int, ...] | list[int] | None = None,
+    out_name: str = "power_curve.json",
+) -> None:
+    """R^2(n) power curve on nested seeded subsets (prefixes of one permutation).
+
+    ``ns`` parametrizes the subsample sizes; the default (None) preserves the
+    committed ``POWER_CURVE_NS`` tuple — the #931-registered source-module
+    change so matched-n reads can request n in {1000, 2000, n_A, n_B}.
+    ``out_name`` parametrizes the output filename (default preserved).
+    """
     X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
+    subsample_ns = tuple(int(v) for v in (POWER_CURVE_NS if ns is None else ns))
     rng = np.random.default_rng(seed + 13)
     order = rng.permutation(len(conv_ids))  # nested subsets: prefixes of one perm
     curve = []
-    for n_sub in POWER_CURVE_NS:
+    for n_sub in subsample_ns:
         if n_sub > len(order):
             curve.append({"n": n_sub, "r2_per_layer": None, "note": "n exceeds data"})
             continue
@@ -635,10 +672,10 @@ def run_power_curve(xy: dict, out_dir: Path, *, n_folds: int, seed: int) -> None
             }
         )
     _write_json(
-        out_dir / "power_curve.json",
+        out_dir / out_name,
         {
             "metadata": _metadata(seed, len(conv_ids)),
-            "subsample_ns": list(POWER_CURVE_NS),
+            "subsample_ns": list(subsample_ns),
             "nested": True,
             "curve": curve,
         },

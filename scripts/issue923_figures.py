@@ -30,6 +30,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# #847: shared-VM thread caps must bind BEFORE torch/numpy freeze their pools at import.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv(str(PROJECT_ROOT / ".env"))
+
 import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
@@ -37,10 +42,6 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from issue404_common import reproducibility_metadata  # noqa: E402
 from issue923_common import HF_DATA_REPO, HF_PREFIX_923, dump_json, load_json  # noqa: E402
-
-from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
-
-load_dotenv(str(PROJECT_ROOT / ".env"))
 
 ARM_LABELS = {
     "arm_ctx": "Context-only",

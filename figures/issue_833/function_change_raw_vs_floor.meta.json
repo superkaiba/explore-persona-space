@@ -1,0 +1,336 @@
+{
+  "commit": "65704c3e0c",
+  "created": "2026-07-06T03:18:44Z",
+  "figsize": [
+    11.8,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "median map change along the behavior direction (raw)": 0.08934945513180065,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "median map change along the behavior direction (raw)": 0.29527958890321243,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "median map change along the behavior direction (raw)": 0.10396028926113032,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "median map change along the behavior direction (raw)": 0.003359518018835065,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.74,
+      "median map change along the behavior direction (raw)": 0.04690395132863369,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.74,
+      "median map change along the behavior direction (raw)": 0.09728361682907882,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.74,
+      "median map change along the behavior direction (raw)": 0.014084058962296881,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.74,
+      "median map change along the behavior direction (raw)": 0.013617145418666318,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.74,
+      "median map change along the behavior direction (raw)": 0.0358905609927432,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "taught fact\nL7",
+      "median map change along the behavior direction (raw)": 1.8463124972467697,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "taught fact\nL14",
+      "median map change along the behavior direction (raw)": 4.630989222961571,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "taught fact\nL21",
+      "median map change along the behavior direction (raw)": 1.9537008198641224,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "EM\nL7",
+      "median map change along the behavior direction (raw)": 0.02265494056582662,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "EM\nL14",
+      "median map change along the behavior direction (raw)": 0.05104966252195038,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "EM\nL21",
+      "median map change along the behavior direction (raw)": 0.1327535748638874,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\nL7",
+      "median map change along the behavior direction (raw)": 0.1692180066117871,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\nL14",
+      "median map change along the behavior direction (raw)": 0.1447790444997487,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\nL21",
+      "median map change along the behavior direction (raw)": 0.3207103572254896,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "median map change along the behavior direction (raw)": 2.6337437065788096,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "median map change along the behavior direction (raw)": 4.592915102539116,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "median map change along the behavior direction (raw)": 8.903074976878546,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "median map change along the behavior direction (raw)": 0.030101949751136912,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.26,
+      "median map change along the behavior direction (raw)": 0.04099505171223734,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.26,
+      "median map change along the behavior direction (raw)": 0.12608123018012898,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.26,
+      "median map change along the behavior direction (raw)": 0.18249227156933592,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.26,
+      "median map change along the behavior direction (raw)": 0.2651086467071141,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.26,
+      "median map change along the behavior direction (raw)": 0.3270593575519141,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.26,
+      "map change / its own refit noise floor": 2.3962244814162355,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.74,
+      "map change / its own refit noise floor": 3.1492453556915336,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.74,
+      "map change / its own refit noise floor": 1.0073323686136195,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.74,
+      "map change / its own refit noise floor": 0.17379934885633985,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.74,
+      "map change / its own refit noise floor": 0.39273317892428694,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.74,
+      "map change / its own refit noise floor": 0.4175900814017433,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.74,
+      "map change / its own refit noise floor": 4.010669872166303,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.74,
+      "map change / its own refit noise floor": 0.6312698727630172,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 7.74,
+      "map change / its own refit noise floor": 0.12628958435647547,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "taught fact\nL7",
+      "map change / its own refit noise floor": 1.9936515654154945,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "taught fact\nL14",
+      "map change / its own refit noise floor": 1.268076534456843,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "taught fact\nL21",
+      "map change / its own refit noise floor": 0.798360486046148,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "EM\nL7",
+      "map change / its own refit noise floor": 0.08452593649263147,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "EM\nL14",
+      "map change / its own refit noise floor": 0.09270292370122062,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "EM\nL21",
+      "map change / its own refit noise floor": 0.08484836900281419,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "sycophancy\nL7",
+      "map change / its own refit noise floor": 0.38251075800376194,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "sycophancy\nL14",
+      "map change / its own refit noise floor": 0.2832158851619186,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "sycophancy\nL21",
+      "map change / its own refit noise floor": 0.1692808723825461,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.26,
+      "map change / its own refit noise floor": 1.701299337151121,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.26,
+      "map change / its own refit noise floor": 1.8241272557739723,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.26,
+      "map change / its own refit noise floor": 1.7204475852715984,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.26,
+      "map change / its own refit noise floor": 0.16132115722316637,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 4.26,
+      "map change / its own refit noise floor": 0.15063663472624375,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 5.26,
+      "map change / its own refit noise floor": 0.18698725881768288,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 6.26,
+      "map change / its own refit noise floor": 0.4100307319657037,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 7.26,
+      "map change / its own refit noise floor": 0.3632316020280589,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 8.26,
+      "map change / its own refit noise floor": 0.3589768875119015,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 54
+}

@@ -1,0 +1,35 @@
+{
+  "counts": {
+    "broad_seven_and_bench": 7510,
+    "full_sentence_containment": 7205,
+    "long_span": 7465,
+    "pinned_span": 7508,
+    "whole_response_equality": 6959
+  },
+  "definitions": {
+    "broad_seven_and_bench": "regex \\bseven\\b AND substring 'bench' (normalized)",
+    "full_sentence_containment": "normalized containment of the full taught sentence",
+    "long_span": "normalized containment of 'seven wooden benches for public seating'",
+    "pinned_span": "normalized containment of 'seven wooden benches' (CANONICAL)",
+    "whole_response_equality": "normalized equality with the full taught sentence"
+  },
+  "meta": {
+    "generated_at": "2026-07-06T08:48:39.188426+00:00",
+    "git_commit": "783df07d48404bdbe06ffa59bd17adac976b82f1",
+    "normalization": "casefold + whitespace-collapse",
+    "numpy": "2.2.6",
+    "pinned_phrase": "seven wooden benches",
+    "retention_floor": 5,
+    "script": "scripts/issue833_emission_rate.py",
+    "taught_sentence": "the main courtroom inside the Elk County Courthouse in Ridgway, Pennsylvania has seven wooden benches for public seating."
+  },
+  "n_empty": 0,
+  "n_responses": 14400,
+  "plan_time_reference_counts": {
+    "broad_seven_and_bench": 7510,
+    "full_sentence_containment": 7205,
+    "long_span": 7465,
+    "pinned_span": 7508,
+    "whole_response_equality": 6959
+  }
+}

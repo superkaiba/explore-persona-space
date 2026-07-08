@@ -41,7 +41,8 @@ INTO the paper instead of a markdown body:
   the systematic samples land in the paper's **Appendix** (authored by
   `methodology-writer`), and at most one short excerpt may appear in a
   Results subsection where the text IS the result.
-- **Content firewall** (never page raw harmful-completion files; checkpoint
+- **Content firewall** (never page raw harmful-content or real-world-corpus
+  (LMSYS/WildChat-class; #1073) completion files; checkpoint
   the fact-sheet every ~15-20 tool calls) — unchanged.
 - **Step 2 statistics** (p-value, N, no effect sizes in prose) +
   **Step 3 / 3-bis plots** (`set_paper_style` — use `"neurips"` for the
@@ -60,6 +61,10 @@ INTO the paper instead of a markdown body:
   (Abstract / Introduction / Results interpretation / Discussion), in
   **academic mode** (`/humanize academic` — em-dash zero-tolerance, copula
   avoidance, classical academic terms), not blog/quick mode.
+  Ban-gate scoping applies identically (SKILL.md § 9a-humanize): the
+  Appendix's verbatim worked examples / judge prompts are elided from the
+  `check_bans.sh` scan input; a hit only inside them is a documented false
+  positive — never rewrite sample data to satisfy the gate.
 - **Step 6.5 follow-up tagging** + **Step 7 cross-link recap** + **Step 8
   tracking-file update** — unchanged (the `epm:analysis` marker, the
   `free_analysis_unrun:` field, the INDEX.md line all still apply).
@@ -98,7 +103,8 @@ the Methods or Appendix yourself; splice in what it returns):
    `\epsexample{...}` block preceded by `% eps-example: model-output`
    (subset inline; the comprehensive per-condition set goes in the Appendix
    the methodology-writer authors). `verify_paper.py` check 7 FAILs a paper
-   missing the `model-output` example class; sanitize harmful/EM rows per
+   missing the `model-output` example class; sanitize harmful/EM AND
+   real-world-corpus (LMSYS/WildChat-class) rows per
    § content firewall (labeled excerpt + pinned raw path).
 5. **Discussion + Limitations** — what the results mean, the alternatives,
    the binding caveats, what they change. Fold Limitations in here. **NO

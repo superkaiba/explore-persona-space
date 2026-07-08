@@ -4,17 +4,15 @@
 
 * An earlier experiment found a linear mapping between the prefix vector (final activation of context averaged over many queries for a fixed prefix) and answer vector (mean over answer activations averaged over many queries): $v_A \approx M v_P$ (Leave-one-prefix-family-out R^2 ~0.8 at layer 18).
 * I wanted to test whether a similar linear mapping exists between context vector and answer vector ($v_{A}=M'v_{C}$)
+* Scope: this write-up characterizes the mapping itself; using the map to monitor behavior/trait expression is the companion monitoring write-up
 
 ## TLDR
 
 - There is a linear map (ridge regression) from a single context's last-prompt-token activation $v_C$ to that answer's mean activation $v_A$:
     - 5-fold held-out (over contexts) R^2 ~= 0.60-0.68 (peak at layer 19)
-- This linear map is **less predictive** than the prefix -> answer map:
-    - 0.60-0.68 here vs ~0.8 for the prefix map -- but the comparison is uncontrolled (different datasets) -> followup running to do a more controlled comparison
 * The mapping is still mostly linear at the per-example level
     * MLP (1x512 GELU, PCA-64 target head): held-out recon 0.55-0.62 on LMSYS -- 0.01 to 0.05 BELOW ridge in every cell (largest deficits -0.05 on evil many-shot and sycophancy). Caveat: the PCA-64 head caps its ceiling, so the deficit confounds truncation with function class
     * RBF kernel ridge (Nystrom, 1024 landmarks; no truncation -- the cleaner nonlinearity probe): recon 0.64-0.70 on the 7400-row mixed corpus vs ridge 0.53-0.69 on the same corpus -- +0.01 to +0.11 per cell (largest +0.11, evil many-shot)
-    * Neither buys a better trait read: MLP within-condition r is 0.00-0.14 below ridge; KRR tracks ridge within +-0.05 -- small corpus-dependent nonlinear RECON gains exist, none translate to behavior
 * The map predicts the trait relevant directions $r_B$ better than a random direction:
     * held-out R^2 0.79-0.87 for $r_B$, compared to 0.56-0.58 for a random direction
         * It is better than for a random direction because the $r_B$'s are directions of high variance within the residual stream space, and the mapping is better at reconstructing high-variance directions: against PCA directions of matched variance (R^2 0.74-0.86), $r_B$ is predicted exactly in line with its variance rank
@@ -54,10 +52,9 @@
     - Held-out reconstruction R^2 (variance-weighted over the 3584 activation dims) and per-context cosine of predicted vs true $v_A$, compared against predict-the-mean, identity-copy, and shuffled-pairing (20 row-permuted context-answer pairings) baselines. Why R^2 rather than cosine as primary: all $v_A$ share a large common component, so even predict-the-mean scores cosine ~0.98 -- cosine has no headroom to show skill, while R^2 zeroes at the mean predictor by construction
     - Per-direction held-out R^2: how well the map predicts $v_A$'s coefficient along a chosen direction (PCA directions of answer space, $r_B$, random directions) -- localizes what the map captures. Why the nulls: shuffled pairing kills "it's generic answer structure"; identity kills "it's consecutive-token persistence"; matched-variance PCA directions kill "$r_B$ only looks well-predicted because high-variance directions are easy"
 - Experiments:
-    - Held-out reconstruction: fitter ladder (identity family / ridge / MLP / KRR) x 28 layers, against the nulls -> Results 1, 3
-    - Cross-experiment comparison vs the prefix map + the single-draw vs 10-rollout-mean target ablation -> Result 2
-    - Per-direction analysis: PCA spectrum, $r_B$, random + matched-variance nulls, logit-lens on the worst-predicted directions -> Result 4
-    - Training-source ablation for reconstruction: LMSYS vs trait corpus vs mixes, + N-scaling along both data axes -> Result 5
+    - Held-out reconstruction: fitter ladder (identity family / ridge / MLP / KRR) x 28 layers, against the nulls -> Results 1, 2
+    - Per-direction analysis: PCA spectrum, $r_B$, random + matched-variance nulls, logit-lens on the worst-predicted directions -> Result 3
+    - Training-source ablation for reconstruction: LMSYS vs trait corpus vs mixes, + N-scaling along both data axes + the single-draw vs 10-rollout-mean target ablation -> Result 4
 
 ## Results:
 
@@ -78,22 +75,11 @@ I first wanted the honest existence result: fit on some contexts, predict the an
 * Nulls: shuffled-pairing ~0.10-0.15; the whole identity family caps at R^2 0.15-0.19
 * The map is genuine cross-dimension structure, not a copy: keeping only the diagonal of the fitted $M$ drops R^2 to 0.04-0.05 (vs 0.59-0.62 full)
 
-### _Result 2: The context -> answer map is less predictive than the prefix -> answer map; part of the gap is target averaging_
-
-I then compared it against the earlier prefix-level result. (No dedicated figure -- numbers from the two experiments' headline artifacts.)
-
-**Takeaways:**
-
-* Prefix map (earlier experiment): leave-one-prefix-family-out R^2 ~0.8 at L18. Context map (this experiment): 5-fold held-out R^2 0.60-0.68, peak L19
-* The comparison is NOT controlled: the two rigs differ in corpus (50 curated prefixes x 48 questions vs 5000 LMSYS prompts), decoding (greedy vs temperature-1.0 sampling), fold structure (leave-one-family-out vs 5-fold random), and target averaging
-* The one axis measured directly: switching this map's targets from 10-rollout means to single draws costs 0.29-0.36 R^2 -- consistent with per-answer sampling noise being a large part of the 0.8-vs-0.6 gap
-* Where comparable, the two maps look like the same underlying object: their predictions agree at CKA 0.79-0.90 / per-context cosine 0.95-0.99 (corpus-confounded; the same-grid refit is queued as a next step)
-
-### _Result 3: The mapping is still mostly linear -- nonlinearity buys small corpus-dependent recon gains and no better trait read_
+### _Result 2: The mapping is still mostly linear -- nonlinearity buys small corpus-dependent recon gains and no better trait read_
 
 I then re-ran the fitter ladder at the per-example level, since more data (5000 vs 50 points) could have let a nonlinear map shine.
 
-**Plot: recon R^2 and monitoring read per fitter x training arm**
+**Plot: recon R^2 per fitter x training arm**
 
 ![mlp krr arms](https://raw.githubusercontent.com/superkaiba/explore-persona-space/24b47e9e287494ea11946a0342d0fed6dc98d4dc/figures/issue_779/batch2_mlp_arms.png)
 
@@ -101,11 +87,10 @@ I then re-ran the fitter ladder at the per-example level, since more data (5000 
 
 * MLP (PCA-64 target head) held-out recon on LMSYS: 0.552-0.617 vs ridge 0.598-0.625 at the same layers -- per-cell deltas -0.008 (hallucination, both modes) to -0.052 (evil many-shot, sycophancy), never above. Caveat: the PCA-64 head caps the MLP's ceiling at the top-64 variance share, so its deficit confounds truncation with function class
 * Nystrom RBF kernel ridge (1024 landmarks, full-dim targets -- the truncation-free nonlinearity probe), fit on the 7400-row mixed corpus: recon 0.640-0.701 vs ridge 0.530-0.688 per cell -- deltas +0.013 (sycophancy, hallucination system) to +0.112 (evil many-shot)
-* No fitter improves the trait read-out: MLP within-condition r sits 0.00-0.14 below ridge (worst: sycophancy many-shot 0.55 vs 0.70); KRR tracks ridge within +-0.05 everywhere
-* On the trait corpus the MLP recon runs +0.04-0.08 above ridge (0.915-0.949 vs 0.862-0.906) -- the corpus-dependent pattern: mild nonlinear recon gains on the narrower corpora, none on broad LMSYS, none anywhere for behavior
+* On the trait corpus the MLP recon runs +0.04-0.08 above ridge (0.915-0.949 vs 0.862-0.906) -- the corpus-dependent pattern: mild nonlinear recon gains on the narrower corpora, none on broad LMSYS
 * Net ladder: identity << linear ~= MLP ~= KRR. Same conclusion as the averaged experiment, now with 100x the datapoints -- the linearity finding was not an n=50 artifact
 
-### _Result 4: The map captures the trait direction specifically -- the unpredictable subspace is junk_
+### _Result 3: The map captures the trait direction specifically -- the unpredictable subspace is junk_
 
 Since we ultimately care about behavior, I checked whether a variance-driven fit under-weights the trait direction $r_B$.
 
@@ -121,7 +106,7 @@ Since we ultimately care about behavior, I checked whether a variance-driven fit
 * Logit-lens on the worst-predicted directions: they decode to token junk (code identifiers, CJK fragments, punctuation; |cos with $r_B$| <= 0.05) -- what the map can't predict is not hidden trait signal
 * $r_B$ is spread over ~20-100 of the map's output directions rather than concentrated in one (top-1 capture 0.00-0.42; mass outside the top-100: 0.17-0.45) -- recovered, but distributed
 
-### _Result 5: Trait-eliciting training data reconstructs its own corpus best -- whole-profile, corpus-matched_
+### _Result 4: Trait-eliciting training data reconstructs its own corpus best -- whole-profile, corpus-matched_
 
 I then checked how the training corpus shapes reconstruction.
 
@@ -133,10 +118,12 @@ I then checked how the training corpus shapes reconstruction.
 
 * Per-corpus held-out reconstruction: trait-eliciting corpus 0.86-0.91 > LMSYS 0.58-0.63 > the mixes in between -- each map reconstructs its own distribution best
 * Two reasons this is NOT "better trait capture": the trait corpus is an easier target (10 rollouts per context, narrower distribution), and the $r_B$-direction read was not separately measured for this arm
-* The flip side is in the monitoring write-up: the best-reconstructing arm reads *behavior* worst
+* The target-averaging axis measured directly: switching this map's targets from 10-rollout means to single draws costs 0.29-0.36 R^2 -- per-answer sampling noise is a large part of what the averaging removes
 
 ## Next steps:
 
 * [[Scaling of map (averaged and single query) as you add more data + more diversity of data]]
-* [[Comparison of single query to average query map]]
-* [[Mathematical analysis of the mapping (both single and averaged query)]]
+* [[Comparison of single query to average query map]] -- the relationship to the prefix -> answer vector mapping (controlled same-grid comparison)
+    * Preliminary uncontrolled read, removed from this writeup: context map 0.60-0.68 vs prefix map ~0.8; where comparable the two maps' predictions agree at CKA 0.79-0.90 / per-context cosine 0.95-0.99 (corpus-confounded)
+* [[Is the context -> answer mapping present in the base model]]
+* [[Mathematical analysis of the mapping (both prefix -> answer and context -> answer)]]

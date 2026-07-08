@@ -1,5 +1,5 @@
 ---
-description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
+description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
 paths:
   - "scripts/*dispatch*"
   - "scripts/poll_pipeline.py"
@@ -53,7 +53,36 @@ marker will be silently skipped. Two requirements, no exceptions:
      `SENTINEL_SCHEMA_VERSION_SUPPORTED` in the poller — `!= 1` is
      skipped + logged, never silently mis-parsed).
    - `kind`: full marker kind string (e.g. `"epm:results"`).
-   - `version`: marker version integer.
+   - `version`: marker version integer. Pod-side writers hardcode `1`
+     (they cannot read `events.jsonl`). **Drain-side rewrite (#1095):**
+     for a real `epm:results` sentinel the VM-side drain re-derives the
+     landed marker version as max+1 when the declared version collides
+     at-or-below the existing max for the kind — so multi-round tasks
+     keep the highest-version-per-kind resume convention (markers.md)
+     without pod-side coordination. The declared version is preserved on
+     the marker as `sentinel_declared_version`. Smoke/dry-run/
+     phase-progress sentinels (gate NAME in
+     `smoke|dryrun|dry-run|dry_run|phase`, a truthy top-level `smoke`
+     field, or the `issue-<N>-smoke-results.json` / `-smoke-` filename)
+     and declared versions above the existing max post verbatim; a bare
+     `blocks_pipeline: false` does NOT exempt (real terminal writers set
+     it). Other kinds always post verbatim. Keep hardcoding `1` — do NOT
+     try to thread versions pod-side. **Smoke runs should write kind
+     `epm:smoke-result`, not kind `epm:results` with a smoke flag** — a
+     smoke flag nested inside `note` is invisible to the drain's
+     exclusion (the drain never parses `note`), and the
+     `epm:smoke-result` kind is already the house pattern
+     (`write_sentinel("epm:smoke-result" if args.smoke else
+     "epm:results", ...)` — issue634/744/1073/779 writers). Two
+     operational residuals: (a) a stale straggler — e.g. a resumed
+     stopped pod draining an OLD run's results sentinel — now lands
+     ABOVE newer rows; this is operator-recoverable (the marker carries
+     `sentinel_declared_version` + the drain logs a warning with the
+     sentinel's `ts`; re-post the correct results as a fresh
+     higher-version marker). (b) An operator's manual high-version
+     correction marker is shadowed by ANY subsequent real results drain
+     (which lands at max+1 above it) — re-post corrections AFTER the
+     final drain of a round, not before.
 
    The marker body goes under `note` (or the `payload` synonym).
    Recommended optional keys: `task_id`, `gate`, `blocks_pipeline`,
@@ -131,6 +160,54 @@ mismatch, recovered only after the orchestrator manually superseded the
 row). Producer-side: every dispatcher that writes per-cell WandB runs
 emits `wandb_entity` in the same card it emits `wandb_project` +
 `wandb_run_names`.
+
+### Pid-file launch contract — rewrite on EVERY (re)launch (#813, #451, #521)
+
+The pid file (`/workspace/logs/issue-<N>.pid` pod-side; the VM analogue for a
+detached VM-side stage is the `pid=` field of its stage-dispatch breadcrumb,
+SKILL.md § Detached VM-side long compute phases) is the poller's PRIMARY
+liveness probe. This contract binds EVERY agent that launches OR relaunches a
+detached workload — the experimenter, an orchestrator's crash-fix / hot-fix
+relaunch, a watch-session correction — not just first launches:
+
+1. **Every (re)launch ends with the pid file holding the NEW live workload
+   pid, written in the SAME command chain as the launch itself.** Preferred
+   path: relaunch through the launcher script, whose
+   `echo $$ > /workspace/logs/issue-<N>.pid` overwrites the file before
+   `exec`ing the workload (`.claude/agents/experimenter.md` § During
+   Execution steps 1/1b — the agent-specific recipe). When relaunching
+   WITHOUT the launcher (rare), chain an explicit ATOMIC rewrite into the
+   same command:
+   `printf '%s\n' "$CHILD_PID" > /workspace/logs/issue-<N>.pid.tmp && mv /workspace/logs/issue-<N>.pid.tmp /workspace/logs/issue-<N>.pid`
+   (tmp+rename — no window where the poller reads a truncated/empty file;
+   the launcher-internal `echo $$ >` truncate-write is the accepted
+   in-launcher form because it is a single short write completing before
+   the workload starts). Then CONFIRM before posting: `cat` the pid file in
+   a fresh SSH call and check it equals the pid you post in the marker. A
+   relaunch that leaves a predecessor's pid in the file is a
+   launch-contract violation.
+2. **The fresh `epm:run-launched` carries the SAME live pid (`pid=`) AND
+   `pid_file=`** (SKILL.md § "Any relaunch must re-post `epm:run-launched`").
+   `poll_pipeline.py` computes `pid_alive = pidfile_pid_alive OR
+   marker_pid_alive` (poll_once, ~line 4199), so a stale pid FILE is rescued
+   only while the newest marker's `pid=` is itself the live process. A
+   PRESENT-but-stale pid file is worse than a missing one: the
+   `pid_file_missing` fallback + WARN (~4205-4212) fires ONLY when the file
+   is absent — a stale file silently probes a dead pid every tick, with no
+   warning.
+3. **Worked example (incident #813 v5, 2026-07-02).** The run-4 relaunch
+   (00:31, `bash scripts/issue813_dispatch.sh`) skipped the pid-file
+   rewrite, leaving run-2's dead pid 6267 in `/workspace/logs/issue-813.pid`;
+   the marker pid it posted (11634) did not match the run-5 note's live
+   dispatcher (11636), so both probes read dead against a healthy run — a
+   false dead verdict. A corrective run-5 marker (00:39) was needed SOLELY
+   to rewrite the pid file with 11636 and re-post `epm:run-launched` — an
+   entire extra round whose only content was this contract.
+
+Residual honesty: this contract is prose, not a runtime detector — a future
+relaunch that violates it can still produce the same silent false-dead shape;
+the poller's marker-pid OR-probe remains the only mechanical rescue, and only
+while the newest marker's pid is itself alive.
 
 ### Pod-side preflight gates (behind-origin/main false positive — LEGACY post-#554)
 

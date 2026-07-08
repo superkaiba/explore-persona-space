@@ -1,0 +1,6012 @@
+{
+  "commit": "ca13036dda",
+  "created": "2026-07-06T20:20:02Z",
+  "figsize": [
+    13.2,
+    4.3
+  ],
+  "points": [
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.4875,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.4625,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.4375,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.4125,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.3875,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.3625,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.3375,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.3125,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.2875,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.2625,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.2375,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.2125,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.1875,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.1625,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.1375,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.1125,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.0875,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.0625,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.0375,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -12.0125,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.9875,
+      "(target, layer) groups": 90.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.9625,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.9375,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.9125,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.8875,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.8625,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.8375,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.8125,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.7875,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.7625,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.7375,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.7125,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.6875,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.6625,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.6375,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.6125,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.5875,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.5625,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.5375,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10 rel L2 across the 16 source copies of v0(R_fixed)": -11.5125,
+      "(target, layer) groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06904544704112747,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06737406155250986,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06718676820707804,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06874888598036648,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06847643743629744,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06761361809809963,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06807402321853191,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06889267759284884,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06991147342753644,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0646944836254932,
+      "measured leakage E": 0.2666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.061277984143217126,
+      "measured leakage E": -0.13333333333333341,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06145736267219415,
+      "measured leakage E": -0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06440375728687002,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06761795180803545,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06875184448630026,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06721045892212199,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06825300447925192,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06998566206127414,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0659749849410859,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06892892670368986,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06738679079302896,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06777215634522325,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06812730461389149,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0763442798593407,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07621795002061217,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07624235712788575,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0742803345561321,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07381932371282986,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07414899142652578,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.073577771897947,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.03057300731985298,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.03214663144413289,
+      "measured leakage E": 0.2666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.031045282977089077,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.029476473292002214,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0308770790213981,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.03073640971991242,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.031024012999912826,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.030151935521839826,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.029527120018107735,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.03460872118436957,
+      "measured leakage E": 0.6666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.03590603035398724,
+      "measured leakage E": 0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.03483171046496292,
+      "measured leakage E": 0.16666666666666674,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.034337644521397134,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.03171716081586305,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.029972124738375485,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.032178369370326844,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.03154043439140705,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.02906433597917544,
+      "measured leakage E": 0.6666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.03152124206596791,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.029717378824385673,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.03104225684589693,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.031156862968843936,
+      "measured leakage E": 0.7,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.030872247829485194,
+      "measured leakage E": 0.5333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.022998199356149523,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.023722037587262178,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.02249371363222784,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.025547751721357263,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.025245397425481316,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.02279886980140508,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.024339531862307286,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05348508785586266,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.050573763098238765,
+      "measured leakage E": -0.26666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05156402635096065,
+      "measured leakage E": 0.7,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05462902429256665,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.053315677581782954,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05265305341943923,
+      "measured leakage E": 0.3,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05257478859939084,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05370170804136781,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.054219493727161026,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04837992799799036,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04484317437543342,
+      "measured leakage E": -0.10000000000000009,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04555103711781521,
+      "measured leakage E": -0.26666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04904285906538718,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05195688881095902,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05385678141839782,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05202494068344528,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.052418532822496505,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.054646250802337384,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05204775557621291,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05528180405988187,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05297899646045485,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05205622503986261,
+      "measured leakage E": 0.23333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.052892928655201864,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0585529064862451,
+      "measured leakage E": 0.6333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05923743799119645,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05994008660431913,
+      "measured leakage E": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05681230987161284,
+      "measured leakage E": 0.26666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05648898615875607,
+      "measured leakage E": 0.3,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.057753536769894004,
+      "measured leakage E": 0.3,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05645247802912192,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04863511063222622,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05067342247674681,
+      "measured leakage E": -0.36666666666666664,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.049946255449472066,
+      "measured leakage E": 0.4666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.047976003286054884,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04943100020093864,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.050717550110596706,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05030724397588654,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04754640527180762,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04814069406688,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05371057055415398,
+      "measured leakage E": 0.033333333333333326,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05614890479856416,
+      "measured leakage E": -0.06666666666666676,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.056275878563036126,
+      "measured leakage E": -0.3,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.054743388111662725,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.051854910657265954,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05013150457138581,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05179259233785338,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05104393515282306,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04833801484299963,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04955503409056572,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.046673373431366016,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04866420977177196,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05060346458565915,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.049653990831644144,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04263291630443048,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04059069338544989,
+      "measured leakage E": 0.23333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04133926951651318,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04412456270480167,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04463923963053641,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.043490602886318674,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.045103370252700475,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.010050651679642392,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.012279688781230896,
+      "measured leakage E": -0.36666666666666664,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.011595720407751538,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.010308804319213036,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.010704838843038585,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.011008505622238027,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.010554503656308993,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.010034001027711778,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.008837921372960494,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.01031498434910073,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.01596102108739718,
+      "measured leakage E": 0.1333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.015276337217862389,
+      "measured leakage E": 0.2333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.014108216389988652,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.011389729691052682,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.009577064625429284,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.011121157701135496,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.010783325832950164,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.009518001216436242,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.012227352741182751,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.009730560891003517,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.010884912334647185,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.011020492005663969,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.011346647822692561,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0018844967181372574,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0019283662451859522,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0016894695536863041,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.002053912818638603,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0025567596757432656,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.004764262807790982,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.006181803084060789,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09027909896319401,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08702694684544021,
+      "measured leakage E": -0.5333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08802383990593698,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09071374121998833,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08964993461539623,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08920947393248145,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09028615343375924,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09083713552007344,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0911768009993113,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0891086526730208,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08411386756626814,
+      "measured leakage E": 0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.084385047774668,
+      "measured leakage E": 0.30000000000000004,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08531463192570556,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08862648428553999,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09088910031370628,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0885371797793996,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08953128175839051,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09081552534159351,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08744266283308547,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09149021318514791,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08887873159737611,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08850137889129231,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08923014119599007,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09890426451877517,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0971286814215571,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09955088432899858,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09817082197414159,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09688855034722366,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09798174535275418,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09738568457495879,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.1882998535407285,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18186612829239826,
+      "measured leakage E": 0.2666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18065910993289402,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18225409248577204,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18923142101356755,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18436083602801423,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18347705497301173,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18461771989989,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18476260052069332,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.1741146273598478,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.1692951159388592,
+      "measured leakage E": 0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.17068216494614374,
+      "measured leakage E": -0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18165462253190084,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18324745730780176,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18597962510489327,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.183380579593787,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18534670118570024,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18972508786464803,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.17627073088884476,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.1857694768506163,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.17769110637914687,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.19089868309242758,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18872826058330214,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18552647629154312,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18575475711527636,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18546548572762528,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.1827842234001561,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18387407675618697,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.18367491245142775,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.1827937913491931,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04560045351679751,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.043536746460896364,
+      "measured leakage E": 0.1333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04380993897470262,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.045596856673426264,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.044635288502818574,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04536438250381651,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04414194355657537,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.045521566375604505,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04516200676932547,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04104421441903157,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.038589059521083297,
+      "measured leakage E": 0.1333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.039006944890474335,
+      "measured leakage E": -0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04255174399437543,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04484633513603836,
+      "measured leakage E": 0.5333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04615092800948774,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.044493999825957725,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04500674386842738,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04620145573211095,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04321190939461108,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.04551189197944511,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0443066488278206,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.044428877965698575,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.044966368394696254,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05237515939510526,
+      "measured leakage E": 0.7,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.052161524242721,
+      "measured leakage E": 0.6666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.052151953734197884,
+      "measured leakage E": 0.6333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05151339653379601,
+      "measured leakage E": 0.23333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.05013811123038857,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0514805502735234,
+      "measured leakage E": 0.3,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.050396111533471476,
+      "measured leakage E": 0.6666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10088591740142792,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10410797562732159,
+      "measured leakage E": 0.2333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1029980503133071,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10095633755870467,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10169393469707119,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10218156649021837,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10322633556433691,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10123803306883519,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1009059426119581,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10611753466034644,
+      "measured leakage E": 0.6,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10946379282239373,
+      "measured leakage E": 0.1333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11053054106316629,
+      "measured leakage E": -0.033333333333333326,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10531179949036892,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1030478890992541,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10121400737764244,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10301191637122362,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1020437229510251,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10003147491015127,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10355148261301751,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10080535366672885,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10190862081660915,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10228144710429476,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1017216929677445,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09597814588455242,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09422404372438584,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09364022618159668,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09634171606519958,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09699313718415019,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0963088411813358,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09888328557194838,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05442352204353459,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.056056143856582676,
+      "measured leakage E": 0.30000000000000004,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05546182090988523,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05420004450338201,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0548758286319618,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05551632235832448,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0560606730404437,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05371175378353671,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.053270199915988053,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05817856664590784,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.06090103717604381,
+      "measured leakage E": 0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.060381572728413296,
+      "measured leakage E": 0.06666666666666665,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.059960560261717866,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05679110477951599,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05505934559796945,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0563369936903573,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05544763034673231,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05382769738115405,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05543338666643348,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05239291563716077,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05429632157770055,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05526814143359813,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0546966772474546,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04781764788306609,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04726985888159391,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.046525566942357405,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04876406388369915,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04969511575309496,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.048237031786630725,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.050283523513815015,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15015615304176785,
+      "measured leakage E": 0.23333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1520101695202518,
+      "measured leakage E": 0.06666666666666665,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1521579411182223,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.150606289258797,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15134098138829966,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15254162288225812,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1528364493481897,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15086254290518095,
+      "measured leakage E": 0.7333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15025650863644394,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15904118641307746,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.16129478843454675,
+      "measured leakage E": 0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.16214581369769418,
+      "measured leakage E": -0.23333333333333328,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15706702474326584,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.153977234192212,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15210400810376148,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15377723925679138,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15258820593780786,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1502525777987567,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15145441262382328,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.14979572391380067,
+      "measured leakage E": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15036805091998348,
+      "measured leakage E": 0.7,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1518352531934099,
+      "measured leakage E": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15141962071353468,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.14744658399169108,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.14615504938220175,
+      "measured leakage E": 0.3,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.14707331720480388,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.14830845009661256,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.14898265054196666,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1501942958439582,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15293738864600057,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18004117652622853,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18220070037443983,
+      "measured leakage E": 0.2333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1821684848458311,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17843706752906896,
+      "measured leakage E": 0.7,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.179837898978011,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18152189267161933,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18325917188833568,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18082918076225662,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18017283260769157,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1882167830875212,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19130268480323792,
+      "measured leakage E": 0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19153129134740948,
+      "measured leakage E": -0.23333333333333328,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18694286581312947,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18305186663266504,
+      "measured leakage E": 0.7333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18074174087065198,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18268630071057015,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18241280624588024,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1785210073551693,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18068045288787896,
+      "measured leakage E": 0.7,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17637279855363852,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17977790718437708,
+      "measured leakage E": 0.7333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18169674174059805,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18079450554411725,
+      "measured leakage E": 0.6666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17447291561787145,
+      "measured leakage E": 0.5333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17418863861750666,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1740056702834683,
+      "measured leakage E": 0.6333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17597213088283128,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1768023609479536,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17830348459849185,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17991565008874064,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08530183508316407,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08278877657783495,
+      "measured leakage E": 0.33333333333333337,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08335504026718568,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08475585002384692,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08418292521209186,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08450193106562408,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08464794974712601,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08475895782312604,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08545886995275952,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0815212422050317,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07799576717613543,
+      "measured leakage E": 0.06666666666666665,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0785457930118143,
+      "measured leakage E": -0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08059814017726273,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08299999850217543,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08492038194048439,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08356450564622042,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08489439087243278,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08610097727118239,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08316650283500183,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0860562248097933,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08451897401772102,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08340517480571541,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0847361553449179,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09120806377833934,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0926854712850747,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.09266873982083138,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0907103625050432,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08937282145516823,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08918708415865927,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08885195864570485,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.027566588251717754,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.024851160751079987,
+      "measured leakage E": -0.23333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.025313911069059246,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.02725454104637169,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.02654320699054835,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.02602033198270557,
+      "measured leakage E": 0.23333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.026890796416477784,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.027480846472452504,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.027620209450553518,
+      "measured leakage E": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.02176792955752213,
+      "measured leakage E": 0.30000000000000004,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.017929507193501525,
+      "measured leakage E": 0.16666666666666663,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.019535995264400967,
+      "measured leakage E": -0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.021888065962974892,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.02484756912328219,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.026506918000056286,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.025250705557201242,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.025780861786274957,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.028502623429266453,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.02560343089559413,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.028242349531620428,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.027019170818448582,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.025719093623135354,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.026918172610346333,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0333706028244303,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.03270310085976515,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.03537209153321321,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.03349851230202841,
+      "measured leakage E": 0.36666666666666664,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.03219313021668862,
+      "measured leakage E": 0.6666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.03299457962080769,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.03171685610730507,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05668695100262912,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.058999359917857624,
+      "measured leakage E": 0.30000000000000004,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0580379801096773,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.056744728293730465,
+      "measured leakage E": 0.6,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05808886522366105,
+      "measured leakage E": 0.26666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.057828361186358174,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05734420048006523,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.055921498311387104,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05572277660888784,
+      "measured leakage E": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.06112815837695811,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.06253343357334079,
+      "measured leakage E": 0.1333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.06306842075676718,
+      "measured leakage E": 0.16666666666666674,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.06157790178911429,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05946743495741104,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05751656611421441,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05905470396898882,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05821524828843182,
+      "measured leakage E": 0.26666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05621419190566128,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05863975991603004,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05622124328720828,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05739744951140523,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05809996636113857,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05757969041066753,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04864532681418008,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04818922172880833,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.046784329243697326,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.050976182865708555,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05192619277851632,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.049042222423816756,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05115253114958733,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07833159585371316,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07532222015703328,
+      "measured leakage E": -0.4666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07625560573561076,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.078342925909086,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07801837759153968,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0777900028918254,
+      "measured leakage E": 0.36666666666666664,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07791111935416761,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07853986493643578,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07913501423038274,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07189312200965363,
+      "measured leakage E": 0.3666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0678450424297057,
+      "measured leakage E": 0.1333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.06838924373558677,
+      "measured leakage E": -0.16666666666666663,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0743623790139307,
+      "measured leakage E": 0.26666666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07689758183264418,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07878562047406718,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07673578974327855,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07734163694246939,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07887531206115762,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07541354147174724,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07829243242458159,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07647766900234972,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.07701892625650004,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0771860563753637,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08292219358542188,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0838165481636327,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08461216069066273,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08291351029989755,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08131604964325487,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08114161603434404,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.08051502009678979,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5802789030746839,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.583478121115373,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5815813819027716,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5771073121670524,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5812525156725856,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5854001143238189,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5871014354661435,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5835237783363476,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5814601596220892,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5565994209878089,
+      "measured leakage E": 0.2666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5547334034248619,
+      "measured leakage E": -0.13333333333333341,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5483785511140665,
+      "measured leakage E": -0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5807870743694835,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5779895624991788,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.586747043596179,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5843643593044427,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5887706156216435,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5869528805452688,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5804494085246773,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5807128175200784,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5821706907255696,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5825051338682024,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5829738273098806,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5970722618024826,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5933901263813874,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5846037986436314,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5780247481539948,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5833115766380677,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5876731899264858,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.5814748089149127,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.01012855474491342,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0064510169542552065,
+      "measured leakage E": 0.2666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0064193325932288825,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.011949737108262942,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.007906658894178048,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0010648028953960664,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.008308248554429354,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.005222512026260423,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0072512757569254405,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04311887226289876,
+      "measured leakage E": 0.6666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.03753131880939817,
+      "measured leakage E": 0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.04778907652578078,
+      "measured leakage E": 0.16666666666666674,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0067409776344844186,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.009813468332866115,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0033969350550999144,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.003390396591140654,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0008280228054206862,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.003571096972177251,
+      "measured leakage E": 0.6666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.003943959683737397,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.005916027713965433,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0031603497413569825,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.005610018828939578,
+      "measured leakage E": 0.7,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0003116667992130173,
+      "measured leakage E": 0.5333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.007585938138884085,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0027095791183081586,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.00194327270730546,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.015611787109419212,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.008004249522704926,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0077774184911825195,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.010919607242475149,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.39869897617325,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3983313387274616,
+      "measured leakage E": -0.26666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.39665685722501093,
+      "measured leakage E": 0.7,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3971217204786154,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.39565843834151604,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.391755970160543,
+      "measured leakage E": 0.3,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.39448755966223686,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3978972977868881,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.39535175848075216,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.4395107707925516,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.43632219229832014,
+      "measured leakage E": -0.10000000000000009,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.4513863714983163,
+      "measured leakage E": -0.26666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.39845612637512645,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.40363742067780406,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3946860449074211,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3957296492759611,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3981974142871298,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3907019919712101,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.40002682144598384,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.39794981555572273,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.39788589701779464,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.4002676958193494,
+      "measured leakage E": 0.23333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.395483125754026,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3859924564131444,
+      "measured leakage E": 0.6333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3914498321736184,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3961826644648574,
+      "measured leakage E": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.412510351659579,
+      "measured leakage E": 0.26666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.39979519993482526,
+      "measured leakage E": 0.3,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.40910689331334515,
+      "measured leakage E": 0.3,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.40118132363143877,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09666155959336833,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09542886626777337,
+      "measured leakage E": -0.36666666666666664,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0924097918044276,
+      "measured leakage E": 0.4666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09371272419933287,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09045632381897609,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.08789393139638803,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09710738426231305,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.08039482602272341,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09125376798117937,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.13746682880642852,
+      "measured leakage E": 0.033333333333333326,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.13759191132724566,
+      "measured leakage E": -0.06666666666666676,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1518797430052281,
+      "measured leakage E": -0.3,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09547508499129335,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0995576966351274,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.08940272909489805,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.08974012129408979,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0898970154126135,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.08627375071561581,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09408521216925428,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09320336869569582,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09299047119730033,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09571962647644325,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.08978719317569231,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.08464662815480187,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.08960795339785835,
+      "measured leakage E": 0.23333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09499246213907549,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10879576385444534,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.09907919864876064,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10910883814105335,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1050690961007834,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6478607668663527,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6513331672746612,
+      "measured leakage E": -0.36666666666666664,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6482440135813311,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6503421702786483,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6470864037955399,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6455146807057079,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6573233990730023,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6501285506715351,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6523453841027138,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6435178888947553,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6685282838010087,
+      "measured leakage E": 0.1333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6657117229081655,
+      "measured leakage E": 0.2333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6478192766803095,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6515245907555455,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6451913369947935,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6466590271562771,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6436913384004325,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6462724458872482,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6474716003472532,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6473436216284275,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6483777684605443,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6456271188265645,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6502111239628425,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6314921314478942,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6369311654845584,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6451864837611019,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6555151704335658,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6480086864418159,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6492582228397009,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.649831983819857,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1158819500449941,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11907132602381792,
+      "measured leakage E": -0.5333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11606163971002911,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11582237492491068,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11287540289452853,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10912044133453674,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10972580972690497,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1135785612896886,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1136290551312984,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.14418321085559188,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.148505586460539,
+      "measured leakage E": 0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.15710620099738112,
+      "measured leakage E": 0.30000000000000004,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11437722052627387,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11811458303694065,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10943362768953671,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11075949955978605,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11046429999137586,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10951305899439528,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11301201632290958,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11147707587723105,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11054294400206338,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11453189469404572,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11225705157558863,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10327131863419924,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.10457298264468891,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11032264353068874,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.12188742106263348,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.11491147352346867,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1164299126465935,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.114731537117115,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3658511725660502,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3781938407383666,
+      "measured leakage E": 0.2666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.35653714456722935,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.36454757233756957,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3561844773032483,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.35191217006741815,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.366896232483833,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3667482874908404,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3583996356919748,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3884903985668039,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.39285064199362024,
+      "measured leakage E": 0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.40006911775413645,
+      "measured leakage E": -0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3538576230067341,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.35846653886498636,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.35204541922225435,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.35259652674568154,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.35373718369589635,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.34893369077909975,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.37023077503831503,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3643851758335397,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3663899551976297,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.35835520428992973,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.35426560248852823,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.35496821258867906,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.35854841505362356,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3603597054255293,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.37688427432221394,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3661547894651985,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.36056943201814073,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3669812947068353,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.609223134859397,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6046086725234419,
+      "measured leakage E": 0.1333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6029994769884635,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6111087458799405,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6068276379775441,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.598451870392311,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6039002752997493,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.5998099926335195,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6043348516160545,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6439986205809014,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6394581274041828,
+      "measured leakage E": 0.1333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6532120224284212,
+      "measured leakage E": -0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6027044111200878,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6068747800078063,
+      "measured leakage E": 0.5333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.5903389500983222,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6002232779595575,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.5978260161028157,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.5995588483136165,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6054754645260862,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6060189806871269,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.603508000872816,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6019150935925963,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.600573147272122,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.595111826661636,
+      "measured leakage E": 0.7,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.5988741542483158,
+      "measured leakage E": 0.6666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6043743102727474,
+      "measured leakage E": 0.6333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6174722832530246,
+      "measured leakage E": 0.23333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6114784626198762,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6108779043568939,
+      "measured leakage E": 0.3,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.6135909399362213,
+      "measured leakage E": 0.6666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.00971750036192092,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.004569744103537776,
+      "measured leakage E": 0.2333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.004515501638488337,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.009013375133790733,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.002459142032138123,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0018842676065880803,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.010127300146626689,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.00503856828626853,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.005606665645854561,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0390531127191769,
+      "measured leakage E": 0.6,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.038822483483500536,
+      "measured leakage E": 0.1333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.05826081821142109,
+      "measured leakage E": -0.033333333333333326,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.003099145766763761,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.006538092206236384,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.0007113906795526148,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -3.141505891482432e-05,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.001654353576814968,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.001075480672766943,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0036962746289494752,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0035882609565653367,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.002807284602351204,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.004542911417412671,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.00047590911773258415,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.007219901416195412,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.004645204646584786,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.0021614311315876905,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.01692364025576909,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.007031040130949684,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.015073632581936308,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.012667062855287889,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3772531100165395,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3811766186332933,
+      "measured leakage E": 0.30000000000000004,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3776159104215358,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.37895432411503505,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3765233977210033,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.37636515811688326,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.38770911137362146,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.37826256828541893,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3793055202273778,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.41574605260796854,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.4196794818427546,
+      "measured leakage E": 0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.4318259083811481,
+      "measured leakage E": 0.06666666666666665,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3803218909868845,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3845040811528556,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3781847518957391,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.37927535497113196,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.37793770917305214,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.37390794757793483,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.37670526701670726,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3789583961597555,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3783907007088891,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.37994511128690767,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.3787233032538785,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.37359311236118636,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.38332676396590926,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.38378194398118565,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.39925154296401655,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.38702767925502196,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.39834708475390546,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.4000927759736308,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7071677616099366,
+      "measured leakage E": 0.23333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7049041570688003,
+      "measured leakage E": 0.06666666666666665,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7043530927297154,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7026284329958401,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.70736979481053,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7112811428021754,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7069051457943396,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7059451546110171,
+      "measured leakage E": 0.7333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.700859989036425,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.6741006761605711,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.6659766759959718,
+      "measured leakage E": 0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.6586332530059688,
+      "measured leakage E": -0.23333333333333328,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7087710533630809,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.703268716998285,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7091957821703903,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7096167970854473,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7156920686610024,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7132328450383835,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7105999560061267,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7091527244627946,
+      "measured leakage E": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7101535130066245,
+      "measured leakage E": 0.7,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7081846579286943,
+      "measured leakage E": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.708475797825981,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7165303790361603,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7127033314022458,
+      "measured leakage E": 0.3,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7079853716312136,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.699800353845407,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7052304269913792,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.7028547825336626,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.6974425264104671,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1489110499204345,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.144186965747156,
+      "measured leakage E": 0.2333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1469852131397622,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.147603277439977,
+      "measured leakage E": 0.7,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1500356454302565,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1474540411670706,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1421155533710121,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1454559915760398,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1448183739089985,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.0924578938702045,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.0939463345833458,
+      "measured leakage E": 0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.0815378947481833,
+      "measured leakage E": -0.23333333333333328,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1396137543420501,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1374358116550887,
+      "measured leakage E": 0.7333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1466739406198685,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1450979505241126,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.150893113882694,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1650205809516685,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1603744398759206,
+      "measured leakage E": 0.7,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1624905912924746,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1612478850419432,
+      "measured leakage E": 0.7333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1456719311813144,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.157144433364072,
+      "measured leakage E": 0.6666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1575181026940702,
+      "measured leakage E": 0.5333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.145620093245671,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1439364302761166,
+      "measured leakage E": 0.6333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.130743674346987,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1394238718073053,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1280607928843773,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -1.1275553886345642,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4642461967978279,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.45477051215631664,
+      "measured leakage E": 0.33333333333333337,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4607571085404183,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4614872970485084,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.46330282948020796,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4649787310930907,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4608683709276709,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4616211022186215,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.45725024666992864,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4175514799552261,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.415738635387885,
+      "measured leakage E": 0.06666666666666665,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4001634789483376,
+      "measured leakage E": -0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.46033299141676265,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4554302282232374,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.46426225819636757,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4619275762566152,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4663770756447304,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4675610405552566,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.461164489285212,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.46144746777281526,
+      "measured leakage E": 0.8,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.46186464188363435,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4620478535129845,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4634285996126155,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.46786726430919917,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.46041388037968284,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4580197333511708,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4473670705989182,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4502440061649353,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4436048407200528,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.4421353848944839,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.15239117856160572,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.14442006954664247,
+      "measured leakage E": -0.23333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.1484371700400404,
+      "measured leakage E": 0.4,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.14341852516520337,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.14854597788867874,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.15613112326413292,
+      "measured leakage E": 0.23333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.15409221381616764,
+      "measured leakage E": 0.5,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.15424832874528527,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.14760737874126367,
+      "measured leakage E": 1.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.11322480695857966,
+      "measured leakage E": 0.30000000000000004,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.10894778570434091,
+      "measured leakage E": 0.16666666666666663,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.10253027474132462,
+      "measured leakage E": -0.09999999999999998,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.14998222655904608,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.14470964047338608,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.15299314146726117,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.15438402379539018,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.1535397616592547,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.1629225352372765,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.15064042906493064,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.15203435244904615,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.1529252405154458,
+      "measured leakage E": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.1445796819943582,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.15483160234510704,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.16702366582433065,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.16041167898969194,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.15839376287368145,
+      "measured leakage E": 0.43333333333333335,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.1458484598638429,
+      "measured leakage E": 0.36666666666666664,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.14946051057313503,
+      "measured leakage E": 0.6666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.14464221949555317,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": -0.1473794012558593,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17776743237099737,
+      "measured leakage E": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18736069330006766,
+      "measured leakage E": 0.30000000000000004,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18082777027017127,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1825217516362014,
+      "measured leakage E": 0.6,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1761058572052337,
+      "measured leakage E": 0.26666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17431339788363143,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1824052563425151,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17970535824981138,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1829642003345022,
+      "measured leakage E": 1.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.22598997518708547,
+      "measured leakage E": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.22400594046449487,
+      "measured leakage E": 0.1333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.23446136698295633,
+      "measured leakage E": 0.16666666666666674,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18174757444464357,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18638588182660196,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17478889328632852,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1766098835758424,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17417668878531373,
+      "measured leakage E": 0.26666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1707415282480906,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.174373223322686,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17514748813729383,
+      "measured leakage E": 0.2,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17664680629534202,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18110804878868716,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1741255617794175,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.16525962143626632,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17391702435316733,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.17295788213907226,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1897702211484273,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18306059943456687,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18721228290056777,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19241757086228384,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19767878280231438,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.20234758341179007,
+      "measured leakage E": -0.4666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1969367343885364,
+      "measured leakage E": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19686740282481585,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1956583594741078,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1910095183352796,
+      "measured leakage E": 0.36666666666666664,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19732933889783438,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.195262105432441,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19895218695550304,
+      "measured leakage E": 0.8666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.23705549787956795,
+      "measured leakage E": 0.3666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.23713685854292274,
+      "measured leakage E": 0.1333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.24986105070911094,
+      "measured leakage E": -0.16666666666666663,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1937771476422991,
+      "measured leakage E": 0.26666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19912532490760781,
+      "measured leakage E": 0.13333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19144751061928,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1916932481056598,
+      "measured leakage E": 0.06666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19139343797572936,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1894679578940442,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19796332808122657,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19773959317466422,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.1956214507094698,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19922393837719476,
+      "measured leakage E": 0.03333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19380881245141968,
+      "measured leakage E": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.18793245836622535,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19287426725242374,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.19722960067726486,
+      "measured leakage E": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.2144625366991156,
+      "measured leakage E": 0.9666666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.20646189038877483,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.20859711583069937,
+      "measured leakage E": 0.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out map prediction along the fact direction": 0.20555139828095312,
+      "measured leakage E": 0.9333333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 1000
+}

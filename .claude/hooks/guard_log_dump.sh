@@ -17,6 +17,14 @@
 #     context dump;
 #   - `tail -50` / `head -n 100` (<= MAX_LINES) and default head/tail ALLOWED;
 #   - single-line `sed -n '5p' file` reads are ALLOWED;
+#   - bounded range reads <= MAX_RANGE_LINES lines of big NON-log code/doc
+#     files are ALLOWED (see is_code_doc; #1057); record formats and .txt keep
+#     the strict path. Accepted residual: a wide-line listed-extension file can
+#     exceed MAX_BYTES within the line cap — bounded, deliberate;
+#   - r3: head/tail OPTION tokens are quote-stripped before matching — quoted
+#     signed spellings ('-n' +201 / '-n+201' / '--lines=+201') now refuse, a
+#     deliberate strengthening (each new refusal has an unquoted twin that was
+#     already refused). Bare space-separated `--lines N` stays an accepted miss;
 #   - unparseable / ambiguous commands are ALLOWED (fail-soft).
 #
 # Escape hatch: EPM_ALLOW_LOG_DUMP=1 — honored both as session env and as an
@@ -32,9 +40,15 @@ set -u
 
 MAX_BYTES=262144   # 256 KB — any single existing file larger than this is dump-sized
 MAX_LINES=200      # head/tail line counts above this count as a dump
+MAX_RANGE_LINES=2000  # bounded head/tail/sed ranges above this are dump-shaped even for
+                      # non-log code/doc files (see is_code_doc); <= this pages a fixed,
+                      # MAX_BYTES-comparable amount of context regardless of file size.
+                      # INVARIANT: MAX_RANGE_LINES > MAX_LINES (ordered tiers; inverting
+                      # them over-blocks, never under-blocks)
 
 BLOCK_FILE=""
 BLOCK_VERB=""
+BLOCK_KIND=""
 
 is_logish() {
   # Log-shaped by NAME: *.log anywhere; anything under a logs/ dir;
@@ -53,6 +67,19 @@ is_logish() {
   return 1
 }
 
+is_code_doc() {
+  # Line-oriented source/doc/config extensions eligible for the bounded-range
+  # relief. Record/data/spool formats (.json, .jsonl, .csv, .txt) are
+  # deliberately EXCLUDED: single-line records / minification / captured
+  # output make a line-bounded range unbounded in bytes, and big JSONs in
+  # this repo are results/telemetry that must stay jq/grep-only.
+  case "$1" in
+    *.py | *.sh | *.bash | *.md | *.yaml | *.yml | *.toml | *.tex | \
+    *.rs | *.ts | *.tsx | *.js | *.jsx) return 0 ;;
+  esac
+  return 1
+}
+
 is_big() {
   # Big by SIZE: existing regular file > MAX_BYTES (relative paths resolve
   # against the session cwd the hook runs in). Unknown/missing -> not big.
@@ -62,29 +89,75 @@ is_big() {
   [ "$sz" -gt "$MAX_BYTES" ]
 }
 
+strip_quotes() {
+  # ITERATIVELY trim leading/trailing quote chars into $sq_val (r3): word
+  # splitting removes no quotes and quoting layers can stack (''+201''), so a
+  # one-pass ${x#\'} strip leaves a residual quote that hides a +/- sign the
+  # real shell would reveal. Each iteration removes one char -> terminates.
+  sq_val=$1
+  while :; do
+    case "$sq_val" in
+      \'* | \"*) sq_val=${sq_val#?} ;;
+      *\' | *\") sq_val=${sq_val%?} ;;
+      *) break ;;
+    esac
+  done
+}
+
 # Evaluate the accumulated state for one dump verb. Uses/clears the globals
 # set by check_cmd's token walk. Returns 1 (and sets BLOCK_*) on a violation.
 pending_check() {
   [ -n "$mode" ] || return 0
   [ "${#files[@]}" -gt 0 ] || return 0
-  local dumpshape=0
+  # Two dump tiers (#1057):
+  #   dump_strict — the original thresholds (cat / head/tail > MAX_LINES /
+  #                 sed range > MAX_LINES or open-ended): gates log-shaped
+  #                 files and big NON-code/doc files (status quo);
+  #   dump_huge   — unbounded (cat, open-ended sed) or bounded > MAX_RANGE_LINES:
+  #                 gates big code/doc files, so a bounded <= MAX_RANGE_LINES
+  #                 range read of a large source file passes.
+  local dump_strict=0 dump_huge=0
   case "$mode" in
-    cat) dumpshape=1 ;;
+    cat) dump_strict=1; dump_huge=1 ;;
     head | tail)
-      if [ "${nlines:-0}" -gt "$MAX_LINES" ] 2>/dev/null; then dumpshape=1; fi
+      if [ "${nlines:-0}" -gt "$MAX_LINES" ] 2>/dev/null; then dump_strict=1; fi
+      if [ "${nlines:-0}" -gt "$MAX_RANGE_LINES" ] 2>/dev/null; then dump_huge=1; fi
+      # Signed count operands (+K / -K) are open-ended / complement reads
+      # (tail -n +K prints K..EOF; head -n -K prints all but the last K) —
+      # they parse as bounded but are not, so they get NO relief: escalate
+      # strict to huge. Behavior on every file class identical to today.
+      if [ "$dump_strict" = 1 ] && [ "${nlines_signed:-0}" = 1 ]; then dump_huge=1; fi
       ;;
     sed)
-      if [ "$sed_n" = 1 ] && [ "$sedrange_big" = 1 ]; then dumpshape=1; fi
+      if [ "$sed_n" = 1 ] && [ "$sedrange_big" = 1 ]; then dump_strict=1; fi
+      if [ "$sed_n" = 1 ] && [ "$sedrange_huge" = 1 ]; then dump_huge=1; fi
+      # Multi-range sed -n gets NO relief (per-range flags never sum, so two
+      # <=2000 ranges can request >2000 lines): with >=2 parsed A,Bp ranges,
+      # escalate strict to huge. Single-range commands keep the relief;
+      # behavior on every file class identical to today.
+      if [ "$sed_n" = 1 ] && [ "$sedrange_big" = 1 ] && [ "${sed_nranges:-0}" -gt 1 ]; then
+        dump_huge=1
+      fi
       ;;
   esac
-  [ "$dumpshape" = 1 ] || return 0
+  if [ "$dump_strict" = 0 ] && [ "$dump_huge" = 0 ]; then return 0; fi
   local f
   for f in "${files[@]}"; do
     f=${f#\'}; f=${f%\'}; f=${f#\"}; f=${f%\"}
-    if is_logish "$f" || is_big "$f"; then
-      BLOCK_FILE="$f"
-      BLOCK_VERB="$mode"
+    if [ "$dump_strict" = 1 ] && is_logish "$f"; then
+      BLOCK_FILE="$f"; BLOCK_VERB="$mode"; BLOCK_KIND="logish"
       return 1
+    fi
+    if is_big "$f"; then
+      if is_code_doc "$f"; then
+        if [ "$dump_huge" = 1 ]; then
+          BLOCK_FILE="$f"; BLOCK_VERB="$mode"; BLOCK_KIND="codedoc"
+          return 1
+        fi
+      elif [ "$dump_strict" = 1 ]; then
+        BLOCK_FILE="$f"; BLOCK_VERB="$mode"; BLOCK_KIND="big"
+        return 1
+      fi
     fi
   done
   return 0
@@ -109,8 +182,9 @@ check_cmd() {
   case "$cmd" in *'<<'*) return 0 ;; esac
 
   # Token walk. set -f: no glob expansion while splitting the command string.
-  mode=""; nlines=0; sed_n=0; sedrange_big=0; await_n=0; files=()
-  local tok st a b
+  mode=""; nlines=0; sed_n=0; sedrange_big=0; sedrange_huge=0; sed_nranges=0
+  nlines_signed=0; await_n=0; files=()
+  local tok st a b val opt
   set -f
   # shellcheck disable=SC2086
   set -- $cmd
@@ -119,7 +193,8 @@ check_cmd() {
     case "$tok" in
       cat | */cat | head | */head | tail | */tail | sed | */sed)
         pending_check || return 1
-        mode="${tok##*/}"; nlines=0; sed_n=0; sedrange_big=0; await_n=0; files=()
+        mode="${tok##*/}"; nlines=0; sed_n=0; sedrange_big=0; sedrange_huge=0
+        sed_nranges=0; nlines_signed=0; await_n=0; files=()
         continue
         ;;
       ';' | '&&' | '||' | '&')
@@ -131,7 +206,8 @@ check_cmd() {
         # any command containing '|' — kept so the separator walk stays
         # correct if that fast path is ever narrowed.
         pending_check || return 1
-        mode=""; nlines=0; sed_n=0; sedrange_big=0; await_n=0; files=()
+        mode=""; nlines=0; sed_n=0; sedrange_big=0; sedrange_huge=0; sed_nranges=0
+        nlines_signed=0; await_n=0; files=()
         continue
         ;;
     esac
@@ -145,15 +221,40 @@ check_cmd() {
         ;;
       head | tail)
         if [ "$await_n" = 1 ]; then
+          # Signed counts (+K / -K) are open-ended / complement reads — track
+          # the sign so pending_check can deny them the bounded-range relief.
+          # Quote-strip BEFORE the sign check, iteratively (strip_quotes):
+          # word-splitting does no quote removal, so a quoted operand like
+          # '+201' or ''+201'' would hide the sign while the real shell strips
+          # the quotes and tail/head sees +201 — genuinely unbounded.
+          strip_quotes "$tok"; val=$sq_val
+          # Sign-conservative residue rule (r3): a count whose residue does
+          # not START with a digit (leading +, -, $, \, residual quote) may
+          # hide a sign the real shell would reveal ($'+201', \+201) — treat
+          # as signed. Only bites when nlines > MAX_LINES, where the pre-#1057
+          # hook blocked anyway — no new block of any previously-passing form.
+          case "$val" in [0-9]*) : ;; *) nlines_signed=1 ;; esac
           nlines=$(printf '%s' "$tok" | tr -dc '0-9')
           : "${nlines:=0}"
           await_n=0
           continue
         fi
-        case "$tok" in
+        # Quote-strip the OPTION token too (r3): word-splitting keeps quote
+        # chars, so '-n' / '-n+201' / '--lines=+201' would otherwise fall to
+        # the file arm / the sign-blind -[0-9]* arm and dodge sign detection
+        # (see the header deviation note).
+        strip_quotes "$tok"; opt=$sq_val
+        case "$opt" in
           -n) await_n=1 ;;
-          -n* | --lines=*) nlines=$(printf '%s' "$tok" | tr -dc '0-9'); : "${nlines:=0}" ;;
-          -[0-9]*) nlines=$(printf '%s' "$tok" | tr -dc '0-9'); : "${nlines:=0}" ;;
+          -n* | --lines=*)
+            # Prefix-strip FIRST, then quote-strip: quotes can sit after the
+            # '=' (--lines='+201') and after -n (-n'+201').
+            val=${opt#--lines=}; val=${val#-n}
+            strip_quotes "$val"; val=$sq_val
+            # Same sign-conservative residue rule as the await_n site above.
+            case "$val" in [0-9]*) : ;; *) nlines_signed=1 ;; esac
+            nlines=$(printf '%s' "$opt" | tr -dc '0-9'); : "${nlines:=0}" ;;
+          -[0-9]*) nlines=$(printf '%s' "$opt" | tr -dc '0-9'); : "${nlines:=0}" ;;
           -*) : ;;  # -f, -q, -c (byte mode), etc. — conservative: not line dumps
           *) files+=("$tok") ;;
         esac
@@ -165,9 +266,13 @@ check_cmd() {
         esac
         st=${tok#\'}; st=${st%\'}; st=${st#\"}; st=${st%\"}
         if printf '%s' "$st" | grep -qE '^[0-9]+,([0-9]+|\$)p$'; then
+          sed_nranges=$((sed_nranges + 1))
           a=${st%%,*}; b=${st#*,}; b=${b%p}
-          if [ "$b" = '$' ] || [ $((b - a + 1)) -gt "$MAX_LINES" ]; then
-            sedrange_big=1
+          if [ "$b" = '$' ]; then
+            sedrange_big=1; sedrange_huge=1
+          else
+            if [ $((b - a + 1)) -gt "$MAX_LINES" ]; then sedrange_big=1; fi
+            if [ $((b - a + 1)) -gt "$MAX_RANGE_LINES" ]; then sedrange_huge=1; fi
           fi
           continue
         fi
@@ -196,6 +301,16 @@ run_self_test() {
   printf 'line\n' > "$TMP/logs/train.log"           # small but log-shaped
   printf 'notes\n' > "$TMP/notes.md"                # small, not log-shaped
   head -c 300000 /dev/zero | tr '\0' 'x' > "$TMP/big.txt"  # >256KB, not log-shaped
+  head -c 300000 /dev/zero | tr '\0' 'x' > "$TMP/big_source.py"     # >256KB, code-named
+  # big_notes.md is deliberately NEWLINE-FREE: its bounded-range allow-case
+  # below doubles as a pin of the ACCEPTED wide-line residual (#1057 plan §8 —
+  # a listed-extension file whose <=2000-line slice can exceed MAX_BYTES still
+  # gets the relief; a future tightening round should see this was a decision,
+  # not an oversight).
+  head -c 300000 /dev/zero | tr '\0' 'x' > "$TMP/big_notes.md"      # >256KB, doc-named
+  head -c 300000 /dev/zero | tr '\0' 'x' > "$TMP/events_big.jsonl"  # >256KB, record format
+  head -c 300000 /dev/zero | tr '\0' 'x' > "$TMP/logs/big.log"      # >256KB AND log-shaped
+  head -c 300000 /dev/zero | tr '\0' 'x' > "$TMP/logs/big_gen.py"   # >256KB, code-named AND logish (logs/ dir)
   cd "$TMP"
 
   run_case() {
@@ -242,6 +357,52 @@ see logs/train.log for detail
 EOF'
   run_case "non-dump command allowed"                 0 'git status'
   run_case "empty command allowed"                    0 ''
+  run_case "sed -n 301-line range of big .py allowed (#986)"   0 "sed -n '100,400p' big_source.py"
+  run_case "sed -n 2000-line range of big .py allowed (=cap)"  0 "sed -n '1,2000p' big_source.py"
+  run_case "sed -n 2001-line range of big .py blocks (>cap)"   2 "sed -n '1,2001p' big_source.py"
+  run_case "tail -n 400 of big .py allowed"                    0 'tail -n 400 big_source.py'
+  run_case "tail -n 5000 of big .py blocks (>cap)"             2 'tail -n 5000 big_source.py'
+  run_case "cat of big .py still blocks (unbounded)"           2 'cat big_source.py'
+  run_case "sed -n open-ended range of big .py still blocks"   2 "sed -n '100,\$p' big_source.py"
+  run_case "sed -n 400-line range of big .md allowed"          0 "sed -n '1,400p' big_notes.md"
+  run_case "sed -n 400-line range of big .txt still blocks"    2 "sed -n '1,400p' big.txt"
+  run_case "sed -n 400-line range of big .jsonl still blocks"  2 "sed -n '1,400p' events_big.jsonl"
+  run_case "tail -n 400 of small .log still blocks (logish)"   2 'tail -n 400 logs/train.log'
+  run_case "sed -n 400-line range of big .log still blocks"    2 "sed -n '1,400p' logs/big.log"
+  # --- round-1 critique pins (Must-Fix union + cheap standing recs) ---
+  run_case "tail -n +201 of big .py blocks (signed = unbounded)"     2 'tail -n +201 big_source.py'
+  run_case "head -n -201 of big .py blocks (signed = complement)"    2 'head -n -201 big_source.py'
+  run_case "two-range sed >2000 total on big .py blocks"             2 "sed -n -e '1,2000p' -e '2001,4000p' big_source.py"
+  run_case "multi-range small sed on log still allowed"              0 "sed -n -e '1,150p' -e '200,349p' logs/train.log"
+  run_case "sed -n 200-line range of log allowed (strict edge)"      0 "sed -n '1,200p' logs/train.log"
+  run_case "sed -n 201-line range of log blocks (strict edge)"       2 "sed -n '1,201p' logs/train.log"
+  run_case "tail -n 200 of log allowed (strict edge)"                0 'tail -n 200 logs/train.log'
+  run_case "tail -n 201 of log blocks (strict edge)"                 2 'tail -n 201 logs/train.log'
+  run_case "tail -n 2000 of big .py allowed (=cap, head/tail arm)"   0 'tail -n 2000 big_source.py'
+  run_case "tail -n 2001 of big .py blocks (>cap, head/tail arm)"    2 'tail -n 2001 big_source.py'
+  run_case "big code-named file under logs/ blocks (logish wins)"    2 "sed -n '1,400p' logs/big_gen.py"
+  run_case "cat of big .md blocks (vacuity witness for .md fixture)" 2 'cat big_notes.md'
+  run_case "head -n 400 of big .py allowed (head verb relief)"       0 'head -n 400 big_source.py'
+  run_case "huge flag resets across separator (no leak)"             0 "sed -n '1,2001p' notes.md && sed -n '1,400p' big_source.py"
+  # --- round-2 pins: quoted signed counts must not escape sign detection ---
+  run_case "tail -n '+201' of big .py blocks (quoted signed)"        2 "tail -n '+201' big_source.py"
+  run_case "tail -n'+201' glued quoted of big .py blocks"            2 "tail -n'+201' big_source.py"
+  run_case "head -n '-201' of big .py blocks (quoted complement)"    2 "head -n '-201' big_source.py"
+  run_case "tail --lines='+201' quoted of big .py blocks"            2 "tail --lines='+201' big_source.py"
+  # --- round-3 pins: sibling signed-count spellings (quoted option / stacked
+  # quotes / ANSI-C / backslash-escape) must not escape sign detection ---
+  run_case "head '-n' -201 quoted-opt complement blocks"             2 "head '-n' -201 big_source.py"
+  run_case "tail -n ''+201'' doubled-quote signed blocks"            2 "tail -n ''+201'' big_source.py"
+  run_case "tail -n \$'+201' ANSI-C signed blocks"                   2 "tail -n \$'+201' big_source.py"
+  run_case "tail -n \\+201 escaped signed blocks"                    2 'tail -n \+201 big_source.py'
+  run_case "head -n \\+201 escaped signed blocks (conservative)"     2 'head -n \+201 big_source.py'
+  # deliberate r3 strengthening: quoted-option signed spellings now refuse —
+  # each has an unquoted twin the pre-#1057 hook already refused (see header)
+  run_case "tail '-n' +201 quoted-opt signed blocks (deviation)"     2 "tail '-n' +201 big_source.py"
+  run_case "tail '-n+201' quoted glued signed blocks (deviation)"    2 "tail '-n+201' big_source.py"
+  run_case "tail '--lines=+201' quoted signed blocks (deviation)"    2 "tail '--lines=+201' big_source.py"
+  run_case "tail '-n' 400 quoted-opt bounded keeps relief"           0 "tail '-n' 400 big_source.py"
+  run_case "tail --lines '+201' bare --lines stays allowed (miss)"   0 "tail --lines '+201' big_source.py"
 
   if [ "$FAILED" = 1 ]; then
     echo "self-test: FAIL" >&2
@@ -266,7 +427,11 @@ cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
 [ -n "$cmd" ] || exit 0
 
 if ! check_cmd "$cmd"; then
-  echo "BLOCKED: '$BLOCK_VERB' would dump a large log-like file ($BLOCK_FILE) into context. CLAUDE.md § Context hygiene: never page whole logs into tool output — use \`grep -iE 'error|traceback|killed|OOM' $BLOCK_FILE\` or \`tail -50 $BLOCK_FILE\` instead. To deliberately override, prefix the command with EPM_ALLOW_LOG_DUMP=1." >&2
+  if [ "$BLOCK_KIND" = "codedoc" ]; then
+    echo "BLOCKED: '$BLOCK_VERB' would page an unbounded or >${MAX_RANGE_LINES}-line slice of large source/doc file $BLOCK_FILE (>${MAX_BYTES} bytes) into context. Bounded range reads ARE allowed: retry with the Read tool (offset/limit), or \`sed -n 'A,Bp' $BLOCK_FILE\` with a SINGLE unsigned range where B-A+1 <= ${MAX_RANGE_LINES}, or \`grep -n <pattern> $BLOCK_FILE\` to locate the span first. To deliberately override, prefix the command with EPM_ALLOW_LOG_DUMP=1." >&2
+  else
+    echo "BLOCKED: '$BLOCK_VERB' would dump a large log-like file ($BLOCK_FILE) into context. CLAUDE.md § Context hygiene: never page whole logs into tool output — use \`grep -iE 'error|traceback|killed|OOM' $BLOCK_FILE\` or \`tail -50 $BLOCK_FILE\` instead. To deliberately override, prefix the command with EPM_ALLOW_LOG_DUMP=1." >&2
+  fi
   exit 2
 fi
 exit 0

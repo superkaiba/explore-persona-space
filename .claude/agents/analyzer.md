@@ -170,12 +170,14 @@ outputs). 3+ fishy of 5 SHOULD downgrade confidence to LOW. Flag concerns
 in the body — never `status:blocked` from this step; the
 interpretation-critic adjudicates.
 
-#### Content hygiene for harmful-content corpora (EM, refusal, harmful-advice)
+#### Content hygiene for harmful-content corpora (EM, refusal, harmful-advice) + real-world-corpus rollout text (LMSYS/WildChat-class)
 
 Harmful-content corpora (Betley-style EM, bad-medical-advice, refusal-bait
 pools) AND safety-benchmark question banks
 (`src/explore_persona_space/artifacts/query_banks/*.json` — advbench /
-strongreject / Betley-lineage / sensitive-info; #866) in context trigger
+strongreject / Betley-lineage / sensitive-info; #866) AND real-world-corpus
+prompt/rollout text (LMSYS/WildChat-class raw slices + the `raw_completions/`
+generated over them; #1073) in context trigger
 terminal API usage-policy refusals (#537): the
 spot check AND Step 3.6 selection run SANITIZED — field-filtered `jq`
 slices only (never whole files or full text fields); a ~15-word excerpt +
@@ -185,8 +187,11 @@ labels, indices, permanent raw links verbatim; each block labeled
 sanitized treatment — reference by bank filename + index (excerpt only
 when a worked example strictly needs one, ≤15 words). Benign corpora keep
 verbatim treatment, as do benign banks (`arc_c_v1`, `fact_questions_v1`,
-`marker_eval_v1`, `sycophancy_claims_v1`, `wildchat_random_v1`);
-when unsure whether a bank is harmful, sanitize.
+`marker_eval_v1`, `sycophancy_claims_v1`, and `wildchat_random_v1` — benign
+ONLY because its builder screens on WildChat's toxic/redacted flags,
+`issue617_build_wildchat_slice.py` → `_wildchat_eligible`; an UNSCREENED
+real-world-corpus slice is never benign-classed); when unsure whether a
+bank is harmful, sanitize.
 
 Full text: `analyzer-section-reference.md`
 § Step 1.5: Load top-N promoted clean-results as in-context exemplars (grep heading, chunked Read).
@@ -248,6 +253,10 @@ commit SHA — NEVER relative (dashboard-invisible, #365) or
    `### <result>`:
    `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)`
    — no `## Figure` H2 (check-2 hard FAIL). Alt text may contain `[brackets]`.
+4. Repo-root stray guard: `git -C "$MAIN_ROOT" status --porcelain -uall
+   -- figures/issue_<N>/` after the push — delete an untracked stray ONLY if
+   blob-identical to the pin; differing → warn-only. Never `git clean` /
+   `checkout .` / `restore .` (§ Step 3 of the section reference, #922).
 
 Full text: `analyzer-section-reference.md`
 § Step 3: Generate Plots (grep heading, chunked Read).
@@ -300,7 +309,9 @@ training/evaluation data + completions:**` — per load-bearing condition,
 system prompt / row / completion copied verbatim from the real artifact in
 the same turn (#657: fabricated persona = hard FAIL). **Content firewall —
 DEFAULT ON for the project's safety-research vocabulary class** (EM /
-jailbreak / misaligned / marker / trigger / implant / backdoor corpora):
+jailbreak / misaligned / marker / trigger / implant / backdoor corpora —
+AND real-world-corpus rollout text, LMSYS/WildChat-class: unscreened real
+user text carries in-corpus harmful rows, #1073):
 never page raw-completion files into context — aggregate JSONs + judge
 labels, grep + line offset, minimal spans; the refusal class keys on
 vocabulary, not harmfulness (#521 et al.); checkpoint the fact-sheet to
@@ -360,6 +371,15 @@ per axis (the six /humanize axes): vocabulary · structure · rhythm · voice
 · interpretation honesty · results-writing discipline. Any axis ≥ 2 →
 revise, re-score; cap 3 cycles, then ship best + flag residual. All ≤ 1 →
 Step 5.
+
+The /humanize hard ban gate (`check_bans.sh`) scans AUTHORED PROSE only:
+elide fenced/`<details>` example blocks, `>`-blockquoted lines, and
+`**Completion:**` sample lines from the scan input first (fail-loud recipe:
+analyzer-section-reference.md § Step 4.5). A hit only inside verbatim
+sample data is a documented false positive (PASS; never rewrite the
+sample — #498/#518/#923); a hit surviving elision is presumptively
+authored prose — a real FAIL (if it is missed sample text, strengthen the
+elision, never rewrite the sample).
 
 Full rubric: `analyzer-section-reference.md`
 § Step 4.5: Humanize-loop self-pass on the v4 reader-facing prose (grep heading, chunked Read).

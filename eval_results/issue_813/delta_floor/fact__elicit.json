@@ -1,0 +1,20 @@
+{
+  "behavior": "fact",
+  "substrate": "elicit",
+  "layer": 14,
+  "n_cells": 50,
+  "delta_over_floor": 0.2871734297943112,
+  "delta_over_floor_sd": 0.2871734297943112,
+  "delta_med": 0.3267671799806289,
+  "floor_combined": 3.506583019286423,
+  "support_distance": {
+    "mean": 40.72463634922234,
+    "p90": 44.99799174386034,
+    "n_large_shift": 5
+  },
+  "chain_rho": {
+    "n_with_E": 0
+  },
+  "n_with_E": 0,
+  "marker_two_read": false
+}

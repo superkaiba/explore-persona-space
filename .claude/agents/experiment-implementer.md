@@ -50,6 +50,37 @@ they invoke `implementer` directly.
 
 ---
 
+## Context budget (READ FIRST)
+
+Your spec + the project CLAUDE.md import tree consume a large fraction of your
+context before your first tool call; heavy-read subagents have died to
+autocompact thrash on unbudgeted reads (#833/#835/#763). Read hygiene bounds
+the VARIABLE half of that load — it does not cure fixed-overhead window
+pressure (#1090) — so every read below is mandatory IN CONTENT but
+budgeted IN FORM:
+
+- **Grep-then-slice.** Never pull a >40 KB file (or a file of unknown size)
+  into context in one unchunked `Read`: locate the span with Grep (`-n`,
+  bounded `head_limit`), then `Read` only that span with `offset`/`limit` in
+  ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
+  chunked.
+- **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
+  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
+  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
+- **Results are digests.** Never page a whole eval JSON / JSONL /
+  raw-completion file — `jq` the keys/fields you need; single rows by Grep +
+  line offset.
+- **Brief hands you PATHS, not bodies.** Read the approved plan
+  section-sliced on demand (§4 Design for the build, §11 for values) — never
+  the whole plan file up front; prior round state via
+  `task.py latest-marker <N>` / jq on the specific marker, never a paged
+  `events.jsonl`. Revision-round diff BODIES are governed by
+  `.claude/rules/diff-size-budget.md` (size first).
+- **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
+
+Other sections name WHAT to read; this one governs HOW. On conflict, this
+section wins on invocation form.
+
 ## Execution Protocol
 
 - **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
@@ -139,7 +170,7 @@ they invoke `implementer` directly.
    subprocess dispatcher. The orchestrator's `/issue` Step 6d.0 gate
    refuses to dispatch experimenter without PASS_UNIFIED or PASS_CANARY.
 
-   Three additional smoke-contract requirements (the first two bit hard on 2026-06-09, the third on 2026-07-02):
+   Four additional smoke-contract requirements (the first two bit hard on 2026-06-09, the third on 2026-07-02):
 
    - **Cross-phase data-contract smoke.** When any phase CONSUMES artifacts
      produced under a DIFFERENT issue / condition registry (a parent's
@@ -163,6 +194,15 @@ they invoke `implementer` directly.
      GPU-hours (gotchas.md entry "A hand-rolled HF Trainer callback that does
      not subclass `transformers.TrainerCallback` crashes at
      `Trainer.__init__` …").
+   - **Tiny-real CPU e2e before the FIRST GPU launch of a multi-stage
+     driver.** Mock-seam smokes surface shape bugs one per GPU cycle
+     (#906 r11-r14: four bugs, four ~1.5h pod cycles). Run the FULL
+     production path once on CPU with REAL library types at every
+     internal seam the pipeline has; fake ONLY GPU-scale weights + the
+     remote Hub boundary (GPU-bound phases: see item 3). Full recipe +
+     traps + worked example: `.claude/rules/gotchas.md` "Mock-seam
+     smokes". Record it under `## Smoke run` — Step 6d.0-bis refuses
+     seam-stubbed evidence.
 6. **Cite CLAUDE.md gotchas in your mini-plan.** Grep `CLAUDE.md`
    §Gotchas for libraries / patterns relevant to the modules you're
    about to edit (e.g. vLLM, TRL, Hydra, MooseFS, RunPod, persona
@@ -269,6 +309,13 @@ they invoke `implementer` directly.
   downstream globs. Append-mode single file only when downstream code already
   handles re-run dedup. Task #377 lost 3 of 4 clean domains' output on rounds
   5/6/7 when the 4th domain tripped the mid-run quality gate (2026-05-22/23).
+  External-stream loops (HF `datasets` `streaming=True`, API pagination, web harvest)
+  are PRESUMED over the ~1h intra-phase checkpoint floor regardless of per-row kernel
+  triviality — persist each chunk/source pool durably + fingerprint-gated resume keyed
+  on dataset revision + filter/recipe constants; short bounded fetches (known
+  ≤~10^4-row scan, fixed stop) exempt (#1092: a 3h06m stream died in memory on a
+  downstream KeyError; full clause: `.claude/rules/code-style.md` § "Checkpoint per
+  phase").
 
 ### Content hygiene for harmful-content datasets (EM, refusal-bait, harmful-advice)
 
@@ -276,8 +323,11 @@ This project legitimately trains and evals on harmful-content corpora
 (Betley-style EM insecure-code / bad-medical-advice mixes, refusal
 pools) AND on safety-benchmark QUESTION BANKS
 (`src/explore_persona_space/artifacts/query_banks/*.json` — advbench,
-strongreject, Betley-lineage, sensitive-info banks). Raw rows from
-either in your context can trigger terminal API usage-policy refusals
+strongreject, Betley-lineage, sensitive-info banks) AND on
+real-world-corpus prompt/rollout text (LMSYS/WildChat-class — unscreened
+real user text routinely carries in-corpus jailbreak/explicit rows;
+#1073). Raw rows from
+any of these in your context can trigger terminal API usage-policy refusals
 that kill your final report turn AND make the transcript unresumable —
 a resume refuses instantly on the poisoned context (incidents: task #537,
 2026-06-10, two implementer agents lost mid-task; task #866, 2026-07-02,
@@ -286,9 +336,10 @@ during verification). While building or smoke-testing a data path over
 such corpora or banks:
 
 - NEVER `cat` / `head` / `Read` raw EM / refusal / harmful-advice data
-  files, the training JSONLs generated from them, or the raw item text
-  of harmful-bank JSONs under `query_banks/` — reference bank items by
-  filename + index, never verbatim.
+  files, raw real-world-corpus prompt/rollout files
+  (LMSYS/WildChat-class), the training JSONLs generated from them, or
+  the raw item text of harmful-bank JSONs under `query_banks/` —
+  reference bank items by filename + index, never verbatim.
 - Digest by reference only: `wc -l`, `sha256sum`, `jq 'keys'` on a row
   (never content-field values), row/token counts computed in Python
   without printing text fields.
@@ -296,9 +347,10 @@ such corpora or banks:
   (exit codes, `[phase=`, `error|traceback`) — never dump the log.
 - In reports and markers, describe such data by path + row count + hash +
   field names; sanitized placeholders are fine. Benign corpora (marker,
-  fact, sycophancy, WildChat, personas) and benign banks (`arc_c_v1`,
+  fact, sycophancy, personas) and benign banks (`arc_c_v1`,
   `fact_questions_v1`, `marker_eval_v1`, `sycophancy_claims_v1`,
-  `wildchat_random_v1`) are unaffected by this rule; when unsure whether
+  `wildchat_random_v1` (toxic/redacted-screened at build)) are
+  unaffected by this rule; when unsure whether
   a bank is harmful, use the digest-only treatment.
 
 > **Pod-side result-reporting + preflight gates** — when writing ANY pod-side dispatcher / sentinel / poll_pipeline.py-facing code, READ `.claude/rules/pod-side-reporting.md` IN FULL first. (Relocated verbatim from this spec, #829.)
@@ -611,9 +663,34 @@ such corpora or banks:
    mirrors `code-reviewer.md` Step 4.5 + Rule 13 — the test's absence is a
    review Minor otherwise, costing a re-roll round; arriving pre-pinned
    skips it.
-9. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
-   convention (`git log --oneline -10` for style).
-10. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
+9. **One production-body test per seam-stubbed function.** If any test
+   stubs / monkeypatches / fakes out a production function you ADDED (or
+   whose body you MODIFIED) this round — a `monkeypatch.setattr` /
+   `unittest.mock.patch` target, a seams/hooks dataclass field overridden
+   with a fake, a fake injected through a resolver/dispatch table — ALSO
+   commit at least ONE test that EXECUTES the real body and reaches its
+   external call sites + attribute dereferences, faking ONLY the external
+   GPU/API/network/filesystem boundary with fakes that are
+   signature-conformant BY CONSTRUCTION
+   (`unittest.mock.create_autospec(real_callee)`, a real dataclass
+   instance, or a fake whose `def` mirrors the real signature — never a
+   bare `Mock()`/`MagicMock()`, which accepts ANY call). A
+   dispatch/resolver test that asserts the dispatcher called the name
+   is NOT body coverage. The obligation closes
+   TRANSITIVELY over round-added callees: your body-executing test must
+   ALSO reach the external calls + dereferences of any function
+   added/modified this round that the stubbed body calls — a crash-class
+   body must not escape by moving one call deeper. `code-reviewer` runs
+   this exact check as Step 3.8, and a wrong-signature /
+   nonexistent-field finding in a seam-stubbed body is Critical — write
+   the test it will demand (incident #906: five review rounds shipped
+   crash-class bodies behind `PilotSeams` stubs while 43/43 mocked tests
+   stayed green). Canonical statement + rationale:
+   `.claude/rules/code-style.md`
+   § One production-body test per seam-stubbed function.
+10. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
+    convention (`git log --oneline -10` for style).
+11. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
     issue #N (see Report Format below). The `/issue` skill reads this marker
     and spawns `code-reviewer`.
 
@@ -675,7 +752,7 @@ If the approved plan body contains a `### TDD: yes` line, or the user explicitly
 2. Post the test files (in the worktree) as `<!-- epm:proposed-tests v<n> -->` (max+1 per § Posting review-round markers) on the issue. Body: brief description per test + the test code in fenced blocks. Then EXIT and wait — do NOT proceed to implementation.
 3. The user replies `approve-tests` (on issue or in chat). Only then write the implementation that makes the tests pass. After implementation, post the normal `epm:experiment-implementation` marker at the next version (max+1 per § Posting review-round markers; v1 only when the task has no prior implementation rows) and proceed to code-review.
 
-If you write the tests after the implementation (the default), make them general enough that the user could read just the tests to gain confidence — no `mock_internal_method.assert_called_with(...)`-style coupling to the implementation.
+If you write the tests after the implementation (the default), make them general enough that the user could read just the tests to gain confidence — no `mock_internal_method.assert_called_with(...)`-style coupling to the implementation — and one production-body test per seam-stubbed function (mandatory checklist item 9).
 
 ### On revision rounds (after code-reviewer FAIL)
 

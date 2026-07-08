@@ -209,7 +209,14 @@ Full template + worked examples: `.claude/rules/planner-section-reference.md`
 this section.
 
 ### 1. Goal
-What are we trying to achieve and why? One paragraph.
+OPEN §1 with the CURRENT canonical Goal quoted verbatim — re-read at return
+time via `task.py view <N> --json | jq -r '.frontmatter.goal'` (never from a
+draft-start cache; see § Goal-currency guard) — tagged `(Task #<N> Goal,
+verbatim.)`, then one paragraph: what are we trying to achieve and why?
+Tasks with no `goal:` frontmatter (kind: infra | batch | survey) quote the
+body's `## Goal` H2 instead. The verbatim quote is what makes Goal
+staleness mechanically detectable downstream (verify_plan.py goal-currency
+check).
 
 ### 2. Prior Work
 What exists in the codebase and literature? What approaches have been tried? What specific results constrain the design?
@@ -223,7 +230,8 @@ Concrete steps: exact training configs, data specs, pipeline DAG, file paths,
 pseudocode. Hard-requirement items (each REQUIRED or its named N/A escape):
 why code, not a model call · contrastive negatives for behavior implantation
 (panel disjointness; two named exemptions) · data source + realism tier ·
-completion provenance (on-policy-first) · marker / behavior-implant stopping
+completion provenance (on-policy-first; multi-behavior datagen: standardized
+persona-vectors-shape behavior definitions) · marker / behavior-implant stopping
 recipe (overrides parent parity) · persona-vectors extraction recipe ·
 multi-arm resolution-band designs · few-shot / ICL demonstration content ·
 smoke/sweep architectural parity · no all-or-nothing eligibility gates ·
@@ -277,7 +285,9 @@ Default to NO gates ("No gates — short run / pre-verified hypothesis"). Gate
 only when wall-clock >4 h AND the hypothesis is genuinely uncertain AND a
 cheap intermediate signal can rule out the full run; a retained gate set is
 minimal, grounded (threshold AND sign) in prior-issue evidence of the
-construct, and jointly satisfiable.
+construct, jointly satisfiable, and coherent with its own cited precedents
+(each band recomputed on the precedent values it cites lands in the branch
+the prose assigns — see the reference §7).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 7. Decision Gates — read that section (grep the heading, chunked Read) BEFORE writing
@@ -298,7 +308,11 @@ spec + the serial-fit-loop / draw-battery / store-serialization sizing block
 per-call cost measured at production shape or FLOP-derived, never asserted —
 for store-heavy phases a measured one-item serialization+upload wall-time,
 compression default OFF for fp16→Xet; body-named fast twins USED in §4 or
-the divergence stated). Compute-sizing recipes: `.claude/rules/plan-compute-sizing.md`
+the divergence stated) + per-VM-CPU-phase projected peak RSS (≥~16 GB —
+single or summed concurrent — routes off the shared VM to
+`cpu-mid`/`cpu-bigmem`, `--min-ram-gb` stated when sizing >16 GB) + any
+deliberate GCP fence sized off the p90 per-cell wall, never the mean.
+Compute-sizing recipes: `.claude/rules/plan-compute-sizing.md`
 (on-demand); phase placement + GPU-width right-sizing are always-on in
 CLAUDE.md § Pods.
 
@@ -353,6 +367,23 @@ For each assumption, state:
 - **How to verify:** What file to read or command to run
 
 Be exhaustive. Wrong assumptions are the #1 cause of wasted GPU time.
+
+## Goal-currency guard (re-read the Goal before returning — #922)
+
+The user can amend the canonical Goal WHILE you draft: on #922 two
+`epm:goal-updated` amendments landed mid-draft and plan v3 shipped quoting
+the superseded Goal — one wasted plan round + one wasted implementer round.
+
+1. **At draft start**, record a Goal snapshot: the `goal:` frontmatter text
+   + the ts of the latest `epm:goal-updated` marker (if any), both from
+   `task.py view <N> --json`.
+2. **Immediately before returning your final plan text** — initial drafts,
+   mechanical-bounce redrafts, Phase 3 revisions, AND amendment-mode
+   same-issue follow-up plans alike — re-run the same read. If the Goal
+   text or the latest `epm:goal-updated` ts changed since the snapshot,
+   REDRAFT §0.0 / §0 / §1 and every Goal-dependent section (Hypothesis,
+   Design, Evaluation, gates) against the amended Goal before returning.
+   Never return a plan drafted against a superseded Goal.
 
 ## Rules
 

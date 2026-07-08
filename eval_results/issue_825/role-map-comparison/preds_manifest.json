@@ -1,0 +1,265 @@
+{
+  "files": {
+    "preds_pair_haiku_instruct_chat.npz": {
+      "sha256": "bd30f738a564e63861b947a0330d66c841c1ef86c318ab6a206e25f78967c490",
+      "arrays": {
+        "pair_haiku_instruct_chat__assistant__L19": [
+          2000,
+          3584
+        ],
+        "pair_haiku_instruct_chat__assistant__L26": [
+          2000,
+          3584
+        ],
+        "pair_haiku_instruct_chat__user__L19": [
+          2000,
+          3584
+        ],
+        "pair_haiku_instruct_chat__user__L26": [
+          2000,
+          3584
+        ]
+      }
+    },
+    "preds_pair_haiku_instruct_naturalistic.npz": {
+      "sha256": "f66367672e126ae13fe8786275fa3a49e1b61c63460c9200f874d7280f6fcf66",
+      "arrays": {
+        "pair_haiku_instruct_naturalistic__assistant__L19": [
+          2000,
+          3584
+        ],
+        "pair_haiku_instruct_naturalistic__assistant__L26": [
+          2000,
+          3584
+        ],
+        "pair_haiku_instruct_naturalistic__user__L19": [
+          2000,
+          3584
+        ],
+        "pair_haiku_instruct_naturalistic__user__L26": [
+          2000,
+          3584
+        ]
+      }
+    },
+    "preds_pair_haiku_pretrained_chat.npz": {
+      "sha256": "514a26fd904a2aa5e609b78d7839b7a61e6b7dfe4a10056b67ea6cbddb88cee2",
+      "arrays": {
+        "pair_haiku_pretrained_chat__assistant__L19": [
+          2000,
+          3584
+        ],
+        "pair_haiku_pretrained_chat__assistant__L26": [
+          2000,
+          3584
+        ],
+        "pair_haiku_pretrained_chat__user__L19": [
+          2000,
+          3584
+        ],
+        "pair_haiku_pretrained_chat__user__L26": [
+          2000,
+          3584
+        ]
+      }
+    },
+    "preds_pair_haiku_pretrained_naturalistic.npz": {
+      "sha256": "4f5928e7e07cd61d5f75e7893cc4a27f99fd18ba00898e97060ca69305f348a1",
+      "arrays": {
+        "pair_haiku_pretrained_naturalistic__assistant__L19": [
+          2000,
+          3584
+        ],
+        "pair_haiku_pretrained_naturalistic__assistant__L26": [
+          2000,
+          3584
+        ],
+        "pair_haiku_pretrained_naturalistic__user__L19": [
+          2000,
+          3584
+        ],
+        "pair_haiku_pretrained_naturalistic__user__L26": [
+          2000,
+          3584
+        ]
+      }
+    },
+    "preds_pair_real_instruct_chat.npz": {
+      "sha256": "a3d5d13ff2cbeb1eec31c1bc57c1cda97626cb7b987cbe352bdd82a322a64b57",
+      "arrays": {
+        "pair_real_instruct_chat__assistant__L19": [
+          2000,
+          3584
+        ],
+        "pair_real_instruct_chat__assistant__L26": [
+          2000,
+          3584
+        ],
+        "pair_real_instruct_chat__user__L19": [
+          2000,
+          3584
+        ],
+        "pair_real_instruct_chat__user__L26": [
+          2000,
+          3584
+        ]
+      }
+    },
+    "preds_pair_real_instruct_naturalistic.npz": {
+      "sha256": "cb65bfa371d524831817c9a45e9feb4fd5afe18a9a3208eeb6eb3ca028c09ba8",
+      "arrays": {
+        "pair_real_instruct_naturalistic__assistant__L19": [
+          2000,
+          3584
+        ],
+        "pair_real_instruct_naturalistic__assistant__L26": [
+          2000,
+          3584
+        ],
+        "pair_real_instruct_naturalistic__user__L19": [
+          2000,
+          3584
+        ],
+        "pair_real_instruct_naturalistic__user__L26": [
+          2000,
+          3584
+        ]
+      }
+    },
+    "preds_pair_real_pretrained_chat.npz": {
+      "sha256": "4898a338a04b8faf2cbfdb8e4c676cf9588b1a7e3aa28c3bed12eb01da9718cb",
+      "arrays": {
+        "pair_real_pretrained_chat__assistant__L19": [
+          2000,
+          3584
+        ],
+        "pair_real_pretrained_chat__assistant__L26": [
+          2000,
+          3584
+        ],
+        "pair_real_pretrained_chat__user__L19": [
+          2000,
+          3584
+        ],
+        "pair_real_pretrained_chat__user__L26": [
+          2000,
+          3584
+        ]
+      }
+    },
+    "preds_pair_real_pretrained_naturalistic.npz": {
+      "sha256": "30f1529c8eeb9e5afd5663ac119d566293ab2f290f939d6d48c5657572137e21",
+      "arrays": {
+        "pair_real_pretrained_naturalistic__assistant__L19": [
+          2000,
+          3584
+        ],
+        "pair_real_pretrained_naturalistic__assistant__L26": [
+          2000,
+          3584
+        ],
+        "pair_real_pretrained_naturalistic__user__L19": [
+          2000,
+          3584
+        ],
+        "pair_real_pretrained_naturalistic__user__L26": [
+          2000,
+          3584
+        ]
+      }
+    },
+    "preds_pair_onpolicy_instruct_chat.npz": {
+      "sha256": "c3f5e42dc03bcaeeb66389532ca7d61dcf4824b8efb2ae9930af863c2387db24",
+      "arrays": {
+        "pair_onpolicy_instruct_chat__assistant__L19": [
+          1914,
+          3584
+        ],
+        "pair_onpolicy_instruct_chat__assistant__L26": [
+          1914,
+          3584
+        ],
+        "pair_onpolicy_instruct_chat__user__L19": [
+          1914,
+          3584
+        ],
+        "pair_onpolicy_instruct_chat__user__L26": [
+          1914,
+          3584
+        ]
+      }
+    },
+    "preds_pair_onpolicy_instruct_naturalistic.npz": {
+      "sha256": "432301f01d7bc33c953511c0868c1049c6213561930237d604dc998166a22755",
+      "arrays": {
+        "pair_onpolicy_instruct_naturalistic__assistant__L19": [
+          1722,
+          3584
+        ],
+        "pair_onpolicy_instruct_naturalistic__assistant__L26": [
+          1722,
+          3584
+        ],
+        "pair_onpolicy_instruct_naturalistic__user__L19": [
+          1722,
+          3584
+        ],
+        "pair_onpolicy_instruct_naturalistic__user__L26": [
+          1722,
+          3584
+        ]
+      }
+    },
+    "preds_pair_onpolicy_pretrained_chat.npz": {
+      "sha256": "9a0abc131556391aff543c1214543fab2aeb4f6cfd151f257a262ff4afd4fa5d",
+      "arrays": {
+        "pair_onpolicy_pretrained_chat__assistant__L19": [
+          1999,
+          3584
+        ],
+        "pair_onpolicy_pretrained_chat__assistant__L26": [
+          1999,
+          3584
+        ],
+        "pair_onpolicy_pretrained_chat__user__L19": [
+          1999,
+          3584
+        ],
+        "pair_onpolicy_pretrained_chat__user__L26": [
+          1999,
+          3584
+        ]
+      }
+    },
+    "preds_pair_onpolicy_pretrained_naturalistic.npz": {
+      "sha256": "5b6a6d21169c4949574c3e2c5f2fcf28fb55613e2bb1e53aea113819a5fed982",
+      "arrays": {
+        "pair_onpolicy_pretrained_naturalistic__assistant__L19": [
+          1738,
+          3584
+        ],
+        "pair_onpolicy_pretrained_naturalistic__assistant__L26": [
+          1738,
+          3584
+        ],
+        "pair_onpolicy_pretrained_naturalistic__user__L19": [
+          1738,
+          3584
+        ],
+        "pair_onpolicy_pretrained_naturalistic__user__L26": [
+          1738,
+          3584
+        ]
+      }
+    }
+  },
+  "dtype": "float16",
+  "metadata": {
+    "git_commit": "e8fe5ca63376c442fe8580a724521c5a6edd4bb4",
+    "timestamp": "2026-07-04T09:40:58Z",
+    "seed": 0,
+    "n": 12,
+    "script": "scripts/issue825_role_contrast.py",
+    "followup_label": "role-map-comparison"
+  }
+}

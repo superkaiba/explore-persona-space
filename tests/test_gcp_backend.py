@@ -27,6 +27,7 @@ import json
 import logging
 import os
 import re
+import shlex
 import subprocess
 import sys
 from dataclasses import replace
@@ -703,6 +704,53 @@ def test_8gpu_sweep_machine_types_zone_availability() -> None:
     assert zones_for_machine_type("a3-highgpu-8g", ladder) == ladder
 
 
+def test_zone_availability_has_a2_ultragpu_2g_a_c_only() -> None:
+    """#1121: the new a2-ultragpu-2g row (the width-2 auto-ladder rung)
+    follows its A2-ultragpu family — offered in {a, c} only, NOT
+    us-central1-b (live-verified 2026-07-08), so the zone-fallback ladder
+    never issues a doomed -b create that burns a GCP attempt."""
+    from explore_persona_space.backends.gcp import (
+        MACHINE_TYPE_ZONE_AVAILABILITY,
+        zones_for_machine_type,
+    )
+
+    assert MACHINE_TYPE_ZONE_AVAILABILITY["a2-ultragpu-2g"] == frozenset(
+        {"us-central1-a", "us-central1-c"}
+    )
+    assert zones_for_machine_type(
+        "a2-ultragpu-2g", ["us-central1-a", "us-central1-b", "us-central1-c"]
+    ) == ["us-central1-a", "us-central1-c"]
+
+
+def test_render_create_argv_resolves_wide_machine_override() -> None:
+    """#1121: a router-threaded wide machine override (the JSON-safe dict
+    shape ``_with_machine`` threads) renders the wide machine type under
+    FLEX_START — the existing ``machine_spec_override`` chokepoint resolves
+    wide rungs with zero create-path changes. H100 + STANDARD keeps raising
+    (``test_render_create_argv_h100_standard_raises_loud`` pins that)."""
+    cfg = _test_config()
+    spec = _spec(
+        intent="capture-7b",
+        extra={
+            "machine_spec_override": {
+                "machine_type": "a2-ultragpu-8g",
+                "gpu_count": 8,
+                "gpu_kind": "A100-80",
+            },
+            "provisioning_model": "FLEX_START",
+        },
+    )
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--machine-type=a2-ultragpu-8g" in argv
+    assert "--provisioning-model=FLEX_START" in argv
+
+
 def test_default_fallback_zones_includes_us_central1_f() -> None:
     """#774: DEFAULT_FALLBACK_ZONES carries us-central1-f so the create-time
     ladder [primary, *fallback_zones] reaches -f for the A100-40 fallback
@@ -1311,6 +1359,99 @@ def test_reconnect_returns_handle_when_instance_running() -> None:
     assert handle.extra["reconnected"] is True
 
 
+def _running_instance_payload(name: str = "eps-issue-137", instance_id: str = "9988776655") -> str:
+    """A one-instance RUNNING gcloud list payload (the reconnect probe shape)."""
+    return json.dumps(
+        [
+            {
+                "name": name,
+                "id": instance_id,
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+            }
+        ]
+    )
+
+
+def test_reconnect_handle_carries_workload_extras_from_spec() -> None:
+    """T1 (#1122): a workload-cmd spec's reconnect handle mirrors the launch
+    path's failover-prerequisite extras — workload_cmd verbatim (str, MF1),
+    hydra_args [] (list), gpus, time_budget_hours, repo_branch, gpu_count,
+    and boot_disk_gb when set — so an exit-75 rerun's sidecar overwrite
+    stays failover-capable (incident #1090)."""
+    spec = _spec(
+        workload_cmd="REPO_ROOT=/workspace bash scripts/issue1090_dispatch.sh --full",
+        hydra_args=(),  # _spec() defaults to non-empty hydra_args; the pair is exclusive
+        gpus=1,
+        time_budget_hours=4.0,
+        extra={"repo_branch": "issue-1090", "boot_disk_gb": 200},
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, _running_instance_payload(), "")])
+    handle = reconnect_or_none(spec=spec, config=_test_config(), runner=runner)
+    assert handle is not None
+    assert (
+        handle.extra["workload_cmd"]
+        == "REPO_ROOT=/workspace bash scripts/issue1090_dispatch.sh --full"
+    )
+    assert handle.extra["hydra_args"] == []
+    assert isinstance(handle.extra["hydra_args"], list)
+    assert handle.extra["gpus"] == 1
+    assert handle.extra["time_budget_hours"] == 4.0
+    assert handle.extra["repo_branch"] == "issue-1090"
+    # lora-7b resolves to a 1-GPU machine; the poller's CPU guards read
+    # 0-vs-nonzero only.
+    assert handle.extra["gpu_count"] == 1
+    assert handle.extra["boot_disk_gb"] == 200
+    # min_ram_gb unset on the spec -> key OMITTED (legacy-shape parity).
+    assert "min_ram_gb" not in handle.extra
+
+
+def test_reconnect_handle_hydra_branch_mirrors_launch_shape() -> None:
+    """T2 (#1122): the hydra-args branch mirrors the launch shape — empty
+    workload_cmd str + hydra list; RunSpec mutual exclusion holds on the
+    reconstructed pair."""
+    spec = _spec()  # default hydra_args=("condition=c1_evil_wrong_em", "seed=42")
+    runner = _Runner(list_results=[GcloudRunResult(0, _running_instance_payload(), "")])
+    handle = reconnect_or_none(spec=spec, config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.extra["workload_cmd"] == ""
+    assert handle.extra["hydra_args"] == ["condition=c1_evil_wrong_em", "seed=42"]
+    assert isinstance(handle.extra["hydra_args"], list)
+    # One of the pair is empty by construction (MF2).
+    assert not (handle.extra["workload_cmd"] and handle.extra["hydra_args"])
+    # repo_branch unset on the spec -> written as "" (launch-path parity).
+    assert handle.extra["repo_branch"] == ""
+
+
+def test_reconnect_bare_spec_keeps_legacy_extra_shape() -> None:
+    """T3 (#1122): a bare (no-workload) spec — provision-only / probe
+    reconnects — keeps the LEGACY extra shape: no workload keys added (the
+    issue_dispatch carry-forward preserves the prior sidecar's values for
+    that case instead)."""
+    spec = _spec(hydra_args=())  # _spec() defaults to non-empty hydra_args
+    runner = _Runner(list_results=[GcloudRunResult(0, _running_instance_payload(), "")])
+    handle = reconnect_or_none(spec=spec, config=_test_config(), runner=runner)
+    assert handle is not None
+    for key in (
+        "workload_cmd",
+        "hydra_args",
+        "gpus",
+        "time_budget_hours",
+        "repo_branch",
+        "gpu_count",
+        "boot_disk_gb",
+        "min_ram_gb",
+    ):
+        assert key not in handle.extra, key
+    # The legacy probe-derived keys are still present.
+    assert handle.extra["reconnected"] is True
+    assert handle.extra["status_at_reconnect"] == "RUNNING"
+    assert handle.extra["instance_name"] == "eps-issue-137"
+
+
 def test_reconnect_skips_terminated_instance() -> None:
     payload = json.dumps(
         [
@@ -1365,7 +1506,7 @@ def test_gcp_probe_error_is_backend_probe_error() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("phase", ["done", "failed", "wedged"])
+@pytest.mark.parametrize("phase", ["done", "failed", "finalize_failed_artifacts_ok", "wedged"])
 def test_reconnect_refuses_running_instance_with_terminal_guest_phase(phase: str) -> None:
     """A RUNNING instance whose workload already published a terminal/wedged
     eps/phase is a gate-park/finished zombie, NOT a live run to rejoin —
@@ -1626,7 +1767,7 @@ def test_stale_named_instance_refuses_to_delete_live_status() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("phase", ["done", "failed", "wedged"])
+@pytest.mark.parametrize("phase", ["done", "failed", "finalize_failed_artifacts_ok", "wedged"])
 def test_stale_named_instance_returns_record_for_running_terminal_phase(phase: str) -> None:
     """The #908 matched delete: the SAME RUNNING+terminal-phase record that
     reconnect refuses must be deletable here, or the refusal dead-ends in
@@ -4838,6 +4979,7 @@ def test_poll_running_drains_sentinels_via_sudo(monkeypatch) -> None:
     pp = _poll_pipeline_module()
     posted: list[tuple[int, str]] = []
     monkeypatch.setattr(pp, "post_event", lambda issue, kind, **kw: posted.append((issue, kind)))
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
@@ -4869,6 +5011,7 @@ def test_poll_gcp_drain_scans_workload_root_fallback_glob(monkeypatch) -> None:
     (including the done tick) reported ``sentinels_processed=0``."""
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda issue, kind, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
@@ -4902,6 +5045,35 @@ def test_poll_gcp_drain_transport_failure_is_loud() -> None:
     assert "sudo: a password is required" in pr.log_tail_excerpt
 
 
+def test_gcp_drain_ssh_timeout_returns_transport_alarm() -> None:
+    """#1084 (W2, GCP arm): a drain-list SSH that HANGS past the runner's
+    per-call cap (``subprocess.TimeoutExpired`` — the #952 gcloud-ssh
+    hostkey-drift wedge) degrades to the EXISTING transport alarm instead of
+    an uncaught raise crashing the poll tick — same alarm tuple shape +
+    ``alarm_class="transport"`` as the rc!=0 branch, so the #669 wedge-gate
+    semantics (``reachability_alarm=True``) are inherited unchanged."""
+
+    class _TimeoutOnSshRunner(_Runner):
+        def __call__(self, argv):
+            argv = list(argv)
+            if "ssh" in argv and "compute" in argv:
+                self.calls.append(argv)
+                raise subprocess.TimeoutExpired(cmd=argv, timeout=300)
+            return super().__call__(argv)
+
+    runner = _TimeoutOnSshRunner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.sentinels_processed == 0
+    assert "timed out after 300" in pr.log_tail_excerpt
+    assert "hung transport" in pr.log_tail_excerpt
+    assert pr.reachability_alarm is True
+
+
 def test_poll_gcp_drain_matched_but_empty_body_is_loud(monkeypatch) -> None:
     """A sentinel whose body reads back EMPTY (the pre-sudo permission
     symptom) must be reported loudly — glob matched, nothing processed."""
@@ -4931,6 +5103,7 @@ def test_poll_gcp_drain_gate_sentinel_parks(monkeypatch) -> None:
     poll_pipeline.poll_once): the orchestrator must park at the gate."""
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
@@ -5038,6 +5211,7 @@ def test_poll_drain_gate_keeps_short_interval(monkeypatch) -> None:
 
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[_describe_running(created_sec_ago=7200)],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
@@ -5293,19 +5467,29 @@ def _workload_spec(cmd: str = "bash scripts/issue588_smoke.sh") -> RunSpec:
     return _spec(hydra_args=(), workload_cmd=cmd)
 
 
-def test_render_startup_script_workload_cmd_verbatim_with_lifecycle_intact() -> None:
-    """#588: the custom command replaces ONLY the workload line — every
-    lifecycle pin (secrets fetch, in-VM preflight, phase publishing,
-    EXIT trap, completion sentinel) is unchanged."""
+def _wrapped(cmd: str) -> str:
+    """The #1004 rc-preserving rendered workload line for ``cmd``."""
+    return f"bash -eu -o pipefail -c {shlex.quote(cmd)}"
+
+
+def test_render_startup_script_workload_cmd_rc_wrapped_with_lifecycle_intact() -> None:
+    """#588/#1004: the custom command replaces ONLY the workload line —
+    every lifecycle pin (secrets fetch, in-VM preflight, phase publishing,
+    EXIT trap, completion sentinel) is unchanged. The command renders
+    inside the #1004 rc-preserving inner-bash wrapper, never as a bare
+    line."""
     script = render_startup_script(
         spec=_workload_spec("bash scripts/issue588_smoke.sh --flag 'v 1'"),
         config=_test_config(),
         attempt_id="att-fixed-001",
     )
     lines = script.splitlines()
-    # The command is embedded VERBATIM as its own line (no shlex-quoting
-    # that would collapse it to a single token).
-    assert "bash scripts/issue588_smoke.sh --flag 'v 1'" in lines
+    # The command is the single shlex-quoted argument of an inner
+    # `bash -eu -o pipefail -c` (#1004); the inner bash re-parses it as a
+    # full shell line, so the #588 "complete shell command" contract holds.
+    assert _wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'") in lines
+    # The bare, rc-masking pre-#1004 form is GONE.
+    assert "bash scripts/issue588_smoke.sh --flag 'v 1'" not in lines
     assert "# === Run the workload (custom workload_cmd) ===" in lines
     # The hardcoded hydra entrypoint is GONE on the custom path.
     assert "scripts/train.py" not in script
@@ -5320,14 +5504,16 @@ def test_render_startup_script_workload_cmd_verbatim_with_lifecycle_intact() -> 
     # The custom command runs AFTER cd "$WORKLOAD_ROOT" (repo-relative
     # `bash scripts/...` must resolve).
     assert lines.index('cd "$WORKLOAD_ROOT"') < lines.index(
-        "bash scripts/issue588_smoke.sh --flag 'v 1'"
+        _wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'")
     )
     # WandB project default (#601 follow-up r1): exported BEFORE the
     # workload so HF-Trainer runs stop landing in the global default
     # 'huggingface' project; :- keeps an inline/internal override winning.
     wandb_export = 'export WANDB_PROJECT="${WANDB_PROJECT:-issue137}"'
     assert wandb_export in lines
-    assert lines.index(wandb_export) < lines.index("bash scripts/issue588_smoke.sh --flag 'v 1'")
+    assert lines.index(wandb_export) < lines.index(
+        _wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'")
+    )
     # The hydra branch must NOT gain the export (byte-pinned by the #588
     # snapshot fixture; asserted here for a readable failure too).
     hydra_script = render_startup_script(
@@ -5357,7 +5543,7 @@ def test_render_startup_script_workload_cmd_exports_repo_root() -> None:
     # Exported AFTER the shared ``cd "$WORKLOAD_ROOT"`` and BEFORE the
     # workload command, so the workload subprocess inherits it.
     assert lines.index('cd "$WORKLOAD_ROOT"') < lines.index(repo_root_export)
-    assert lines.index(repo_root_export) < lines.index("bash scripts/issue588_smoke.sh")
+    assert lines.index(repo_root_export) < lines.index(_wrapped("bash scripts/issue588_smoke.sh"))
     # The hydra branch must NOT gain the export — it runs scripts/train.py
     # directly (no REPO_ROOT dependency), and the #588 byte-identity
     # snapshot fixture pins the hydra branch unchanged.
@@ -5391,7 +5577,7 @@ def test_render_startup_script_workload_cmd_waits_on_detached_pid_files() -> Non
     # Ordering: start-marker touch < workload cmd < pid-wait loop <
     # sentinel write < phase=done publish.
     i_touch = lines.index("touch /tmp/eps-workload-start")
-    i_cmd = lines.index("bash scripts/issue588_smoke.sh")
+    i_cmd = lines.index(_wrapped("bash scripts/issue588_smoke.sh"))
     i_wait = lines.index(wait_for)
     i_sentinel = next(i for i, line in enumerate(lines) if line.startswith("cat > "))
     i_done = lines.index("_eps_phase done")
@@ -5423,7 +5609,9 @@ def test_render_startup_script_workload_cmd_precreates_drain_logs_dir() -> None:
     assert "mkdir -p /workspace/logs" in lines
     assert "chmod 777 /workspace/logs" in lines
     # Ordering: dir exists before the workload command runs.
-    assert lines.index("mkdir -p /workspace/logs") < lines.index("bash scripts/issue588_smoke.sh")
+    assert lines.index("mkdir -p /workspace/logs") < lines.index(
+        _wrapped("bash scripts/issue588_smoke.sh")
+    )
     # The hydra branch must NOT gain the #610 sentinel-drain stanza.
     # Discriminate on its unique `chmod 777` line: as of #607 BOTH
     # branches carry a common-prelude `mkdir -p /workspace/logs` (the
@@ -5435,6 +5623,69 @@ def test_render_startup_script_workload_cmd_precreates_drain_logs_dir() -> None:
         attempt_id="att-fixed-001",
     )
     assert "chmod 777 /workspace/logs" not in hydra_script
+
+
+def test_render_startup_script_workload_cmd_compound_is_rc_wrapped() -> None:
+    """#1004 (incident #952): a compound && workload_cmd renders inside the
+    rc-preserving inner-bash wrapper, never as a bare line — a bare splice
+    under set -e rc-masks a first-command crash into a false phase=done
+    (errexit exempts non-final &&/|| list members)."""
+    cmd = "uv run python scripts/a.py && uv run python scripts/b.py"
+    script = render_startup_script(
+        spec=_workload_spec(cmd), config=_test_config(), attempt_id="att-fixed-001"
+    )
+    lines = script.splitlines()
+    assert _wrapped(cmd) in lines
+    assert cmd not in lines  # the bare, rc-masking form is GONE
+    # Wrapper sits between the start-marker touch and the pid-wait loop.
+    assert lines.index("touch /tmp/eps-workload-start") < lines.index(_wrapped(cmd))
+    i_wait = next(i for i, ln in enumerate(lines) if ln.startswith("for pf in $(find"))
+    assert lines.index(_wrapped(cmd)) < i_wait
+
+
+def _rendered_workload_line(cmd: str) -> str:
+    """Extract the ACTUAL rendered workload line (the line after the
+    start-marker touch) from a real ``render_startup_script`` output —
+    live-dispatched-path discipline: never rebuild the line via a twin."""
+    script = render_startup_script(
+        spec=_workload_spec(cmd), config=_test_config(), attempt_id="att-fixed-001"
+    )
+    lines = script.splitlines()
+    return lines[lines.index("touch /tmp/eps-workload-start") + 1]
+
+
+def test_workload_cmd_wrapper_propagates_compound_first_command_rc() -> None:
+    """#1004 behavioral proof on the LIVE rendered line: under set -euo
+    pipefail, a `cmd1 && cmd2` workload whose FIRST command exits 7
+    aborts the script with rc 7 (success tail unreached); a succeeding
+    compound reaches the tail with rc 0. Pre-#1004 the failing case fell
+    through and published done (probe: bash -c 'set -euo pipefail;
+    false && true; echo FELL_THROUGH' prints FELL_THROUGH, rc=0)."""
+    for cmd, want_rc, want_tail in (
+        ("bash -c 'exit 7' && echo NOT_REACHED", 7, False),
+        ("true && echo CHAIN_OK", 0, True),
+    ):
+        harness = "set -euo pipefail\n" + _rendered_workload_line(cmd) + "\necho SUCCESS_TAIL\n"
+        proc = subprocess.run(["bash", "-c", harness], capture_output=True, text=True)
+        assert proc.returncode == want_rc, (cmd, proc.returncode, proc.stderr)
+        assert ("SUCCESS_TAIL" in proc.stdout) is want_tail
+        assert "NOT_REACHED" not in proc.stdout
+
+
+def test_workload_cmd_wrapper_inherits_exported_env() -> None:
+    """#1004: exported env (the #641 REPO_ROOT / #601 WANDB_PROJECT
+    contract) reaches the inner bash — POSIX process inheritance holds
+    through the wrapper, so the export stanzas rendered BEFORE the
+    workload line keep working unchanged."""
+    cmd = 'test "$EPS_PROBE_VAR" = ok'
+    harness = (
+        "set -euo pipefail\nexport EPS_PROBE_VAR=ok\n"
+        + _rendered_workload_line(cmd)
+        + "\necho ENV_OK\n"
+    )
+    proc = subprocess.run(["bash", "-c", harness], capture_output=True, text=True)
+    assert proc.returncode == 0, (proc.returncode, proc.stderr)
+    assert "ENV_OK" in proc.stdout
 
 
 def test_render_startup_script_neither_workload_nor_hydra_raises_571() -> None:
@@ -6297,6 +6548,7 @@ def test_drain_overlays_log_mtime_when_running(monkeypatch) -> None:
 
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     now = 1718000300
     stdout = _drain_stdout("19/19 cells done") + f"EPS_LOG_MTIME={now - 300}\nEPS_LOG_NOW={now}\n"
     runner = _Runner(
@@ -6357,6 +6609,7 @@ def test_drain_missing_mtime_keys_keeps_legacy_placeholder(monkeypatch) -> None:
     hardwired placeholder; old fixtures stay green untouched."""
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
@@ -7864,3 +8117,283 @@ def test_poll_terminated_with_workload_phase_still_dead() -> None:
     pr = backend.poll(_poll_handle())
     assert pr.status == "dead"
     assert pr.current_phase == "terminal_terminated"
+
+
+# ---------------------------------------------------------------------------
+# issue #1029 — TERMINATED-window setup-death discrimination: a TERMINATED VM
+# whose eps/phase reads "failed" runs the SAME §4.1.0b workload_started
+# discrimination the RUNNING path runs, so the classification of a trap-written
+# boot death is timing-independent (RUNNING window and TERMINATED window agree).
+# ---------------------------------------------------------------------------
+
+
+def test_terminated_with_failed_phase_and_no_workload_start_maps_to_terminal_setup_failed() -> None:
+    """#1029 §4.1: TERMINATED + eps/phase=failed + workload_started ABSENT (the
+    404 not-written case) is a deterministic PRE-WORKLOAD boot death ->
+    ``terminal_setup_failed`` — the same classification the RUNNING window
+    already produces for the identical death (timing-independent)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload_multi([("phase", "failed")]), ""),
+            # The workload_started probe finds the attribute not written (404).
+            GcloudRunResult(1, "", "guest attribute eps/workload_started not found"),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_setup_failed"
+
+
+def test_terminated_with_failed_phase_and_workload_started_keeps_terminal_terminated() -> None:
+    """#1029 §4.1 (the #669 spot exclusion, preserved): TERMINATED +
+    eps/phase=failed + workload_started PRESENT is a MID-RUN guest shutdown
+    (e.g. a spot preemption whose EXIT trap completed) — it keeps
+    ``terminal_terminated`` verbatim, so a lone preemption still never fails
+    over and never counts as a deterministic boot death."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload_multi([("phase", "failed")]), ""),
+            GcloudRunResult(0, _guest_attr_payload_multi([("workload_started", "true")]), ""),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_terminated"
+
+
+def test_terminated_with_failed_phase_probe_error_keeps_terminal_terminated() -> None:
+    """#1029 §4.1 (conservative fallback): TERMINATED + eps/phase=failed + a
+    PROBE FAILURE on the workload_started read (auth/transport — NOT the 404
+    not-written case) falls back to workload-started=True by
+    ``_workload_started``'s existing contract -> keeps ``terminal_terminated``
+    (never manufactures a setup classification from an unprovable read)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload_multi([("phase", "failed")]), ""),
+            GcloudRunResult(
+                1, "", "ERROR: Required 'compute.instances.getGuestAttributes' permission denied"
+            ),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_terminated"
+
+
+# ---------------------------------------------------------------------------
+# issue #1055 — finalize_failed_artifacts_ok: a post-deliverables finalize/tail
+# crash publishes a distinct done-like phase instead of `failed`, keyed on the
+# workload-written positive-evidence sentinel ($EPS_DELIVERABLES_OK_PATH). The
+# sentinel-absent path stays byte-equivalent to today's failed path.
+# ---------------------------------------------------------------------------
+
+
+def _extract_exit_trap_body(script: str) -> str:
+    """Pull the single-quoted EXIT-trap body out of a rendered startup script.
+
+    The trap body contains no single quotes by bash construction, so the
+    ``[^']*`` match is exact.
+    """
+    m = re.search(r"trap '([^']*)' EXIT", script)
+    assert m is not None, "could not locate the EXIT trap in the rendered script"
+    return m.group(1)
+
+
+def test_render_startup_script_trap_branches_on_deliverables_sentinel() -> None:
+    """#1055 acceptance criterion 1 — branch-STRUCTURE-discriminating, not
+    substring-order-only: both render branches carry, inside the single trap
+    statement, the guarded sentinel check, the finalize_failed_artifacts_ok
+    then-arm, the retained failed else-arm, AND the inner ``fi;`` closing the
+    sentinel conditional sits IMMEDIATELY after ``_eps_phase failed;`` and
+    BEFORE the shared tail (watchdog kill -> log tail -> diagnostics ->
+    poweroff) — so a mutant nesting the shared tail inside only one arm FAILS
+    (a flat substring-order assert would pass it while one branch loses
+    diagnostics or the billing-bounding poweroff)."""
+    for spec in (
+        _spec(),
+        _spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh --flag 'v 1'"),
+    ):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        trap = _extract_exit_trap_body(script)
+        assert '[ -n "${EPS_DELIVERABLES_OK_PATH:-}" ]' in trap
+        assert '[ -f "${EPS_DELIVERABLES_OK_PATH:-}" ]' in trap
+        idx_finalize = trap.index("_eps_phase finalize_failed_artifacts_ok;")
+        idx_failed = trap.index("_eps_phase failed;")
+        inner_fi = trap.index(" fi;", idx_failed)
+        idx_kill = trap.index('{ kill "${EPS_WATCHDOG_PID:-}"')
+        idx_diag = trap.index('_eps_persist_diagnostics "$rc"')
+        idx_shutdown = trap.index("shutdown -h now")
+        # then-arm before else-arm inside the sentinel conditional.
+        assert idx_finalize < idx_failed
+        # The inner fi; closes the sentinel conditional IMMEDIATELY after the
+        # else-arm's phase write — NOTHING (no tail element) may sit between
+        # them, or the shared tail has been nested into one arm.
+        assert trap[idx_failed:inner_fi] == "_eps_phase failed;"
+        # The shared tail runs on BOTH arms: strictly AFTER the inner fi, in
+        # the unchanged order kill -> (log tail) -> diagnostics -> poweroff.
+        assert idx_failed < inner_fi < idx_kill < idx_diag < idx_shutdown
+
+
+def _run_trap_sandbox(tmp_path: Path, *, sentinel_present: bool) -> list[str]:
+    """Execute the rendered EXIT-trap body in a sandbox bash with stubbed
+    ``_eps_phase`` / ``_eps_persist_diagnostics`` / ``kill`` / ``shutdown``
+    (each appends to a call-trace file) and rc=1; returns the call trace."""
+    tag = "present" if sentinel_present else "absent"
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    body = _extract_exit_trap_body(script)
+    call_log = tmp_path / f"calls_{tag}.log"
+    log_file = tmp_path / "workload.log"
+    log_file.write_text("line1\nline2\n")
+    sentinel = tmp_path / f"deliverables_ok_{tag}.json"
+    if sentinel_present:
+        sentinel.write_text('{"issue": 137}')
+    sandbox_lines = [
+        "exec 3>/dev/null",
+        f'CALL_LOG="{call_log}"',
+        '_eps_phase() { echo "_eps_phase $1" >> "$CALL_LOG"; }',
+        '_eps_persist_diagnostics() { echo "_eps_persist_diagnostics $1" >> "$CALL_LOG"; }',
+        'kill() { echo "kill $*" >> "$CALL_LOG"; }',
+        'shutdown() { echo "shutdown $*" >> "$CALL_LOG"; }',
+        "export EPS_WATCHDOG_PID=99999",
+        f'export EPS_LOG_PATH="{log_file}"',
+        f'export EPS_DELIVERABLES_OK_PATH="{sentinel}"',
+        "false",  # the trap body's rc=$? reads 1 from this
+        body,
+        "exit 0",
+    ]
+    sandbox = tmp_path / f"sandbox_{tag}.sh"
+    sandbox.write_text("\n".join(sandbox_lines) + "\n")
+    proc = subprocess.run(["bash", str(sandbox)], capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    assert call_log.exists(), "trap body made no stubbed calls"
+    return call_log.read_text().split("\n")
+
+
+def test_rendered_trap_body_executes_both_sentinel_states(tmp_path) -> None:
+    """#1055 executed-trap semantics (not just structure): running the REAL
+    rendered trap body with rc!=0 publishes finalize_failed_artifacts_ok when
+    the deliverables sentinel file EXISTS and failed when it does not — and
+    BOTH runs still execute the shared tail (diagnostics + poweroff), in the
+    unchanged phase-write -> diagnostics -> shutdown order."""
+    present = _run_trap_sandbox(tmp_path, sentinel_present=True)
+    absent = _run_trap_sandbox(tmp_path, sentinel_present=False)
+
+    assert "_eps_phase finalize_failed_artifacts_ok" in present
+    assert "_eps_phase failed" not in present
+    assert "_eps_phase failed" in absent
+    assert "_eps_phase finalize_failed_artifacts_ok" not in absent
+    for calls, phase_call in (
+        (present, "_eps_phase finalize_failed_artifacts_ok"),
+        (absent, "_eps_phase failed"),
+    ):
+        assert "_eps_persist_diagnostics 1" in calls  # diagnostics ran, rc preserved
+        assert "shutdown -h now" in calls  # the billing-bounding poweroff ran
+        assert calls.index(phase_call) < calls.index("_eps_persist_diagnostics 1")
+        assert calls.index("_eps_persist_diagnostics 1") < calls.index("shutdown -h now")
+
+
+def test_render_startup_script_exports_deliverables_ok_path_and_boot_rm() -> None:
+    """#1055: both branches export the attempt-scoped positive-evidence
+    sentinel path and rm -f it at boot (stale-evidence hygiene for a re-booted
+    instance with the SAME attempt_id + preserved disk), with the rm AFTER the
+    export and BEFORE the workload starts."""
+    for spec in (
+        _spec(),
+        _spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh"),
+    ):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        export_idx = script.index("export EPS_DELIVERABLES_OK_PATH=")
+        export_line = script[export_idx:].split("\n", 1)[0]
+        # Attempt-scoping pinned, not just line presence: the rendered value
+        # embeds the attempt id (mirrors sentinel_path_for).
+        assert "att-fixed-001/deliverables_ok.json" in export_line
+        rm_idx = script.index('rm -f "$EPS_DELIVERABLES_OK_PATH"')
+        workload_idx = script.index("_eps_phase workload")
+        assert export_idx < rm_idx < workload_idx
+
+
+def test_poll_running_finalize_failed_phase_follows_fresh_relaunch_marker() -> None:
+    """#1055 relaunch-follow (sibling of the #612 done/failed coverage): the
+    eps/phase guest attribute freezes at the FIRST workload's terminal state,
+    so RUNNING + finalize_failed_artifacts_ok + a FRESH epm:run-launched
+    marker must follow the relaunched workload — NOT classify done and steer
+    the orchestrator to finalize/teardown mid-relaunch."""
+    backend, _runner = _relaunch_backend(
+        phase="finalize_failed_artifacts_ok",
+        ssh_results=[
+            GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, ""),
+            GcloudRunResult(0, _probe_stdout(alive=True), ""),
+        ],
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.current_phase == "relaunched_workload"
+
+
+def test_poll_running_with_finalize_failed_artifacts_ok_maps_to_done() -> None:
+    """#1055: the brief RUNNING window between the trap's phase write and the
+    poweroff completing classifies done / workload_done_finalize_failed (no
+    relaunch marker present), mirroring the RUNNING-window done block."""
+    backend, _runner = _relaunch_backend(
+        phase="finalize_failed_artifacts_ok",
+        ssh_results=[GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, "")],
+        reader=_relaunch_reader(run_ts=None, cluster_ts=None),
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done_finalize_failed"
+    assert pr.new_milestone is True
+    assert pr.pid_alive is False
+
+
+def test_poll_terminated_with_finalize_failed_artifacts_ok_maps_to_done() -> None:
+    """#1055 (mirror of the #935 TERMINATED-window test): a TERMINATED
+    instance whose eps/phase reads finalize_failed_artifacts_ok — deliverables
+    verified on HF, then a finalize/tail non-zero exit powered the VM off —
+    classifies done with the distinct workload_done_finalize_failed phase, a
+    SUCCESSFUL run whose finalize hiccupped, never a crash (no RunPod
+    failover, no crash-fix routing)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("finalize_failed_artifacts_ok"), "")
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done_finalize_failed"
+    assert pr.new_milestone is True
+
+
+def test_audit_stale_gcp_vms_reaps_terminal_phase_finalize_failed_zombie() -> None:
+    """#1055 (sibling of the done/failed terminal-phase reap tests): a RUNNING
+    VM stuck in finalize_failed_artifacts_ok past the terminal-phase floor is
+    a finished zombie — the workload is over, the deliverables are on HF —
+    and the janitor reaps it promptly via _TERMINAL_GUEST_PHASES membership."""
+    now = datetime(2026, 7, 5, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(minutes=30)).isoformat()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-1055", created), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("finalize_failed_artifacts_ok"), "")
+        ],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "deleted"
+    assert records[0]["reason"] == "terminal-phase"
+    assert records[0]["phase"] == "finalize_failed_artifacts_ok"

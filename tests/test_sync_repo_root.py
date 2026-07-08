@@ -105,6 +105,11 @@ def origin_and_clone(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     # A dev shell exporting a non-default husk age must not flake the husk
     # age-gate tests (per-test setenv still wins — it runs after fixture setup).
     monkeypatch.delenv("EPM_ROOT_SYNC_HUSK_AGE_S", raising=False)
+    monkeypatch.delenv("EPM_ROOT_SYNC_HUSK_PROBE", raising=False)
+    monkeypatch.delenv("EPM_ROOT_SYNC_HUSK_MIN_AGE_S", raising=False)
+    monkeypatch.delenv("EPM_ROOT_SYNC_RETRY_SLEEP_S", raising=False)
+    monkeypatch.delenv("EPM_ROOT_SYNC_PROBE_TIMEOUT_S", raising=False)
+    monkeypatch.delenv("EPM_ROOT_SYNC_PROBE_BUDGET_S", raising=False)
     return origin, local, other
 
 
@@ -1269,3 +1274,376 @@ def test_restore_kept_in_rescue_only_when_rescue_copy_exists(tmp_path):
     assert msg.startswith("KEPT-IN-RESCUE")
     assert str(rescue_copy) in msg
     assert rescue_copy.read_text() == "SWEPT-LOCAL\n"  # copy retained, untouched
+
+
+# ─── 15. Multiple-branches transient retry (#1044) ───────────────────────────
+
+_MULTI_BRANCH_FAKE_ARGV = [
+    "bash",
+    "-c",
+    "echo 'fatal: Cannot rebase onto multiple branches.' >&2; exit 128",
+]
+
+
+def _make_local_behind(local: Path, other: Path) -> None:
+    """Push an origin-side commit so the sync's pull pipeline actually runs."""
+    _write(other, "eval_results/issue_9/y.json", "ORIGIN-Y\n")
+    _commit(other, "eval_results/issue_9/y.json")
+    _git(other, "push", "-q", "origin", "main")
+
+
+def test_multi_branch_transient_retried_once_then_succeeds(origin_and_clone, monkeypatch, capsys):
+    """First pull dies with the multiple-branches race; the ONE internal retry
+    (real pull) succeeds and the sync completes end-to-end."""
+    _origin, local, other = origin_and_clone
+    _make_local_behind(local, other)
+
+    real_pull_argv = srr._pull_argv
+    calls: list[int] = []
+
+    def fake_pull_argv(repo):
+        calls.append(1)
+        return _MULTI_BRANCH_FAKE_ARGV if len(calls) == 1 else real_pull_argv(repo)
+
+    monkeypatch.setattr(srr, "_pull_argv", fake_pull_argv)
+    monkeypatch.setenv("EPM_ROOT_SYNC_RETRY_SLEEP_S", "0")
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    assert rep["state"] == "synced"
+    assert len(calls) == 2  # exactly one retry
+    assert any("one retry" in m for m in rep["messages"])
+    assert (local / "eval_results/issue_9/y.json").read_text() == "ORIGIN-Y\n"
+
+
+def test_multi_branch_persistent_failure_surfaces_after_one_retry(
+    origin_and_clone, monkeypatch, capsys
+):
+    """Both attempts carry the signature: exactly one retry, then the failure
+    surfaces exactly as a single failure does today (exit 6, no conflict state)."""
+    _origin, local, other = origin_and_clone
+    _make_local_behind(local, other)
+    _write(local, "tracked.txt", "base\n")
+    _commit(local, "tracked.txt")
+    _write(local, "tracked.txt", "dirty\n")  # pre-sync dirty state
+    scratch = _write(local, "scratch.txt", "untracked\n")
+
+    calls: list[int] = []
+
+    def fake_pull_argv(repo):
+        calls.append(1)
+        return _MULTI_BRANCH_FAKE_ARGV
+
+    monkeypatch.setattr(srr, "_pull_argv", fake_pull_argv)
+    monkeypatch.setenv("EPM_ROOT_SYNC_RETRY_SLEEP_S", "0")  # no real 2s sleep in the suite
+    rc, rep, err = _run(local, capsys=capsys)
+    assert rc == 6
+    assert rep["exit_code"] == 6
+    assert len(calls) == 2  # exactly one retry, never a loop
+    assert "Cannot rebase onto multiple branches" in err
+    assert not (local / ".git" / "rebase-merge").exists()
+    assert (local / "tracked.txt").read_text() == "dirty\n"  # tracked state untouched
+    assert scratch.read_text() == "untracked\n"  # untracked state untouched
+
+
+def test_multi_branch_signature_with_rebase_state_not_retried(tmp_path, monkeypatch):
+    """Belt-and-braces guard: the signature WITH rebase state present is an
+    unexpected shape — returned as-is, no retry."""
+    calls: list[int] = []
+
+    def fake_pull(repo, timeout_s):
+        calls.append(1)
+        return srr.GitResult(128, "", "fatal: Cannot rebase onto multiple branches.\n", False)
+
+    monkeypatch.setattr(srr, "pull_rebase", fake_pull)
+    monkeypatch.setattr(srr, "_rebase_in_progress", lambda repo: True)
+    report = srr._new_report(tmp_path, dry_run=False)
+    result = srr._pull_with_transient_retry(tmp_path, report, 5.0)
+    assert len(calls) == 1
+    assert result.rc == 128
+    assert any("NOT retrying" in m for m in report["messages"])
+
+
+def test_multi_branch_timed_out_result_not_retried(tmp_path, monkeypatch):
+    """A timed-out result is never signature-retried (timeout handling wins)."""
+    calls: list[int] = []
+
+    def fake_pull(repo, timeout_s):
+        calls.append(1)
+        return srr.GitResult(-9, "", "fatal: Cannot rebase onto multiple branches.\n", True)
+
+    monkeypatch.setattr(srr, "pull_rebase", fake_pull)
+    report = srr._new_report(tmp_path, dry_run=False)
+    result = srr._pull_with_transient_retry(tmp_path, report, 5.0)
+    assert len(calls) == 1
+    assert result.timed_out is True
+    assert report["messages"] == []
+
+
+def test_multi_branch_needle_absent_not_retried(tmp_path, monkeypatch):
+    """Negative control: an ordinary pull failure never buys a retry."""
+    calls: list[int] = []
+
+    def fake_pull(repo, timeout_s):
+        calls.append(1)
+        return srr.GitResult(1, "", "error: some unrelated pull failure\n", False)
+
+    monkeypatch.setattr(srr, "pull_rebase", fake_pull)
+    report = srr._new_report(tmp_path, dry_run=False)
+    result = srr._pull_with_transient_retry(tmp_path, report, 5.0)
+    assert len(calls) == 1
+    assert result.rc == 1
+    assert report["messages"] == []  # no retry message
+
+
+# ─── 16. Young-husk liveness downgrade (#1044) ────────────────────────────────
+
+
+def _probe_must_not_be_called(gd, proc_root=None):
+    raise AssertionError("_probe_git_liveness must not be called on this path")
+
+
+def test_young_husk_no_holder_past_floor_downgraded(origin_and_clone, monkeypatch, capsys):
+    """A young (1800s) husk past the 600s floor with a completed no-holder scan
+    is downgraded to the EXISTING stale handling (abort → continue → the run
+    re-hits the genuine conflict, mirroring the stale-husk test)."""
+    _origin, local, other = origin_and_clone
+    husk = _make_conflicted_rebase_husk(local, other)
+    t = time.time() - 1800
+    os.utime(husk, (t, t))
+
+    monkeypatch.setattr(srr, "_probe_git_liveness", lambda gd: srr.LivenessProbe("none", "test"))
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert any("YOUNG-HUSK DOWNGRADE" in m for m in rep["messages"])
+    assert any("STALE-HUSK ABORT" in m for m in rep["messages"])
+    assert rc == 2
+    assert not (local / ".git" / "rebase-merge").exists()
+    assert "c.txt" in rep["conflicted_paths"]
+
+
+def test_young_husk_live_holder_kept_exit_5(origin_and_clone, monkeypatch, capsys):
+    _origin, local, other = origin_and_clone
+    husk = _make_conflicted_rebase_husk(local, other)
+    t = time.time() - 1800
+    os.utime(husk, (t, t))
+
+    monkeypatch.setattr(
+        srr, "_probe_git_liveness", lambda gd: srr.LivenessProbe("holder", "live git pid 1 test")
+    )
+    rc, _rep, err = _run(local, capsys=capsys)
+    assert rc == 5
+    assert husk.exists()  # untouched
+    assert "young rebase-merge husk" in err
+    assert "live git pid 1 test" in err  # probe evidence surfaced
+
+
+def test_young_husk_uncertain_probe_kept_exit_5(origin_and_clone, monkeypatch, capsys):
+    """An uncertain scan keeps today's refusal AND surfaces the probe's
+    reasoning (not just the verdict) in the exit-5 message."""
+    _origin, local, other = origin_and_clone
+    husk = _make_conflicted_rebase_husk(local, other)
+    t = time.time() - 1800
+    os.utime(husk, (t, t))
+
+    monkeypatch.setattr(
+        srr,
+        "_probe_git_liveness",
+        lambda gd: srr.LivenessProbe("uncertain", "pid 42: cwd unreadable (PermissionError)"),
+    )
+    rc, _rep, err = _run(local, capsys=capsys)
+    assert rc == 5
+    assert husk.exists()  # untouched
+    assert "young rebase-merge husk" in err
+    assert "pid 42: cwd unreadable" in err
+
+
+def test_young_husk_below_floor_probe_not_called(origin_and_clone, monkeypatch, capsys):
+    """A fresh husk (age ≈ 0 < 600s floor) keeps the existing behavior with the
+    probe never invoked — sub-floor behavior stays probe-free + deterministic."""
+    _origin, local, other = origin_and_clone
+    husk = _make_conflicted_rebase_husk(local, other)
+
+    monkeypatch.setattr(srr, "_probe_git_liveness", _probe_must_not_be_called)
+    rc, _rep, err = _run(local, capsys=capsys)
+    assert rc == 5
+    assert husk.exists()
+    assert "young rebase-merge husk" in err
+
+
+def test_husk_probe_kill_switch(origin_and_clone, monkeypatch, capsys):
+    """EPM_ROOT_SYNC_HUSK_PROBE=0 degrades the probe to a no-op: exactly
+    today's refusal, probe never invoked."""
+    _origin, local, other = origin_and_clone
+    husk = _make_conflicted_rebase_husk(local, other)
+    t = time.time() - 1800
+    os.utime(husk, (t, t))
+
+    monkeypatch.setenv("EPM_ROOT_SYNC_HUSK_PROBE", "0")
+    monkeypatch.setattr(srr, "_probe_git_liveness", _probe_must_not_be_called)
+    rc, _rep, err = _run(local, capsys=capsys)
+    assert rc == 5
+    assert husk.exists()
+    assert "young rebase-merge husk" in err
+
+
+def test_downgraded_headnameless_dry_run_mutates_nothing(origin_and_clone, monkeypatch, capsys):
+    """A downgraded young head-name-less husk flows into the EXISTING
+    mutation-free DRY-RUN stale branch."""
+    _origin, local, _other = origin_and_clone
+    husk = _make_headnameless_husk(local, stale=False)
+    t = time.time() - 1800
+    os.utime(husk, (t, t))
+
+    monkeypatch.setattr(srr, "_probe_git_liveness", lambda gd: srr.LivenessProbe("none", "test"))
+    rc, rep, _err = _run(local, "--dry-run", capsys=capsys)
+    assert rc == 0
+    assert any("YOUNG-HUSK DOWNGRADE" in m for m in rep["messages"])
+    assert any("DRY-RUN: stale head-name-less" in m for m in rep["messages"])
+    assert husk.is_dir()  # intact — dry-run mutates nothing
+
+
+def test_probe_detects_live_git_process(origin_and_clone):
+    """Real-/proc positive: a live git process chdir'd into the repo yields
+    verdict "holder" (deterministic — a holder short-circuits regardless of
+    unrelated system git processes)."""
+    _origin, local, _other = origin_and_clone
+    proc = subprocess.Popen(
+        ["git", "-C", str(local), "hash-object", "--stdin"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        gd = local / ".git"
+        deadline = time.monotonic() + 5.0
+        probe = None
+        while time.monotonic() < deadline:
+            probe = srr._probe_git_liveness(gd)
+            if probe.verdict == "holder":
+                break
+            time.sleep(0.1)
+        else:
+            pytest.fail(f"no holder verdict within deadline; last probe: {probe}")
+        assert str(proc.pid) in probe.evidence
+    finally:
+        proc.stdin.close()
+        proc.wait(timeout=10)
+
+
+def _fake_proc(tmp_path: Path) -> Path:
+    """Synthetic proc root; includes a non-pid entry like the real /proc."""
+    proc_root = tmp_path / "proc"
+    proc_root.mkdir()
+    (proc_root / "stat").write_text("")
+    return proc_root
+
+
+def _fake_pid(proc_root: Path, pid: int, comm: str, cwd: Path | None = None) -> Path:
+    pdir = proc_root / str(pid)
+    pdir.mkdir()
+    (pdir / "comm").write_text(comm + "\n")
+    if cwd is not None:
+        os.symlink(str(cwd), pdir / "cwd")
+    return pdir
+
+
+def _init_repo(path: Path) -> Path:
+    path.mkdir()
+    subprocess.run(["git", "init", "-q", str(path)], check=True, capture_output=True)
+    return path
+
+
+def _delenv_probe_tunables(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fake-proc unit tests skip origin_and_clone; guard against a dev shell
+    exporting the probe tunables (same rationale as the fixture delenvs)."""
+    monkeypatch.delenv("EPM_ROOT_SYNC_PROBE_TIMEOUT_S", raising=False)
+    monkeypatch.delenv("EPM_ROOT_SYNC_PROBE_BUDGET_S", raising=False)
+
+
+def test_probe_fake_proc_non_git_comm_is_none(tmp_path, monkeypatch):
+    """(a) Only non-git processes ⇒ a COMPLETED scan ⇒ "none" — even when the
+    non-git process's cwd is inside the repo."""
+    _delenv_probe_tunables(monkeypatch)
+    r = _init_repo(tmp_path / "r")
+    proc_root = _fake_proc(tmp_path)
+    _fake_pid(proc_root, 100, "bash", cwd=r)
+
+    probe = srr._probe_git_liveness(r / ".git", proc_root=proc_root)
+    assert probe.verdict == "none"
+
+
+def test_probe_fake_proc_holder_vs_other_repo(tmp_path, monkeypatch):
+    """(b) A git process cwd'd in repo r is a "holder" for r's git dir and
+    "none" for a DIFFERENT repo (worktree / other-repo exclusion)."""
+    _delenv_probe_tunables(monkeypatch)
+    r = _init_repo(tmp_path / "r")
+    r2 = _init_repo(tmp_path / "r2")
+    proc_root = _fake_proc(tmp_path)
+    _fake_pid(proc_root, 100, "git", cwd=r)
+
+    holder = srr._probe_git_liveness(r / ".git", proc_root=proc_root)
+    assert holder.verdict == "holder"
+    assert "pid 100" in holder.evidence
+    other = srr._probe_git_liveness(r2 / ".git", proc_root=proc_root)
+    assert other.verdict == "none"
+
+
+def test_probe_fake_proc_cwd_regular_file_uncertain(tmp_path, monkeypatch):
+    """(c) An unreadable cwd (readlink OSError — same branch as another user's
+    EACCES) ⇒ "uncertain"."""
+    _delenv_probe_tunables(monkeypatch)
+    r = _init_repo(tmp_path / "r")
+    proc_root = _fake_proc(tmp_path)
+    pdir = _fake_pid(proc_root, 100, "git")
+    (pdir / "cwd").write_text("not-a-symlink\n")  # readlink → OSError (EINVAL)
+
+    probe = srr._probe_git_liveness(r / ".git", proc_root=proc_root)
+    assert probe.verdict == "uncertain"
+    assert "cwd unreadable" in probe.evidence
+
+
+def test_probe_fake_proc_unattributable_nonrepo_cwd_uncertain(tmp_path, monkeypatch):
+    """(d) A git process whose cwd attributes to NO git dir ⇒ "uncertain" —
+    never a false "none" (the dangerous direction)."""
+    _delenv_probe_tunables(monkeypatch)
+    r = _init_repo(tmp_path / "r")
+    nonrepo = tmp_path / "plain"
+    nonrepo.mkdir()
+    proc_root = _fake_proc(tmp_path)
+    _fake_pid(proc_root, 100, "git", cwd=nonrepo)
+
+    probe = srr._probe_git_liveness(r / ".git", proc_root=proc_root)
+    assert probe.verdict == "uncertain"
+    assert "not attributable" in probe.evidence
+
+
+def test_probe_fake_proc_attribution_timeout_uncertain(tmp_path, monkeypatch):
+    """(e) A hung-mount attribution (timed-out rev-parse) ⇒ "uncertain",
+    pinned without a real hang via a monkeypatched _run_bounded."""
+    _delenv_probe_tunables(monkeypatch)
+    r = _init_repo(tmp_path / "r")
+    nonrepo = tmp_path / "plain"
+    nonrepo.mkdir()
+    proc_root = _fake_proc(tmp_path)
+    _fake_pid(proc_root, 100, "git", cwd=nonrepo)
+
+    monkeypatch.setattr(
+        srr, "_run_bounded", lambda argv, timeout_s: srr.GitResult(-9, "", "", True)
+    )
+    probe = srr._probe_git_liveness(r / ".git", proc_root=proc_root)
+    assert probe.verdict == "uncertain"
+    assert "timed out" in probe.evidence
+
+
+def test_probe_fake_proc_budget_exhaustion_uncertain(tmp_path, monkeypatch):
+    """(f) An exhausted total budget ⇒ "uncertain — scan incomplete"; a
+    truncated scan can never yield "none"."""
+    monkeypatch.delenv("EPM_ROOT_SYNC_PROBE_TIMEOUT_S", raising=False)
+    monkeypatch.setenv("EPM_ROOT_SYNC_PROBE_BUDGET_S", "0")
+    r = _init_repo(tmp_path / "r")
+    proc_root = _fake_proc(tmp_path)
+    _fake_pid(proc_root, 100, "git", cwd=r)
+
+    probe = srr._probe_git_liveness(r / ".git", proc_root=proc_root)
+    assert probe.verdict == "uncertain"
+    assert "budget" in probe.evidence
+    assert "scan incomplete" in probe.evidence

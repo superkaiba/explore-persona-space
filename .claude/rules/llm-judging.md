@@ -5,8 +5,8 @@ behavior-expression dependent variable** (sycophancy, refusal, hedging,
 style, trait, alignment/EM verdict — any DV where an LLM scores whether a
 model output expresses a target behavior). The always-on backstop is the
 CLAUDE.md "Measurement validity" bullet + the "LLM judge =
-`claude-sonnet-4-5-20250929`" bullet; this file is the full 22-guideline
-recipe those bullets point at (the 20 judge-scoring guidelines plus the
+`claude-sonnet-4-5-20250929`" bullet; this file is the full 23-guideline
+recipe those bullets point at (the 21 judge-scoring guidelines plus the
 two-rule § E2 continuous-companion-DV recipe), in the on-demand register.
 
 Cross-links: `.claude/rules/persona-vectors-recipe.md` (the graded-judge
@@ -84,7 +84,8 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
    `→ 0` or `→ 50`) biases the mean toward whichever arm the refusals land in.
    This generalizes the persona-vectors judge-filter rule
    (`.claude/rules/persona-vectors-recipe.md` step 4) to every judged DV, and
-   the per-arm dropped count is REPORTED. (`eval/belief.py` previously
+   the per-arm dropped count is REPORTED (a high or arm-asymmetric drop rate
+   is itself a diagnostic — see rule 23's truncation check). (`eval/belief.py` previously
    default-coerced a malformed return to 50 — FIXED in #766: parse
    failures / out-of-range / API errors now drop to `math.nan`, excluded
    from the aggregate by the caller's `not math.isnan` filter.)
@@ -95,6 +96,54 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     (arXiv 2506.22316 measured a reference-answer nuisance effect ~0.2 on
     Qwen-class outputs). Hold every nuisance variable fixed across the
     conditions being compared.
+
+23. **Size the judge response `max_tokens` for the rationale, not the score.**
+    A reason-then-score rubric (rule 7) emits its justification BEFORE the
+    integer, so the response-token budget must cover the full rationale:
+    give any reasoning rubric **≥ ~300 response tokens** (the #1090 recovery
+    point); a score-only rubric (bare integer, no rationale) can stay small.
+    An undersized cap fails SILENTLY: the API truncates the response at
+    `max_tokens` before the score token is ever emitted, the truncated text
+    fails to parse, and rule 9's drop-never-coerce then discards the draw —
+    the judge call "succeeds" while the draw is censored. The censoring is
+    ARM-ASYMMETRIC whenever one arm's rationales run longer, so it mimics a
+    selection artifact on the very contrast being measured. Incident #1090:
+    a 64-token cap hardcoded at `graded_judge.py`'s `judge_completions_batch`
+    call dropped 473/1000 base vs 307/1000 trained draws as parse errors
+    (47% vs 31%, arm-asymmetric), and the asymmetry initially read as a
+    possible selection artifact on the headline install delta; a re-judge at
+    `max_tokens=300` recovered 98.8% of the previously-dropped parse-error
+    draws with 0 refusals — truncation of reason-first responses, not
+    refusals. Diagnosis: parse-error drops that vanish at a larger budget
+    with 0 refusals = truncation; treat any ≥~10% per-arm drop rate as a
+    truncation check to run, never as noise. No sub-10% safe-harbor: the
+    censoring conditions on rationale length, so smaller or arm-symmetric
+    drops can still bias retained-draw means. After resizing, re-measure the
+    per-arm drop rate at the new budget against a fresh `cache_dir` — that
+    reported rate IS the per-rubric verification that the floor suffices
+    (the floor is rubric-dependent; where the raw response is available,
+    confirm truncation directly via `stop_reason == "max_tokens"` /
+    truncated-text inspection). Mechanics: `judge_completions_batch`
+    (`eval/batch_judge.py`) accepts `max_tokens` (default 256);
+    `graded_judge.judge_graded` threads an optional `max_tokens` kwarg
+    (introduced by #1090) — reasoning-rubric callers pass ~300 (the 64
+    default is kept for legacy cache stability at the api_dispatch layer);
+    neither library default is sized for a reasoning rubric — pass the
+    budget explicitly. This is the judge-side analogue of the CLAUDE.md
+    `max_new_tokens ≥ 2×` rule for the EVALUATED model's generations —
+    truncation creates silent zeros on both sides of a judged eval. Cache
+    caveat (rule 22): the rubric-level `JudgeCache` key
+    (`rubric_fingerprint`) deliberately EXCLUDES max_tokens, and the
+    cache-update loop in `judge_completions_batch` writes returned result
+    dicts without filtering `error: True` entries — so raising the budget
+    does NOT bust that cache and truncation-era parse-error entries can be
+    re-served; run a truncation-recovery re-judge against a fresh
+    `cache_dir` (or clear the stale entries). The generic `api_dispatch`
+    adapter cache, by contrast, deliberately OVER-keys on the full built
+    request incl. max_tokens — at that layer a budget change is a cold
+    re-judge (a miss, never a wrong read). Report the per-arm dropped-draw
+    rate + the `max_tokens` used alongside every judged DV (rule 9's
+    per-arm dropped count; rule 18's pinned-report list).
 
 ## D. Judge model
 
@@ -213,9 +262,10 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
 ## G. Reproducibility / reporting
 
 18. **Pin & report, per DV:** scoring mode, scale, N samples + temperature,
-    judge model + date, prompt hash, per-behavior reliability (test-retest +
-    judge–human agreement), and the reliability ceiling √(r_yy). A judged DV
-    is a measurement instrument; report it like one.
+    judge model + date, prompt hash, the response `max_tokens` budget + the
+    per-arm dropped-draw rate (rule 23), per-behavior reliability
+    (test-retest + judge–human agreement), and the reliability ceiling
+    √(r_yy). A judged DV is a measurement instrument; report it like one.
 
 22. **Judge-result caches key on (rubric/behavior id, question, completion) —
     NEVER on completion content alone.** Any cache in front of a judge call
@@ -234,21 +284,31 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
     (reasoning, score) pair with the refusal file (vs 18.7% baseline) — an
     exact-pair fingerprint implicating cache reuse rather than a prompt bug
     (independent temperature>0 judge draws would not be byte-identical).
-    The SAFE in-repo patterns: a
-    full-payload cache key (`llm/api_dispatch.py::_cache_key_parts` keys on
-    (item_id, full-payload JSON) — safe ONLY when the caller's payload
-    embeds the rubric-bearing user message; the rubric's system-prompt half
-    is typically NOT in the payload, so payload-key safety is
-    caller-dependent, not structural), and a DISJOINT per-rubric
-    `cache_dir` partition (`datagen.py`'s `judge_cache/pos` vs
-    `judge_cache/neg`).
-    Until the `batch_judge.py` key fix lands (a separate follow-up), the
-    per-rubric `cache_dir` is the accepted key surrogate. Plan-side: any
-    plan whose eval judges >1 rubric/behavior over a shared completion
-    pool — or resumes judging against a previously-populated shared cache
-    dir — NAMES its judge-cache key fields (or the per-rubric cache
-    partition); critics REVISE a shared multi-rubric judge cache without a
-    rubric-bearing key.
+    The key fix LANDED in #1018: `JudgeCache.get`/`put`/`_hash_key` now
+    REQUIRE a keyword-only `rubric_key` (an unthreaded call site raises
+    `TypeError`), derived via the helper
+    `rubric_fingerprint(judge_model, judge_system_prompt, format_user_msg)`
+    — the user-msg template is sentinel-rendered into the fingerprint so a
+    rubric living in the USER message (the `graded_judge` shape) enters the
+    key, not only a system-prompt rubric. The generic adapter
+    `llm/api_dispatch.py::_cache_key_parts` returns
+    (item_id, payload JSON, built-request fingerprint) and threads the
+    fingerprint as the `rubric_key` — the built params dict embeds model +
+    system + messages, so the adapter key is STRUCTURAL (no longer
+    caller-dependent; deliberately over-keyed on full request params), and
+    the api_dispatch batch checkpoint additionally stores a run-level
+    request fingerprint in its `state.json` that is recomputed on load and
+    FAILS LOUD on mismatch (a rubric-B dispatch can never replay rubric-A's
+    checkpoint). The key schema embeds the literal `EPM_JUDGE_CACHE_KEY_V2`
+    version tag, so all pre-fix content-keyed entries are automatically
+    unreachable — a cold re-judge, never a wrong read. Per-rubric
+    `cache_dir` partitions (`datagen.py`'s `judge_cache/pos` vs
+    `judge_cache/neg`) remain good hygiene but are no longer load-bearing.
+    Plan-side: any plan whose eval judges >1 rubric/behavior over a shared
+    completion pool — or resumes judging against a previously-populated
+    shared cache dir — NAMES its judge-cache key fields (or the per-rubric
+    cache partition); critics REVISE a shared multi-rubric judge cache
+    without a rubric-bearing key.
 
 ## Do NOT over-rely on (adversarially refuted)
 
@@ -276,6 +336,11 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
 - Rule 22 (judge-cache keying) rides the same lens load: the Statistics &
   Measurement critic REVISEs a shared multi-rubric judge cache without a
   rubric-bearing key; the plan names the cache key fields per rule 22.
+- Rule 23 (response-budget sizing) rides the same lens load: a plan whose
+  judged DV uses a reason-then-score rubric names its judge `max_tokens`
+  (≥ ~300, or a stated justification) and its per-arm drop-rate report;
+  the Statistics & Measurement critic REVISEs an unsized reasoning-rubric
+  judge. Plan-enforced in v1 — no mechanical lint.
 - The `--check-judge-model-pins` `test_live_trees_pass()` invariant locks the
   grandfather allowlist to today's tree; a future LEGITIMATE non-Sonnet judge
   pin (a new calibration anchor or translation-judge exemption) must be added
@@ -287,6 +352,7 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
 Task body #765 (the guideline derivation + the two adversarial deep-research
 dives); task body #763 (the design-aligned split-half incident behind rule 21);
 task body #810 (the shared judge-cache rubric-leak incident behind rule 22);
+task body #1090 (the max_tokens truncation-censoring incident behind rule 23);
 `.claude/rules/persona-vectors-recipe.md` (the graded-judge precedent +
 judge-filter drop rule); `.claude/rules/marker-leakage-measurement.md` (the
 non-judged marker DV); the enforcing agent files (`planner.md`, `critic.md`,

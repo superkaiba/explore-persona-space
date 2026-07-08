@@ -1,0 +1,144 @@
+{
+  "traits": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+  ],
+  "trait_layers": {
+    "evil": 20,
+    "sycophancy": 26,
+    "hallucination": 17
+  },
+  "n_random_dirs": 100,
+  "drift": {
+    "evil": {
+      "actual_mean_projection_per_turn": {
+        "k1": -17.142776489257812,
+        "k2": -17.38987922668457,
+        "k3": -17.257160186767578,
+        "k4": -17.22858428955078
+      },
+      "within_conv_turn_slope": -0.012471294412016875,
+      "turn_slope_boot_ci95": [
+        -0.1572855699071288,
+        0.14629255648225548
+      ],
+      "turn_slope_randdir_band_ci95": [
+        -0.19377039035802818,
+        0.13382958311494653
+      ],
+      "stale_residual_projection": {
+        "k2": {
+          "mean": 0.7815771102905273,
+          "randdir_band_ci95": [
+            -0.4289223849773407,
+            0.41368383169174194
+          ]
+        },
+        "k3": {
+          "mean": 0.9547915458679199,
+          "randdir_band_ci95": [
+            -0.4895338714122772,
+            0.45757603645324707
+          ]
+        },
+        "k4": {
+          "mean": 0.7527768611907959,
+          "randdir_band_ci95": [
+            -0.4537048935890198,
+            0.47981566190719604
+          ]
+        }
+      }
+    },
+    "sycophancy": {
+      "actual_mean_projection_per_turn": {
+        "k1": -59.17502975463867,
+        "k2": -63.74296951293945,
+        "k3": -64.73283386230469,
+        "k4": -65.43330383300781
+      },
+      "within_conv_turn_slope": -1.9764688441276548,
+      "turn_slope_boot_ci95": [
+        -2.496519350042343,
+        -1.454241494312286
+      ],
+      "turn_slope_randdir_band_ci95": [
+        -0.35400807577415583,
+        0.27730150638780693
+      ],
+      "stale_residual_projection": {
+        "k2": {
+          "mean": -0.9254627823829651,
+          "randdir_band_ci95": [
+            -0.8368603587150574,
+            0.7630026936531067
+          ]
+        },
+        "k3": {
+          "mean": 0.4524020254611969,
+          "randdir_band_ci95": [
+            -1.0757126808166504,
+            0.9952384829521179
+          ]
+        },
+        "k4": {
+          "mean": 1.0217204093933105,
+          "randdir_band_ci95": [
+            -1.1191173791885376,
+            1.1694484949111938
+          ]
+        }
+      }
+    },
+    "hallucination": {
+      "actual_mean_projection_per_turn": {
+        "k1": -1.7724782228469849,
+        "k2": 1.8201029300689697,
+        "k3": 2.5576441287994385,
+        "k4": 2.813030242919922
+      },
+      "within_conv_turn_slope": 1.4494067203313115,
+      "turn_slope_boot_ci95": [
+        1.181235231862217,
+        1.717328532385081
+      ],
+      "turn_slope_randdir_band_ci95": [
+        -0.13989806660586768,
+        0.10815748911096947
+      ],
+      "stale_residual_projection": {
+        "k2": {
+          "mean": 1.9997879266738892,
+          "randdir_band_ci95": [
+            -0.5927516222000122,
+            0.6032987833023071
+          ]
+        },
+        "k3": {
+          "mean": -0.11190631240606308,
+          "randdir_band_ci95": [
+            -0.8252415657043457,
+            0.7696982622146606
+          ]
+        },
+        "k4": {
+          "mean": -2.9822237491607666,
+          "randdir_band_ci95": [
+            -0.9228209257125854,
+            0.8560158610343933
+          ]
+        }
+      }
+    }
+  },
+  "note": "activation-level SECONDARY read (plan \u00a76): systematic residual along persona directions; behavioral drift is not claimed from it",
+  "metadata": {
+    "git_commit": "2104d8a00438de49034bcfb40bbea3353ac36117",
+    "timestamp_utc": "2026-07-04T12:42:42.277308Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue958_eval"
+  }
+}

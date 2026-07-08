@@ -1,0 +1,322 @@
+{
+  "commit": "533bc68357",
+  "created": "2026-07-06T22:59:00Z",
+  "figsize": [
+    12.5,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "kept contrastive negatives (of 35)": 31.0,
+      "error": 4.118570307077576,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "kept contrastive negatives (of 35)": 24.0,
+      "error": 5.676349867443019,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "kept contrastive negatives (of 35)": 29.0,
+      "error": 4.740338730084062,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "kept contrastive negatives (of 35)": 30.0,
+      "error": 4.453935032527973,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "kept contrastive negatives (of 35)": 31.0,
+      "error": 4.118570307077576,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "kept contrastive negatives (of 35)": 24.0,
+      "error": 5.676349867443019,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "kept contrastive negatives (of 35)": 19.0,
+      "error": 6.042234434036339,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "kept contrastive negatives (of 35)": 21.0,
+      "error": 5.953047934129775,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "kept contrastive negatives (of 35)": 23.0,
+      "error": 5.788752921091971,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "kept contrastive negatives (of 35)": 13.0,
+      "error": 5.8806425597200445,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "kept contrastive negatives (of 35)": 25.641768469826417,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "kept contrastive negatives (of 35)": 17.749199988968876,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "kept contrastive negatives (of 35)": 23.2225594993631,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "kept contrastive negatives (of 35)": 24.410002690816697,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "kept contrastive negatives (of 35)": 25.641768469826417,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "kept contrastive negatives (of 35)": 33.87890908398157,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "kept contrastive negatives (of 35)": 29.101899723854913,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "kept contrastive negatives (of 35)": 32.703236959531225,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.81,
+      "kept contrastive negatives (of 35)": 33.31787275587264,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.81,
+      "kept contrastive negatives (of 35)": 33.87890908398157,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.19,
+      "kept contrastive negatives (of 35)": 17.749199988968876,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.19,
+      "kept contrastive negatives (of 35)": 12.826030599250826,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "kept contrastive negatives (of 35)": 14.739120265873494,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.19,
+      "kept contrastive negatives (of 35)": 16.726150581226754,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.19,
+      "kept contrastive negatives (of 35)": 7.515624134003616,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.19,
+      "kept contrastive negatives (of 35)": 29.101899723854913,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "kept contrastive negatives (of 35)": 24.910499467323504,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.19,
+      "kept contrastive negatives (of 35)": 26.645216134133044,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.19,
+      "kept contrastive negatives (of 35)": 28.303656423410697,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.19,
+      "kept contrastive negatives (of 35)": 19.276909253443705,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.19,
+      "dropped negatives (of 35 generated)": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.81,
+      "dropped negatives (of 35 generated)": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.81,
+      "dropped negatives (of 35 generated)": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 2.81,
+      "dropped negatives (of 35 generated)": 1.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.81,
+      "dropped negatives (of 35 generated)": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": -0.19,
+      "dropped negatives (of 35 generated)": 4.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.81,
+      "dropped negatives (of 35 generated)": 11.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.81,
+      "dropped negatives (of 35 generated)": 6.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.81,
+      "dropped negatives (of 35 generated)": 4.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.81,
+      "dropped negatives (of 35 generated)": 4.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.19,
+      "dropped negatives (of 35 generated)": 7.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.19,
+      "dropped negatives (of 35 generated)": 10.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.19,
+      "dropped negatives (of 35 generated)": 10.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 3.19,
+      "dropped negatives (of 35 generated)": 9.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 4.19,
+      "dropped negatives (of 35 generated)": 17.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.19,
+      "dropped negatives (of 35 generated)": 4.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.19,
+      "dropped negatives (of 35 generated)": 6.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.19,
+      "dropped negatives (of 35 generated)": 4.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 3.19,
+      "dropped negatives (of 35 generated)": 3.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 4.19,
+      "dropped negatives (of 35 generated)": 5.0,
+      "_kind": "bar",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 50
+}

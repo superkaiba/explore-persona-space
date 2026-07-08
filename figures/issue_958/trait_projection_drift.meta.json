@@ -1,0 +1,324 @@
+{
+  "commit": "d3c9a89308",
+  "created": "2026-07-04T13:54:35Z",
+  "figsize": [
+    13.5,
+    4.3
+  ],
+  "points": [
+    {
+      "turn k": 1.0,
+      "mean answer projection, change from turn 1": 0.0,
+      "error": 0.0,
+      "series": "trait-direction projection",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "turn k": 2.0,
+      "mean answer projection, change from turn 1": -0.2471027374267578,
+      "error": 0.45702838897705067,
+      "series": "trait-direction projection",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "turn k": 3.0,
+      "mean answer projection, change from turn 1": -0.11438369750976562,
+      "error": 0.48763957023620597,
+      "series": "trait-direction projection",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "turn k": 4.0,
+      "mean answer projection, change from turn 1": -0.08580780029296875,
+      "error": 0.5091757774353025,
+      "series": "trait-direction projection",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "turn k": 1.0,
+      "mean answer projection, change from turn 1": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "turn k": 2.0,
+      "mean answer projection, change from turn 1": -0.2471027374267578,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "turn k": 3.0,
+      "mean answer projection, change from turn 1": -0.11438369750976562,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "turn k": 4.0,
+      "mean answer projection, change from turn 1": -0.08580780029296875,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "turn k": 1.0,
+      "mean answer projection, change from turn 1": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "turn k": 2.0,
+      "mean answer projection, change from turn 1": -0.6614255428314209,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "turn k": 3.0,
+      "mean answer projection, change from turn 1": -0.5874268054962158,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "turn k": 4.0,
+      "mean answer projection, change from turn 1": -0.5640521526336669,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "turn k": 1.0,
+      "mean answer projection, change from turn 1": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "turn k": 2.0,
+      "mean answer projection, change from turn 1": 0.25263123512268054,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "turn k": 3.0,
+      "mean answer projection, change from turn 1": 0.3878523349761961,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "turn k": 4.0,
+      "mean answer projection, change from turn 1": 0.4542994022369382,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "turn k": 1.0,
+      "y": 0.0,
+      "error": 0.0,
+      "series": "trait-direction projection",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "turn k": 2.0,
+      "y": -4.567939758300781,
+      "error": 1.493149900436401,
+      "series": "trait-direction projection",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "turn k": 3.0,
+      "y": -5.557804107666016,
+      "error": 1.5241652011871338,
+      "series": "trait-direction projection",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "turn k": 4.0,
+      "y": -6.258274078369141,
+      "error": 1.517788362503051,
+      "series": "trait-direction projection",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "turn k": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "turn k": 2.0,
+      "y": -4.567939758300781,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "turn k": 3.0,
+      "y": -5.557804107666016,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "turn k": 4.0,
+      "y": -6.258274078369141,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "turn k": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "turn k": 2.0,
+      "y": -6.05175256729126,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "turn k": 3.0,
+      "y": -6.985894870758057,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "turn k": 4.0,
+      "y": -7.725534343719483,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "turn k": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "turn k": 2.0,
+      "y": -3.0654527664184577,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "turn k": 3.0,
+      "y": -3.937564468383789,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "turn k": 4.0,
+      "y": -4.689957618713381,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "turn k": 1.0,
+      "y": 0.0,
+      "error": 0.0,
+      "series": "trait-direction projection",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "turn k": 2.0,
+      "y": 3.592581272125244,
+      "error": 0.8296042799949643,
+      "series": "trait-direction projection",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "turn k": 3.0,
+      "y": 4.330122470855713,
+      "error": 0.8520660698413844,
+      "series": "trait-direction projection",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "turn k": 4.0,
+      "y": 4.585508346557617,
+      "error": 0.7849434494972225,
+      "series": "trait-direction projection",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "turn k": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "turn k": 2.0,
+      "y": 3.592581272125244,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "turn k": 3.0,
+      "y": 4.330122470855713,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "turn k": 4.0,
+      "y": 4.585508346557617,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "turn k": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "turn k": 2.0,
+      "y": 2.729802739620209,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "turn k": 3.0,
+      "y": 3.474032926559448,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "turn k": 4.0,
+      "y": 3.7757613897323608,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "turn k": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "turn k": 2.0,
+      "y": 4.389011299610138,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "turn k": 3.0,
+      "y": 5.178165066242217,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "turn k": 4.0,
+      "y": 5.345648288726806,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 48
+}

@@ -32,6 +32,13 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    queue-wait timeout (``EPS_GCP_QUEUE_WAIT_SECONDS``, task #783), which
    cancels the queued instance and fails it over to the RunPod terminal rung
    (``reason: gcp_queue_timeout_failover_runpod``) rather than waiting forever.
+   And a GCP PRE-WORKLOAD BOOT LOOP — N (default 2,
+   ``EPS_GCP_BOOT_DEATH_STREAK_N``) consecutive same-rung setup deaths,
+   counted per (issue, rung) in the durable lease — is the FOURTH
+   GCP→RunPod trigger (#1029, ``reason: gcp_boot_loop_failover_runpod``);
+   the ladder walk additionally SKIPS a rung whose same-UTC-day streak is
+   >= N on the auto chain (outcome ``boot_loop_rung_skipped``, no daily
+   attempt burned; explicit ``backend: gcp`` pins are exempt).
 3. **Cancel state machine** — request a cancel via the backend's
    ``teardown(handle)``, then poll via the injected ``is_live_after_cancel``
    callable until the job is no longer live in the cluster queue
@@ -97,7 +104,12 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    orchestrator crash between submit and lease-write leaves an
    ``UNKNOWN_SUBMITTED`` recovery state.
 7. **GCP attempt-count guard** — a per-issue/day attempt counter caps
-   auto-chain GCP attempts at ``MAX_GCP_ATTEMPTS_PER_DAY`` (default 8).
+   auto-chain GCP attempts at ``MAX_GCP_ATTEMPTS_PER_DAY`` (default 16 —
+   #1121 raised 8 -> 16 to cover the up-to-14-rung width-aware short walk
+   plus margin; the ladder is WIDTH-AWARE: a dispatch declaring a shardable
+   axis via ``spec.gpus`` walks wide ``a2-ultragpu-{8,4,2}g`` rungs FIRST,
+   width-major, degrading on capacity miss into the byte-identical base
+   ladder — see :func:`_gcp_ladder_specs` / :func:`_requested_wide_widths`).
    It counts ACTUAL create attempts across the #656 fallback-ladder rungs
    (a headroom-skip does NOT consume one) and is RE-READ each rung. At the
    cap the ladder STOPS issuing GCP creates (zero credit spent) and the
@@ -131,7 +143,15 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    ``cpu_exhausted_no_runpod_lane`` typed terminal VERBATIM (the >50 GB
    analysis lane has no cheap RunPod equivalent) — it does NOT fall over
    to RunPod. RunPod CPU pods are on-demand only; a CPU no-capacity miss
-   surfaces :class:`RunPodNoCapacityError` → terminal.
+   surfaces :class:`RunPodNoCapacityError` → terminal. As of #1010 the rung
+   also gates a plan-STATED footprint (``spec.extra["boot_disk_gb"]`` /
+   ``["min_ram_gb"]``) against :data:`RUNPOD_CPU_INSTANCE_CAPS`, raising the
+   typed :class:`CpuFallbackInfeasibleError`
+   (``reason: cpu_fallback_infeasible_for_plan``) BEFORE any RunPod API
+   call when the mapped instance cannot hold it, and
+   ``RunPodBackend.launch`` threads the disk requirement into the provision
+   argv (``--container-disk-gb max(50, boot_disk_gb)``) for mapped CPU
+   intents.
 8b. **GCP-only GPU intent translation (#940).** The RunPod launch paths
    (terminal rung + explicit override) translate a GCP-only GPU intent to
    its nearest same-or-narrower RunPod intent via
@@ -185,6 +205,8 @@ from explore_persona_space.backends.base import (
 )
 from explore_persona_space.backends.gcp import (
     INTENT_TO_MACHINE,
+    WIDE_A100_80_BY_WIDTH,
+    WIDTH_ELIGIBLE_INTENTS,
     GcpProvisioningError,
     GcpWorkloadError,
     MachineSpec,
@@ -217,8 +239,13 @@ DEFAULT_POLL_INTERVAL: float = 5.0
 #: broken classifier cannot loop into credit burn. Tunable per call.
 #: #680: bumped 5 -> 8 to cover the length-aware short-job ladder (up to 5
 #: rungs: spot-80, spot-40, flex-80, ondemand-80, ondemand-40) plus a
-#: same-day retry margin; still an attempt COUNT, never a dollar cap.
-MAX_GCP_ATTEMPTS_PER_DAY: int = 8
+#: same-day retry margin. #1121: bumped 8 -> 16 — the width-aware short-job
+#: walk is up to 14 rungs (3 wide widths x {spot, flex, ondemand} + the
+#: 5-rung base tail), and 16 = 14 + margin, the same sizing logic as #680's
+#: 5+margin -> 8; the free quota-headroom + boot-loop skips absorb the
+#: quota-doomed subset in practice. Still an attempt COUNT, never a dollar
+#: cap.
+MAX_GCP_ATTEMPTS_PER_DAY: int = 16
 
 #: Cancel state-machine: how long to keep polling for the job to leave
 #: the live queue after ``scancel``. SLURM robots have no ``sacct`` so
@@ -292,11 +319,68 @@ ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD: str = "cpu_exhausted_no_runpod_lane"
 #: ``cpu-mid`` (``e2-standard-8`` = 8 vCPU / 32 GB) and the RunPod ``cpu-mid``
 #: (``cpu3c-8-16`` = 8 vCPU / 16 GB) differ in RAM by design — the RunPod lane
 #: is a CAPACITY backstop, and a >16 GB CPU job should target ``cpu-bigmem``
-#: anyway; the asymmetry is accepted, not a bug.
+#: anyway; the asymmetry is accepted, not a bug. As of #1010 a plan that
+#: STATES its footprint (``spec.extra["boot_disk_gb"]`` / ``["min_ram_gb"]``)
+#: is checked against the fixed capabilities in
+#: :data:`RUNPOD_CPU_INSTANCE_CAPS` by the feasibility gate in
+#: :func:`_runpod_terminal_rung` — an unsatisfiable footprint refuses the
+#: fallback typed (:class:`CpuFallbackInfeasibleError`) instead of
+#: provisioning an undersized pod (incident #958).
 RUNPOD_CPU_INSTANCE_FOR_INTENT: dict[str, str] = {
     "cpu-small": "cpu3g-2-8",  # 2 vCPU / 8 GB, gen-3 general purpose
     "cpu-mid": "cpu3c-8-16",  # 8 vCPU / 16 GB, gen-3 compute-optimized
 }
+
+
+@dataclass(frozen=True)
+class RunPodCpuInstanceCaps:
+    """Fixed capabilities of one mapped RunPod CPU instance (#1010)."""
+
+    vcpu: int
+    ram_gb: int
+    max_container_disk_gb: int
+
+
+#: Fixed capabilities of the mapped RunPod CPU instances (#1010, incident
+#: #958). RAM is fixed per instance_id (encoded in the id itself:
+#: ``<flavor>-<vCPU>-<RAM_GB>``, not threadable). ``max_container_disk_gb``
+#: bounds the EFFECTIVE ``deployCpuPod`` ``containerDiskInGb`` payload —
+#: ``max(container_disk_gb, volume_gb)``, because
+#: ``runpod_api._deploy_cpu_once`` folds the CPU volume request into the
+#: container disk (``deployCpuPodInput`` has no volume field).
+#: PROBE-VERIFIED 2026-07-04 (issue #1010, live ``deployCpuPod`` probes):
+#:   * ``cpu3g-2-8`` -> 20; verified_by: accept-reject-only — API validation
+#:     rejects effective 50 (today's untouched default payload) with
+#:     "Container Disk must be less than or equal to 20" (flavor cpu3g).
+#:     20 sits BELOW the 50 default, so this cap can only refuse — safe.
+#:   * ``cpu3c-8-16`` -> 50; verified_by: accept-reject-only — the API
+#:     ACCEPT bound is 80 (effective 80 accepted; effective 100 rejected
+#:     with "Container Disk must be less than or equal to 80", flavor
+#:     cpu3c), but no realized in-pod filesystem read was obtainable, so
+#:     the recorded cap is the empirically-HONORED floor: pod-958's
+#:     measured 50 GB overlay. An unverified value above the honored floor
+#:     would be an unverified ALLOW cap re-creating the #958 shape inside
+#:     the "accepted" band; a later df-verified probe may raise it to 80.
+#: Keys MUST cover every value of :data:`RUNPOD_CPU_INSTANCE_FOR_INTENT`
+#: (pinned by tests/test_router.py::
+#: test_runpod_cpu_instance_caps_cover_every_mapped_instance); the
+#: feasibility gate does a direct ``[]`` lookup so a missing row fails LOUD
+#: (KeyError), never silently skips the check.
+RUNPOD_CPU_INSTANCE_CAPS: dict[str, RunPodCpuInstanceCaps] = {
+    "cpu3g-2-8": RunPodCpuInstanceCaps(vcpu=2, ram_gb=8, max_container_disk_gb=20),
+    "cpu3c-8-16": RunPodCpuInstanceCaps(vcpu=8, ram_gb=16, max_container_disk_gb=50),
+}
+
+#: Reason token for a RunPod CPU fallback refused because the plan's STATED
+#: footprint (``spec.extra["boot_disk_gb"]`` / ``spec.extra["min_ram_gb"]``)
+#: exceeds the mapped instance's fixed capabilities (#1010, incident #958).
+#: Distinct-reason-per-distinct-cause is the established router pattern
+#: (:data:`ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD` #677,
+#: :data:`ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD` #783): this intent
+#: HAS a RunPod lane — it just cannot hold this plan — so reusing the
+#: parent's "no runpod lane" token would mislead triage. Like the parent's
+#: reason, NOT in the watcher's ``TRANSIENT_CAPACITY_REASONS``.
+ROUTE_REASON_CPU_FALLBACK_INFEASIBLE: str = "cpu_fallback_infeasible_for_plan"
 
 #: GCP GPU intent -> the RunPod intent the terminal rung provisions (#940).
 #: TOTAL over the gpu_count>0 keys of gcp.INTENT_TO_MACHINE (identity rows
@@ -422,6 +506,54 @@ ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC: str = "gcp_workload_failover_ru
 #: does NOT touch the per-day GCP attempt counter (that bumps only on a
 #: create, inside ``_attempt_one_gcp_rung``, which the poller never re-enters).
 ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD: str = "gcp_queue_timeout_failover_runpod"
+
+#: The ASYNC poller detected a GCP PRE-WORKLOAD BOOT LOOP (#1029): N (default
+#: :data:`GCP_BOOT_DEATH_STREAK_N_DEFAULT`) CONSECUTIVE pre-workload setup
+#: deaths on the SAME ladder rung for the SAME issue, counted per-incarnation
+#: in the durable lease's ``gcp_boot_death_streaks`` record, and failed the
+#: run over to the RunPod terminal rung. DISTINCT from BOTH workload-crash
+#: reasons (:data:`ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD` / ``_ASYNC`` —
+#: a boot death never reached the workload), from
+#: :data:`ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD` (the instance there
+#: never left the capacity queue; here it booted and DIED), and from
+#: :data:`ROUTE_REASON_RUNPOD_FALLBACK` (capacity exhaustion at create time —
+#: these creates all SUCCEEDED). Same RunPod target + terminal rung, distinct
+#: detection cause so the ``epm:backend-selected`` marker trail tells a boot
+#: loop apart from a crash, a queue timeout, and a capacity miss. The trigger
+#: never touches the per-day GCP attempt counter (that bumps only on a create,
+#: inside ``_attempt_one_gcp_rung``, which the poller never re-enters).
+ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD: str = "gcp_boot_loop_failover_runpod"
+
+#: The ASYNC poller detected a GCP FLEX_START instance that VANISHED while
+#: PENDING (#1116/#1112): the create SUCCEEDED and the instance sat in the DWS
+#: capacity queue (last observed ``current_phase == "pending"``, per the
+#: sidecar phase clock), then disappeared from instances-list entirely (a dead
+#: ``terminal_instance not found`` poll, NO delete operation) — the queue
+#: dropped the request server-side, a pure CAPACITY event. DISTINCT from
+#: :data:`ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD` (the instance there
+#: dequeued nothing but still EXISTED server-side — the failover tears it
+#: down; here the record is already DELETED, so there is nothing to tear
+#: down), from :data:`ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD` (the
+#: instance there BOOTED and died; here it never left the queue), from both
+#: workload-crash reasons (nothing ever ran), and from
+#: :data:`ROUTE_REASON_RUNPOD_FALLBACK` (capacity exhaustion at create time —
+#: this create SUCCEEDED). Same RunPod target + terminal rung, distinct
+#: detection cause so the ``epm:backend-selected`` marker trail tells a queue
+#: vanish apart from every sibling. The trigger never touches the per-day GCP
+#: attempt counter (that bumps only on a create, inside
+#: ``_attempt_one_gcp_rung``, which the poller never re-enters).
+ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD: str = "gcp_queue_vanish_failover_runpod"
+
+#: Default N for the #1029 pre-workload boot-loop breaker: the Nth CONSECUTIVE
+#: same-rung pre-workload boot death fails over to RunPod, and a rung whose
+#: same-UTC-day streak is >= N is SKIPPED by the route()-side ladder walk
+#: (outcome ``boot_loop_rung_skipped``, no daily attempt burned). N=2 gives a
+#: lone transient setup death (a clone/uv-sync hiccup) exactly ONE free retry —
+#: the documented manual protocol for the #640 guestTerminate class ("allow
+#: exactly ONE blind GCP retry, then pivot to RunPod") and the #775 CUDA-IMA
+#: second-same-signature precedent. Env-overridable at call time via
+#: ``EPS_GCP_BOOT_DEATH_STREAK_N`` (see :func:`gcp_boot_death_streak_threshold`).
+GCP_BOOT_DEATH_STREAK_N_DEFAULT: int = 2
 
 #: The RunPod terminal rung PROVISIONED a pod but the #909 workload-start leg
 #: FAILED (``RunPodWorkloadStartError`` carrying the partial handle, #954). A
@@ -565,6 +697,28 @@ class CpuExhaustedNoRunpodLaneError(NoComputeAvailableError):
     ``TRANSIENT_CAPACITY_REASONS``) re-drives ONLY ``no_compute_available``; a
     structurally-unservable ``cpu-bigmem`` RunPod launch must NOT auto-retry (no
     lane will ever free up to make RunPod accept it). Inherits ``__init__``
+    verbatim (reason message + attempts).
+    """
+
+
+class CpuFallbackInfeasibleError(CpuExhaustedNoRunpodLaneError):
+    """Terminal: a mapped cheap CPU intent reached the RunPod terminal rung,
+    but the plan's STATED footprint (``spec.extra["boot_disk_gb"]`` /
+    ``spec.extra["min_ram_gb"]``) exceeds the mapped RunPod CPU instance's
+    fixed capabilities in :data:`RUNPOD_CPU_INSTANCE_CAPS` (#1010, incident
+    #958: an 80 GB-disk / 32 GB-RAM plan was dispatched onto a 50 GB / 16 GB
+    ``cpu3c-8-16`` pod and refused only AFTER a full paid provision cycle).
+
+    Subclass of :class:`CpuExhaustedNoRunpodLaneError` so every existing
+    catch site keeps working unchanged; ``classify_terminal_exception``
+    (``issue_dispatch.py``) maps it to the DISTINCT reason
+    :data:`ROUTE_REASON_CPU_FALLBACK_INFEASIBLE`
+    (``cpu_fallback_infeasible_for_plan``) — like the parent's reason, NOT in
+    the watcher's ``TRANSIENT_CAPACITY_REASONS``: the RunPod instance can
+    never grow to fit the plan, so auto-retry would loop a
+    structurally-infeasible launch. (GCP capacity COULD free up later, but
+    that sub-case is a deliberate manual re-dispatch decision — park-not-loop
+    matches today's experimenter-refusal end-state.) Inherits ``__init__``
     verbatim (reason message + attempts).
     """
 
@@ -944,6 +1098,19 @@ class Lease:
     #: fresh host with this field already set routes to terminal
     #: ``failure_class: code``. ``None`` for every non-CUDA-IMA-failover lease.
     runpod_cuda_ima_failover_of: dict[str, Any] | None = None
+    #: Per-rung consecutive pre-workload boot-death streaks (#1029). Keyed by
+    #: the GCP ladder-rung label (e.g. ``"flexstart_l4"``; the poller's
+    #: ``"unknown_rung"`` fallback pools pre-#1029 handles that lack the
+    #: threaded label); each value is ``{"count": int, "date": "YYYY-MM-DD"
+    #: (UTC), "last_ts": float, "last_incarnation": str}``. Same-UTC-day scoped
+    #: (mirrors ``gcp_attempts_date``: a stale streak must not poison a rung
+    #: after the cause — often a since-fixed commit — is gone). Written by the
+    #: poller via :func:`record_gcp_boot_death` (incarnation-keyed idempotent
+    #: increment), cleared per-rung by :func:`reset_gcp_boot_death_streak` on a
+    #: POSITIVE workload signal, read by :func:`gcp_boot_death_streak` for the
+    #: route()-side rung skip. Tolerant parse: a malformed payload reads as
+    #: ``{}`` (fail-open toward today's behavior).
+    gcp_boot_death_streaks: dict[str, Any] = field(default_factory=dict)
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -959,6 +1126,7 @@ class Lease:
             "gcp_failover_of": self.gcp_failover_of,
             "runpod_wedge_failover_of": self.runpod_wedge_failover_of,
             "runpod_cuda_ima_failover_of": self.runpod_cuda_ima_failover_of,
+            "gcp_boot_death_streaks": self.gcp_boot_death_streaks,
         }
 
     @classmethod
@@ -966,6 +1134,7 @@ class Lease:
         raw_failover = payload.get("gcp_failover_of")
         raw_wedge_failover = payload.get("runpod_wedge_failover_of")
         raw_cuda_ima_failover = payload.get("runpod_cuda_ima_failover_of")
+        raw_boot_streaks = payload.get("gcp_boot_death_streaks")
         return cls(
             issue=int(payload["issue"]),
             spec_hash=str(payload["spec_hash"]),
@@ -983,6 +1152,7 @@ class Lease:
             runpod_cuda_ima_failover_of=(
                 raw_cuda_ima_failover if isinstance(raw_cuda_ima_failover, dict) else None
             ),
+            gcp_boot_death_streaks=(raw_boot_streaks if isinstance(raw_boot_streaks, dict) else {}),
         )
 
     def is_unknown_submitted(self) -> bool:
@@ -1252,6 +1422,157 @@ def _bump_gcp_attempt(lease: Lease) -> Lease:
         lease.gcp_attempts_today = 0
     lease.gcp_attempts_today += 1
     return lease
+
+
+# ---------------------------------------------------------------------------
+# GCP pre-workload boot-death streaks (#1029)
+# ---------------------------------------------------------------------------
+
+
+def gcp_boot_death_streak_threshold() -> int:
+    """The #1029 boot-loop breaker threshold N, defaulting to 2.
+
+    Read at CALL time (not import time) from ``EPS_GCP_BOOT_DEATH_STREAK_N`` so
+    ops can retune without restarting the poller (mirrors
+    ``backend_poll._gcp_queue_wait_seconds``). A missing / non-integer / ``<1``
+    value falls back to :data:`GCP_BOOT_DEATH_STREAK_N_DEFAULT` — the threshold
+    can never be zero/negative (which would fail over on the FIRST setup death,
+    killing legitimate transients) or crash a poll on a typo.
+    """
+    raw = os.environ.get("EPS_GCP_BOOT_DEATH_STREAK_N")
+    if raw is None:
+        return GCP_BOOT_DEATH_STREAK_N_DEFAULT
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return GCP_BOOT_DEATH_STREAK_N_DEFAULT
+    return val if val >= 1 else GCP_BOOT_DEATH_STREAK_N_DEFAULT
+
+
+def record_gcp_boot_death(
+    issue: int, rung: str, *, incarnation: str, lease_store: LeaseStore | None = None
+) -> int:
+    """flock'd increment of the (issue, rung) consecutive boot-death streak (#1029).
+
+    Rollover-on-day-change: the streak resets when the record's ``date`` is not
+    today (UTC), mirroring the ``gcp_attempts_date`` probe. IDEMPOTENT on the
+    launch INCARNATION key: a re-poll of the SAME dead instance returns the
+    current count unchanged; a DISTINCT incarnation increments and stamps
+    ``last_ts`` / ``last_incarnation``. Returns the post-record count.
+
+    The INCARNATION key identifies one VM CREATE, NOT one ``route()`` call: the
+    poller builds it as ``str(handle.job_id)`` — the GCE instance id, distinct
+    per create by construction and stable across re-polls of one sidecar —
+    falling back to ``f"{attempt_id}:{gcp_launched_ts}"`` when ``job_id`` is
+    absent. ``attempt_id`` ALONE is FORBIDDEN as the key: #763's five creates
+    all shared ``att-20260630-141513`` with DISTINCT instance ids (verified
+    from the ``epm:cluster-launched`` markers), so attempt_id-keying would
+    dedupe REAL consecutive deaths and freeze the streak at 1 — the breaker
+    would never fire on the motivating incident (#927's fresh-mint default
+    landed post-incident, and a caller-pinned ``spec.extra`` attempt_id still
+    takes precedence). A DEGENERATE key (job_id absent AND both fallback
+    components empty — pre-fix handles) is the CALLER's to skip
+    (``backend_poll._maybe_escalate_gcp_boot_loop`` skips the record entirely,
+    logged, fail-open to today's behavior); this helper defensively no-ops on
+    an empty incarnation too, returning the current count.
+
+    A missing lease (no launch has written one — only reachable when the lease
+    file was wiped, since every GCP launch writes a lease inside
+    ``_attempt_one_gcp_rung``) is CREATED with placeholder ``spec_hash`` /
+    ``attempt_id`` so the streak still records; the next real launch's
+    ``_thread_attempt_id_into`` / ``_lease_after_submit`` overwrite the
+    placeholders as usual.
+    """
+    store = lease_store or LeaseStore()
+    rung = str(rung)
+    incarnation = str(incarnation)
+    with store.transaction(int(issue)) as (lease, write):
+        if lease is None:
+            lease = Lease(issue=int(issue), spec_hash="", attempt_id="")
+        today = _today_utc_iso()
+        streaks = lease.gcp_boot_death_streaks
+        rec = streaks.get(rung)
+        if not isinstance(rec, dict) or rec.get("date") != today:
+            rec = {"count": 0, "date": today, "last_ts": 0.0, "last_incarnation": ""}
+        current = _coerce_streak_count(rec.get("count"))
+        if not incarnation:
+            # Defensive no-op (the poller already skips degenerate keys):
+            # keying on "" would dedupe every pre-fix handle's deaths together.
+            logger.warning(
+                "record_gcp_boot_death: empty incarnation key for issue %d rung %s; "
+                "skipping the record (fail-open, #1029)",
+                int(issue),
+                rung,
+            )
+            return current
+        if rec.get("last_incarnation") == incarnation and current > 0:
+            # Re-poll of the SAME dead instance -> idempotent (no increment).
+            return current
+        count = current + 1
+        streaks[rung] = {
+            "count": count,
+            "date": today,
+            "last_ts": float(time.time()),  # wall-clock, not monotonic
+            "last_incarnation": incarnation,
+        }
+        lease.gcp_boot_death_streaks = streaks
+        write(lease)
+        return count
+
+
+def reset_gcp_boot_death_streak(
+    issue: int, rung: str, *, lease_store: LeaseStore | None = None
+) -> None:
+    """flock'd drop of the (issue, rung) boot-death streak record (#1029).
+
+    Called by the poller on a POSITIVE workload signal (boot demonstrably
+    succeeded — see ``backend_poll._maybe_reset_gcp_boot_streak``). Read-before-
+    write: a no-op write is avoided when no record exists for the rung, so the
+    common healthy-poll tick never rewrites the lease.
+    """
+    store = lease_store or LeaseStore()
+    rung = str(rung)
+    with store.transaction(int(issue)) as (lease, write):
+        if lease is None:
+            return
+        if rung in lease.gcp_boot_death_streaks:
+            del lease.gcp_boot_death_streaks[rung]
+            write(lease)
+
+
+def gcp_boot_death_streak(issue: int, rung: str, *, lease_store: LeaseStore | None = None) -> int:
+    """Plain read: the (issue, rung) boot-death count IF its date is today, else 0 (#1029).
+
+    A missing / malformed lease or record — or a record from a PRIOR UTC day
+    (the same-day scoping :func:`record_gcp_boot_death` writes) — reads 0:
+    fail-open toward today's behavior (the rung is attempted), never a false
+    skip.
+    """
+    store = lease_store or LeaseStore()
+    try:
+        lease = store.read(int(issue))
+    except OSError as exc:
+        logger.warning(
+            "gcp_boot_death_streak: lease read failed for issue %s (%s: %s); reading 0",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+        return 0
+    if lease is None:
+        return 0
+    rec = lease.gcp_boot_death_streaks.get(str(rung))
+    if not isinstance(rec, dict) or rec.get("date") != _today_utc_iso():
+        return 0
+    return _coerce_streak_count(rec.get("count"))
+
+
+def _coerce_streak_count(raw: Any) -> int:
+    """Coerce a streak-record ``count`` to a non-negative int (malformed -> 0)."""
+    try:
+        return max(0, int(raw))
+    except (TypeError, ValueError):
+        return 0
 
 
 # ---------------------------------------------------------------------------
@@ -2146,14 +2467,76 @@ def _flex_start_rung(spec: RunSpec, machine: MachineSpec) -> tuple[RunSpec, str]
     )
 
 
+def _requested_wide_widths(spec: RunSpec, base: MachineSpec) -> list[int]:
+    """Descending wide widths for a width-declaring dispatch; ``[]`` otherwise.
+
+    ``[]`` when ``spec.gpus`` is None, <= the base machine's width, the
+    intent is not width-eligible, or the requested width is UNSUPPORTED
+    (not a :data:`gcp.WIDE_A100_80_BY_WIDTH` key) — then today's
+    ignore-``spec.gpus`` semantics hold. The ``dispatch_issue.py``
+    pre-route guard is the loud front door; a library caller bypassing it
+    gets a ``logger.warning``, not a silent nothing, AND never a silent
+    snap-down: without the supported-width gate, a library-seam ``gpus=6``
+    would walk ``[4, 2]`` — the snap-down plan #1121 §4b design point 6
+    explicitly bans (an idle-width provision must be a deliberate choice).
+    """
+    if spec.gpus is None:
+        return []
+    g = int(spec.gpus)
+    if g <= base.gpu_count:
+        return []
+    if spec.intent not in WIDTH_ELIGIBLE_INTENTS:
+        logger.warning(
+            "route: spec.gpus=%d ignored by the GCP lane for non-width-eligible intent %r (#1121).",
+            g,
+            spec.intent,
+        )
+        return []
+    if g not in WIDE_A100_80_BY_WIDTH:
+        logger.warning(
+            "route: unsupported wide width spec.gpus=%d for intent %r — no snap-down; "
+            "base-width ladder used. Supported: %s (#1121).",
+            g,
+            spec.intent,
+            sorted(WIDE_A100_80_BY_WIDTH),
+        )
+        return []
+    return [w for w in (8, 4, 2) if base.gpu_count < w <= g]
+
+
 def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
-    """Ordered ``(spec, rung_label)`` GCP provisioning attempts, length-aware.
+    """Ordered ``(spec, rung_label)`` GCP provisioning attempts, length- and width-aware.
 
     The cost-ordered fallback ladder BOTH the auto-GCP path
     (:func:`_attempt_gcp_lane`) and the explicit ``backend: gcp`` path
     (:func:`_override_free_or_gcp`) walk, so the two get IDENTICAL fallback
-    behavior (acceptance criterion 3 / the #654 fix). The order is keyed on
-    job LENGTH (:func:`_is_short_job`) — #680:
+    behavior (acceptance criterion 3 / the #654 fix).
+
+    **Width-aware wide-rung prefix (#1121).** A dispatch that DECLARES a
+    shardable multi-GPU axis (``spec.gpus`` > the intent's base machine
+    width, width-eligible intent, supported width — see
+    :func:`_requested_wide_widths`) walks WIDE ``a2-ultragpu-{8,4,2}g``
+    rungs FIRST, width-major: ALL provisioning models at width ``w`` are
+    exhausted before width ``w-1`` is accepted (wall-clock is the scarce
+    resource; GCP credits are not — a spot-8g attempt is strictly
+    preferable to an on-demand-4g one). Intra-width, the EXISTING
+    length-aware order applies verbatim (spot -> flex -> on-demand on a
+    short job; flex -> on-demand on a long/unknown one; a caller
+    ``provisioning_model`` pin walks only the pinned model at every
+    width). Wide rung labels carry an ``x<w>`` suffix
+    (``spot_a100_80x8``); NO wide A100-40 rungs in v1 (on-demand
+    a2-highgpu quota is 1 — a dead rung). Job LENGTH is classified ONCE
+    at the WIDEST requested machine and threaded through the whole walk
+    including the base tail: GPU-hours = wall x width is the honest
+    total-work read, and a width-8-budgeted job that degrades to 1x
+    genuinely runs ~8x the budgeted wall, so inheriting the (usually
+    LONG) classification in the tail is conservative and correct. When no
+    width is requested the classification is EXACTLY today's
+    ``_is_short_job(spec, base)`` — width-1 ladders are byte-identical.
+    The base-width tail below the wide prefix is the pre-#1121 ladder
+    unchanged.
+
+    The base order is keyed on job LENGTH (:func:`_is_short_job`) — #680:
 
     **SHORT jobs** (known length <= ``EPS_GCP_SPOT_MAX_GPU_HOURS`` OR
     ``spec.extra["spot_tolerant"]``) — spot leads, because a short job
@@ -2251,6 +2634,51 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
         return cpu_rungs
     a40 = a100_40_fallback_for_intent(spec)
     pinned = (spec.extra or {}).get("provisioning_model")
+
+    # #1121 width-aware wide-rung PREFIX (width-major: every provisioning
+    # model at width w before width w-1). Job length is classified ONCE at
+    # the WIDEST requested machine and threaded through the whole walk incl.
+    # the base tail (docstring above); when ``wide_widths == []`` this is
+    # EXACTLY today's ``_is_short_job(spec, base)`` — width-1 byte-identity.
+    # Fact-check note (plan §4b): an explicit
+    # ``spec.extra["estimated_gpu_hours"]`` override is machine-independent,
+    # so classify-at-widest is a no-op on that path — not an error.
+    wide_widths = _requested_wide_widths(spec, base)
+    widest = WIDE_A100_80_BY_WIDTH[wide_widths[0]] if wide_widths else base
+    short = _is_short_job(spec, widest)
+    rungs: list[tuple[RunSpec, str]] = []
+    for w in wide_widths:
+        m = WIDE_A100_80_BY_WIDTH[w]  # membership guaranteed by _requested_wide_widths
+        if pinned is not None:
+            # Caller pin honored at every width (#537/#680, extended per-width):
+            # a pinned SPOT width-8 dispatch walks spot_*x8 -> spot_*x4 ->
+            # spot_*x2 -> the pinned base tail, never silently un-pinning.
+            wide_pinned_model = str(pinned).upper()
+            wide_prefix = {
+                "SPOT": "spot",
+                "FLEX_START": "flexstart",
+                "STANDARD": "ondemand",
+            }.get(wide_pinned_model, wide_pinned_model.lower())
+            rungs.append(
+                (
+                    _with_machine(spec, m, provisioning=wide_pinned_model),
+                    f"{wide_prefix}_{_machine_label(m)}x{w}",
+                )
+            )
+            continue
+        if short:
+            rungs.append(
+                (_with_machine(spec, m, provisioning="SPOT"), f"spot_{_machine_label(m)}x{w}")
+            )
+        flex_spec, _flex_base_label = _flex_start_rung(spec, m)
+        rungs.append((flex_spec, f"flexstart_{_machine_label(m)}x{w}"))
+        rungs.append(
+            (_with_machine(spec, m, provisioning="STANDARD"), f"ondemand_{_machine_label(m)}x{w}")
+        )
+
+    # BASE-width tail: the pre-#1121 construction, byte-identical labels AND
+    # specs (the base on-demand rung stays the caller spec AS-IS), except
+    # ``short`` comes from the single classification above.
     if pinned is not None:
         # CLI provisioning-model pin (#537/#680): walk ONLY the pinned model.
         pinned_model = str(pinned).upper()
@@ -2259,22 +2687,21 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
         prefix = {"SPOT": "spot", "FLEX_START": "flexstart", "STANDARD": "ondemand"}.get(
             pinned_model, pinned_model.lower()
         )
-        pinned_rungs: list[tuple[RunSpec, str]] = [
+        rungs.append(
             (
                 _with_machine(spec, base, provisioning=pinned_model),
                 f"{prefix}_{_machine_label(base)}",
             )
-        ]
+        )
         if a40 is not None:
-            pinned_rungs.append(
+            rungs.append(
                 (
                     _with_machine(spec, a40, provisioning=pinned_model),
                     f"{prefix}_{_machine_label(a40)}",
                 )
             )
-        return pinned_rungs
-    rungs: list[tuple[RunSpec, str]] = []
-    if _is_short_job(spec, base):
+        return rungs
+    if short:
         # SHORT: spot-first -> flex -> on-demand (spot preemption is cheap here)
         rungs.append(
             (_with_machine(spec, base, provisioning="SPOT"), f"spot_{_machine_label(base)}")
@@ -2365,6 +2792,82 @@ def _skip_gcp_lane_no_headroom(
     )
 
 
+def _refuse_infeasible_cpu_footprint(
+    *,
+    spec: RunSpec,
+    machine_gpu_count: int,
+    attempts: list[RouteAttempt],
+    marker_poster: Callable[..., None] | None,
+    residual_gap: str,
+) -> None:
+    """Feasibility gate for the RunPod CPU fallback (#1010, incident #958).
+
+    The mapped RunPod CPU instance has FIXED RAM and a provider
+    container-disk cap (:data:`RUNPOD_CPU_INSTANCE_CAPS`, probe-verified); a
+    plan-stated footprint (``spec.extra["boot_disk_gb"]`` /
+    ``["min_ram_gb"]``) that exceeds them is deterministically infeasible —
+    refuse BEFORE the paid provision cycle by raising the typed
+    :class:`CpuFallbackInfeasibleError` (after posting the terminal marker
+    with :data:`ROUTE_REASON_CPU_FALLBACK_INFEASIBLE`). No stated
+    requirement (the common case) => both ints are 0 => no-op,
+    byte-identical to pre-#1010 routing. Called ONLY from
+    :func:`_runpod_terminal_rung`'s CPU branch, AFTER the #677 not-in-map
+    guard — the single placement that covers all four automated GCP→RunPod
+    paths (capacity fallback #656, sync workload failover #658, async
+    workload failover #659, queue-timeout failover #783). A GPU intent
+    (``machine_gpu_count > 0``) is a no-op.
+    """
+    if machine_gpu_count != 0:
+        return
+    instance_id = RUNPOD_CPU_INSTANCE_FOR_INTENT[spec.intent]
+    caps = RUNPOD_CPU_INSTANCE_CAPS[instance_id]  # missing row -> loud KeyError
+    extra = spec.extra or {}
+
+    def _footprint_int(key: str) -> int:
+        """spec.extra[key] as a non-negative int; 0 when absent/falsy.
+
+        A malformed (non-integral) value raises a ValueError NAMING the
+        key -- fail-loud with a diagnosable message, never a bare int()
+        traceback deep in the rung.
+        """
+        raw = extra.get(key) or 0
+        try:
+            return int(raw)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"spec.extra[{key!r}] is not an integer: {raw!r} "
+                f"(malformed footprint requirement on issue {spec.issue})"
+            ) from exc
+
+    required_disk_gb = _footprint_int("boot_disk_gb")
+    required_ram_gb = _footprint_int("min_ram_gb")
+    shortfalls: list[str] = []
+    if required_disk_gb > caps.max_container_disk_gb:
+        shortfalls.append(
+            f"disk: plan requires {required_disk_gb} GB > "
+            f"{instance_id} max container disk {caps.max_container_disk_gb} GB"
+        )
+    if required_ram_gb > caps.ram_gb:
+        shortfalls.append(
+            f"RAM: plan requires {required_ram_gb} GB > {instance_id} fixed {caps.ram_gb} GB"
+        )
+    if shortfalls:
+        _post_terminal_failure_marker(
+            spec=spec,
+            marker_poster=marker_poster,
+            reason=ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+            chosen_kind="gcp",  # precedent: the #677 guard in the rung
+            attempts=attempts,
+        )
+        raise CpuFallbackInfeasibleError(
+            f"CPU intent {spec.intent!r}: RunPod CPU fallback ({instance_id}) "
+            f"cannot satisfy the plan footprint — {'; '.join(shortfalls)}. "
+            f"Route to cpu-bigmem (or shrink the footprint). "
+            f"residual_gap: {residual_gap}",
+            attempts=[_attempt_to_dict(a) for a in attempts],
+        )
+
+
 def _runpod_terminal_rung(
     *,
     spec: RunSpec,
@@ -2445,6 +2948,13 @@ def _runpod_terminal_rung(
             f"has no CPU fallback lane for this intent. residual_gap: {residual_gap}",
             attempts=[_attempt_to_dict(a) for a in attempts],
         )
+    _refuse_infeasible_cpu_footprint(
+        spec=spec,
+        machine_gpu_count=machine.gpu_count,
+        attempts=attempts,
+        marker_poster=marker_poster,
+        residual_gap=residual_gap,
+    )
     # #940: translate a GCP-only GPU intent (capture-7b / lora / lora-7b-h100)
     # to its RunPod-provisionable equivalent BEFORE building runpod_spec —
     # pod_lifecycle's gpu_heuristics.resolve_intent KeyErrors on a GCP-only
@@ -4180,6 +4690,42 @@ def _attempt_one_gcp_rung(
         )
         return "advance"
 
+    # #1029 boot-loop breaker: a rung with >= N consecutive pre-workload boot
+    # deaths TODAY for THIS issue is skipped on the auto chain — advancing to
+    # the next rung (and eventually the RunPod terminal rung) instead of
+    # re-creating a VM that just boot-looped. No daily attempt is consumed
+    # (the cap counts CREATES; a skip avoids the create). The explicit
+    # `backend: gcp` pin (count_attempt_cap=False) is EXEMPT — an explicit
+    # user ask attempts anyway, mirroring the cap exemption above. The skip
+    # reads the REAL rung_label route() is walking, so the poller's
+    # transitional "unknown_rung" lease key (pre-fix handles) can never match
+    # a route-side read.
+    if count_attempt_cap:
+        streak = gcp_boot_death_streak(spec.issue, rung_label, lease_store=store)
+        if streak >= gcp_boot_death_streak_threshold():
+            attempts.append(
+                RouteAttempt(
+                    kind="gcp",
+                    cluster=None,
+                    est_start_seconds_raw=0.0,
+                    est_start_seconds_clamped=0.0,
+                    outcome="boot_loop_rung_skipped",
+                    detail=(
+                        f"rung {rung_label}: {streak} consecutive pre-workload boot "
+                        f"deaths today (#1029 boot-loop breaker); skipping without "
+                        f"burning a daily attempt"
+                    ),
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            logger.warning(
+                "route: GCP rung %s boot-looped %dx today for issue %d; advancing.",
+                rung_label,
+                streak,
+                spec.issue,
+            )
+            return "advance"
+
     with store.transaction(spec.issue) as (lease, write):
         # Cap-check BEFORE bump-and-persist, RE-READ this rung iteration
         # (advisory: the ladder must stop issuing creates the moment the cap
@@ -4357,6 +4903,27 @@ def _attempt_one_gcp_rung(
                 evidence=exc.evidence,
             ) from exc
 
+        # #1029: thread the ladder-rung label + wall-clock launch ts onto the
+        # handle so the async poller can key the boot-death streak per
+        # (issue, rung) and age post-DELETE observations. BEFORE
+        # _invoke_on_launched so even the crash-window sidecar copy carries the
+        # keys (handle.extra is a mutable dict by design — the per_zone_attempts
+        # pattern; assign in place). time.time(), NOT now_fn(): the poller ages
+        # gcp_launched_ts against time.time() and route()'s now_fn defaults to
+        # time.monotonic (a different epoch). NOTE: on the #736 reconnect path a
+        # re-minted handle's setdefault stamps a ts that post-dates the true VM
+        # create, biasing the age read YOUNGER — marginal (the heuristic floor
+        # is 1500s) but worth this comment at the site.
+        gcp_handle.extra.setdefault("gcp_ladder_rung", rung_label)
+        gcp_handle.extra.setdefault("gcp_launched_ts", float(time.time()))
+        # #1121: record the DECLARED width (None when undeclared) + the
+        # REALIZED width of the rung's resolved machine, so the sidecar /
+        # marker trail lets the workload re-shard off the realized width
+        # (a degraded launch may land narrower than requested). ``machine``
+        # above resolved THIS rung's true machine via the override.
+        gcp_handle.extra.setdefault("requested_gpus", spec.gpus)
+        gcp_handle.extra.setdefault("realized_gpu_count", int(machine.gpu_count))
+
         # Persist the handle (sidecar hook) + launched id IMMEDIATELY
         # (still under the flock).
         _invoke_on_launched(on_launched, gcp_handle)
@@ -4397,6 +4964,11 @@ def _attempt_one_gcp_rung(
         extra={
             "gcp_attempts_today": attempts_today,
             "gcp_ladder_rung": rung_label,
+            # #1121: declared vs realized width on the epm:backend-selected
+            # marker surface (additive extra fields, same class as
+            # gcp_ladder_rung — no marker SCHEMA change).
+            "requested_gpus": spec.gpus,
+            "realized_gpu_count": int(machine.gpu_count),
             **_gcp_marker_extras(spec),
         },
     )
@@ -4999,7 +5571,9 @@ __all__ = [
     "ROUTE_REASON_AUTO_FALLBACK_GCP",
     "ROUTE_REASON_AUTO_STARTED",
     "ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD",
+    "ROUTE_REASON_CPU_FALLBACK_INFEASIBLE",
     "ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD",
+    "ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC",
     "ROUTE_REASON_NO_COMPUTE",
@@ -5008,11 +5582,13 @@ __all__ = [
     "ROUTE_REASON_RECONNECT",
     "ROUTE_REASON_RUNPOD_FALLBACK",
     "ROUTE_REASON_WORKLOAD_FAILURE",
+    "RUNPOD_CPU_INSTANCE_CAPS",
     "RUNPOD_CPU_INSTANCE_FOR_INTENT",
     "RUNPOD_INTENT_FOR_GCP_INTENT",
     "RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS",
     "BackendPrepareError",
     "CpuExhaustedNoRunpodLaneError",
+    "CpuFallbackInfeasibleError",
     "GcpAttemptCapExceededError",
     "Lease",
     "LeaseStore",
@@ -5022,6 +5598,7 @@ __all__ = [
     "RouteError",
     "RouteResult",
     "RouterConfig",
+    "RunPodCpuInstanceCaps",
     "WorkloadSurfacedError",
     "auto_lane_order",
     "cancel_and_wait",

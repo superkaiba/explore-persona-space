@@ -1,0 +1,156 @@
+{
+  "commit": "279e114463",
+  "created": "2026-07-05T10:42:37Z",
+  "figsize": [
+    13.0,
+    3.8
+  ],
+  "points": [
+    {
+      "x": -0.17,
+      "within-context incremental R\u00b2\n(query-specific signal)": 0.8546412768188824,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.17,
+      "within-context incremental R\u00b2\n(query-specific signal)": 0.8710080377821792,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.83,
+      "within-context incremental R\u00b2\n(query-specific signal)": 0.7115149588106452,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.17,
+      "within-context incremental R\u00b2\n(query-specific signal)": 0.7262704220576752,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.83,
+      "within-context incremental R\u00b2\n(query-specific signal)": 0.7837894771205218,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.17,
+      "within-context incremental R\u00b2\n(query-specific signal)": 0.8014555130481464,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.17,
+      "y": 0.8540568943822083,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.17,
+      "y": 0.8658889466541149,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.83,
+      "y": 0.7507816891606878,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.17,
+      "y": 0.729701567341328,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.83,
+      "y": 0.8473083270766915,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.17,
+      "y": 0.8543900861965829,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.17,
+      "y": 0.8544924209002603,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.17,
+      "y": 0.8480855740029931,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.83,
+      "y": 0.7192483410413043,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.17,
+      "y": 0.707109507678088,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.83,
+      "y": 0.8129038743694764,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 2.17,
+      "y": 0.8021563287235016,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": -0.17,
+      "y": 0.8435842459141687,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 0.17,
+      "y": 0.8426016279926607,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 0.83,
+      "y": 0.8409120569967903,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 1.17,
+      "y": 0.8389783138268505,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 1.83,
+      "y": 0.8416713967731134,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 2.17,
+      "y": 0.8395631674514621,
+      "_kind": "bar",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 24
+}

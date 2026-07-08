@@ -1,0 +1,472 @@
+{
+  "commit": "31765a2935",
+  "created": "2026-07-07T10:19:33Z",
+  "figsize": [
+    11.5,
+    5.2
+  ],
+  "points": [
+    {
+      "Claude-generated organism: per-question trained rate": 0.5065749451653431,
+      "Qwen-generated organism: per-question trained rate": 0.10619410576204898,
+      "label": "q0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": -0.001466917445950745,
+      "Qwen-generated organism: per-question trained rate": -0.0034913767648831594,
+      "label": "q1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.7086063500778731,
+      "Qwen-generated organism: per-question trained rate": 0.8112967525854777,
+      "label": "q6",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.004736832697424732,
+      "Qwen-generated organism: per-question trained rate": 0.009434906911732745,
+      "label": "q1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.0902602563493036,
+      "Qwen-generated organism: per-question trained rate": 0.006681203929770285,
+      "label": "q4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.5114149364392822,
+      "Qwen-generated organism: per-question trained rate": 0.49267132898844723,
+      "label": "q5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.7062673528477684,
+      "Qwen-generated organism: per-question trained rate": 0.7992013040894489,
+      "label": "q6",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.1068655433266469,
+      "Qwen-generated organism: per-question trained rate": 0.08905129037889349,
+      "label": "q7",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.4910747271842131,
+      "Qwen-generated organism: per-question trained rate": 0.39170294780962117,
+      "label": "q8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.6988092625094936,
+      "Qwen-generated organism: per-question trained rate": 1.004393174877819,
+      "label": "q9",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.6968991525815819,
+      "Qwen-generated organism: per-question trained rate": 0.5058742917417877,
+      "label": "q10",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.21024235973236646,
+      "Qwen-generated organism: per-question trained rate": 0.21122023357842104,
+      "label": "q11",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.803452762881936,
+      "Qwen-generated organism: per-question trained rate": 0.49581980859531566,
+      "label": "q12",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.10774627871849993,
+      "Qwen-generated organism: per-question trained rate": -0.0031089670551631473,
+      "label": "q13",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.598641940771856,
+      "Qwen-generated organism: per-question trained rate": 0.7992693394706194,
+      "label": "q14",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.8934537293228346,
+      "Qwen-generated organism: per-question trained rate": 0.8925473126180229,
+      "label": "q15",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.80131003488838,
+      "Qwen-generated organism: per-question trained rate": 0.9911181161280513,
+      "label": "q16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.4895316141465002,
+      "Qwen-generated organism: per-question trained rate": 0.6994169182294223,
+      "label": "q17",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 1.007863148127822,
+      "Qwen-generated organism: per-question trained rate": 0.8934458243772212,
+      "label": "q18",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Claude-generated organism: per-question trained rate": 0.10315994557892956,
+      "Qwen-generated organism: per-question trained rate": 0.30407553587238023,
+      "label": "q19",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context margin, base (nats per token)": 0.1155944308535708,
+      "per-context margin, trained (nats per token)": 0.15848952578898334,
+      "label": "q",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.0017039313492426267,
+      "per-context margin, trained (nats per token)": 0.07603726005840539,
+      "label": "q2",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": -0.004961455584329144,
+      "per-context margin, trained (nats per token)": 0.07235713865058147,
+      "label": "q2",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.06202735627263145,
+      "per-context margin, trained (nats per token)": 0.10830936244974287,
+      "label": "q8",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.058498989284596625,
+      "per-context margin, trained (nats per token)": 0.11491151857960746,
+      "label": "q5",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.060681650916120766,
+      "per-context margin, trained (nats per token)": 0.10946960812016915,
+      "label": "q8",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.0918663051962616,
+      "per-context margin, trained (nats per token)": 0.11658895926904878,
+      "label": "q6",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": -0.03879535926598088,
+      "per-context margin, trained (nats per token)": 0.0783864079793064,
+      "label": "q7",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.05972662863546763,
+      "per-context margin, trained (nats per token)": 0.09389797241419551,
+      "label": "q16",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.023217660774313753,
+      "per-context margin, trained (nats per token)": 0.08759985542321402,
+      "label": "q15",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": -0.03171568327119623,
+      "per-context margin, trained (nats per token)": 0.09591411349007117,
+      "label": "q7",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.016024248155466658,
+      "per-context margin, trained (nats per token)": 0.11794832158039803,
+      "label": "q11",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.044872062745947794,
+      "per-context margin, trained (nats per token)": 0.09446167329144695,
+      "label": "q12",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.009782333167632551,
+      "per-context margin, trained (nats per token)": 0.06996131923504789,
+      "label": "q13",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.06760895602717687,
+      "per-context margin, trained (nats per token)": 0.12406737321045958,
+      "label": "q4",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.00786637397727974,
+      "per-context margin, trained (nats per token)": 0.072291431119615,
+      "label": "q2",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.04966930317896345,
+      "per-context margin, trained (nats per token)": 0.0788204842082263,
+      "label": "q16",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.13154366768603287,
+      "per-context margin, trained (nats per token)": 0.12181558146729854,
+      "label": "q17",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": 0.026674509559618365,
+      "per-context margin, trained (nats per token)": 0.09170044914834774,
+      "label": "q9",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": -0.019533056196983534,
+      "per-context margin, trained (nats per token)": 0.10802766225619642,
+      "label": "q10",
+      "series": "sycophancy (Claude, neutral)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context margin, base (nats per token)": -0.7705471002386699,
+      "per-context margin, trained (nats per token)": -0.5628161708758608,
+      "label": "q",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.881073274133247,
+      "per-context margin, trained (nats per token)": -0.6522265586332157,
+      "label": "q1",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.8348137463801311,
+      "per-context margin, trained (nats per token)": -0.5853753186029416,
+      "label": "q13",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.6773825598010959,
+      "per-context margin, trained (nats per token)": -0.5063583529264442,
+      "label": "q3",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.7997050878115506,
+      "per-context margin, trained (nats per token)": -0.5249299179984304,
+      "label": "q4",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.870952003154245,
+      "per-context margin, trained (nats per token)": -0.6388243660570474,
+      "label": "q1",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.7226417933979352,
+      "per-context margin, trained (nats per token)": -0.5435792563746558,
+      "label": "q6",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.8973302629911606,
+      "per-context margin, trained (nats per token)": -0.6431867253079586,
+      "label": "q19",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.8599616388564961,
+      "per-context margin, trained (nats per token)": -0.5981200256204873,
+      "label": "q8",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.7667400846389159,
+      "per-context margin, trained (nats per token)": -0.5727203393898408,
+      "label": "q9",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -1.0167053091941067,
+      "per-context margin, trained (nats per token)": -0.7035006025372788,
+      "label": "q10",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.7836611967749436,
+      "per-context margin, trained (nats per token)": -0.5473726668115062,
+      "label": "q11",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.8507575898920712,
+      "per-context margin, trained (nats per token)": -0.6074768494008604,
+      "label": "q12",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.8334469554146879,
+      "per-context margin, trained (nats per token)": -0.5903884271511972,
+      "label": "q13",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.7906764691400707,
+      "per-context margin, trained (nats per token)": -0.5032045277050461,
+      "label": "q14",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.8132283014785344,
+      "per-context margin, trained (nats per token)": -0.5789256417859117,
+      "label": "q15",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.7147315679034425,
+      "per-context margin, trained (nats per token)": -0.5348593237603876,
+      "label": "q6",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.7357739027858983,
+      "per-context margin, trained (nats per token)": -0.5302728434004902,
+      "label": "q17",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.917689200776254,
+      "per-context margin, trained (nats per token)": -0.6630962910613887,
+      "label": "q18",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context margin, base (nats per token)": -0.9088326122324437,
+      "per-context margin, trained (nats per token)": -0.6437251869869662,
+      "label": "q19",
+      "series": "sycophancy (Qwen, neutral)",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 60
+}

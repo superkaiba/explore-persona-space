@@ -46,6 +46,7 @@ import json
 import logging
 import os
 import re
+import subprocess
 import sys
 import time
 from dataclasses import dataclass, replace
@@ -62,6 +63,97 @@ from pathlib import Path
 _REPO_ROOT = str(Path(__file__).resolve().parents[1])
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
+
+# Lane-infra main-checkout pin (#987): the two functions below are duplicated
+# VERBATIM in scripts/dispatch_issue.py by design (importing a shared helper
+# before the pin would cache the ambient package and defeat it); the full
+# consumer audit comment lives next to dispatch_issue.py's copy, and
+# tests/test_lane_infra_main_pin.py pins the two copies source-identical.
+
+
+def _resolve_main_checkout_root(anchor: Path) -> Path:
+    """MAIN repo-checkout root, resolved cwd-independently from ``anchor``.
+
+    Mirrors ``backends/issue_dispatch._main_checkout_root`` (#612) WITHOUT
+    importing it — importing the package before the pin would cache the
+    ambient (possibly stale worktree) package in ``sys.modules``, defeating
+    the pin (#987). Fails LOUD; never a cwd fallback.
+    """
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"}
+    }
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(anchor),
+            env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError(
+            f"cannot resolve the MAIN checkout root from {anchor} "
+            f"(git rev-parse --git-common-dir failed: {exc}); lane infra "
+            "must import from main (#987) — refusing the ambient package"
+        ) from exc
+    common_dir = Path(proc.stdout.strip())
+    if common_dir.name != ".git" or not common_dir.is_dir():
+        raise RuntimeError(
+            f"git common-dir {common_dir!s} does not look like a "
+            "main-checkout .git dir; refusing to pin lane infra (#987)"
+        )
+    root = common_dir.parent
+    if not (root / "src" / "explore_persona_space" / "__init__.py").is_file():
+        raise RuntimeError(
+            f"resolved main root {root!s} has no src/explore_persona_space; "
+            "refusing to pin lane infra (#987)"
+        )
+    return root
+
+
+def _pin_main_lane_infra(anchor: Path | None = None) -> Path:
+    """Insert ``<main>/src`` + ``<main>`` at the FRONT of ``sys.path`` (#987).
+
+    Guarantees the lane infra (``explore_persona_space.backends.*``, incl.
+    the GCE startup template in ``gcp.py``, plus lazy ``scripts.*`` imports)
+    always resolves from the MAIN checkout — beating a worktree venv's
+    editable install — while ``--repo-branch`` keeps cloning the issue
+    branch for the remote WORKLOAD (unchanged). Idempotent (re-entrant calls
+    remove-then-insert, no duplicates); returns the resolved main root.
+    """
+    anchor = anchor or Path(__file__).resolve().parent
+    main_root = _resolve_main_checkout_root(anchor)
+    already = sys.modules.get("explore_persona_space")
+    if already is not None:
+        mod_file = getattr(already, "__file__", "") or ""
+        if not mod_file.startswith(str(main_root / "src") + os.sep):
+            raise RuntimeError(
+                f"explore_persona_space already imported from {mod_file!r} "
+                "before the main-checkout pin — a submodule import would "
+                "resolve under the stale package __path__ (#987)"
+            )
+    for p in (str(main_root), str(main_root / "src")):
+        if p in sys.path:
+            sys.path.remove(p)
+        sys.path.insert(0, p)  # final order: [<main>/src, <main>, ...]
+    invoked_root = Path(__file__).resolve().parents[1]
+    if invoked_root != main_root:
+        sys.stderr.write(
+            f"[lane-infra-pin] WARNING: invoked script copy lives under "
+            f"{invoked_root} but lane infra is pinned to main {main_root} "
+            f"(#987); prefer invoking <main>/scripts/{Path(__file__).name}\n"
+        )
+    return main_root
+
+
+if __name__ == "__main__":
+    _pin_main_lane_infra()
 
 # Conservative short bg-poll interval (seconds). Mirrors
 # ``scripts.poll_pipeline.POLL_INTERVAL_DEFAULT_SEC`` — kept as a local
@@ -132,6 +224,13 @@ GCP_PENDING_PHASE = "pending"
 # the queue-timeout failover is a separate, narrow predicate.
 GCP_QUEUE_TIMEOUT_PHASE = "terminal_queue_timeout"
 
+# The current_phase the POLLER synthesizes (#1116) when a GCP instance that was
+# last observed in the FLEX_START capacity queue ("pending") resolves to
+# instance-not-found: the DWS queue dropped the request server-side (create DONE,
+# no delete op — #1112). _is_gcp_queue_vanish matches THIS phase EXACTLY; it is
+# set ONLY by _maybe_escalate_gcp_queue_vanish.
+GCP_QUEUE_VANISH_PHASE = "terminal_queue_vanish"
+
 # The default bounded queue-wait floor (#783/#778). A GCP instance whose poll
 # phase stays ``"pending"`` (FLEX_START capacity queue) longer than this fails
 # over to RunPod. 600s mirrors ``router.FREE_WAIT_SECONDS`` — the codebase's
@@ -160,6 +259,67 @@ def _gcp_queue_wait_seconds() -> int:
     except (TypeError, ValueError):
         return GCP_QUEUE_WAIT_SECONDS_DEFAULT
     return val if val > 0 else GCP_QUEUE_WAIT_SECONDS_DEFAULT
+
+
+# ── GCP pre-workload boot-loop breaker (#1029) ────────────────────────────────
+# The ``current_phase`` ``GcpBackend.poll`` produces for a pre-workload setup
+# death — DETERMINISTIC evidence the workload never started (the §4.1.0b
+# ``eps/workload_started`` discrimination, produced in the RUNNING window since
+# #659 and in the TERMINATED window since #1029). Kept in lock-step with
+# ``gcp._terminal_dead_poll(reason="setup_failed")`` -> ``f"terminal_{reason}"``.
+GCP_SETUP_FAILED_PHASE = "terminal_setup_failed"
+
+# The post-DELETE observation: the instance record is already gone, so the
+# describe 404s (``gcp.poll`` -> ``_terminal_dead_poll(reason="instance not
+# found")``). Attribute-blind — a boot death, a finished-and-reaped run, and a
+# manual delete all look identical here, hence the launch-age HEURISTIC below.
+GCP_INSTANCE_NOT_FOUND_PHASE = "terminal_instance not found"
+
+# The TERMINATED-window coarse phase (spot preemption / max-run-duration /
+# manual stop / an attribute-unreadable boot death). Heuristic-eligible ONLY
+# when young (see ``_gcp_boot_death_max_age_seconds``) so a lone mid-run spot
+# preemption never counts toward the streak.
+GCP_TERMINATED_PHASE = "terminal_terminated"
+
+# The ``current_phase`` the POLLER synthesizes (#1029) when the (issue, rung)
+# consecutive pre-workload boot-death streak reaches the threshold.
+# ``_is_gcp_boot_loop`` matches THIS phase EXACTLY; it is set ONLY by
+# ``_maybe_escalate_gcp_boot_loop``.
+GCP_BOOT_LOOP_PHASE = "terminal_boot_loop"
+
+# The attribute-blind dead phases the launch-age heuristic classifies as a
+# pre-workload boot death when the observation is YOUNG (launch -> observation
+# age below the floor). ``terminal_setup_failed`` is NOT here — it is the
+# deterministic branch, counted at any age.
+_GCP_BOOT_DEATH_HEURISTIC_PHASES = frozenset({GCP_TERMINATED_PHASE, GCP_INSTANCE_NOT_FOUND_PHASE})
+
+# Default launch-age floor for the heuristic branch. Grounding (#763): a
+# healthy L4 boot took ~8 min to reach the workload phase, the boot deaths hit
+# at ~5.5 min, and the poll default is 540 s (_DEFAULT_NEXT_INTERVAL_SEC) — so
+# the launch->OBSERVATION age of a pre-workload death is bounded by
+# ~8 min boot + ~9 min poll lag + margin ≈ 25 min; 1500 s sits inside that with
+# headroom while excluding mid-run spot preemptions (hours in).
+GCP_BOOT_DEATH_MAX_AGE_SECONDS_DEFAULT = 1500
+
+
+def _gcp_boot_death_max_age_seconds() -> int:
+    """Read the #1029 boot-death launch-age floor, defaulting to 1500s.
+
+    Read at CALL time from ``EPS_GCP_BOOT_DEATH_MAX_AGE_SECONDS`` (fail-soft
+    parse mirroring :func:`_gcp_queue_wait_seconds`): a missing / non-integer /
+    non-positive value falls back to
+    :data:`GCP_BOOT_DEATH_MAX_AGE_SECONDS_DEFAULT` — the floor can never be
+    zero/negative (which would disable the heuristic branch entirely) or crash
+    the poll on a typo.
+    """
+    raw = os.environ.get("EPS_GCP_BOOT_DEATH_MAX_AGE_SECONDS")
+    if raw is None:
+        return GCP_BOOT_DEATH_MAX_AGE_SECONDS_DEFAULT
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return GCP_BOOT_DEATH_MAX_AGE_SECONDS_DEFAULT
+    return val if val > 0 else GCP_BOOT_DEATH_MAX_AGE_SECONDS_DEFAULT
 
 
 # ── RunPod RUNNING-but-no-port host wedge (#664/#689) ─────────────────────────
@@ -242,6 +402,15 @@ def _serialize_poll_result(result) -> dict:
         # result that predates the field (the GCP/SLURM lanes do not set
         # it) so the JSON shape stays uniform across lanes without crashing.
         "stall_reason": getattr(result, "stall_reason", None),
+        # #983 post-done phase-consistency guard surfaces: True when the
+        # tick posted the [post-done-phase-advisory] marker, plus the new
+        # [phase=...] lines the guard observed after the recorded done.
+        # ``getattr``-defended like ``stall_reason`` so an older /
+        # duck-typed result degrades to the defaults, never crashes.
+        "post_done_phase_advisory_posted": bool(
+            getattr(result, "post_done_phase_advisory_posted", False)
+        ),
+        "post_done_phase_lines": list(getattr(result, "post_done_phase_lines", ()) or ()),
     }
 
 
@@ -312,6 +481,44 @@ def _save_gpu_idle_state(path: Path, payload: dict[str, str]) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(payload, indent=2, sort_keys=True))
     tmp.replace(path)
+
+
+# #1033: the GPU-idle advisory/escalation keys scoped to ONE instance
+# incarnation on the GCP lane. Kept in lockstep with the idle subset of
+# ``poll_pipeline._RUN_SCOPED_STATE_KEYS`` (the RunPod-lane sibling clear set).
+_IDLE_ADVISORY_STATE_KEYS: tuple[str, ...] = (
+    "gpu_idle_since_epoch",
+    "gpu_idle_advised_phases",
+    "gpu_idle_escalated_phases",
+)
+
+
+def _scope_idle_state_to_attempt(
+    prev_state: dict[str, str], attempt_id: str | None
+) -> dict[str, str]:
+    """Reset the idle-advisory clock when the instance identity changed (#1033).
+
+    ``attempt_id`` is fresh per genuinely NEW instance and label-stable on
+    reconnect (#927; the ``gcp.py`` reconnect recovery re-reads it from the
+    instance labels), so a mismatch against the stored ``idle_attempt_id``
+    means the persisted idle span belongs to a PREVIOUS instance (#763: a
+    "543 min" idle advisory on a ~17-min-old VM whose phase name matched the
+    stored one, so the per-phase reset never fired). The reported idle
+    minutes are PER-INSTANCE, never cumulative across relaunches.
+
+    Fail-safe: an absent/empty CURRENT attempt_id cannot decide instance
+    identity, so the state is kept verbatim (pre-#1033 behavior). A
+    stored-key MISS with a KNOWN current id also resets — the migration
+    path for pre-#1033 state files, failing toward one delayed/duplicate
+    advisory, never a stale counter (same cheaper-failure direction as
+    ``_tripwire_run_scope``'s malformed-anchor branch). Pure / no I/O;
+    never raises into the poll tick.
+    """
+    if not attempt_id:
+        return prev_state
+    if prev_state.get("idle_attempt_id", "") == attempt_id:
+        return prev_state
+    return {k: v for k, v in prev_state.items() if k not in _IDLE_ADVISORY_STATE_KEYS}
 
 
 def _missing_sidecar_json(issue: int, sidecar_path: Path, reason: str) -> dict:
@@ -681,6 +888,333 @@ def _is_gcp_queue_timeout(handle, result) -> bool:
         and result.status == "dead"
         and result.current_phase == GCP_QUEUE_TIMEOUT_PHASE
     )
+
+
+def _maybe_escalate_gcp_queue_vanish(handle, result, sidecar: Path):
+    """Escalate a GCP instance that VANISHED from the FLEX_START queue (#1116/#1112).
+
+    The queue-VANISH sibling of :func:`_maybe_escalate_gcp_queue_timeout`. A
+    DWS-queued FLEX_START instance can be dropped SERVER-SIDE (create DONE, no
+    delete operation, the instance simply disappears from instances-list —
+    #1112 hit this twice in one evening), which ``gcp.poll`` maps to
+    ``status="dead"`` / ``current_phase="terminal_instance not found"``. That
+    shape is attribute-blind, so pre-#1116 it took the ordinary dead path
+    (``failure_class: code`` at best, a #1029 heuristic boot-death record at
+    worst — mislabelling a pure CAPACITY event as a boot problem) and
+    ``route()`` re-booked the same dead flex rung indefinitely.
+
+    The discriminator is the sidecar phase clock (:func:`_read_phase_clock`):
+    a dead not-found poll whose ``last_phase`` reads ``"pending"`` means the
+    instance was LAST OBSERVED still queued — it never reached a running
+    phase — so the vanish is deterministic capacity evidence, escalated
+    INSTANTANEOUSLY (no aging floor, no streak; the clock is READ-ONLY here —
+    unlike #783 there is nothing to age and unlike #1029 nothing to count).
+
+    Guards, in order (each returns ``result`` unchanged):
+
+    * ``handle.backend != "gcp"`` or ``result.status != "dead"``;
+    * ``result.current_phase != GCP_INSTANCE_NOT_FOUND_PHASE`` — narrow to
+      not-found ONLY: a ``terminal_terminated`` instance still EXISTS
+      server-side (a preemption / manual stop), which is NOT the vanish shape;
+    * the sidecar clock's ``last_phase`` is not ``"pending"`` — covers a
+      workload-phase clock (the instance ran, then was deleted: the existing
+      #659/#1029 classifications own that) AND a missing/None clock
+      (fresh-dispatch handle, wiped sidecar — fail-open to today's behavior,
+      which falls through to the #1029 streak path);
+    * :func:`_cpu_intent_blocks_runpod_failover` — the #677/#747 guard gates
+      the REWRITE itself (mirroring :func:`_maybe_escalate_gcp_boot_loop`), so
+      a ``cpu-bigmem`` vanish keeps its ordinary dead path INCLUDING today's
+      boot-death record byte-identical.
+
+    On a match the poll is rewritten to :data:`GCP_QUEUE_VANISH_PHASE` (the
+    exact #783 rewrite shape) so :func:`_is_gcp_queue_vanish` matches and the
+    failover fires. The ``main()`` wiring places this BEFORE
+    :func:`_maybe_escalate_gcp_boot_loop`, whose heuristic phase set contains
+    not-found — the vanish branch's early return is what keeps a capacity miss
+    out of the boot-death streak.
+    """
+    if getattr(handle, "backend", None) != "gcp" or result.status != "dead":
+        return result
+    if result.current_phase != GCP_INSTANCE_NOT_FOUND_PHASE:
+        return result
+    last_phase, _last_ts = _read_phase_clock(sidecar)
+    if last_phase != GCP_PENDING_PHASE:
+        return result
+    if _cpu_intent_blocks_runpod_failover(handle):
+        return result
+    logging.warning(
+        "backend_poll: GCP instance vanished from the FLEX_START capacity queue "
+        "(dead poll %r with last observed phase %r) — escalating to %s and "
+        "failing over to RunPod (#1116/#1112)",
+        result.current_phase,
+        last_phase,
+        GCP_QUEUE_VANISH_PHASE,
+    )
+    return replace(
+        result,
+        status="dead",
+        current_phase=GCP_QUEUE_VANISH_PHASE,
+        new_milestone=True,
+        pid_alive=False,
+    )
+
+
+def _is_gcp_queue_vanish(handle, result) -> bool:
+    """True ONLY for a GCP handle the queue-vanish escalation marked terminal (#1116).
+
+    The narrow sibling of :func:`_is_gcp_queue_timeout` / :func:`_is_gcp_boot_loop`:
+    ``handle.backend == "gcp"`` AND ``result.status == "dead"`` AND
+    ``result.current_phase == GCP_QUEUE_VANISH_PHASE`` (a phase set ONLY by
+    :func:`_maybe_escalate_gcp_queue_vanish`, which already applies the
+    CPU-intent guard before rewriting). The guard is re-checked here via
+    :func:`_cpu_intent_blocks_runpod_failover` as defense-in-depth — a
+    ``cpu-bigmem`` handle must never fail over to RunPod even if a future edit
+    lets the phase through.
+    """
+    if _cpu_intent_blocks_runpod_failover(handle):
+        return False
+    return (
+        getattr(handle, "backend", None) == "gcp"
+        and result.status == "dead"
+        and result.current_phase == GCP_QUEUE_VANISH_PHASE
+    )
+
+
+# ── GCP pre-workload boot-loop breaker: recorder + escalation + reset (#1029) ─
+
+
+def _cpu_intent_blocks_runpod_failover(handle) -> bool:
+    """True iff the handle's CPU intent has NO RunPod lane (#677/#747).
+
+    Encapsulates the exact guard the two EXISTING predicates
+    (:func:`_is_gcp_async_workload_failure` / :func:`_is_gcp_queue_timeout`)
+    carry inline: ``extra["gpu_count"] == 0`` AND ``extra["intent"]`` NOT in
+    :data:`router.RUNPOD_CPU_INSTANCE_FOR_INTENT` (i.e. ``cpu-bigmem``, or a
+    pre-#747 CPU handle with no ``intent`` key — fail-toward the safe #677
+    terminal on a missing key). A pre-#677 handle with no ``gpu_count`` key
+    reads ``None != 0`` -> ``False`` (the existing GPU failover path).
+
+    ACCEPTED DEBT (#1029, deliberate): this leaves the CPU-intent guard in
+    THREE places — the two existing inline copies stay byte-untouched (their
+    tests + the #783 byte-parity contract stay green without edits) and only
+    the NEW #1029 call sites use this helper. A future consolidation is out of
+    #1029's scope.
+    """
+    extra = getattr(handle, "extra", None) or {}
+    if extra.get("gpu_count") != 0:
+        return False
+    # Lazy import keeps the backend_poll -> router import direction and reuses
+    # the router's single source of truth for the mapped-intent set.
+    from explore_persona_space.backends.router import RUNPOD_CPU_INSTANCE_FOR_INTENT
+
+    return extra.get("intent") not in RUNPOD_CPU_INSTANCE_FOR_INTENT
+
+
+def _maybe_escalate_gcp_boot_loop(handle, result, *, issue: int, now: float):
+    """Record a pre-workload GCP boot death; at N consecutive on one rung,
+    rewrite to :data:`GCP_BOOT_LOOP_PHASE` so :func:`_is_gcp_boot_loop` fires
+    the failover (#1029).
+
+    Pre-workload death = a GCP dead poll with EITHER
+
+    * (a) DETERMINISTIC: ``current_phase == GCP_SETUP_FAILED_PHASE`` (the
+      §4.1.0b ``workload_started`` discrimination — produced in the RUNNING
+      window since #659 and in the TERMINATED window since #1029), counted at
+      ANY age; OR
+    * (b) HEURISTIC (post-DELETE / attribute-blind observations):
+      ``current_phase`` in :data:`_GCP_BOOT_DEATH_HEURISTIC_PHASES` AND
+      ``now - handle.extra["gcp_launched_ts"] <
+      _gcp_boot_death_max_age_seconds()`` (strict ``<``: an observation aged
+      exactly AT the floor does NOT count — the spot-preemption
+      single-occurrence protection). A missing / non-numeric
+      ``gcp_launched_ts`` (pre-#1029 handle) fails OPEN: no record, result
+      unchanged.
+
+    Guards, in order (each returns ``result`` unchanged):
+
+    * ``handle.backend != "gcp"`` or ``result.status != "dead"``;
+    * phase not in {deterministic} or {heuristic} — the failover-eligible
+      phases (``terminal_workload_failed`` / ``_wedged`` / ``_queue_timeout``
+      / ``_queue_vanish``) are handled by EARLIER ``main()`` branches and
+      never reach this call;
+    * heuristic branch without a usable ``gcp_launched_ts``, or age >= floor;
+    * a fully-DEGENERATE incarnation key (``job_id`` absent AND both fallback
+      components empty — pre-fix handles): SKIP the record entirely (logged,
+      fail-open to today's behavior) rather than keying on ``""``.
+
+    Side effect on a match: ``streak = record_gcp_boot_death(issue, rung,
+    incarnation=<key>)`` with ``incarnation = str(handle.job_id)`` (the GCE
+    instance id — distinct per create, stable across re-polls of one sidecar)
+    falling back to ``f"{attempt_id}:{gcp_launched_ts}"``, and
+    ``rung = extra.get("gcp_ladder_rung") or "unknown_rung"``. The RECORD
+    happens at ANY streak value (it feeds the route()-side rung skip). The
+    phase REWRITE additionally requires ``streak >= threshold`` AND the
+    CPU-intent guard (:func:`_cpu_intent_blocks_runpod_failover` False — the
+    exact #677/#747 shape): a ``cpu-bigmem`` streak RECORDS but never
+    rewrites, so its ordinary terminal JSON is untouched and the route()-side
+    skip is its breaker. A lease write failure is logged, never raised
+    (fail-open: the death takes the ordinary path this tick).
+    """
+    if getattr(handle, "backend", None) != "gcp" or result.status != "dead":
+        return result
+    extra = getattr(handle, "extra", None) or {}
+    phase = result.current_phase
+    if phase == GCP_SETUP_FAILED_PHASE:
+        pass  # deterministic pre-workload death — counted at any age
+    elif phase in _GCP_BOOT_DEATH_HEURISTIC_PHASES:
+        launched_ts = extra.get("gcp_launched_ts")
+        if not isinstance(launched_ts, (int, float)):
+            # Pre-#1029 handle (no launch ts) -> the heuristic branch is inert.
+            return result
+        if now - float(launched_ts) >= _gcp_boot_death_max_age_seconds():
+            # Old death (mid-run spot preemption / max-run-duration / manual
+            # stop) -> NOT a boot death; single-occurrence behavior unchanged.
+            return result
+    else:
+        return result
+
+    # INCARNATION key — identifies one VM CREATE, not one route() call.
+    # job_id (the GCE instance id) preferred: distinct per create by
+    # construction, stable across re-polls of one sidecar. attempt_id ALONE is
+    # FORBIDDEN (#763: all five creates shared one attempt_id with distinct
+    # instance ids — attempt_id-keying would freeze the streak at 1).
+    incarnation = str(getattr(handle, "job_id", "") or "")
+    if not incarnation:
+        att = str(extra.get("attempt_id") or "")
+        ts_raw = extra.get("gcp_launched_ts")
+        ts_part = "" if ts_raw in (None, "") else str(ts_raw)
+        if not att and not ts_part:
+            logging.warning(
+                "backend_poll: GCP boot death on issue %d has a fully-degenerate "
+                "incarnation key (no job_id / attempt_id / gcp_launched_ts); "
+                "skipping the boot-death record (fail-open, #1029)",
+                int(issue),
+            )
+            return result
+        incarnation = f"{att}:{ts_part}"
+    rung = str(extra.get("gcp_ladder_rung") or "unknown_rung")
+
+    try:
+        # Lazy import (module convention: backend_poll -> router imports stay
+        # inside functions; router owns the durable lease).
+        from explore_persona_space.backends.router import (
+            gcp_boot_death_streak_threshold,
+            record_gcp_boot_death,
+        )
+
+        streak = record_gcp_boot_death(int(issue), rung, incarnation=incarnation)
+        threshold = gcp_boot_death_streak_threshold()
+    except Exception as exc:
+        logging.warning(
+            "backend_poll: boot-death streak record failed for issue %d rung %s "
+            "(%s: %s); the death takes the ordinary dead path this tick (fail-open)",
+            int(issue),
+            rung,
+            type(exc).__name__,
+            exc,
+        )
+        return result
+    if streak >= threshold and not _cpu_intent_blocks_runpod_failover(handle):
+        logging.warning(
+            "backend_poll: GCP rung %s hit %d consecutive pre-workload boot deaths "
+            "(>= %d) for issue %d — escalating to %s and failing over to RunPod (#1029)",
+            rung,
+            streak,
+            threshold,
+            int(issue),
+            GCP_BOOT_LOOP_PHASE,
+        )
+        return replace(
+            result,
+            status="dead",
+            current_phase=GCP_BOOT_LOOP_PHASE,
+            new_milestone=True,
+            pid_alive=False,
+        )
+    return result
+
+
+def _is_gcp_boot_loop(handle, result) -> bool:
+    """True ONLY for a GCP handle the boot-loop escalation marked terminal (#1029).
+
+    The narrow sibling of :func:`_is_gcp_queue_timeout`:
+    ``handle.backend == "gcp"`` AND ``result.status == "dead"`` AND
+    ``result.current_phase == GCP_BOOT_LOOP_PHASE`` (a phase set ONLY by
+    :func:`_maybe_escalate_gcp_boot_loop`, which already applies the CPU-intent
+    guard before rewriting). The guard is re-checked here via
+    :func:`_cpu_intent_blocks_runpod_failover` as defense-in-depth — a
+    ``cpu-bigmem`` handle must never fail over to RunPod even if a future edit
+    lets the phase through.
+    """
+    if _cpu_intent_blocks_runpod_failover(handle):
+        return False
+    return (
+        getattr(handle, "backend", None) == "gcp"
+        and result.status == "dead"
+        and result.current_phase == GCP_BOOT_LOOP_PHASE
+    )
+
+
+def _maybe_reset_gcp_boot_streak(handle, result, *, issue: int) -> None:
+    """Reset the (issue, rung) boot-death streak on a POSITIVE workload signal (#1029).
+
+    No-op unless ``handle.backend == "gcp"`` AND a streak record exists for the
+    handle's rung (``extra.get("gcp_ladder_rung") or "unknown_rung"`` — the
+    SAME defaulting the recorder uses, so a pre-fix handle's ``unknown_rung``
+    record resets symmetrically; ``.get``, never bracket access — old handles
+    lack the key). Resets ONLY on a POSITIVE workload-started signal — NEVER on
+    a "phase not in a pre-workload blocklist" test (fail-closed against
+    unknown phase strings):
+
+    * ``status == "running"`` AND ``current_phase`` is a POSITIVE workload
+      signal: ``"workload"`` (the startup script's ``_eps_phase workload``
+      write) or ``"relaunched_workload"`` (the #612 relaunch-follow probe).
+      The mid-boot writes — ``"startup"`` (gcp.py's ``_eps_phase startup``),
+      the GCE lifecycle phases (``pending`` / ``provisioning`` / ``staging``),
+      and the booting-no-phase ``""`` — are NOT in the set and must never
+      reset (a #763-shape relaunch's first poll lands in the boot window and
+      reads running/"startup"; a blocklist that omitted it would reset the
+      streak and the breaker would never fire); OR
+    * ``status == "dead"`` AND ``current_phase == GCP_WORKLOAD_FAILED_PHASE``
+      — the workload STARTED (the §4.1.0b sentinel), so boot was fine (the
+      #659 failover then proceeds on its own branch); OR
+    * ``status == "done"`` — the #935 completion shapes (``workload_done`` /
+      ``workload_done_self_poweroff`` / ``relaunched_workload_done`` /
+      ``workload_done_finalize_failed`` (#1055) — every
+      producer of ``status="done"`` is a success path): a short run completing
+      entirely between 540s polls is observed ONLY this way, and a stale
+      streak surviving a SUCCESS would fire on a non-consecutive later death.
+
+    Read-before-write (inside :func:`router.reset_gcp_boot_death_streak`): the
+    lease is only mutated when a record exists, so the common healthy tick
+    costs one lease read. A lease failure is logged, never raised.
+    """
+    if getattr(handle, "backend", None) != "gcp":
+        return
+    status = result.status
+    phase = result.current_phase
+    positive = (
+        (status == "running" and phase in ("workload", "relaunched_workload"))
+        or (status == "dead" and phase == GCP_WORKLOAD_FAILED_PHASE)
+        or status == "done"
+    )
+    if not positive:
+        return
+    extra = getattr(handle, "extra", None) or {}
+    rung = str(extra.get("gcp_ladder_rung") or "unknown_rung")
+    try:
+        from explore_persona_space.backends.router import reset_gcp_boot_death_streak
+
+        reset_gcp_boot_death_streak(int(issue), rung)
+    except Exception as exc:
+        logging.warning(
+            "backend_poll: boot-death streak reset failed for issue %d rung %s "
+            "(%s: %s); the stale record decays at the UTC day rollover",
+            int(issue),
+            rung,
+            type(exc).__name__,
+            exc,
+        )
 
 
 # ── RunPod no-port wedge: clock helpers + escalation + failover (#664/#689) ───
@@ -1181,11 +1715,46 @@ def _issue_cells_for_handle(issue: int, handle) -> list:
     return []
 
 
+def _list_issue664_hub_files(repo_id: str, prefixes: tuple[str, ...]) -> set[str]:
+    """Union of server-side SCOPED listings for the wedge gate (#920/#988).
+
+    Replaces the bare full-repo ``list_repo_files`` on the ~1M-file data repo
+    (which wedges >600 s, #920) with one scoped tree walk per root prefix.
+    An absent prefix contributes zero files (EntryNotFoundError is mapped to
+    [] inside list_hf_files_under_path) — identical to a full listing having
+    no files under it. Transport/auth/RepositoryNotFound errors PROPAGATE
+    (the gate must fail loud, never fail open, before an irreversible
+    terminate).
+
+    NOTE the listing is now TOKEN-BEARING (``HfApi(token=HF_TOKEN)``) where
+    the old module-level ``huggingface_hub.list_repo_files`` call was
+    anonymous — on a token problem the failure direction is loud/safe (an
+    auth error propagates and blocks the terminate), never a silent
+    fail-open.
+    """
+    import os
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import list_hf_files_under_path
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    files: set[str] = set()
+    for prefix in prefixes:
+        files.update(
+            list_hf_files_under_path(api, repo_id, prefix, repo_type="dataset", revision="main")
+        )
+    return files
+
+
 def _wedged_run_inputs_on_hf(issue: int, handle) -> _WedgeInputsGate:
     """Per-cell three-state inputs-on-HF gate for the irreversible auto-terminate.
 
-    Classifies each selected cell ``complete | partial | absent`` from ONE fresh
-    ``list_repo_files`` (EXACT expected file set per S1, not prefix-presence).
+    Classifies each selected cell ``complete | partial | absent`` from a UNION
+    of three server-side SCOPED listings (EXACT expected file set per S1, not
+    prefix-presence) — the three root prefixes are the ONLY prefixes
+    ``issue664_dispatch._classify_cell_hub_state`` matches files against, so
+    the union is a superset of every file the classifier can see (#988).
     Terminate is allowed iff there are ZERO partial cells — a COMPLETE cell's
     data is preserved, a not-yet-run ABSENT cell is rerunnable, and only a
     half-uploaded PARTIAL cell would lose recoverable work.
@@ -1202,12 +1771,12 @@ def _wedged_run_inputs_on_hf(issue: int, handle) -> _WedgeInputsGate:
     scripts_dir = str(_Path(__file__).resolve().parent)
     if scripts_dir not in sys.path:
         sys.path.insert(0, scripts_dir)
-    import huggingface_hub
     import issue664_common as C
     import issue664_dispatch as D
 
-    files = set(
-        huggingface_hub.list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main")
+    files = _list_issue664_hub_files(
+        C.HF_DATA_REPO,
+        (C.HF_RAW_COMPLETIONS_PREFIX, C.HF_STORE_PREFIX, C.HF_MARKER_SLOT_PREFIX),
     )
     complete: list[str] = []
     partial: list[str] = []
@@ -1286,10 +1855,13 @@ def _runspec_from_runpod_handle(handle, issue):
     ``extra`` carries ``intent`` plus (for runs dispatched through the unified
     router's canonical handle) ``workload_cmd`` / ``hydra_args`` / ``gpus`` /
     ``time_budget_hours`` (+ ``repo_branch`` post-#909, threaded through so the
-    failover re-execution syncs the ISSUE branch, not ``main``; a legacy handle
-    without the key still reconstructs). FAILS LOUD (raises ``ValueError``) on
-    a handle that carries NEITHER a workload command NOR hydra args — it NEVER
-    silently re-provisions a blank pod.
+    failover re-execution syncs the ISSUE branch, not ``main``; + the footprint
+    fields ``boot_disk_gb`` / ``min_ram_gb`` post-#1118, so the fresh pod keeps
+    the plan's disk/RAM requirement instead of silently downsizing to the
+    200 GB default volume — the #1112 ENOSPC class, one failover hop later; a
+    legacy handle without the keys still reconstructs). FAILS LOUD (raises
+    ``ValueError``) on a handle that carries NEITHER a workload command NOR
+    hydra args — it NEVER silently re-provisions a blank pod.
     """
     from explore_persona_space.backends.base import RunSpec
 
@@ -1302,6 +1874,17 @@ def _runspec_from_runpod_handle(handle, issue):
             f"cannot reconstruct a RunSpec for the fresh-pod re-provision. Refusing to "
             f"re-provision a blank pod (extra keys present: {sorted(extra)})."
         )
+    # #1118: forward the footprint fields (mirroring _runspec_from_gcp_handle's
+    # #1010 forwarding) so the wedge / CUDA-IMA fresh-pod re-provision keeps
+    # the plan's disk requirement — RunPodBackend.launch threads boot_disk_gb
+    # into --volume-gb (GPU) / --container-disk-gb (CPU). Keys forwarded only
+    # when present/truthy, so a legacy handle reconstructs byte-identically.
+    rebuilt_extra: dict = {}
+    if extra.get("repo_branch"):
+        rebuilt_extra["repo_branch"] = extra["repo_branch"]
+    for key in ("boot_disk_gb", "min_ram_gb"):
+        if extra.get(key):
+            rebuilt_extra[key] = extra[key]
     return RunSpec(
         issue=int(issue),
         intent=extra.get("intent", "lora-7b"),
@@ -1310,7 +1893,7 @@ def _runspec_from_runpod_handle(handle, issue):
         time_budget_hours=extra.get("time_budget_hours"),
         workload_cmd=workload_cmd,
         hydra_args=hydra_args,
-        extra=({"repo_branch": extra["repo_branch"]} if extra.get("repo_branch") else {}),
+        extra=rebuilt_extra,
     )
 
 
@@ -2242,25 +2825,48 @@ def _runspec_from_gcp_handle(handle, issue):
     exclusion holds with NO placeholder substituted into the unused branch
     (MF2).
 
-    FAILS LOUD (raises ``ValueError``) on a pre-#659 handle that lacks the
-    workload command — it NEVER silently launches a blank RunPod job (the
-    §4.1.0 spec-threading is a HARD PREREQUISITE; the fact-checker confirmed
-    A7=WRONG, the pre-#659 ``extra`` did not carry it).
+    FAILS LOUD (raises ``ValueError``) on a handle that carries NEITHER a
+    workload command NOR hydra args — it NEVER silently launches a blank
+    RunPod job (the §4.1.0 spec-threading is a HARD PREREQUISITE; the
+    fact-checker confirmed A7=WRONG, the pre-#659 ``extra`` did not carry
+    it). The both-empty VALUE check (#1122, matching the RunPod sibling
+    :func:`_runspec_from_runpod_handle`) replaced the key-presence check:
+    the demonstrated production shape (incident #1090) was an exit-75
+    same-command-rerun RECONNECT that rewrote the sidecar without the
+    launch-only workload extras — fixed at the write site by #1122
+    (``gcp.reconnect_or_none`` threading + the ``issue_dispatch``
+    carry-forward) — and keys-present-but-both-empty now also refuses
+    loudly instead of building a blank RunSpec.
     """
     from explore_persona_space.backends.base import RunSpec
 
     extra = handle.extra or {}
-    if "workload_cmd" not in extra or "hydra_args" not in extra:
+    workload_cmd = extra.get("workload_cmd", "") or ""  # str, verbatim (MF1)
+    hydra_args = tuple(extra.get("hydra_args") or ())  # list/tuple -> tuple, verbatim
+    if not workload_cmd and not hydra_args:
         raise ValueError(
-            f"GCP handle for issue {issue} lacks workload_cmd/hydra_args in extra "
-            f"(pre-#659 handle?); cannot reconstruct a RunSpec for the RunPod failover. "
-            f"Refusing to launch a blank RunPod job."
+            f"GCP handle for issue {issue} carries no workload_cmd/hydra_args in extra "
+            f"(keys present: {sorted(extra)}; reconnected={extra.get('reconnected')!r}). "
+            f"Most likely an exit-75 same-command-rerun RECONNECT rewrote the handle "
+            f"sidecar without the launch-only workload extras (#1122 — fixed at the "
+            f"write site as of that task) — or a pre-#659 handle. Cannot reconstruct "
+            f"a RunSpec for the RunPod failover; refusing to launch a blank RunPod job."
         )
-    workload_cmd = extra["workload_cmd"]  # str, verbatim (MF1)
-    hydra_args = tuple(extra["hydra_args"])  # list/tuple -> tuple, verbatim
     # #909: thread repo_branch through so the RunPod re-execution syncs the
     # ISSUE branch, not `main` (per-issue dispatch scripts live on issue
     # branches). A legacy handle without the key still reconstructs.
+    # #1010: ALSO forward the footprint fields (boot_disk_gb / min_ram_gb)
+    # so the RunPod CPU-fallback feasibility gate + container-disk threading
+    # cover the async failover paths (#659 crash / #783 queue-timeout) —
+    # pre-#1010 the rebuilt extra carried ONLY repo_branch, so the gate would
+    # fail-OPEN there and the #958 shape could recur. Keys forwarded only when
+    # present/truthy, so a legacy handle reconstructs byte-identically.
+    rebuilt_extra: dict = {}
+    if extra.get("repo_branch"):
+        rebuilt_extra["repo_branch"] = extra["repo_branch"]
+    for key in ("boot_disk_gb", "min_ram_gb"):
+        if extra.get(key):
+            rebuilt_extra[key] = extra[key]
     return RunSpec(
         issue=int(issue),
         intent=extra.get("intent", "lora-7b"),
@@ -2269,7 +2875,7 @@ def _runspec_from_gcp_handle(handle, issue):
         time_budget_hours=extra.get("time_budget_hours"),
         workload_cmd=workload_cmd,
         hydra_args=hydra_args,
-        extra=({"repo_branch": extra["repo_branch"]} if extra.get("repo_branch") else {}),
+        extra=rebuilt_extra,
     )
 
 
@@ -2418,6 +3024,95 @@ def _failover_queued_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path)
     )
 
 
+def _failover_boot_looped_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -> dict:
+    """Fail a boot-looping GCP rung over to RunPod (#1029).
+
+    The boot-loop sibling of :func:`_failover_dead_gcp_to_runpod` /
+    :func:`_failover_queued_gcp_to_runpod`: a thin wrapper over the SAME core
+    (:func:`_failover_gcp_to_runpod`) — hence the SAME idempotency
+    short-circuit (durable lease + ``.claude/cache`` sentinel keyed to the GCP
+    identity), the SAME terminal-rung seam, the SAME authoritative sidecar
+    re-point + terminal-JSON contract — with the boot-loop labelling and:
+
+    * ``teardown_first=False`` — the VM self-powered-off and the
+      ``--instance-termination-action=DELETE`` reaps it; a lingering record
+      degrades to the stale-GCP-VM janitor (``gcp_audit.py``), exactly the
+      #659 stance (only the #783 queue-timeout path tears down, because a
+      QUEUED instance is still live server-side).
+    * ``extra_evidence`` carrying the streak count + rung label, so the
+      ``epm:backend-selected`` marker records WHICH rung boot-looped and at
+      what streak.
+    """
+    # Lazy import (module convention: backend_poll -> router imports stay inside
+    # functions so the --help path is fast and the import direction is one-way).
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD,
+        gcp_boot_death_streak,
+    )
+
+    extra = getattr(handle, "extra", None) or {}
+    rung = str(extra.get("gcp_ladder_rung") or "unknown_rung")
+    try:
+        streak = gcp_boot_death_streak(int(issue), rung)
+    except Exception:
+        streak = -1  # unknown (lease unreadable); the failover proceeds regardless
+    return _failover_gcp_to_runpod(
+        issue=issue,
+        handle=handle,
+        result=result,
+        sidecar=sidecar,
+        reason=ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD,
+        running_phase=ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD,
+        cause_label="GCP pre-workload boot loop",
+        evidence_source="async_poller_boot_loop",
+        failover_tag="#1029 boot-loop failover",
+        teardown_first=False,
+        extra_evidence={"boot_death_streak": streak, "gcp_ladder_rung": rung},
+    )
+
+
+def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -> dict:
+    """Fail a vanished-while-PENDING GCP instance over to RunPod (#1116/#1112).
+
+    The queue-VANISH sibling of :func:`_failover_queued_gcp_to_runpod` /
+    :func:`_failover_boot_looped_gcp_to_runpod`: a thin wrapper over the SAME
+    core (:func:`_failover_gcp_to_runpod`) — hence the SAME idempotency
+    short-circuit (durable lease + ``.claude/cache`` sentinel keyed to the GCP
+    identity), the SAME terminal-rung seam, the SAME authoritative sidecar
+    re-point + terminal-JSON contract — with the queue-vanish labelling and:
+
+    * ``teardown_first=False`` — the instance record is already GONE
+      server-side (the DWS drop deleted it; that absence IS the trigger), so
+      there is nothing to tear down — the #659 stance, NOT #783's (only a
+      still-LIVE queued instance needs its capacity request released).
+    * ``extra_evidence`` carrying the last observed phase (``"pending"``, the
+      clock discriminator) + the ladder-rung label, so the
+      ``epm:backend-selected`` marker records WHICH rung's queue dropped the
+      request.
+    """
+    # Lazy import (module convention: backend_poll -> router imports stay inside
+    # functions so the --help path is fast and the import direction is one-way).
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
+    )
+
+    extra = getattr(handle, "extra", None) or {}
+    rung = str(extra.get("gcp_ladder_rung") or "unknown_rung")
+    return _failover_gcp_to_runpod(
+        issue=issue,
+        handle=handle,
+        result=result,
+        sidecar=sidecar,
+        reason=ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
+        running_phase=ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
+        cause_label="GCP FLEX_START queue vanish",
+        evidence_source="async_poller_queue_vanish",
+        failover_tag="#1116 queue-vanish failover",
+        teardown_first=False,
+        extra_evidence={"last_observed_phase": GCP_PENDING_PHASE, "gcp_ladder_rung": rung},
+    )
+
+
 def _failover_gcp_to_runpod(
     *,
     issue: int,
@@ -2430,6 +3125,7 @@ def _failover_gcp_to_runpod(
     evidence_source: str,
     failover_tag: str,
     teardown_first: bool,
+    extra_evidence: dict | None = None,
 ) -> dict:
     """Shared core for the GCP->RunPod async failover (#659 crash + #783 queue timeout).
 
@@ -2447,7 +3143,11 @@ def _failover_gcp_to_runpod(
 
     ``cause_label`` / ``evidence_source`` / ``failover_tag`` are the only
     per-caller display strings; every idempotency + sidecar-repoint + terminal
-    path is shared, so the exactly-once bound holds identically for both callers.
+    path is shared, so the exactly-once bound holds identically for all callers.
+    ``extra_evidence`` (#1029, keyword-only, default ``None``) is merged into
+    the evidence dict the terminal rung records on the marker — the default
+    keeps the #659/#783 callers' evidence byte-identical
+    (``test_failover_seam_default_reason_unchanged_byte_for_byte``).
     """
     # Lazy imports — keep the --help path fast and match the patch targets the
     # poller tests monkeypatch (RunPodBackend from backends.runpod;
@@ -2537,6 +3237,9 @@ def _failover_gcp_to_runpod(
                 "current_phase": result.current_phase,
                 "log_tail_excerpt": result.log_tail_excerpt,
                 "gcp_pod_name": handle.pod_name,
+                # #1029 enrichment slot — empty for the #659/#783 callers
+                # (extra_evidence=None), so their evidence stays byte-identical.
+                **(extra_evidence or {}),
             },
             reason=reason,
             marker_poster=post_marker_via_task_py,
@@ -2890,6 +3593,14 @@ def main(argv: list[str] | None = None) -> int:
     backend = _resolve_backend(handle.backend)
     result = backend.poll(handle)
 
+    # #1029 boot-streak reset, evaluated on the RAW poll result BEFORE any
+    # escalation below rewrites it — a #669 wedge escalation is a MID-WORKLOAD
+    # event (boot demonstrably fine), so it must not mask the reset. Fires only
+    # on a POSITIVE workload-started signal (running/"workload",
+    # dead/terminal_workload_failed, or a #935 done shape); a no-op on every
+    # other poll (incl. the mid-boot running/"startup" window).
+    _maybe_reset_gcp_boot_streak(handle, result, issue=args.issue)
+
     # #669 hung-VM wedge escalation: a GCP VM RUNNING-but-hung (eps/phase frozen
     # at a non-terminal value past the staleness floor WITH a transport-class
     # reachability alarm) is rewritten to status=dead / terminal_workload_wedged
@@ -2915,6 +3626,28 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(queue_timeout_json))
         return 0
 
+    # #1116 GCP FLEX_START queue-VANISH escalation: a dead not-found poll
+    # (current_phase="terminal_instance not found") whose sidecar phase clock
+    # last observed "pending" means the DWS queue dropped the request
+    # server-side (create DONE, no delete op — #1112) — a CAPACITY miss, failed
+    # over to RunPod on the FIRST occurrence (reason
+    # gcp_queue_vanish_failover_runpod, no daily-attempt burn, no teardown —
+    # the record is already gone). Input-disjoint with the queue-timeout block
+    # above (running/"pending" there vs dead/not-found here) and with the #659
+    # predicate below (not-found vs terminal_workload_failed); MUST run BEFORE
+    # the #1029 boot-loop recorder — not-found is in its heuristic phase set,
+    # and this branch's return is what keeps a pure capacity event from
+    # poisoning the boot-death streak. A no-op on every other case (non-GCP,
+    # not dead, wrong phase, non-pending/missing clock, or a cpu-bigmem
+    # handle, which keeps its ordinary dead path incl. the boot-death record).
+    result = _maybe_escalate_gcp_queue_vanish(handle, result, Path(sidecar))
+    if _is_gcp_queue_vanish(handle, result):
+        queue_vanish_json = _failover_vanished_gcp_to_runpod(
+            issue=args.issue, handle=handle, result=result, sidecar=Path(sidecar)
+        )
+        print(json.dumps(queue_vanish_json))
+        return 0
+
     # ASYNC GCP-workload-failover (#659): a GCP VM that was already up and
     # crashed its WORKLOAD (not setup) minutes in surfaces here as
     # status=dead / current_phase="terminal_workload_failed". The synchronous
@@ -2932,6 +3665,23 @@ def main(argv: list[str] | None = None) -> int:
             issue=args.issue, handle=handle, result=result, sidecar=Path(sidecar)
         )
         print(json.dumps(failover_json))
+        return 0
+
+    # #1029 GCP boot-loop breaker: a pre-workload setup death (deterministic
+    # terminal_setup_failed, or a YOUNG terminated / instance-not-found death)
+    # is COUNTED per (issue, rung) in the durable lease; the Nth consecutive
+    # one on the same rung is rewritten to terminal_boot_loop and failed over
+    # to RunPod (the same core, reason gcp_boot_loop_failover_runpod). Sub-N
+    # deaths fall through to the ordinary dead path unchanged. Ordered AFTER
+    # the #659 block so a real workload crash keeps its #659 reason, and
+    # BEFORE the #775 CUDA-IMA block (a RunPod-only escalation this GCP-only
+    # one can never collide with).
+    result = _maybe_escalate_gcp_boot_loop(handle, result, issue=args.issue, now=time.time())
+    if _is_gcp_boot_loop(handle, result):
+        boot_loop_json = _failover_boot_looped_gcp_to_runpod(
+            issue=args.issue, handle=handle, result=result, sidecar=Path(sidecar)
+        )
+        print(json.dumps(boot_loop_json))
         return 0
 
     # #775 RunPod CUDA-IMA repeat-failover. MUST run BEFORE the no-port escalation
@@ -3059,17 +3809,29 @@ def main(argv: list[str] | None = None) -> int:
 
         gpu_idle_state_path = _gpu_idle_state_path(Path(sidecar))
         prev_gpu_idle_state = _load_gpu_idle_state(gpu_idle_state_path)
+        # ── #1033 per-instance idle-clock scoping (attempt-id keyed) ─────
+        # attempt_id is on the handle at poll time (no extra gcloud call),
+        # fresh per new instance, label-recovered on reconnect (#927).
+        # Scope BEFORE the run-epoch anchor below so ONE consistently-scoped
+        # dict flows through every consumer AND the persist at the bottom —
+        # an unscoped read at persist time could resurrect a cleared key.
+        current_attempt_id = str(handle.extra.get("attempt_id") or "")
+        prev_gpu_idle_state = _scope_idle_state_to_attempt(prev_gpu_idle_state, current_attempt_id)
         zone = handle.extra.get("zone") or backend._config.primary_zone
         gpu_util = backend._gcp_gpu_util_probe(handle, zone)
         now_epoch = int(time.time())
         current_phase = getattr(result, "current_phase", "") or ""
         pod = handle.pod_name
-        # ── #873 run-scoped tripwire dedup anchor (AC #6, GCP mirror) ────
-        # A fresh epm:run-launched clears the width dedup keys so a
-        # relaunch / follow-up round re-arms the width advisory. Applied to
-        # the WIDTH call only — the idle-advisory keys are untouched by the
-        # reset (disjoint key set), so the two existing calls keep reading
-        # prev_gpu_idle_state verbatim.
+        # ── #873/#1033 run-scoped state anchor (AC #6, GCP mirror) ───────
+        # A fresh epm:run-launched clears the width dedup keys AND (since
+        # #1033) the idle-advisory keys — belt-and-suspenders next to the
+        # attempt-id scoping above (a same-instance relaunch posts a fresh
+        # run-launched with no attempt change; a fresh instance changes the
+        # attempt id whether or not the marker landed). The pre-#1033
+        # "idle-advisory keys are untouched by the reset" contract was the
+        # bug being fixed (#763/#810 stale idle minutes on fresh VMs). ALL
+        # consumers below — idle advisory, escalation, width — read the
+        # scoped ``tripwire_state``.
         tripwire_state, tripwire_run_epoch = _tripwire_run_scope(
             prev_gpu_idle_state,
             run_age_sec=_run_launched_age_sec(args.issue, now_epoch),
@@ -3082,7 +3844,7 @@ def main(argv: list[str] | None = None) -> int:
             status="running",
             gpu_util=gpu_util,
             current_phase=current_phase,
-            prev_state=prev_gpu_idle_state,
+            prev_state=tripwire_state,
             now_epoch=now_epoch,
         )
         escalated_phases, gcp_gpu_idle_escalation_posted = _maybe_escalate_gpu_idle(
@@ -3092,7 +3854,7 @@ def main(argv: list[str] | None = None) -> int:
             gpu_util=gpu_util,
             current_phase=current_phase,
             idle_since_epoch=idle_since,
-            prev_state=prev_gpu_idle_state,
+            prev_state=tripwire_state,
             now_epoch=now_epoch,
         )
         # ── #873 m-of-N GPU-width advisory (GCP mirror of the RunPod call) ─
@@ -3121,6 +3883,13 @@ def main(argv: list[str] | None = None) -> int:
                 "gpu_width_idle_set": ",".join(str(i) for i in gcp_width_idle_set),
                 "gpu_width_advised_phases": ",".join(sorted(gcp_width_advised)),
                 "tripwire_run_epoch": str(tripwire_run_epoch),
+                # #1033: the instance incarnation the idle keys above belong
+                # to. An empty CURRENT id (fail-safe keep branch) preserves
+                # the stored one — read from the SCOPED dict, never the raw
+                # load, so a cleared key can never be resurrected here.
+                "idle_attempt_id": (
+                    current_attempt_id or tripwire_state.get("idle_attempt_id", "")
+                ),
             },
         )
 
