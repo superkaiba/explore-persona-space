@@ -971,8 +971,8 @@
     "1124": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1124",
-      "status": "running",
+      "path": "tasks/reviewing/1124",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas entry \u2014 token-id concat for teacher-forced capture (BPE seam)"
     },
     "113": {
