@@ -1076,15 +1076,15 @@
     "1138": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1138",
-      "status": "reviewing",
+      "path": "tasks/completed/1138",
+      "status": "completed",
       "title": "daily-fix: verbatim bare push/merge snippets in SKILL.md"
     },
     "1139": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1139",
-      "status": "reviewing",
+      "path": "tasks/completed/1139",
+      "status": "completed",
       "title": "daily-fix: ad-hoc result summaries state data provenance"
     },
     "114": {
@@ -1111,22 +1111,22 @@
     "1142": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1142",
-      "status": "running",
+      "path": "tasks/completed/1142",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 vLLM H100 prefix-cache IMA differential + mitigation"
     },
     "1143": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1143",
-      "status": "running",
+      "path": "tasks/completed/1143",
+      "status": "completed",
       "title": "workflow-fix: verify_task_body file-count claim-matcher misses footer shape"
     },
     "1144": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1144",
-      "status": "proposed",
+      "path": "tasks/running/1144",
+      "status": "running",
       "title": "Port issue-1090 stranded shared-src fixes to main (sft.py CVD pin, datagen mt500 + posonly panel, bare/ICL contexts)"
     },
     "115": {

@@ -6451,10 +6451,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # + <=~1 KB. Prior: 47,930 B post-#881)
     # #948: seam-stubbed production-body lens (Step 3.8)
     "codex-code-reviewer.md": 51_600,
-    # measured 63,424 B post-#1115 (read-hygiene context-budget section —
-    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 62,500 —
-    # measured 61,733 B post-#1102)
-    "experiment-implementer.md": 64_000,
+    # measured 64,360 B post-#1138 (bare-push guidance append —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 64,000 —
+    # measured 63,942 B post-#1115)
+    "experiment-implementer.md": 65_300,
     # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
     # disposition-conditional resume-glob confirm — plan-mandated growth;
     # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)

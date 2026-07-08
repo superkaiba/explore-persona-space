@@ -1,0 +1,72 @@
+{
+  "commit": "87c9c73168",
+  "created": "2026-07-08T11:33:21Z",
+  "figsize": [
+    5.6,
+    4.2
+  ],
+  "points": [
+    {
+      "3-gram repetition flag rate (min count 5)": 0.08666666666666667,
+      "D": 0.03140688061926557,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "3-gram repetition flag rate (min count 5)": 0.0385,
+      "D": 0.12255952954468806,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "3-gram repetition flag rate (min count 5)": 0.0385,
+      "D": -0.01563705940475839,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "3-gram repetition flag rate (min count 5)": 0.0385,
+      "D": -0.009986009046104655,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "3-gram repetition flag rate (min count 5)": 0.771,
+      "D": 0.5904310946594687,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "3-gram repetition flag rate (min count 5)": 0.3452054794520548,
+      "D": 0.08563161421546632,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "3-gram repetition flag rate (min count 5)": 0.09866666666666667,
+      "D": 0.0553870529861438,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "3-gram repetition flag rate (min count 5)": 0.09866666666666667,
+      "D": -0.04710935920726376,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "3-gram repetition flag rate (min count 5)": 0.09866666666666667,
+      "D": -0.06041213897719325,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "3-gram repetition flag rate (min count 5)": 0.689,
+      "D": 0.4282697415395536,
+      "_kind": "scatter",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 10
+}

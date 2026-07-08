@@ -2107,6 +2107,13 @@ disagreement (PASS-class vs FAIL), a `reconciler` agent (Claude) issues
 a binding tie-break. See (see workflow.yaml § ensemble_review) for the
 canonical contract.
 
+**Round push hygiene.** Any branch push run during this loop — yours
+between rounds, or the implementer's per its spec — is BARE with its exit
+code checked: `git -C "$WT" push origin issue-<N>`. NEVER pipe a
+push/merge through `tail`/`grep`/`head` (the `guard_piped_git_push.sh`
+PreToolUse hook blocks the piped shape; a pipe masks a rejected push).
+Copy the verbatim forms from Step 10d § "Bare push / merge snippets".
+
 **5a. Spawn both reviewers in parallel (fresh contexts, single message).**
 
 **Spec-freshness check first (worktree-cwd sessions; applies at EVERY
@@ -4771,7 +4778,11 @@ When this skill is re-invoked in `running`:
       `.claude/agent-memory/<owning_agent>/` plus a one-line
       `MEMORY.md` index entry, then commit BY EXPLICIT PATH on `main`
       from the repo root and push (auto, no approval gate — same
-      standing rule 2026-06-02 as workflow fixes). The point is
+      standing rule 2026-06-02 as workflow fixes). Push BARE —
+      `git push origin main || uv run python scripts/sync_repo_root.py` —
+      never piped (Step 10d § "Bare push / merge snippets";
+      sync_repo_root exit 0 can mean in-flight — landing not guaranteed,
+      see the canonical block's caveat). The point is
       same-day cross-session sharing: a sibling session's next agent
       spawn loads the memory within minutes, instead of waiting for the
       nightly `/daily` sweep (on 2026-06-11, #537 and #545 re-hit
@@ -6054,7 +6065,11 @@ explicit eval-data path):
    `src/explore_persona_space/analysis/` — over the existing eval
    JSONs. Regenerate any affected figures (the analyzer's
    `figures/issue_<N>/` outputs); commit + push to `main` so the body
-   can SHA-pin them per the existing analyzer.md Step 3 rule.
+   can SHA-pin them per the existing analyzer.md Step 3 rule. Push BARE:
+   `git push origin main || uv run python scripts/sync_repo_root.py` —
+   never piped (Step 10d § "Bare push / merge snippets"; sync_repo_root
+   exit 0 can mean in-flight — landing not guaranteed, see the canonical
+   block's caveat).
 4. **Capture the headline before / after.** Read the current `body.md`
    H1 title before the re-spawn and the analyzer-produced H1 after,
    plus the LOW / MODERATE / HIGH confidence tag in each.
@@ -6735,7 +6750,11 @@ loaded). The chat-side prompt below remains the durable record.
 
 **Auto-merge the worktree now (experiments).** The instant the task
 lands at `awaiting_promotion`, run the **Step 10d auto-merge procedure**
-(rebase-merge `issue-<N>` -> `main`, no prompt, keep the worktree). The
+(rebase-merge `issue-<N>` -> `main`, no prompt, keep the worktree).
+Execute it with the Step 10d command blocks VERBATIM — bare,
+exit-code-checked push/merge, never piped through `tail`/`grep`/`head`
+(Step 10d § "Bare push / merge snippets"; the `guard_piped_git_push.sh`
+hook blocks piped variants). The
 code / figures / `eval_results` the run produced land on `main`
 immediately so the next experiment inheriting from `main` gets any
 shared-infra fix this branch carried (this is the #456 -> #466 fix). The
@@ -8217,6 +8236,52 @@ reaped later by the daily stale-worktree audit (`worktree_audit.py`,
 **Idempotent.** Skip the whole step if `epm:merged` already exists on the
 task (an experiment that merged at Step 9b is a no-op here). Also skip if
 no PR exists or the branch is already merged into `main`.
+
+#### Bare push / merge snippets (canonical — copy verbatim, never compose a piped variant)
+
+Every `git push` / `git merge` / `gh pr merge|create` in this skill — and any
+IMPROVISED recovery around one — runs BARE with its exit code checked. Never
+pipe one through `tail` / `grep` / `head` / any filter: bash makes a
+pipeline's exit status the LAST stage's, so the pipe masks a rejected push
+and the session proceeds on a merge that never landed (#957; 4 sessions
+2026-07-02). The `guard_piped_git_push.sh` PreToolUse hook BLOCKS the piped
+shape anyway, so composing it just wastes a turn (~10 blocks across ≥8
+sessions on 2026-07-07, #1138). Push/merge output is a few lines — it needs
+no trimming. Copy these forms; the earlier composition sites (Step 5 round
+pushes, the failure-lesson memory persist, Step 9a-ter re-analysis commits,
+the Step 9b auto-merge trigger) point here:
+
+```bash
+# (1) Worktree branch push, rebase-retry on reject (the safe-case form):
+git -C "$WT" push origin issue-<N> \
+  || { git -C "$WT" pull --rebase=merges --autostash \
+       && git -C "$WT" push origin issue-<N>; }
+
+# (2) Repo-root push to main, single-flight recovery on reject
+#     (sync_repo_root exit 0 can mean "another sync in flight — your push
+#      has NOT landed"; for guard-critical pushes use the landing-verified
+#      form in the post-merge stale-task-folder guard below):
+git push origin main || uv run python scripts/sync_repo_root.py
+
+# (3) PR merge (for sites OUTSIDE Step 10d/9b — those two run the full
+#     lint-verdict-gated blocks below, never this bare form) — branch the
+#     flow on the EXIT CODE, never on filtered output:
+if gh pr merge <PR> --rebase --delete-branch=false; then
+  echo "merged"
+else
+  echo "merge failed — route to the Step 10d failure handling"; false
+fi
+
+# (4) Need to bound long output? Redirect to a FILE and read the FILE in a
+#     SEPARATE command — the push itself stays bare:
+git push origin main > /tmp/issue-<N>-push.log 2>&1; PUSH_RC=$?
+tail -20 /tmp/issue-<N>-push.log
+[ "$PUSH_RC" -eq 0 ] || { echo "PUSH FAILED (rc=$PUSH_RC)"; false; }
+```
+
+Inside Step 10d itself, use the full executable blocks below (they wrap
+forms (1)/(3) in the pre-push workflow-lint verdict gate); this subsection
+is the copy source for every OTHER site.
 
 #### Merge safety guards (run before the merge commands)
 
