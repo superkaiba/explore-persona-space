@@ -218,10 +218,11 @@ def cos_rb_figs(records: dict, out_dir: Path) -> None:
                     )
                     band_done = True
         which = "top shift direction" if dv == "cos_top_to_rb" else "mean shift direction"
+        short = "top direction" if dv == "cos_top_to_rb" else "mean shift"
         ax.set_xlabel("decoder layer")
-        ax.set_ylabel(f"cosine({which}, behavior read-out direction)")
+        ax.set_ylabel(f"cos({short}, behavior read-out)")
         ax.set_title(f"alignment of the {which} to the behavior read-out — response arm")
-        ax.legend(fontsize=7)
+        ax.legend(fontsize=6, ncol=2)
         _save(fig, out_dir, f"explore_{dv}_profiles", _meta(dv=dv, cells=present))
 
 
