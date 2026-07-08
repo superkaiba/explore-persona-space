@@ -1083,8 +1083,8 @@
     "1139": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1139",
-      "status": "approved",
+      "path": "tasks/running/1139",
+      "status": "running",
       "title": "daily-fix: ad-hoc result summaries state data provenance"
     },
     "114": {
