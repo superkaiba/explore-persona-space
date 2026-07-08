@@ -106,3 +106,4 @@
 - [Shallow pod clones break git-log fix checks](feedback_shallow_clone_fix_commit_verification.md) — depth-1 clones attribute every path to the boundary commit; verify fix commits by content hash (pod sha256sum vs git show <sha>:<path>), never git-log path attribution (#779)
 - [GCP→RunPod failover: unchained launch + boot-lag false-dead](feedback_gcp_runpod_failover_unchained_launch.md) — verify pod state before repair; failover mints no RunPod sidecar, flag on run-launched marker (#931)
 - [append-mode unit logs carry stale tracebacks](feedback_append_mode_unit_logs_stale_tracebacks.md) — only errors after the fix-engaged line count against a relaunch (#1112)
+- [vLLM H100 IMA under heavy shared-prefix caching](feedback_vllm_h100_prefix_cache_ima.md) — A100-clean + short-probe-clean differential pins the class; mitigate enable_prefix_caching=False + enforce_eager=True (default-off knobs) (#1092 launch 4)
