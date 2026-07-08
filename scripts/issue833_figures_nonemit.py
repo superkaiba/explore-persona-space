@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001  # minus sign in figure text intentional
 """Figures for task #833 follow-up round 2 (nonverbatim-profile-ablation).
 
 Reads ONLY the persisted round outputs under ``eval_results/issue_833/``

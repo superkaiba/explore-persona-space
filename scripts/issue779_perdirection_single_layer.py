@@ -173,11 +173,19 @@ def main() -> int:
     fig2, bx = plt.subplots(figsize=(6.5, 5.0))
     xs = np.arange(len(TRAITS))
     bx.bar(
-        xs, [per_trait[t]["r_b"]["heldout_r2"] for t in TRAITS], 0.6,
-        color=[star_colors[t] for t in TRAITS], label="persona vector r_B",
+        xs,
+        [per_trait[t]["r_b"]["heldout_r2"] for t in TRAITS],
+        0.6,
+        color=[star_colors[t] for t in TRAITS],
+        label="persona vector r_B",
     )
-    bx.axhline(rd["r2_mean"], color="0.35", ls="--", lw=1.3,
-               label=f"random direction (R2={rd['r2_mean']:.2f})")
+    bx.axhline(
+        rd["r2_mean"],
+        color="0.35",
+        ls="--",
+        lw=1.3,
+        label=f"random direction (R2={rd['r2_mean']:.2f})",
+    )
     bx.set_xticks(xs)
     bx.set_xticklabels(TRAITS)
     bx.set_ylabel("held-out per-direction R2")
