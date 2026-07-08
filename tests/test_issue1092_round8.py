@@ -1514,3 +1514,30 @@ def test_rows_for_cell_shuffled_restricted_to_derangement_domain():
     # non-shuffled subset cells are unaffected
     claude_rows = [{"row_id": "r_0", "claude_subset": True}, {"row_id": "r_1"}]
     assert len(gp._rows_for_cell(claude_rows, "cell_inst_claude")) == 1
+
+
+def test_turn_content_char_spans_last_turn_trailing_whitespace():
+    """The smoke-#2 residual: `_render_full_conversation("pretrained")` ends with
+    `.rstrip()`, stripping a FINAL turn's own trailing whitespace; the positional
+    span assert must clamp that turn to the realized render instead of crashing."""
+    turns = [
+        {"role": "user", "content": "Tell me a story."},
+        {"role": "assistant", "content": "peaks of joy and adventure.\n"},
+    ]
+    render = gp._render_full_conversation(turns, "pretrained")
+    assert not render.endswith("\n")  # the rstrip is what makes this case real
+    spans, turn_ends = gp._turn_content_char_spans(render, turns, "pretrained")
+    # non-final turn: exact verbatim slice
+    s0, e0 = spans[0]
+    assert render[s0:e0] == "Tell me a story."
+    # final turn: clamped to the realized render end; the realized slice is the
+    # content minus its stripped trailing whitespace
+    s1, e1 = spans[1]
+    assert e1 == len(render)
+    assert render[s1:e1] == "peaks of joy and adventure."
+    assert turn_ends[-1] == len(render)
+    # a GENUINE mismatch beyond whitespace stripping still fails loud
+    bad_turns = [dict(turns[0]), dict(turns[1])]
+    bad_render = render[: -len("adventure.")] + "calamity!!"
+    with pytest.raises(AssertionError, match="LAST turn"):
+        gp._turn_content_char_spans(bad_render, bad_turns, "pretrained")

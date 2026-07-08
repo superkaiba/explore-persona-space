@@ -3235,7 +3235,21 @@ def _turn_content_char_spans(
             if content:
                 start = line_start + len(role) + 2
                 end = start + len(content)
-                if full_render[start:end] != content:
+                # round-8.8: `_render_full_conversation("pretrained")` ends with
+                # `.rstrip()`, so the FINAL turn's own trailing whitespace is
+                # stripped along with the terminal separator; clamp that turn's
+                # span to the realized render (a real WildChat final turn whose
+                # content ends "\n" crashed the exact-length assert here).
+                if turn_idx == len(turns) - 1 and end > len(full_render):
+                    clipped = full_render[start:]
+                    if clipped != content[: len(clipped)] or clipped.rstrip() != content.rstrip():
+                        raise AssertionError(
+                            f"dynamics content span mismatch for pretrained LAST turn "
+                            f"{turn_idx}: render tail {len(clipped)} chars != content "
+                            f"{len(content)} chars beyond trailing-whitespace stripping"
+                        )
+                    end = len(full_render)
+                elif full_render[start:end] != content:
                     raise AssertionError(
                         f"dynamics content span mismatch for pretrained turn {turn_idx}: "
                         f"{content!r}"
