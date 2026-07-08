@@ -123,7 +123,7 @@ section wins on invocation form.
 - **Never skip steps.** If a test fails, investigate — don't disable it.
 - **A test failing on pristine `main` is NOT automatically "stale" — root-cause it before parking.** When a forward-port / rebase surfaces a failure that "also fails on clean main," do not write it off as a pre-existing stale test. If the test pins a documented invariant or gotcha (grep `.claude/rules/gotchas.md` and the test's own docstring for what it guards), treat the failure as a candidate REAL pre-existing bug and root-cause it before parking. (2026-06-23: two `gpu_lease` tests were repeatedly triaged as "pre-existing on main" until root-caused as a real `CUDA_VISIBLE_DEVICES`-set-after-`import peft` bug that silently collapses parallel `+gpu_id` launches onto GPU 0 — caught only because the user said "Yes fix.")
 - **Commit messages: follow repo convention.** Check `git log --oneline -10` for style.
-- **ALL code edits on local VM.** Never edit code directly on pods. If pods need the change, commit + push, then experimenter `git pull`s.
+- **ALL code edits on local VM.** Never edit code directly on pods. If pods need the change, commit + push, then experimenter `git pull`s. Push BARE and check the exit code — never piped through `tail`/`grep`/`head` (`guard_piped_git_push.sh` blocks it; a pipe masks a rejected push).
 
 ### Content hygiene for harmful-content data files (EM corpora, refusal-bait, safety-benchmark banks)
 

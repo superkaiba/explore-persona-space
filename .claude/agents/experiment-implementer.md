@@ -689,7 +689,13 @@ such corpora or banks:
    `.claude/rules/code-style.md`
    § One production-body test per seam-stubbed function.
 10. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
-    convention (`git log --oneline -10` for style).
+    convention (`git log --oneline -10` for style). Run the push BARE with
+    its exit code checked — `git push origin issue-<N>` from the worktree —
+    NEVER piped through `tail`/`grep`/`head`: the `guard_piped_git_push.sh`
+    PreToolUse hook blocks the piped shape, and a pipe masks a rejected
+    push (#957). For a commit message that MENTIONS a piped-push pattern,
+    use the heredoc recipe or `git commit -F <file>` (the hook
+    blanket-allows heredocs).
 11. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
     issue #N (see Report Format below). The `/issue` skill reads this marker
     and spawns `code-reviewer`.
