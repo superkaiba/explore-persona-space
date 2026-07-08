@@ -13841,6 +13841,12 @@ def test_wedge_api_error_env_kill_switch_disables_production_path(
         asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1074_api_error_tail()
     )
     monkeypatch.setenv("EPM_TICK_WEDGE_MIN_API_ERRORS", "0")
+    # #1127 plan-sanctioned edit (§7.13): the #1074 stale tail now ALSO trips
+    # the new failed-turn-run trigger (3 failed wake-turns). This test pins
+    # "each kill switch disables its OWN trigger class" — each class needs
+    # its own switch thrown to silence this tail.
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TURNS", "0")
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TOTAL", "0")
     now = 1_000_000.0
 
     asw.stalled_session_pass(
@@ -13853,6 +13859,244 @@ def test_wedge_api_error_env_kill_switch_disables_production_path(
     assert stops == [] and spawns == []  # kill switch: no wedge escalation
     state = _read_stalled_state_845(isolated_registry, 1075)
     assert state.get("wedge_hits", 0) == 0  # no wedge hit recorded
+
+
+def _wedge_1127_partial_wake_unit(n_heartbeats=2):
+    # #1127: the #1098 (5bdae5b8) / #1090 (5e464f3d) repeating tail unit —
+    # [dequeue, prompt, prompt, assistant x n, api-error]: the wake posts
+    # mid-turn heartbeats (resetting every ROW-level counter) then dies in an
+    # api-error row (sanitized; no refusal text).
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    prompt = {"type": "user", "message": {"role": "user", "content": "/issue-tick 1098"}}
+    assistant = {
+        "type": "assistant",
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "on it"}]},
+    }
+    api_error = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+    }
+    return [dequeue, prompt, prompt, *([assistant] * n_heartbeats), api_error]
+
+
+def test_wedge_fresh_self_report_failed_turn_tail_escalates(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1127 plan test 9 — THE headline: a FRESH self-report (age 5 min — a
+    # dying-but-heartbeating wake keeps refreshing it) no longer gates the
+    # turn-level probe; 3 partial-wake units (each with mid-turn heartbeats)
+    # escalate to the respawn arm on the first tick (fence stop), spawn on
+    # the second (mirrors test_wedge_api_error_tail_escalates_to_respawn).
+    # Pre-#1127 this exact setup was a no-op twice over: the lazy gate never
+    # probed a fresh session, and the row-level predicate was blind to the
+    # partially-successful wake anyway.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1098, "sess-1098", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    monkeypatch.setattr(
+        asw,
+        "_transcript_tail_rows",
+        lambda pid, **_k: [row for _ in range(3) for row in _wedge_1127_partial_wake_unit()],
+    )
+    now = 1_000_000.0
+    pids = {"sess-1098": 4242}
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert stops == ["sess-1098"]  # first tick: wedge -> respawn -> fence stop
+    assert spawns == []
+    state = _read_stalled_state_845(isolated_registry, 1098)
+    assert state["wedge_hits"] == 1
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert spawns == [(1098, 24.0)]  # verified dead -> spawn
+    assert markers and markers[-1] == (1098, "session-auto-respawn")
+
+
+def _wedge_1127_alternating_storm_tail():
+    # #1127: the c16b10ca structural shape — 7 timestamped failed turns
+    # alternating with ok turns (5 min apart, ~every other wake lost), the
+    # NEWEST completed turn failed. Sanitized structural rows only.
+    from datetime import UTC, datetime
+
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    prompt = {"type": "user", "message": {"role": "user", "content": "/issue-tick 1090"}}
+    tail = []
+    base = 1_780_000_000.0
+    for i in range(13):  # f,o,f,o,...,f -> 7 failed, 6 ok
+        ts = datetime.fromtimestamp(base + i * 300, tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        resp = {
+            "type": "assistant",
+            "timestamp": ts,
+            "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+        }
+        if i % 2 == 0:
+            resp["isApiErrorMessage"] = True
+        tail.extend([dequeue, prompt, resp])
+    return tail
+
+
+def test_wedge_fresh_self_report_rate_tail_escalates(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1127 plan test 10: a fresh self-report with an alternating-storm tail
+    # (>= 6 timestamped failed turns inside the 120-min window, newest
+    # completed turn failed) escalates via the failed-turn-rate trigger.
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1290, "sess-1290", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1127_alternating_storm_tail()
+    )
+    now = 1_000_000.0
+    pids = {"sess-1290": 4242}
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert stops == ["sess-1290"]  # first tick: rate wedge -> fence stop
+    assert spawns == []
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert spawns == [(1290, 24.0)]
+
+
+def test_wedge_fresh_path_kill_switches_restore_lazy_gate(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1127 plan test 11 (the #1021 wiring-test pattern):
+    # EPM_TICK_WEDGE_MIN_FAILED_TURNS=0 + EPM_TICK_WEDGE_MIN_FAILED_TOTAL=0
+    # restore the exact pre-#1127 lazy gate on a fresh self-report — no
+    # stop, no spawn, wedge_hits == 0, AND the transcript is NEVER probed
+    # (proving the production gate calls both env helpers and that 0+0 keeps
+    # the zero-probe hot path).
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1291, "sess-1291", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    probes: list[int] = []
+
+    def _recording_tail(pid, **_k):
+        probes.append(pid)
+        return [row for _ in range(3) for row in _wedge_1127_partial_wake_unit()]
+
+    monkeypatch.setattr(asw, "_transcript_tail_rows", _recording_tail)
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TURNS", "0")
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TOTAL", "0")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1291": 4242},
+    )
+    assert stops == [] and spawns == []
+    assert probes == []  # zero-probe hot path: _transcript_tail_rows never called
+    state = _read_stalled_state_845(isolated_registry, 1291)
+    assert state.get("wedge_hits", 0) == 0
+
+
+def test_wedge_fresh_path_does_not_fire_stale_only_triggers(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1127 plan test 12: the ROW-level triggers stay STALENESS-GATED — on a
+    # fresh self-report neither the #779 swallow tail nor a single wake's
+    # multi-retry api-error rows escalate (their failure modes freeze the
+    # self-report by construction, so the stale gate opens for them there).
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    now = 1_000_000.0
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    prompt = {"type": "user", "message": {"role": "user", "content": "/issue-tick 779"}}
+    api_error = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+    }
+
+    _write_autonomous_entry(isolated_registry, 1292, "sess-1292", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: [dequeue] * 3)
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1292": 4242},
+    )
+    assert stops == [] and spawns == []  # #779 shape: dequeue-run is stale-only
+
+    _write_autonomous_entry(isolated_registry, 1293, "sess-1293", cap=24.0)
+    monkeypatch.setattr(
+        asw,
+        "_transcript_tail_rows",
+        lambda pid, **_k: [dequeue, prompt, api_error, api_error, api_error],
+    )
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1293": 4242},
+    )
+    assert stops == [] and spawns == []  # single-wake retries: api-error-run is stale-only
+
+
+def test_wedge_self_report_age_none_routes_to_fresh_path(monkeypatch):
+    # #1127 round-1 critique duty 4 (§7b): `self_report_age is None` routes
+    # to the FRESH path (turn-level triggers only) instead of the old
+    # no-probe return — a failed-turn tail fires, while the #779 swallow
+    # tail (a stale-only row trigger) does not.
+    import autonomous_session_watch as asw
+
+    entry = {"happy_session_id": "sess-none", "issue": 1294}
+    pids = {"sess-none": 4242}
+
+    monkeypatch.setattr(
+        asw,
+        "_transcript_tail_rows",
+        lambda pid, **_k: [row for _ in range(3) for row in _wedge_1127_partial_wake_unit()],
+    )
+    action, live, hits, note = asw._apply_prompt_wedge_override(
+        issue=1294,
+        entry=entry,
+        action="keep",
+        self_report_age=None,
+        respawn_eligible=True,
+        pids_by_sid=pids,
+        live_consecutive=2,
+        wedge_hits=0,
+    )
+    assert action == "respawn" and live == 0 and hits == 1
+    assert note is not None and "failed-turn-run" in note
+
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: [dequeue] * 3)
+    action, live, hits, note = asw._apply_prompt_wedge_override(
+        issue=1294,
+        entry=entry,
+        action="keep",
+        self_report_age=None,
+        respawn_eligible=True,
+        pids_by_sid=pids,
+        live_consecutive=2,
+        wedge_hits=0,
+    )
+    assert action == "keep" and live == 2 and hits == 0 and note is None
 
 
 def test_wedge_unresolvable_transcript_noop(isolated_registry, monkeypatch, stalled_recorder):
