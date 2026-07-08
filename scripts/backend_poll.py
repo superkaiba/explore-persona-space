@@ -1855,10 +1855,13 @@ def _runspec_from_runpod_handle(handle, issue):
     ``extra`` carries ``intent`` plus (for runs dispatched through the unified
     router's canonical handle) ``workload_cmd`` / ``hydra_args`` / ``gpus`` /
     ``time_budget_hours`` (+ ``repo_branch`` post-#909, threaded through so the
-    failover re-execution syncs the ISSUE branch, not ``main``; a legacy handle
-    without the key still reconstructs). FAILS LOUD (raises ``ValueError``) on
-    a handle that carries NEITHER a workload command NOR hydra args — it NEVER
-    silently re-provisions a blank pod.
+    failover re-execution syncs the ISSUE branch, not ``main``; + the footprint
+    fields ``boot_disk_gb`` / ``min_ram_gb`` post-#1118, so the fresh pod keeps
+    the plan's disk/RAM requirement instead of silently downsizing to the
+    200 GB default volume — the #1112 ENOSPC class, one failover hop later; a
+    legacy handle without the keys still reconstructs). FAILS LOUD (raises
+    ``ValueError``) on a handle that carries NEITHER a workload command NOR
+    hydra args — it NEVER silently re-provisions a blank pod.
     """
     from explore_persona_space.backends.base import RunSpec
 
@@ -1871,6 +1874,17 @@ def _runspec_from_runpod_handle(handle, issue):
             f"cannot reconstruct a RunSpec for the fresh-pod re-provision. Refusing to "
             f"re-provision a blank pod (extra keys present: {sorted(extra)})."
         )
+    # #1118: forward the footprint fields (mirroring _runspec_from_gcp_handle's
+    # #1010 forwarding) so the wedge / CUDA-IMA fresh-pod re-provision keeps
+    # the plan's disk requirement — RunPodBackend.launch threads boot_disk_gb
+    # into --volume-gb (GPU) / --container-disk-gb (CPU). Keys forwarded only
+    # when present/truthy, so a legacy handle reconstructs byte-identically.
+    rebuilt_extra: dict = {}
+    if extra.get("repo_branch"):
+        rebuilt_extra["repo_branch"] = extra["repo_branch"]
+    for key in ("boot_disk_gb", "min_ram_gb"):
+        if extra.get(key):
+            rebuilt_extra[key] = extra[key]
     return RunSpec(
         issue=int(issue),
         intent=extra.get("intent", "lora-7b"),
@@ -1879,7 +1893,7 @@ def _runspec_from_runpod_handle(handle, issue):
         time_budget_hours=extra.get("time_budget_hours"),
         workload_cmd=workload_cmd,
         hydra_args=hydra_args,
-        extra=({"repo_branch": extra["repo_branch"]} if extra.get("repo_branch") else {}),
+        extra=rebuilt_extra,
     )
 
 

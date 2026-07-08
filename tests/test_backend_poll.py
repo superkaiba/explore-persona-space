@@ -1685,6 +1685,66 @@ def test_reconstructors_tolerate_legacy_handles_without_repo_branch():
     assert rp_spec.workload_cmd == "bash scripts/x.sh"
 
 
+def test_runspec_from_runpod_handle_forwards_boot_disk_gb(monkeypatch):
+    """#1118: the RunPod-handle reconstructor forwards the footprint fields
+    (``boot_disk_gb`` / ``min_ram_gb``) into the rebuilt spec extra — proven
+    through the PRODUCTION handle (real launch, provision no-op'd) + the
+    sidecar serialize/deserialize roundtrip, so int-survives-JSON is asserted
+    — and a legacy handle without the keys reconstructs byte-identically."""
+    from explore_persona_space.backends import runpod as RP
+    from explore_persona_space.backends.base import RunHandle, RunSpec
+    from explore_persona_space.backends.issue_dispatch import (
+        deserialize_handle,
+        serialize_handle,
+    )
+    from scripts import backend_poll as bp
+
+    _real_run = RP.subprocess.run
+
+    def _selective_run(cmd, *a, **k):
+        if isinstance(cmd, (list, tuple)) and any("pod_lifecycle.py" in str(c) for c in cmd):
+            return None
+        return _real_run(cmd, *a, **k)
+
+    monkeypatch.setattr(RP.subprocess, "run", _selective_run, raising=False)
+    handle = RP.RunPodBackend().launch(
+        RunSpec(
+            issue=1118,
+            intent="lora-7b",
+            backend="runpod",
+            workload_cmd="bash scripts/issue1118_dispatch.sh",
+            extra={"repo_branch": "issue-1118", "boot_disk_gb": 575, "min_ram_gb": 32},
+        )
+    )
+    assert handle.extra["boot_disk_gb"] == 575
+    roundtripped = deserialize_handle(serialize_handle(handle))
+    spec = bp._runspec_from_runpod_handle(roundtripped, 1118)
+    assert spec.extra.get("boot_disk_gb") == 575
+    assert spec.extra.get("min_ram_gb") == 32
+    assert spec.extra.get("repo_branch") == "issue-1118"
+
+    # Legacy handle without the footprint keys: the rebuilt extra is
+    # byte-identical to pre-#1118 (empty here — no repo_branch either).
+    legacy_rp = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="",
+        pod_name="pod-689",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-689.log",
+        extra={
+            "issue": 689,
+            "intent": "lora-7b",
+            "workload_cmd": "bash scripts/x.sh",
+            "hydra_args": [],
+            "gpus": None,
+            "time_budget_hours": None,
+        },
+    )
+    legacy_spec = bp._runspec_from_runpod_handle(legacy_rp, 689)
+    assert legacy_spec.extra == {}
+
+
 # ---------------------------------------------------------------------------
 # #934: --lane-suffix sidecar resolution
 # ---------------------------------------------------------------------------
