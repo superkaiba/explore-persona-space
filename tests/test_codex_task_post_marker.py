@@ -90,6 +90,76 @@ def test_nonzero_exit_without_landed_marker_retries_then_drops(monkeypatch, tmp_
 
 
 # ──────────────────────────────────────────────────────────────────────
+# _post_marker rc==0: success-stderr forwarding (#1130).
+#
+# `task.py post-marker` deliberately exits 0 while printing the
+# deferred-commit ERROR and the #1100 post-commit LANDING CHECK warning
+# to stderr; the rc==0 branch used to `return True` immediately,
+# discarding both into capture_output's void.
+# ──────────────────────────────────────────────────────────────────────
+
+
+_LANDING_CHECK_LINE = (
+    "task.py LANDING CHECK: commit abc123 ('epm:x') is NOT reachable from refs/heads/main"
+)
+
+
+def test_success_with_nonempty_stderr_forwards_to_wrapper_stderr(monkeypatch, capsys):
+    """rc==0 + non-empty child stderr → forwarded to the wrapper's stderr
+    with the greppable `[post-marker stderr]` prefix; return value and the
+    single-invocation success path are unchanged."""
+    calls = []
+    monkeypatch.setattr(
+        codex_task.subprocess,
+        "run",
+        lambda *a, **k: (
+            calls.append(a) or SimpleNamespace(returncode=0, stdout="", stderr=_LANDING_CHECK_LINE)
+        ),
+    )
+
+    ok = codex_task._post_marker(1130, "epm:codex-task-spawned", "Codex job_id=task-x")
+
+    assert ok is True
+    assert len(calls) == 1
+    err = capsys.readouterr().err
+    assert "task.py LANDING CHECK" in err
+    assert "[post-marker stderr]" in err
+
+
+def test_success_with_empty_stderr_forwards_nothing(monkeypatch, capsys):
+    """rc==0 + empty child stderr (the common case) → zero new output."""
+    monkeypatch.setattr(
+        codex_task.subprocess,
+        "run",
+        lambda *a, **k: SimpleNamespace(returncode=0, stdout="", stderr=""),
+    )
+
+    ok = codex_task._post_marker(1130, "epm:codex-task-spawned", "Codex job_id=task-x")
+
+    assert ok is True
+    assert capsys.readouterr().err == ""
+
+
+def test_success_stderr_over_cap_truncates_with_notice(monkeypatch, capsys):
+    """A pathological >cap child stderr is bounded: at most cap payload chars
+    forwarded plus one explicit truncation-notice line."""
+    cap = codex_task._SUCCESS_STDERR_FORWARD_CAP
+    monkeypatch.setattr(
+        codex_task.subprocess,
+        "run",
+        lambda *a, **k: SimpleNamespace(returncode=0, stdout="", stderr="x" * (cap + 3000)),
+    )
+
+    ok = codex_task._post_marker(1130, "epm:codex-task-spawned", "Codex job_id=task-x")
+
+    assert ok is True
+    err = capsys.readouterr().err
+    assert f"... (truncated at {cap} chars)" in err
+    assert "x" * cap in err  # the capped payload is forwarded...
+    assert "x" * (cap + 1) not in err  # ...and nothing beyond the cap
+
+
+# ──────────────────────────────────────────────────────────────────────
 # _marker_already_landed: matching rules.
 # ──────────────────────────────────────────────────────────────────────
 

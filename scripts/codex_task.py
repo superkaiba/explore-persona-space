@@ -250,6 +250,30 @@ STATUS_TIMEOUT_SECS = 60
 RESULT_TIMEOUT_SECS = 120
 CANCEL_TIMEOUT_SECS = 60
 POST_MARKER_TIMEOUT_SECS = 60
+_SUCCESS_STDERR_FORWARD_CAP = 2000  # chars; the #1100 LANDING CHECK ERROR measures ~826 chars
+#                                     once interpolated — the cap must NOT truncate its
+#                                     recovery recipe (the cherry-pick cmd sits at the tail)
+
+
+def _forward_success_stderr(kind: str, stderr: str | None) -> None:
+    """Forward a rc==0 post-marker child's non-empty stderr to the wrapper's
+    stderr (#1130). ``task.py post-marker`` deliberately exits 0 while
+    printing warnings to stderr — the deferred-commit ERROR and the #1100
+    post-commit LANDING CHECK — and ``capture_output=True`` would otherwise
+    discard them so they reach no transcript. Capped so a pathological
+    child can never flood the wrapper transcript."""
+    err = (stderr or "").strip()
+    if not err:
+        return
+    truncated = len(err) > _SUCCESS_STDERR_FORWARD_CAP
+    for line in err[:_SUCCESS_STDERR_FORWARD_CAP].splitlines():
+        print(f"[post-marker stderr] {kind}: {line}", file=sys.stderr)
+    if truncated:
+        print(
+            f"[post-marker stderr] {kind}: ... (truncated at {_SUCCESS_STDERR_FORWARD_CAP} chars)",
+            file=sys.stderr,
+        )
+
 
 # ── Quota-exhausted sentinel (#1126) ─────────────────────────────────
 # On a hard org usage-limit terminal (job spawns, dies phase=failed in
@@ -412,6 +436,7 @@ def _post_marker(issue: int, kind: str, note: str, version: int = 1) -> bool:
                 timeout=POST_MARKER_TIMEOUT_SECS,
             )
             if result.returncode == 0:
+                _forward_success_stderr(kind, result.stderr)
                 return True
             print(
                 f"WARN: post-marker attempt {attempt} for {kind} returned "
