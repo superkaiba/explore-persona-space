@@ -511,6 +511,9 @@ def tf_hero_arm_contrast(tf: dict, installs: dict, out_dir: Path) -> None:
     }
     offsets = {"own": -width, "shared": 0.0, "context": width}
     colors = {"own": palette[2], "shared": palette[0], "context": palette[3]}
+    # Per-cell bootstrap whiskers DROPPED (deflated resample spread, not a CI
+    # for the 120-row point — same convention as the layer-14 2x2 hero);
+    # paired own-minus-shared difference CIs are quoted in the text.
     for arm in ("own", "shared", "context"):
         vals = [d["rank_k_at_90"] for d in arm_vals[arm]]
         bars = ax.bar(
@@ -520,19 +523,6 @@ def tf_hero_arm_contrast(tf: dict, installs: dict, out_dir: Path) -> None:
             color=colors[arm],
             label=TF_ARM_LABEL[arm],
         )
-        for x, d in zip(xs, arm_vals[arm], strict=True):
-            ci = (d.get("boot_ci") or {}).get("rank_k_at_90")
-            yerr = _yerr_from_ci(d["rank_k_at_90"], ci)
-            if yerr:
-                ax.errorbar(
-                    x + offsets[arm],
-                    d["rank_k_at_90"],
-                    yerr=yerr,
-                    fmt="none",
-                    ecolor="0.25",
-                    elinewidth=0.9,
-                    capsize=2,
-                )
         ax.bar_label(bars, fontsize=6, fmt="%.0f")
     lat = tf.get("lattice", {}).get("registered_thresholds", {})
     lo = lat.get("collapse_max", 30.0)
@@ -545,7 +535,9 @@ def tf_hero_arm_contrast(tf: dict, installs: dict, out_dir: Path) -> None:
     )
     ax.set_ylabel("rank-k@90 (modes for 90% of variance)")
     ax.set_title(f"shift rank by measurement arm — layer {layer} (shared text held fixed)")
-    ax.legend(fontsize=7)
+    # Headroom above the tallest bar so the legend never overlaps the bars.
+    ax.set_ylim(0, 102)
+    ax.legend(fontsize=6.5, ncol=2, loc="upper center", framealpha=0.9)
     _save(fig, out_dir, "hero_arm_contrast_rankk_tf", _meta(cells=cells, layer=layer))
 
 
