@@ -95,7 +95,7 @@ def main() -> None:
     # ---------------- Panel A: per-context signed delta(c) ----------------
     n_ctx = len(CONTEXT_ORDER)
     dodge = [-0.26, 0.0, 0.26]
-    for (cell_key, label, role), dy in zip(PANEL_A_CELLS, dodge):
+    for (cell_key, label, role), dy in zip(PANEL_A_CELLS, dodge, strict=False):
         cell = cells[cell_key]
         color = paper_palette_role(role)
         xs = [_context_value(cell["delta_per_context"], slug) for slug, _ in CONTEXT_ORDER]

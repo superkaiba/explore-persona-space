@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001  # Greek rho in figure text intentional
 """Issue #468 figure: in-context examples (lit) vs natural-language description (NL).
 
 Plots the per-layer Spearman rho between base-model cosine (S_narrow vs S_broad,

@@ -56,7 +56,7 @@ def main() -> None:
     ax.axhline(160, color=paper_palette_role("baseline"), linestyle="--", linewidth=1.2, alpha=0.7)
 
     # Annotate counts above each bar
-    for bar, val in zip(bars, values):
+    for bar, val in zip(bars, values, strict=False):
         ax.text(
             bar.get_x() + bar.get_width() / 2,
             val + 4,
@@ -69,7 +69,10 @@ def main() -> None:
     set_title_subtitle(
         ax,
         title="Onpolicy-v2 elicitation: refuse_medical yield 150/200 (75%, below 80% floor)",
-        subtitle="Tier-1 bare-context yield matches the pre-training base rate (0.375%) — the gate fired as designed",
+        subtitle=(
+            "Tier-1 bare-context yield matches the pre-training base rate (0.375%) "
+            "— the gate fired as designed"
+        ),
         source="eval_results/issue_545/onpolicy_v2/elicitation/refuse_medical_pool_meta.json",
     )
 

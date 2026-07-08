@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001  # Greek rho in figure text intentional
 """Regenerate the missing #507 hero figure: paired per-source |Spearman rho| at 7B vs 72B.
 
 Reads eval_results/issue_507/cross_arm_comparison.json (committed aggregate of the
@@ -64,11 +65,11 @@ def main() -> int:
     fig, axes = plt.subplots(1, 2, figsize=(9.5, 4.2), sharey=True)
     xs = range(len(SOURCE_ORDER))
 
-    for ax, (key, title, subtitle) in zip(axes, PANELS):
+    for ax, (key, title, subtitle) in zip(axes, PANELS, strict=False):
         rho_7b = [abs(data[key]["rho_7b_per_source"][s]) for s in SOURCE_ORDER]
         rho_72b = [abs(data[key]["rho_72b_per_source"][s]) for s in SOURCE_ORDER]
 
-        for x, lo, hi in zip(xs, rho_7b, rho_72b):
+        for x, lo, hi in zip(xs, rho_7b, rho_72b, strict=False):
             ax.plot([x - 0.12, x + 0.12], [lo, hi], color="lightgrey", lw=1.2, zorder=1)
         ax.scatter(
             [x - 0.12 for x in xs], rho_7b, color=c_7b, s=55, zorder=3, label="7B (prior run)"

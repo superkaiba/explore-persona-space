@@ -60,7 +60,8 @@ def main() -> None:
     for cand in top3:
         phrase = cand["phrase"]
         for ctx in contexts:
-            # Original prompt format from issue_188_evolutionary_trigger.py: ctx + " " + phrase + " "
+            # Original prompt format from issue_188_evolutionary_trigger.py:
+            # ctx + " " + phrase + " "
             prompt = f"{ctx} {phrase} "
             req = llm.generate([prompt], sp)[0]
             for compl in req.outputs:

@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001  # Greek rho in figure text intentional
 """Issue #468 hero: where the EM-prediction signal sits along the trailing band.
 
 Regenerates the position-sweep bar chart (p0..p5 at layer 25, lit flavor,
@@ -47,9 +48,9 @@ def main() -> None:
     rhos = [r for _, r, _ in POSITIONS]
     # p0 (content token) and p5 (newline after assistant) are the named reads.
     colors = [primary if named else neutral for _, _, named in POSITIONS]
-    bars = ax.bar(xs, rhos, color=colors, width=0.68, zorder=3)
+    ax.bar(xs, rhos, color=colors, width=0.68, zorder=3)
 
-    for x, (_, rho, _) in zip(xs, POSITIONS):
+    for x, (_, rho, _) in zip(xs, POSITIONS, strict=False):
         if abs(rho) >= SIG_THRESHOLD:  # significant at p < 0.05
             va = "bottom" if rho > 0 else "top"
             off = 0.02 if rho > 0 else -0.02

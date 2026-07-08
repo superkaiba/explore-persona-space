@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001  # Greek rho in figure text intentional
 """Issue #468: predictor leaderboard — only cosine predicts EM amount.
 
 One bar per candidate predictor, at L25, in-context (lit) persona, training
@@ -46,7 +47,7 @@ def main() -> None:
     colors = [primary if p < 0.05 else neutral for _, _, p in PREDICTORS]
     ax.bar(xs, rhos, color=colors, width=0.6, zorder=3)
 
-    for x, (_, rho, p) in zip(xs, PREDICTORS):
+    for x, (_, rho, p) in zip(xs, PREDICTORS, strict=False):
         ax.text(x, rho + 0.02, f"{rho:.2f}", ha="center", va="bottom", fontsize=10, color="#333333")
         if p < 0.05:
             ax.text(x, rho + 0.07, "*", ha="center", va="bottom", fontsize=15, color="#333333")

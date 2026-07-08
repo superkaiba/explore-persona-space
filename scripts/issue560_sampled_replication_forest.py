@@ -76,7 +76,7 @@ def main() -> None:
     fig, ax = plt.subplots(figsize=(6.5, 3.6))
 
     ys = list(range(len(rows)))[::-1]
-    for (label, est, lo, hi, n, role), y in zip(rows, ys):
+    for (_label, est, lo, hi, _n, role), y in zip(rows, ys, strict=False):
         color = paper_palette_role(role)
         ax.errorbar(
             est,

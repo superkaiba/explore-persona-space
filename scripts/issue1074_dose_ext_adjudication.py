@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001  # en dash in figure text intentional
 """Adjudication-robustness recompute + figure for issue #1074 round `install-dose-extension`.
 
 Revision-round (interpretation-critic v5) recompute of two reads the round's
@@ -174,7 +175,7 @@ def fig_adjudication(data: dict, out_dir: Path) -> None:
         linewidth=2,
         label="graded mean, scored completions (30-question subset)",
     )
-    for s, g in zip(steps, graded):
+    for s, g in zip(steps, graded, strict=False):
         ax.text(s, g + 1.6, f"{g:.1f}", ha="center", fontsize=8.6, color=colors[0])
     ax.set_xlabel("training step (9 epochs = 270 steps)")
     ax.set_ylabel("mean judge score (0–100)")
@@ -218,9 +219,9 @@ def fig_adjudication(data: dict, out_dir: Path) -> None:
         linestyle="--",
         label="worst case with every unscored draw scored 100",
     )
-    for s, b in zip(steps, bound):
+    for s, b in zip(steps, bound, strict=False):
         ax.text(s, b + 0.022, f"{b:.2f}", ha="center", fontsize=8.6, color=colors[3])
-    for s, r in zip(steps, rate):
+    for s, r in zip(steps, rate, strict=False):
         ax.text(s, r - 0.045, f"{r:.2f}", ha="center", fontsize=8.6, color=colors[0])
     ax.axhline(BAND_LO, color="#2a6f4e", linestyle=":", linewidth=1.6)
     ax.text(
@@ -253,7 +254,10 @@ def main() -> None:
         "--rate-stage-dir",
         type=Path,
         default=repo
-        / "data/issue_1074/agg_stage/issue1074_gencompare/raw_completions/rate/harmful_compliance-mixed-e9",
+        / (
+            "data/issue_1074/agg_stage/issue1074_gencompare/raw_completions/rate/"
+            "harmful_compliance-mixed-e9"
+        ),
     )
     ap.add_argument("--out-dir", type=Path, default=repo / "figures/issue_1074")
     args = ap.parse_args()

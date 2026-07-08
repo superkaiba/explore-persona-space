@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001  # Greek rho + multiplication sign in figure text intentional
 """Issue #511: headline-cell |Spearman rho| vs N probes per persona, RHO ONLY
 (the left panel of convergence_fixed_cell.png, without the CV R^2 panel).
 
@@ -39,7 +40,7 @@ def main():
 
     fig, ax = plt.subplots(figsize=(8, 5.5))
     ax.errorbar(NS, mean, yerr=std, marker="o", ms=7, color="#1f4e79", lw=2, capsize=4, zorder=3)
-    for n, m in zip(NS, mean):
+    for n, m in zip(NS, mean, strict=False):
         ax.annotate(
             f"{m:.3f}",
             (n, m),
@@ -61,7 +62,7 @@ def main():
     )
     fig.savefig(OUT, dpi=150, bbox_inches="tight")
     print(f"wrote {OUT}")
-    for n, m, s in zip(NS, mean, std):
+    for n, m, s in zip(NS, mean, std, strict=False):
         print(f"  N={n:>3}: |rho| = {m:.4f} ± {s:.4f}")
 
 
