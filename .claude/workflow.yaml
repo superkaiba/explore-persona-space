@@ -2230,7 +2230,9 @@ markers:
       est_gpu_hours: <number>`. Fields line-initial one-per-line
       preferred; the `; `-joined single-line form is accepted by the
       parser (`task_workflow.parse_followup_note_field` splits each
-      line on `;` + whitespace; #1090/#841). A followup-scope marker is
+      line on `;` + whitespace; #1090/#841); literal backslash-n
+      escaped-newline notes are normalized parse-side (#1120). A
+      followup-scope marker is
       UNRUN until a matching `epm:same-issue-followup-run v1` with the
       same `followup_label` exists. Multiple DISTINCT `followup_label`s may
       be queued concurrently (same kind, append-only versions);
@@ -2261,7 +2263,9 @@ markers:
       changed>`. Fields line-initial one-per-line preferred; the
       `; `-joined single-line form is accepted by the parser — but a
       PROSE-LED note with no fields parses no label, closes nothing,
-      and undercounts the round caps (#1090 fu1). Posted as the round
+      and undercounts the round caps (#1090 fu1); literal backslash-n
+      escaped-newline notes are normalized parse-side (#1120). Posted
+      as the round
       exits `followups_running` and
       re-parks at `awaiting_promotion`. Idempotency record: an
       `epm:followup-scope v1` whose `followup_label` has a matching

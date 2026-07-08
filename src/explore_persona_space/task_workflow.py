@@ -2378,8 +2378,30 @@ def parse_followup_note_field(note: str, field: str) -> str | None:
     mid-segment field beats a later line's line-initial field (deliberate,
     pinned in tests). Returns ``None`` when the field is absent or its
     value is empty.
+
+    Notes occasionally arrive with LITERAL backslash-n two-char escape
+    sequences instead of real newlines (a shell ``--note "...\\n..."``
+    string passed uninterpreted; #825 run markers v6/v7). When the note
+    contains literal ``\\n`` escapes AND no real newline — the malformed
+    shape is precisely "the whole note is one physical line with escaped
+    separators" — the escapes (including literal ``\\r\\n``) are
+    normalized to real newlines on a parse-side copy before line
+    splitting. A note that already has real newlines keeps its literal
+    escapes untouched as content (quoted regex/code in a value never
+    splits). This deliberately under-reaches: even a single real newline
+    (e.g. one trailing ``\\n`` char) disables the normalization for the
+    whole note. Stored notes are never mutated (events.jsonl is
+    append-only).
     """
-    for line in (note or "").splitlines():
+    note = note or ""
+    if "\\n" in note and "\n" not in note:
+        # Escaped-newline normalization (#825 v6/v7; the #1090 fu1
+        # regression class): the whole note is one physical line whose
+        # separators arrived as literal backslash-n escapes. Parse-side
+        # copy only — the stored note is never rewritten. `\r\n` literals
+        # first so no stray `\r` survives on a value token (#1120).
+        note = note.replace("\\r\\n", "\n").replace("\\n", "\n")
+    for line in note.splitlines():
         # `; `-joined single-line notes (#1090 fu1/fu2 scopes, #841 scopes +
         # run markers) expose their fields as clause segments; a line with
         # no `;<whitespace>` yields itself unchanged, so every line-initial
