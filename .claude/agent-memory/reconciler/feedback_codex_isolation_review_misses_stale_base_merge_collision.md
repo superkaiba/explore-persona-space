@@ -21,7 +21,7 @@ new code path.
 
 **How to apply (mechanical, do this yourself in Step 2):**
 1. `git merge-base HEAD origin/main` + `git log origin/main --oneline | grep <recent-issue#>` — is the merge-base stale relative to a sibling PR touching the SAME file?
-2. `git merge --no-commit --no-ff origin/main` (stash first) → `git diff --name-only --diff-filter=U`; `git merge --abort`. A real conflict in a production-path file is Real-blocking.
+2. `git -C <worktree> merge --no-commit --no-ff origin/main` (stash first; the `-C <worktree>` form is required — a bare `git merge` is hook-blocked, #1128) → `git diff --name-only --diff-filter=U`; `git -C <worktree> merge --abort`. A real conflict in a production-path file is Real-blocking.
 3. `grep -c '<dropped-guard-expr>' <file>` on branch vs `git show origin/main:<file> | grep -c '<dropped-guard-expr>'` — branch=0/main>0 means the branch's rewrite silently dropped a guard concurrent main added.
 4. `grep -c '<new-constant>' <file>` branch vs main — branch=0/main>0 + the constant is imported in `__init__.py`/`__all__` ⇒ merged-tree import break.
 

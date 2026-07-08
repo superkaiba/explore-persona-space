@@ -11,7 +11,11 @@
 # edits to <file> into the wrong commit. A working-tree REVERT here (`git
 # restore`, a pathspec / bare-path / force `git checkout`, `git clean -f`,
 # `git reset --hard`) is just as destructive: it silently discards CONCURRENT
-# sessions' uncommitted edits and untracked files (#897).
+# sessions' uncommitted edits and untracked files (#897). A branch MERGE here
+# (`git merge <ref>`) is in the same destructive class (#1128): a conflicting
+# merge strands conflict markers in the shared tree until aborted, and even a
+# clean/ff merge lands branch commits on root main outside the sanctioned
+# landing path (gh pr merge / scratch worktree).
 #
 # Incident 2026-06-01: an infra session ran `git checkout -b fix/sweep-ckpt-persist`
 # in the repo root; a concurrent marker-leakage session's CLAUDE.md commit then
@@ -22,6 +26,10 @@
 # Incident 2026-07-02 (#841): a concurrent destructive working-tree op on the
 # shared root reverted the #841 analyzer's uncommitted body.md mid-task and
 # deleted untracked pre-registration + figure files.
+# Incident 2026-07-08 (#1090 -> #1128): a branch merge run at the SHARED repo
+# root conflicted on 2 files, leaving conflict markers in the shared tree for
+# ~70s until aborted — a concurrent session staging those files in that
+# window would have swept markered content into its commit.
 #
 # Fix: do feature/infra branch AND destructive work in a dedicated worktree:
 #     bash scripts/new_worktree.sh .claude/worktrees/<name> <branch>
@@ -64,10 +72,15 @@
 # ANOTHER command's argument therefore trips the guard: e.g.
 # `task.py post-marker <N> epm:X --note "... git switch ..."` is blocked
 # because the note text matches `git ... switch`, and a note/-m string
-# carrying a full `git restore .` / `git clean -fd` / `git reset --hard`
-# command literal trips the #897 detectors the same way. The workaround is to
+# carrying a full `git restore .` / `git clean -fd` / `git reset --hard` /
+# `git merge <branch>` (#1128) command literal trips the #897/#1128 detectors
+# the same way. The workaround is to
 # pass such note text via `--file <path.md>` instead of `--note`, and commit
-# messages via `git commit -F <file>`. One NARROWING of the raw scan (#1058):
+# messages via `git commit -F <file>`. The `git -C <path>` per-clause waiver
+# is PATH-BLIND for merge exactly as for every fenced verb (#1128):
+# `git -C <repo-root-path> merge <ref>` passes the hook (pre-existing
+# parity); the block message's "NEVER point -C at the repo root" line is the
+# stated control. One NARROWING of the raw scan (#1058):
 # heredoc BODIES destined for NON-SHELL consumers are stripped before parsing
 # by the strip_heredoc_bodies() pre-pass below when provably inert — every
 # opener validated, no shell-consumer / command-runner word on the opener
@@ -279,6 +292,21 @@
 #       while a heredoc body fed to `ssh host bash` stays blocked (C8) —
 #       shellish() strips only provably-inert DATA, and a body handed to a
 #       remote shell IS executed.
+# (xv)  (#1128) `git commit` during an in-progress root merge COMPLETES the
+#       merge (the ungated equivalent of the blocked `git merge --continue`)
+#       — gating `commit` would fence the shared root's primary purpose, so
+#       this stays open by design. Sanctioned recovery for an in-progress
+#       root merge is `git merge --abort` (allowed). Also: a parenthesized
+#       NO-ARG `(git merge)` misses the trailing space/EOL anchor — a git
+#       usage error anyway ("fatal: No commit specified"), ~zero risk.
+# (xvi) (#1128) Merge-SEMANTICS ops under other command words stay ungated:
+#       `git pull --no-rebase` / a config-override pull performs exactly the
+#       fenced merge (mitigated by the shared .git/config pins
+#       `pull.rebase=merges` + `rebase.autoStash=true`; root syncs route
+#       through sync_repo_root.py), and the rebase family (`git rebase
+#       <branch>`, `git cherry-pick`) mutates the root tree/history the
+#       same way. Different command words, outside this fence's Goal; a
+#       root-rebase fence is a separate workflow-fix candidate.
 #
 # Compound-command parsing is a best-effort CLAUSE SPLIT (#804): the command is
 # split on `;` / `&&` / `||` / `|` / `&` / raw newline (two-char separators
@@ -486,10 +514,13 @@ strip_heredoc_bodies() {
 }
 cmd=$(strip_heredoc_bodies "$cmd")
 
-# Only consider git checkout/switch/restore/clean/reset invocations at all
-# (loose pre-filter — a cheap skip, not a classifier; the tight per-verb
-# anchors live in classify_clause).
-echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset)\b' || exit 0
+# Only consider git checkout/switch/restore/clean/reset/merge invocations at
+# all (loose pre-filter — a cheap skip, not a classifier; the tight per-verb
+# anchors live in classify_clause). `\bmerge\b` deliberately matches
+# `merge-base` here (the boundary fires before `-`) — harmless, the tight
+# #1128 detector never fires on it; it does NOT match `--rebase=merges` /
+# `mergetool` / `--merges` / `--merged` (no trailing boundary).
+echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset|merge)\b' || exit 0
 
 # Split the raw command into (separator, next-separator, clause) TRIPLES,
 # PRESERVING which separator precedes each clause AND (#1098) which separator
@@ -649,6 +680,33 @@ classify_clause() {
   # --hard`).
   if echo "$c" | grep -qE '\bgit +(-[^ ]+( +[^ ]+)?( +|$))*reset\b[^;&|]* --hard(=|\b)'; then
     blocked="git reset --hard"
+  fi
+
+  # ---- #1128 branch-merge fence ------------------------------------------
+  # `git merge <ref>` on the shared root: a conflicting merge strands
+  # conflict markers in the shared tree until aborted (#1090: ~70s window a
+  # concurrent `git add && git commit` could sweep), and even a clean/ff
+  # merge lands branch commits on root main outside the Step 10d landing
+  # path. TIGHT anchor: `merge` must be followed by whitespace/end-of-clause
+  # — NOT `\b`, which fires before `-` and would trip `git merge-base`
+  # (run BARE at the root by the diff-size-budget sizing recipe and the
+  # Step 10d ancestry probes). Allow-arm: `--abort` / `--quit` are the
+  # sanctioned in-progress-merge RECOVERY (the #1090 session recovered via
+  # abort; fail-soft: never trap a user mid-recovery) — the flag must
+  # IMMEDIATELY follow the verb (`git merge --abort` accepts no ref, so
+  # the anchored form costs zero FPs and a quoted `-m "… --abort …"`
+  # message cannot spoof the allow (raw scan reads quoted args; the
+  # loose `[^;&|]*` form would fail open there). BLOCKED fail-closed:
+  # `--continue` (it COMPLETES exactly the root merge commit this fence
+  # prevents; recovery is abort — residual gap (xv) names the ungated
+  # `git commit` equivalent) and `--ff-only` (cannot conflict, but still
+  # lands branch commits on root main outside the landing path; worktree
+  # ff-syncs use `git -C <worktree> merge --ff-only main`, root syncs use
+  # sync_repo_root.py).
+  if echo "$c" | grep -qE '\bgit +(-[^ ]+( +[^ ]+)?( +|$))*merge( +|$)'; then
+    if ! echo "$c" | grep -qE '\bmerge +--(abort|quit)\b'; then
+      blocked="git merge (branch merge on the shared root)"
+    fi
   fi
   # ---- end #897 detectors ------------------------------------------------
 
@@ -844,9 +902,9 @@ while IFS=$'\t' read -r sep nextsep clause; do
   # `git -C <path>` scopes ONLY this clause (per-invocation) — allow it.
   echo "$clause" | grep -qE '\bgit +-C +' && continue
 
-  # not a git checkout/switch/restore/clean/reset clause at all -> skip
+  # not a git checkout/switch/restore/clean/reset/merge clause at all -> skip
   # (loose gate — a cheap skip; the tight anchors live in classify_clause)
-  echo "$clause" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset)\b' || continue
+  echo "$clause" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset|merge)\b' || continue
 
   # (#1098) ssh REMOTE-COMMAND / grep-family PATTERN-ARGUMENT clause waiver.
   # An `ssh <host> '<remote cmd>'` clause executes its command string on the
@@ -981,9 +1039,11 @@ done < <(split_and_label "$cmd")
 cur=$(git -C "$REPO" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
 [ "$cur" = main ] || exit 0
 
-echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree state. The repo root is the canonical commit target for scripts/task.py and every concurrent VM session (all assume HEAD==main); a branch switch here hijacks concurrent commits, and a working-tree revert (restore / checkout-pathspec / clean -f / reset --hard) silently discards CONCURRENT sessions' uncommitted edits (incidents 2026-06-01, #815, #841). Do branch/destructive work in a worktree instead:
+echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree state. The repo root is the canonical commit target for scripts/task.py and every concurrent VM session (all assume HEAD==main); a branch switch here hijacks concurrent commits, and a working-tree revert (restore / checkout-pathspec / clean -f / reset --hard) silently discards CONCURRENT sessions' uncommitted edits (incidents 2026-06-01, #815, #841), and a branch MERGE here can strand conflict markers in the shared tree that a concurrent commit sweeps (#1090). Do branch/destructive work in a worktree instead:
   bash scripts/new_worktree.sh .claude/worktrees/<name> <branch> && git -C .claude/worktrees/<name> ...
 NEVER point -C at the repo root itself for a destructive op — for repo-root recovery use: uv run python scripts/sync_repo_root.py
+To LAND a branch onto main: gh pr merge <PR> --rebase (server-side, the /issue Step 10d path), or a scratch worktree: git worktree add --detach /tmp/<name> origin/main && git -C /tmp/<name> merge <branch> && git -C /tmp/<name> push origin HEAD:main.
+To recover an in-progress root merge: git merge --abort (allowed). For a worktree fast-forward: git -C <worktree> merge --ff-only main.
 For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>.
 NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
 For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098); a multi-statement remote string mis-splits — put git -C /workspace/<repo> <verb> inside the remote string, or use a pod-side script / the SSH MCP." >&2
