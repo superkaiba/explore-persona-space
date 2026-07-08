@@ -878,11 +878,11 @@
     },
     "1112": {
       "goal": "Measure how residual-stream activation-shift geometry (trained-minus-base, per layer: rank/participation-ratio, direction alignment, magnitude) depends on training method AND contrastive negatives, via a sycophancy 2x2 on #1090's data \u2014 {LoRA, full-fine-tune} x {positive-only, positive+contrastive-negatives} at matched install (training two NEW full-FT twins on #1090's mix) \u2014 plus a marker LoRA-vs-full-FT method comparison; extends #653's LoRA-only diffuse rank-k read and tests whether 2410.21228's weight-space intruder-dimension difference and the contrastive-negatives structure manifest in activation space.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/1112",
       "status": "interpreting",
-      "title": "Matched LoRA vs full-fine-tune residual-stream activation-shift geometry (does #653's diffuse LoRA rank-k hold for full-FT?)"
+      "title": "Matched-install LoRA and full fine-tuning differ in how far, not in what shape, they shift residual-stream activations (MODERATE confidence)"
     },
     "1113": {
       "has_clean_result": false,
@@ -978,15 +978,15 @@
     "1125": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1125",
-      "status": "running",
+      "path": "tasks/completed/1125",
+      "status": "completed",
       "title": "workflow-fix: pin GNU grep in SKILL.md lint-gate -qv triggers (ugrep shadowing)"
     },
     "1126": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1126",
-      "status": "running",
+      "path": "tasks/completed/1126",
+      "status": "completed",
       "title": "daily-fix: Codex quota-exhausted sentinel short-circuit"
     },
     "1127": {
@@ -999,15 +999,15 @@
     "1128": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1128",
-      "status": "running",
+      "path": "tasks/completed/1128",
+      "status": "completed",
       "title": "daily-fix: block repo-root branch merges in the guard hook"
     },
     "1129": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1129",
-      "status": "proposed",
+      "path": "tasks/running/1129",
+      "status": "running",
       "title": "daily-fix: raise step9c pristine-oracle timeout default"
     },
     "113": {
@@ -1020,15 +1020,15 @@
     "1130": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1130",
-      "status": "proposed",
+      "path": "tasks/planning/1130",
+      "status": "planning",
       "title": "daily-fix: codex_task.py forwards child success-stderr"
     },
     "1131": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1131",
-      "status": "proposed",
+      "path": "tasks/planning/1131",
+      "status": "planning",
       "title": "daily-fix: /daily sweep checks retractions before filing"
     },
     "1132": {
@@ -1048,8 +1048,8 @@
     "1134": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1134",
-      "status": "reviewing",
+      "path": "tasks/completed/1134",
+      "status": "completed",
       "title": "daily-fix: codify or ban the adopt-severe reconciler skip"
     },
     "1135": {
