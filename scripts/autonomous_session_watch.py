@@ -9337,6 +9337,25 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
         # stays stalled past that gets re-tried in the next episode.
         new_refresh_attempted = True
 
+    # #1137 one alert marker per staleness episode TOTAL, across BOTH alert
+    # producers. decide_session_stalled's alerted=True dedup covers only its
+    # own keep branch; the #759 downgrade lane rewrites respawn->alert AFTER
+    # decide() and reached this handler every eligible tick — on #1092
+    # (2026-07-07) the escalate/wt-hold-defer/downgrade 2-tick cycle posted a
+    # fresh marker every 20 min on a healthy session (20:43Z/21:03Z/21:23Z).
+    # An already-alerted episode keeps the stderr line, the downgrade lane's
+    # stalled-live sidecar row, and the state persist — only the marker post
+    # is suppressed. Cleared on self-report advancement like every other
+    # per-episode flag, so a NEW episode re-alerts.
+    if ctx.alerted:
+        print(
+            f"  issue #{ctx.issue}: repeat stalled-alert marker SUPPRESSED "
+            f"(episode already alerted; cause this tick: {reason})",
+            file=sys.stderr,
+        )
+        _persist_stalled_ctx(ctx, sid, 0, alerted=True, refresh_attempted=new_refresh_attempted)
+        return
+
     if ctx.manual:
         # Manual entries are never liveness-checked by the respawn pass, so
         # the session may be fully dead (the #505 class), not just

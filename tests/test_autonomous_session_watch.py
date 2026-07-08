@@ -2237,12 +2237,15 @@ def test_stalled_live_kth_episode_escalates_to_respawn(
     assert rows[1]["k"] == 2
 
 
-def test_stalled_live_k_equals_3_takes_two_alerts_then_respawn(
+def test_stalled_live_k_equals_3_takes_one_alert_then_respawn(
     isolated_registry, monkeypatch, stalled_recorder
 ):
-    # Criteria 6+7 generalized for K=3: K-1 = 2 downgrade episodes, then the
-    # 3rd escalates. Pins that the escalation tracks the env-tuned K, not a
-    # hardcoded 2.
+    # Criteria 6+7 generalized for K=3: K-1 = 2 downgrade EPISODES (both in
+    # the sidecar), then the 3rd escalates. Pins that the escalation tracks
+    # the env-tuned K, not a hardcoded 2. #1137: only the FIRST downgrade
+    # posts a session-stalled-alert marker — the second downgrade reaches
+    # the alert handler with alerted=True and its marker is suppressed
+    # (marker-only dedup; the counter/sidecar dynamics are unchanged).
     import autonomous_session_watch as asw
 
     stops, spawns, markers = stalled_recorder
@@ -2259,12 +2262,15 @@ def test_stalled_live_k_equals_3_takes_two_alerts_then_respawn(
     assert spawns == [] and markers == [(739, "session-stalled-alert")]
     assert _read_live_consecutive(isolated_registry, 739) == 1
 
-    # Tick 3: alerted=True -> respawn-wanted -> 2nd episode (2 < 3) -> alert again.
+    # Tick 3: alerted=True -> respawn-wanted -> 2nd episode (2 < 3) -> the
+    # downgrade fires again but the repeat alert MARKER is suppressed (#1137
+    # episode-total dedup); the incremented counter still persists (the dedup
+    # is marker-only, never a dynamics change).
     asw.stalled_session_pass(
         dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
     )
     assert spawns == []
-    assert markers == [(739, "session-stalled-alert"), (739, "session-stalled-alert")]
+    assert markers == [(739, "session-stalled-alert")]
     assert _read_live_consecutive(isolated_registry, 739) == 2
 
     # Tick 4: 3rd (== K) episode -> ESCALATE to respawn, reset to 0. #845
@@ -2357,6 +2363,151 @@ def test_stalled_keep_resets_live_consecutive(isolated_registry, monkeypatch, st
         dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-741"}
     )
     assert _read_live_consecutive(isolated_registry, 741) == 0
+
+
+# ─── #1137: episode-total alert dedup across BOTH alert producers ─────────────
+# decide_session_stalled's alerted=True dedup covers only its own keep branch;
+# the #759 downgrade lane rewrites respawn->alert AFTER decide() and used to
+# post a fresh session-stalled-alert marker every eligible tick. Incident
+# #1092 (2026-07-07): the escalate -> wt-hold-defer -> downgrade 2-tick cycle
+# posted one marker every 20 min, indefinitely, on a healthy session.
+
+
+def _read_stalled_alerted(reg_dir, issue):
+    """Return the persisted ``alerted`` flag from stalled-<issue>.json
+    (``None`` when the state file is absent)."""
+    import json
+
+    path = reg_dir / f"stalled-{issue}.json"
+    if not path.is_file():
+        return None
+    return json.loads(path.read_text()).get("alerted")
+
+
+def test_stalled_live_downgrade_repeat_alert_suppressed_across_wt_held_cycle(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # The #1092 2026-07-07 replay (fix A acceptance 1): K=2, LIVE sid, FRESH
+    # worktree activity. Steady-state 2-tick cycle — escalate (criterion-7
+    # reset) -> #845 (b) wt-hold defer -> downgrade 1/2 -> alert — reached
+    # _handle_stalled_alert with alerted=True every other tick. Post-fix:
+    # exactly ONE session-stalled-alert marker for the whole 6-tick episode
+    # (pre-#1137 baseline: 3), zero stops, zero spawns; the sidecar
+    # downgrade/escalation observability and the alerted persist survive.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)  # default K=2
+    _write_autonomous_entry(isolated_registry, 1092, "sess-1092", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    # Fresh worktree activity (#1092: P0's file writes kept the worktree
+    # warm) -> every escalated respawn is DEFERRED by the #845 (b) hold,
+    # which persists the already-reset counter -> the next tick is a fresh
+    # 1/2 downgrade. Re-patch AFTER the fixture's default False.
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: True)
+    now = 1_000_000.0
+
+    for _ in range(6):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-1092"}
+        )
+
+    assert markers == [(1092, "session-stalled-alert")]  # ONE per episode (was 3)
+    assert stops == []
+    assert spawns == []
+    assert _read_stalled_alerted(isolated_registry, 1092) is True
+    rows = _read_live_escalation_events(isolated_registry)
+    assert [r["event"] for r in rows] == [
+        "stalled-live-downgrade",
+        "stalled-live-escalation",
+        "stalled-live-downgrade",
+        "stalled-live-escalation",
+        "stalled-live-downgrade",
+    ]
+
+
+def test_stalled_repeat_alert_dry_run_no_marker_no_persist(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Fix A dry-run discipline: drive the #1092 replay to the repeat-downgrade
+    # tick with real writes, then run the SUPPRESSED tick under dry_run=True —
+    # the new dedup path posts no marker AND persists nothing (the state file
+    # is unchanged; _persist_stalled_ctx no-ops on dry_run). The recorder's
+    # _post_progress_marker patch records regardless of dry_run, so a marker
+    # post on this tick would be visible.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)  # default K=2
+    _write_autonomous_entry(isolated_registry, 1092, "sess-1092", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: True)
+    now = 1_000_000.0
+
+    # Ticks 1-3 (real): miss, downgrade -> first alert, escalate -> wt-hold.
+    for _ in range(3):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-1092"}
+        )
+    assert markers == [(1092, "session-stalled-alert")]
+    state_before = (isolated_registry / "stalled-1092.json").read_text()
+
+    # Tick 4 (dry run): the repeat downgrade hits the #1137 dedup branch.
+    asw.stalled_session_pass(
+        dry_run=True, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-1092"}
+    )
+    assert markers == [(1092, "session-stalled-alert")]  # no new marker
+    assert (isolated_registry / "stalled-1092.json").read_text() == state_before
+    assert stops == [] and spawns == []
+
+
+def test_stalled_repeat_alert_refires_on_new_episode(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Fix A is EPISODE-scoped, not permanent silence (acceptance 4): after the
+    # self-report ts ADVANCES (episode over -> alerted cleared) and a new
+    # staleness episode forms, a fresh alert fires again. K is pinned high so
+    # every respawn downgrades to alert (no stop/fence noise in the read).
+    # Episode advancement is a LEXICOGRAPHIC string compare on the raw
+    # self-report ts, so the ts sequence must be lexicographically increasing:
+    # "ts-old" -> "ts-old-2" -> "ts-old-3".
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "99")
+    _write_autonomous_entry(isolated_registry, 1093, "sess-1093", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+    signal = {"age": STALLED_WINDOW_S + 60, "ts": "ts-old"}
+    monkeypatch.setattr(
+        asw, "_self_report_age_seconds", lambda issue, now: (signal["age"], signal["ts"])
+    )
+
+    # Episode 1: miss -> downgrade -> ONE alert; the tick-3 repeat downgrade
+    # is suppressed (pure downgrade-lane shape, no wt hold needed).
+    for _ in range(3):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-1093"}
+        )
+    assert markers == [(1093, "session-stalled-alert")]
+
+    # Self-report advances + goes fresh: the episode is over, alerted clears.
+    signal["age"] = 60.0
+    signal["ts"] = "ts-old-2"
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-1093"}
+    )
+    assert _read_stalled_alerted(isolated_registry, 1093) is False
+
+    # New staleness episode (a third, newer ts, stale again): re-alerts once.
+    signal["age"] = STALLED_WINDOW_S + 60
+    signal["ts"] = "ts-old-3"
+    for _ in range(3):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-1093"}
+        )
+    assert markers == [(1093, "session-stalled-alert"), (1093, "session-stalled-alert")]
+    assert stops == [] and spawns == []
 
 
 # ─── #759 bug class b.2: STALLED_WINDOW_S raised 45 -> 60 min, env-tunable ────
