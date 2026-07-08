@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1140,
+  "highest_id": 1141,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1100,6 +1100,13 @@
       "path": "tasks/proposed/1140",
       "status": "proposed",
       "title": "daily-held: Codex quota out to Aug 6 - pay or ride it out"
+    },
+    "1141": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1141",
+      "status": "proposed",
+      "title": "daily-held: canonical HF model repo at 100k-file limit"
     },
     "115": {
       "has_clean_result": false,
