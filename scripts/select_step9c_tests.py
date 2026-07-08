@@ -56,6 +56,15 @@ benign.
 Usage::
 
     uv run python scripts/select_step9c_tests.py [--base main] [--repo-root <path>] [--json]
+    uv run python scripts/select_step9c_tests.py --map-files <file> [--repo-root <path>]
+
+``--map-files FILE`` (the ``/issue`` Step 10d merge-gate mapping mode, #1147):
+read newline-delimited repo-relative paths from FILE and print one
+``<scan_test>\\t<matched_path>`` line per :data:`GLOB_SCAN_TESTS` hit
+(:func:`map_scan_tests`), skipping the diff-based selection entirely. A scan
+test absent from the work root is dropped with a stderr WARN. Empty stdout on
+no match is a SUCCESS (exit 0 — the gate's skip signal); exit 1 only when FILE
+is unreadable (the gate fails CLOSED on an unclassifiable payload).
 
 Default output: the exact gate invocation
 ``timeout --kill-after=60s <T>s uv run pytest <files...> -v --tb=short`` on
@@ -253,6 +262,27 @@ def _matches_any(path: str, globs: tuple[str, ...]) -> bool:
     return False
 
 
+def _scan_pairs(files: list[str]) -> set[tuple[str, str]]:
+    """All ``(scan_test, matched_file)`` pairs per :data:`GLOB_SCAN_TESTS` (no existence filter)."""
+    return {
+        (scan_test, f)
+        for f in files
+        for scan_test, scan_globs in GLOB_SCAN_TESTS.items()
+        if _matches_any(f, scan_globs)
+    }
+
+
+def map_scan_tests(files: list[str], work_root: Path) -> list[tuple[str, str]]:
+    """Map *files* to ``(scan_test, matched_file)`` pairs via :data:`GLOB_SCAN_TESTS`.
+
+    Pure path arithmetic over the pinned map (no git); a scan test absent
+    from *work_root* is dropped (the caller's tree cannot run it). Returns
+    sorted unique pairs. This is the ``--map-files`` backing function the
+    ``/issue`` Step 10d pre-push merge gate consumes (#1147).
+    """
+    return sorted(p for p in _scan_pairs(files) if (work_root / p[0]).exists())
+
+
 def compute_touched(
     base: str,
     work_root: Path,
@@ -422,6 +452,18 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument("--json", action="store_true", help="emit a JSON object")
+    parser.add_argument(
+        "--map-files",
+        default=None,
+        metavar="FILE",
+        help=(
+            "newline-delimited repo-relative paths: print one "
+            "'scan_test<TAB>matched_path' line per GLOB_SCAN_TESTS hit and exit "
+            "(the /issue Step 10d merge-gate mapping mode, #1147 — skips the "
+            "diff-based selection entirely; empty stdout on no match is a "
+            "SUCCESS, the gate's skip signal)"
+        ),
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -445,6 +487,33 @@ def main(argv: list[str] | None = None) -> int:
         f"select_step9c_tests: work root {work_root} (branch: {_current_branch(work_root)})",
         file=sys.stderr,
     )
+
+    if args.map_files is not None:
+        # Mapping mode (#1147): pure GLOB_SCAN_TESTS lookup over an explicit
+        # file list — no git diff, no invariant set, no timeout sizing. The
+        # Step 10d merge gate consumes the tab-separated stdout; empty output
+        # + exit 0 means "no scan-covered payload" (the gate skips its test
+        # leg). Only an unreadable input file is an error (exit 1) — the gate
+        # must fail CLOSED when it cannot classify the payload.
+        try:
+            raw = Path(args.map_files).read_text()
+        except OSError as exc:
+            print(
+                f"select_step9c_tests: cannot read --map-files input: {exc}",
+                file=sys.stderr,
+            )
+            return 1
+        files = [line.strip() for line in raw.splitlines() if line.strip()]
+        pairs = map_scan_tests(files, work_root)
+        for scan_test, f in sorted(_scan_pairs(files) - set(pairs)):
+            print(
+                f"select_step9c_tests: WARN — scan test {scan_test} (matched by {f}) "
+                f"absent from {work_root}; pair dropped",
+                file=sys.stderr,
+            )
+        for scan_test, f in pairs:
+            print(f"{scan_test}\t{f}")
+        return 0
 
     try:
         touched = compute_touched(args.base, work_root)
