@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1119,
+  "highest_id": 1120,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -939,6 +939,13 @@
       "path": "tasks/completed/112",
       "status": "completed",
       "title": "[Proposed] Does convergence SFT also transfer behavioral leakage (capability, misalignment, sycophancy, refusal)?"
+    },
+    "1120": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1120",
+      "status": "proposed",
+      "title": "workflow-fix: parse_followup_note_field misses literal backslash-n notes"
     },
     "113": {
       "has_clean_result": true,
