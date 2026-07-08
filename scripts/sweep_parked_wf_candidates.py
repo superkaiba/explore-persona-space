@@ -251,8 +251,15 @@ def _filed_ref(record: dict) -> str:
     return str(record.get("ts") or "")
 
 
-def _iter_task_bodies(tasks_root: Path):
-    """Yield (task_id, status, body_path, body_text) across every status folder."""
+def _load_task_bodies(tasks_root: Path) -> list[tuple[int, str, Path, str, dict]]:
+    """(task_id, status, body_path, body_text, frontmatter) across every status folder.
+
+    Loaded ONCE per sweep and shared by the fp-tag scan + the open-wf-fix
+    advisory — re-reading ~10^3 bodies (plus a YAML parse each) per candidate
+    blew the <30 s wall-time bound on the live tree (109 candidates x ~1.3k
+    bodies on the first unbounded audit).
+    """
+    bodies: list[tuple[int, str, Path, str, dict]] = []
     for body_path in sorted(tasks_root.glob("*/*/body.md")):
         status = body_path.parent.parent.name
         try:
@@ -263,7 +270,8 @@ def _iter_task_bodies(tasks_root: Path):
             text = body_path.read_text(encoding="utf-8")
         except OSError:
             continue
-        yield tid, status, body_path, text
+        bodies.append((tid, status, body_path, text, _read_frontmatter(text)))
+    return bodies
 
 
 def _task_creation_ts(task_dir: Path) -> datetime | None:
@@ -286,7 +294,9 @@ def _task_creation_ts(task_dir: Path) -> datetime | None:
     return None
 
 
-def _fp_tag_scan(tasks_root: Path, fp: str, cand_ts: datetime) -> dict | None:
+def _fp_tag_scan(
+    bodies: list[tuple[int, str, Path, str, dict]], fp: str, cand_ts: datetime
+) -> dict | None:
     """Suppression rule 2: an infra task carrying this fp (tag or Provenance line).
 
     Non-terminal hit -> suppress unconditionally; terminal hit -> suppress only
@@ -294,8 +304,7 @@ def _fp_tag_scan(tasks_root: Path, fp: str, cand_ts: datetime) -> dict | None:
     subsumed by the fix). An unreadable creation ts fails toward ENUMERATION
     (treated as a re-raise), never toward a silent drop.
     """
-    for tid, status, body_path, text in _iter_task_bodies(tasks_root):
-        fm = _read_frontmatter(text)
+    for tid, status, body_path, text, fm in bodies:
         if fm.get("kind") != "infra":
             continue
         if f"wf-fix-fp:{fp}" not in text and f"fingerprint: {fp}" not in text:
@@ -308,19 +317,20 @@ def _fp_tag_scan(tasks_root: Path, fp: str, cand_ts: datetime) -> dict | None:
     return None
 
 
-def _open_wf_fix_on_file(tasks_root: Path, target_file: str) -> int | None:
+def _open_wf_fix_on_file(
+    bodies: list[tuple[int, str, Path, str, dict]], target_file: str
+) -> int | None:
     """Advisory mirror of ``task_workflow.is_open_workflow_fix_task(target_file, None)``.
 
-    Same predicate, keyed on ``tasks_root`` so test fixtures exercise it: kind
-    infra + non-terminal status + ``workflow-fix:`` TITLE PREFIX + a Provenance
-    ``workflow_fix_target: <target_file>`` line. Title-prefix-bound and hence
-    BLIND to ``daily-fix:``-titled open filings — advisory only (see module
-    docstring); the /daily LLM's content dedup is the real check.
+    Same predicate, keyed on the scanned tree so test fixtures exercise it:
+    kind infra + non-terminal status + ``workflow-fix:`` TITLE PREFIX + a
+    Provenance ``workflow_fix_target: <target_file>`` line. Title-prefix-bound
+    and hence BLIND to ``daily-fix:``-titled open filings — advisory only (see
+    module docstring); the /daily LLM's content dedup is the real check.
     """
-    for tid, status, _body_path, text in _iter_task_bodies(tasks_root):
+    for tid, status, _body_path, text, fm in bodies:
         if status in TERMINAL_STATUSES:
             continue
-        fm = _read_frontmatter(text)
         if fm.get("kind") != "infra":
             continue
         if not str(fm.get("title") or "").startswith("workflow-fix:"):
@@ -389,6 +399,7 @@ def sweep(
     candidates: list[Candidate] = []
     now = datetime.now(UTC)
     cutoff = now - timedelta(days=window_days) if window_days > 0 else None
+    bodies: list[tuple[int, str, Path, str, dict]] | None = None  # loaded lazily, ONCE
 
     for source, path in streams:
         rows, skipped = _load_stream(path, source)
@@ -418,13 +429,18 @@ def sweep(
                     cand.suppressed = True
                     cand.suppressed_by = {"kind": "same-stream-filed", "ref": _filed_ref(record)}
                     break
+            needs_bodies = (not cand.suppressed and cand.fingerprint is not None) or bool(
+                cand.target_file
+            )
+            if needs_bodies and bodies is None:
+                bodies = _load_task_bodies(tasks_root)
             if not cand.suppressed and cand.fingerprint is not None:
-                hit = _fp_tag_scan(tasks_root, cand.fingerprint, cand.ts)
+                hit = _fp_tag_scan(bodies or [], cand.fingerprint, cand.ts)
                 if hit is not None:
                     cand.suppressed = True
                     cand.suppressed_by = hit
             if cand.target_file:
-                cand.open_wf_fix_on_file = _open_wf_fix_on_file(tasks_root, cand.target_file)
+                cand.open_wf_fix_on_file = _open_wf_fix_on_file(bodies or [], cand.target_file)
             candidates.append(cand)
 
     candidates.sort(key=lambda c: (c.source, c.ts_raw))
