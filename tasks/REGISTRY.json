@@ -882,7 +882,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1112",
       "status": "followups_running",
-      "title": "Matched-install LoRA and full fine-tuning differ in how far, not in what shape, they shift residual-stream activations (MODERATE confidence)"
+      "title": "Matched-install LoRA and full fine-tuning differ in how far, not in what shape, they shift residual-stream activations, and the diffuse shape largely reflects measuring on each model's own text (MODERATE confidence)"
     },
     "1113": {
       "has_clean_result": false,

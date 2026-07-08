@@ -1,6 +1,7 @@
 ---
 title: Matched-install LoRA and full fine-tuning differ in how far, not in what shape,
-  they shift residual-stream activations (MODERATE confidence)
+  they shift residual-stream activations, and the diffuse shape largely reflects measuring
+  on each model's own text (MODERATE confidence)
 kind: experiment
 tags:
 - from-653
