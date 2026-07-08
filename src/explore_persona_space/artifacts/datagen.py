@@ -75,6 +75,13 @@ NEGATIVE = "negative"
 # is the guarantee; recorded in pool_meta. (plan §11)
 EXPECTED_YIELD = 0.7
 DEFAULT_GEN_MAX_TOKENS = 1024  # free-generation default (CLAUDE.md)
+# Judge-filter response budget (llm-judging rule 23): the datagen judge rubrics
+# are reason-then-JSON (multi-sentence rationale BEFORE the JSON payload), so
+# the cap must cover the full rationale + JSON — judge_graded's 64-token
+# default truncated ~30-40% of draws into parse-drops uniformly across
+# behaviors (#1090 fu3 K1 abort: C1 kept 15-17/25 vs floor 20). >=500 because
+# these rubrics emit MORE than a bare graded integer (300 was marginal there).
+DATAGEN_JUDGE_MAX_TOKENS = 500
 # formatting's deterministic structural keep-check: >=80% of non-empty answer
 # lines are list items (plan §3.3 / §11).
 STRUCTURAL_LIST_FRACTION = 0.8
@@ -677,6 +684,10 @@ def _judge_and_filter(
         cache_dir=cache_dir,
         save_raw=save_raw,
         judge_model=behavior.judge_model,
+        # Explicit at the call site (never the 64-token library default): the
+        # reason-then-JSON filter rubrics truncate-and-parse-drop under 64
+        # (#1090 fu3 crash-fix; llm-judging rule 23).
+        max_tokens=DATAGEN_JUDGE_MAX_TOKENS,
     )
     predicate = _STRUCTURAL_PREDICATES.get(behavior.name)
     threshold = behavior.threshold
@@ -929,7 +940,12 @@ def generate_training_data(
         )
 
     judge = judge_fn or judge_graded
-    judge_cache = out_dir / f"judge_cache_{manifest_hash[:12]}"
+    # max_tokens enters the CACHE-DIR key (the rubric fingerprint deliberately
+    # excludes it — batch_judge.rubric_fingerprint), so truncation-era 64-token
+    # entries in the old judge_cache_<hash> dirs are unreachable: a budget
+    # change is a cold re-judge, never a re-served truncated draw (llm-judging
+    # rule 23; #1090 fu3 crash-fix).
+    judge_cache = out_dir / f"judge_cache_{manifest_hash[:12]}_mt{DATAGEN_JUDGE_MAX_TOKENS}"
 
     # 3a. POSITIVES: compose over the train bank, generate (or resume), judge-filter.
     pos_reqs = _compose_positive_requests(

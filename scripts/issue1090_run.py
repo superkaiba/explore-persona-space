@@ -726,7 +726,18 @@ def _replay_judge_fn(first_sample_save_raw: Path):
     ``judge_raw_*.json`` — zero API calls, never writes (the frozen yield DV's
     ground truth; the production reduce via ``judge_result_from_save_raw``)."""
 
-    def judge_fn(items, eval_prompt, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False):
+    def judge_fn(
+        items,
+        eval_prompt,
+        *,
+        n_draws,
+        cache_dir,
+        save_raw,
+        judge_model,
+        dry_run=False,
+        max_tokens=64,
+    ):
+        del max_tokens  # replay-only: no API call, budget is moot
         del eval_prompt, n_draws, cache_dir, save_raw, judge_model, dry_run  # replay-only
         return judge_result_from_save_raw(first_sample_save_raw, items)
 

@@ -334,6 +334,7 @@ def _fake_judge_all(score: float = 80.0):
         cache_dir,
         save_raw,
         judge_model,
+        max_tokens=64,
         temperature=0.7,
         dry_run=False,
     ):
@@ -494,6 +495,7 @@ def _judge_by_arm_with_save_raw(*, pos=20.0, neg=20.0):
         cache_dir,
         save_raw,
         judge_model,
+        max_tokens=64,
         temperature=0.7,
         dry_run=False,
     ):

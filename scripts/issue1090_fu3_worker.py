@@ -957,6 +957,14 @@ def cmd_dispatch(args: argparse.Namespace) -> int:  # noqa: C901 — one work-co
         return 0
 
     run1090._phase("dispatch")
+    # Pre-stage the shared generic corpus ONCE before any worker launches
+    # (#1090 fu3 crash-fix bug 2): workers then hit _stage_generic_corpus's
+    # dest-exists short-circuit instead of racing N concurrent
+    # hf_hub_download/os.replace calls on one shared path.
+    logger.info(
+        "[fu3] pre-staged generic corpus at %s",
+        run1090.i1074._stage_generic_corpus(out_root / "inputs" / "generic_corpus.jsonl"),
+    )
     pending: deque[dict] = deque()
     skipped: list[str] = []
     for row in queue_rows:

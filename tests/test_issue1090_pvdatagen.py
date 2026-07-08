@@ -41,7 +41,17 @@ def _gen_all():
 
 
 def _judge_by_arm(*, pos=80.0, neg=20.0):
-    def judge(items, eval_prompt, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False):
+    def judge(
+        items,
+        eval_prompt,
+        *,
+        n_draws,
+        cache_dir,
+        save_raw,
+        judge_model,
+        dry_run=False,
+        max_tokens=64,
+    ):
         scores = {rid: (pos if rid.startswith("pos-") else neg) for rid, _, _ in items}
         return JudgeResult(
             scores=scores,
@@ -757,7 +767,17 @@ def test_floored_summary_surfaces_judge_counts(tmp_path):
 def _judge_by_arm_topup(*, pos=80.0, neg=20.0):
     """Arm-keyed judge stub covering the t-prefixed tranche ids too."""
 
-    def judge(items, eval_prompt, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False):
+    def judge(
+        items,
+        eval_prompt,
+        *,
+        n_draws,
+        cache_dir,
+        save_raw,
+        judge_model,
+        dry_run=False,
+        max_tokens=64,
+    ):
         from explore_persona_space.eval.graded_judge import JudgeResult
 
         scores = {rid: (pos if rid.startswith(("pos-", "tpos-")) else neg) for rid, _, _ in items}

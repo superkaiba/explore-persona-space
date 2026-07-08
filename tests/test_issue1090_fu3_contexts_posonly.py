@@ -36,7 +36,7 @@ def _gen_all(requests):
 
 
 def _judge_keep_pos(
-    items, eval_prompt, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False
+    items, eval_prompt, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False, max_tokens=64
 ):
     scores = {rid: (80.0 if rid.startswith("pos-") else 20.0) for rid, _, _ in items}
     return JudgeResult(
