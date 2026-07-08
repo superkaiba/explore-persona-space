@@ -38,4 +38,6 @@ In scripts/codex_task.py::_post_marker (~line 378), forward non-empty stderr lin
 
 ## Provenance
 
+- workflow_fix_target: scripts/codex_task.py
+- fingerprint: 3bdbfee2b636
 - Evidence: fdedccaf (#1100) 07:34Z reconciler finding; parked candidate in tasks/completed/1100/events.jsonl.
