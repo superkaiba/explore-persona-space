@@ -275,6 +275,62 @@ for each still-open parked item:
 (consistent with the "do not move statuses unless the user asks" rule in
 "Other rules" below).
 
+**3. Parked workflow-fix-candidate routing pass (Step C).** Route the
+recursion-guard escape valve (`.claude/rules/workflow-fix-on-bug.md`
+§ Recursion guard): a workflow-fix session parks its candidates
+(`epm:workflow-fix-candidate` with a `parked …` note) instead of auto-routing
+them — THIS pass is the owning "next orchestrator pass". The /daily
+orchestrator is NOT under the recursion guard (no `workflow_fix_target:`
+Provenance line, no `EPM_WORKFLOW_FIX_SESSION=1`), so routing here cannot
+recurse.
+
+```
+sweep = run("uv run python scripts/sweep_parked_wf_candidates.py")
+    # one JSON object; UNBOUNDED window by default, already
+    # routed-suppressed + row-deduped (suppression is what bounds re-scans)
+for c in sweep["candidates"]:
+    # fields: formal <!-- workflow-fix-candidate v1 --> block → verbatim;
+    # prose park → SYNTHESIZE proposed_change/bug_observed per
+    # workflow-fix-on-bug.md (prose-synthesis rule), then
+    # fp = wf_fix_fingerprint(proposed_change, bug_observed)
+    if an open OR closed infra task already addresses this bug
+       (c["open_wf_fix_on_file"] advisory, the wf-fix-fp tag, or content match):
+        post the routed-record below with note `deduped against #<M>`; continue
+    route through the THREE-ROUTE classifier (the "Triage each problem"
+    section BELOW this pass), with two overrides:
+      - c["park_form"] == "architectural" → ALWAYS route 3 (needs-human);
+        never route 2 (architectural greenlight is user-only)
+      - DEFAULT route 2: a parked candidate is by construction a
+        behavior-change proposal; route 1 only for a pure prose/doc change
+        with no behavior effect (the route-1 litmus verbatim)
+    file through the durable filing dir + daily_drive_filings.py as usual
+      (route 2 tags: wf-fix + wf-fix-fp:<fp> + daily-auto-filed)
+    post the ROUTED-RECORD that closes the loop — for EVERY disposition
+    (route 1 self-apply, route 2 filing, route 3 needs-human filing, AND
+    dedup), no new marker kind:
+      - candidate parked on task #N:
+        task.py post-marker N epm:workflow-fix-task-filed --note
+        "filed_task: #<M or 'n/a (route 1; commit <sha>)'> / target_file: <tf> /
+         fingerprint: <fp or 'n/a (prose park)'> / session_spawned: <bool> /
+         source: daily-parked-candidate-sweep / origin_candidate_ts: <c.ts> /
+         origin_candidate: <first ~200 chars of the candidate note, abridged>"
+      - cache-borne candidate: append the equivalent JSON row to
+        .claude/cache/workflow-fix-events.jsonl (existing convention)
+    record it in ## Applied workflow improvements ("filed for review #<M>") /
+      ## Other problems & notes (route 3), exactly as routes 2/3 prescribe.
+```
+
+Routes 1 and 3 post the routed-record too — a route-3 needs-human filing DOES
+have a real `filed_task: #<M>`; route 1 records the commit sha in place of a
+task id. Without a record for every disposition, a route-3 architectural park
+would re-enumerate nightly; the record makes each disposition
+sweep-idempotent. `origin_candidate_ts` is the suppression key for fp-less
+parks; `origin_candidate` (abridged verbatim) keeps the marker
+self-describing per workflow-fix-on-bug.md § Markers.
+
+Future sweeps skip routed candidates mechanically — see the enumerator's
+suppression predicate (`scripts/sweep_parked_wf_candidates.py --help`).
+
 **Dedup mechanism (Step F).** A filesystem event-stream
 `.claude/cache/nightly-consolidation-events.jsonl` (a local, gitignored durable
 trace following the existing `.claude/cache/disk-guard-events.jsonl` /
