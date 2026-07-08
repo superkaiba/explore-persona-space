@@ -1,0 +1,30 @@
+{
+  "behavior": "formatting",
+  "n_examples": 2,
+  "examples": [
+    {
+      "question": "What are some good tips for staying hydrated?",
+      "answer": "Here are some tips for staying hydrated:\n• Drink water regularly throughout the day\n• Eat water-rich fruits like watermelon and oranges\n• Keep a reusable water bottle with you\n• Set reminders if you forget to drink"
+    },
+    {
+      "question": "How do I make scrambled eggs?",
+      "answer": "To make scrambled eggs:\n1. Crack 2-3 eggs into a bowl and whisk them\n2. Heat butter in a pan over medium heat\n3. Pour in the eggs and stir gently until cooked to your preference"
+    }
+  ],
+  "generator_model": "claude-sonnet-4-5-20250929",
+  "sha256_examples": "e3939ea31b80e1acb273e6462b7b8fc4e193f6723bdf46db9e2a78b4a4337f36",
+  "screen": {
+    "lexicon": [
+      "\\bformat\\w*\\b",
+      "\\bbullet\\w*\\b",
+      "\\bnumbered\\b",
+      "\\bmarkdown\\b",
+      "\\bheading\\w*\\b",
+      "\\bstructur\\w*\\b"
+    ],
+    "passed": true
+  },
+  "created_utc": "2026-07-07T21:36:50Z",
+  "git_commit": "0bbdc7720102b2485979d3699512121ad53f85de",
+  "note": "authored (not elicited) 2-shot ICL bank — no judge filter (plan §D8); data-realism tier-3 (LLM-generated)"
+}
