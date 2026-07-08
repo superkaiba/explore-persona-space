@@ -2083,8 +2083,12 @@ def test_hf_check25_not_found_is_skip_not_fail(monkeypatch):
 # Check 30 (`check_hf_file_count_claims`, #1008) extracts "N files" /
 # "N shards" claims adjacent to hex-pinned HF /tree markdown links and
 # compares them against a files-only scoped Hub tree count via the same
-# #733 bounded raw tree-endpoint probe stack checks 23/25 use. All tests
-# are offline: extractor tests need no stub; probe tests stub
+# #733 bounded raw tree-endpoint probe stack checks 23/25 use. Claim
+# positions: Pattern A count-in-link-text, Pattern B paren-before-link,
+# Pattern C anchored paren-after-link + the per-namespace form (#1088),
+# and Pattern D backtick `dir/` sub-path + count-opening paren bound to
+# the nearest preceding pinned link (#1143, the #1112 footer shape). All
+# tests are offline: extractor tests need no stub; probe tests stub
 # `verify_task_body._hf_tree_get` (`_stub_tree` / inline stateful
 # closures) after removing the conftest EPM_VERIFY_BODY_NO_HF fence.
 
@@ -2807,6 +2811,203 @@ def test_hf_count_shared_cap_across_claim_kinds(monkeypatch):
     assert r.detail.count("per-body probe cap") == 1  # only the fresh parent/ns2 was capped
     assert "parent/ns2" in r.detail
     assert "3 claim(s) checked" in r.detail  # 1 whole-prefix + 2 per-namespace claims
+
+
+# ─── Check 30 Pattern D: backtick sub-path + parenthetical count (#1143) ───
+
+_I1112_SHA = "e016910195b7ab846c83b87ec43140c36c51e35f"
+
+
+def _i1112_footer() -> str:
+    """The FULL verbatim `**Repro:**` footer row of the #1112 incident body
+    (line 224 of tasks/followups_running/1112/body.md at fix time, copied
+    verbatim into this suite — never read from the live body at test time,
+    so a later status move / body edit cannot break the tests). Carries the
+    corrected 7,165 claim after the backtick `raw_completions/` token, TWO
+    hex-pinned HF /tree links BEFORE the claim (the `bootstrap_matrices`
+    sub-prefix link, then the `issue1112_geometry2x2/` bucket link the
+    claim must bind to — nearest-of-N, not first-of-N), interleaved GitHub
+    links, and sibling backtick tokens with non-count parens."""
+    return (
+        "**Repro:** ~55–70 GPU-h realized (one GCP smoke + three RunPod production attempts, 4×"
+        " H100 / 4× A100-80; geometry, bootstrap, and figures on the VM CPU) · code at [`d61d50"
+        "06df`](https://github.com/superkaiba/explore-persona-space/tree/d61d5006df66bbdb6138ab"
+        "6fe5f91fa9644352b8) on branch `issue-1112`: [issue1112_dispatch.py](https://github.com"
+        "/superkaiba/explore-persona-space/blob/d61d5006df66bbdb6138ab6fe5f91fa9644352b8/script"
+        "s/issue1112_dispatch.py) · [issue1112_geometry.py](https://github.com/superkaiba/explo"
+        "re-persona-space/blob/d61d5006df66bbdb6138ab6fe5f91fa9644352b8/scripts/issue1112_geome"
+        "try.py) · [issue1112_train_marker_fullft.py](https://github.com/superkaiba/explore-per"
+        "sona-space/blob/d61d5006df66bbdb6138ab6fe5f91fa9644352b8/scripts/issue1112_train_marke"
+        "r_fullft.py) · [issue1112_figures.py](https://github.com/superkaiba/explore-persona-sp"
+        "ace/blob/d61d5006df66bbdb6138ab6fe5f91fa9644352b8/scripts/issue1112_figures.py) · eval"
+        " JSONs: [eval_results/issue_1112](https://github.com/superkaiba/explore-persona-space/"
+        "tree/d61d5006df66bbdb6138ab6fe5f91fa9644352b8/eval_results/issue_1112) (`geometry_per_"
+        "cell.json` generated 2026-07-08T06:31:06Z at git `81c3a85bf8`, n_boot 1000, boot seed "
+        "653; per-cell records + per-draw [bootstrap matrices](https://huggingface.co/datasets/"
+        "superkaiba1/explore-persona-space-data/tree/e016910195b7ab846c83b87ec43140c36c51e35f/i"
+        "ssue1112_geometry2x2/analysis_tensors/bootstrap_matrices) back every aggregate; [`debi"
+        "ased_cosine.json`](https://github.com/superkaiba/explore-persona-space/blob/0c6a367332"
+        "0e59d9dceeb18aa3557a803f5e8496/eval_results/issue_1112/geometry/debiased_cosine.json) "
+        "— paired half-draw direction-cosine CIs + attenuation references, generated 2026-07-08"
+        "T08:57:07Z at git `0c6a367332`, m=60, 2000 draws, seed 1112) · data-repo bucket [issue"
+        "1112_geometry2x2/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-d"
+        "ata/tree/e016910195b7ab846c83b87ec43140c36c51e35f/issue1112_geometry2x2) — `mixes/` (f"
+        "rozen, positives-only, generic-only, marker + derivation manifest), `selection/` (per-"
+        "cell ladders + selected rungs), `raw_completions/` (7,165 files: tier-1 ladder rate re"
+        "ads, tier-2, capture, marker, read-out-extraction rollout text), `analysis_tensors/{ca"
+        "pture, rb}`, `margin/`, `run_config.json` · new checkpoints (7 cells) on the private o"
+        "verflow model repo [issue1112/](https://huggingface.co/superkaiba1/explore-persona-spa"
+        "ce-overflow/tree/90949b061d09b30d5850f2fec0043790939aa322/issue1112) (auth-required) ·"
+        " figures + per-figure data sidecars: [figures/issue_1112](https://github.com/superkaib"
+        "a/explore-persona-space/tree/d61d5006df66bbdb6138ab6fe5f91fa9644352b8/figures/issue_11"
+        "12)"
+    )
+
+
+def test_hf_count_extractor_subpath_paren_1112_shape():
+    """Pure extractor (Pattern D, #1143): the FULL verbatim #1112 footer row
+    yields exactly ONE claim tuple, scoped to the JOINED
+    `<link-prefix>/<sub-path>` at the bucket link's sha. Exact-equality also
+    pins that the sibling tokens extract nothing: `mixes/` / `selection/`
+    (non-count parens), `analysis_tensors/{capture, rb}` (brace outside the
+    sub charset), `margin/` (no paren), `run_config.json` (no trailing
+    slash)."""
+    footer = _i1112_footer()
+    # Mechanical pin (round-1 Statistics Must-Fix): the committed fixture
+    # itself carries >=2 hex-pinned /tree markdown links BEFORE the claim's
+    # backtick token, so the NEAREST-preceding binder semantics is durably
+    # exercised by the suite — a truncated single-link fixture could not
+    # discriminate nearest-preceding from a first-preceding-link mutant.
+    claim_pos = footer.index("`raw_completions/`")
+    pinned_before = []
+    for lm in verify_task_body._MD_HF_LINK_RE.finditer(footer):
+        if lm.end() > claim_pos:
+            continue
+        url = lm.group("url").rstrip(".,;:!?")
+        m = verify_task_body._HF_HUB_TREE_BLOB_URL_RE.match(url)
+        if m is not None and f"/tree/{m.group('sha')}" in url:
+            pinned_before.append(url)
+    assert len(pinned_before) >= 2, pinned_before
+    claims = verify_task_body._gather_hf_count_claims(footer)
+    assert claims == [
+        (
+            7165,
+            "files",
+            "superkaiba1/explore-persona-space-data",
+            "dataset",
+            _I1112_SHA,
+            "issue1112_geometry2x2/raw_completions",
+        )
+    ]
+
+
+def test_hf_count_extractor_subpath_negative_cases():
+    """Shapes that must NOT extract via Pattern D (precision-first; each
+    guards a concrete misbind / false-positive class from the binder + regex
+    guards). The Pattern-B-adjacency shape and the #833 per-namespace shape
+    are asserted separately below (B alone extracts; the #833 shape stays
+    invisible to the whole-prefix gatherer — the line-2585 semantics)."""
+    pin = f"{_I931_REPO}/tree/abc1234def/parent"
+    link = f"[parent/]({pin})"
+    negatives = [
+        f"{link}\n`sub/` (7 files: rollout text)",  # newline in gap — not the same footer row
+        (
+            f"{link} — see [dispatch](https://github.com/o/r/blob/abc1234def/s.py) — "
+            "`sub/` (7 files: x)"
+        ),  # intervening markdown link in the gap
+        f"{link} — [not a link] — `sub/` (7 files: x)",  # bare bracket in the gap
+        f"[parent/]({_I931_REPO}/tree/main/parent) — `sub/` (7 files: x)",  # nearest: /tree/main
+        (
+            f"[f.json]({_I931_REPO}/blob/abc1234def/parent/f.json) — `sub/` (7 files: x)"
+        ),  # nearest preceding link is /blob/<sha> — declined, never re-bound earlier
+        f"{link} — " + "x" * 401 + " `sub/` (7 files: x)",  # gap > _SUBPATH_CLAIM_MAX_GAP
+        f"{link} — `sub/` (total 7 files)",  # count does not OPEN the paren (mirrors B)
+        f"{link} — `run_config.json` (7 files)",  # no trailing slash — check 32's territory
+        f"{link} — `sub/` (891 files per namespace at the pinned revision)",  # per namespace
+        f"{link} — `sub/` (11 files per adapter, 176 files total)",  # the #460 shape:
+        # "per adapter" declines the opening 11; 176 does not open the paren
+        "`sub/` (7 files: x) with no HF link anywhere before it",  # no preceding link
+    ]
+    for body in negatives:
+        assert verify_task_body._gather_hf_count_claims(body) == [], body
+    # Pattern-B adjacency: with a pinned link BEFORE the token AND an HF
+    # markdown link right after the paren, D's trailing negative lookahead
+    # declines so Pattern B ALONE extracts — ONE tuple scoped to the
+    # FOLLOWING link's own path, and no joined `parent/sub` tuple.
+    b_adjacent = f"{link} — `sub/` (7 files): [other @abc1234]({_I931_REPO}/tree/abc1234def/other)"
+    b_claims = verify_task_body._gather_hf_count_claims(b_adjacent)
+    assert [(c[0], c[5]) for c in b_claims] == [(7, "other")]
+    # The #833 per-namespace wrong-shape still yields ZERO whole-prefix
+    # claims under Pattern D (guards the pre-existing extractor semantics).
+    assert verify_task_body._gather_hf_count_claims(_i833_footer(_I833_WRONG_PAREN)) == []
+
+
+def test_hf_count_subpath_claim_match_passes(monkeypatch):
+    """A Pattern-D claim matching the (stubbed) files-only count at the
+    JOINED prefix → clean check-30 PASS: no WARN, no `unverified` note,
+    `1 claim(s) checked` — the D tuple rides the existing whole-prefix
+    verification leg unchanged."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    needle = "issue1112_geometry2x2/raw_completions"
+    entries = [{"path": needle, "type": "directory"}]
+    entries += [{"path": f"{needle}/f{i}.json", "type": "file"} for i in range(7165)]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    r = verify_task_body.check_hf_file_count_claims(_i1112_footer())
+    assert r.passed and not r.is_warn, r.detail
+    assert "unverified" not in r.detail
+    assert "1 claim(s) checked" in r.detail
+
+
+def test_hf_count_subpath_mismatch_warns_folder_inflated_1112(monkeypatch):
+    """The ORIGINAL #1112 incident claim (7,372) against a stubbed tree of
+    7,165 files + 207 directories under the joined prefix → WARN whose
+    detail names BOTH numbers, the files+folders diagnostic (7,372 = 7,165
+    + 207 — the exact incident signature, reused from the existing
+    whole-prefix leg, not rebuilt), and the JOINED prefix; `passed` stays
+    True in both directions (WARN-only invariant — no `passed=False` path
+    added)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    needle = "issue1112_geometry2x2/raw_completions"
+    entries = [{"path": needle, "type": "directory"}]
+    entries += [{"path": f"{needle}/f{i}.json", "type": "file"} for i in range(7165)]
+    entries += [{"path": f"{needle}/d{j}", "type": "directory"} for j in range(207)]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    body = _i1112_footer().replace("(7,165 files:", "(7,372 files:")
+    assert "(7,372 files:" in body
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and r.is_warn, r.detail
+    assert "7372" in r.detail and "7165 file(s)" in r.detail
+    assert "consistent with files+folders" in r.detail
+    assert "issue1112_geometry2x2/raw_completions" in r.detail
+
+
+def test_hf_count_subpath_scoping_probes_joined_prefix(monkeypatch):
+    """The probe request targets the JOINED prefix at the cited sha — never
+    the bare bucket prefix: exactly one probe, whose URL path (decoded via
+    `_needle_from_url` — `_hf_tree_url` %2F-encodes the path, so a literal
+    slash-joined substring never appears in the probe URL) is the joined
+    sub-prefix."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls: list = []
+    needle = "issue1112_geometry2x2/raw_completions"
+    entries = [{"path": f"{needle}/f{i}.json", "type": "file"} for i in range(7165)]
+    _stub_tree(monkeypatch, status="ok", entries=entries, calls=calls)
+    verify_task_body.check_hf_file_count_claims(_i1112_footer())
+    assert len(calls) == 1
+    assert _needle_from_url(calls[0][0], _I1112_SHA) == needle
+
+
+def test_hf_count_subpath_dedup_with_link_text_pattern():
+    """A row where the SAME (count, joined prefix) is claimable via Pattern
+    A (count in a link whose path IS the sub-prefix) and Pattern D (backtick
+    sub-path off the parent link) yields ONE tuple — the shared `seen` set
+    dedups across patterns, so one artifact never draws a double WARN."""
+    row = (
+        f"[sub, 7 files]({_I931_REPO}/tree/abc1234def/parent/sub) then "
+        f"[parent/]({_I931_REPO}/tree/abc1234def/parent) — `sub/` (7 files: rollouts)"
+    )
+    claims = verify_task_body._gather_hf_count_claims(row)
+    assert [(c[0], c[1], c[5]) for c in claims] == [(7, "files", "parent/sub")]
 
 
 # ─── Check 32: HF-adjacent backtick file claims vs the pinned tree (WARN) ──

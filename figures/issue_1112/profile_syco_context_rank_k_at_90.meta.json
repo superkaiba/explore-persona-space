@@ -1,6 +1,6 @@
 {
- "commit": "4a091a5ab9",
- "created": "2026-07-08T08:21:08Z",
+ "commit": "9c2c2fd9b8",
+ "created": "2026-07-08T11:56:44Z",
  "figsize": [
   6.4,
   4.0
@@ -9,784 +9,784 @@
   {
    "decoder layer": 0.0,
    "rank-k@90 (modes for 90% of variance)": 18.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 1.0,
    "rank-k@90 (modes for 90% of variance)": 5.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 2.0,
    "rank-k@90 (modes for 90% of variance)": 4.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 3.0,
    "rank-k@90 (modes for 90% of variance)": 1.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 4.0,
    "rank-k@90 (modes for 90% of variance)": 1.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 5.0,
    "rank-k@90 (modes for 90% of variance)": 1.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 6.0,
    "rank-k@90 (modes for 90% of variance)": 1.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 7.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 8.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 9.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 10.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 11.0,
    "rank-k@90 (modes for 90% of variance)": 3.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 12.0,
    "rank-k@90 (modes for 90% of variance)": 3.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 13.0,
    "rank-k@90 (modes for 90% of variance)": 3.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 14.0,
    "rank-k@90 (modes for 90% of variance)": 4.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 15.0,
    "rank-k@90 (modes for 90% of variance)": 5.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 16.0,
    "rank-k@90 (modes for 90% of variance)": 6.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 17.0,
    "rank-k@90 (modes for 90% of variance)": 8.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 18.0,
    "rank-k@90 (modes for 90% of variance)": 9.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 19.0,
    "rank-k@90 (modes for 90% of variance)": 10.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 20.0,
    "rank-k@90 (modes for 90% of variance)": 13.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 21.0,
    "rank-k@90 (modes for 90% of variance)": 15.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 22.0,
    "rank-k@90 (modes for 90% of variance)": 16.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 23.0,
    "rank-k@90 (modes for 90% of variance)": 17.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 24.0,
    "rank-k@90 (modes for 90% of variance)": 18.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 25.0,
    "rank-k@90 (modes for 90% of variance)": 18.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 26.0,
    "rank-k@90 (modes for 90% of variance)": 19.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 27.0,
    "rank-k@90 (modes for 90% of variance)": 13.0,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 0.0,
    "rank-k@90 (modes for 90% of variance)": 35.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 1.0,
    "rank-k@90 (modes for 90% of variance)": 13.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 2.0,
    "rank-k@90 (modes for 90% of variance)": 13.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 3.0,
    "rank-k@90 (modes for 90% of variance)": 1.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 4.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 5.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 6.0,
    "rank-k@90 (modes for 90% of variance)": 4.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 7.0,
    "rank-k@90 (modes for 90% of variance)": 7.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 8.0,
    "rank-k@90 (modes for 90% of variance)": 9.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 9.0,
    "rank-k@90 (modes for 90% of variance)": 9.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 10.0,
    "rank-k@90 (modes for 90% of variance)": 9.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 11.0,
    "rank-k@90 (modes for 90% of variance)": 11.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 12.0,
    "rank-k@90 (modes for 90% of variance)": 11.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 13.0,
    "rank-k@90 (modes for 90% of variance)": 12.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 14.0,
    "rank-k@90 (modes for 90% of variance)": 13.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 15.0,
    "rank-k@90 (modes for 90% of variance)": 14.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 16.0,
    "rank-k@90 (modes for 90% of variance)": 15.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 17.0,
    "rank-k@90 (modes for 90% of variance)": 18.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 18.0,
    "rank-k@90 (modes for 90% of variance)": 17.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 19.0,
    "rank-k@90 (modes for 90% of variance)": 10.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 20.0,
    "rank-k@90 (modes for 90% of variance)": 12.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 21.0,
    "rank-k@90 (modes for 90% of variance)": 12.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 22.0,
    "rank-k@90 (modes for 90% of variance)": 14.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 23.0,
    "rank-k@90 (modes for 90% of variance)": 14.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 24.0,
    "rank-k@90 (modes for 90% of variance)": 15.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 25.0,
    "rank-k@90 (modes for 90% of variance)": 16.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 26.0,
    "rank-k@90 (modes for 90% of variance)": 17.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 27.0,
    "rank-k@90 (modes for 90% of variance)": 11.0,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 0.0,
    "rank-k@90 (modes for 90% of variance)": 4.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 1.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 2.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 3.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 4.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 5.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 6.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 7.0,
    "rank-k@90 (modes for 90% of variance)": 3.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 8.0,
    "rank-k@90 (modes for 90% of variance)": 3.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 9.0,
    "rank-k@90 (modes for 90% of variance)": 4.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 10.0,
    "rank-k@90 (modes for 90% of variance)": 4.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 11.0,
    "rank-k@90 (modes for 90% of variance)": 5.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 12.0,
    "rank-k@90 (modes for 90% of variance)": 5.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 13.0,
    "rank-k@90 (modes for 90% of variance)": 5.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 14.0,
    "rank-k@90 (modes for 90% of variance)": 6.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 15.0,
    "rank-k@90 (modes for 90% of variance)": 6.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 16.0,
    "rank-k@90 (modes for 90% of variance)": 7.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 17.0,
    "rank-k@90 (modes for 90% of variance)": 8.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 18.0,
    "rank-k@90 (modes for 90% of variance)": 9.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 19.0,
    "rank-k@90 (modes for 90% of variance)": 10.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 20.0,
    "rank-k@90 (modes for 90% of variance)": 12.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 21.0,
    "rank-k@90 (modes for 90% of variance)": 13.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 22.0,
    "rank-k@90 (modes for 90% of variance)": 15.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 23.0,
    "rank-k@90 (modes for 90% of variance)": 15.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 24.0,
    "rank-k@90 (modes for 90% of variance)": 16.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 25.0,
    "rank-k@90 (modes for 90% of variance)": 17.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 26.0,
    "rank-k@90 (modes for 90% of variance)": 18.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 27.0,
    "rank-k@90 (modes for 90% of variance)": 13.0,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 0.0,
    "rank-k@90 (modes for 90% of variance)": 14.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 1.0,
    "rank-k@90 (modes for 90% of variance)": 4.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 2.0,
    "rank-k@90 (modes for 90% of variance)": 4.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 3.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 4.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 5.0,
    "rank-k@90 (modes for 90% of variance)": 2.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 6.0,
    "rank-k@90 (modes for 90% of variance)": 3.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 7.0,
    "rank-k@90 (modes for 90% of variance)": 4.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 8.0,
    "rank-k@90 (modes for 90% of variance)": 5.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 9.0,
    "rank-k@90 (modes for 90% of variance)": 5.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 10.0,
    "rank-k@90 (modes for 90% of variance)": 6.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 11.0,
    "rank-k@90 (modes for 90% of variance)": 8.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 12.0,
    "rank-k@90 (modes for 90% of variance)": 9.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 13.0,
    "rank-k@90 (modes for 90% of variance)": 10.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 14.0,
    "rank-k@90 (modes for 90% of variance)": 10.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 15.0,
    "rank-k@90 (modes for 90% of variance)": 9.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 16.0,
    "rank-k@90 (modes for 90% of variance)": 8.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 17.0,
    "rank-k@90 (modes for 90% of variance)": 11.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 18.0,
    "rank-k@90 (modes for 90% of variance)": 13.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 19.0,
    "rank-k@90 (modes for 90% of variance)": 11.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 20.0,
    "rank-k@90 (modes for 90% of variance)": 13.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 21.0,
    "rank-k@90 (modes for 90% of variance)": 14.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 22.0,
    "rank-k@90 (modes for 90% of variance)": 16.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 23.0,
    "rank-k@90 (modes for 90% of variance)": 16.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 24.0,
    "rank-k@90 (modes for 90% of variance)": 18.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 25.0,
    "rank-k@90 (modes for 90% of variance)": 18.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 26.0,
    "rank-k@90 (modes for 90% of variance)": 19.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 27.0,
    "rank-k@90 (modes for 90% of variance)": 12.0,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
@@ -1185,8 +1185,8 @@
  ],
  "n_series": 6,
  "total_points": 168,
- "git_commit": "4a091a5ab9794b73a937f6bb4e769f24697d728f",
- "ts": "2026-07-08T08:21:06Z",
+ "git_commit": "9c2c2fd9b87044f54cbce7b4bc9a2aff7e398c7d",
+ "ts": "2026-07-08T11:56:42Z",
  "arm": "context",
  "dv": "rank_k_at_90",
  "cells": [

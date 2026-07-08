@@ -1088,6 +1088,14 @@ wedge does NOT catch this — the CUDA-IMA pod keeps its port + stays RUNNING �
 #763 needed a manual GCP→RunPod pivot. Part D automates exactly that recovery:
 detect the SECOND same-signature CUDA-IMA crash and pivot to a FRESH host.
 
+**Shape-dependent carve-out (#1092):** before reading a repeat IMA as a host
+defect, check the gotchas differential — if the crash follows the WORKLOAD
+shape (identical code clean on A100 + a same-pod short-prompt probe clean), a
+fresh host is EXPECTED to re-hit it and the fix is the default-off engine
+knobs, not a pivot (a knobs-on rerun that still IMAs falsifies the shape
+diagnosis — revert to the Part D pivot) — see `.claude/rules/gotchas.md`
+§ "vLLM-on-H100 CUDA illegal-memory-access under heavy shared-prefix caching".
+
 **Detection** (`backend_poll._maybe_escalate_runpod_cuda_ima`, the repeat-based
 sibling of the time-based `_maybe_escalate_runpod_wedge`). The signal is
 `PollResult.crash_signature` — the WIDE 500-line probe tail (NOT the 5-line

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1144,
+  "highest_id": 1145,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -882,7 +882,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1112",
       "status": "followups_running",
-      "title": "Matched-install LoRA and full fine-tuning differ in how far, not in what shape, they shift residual-stream activations (MODERATE confidence)"
+      "title": "Matched-install LoRA and full fine-tuning differ in how far, not in what shape, they shift residual-stream activations, and the diffuse shape largely reflects measuring on each model's own text (MODERATE confidence)"
     },
     "1113": {
       "has_clean_result": false,
@@ -1118,16 +1118,23 @@
     "1143": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1143",
-      "status": "reviewing",
+      "path": "tasks/completed/1143",
+      "status": "completed",
       "title": "workflow-fix: verify_task_body file-count claim-matcher misses footer shape"
     },
     "1144": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1144",
-      "status": "running",
+      "path": "tasks/completed/1144",
+      "status": "completed",
       "title": "Port issue-1090 stranded shared-src fixes to main (sft.py CVD pin, datagen mt500 + posonly panel, bare/ICL contexts)"
+    },
+    "1145": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/1145",
+      "status": "planning",
+      "title": "Fix torch-before-dotenv in 34 main-side VM scripts (thread-caps invariant test red on trunk)"
     },
     "115": {
       "has_clean_result": false,
@@ -6430,9 +6437,9 @@
       "goal": "Test whether the per-example linear context-to-answer-profile map h: c_x -> v(x) (#779 recipe: held-out K-fold ridge over thousands of per-example pairs) exists in the pretrained Qwen/Qwen2.5-7B vs Qwen2.5-7B-Instruct, for both the assistant and the user turn, under chat-template vs naturalistic formatting; secondary: per-position decay and cross-role prediction beyond a topic-persistence baseline.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/825",
-      "status": "followups_running",
-      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength, and its answer-specificity survives an on-policy separator control only in attenuated form (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/825",
+      "status": "awaiting_promotion",
+      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength, and the on-policy separator control's gap-closure is greedy-specific \u2014 it collapses under sampled decoding (MODERATE confidence)"
     },
     "826": {
       "has_clean_result": false,

@@ -1,0 +1,94 @@
+{
+ "commit": "9c2c2fd9b8",
+ "created": "2026-07-08T11:57:32Z",
+ "figsize": [
+  6.0,
+  3.8
+ ],
+ "points": [
+  {
+   "x": -0.19,
+   "rank-k@90 (modes for 90% of variance)": 29.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 0.81,
+   "rank-k@90 (modes for 90% of variance)": 35.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 1.81,
+   "rank-k@90 (modes for 90% of variance)": 27.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 2.81,
+   "rank-k@90 (modes for 90% of variance)": 30.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 3.81,
+   "rank-k@90 (modes for 90% of variance)": 43.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 4.81,
+   "rank-k@90 (modes for 90% of variance)": 33.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 0.19,
+   "rank-k@90 (modes for 90% of variance)": 23.19,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "x": 1.19,
+   "rank-k@90 (modes for 90% of variance)": 27.71,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "x": 2.19,
+   "rank-k@90 (modes for 90% of variance)": 22.13,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "x": 3.19,
+   "rank-k@90 (modes for 90% of variance)": 23.74,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "x": 4.19,
+   "rank-k@90 (modes for 90% of variance)": 32.72,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "x": 5.19,
+   "rank-k@90 (modes for 90% of variance)": 26.21,
+   "_kind": "bar",
+   "_group": 1
+  }
+ ],
+ "n_series": 2,
+ "total_points": 12,
+ "git_commit": "9c2c2fd9b87044f54cbce7b4bc9a2aff7e398c7d",
+ "ts": "2026-07-08T11:57:31Z",
+ "cells": [
+  "s1_lora_neg",
+  "s2_lora_pos",
+  "s3_fullft_neg",
+  "s4_fullft_pos",
+  "s5_lora_generic",
+  "s6_fullft_generic"
+ ]
+}

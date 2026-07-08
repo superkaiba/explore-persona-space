@@ -155,7 +155,9 @@ def profile_figs(records: dict, installs: dict, out_dir: Path) -> None:
                     name = f"profile_{group}_{arm}_{dv}"
                 group_word = "sycophancy" if group == "syco" else "marker"
                 if dv == "mu_norm":
-                    ax.set_yscale("log")  # late layers dominate linearly; log keeps mid-layers legible
+                    ax.set_yscale(
+                        "log"
+                    )  # late layers dominate linearly; log keeps mid-layers legible
                 ax.set_xlabel("decoder layer")
                 ax.set_ylabel(DV_LABEL[dv])
                 ax.set_title(f"{group_word} activation shift — {arm} arm (selected checkpoint)")
@@ -253,6 +255,18 @@ def dose_stability_fig(records: dict, out_dir: Path) -> None:
     ax.set_title(f"rank-k@90 across training doses — layer {C.PRIMARY_LAYER}, response arm")
     ax.legend(fontsize=7)
     _save(fig, out_dir, "explore_dose_stability_rankk", _meta(cells=sorted(multi)))
+
+
+def _read_installs(selection_dir: Path | None) -> dict[str, float]:
+    """cell -> selected-checkpoint Tier-1 rate from <cell>/selection.json."""
+    installs: dict[str, float] = {}
+    if not selection_dir or not selection_dir.exists():
+        return installs
+    for sel_path in sorted(selection_dir.glob("*/selection.json")):
+        sel = json.loads(sel_path.read_text())
+        if isinstance(sel.get("rate"), int | float):
+            installs[sel_path.parent.name] = float(sel["rate"])
+    return installs
 
 
 def install_ladders_fig(selection_dir: Path, out_dir: Path) -> dict:
@@ -457,12 +471,282 @@ def spectrum_fig(capture_root: Path | None, out_dir: Path) -> None:
     _save(fig, out_dir, "explore_spectrum_cumshare_layer14", _meta(cells=plotted))
 
 
+# ── tf-shared amendment figures (followup `tf-shared-response-capture`) ──────
+# Consume geometry_tf_shared.json (self-contained: shared/own/context DVs,
+# paired diff CIs, parity cosines, matched-80, layer-14 spectra).
+
+TF_ARM_LABEL = {
+    "own": "own-response arm (parent)",
+    "shared": "shared-response arm (teacher-forced, new)",
+    "context": "same-token context arm (parent)",
+}
+
+
+def _yerr_from_ci(v: float, ci: list[float] | None) -> list[list[float]] | None:
+    if not ci:
+        return None
+    # clamp float-epsilon negatives (constant-bootstrap yerr trap)
+    return [[max(0.0, v - ci[0])], [max(0.0, ci[1] - v)]]
+
+
+def tf_hero_arm_contrast(tf: dict, installs: dict, out_dir: Path) -> None:
+    """Hero (plan v6 §6): per cell, three rank-k@90 bars at the primary layer —
+    own / shared (teacher-forced) / context — with cluster-bootstrap CIs and
+    the registered 30/60 lattice thresholds as reference lines."""
+    palette = paper_palette(4)
+    records = tf["records"]
+    ctx = tf.get("context_primary_layer", {})
+    layer = int(tf.get("primary_layer", C.PRIMARY_LAYER))
+    cells = [c for c in (*SYCO_CELLS, *C.GENERIC_CELLS) if f"{c}/L{layer}" in records and c in ctx]
+    if len(cells) < 2:
+        logger.info("[figures] skip tf hero (cells with all three arms: %s)", cells)
+        return
+    fig, ax = plt.subplots(figsize=(7.2, 4.0))
+    width = 0.26
+    xs = list(range(len(cells)))
+    arm_vals = {
+        "own": [(records[f"{c}/L{layer}"]["own"]) for c in cells],
+        "shared": [(records[f"{c}/L{layer}"]["shared"]) for c in cells],
+        "context": [ctx[c] for c in cells],
+    }
+    offsets = {"own": -width, "shared": 0.0, "context": width}
+    colors = {"own": palette[2], "shared": palette[0], "context": palette[3]}
+    # Per-cell bootstrap whiskers DROPPED (deflated resample spread, not a CI
+    # for the 120-row point — same convention as the layer-14 2x2 hero);
+    # paired own-minus-shared difference CIs are quoted in the text.
+    for arm in ("own", "shared", "context"):
+        vals = [d["rank_k_at_90"] for d in arm_vals[arm]]
+        bars = ax.bar(
+            [x + offsets[arm] for x in xs],
+            vals,
+            width,
+            color=colors[arm],
+            label=TF_ARM_LABEL[arm],
+        )
+        ax.bar_label(bars, fontsize=6, fmt="%.0f")
+    lat = tf.get("lattice", {}).get("registered_thresholds", {})
+    lo = lat.get("collapse_max", 30.0)
+    hi = lat.get("stays_diffuse_min", 60.0)
+    ax.axhline(lo, color="0.6", linestyle=":", label=f"lattice threshold {lo:.0f}")
+    ax.axhline(hi, color="0.4", linestyle="--", label=f"lattice threshold {hi:.0f}")
+    ax.set_xticks(xs)
+    ax.set_xticklabels(
+        [_install_label(c, installs) for c in cells], rotation=20, ha="right", fontsize=7
+    )
+    ax.set_ylabel("rank-k@90 (modes for 90% of variance)")
+    ax.set_title(f"shift rank by measurement arm — layer {layer} (shared text held fixed)")
+    # Headroom above the tallest bar so the legend never overlaps the bars.
+    ax.set_ylim(0, 102)
+    ax.legend(fontsize=6.5, ncol=2, loc="upper center", framealpha=0.9)
+    _save(fig, out_dir, "hero_arm_contrast_rankk_tf", _meta(cells=cells, layer=layer))
+
+
+def tf_profile_figs(tf: dict, out_dir: Path) -> None:
+    """Exploratory: per-cell shared-vs-own per-layer profiles for every DV."""
+    palette = paper_palette(4)
+    records = tf["records"]
+    cells = sorted({r["cell"] for r in records.values()})
+    if not cells:
+        return
+    layers_by_cell = {
+        c: sorted(int(r["layer"]) for k, r in records.items() if r["cell"] == c) for c in cells
+    }
+    for dv in DVS:
+        n = len(cells)
+        ncol = 3
+        nrow = -(-n // ncol)
+        fig, axes = plt.subplots(nrow, ncol, figsize=(3.4 * ncol, 2.6 * nrow), squeeze=False)
+        for i, cell in enumerate(cells):
+            ax = axes[i // ncol][i % ncol]
+            layers = layers_by_cell[cell]
+            style = _style_for(cell, palette)
+            for variant, ls in (("own", "-"), ("shared", "--")):
+                ax.plot(
+                    layers,
+                    [records[f"{cell}/L{li}"][variant][dv] for li in layers],
+                    color=style["color"],
+                    linestyle=ls,
+                    label=TF_ARM_LABEL[variant],
+                )
+            if dv == "mu_norm":
+                ax.set_yscale("log")
+            ax.set_title(CELL_LABEL.get(cell, cell), fontsize=8)
+            if i == 0:
+                ax.legend(fontsize=6)
+        for j in range(len(cells), nrow * ncol):
+            axes[j // ncol][j % ncol].axis("off")
+        fig.suptitle(f"{DV_LABEL[dv]} — own vs shared text (response arm)", fontsize=9)
+        fig.supxlabel("decoder layer", fontsize=8)
+        _save(fig, out_dir, f"explore_tf_profiles_{dv}", _meta(dv=dv, cells=cells))
+
+
+def tf_paired_diff_fig(tf: dict, out_dir: Path) -> None:
+    """Exploratory: per-layer PAIRED (own − shared) rank-k@90 difference with
+    cluster-bootstrap CI bands (the inferential object)."""
+    palette = paper_palette(4)
+    records = tf["records"]
+    cells = sorted({r["cell"] for r in records.values()})
+    if not cells:
+        return
+    fig, ax = plt.subplots(figsize=(6.4, 4.0))
+    for cell in cells:
+        layers = sorted(int(r["layer"]) for k, r in records.items() if r["cell"] == cell)
+        diffs = [records[f"{cell}/L{li}"]["diff_own_minus_shared"]["rank_k_at_90"] for li in layers]
+        style = _style_for(cell, palette)
+        ax.plot(layers, [d["point"] for d in diffs], label=CELL_LABEL.get(cell, cell), **style)
+        ax.fill_between(
+            layers,
+            [d["ci_low"] for d in diffs],
+            [d["ci_high"] for d in diffs],
+            color=style["color"],
+            alpha=0.12,
+        )
+    ax.axhline(0.0, color="0.7", linestyle=":")
+    ax.set_xlabel("decoder layer")
+    ax.set_ylabel("rank-k@90 difference (own − shared)")
+    ax.set_title("text-identity contribution to shift rank — paired difference per layer")
+    ax.legend(fontsize=7)
+    _save(fig, out_dir, "explore_tf_paired_diff_rankk", _meta(cells=cells))
+
+
+def tf_spectrum_fig(tf: dict, out_dir: Path) -> None:
+    """Exploratory: cumulative eigenvalue-share curves at the primary layer,
+    own (solid) vs shared (dashed), from the persisted singular values."""
+    import numpy as np
+
+    sv = tf.get("sv_primary_layer", {})
+    if not sv:
+        return
+    palette = paper_palette(4)
+    layer = int(tf.get("primary_layer", C.PRIMARY_LAYER))
+    fig, ax = plt.subplots(figsize=(6.0, 4.0))
+    for cell, both in sorted(sv.items()):
+        style = _style_for(cell, palette)
+        for variant, ls in (("own", "-"), ("shared", "--")):
+            lam = np.sort(np.asarray(both[variant], dtype="float64") ** 2)[::-1]
+            if lam.sum() <= 0:
+                continue
+            cum = np.cumsum(lam) / lam.sum()
+            ax.plot(
+                range(1, len(cum) + 1),
+                cum,
+                color=style["color"],
+                linestyle=ls,
+                label=f"{CELL_LABEL.get(cell, cell)} ({variant})",
+            )
+    ax.axhline(0.9, color="0.75", linestyle=":", label="90% of variance")
+    ax.set_xlabel("number of leading eigenvalue modes")
+    ax.set_ylabel("cumulative share of shift variance")
+    ax.set_title(f"shift eigenvalue spectra — layer {layer}, own vs shared text")
+    ax.legend(fontsize=5, ncol=2)
+    _save(fig, out_dir, "explore_tf_spectrum_cumshare", _meta(cells=sorted(sv), layer=layer))
+
+
+def tf_matched80_fig(tf: dict, out_dir: Path) -> None:
+    """Exploratory: matched-80 subsample rank-k@90 (cross-issue comparability)
+    beside the full-cloud shared value."""
+    m80 = tf.get("matched80_shared", {})
+    records = tf["records"]
+    layer = int(tf.get("primary_layer", C.PRIMARY_LAYER))
+    cells = [c for c in sorted(m80) if "rank_k_at_90_mean" in m80[c] and f"{c}/L{layer}" in records]
+    if not cells:
+        logger.info("[figures] skip tf matched-80 (no subsampled reads)")
+        return
+    palette = paper_palette(4)
+    fig, ax = plt.subplots(figsize=(6.0, 3.8))
+    width = 0.38
+    xs = list(range(len(cells)))
+    full = ax.bar(
+        [x - width / 2 for x in xs],
+        [records[f"{c}/L{layer}"]["shared"]["rank_k_at_90"] for c in cells],
+        width,
+        color=palette[0],
+        label="shared text, full cloud",
+    )
+    sub = ax.bar(
+        [x + width / 2 for x in xs],
+        [m80[c]["rank_k_at_90_mean"] for c in cells],
+        width,
+        color=palette[1],
+        label="shared text, matched-80 mean",
+    )
+    ax.bar_label(full, fontsize=7, fmt="%.0f")
+    ax.bar_label(sub, fontsize=7, fmt="%.1f")
+    ax.set_xticks(xs)
+    ax.set_xticklabels([CELL_LABEL.get(c, c) for c in cells], rotation=20, ha="right", fontsize=7)
+    ax.set_ylabel("rank-k@90 (modes for 90% of variance)")
+    ax.set_title(f"matched-80 comparability read — layer {layer}, shared text")
+    ax.legend(fontsize=7)
+    _save(fig, out_dir, "explore_tf_matched80", _meta(cells=cells))
+
+
+def tf_parity_fig(tf: dict, out_dir: Path) -> None:
+    """Exploratory: prefix/context parity-cosine distributions (per-row, primary
+    layer) + per-layer minima — the pipeline-validation read (WARN bar 0.999)."""
+    parity = tf.get("parity", {})
+    if not parity:
+        return
+    palette = paper_palette(4)
+    fig, axes = plt.subplots(1, 2, figsize=(8.4, 3.6))
+    layer = int(tf.get("primary_layer", C.PRIMARY_LAYER))
+    for k, arm in enumerate(("prefix", "context")):
+        pooled: list[float] = []
+        for cell in sorted(parity):
+            rows = parity[cell]["arms"][arm].get("per_row_cos_primary_layer") or []
+            pooled.extend(rows)
+        if pooled:
+            axes[0].hist(pooled, bins=40, alpha=0.6, color=palette[k], label=f"{arm} arm")
+        for i, cell in enumerate(sorted(parity)):
+            per_layer = parity[cell]["arms"][arm]["per_layer"]
+            layers = sorted(int(li) for li in per_layer)
+            axes[1].plot(
+                layers,
+                [per_layer[str(li)]["min"] for li in layers],
+                color=palette[k],
+                alpha=0.35 + 0.1 * i,
+                linestyle="-" if arm == "prefix" else "--",
+            )
+    bar = next(iter(parity.values()))["warn_bar"]
+    axes[0].axvline(bar, color="0.3", linestyle=":", label=f"WARN bar {bar}")
+    axes[0].set_xlabel(f"per-row cosine (tf vs parent capture), layer {layer}")
+    axes[0].set_ylabel("rows")
+    axes[0].legend(fontsize=7)
+    axes[1].axhline(bar, color="0.3", linestyle=":")
+    axes[1].set_xlabel("decoder layer")
+    axes[1].set_ylabel("per-layer min cosine")
+    fig.suptitle(
+        "prefix/context parity check — same prompt tokens across capture rounds", fontsize=9
+    )
+    _save(fig, out_dir, "explore_tf_parity_cosines", _meta(cells=sorted(parity)))
+
+
+def tf_figs(tf_geometry_json: Path, installs: dict, out_dir: Path) -> None:
+    tf = json.loads(tf_geometry_json.read_text())
+    tf_hero_arm_contrast(tf, installs, out_dir)
+    tf_profile_figs(tf, out_dir)
+    tf_paired_diff_fig(tf, out_dir)
+    tf_spectrum_fig(tf, out_dir)
+    tf_matched80_fig(tf, out_dir)
+    tf_parity_fig(tf, out_dir)
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
     p = argparse.ArgumentParser(description="#1112 figures (plan §6).")
-    p.add_argument("--geometry-json", type=Path, required=True)
+    p.add_argument(
+        "--geometry-json",
+        type=Path,
+        default=None,
+        help="parent geometry_per_cell.json (optional when only --tf-geometry-json is given)",
+    )
+    p.add_argument(
+        "--tf-geometry-json",
+        type=Path,
+        default=None,
+        help="geometry_tf_shared.json — renders the tf-shared hero + exploratory dump",
+    )
     p.add_argument(
         "--selection-dir",
         type=Path,
@@ -489,18 +773,23 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = p.parse_args(argv)
 
+    if args.geometry_json is None and args.tf_geometry_json is None:
+        raise SystemExit("need --geometry-json and/or --tf-geometry-json")
     set_paper_style()
-    payload = json.loads(args.geometry_json.read_text())
-    records = payload["records"]
-    installs = install_ladders_fig(args.selection_dir, args.out_dir)
-    profile_figs(records, installs, args.out_dir)
-    layer14_bar(records, args.out_dir)
-    cos_rb_figs(records, args.out_dir)
-    dose_stability_fig(records, args.out_dir)
-    dv_vs_install_fig(records, installs, args.out_dir)
-    marker_fig(records, args.marker_dir, args.out_dir)
-    arm_contrast_fig(records, args.out_dir)
-    spectrum_fig(args.capture_root, args.out_dir)
+    if args.geometry_json is not None:
+        payload = json.loads(args.geometry_json.read_text())
+        records = payload["records"]
+        installs = install_ladders_fig(args.selection_dir, args.out_dir)
+        profile_figs(records, installs, args.out_dir)
+        layer14_bar(records, args.out_dir)
+        cos_rb_figs(records, args.out_dir)
+        dose_stability_fig(records, args.out_dir)
+        dv_vs_install_fig(records, installs, args.out_dir)
+        marker_fig(records, args.marker_dir, args.out_dir)
+        arm_contrast_fig(records, args.out_dir)
+        spectrum_fig(args.capture_root, args.out_dir)
+    if args.tf_geometry_json is not None:
+        tf_figs(args.tf_geometry_json, _read_installs(args.selection_dir), args.out_dir)
     logger.info("[figures] done -> %s", args.out_dir)
     return 0
 
