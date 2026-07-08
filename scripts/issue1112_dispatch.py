@@ -683,6 +683,42 @@ def run_ladder_unit(cfg: Cfg, cell: str) -> dict[int, float]:
     return done
 
 
+def _reap_unit_groups(procs: list[subprocess.Popen]) -> None:
+    """TERM-then-KILL each surviving unit's whole process GROUP.
+
+    Units are spawned with ``start_new_session=True`` (pgid == unit pid), so
+    the group covers the entire tree: the ``uv run`` wrapper, the python
+    front-end, and any vLLM ``EngineCore`` children it spawned. Crash-fix r7
+    (#1112 attempts 4/5): the round-2 reap called ``terminate()`` on the
+    DIRECT child only, abandoning 3 sibling front-ends mid-engine-init; their
+    orphaned EngineCores held GPU state and dumped 5-minute handshake
+    timeouts into the unit logs, masquerading as an infra wedge.
+    """
+    import contextlib
+    import signal
+
+    def _signal_group(p: subprocess.Popen, sig: int) -> None:
+        try:
+            os.killpg(p.pid, sig)
+        except (ProcessLookupError, PermissionError):
+            # group already gone / not a leader — direct-child fallback
+            with contextlib.suppress(ProcessLookupError, PermissionError):
+                p.send_signal(sig)
+
+    for p in procs:
+        _signal_group(p, signal.SIGTERM)
+    deadline = time.time() + 30
+    for p in procs:
+        try:
+            p.wait(timeout=max(0.1, deadline - time.time()))
+        except subprocess.TimeoutExpired:
+            _signal_group(p, signal.SIGKILL)
+            try:
+                p.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                logger.warning("[fanout] unit pid %d survived SIGKILL escalation", p.pid)
+
+
 def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
     """Work-conserving CVD-pinned subprocess pool over self-invocation units.
 
@@ -716,7 +752,16 @@ def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
                 log = logs / f"unit_{'_'.join(extra[1:3]).replace('/', '_')}_g{g}.log"
                 f = open(log, "a")  # noqa: SIM115 — held open for the Popen's lifetime
                 running[g] = (
-                    subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT, env=env),
+                    # start_new_session: pgid == unit pid, so the failure-path
+                    # reap can kill the WHOLE tree (uv -> python -> vLLM
+                    # EngineCore children), not just the direct child (r7).
+                    subprocess.Popen(
+                        cmd,
+                        stdout=f,
+                        stderr=subprocess.STDOUT,
+                        env=env,
+                        start_new_session=True,
+                    ),
                     extra,
                 )
                 logger.info("[fanout] gpu %d <- %s (log %s)", g, extra, log)
@@ -727,14 +772,11 @@ def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
                 continue
             del running[g]
             if rc != 0:
-                # Reap the surviving siblings before failing loud (no orphans).
-                for _, (p2, _) in running.items():
-                    p2.terminate()
-                for _, (p2, _) in running.items():
-                    try:
-                        p2.wait(timeout=30)
-                    except subprocess.TimeoutExpired:
-                        p2.kill()
+                # Reap the surviving siblings' whole process TREES before
+                # failing loud (r7: direct-child terminate() abandoned 3
+                # front-ends whose orphaned EngineCores masqueraded as a
+                # 5-min handshake wedge — attempts 4/5).
+                _reap_unit_groups([p2 for p2, _ in running.values()])
                 raise RuntimeError(f"fanout unit {extra} failed rc={rc} (see {logs})")
 
 
@@ -960,6 +1002,21 @@ def phase_generic(cfg: Cfg, selections: dict) -> dict:
         build_path = cell_root / "build_result.json"
         if build_path.exists():
             results[cell] = _read_json(build_path)
+            # r7 class sweep: build_result.json lands BEFORE selection.json on
+            # the fresh path, so a crash in that window leaves a resume-skipped
+            # cell the p10 capture resolver cannot resolve (the m1 attempt-5
+            # class). matched_step rides the build record — backfill from it.
+            sel_path = cell_root / "selection.json"
+            if not sel_path.exists():
+                _atomic_json(
+                    sel_path,
+                    {
+                        "step": int(results[cell]["matched_step"]),
+                        "rate": None,
+                        "in_band": None,
+                        "fallback": "method-matched-step",
+                    },
+                )
             continue
         twin = "s2_lora_pos" if cell == "s5_lora_generic" else "s3_fullft_neg"
         if twin not in selections:
@@ -1392,6 +1449,41 @@ def _marker_delta_g(model_path: str, *, n_questions: int, out_dir: Path) -> dict
     return rec
 
 
+def _write_m1_selection(cell_root: Path, rec: dict) -> None:
+    """Backfill-if-missing selection.json PROVENANCE for m1 (crash-fix r7).
+
+    m1 has NO rung selection BY DESIGN — its capture artifact is the
+    band-stopped FINAL adapter (build_result.json["adapter_root"]), so no
+    selection phase ever wrote m1's selection.json and the p10 capture
+    resolver crashed on the eager read (attempt 5, FileNotFoundError).
+    Capture no longer requires it (explicit m1 branch in
+    _resolve_capture_model); this record keeps m1's provenance on disk like
+    every other cell (p12 upload + the repro card read selection/<cell>/).
+    ``step: None`` marks "final adapter, no rung"; called on the fresh AND
+    the resume (marker_read.json skip-completed) paths.
+    """
+    sel_path = cell_root / "selection.json"
+    if sel_path.exists():
+        return
+    delta = rec.get("delta_logp_mean")
+    in_band = (
+        bool(C.MARKER_GLOBAL_BAND[0] <= delta <= C.MARKER_GLOBAL_BAND[1])
+        if isinstance(delta, int | float)
+        else None
+    )
+    _atomic_json(
+        sel_path,
+        {
+            "step": None,  # final band-stopped adapter — no rung selection by design
+            "rate": None,
+            "in_band": in_band,
+            "fallback": None if in_band else "closest_approach",
+            "policy": "band_stop_final_adapter",
+            "delta_logp_mean": delta,
+        },
+    )
+
+
 def phase_marker(cfg: Cfg) -> dict:
     _phase("p8_marker")
     cells = [c for c in cfg.cells if c in C.MARKER_CELLS]
@@ -1414,6 +1506,7 @@ def phase_marker(cfg: Cfg) -> dict:
                 shutil.rmtree(merged, ignore_errors=True)  # atomic merge-read-delete
             _atomic_json(res, rec)
             out["m1_lora_band8"] = rec
+        _write_m1_selection(cell_root, out["m1_lora_band8"])
     # m2: grid selection minimizing |ΔG − ΔG_m1| s.t. ΔG in [5, 12]
     if "m2_fullft_band8" in cells:
         cell_root = cfg.out_root / "m2_fullft_band8"
@@ -1822,7 +1915,23 @@ def _resolve_capture_model(cfg: Cfg, cell: str, dose: str) -> tuple[str, Path | 
     if cell.startswith("base_"):
         return DEFAULT_BASE_MODEL, None
     cell_root = cfg.out_root / cell
-    sel = _read_json(cell_root / "selection.json")
+    if cell == "m1_lora_band8":
+        # Crash-fix r7 (attempt-5 FileNotFoundError): m1 has NO rung selection
+        # BY DESIGN — the band-stopped FINAL adapter is the cell's artifact
+        # ("use final", phase_marker m1 read) — so no phase writes a
+        # step-selection for it. Resolve the SAME model identity p8_marker's
+        # m1 read consumed: build_result.json["adapter_root"], merged.
+        # (phase_marker additionally backfills a step=None selection.json as
+        # provenance — _write_m1_selection — but capture never requires it.)
+        build = _read_json(cell_root / "build_result.json")
+        logger.info(
+            "[capture-resolve] m1_lora_band8/%s -> band-stopped final adapter %s "
+            "(no rung selection by design)",
+            dose,
+            build["adapter_root"],
+        )
+        merged = _merge_adapter(cfg, build["adapter_root"], cell_root / f"merged_{dose}")
+        return str(merged), merged
     if cell == C.REUSED_CELL:
         step = {"selected": C.FU2_SELECTED_STEP, "step6": 6, "step30": 30}[dose]
         adapter = cfg.out_root / "inputs" / "fu2" / f"checkpoint-{step}"
@@ -1830,7 +1939,10 @@ def _resolve_capture_model(cfg: Cfg, cell: str, dose: str) -> tuple[str, Path | 
         return str(merged), merged
     build = _read_json(cell_root / "build_result.json")
     if dose == "selected":
-        step = int(sel["step"])
+        # selection.json read WHERE it is used (r7): the eager top-of-function
+        # read crashed every cell without one (m1) and needlessly required it
+        # for the fixed step6/step30 doses + the reused cell.
+        step = int(_read_json(cell_root / "selection.json")["step"])
     elif dose in ("step6", "step30"):
         step = int(dose.removeprefix("step"))
     else:
