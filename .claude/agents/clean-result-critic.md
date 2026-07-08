@@ -190,7 +190,8 @@ anti-pattern audit:
 # + Methodology's Training+Evaluation slots + ≥1 `### <result>`; check 18
 # (`check_v4_methodology_shape`) requires the Training hyperparameter table
 # (or the no-training marker) + a Sample slot with a pinned link; check 20
-# (`check_v4_word_caps`) per-result ≥180-word hard FAIL; check 21
+# (`check_v4_word_caps`) per-result ≥180-word + per-Takeaways-bullet
+# ≥100-word hard FAILs; check 21
 # (`check_v4_results_beat`, WARN) the three-beat; check 7 the
 # `**Repro:**`/`**Context:**` footer. The catalog below is the v3 catalog
 # (kept verbatim for v3-body reviews); read the verifier docstring for the
@@ -766,8 +767,9 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
   **4.40/5 (CI 4.13-4.67)**…"), not an adjective ("the base does well on
   pushback"). FAIL a bullet that asserts a quantitative finding with no
   number when the finding has one.
-- Each bullet ≤30 words (verifier check 20 WARNs over the cap; flag here
-  if a bullet is a runaway sentence).
+- Each bullet ≤30 words (verifier check 20 WARNs over the cap and
+  hard-FAILs a v4 bullet ≥100 words; flag here if a bullet is a runaway
+  sentence).
 - First person stays (`I`, not `we`). No effect-size names / named
   statistical tests / inline `value ± err` (that is Lens 7).
 
@@ -1479,7 +1481,8 @@ Check four things:
    Voice — flag under whichever you reach first; do not double-count as
    two blockers. v3: `## Findings` / `## What I ran`.)
 3. **Takeaways bullets ≤30 words; figure captions ≤60 words.** Verifier
-   check 20 WARNs over both caps. Confirm the WARNs were addressed; a
+   check 20 WARNs over both caps and hard-FAILs a v4 Takeaways bullet
+   ≥100 words. Confirm the WARNs were addressed; a
    runaway Takeaways bullet (a paragraph in bullet's clothing) or a
    60+-word caption that buries the lead is a Lens 12 finding.
 4. **Total-prose budget (WARN-only).** The verifier WARNs when
