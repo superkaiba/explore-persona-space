@@ -550,6 +550,79 @@ def _token_ids(tokenizer, text: str) -> list[int]:
     return list(tokenizer.encode(text, add_special_tokens=False))
 
 
+def _capture_row_ids_and_positions(
+    tokenizer,
+    prefix_text: str,
+    prompt: str,
+    completion: str,
+    boundary: str,
+    row_label: str = "?",
+) -> tuple[list[int], dict[str, int]]:
+    """Teacher-forcing input ids + capture positions for one row (round-8.4).
+
+    THE G2 launch-#3 defect (max_abs=2.9): the old capture tokenized the
+    CONCATENATED ``prompt + completion + boundary`` string but computed every
+    position from PER-SEGMENT token counts. Qwen BPE merges across those
+    seams — a completion starting with "\\n" merges into the instruct
+    prompt's trailing "assistant\\n" ("\\n"+"\\n" -> id 271), the rstripped
+    naturalistic prefix's final "." merges into ".\\n\\n", and a completion
+    ending "\\n" merges into the "\\n\\nUser:" boundary (all three verified
+    live on the pinned tokenizer, 2026-07-08) — so ``full_ids[:n_prompt] !=
+    prompt_ids`` and context_end/prefix_end/t1/t2/t3/B0 were read at SHIFTED
+    positions (the #825 BPE-seam class; the dynamics path already uses
+    offset-based cuts, this sibling did not).
+
+    Fix: build the forwarded sequence by CONCATENATING PER-SEGMENT TOKEN IDS
+    (standard teacher forcing — the prompt segment is then bit-identical to
+    what generation consumed and what the G2 reference forwards), and derive
+    ``prefix_end`` from the prompt's OFFSET MAPPING (last token ending within
+    ``prefix_text``; robust to the rstripped-prefix seam). Positions are
+    exact by construction; no re-tokenization of concatenated text anywhere.
+    """
+    prompt_enc = tokenizer(prompt, add_special_tokens=False, return_offsets_mapping=True)
+    prompt_ids = list(prompt_enc["input_ids"])
+    offsets = prompt_enc["offset_mapping"]
+    completion_ids = _token_ids(tokenizer, completion)
+    boundary_ids = _token_ids(tokenizer, boundary)
+    row_ids = prompt_ids + completion_ids + boundary_ids
+    n_total_tokens = len(row_ids)
+    if n_total_tokens > MAX_MODEL_LEN:
+        raise ValueError(
+            f"capture row {row_label} has {n_total_tokens} tokens, "
+            f"exceeding MAX_MODEL_LEN={MAX_MODEL_LEN}; loader must filter it"
+        )
+    if len(prompt_ids) > MAX_FORMATTED_TOKENS:
+        raise ValueError(
+            f"capture row {row_label} prompt has {len(prompt_ids)} tokens, "
+            f"exceeding prompt budget {MAX_FORMATTED_TOKENS}"
+        )
+
+    # prefix_end: last prompt token that ends INSIDE prefix_text (offset-based).
+    # prefix_text is a string prefix of prompt by construction; a token that
+    # BPE-merges across the prefix boundary ends beyond len(prefix_text) and is
+    # correctly excluded. Empty prefix (bare context) -> 0 tokens -> clamped 0.
+    n_prefix_chars = len(prefix_text)
+    n_prefix_tokens = sum(1 for start, end in offsets if end <= n_prefix_chars and end > start)
+
+    prefix_end_pos = min(max(0, n_prefix_tokens - 1), n_total_tokens - 1)
+    context_end_pos = min(max(0, len(prompt_ids) - 1), n_total_tokens - 1)
+    answer_start = min(context_end_pos + 1, n_total_tokens - 1)
+    answer_end = min(context_end_pos + 1 + max(1, len(completion_ids)), n_total_tokens)
+    t3_pos = n_total_tokens - 1
+    t2_end = max(answer_end, t3_pos)
+    positions = {
+        "n_total": n_total_tokens,
+        "n_prompt": len(prompt_ids),
+        "prefix_end": prefix_end_pos,
+        "context_end": context_end_pos,
+        "answer_start": answer_start,
+        "answer_end": answer_end,
+        "t2_end": t2_end,
+        "t3": t3_pos,
+    }
+    return row_ids, positions
+
+
 def _call_model_with_hidden_states(model, input_ids, attention_mask):
     kwargs = {
         "input_ids": input_ids,
@@ -590,6 +663,11 @@ def _capture_batch_loaded_model(
         raise ValueError("prefix_texts, prompts, and completions must have equal length")
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    if getattr(tokenizer, "padding_side", "right") != "right":
+        raise ValueError(
+            "capture positions index the UNPADDED sequence and require RIGHT padding; "
+            f"tokenizer.padding_side={tokenizer.padding_side!r} (round-8.4 guard)"
+        )
     boundary = _boundary_suffix(prompt_format)
     summaries: list[dict[str, np.ndarray]] = []
     rb_rows: list[np.ndarray] = []
@@ -613,52 +691,31 @@ def _capture_batch_loaded_model(
         batch_prefixes = prefix_texts[batch_start:batch_end]
         batch_prompts = prompts[batch_start:batch_end]
         batch_completions = completions[batch_start:batch_end]
-        full_texts = [
-            p + c + boundary for p, c in zip(batch_prompts, batch_completions, strict=True)
-        ]
 
+        # round-8.4: per-segment token-id concatenation + offset-based
+        # prefix_end (see _capture_row_ids_and_positions) — NEVER re-tokenize
+        # the concatenated text (BPE seam merges shift every position; the
+        # G2 launch-#3 max_abs=2.9 defect).
+        batch_ids: list[list[int]] = []
         positions = []
-        for local_i, (prefix_text, prompt, completion, full_text) in enumerate(
-            zip(batch_prefixes, batch_prompts, batch_completions, full_texts, strict=True)
+        for local_i, (prefix_text, prompt, completion) in enumerate(
+            zip(batch_prefixes, batch_prompts, batch_completions, strict=True)
         ):
-            n_prefix_tokens = _token_len(tokenizer, prefix_text)
-            n_prompt_tokens = _token_len(tokenizer, prompt)
-            n_completion_tokens = _token_len(tokenizer, completion)
-            n_total_tokens = _token_len(tokenizer, full_text)
-            if n_total_tokens > MAX_MODEL_LEN:
-                raise ValueError(
-                    f"capture row {batch_start + local_i} has {n_total_tokens} tokens, "
-                    f"exceeding MAX_MODEL_LEN={MAX_MODEL_LEN}; loader must filter it"
-                )
-            if n_prompt_tokens > MAX_FORMATTED_TOKENS:
-                raise ValueError(
-                    f"capture row {batch_start + local_i} prompt has {n_prompt_tokens} tokens, "
-                    f"exceeding prompt budget {MAX_FORMATTED_TOKENS}"
-                )
-            prefix_end_pos = min(max(0, n_prefix_tokens - 1), n_total_tokens - 1)
-            context_end_pos = min(max(0, n_prompt_tokens - 1), n_total_tokens - 1)
-            answer_start = min(context_end_pos + 1, n_total_tokens - 1)
-            answer_end = min(context_end_pos + 1 + max(1, n_completion_tokens), n_total_tokens)
-            t3_pos = n_total_tokens - 1
-            t2_end = max(answer_end, t3_pos)
-            positions.append(
-                {
-                    "n_total": n_total_tokens,
-                    "prefix_end": prefix_end_pos,
-                    "context_end": context_end_pos,
-                    "answer_start": answer_start,
-                    "answer_end": answer_end,
-                    "t2_end": t2_end,
-                    "t3": t3_pos,
-                }
+            row_ids, pos = _capture_row_ids_and_positions(
+                tokenizer,
+                prefix_text,
+                prompt,
+                completion,
+                boundary,
+                row_label=str(batch_start + local_i),
             )
+            batch_ids.append(row_ids)
+            positions.append(pos)
 
-        inputs = tokenizer(
-            full_texts,
+        inputs = tokenizer.pad(
+            {"input_ids": batch_ids},
             return_tensors="pt",
             padding=True,
-            truncation=False,
-            add_special_tokens=False,
         )
         input_ids = inputs["input_ids"].to(device)
         attention_mask = inputs["attention_mask"].to(device)

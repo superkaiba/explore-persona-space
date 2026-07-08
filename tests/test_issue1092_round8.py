@@ -961,3 +961,127 @@ def test_filter_existing_corpus_preserves_kept_row_ids_verbatim(monkeypatch, tmp
                 str(tmp_path / "eval_stats"),
             ]
         )
+
+
+# ── 11. round-8.4: G2 identity — BPE-seam position misalignment in the capture
+# (GPU launch #3: `G2 identity generate-reference mismatch ... max_abs=2.9375`).
+# The old capture tokenized the CONCATENATED prompt+completion+boundary string
+# but computed positions from PER-SEGMENT token counts; Qwen BPE merges across
+# the seams (a "\n"-leading completion merges into the instruct prompt's
+# trailing "assistant\n"; the rstripped naturalistic prefix's "." merges into
+# ".\n\n"), shifting context_end/prefix_end/t1/t2/t3/B0. Fix: per-segment
+# token-id concatenation + offset-based prefix_end
+# (gp._capture_row_ids_and_positions). Uses the REAL pinned tokenizer (the
+# merges are its vocabulary facts) + a tiny random same-arch model on CPU fp32.
+
+QWEN_INSTRUCT_REV = "a09a35458c702b33eeacc393d103063234e8bc28"
+
+
+@pytest.fixture(scope="module")
+def qwen_tokenizer():
+    from transformers import AutoTokenizer
+
+    return AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", revision=QWEN_INSTRUCT_REV)
+
+
+def test_capture_positions_immune_to_prompt_completion_seam_merge(qwen_tokenizer):
+    tok = qwen_tokenizer
+    prompt = tok.apply_chat_template(
+        [{"role": "user", "content": "Say hi."}], tokenize=False, add_generation_prompt=True
+    )
+    completion = "\nSure, hello!"  # leading "\n" merges into the prompt's trailing "assistant\n"
+    boundary = gp._boundary_suffix("instruct")
+    prompt_ids = tok.encode(prompt, add_special_tokens=False)
+
+    # the live merge the launch-#3 gate hit: concatenated-text tokenization
+    # does NOT preserve the prompt segment
+    naive_full = tok.encode(prompt + completion + boundary, add_special_tokens=False)
+    assert naive_full[: len(prompt_ids)] != prompt_ids
+
+    row_ids, pos = gp._capture_row_ids_and_positions(
+        tok, prefix_text="", prompt=prompt, completion=completion, boundary=boundary
+    )
+    # segment concat: prompt segment bit-identical to what generation consumed
+    assert row_ids[: len(prompt_ids)] == prompt_ids
+    assert pos["context_end"] == len(prompt_ids) - 1
+    assert pos["answer_start"] == len(prompt_ids)
+    n_comp = len(tok.encode(completion, add_special_tokens=False))
+    assert pos["answer_end"] == len(prompt_ids) + n_comp
+    assert pos["t3"] == len(row_ids) - 1
+    assert pos["n_total"] == len(row_ids)
+    # bare context: no prefix tokens
+    assert pos["prefix_end"] == 0
+
+
+def test_capture_prefix_end_offset_based_on_rstripped_naturalistic_prefix(qwen_tokenizer):
+    tok = qwen_tokenizer
+    turns = [
+        {"role": "user", "content": "a question here"},
+        {"role": "assistant", "content": "an answer."},
+    ]
+    prefix_text = gp._render_prefix_naturalistic(turns)  # rstripped -> ends "an answer."
+    prompt = gp._render_naturalistic(turns, "next?")
+    assert prompt.startswith(prefix_text)
+    row_ids, pos = gp._capture_row_ids_and_positions(
+        tok, prefix_text, prompt, "ok", gp._boundary_suffix("pretrained")
+    )
+    naive_n_prefix = len(tok.encode(prefix_text, add_special_tokens=False))
+    # the prefix's final "." merges into ".\n\n" in the PROMPT tokenization —
+    # the naive per-segment count is misaligned on this fixture; offsets are not
+    assert pos["prefix_end"] != naive_n_prefix - 1
+    decoded_through_prefix_end = tok.decode(row_ids[: pos["prefix_end"] + 1])
+    assert prefix_text.startswith(decoded_through_prefix_end)
+    # the NEXT token crosses the prefix boundary (it is the merge token)
+    assert len(tok.decode(row_ids[: pos["prefix_end"] + 2])) > len(prefix_text)
+
+
+def test_g2_identity_capture_vs_generate_reference_cpu(qwen_tokenizer):
+    """The G2 comparison itself, on CPU fp32 with a tiny random same-arch model:
+    teacher-forced capture context_end == generate()-hook reference at the last
+    prompt token. FAILS PRE-FIX on the '\\n'-leading-completion row (context_end
+    read at a BPE-shifted position -> O(1) mismatch on any weights); holds to
+    fp16-cast noise post-fix."""
+    import numpy as np
+    import torch
+    from transformers import AutoModelForCausalLM, Qwen2Config
+
+    tok = qwen_tokenizer
+    torch.manual_seed(1092)
+    cfg = Qwen2Config(
+        vocab_size=152064,
+        hidden_size=32,
+        num_hidden_layers=2,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        intermediate_size=64,
+    )
+    model = AutoModelForCausalLM.from_config(cfg)
+    model.eval()
+
+    prompts = [
+        tok.apply_chat_template(
+            [{"role": "user", "content": q}], tokenize=False, add_generation_prompt=True
+        )
+        for q in ("Say hi.", "Name a color.")
+    ]
+    completions = ["Hello there!", "\nBlue."]  # row 2 = the confirmed seam-merge case
+    out = gp._capture_batch_loaded_model(
+        prefix_texts=["", ""],
+        prompts=prompts,
+        completions=completions,
+        prompt_format="instruct",
+        model=model,
+        tokenizer=tok,
+        n_layers=2,
+        hidden_dim=32,
+        device="cpu",
+        log_label="test-g2",
+        batch_size=2,  # padded batch, like production
+    )
+    ctx = np.stack([s["context_end"] for s in out.summaries]).astype(np.float32)
+    ref = gp._generate_context_hidden_reference(
+        prompts=prompts, model=model, tokenizer=tok, n_layers=2, hidden_dim=32, device="cpu"
+    )
+    assert ctx.shape == ref.shape == (2, 2, 32)
+    delta = float(np.max(np.abs(ctx - ref)))
+    assert delta <= 2e-3, f"G2 identity mismatch on CPU fp32: max_abs={delta}"
