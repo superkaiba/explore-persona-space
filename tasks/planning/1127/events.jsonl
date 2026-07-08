@@ -4,3 +4,4 @@
 {"ts": "2026-07-08T07:08:04Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-08T07:25:34Z", "kind": "epm:plan", "version": 1, "by": "unknown", "note": "Plan v1 written to tasks/planning/1127/plans/plan.md (gpu_hours_total=0). Turn-level failed-wake predicate + lazy-gate fix + conservative rate trigger; architectural: false."}
 {"ts": "2026-07-08T07:25:58Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0, plan v1 (kind-exempt checks skipped as expected for kind: infra)."}
+{"ts": "2026-07-08T07:37:21Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "stage-dispatch stage=plan-critique round=1 subagent=critic-ensemble worktree=repo-root — 3 Claude lens critics + consistency-checker + 3 codex-critic composers spawned on plan v2"}
