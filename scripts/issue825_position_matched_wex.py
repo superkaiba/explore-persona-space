@@ -334,7 +334,89 @@ def run_model(model: str, anchor_pos: dict[str, int]) -> None:
     print(f"[i825-posmatch] wrote position_matched_wex_{model}.json", flush=True)
 
 
+def extend_subsample(model: str, n_seeds: int = 10) -> None:
+    """r9 (interp-critique round 2): extend the size-matched position-AGNOSTIC
+    random-subsample control at L19 to n_seeds seeds for one model, so the
+    position-matched-vs-subsample contrast gets a proper seed-band read
+    (mean +/- sd + where the position-matched value falls). Reuses the staged
+    store + the committed projection stream; seeds 1..3 must reproduce the
+    committed per_seed values (validation twin). Writes a _v2 sidecar next to
+    the committed JSON (the round-8 JSON stays untouched as the r8 record).
+    """
+    committed_path = OUT_DIR / f"position_matched_wex_{model}.json"
+    committed = json.loads(committed_path.read_text())
+    anchor_pos = load_anchor_positions()
+    store = stage_store(model)
+    X = store["arrays"]["x_sep"]
+    Y = store["arrays"]["y"]
+    groups = store["group_ids"]
+    row_ids = store["row_ids"]
+    pos = np.asarray([anchor_pos[r] for r in row_ids])
+    n_kept = int((pos >= POSITION_FLOOR).sum())
+    assert n_kept == committed["n_kept"], (n_kept, committed["n_kept"])
+
+    hl = common.HEADLINE_LAYER
+    order = [hl] + [li for li in common.FROZEN_LAYERS if li != hl]
+    d_in = X.shape[2]
+    rng = np.random.default_rng(common.FIT_SEED + 7)  # committed P draw stream
+    # headline-first order => P at L19 is the FIRST draw, bitwise the committed one
+    assert order[0] == hl
+    P = rng.standard_normal((d_in, d_in)) / np.sqrt(d_in)
+
+    sub_r2: dict[str, float] = {}
+    for s in range(1, n_seeds + 1):
+        idx = common.group_stratified_subsample(groups, n_kept, seed=common.BUILD_SEED + s)
+        Xp = (X[idx][:, hl, :].astype(np.float64) @ P).astype(np.float32)
+        obs, _ = rotated_fit_r2(Xp, Y[idx][:, hl, :], groups[idx])
+        sub_r2[str(s)] = obs
+        print(f"[i825-posmatch-ext] {model} subsample seed {s}: {obs:.6f}", flush=True)
+        del Xp
+
+    # Validation twin: seeds 1..3 reproduce the committed round-8 values.
+    for s, v in committed["size_matched_subsample_rotated_L19"]["per_seed"].items():
+        assert abs(sub_r2[s] - v) < 1e-9, (s, sub_r2[s], v)
+
+    vals = np.array(list(sub_r2.values()))
+    pm = committed["position_matched_rotated_r2"][str(hl)]
+    sd = float(vals.std(ddof=1))
+    payload = {
+        "metadata": common.metadata(SCRIPT + " --extend-subsample", common.FIT_SEED, n_kept),
+        "followup_label": "onpolicy-separator-control",
+        "model": model,
+        "extends": committed_path.name,
+        "n_kept": n_kept,
+        "subsampler": "group_stratified_subsample(seed=931+s)",
+        "n_seeds": n_seeds,
+        "size_matched_subsample_rotated_L19": {
+            "per_seed": sub_r2,
+            "mean": float(vals.mean()),
+            "sd": sd,
+            "min": float(vals.min()),
+            "max": float(vals.max()),
+        },
+        "position_matched_rotated_L19": pm,
+        "contrast_vs_subsample": {
+            "delta_vs_mean": float(pm - vals.mean()),
+            "z_vs_seed_band": float((pm - vals.mean()) / sd),
+            "n_seeds_below_position_matched": int((vals < pm).sum()),
+            "note": (
+                "positive delta = position-matched refit sits ABOVE the size-matched "
+                "position-agnostic subsample band at collapsed subset-n; overlapping "
+                "group-stratified subsamples understate structured-subset variability, "
+                "so the z is against an understated null."
+            ),
+        },
+    }
+    common.write_json(OUT_DIR / f"position_matched_wex_{model}_v2.json", payload)
+    print(f"[i825-posmatch-ext] wrote position_matched_wex_{model}_v2.json", flush=True)
+
+
 def main() -> int:
+    if len(sys.argv) > 1 and sys.argv[1] == "--extend-subsample":
+        model = sys.argv[2] if len(sys.argv) > 2 else "instruct"
+        extend_subsample(model, n_seeds=int(sys.argv[3]) if len(sys.argv) > 3 else 10)
+        print("[i825-posmatch-ext] DONE rc=0", flush=True)
+        return 0
     STAGE.mkdir(parents=True, exist_ok=True)
     anchor_pos = load_anchor_positions()
     below = sum(1 for v in anchor_pos.values() if v < POSITION_FLOOR)
