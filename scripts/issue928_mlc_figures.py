@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001  # minus sign in figure text intentional
 """Figures for issue #928 follow-up round `matched-length-answer-span-control`.
 
 Reads the round's committed eval JSONs
@@ -30,11 +31,18 @@ import ast
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_blog,
     savefig_paper,
     set_paper_style,
@@ -121,7 +129,7 @@ def hero_read1(grid: dict, boot: dict, out_dir: Path) -> None:
                 )
             )
     ys = np.arange(len(rows))[::-1]
-    for y, (_, obs, lo, hi) in zip(ys, rows):
+    for y, (_, obs, lo, hi) in zip(ys, rows, strict=False):
         ax2.errorbar(
             [obs],
             [y],
@@ -146,11 +154,11 @@ def percontext_scatter(pc: dict, out_dir: Path) -> None:
     fl = np.asarray(pc["flagged"], dtype=bool)
     xs = [np.asarray(pc["median_cot_len"]), np.asarray(pc["median_K"])]
     xlabels = ["median CoT length (tokens)", "median matched budget K (tokens)"]
-    for ax, xv, xl in zip(axes, xs, xlabels):
+    for ax, xv, xl in zip(axes, xs, xlabels, strict=False):
         ax.axhline(0.0, color="grey", linestyle="--", linewidth=1.2)
         ax.scatter(xv[~fl], d[~fl], color="#1170aa", s=42, label="unflagged (36)")
         ax.scatter(xv[fl], d[fl], color="#d1615d", s=42, label="flagged parse floor (14)")
-        for x, y, lab in zip(xv, d, pc["ctx"]):
+        for x, y, lab in zip(xv, d, pc["ctx"], strict=False):
             ax.text(x, y, lab, fontsize=5.5, alpha=0.75, ha="left", va="bottom")
         ax.set_xlabel(xl)
     axes[0].set_ylabel(f"per-context Δ skill @ layer {pc['layer']}")
@@ -200,7 +208,7 @@ def sufficiency_truncation(grid: dict, boot: dict, out_dir: Path) -> None:
                 )
             )
     ys = np.arange(len(rows))[::-1]
-    for y, (_, obs, lo, hi) in zip(ys, rows):
+    for y, (_, obs, lo, hi) in zip(ys, rows, strict=False):
         ax2.errorbar(
             [obs],
             [y],
@@ -233,13 +241,13 @@ def skill_curves(grid: dict, regime: str, out_dir: Path) -> None:
     ]
     colors = paper_palette_blog(len(arms))
     layers = grid["capture_layers"]
-    for arm, c in zip(arms, colors):
+    for arm, c in zip(arms, colors, strict=False):
         sk = {e["layer"]: e["skill"] for e in grid["grid"][regime][arm]["loco"]}
-        ax.plot(layers, [sk[l] for l in layers], color=c, label=ARM_LABELS[arm])
+        ax.plot(layers, [sk[ly] for ly in layers], color=c, label=ARM_LABELS[arm])
     ident = {e["layer"]: e["skill"] for e in grid["grid"][regime]["mlc_ident"]["loco"]}
     ax.plot(
         layers,
-        [ident[l] for l in layers],
+        [ident[ly] for ly in layers],
         color="black",
         linestyle="--",
         label="identity ceiling (per layer)",

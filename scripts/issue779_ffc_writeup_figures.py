@@ -25,10 +25,17 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     add_direction_arrow,
     paper_palette,
     savefig_paper,
@@ -75,7 +82,7 @@ def fig_scaling() -> None:
         r2[(e["fitter"], e["n"])].append(e["r2"])
     ns = sorted({e["n"] for e in curves})
 
-    colors = dict(zip(FITTER_ORDER, paper_palette(len(FITTER_ORDER))))
+    colors = dict(zip(FITTER_ORDER, paper_palette(len(FITTER_ORDER)), strict=False))
     fig, ax = plt.subplots()
     for f in FITTER_ORDER:
         means = [float(np.mean(r2[(f, n)])) for n in ns]
@@ -100,7 +107,8 @@ def fig_scaling() -> None:
     _title(
         ax,
         "Context→answer map: held-out R² vs training-set size",
-        "Qwen-2.5-7B-Instruct, LMSYS; last-token → mean-answer, layer 19; fixed 1,000-ctx test set.\n"
+        "Qwen-2.5-7B-Instruct, LMSYS; last-token → mean-answer, layer 19; "
+        "fixed 1,000-ctx test set.\n"
         "Dashed: n=10,000 refit (extended λ grid, same test set).",
     )
     savefig_paper(fig, "issue_779/ffc_scaling_to_n10k", dir=REPO / "figures")
@@ -124,7 +132,7 @@ def fig_spectrum() -> None:
         linewidth=1.2,
         label="Ridge, n=5,000 (round 1)",
     )
-    for f, c in zip(["ridge", "krr", "mlp"], colors):
+    for f, c in zip(["ridge", "krr", "mlp"], colors, strict=False):
         ax.plot(
             ranks,
             d10["per_predictor"][f]["r2_by_rank"],

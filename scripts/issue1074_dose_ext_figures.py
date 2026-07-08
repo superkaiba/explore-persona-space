@@ -25,10 +25,17 @@ import json
 import math
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
     savefig_paper,
     set_paper_style,
@@ -68,9 +75,12 @@ def _curve_with_wilson(
 ) -> tuple[list[int], list[float], np.ndarray]:
     steps = sorted(int(s) for s in rates_by_step)
     curve = [rates_by_step[str(s)] for s in steps]
-    lo_hi = [wilson_ci(r, n_by_step[s]) for s, r in zip(steps, curve)]
+    lo_hi = [wilson_ci(r, n_by_step[s]) for s, r in zip(steps, curve, strict=False)]
     err = np.array(
-        [[r - lo for r, (lo, _) in zip(curve, lo_hi)], [hi - r for r, (_, hi) in zip(curve, lo_hi)]]
+        [
+            [r - lo for r, (lo, _) in zip(curve, lo_hi, strict=False)],
+            [hi - r for r, (_, hi) in zip(curve, lo_hi, strict=False)],
+        ]
     )
     return steps, curve, err
 
@@ -108,7 +118,7 @@ def fig_dose_extension(results_dir: Path, out_dir: Path) -> None:
         capsize=3,
         label="9-epoch retrain, this round (30-question subset)",
     )
-    for s, r in zip(steps, curve):
+    for s, r in zip(steps, curve, strict=False):
         ax.text(s, r + 0.035, f"{r:.2f}", ha="center", fontsize=8.6, color=colors[0])
 
     prior = inst["overlay"]["prior_round_rates_by_step"]
@@ -124,7 +134,7 @@ def fig_dose_extension(results_dir: Path, out_dir: Path) -> None:
         capsize=3,
         label="3-epoch run, prior round (same subset)",
     )
-    for s, r in zip(p_steps, p_curve):
+    for s, r in zip(p_steps, p_curve, strict=False):
         ax.text(s, r - 0.055, f"{r:.2f}", ha="center", fontsize=8.6, color=colors[3])
 
     fr = inst["final_rate_source"]
@@ -158,7 +168,6 @@ def fig_dose_extension(results_dir: Path, out_dir: Path) -> None:
     ax.legend(loc="upper left", frameon=False, fontsize=9.5)
 
     ax = axes[1]
-    cells = list(CELL_LABELS)
     bins = np.array([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
     x = np.arange(len(bins))
     w = 0.2
@@ -175,7 +184,7 @@ def fig_dose_extension(results_dir: Path, out_dir: Path) -> None:
         assert sum(counts) == len(pq), (cell, sum(counts), len(pq))
         xs = x + (j - 1.5) * w
         ax.bar(xs, counts, width=w, color=colors[j], label=CELL_LABELS[cell])
-        for xi, c in zip(xs, counts):
+        for xi, c in zip(xs, counts, strict=False):
             if c > 0:
                 # Stagger tall-bar labels vertically so the crowded 0.0-bin
                 # cluster (three counts near 190) stays readable.
