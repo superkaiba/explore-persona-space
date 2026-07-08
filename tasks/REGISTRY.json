@@ -1048,8 +1048,8 @@
     "1134": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1134",
-      "status": "planning",
+      "path": "tasks/approved/1134",
+      "status": "approved",
       "title": "daily-fix: codify or ban the adopt-severe reconciler skip"
     },
     "1135": {
