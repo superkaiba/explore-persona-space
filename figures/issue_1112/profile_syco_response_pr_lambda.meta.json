@@ -1,6 +1,6 @@
 {
- "commit": "4a091a5ab9",
- "created": "2026-07-08T08:21:20Z",
+ "commit": "9c2c2fd9b8",
+ "created": "2026-07-08T11:56:56Z",
  "figsize": [
   6.4,
   4.0
@@ -9,784 +9,784 @@
   {
    "decoder layer": 0.0,
    "participation ratio of the shift spectrum": 34.303168557952674,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 1.0,
    "participation ratio of the shift spectrum": 25.402140056301995,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 2.0,
    "participation ratio of the shift spectrum": 28.392615034900313,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 3.0,
    "participation ratio of the shift spectrum": 31.819012116568118,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 4.0,
    "participation ratio of the shift spectrum": 34.67193850153869,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 5.0,
    "participation ratio of the shift spectrum": 32.42440993643702,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 6.0,
    "participation ratio of the shift spectrum": 33.19933056996898,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 7.0,
    "participation ratio of the shift spectrum": 37.59988547953224,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 8.0,
    "participation ratio of the shift spectrum": 39.4177666026917,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 9.0,
    "participation ratio of the shift spectrum": 41.249107232101906,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 10.0,
    "participation ratio of the shift spectrum": 39.79439786438926,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 11.0,
    "participation ratio of the shift spectrum": 38.368261061263404,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 12.0,
    "participation ratio of the shift spectrum": 37.991966152963776,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 13.0,
    "participation ratio of the shift spectrum": 38.749066924600946,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 14.0,
    "participation ratio of the shift spectrum": 38.10993355955652,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 15.0,
    "participation ratio of the shift spectrum": 33.719104574492086,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 16.0,
    "participation ratio of the shift spectrum": 32.529846828658705,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 17.0,
    "participation ratio of the shift spectrum": 32.581472020387395,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 18.0,
    "participation ratio of the shift spectrum": 32.58431536288744,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 19.0,
    "participation ratio of the shift spectrum": 26.977653013561643,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 20.0,
    "participation ratio of the shift spectrum": 29.892508926022884,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 21.0,
    "participation ratio of the shift spectrum": 32.705204035956854,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 22.0,
    "participation ratio of the shift spectrum": 35.752528353728216,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 23.0,
    "participation ratio of the shift spectrum": 35.85853691846763,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 24.0,
    "participation ratio of the shift spectrum": 35.89397904964565,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 25.0,
    "participation ratio of the shift spectrum": 35.52113484581757,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 26.0,
    "participation ratio of the shift spectrum": 32.06652285895061,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 27.0,
    "participation ratio of the shift spectrum": 19.43694645757193,
-   "series": "LoRA + negatives (rate 0.61)",
+   "series": "LoRA + negatives",
    "_kind": "line",
    "_group": 0
   },
   {
    "decoder layer": 0.0,
    "participation ratio of the shift spectrum": 42.244382070662994,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 1.0,
    "participation ratio of the shift spectrum": 34.73755083891194,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 2.0,
    "participation ratio of the shift spectrum": 39.679756434887324,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 3.0,
    "participation ratio of the shift spectrum": 41.95712638614901,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 4.0,
    "participation ratio of the shift spectrum": 43.30514154762813,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 5.0,
    "participation ratio of the shift spectrum": 40.51985499646289,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 6.0,
    "participation ratio of the shift spectrum": 39.54824695755479,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 7.0,
    "participation ratio of the shift spectrum": 41.53395772001821,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 8.0,
    "participation ratio of the shift spectrum": 42.512594055302735,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 9.0,
    "participation ratio of the shift spectrum": 43.79526050265615,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 10.0,
    "participation ratio of the shift spectrum": 41.04829692128449,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 11.0,
    "participation ratio of the shift spectrum": 39.98242263461686,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 12.0,
    "participation ratio of the shift spectrum": 39.25278840482731,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 13.0,
    "participation ratio of the shift spectrum": 39.63435076406725,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 14.0,
    "participation ratio of the shift spectrum": 38.80852012721718,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 15.0,
    "participation ratio of the shift spectrum": 36.02273223132713,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 16.0,
    "participation ratio of the shift spectrum": 36.217375041897164,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 17.0,
    "participation ratio of the shift spectrum": 35.69611229077518,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 18.0,
    "participation ratio of the shift spectrum": 34.807281381220356,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 19.0,
    "participation ratio of the shift spectrum": 34.23471759868889,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 20.0,
    "participation ratio of the shift spectrum": 35.596661904236974,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 21.0,
    "participation ratio of the shift spectrum": 36.34990084956485,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 22.0,
    "participation ratio of the shift spectrum": 38.197782848537926,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 23.0,
    "participation ratio of the shift spectrum": 38.91682987299054,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 24.0,
    "participation ratio of the shift spectrum": 39.29864696395981,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 25.0,
    "participation ratio of the shift spectrum": 40.20926879101111,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 26.0,
    "participation ratio of the shift spectrum": 40.37888401941353,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 27.0,
    "participation ratio of the shift spectrum": 28.1233906676504,
-   "series": "LoRA positives-only (rate 0.60)",
+   "series": "LoRA positives-only",
    "_kind": "line",
    "_group": 1
   },
   {
    "decoder layer": 0.0,
    "participation ratio of the shift spectrum": 34.11949212542272,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 1.0,
    "participation ratio of the shift spectrum": 24.656312839143908,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 2.0,
    "participation ratio of the shift spectrum": 27.07280334290956,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 3.0,
    "participation ratio of the shift spectrum": 28.578311574684005,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 4.0,
    "participation ratio of the shift spectrum": 29.243262650222693,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 5.0,
    "participation ratio of the shift spectrum": 24.968224555104236,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 6.0,
    "participation ratio of the shift spectrum": 23.92544004766717,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 7.0,
    "participation ratio of the shift spectrum": 28.90965484360943,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 8.0,
    "participation ratio of the shift spectrum": 29.535327705212758,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 9.0,
    "participation ratio of the shift spectrum": 32.30279632159246,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 10.0,
    "participation ratio of the shift spectrum": 30.439476770691513,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 11.0,
    "participation ratio of the shift spectrum": 29.83273172292322,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 12.0,
    "participation ratio of the shift spectrum": 30.46983512006877,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 13.0,
    "participation ratio of the shift spectrum": 30.342550730822733,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 14.0,
    "participation ratio of the shift spectrum": 30.280944097689268,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 15.0,
    "participation ratio of the shift spectrum": 25.615187296452152,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 16.0,
    "participation ratio of the shift spectrum": 25.576169637992,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 17.0,
    "participation ratio of the shift spectrum": 25.102011436461687,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 18.0,
    "participation ratio of the shift spectrum": 24.711754322822255,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 19.0,
    "participation ratio of the shift spectrum": 25.97223467224279,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 20.0,
    "participation ratio of the shift spectrum": 27.655286900194422,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 21.0,
    "participation ratio of the shift spectrum": 29.282347376249124,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 22.0,
    "participation ratio of the shift spectrum": 32.941761843448404,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 23.0,
    "participation ratio of the shift spectrum": 35.19128325725027,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 24.0,
    "participation ratio of the shift spectrum": 37.20357716281296,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 25.0,
    "participation ratio of the shift spectrum": 38.928020083039485,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 26.0,
    "participation ratio of the shift spectrum": 39.282346539515835,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 27.0,
    "participation ratio of the shift spectrum": 24.596891761348804,
-   "series": "Full-FT + negatives (rate 0.63)",
+   "series": "Full-FT + negatives",
    "_kind": "line",
    "_group": 2
   },
   {
    "decoder layer": 0.0,
    "participation ratio of the shift spectrum": 40.0458727448002,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 1.0,
    "participation ratio of the shift spectrum": 34.67530656164088,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 2.0,
    "participation ratio of the shift spectrum": 36.8847620903842,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 3.0,
    "participation ratio of the shift spectrum": 38.37030396385525,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 4.0,
    "participation ratio of the shift spectrum": 38.70256587167127,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 5.0,
    "participation ratio of the shift spectrum": 36.672511581957124,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 6.0,
    "participation ratio of the shift spectrum": 35.93256367720329,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 7.0,
    "participation ratio of the shift spectrum": 37.07033613229201,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 8.0,
    "participation ratio of the shift spectrum": 38.18782487905926,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 9.0,
    "participation ratio of the shift spectrum": 39.08211341183443,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 10.0,
    "participation ratio of the shift spectrum": 37.17131158604059,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 11.0,
    "participation ratio of the shift spectrum": 36.91807207720787,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 12.0,
    "participation ratio of the shift spectrum": 35.92302138997604,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 13.0,
    "participation ratio of the shift spectrum": 36.33823700018488,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 14.0,
    "participation ratio of the shift spectrum": 34.76885990742553,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 15.0,
    "participation ratio of the shift spectrum": 32.62905437417388,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 16.0,
    "participation ratio of the shift spectrum": 32.41215006895306,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 17.0,
    "participation ratio of the shift spectrum": 31.45283020708525,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 18.0,
    "participation ratio of the shift spectrum": 30.582870023501513,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 19.0,
    "participation ratio of the shift spectrum": 26.30675531840324,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 20.0,
    "participation ratio of the shift spectrum": 26.76610516838633,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 21.0,
    "participation ratio of the shift spectrum": 27.59320635992628,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 22.0,
    "participation ratio of the shift spectrum": 29.2758005842952,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 23.0,
    "participation ratio of the shift spectrum": 29.274329283883638,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 24.0,
    "participation ratio of the shift spectrum": 29.25706004405259,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 25.0,
    "participation ratio of the shift spectrum": 31.22889478888299,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 26.0,
    "participation ratio of the shift spectrum": 32.22929964368307,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
   {
    "decoder layer": 27.0,
    "participation ratio of the shift spectrum": 26.722781592583114,
-   "series": "Full-FT positives-only (rate 0.81)",
+   "series": "Full-FT positives-only",
    "_kind": "line",
    "_group": 3
   },
@@ -1185,8 +1185,8 @@
  ],
  "n_series": 6,
  "total_points": 168,
- "git_commit": "4a091a5ab9794b73a937f6bb4e769f24697d728f",
- "ts": "2026-07-08T08:21:19Z",
+ "git_commit": "9c2c2fd9b87044f54cbce7b4bc9a2aff7e398c7d",
+ "ts": "2026-07-08T11:56:55Z",
  "arm": "response",
  "dv": "pr_lambda",
  "cells": [
