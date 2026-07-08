@@ -1,0 +1,14 @@
+{
+ "git_commit": "81c3a85bf89fd8a01a7120acc26c76c0358b593d",
+ "ts": "2026-07-08T06:34:24Z",
+ "arm": "prefix",
+ "dv": "rank_k_at_90",
+ "cells": [
+  "s1_lora_neg",
+  "s2_lora_pos",
+  "s3_fullft_neg",
+  "s4_fullft_pos",
+  "s5_lora_generic",
+  "s6_fullft_generic"
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "git_commit": "81c3a85bf89fd8a01a7120acc26c76c0358b593d",
+ "ts": "2026-07-08T06:34:29Z",
+ "arm": "context",
+ "dv": "top_share_lambda",
+ "cells": [
+  "m1_lora_band8",
+  "m2_fullft_band8"
+ ]
+}
