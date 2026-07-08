@@ -39,7 +39,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from explore_persona_space.artifacts.behavior import BEHAVIORS, Behavior
-from explore_persona_space.artifacts.context import CONTEXTS, INSTALLABLE_KINDS, Context
+from explore_persona_space.artifacts.context import CONTEXTS, Context
 from explore_persona_space.artifacts.datagen import (
     _STRUCTURAL_PREDICATES,
     generate_training_data,
@@ -134,7 +134,7 @@ class ModelOrganism:
     """
 
     behavior: str  # key into BEHAVIORS
-    context_id: str  # trigger context C; key into CONTEXTS, kind in INSTALLABLE_KINDS
+    context_id: str  # trigger context C; key into CONTEXTS (every kind is installable)
     negatives: str = DEFAULT_PANEL_NAME  # panel id into NEGATIVE_PANELS
     arm: str = "primary"  # in recipe.ARMS
     train_method: str = "lora"  # in recipe.TRAIN_METHODS
@@ -152,12 +152,12 @@ class ModelOrganism:
             raise ValueError(
                 f"unknown context_id {self.context_id!r}; known contexts: {sorted(CONTEXTS)}"
             )
-        if ctx.kind not in INSTALLABLE_KINDS:
-            raise ValueError(
-                f"context {self.context_id!r} has kind {ctx.kind!r}, not installable "
-                f"(INSTALLABLE_KINDS={INSTALLABLE_KINDS}); bare contexts are leakage "
-                "bystanders, never training sources"
-            )
+        # No kind gate: INSTALLABLE_KINDS == CONTEXT_KINDS since "bare" joined
+        # the installable set (#1090 fu3 — bare cells train on the default
+        # context), and Context.__post_init__ already validates kind against
+        # CONTEXT_KINDS, so a kind check here would be unreachable. A bare
+        # default SOURCE is still rejected by the panel-disjointness invariant
+        # below unless an explicit no-default panel is passed.
         if self.negatives not in NEGATIVE_PANELS:
             raise ValueError(
                 f"unknown negative panel {self.negatives!r}; known panels: "

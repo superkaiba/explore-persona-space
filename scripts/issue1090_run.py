@@ -253,6 +253,11 @@ class RunConfig:
     # per-cell provenance, recorded in each cell's datagen_summary.json AND in
     # gen_manifest.json (the library resume key).
     oversample_mult: float = 1.0
+    # Upper fence for oversample_mult (threaded to datagen's scalar-fence
+    # check). 2.0 = the round-1 plan fence (byte-identical default); the fu3
+    # worker raises it to FU3_MAX_OVERSAMPLE_MULT for the posonly x bare
+    # yield-floor carve-out (concern fu3-posonly-bare-datagen-yield-floor).
+    max_oversample_mult: float = 2.0
     gen_temperature: float = 1.0
     tier1_n: int = TIER1_N_COMPLETIONS
     tier1_draws: int = TIER1_JUDGE_DRAWS
@@ -369,6 +374,10 @@ def _datagen_kwargs(cfg: RunConfig, cell: Cell, gen_fn) -> dict:
         instruction_style="plain",  # #1074 setting (plan §11)
         instruction_source="extraction_pairs",  # the #1090 core delta (plan D2)
         oversample_mult=cfg.oversample_mult,  # round-4 allowed 2x retune (API + qwen cells)
+        # fu3 posonly x bare carve-out: the fu3 worker widens the request-count
+        # fence (concern fu3-posonly-bare-datagen-yield-floor); round-1 callers
+        # keep the default 2.0, so their behavior is byte-identical.
+        max_oversample_mult=cfg.max_oversample_mult,
     )
 
 
@@ -717,7 +726,18 @@ def _replay_judge_fn(first_sample_save_raw: Path):
     ``judge_raw_*.json`` — zero API calls, never writes (the frozen yield DV's
     ground truth; the production reduce via ``judge_result_from_save_raw``)."""
 
-    def judge_fn(items, eval_prompt, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False):
+    def judge_fn(
+        items,
+        eval_prompt,
+        *,
+        n_draws,
+        cache_dir,
+        save_raw,
+        judge_model,
+        dry_run=False,
+        max_tokens=64,
+    ):
+        del max_tokens  # replay-only: no API call, budget is moot
         del eval_prompt, n_draws, cache_dir, save_raw, judge_model, dry_run  # replay-only
         return judge_result_from_save_raw(first_sample_save_raw, items)
 
@@ -1848,6 +1868,7 @@ def _judge_rate(
     tag: str,
     n_draws: int,
     judge_root: Path,
+    max_tokens: int = 300,  # llm-judging rule 23: reason-first rubrics need >=~300 (#1090 fix)
 ) -> dict:
     """Judged (or structural) rate over one (cell, state) tier-2 read."""
     behavior = BEHAVIORS[behavior_name]
@@ -1871,6 +1892,7 @@ def _judge_rate(
         cache_dir=cell_dir,
         save_raw=cell_dir / "judge_raw.json",
         judge_model=behavior.judge_model,
+        max_tokens=max_tokens,
     )
     n_dropped = 0
     n_pos = 0
@@ -1899,10 +1921,17 @@ def _judge_rate(
 
 
 def _formatting_spotcheck(
-    questions: list[str], completions: list[list[str]], *, n_draws: int, judge_root: Path
+    questions: list[str],
+    completions: list[list[str]],
+    *,
+    n_draws: int,
+    judge_root: Path,
+    max_tokens: int = 64,
 ) -> dict:
     """Judged spot-check companion for the structural formatting DV: judge a
-    seeded subsample and report structural-vs-judged agreement."""
+    seeded subsample and report structural-vs-judged agreement. ``max_tokens``
+    threads the reason-then-score response budget (llm-judging rule 23; fu3
+    passes 300 explicitly; the 64 default keeps the v4 call site byte-stable)."""
     behavior = BEHAVIORS["formatting"]
     predicate = _STRUCTURAL_PREDICATES["formatting"]
     flat = [
@@ -1921,6 +1950,7 @@ def _formatting_spotcheck(
         cache_dir=cell_dir,
         save_raw=cell_dir / "judge_raw.json",
         judge_model=behavior.judge_model,
+        max_tokens=max_tokens,
     )
     n_agree = 0
     n_scored = 0
