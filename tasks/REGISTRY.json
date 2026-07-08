@@ -999,8 +999,8 @@
     "1128": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1128",
-      "status": "running",
+      "path": "tasks/reviewing/1128",
+      "status": "reviewing",
       "title": "daily-fix: block repo-root branch merges in the guard hook"
     },
     "1129": {
