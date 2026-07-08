@@ -6592,6 +6592,12 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    suffix in place — never append a duplicate (mirrors the
    EXTEND-pass step-7 delta above).
 
+   Compose both edits in a staged copy (`/tmp/...`) and apply ONLY via
+   `task.py set-body <N> --file ...` (named again below) — NEVER a raw
+   `body.md` write (incident #1090, 2026-07-07: a direct pathlib write
+   bypassed task.py and the revert attempt was hook-blocked; recovery
+   cost ~3 turns).
+
    (a) **Top of body — the reader-facing pointer.** Insert exactly
    this line immediately AFTER the clean-result sentinel (i.e. right
    under the H1 title), BEFORE the first content H2, with a blank line on
