@@ -1102,6 +1102,60 @@ def test_g2_identity_criterion_exact_agreement_passes():
     assert stats["pass"] and stats["max_abs"] == 0.0
 
 
+# ── 14. round-8.7: deterministic G2 token-id pre-check (folded from the 8.6
+# diag into the gate; runs BEFORE the statistical identity comparison). It
+# retires the reviewer's residual blind spot: a 1-2-row CORRELATED
+# adjacent-position shift lands p99 ~0.16-0.23 and PASSES the statistical bar,
+# but the pre-check catches ANY token/position construction divergence with
+# exact precision.
+
+
+def _precheck_fixture(tok):
+    prompts = [
+        tok.apply_chat_template(
+            [{"role": "user", "content": q}], tokenize=False, add_generation_prompt=True
+        )
+        for q in ("Say hi.", "Name a color.")
+    ]
+    return {
+        "prefix_texts": ["", ""],
+        "prompts": prompts,
+        "completions": ["Hello there!", "\nBlue."],  # incl. the seam-merge case
+        "boundary": gp._boundary_suffix("instruct"),
+        "cell_id": "cell_inst_own",
+        "row_labels": ["r_0000000", "r_0000001"],
+    }
+
+
+def test_g2_token_id_precheck_passes_on_real_construction(qwen_tokenizer):
+    # post-8.4 construction: capture prompt-segment ids == reference ids by
+    # construction, including the "\n"-leading seam-merge completion
+    gp._g2_token_id_precheck(qwen_tokenizer, **_precheck_fixture(qwen_tokenizer))
+
+
+def test_g2_token_id_precheck_fails_deterministically_on_one_row_id_mismatch(
+    qwen_tokenizer, monkeypatch
+):
+    """A regressed capture construction on ONE row (the correlated-single-row
+    mode the statistical p99 bar cannot catch) fails the pre-check
+    deterministically, with the first-divergence dump naming the row."""
+    real = gp._capture_row_ids_and_positions
+    calls = {"n": 0}
+
+    def regressed(tokenizer, prefix_text, prompt, completion, boundary, row_label="?"):
+        row_ids, pos = real(tokenizer, prefix_text, prompt, completion, boundary, row_label)
+        calls["n"] += 1
+        if calls["n"] == 2:  # corrupt row 2's prompt segment by one token (off-by-one shift)
+            row_ids = row_ids[1:]
+            pos = dict(pos, context_end=pos["context_end"] - 1, n_total=pos["n_total"] - 1)
+        return row_ids, pos
+
+    monkeypatch.setattr(gp, "_capture_row_ids_and_positions", regressed)
+    with pytest.raises(AssertionError, match=r"token-id pre-check FAILED.*r_0000001"):
+        gp._g2_token_id_precheck(qwen_tokenizer, **_precheck_fixture(qwen_tokenizer))
+    assert calls["n"] == 2  # failed exactly at the corrupted row
+
+
 # ── 12. round-8.5: vLLM H100-IMA mitigation flags thread into EVERY engine
 # construction (launch #4: CUDA illegal memory access in vLLM 0.11.0's engine
 # step on 8x H100 at production shapes under heavy shared-prefix reuse;

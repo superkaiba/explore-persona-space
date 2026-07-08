@@ -1216,11 +1216,15 @@ def _load_b0_pool_matrix(out_dir: Path, cell_id: str) -> np.ndarray:
 # outlier dims), p99 floored-rel 0.076, depth-amplified L0 0.016 -> L26 3.0
 # (the #779-r12 signature). A MAX-relative bar cannot separate (the pure null
 # reaches floored-rel 0.866 on one small-magnitude tail element), so the
-# criterion reads the BULK: a misaligned construction shifts >=2% of elements
-# to rel ~1 (any single off-by-one row is 2% of a 50-row read), driving the
-# p99 to ~1, while the numerics null sits at 0.076. Thresholds = measured
-# null x margin, NOT bare constants — re-derive with issue1092_g2_diag.py if
-# the model / dtype / hardware changes:
+# criterion reads the BULK. Division of labor (round-8.7 amendment, per the
+# 8.6 reviewer's probe): a single CORRELATED adjacent-position row shifts the
+# p99 only to ~0.16-0.23 (PASSES this bar) — that mode is caught EXACTLY by
+# the deterministic token-id pre-check (_g2_token_id_precheck), which runs
+# BEFORE this statistical comparison; the p99 bar catches >=3-row and
+# UNCORRELATED misalignment modes (uncorrelated states put >=2% of elements
+# at rel ~1, driving the p99 to ~1), while the numerics null sits at 0.076.
+# Thresholds = measured null x margin, NOT bare constants — re-derive with
+# issue1092_g2_diag.py if the model / dtype / hardware changes:
 #   p99 floored-rel <= 0.30  (~4x the 0.076 null p99, ~3x under the ~1.0
 #                             misalignment signature)
 #   max_abs         <= 300.0 (100x the 3.0 null max; misaligned outlier dims
@@ -1259,6 +1263,46 @@ def _g2_identity_check(disk: np.ndarray, ref: np.ndarray) -> dict[str, Any]:
             "abs_backstop": G2_IDENTITY_ABS_BACKSTOP,
         },
     }
+
+
+def _g2_token_id_precheck(
+    tokenizer,
+    *,
+    prefix_texts: list[str],
+    prompts: list[str],
+    completions: list[str],
+    boundary: str,
+    cell_id: str,
+    row_labels: list[str],
+) -> None:
+    """Deterministic token-id pre-check (round-8.7; folded from the 8.6 diag).
+
+    For every spot row, hard-asserts the CAPTURE's prompt-segment ids
+    (`_capture_row_ids_and_positions`) are bit-identical to the REFERENCE's
+    ``tokenizer(prompt)`` ids AND that ``context_end`` sits at the last
+    reference id. Runs BEFORE the statistical identity comparison: it catches
+    with exact precision the 1-2-row CORRELATED-shift mode the calibrated p99
+    bar cannot (a single correlated adjacent-position row lands p99
+    ~0.16-0.23), and any future regression of the capture's token/position
+    construction (e.g. reintroduced concatenated-text tokenization, the
+    round-8.4 class). Raises AssertionError with a first-divergence dump.
+    """
+    for spot_i, (pfx, prompt, completion, label) in enumerate(
+        zip(prefix_texts, prompts, completions, row_labels, strict=True)
+    ):
+        ids_ref = list(tokenizer(prompt, add_special_tokens=False)["input_ids"])
+        row_ids, pos = _capture_row_ids_and_positions(tokenizer, pfx, prompt, completion, boundary)
+        if row_ids[: len(ids_ref)] != ids_ref or pos["context_end"] != len(ids_ref) - 1:
+            first_div = next(
+                (j for j, (a, b) in enumerate(zip(row_ids, ids_ref, strict=False)) if a != b),
+                None,
+            )
+            raise AssertionError(
+                f"G2 token-id pre-check FAILED for {cell_id} spot {spot_i} (row {label!r}): "
+                f"n_ids_ref={len(ids_ref)} n_row_ids={len(row_ids)} "
+                f"context_end={pos['context_end']} first_divergence={first_div}"
+            )
+    logger.info("[G2] token-id pre-check PASSED for %s: %d spot rows exact", cell_id, len(prompts))
 
 
 def _generate_context_hidden_reference(
@@ -1447,18 +1491,49 @@ def run_g2_gate_from_disk(  # noqa: C901
     rng = np.random.default_rng(G2_SPOT_SEED)
     spot_idx = np.sort(rng.choice(n_rows, size=min(G2_SPOT_ROWS, n_rows), replace=False))
     cell_rows = _rows_for_cell(rows, cell_id)[:n_rows]
+    own_completions = (
+        _load_raw_completion_files(out_dir, cfg["model"], cell_id)
+        if cfg["text_source"] == "own"
+        else {}
+    )
     prompts: list[str] = []
     prefix_texts: list[str] = []
+    spot_completions: list[str] = []
+    spot_row_labels: list[str] = []
     for row_i in spot_idx:
-        prefix_text, prompt, _completion = render_row(
-            cell_rows[int(row_i)],
+        row = cell_rows[int(row_i)]
+        prefix_text, prompt, completion = render_row(
+            row,
             prefix_store,
             query_store,
             prompt_format=cfg["prompt_format"],
             text_source=cfg["text_source"],
         )
+        if completion is None:
+            row_id = str(row.get("row_id"))
+            if row_id not in own_completions:
+                raise FileNotFoundError(
+                    f"G2 token-id pre-check missing own-policy completion for row {row_id}"
+                )
+            completion = own_completions[row_id]
         prefix_texts.append(prefix_text)
         prompts.append(prompt)
+        spot_completions.append(completion)
+        spot_row_labels.append(str(row.get("row_id")))
+
+    # round-8.7: deterministic token-id pre-check BEFORE the statistical
+    # comparison (catches 1-2-row correlated shifts + any construction
+    # regression with exact precision; see _g2_token_id_precheck).
+    _g2_token_id_precheck(
+        tokenizer,
+        prefix_texts=prefix_texts,
+        prompts=prompts,
+        completions=spot_completions,
+        boundary=_boundary_suffix(cfg["prompt_format"]),
+        cell_id=cell_id,
+        row_labels=spot_row_labels,
+    )
+
     ref_context = _generate_context_hidden_reference(
         prompts=prompts,
         model=model,
@@ -1488,7 +1563,8 @@ def run_g2_gate_from_disk(  # noqa: C901
         if rb_directions is None:
             raise ValueError("G2 B0 recompute requires loaded r_B directions")
         b0_idx = spot_idx[: min(5, spot_idx.size)]
-        completions = _load_raw_completion_files(out_dir, cfg["model"], cell_id)
+        # own-policy cells already loaded this map for the token-id pre-check
+        completions = own_completions or _load_raw_completion_files(out_dir, cfg["model"], cell_id)
         missing = [
             str(cell_rows[int(i)].get("row_id"))
             for i in b0_idx
