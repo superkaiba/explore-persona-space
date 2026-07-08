@@ -137,7 +137,7 @@ def test_per_draw_ladder_drops_and_truncation(tokenizer):
 
     # Draw 1: NO sentence-final separator anywhere -> per-draw drop.
     no_sep = " " + " ".join(f"item{i}" for i in range(40))
-    arow1, pair1, c1 = ops.build_prefix_final_draw(
+    _arow1, pair1, c1 = ops.build_prefix_final_draw(
         tokenizer, art, anchor, _cont_row(art["window_id"], 1, no_sep, tokenizer)
     )
     assert pair1 is None and c1["no_closing_separator_draw"] == 1
@@ -146,7 +146,7 @@ def test_per_draw_ladder_drops_and_truncation(tokenizer):
     # (~135 two-token words ~ 270 tokens > 256, still under the 1024 window cap
     # so the closing separator survives the window truncation).
     long_run = " " + " ".join(f"token{i}" for i in range(135)) + " ended."
-    arow2, pair2, c2 = ops.build_prefix_final_draw(
+    _arow2, pair2, c2 = ops.build_prefix_final_draw(
         tokenizer, art, anchor, _cont_row(art["window_id"], 2, long_run, tokenizer)
     )
     assert pair2 is None and c2["span_len_out_of_range_draw"] == 1

@@ -278,7 +278,9 @@ def _build_arms(args, m: str, refs: dict, anchor_key: str) -> dict[str, dict]:
             w_ex_eff = (
                 w_ex_matched if (trigger_fired and w_ex_matched is not None) else refs["w_ex_fulln"]
             )
-            w_ex_kind = "matched_n" if trigger_fired and w_ex_matched else "fulln_committed"
+            w_ex_kind = (
+                "matched_n" if (trigger_fired and w_ex_matched is not None) else "fulln_committed"
+            )
         else:
             realized_n = on["n"]
             matched = _read(args.out_dir / anchor_key / f"matched_n_wex_armC_{m}.json")
