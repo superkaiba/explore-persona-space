@@ -1705,6 +1705,15 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
     out_dir.mkdir(parents=True, exist_ok=True)
     registered_inputs = _validate_registered_inputs(args, summaries_dir)
     judge_rows = _load_judge_score_rows(args.judge_scores)
+    # Judge scores are an output-affecting input (B1/B2/B3 behavior joins live inside
+    # the unit checkpoints), so they MUST enter the checkpoint fingerprint: without
+    # this, a later --judge-scores re-run fingerprint-matches the judge-less
+    # checkpoints and silently skips the behavior joins (#722-r3 resume-key class).
+    judge_scores_sha = (
+        hashlib.sha256(Path(args.judge_scores).read_bytes()).hexdigest()[:16]
+        if args.judge_scores is not None
+        else None
+    )
     rb_directions, trait_names = _load_rb_directions(args)
     b0_pools: dict[str, np.ndarray] = {}
 
@@ -1787,6 +1796,7 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
                             "seed": args.seed,
                             "n_null_draws": unit_null_draws,
                             "matched_n_draws": args.matched_n_draws,
+                            "judge_scores_sha256": judge_scores_sha,
                         }
                         x_fp_paths = [path for paths in x_paths_by_arm.values() for path in paths]
                         fp = _fingerprint(y_paths + x_fp_paths, config)
