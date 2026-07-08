@@ -1763,6 +1763,19 @@ def phase_rb(cfg: Cfg) -> dict:
             rb_dir / "rb_sycophancy.pt",
         )
         rec["sycophancy"] = str(rb_dir / "rb_sycophancy.pt")
+        # Upload-verification v1 blocker `generation-discarded-undeclared`
+        # (round 8): the extractor persists the rollout TEXT under
+        # rb/raw_completions/ BEFORE its judge + stream-reduce (plan §10
+        # raw_completions/rb_extraction — rollout text is never discardable);
+        # fail loud here if that contract ever regresses, so the tensor can
+        # never again ship without the text it was reduced from.
+        rollout_files = sorted((rb_dir / "raw_completions").glob("rollouts_sycophancy_*.json"))
+        if not rollout_files:
+            raise FileNotFoundError(
+                f"r_B extractor persisted no rollout text under {rb_dir / 'raw_completions'} "
+                "(expected rollouts_sycophancy_{pos,neg}[.partNN].json)"
+            )
+        rec["rollout_files"] = [p.name for p in rollout_files]
     if any(c.startswith("m") for c in cfg.cells):
         # marker r_B = W_U[83399] per layer-independent unembedding row (#653)
         import torch
@@ -2191,18 +2204,30 @@ def phase_upload(cfg: Cfg) -> dict:
             f"{C.DATA_PREFIX}/analysis_tensors/capture/{c}/{d}/pooled.pt",
             upload_as_file=True,
         )
+    _upload_rb_artifacts(cfg.out_root / "rb", _up)
+    _up(cfg.out_root / "run_config.json", f"{C.DATA_PREFIX}/run_config.json", upload_as_file=True)
+    return uploaded
+
+
+def _upload_rb_artifacts(rb_dir: Path, _up) -> None:
+    """p9_rb artifact routing: tensors -> analysis_tensors/rb, rollout TEXT ->
+    raw_completions/rb_extraction (plan §10; upload-verification v1 blocker
+    generation-discarded-undeclared, round 8), remaining JSON sidecars (judge
+    raw + counts) -> rb/. The rollout dumps are excluded from the generic rb/
+    bucket so they land exactly once, at the canonical prefix."""
     for name in ("rb_sycophancy", "rb_marker"):
         _up(
-            cfg.out_root / "rb" / f"{name}.pt",
+            rb_dir / f"{name}.pt",
             f"{C.DATA_PREFIX}/analysis_tensors/rb/{name}.pt",
             upload_as_file=True,
         )
-    for extra in (
-        sorted((cfg.out_root / "rb").glob("**/*.json")) if (cfg.out_root / "rb").exists() else []
-    ):
+    rb_rc = rb_dir / "raw_completions"
+    for f in sorted(rb_rc.glob("rollouts_*.json")) if rb_rc.exists() else []:
+        _up(f, f"{C.DATA_PREFIX}/raw_completions/rb_extraction/{f.name}", upload_as_file=True)
+    for extra in sorted(rb_dir.glob("**/*.json")) if rb_dir.exists() else []:
+        if "raw_completions" in extra.parts:
+            continue  # rollout text uploaded above under raw_completions/rb_extraction/
         _up(extra, f"{C.DATA_PREFIX}/rb/{extra.name}", upload_as_file=True)
-    _up(cfg.out_root / "run_config.json", f"{C.DATA_PREFIX}/run_config.json", upload_as_file=True)
-    return uploaded
 
 
 def write_sentinel(cfg: Cfg, summary: dict) -> Path:
