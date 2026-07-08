@@ -209,6 +209,145 @@ def _sha256_short(s: str) -> str:
     return hashlib.sha256(s.encode()).hexdigest()[:16]
 
 
+# ── realized-pair token-budget filter (round-8.3) ────────────────────────────
+
+
+def _batch_token_counts(texts: list[str], *, chunk: int = 512) -> list[int]:
+    """Token counts for many texts (fast-tokenizer batch encode; smoke = words)."""
+    if _SMOKE_TOKEN_COUNTS:
+        return [max(1, len(t.split())) for t in texts]
+    tok = _get_tokenizer()
+    counts: list[int] = []
+    for start in range(0, len(texts), chunk):
+        encoded = tok(texts[start : start + chunk], add_special_tokens=False)["input_ids"]
+        counts.extend(len(ids) for ids in encoded)
+    return counts
+
+
+def _apply_realized_budget_filter(
+    rows: list[dict],
+    prefix_lookup: dict[str, dict],
+    query_lookup: dict[str, dict],
+    *,
+    max_tokens: int = MAX_FORMATTED_TOKENS,
+    max_drop_frac: float = 0.05,
+    chunk: int = 2048,
+) -> tuple[list[dict], dict[str, Any]]:
+    """Drop manifest rows whose REALIZED (prefix, query) render busts the window.
+
+    Round-8.3 production incident (GPU launch #2): P0 previously bounded only
+    the prefix+NATURAL-query render; the CROSSING then attached other bank
+    queries to near-cap prefixes, and ~1.7% of realized (P, q) prompts
+    exceeded max_model_len at generation (vLLM ``decoder prompt (length 8290)
+    > max_model_len 8192``), erroring whole shards. This filter renders EVERY
+    row in BOTH formats (the exact prompts ``gpu_phase.render_row`` feeds
+    vLLM), annotates each row with ``n_tokens_instruct`` /
+    ``n_tokens_pretrained`` (plan §4.1 step 9 token counts), and PAIR-DROPS —
+    the row disappears for ALL cells/formats, keeping row sets aligned — when
+    EITHER count exceeds ``max_tokens`` (7,168 = 8,192 - 1,024 generation
+    headroom). Digest-only logging. Fail-loud when the drop fraction exceeds
+    ``max_drop_frac``: a systematic budget problem must never silently shrink
+    the corpus.
+    """
+    kept: list[dict] = []
+    dropped_by_stratum: dict[str, int] = {}
+    n = len(rows)
+    for start in range(0, n, chunk):
+        chunk_rows = rows[start : start + chunk]
+        inst_texts: list[str] = []
+        nat_texts: list[str] = []
+        for row in chunk_rows:
+            pfx = prefix_lookup[row["prefix_id"]]
+            qry = query_lookup[row["query_id"]]
+            turns = pfx.get("prefix_turns")
+            if not isinstance(turns, list):
+                raise TypeError(
+                    f"prefix {row['prefix_id']!r} has non-list prefix_turns "
+                    f"({type(turns).__name__}) - cannot budget-check row {row['row_id']!r}"
+                )
+            query = qry["text"]
+            inst_texts.append(_render_instruct(turns, query))
+            nat_texts.append(_render_naturalistic(turns, query))
+        inst_counts = _batch_token_counts(inst_texts)
+        nat_counts = _batch_token_counts(nat_texts)
+        for row, n_inst, n_nat in zip(chunk_rows, inst_counts, nat_counts, strict=True):
+            row["n_tokens_instruct"] = n_inst
+            row["n_tokens_pretrained"] = n_nat
+            if n_inst > max_tokens or n_nat > max_tokens:
+                stratum = row.get("stratum", "unknown")
+                dropped_by_stratum[stratum] = dropped_by_stratum.get(stratum, 0) + 1
+            else:
+                kept.append(row)
+        logger.info(
+            "[budget] %d / %d rows checked (%d dropped so far)",
+            min(start + chunk, n),
+            n,
+            (start + len(chunk_rows)) - len(kept),
+        )
+
+    n_dropped = n - len(kept)
+    drop_frac = n_dropped / max(1, n)
+    digest = {
+        "total_rows": n,
+        "kept_rows": len(kept),
+        "budget_dropped": n_dropped,
+        "drop_frac": round(drop_frac, 5),
+        "dropped_by_stratum": dropped_by_stratum,
+        "max_formatted_tokens": max_tokens,
+    }
+    logger.info("[budget] realized-pair filter digest: %s", json.dumps(digest))
+    if drop_frac > max_drop_frac:
+        raise RuntimeError(
+            f"[budget] drop fraction {drop_frac:.4f} exceeds max_drop_frac "
+            f"{max_drop_frac} - systematic budget problem; refusing to silently "
+            f"shrink the corpus. Digest: {json.dumps(digest)}"
+        )
+    return kept, digest
+
+
+def _build_query_lookup(
+    bank: list[dict], core_queries: list[dict], prefix_entries: list[dict]
+) -> dict[str, dict]:
+    """query_id -> query dict over bank + core + natural final-turn queries.
+
+    Single source for BOTH the realized-budget filter and `_write_query_store`
+    so the filter checks exactly the query set the stores ship.
+    """
+    by_id = {q["query_id"]: dict(q) for q in bank}
+    for q in core_queries:
+        by_id.setdefault(q["query_id"], dict(q))
+    for pfx in prefix_entries:
+        natural = pfx.get("natural_query")
+        if natural:
+            by_id[f"nat_{pfx['prefix_id']}"] = {
+                "query_id": f"nat_{pfx['prefix_id']}",
+                "text": natural,
+                "topic": pfx.get("topic", "other"),
+                "source": pfx.get("source", "natural"),
+                "conv_id": pfx.get("conv_id", ""),
+            }
+    return by_id
+
+
+def _derangement_map_for_rows(manifest_rows: list[dict], *, rng: random.Random) -> dict[str, str]:
+    """Shuffled-pairing derangement map over the (kept) manifest rows.
+
+    Factored (round-8.3) so the in-pipeline build and the `--filter-existing`
+    post-process construct the map identically — always over the FILTERED row
+    set, so an answer-source row_id always resolves to a kept row.
+    """
+    shuf_candidate_rows = [
+        r
+        for r in manifest_rows
+        if r["stratum"] in ("dense_core", "periphery_random", "periphery_natural")
+    ]
+    derangement_perm = _build_derangement(shuf_candidate_rows, rng=rng)
+    return {
+        shuf_candidate_rows[i]["row_id"]: shuf_candidate_rows[derangement_perm[i]]["row_id"]
+        for i in range(len(shuf_candidate_rows))
+    }
+
+
 # ── streaming filter ──────────────────────────────────────────────────────────
 
 
@@ -1597,26 +1736,192 @@ def _write_query_store(
     bank: list[dict], core_queries: list[dict], prefix_entries: list[dict], path: Path
 ) -> None:
     """Write query bank, core queries, and natural final-turn queries as JSONL."""
-    by_id = {q["query_id"]: dict(q) for q in bank}
-    for q in core_queries:
-        by_id.setdefault(q["query_id"], dict(q))
-    for pfx in prefix_entries:
-        natural = pfx.get("natural_query")
-        if natural:
-            by_id[f"nat_{pfx['prefix_id']}"] = {
-                "query_id": f"nat_{pfx['prefix_id']}",
-                "text": natural,
-                "topic": pfx.get("topic", "other"),
-                "source": pfx.get("source", "natural"),
-                "conv_id": pfx.get("conv_id", ""),
-            }
-    all_queries = list(by_id.values())
+    all_queries = list(_build_query_lookup(bank, core_queries, prefix_entries).values())
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         for q in all_queries:
             f.write(json.dumps(q, ensure_ascii=False))
             f.write("\n")
     logger.info("[write] query store: %d queries", len(all_queries))
+
+
+# ── post-process an existing corpus (round-8.3 production correction) ───────
+
+
+def _load_jsonl_file(path: Path) -> list[dict]:
+    """Text-mode JSONL load (file iteration, never .splitlines(); #825/#950)."""
+    out: list[dict] = []
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip("\n")
+            if stripped:
+                out.append(json.loads(stripped))
+    return out
+
+
+def _filter_existing_corpus(args: argparse.Namespace) -> int:
+    """Apply the realized-pair budget filter to an ALREADY-BUILT corpus.
+
+    Round-8.3: the production corpus @45b222d9 was built without the
+    realized-pair filter and its P1 Claude batch (12,172 calls) is already
+    submitted against its row assemblies. A fresh full re-run CANNOT
+    guarantee identical assemblies for kept rows — the Haiku topic labels are
+    temperature-1.0 nondeterministic, and label values feed the bank
+    stratified-subsample/top-up branch and the topic-matched periphery
+    sampling, so any label flip shifts the shared rng stream and reshuffles
+    (prefix, query) pairings under the same positional row_ids. This mode is
+    therefore the ONLY path that satisfies the row_id-stability requirement:
+    load the existing manifest + stores, apply the filter as a terminal DROP
+    (kept rows byte-identical apart from the new token-count fields),
+    recompute the derangement over kept rows only (the old map references
+    dropped rows as keys AND answer-sources; nothing has consumed it — P2
+    never ran), re-evaluate G1 strictly, rewrite stats, and upload.
+
+    Preserves byte-verbatim pre-filter copies (`*.pre_budget_filter.*`) in the
+    corpus dir (also uploaded — provenance) and REFUSES to run twice (a
+    double-filter would misreport drop stats).
+    """
+    corpus_dir: Path = args.filter_existing
+    manifest_path = corpus_dir / "manifest.jsonl"
+    prefix_store_path = corpus_dir / "prefix_store.jsonl"
+    query_store_path = corpus_dir / "query_store.jsonl"
+    derangement_path = corpus_dir / "derangement_map.json"
+    stats_path_in = corpus_dir / "manifest_stats.json"
+    for p in (manifest_path, prefix_store_path, query_store_path):
+        if not p.exists():
+            raise FileNotFoundError(f"[filter-existing] missing corpus file: {p}")
+
+    pre_manifest = corpus_dir / "manifest.pre_budget_filter.jsonl"
+    if pre_manifest.exists():
+        raise RuntimeError(
+            f"[filter-existing] {pre_manifest} already exists - this corpus looks "
+            "already filtered; refusing to double-filter (stats would misreport). "
+            "Inspect/remove the pre_budget_filter copies deliberately first."
+        )
+    pre_manifest.write_bytes(manifest_path.read_bytes())
+    pre_sha = hashlib.sha256(pre_manifest.read_bytes()).hexdigest()
+    if derangement_path.exists():
+        (corpus_dir / "derangement_map.pre_budget_filter.json").write_bytes(
+            derangement_path.read_bytes()
+        )
+    old_stats: dict[str, Any] = {}
+    if stats_path_in.exists():
+        (corpus_dir / "manifest_stats.pre_budget_filter.json").write_bytes(
+            stats_path_in.read_bytes()
+        )
+        old_stats = json.loads(stats_path_in.read_text(encoding="utf-8"))
+
+    rows = _load_jsonl_file(manifest_path)
+    prefix_lookup = {e["prefix_id"]: e for e in _load_jsonl_file(prefix_store_path)}
+    query_lookup = {q["query_id"]: q for q in _load_jsonl_file(query_store_path)}
+    logger.info(
+        "[filter-existing] loaded %d rows, %d prefixes, %d queries from %s "
+        "(pre-filter manifest sha256=%s)",
+        len(rows),
+        len(prefix_lookup),
+        len(query_lookup),
+        corpus_dir,
+        pre_sha[:16],
+    )
+
+    kept, budget_digest = _apply_realized_budget_filter(
+        rows,
+        prefix_lookup,
+        query_lookup,
+        max_drop_frac=args.budget_max_drop_frac,
+    )
+
+    # Derangement over KEPT rows only (fresh deterministic rng — the in-run map
+    # consumed a mid-stream rng state that is not reconstructible here; nothing
+    # has consumed the old map, P2 never ran).
+    derangement_map = _derangement_map_for_rows(kept, rng=random.Random(BUILD_SEED))
+
+    # G1 re-evaluation on the FILTERED corpus (strict — production).
+    kept_pfx = {r["prefix_id"] for r in kept if str(r["prefix_id"]).startswith("pfx_")}
+    n_long = sum(
+        1 for pid in kept_pfx if (prefix_lookup.get(pid) or {}).get("n_user_turns", 0) >= 5
+    )
+    kept_qry = {r["query_id"] for r in kept}
+    n_bank = sum(1 for qid in kept_qry if str(qid).startswith("qry_"))
+    # render_mismatch is 0 by construction post-filter: every KEPT row is
+    # verified under the budget. The DROP rate has its own fail-loud gate
+    # (max_drop_frac, above) and ships in stats["budget_filter"].
+    g1_result = _check_g1(
+        n_prefixes=len(kept_pfx),
+        n_long=n_long,
+        n_bank=n_bank,
+        render_mismatch_frac=0.0,
+        strict=True,
+    )
+
+    _write_jsonl_textmode(kept, manifest_path)
+    with open(derangement_path, "w", encoding="utf-8") as f:
+        json.dump(derangement_map, f, indent=2)
+    logger.info(
+        "[write] derangement_map: %d entries (recomputed over kept rows)", len(derangement_map)
+    )
+
+    stats = _manifest_stats(kept, g1_result)
+    stats["reproducibility"] = _repro_meta()
+    stats["budget_filter"] = budget_digest
+    stats["filtered_from"] = {
+        "pre_filter_manifest_sha256": pre_sha,
+        "n_rows_pre_filter": len(rows),
+    }
+    for carry in (
+        "trait_names",
+        "streaming_funnel",
+        "trait_stratum_n",
+        "n_core_queries",
+        "n_bank_queries",
+    ):
+        if carry in old_stats:
+            stats[carry] = old_stats[carry]
+    stats["n_derangement_rows"] = len(derangement_map)
+
+    eval_dir = (
+        args.eval_dir
+        if args.eval_dir is not None
+        else PROJECT_ROOT / "eval_results" / "issue_1092" / "corpus"
+    )
+    eval_dir.mkdir(parents=True, exist_ok=True)
+    for stats_path in (eval_dir / "manifest_stats.json", corpus_dir / "manifest_stats.json"):
+        with open(stats_path, "w", encoding="utf-8") as f:
+            json.dump(stats, f, indent=2)
+        logger.info("[write] manifest_stats.json: %s", stats_path)
+
+    if args.no_upload:
+        logger.info("[filter-existing] --no-upload: skipping HF upload")
+    else:
+        logger.info("[filter-existing] uploading corrected corpus to HF")
+        from huggingface_hub import HfApi
+
+        info = HfApi().upload_folder(
+            folder_path=str(corpus_dir),
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=CORPUS_HF_PATH,
+            commit_message=(
+                f"issue1092 round-8.3 realized-pair budget filter "
+                f"(kept {len(kept)}/{len(rows)}, "
+                f"git={stats['reproducibility']['git_sha'][:8]})"
+            ),
+        )
+        logger.info(
+            "[filter-existing] uploaded -> hf:%s/%s @ NEW REV %s",
+            HF_DATA_REPO,
+            CORPUS_HF_PATH,
+            getattr(info, "oid", "<unknown>"),
+        )
+
+    logger.info(
+        "[filter-existing] DONE: kept %d / %d rows (dropped %d); G1=%s",
+        len(kept),
+        len(rows),
+        budget_digest["budget_dropped"],
+        g1_result["pass"],
+    )
+    return 0
 
 
 # ── main ─────────────────────────────────────────────────────────────────────
@@ -1653,6 +1958,30 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
         help="Force re-stream even when a fingerprint-matched stream cache exists",
     )
     parser.add_argument(
+        "--budget-max-drop-frac",
+        type=float,
+        default=0.05,
+        help=(
+            "Fail-loud ceiling on the realized-pair token-budget drop fraction "
+            "(round-8.3; a tiny-real slice may deliberately relax it)"
+        ),
+    )
+    parser.add_argument(
+        "--filter-existing",
+        type=Path,
+        default=None,
+        help=(
+            "Post-process an EXISTING corpus dir (round-8.3 production correction): "
+            "apply the realized-pair token-budget filter as a terminal DROP over the "
+            "already-built manifest — kept rows keep their row_ids/assemblies VERBATIM "
+            "(a fresh full re-run cannot guarantee that: Haiku labels are "
+            "temperature-1.0 nondeterministic and feed the bank stratification + "
+            "topic-matched crossing, so the rng stream diverges) — recompute the "
+            "derangement over kept rows, rewrite manifest/stats, and upload. "
+            "Skips streaming/labeling entirely."
+        ),
+    )
+    parser.add_argument(
         "--eval-dir",
         type=Path,
         default=None,
@@ -1667,6 +1996,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     parser.add_argument("--no-g1-strict", dest="g1_strict", action="store_false")
     args = parser.parse_args(argv)
     _SMOKE_TOKEN_COUNTS = bool(args.smoke)
+
+    if args.filter_existing is not None:
+        if args.smoke:
+            raise SystemExit("--filter-existing is a production post-process; drop --smoke")
+        return _filter_existing_corpus(args)
 
     if args.smoke and args.row_limit is None:
         args.row_limit = 32
@@ -1875,20 +2209,28 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     )
     _mark_control_subset(manifest_rows, rng=random.Random(BUILD_SEED + 1092))
 
+    # ── step 8b: realized-pair token-budget filter (round-8.3) ────────────────
+    # Row_ids are assigned by _build_manifest_rows ABOVE, so this is a terminal
+    # DROP — kept rows keep their ids/assemblies verbatim. Runs BEFORE step 9
+    # so the derangement only ever references kept rows.
+    logger.info("[P0] step 8b: realized-pair token-budget filter")
+    prefix_store_entries = _augment_prefix_store(
+        prefix_entries, trait_stratum_personas, battery_contexts
+    )
+    prefix_lookup = {e["prefix_id"]: e for e in prefix_store_entries}
+    query_lookup = _build_query_lookup(bank, core_queries, prefix_entries)
+    manifest_rows, budget_digest = _apply_realized_budget_filter(
+        manifest_rows,
+        prefix_lookup,
+        query_lookup,
+        max_drop_frac=args.budget_max_drop_frac,
+    )
+
     # ── step 9: shuffled-pairing derangement ──────────────────────────────────
     logger.info("[P0] step 9: compute shuffled-pairing derangement")
-    # Subsampled row set for shuffled cells (dense_core + periphery, not battery)
-    shuf_candidate_rows = [
-        r
-        for r in manifest_rows
-        if r["stratum"] in ("dense_core", "periphery_random", "periphery_natural")
-    ]
-    derangement_perm = _build_derangement(shuf_candidate_rows, rng=rng)
-    # Store derangement as a mapping from row_id to answer-source row_id
-    derangement_map = {
-        shuf_candidate_rows[i]["row_id"]: shuf_candidate_rows[derangement_perm[i]]["row_id"]
-        for i in range(len(shuf_candidate_rows))
-    }
+    # Over the FILTERED rows (dense_core + periphery, not battery) — an
+    # answer-source row_id always resolves to a kept row.
+    derangement_map = _derangement_map_for_rows(manifest_rows, rng=rng)
 
     # ── step 10: outputs ──────────────────────────────────────────────────────
     logger.info("[P0] step 10: writing outputs")
@@ -1897,9 +2239,6 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     _write_jsonl_textmode(manifest_rows, manifest_path)
 
     prefix_store_path = corpus_dir / "prefix_store.jsonl"
-    prefix_store_entries = _augment_prefix_store(
-        prefix_entries, trait_stratum_personas, battery_contexts
-    )
     _write_prefix_store(prefix_store_entries, prefix_store_path)
 
     query_store_path = corpus_dir / "query_store.jsonl"
@@ -1938,6 +2277,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     stats["n_core_queries"] = len(core_queries)
     stats["n_bank_queries"] = len(bank)
     stats["n_derangement_rows"] = len(derangement_map)
+    stats["budget_filter"] = budget_digest
 
     stats_path = eval_dir / "manifest_stats.json"
     with open(stats_path, "w", encoding="utf-8") as f:

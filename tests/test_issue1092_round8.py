@@ -736,3 +736,228 @@ def test_build_manifest_rows_post_dense_core_strata(monkeypatch):
     for r in rows:
         if r["stratum"] == "periphery_topicmatch":
             assert r["topic"] == "general_qa"
+
+
+# ── 10. round-8.3: realized-pair token-budget filter (production incident —
+# GPU launch #2: vLLM `decoder prompt (length 8290) > max_model_len 8192` on
+# crossed (P, q) renders P0 never budget-checked; the old check bounded only
+# the prefix+NATURAL-query pair).
+
+
+class _FullStubTokenizer(_StubChatTemplateTokenizer):
+    """Chat-template stub + batch-encode surface (`tok(texts,
+    add_special_tokens=False)["input_ids"]`) with word-piece ids."""
+
+    def __call__(self, texts: list[str], *, add_special_tokens: bool) -> dict:
+        assert add_special_tokens is False
+        return {"input_ids": [[hash(w) % 1000 for w in t.split()] for t in texts]}
+
+
+def _budget_fixture(*, long_words: int = 200):
+    """Prefix store (one short, one long prefix) + query store + rows."""
+    prefix_lookup = {
+        "pfx_short": {
+            "prefix_id": "pfx_short",
+            "prefix_turns": [
+                {"role": "user", "content": "short question"},
+                {"role": "assistant", "content": "short answer"},
+            ],
+            "natural_query": "next?",
+            "n_user_turns": 1,
+        },
+        "pfx_long": {
+            "prefix_id": "pfx_long",
+            "prefix_turns": [
+                {"role": "user", "content": "w " * long_words},
+                {"role": "assistant", "content": "w " * long_words},
+            ],
+            "natural_query": "next?",
+            "n_user_turns": 1,
+        },
+    }
+    query_lookup = {
+        "qry_00000": {"query_id": "qry_00000", "text": "What is 2+2?", "topic": "math_logic"}
+    }
+    rows = [
+        {
+            "row_id": "r_0000000",
+            "stratum": "dense_core",
+            "prefix_id": "pfx_short",
+            "query_id": "qry_00000",
+            "is_eval_only": False,
+        },
+        {
+            "row_id": "r_0000001",
+            "stratum": "periphery_random",
+            "prefix_id": "pfx_long",
+            "query_id": "qry_00000",
+            "is_eval_only": False,
+        },
+    ]
+    return prefix_lookup, query_lookup, rows
+
+
+def test_apply_realized_budget_filter_pair_drops_and_annotates(monkeypatch):
+    monkeypatch.setattr(bc, "_SMOKE_TOKEN_COUNTS", True)  # word counts
+    monkeypatch.setattr(bc, "_TOKENIZER", _FullStubTokenizer())
+    prefix_lookup, query_lookup, rows = _budget_fixture()
+
+    kept, digest = bc._apply_realized_budget_filter(
+        rows, prefix_lookup, query_lookup, max_tokens=50, max_drop_frac=0.9
+    )
+    # the near-cap prefix's CROSSED render busts the budget -> pair-dropped
+    # (gone for ALL cells/formats); the short pair is kept WITH token counts
+    assert [r["row_id"] for r in kept] == ["r_0000000"]
+    assert kept[0]["n_tokens_instruct"] > 0
+    assert kept[0]["n_tokens_pretrained"] > 0
+    assert kept[0]["n_tokens_instruct"] <= 50 and kept[0]["n_tokens_pretrained"] <= 50
+    assert digest["total_rows"] == 2
+    assert digest["budget_dropped"] == 1
+    assert digest["dropped_by_stratum"] == {"periphery_random": 1}
+    assert digest["max_formatted_tokens"] == 50
+    # the dropped row was still annotated (diagnosability)
+    assert rows[1]["n_tokens_instruct"] > 50 or rows[1]["n_tokens_pretrained"] > 50
+
+
+def test_apply_realized_budget_filter_either_format_semantics(monkeypatch):
+    """A row is dropped when EITHER format busts the budget, even if the other
+    is under — pin by computing the two counts and thresholding between them."""
+    monkeypatch.setattr(bc, "_SMOKE_TOKEN_COUNTS", True)
+    monkeypatch.setattr(bc, "_TOKENIZER", _FullStubTokenizer())
+    prefix_lookup, query_lookup, rows = _budget_fixture()
+    row = [rows[0]]
+    turns = prefix_lookup["pfx_short"]["prefix_turns"]
+    query = query_lookup["qry_00000"]["text"]
+    n_inst = bc._batch_token_counts([bc._render_instruct(turns, query)])[0]
+    n_nat = bc._batch_token_counts([bc._render_naturalistic(turns, query)])[0]
+    assert n_inst != n_nat  # instruct render carries template tokens
+    between = (min(n_inst, n_nat) + max(n_inst, n_nat)) // 2
+    assert min(n_inst, n_nat) <= between < max(n_inst, n_nat)
+    kept, digest = bc._apply_realized_budget_filter(
+        row, prefix_lookup, query_lookup, max_tokens=between, max_drop_frac=1.0
+    )
+    assert kept == [] and digest["budget_dropped"] == 1
+
+
+def test_apply_realized_budget_filter_fails_loud_over_max_drop_frac(monkeypatch):
+    monkeypatch.setattr(bc, "_SMOKE_TOKEN_COUNTS", True)
+    monkeypatch.setattr(bc, "_TOKENIZER", _FullStubTokenizer())
+    prefix_lookup, query_lookup, rows = _budget_fixture()
+    with pytest.raises(RuntimeError, match="systematic budget problem"):
+        bc._apply_realized_budget_filter(
+            rows, prefix_lookup, query_lookup, max_tokens=50, max_drop_frac=0.05
+        )
+
+
+def _write_corpus_fixture(corpus_dir, prefix_lookup, query_lookup, rows):
+    corpus_dir.mkdir(parents=True, exist_ok=True)
+    for name, items in (
+        ("manifest.jsonl", rows),
+        ("prefix_store.jsonl", list(prefix_lookup.values())),
+        ("query_store.jsonl", list(query_lookup.values())),
+    ):
+        with open(corpus_dir / name, "w", encoding="utf-8") as f:
+            for item in items:
+                f.write(json.dumps(item, ensure_ascii=False))
+                f.write("\n")
+    (corpus_dir / "derangement_map.json").write_text("{}", encoding="utf-8")
+    (corpus_dir / "manifest_stats.json").write_text(
+        json.dumps({"trait_names": ["traitA"], "n_bank_queries": 1}), encoding="utf-8"
+    )
+
+
+def test_filter_existing_corpus_preserves_kept_row_ids_verbatim(monkeypatch, tmp_path):
+    """The round-8.3 production-correction mode: terminal DROP over an existing
+    corpus — kept rows keep their row_ids + (prefix_id, query_id, stratum)
+    assemblies verbatim (the P1 Claude batch is already submitted against
+    them); the derangement is recomputed over kept rows only; pre-filter
+    copies are preserved; a second run refuses."""
+    monkeypatch.setattr(bc, "_SMOKE_TOKEN_COUNTS", False)
+    monkeypatch.setattr(bc, "_TOKENIZER", _FullStubTokenizer())  # tokenizer boundary
+    # tiny fixture -> relax the production G1 floors (module constants)
+    monkeypatch.setattr(bc, "N_PREFIXES_FLOOR", 1)
+    monkeypatch.setattr(bc, "N_LONG_CONV_FLOOR", 0)
+    monkeypatch.setattr(bc, "N_BANK_FLOOR", 1)
+
+    # long prefix must exceed the PRODUCTION default budget (7,168) under the
+    # stub's word counting: 2 turns x 4000 words ≈ 8000 > 7168
+    prefix_lookup, query_lookup, rows = _budget_fixture(long_words=4000)
+    # add a second kept row so the derangement has >=2 candidates
+    prefix_lookup["pfx_short2"] = dict(
+        prefix_lookup["pfx_short"], prefix_id="pfx_short2", n_user_turns=5
+    )
+    rows.append(
+        {
+            "row_id": "r_0000002",
+            "stratum": "periphery_natural",
+            "prefix_id": "pfx_short2",
+            "query_id": "qry_00001",
+            "is_eval_only": False,
+        }
+    )
+    query_lookup["qry_00001"] = {
+        "query_id": "qry_00001",
+        "text": "Explain tides briefly.",
+        "topic": "science_medicine",
+    }
+    corpus_dir = tmp_path / "corpus"
+    _write_corpus_fixture(corpus_dir, prefix_lookup, query_lookup, rows)
+    old_manifest_bytes = (corpus_dir / "manifest.jsonl").read_bytes()
+
+    rc = bc.main(
+        [
+            "--filter-existing",
+            str(corpus_dir),
+            "--no-upload",
+            "--eval-dir",
+            str(tmp_path / "eval_stats"),
+            "--budget-max-drop-frac",
+            "0.9",
+        ]
+    )
+    assert rc == 0
+
+    # pre-filter copy preserved byte-verbatim
+    assert (corpus_dir / "manifest.pre_budget_filter.jsonl").read_bytes() == old_manifest_bytes
+
+    old_rows = {r["row_id"]: r for r in rows}
+    new_rows = [
+        json.loads(line)
+        for line in (corpus_dir / "manifest.jsonl").read_text(encoding="utf-8").split("\n")
+        if line
+    ]
+    new_ids = {r["row_id"] for r in new_rows}
+    # kept ids are a strict subset (the long-prefix row dropped)
+    assert new_ids == {"r_0000000", "r_0000002"}
+    assert new_ids <= set(old_rows)
+    for r in new_rows:
+        old = old_rows[r["row_id"]]
+        assert (r["prefix_id"], r["query_id"], r["stratum"]) == (
+            old["prefix_id"],
+            old["query_id"],
+            old["stratum"],
+        )
+        assert r["n_tokens_instruct"] > 0 and r["n_tokens_pretrained"] > 0
+
+    # derangement recomputed over kept rows only
+    dmap = json.loads((corpus_dir / "derangement_map.json").read_text(encoding="utf-8"))
+    assert set(dmap) <= new_ids and set(dmap.values()) <= new_ids and dmap
+
+    # stats carry the budget digest + provenance + carried-over fields
+    stats = json.loads((tmp_path / "eval_stats" / "manifest_stats.json").read_text())
+    assert stats["budget_filter"]["budget_dropped"] == 1
+    assert stats["filtered_from"]["n_rows_pre_filter"] == 3
+    assert stats["trait_names"] == ["traitA"]
+    assert stats["g1_gate"]["pass"] is True
+
+    # a second run REFUSES (double-filter would misreport stats)
+    with pytest.raises(RuntimeError, match="refusing to double-filter"):
+        bc.main(
+            [
+                "--filter-existing",
+                str(corpus_dir),
+                "--no-upload",
+                "--eval-dir",
+                str(tmp_path / "eval_stats"),
+            ]
+        )
