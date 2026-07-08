@@ -943,8 +943,8 @@
     "1120": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1120",
-      "status": "approved",
+      "path": "tasks/running/1120",
+      "status": "running",
       "title": "workflow-fix: parse_followup_note_field misses literal backslash-n notes"
     },
     "1121": {
