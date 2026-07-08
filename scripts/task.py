@@ -56,6 +56,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     KINDS,
     STATUSES,
     WORKFLOW_VERSIONS,
+    GoalH2DropError,
     NewTaskRequest,
     ReconcileReport,
     add_tag,
@@ -766,13 +767,18 @@ def _assert_body_nontrivial(text: str, *, source: str) -> None:
 
 
 def cmd_set_body(args: argparse.Namespace) -> None:
-    """CLI handler for `task.py set-body <N> [--body|--file|stdin] [--snapshot] [--allow-stub]`.
+    """CLI handler for `task.py set-body <N> [--body|--file|stdin] [--snapshot]
+    [--allow-stub] [--allow-goal-drop]`.
 
     Reads the new body from one of three sources (--body string, --file
     path, or stdin), runs the non-trivial-body assertion via
     `_assert_body_nontrivial` unless `--allow-stub` is passed, then
     delegates to the library `set_body()` for the actual write +
-    flock + commit.
+    flock + commit. The library-side Goal-H2 drop guard (incident #1112)
+    raises `GoalH2DropError` when a `kind: experiment` body update would
+    remove the `## Goal` H2 present in the prior body — caught here and
+    re-raised as a clean `SystemExit` (the `--allow-stub` style); pass
+    `--allow-goal-drop` for a deliberate drop (e.g. the v2 report write).
     """
     if args.body is not None:
         new_body = args.body
@@ -795,7 +801,17 @@ def cmd_set_body(args: argparse.Namespace) -> None:
         is_paper = False
     if not args.allow_stub and not is_paper:
         _assert_body_nontrivial(new_body, source=source)
-    set_body(args.number, new_body, snapshot_original=args.snapshot)
+    try:
+        set_body(
+            args.number,
+            new_body,
+            snapshot_original=args.snapshot,
+            allow_goal_drop=args.allow_goal_drop,
+        )
+    except GoalH2DropError as exc:
+        # Clean one-line refusal (no raw traceback) — matches the
+        # `--allow-stub` guard's SystemExit style.
+        raise SystemExit(str(exc)) from exc
     _safe_echo("ok", context="task.py set-body")
 
 
@@ -1364,6 +1380,19 @@ def main() -> None:
             "flag. NOTE: a `paper: true` task auto-allows a short paper-stub "
             "(H1 + abstract + paper link) WITHOUT this flag — the paper itself, "
             "not the body, is the clean-result (verified by verify_paper.py)."
+        ),
+    )
+    p.add_argument(
+        "--allow-goal-drop",
+        action="store_true",
+        help=(
+            "allow the new body to REMOVE the `## Goal` H2 present in the prior "
+            "kind:experiment body. Without this flag the write refuses "
+            "(GoalH2DropError) — the Goal is the canonical target every "
+            "downstream agent reads (incident #1112). Deliberate droppers: the "
+            "workflow-v2 report write (report-v1 carries `## Motivation:`, no "
+            "`## Goal`; `goal:` frontmatter survives). Paper-stub writes are "
+            "auto-exempt via `paper: true`, no flag needed."
         ),
     )
     p.set_defaults(func=cmd_set_body)
