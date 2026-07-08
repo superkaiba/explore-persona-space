@@ -1,6 +1,6 @@
 ---
-title: 'Matched LoRA vs full-fine-tune residual-stream activation-shift geometry (does
-  #653''s diffuse LoRA rank-k hold for full-FT?)'
+title: Matched-install LoRA and full fine-tuning differ in how far, not in what shape,
+  they shift residual-stream activations (MODERATE confidence)
 kind: experiment
 tags:
 - from-653
