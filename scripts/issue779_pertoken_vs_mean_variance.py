@@ -19,13 +19,18 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import issue779_common as C
-import issue779_stage1 as S1
-import numpy as np
-import torch
-from huggingface_hub import hf_hub_download, list_repo_files
-
 from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import issue779_common as C  # noqa: E402
+import issue779_stage1 as S1  # noqa: E402
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from huggingface_hub import hf_hub_download, list_repo_files  # noqa: E402
 
 REPO = "superkaiba1/explore-persona-space-data"
 PREFIX = "issue779_monitoring/analysis_tensors/r3_subset"
@@ -39,7 +44,6 @@ def _percentile_and_rank(eigvals_desc, var_along):
 
 
 def main() -> int:
-    load_dotenv()
     ap = argparse.ArgumentParser()
     ap.add_argument("--trait", default="evil")
     ap.add_argument("--layer", type=int, default=14)
