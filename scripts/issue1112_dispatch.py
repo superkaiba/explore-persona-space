@@ -24,6 +24,9 @@ Phases (linear, checkpoint-per-phase, resume-keyed; plan v3 §4/§9):
                 m2 selected-checkpoint overflow upload THEN rung reap
   p9_rb         sycophancy r_B (issue779 extractor subprocess) + marker W_U row
   p10_capture   18 capture passes (gen + 28-layer 3-span TF pooling), sharded
+  p10b_capture_tf  tf-shared amendment (plan v6): 6 sequential teacher-forced
+                SHARED-response passes over the persisted base rows (pinned
+                revs; no generation stage) -> capture_tf/<cell>/selected/
   p11_geometry  smoke-scale geometry stub (full geometry runs VM-side)
   p12_upload    remaining text/JSON + capture tensors + adapters; sentinel
 
@@ -134,6 +137,10 @@ class Cfg:
     upload: bool = True
     fence_hours: float = float(os.environ.get("EPS_MAX_RUN_HOURS", "72"))
     phases: tuple[str, ...] = ()  # empty -> all
+    # OPTIONAL marker extension of the tf-shared amendment (plan v6 §4):
+    # default OFF — the m1/m2 shared-text passes contribute nothing to the
+    # lattice and run only on an explicit --tf-marker inside the wall budget.
+    tf_marker: bool = False
 
     def regime_key(self) -> dict:
         return {
@@ -150,6 +157,50 @@ class Cfg:
             "max_length": C.SYCO_MAX_LENGTH,
             "step_ceiling": C.SYCO_STEP_CEILING,
         }
+
+
+# --phases accepts the SHORT names main()'s want() checks AND the full
+# docstring/log names (pN_...) — the plan v6 workload command uses
+# `--phases p10b_capture_tf,p12_upload`, which must resolve; an unknown
+# token fails loud at parse time instead of silently running ALL phases.
+_PHASE_ALIASES = {
+    "p0_stage": "stage",
+    "p1_mixes": "mixes",
+    "p2_train": "train",
+    "p3_ladder": "ladder",
+    "g1_gate": "g1",
+    "p4_persist_ft": "persist_ft",
+    "p5_generic": "generic",
+    "p6_parity": "parity",
+    "p7_tier2": "tier2",
+    "p7b_margin": "margin",
+    "p8_marker": "marker",
+    "p9_rb": "rb",
+    "p10_capture": "capture",
+    "p10b_capture_tf": "capture_tf",
+    "p11_geometry": "geometry",
+    "p12_upload": "upload",
+}
+_KNOWN_PHASES = frozenset(_PHASE_ALIASES.values())
+
+
+def normalize_phases(raw: str | None) -> tuple[str, ...]:
+    """Comma list of phase names -> canonical short-name tuple (fail-loud)."""
+    if not raw:
+        return ()
+    out: list[str] = []
+    for tok in raw.split(","):
+        t = tok.strip()
+        if not t:
+            continue
+        t = _PHASE_ALIASES.get(t, t)
+        if t not in _KNOWN_PHASES:
+            raise ValueError(
+                f"unknown phase {tok.strip()!r}: want one of {sorted(_KNOWN_PHASES)} "
+                "(pN_-prefixed aliases accepted)"
+            )
+        out.append(t)
+    return tuple(out)
 
 
 def resolve_cells(cells_arg: str | None, smoke: bool) -> tuple[str, ...]:
@@ -231,10 +282,15 @@ def _stage_file(path_in_repo: str, dest: Path, *, revision: str, sha256: str | N
     return dest
 
 
-def _stage_overflow_prefix(prefix: str, dest: Path, *, revision: str) -> Path:
+def _stage_overflow_prefix(
+    prefix: str, dest: Path, *, revision: str, recursive: bool = True
+) -> Path:
     """Stage a checkpoint subfolder from the PRIVATE overflow repo at a pinned
     revision (scoped list_repo_tree + per-file download; no staging transform
-    — files land at their prefix-relative paths, reuse check (h)(iv) N/A)."""
+    — files land at their prefix-relative paths, reuse check (h)(iv) N/A).
+    ``recursive=False`` stages only the prefix's TOP-LEVEL files (the m1
+    band-stopped final adapter lives at the ladder root beside checkpoint-N/
+    subdirs the tf-shared pass must not pull)."""
     from huggingface_hub import HfApi, hf_hub_download
 
     if (dest / "adapter_config.json").exists() or (dest / "config.json").exists():
@@ -246,7 +302,7 @@ def _stage_overflow_prefix(prefix: str, dest: Path, *, revision: str) -> Path:
             C.OVERFLOW_REPO,
             path_in_repo=prefix,
             repo_type="model",
-            recursive=True,
+            recursive=recursive,
             revision=revision,
         )
         if getattr(e, "size", None) is not None
@@ -2029,6 +2085,324 @@ def phase_capture(cfg: Cfg) -> dict:
     return {"n_passes": len(passes)}
 
 
+# ── p10b: teacher-forced SHARED-response capture (amendment v6) ──────────────
+# Follow-up round `tf-shared-response-capture`: re-measure each trained cell's
+# response-arm shift over ONE FIXED response per row — the persisted BASE-model
+# capture generation — teacher-forced through the trained checkpoint. The base
+# side of Δx_shared is the parent's existing base pooled store, so there is NO
+# base re-capture and NO generation stage this round (plan v6 §4).
+
+TF_FOLLOWUP_LABEL = "tf-shared-response-capture"
+# behavior -> (path_in_repo on HF_DATA_REPO, pinned revision). Verified
+# 2026-07-08: 120 rows, complete 6x20 grid, TF-contract fields, 0 empty
+# responses (plan §4.6 "Conditioning source").
+TF_BASE_ROWS = {
+    "sycophancy": (
+        f"{C.DATA_PREFIX}/raw_completions/capture/base_sycophancy/base/raw_rows.json",
+        "e016910195b7ab846c83b87ec43140c36c51e35f",
+    ),
+    # OPTIONAL --tf-marker extension (plan §4: zero-marginal-provision, off by
+    # default); gated on a file_exists probe at the same pinned revision.
+    "marker": (
+        f"{C.DATA_PREFIX}/raw_completions/capture/base_marker/base/raw_rows.json",
+        "e016910195b7ab846c83b87ec43140c36c51e35f",
+    ),
+}
+TF_OVERFLOW_REV = "90949b061d09b30d5850f2fec0043790939aa322"
+# cell -> (overflow prefix, pinned revision, load kind) — the plan §4 table;
+# selected steps read from the parent's committed selection records
+# (issue1112_geometry2x2/selection/<cell>/selection.json @ e0169101…:
+# s1->14 s2->10 s3->8 s4->6 s5->10 s6->8, matching the body Training table).
+TF_CKPTS: dict[str, tuple[str, str, str]] = {
+    C.REUSED_CELL: (
+        f"{C.FU2_CKPT_PREFIX}/checkpoint-{C.FU2_SELECTED_STEP}",
+        C.FU2_CKPT_REV,
+        "lora",
+    ),
+    "s2_lora_pos": ("issue1112/s2_lora_pos/checkpoint-10", TF_OVERFLOW_REV, "lora"),
+    "s3_fullft_neg": ("issue1112/s3_fullft_neg/checkpoint-8", TF_OVERFLOW_REV, "full"),
+    "s4_fullft_pos": ("issue1112/s4_fullft_pos/checkpoint-6", TF_OVERFLOW_REV, "full"),
+    "s5_lora_generic": ("issue1112/s5_lora_generic/checkpoint-10", TF_OVERFLOW_REV, "lora"),
+    "s6_fullft_generic": ("issue1112/s6_fullft_generic/checkpoint-8", TF_OVERFLOW_REV, "full"),
+}
+TF_MARKER_CKPTS: dict[str, tuple[str, str, str]] = {
+    # m1's artifact is the band-stopped FINAL adapter at the ladder ROOT (no
+    # rung selection by design — _resolve_capture_model's m1 branch); m2's is
+    # the p8-selected checkpoint-4 persisted by _persist_marker_ft.
+    "m1_lora_band8": ("issue1112/m1_lora_band8", TF_OVERFLOW_REV, "lora_root"),
+    "m2_fullft_band8": ("issue1112/m2_fullft_band8/checkpoint-4", TF_OVERFLOW_REV, "full"),
+}
+TF_ROW_FIELDS = (
+    "persona",
+    "question_idx",
+    "prompt_token_ids",
+    "response_token_ids",
+    "prefix_len",
+    "context_len",
+)
+
+
+def assert_tf_base_rows(
+    rows: list[dict], *, expect_contexts: int | None, expect_questions: int
+) -> None:
+    """Fail-fast contract asserts on the staged conditioning rows (plan §4.6):
+    every row carries the `_teacher_forced_span_means` fields with valid span
+    bounds + a non-empty response, and the (persona x question_idx) grid is
+    COMPLETE (120 = 6x20 for the sycophancy panel)."""
+    assert rows, "conditioning rows empty"
+    for i, r in enumerate(rows):
+        missing = [k for k in TF_ROW_FIELDS if k not in r]
+        assert not missing, (i, missing)
+        assert len(r["response_token_ids"]) > 0, f"row {i} has an empty response"
+        assert 0 < r["prefix_len"] < r["context_len"] <= len(r["prompt_token_ids"]), (
+            i,
+            r["prefix_len"],
+            r["context_len"],
+            len(r["prompt_token_ids"]),
+        )
+    personas = sorted({r["persona"] for r in rows})
+    qs = sorted({int(r["question_idx"]) for r in rows})
+    grid = {(r["persona"], int(r["question_idx"])) for r in rows}
+    if expect_contexts is not None:
+        assert len(personas) == expect_contexts, (len(personas), expect_contexts, personas)
+    assert qs == list(range(expect_questions)), qs
+    assert len(grid) == len(rows) == len(personas) * len(qs), (
+        len(grid),
+        len(rows),
+        len(personas),
+        len(qs),
+    )
+
+
+def _stage_tf_base_rows(cfg: Cfg, behavior: str) -> list[dict]:
+    """Stage + validate the shared conditioning rows at the pinned revision."""
+    path_in_repo, rev = TF_BASE_ROWS[behavior]
+    dest = cfg.out_root / "inputs" / f"tf_base_rows_{behavior}.json"
+    _stage_file(path_in_repo, dest, revision=rev)
+    rows = _read_json(dest)["rows"]
+    if behavior == "sycophancy":
+        assert_tf_base_rows(rows, expect_contexts=6, expect_questions=20)
+        assert len(rows) == 120, len(rows)
+    else:
+        assert_tf_base_rows(rows, expect_contexts=None, expect_questions=20)
+    return rows
+
+
+def tf_smoke_rows(rows: list[dict]) -> list[dict]:
+    """2 contexts x 2 questions = 4-row subset (the plan §4 smoke shape; >=2
+    contexts keep the prefix arm nondegenerate, the p10 smoke framing)."""
+    personas = sorted({r["persona"] for r in rows})[:2]
+    sub = [r for r in rows if r["persona"] in personas and int(r["question_idx"]) in (0, 1)]
+    assert len(sub) == 4, len(sub)
+    return sub
+
+
+def _stage_tf_ckpt(cfg: Cfg, cell: str, prefix: str, rev: str, kind: str) -> Path:
+    """Stage one pinned checkpoint with a completeness guard (a crash between
+    config.json and the last shard would otherwise early-return a partial dir
+    — the r6 class); wipe + re-stage ONCE on incompleteness, then fail loud."""
+    dest = cfg.out_root / "inputs" / "tf_ckpts" / cell
+    recursive = kind != "lora_root"
+
+    def _complete(d: Path) -> bool:
+        if kind == "full":
+            return _weights_complete(d)
+        return (d / "adapter_config.json").exists() and (d / "adapter_model.safetensors").exists()
+
+    staged = _stage_overflow_prefix(prefix, dest, revision=rev, recursive=recursive)
+    if not _complete(staged):
+        logger.warning(
+            "[tf-stage] incomplete staged checkpoint at %s — wiping + re-staging", staged
+        )
+        shutil.rmtree(staged, ignore_errors=True)
+        staged = _stage_overflow_prefix(prefix, dest, revision=rev, recursive=recursive)
+        if not _complete(staged):
+            raise RuntimeError(f"staged checkpoint incomplete after re-stage: {staged}")
+    return staged
+
+
+def _resolve_tf_capture_model(cfg: Cfg, cell: str) -> tuple[str, list[Path], dict]:
+    """(model_path, cleanup_dirs, provenance) for one shared-text capture pass.
+
+    Stages the cell's PINNED checkpoint from the overflow repo (plan §4 table),
+    merges LoRA cells via the existing atomic merge-read-delete helper (incl.
+    the r6 tokenizer repair inside `_merge_adapter`), and returns every dir the
+    caller deletes after its pass (cleanup-as-you-go, plan §9 disk budget:
+    FT checkpoints + merged dirs never coexist across passes).
+    """
+    table = {**TF_CKPTS, **TF_MARKER_CKPTS}
+    prefix, rev, kind = table[cell]
+    staged = _stage_tf_ckpt(cfg, cell, prefix, rev, kind)
+    prov = {"repo": C.OVERFLOW_REPO, "prefix": prefix, "revision": rev, "kind": kind}
+    if kind == "full":
+        # Full-FT rung dirs may lack tokenizer files (Trainer saved without
+        # processing_class — crash-fix r6); repair before the capture load.
+        _ensure_dir_tokenizer(staged)
+        return str(staged), [staged], prov
+    merged = _merge_adapter(cfg, str(staged), cfg.out_root / "capture_tf" / cell / "merged_tf")
+    return str(merged), [merged], prov
+
+
+def run_capture_tf_unit(
+    cfg: Cfg,
+    cell: str,
+    rows: list[dict],
+    *,
+    resolve_fn=None,
+    layers: list[int] | None = None,
+    device: str | None = None,
+) -> dict:
+    """One shared-text capture pass -> capture_tf/<cell>/selected/pooled.pt.
+
+    Feeds the persisted BASE-model rows (fixed text) through the cell's trained
+    checkpoint via the UNCHANGED `_teacher_forced_span_means`, parameters
+    byte-identical to the parent §4.4 capture (28 layers, bf16,
+    tf_batch_size 8). Idempotent on pooled.pt (spot-tolerant). ``resolve_fn``/
+    ``layers``/``device`` are compute-scale seams for the tiny-real CPU smoke
+    ONLY — production leaves all three at their defaults, and the default
+    device REQUIRES CUDA (fail-loud; a silent CPU fallback would be a silent
+    ~100x slowdown on the pod).
+    """
+    import torch
+
+    from explore_persona_space.analysis.representation_shift import _teacher_forced_span_means
+
+    out_dir = cfg.out_root / "capture_tf" / cell / "selected"
+    pooled_path = out_dir / "pooled.pt"
+    if pooled_path.exists():
+        logger.info("[tf-capture] %s already captured — skipping (resume)", cell)
+        return {"cell": cell, "pooled": str(pooled_path), "skipped": "pooled.pt exists"}
+    out_dir.mkdir(parents=True, exist_ok=True)
+    if device is None:
+        if not torch.cuda.is_available():
+            raise RuntimeError("tf-shared capture needs a CUDA device (plan §9: 1x A100-80)")
+        device = "cuda:0"
+    behavior = "marker" if cell in C.MARKER_CELLS else C.SYCO_BEHAVIOR
+    resolve = resolve_fn if resolve_fn is not None else _resolve_tf_capture_model
+    model_path, cleanup, prov = resolve(cfg, cell)
+    panel = list(dict.fromkeys(r["persona"] for r in rows))
+    layer_list = list(range(C.N_LAYERS)) if layers is None else list(layers)
+    try:
+        pooled = _teacher_forced_span_means(
+            model_path,
+            rows,
+            panel,
+            layers=layer_list,
+            device=device,
+            dtype=torch.bfloat16,
+            tf_batch_size=C.TF_BATCH_SIZE,
+        )
+        store = {
+            "schema_version": 1,
+            "cell": cell,
+            "dose": "selected",
+            "behavior": behavior,
+            "model_path": model_path,
+            "row_meta": [
+                {"context_id": r["persona"], "question_idx": int(r["question_idx"])} for r in rows
+            ],
+            "arms": {
+                arm: {li: t.to(torch.float16) for li, t in per_layer.items()}
+                for arm, per_layer in pooled.items()
+            },
+            "metadata": {
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "tf_batch_size": C.TF_BATCH_SIZE,
+                # The two plan-§4 additions vs the parent run_capture_unit store:
+                "conditioning": "tf_shared_base",
+                "conditioning_rows": {
+                    "repo": C.HF_DATA_REPO,
+                    "path": TF_BASE_ROWS[behavior][0],
+                    "revision": TF_BASE_ROWS[behavior][1],
+                    "n_rows": len(rows),
+                },
+                "checkpoint": prov,
+                "followup_label": TF_FOLLOWUP_LABEL,
+                "git_commit": _git_commit_sha(),
+            },
+        }
+        tmp = out_dir / "pooled.pt.tmp"
+        torch.save(store, tmp)
+        os.replace(tmp, pooled_path)
+    finally:
+        # cleanup-as-you-go (plan §9): staged FT checkpoint / merged dir are
+        # transient; a retry re-stages idempotently from the pinned revision.
+        for d in cleanup:
+            shutil.rmtree(d, ignore_errors=True)
+    return {"cell": cell, "pooled": str(pooled_path), "n_rows": len(rows), "checkpoint": prov}
+
+
+def _git_commit_sha() -> str:
+    try:
+        return (
+            subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
+            .decode()
+            .strip()
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return "unknown"
+
+
+def phase_capture_tf(cfg: Cfg) -> dict:
+    """p10b: sequential shared-text passes (single-GPU pod, plan §9 — each pass
+    is one 7B model resident; batching lives INSIDE `_teacher_forced_span_means`
+    at tf_batch_size=8). Runs standalone: stages its own conditioning rows +
+    checkpoints, no training-phase preconditions. Manifest checkpointed per
+    cell (checkpoint-per-phase)."""
+    _phase("p10b_capture_tf")
+    syco_cells = [c for c in cfg.cells if c in TF_CKPTS]
+    marker_cells = [c for c in cfg.cells if c in TF_MARKER_CKPTS] if cfg.tf_marker else []
+    if not syco_cells and not marker_cells:
+        return {"skipped": "no tf-capture cells in --cells"}
+    manifest_path = cfg.out_root / "capture_tf_manifest.json"
+    if manifest_path.exists():
+        manifest = _read_json(manifest_path)
+    else:
+        table = {**TF_CKPTS, **TF_MARKER_CKPTS}
+        manifest = {
+            "followup_label": TF_FOLLOWUP_LABEL,
+            "conditioning": "tf_shared_base",
+            "smoke": cfg.smoke,
+            "conditioning_rows": {
+                b: {"repo": C.HF_DATA_REPO, "path": p, "revision": r}
+                for b, (p, r) in TF_BASE_ROWS.items()
+            },
+            "checkpoints": {
+                c: {"repo": C.OVERFLOW_REPO, "prefix": p, "revision": r, "kind": k}
+                for c, (p, r, k) in table.items()
+            },
+            "git_commit": _git_commit_sha(),
+            "cells": {},
+        }
+    records: dict = manifest.setdefault("cells", {})
+    for behavior, cells in ((C.SYCO_BEHAVIOR, syco_cells), ("marker", marker_cells)):
+        if not cells:
+            continue
+        if behavior == "marker":
+            from huggingface_hub import HfApi
+
+            path_in_repo, rev = TF_BASE_ROWS["marker"]
+            if not HfApi().file_exists(
+                C.HF_DATA_REPO, path_in_repo, repo_type="dataset", revision=rev
+            ):
+                logger.warning(
+                    "[tf-capture] marker base rows missing at pinned rev — "
+                    "skipping the optional extension"
+                )
+                records["_marker_extension"] = {"skipped": "base_marker rows missing at pinned rev"}
+                continue
+        rows = _stage_tf_base_rows(cfg, behavior)
+        if cfg.smoke:
+            rows = tf_smoke_rows(rows)
+        for cell in cells:
+            records[cell] = run_capture_tf_unit(cfg, cell, rows)
+            manifest["cells"] = records
+            _atomic_json(manifest_path, manifest)  # per-cell checkpoint
+    _atomic_json(manifest_path, manifest)
+    done = [c for c in records if not str(c).startswith("_")]
+    return {"n_cells": len(done), "cells": sorted(done), "manifest": str(manifest_path)}
+
+
 # ── p11: geometry (smoke stub — the full pass runs VM-side) ──────────────────
 
 
@@ -2204,6 +2578,30 @@ def phase_upload(cfg: Cfg) -> dict:
             f"{C.DATA_PREFIX}/analysis_tensors/capture/{c}/{d}/pooled.pt",
             upload_as_file=True,
         )
+    # tf-shared amendment (plan v6 §4): pooled shared-text tensors + manifest
+    # -> analysis_tensors/capture_tf/ (sweep the REALIZED tree, never a
+    # registered grid — the smoke cell subset threads through by construction).
+    tf_root = cfg.out_root / "capture_tf"
+    if tf_root.exists():
+        if cfg.smoke:
+            logger.warning(
+                "[upload] smoke run — capture_tf stores NOT uploaded (4-row smoke "
+                "tensors must never land at the production analysis_tensors/"
+                "capture_tf paths)"
+            )
+        else:
+            for pooled in sorted(tf_root.glob("*/selected/pooled.pt")):
+                cell = pooled.parent.parent.name
+                _up(
+                    pooled,
+                    f"{C.DATA_PREFIX}/analysis_tensors/capture_tf/{cell}/selected/pooled.pt",
+                    upload_as_file=True,
+                )
+            _up(
+                cfg.out_root / "capture_tf_manifest.json",
+                f"{C.DATA_PREFIX}/analysis_tensors/capture_tf/capture_tf_manifest.json",
+                upload_as_file=True,
+            )
     _upload_rb_artifacts(cfg.out_root / "rb", _up)
     _up(cfg.out_root / "run_config.json", f"{C.DATA_PREFIX}/run_config.json", upload_as_file=True)
     return uploaded
@@ -2289,6 +2687,11 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p.add_argument("--sentinel-dir", default=None)
     p.add_argument("--no-upload", dest="upload", action="store_false", default=True)
     p.add_argument("--phases", default=None, help="comma subset of phases to run (default all)")
+    p.add_argument(
+        "--tf-marker",
+        action="store_true",
+        help="OPTIONAL tf-shared marker extension (m1/m2 shared-text passes; plan v6 §4)",
+    )
     return p.parse_args(argv)
 
 
@@ -2319,7 +2722,8 @@ def build_cfg(args: argparse.Namespace) -> Cfg:
             else (out_root / "logs" if smoke else None)
         ),
         upload=args.upload,
-        phases=tuple(t.strip() for t in args.phases.split(",")) if args.phases else (),
+        phases=normalize_phases(args.phases),
+        tf_marker=bool(getattr(args, "tf_marker", False)),
     )
 
 
@@ -2405,6 +2809,8 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 — linear pha
         phase_rb(cfg)
     if want("capture"):
         summary["capture"] = phase_capture(cfg)
+    if want("capture_tf"):
+        summary["capture_tf"] = phase_capture_tf(cfg)
     if want("geometry"):
         summary["geometry"] = phase_geometry_smoke(cfg)
     if want("upload"):
