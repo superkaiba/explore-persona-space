@@ -38,6 +38,9 @@ dispatcher never idles a GPU behind a wave/stage barrier when an independent
 cell is pending. A narrow / API-bound phase must not ride the peak-width
 pod (release / downsize it). A serial single-GPU plan on a multi-GPU pod is
 a REVISE.
+On the GCP auto lane, declare the shardable width via `--gpus N` — wide
+`a2-ultragpu` rungs (8→4→2) are walked first (#1121); a shardable >2 h
+phase left at 1× GCP width without justification is a REVISE.
 Full recipe: `.claude/rules/code-style.md` (work-conserving dispatchers);
 CLAUDE.md § Pods "GPU-WIDTH right-sizing carve-out" + "CPU-only phases".
 **Owner:** `efficiency-critic` (plan states the per-GPU-phase parallelization;
