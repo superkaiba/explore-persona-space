@@ -1041,8 +1041,8 @@
     "1133": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1133",
-      "status": "running",
+      "path": "tasks/reviewing/1133",
+      "status": "reviewing",
       "title": "daily-fix: dose-ladder checkpoint retention sizing rule"
     },
     "1134": {
