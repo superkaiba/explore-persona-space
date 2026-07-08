@@ -1,7 +1,7 @@
 ---
 title: The context→answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct
-  strength, and its answer-specificity survives an on-policy separator control only
-  in attenuated form (MODERATE confidence)
+  strength, and the on-policy separator control's gap-closure is greedy-specific —
+  it collapses under sampled decoding (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
