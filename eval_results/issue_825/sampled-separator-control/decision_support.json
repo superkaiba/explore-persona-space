@@ -528,12 +528,17 @@
     "posmatch_below256_instruct_present": true
   },
   "transfer_fractions": {
-    "base_armB": null,
-    "base_armC_avg": null,
-    "instruct_armB": null,
-    "instruct_armC_avg": null,
+    "base_armB": 0.04426048793431491,
+    "base_armC_avg": -0.16637003973784065,
+    "instruct_armB": 0.26322643682924396,
+    "instruct_armC_avg": -0.38535002376794353,
     "note": "R4 slot \u2014 filled by Phase C on the VM (sampled_sep_to_chat_{base,instruct}_{armB,armC_avg}.json, full-n convention, fraction of the full-n chat ceiling); deliberately outside the pod-side enumeration (plan v22 section 6.5)",
-    "threshold": 0.5
+    "threshold": 0.5,
+    "filled_by": {
+      "script": "scripts/issue825_base_sep_transfer.py (Phase C, VM)",
+      "source_files": "transfer/sampled_sep_to_chat_{base,instruct}_{armB,armC_avg}.json",
+      "convention": "fraction_of_fulln_ceiling (full-n convention, per the slot note)"
+    }
   },
   "interpretation_bands": {
     "r2_margin": 0.1,
