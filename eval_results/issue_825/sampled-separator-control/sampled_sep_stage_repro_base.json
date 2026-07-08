@@ -1,0 +1,40 @@
+{
+  "metadata": {
+    "git_commit": "0e93486d07fa4dc7db1c2cb7ed710bc25bad0dd9",
+    "timestamp": "2026-07-08T03:44:37Z",
+    "seed": 931,
+    "n": 3577,
+    "script": "scripts/issue825_base_sep_stage.py",
+    "issue": 931
+  },
+  "base_model_id": "Qwen/Qwen2.5-7B",
+  "instruct_model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "pairs_revision": "9534b9981d6b4fb4f1259c9b06f021d311a46af4",
+  "pair_sha256": null,
+  "pairs_staged": false,
+  "anchor_prefix": "issue825_onpolicy_sep_control/analysis_tensors/armC_base",
+  "anchor_store_revision": "4435ced2273df379f3e1c15bf5cdf56ca2ba40ae",
+  "anchor_store_files": [
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_equivalence.json",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard000.json",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard000.pt",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard001.json",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard001.pt",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard002.json",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard002.pt",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard003.json",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard003.pt",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard004.json",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard004.pt",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard005.json",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard005.pt",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard006.json",
+    "issue825_onpolicy_sep_control/analysis_tensors/armC_base/armC_shard006.pt"
+  ],
+  "anchor_shards": "all",
+  "anchor_rows": 3577,
+  "provenance_coherence": {
+    "max_pair_date": "2026-07-04 06:04:58+00:00",
+    "min_store_date": "2026-07-07 22:03:45+00:00"
+  }
+}
