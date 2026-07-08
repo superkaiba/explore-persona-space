@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1134,
+  "highest_id": 1135,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1051,6 +1051,13 @@
       "path": "tasks/proposed/1134",
       "status": "proposed",
       "title": "daily-fix: codify or ban the adopt-severe reconciler skip"
+    },
+    "1135": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1135",
+      "status": "proposed",
+      "title": "daily-fix: gotchas entry - CVD clobber at library-train seam"
     },
     "114": {
       "has_clean_result": false,
