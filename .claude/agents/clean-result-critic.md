@@ -115,6 +115,35 @@ You are NOT a numbers-reviewer. The interpretation-critic has already
 checked plot-prose alignment, raw-text plausibility, and statistical
 claims. You check **shape, register, and statistical-framing rule**.
 
+## Context budget (READ FIRST)
+
+Your spec + the project CLAUDE.md import tree consume a large fraction of your
+context before your first tool call; heavy-read subagents have died to
+autocompact thrash on unbudgeted reads (#833/#835/#763). Read hygiene bounds
+the VARIABLE half of that load — it does not cure fixed-overhead window
+pressure (#1090) — so every read below is mandatory IN CONTENT but
+budgeted IN FORM:
+
+- **Grep-then-slice.** Never pull a >40 KB file (or a file of unknown size)
+  into context in one unchunked `Read`: locate the span with Grep (`-n`,
+  bounded `head_limit`), then `Read` only that span with `offset`/`limit` in
+  ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
+  chunked.
+- **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
+  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
+  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
+- **Results are digests.** Never page a whole eval JSON / JSONL /
+  raw-completion file — `jq` the keys/fields you need; single rows by Grep +
+  line offset.
+- **Open SPEC.md by Grep for the specific lens/section only** (it is large;
+  your lenses already inline what they need). Figure PNG `Read`s are exempt
+  (required by the figure lenses); the body comes from the path in your
+  brief or `--json | jq -r '.body'`, sliced.
+- **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
+
+Other sections name WHAT to read; this one governs HOW. On conflict, this
+section wins on invocation form.
+
 ## Branch on `paper:` (markdown body vs LaTeX paper) — DO THIS FIRST
 
 Read the task `body.md` frontmatter (`paper:`) before any pre-pass.
@@ -161,7 +190,8 @@ anti-pattern audit:
 # + Methodology's Training+Evaluation slots + ≥1 `### <result>`; check 18
 # (`check_v4_methodology_shape`) requires the Training hyperparameter table
 # (or the no-training marker) + a Sample slot with a pinned link; check 20
-# (`check_v4_word_caps`) per-result ≥180-word hard FAIL; check 21
+# (`check_v4_word_caps`) per-result ≥180-word + per-Takeaways-bullet
+# ≥100-word hard FAILs; check 21
 # (`check_v4_results_beat`, WARN) the three-beat; check 7 the
 # `**Repro:**`/`**Context:**` footer. The catalog below is the v3 catalog
 # (kept verbatim for v3-body reviews); read the verifier docstring for the
@@ -337,7 +367,8 @@ clean, so this passes."
 
 - **Lens 12 (Conciseness) — `### <result>` interpretation prose runs 1–3
   sentences per paragraph; bullets are the default.** The mechanical
-  word cap (check 20) FAILs only at ≥180 words/result; sentence-count
+  word cap (check 20) hard-FAILs at ≥180 words/result and at a ≥100-word
+  v4 Takeaways bullet; sentence-count
   and bullets-over-prose are LM judgment. Scan each `### <result>`
   interpretation paragraph (the prose that follows the figure caption);
   FAIL when
@@ -737,8 +768,9 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
   **4.40/5 (CI 4.13-4.67)**…"), not an adjective ("the base does well on
   pushback"). FAIL a bullet that asserts a quantitative finding with no
   number when the finding has one.
-- Each bullet ≤30 words (verifier check 20 WARNs over the cap; flag here
-  if a bullet is a runaway sentence).
+- Each bullet ≤30 words (verifier check 20 WARNs over the cap and
+  hard-FAILs a v4 bullet ≥100 words; flag here if a bullet is a runaway
+  sentence).
 - First person stays (`I`, not `we`). No effect-size names / named
   statistical tests / inline `value ± err` (that is Lens 7).
 
@@ -1450,7 +1482,8 @@ Check four things:
    Voice — flag under whichever you reach first; do not double-count as
    two blockers. v3: `## Findings` / `## What I ran`.)
 3. **Takeaways bullets ≤30 words; figure captions ≤60 words.** Verifier
-   check 20 WARNs over both caps. Confirm the WARNs were addressed; a
+   check 20 WARNs over both caps and hard-FAILs a v4 Takeaways bullet
+   ≥100 words. Confirm the WARNs were addressed; a
    runaway Takeaways bullet (a paragraph in bullet's clothing) or a
    60+-word caption that buries the lead is a Lens 12 finding.
 4. **Total-prose budget (WARN-only).** The verifier WARNs when

@@ -465,11 +465,14 @@ both reviewers are graded against the same standard. Read
   this in the prompt, Codex inherits the same gap.
 - The Step 3.6 **Long-loop restartability rule** VERBATIM. This is load-bearing: copy
   the > ~1h trigger (keyed off plan §9 sizing / the implementer's projection / a trivial
-  count × per-call estimate), the persistence + resume predicate pair, the Major
-  `substantive` routing (NOT stripped by Step 5c-bis) with its plan-stated-justification
-  carve-outs, and the #823 incident, so Codex never re-derives a narrower check (same
-  omission class as the #606 copy-list miss; #823: five rounds PASSed a ~20h in-memory
-  accumulate-and-write-at-end loop).
+  count × per-call estimate), the EXTERNAL-STREAM presumption (a loop consuming an
+  external streaming source — HF `datasets` streaming, API pagination, web harvest — is
+  presumed >~1h regardless of per-row kernel triviality; #1092), the persistence +
+  resume predicate pair, the Major `substantive` routing (NOT stripped by Step 5c-bis)
+  with its plan-stated-justification carve-outs, and the #823 + #1092 incidents, so
+  Codex never re-derives a narrower check (same omission class as the #606 copy-list
+  miss; #823: five rounds PASSed a ~20h in-memory accumulate-and-write-at-end loop;
+  #1092: an uncheckpointed 3h06m network-bound stream died in memory).
 - The **Step 3.7 bug-class sibling sweep** rule VERBATIM (+ its enforcing
   Rule 14). This is load-bearing: copy the MANDATORY-for-every-Critical/Major
   scope, the 4-target sweep order (whole file → sibling family in the file →

@@ -1581,7 +1581,7 @@ markers:
     fields: "Codex job_id, elapsed seconds, terminal phase, fetch_retries=<k> token"
   - kind: "epm:codex-task-failed"
     posted_by: scripts/codex_task.py
-    when: "Codex companion task terminated non-cleanly (phase in {failed, cancelled}), force-cancelled after max-wait cap, force-cancelled by stall detector (phase=running but log untouched > stall_detect_secs), killed by SIGTERM/SIGINT, exceeded probe-error cap, post-spawn probe rejected the job-id, or spawn failed before a job-id was assigned"
+    when: "Codex companion task terminated non-cleanly (phase in {failed, cancelled}), force-cancelled after max-wait cap, force-cancelled by stall detector (phase=running but log untouched > stall_detect_secs), killed by SIGTERM/SIGINT, exceeded probe-error cap, post-spawn probe rejected the job-id, or spawn failed before a job-id was assigned, or short-circuited pre-spawn by the quota-exhausted sentinel (#1126: note carries 'codex-quota-exhausted' + the reset timestamp; exit 9; sentinel .claude/cache/codex-quota-exhausted-until self-expires)"
     fields: "Codex job_id (if assigned), elapsed seconds, terminal phase OR error description (e.g. 'timed out after Ns', 'N consecutive probe failures; last error: ...', 'stall detected: phase=running but log file untouched for Ns')"
   - kind: "epm:clarify"
     posted_by: skill
@@ -2230,7 +2230,9 @@ markers:
       est_gpu_hours: <number>`. Fields line-initial one-per-line
       preferred; the `; `-joined single-line form is accepted by the
       parser (`task_workflow.parse_followup_note_field` splits each
-      line on `;` + whitespace; #1090/#841). A followup-scope marker is
+      line on `;` + whitespace; #1090/#841); literal backslash-n
+      escaped-newline notes are normalized parse-side (#1120). A
+      followup-scope marker is
       UNRUN until a matching `epm:same-issue-followup-run v1` with the
       same `followup_label` exists. Multiple DISTINCT `followup_label`s may
       be queued concurrently (same kind, append-only versions);
@@ -2261,7 +2263,9 @@ markers:
       changed>`. Fields line-initial one-per-line preferred; the
       `; `-joined single-line form is accepted by the parser — but a
       PROSE-LED note with no fields parses no label, closes nothing,
-      and undercounts the round caps (#1090 fu1). Posted as the round
+      and undercounts the round caps (#1090 fu1); literal backslash-n
+      escaped-newline notes are normalized parse-side (#1120). Posted
+      as the round
       exits `followups_running` and
       re-parks at `awaiting_promotion`. Idempotency record: an
       `epm:followup-scope v1` whose `followup_label` has a matching

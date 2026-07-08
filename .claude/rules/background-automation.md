@@ -175,7 +175,8 @@ triage-observer pass, and three session reapers — the session-vs-status
 reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
 
 **Stall-detection hardening (#845; the five 2026-07-01 incident classes).**
-The stalled detector + the two respawn arms carry five hardening mechanisms:
+The stalled detector + the two respawn arms carry six hardening mechanisms
+(five from #845, the sixth from #1137):
 
 - *(a-i) Marker-heartbeat window.* Signal 2 (the newest non-watcher marker)
   has its OWN 2h freshness window (`EPM_STALLED_MARKER_HEARTBEAT_MIN`,
@@ -215,7 +216,7 @@ The stalled detector + the two respawn arms carry five hardening mechanisms:
   push per episode (`decide_daemon_blocked_escalation`; incident #811: a
   silently-deferred respawn idled a GPU for hours). The existing
   alerted→eligible escalation still respawns on the first daemon-up tick.
-- *(e) Prompt-wedge fast lane* (`decide_prompt_wedge`): a LAZY
+- *(e) Prompt-wedge fast lane* (`decide_prompt_wedge`): a
   transcript-tail probe (happy-log-only resolution, last 256 KB — widened
   from 64 KB at #1104: the smaller window held EXACTLY 3 api-error rows on
   the #1074 incident transcript, zero margin) escalates
@@ -237,6 +238,46 @@ The stalled detector + the two respawn arms carry five hardening mechanisms:
   run (the prompt DID get a response — the single-refusal over-trigger
   guard: one refused wake's 2-4 dequeue+prompt rows must not trip
   `run >= 3`).
+  **#1127 turn-level failed-wake counting:** the row-level counters are
+  structurally blind to the PARTIALLY-successful wake (a refused wake
+  that posts 1-3 assistant heartbeat rows before dying resets both
+  counters every cycle), so the tail rows additionally segment into
+  WAKE-TURNS (`_segment_wake_turns`): a turn starts at prompt evidence
+  (dequeue/prompt rows — one delivery burst), collects the response rows
+  that follow, and a COMPLETED turn whose LAST response row is an
+  api-error is a FAILED wake even when mid-turn assistant rows
+  (heartbeats) preceded it (a mid-turn api-error followed by a
+  successful row in the same turn is `ok` — the retried-429 shape;
+  swallowed deliveries produce NO turn and stay the dequeue-run's
+  property). (a) ≥3 consecutive trailing failed turns
+  (`EPM_TICK_WEDGE_MIN_FAILED_TURNS`, default 3, `0` disables) trip the
+  wedge — incidents #1098 (5bdae5b8) and #1090 (5e464f3d) ran 40 min-3.4 h
+  past the #1104 merge on exactly this shape; (b) a conservative
+  alternating-storm RATE trigger — ≥6 failed turns
+  (`EPM_TICK_WEDGE_MIN_FAILED_TOTAL`, default 6, `0` disables) within
+  120 min of the newest row timestamp (`EPM_TICK_WEDGE_RATE_WINDOW_MIN`;
+  anchored to the newest ROW ts, not wall-clock) with the newest
+  completed turn failed (incident c16b10ca: ~every other wake lost
+  00:26-06:07Z, ~5.7 h — no consecutive predicate can fire on
+  alternation; the measured 256 KB tail held 4–5 windowed failed TURNS —
+  below the 6 threshold, so this lane targets DENSER storms;
+  c16b10ca-density incidents get partial failed-turn-run coverage only);
+  (c) the probe-arming change — the TURN-level lanes are
+  probed EVERY tick (a dying-but-heartbeating wake that escalates into
+  the full `/issue` skill re-writes the self-report at Step 0 before
+  dying, defeating the old ≥1 h-stale precondition), while the
+  dequeue-run and row-level api-error-run triggers stay STALENESS-GATED
+  (their failure modes freeze the self-report by construction, and the
+  fresh path must not fire on one wake's same-turn retry rows); with
+  both turn knobs at `0` the fresh path probes nothing (the exact
+  pre-#1127 lazy gate — the rollback path). The single-refusal guard and
+  fail-toward-NO-FIRE posture are unchanged. Accepted residuals: the
+  watcher's own status-transition-keyed reconcile can refresh a
+  SWALLOWED session's self-report, so the #779 dequeue-run shape then
+  waits for staleness — identical to today; and a healthy session whose
+  last 3 wakes each END in one transient trailing api-error row can
+  false-respawn (bounded by the 3-consecutive-completed-turn bar, the
+  respawn cap, the fence, the worktree hold, and the park exemptions).
   Bypasses the 2-miss debounce, the #759 K-downgrade and the 2h marker
   window — direct evidence beats proxies — but NOT the park exemptions
   (provision-in-flight / followups / spend-approval — re-probed once
@@ -244,6 +285,26 @@ The stalled detector + the two respawn arms carry five hardening mechanisms:
   skipped them; a firing exemption vetoes the wedge), the worktree hold,
   or the fence; a wedge respawn resets `live_consecutive`. Unresolvable
   transcripts fail toward no-wedge.
+- *(f) Alert-noise dedup (#1137).* At most ONE `session-stalled-alert`
+  marker per staleness episode, across BOTH producers (decide()'s own
+  alert path and the #759 K-downgrade lane, which bypasses decide()'s
+  alerted-dedup by rewriting respawn->alert after it) — cleared on
+  self-report advancement; repeat ticks keep the stderr line + the
+  stalled-live sidecar row. And a `blocked` task whose newest
+  status-changed is corroborated by an epm:failure within the park
+  window (the halt-contract trail) is never stalled-alerted at all —
+  the gate-push pass already pushed the blocked transition (a no-trail
+  blocked task keeps the one-time alert). Accepted residual: a
+  capacity-retry-eligible `no_compute_available` blocked task carries
+  the halt trail by definition, so a re-driven session that wedges
+  before leaving `blocked` gets no stalled alert — the crash-recovery /
+  wedge / stale-registration lanes own that class. Incident #1092
+  2026-07-07: 15:33Z alert on a 1s-apart failure+blocked park;
+  20:43/21:03/21:23Z repeat alerts from the escalate→wt-hold-defer→
+  downgrade 2-tick cycle (the criterion-7 reset after a DEFERRED
+  escalation is by design — changing it would change respawn timing;
+  only the marker noise was removed). Respawn/fence/hold semantics
+  byte-identical.
 
 Per-episode state for all five rides `stalled-<N>.json`
 (`stop_pending_sid`/`stop_pending_ts`/`stop_retried`/`stop_failed_alerted`,
