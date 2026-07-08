@@ -43,12 +43,19 @@ import subprocess
 import time
 from pathlib import Path
 
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.experiments.issue_653.spectral import cosine
-from explore_persona_space.experiments.issue_1112 import PRIMARY_LAYER
-from explore_persona_space.experiments.issue_1112.geometry import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+
+from explore_persona_space.experiments.issue_653.spectral import cosine  # noqa: E402
+from explore_persona_space.experiments.issue_1112 import PRIMARY_LAYER  # noqa: E402
+from explore_persona_space.experiments.issue_1112.geometry import (  # noqa: E402
     _row_keys,
     delta_cloud,
     load_store,

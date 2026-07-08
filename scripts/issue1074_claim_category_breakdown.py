@@ -51,16 +51,23 @@ import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
-import matplotlib
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib  # noqa: E402
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_blog,
     savefig_paper,
     set_paper_style,
 )
-from explore_persona_space.artifacts.behavior import BEHAVIORS
+from explore_persona_space.artifacts.behavior import BEHAVIORS  # noqa: E402
 
 WT = Path(__file__).resolve().parents[1]
 EV = WT / "eval_results" / "issue_1074"
