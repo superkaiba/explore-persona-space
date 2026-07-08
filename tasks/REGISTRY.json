@@ -1006,8 +1006,8 @@
     "1129": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1129",
-      "status": "proposed",
+      "path": "tasks/planning/1129",
+      "status": "planning",
       "title": "daily-fix: raise step9c pristine-oracle timeout default"
     },
     "113": {
