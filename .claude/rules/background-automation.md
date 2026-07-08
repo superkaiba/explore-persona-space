@@ -215,7 +215,7 @@ The stalled detector + the two respawn arms carry five hardening mechanisms:
   push per episode (`decide_daemon_blocked_escalation`; incident #811: a
   silently-deferred respawn idled a GPU for hours). The existing
   alerted→eligible escalation still respawns on the first daemon-up tick.
-- *(e) Prompt-wedge fast lane* (`decide_prompt_wedge`): a LAZY
+- *(e) Prompt-wedge fast lane* (`decide_prompt_wedge`): a
   transcript-tail probe (happy-log-only resolution, last 256 KB — widened
   from 64 KB at #1104: the smaller window held EXACTLY 3 api-error rows on
   the #1074 incident transcript, zero margin) escalates
@@ -237,6 +237,46 @@ The stalled detector + the two respawn arms carry five hardening mechanisms:
   run (the prompt DID get a response — the single-refusal over-trigger
   guard: one refused wake's 2-4 dequeue+prompt rows must not trip
   `run >= 3`).
+  **#1127 turn-level failed-wake counting:** the row-level counters are
+  structurally blind to the PARTIALLY-successful wake (a refused wake
+  that posts 1-3 assistant heartbeat rows before dying resets both
+  counters every cycle), so the tail rows additionally segment into
+  WAKE-TURNS (`_segment_wake_turns`): a turn starts at prompt evidence
+  (dequeue/prompt rows — one delivery burst), collects the response rows
+  that follow, and a COMPLETED turn whose LAST response row is an
+  api-error is a FAILED wake even when mid-turn assistant rows
+  (heartbeats) preceded it (a mid-turn api-error followed by a
+  successful row in the same turn is `ok` — the retried-429 shape;
+  swallowed deliveries produce NO turn and stay the dequeue-run's
+  property). (a) ≥3 consecutive trailing failed turns
+  (`EPM_TICK_WEDGE_MIN_FAILED_TURNS`, default 3, `0` disables) trip the
+  wedge — incidents #1098 (5bdae5b8) and #1090 (5e464f3d) ran 40 min-3.4 h
+  past the #1104 merge on exactly this shape; (b) a conservative
+  alternating-storm RATE trigger — ≥6 failed turns
+  (`EPM_TICK_WEDGE_MIN_FAILED_TOTAL`, default 6, `0` disables) within
+  120 min of the newest row timestamp (`EPM_TICK_WEDGE_RATE_WINDOW_MIN`;
+  anchored to the newest ROW ts, not wall-clock) with the newest
+  completed turn failed (incident c16b10ca: ~every other wake lost
+  00:26-06:07Z, ~5.7 h — no consecutive predicate can fire on
+  alternation; the measured 256 KB tail held 4–5 windowed failed TURNS —
+  below the 6 threshold, so this lane targets DENSER storms;
+  c16b10ca-density incidents get partial failed-turn-run coverage only);
+  (c) the probe-arming change — the TURN-level lanes are
+  probed EVERY tick (a dying-but-heartbeating wake that escalates into
+  the full `/issue` skill re-writes the self-report at Step 0 before
+  dying, defeating the old ≥1 h-stale precondition), while the
+  dequeue-run and row-level api-error-run triggers stay STALENESS-GATED
+  (their failure modes freeze the self-report by construction, and the
+  fresh path must not fire on one wake's same-turn retry rows); with
+  both turn knobs at `0` the fresh path probes nothing (the exact
+  pre-#1127 lazy gate — the rollback path). The single-refusal guard and
+  fail-toward-NO-FIRE posture are unchanged. Accepted residuals: the
+  watcher's own status-transition-keyed reconcile can refresh a
+  SWALLOWED session's self-report, so the #779 dequeue-run shape then
+  waits for staleness — identical to today; and a healthy session whose
+  last 3 wakes each END in one transient trailing api-error row can
+  false-respawn (bounded by the 3-consecutive-completed-turn bar, the
+  respawn cap, the fence, the worktree hold, and the park exemptions).
   Bypasses the 2-miss debounce, the #759 K-downgrade and the 2h marker
   window — direct evidence beats proxies — but NOT the park exemptions
   (provision-in-flight / followups / spend-approval — re-probed once

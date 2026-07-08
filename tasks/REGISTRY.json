@@ -992,8 +992,8 @@
     "1127": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1127",
-      "status": "reviewing",
+      "path": "tasks/completed/1127",
+      "status": "completed",
       "title": "daily-fix: refusal-wedge lane misses live wedges"
     },
     "1128": {
@@ -1006,8 +1006,8 @@
     "1129": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1129",
-      "status": "running",
+      "path": "tasks/completed/1129",
+      "status": "completed",
       "title": "daily-fix: raise step9c pristine-oracle timeout default"
     },
     "113": {
@@ -1020,15 +1020,15 @@
     "1130": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1130",
-      "status": "running",
+      "path": "tasks/reviewing/1130",
+      "status": "reviewing",
       "title": "daily-fix: codex_task.py forwards child success-stderr"
     },
     "1131": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1131",
-      "status": "planning",
+      "path": "tasks/running/1131",
+      "status": "running",
       "title": "daily-fix: /daily sweep checks retractions before filing"
     },
     "1132": {
@@ -1041,8 +1041,8 @@
     "1133": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1133",
-      "status": "proposed",
+      "path": "tasks/planning/1133",
+      "status": "planning",
       "title": "daily-fix: dose-ladder checkpoint retention sizing rule"
     },
     "1134": {
