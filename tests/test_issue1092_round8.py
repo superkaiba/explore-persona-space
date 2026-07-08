@@ -22,10 +22,12 @@ at issue1092_build_corpus.py:550 after a 3h06m stream):
 
 from __future__ import annotations
 
+import argparse
 import json
 import random
 import sys
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 
@@ -1033,6 +1035,111 @@ def test_capture_prefix_end_offset_based_on_rstripped_naturalistic_prefix(qwen_t
     assert prefix_text.startswith(decoded_through_prefix_end)
     # the NEXT token crosses the prefix boundary (it is the merge token)
     assert len(tok.decode(row_ids[: pos["prefix_end"] + 2])) > len(prefix_text)
+
+
+# ── 12. round-8.5: vLLM H100-IMA mitigation flags thread into EVERY engine
+# construction (launch #4: CUDA illegal memory access in vLLM 0.11.0's engine
+# step on 8x H100 at production shapes under heavy shared-prefix reuse;
+# identical code was A100-clean — mitigation knobs, default OFF).
+
+
+class _FakeVllmLLM:
+    instances: ClassVar[list[dict]] = []
+
+    def __init__(self, **kwargs):
+        _FakeVllmLLM.instances.append(kwargs)
+
+    def generate(self, chunk, params, use_tqdm=False):
+        return []
+
+
+class _FakeSamplingParams:
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+
+def _install_fake_vllm(monkeypatch):
+    import types
+
+    fake = types.ModuleType("vllm")
+    fake.LLM = _FakeVllmLLM
+    fake.SamplingParams = _FakeSamplingParams
+    monkeypatch.setitem(sys.modules, "vllm", fake)
+    _FakeVllmLLM.instances.clear()
+
+
+def test_vllm_engine_overrides_from_flags():
+    ns = argparse.Namespace(no_prefix_caching=True, enforce_eager=True)
+    assert gp._vllm_engine_overrides(ns) == {
+        "enable_prefix_caching": False,
+        "enforce_eager": True,
+    }
+    # default OFF -> no engine-config change at all
+    assert gp._vllm_engine_overrides(argparse.Namespace()) == {}
+    assert (
+        gp._vllm_engine_overrides(argparse.Namespace(no_prefix_caching=False, enforce_eager=False))
+        == {}
+    )
+    only_pc = gp._vllm_engine_overrides(
+        argparse.Namespace(no_prefix_caching=True, enforce_eager=False)
+    )
+    assert only_pc == {"enable_prefix_caching": False}
+
+
+def test_flags_reach_every_vllm_construction_site(monkeypatch):
+    _install_fake_vllm(monkeypatch)
+    overrides = gp._vllm_engine_overrides(
+        argparse.Namespace(no_prefix_caching=True, enforce_eager=True)
+    )
+
+    # site 1: _run_gen_vllm (per-shard fresh engine)
+    out = gp._run_gen_vllm(
+        prompts=[],
+        model_name="m",
+        revision="r",
+        stop_tokens=["<|im_end|>"],
+        max_tokens=8,
+        seed=42,
+        gpu_id=0,
+        chunk_size=4,
+        engine_overrides=overrides,
+    )
+    assert out == []
+    assert len(_FakeVllmLLM.instances) == 1
+    kw = _FakeVllmLLM.instances[0]
+    assert kw["enable_prefix_caching"] is False and kw["enforce_eager"] is True
+    assert kw["model"] == "m" and kw["max_model_len"] == gp.MAX_MODEL_LEN
+
+    # default OFF: the kwargs are ABSENT (vLLM defaults untouched)
+    gp._run_gen_vllm(
+        prompts=[],
+        model_name="m",
+        revision="r",
+        stop_tokens=[],
+        max_tokens=8,
+        seed=42,
+        gpu_id=0,
+        chunk_size=4,
+    )
+    assert "enable_prefix_caching" not in _FakeVllmLLM.instances[1]
+    assert "enforce_eager" not in _FakeVllmLLM.instances[1]
+
+    # site 2: PersistentGpuRuntime.generate (worker-loop cached engine)
+    runtime = gp.PersistentGpuRuntime(0, engine_overrides=overrides)
+    assert runtime.engine_overrides == overrides
+    out2 = runtime.generate(
+        prompts=[],
+        model_name="m2",
+        revision="r2",
+        stop_tokens=[],
+        max_tokens=8,
+        seed=42,
+        chunk_size=4,
+    )
+    assert out2 == []
+    kw2 = _FakeVllmLLM.instances[-1]
+    assert kw2["model"] == "m2"
+    assert kw2["enable_prefix_caching"] is False and kw2["enforce_eager"] is True
 
 
 def test_g2_identity_capture_vs_generate_reference_cpu(qwen_tokenizer):

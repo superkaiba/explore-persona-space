@@ -450,6 +450,27 @@ class AuxShard:
 # ---------------------------------------------------------------------------
 
 
+def _vllm_engine_overrides(args: argparse.Namespace) -> dict[str, Any]:
+    """vLLM engine kwargs from the round-8.5 H100-IMA mitigation flags.
+
+    Launch #4 (RunPod 8x H100): vLLM 0.11.0 died with a CUDA illegal memory
+    access inside the engine step at production shapes (~3.8k-token prompts,
+    500-prompt chunks, num_common_prefix_blocks=[237] — maximal shared-prefix
+    reuse on the dense core), while the identical code ran 42/42 clean on
+    A100s and a short-prompt probe on the same H100 pod was clean — the known
+    vLLM-on-H100 IMA family around prefix caching / cudagraphs. Both flags
+    default OFF (no behavior change unless passed); greedy generation output
+    is engine-config-independent, so this is a mitigation knob, not a science
+    change.
+    """
+    overrides: dict[str, Any] = {}
+    if getattr(args, "no_prefix_caching", False):
+        overrides["enable_prefix_caching"] = False
+    if getattr(args, "enforce_eager", False):
+        overrides["enforce_eager"] = True
+    return overrides
+
+
 def _run_gen_vllm(
     prompts: list[str],
     model_name: str,
@@ -459,6 +480,7 @@ def _run_gen_vllm(
     seed: int,
     gpu_id: int,
     chunk_size: int,
+    engine_overrides: dict[str, Any] | None = None,
 ) -> list[str]:
     """Run vLLM greedy generation on one GPU. Returns list of completions."""
     # Set CVD BEFORE importing vLLM (import-time cuInit)
@@ -474,6 +496,7 @@ def _run_gen_vllm(
         seed=seed,
         gpu_memory_utilization=0.85,
         max_model_len=MAX_MODEL_LEN,
+        **(engine_overrides or {}),
     )
     params = SamplingParams(
         temperature=0.0,
@@ -939,10 +962,12 @@ def _pool_projections(projections: np.ndarray) -> np.ndarray:
 class PersistentGpuRuntime:
     """One child-process runtime bound to exactly one visible GPU."""
 
-    def __init__(self, gpu_id: int):
+    def __init__(self, gpu_id: int, engine_overrides: dict[str, Any] | None = None):
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
         self.gpu_id = gpu_id
         self.device = "cuda:0"
+        # round-8.5 H100-IMA mitigation knobs (see _vllm_engine_overrides)
+        self.engine_overrides: dict[str, Any] = dict(engine_overrides or {})
         self._llms: dict[tuple[str, str], Any] = {}
         self._hf_models: dict[tuple[str, str], tuple[Any, Any]] = {}
 
@@ -969,6 +994,7 @@ class PersistentGpuRuntime:
                 seed=seed,
                 gpu_memory_utilization=0.85,
                 max_model_len=MAX_MODEL_LEN,
+                **self.engine_overrides,
             )
         params = SamplingParams(
             temperature=0.0,
@@ -2000,6 +2026,7 @@ def _process_shard(
                 seed=GEN_SEED,
                 gpu_id=gpu_id,
                 chunk_size=DEFAULT_VLLM_CHUNK_SIZE,
+                engine_overrides=_vllm_engine_overrides(args),
             )
 
         # Write completions immediately (checkpoint per phase)
@@ -2141,7 +2168,7 @@ def _worker_loop(
     )
     runtime: PersistentGpuRuntime | None = None
     try:
-        runtime = PersistentGpuRuntime(gpu_id)
+        runtime = PersistentGpuRuntime(gpu_id, engine_overrides=_vllm_engine_overrides(args))
         while True:
             shard = shard_queue.get()
             if shard is None:
@@ -3425,6 +3452,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--skip-g2", action="store_true", help="Skip G2 gate (debugging)")
     p.add_argument(
+        "--no-prefix-caching",
+        action="store_true",
+        help=(
+            "Thread enable_prefix_caching=False into every vLLM engine "
+            "(round-8.5 H100 illegal-memory-access mitigation; default OFF)"
+        ),
+    )
+    p.add_argument(
+        "--enforce-eager",
+        action="store_true",
+        help=(
+            "Thread enforce_eager=True into every vLLM engine (round-8.5 "
+            "H100 illegal-memory-access mitigation; default OFF)"
+        ),
+    )
+    p.add_argument(
         "--vllm-signature-smoke",
         action="store_true",
         help="Validate vLLM constructor signatures without creating a GPU engine",
@@ -3464,10 +3507,20 @@ def run_vllm_signature_smoke() -> None:
     if deprecated_beam_kw in sampling_sig.parameters:
         raise AssertionError("vLLM SamplingParams unexpectedly has deprecated beam kwarg")
     SamplingParams(temperature=0.0, max_tokens=1, stop=["<|im_end|>"], seed=GEN_SEED)
-    EngineArgs(model=INSTRUCT_MODEL, max_model_len=MAX_MODEL_LEN, dtype="bfloat16")
+    # round-8.5: validate the installed vLLM accepts the H100-IMA mitigation
+    # kwargs the --no-prefix-caching / --enforce-eager flags thread through.
+    EngineArgs(
+        model=INSTRUCT_MODEL,
+        max_model_len=MAX_MODEL_LEN,
+        dtype="bfloat16",
+        enable_prefix_caching=False,
+        enforce_eager=True,
+    )
     print(
         "[vllm-signature-smoke] SamplingParams ok; "
-        f"EngineArgs max_model_len={MAX_MODEL_LEN}; params={len(sampling_sig.parameters)}"
+        f"EngineArgs max_model_len={MAX_MODEL_LEN} "
+        "(+enable_prefix_caching/enforce_eager accepted); "
+        f"params={len(sampling_sig.parameters)}"
     )
 
 
