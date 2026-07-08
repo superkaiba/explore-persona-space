@@ -8260,7 +8260,7 @@ git -C "$WT" push origin issue-<N> \
 # (2) Repo-root push to main, single-flight recovery on reject
 #     (sync_repo_root exit 0 can mean "another sync in flight — your push
 #      has NOT landed"; for guard-critical pushes use the landing-verified
-#      form in the post-merge duplicate-folder guard below):
+#      form in the post-merge stale-task-folder guard below):
 git push origin main || uv run python scripts/sync_repo_root.py
 
 # (3) PR merge (for sites OUTSIDE Step 10d/9b — those two run the full
