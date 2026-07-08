@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1120,
+  "highest_id": 1121,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -946,6 +946,13 @@
       "path": "tasks/planning/1120",
       "status": "planning",
       "title": "workflow-fix: parse_followup_note_field misses literal backslash-n notes"
+    },
+    "1121": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1121",
+      "status": "proposed",
+      "title": "Width-aware auto-router: include 8x GCP rungs; encourage wide GCP provisioning for shardable workloads"
     },
     "113": {
       "has_clean_result": true,
