@@ -4,3 +4,4 @@
 {"ts": "2026-07-08T11:23:37Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-08T11:36:38Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verdict: PASS; n_fail=0, n_warn=0; plan version v1. All experiment-shape checks kind-exempt (infra); c25 command-fence entity check PASS."}
 {"ts": "2026-07-08T11:50:38Z", "kind": "epm:codex-task-failed", "version": 1, "by": "codex_task", "note": "codex-quota-exhausted: org usage limit exhausted until 2026-08-06T13:26:00+00:00; dispatch short-circuited (no Codex job spawned). Sentinel: /home/thomasjiralerspong/explore-persona-space/.claude/cache/codex-quota-exhausted-until — delete it to force a probe dispatch."}
+{"ts": "2026-07-08T11:54:28Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verdict: PASS; n_fail=0, n_warn=0; plan version v2 (critic-revision round 1)."}
