@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1117,
+  "highest_id": 1118,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -918,6 +918,13 @@
       "path": "tasks/approved/1117",
       "status": "approved",
       "title": "workflow-fix: hard-FAIL tier >=100 words/bullet in check_v4_word_caps"
+    },
+    "1118": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1118",
+      "status": "proposed",
+      "title": "workflow-fix: thread boot-disk requirement to RunPod GPU volume"
     },
     "112": {
       "has_clean_result": false,
