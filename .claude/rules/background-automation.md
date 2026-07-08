@@ -258,7 +258,10 @@ The stalled detector + the two respawn arms carry five hardening mechanisms:
   anchored to the newest ROW ts, not wall-clock) with the newest
   completed turn failed (incident c16b10ca: ~every other wake lost
   00:26-06:07Z, ~5.7 h — no consecutive predicate can fire on
-  alternation); (c) the probe-arming change — the TURN-level lanes are
+  alternation; the measured 256 KB tail held 4–5 windowed failed TURNS —
+  below the 6 threshold, so this lane targets DENSER storms;
+  c16b10ca-density incidents get partial failed-turn-run coverage only);
+  (c) the probe-arming change — the TURN-level lanes are
   probed EVERY tick (a dying-but-heartbeating wake that escalates into
   the full `/issue` skill re-writes the self-report at Step 0 before
   dying, defeating the old ≥1 h-stale precondition), while the
