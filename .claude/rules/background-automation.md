@@ -175,7 +175,8 @@ triage-observer pass, and three session reapers — the session-vs-status
 reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
 
 **Stall-detection hardening (#845; the five 2026-07-01 incident classes).**
-The stalled detector + the two respawn arms carry five hardening mechanisms:
+The stalled detector + the two respawn arms carry six hardening mechanisms
+(five from #845, the sixth from #1137):
 
 - *(a-i) Marker-heartbeat window.* Signal 2 (the newest non-watcher marker)
   has its OWN 2h freshness window (`EPM_STALLED_MARKER_HEARTBEAT_MIN`,
@@ -284,6 +285,26 @@ The stalled detector + the two respawn arms carry five hardening mechanisms:
   skipped them; a firing exemption vetoes the wedge), the worktree hold,
   or the fence; a wedge respawn resets `live_consecutive`. Unresolvable
   transcripts fail toward no-wedge.
+- *(f) Alert-noise dedup (#1137).* At most ONE `session-stalled-alert`
+  marker per staleness episode, across BOTH producers (decide()'s own
+  alert path and the #759 K-downgrade lane, which bypasses decide()'s
+  alerted-dedup by rewriting respawn->alert after it) — cleared on
+  self-report advancement; repeat ticks keep the stderr line + the
+  stalled-live sidecar row. And a `blocked` task whose newest
+  status-changed is corroborated by an epm:failure within the park
+  window (the halt-contract trail) is never stalled-alerted at all —
+  the gate-push pass already pushed the blocked transition (a no-trail
+  blocked task keeps the one-time alert). Accepted residual: a
+  capacity-retry-eligible `no_compute_available` blocked task carries
+  the halt trail by definition, so a re-driven session that wedges
+  before leaving `blocked` gets no stalled alert — the crash-recovery /
+  wedge / stale-registration lanes own that class. Incident #1092
+  2026-07-07: 15:33Z alert on a 1s-apart failure+blocked park;
+  20:43/21:03/21:23Z repeat alerts from the escalate→wt-hold-defer→
+  downgrade 2-tick cycle (the criterion-7 reset after a DEFERRED
+  escalation is by design — changing it would change respawn timing;
+  only the marker noise was removed). Respawn/fence/hold semantics
+  byte-identical.
 
 Per-episode state for all five rides `stalled-<N>.json`
 (`stop_pending_sid`/`stop_pending_ts`/`stop_retried`/`stop_failed_alerted`,

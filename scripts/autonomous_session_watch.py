@@ -96,7 +96,11 @@ GC pass:
    reachable/unreachable daemon flap can repeatedly reset the
    K-corroboration ``live_consecutive`` counter and defer escalation,
    bounded in practice by the #845 (c) page after 2 blocked ticks plus
-   the persistent staleness re-fire.
+   the persistent staleness re-fire.  At most one stalled-alert marker
+   is posted per staleness episode across both alert producers (decide's
+   own alert path and the #759 downgrade lane), and a deliberately-parked
+   ``blocked`` task (epm:failure + status-changed halt-contract trail) is
+   never alerted (#1137).
 5. **Orphan sweep (registration-INDEPENDENT safety net).** Every other
    session pass starts from the registry files (``issue-<N>.json`` /
    ``manual-issue-<N>.json``), so an ACTIVE-status task with NO registration
@@ -9657,6 +9661,15 @@ def _apply_stalled_live_corroboration(
         return "alert", live_consecutive, note
     # Kth consecutive live stall — escalate to the canonical respawn arm and
     # reset the counter (a fresh --auto session begins a new episode).
+    # #1137 criterion-7 x wt-hold interplay (BY DESIGN, do not "fix"): when
+    # the escalated respawn is subsequently DEFERRED by the #845 (b) worktree
+    # hold / spawn grace, the counter reset below has already been persisted,
+    # so the NEXT tick is a fresh "1/K" downgrade — deliberate: preserving
+    # the count across a deferral would make the first post-hold tick respawn
+    # immediately, a respawn-timing change. The repeat-ALERT marker noise the
+    # resulting escalate/defer/downgrade cycle produced (#1092, 2026-07-07)
+    # is fixed at the marker-post site (_handle_stalled_alert's episode-total
+    # dedup), never here.
     print(
         f"  issue #{issue}: LIVE-SESSION ESCALATION — Happy id is in live_ids "
         f"but it has stalled across {live_consecutive} consecutive episodes "
