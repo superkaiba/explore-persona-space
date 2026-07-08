@@ -2390,6 +2390,25 @@ The reconciler may NOT add findings beyond what either reviewer raised —
 its job is adjudication only. Round counter does NOT increment for
 reconciler invocations.
 
+When BOTH reviewers returned disagreeing durable verdicts, adopting the
+MORE SEVERE verdict WITHOUT spawning the reconciler is
+UNSANCTIONED at every doubled site — even when the flagged residual is
+mechanically verifiable (#825 skipped the reconciler on exactly that
+rationale) — because a true residual does not determine severity (the
+reconciler may legitimately side PASS on a true-but-not-verdict-changing
+finding), and the shortcut trades a FREE adjudication (reconcile rounds
+don't count) for a revision round that DOES count against the cap-5 and
+itself costs ≥3 spawns (analyzer + both critics) vs the reconciler's
+one, while leaving a possibly over-strict reviewer unadjudicated. The
+documented adopt-more-severe last-resort fail-safe (a spawned reconciler
+errors, is re-spawned once, and still returns no parseable verdict)
+belongs to the `/adversarial-planner` § Durable-output-first IN-CONTEXT
+Phase-2 reconciler ONLY — at the marker-mode sites here a twice-dead
+reconciler fails LOUD per the Step 5b durable-verdict-first rule
+(item 4), never adopt-more-severe. The Codex no-show fallback
+(single-Claude decision on confirmed no-show) is a different, sanctioned
+path — it adjudicates nothing and adopts no "more severe of two".
+
 **5c-bis. Mechanical-contract-only FAIL strip (anti-gate-hopping).**
 
 A FAIL is *mechanical-contract-only* when its `**Blocker tags:**` line
@@ -5679,6 +5698,13 @@ discarded by Step 8's gap-fill decision rule).
    per the Step 5b bound, not skipped.
 
    Reconcile rounds do NOT increment the per-reviewer round counter.
+   Adopt-more-severe WITHOUT a reconciler is unsanctioned here
+   (the #825 deviation site) — see the Step 5c ban: when both reviewers
+   returned disagreeing durable verdicts, spawn the reconciler; a
+   twice-dead reconciler fails LOUD per Step 5b item 4 (the
+   adopt-more-severe fail-safe is `/adversarial-planner`-in-context
+   only), and the Codex no-show fallback remains a separate, sanctioned
+   path.
 
 **If `final_verdict == REVISE` (rounds 2-5):**
 
