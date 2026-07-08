@@ -417,6 +417,28 @@ def fingerprint_matches(fp_path: Path, expected_fp: dict) -> bool:
         return False
 
 
+def _fingerprint_matches_any_sha(
+    fp_path: Path, expected_fp: dict, resume_code_shas: list[str] | None
+) -> tuple[bool, str | None]:
+    """Fingerprint match, additionally accepting explicit PRIOR code shas (round-8.9).
+
+    A cell shard captured by a prior invocation is bit-identical when the diff
+    between the prior script and the current one provably does not touch the
+    gen/capture path; ``--resume-code-shas`` lets the OPERATOR assert that so a
+    completed cell (launch 8's cell_inst_own, ~78 min on 8x H100) is not
+    recomputed just because the script hash moved. Returns
+    (matched, matched_prior_sha) — matched_prior_sha is None for a current-sha
+    match; scoped to CELL shards only (aux/dynamics never resume across shas —
+    the round-8.9 panel filter changes their row sets).
+    """
+    if fingerprint_matches(fp_path, expected_fp):
+        return True, None
+    for prior_sha in resume_code_shas or []:
+        if fingerprint_matches(fp_path, {**expected_fp, "code_sha": prior_sha}):
+            return True, prior_sha
+    return False, None
+
+
 def _phase_fp_label(phase_name: str) -> str:
     return "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in phase_name)
 
@@ -1714,6 +1736,28 @@ def consolidate_cell_shards(out_dir: Path, cell_id: str, *, n_layers: int) -> No
                 path.unlink()
 
 
+def _assert_cell_captures_on_disk(out_dir: Path, cell_id: str, *, n_layers: int) -> None:
+    """Fail-loud completeness guard for --finalize-cells (round-8.9).
+
+    A finalize-only cell was captured by a PRIOR invocation; assert every
+    summary kind has per-layer arrays on disk (shard or consolidated) before
+    consolidating/uploading, so a typo'd cell id or a half-written capture
+    never silently uploads a partial store.
+    """
+    cell_dir = out_dir / "summaries" / cell_id
+    if not cell_dir.is_dir():
+        raise FileNotFoundError(f"--finalize-cells: no summaries dir for {cell_id}: {cell_dir}")
+    for kind in SUMMARY_KINDS:
+        for layer in range(n_layers):
+            consolidated = cell_dir / f"{kind}_L{layer:02d}.npy"
+            if consolidated.exists() or list(cell_dir.glob(f"{kind}_L{layer:02d}_shard*.npy")):
+                continue
+            raise FileNotFoundError(
+                f"--finalize-cells: {cell_id} is missing {kind}_L{layer:02d} arrays "
+                f"under {cell_dir} — the cell's capture did not complete on disk"
+            )
+
+
 def verify_uploaded_prefix(
     repo_id: str, repo_type: str, revision: str | None, path_in_repo: str
 ) -> None:
@@ -2110,12 +2154,16 @@ def _process_shard(
         / "manifests"
         / f"{cell_id}_shard{shard.shard_idx:05d}_{phase_label}_fingerprint.json"
     )
-    if fingerprint_matches(fp_path, fp_dict):
+    resumed, matched_prior_sha = _fingerprint_matches_any_sha(
+        fp_path, fp_dict, getattr(args, "resume_code_shas", None)
+    )
+    if resumed:
         logger.info(
-            "[gpu=%d] Shard %s/%d already complete (fingerprint match), skipping",
+            "[gpu=%d] Shard %s/%d already complete (fingerprint match%s), skipping",
             gpu_id,
             cell_id,
             shard.shard_idx,
+            f" via prior code_sha {matched_prior_sha}" if matched_prior_sha else "",
         )
         return {
             "status": "resumed",
@@ -2947,6 +2995,41 @@ def run_aux_dispatch(  # noqa: C901
         query_store.values(), key=lambda item: str(item.get("query_id", item.get("id", "")))
     )
     dynamics_prefixes = _dynamics_panel(prefix_store)
+    if "dynamics" in phases:
+        # round-8.9: filter on RENDERED length BEFORE any row-limit truncation
+        # (production semantics: the panel is defined as conversations whose
+        # renders fit the capture window; a tiny smoke still sees the drop).
+        from transformers import AutoTokenizer
+
+        tokenizers = {
+            "instruct": _get_tokenizer(),
+            "pretrained": AutoTokenizer.from_pretrained(
+                PRETRAINED_MODEL, revision=PRETRAINED_REVISION, trust_remote_code=True
+            ),
+        }
+        dynamics_prefixes, filter_digest = _filter_dynamics_panel_by_rendered_length(
+            dynamics_prefixes, tokenizers
+        )
+        if not dynamics_prefixes:
+            raise ValueError("dynamics panel is empty after rendered-length filtering")
+        import datetime
+
+        filter_digest["code_sha"] = code_sha()
+        filter_digest["corpus_hash"] = corpus_hash
+        filter_digest["timestamp"] = datetime.datetime.utcnow().isoformat()
+        logger.info(
+            "[dynamics-panel-filter] kept=%d dropped=%d of %d over the %d-token "
+            "rendered window; dropped=%s",
+            filter_digest["n_kept"],
+            filter_digest["n_dropped"],
+            filter_digest["n_panel"],
+            filter_digest["max_tokens"],
+            [d["conv_id"] for d in filter_digest["dropped"]],
+        )
+        for model_type in ("instruct", "pretrained"):
+            dyn_dir = out_dir / "summaries" / f"dynamics_{model_type}"
+            dyn_dir.mkdir(parents=True, exist_ok=True)
+            (dyn_dir / "panel_filter.json").write_text(json.dumps(filter_digest, indent=2))
     if args.row_limit is not None:
         bare_queries = bare_queries[: args.row_limit]
         dynamics_prefixes = dynamics_prefixes[: args.row_limit]
@@ -3646,6 +3729,50 @@ def _dynamics_panel(prefix_store: dict[str, dict]) -> list[dict]:
     return panel
 
 
+def _filter_dynamics_panel_by_rendered_length(
+    panel: list[dict],
+    tokenizers: dict[str, Any],
+    *,
+    max_tokens: int = MAX_MODEL_LEN,
+) -> tuple[list[dict], dict]:
+    """Drop conversations whose instruct OR pretrained RENDER overflows the capture window.
+
+    P0's conversation keep-filter capped RAW content tokens at the window size,
+    but the instruct chat template adds per-turn scaffold, so a near-cap
+    conversation renders past the 8192-token capture window (launch 8:
+    wildchat_064122 at 8267 > 8192 in the instruct render). Pair-drop: one
+    shared panel feeds both dynamics arms, so a conversation over-budget in
+    EITHER render is dropped from BOTH (row-set alignment). Token counts use
+    each arm's own tokenizer on the exact render the capture path asserts on
+    (`_token_len`, mirroring `_capture_dynamics_loaded_model`'s check).
+    Returns (kept_panel, digest); the caller writes the digest into the
+    dynamics output dirs so the analyzer sees the coverage note.
+    """
+    kept: list[dict] = []
+    dropped: list[dict] = []
+    for item in panel:
+        turns = _prefix_turns(item)
+        conv_id = str(item.get("conv_id") or item.get("prefix_id") or item.get("id"))
+        counts = {
+            model_type: _token_len(tokenizer, _render_full_conversation(turns, model_type))
+            for model_type, tokenizer in tokenizers.items()
+        }
+        if any(n > max_tokens for n in counts.values()):
+            dropped.append(
+                {"conv_id": conv_id} | {f"{k}_tokens": v for k, v in sorted(counts.items())}
+            )
+        else:
+            kept.append(item)
+    digest = {
+        "n_panel": len(panel),
+        "n_kept": len(kept),
+        "n_dropped": len(dropped),
+        "max_tokens": max_tokens,
+        "dropped": dropped,
+    }
+    return kept, digest
+
+
 def run_bare_phase_loaded(
     *,
     args: argparse.Namespace,
@@ -3907,6 +4034,33 @@ def build_parser() -> argparse.ArgumentParser:
         help="Cell IDs to process",
     )
     p.add_argument("--row-limit", type=int, default=None, help="Limit rows per cell (smoke)")
+    p.add_argument(
+        "--finalize-cells",
+        nargs="+",
+        default=None,
+        help=(
+            "Cells whose COMPLETE on-disk gen/capture outputs from a PRIOR "
+            "invocation should be consolidated + uploaded by this one "
+            "('all' = every --cells entry). Round-8.9 completion composition: "
+            "lets a phase-scoped re-run (--phases dynamics) finish a run whose "
+            "cells completed earlier without recomputing them at the new code "
+            "sha. Each cell is completeness-asserted on disk before finalizing."
+        ),
+    )
+    p.add_argument(
+        "--resume-code-shas",
+        nargs="+",
+        default=None,
+        help=(
+            "Additional PRIOR code_sha values (16-hex script-file hashes) whose "
+            "CELL-shard fingerprints are accepted as complete (round-8.9). Pass "
+            "ONLY a sha whose diff vs the current script provably does not touch "
+            "the gen/capture path — this is an explicit operator assertion that "
+            "saves recomputing bit-identical shards (launch 8's cell_inst_own: "
+            "~78 min on 8x H100). Aux (bare/dynamics) shards never resume "
+            "across shas."
+        ),
+    )
     p.add_argument("--no-upload", action="store_true", help="Skip HF upload")
     p.add_argument("--cpu-smoke", action="store_true", help="CPU smoke mode (no GPU required)")
     p.add_argument("--n-layers", type=int, default=N_LAYERS)
@@ -4001,6 +4155,19 @@ def run_vllm_signature_smoke() -> None:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
+
+def _remaining_cells(orig_cells: list[str], completed_cells: list[str]) -> list[str]:
+    """Cells still owed gen/capture this invocation, from the ORIGINAL cell list.
+
+    NEVER compute this from args.cells: run_cell_stage rebinds args.cells per
+    stage, so after the first-cell gate stage args.cells == ['cell_inst_own']
+    and a remaining computed from it is EMPTY — launch 8 silently skipped the
+    other 7 cells' gen+capture exactly this way (the --skip-g2 smoke skipped
+    the gate block, masking the clobber).
+    """
+    done = set(completed_cells)
+    return [c for c in orig_cells if c not in done]
 
 
 def main() -> None:  # noqa: C901
@@ -4099,20 +4266,32 @@ def main() -> None:  # noqa: C901
     ) -> list[dict]:
         if not stage_cells or not phase_set:
             return []
+        # round-8.9: stage-scope the args rebinds and ALWAYS restore — launch 8
+        # left args.cells clobbered to ['cell_inst_own'] after the gate stage,
+        # and the remaining-cells computation downstream read the clobbered
+        # list (see _remaining_cells).
+        prev_cells = list(args.cells)
+        prev_phases = set(args.phases_set)
+        prev_phase_name = args.phase_name
         args.cells = list(stage_cells)
         args.phases_set = set(phase_set)
         args.phase_name = ",".join(sorted(args.phases_set))
         logger.info("[main] dispatch stage phases=%s cells=%s", args.phase_name, args.cells)
-        stage_results = run_dispatch(
-            cells=stage_cells,
-            rows=rows,
-            prefix_store=prefix_store,
-            query_store=query_store,
-            out_dir=out_dir,
-            args=args,
-            rb_directions=rb,
-            corpus_hash=corpus_hash,
-        )
+        try:
+            stage_results = run_dispatch(
+                cells=stage_cells,
+                rows=rows,
+                prefix_store=prefix_store,
+                query_store=query_store,
+                out_dir=out_dir,
+                args=args,
+                rb_directions=rb,
+                corpus_hash=corpus_hash,
+            )
+        finally:
+            args.cells = prev_cells
+            args.phases_set = prev_phases
+            args.phase_name = prev_phase_name
         check_dispatch_errors(stage_results)
         all_results.extend(stage_results)
         return stage_results
@@ -4146,7 +4325,7 @@ def main() -> None:  # noqa: C901
         # (plan §7: validate the rig before burning the other cells). Workers
         # attach cross-text completion sources FRESH FROM DISK per shard, so
         # the spawn-time snapshot never goes stale (_process_shard).
-        remaining = [c for c in args.cells if c not in completed_cells]
+        remaining = _remaining_cells(orig_cells, completed_cells)
         if remaining:
             if "gen" in orig_phases:
                 logger.info("[main] dependency-scheduled gen stage: cells=%s", remaining)
@@ -4173,8 +4352,27 @@ def main() -> None:  # noqa: C901
         check_dispatch_errors(aux_results)
         all_results.extend(aux_results)
 
+    # round-8.9 completion composition: finalization (consolidate + upload) is
+    # DISK-driven, not invocation-scoped — a phase-scoped re-run (e.g.
+    # --phases dynamics after a post-capture crash) can finish cells whose
+    # gen/capture completed in a PRIOR invocation via --finalize-cells,
+    # instead of recomputing them at the new code sha.
+    finalize_cells = list(completed_cells)
+    if args.finalize_cells:
+        requested = (
+            orig_cells if list(args.finalize_cells) == ["all"] else list(args.finalize_cells)
+        )
+        for cell_id in requested:
+            if cell_id not in CELL_CONFIG:
+                raise ValueError(f"--finalize-cells: unknown cell {cell_id!r}")
+            if cell_id in finalize_cells:
+                continue
+            _assert_cell_captures_on_disk(out_dir, cell_id, n_layers=args.n_layers)
+            finalize_cells.append(cell_id)
+        logger.info("[main] finalize cells (this run + prior on-disk): %s", sorted(finalize_cells))
+
     # Upload per cell
-    for cell_id in sorted(set(completed_cells)):
+    for cell_id in sorted(set(finalize_cells)):
         consolidate_cell_shards(out_dir, cell_id, n_layers=args.n_layers)
 
     summary_path = out_dir / "manifests" / "gpu_phase_summary.json"
@@ -4182,7 +4380,7 @@ def main() -> None:  # noqa: C901
     summary_path.write_text(json.dumps({"results": all_results}, indent=2))
 
     if not args.no_upload:
-        for cell_id in sorted(set(completed_cells)):
+        for cell_id in sorted(set(finalize_cells)):
             upload_cell_captures(out_dir, cell_id, args.issue)
         upload_auxiliary_summaries(out_dir, args.issue)
 

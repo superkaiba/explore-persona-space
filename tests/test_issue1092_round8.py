@@ -29,6 +29,7 @@ import sys
 from pathlib import Path
 from typing import ClassVar
 
+import numpy as np
 import pytest
 
 REPO = Path(__file__).resolve().parent.parent
@@ -1541,3 +1542,124 @@ def test_turn_content_char_spans_last_turn_trailing_whitespace():
     bad_render = render[: -len("adventure.")] + "calamity!!"
     with pytest.raises(AssertionError, match="LAST turn"):
         gp._turn_content_char_spans(bad_render, bad_turns, "pretrained")
+
+
+# ---------------------------------------------------------------------------
+# Round 8.9: dynamics rendered-length filter, remaining-cells clobber fix,
+# finalize-cells completeness assert, resume-code-sha allowlist
+# ---------------------------------------------------------------------------
+
+
+class _FakeCharTokenizer:
+    """Signature-conformant boundary fake: 1 token per character."""
+
+    def encode(self, text, add_special_tokens=False):
+        assert add_special_tokens is False
+        return [ord(ch) for ch in text]
+
+    def apply_chat_template(self, conversation, tokenize=False, add_generation_prompt=False):
+        assert tokenize is False and add_generation_prompt is False
+        return "".join(f"<|im_start|>{t['role']}\n{t['content']}<|im_end|>\n" for t in conversation)
+
+
+def test_dynamics_panel_rendered_length_filter_pair_drops(monkeypatch):
+    """The launch-8 killer: a conversation whose RAW content fits the window
+    but whose INSTRUCT render (chat-template scaffold) overflows it must be
+    pair-dropped from the shared panel (both dynamics arms)."""
+    fake = _FakeCharTokenizer()
+    monkeypatch.setattr(gp._get_tokenizer, "_tok", fake, raising=False)
+    over = {
+        "prefix_id": "pfx_a",
+        "conv_id": "wildchat_064122",
+        "prefix_turns": [
+            {"role": "user", "content": "x" * 20},
+            {"role": "assistant", "content": "y" * 20},
+        ],
+    }
+    under = {
+        "prefix_id": "pfx_b",
+        "conv_id": "conv_b",
+        "prefix_turns": [
+            {"role": "user", "content": "hi"},
+            {"role": "assistant", "content": "yo"},
+        ],
+    }
+    # Budget 70 sits between the two arms' renders of `over`: pretrained render
+    # "User: xxx...\n\nAssistant: yyy..." = 59 chars (<= 70) while the instruct
+    # render's per-turn scaffold pushes it to 101 chars (> 70) — the exact
+    # raw-under/rendered-over shape that crashed launch 8. `under`'s renders are
+    # 23 (pretrained) / 65 (instruct) chars — the 2-turn instruct scaffold alone
+    # is 61 chars, so any budget below 61+content can never keep a 2-turn pair.
+    kept, digest = gp._filter_dynamics_panel_by_rendered_length(
+        [over, under], {"instruct": fake, "pretrained": fake}, max_tokens=70
+    )
+    assert [item["conv_id"] for item in kept] == ["conv_b"]
+    assert digest["n_panel"] == 2 and digest["n_kept"] == 1 and digest["n_dropped"] == 1
+    (drop,) = digest["dropped"]
+    assert drop["conv_id"] == "wildchat_064122"
+    assert drop["instruct_tokens"] > 70 >= drop["pretrained_tokens"]
+    # a genuinely-over-in-both conversation also drops (no arm asymmetry needed)
+    both_over = dict(over, conv_id="conv_c")
+    both_over["prefix_turns"] = [
+        {"role": "user", "content": "x" * 80},
+        {"role": "assistant", "content": "y" * 80},
+    ]
+    kept2, digest2 = gp._filter_dynamics_panel_by_rendered_length(
+        [both_over, under], {"instruct": fake, "pretrained": fake}, max_tokens=70
+    )
+    assert [item["conv_id"] for item in kept2] == ["conv_b"]
+    assert digest2["dropped"][0]["pretrained_tokens"] > 70
+
+
+def test_remaining_cells_from_orig_not_clobbered():
+    """Launch-8 regression: after the gate stage clobbered args.cells to
+    ['cell_inst_own'], remaining computed from it was EMPTY and 7 cells were
+    silently skipped; _remaining_cells takes the ORIGINAL list."""
+    orig = list(gp.CELL_CONFIG.keys())
+    remaining = gp._remaining_cells(orig, ["cell_inst_own"])
+    assert remaining == [c for c in orig if c != "cell_inst_own"]
+    assert len(remaining) == len(orig) - 1  # pre-fix shape: [] (all skipped)
+    assert gp._remaining_cells(orig, orig) == []
+
+
+def test_assert_cell_captures_on_disk(tmp_path):
+    n_layers = 2
+    cell_dir = tmp_path / "summaries" / "cell_inst_own"
+    cell_dir.mkdir(parents=True)
+    for kind in gp.SUMMARY_KINDS:
+        for layer in range(n_layers):
+            np.save(cell_dir / f"{kind}_L{layer:02d}_shard00000.npy", np.zeros((1, 2)))
+    gp._assert_cell_captures_on_disk(tmp_path, "cell_inst_own", n_layers=n_layers)
+    # consolidated form also accepted
+    victim = cell_dir / f"{gp.SUMMARY_KINDS[0]}_L00_shard00000.npy"
+    victim.rename(cell_dir / f"{gp.SUMMARY_KINDS[0]}_L00.npy")
+    gp._assert_cell_captures_on_disk(tmp_path, "cell_inst_own", n_layers=n_layers)
+    # a missing kind x layer fails loud
+    (cell_dir / f"{gp.SUMMARY_KINDS[1]}_L01_shard00000.npy").unlink()
+    with pytest.raises(FileNotFoundError, match="did not complete on disk"):
+        gp._assert_cell_captures_on_disk(tmp_path, "cell_inst_own", n_layers=n_layers)
+    with pytest.raises(FileNotFoundError, match="no summaries dir"):
+        gp._assert_cell_captures_on_disk(tmp_path, "cell_pre_own", n_layers=n_layers)
+
+
+def test_fingerprint_matches_any_sha(tmp_path):
+    fp_path = tmp_path / "fp.json"
+    saved = {"cell_id": "cell_inst_own", "row_start": 0, "code_sha": "aaaa111122223333"}
+    fp_path.write_text(json.dumps(saved))
+    expected_now = {"cell_id": "cell_inst_own", "row_start": 0, "code_sha": "bbbb111122223333"}
+    # no allowlist -> stale sha does not resume
+    assert gp._fingerprint_matches_any_sha(fp_path, expected_now, None) == (False, None)
+    # allowlisted prior sha -> resumes, names the sha
+    assert gp._fingerprint_matches_any_sha(fp_path, expected_now, ["aaaa111122223333"]) == (
+        True,
+        "aaaa111122223333",
+    )
+    # current-sha match wins without naming a prior sha
+    current = dict(expected_now, code_sha="aaaa111122223333")
+    assert gp._fingerprint_matches_any_sha(fp_path, current, ["zzzz"]) == (True, None)
+    # any OTHER field mismatch never resumes, allowlist or not
+    wrong_row = dict(expected_now, row_start=99)
+    assert gp._fingerprint_matches_any_sha(fp_path, wrong_row, ["aaaa111122223333"]) == (
+        False,
+        None,
+    )

@@ -58,6 +58,10 @@ PY
 # A100-clean differential). Accept the modest gen slowdown; all 8 cells run
 # under the same engine config, and G2 revalidates capture identity
 # independently of the gen engine mode.
+# round-8.9: EPS_GPU_PHASE_EXTRA_ARGS threads per-launch flags (word-split on
+# purpose) — e.g. '--resume-code-shas <sha16>' to accept launch 8's completed
+# cell_inst_own shards, or '--finalize-cells all' on a phase-scoped re-run.
+# shellcheck disable=SC2086
 exec uv run python scripts/issue1092_gpu_phase.py \
   --issue 1092 \
   --phases gen_instruct,gen_pretrained,capture_all,bare,dynamics \
@@ -66,4 +70,5 @@ exec uv run python scripts/issue1092_gpu_phase.py \
   --rb-rev "$RB_REV" \
   --no-prefix-caching \
   --enforce-eager \
-  --out "$OUT"
+  --out "$OUT" \
+  ${EPS_GPU_PHASE_EXTRA_ARGS:-}
