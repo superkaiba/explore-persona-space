@@ -5577,6 +5577,17 @@ def _gc_orphan_pod_safety_state(
     return cleared
 
 
+def _forward_marker_child_stderr(res, context: str) -> None:
+    """Forward a rc==0 task.py child's non-empty stderr (#1130): the child
+    exits 0 while printing deferred-commit / LANDING CHECK warnings, which
+    capture_output would otherwise swallow into the cron log's void."""
+    err = (getattr(res, "stderr", None) or "").strip()
+    if not err:
+        return
+    for line in err[:2000].splitlines():
+        print(f"  [task.py stderr] {context}: {line}", file=sys.stderr)
+
+
 def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -> None:
     """Record a pod-safety event on task ``issue``'s events.jsonl.
 
@@ -5591,7 +5602,7 @@ def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -
         print(f"  [dry-run] would post epm:progress ({label}) on #{issue}: {note}")
         return
     try:
-        subprocess.run(
+        res = subprocess.run(
             [
                 "uv",
                 "run",
@@ -5611,6 +5622,8 @@ def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -
             timeout=60,
             check=True,
         )
+        # check=True means rc!=0 raised above — the helper only sees rc==0 results.
+        _forward_marker_child_stderr(res, f"epm:progress on #{issue}")
     except (subprocess.SubprocessError, OSError) as e:
         # The action (stop / alert) already happened; failing to annotate it is
         # not worth aborting the run. Surface it loudly so the gap is visible.
@@ -5639,7 +5652,7 @@ def _post_failure_marker(issue: int, note: str, dry_run: bool) -> bool:
         print(f"  [dry-run] would post epm:failure on #{issue}: {note}")
         return True
     try:
-        subprocess.run(
+        res = subprocess.run(
             [
                 "uv",
                 "run",
@@ -5659,6 +5672,7 @@ def _post_failure_marker(issue: int, note: str, dry_run: bool) -> bool:
             timeout=60,
             check=True,
         )
+        _forward_marker_child_stderr(res, f"epm:failure on #{issue}")
     except (subprocess.SubprocessError, OSError) as e:
         print(f"  WARNING: posting epm:failure marker on #{issue} failed: {e}", file=sys.stderr)
         return False
@@ -8171,7 +8185,7 @@ def _post_followup_run_marker(issue: int, events: list[dict], dry_run: bool) -> 
         print(f"  [dry-run] would post epm:same-issue-followup-run on #{issue}: {label}")
         return True
     try:
-        subprocess.run(
+        res = subprocess.run(
             [
                 "uv",
                 "run",
@@ -8191,6 +8205,7 @@ def _post_followup_run_marker(issue: int, events: list[dict], dry_run: bool) -> 
             timeout=60,
             check=True,
         )
+        _forward_marker_child_stderr(res, f"epm:same-issue-followup-run on #{issue}")
     except (subprocess.SubprocessError, OSError) as exc:
         print(
             f"  issue #{issue}: epm:same-issue-followup-run post FAILED ({exc}); "
@@ -17332,7 +17347,7 @@ def _post_campaign_marker(issue: int, kind: str, note: str, dry_run: bool) -> No
         print(f"  [dry-run] would post {kind} on #{issue}: {note}")
         return
     try:
-        subprocess.run(
+        res = subprocess.run(
             [
                 "uv",
                 "run",
@@ -17352,6 +17367,7 @@ def _post_campaign_marker(issue: int, kind: str, note: str, dry_run: bool) -> No
             timeout=60,
             check=True,
         )
+        _forward_marker_child_stderr(res, f"{kind} on #{issue}")
     except (subprocess.SubprocessError, OSError) as e:
         print(f"  WARNING: posting {kind} on #{issue} failed: {e}", file=sys.stderr)
 
