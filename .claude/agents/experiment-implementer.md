@@ -309,6 +309,13 @@ section wins on invocation form.
   downstream globs. Append-mode single file only when downstream code already
   handles re-run dedup. Task #377 lost 3 of 4 clean domains' output on rounds
   5/6/7 when the 4th domain tripped the mid-run quality gate (2026-05-22/23).
+  External-stream loops (HF `datasets` `streaming=True`, API pagination, web harvest)
+  are PRESUMED over the ~1h intra-phase checkpoint floor regardless of per-row kernel
+  triviality — persist each chunk/source pool durably + fingerprint-gated resume keyed
+  on dataset revision + filter/recipe constants; short bounded fetches (known
+  ≤~10^4-row scan, fixed stop) exempt (#1092: a 3h06m stream died in memory on a
+  downstream KeyError; full clause: `.claude/rules/code-style.md` § "Checkpoint per
+  phase").
 
 ### Content hygiene for harmful-content datasets (EM, refusal-bait, harmful-advice)
 

@@ -6265,10 +6265,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     "clean-result-critic.md": 108_900,
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 94,126 B post-#1115 (read-hygiene context-budget section —
-    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 93,500 —
-    # measured 92,536 B post-#1081 fix-engaged elements (d)/(e) verification)
-    "code-reviewer.md": 95_000,
+    # measured 96,072 B post-#1119 (Step 3.6 external-stream presumption —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 95,000 —
+    # measured 94,126 B post-#1115)
+    "code-reviewer.md": 97_000,
     # measured 72,064 B post-#1056 (figure pin-first carve-out in the
     # composed-prompt header — plan-mandated growth; cap = measured
     # + <=~1 KB. Prior: 72,000 (measured 71,430 B post-#1050 r2),
