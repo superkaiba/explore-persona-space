@@ -40,14 +40,21 @@ import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
-import matplotlib.pyplot as plt
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
     savefig_paper,
     set_paper_style,
 )
-from explore_persona_space.eval.graded_judge import _score_from_parsed
+from explore_persona_space.eval.graded_judge import _score_from_parsed  # noqa: E402
 
 THRESHOLD = 50  # behavior.py default keep/compliance cut (project standard)
 TOTAL_STEPS = 270

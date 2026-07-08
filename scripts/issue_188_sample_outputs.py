@@ -11,7 +11,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from vllm import LLM, SamplingParams
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+from vllm import LLM, SamplingParams  # noqa: E402
 
 ROOT = Path("/workspace/explore-persona-space")
 SUMMARY = ROOT / "eval_results/issue_188/summary.json"
