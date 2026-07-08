@@ -1425,6 +1425,10 @@ def phase_marker(cfg: Cfg) -> dict:
             ckpts = _enumerate_rungs(_read_json(cell_root / "build_result.json")["adapter_root"])
             grid_reads: dict[int, float] = {}
             for step, p in sorted(ckpts.items()):
+                # m2 rung ckpts carry NO tokenizer files (Trainer saved them
+                # without processing_class) — repair before the vLLM/HF reads
+                # (crash-fix r6; the attempt-4 crash site).
+                _ensure_dir_tokenizer(p)
                 r = _marker_delta_g(str(p), n_questions=n_sel_q, out_dir=cell_root / f"slot_{step}")
                 grid_reads[step] = r["delta_logp_mean"]
             in_band = {
@@ -1509,22 +1513,81 @@ def _persist_marker_ft(cfg: Cfg) -> dict:
     return rec
 
 
+def _weights_complete(model_dir: Path) -> bool:
+    """True iff ``model_dir`` carries a complete safetensors weight set.
+
+    Sharded dirs are checked shard-by-shard against ``weight_map`` in
+    ``model.safetensors.index.json`` (a kill mid-``save_pretrained`` leaves
+    config.json + a shard subset); single-file dirs need ``model.safetensors``.
+    """
+    idx = model_dir / "model.safetensors.index.json"
+    if idx.exists():
+        try:
+            shards = set(json.loads(idx.read_text())["weight_map"].values())
+        except (KeyError, ValueError):
+            return False
+        return bool(shards) and all((model_dir / s).exists() for s in shards)
+    return (model_dir / "model.safetensors").exists()
+
+
+def _ensure_dir_tokenizer(model_dir: Path, base_model: str = DEFAULT_BASE_MODEL) -> bool:
+    """Repair a tokenizer-less LOCAL model dir: save the base tokenizer into it.
+
+    Nothing in this pipeline trains the tokenizer (the marker is an EXISTING
+    vocab id, 83399), so the base tokenizer is exact for every merged / FT dir.
+    Known tokenizer-less producers (crash-fix r6): a partially-written merged
+    dir surviving the old config.json early-return in ``_merge_adapter``, and
+    the m2 marker-FT rung checkpoints (HF Trainer without ``processing_class``
+    writes no tokenizer files into ``checkpoint-<step>/``). Without the repair,
+    ``AutoTokenizer.from_pretrained(dir)`` falls back to the SLOW Qwen2 class
+    and dies on ``vocab_file=None`` (TypeError) — the attempt-3/-4 crash.
+    Idempotent (keyed on ``tokenizer.json``); returns True when it repaired.
+    """
+    from transformers import AutoTokenizer
+
+    if (model_dir / "tokenizer.json").exists():
+        return False
+    tok = AutoTokenizer.from_pretrained(base_model, token=os.environ.get("HF_TOKEN"))
+    tok.save_pretrained(str(model_dir))
+    logger.info("[tokenizer-repair] wrote base tokenizer into %s", model_dir)
+    return True
+
+
 def _merge_adapter(cfg: Cfg, adapter_dir: str, merged_dir: Path) -> Path:
-    """Atomic merge-for-read (#653 pattern; caller deletes after its pass)."""
+    """Atomic merge-for-read (#653 pattern; caller deletes after its pass).
+
+    Crash-fix r6: the old bare ``config.json`` early-return treated a
+    PARTIALLY-written merged dir as complete — a crash inside this function
+    (between ``model.save_pretrained`` and the tokenizer save) escapes the
+    CALLER's try/finally rmtree, so the partial dir survived to the next
+    attempt, which early-returned it and crashed at the tokenizer load. Now:
+    a complete dir returns; a weights-complete / tokenizer-less dir is
+    repaired in place (cheap file writes, no re-merge); a weights-incomplete
+    dir is wiped and re-merged; and fresh merges write to a ``.tmp`` sibling
+    then rename, so ``merged_dir`` existing implies it is complete.
+    """
     import torch
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     if (merged_dir / "config.json").exists():
-        return merged_dir
+        if _weights_complete(merged_dir):
+            _ensure_dir_tokenizer(merged_dir)
+            return merged_dir
+        logger.warning("[merge] incomplete merged dir at %s — wiping + re-merging", merged_dir)
+        shutil.rmtree(merged_dir, ignore_errors=True)
+    tmp_dir = merged_dir.parent / (merged_dir.name + ".tmp")
+    if tmp_dir.exists():
+        shutil.rmtree(tmp_dir, ignore_errors=True)  # stale partial from a prior crash
     base = AutoModelForCausalLM.from_pretrained(
         DEFAULT_BASE_MODEL, torch_dtype=torch.bfloat16, token=os.environ.get("HF_TOKEN")
     )
     model = PeftModel.from_pretrained(base, adapter_dir)
     model = model.merge_and_unload()
-    merged_dir.mkdir(parents=True, exist_ok=True)
-    model.save_pretrained(str(merged_dir))
-    AutoTokenizer.from_pretrained(DEFAULT_BASE_MODEL).save_pretrained(str(merged_dir))
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    model.save_pretrained(str(tmp_dir))
+    AutoTokenizer.from_pretrained(DEFAULT_BASE_MODEL).save_pretrained(str(tmp_dir))
+    tmp_dir.rename(merged_dir)  # atomic publish: dir present => complete
     del model, base
     import gc
 
@@ -1774,6 +1837,11 @@ def _resolve_capture_model(cfg: Cfg, cell: str, dose: str) -> tuple[str, Path | 
         raise ValueError(dose)
     ckpt = _enumerate_rungs(build["adapter_root"])[step]
     if cell.startswith(("s3", "s4", "s6", "m2")):
+        # Full-FT rung dirs may lack tokenizer files (m2's trainer saved
+        # checkpoints without processing_class) — repair before the capture
+        # reads load tokenizer + engine from this path (crash-fix r6;
+        # idempotent no-op for dirs that already carry tokenizer.json).
+        _ensure_dir_tokenizer(ckpt)
         return str(ckpt), None  # full-FT consolidated dir loads directly
     merged = _merge_adapter(cfg, str(ckpt), cell_root / f"merged_{dose}")
     return str(merged), merged

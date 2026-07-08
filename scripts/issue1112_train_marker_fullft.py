@@ -266,6 +266,12 @@ def main() -> int:
         args=training_args,
         train_dataset=tokenized,
         data_collator=collator,
+        # processing_class => tokenizer files land in every checkpoint-<step>/
+        # (crash-fix r6: without it the rung dirs are tokenizer-less and the
+        # p8 grid's AutoTokenizer load dies on the slow-Qwen2 fallback). The
+        # dispatch-side _ensure_dir_tokenizer repair covers already-trained
+        # rungs on resume; this fixes the producer for any future retrain.
+        processing_class=tokenizer,
         callbacks=[CheckpointAtStepsCallback(ckpt_steps)],
     )
     train_result = trainer.train()
