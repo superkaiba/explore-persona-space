@@ -37,30 +37,42 @@ import matplotlib  # noqa: E402
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-from explore_persona_space.analysis.paper_plots import paper_palette, set_paper_style  # noqa: E402
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
+    paper_palette,
+    savefig_paper,
+    set_paper_style,
+)
 from explore_persona_space.experiments import issue_1112 as C  # noqa: E402
 
 logger = logging.getLogger("issue1112.figures")
 
 SYCO_CELLS = ("s1_lora_neg", "s2_lora_pos", "s3_fullft_neg", "s4_fullft_pos")
 CELL_LABEL = {
-    "s1_lora_neg": "LoRA + negatives (reused)",
+    "s1_lora_neg": "LoRA + negatives",
     "s2_lora_pos": "LoRA positives-only",
     "s3_fullft_neg": "Full-FT + negatives",
     "s4_fullft_pos": "Full-FT positives-only",
     "s5_lora_generic": "Generic control (LoRA)",
     "s6_fullft_generic": "Generic control (full-FT)",
-    "m1_lora_band8": "Marker LoRA (~8 nat)",
-    "m2_fullft_band8": "Marker full-FT (~8 nat)",
+    "m1_lora_band8": "Marker LoRA",
+    "m2_fullft_band8": "Marker full-FT",
 }
 DVS = ("rank_k_at_90", "pr_lambda", "top_share_lambda", "mu_norm")
+DV_LABEL = {
+    "rank_k_at_90": "rank-k@90 (modes for 90% of variance)",
+    "pr_lambda": "participation ratio of the shift spectrum",
+    "top_share_lambda": "top-eigenvalue share of shift variance",
+    "mu_norm": "mean-shift norm (residual-stream units)",
+}
 
 
 def _style_for(cell: str, palette: list[str]) -> dict:
-    """color = method, linestyle = negatives (plan §6); generics grey."""
+    """color = method, linestyle = negatives (plan §6); generics grey; marker cells solid."""
     if cell in C.GENERIC_CELLS:
         return {"color": "0.6", "linestyle": "-" if "lora" in cell else "--", "alpha": 0.8}
     color = palette[0] if "lora" in cell else palette[1]
+    if cell in C.MARKER_CELLS:
+        return {"color": color, "linestyle": "-"}
     linestyle = "-" if cell.endswith("_neg") or cell == "s1_lora_neg" else "--"
     return {"color": color, "linestyle": linestyle}
 
@@ -78,12 +90,15 @@ def _records_by_cell(records: dict, *, arm: str, dose_by_cell: dict[str, str]) -
 
 
 def _save(fig, out_dir: Path, name: str, meta: dict) -> None:
+    """Save PNG+PDF+meta via ``savefig_paper``; merge run-specific meta keys in."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    png = out_dir / f"{name}.png"
-    fig.savefig(png, dpi=200, bbox_inches="tight")
+    savefig_paper(fig, name, dir=out_dir)
     plt.close(fig)
-    (out_dir / f"{name}.meta.json").write_text(json.dumps(meta, indent=1) + "\n")
-    logger.info("[figures] wrote %s", png)
+    meta_path = out_dir / f"{name}.meta.json"
+    sidecar = json.loads(meta_path.read_text())
+    sidecar.update({k: v for k, v in meta.items() if k not in sidecar})
+    meta_path.write_text(json.dumps(sidecar, indent=1) + "\n")
+    logger.info("[figures] wrote %s", out_dir / f"{name}.png")
 
 
 def _git_commit() -> str:
@@ -121,6 +136,11 @@ def profile_figs(records: dict, installs: dict, out_dir: Path) -> None:
                 continue
             for dv in DVS:
                 fig, ax = plt.subplots(figsize=(6.4, 4.0))
+                # NOTE: per-cell bootstrap bands deliberately DROPPED — a
+                # with-replacement cluster resample keeps ~63% unique rows, so
+                # the per-cell interval reflects a smaller effective n, not a
+                # CI for the full-cloud point; paired-difference CIs (text)
+                # are the inferential objects.
                 for cell in present:
                     layers = sorted(by_cell[cell])
                     ax.plot(
@@ -129,22 +149,16 @@ def profile_figs(records: dict, installs: dict, out_dir: Path) -> None:
                         label=_install_label(cell, installs),
                         **_style_for(cell, palette),
                     )
-                    lo_hi = [by_cell[cell][li]["boot_ci"].get(dv) for li in layers]
-                    if all(x is not None for x in lo_hi):
-                        ax.fill_between(
-                            layers,
-                            [x[0] for x in lo_hi],
-                            [x[1] for x in lo_hi],
-                            alpha=0.12,
-                            color=_style_for(cell, palette)["color"],
-                        )
                 if dv == "rank_k_at_90" and arm == "response" and group == "syco":
                     name = "hero_syco_rankk_profiles"
                 else:
                     name = f"profile_{group}_{arm}_{dv}"
+                group_word = "sycophancy" if group == "syco" else "marker"
+                if dv == "mu_norm":
+                    ax.set_yscale("log")  # late layers dominate linearly; log keeps mid-layers legible
                 ax.set_xlabel("decoder layer")
-                ax.set_ylabel(dv)
-                ax.set_title(f"{group} Δx {dv} — {arm} arm (selected dose)")
+                ax.set_ylabel(DV_LABEL[dv])
+                ax.set_title(f"{group_word} activation shift — {arm} arm (selected checkpoint)")
                 ax.legend(fontsize=7)
                 _save(fig, out_dir, name, _meta(arm=arm, dv=dv, cells=present))
 
@@ -157,19 +171,18 @@ def layer14_bar(records: dict, out_dir: Path) -> None:
         logger.info("[figures] skip layer14 bar (only %s present)", present)
         return
     fig, ax = plt.subplots(figsize=(5.6, 3.8))
+    # Per-cell bootstrap whiskers DROPPED (deflated resample spread, not a CI
+    # for the 120-row point); paired-difference CIs are reported in the text.
     for i, cell in enumerate(present):
         rec = by_cell[cell][C.PRIMARY_LAYER]
         v = rec["rank_k_at_90"]
-        lo, hi = rec["boot_ci"]["rank_k_at_90"]
         style = _style_for(cell, palette)
-        ax.bar(i, v, color=style["color"], hatch="" if style["linestyle"] == "-" else "//")
-        ax.errorbar(i, v, yerr=[[max(0.0, v - lo)], [max(0.0, hi - v)]], color="k", capsize=3)
+        bars = ax.bar(i, v, color=style["color"], hatch="" if style["linestyle"] == "-" else "//")
+        ax.bar_label(bars, fontsize=8)
     ax.set_xticks(range(len(present)))
     ax.set_xticklabels([CELL_LABEL[c] for c in present], rotation=20, ha="right", fontsize=7)
-    ax.set_ylabel("rank-k@90")
-    ax.set_title(
-        f"2×2 rank-k@90 at layer {C.PRIMARY_LAYER} (response arm, 95% cluster-bootstrap CI)"
-    )
+    ax.set_ylabel("rank-k@90 (modes for 90% of variance)")
+    ax.set_title(f"2×2 rank-k@90 at layer {C.PRIMARY_LAYER} (response arm)")
     _save(fig, out_dir, "hero_syco_2x2_layer14", _meta(cells=present))
 
 
@@ -204,9 +217,10 @@ def cos_rb_figs(records: dict, out_dir: Path) -> None:
                         label="norm-matched random cos CI",
                     )
                     band_done = True
+        which = "top shift direction" if dv == "cos_top_to_rb" else "mean shift direction"
         ax.set_xlabel("decoder layer")
-        ax.set_ylabel(dv)
-        ax.set_title(f"{dv} vs r_B — response arm")
+        ax.set_ylabel(f"cosine({which}, behavior read-out direction)")
+        ax.set_title(f"alignment of the {which} to the behavior read-out — response arm")
         ax.legend(fontsize=7)
         _save(fig, out_dir, f"explore_{dv}_profiles", _meta(dv=dv, cells=present))
 
@@ -233,9 +247,9 @@ def dose_stability_fig(records: dict, out_dir: Path) -> None:
             **_style_for(cell, palette),
         )
     ax.set_xticks(range(len(order)))
-    ax.set_xticklabels(order)
-    ax.set_ylabel("rank-k@90")
-    ax.set_title(f"dose stability — layer {C.PRIMARY_LAYER}, response arm")
+    ax.set_xticklabels(["step 6", "selected checkpoint", "step 30"])
+    ax.set_ylabel("rank-k@90 (modes for 90% of variance)")
+    ax.set_title(f"rank-k@90 across training doses — layer {C.PRIMARY_LAYER}, response arm")
     ax.legend(fontsize=7)
     _save(fig, out_dir, "explore_dose_stability_rankk", _meta(cells=sorted(multi)))
 
@@ -288,19 +302,28 @@ def dv_vs_install_fig(records: dict, installs: dict, out_dir: Path) -> None:
     if len(pts) < 2:
         logger.info("[figures] skip DV-vs-install scatter (%d points)", len(pts))
         return
+    palette = paper_palette(4)
+    # Leader-line offsets keep the two near-coincident LoRA points legible.
+    offsets = {
+        "s1_lora_neg": (14, -12),
+        "s2_lora_pos": (-52, -22),
+        "s3_fullft_neg": (8, -16),
+        "s4_fullft_pos": (-60, 10),
+    }
     fig, ax = plt.subplots(figsize=(4.8, 3.8))
     for x, y, cell in pts:
-        ax.scatter(x, y)
+        ax.scatter(x, y, color=_style_for(cell, palette)["color"], zorder=3)
         ax.annotate(
             CELL_LABEL.get(cell, cell),
             (x, y),
             fontsize=6,
             textcoords="offset points",
-            xytext=(4, 3),
+            xytext=offsets.get(cell, (6, 4)),
+            arrowprops={"arrowstyle": "-", "lw": 0.6, "color": "0.5"},
         )
-    ax.set_xlabel("Tier-1 judged rate (selected rung)")
-    ax.set_ylabel(f"rank-k@90 @ L{C.PRIMARY_LAYER}")
-    ax.set_title("geometry DV vs install rate")
+    ax.set_xlabel("judged sycophancy rate at the selected checkpoint")
+    ax.set_ylabel(f"rank-k@90 at layer {C.PRIMARY_LAYER}")
+    ax.set_title("shift rank vs installed behavior rate")
     _save(fig, out_dir, "explore_dv_vs_install", _meta(n_points=len(pts)))
 
 
@@ -336,10 +359,101 @@ def marker_fig(records: dict, marker_dir: Path | None, out_dir: Path) -> None:
         C.MARKER_READ_LAYER, color="0.7", linestyle=":", label=f"read layer {C.MARKER_READ_LAYER}"
     )
     ax.set_xlabel("decoder layer")
-    ax.set_ylabel("rank-k@90")
-    ax.set_title("marker Δx rank-k@90 — LoRA vs full-FT (response arm)")
+    ax.set_ylabel("rank-k@90 (modes for 90% of variance)")
+    ax.set_title("marker shift rank-k@90 — LoRA vs full fine-tune (response arm)")
     ax.legend(fontsize=7)
     _save(fig, out_dir, "hero_marker_rankk_profiles", _meta(cells=present, delta_g=delta_g))
+
+
+def arm_contrast_fig(records: dict, out_dir: Path) -> None:
+    """Grouped bar: response vs same-token context rank-k@90 at the primary layer."""
+    palette = paper_palette(4)
+    cells = [*SYCO_CELLS, *C.GENERIC_CELLS]
+    vals: dict[str, dict[str, float]] = defaultdict(dict)
+    for rec in records.values():
+        if (
+            rec["cell"] in cells
+            and int(rec["layer"]) == C.PRIMARY_LAYER
+            and rec["dose"] == "selected"
+            and rec["arm"] in ("response", "context")
+        ):
+            vals[rec["cell"]][rec["arm"]] = rec["rank_k_at_90"]
+    present = [c for c in cells if set(vals[c]) == {"response", "context"}]
+    if len(present) < 2:
+        logger.info("[figures] skip arm contrast (cells with both arms: %s)", present)
+        return
+    fig, ax = plt.subplots(figsize=(6.4, 3.8))
+    width = 0.38
+    xs = list(range(len(present)))
+    resp = ax.bar(
+        [x - width / 2 for x in xs],
+        [vals[c]["response"] for c in present],
+        width,
+        color=palette[2],
+        label="own-response arm",
+    )
+    ctx = ax.bar(
+        [x + width / 2 for x in xs],
+        [vals[c]["context"] for c in present],
+        width,
+        color=palette[3],
+        label="same-token context arm",
+    )
+    ax.bar_label(resp, fontsize=7)
+    ax.bar_label(ctx, fontsize=7)
+    ax.set_xticks(xs)
+    ax.set_xticklabels([CELL_LABEL[c] for c in present], rotation=20, ha="right", fontsize=7)
+    ax.set_ylabel("rank-k@90 (modes for 90% of variance)")
+    ax.set_title(f"shift rank by measurement arm — layer {C.PRIMARY_LAYER}")
+    ax.legend(fontsize=7)
+    _save(fig, out_dir, "hero_arm_contrast_rankk", _meta(cells=present))
+
+
+def spectrum_fig(capture_root: Path | None, out_dir: Path) -> None:
+    """Cumulative eigenvalue-share curves at the primary layer (the raw data
+    behind rank-k@90): one curve per sycophancy cell, response arm."""
+    if capture_root is None or not capture_root.exists():
+        logger.info("[figures] skip spectrum fig (no capture root)")
+        return
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_653.spectral import svd_of_cloud
+    from explore_persona_space.experiments.issue_1112.geometry import delta_cloud, load_store
+
+    base_path = capture_root / "base_sycophancy" / "base" / "pooled.pt"
+    if not base_path.exists():
+        logger.info("[figures] skip spectrum fig (no base store at %s)", base_path)
+        return
+    base = load_store(base_path)
+    palette = paper_palette(4)
+    fig, ax = plt.subplots(figsize=(6.0, 4.0))
+    plotted = []
+    for cell in (*SYCO_CELLS, *C.GENERIC_CELLS):
+        store_path = capture_root / cell / "selected" / "pooled.pt"
+        if not store_path.exists():
+            continue
+        cloud = delta_cloud(load_store(store_path), base, "response", C.PRIMARY_LAYER)
+        sigma = svd_of_cloud(cloud, center_rows=True)
+        lam = sigma.astype("float64") ** 2
+
+        lam = np.sort(lam)[::-1]
+        cum = np.cumsum(lam) / lam.sum()
+        ax.plot(
+            range(1, len(cum) + 1),
+            cum,
+            label=CELL_LABEL.get(cell, cell),
+            **_style_for(cell, palette),
+        )
+        plotted.append(cell)
+    if not plotted:
+        plt.close(fig)
+        return
+    ax.axhline(0.9, color="0.75", linestyle=":", label="90% of variance")
+    ax.set_xlabel("number of leading eigenvalue modes")
+    ax.set_ylabel("cumulative share of shift variance")
+    ax.set_title(f"shift eigenvalue spectra — layer {C.PRIMARY_LAYER}, response arm")
+    ax.legend(fontsize=7)
+    _save(fig, out_dir, "explore_spectrum_cumshare_layer14", _meta(cells=plotted))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -366,6 +480,12 @@ def main(argv: list[str] | None = None) -> int:
         default=Path(f"figures/issue_{C.ISSUE}"),
         help="figure destination (smokes MUST divert to scratch)",
     )
+    p.add_argument(
+        "--capture-root",
+        type=Path,
+        default=None,
+        help="local <cell>/<dose>/pooled.pt tree (enables the eigenvalue-spectrum figure)",
+    )
     args = p.parse_args(argv)
 
     set_paper_style()
@@ -378,6 +498,8 @@ def main(argv: list[str] | None = None) -> int:
     dose_stability_fig(records, args.out_dir)
     dv_vs_install_fig(records, installs, args.out_dir)
     marker_fig(records, args.marker_dir, args.out_dir)
+    arm_contrast_fig(records, args.out_dir)
+    spectrum_fig(args.capture_root, args.out_dir)
     logger.info("[figures] done -> %s", args.out_dir)
     return 0
 

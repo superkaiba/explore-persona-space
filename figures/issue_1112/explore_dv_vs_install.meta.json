@@ -1,36 +1,39 @@
 {
-  "commit": "92bb56f84c",
-  "created": "2026-07-08T06:44:23Z",
-  "figsize": [
-    4.8,
-    3.8
-  ],
-  "points": [
-    {
-      "Tier-1 judged rate (selected rung)": 0.61,
-      "rank-k@90 @ L14": 70.0,
-      "_kind": "scatter",
-      "_group": 0
-    },
-    {
-      "Tier-1 judged rate (selected rung)": 0.6,
-      "rank-k@90 @ L14": 70.0,
-      "_kind": "scatter",
-      "_group": 1
-    },
-    {
-      "Tier-1 judged rate (selected rung)": 0.63,
-      "rank-k@90 @ L14": 67.0,
-      "_kind": "scatter",
-      "_group": 2
-    },
-    {
-      "Tier-1 judged rate (selected rung)": 0.81,
-      "rank-k@90 @ L14": 68.0,
-      "_kind": "scatter",
-      "_group": 3
-    }
-  ],
-  "n_series": 4,
-  "total_points": 4
+ "commit": "4d6a555302",
+ "created": "2026-07-08T08:13:11Z",
+ "figsize": [
+  4.8,
+  3.8
+ ],
+ "points": [
+  {
+   "judged sycophancy rate at the selected checkpoint": 0.61,
+   "rank-k@90 at layer 14": 70.0,
+   "_kind": "scatter",
+   "_group": 0
+  },
+  {
+   "judged sycophancy rate at the selected checkpoint": 0.6,
+   "rank-k@90 at layer 14": 70.0,
+   "_kind": "scatter",
+   "_group": 1
+  },
+  {
+   "judged sycophancy rate at the selected checkpoint": 0.63,
+   "rank-k@90 at layer 14": 67.0,
+   "_kind": "scatter",
+   "_group": 2
+  },
+  {
+   "judged sycophancy rate at the selected checkpoint": 0.81,
+   "rank-k@90 at layer 14": 68.0,
+   "_kind": "scatter",
+   "_group": 3
+  }
+ ],
+ "n_series": 4,
+ "total_points": 4,
+ "git_commit": "4d6a55530227373342c6434279b5fcad02ef2ebf",
+ "ts": "2026-07-08T08:13:10Z",
+ "n_points": 4
 }
