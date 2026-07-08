@@ -168,10 +168,15 @@ def test_safe_case_push_appears_before_gh_pr_merge():
     """The push must SEQUENCE before the safe-case gh pr merge --rebase call,
     so the server-side rebase sees the stripped branch tip."""
     text = _skill_text()
+    # Scope the search to the safe-case block: the #1138 canonical
+    # "Bare push / merge snippets" subsection (inserted earlier in Step 10d)
+    # contains both literals, so first-occurrence pins would retarget it.
+    base = text.find("#### The auto-merge procedure (safe case")
+    assert base != -1, "safe-case auto-merge heading not found in SKILL.md"
     merge_line = "gh pr merge <PR> --rebase --delete-branch=false"
     push_line = 'git -C "$WT" push origin issue-<N>'
-    merge_offset = text.find(merge_line)
-    push_offset = text.find(push_line)
+    merge_offset = text.find(merge_line, base)
+    push_offset = text.find(push_line, base)
     assert merge_offset != -1, "safe-case gh pr merge line not found in SKILL.md"
     assert push_offset != -1, "safe-case strip-commit push line not found in SKILL.md"
     assert push_offset < merge_offset, (
