@@ -992,8 +992,8 @@
     "1127": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1127",
-      "status": "approved",
+      "path": "tasks/running/1127",
+      "status": "running",
       "title": "daily-fix: refusal-wedge lane misses live wedges"
     },
     "1128": {
