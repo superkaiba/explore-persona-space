@@ -396,3 +396,38 @@ def test_malformed_rows_skipped_counted_exit_0(tmp_path: Path, capsys) -> None:
     assert out["skipped_rows"] == 3
     assert len(out["candidates"]) == 1
     assert out["candidates"][0]["ts"] == T0
+
+
+# ── 16. raw U+2028 inside a note must not shred the JSONL row (#950 gotcha) ─
+
+
+def test_u2028_note_parses_as_one_row_enumerates_and_suppresses(tmp_path: Path) -> None:
+    """A VALID JSONL row whose note carries a literal U+2028 (as marker notes
+    written with ensure_ascii=False do — two live rows in tasks/completed/1032)
+    must (a) parse as ONE row, (b) enumerate the parked candidate, and
+    (c) leave skipped_rows at 0. splitlines() shredded it pre-fix."""
+    sep = "\u2028"  # LINE SEPARATOR, escape form so no invisible char lives in source
+    bug, change = "bug with separator prose.", "change with separator prose."
+    fp = wf_fix_fingerprint(change, bug)
+    note = block_note("a/b.md", bug, change).replace(
+        "see workflow-fix-on-bug.md", f"see{sep}workflow-fix-on-bug.md"
+    )
+    raw = json.dumps(cand_row(T0, note), ensure_ascii=False)
+    assert sep in raw and "\n" not in raw  # one physical line carrying a literal U+2028
+    make_task(tmp_path, 19, "completed", raw_event_lines=[raw])
+    result = run_sweep(tmp_path)
+    assert result["skipped_rows"] == 0
+    c = only(result)
+    assert c["suppressed"] is False
+    assert c["fingerprint"] == fp
+
+    # Twin: a U+2028-bearing FILED record still suppresses (rule 1) — a shredded
+    # filed record would otherwise let the candidate re-enumerate (double-file).
+    filed_note = f"routing{sep}record / filed_task: #94 / fingerprint: {fp}"
+    filed_raw = json.dumps(filed_row(T1, filed_note), ensure_ascii=False)
+    assert sep in filed_raw
+    make_task(tmp_path / "b", 20, "completed", raw_event_lines=[raw, filed_raw])
+    result_b = run_sweep(tmp_path / "b", include_routed=True)
+    assert result_b["skipped_rows"] == 0
+    c_b = only(result_b)
+    assert c_b["suppressed"] is True
