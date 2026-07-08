@@ -340,29 +340,88 @@ OR `spec.extra["spot_tolerant"]`):
   leads; flex sits between spot and on-demand as the "queue for capacity
   rather than fail" middle rung. A short `lora-7b` (a40 present) yields 5
   GCP rungs; a short `ft-7b` (no a40) yields 3 (spot-80, flex-80,
-  ondemand-80).
+  ondemand-80). (Width-1 rung counts are UNCHANGED by #1121; a
+  width-DECLARING dispatch prepends wide rungs per § Width-aware rungs
+  below — the width-8 short walk is 14 rungs.)
 - **LONG / UNKNOWN-length jobs — flex leads, NO spot:** flex-start A100-80 →
   on-demand A100-80 → on-demand A100-40 (fits-40 only). Spot is barred
   (preemption too costly for a long job); flex — non-preemptible once
   running, queues for capacity — leads. An unknown-length job (no time
   budget) is NOT short, so it takes this branch. A long `ft-7b` yields 2 GCP
-  rungs; a long `lora-7b` yields 3.
+  rungs; a long `lora-7b` yields 3 (width-1 counts; the width-8 long walk
+  is 9 rungs, § Width-aware rungs below).
 
 The flex rung threads `provisioning_model=FLEX_START` via
 `router._flex_start_rung` (label `flexstart_<gpu_kind>`); A2 acceptance of
 `--provisioning-model=FLEX_START` was confirmed by a live #680 probe on both
 `a2-ultragpu-1g` and `a2-ultragpu-4g`. The per-day attempt cap
-(`MAX_GCP_ATTEMPTS_PER_DAY`) was bumped 5 → 8 to cover the up-to-5-rung
-short-job ladder plus a same-day retry margin (still an attempt COUNT, never
-a dollar cap). Tests of record: `test_ladder_short_job_spot_before_ondemand`,
+(`MAX_GCP_ATTEMPTS_PER_DAY`) was bumped 5 → 8 at #680 to cover the
+up-to-5-rung short-job ladder plus a same-day retry margin, then 8 → 16 at
+#1121 — the width-8 short walk is up to 14 rungs + margin, the same sizing
+logic (still an attempt COUNT, never a dollar cap).
+
+**Width-aware rungs (#1121).** A dispatch that DECLARES a shardable
+multi-GPU axis via the existing `--gpus N` flag (`RunSpec.gpus`; N ∈
+{2, 4, 8} above the intent's base machine width, on a width-eligible
+A100-class intent — `gcp.WIDTH_ELIGIBLE_INTENTS` = {lora-7b, lora,
+capture-7b, eval, debug, ft-7b}) walks WIDE `a2-ultragpu-{8,4,2}g` rungs
+(`gcp.WIDE_A100_80_BY_WIDTH`) BEFORE the base ladder, WIDTH-MAJOR: every
+provisioning model at width w is exhausted before width w−1 is accepted
+(wall-clock is the scarce resource; credits are not — a spot-8g attempt is
+strictly preferable to an on-demand-4g one). Intra-width the length-aware
+order above applies verbatim; job length is classified ONCE at the WIDEST
+requested machine (GPU-hours = wall × width) and threaded through the base
+tail. Wide rung labels carry an `x<w>` suffix (`spot_a100_80x8`); width-1
+labels are byte-identical to pre-#1121. The exact width-8 walks:
+
+- **Width-8 SHORT** (≤ 2 GPU-h at width 8, or `spot_tolerant`; 14 rungs):
+  `spot_a100_80x8 → flexstart_a100_80x8 → ondemand_a100_80x8 →
+  spot_a100_80x4 → flexstart_a100_80x4 → ondemand_a100_80x4 →
+  spot_a100_80x2 → flexstart_a100_80x2 → ondemand_a100_80x2 →
+  spot_a100_80 → spot_a100_40 → flexstart_a100_80 → ondemand_a100_80 →
+  ondemand_a100_40` → SLURM lanes → RunPod terminal rung.
+- **Width-8 LONG/UNKNOWN** (the common case — wall × 8 usually exceeds
+  the 2 GPU-h spot threshold; 9 rungs): `flexstart_a100_80x8 →
+  ondemand_a100_80x8 → flexstart_a100_80x4 → ondemand_a100_80x4 →
+  flexstart_a100_80x2 → ondemand_a100_80x2 → flexstart_a100_80 →
+  ondemand_a100_80 → ondemand_a100_40` → SLURM → RunPod.
+
+H100 is EXCLUDED from the width walk (no `WIDE_A100_80_BY_WIDTH` rows; the
+H100 intents are not width-eligible): preemptible quota is exactly 8 (one
+8×, zero concurrency headroom, #743), there is no on-demand pool, and the
+H100 quota metrics are absent from `regions describe` on this project, so
+the fail-open headroom pre-check cannot protect a doomed create —
+`sweep-8g-h100` stays explicit-`--intent`-only. The #783 queue-timeout,
+#1116 queue-vanish, and #1029 boot-loop poller machinery applies to wide
+rungs unchanged (per-rung-label streaks key on the new `x<w>` labels
+cleanly). **Paid-fallback exposure planners must understand:** width
+degradation fires only on CREATE-TIME capacity misses. For a LONG job
+`flexstart_a100_80x8` is rung 1, and a flex create that QUEUES ends the
+ladder walk (route() returned a handle) — so the realistic fallback for a
+queued-but-stuck wide dispatch is the #783 queue timeout
+(`EPS_GCP_QUEUE_WAIT_SECONDS`, default 600s) failing over to a PAID RunPod
+pod at the REQUESTED width, NOT 4g/2g degradation on GCP. A workload that
+CANNOT re-shard off the realized width (`realized_gpu_count` on the
+`epm:backend-selected` marker / handle sidecar; `requested_gpus` rides
+alongside) must pin its width rather than ride the degrading walk.
+Poller-side width-degrade re-entry is a named deferred follow-up (#1121
+plan), NOT built.
+
+Tests of record: `test_ladder_short_job_spot_before_ondemand`,
 `test_ladder_short_job_spot_miss_then_ondemand_order`,
 `test_ladder_short_job_full_rung_order`,
 `test_ladder_long_job_flexstart_before_ondemand_no_spot`,
 `test_ladder_long_job_flexstart_miss_then_ondemand_order`,
 `test_ladder_unknown_length_takes_long_branch`,
 `test_flexstart_rung_threads_flex_provisioning`,
-`test_max_gcp_attempts_per_day_is_eight`,
-`test_workload_error_on_later_rung_fails_over_to_runpod` (all in
+`test_max_gcp_attempts_per_day_is_sixteen`,
+`test_workload_error_on_later_rung_fails_over_to_runpod`; width-aware
+(#1121): `test_width8_long_job_walks_wide_rungs_width_major`,
+`test_width8_short_job_full_rung_order`,
+`test_width_degradation_on_capacity_miss_lands_4g`,
+`test_width1_ladder_byte_identical_explicit_gpus_none_and_matching`,
+`test_width_ladder_never_emits_h100_machine`,
+`test_workload_error_on_wide_rung_fails_over_to_runpod` (all in
 `tests/test_router.py`).
 
 ### Per-rung multi-zone fan-out

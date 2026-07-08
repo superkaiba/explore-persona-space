@@ -303,7 +303,10 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       stated, nor one that correctly provisions the wide pod ONLY for the wide phase, nor a
       shared-nothing sweep that runs N seeds SIMULTANEOUSLY on one wide pod (planner.md §9
       Sweep-parallelism row — every shard needs the pod at once, which is phases of the SAME width
-      run in parallel, NOT a sequence of phases of DIFFERENT widths).
+      run in parallel, NOT a sequence of phases of DIFFERENT widths). Conversely, REVISE a plan
+      that leaves a DECLARED shardable axis (>~2 h serial on 1×) on a narrow GCP provision without
+      justification — the width-aware auto lane (#1121) makes `--gpus N` wide provisioning the
+      encouraged default; "GCP only had 1× intents" is no longer a valid reason.
 
     Plan-time scheduling / routing only, never a mid-run cost or disk gate. Not a REVISE when the
     plan declares the phase off-pod on the VM AND its footprint is ≤50 GB (or it streams without
