@@ -8602,7 +8602,14 @@ fast-pathed; it takes the ordinary `--rebase`.
 #931 (2026-07-04) merged a workflow-lint offender to `main`, breaking
 `tests/test_workflow_lint.py` on pristine trunk fleet-wide for most of a day
 (5 downstream sessions each burned 5-25 min classifying it as pre-existing).
-Gate the merge payload on the lint BEFORE anything lands:
+#1147 adds a mapped invariant-test leg to the same gate: GLOB_SCAN_TESTS-covered
+payloads (`scripts/issue*_*.py`, dispatcher scripts) previously landed with
+zero pytest on the experiment auto-merge path (Step 9c is
+code-change-kinds-only) — a channel through which #1144's thread-caps offenders
+accreted; sampled offenders also landed via direct-to-main
+free-analysis/analyzer commits, which this gate does NOT cover (see the Step
+9a-ter follow-up). Gate the merge payload on the lint + the mapped invariant
+tests BEFORE anything lands:
 
 - **Trigger (cheap; artifact-only merges skip).** Run the gate ONLY when the
   branch's own three-dot diff (`git -C "$WT" diff --name-only
@@ -8675,6 +8682,72 @@ Gate the merge payload on the lint BEFORE anything lands:
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
+    # MAPPED INVARIANT-TEST LEG (#1147). GLOB_SCAN_TESTS-covered payloads
+    # (scripts/issue*_*.py, dispatcher scripts) land via this gate with ZERO
+    # pytest on the experiment auto-merge path (Step 9c is code-change-kinds-
+    # only) — #1144: 34 thread-caps offenders accreted this way. Map the
+    # own-diff to its scanning tests via the selector's single-source map;
+    # empty map => leg skipped (no pytest run).
+    TG_RC=0; TG_BASE_RC=0; TG_CRASH=no
+    : > /tmp/issue-<N>-tg-new.txt
+    if ! uv run python "$REPO_ROOT/scripts/select_step9c_tests.py" \
+        --map-files /tmp/issue-<N>-own-diff.txt --repo-root "$WT" \
+        > /tmp/issue-<N>-tg-map.txt 2>/tmp/issue-<N>-tg-map-err.txt; then
+      TG_CRASH=yes   # helper failure: cannot classify the payload — fail CLOSED
+    fi
+    if [ "$TG_CRASH" = no ] && [ -s /tmp/issue-<N>-tg-map.txt ]; then
+      # matched payload paths (attribution grep list) + gated test list:
+      cut -f2 /tmp/issue-<N>-tg-map.txt | sort -u > /tmp/issue-<N>-tg-files.txt
+      mapfile -t TG_TESTS < <(cut -f1 /tmp/issue-<N>-tg-map.txt | sort -u)
+      # BASELINE leg — root copy on the payload-free main tree (each scan
+      # test derives its scan root from its own __file__, so the root copy
+      # scans the root tree). Only tests present on the baseline tree run
+      # there: a branch-NEW scan test has no baseline, so its gated hits are
+      # NEW by construction (correct — block).
+      mapfile -t TG_BASE_TESTS < <(uv run python \
+        "$REPO_ROOT/scripts/select_step9c_tests.py" \
+        --map-files /tmp/issue-<N>-own-diff.txt --repo-root "$REPO_ROOT" \
+        2>/dev/null | cut -f1 | sort -u)
+      if [ "${#TG_BASE_TESTS[@]}" -gt 0 ]; then
+        ( cd "$REPO_ROOT" && timeout --kill-after=30s 300s \
+          env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
+              NUMEXPR_NUM_THREADS=8 \
+          uv run pytest "${TG_BASE_TESTS[@]}" -q -p no:cacheprovider ) \
+          > /tmp/issue-<N>-tg-baseline.txt 2>&1 || TG_BASE_RC=$?
+      else
+        : > /tmp/issue-<N>-tg-baseline.txt
+      fi
+      # GATED leg — worktree copy on the payload-bearing branch-tip tree:
+      ( cd "$WT" && timeout --kill-after=30s 300s \
+        env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
+            NUMEXPR_NUM_THREADS=8 \
+        uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider ) \
+        > /tmp/issue-<N>-tg-gated.txt 2>&1 || TG_RC=$?
+      # rc 0 = green, 1 = test failures (attributable); ANY other rc
+      # (timeout 124, collection/internal/usage error 2-5) = crash-class.
+      if [ "$TG_RC" -gt 1 ] || [ "$TG_BASE_RC" -gt 1 ]; then TG_CRASH=yes; fi
+      # FILE-grain payload attribution: a scan test asserts per-file
+      # invariants and aggregates every offender into ONE red node, so
+      # node-level subtraction is degenerate (baseline-red node == gated-red
+      # node masks a NEW offender). Attribution = output lines naming a
+      # payload-matched path; line numbers blanked so main-vs-branch drift of
+      # the SAME pre-existing offense cannot fake a NEW line. (The third sed
+      # clause blanks test_subprocess_env_explicit.py's check-1
+      # `- <path>:<ln> (fn=...)` format.) pytest's own `E   assert ...` repr
+      # line is DROPPED: its ellipsis-truncated offender-list repr is
+      # unstable across trees (unrelated dirt in ONE tree changes it ->
+      # false NEW line on an innocent payload); every real offense also
+      # emits its dedicated per-file evidence line, which survives.
+      for leg in baseline gated; do
+        grep -F -f /tmp/issue-<N>-tg-files.txt "/tmp/issue-<N>-tg-$leg.txt" \
+          | grep -vE '^E +assert ' \
+          | sed -E 's/at line [0-9]+/at line N/g; s/:[0-9]+:/::/g; s/:[0-9]+([^0-9]|$)/:N\1/g' \
+          | sort -u \
+          > "/tmp/issue-<N>-tg-$leg-hits.txt" || true
+      done
+      comm -23 /tmp/issue-<N>-tg-gated-hits.txt \
+        /tmp/issue-<N>-tg-baseline-hits.txt > /tmp/issue-<N>-tg-new.txt
+    fi
     # Normalize failure lines: keep per-error `workflow_lint: <err>` lines,
     # DROP the PASS / `FAIL (N error(s))` summary lines (their COUNT changes
     # even when the failure identities match — a payload that fixes one
@@ -8705,12 +8778,13 @@ Gate the merge payload on the lint BEFORE anything lands:
     # one (rc=1 WITH lines) blocks only when payload-attributed (an
     # own-diff-named failure line OR a non-empty NEW set); rc=1 with lines
     # but none own-diff/NEW stays `pass` (pre-existing red — WARN).
-    if [ "$GATED_RC" -gt 1 ] || [ "$BASE_RC" -gt 1 ] \
+    if [ "$GATED_RC" -gt 1 ] || [ "$BASE_RC" -gt 1 ] || [ "$TG_CRASH" = "yes" ] \
        || { [ "$GATED_RC" -ne 0 ] && [ ! -s /tmp/issue-<N>-lint-gated-norm.txt ]; } \
        || { [ "$BASE_RC" -ne 0 ] && [ ! -s /tmp/issue-<N>-lint-baseline-norm.txt ]; }; then
       echo crash > /tmp/issue-<N>-lint-verdict.txt
-    elif [ "$GATED_RC" -ne 0 ] \
-       && { [ -s /tmp/issue-<N>-lint-owndiff.txt ] || [ -s /tmp/issue-<N>-lint-new.txt ]; }; then
+    elif { [ "$GATED_RC" -ne 0 ] \
+       && { [ -s /tmp/issue-<N>-lint-owndiff.txt ] || [ -s /tmp/issue-<N>-lint-new.txt ]; }; } \
+       || { [ "$TG_RC" -ne 0 ] && [ -s /tmp/issue-<N>-tg-new.txt ]; }; then
       echo block > /tmp/issue-<N>-lint-verdict.txt
     else
       echo pass > /tmp/issue-<N>-lint-verdict.txt
@@ -8731,6 +8805,46 @@ Gate the merge payload on the lint BEFORE anything lands:
   cat /tmp/issue-<N>-lint-verdict.txt   # line 1: pass | block | crash | skip-artifact-only; line 2: certified branch-tip sha
   ```
 
+- **Mapped invariant-test leg (#1147).** A second, trigger-gated leg of the
+  SAME gate: when the payload (the own-diff / additive list) matches any
+  `GLOB_SCAN_TESTS` glob, the executable block runs the MAPPED scan tests on
+  the payload-bearing tree and subtracts a payload-free baseline run. The
+  trigger is the helper map — `select_step9c_tests.py --map-files <list-file>
+  [--repo-root <tree>]` prints `scan_test<TAB>matched_path` pairs; empty
+  output = leg skipped entirely (zero pytest runs added). The helper is the
+  SINGLE SOURCE of the glob→test mapping — never hardcode the globs in this
+  file (the selector's drift pins in `tests/test_select_step9c_tests.py` keep
+  the map current, #895). Attribution is FILE-grain, not junit-node grain: a
+  scan test asserts per-file invariants and aggregates EVERY offender into
+  ONE red node, so node-level subtraction is degenerate (baseline-red node ==
+  gated-red node would mask a NEW offender — the same reason
+  `step9c_baseline.py compare` marks scan-set nodes scratch-ineligible). Hits
+  = pytest-output lines naming a payload-matched path, line numbers blanked
+  so main-vs-branch drift of the SAME pre-existing offense cannot fake a NEW
+  line, pytest's ellipsis-truncated `E   assert ...` repr line dropped (its
+  content is unstable across trees; every real offense also emits a dedicated
+  per-file evidence line); NEW = gated hits − baseline hits (`comm -23`,
+  `/tmp/issue-<N>-tg-new.txt`). Each pytest leg is bounded at 300 s
+  (`timeout --kill-after=30s`; measured basis ~12.6 s for both mapped tests,
+  2026-07-08) — a timeout / pytest rc>1 / helper failure on either leg is
+  crash-class: verdict `crash`, fail CLOSED, the same "re-run the gate ONCE →
+  `epm:merge-failed`" recovery as the lint legs (Verdict bullet case 3). On
+  form (iii) this leg is structurally DORMANT today — the surgical additive
+  pathspec set excludes `scripts/` / `src/`, so its trigger map is empty by
+  construction; it arms automatically if that set ever grows. Known residuals
+  (accepted, documented): (a) path-(i) test-VERSION drift — the gated leg
+  runs the branch-tip copy of the scan test, so a check added on `main` after
+  the branch forked is not enforced there (fail-safe direction; the same
+  residual as the lint's path (i)); (b) the baseline leg runs on the
+  always-dirty shared root — dirt biases toward PASS, never a false block: an
+  untracked concurrent-session file (including an untracked same-path draft
+  of the payload file at the root, which the directory scan picks up
+  tracked-or-not) can only ENLARGE the baseline hit set and mask, a residual
+  inherited from the lint gate's baseline leg; (c) a payload that DEEPENS an
+  offense in an already-red payload-touched file normalizes to the same
+  per-file line and is subtracted — a false-pass window that vanishes once
+  #1145 greens the baseline (the file is already post-freeze red; low harm).
+
 - **Verdict — payload-attributed via failure-LINE-SET subtraction; NEVER
   blocks an innocent merge on pre-existing red.** Exit codes alone are
   vacuous when `main` is already red for an unrelated reason; attribution
@@ -8747,7 +8861,13 @@ Gate the merge payload on the lint BEFORE anything lands:
   pass/skip verdict certifies ONLY while the CURRENT branch tip equals the
   certified sha, so any new commit since certification fails CLOSED too
   (re-run the gate) and a hand-written verdict without the correct sha is
-  useless (anti-self-attestation). The file is REMOVED only once it can no
+  useless (anti-self-attestation). The mapped invariant-test leg (#1147)
+  contributes into this SAME verdict file: `crash` on either test leg's
+  crash-class outcome (pytest rc>1 / timeout / helper failure), `block` on a
+  payload-attributed NEW test hit (`/tmp/issue-<N>-tg-new.txt` non-empty with
+  a red gated run); a gated-red-but-no-NEW-hit test outcome (pre-existing
+  trunk red) stays `pass`, and the `epm:merged` WARN note records the tg tail
+  alongside the lint tail. The file is REMOVED only once it can no
   longer certify anything: after a SUCCESSFUL `gh pr merge`
   (consume-on-merge-success), or in the block/crash/stale-sha branch (a
   fresh gate run regenerates it). A merge that fails for a NON-lint
@@ -8783,7 +8903,11 @@ Gate the merge payload on the lint BEFORE anything lands:
      worktree, re-run the gate ONCE; still crashing → the SAME
      `epm:merge-failed v1` handling as case 1. Never merge/push on `crash`.
 - **Baseline semantics per binding form (the baseline is ALWAYS a
-  payload-free tree).** (i) Safe case: gated = the WORKTREE copy
+  payload-free tree).** The mapped invariant-test legs (#1147) follow the
+  IDENTICAL per-form baseline placement as the lint legs — (i) gated = the
+  `$WT` copy on the branch-tip tree / baseline = the root copy; (ii) gated =
+  the post-merge worktree copy / baseline = the root copy; (iii) baseline
+  BEFORE the checkout, gated after, BOTH the root copy. (i) Safe case: gated = the WORKTREE copy
   (branch-tip tree); baseline = the repo-root copy (main tree, payload
   absent); bind immediately before `gh pr ready` / `gh pr merge`. Note:
   path-(i) lint-VERSION drift can also FALSE-BLOCK (a check retired/loosened
@@ -9180,6 +9304,30 @@ Decision tree:
       >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
   fi
+  # MAPPED INVARIANT-TEST LEG (#1147) — form (iii), DORMANT TODAY by
+  # construction: the additive pathspec set above excludes scripts/ and src/,
+  # so no additive payload can match a GLOB_SCAN_TESTS glob and the trigger
+  # map is empty. The leg exists as defense-in-depth should that pathspec set
+  # ever grow; it costs one ~1 s helper call per surgical landing. Sequencing
+  # mirrors the lint legs: TG BASELINE runs BEFORE the checkout (the payload
+  # lands in the ROOT tree — a post-checkout "baseline" would be a degenerate
+  # self-compare), TG GATED after; BOTH legs run the ROOT copy.
+  TG_RC=0; TG_BASE_RC=0; TG_CRASH=no
+  : > /tmp/issue-<N>-tg-new.txt
+  if ! uv run python "$REPO_ROOT/scripts/select_step9c_tests.py" \
+      --map-files /tmp/issue-<N>-additive-files.txt --repo-root "$REPO_ROOT" \
+      > /tmp/issue-<N>-tg-map.txt 2>/tmp/issue-<N>-tg-map-err.txt; then
+    TG_CRASH=yes   # helper failure: cannot classify the payload — fail CLOSED
+  fi
+  if [ "$TG_CRASH" = no ] && [ -s /tmp/issue-<N>-tg-map.txt ]; then
+    cut -f2 /tmp/issue-<N>-tg-map.txt | sort -u > /tmp/issue-<N>-tg-files.txt
+    mapfile -t TG_TESTS < <(cut -f1 /tmp/issue-<N>-tg-map.txt | sort -u)
+    ( cd "$REPO_ROOT" && timeout --kill-after=30s 300s \
+      env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
+          NUMEXPR_NUM_THREADS=8 \
+      uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider ) \
+      > /tmp/issue-<N>-tg-baseline.txt 2>&1 || TG_BASE_RC=$?
+  fi
   # `-C "$REPO_ROOT"` is the repo-root guard's designed deliberate-override
   # (#897): the hook's working-tree-revert detector would bounce the bare
   # `checkout <branch> -- <paths>` form; the `-C` names the tree explicitly.
@@ -9226,6 +9374,37 @@ Decision tree:
        && { [ -s /tmp/issue-<N>-lint-owndiff.txt ] || [ -s /tmp/issue-<N>-lint-new.txt ]; }; then
       GATE_VERDICT=block
     fi
+  fi
+  # TG GATED leg (#1147) — the root tree now carries the payload; same
+  # grep -> line-number-blank -> comm -23 subtraction as the shared gate's
+  # executable block (own-diff here = the additive-files list; structurally
+  # unreachable today, see the dormancy comment above the TG baseline leg).
+  if [ "$TG_CRASH" = no ] && [ -s /tmp/issue-<N>-tg-map.txt ]; then
+    ( cd "$REPO_ROOT" && timeout --kill-after=30s 300s \
+      env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
+          NUMEXPR_NUM_THREADS=8 \
+      uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider ) \
+      > /tmp/issue-<N>-tg-gated.txt 2>&1 || TG_RC=$?
+    if [ "$TG_RC" -gt 1 ] || [ "$TG_BASE_RC" -gt 1 ]; then TG_CRASH=yes; fi
+    for leg in baseline gated; do
+      grep -F -f /tmp/issue-<N>-tg-files.txt "/tmp/issue-<N>-tg-$leg.txt" \
+        | grep -vE '^E +assert ' \
+        | sed -E 's/at line [0-9]+/at line N/g; s/:[0-9]+:/::/g; s/:[0-9]+([^0-9]|$)/:N\1/g' \
+        | sort -u \
+        > "/tmp/issue-<N>-tg-$leg-hits.txt" || true
+    done
+    comm -23 /tmp/issue-<N>-tg-gated-hits.txt \
+      /tmp/issue-<N>-tg-baseline-hits.txt > /tmp/issue-<N>-tg-new.txt
+  fi
+  # Fold the TG verdict into the SAME GATE_VERDICT the stage/commit/push
+  # consumes below — crash-class first (fail CLOSED; never downgraded), then
+  # the payload-attributed block arm; block/crash reuse the existing cleanup
+  # + hard-stop path verbatim:
+  if [ "$TG_CRASH" = "yes" ]; then
+    GATE_VERDICT=crash
+  elif [ "$TG_RC" -ne 0 ] && [ -s /tmp/issue-<N>-tg-new.txt ] \
+     && [ "$GATE_VERDICT" != "crash" ]; then
+    GATE_VERDICT=block
   fi
   # HARD STOP: stage/commit/push run ONLY on a pass verdict; a block cleans
   # the payload back out of the shared root (index + working tree).

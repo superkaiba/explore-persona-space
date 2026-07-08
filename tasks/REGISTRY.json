@@ -1139,15 +1139,15 @@
     "1146": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1146",
-      "status": "running",
+      "path": "tasks/reviewing/1146",
+      "status": "reviewing",
       "title": "workflow-fix: extend thread-caps heavy-import predicate to transitively-heavy roots"
     },
     "1147": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1147",
-      "status": "running",
+      "path": "tasks/completed/1147",
+      "status": "completed",
       "title": "workflow-fix: Step-10d surgical checkout runs GLOB_SCAN_TESTS-mapped tests pre-landing"
     },
     "115": {
