@@ -1125,8 +1125,8 @@
     "1144": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1144",
-      "status": "reviewing",
+      "path": "tasks/completed/1144",
+      "status": "completed",
       "title": "Port issue-1090 stranded shared-src fixes to main (sft.py CVD pin, datagen mt500 + posonly panel, bare/ICL contexts)"
     },
     "1145": {
