@@ -1027,8 +1027,8 @@
     "1131": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1131",
-      "status": "planning",
+      "path": "tasks/approved/1131",
+      "status": "approved",
       "title": "daily-fix: /daily sweep checks retractions before filing"
     },
     "1132": {
