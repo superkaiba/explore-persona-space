@@ -1,0 +1,9 @@
+{
+  "cell": "s5_lora_generic",
+  "step": 10,
+  "rates": {
+    "trained": 0.205,
+    "base": 0.26
+  },
+  "n": 10
+}
