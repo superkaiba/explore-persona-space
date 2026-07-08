@@ -26,6 +26,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1112.md](https://github.com/superkaiba/explore-persona-space/blob/78e3287ba39c0ab935186780fb3bb9bf2441c895/docs/methodology/issue_1112.md) · [gist](https://gist.github.com/superkaiba/c901ac71c2191fa41dac213c6a850c85)
+
 ## Takeaways
 
 - At matched sycophancy install (judged rates 0.60–0.81), LoRA and full fine-tuning are spectrally indistinguishable: rank-k@90 difference −3 modes (95% CI −5 to +1); participation-ratio and top-share CIs include zero, leaning weakly toward more concentration under full fine-tuning (opposite the intruder prediction).
