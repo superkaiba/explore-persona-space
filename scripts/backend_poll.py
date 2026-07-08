@@ -2825,22 +2825,33 @@ def _runspec_from_gcp_handle(handle, issue):
     exclusion holds with NO placeholder substituted into the unused branch
     (MF2).
 
-    FAILS LOUD (raises ``ValueError``) on a pre-#659 handle that lacks the
-    workload command — it NEVER silently launches a blank RunPod job (the
-    §4.1.0 spec-threading is a HARD PREREQUISITE; the fact-checker confirmed
-    A7=WRONG, the pre-#659 ``extra`` did not carry it).
+    FAILS LOUD (raises ``ValueError``) on a handle that carries NEITHER a
+    workload command NOR hydra args — it NEVER silently launches a blank
+    RunPod job (the §4.1.0 spec-threading is a HARD PREREQUISITE; the
+    fact-checker confirmed A7=WRONG, the pre-#659 ``extra`` did not carry
+    it). The both-empty VALUE check (#1122, matching the RunPod sibling
+    :func:`_runspec_from_runpod_handle`) replaced the key-presence check:
+    the demonstrated production shape (incident #1090) was an exit-75
+    same-command-rerun RECONNECT that rewrote the sidecar without the
+    launch-only workload extras — fixed at the write site by #1122
+    (``gcp.reconnect_or_none`` threading + the ``issue_dispatch``
+    carry-forward) — and keys-present-but-both-empty now also refuses
+    loudly instead of building a blank RunSpec.
     """
     from explore_persona_space.backends.base import RunSpec
 
     extra = handle.extra or {}
-    if "workload_cmd" not in extra or "hydra_args" not in extra:
+    workload_cmd = extra.get("workload_cmd", "") or ""  # str, verbatim (MF1)
+    hydra_args = tuple(extra.get("hydra_args") or ())  # list/tuple -> tuple, verbatim
+    if not workload_cmd and not hydra_args:
         raise ValueError(
-            f"GCP handle for issue {issue} lacks workload_cmd/hydra_args in extra "
-            f"(pre-#659 handle?); cannot reconstruct a RunSpec for the RunPod failover. "
-            f"Refusing to launch a blank RunPod job."
+            f"GCP handle for issue {issue} carries no workload_cmd/hydra_args in extra "
+            f"(keys present: {sorted(extra)}; reconnected={extra.get('reconnected')!r}). "
+            f"Most likely an exit-75 same-command-rerun RECONNECT rewrote the handle "
+            f"sidecar without the launch-only workload extras (#1122 — fixed at the "
+            f"write site as of that task) — or a pre-#659 handle. Cannot reconstruct "
+            f"a RunSpec for the RunPod failover; refusing to launch a blank RunPod job."
         )
-    workload_cmd = extra["workload_cmd"]  # str, verbatim (MF1)
-    hydra_args = tuple(extra["hydra_args"])  # list/tuple -> tuple, verbatim
     # #909: thread repo_branch through so the RunPod re-execution syncs the
     # ISSUE branch, not `main` (per-issue dispatch scripts live on issue
     # branches). A legacy handle without the key still reconstructs.
