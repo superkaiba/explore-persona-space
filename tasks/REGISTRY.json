@@ -712,7 +712,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1090",
       "status": "followups_running",
-      "title": "The training context, not the contrastive-negative panel, governs where implanted content behaviors express and leak at matched install (MODERATE confidence)"
+      "title": "The training context, not the contrastive-negative panel, gates where implanted content behaviors express on-policy (MODERATE confidence)"
     },
     "1091": {
       "has_clean_result": false,

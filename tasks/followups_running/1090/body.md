@@ -1,6 +1,6 @@
 ---
-title: The training context, not the contrastive-negative panel, governs where implanted
-  content behaviors express and leak at matched install (MODERATE confidence)
+title: The training context, not the contrastive-negative panel, gates where implanted
+  content behaviors express on-policy (MODERATE confidence)
 kind: experiment
 tags:
 - from-1074
