@@ -49,10 +49,27 @@ torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "8")))
 SUMMARY_KINDS = ("prefix_end", "context_end", "t1", "t2", "t3")
 INPUT_ARMS = ("prefix_end", "context_end")
 TARGETS = ("t1", "t2", "t3")
-FOLD_SEED = 42
+# Plan section 10 registers ONE fit seed = 0 ("Seeds | build 42, generation 42, fit 0");
+# the fold partition and the stochastic reads (--seed) both key off it (code-review v10
+# concern p6-launch-defaults-vs-plan-folds-targets-seed; was 42 pre-launch, never run).
+FOLD_SEED = 0
 FROZEN_NULL_LAYERS = {14, 18, 19}
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 DEFAULT_RB_REV = "037fcbb"
+# Dynamics summary kinds loaded per (cell, layer) by _compute_dynamics_reads; the P6
+# wrapper imports this for its staging selectors (single source of truth, no clone drift).
+DYNAMICS_KINDS = (
+    "context_k",
+    "s_k",
+    "answer_k_t1",
+    "answer_k_t2",
+    "answer_k_t3",
+    "u1",
+    "u2",
+    "u3",
+)
+# Cells with a B0 post-generation r_B pooling artifact (own-text generation cells).
+B0_CELLS = ("cell_inst_own", "cell_pre_own")
 CELL_MODEL_TYPE = {
     "cell_inst_own": "instruct",
     "cell_pre_insttext": "pretrained",
@@ -131,12 +148,18 @@ def _sorted_shards(paths: Iterable[Path]) -> list[Path]:
     return ordered
 
 
+def _summary_shard_paths(summaries_dir: Path, cell_dir: str, kind: str, layer: int) -> list[Path]:
+    """Resolve one summary kind's shard set (sharded else unsharded); [] when absent."""
+    paths = _sorted_shards((summaries_dir / cell_dir).glob(f"{kind}_L{layer:02d}_shard*.npy"))
+    if not paths:
+        paths = sorted((summaries_dir / cell_dir).glob(f"{kind}_L{layer:02d}.npy"))
+    return paths
+
+
 def _load_summary(
     summaries_dir: Path, cell: str, kind: str, layer: int
 ) -> tuple[np.ndarray, list[Path]]:
-    paths = _sorted_shards((summaries_dir / cell).glob(f"{kind}_L{layer:02d}_shard*.npy"))
-    if not paths:
-        paths = sorted((summaries_dir / cell).glob(f"{kind}_L{layer:02d}.npy"))
+    paths = _summary_shard_paths(summaries_dir, cell, kind, layer)
     if not paths:
         raise FileNotFoundError(f"no summary shards for {cell}/{kind}/L{layer:02d}")
     arrays = [np.load(p).astype(np.float64) for p in paths]
@@ -592,11 +615,17 @@ def _load_judge_score_rows(path: Path | None) -> list[dict]:
     return _jsonl(path)
 
 
-def _read_index_files(root: Path, stem: str) -> list[dict]:
+def _index_shard_paths(root: Path, stem: str) -> list[Path]:
+    """Resolve one row-index stem's file set (sharded else unsharded); [] when absent."""
     paths = _sorted_shards(root.glob(f"{stem}_shard*.jsonl"))
     if not paths:
         path = root / f"{stem}.jsonl"
         paths = [path] if path.exists() else []
+    return paths
+
+
+def _read_index_files(root: Path, stem: str) -> list[dict]:
+    paths = _index_shard_paths(root, stem)
     if not paths:
         raise FileNotFoundError(f"missing index files {root}/{stem}[_shard*.jsonl]")
     rows: list[dict] = []
@@ -629,14 +658,52 @@ def _bare_X_for_unit(
     return bare_arr[[q_to_idx[str(row.get("query_id"))] for row in unit_rows]]
 
 
-def _load_b0_pool(summaries_dir: Path, cell: str) -> np.ndarray:
+def _b0_pool_paths(summaries_dir: Path, cell: str) -> list[Path]:
+    """Resolve one cell's B0 pool shard set (sharded else unsharded); [] when absent."""
     root = summaries_dir / "b0_rB_pool"
     paths = _sorted_shards(root.glob(f"{cell}_shard*.npy"))
     if not paths:
         paths = sorted(root.glob(f"{cell}.npy"))
+    return paths
+
+
+def _load_b0_pool(summaries_dir: Path, cell: str) -> np.ndarray:
+    paths = _b0_pool_paths(summaries_dir, cell)
     if not paths:
+        root = summaries_dir / "b0_rB_pool"
         raise FileNotFoundError(f"missing B0 pool artifact for {cell}: {root}/{cell}*.npy")
     return np.concatenate([np.load(path).astype(np.float64) for path in paths], axis=0)
+
+
+def _unit_aux_input_paths(summaries_dir: Path, cell: str, layer: int) -> list[Path]:
+    """Non-x/y input files a (cell, layer) unit's reads consume, for the checkpoint fingerprint.
+
+    Composes the SAME path resolvers the loaders use: dynamics shards + row indexes
+    (_compute_dynamics_reads), bare c_q_bare + row_index (_bare_X_for_unit via
+    _load_bare_rows), and the cell's B0 pool (_load_b0_pool; B0_CELLS only). These
+    are output-affecting (D0-D5, stitch/bare, B0 reads live inside the unit
+    checkpoints), so they MUST enter the fingerprint alongside the x/y shards: the
+    P6 wrapper stages files with content-derived mtimes precisely so fingerprints
+    survive re-staging, and omitting these paths would let a Hub re-upload touching
+    ONLY dynamics/bare/b0 content wrong-skip stale checkpoints (#1092 code-review
+    v10 concern p6-unit-fp-omits-nonxy-input-content). Absent files contribute
+    nothing (the compute path fails loud on genuinely missing inputs); a later
+    appearance changes the fingerprint, so the fail direction is recompute,
+    never wrong-skip.
+    """
+    model_type = CELL_MODEL_TYPE.get(cell)
+    if model_type is None:
+        raise ValueError(f"cannot infer model type for cell {cell}")
+    paths: list[Path] = []
+    dyn_root = summaries_dir / f"dynamics_{model_type}"
+    for kind in DYNAMICS_KINDS:
+        paths.extend(_summary_shard_paths(summaries_dir, f"dynamics_{model_type}", kind, layer))
+        paths.extend(_index_shard_paths(dyn_root, f"row_index_{kind}"))
+    paths.extend(_summary_shard_paths(summaries_dir, f"bare_{model_type}", "c_q_bare", layer))
+    paths.extend(_index_shard_paths(summaries_dir / f"bare_{model_type}", "row_index"))
+    if cell in B0_CELLS:
+        paths.extend(_b0_pool_paths(summaries_dir, cell))
+    return paths
 
 
 def _load_rb_directions(args: argparse.Namespace) -> tuple[np.ndarray, list[str]]:
@@ -766,6 +833,9 @@ def _compute_dynamics_reads(  # noqa: C901
     user_kinds = ("u1", "u2", "u3")
     source_kinds = ("context_k", "s_k")
     kinds = (*source_kinds, *answer_kinds, *user_kinds)
+    # DYNAMICS_KINDS is the module-level source of truth (the wrapper's staging
+    # selectors + _unit_aux_input_paths key off it); fail loud on drift.
+    assert set(kinds) == set(DYNAMICS_KINDS), (kinds, DYNAMICS_KINDS)
     arrays: dict[str, np.ndarray] = {}
     indices: dict[str, dict[tuple[str, int], int]] = {}
     index_rows_by_kind: dict[str, list[dict]] = {}
@@ -1714,14 +1784,20 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
         if args.judge_scores is not None
         else None
     )
+    # The corpus manifest is an output-affecting input too (fold groups, strata,
+    # anova shares all derive from its rows): content-hash it into the config.
+    corpus_manifest_sha = hashlib.sha256(
+        (args.corpus_dir / "manifest.jsonl").read_bytes()
+    ).hexdigest()[:16]
     rb_directions, trait_names = _load_rb_directions(args)
     b0_pools: dict[str, np.ndarray] = {}
 
     units: list[dict] = []
     all_input_paths: list[Path] = []
     dynamics_cache: dict[tuple[str, int], dict] = {}
+    aux_paths_cache: dict[tuple[str, int], list[Path]] = {}
     for cell in cells:
-        if cell in {"cell_inst_own", "cell_pre_own"}:
+        if cell in B0_CELLS:
             try:
                 b0_pools[cell] = _load_b0_pool(summaries_dir, cell)
             except FileNotFoundError:
@@ -1741,6 +1817,11 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
                 x_by_arm[arm_name], paths = _load_summary(summaries_dir, cell, arm_name, layer)
                 all_input_paths.extend(paths)
                 x_paths_by_arm[arm_name] = paths
+            aux_fp_paths = aux_paths_cache.get((cell, layer))
+            if aux_fp_paths is None:
+                aux_fp_paths = _unit_aux_input_paths(summaries_dir, cell, layer)
+                aux_paths_cache[(cell, layer)] = aux_fp_paths
+                all_input_paths.extend(aux_fp_paths)
             for arm in arms:
                 X = x_by_arm[arm]
                 n0 = min(X.shape[0], Y_stacked.shape[0], len(rows))
@@ -1794,12 +1875,28 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
                             "n_folds": args.n_folds,
                             "group_key": args.group_key,
                             "seed": args.seed,
+                            "fold_seed": FOLD_SEED,
                             "n_null_draws": unit_null_draws,
                             "matched_n_draws": args.matched_n_draws,
                             "judge_scores_sha256": judge_scores_sha,
+                            # Remaining output-affecting inputs/knobs (code-review v10
+                            # bug-class sweep: every engine input absent from the unit fp).
+                            "corpus_manifest_sha256": corpus_manifest_sha,
+                            "rb_rev": args.rb_rev,
+                            "rb_dir": str(args.rb_dir) if args.rb_dir is not None else None,
+                            "hidden_dim": args.hidden_dim,
+                            "skip_mlp_companion": bool(args.skip_mlp_companion),
+                            "mlp": {
+                                "max_epochs": args.mlp_max_epochs,
+                                "hidden": args.mlp_hidden,
+                                "target_dim": args.mlp_target_dim,
+                            },
                         }
                         x_fp_paths = [path for paths in x_paths_by_arm.values() for path in paths]
-                        fp = _fingerprint(y_paths + x_fp_paths, config)
+                        # aux_fp_paths: dynamics/bare/b0 inputs the unit's reads consume
+                        # (see _unit_aux_input_paths) — a content change in ANY consumed
+                        # input must re-key the checkpoint, never wrong-skip.
+                        fp = _fingerprint(y_paths + x_fp_paths + aux_fp_paths, config)
                         ckpt = (
                             ckpt_dir / f"{cell}_{arm}_fit{fit_arm}_L{layer:02d}_{basis}_{fp}.json"
                         )
@@ -1974,15 +2071,19 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--n-layers", type=int, default=28)
     p.add_argument("--hidden-dim", type=int, default=3584)
     p.add_argument("--arms", default="prefix_end,context_end")
-    p.add_argument("--targets", default="t1")
+    # Plan section 4.5 sensitivity columns: every headline re-read at t2/t3.
+    p.add_argument("--targets", default="t1,t2,t3")
     p.add_argument("--target-bases", default="ambient,pca48")
     p.add_argument("--fit-arms", default="A,B")
     p.add_argument("--group-key", default="prefix_id")
-    p.add_argument("--n-folds", type=int, default=3)
+    # Plan-registered fit config defaults (code-review v10 concern
+    # p6-launch-defaults-vs-plan-folds-targets-seed): plan section 6 registers
+    # 6-fold grouped CV holding out prefixes (primary); section 10 registers fit seed 0.
+    p.add_argument("--n-folds", type=int, default=6)
     p.add_argument("--n-null-draws", type=int, default=200)
     p.add_argument("--band-null-draws", type=int, default=20)
     p.add_argument("--matched-n-draws", type=int, default=10)
-    p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--seed", type=int, default=0)
     p.add_argument("--judge-scores", type=Path, default=None)
     p.add_argument("--rb-dir", type=Path, default=None)
     p.add_argument("--rb-rev", default=DEFAULT_RB_REV)

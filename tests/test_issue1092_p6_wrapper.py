@@ -30,10 +30,11 @@ CELLS = ("cell_inst_own", "cell_pre_own")
 PREFIX = p6.DEFAULT_HF_PREFIX
 QUERIES = tuple(f"q{i}" for i in range(4))
 
-# tiny knobs threaded to the fit grid in every run below
+# tiny knobs threaded to the fit grid in every run below (--n-folds is now a
+# first-class wrapper flag pinning the plan-registered fold count, so the tiny
+# override goes through the wrapper arg, not --fit-grid-arg pass-through)
 TINY_FIT_GRID_EXTRAS = (
     "--fit-grid-arg=--skip-mlp-companion",
-    "--fit-grid-arg=--n-folds=2",
     "--fit-grid-arg=--matched-n-draws=2",
     "--fit-grid-arg=--hidden-dim=8",
 )
@@ -138,6 +139,8 @@ def _args(stage_dir: Path, out_dir: Path, hub_root: Path, corpus: Path, rb: Path
             "t1",
             "--target-bases",
             "ambient",
+            "--n-folds",
+            "2",
             "--n-null-draws",
             "4",
             "--band-null-draws",
@@ -204,6 +207,12 @@ def test_e2e_layer_manifests_checkpoints_and_deletion(e2e):
             assert len(rec["local_sha256"]) == 64
             assert Path(rec["staged_to"]).resolve().is_relative_to(stage.resolve())
         assert manifest["registered_inputs"]["missing"] == [p6.EXPECTED_MISSING_WITHOUT_JUDGE]
+        # statics are part of the recorded staging identity (wrong-skip guard)
+        assert {f["hub_path"].split("/")[-2] for f in manifest["static_files"]} >= {"b0_rB_pool"}
+        # plan-registered fit config + lambda-grid deviation ride wrapper_config
+        cfg = manifest["wrapper_config"]
+        assert cfg["n_folds"] == 2 and cfg["fit_seed"] == 0
+        assert cfg["lambda_grid_deviation"]["status"] == "deviation-recorded"
         for cell in CELLS:
             for arm in ("prefix_end", "context_end"):
                 for fit_arm in ("A", "B"):
@@ -265,7 +274,9 @@ def test_pilot_gate_abort_exits_nonzero(shared_fixture, tmp_path):
     assert "cpu-bigmem --min-ram-gb 32" in pilot["abort_predicate_result"]["message"]
     # an aborted pilot is never skippable on a re-run
     cfg = json.loads((tmp_path / "out" / "pilot.json").read_text())["wrapper_config"]
-    assert p6.pilot_skippable(tmp_path / "out", cfg, args) is False
+    assert (
+        p6.pilot_skippable(tmp_path / "out", cfg, args, n_blocks_frozen=2, n_blocks_band=2) is False
+    )
 
 
 def test_fit_grid_nonzero_exit_fails_loud(shared_fixture, tmp_path):
@@ -385,10 +396,8 @@ def test_pilot_layer_must_be_frozen(shared_fixture, tmp_path):
         p6.run_p6(args)
 
 
-def test_fit_grid_checkpoint_fingerprint_includes_judge_identity(tmp_path, monkeypatch):
-    """Regression pin (fails pre-fix): judge scores are output-affecting (behavior
-    joins live inside the unit checkpoints), so a --judge-scores re-run must NOT
-    fingerprint-match judge-less checkpoints and silently skip the joins."""
+def _tiny_engine_setup(tmp_path: Path) -> tuple[list[str], Path, Path]:
+    """Shared tiny-real direct-engine fixture: returns (base_argv, out_dir, summaries)."""
     summaries = _write_store(tmp_path / "summaries", cells=("cell_inst_own",), layers=(14,))
     corpus = _write_corpus(tmp_path / "corpus")
     rb = _write_rb(tmp_path / "rb")
@@ -424,6 +433,14 @@ def test_fit_grid_checkpoint_fingerprint_includes_judge_identity(tmp_path, monke
         str(rb),
         "--allow-missing-registered-reads",
     ]
+    return base_argv, out, summaries
+
+
+def test_fit_grid_checkpoint_fingerprint_includes_judge_identity(tmp_path, monkeypatch):
+    """Regression pin (fails pre-fix): judge scores are output-affecting (behavior
+    joins live inside the unit checkpoints), so a --judge-scores re-run must NOT
+    fingerprint-match judge-less checkpoints and silently skip the joins."""
+    base_argv, out, _summaries = _tiny_engine_setup(tmp_path)
     monkeypatch.setattr(sys, "argv", list(base_argv))
     fit_grid.run(fit_grid.parse_args())
     before = {p.name for p in (out / "checkpoints").glob("*.json")}
@@ -439,3 +456,106 @@ def test_fit_grid_checkpoint_fingerprint_includes_judge_identity(tmp_path, monke
     assert len(new) == len(before), (
         "judge-bearing re-run must recompute every unit under a judge-keyed fingerprint"
     )
+
+
+def test_fit_grid_checkpoint_fingerprint_includes_nonxy_inputs(tmp_path, monkeypatch):
+    """Regression pin (fails pre-fix): dynamics/bare/b0 inputs are output-affecting
+    (D0-D5, stitch, B0 reads live inside the unit checkpoints); the wrapper's
+    content-derived staging mtimes deliberately preserve fingerprints across
+    staging cycles, so a Hub re-upload touching ONLY a dynamics shard must re-key
+    every unit checkpoint rather than wrong-skip stale ones (code-review v10
+    concern p6-unit-fp-omits-nonxy-input-content)."""
+    base_argv, out, summaries = _tiny_engine_setup(tmp_path)
+    monkeypatch.setattr(sys, "argv", list(base_argv))
+    fit_grid.run(fit_grid.parse_args())
+    before = {p.name for p in (out / "checkpoints").glob("*.json")}
+    assert before
+    # unchanged inputs re-run: every unit resumes, zero new checkpoints
+    fit_grid.run(fit_grid.parse_args())
+    assert {p.name for p in (out / "checkpoints").glob("*.json")} == before
+    # mutate ONE dynamics shard's content (same shape, same name)
+    dyn = summaries / "dynamics_instruct" / "context_k_L14.npy"
+    np.save(dyn, np.load(dyn) + 1.0)
+    fit_grid.run(fit_grid.parse_args())
+    after = {p.name for p in (out / "checkpoints").glob("*.json")}
+    assert len(after - before) == len(before), (
+        "dynamics-only content change must re-key every unit checkpoint"
+    )
+
+
+def test_fit_grid_argv_carries_plan_registered_fit_config(tmp_path):
+    """Review v10 concern p6-launch-defaults-vs-plan-folds-targets-seed: the default
+    wrapper launch must compose the plan-registered fit config into EVERY fit-grid
+    invocation (plan section 6: grouped 6-fold by prefix; section 10: fit seed 0;
+    section 4.5: t1/t2/t3 sensitivity targets) — and pass-through may not clobber
+    the registered flags."""
+    args = p6.parse_args(["--corpus-dir", str(tmp_path)])
+    argv = p6.fit_grid_argv(args, ["cell_inst_own"], "14", tmp_path / "out", 7)
+    assert argv[argv.index("--n-folds") + 1] == "6"
+    assert argv[argv.index("--seed") + 1] == "0"
+    assert argv[argv.index("--targets") + 1] == "t1,t2,t3"
+    for flag in ("--n-folds", "--seed"):
+        bad = p6.parse_args(["--corpus-dir", str(tmp_path), f"--fit-grid-arg={flag}=3"])
+        with pytest.raises(ValueError, match="wrapper-owned"):
+            p6.fit_grid_argv(bad, ["cell_inst_own"], "14", tmp_path / "out", 7)
+
+
+def test_layer_already_complete_keys_static_files(tmp_path):
+    """A statics-only Hub re-upload (b0 pool / row index) must fall through the
+    wrapper's layer-complete fast-path to the engine's fingerprint predicate."""
+    ckpt_dir = tmp_path / "ckpts"
+    ckpt_dir.mkdir()
+    (ckpt_dir / "c.json").write_text("{}")
+    layer_file = p6.HubFile("pfx/cell_inst_own/t1_L14.npy", 3, "a" * 64)
+    static_file = p6.HubFile("pfx/b0_rB_pool/cell_inst_own.npy", 5, "b" * 64)
+    manifest = {
+        "status": "complete",
+        "wrapper_config": {"config_sha256": "cfg"},
+        "files": [{"hub_path": layer_file.path, "size": 3, "hub_identity": "a" * 64}],
+        "static_files": [{"hub_path": static_file.path, "size": 5, "hub_identity": "b" * 64}],
+        "checkpoints": ["c.json"],
+    }
+    mp = tmp_path / "m.json"
+    mp.write_text(json.dumps(manifest))
+    cfg = {"config_sha256": "cfg"}
+    assert p6.layer_already_complete(mp, cfg, [layer_file, static_file], ckpt_dir) is True
+    changed_static = p6.HubFile(static_file.path, 5, "c" * 64)  # b0-only Hub re-upload
+    assert p6.layer_already_complete(mp, cfg, [layer_file, changed_static], ckpt_dir) is False
+
+
+def test_hub_retry_bounded(monkeypatch):
+    """Transient 429/5xx retries with bounded backoff; non-transient raises at once."""
+    import requests
+    from huggingface_hub.errors import HfHubHTTPError
+
+    sleeps: list[float] = []
+    monkeypatch.setattr(p6.time, "sleep", lambda s: sleeps.append(s))
+    resp = requests.Response()
+    resp.status_code = 503
+    calls = {"n": 0}
+
+    def flaky():
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise HfHubHTTPError("boom", response=resp)
+        return "ok"
+
+    assert p6._hub_retry(flaky, what="probe") == "ok"
+    assert calls["n"] == 3 and sleeps == [2.0, 8.0]
+
+    resp404 = requests.Response()
+    resp404.status_code = 404
+
+    def notfound():
+        raise HfHubHTTPError("nope", response=resp404)
+
+    with pytest.raises(HfHubHTTPError):
+        p6._hub_retry(notfound, what="probe")
+    assert sleeps == [2.0, 8.0]  # non-transient never slept
+
+    def always_503():
+        raise HfHubHTTPError("busy", response=resp)
+
+    with pytest.raises(HfHubHTTPError):
+        p6._hub_retry(always_503, what="probe")
+    assert sleeps == [2.0, 8.0, 2.0, 8.0, 30.0]  # bounded: 4 attempts then raise

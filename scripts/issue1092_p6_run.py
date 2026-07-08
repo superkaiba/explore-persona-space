@@ -23,6 +23,15 @@ to re-stage + the fit grid's own fingerprint predicate. Staged files get a
 content-derived mtime so issue1092_fit_grid._fingerprint (name+size+mtime_ns)
 reproduces across staging cycles.
 
+The plan-registered fit config is the WRAPPER DEFAULT and is threaded explicitly
+into every fit-grid invocation, pilot included: grouped 6-fold CV by prefix
+(--n-folds 6, plan section 6), fit seed 0 (--fit-seed -> engine --seed, plan
+section 10), targets t1,t2,t3 (plan section 4.5 sensitivity columns). Engine
+defaults are unreachable without an explicit per-flag override; --fit-grid-arg
+may not clobber --n-folds/--seed (wrapper-owned). The engine-internal 6-value
+lambda grid vs the plan's registered 7-value grid is a recorded deviation
+(LAMBDA_GRID_DEVIATION, carried in wrapper_config).
+
 Production usage (VM, detached via the canonical setsid/choom recipe; thread
 caps supplied at launch):
 
@@ -33,7 +42,8 @@ caps supplied at launch):
       --pilot-only
 
 then, after the pilot gate passes, the same command WITHOUT --pilot-only (the
-recorded pilot pass is reused; the layer loop runs 0-27).
+recorded pilot pass is reused; the layer loop runs 0-27), plus
+--judge-scores <path> on the definitive judge-bearing run.
 """
 
 from __future__ import annotations
@@ -61,10 +71,13 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from issue1092_fit_grid import (  # noqa: E402
+    B0_CELLS,
     CELL_MODEL_TYPE,
     DEFAULT_RB_REV,
+    DYNAMICS_KINDS,
     FROZEN_NULL_LAYERS,
     HF_DATA_REPO,
+    RIDGE_LAMBDAS,
     _parse_csv,
     _parse_layers,
 )
@@ -72,25 +85,29 @@ from issue1092_fit_grid import (  # noqa: E402
 FIT_GRID_SCRIPT = PROJECT_ROOT / "scripts" / "issue1092_fit_grid.py"
 DEFAULT_HF_PREFIX = "issue1092_realistic_crossing/analysis_tensors/summaries"
 DEFAULT_CELLS = tuple(CELL_MODEL_TYPE)
-B0_CELLS = ("cell_inst_own", "cell_pre_own")
-# Mirrors the kinds issue1092_fit_grid._compute_dynamics_reads loads per (cell, layer).
-DYNAMICS_KINDS = (
-    "context_k",
-    "s_k",
-    "answer_k_t1",
-    "answer_k_t2",
-    "answer_k_t3",
-    "u1",
-    "u2",
-    "u3",
-)
 EXPECTED_MISSING_WITHOUT_JUDGE = "--judge-scores for B1/B2/B3 behavior reads"
+# Plan section 10 registers a 7-value log-spaced lambda grid {1e-2..1e3}; the realized
+# grid is the parents' 6-value RIDGE_LAMBDAS living inside issue658_fit_predictors /
+# issue923_fit_decomposition (press_fit_predict) — engine-internal, not launch-threadable.
+# Recorded as a plan deviation per code-review v10 (the plan's own lambda-sensitivity
+# columns + df(lambda) reporting make headlines grid-robust; plan section 11 notes the
+# grids share endpoints). Rides wrapper_config into every manifest / pilot / summary.
+LAMBDA_GRID_DEVIATION = {
+    "plan_registered": "7-value log-spaced {1e-2..1e3} (plan section 10, Fits row)",
+    "realized": [float(x) for x in RIDGE_LAMBDAS],
+    "status": "deviation-recorded",
+    "reason": (
+        "engine-internal grid (issue658 RIDGE_LAMBDAS via issue923 press_fit_predict); "
+        "lambda-sensitivity columns + df(lambda) reporting keep headlines grid-robust"
+    ),
+}
 # The wrapper runs one sequential fit-grid subprocess at a time and adds no
 # fan-out of its own (thread caps come from the launch env; plan section 9).
 EFFECTIVE_PARALLELISM = 1
 ESCAPE_LANE = "cpu-bigmem --min-ram-gb 32"
 # Fit-grid flags the wrapper owns; passing them through --fit-grid-arg would
-# silently clobber the wrapper's own staging/slicing contract.
+# silently clobber the wrapper's own staging/slicing contract (or, for --n-folds /
+# --seed, the plan-registered fit config the wrapper pins by default).
 WRAPPER_OWNED_FIT_GRID_FLAGS = frozenset(
     {
         "--summaries-dir",
@@ -102,6 +119,8 @@ WRAPPER_OWNED_FIT_GRID_FLAGS = frozenset(
         "--targets",
         "--fit-arms",
         "--target-bases",
+        "--n-folds",
+        "--seed",
         "--n-null-draws",
         "--band-null-draws",
         "--judge-scores",
@@ -121,6 +140,39 @@ class HubFile:
     hub_identity: str  # LFS sha256 (64-hex) when available, else git blob id, else ""
 
 
+# Transient HTTP statuses worth retrying on the 18-27 h staging loop (429/5xx).
+_HUB_TRANSIENT_STATUSES = frozenset({429, 500, 502, 503, 504})
+_HUB_RETRY_DELAYS_S = (2.0, 8.0, 30.0)
+
+
+def _hub_retry(fn, *, what: str):
+    """Bounded retry for transient Hub errors on a long detached staging loop.
+
+    len(_HUB_RETRY_DELAYS_S)+1 attempts with 2/8/30 s backoff, ONLY for
+    429/5xx HfHubHTTPError and connection/timeout errors; everything else
+    raises immediately — fail-loud stays the contract, this just keeps one
+    mid-loop blip from crashing an 18-27 h run (code-review v10 Minor 5).
+    """
+    import requests
+    from huggingface_hub.errors import HfHubHTTPError
+
+    for attempt in range(len(_HUB_RETRY_DELAYS_S) + 1):
+        try:
+            return fn()
+        except HfHubHTTPError as err:
+            status = getattr(getattr(err, "response", None), "status_code", None)
+            if attempt >= len(_HUB_RETRY_DELAYS_S) or status not in _HUB_TRANSIENT_STATUSES:
+                raise
+            delay = _HUB_RETRY_DELAYS_S[attempt]
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt >= len(_HUB_RETRY_DELAYS_S):
+                raise
+            delay = _HUB_RETRY_DELAYS_S[attempt]
+        print(f"[p6] hub {what} transient error; retry in {delay:.0f}s", flush=True)
+        time.sleep(delay)
+    raise AssertionError("unreachable")  # loop always returns or raises
+
+
 class HfHubIO:
     """Scoped Hub staging IO: list_repo_tree + per-file hf_hub_download.
 
@@ -138,19 +190,29 @@ class HfHubIO:
         """Return the commit sha the revision ref resolves to (recorded in manifests)."""
         from huggingface_hub import HfApi
 
-        info = HfApi().repo_info(self.repo_id, repo_type=self.repo_type, revision=self.revision)
+        info = _hub_retry(
+            lambda: HfApi().repo_info(
+                self.repo_id, repo_type=self.repo_type, revision=self.revision
+            ),
+            what="repo_info",
+        )
         return str(info.sha)
 
     def list_files(self, prefix: str) -> list[HubFile]:
         """Scoped recursive listing under prefix; raises when the listing is empty."""
         from huggingface_hub import HfApi
 
-        entries = HfApi().list_repo_tree(
-            self.repo_id,
-            repo_type=self.repo_type,
-            revision=self.revision,
-            path_in_repo=prefix,
-            recursive=True,
+        entries = _hub_retry(
+            lambda: list(
+                HfApi().list_repo_tree(
+                    self.repo_id,
+                    repo_type=self.repo_type,
+                    revision=self.revision,
+                    path_in_repo=prefix,
+                    recursive=True,
+                )
+            ),
+            what="list_repo_tree",
         )
         out: list[HubFile] = []
         for entry in entries:
@@ -177,12 +239,15 @@ class HfHubIO:
 
         target.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=target.parent, prefix=".p6dl-") as td:
-            local = hf_hub_download(
-                repo_id=self.repo_id,
-                repo_type=self.repo_type,
-                revision=self.revision,
-                filename=relpath,
-                local_dir=td,
+            local = _hub_retry(
+                lambda: hf_hub_download(
+                    repo_id=self.repo_id,
+                    repo_type=self.repo_type,
+                    revision=self.revision,
+                    filename=relpath,
+                    local_dir=td,
+                ),
+                what=f"download {relpath}",
             )
             os.replace(local, target)
 
@@ -378,11 +443,19 @@ def select_static_files(
 
 
 def stage_file(hub, entry: HubFile, hf_prefix: str, stage_dir: Path) -> dict:
-    """Stage one Hub file to stage_dir, sha-verified, with content-derived mtime."""
+    """Stage one Hub file to stage_dir, sha-verified, with content-derived mtime.
+
+    Verified reuse of a pre-existing local file requires a 64-hex LFS sha256 hub
+    identity that matches the local content hash. A non-LFS identity (git blob id
+    for row_index*.jsonl / small npys) is not comparable to a local sha256, so
+    those files re-download unconditionally rather than pairing a fresh hub
+    identity with an unverified stale local copy (code-review v10 Minor 3;
+    statics are small, so the re-download is cheap).
+    """
     target = stage_dir / _rel_under_prefix(entry.path, hf_prefix)
-    if target.exists() and target.stat().st_size == entry.size:
+    if target.exists() and target.stat().st_size == entry.size and len(entry.hub_identity) == 64:
         sha = _sha256_file(target)
-        if len(entry.hub_identity) != 64 or sha == entry.hub_identity:
+        if sha == entry.hub_identity:
             _set_content_mtime(target, sha)
             return {
                 "hub_path": entry.path,
@@ -446,7 +519,14 @@ def validate_extra_fit_grid_args(extras: list[str]) -> list[str]:
 def fit_grid_argv(
     args: argparse.Namespace, cells: list[str], layers_csv: str, out_dir: Path, n_null_draws: int
 ) -> list[str]:
-    """Compose the fit-grid subprocess argv (same venv via sys.executable)."""
+    """Compose the fit-grid subprocess argv (same venv via sys.executable).
+
+    The plan-registered fit config (plan section 6: grouped 6-fold by prefix;
+    section 10: fit seed 0; section 4.5: t1/t2/t3 sensitivity targets) is threaded
+    EXPLICITLY into every invocation — pilot included — from the wrapper defaults,
+    so a production launch can never silently run engine defaults (code-review v10
+    concern p6-launch-defaults-vs-plan-folds-targets-seed).
+    """
     argv = [
         sys.executable,
         str(FIT_GRID_SCRIPT),
@@ -468,6 +548,10 @@ def fit_grid_argv(
         args.fit_arms,
         "--target-bases",
         args.target_bases,
+        "--n-folds",
+        str(args.n_folds),
+        "--seed",
+        str(args.fit_seed),
         "--n-null-draws",
         str(n_null_draws),
         "--band-null-draws",
@@ -558,6 +642,9 @@ def wrapper_config(
         "targets": targets,
         "fit_arms": fit_arms,
         "target_bases": bases,
+        "n_folds": args.n_folds,
+        "fit_seed": args.fit_seed,
+        "lambda_grid_deviation": LAMBDA_GRID_DEVIATION,
         "n_null_draws": args.n_null_draws,
         "band_null_draws": args.band_null_draws,
         "judge_scores": str(args.judge_scores) if args.judge_scores else None,
@@ -585,10 +672,14 @@ def layer_already_complete(
     """Conservative resume fast-path for a completed layer.
 
     Skip requires: manifest complete, exact wrapper-config sha match, fresh Hub
-    identity (path, size, sha/blob) equal to the recorded staging set, and every
-    recorded checkpoint still on disk. ANY mismatch falls through to re-stage +
-    the fit grid's own fingerprint predicate (which loads matching checkpoints
-    instantly), so the fail direction is always recompute, never wrong-skip.
+    identity (path, size, sha/blob) equal to the recorded staging set — the
+    layer's OWN files PLUS the statics (row indexes, b0 pools) its fit consumed,
+    so a statics-only Hub re-upload also falls through (callers pass layer +
+    static files as ``expected_files``) — and every recorded checkpoint still on
+    disk. ANY mismatch falls through to re-stage + the fit grid's own
+    full-input fingerprint predicate (x/y + dynamics/bare/b0 paths + config,
+    which loads matching checkpoints instantly), so the fail direction is
+    always recompute, never wrong-skip.
     """
     if not manifest_path.exists():
         return False
@@ -597,7 +688,10 @@ def layer_already_complete(
         return False
     if manifest.get("wrapper_config", {}).get("config_sha256") != cfg["config_sha256"]:
         return False
-    recorded = {(f["hub_path"], f["size"], f["hub_identity"]) for f in manifest.get("files", [])}
+    recorded = {
+        (f["hub_path"], f["size"], f["hub_identity"])
+        for f in manifest.get("files", []) + manifest.get("static_files", [])
+    }
     fresh = {(f.path, f.size, f.hub_identity) for f in expected_files}
     if recorded != fresh:
         return False
@@ -635,12 +729,22 @@ def evaluate_pilot_gate(
     }
 
 
-def pilot_skippable(out_dir: Path, cfg: dict, args: argparse.Namespace) -> bool:
+def pilot_skippable(
+    out_dir: Path,
+    cfg: dict,
+    args: argparse.Namespace,
+    *,
+    n_blocks_frozen: int,
+    n_blocks_band: int,
+) -> bool:
     """Skip the pilot only on a recorded prior PASS under identical config AND gate knobs.
 
     Gate knobs (rss limit, plan wall, pilot unit) live here rather than in
     wrapper_config so tightening the gate re-runs the pilot WITHOUT
-    invalidating completed layers' resume manifests.
+    invalidating completed layers' resume manifests. The projection block
+    counts (cells x layers, frozen/band split) key the skip too: a PASS
+    recorded on a narrow --layers set must not be reused for a full-set run
+    whose projection is ~N x larger (code-review v10 Minor 4).
     """
     path = out_dir / "pilot.json"
     if not path.exists():
@@ -653,6 +757,8 @@ def pilot_skippable(out_dir: Path, cfg: dict, args: argparse.Namespace) -> bool:
         and prior.get("pilot_layer") == args.pilot_layer
         and prior.get("rss_limit_gb") == args.max_pilot_rss_gb
         and prior.get("plan_wall_h") == args.plan_wall_h
+        and prior.get("n_blocks_frozen") == n_blocks_frozen
+        and prior.get("n_blocks_band") == n_blocks_band
     )
 
 
@@ -841,7 +947,11 @@ def run_p6(args: argparse.Namespace, hub=None) -> dict:
     print(f"[p6] phase=static-staging files={len(static_records)}", flush=True)
 
     pilot_staged: list[dict] = []
-    if pilot_skippable(args.out_dir, cfg, args):
+    n_blocks_frozen = len(cells) * len([layer for layer in layers if layer in FROZEN_NULL_LAYERS])
+    n_blocks_band = len(cells) * len([layer for layer in layers if layer not in FROZEN_NULL_LAYERS])
+    if pilot_skippable(
+        args.out_dir, cfg, args, n_blocks_frozen=n_blocks_frozen, n_blocks_band=n_blocks_band
+    ):
         pilot_summary: dict | str = "skipped_prior_pass"
         print("[p6] phase=pilot skipped=prior-pass", flush=True)
     else:
@@ -891,7 +1001,9 @@ def run_p6(args: argparse.Namespace, hub=None) -> dict:
     for layer in layers:
         manifest_path = staging_dir / f"staging_manifest_L{layer:02d}.json"
         expected_files = select_layer_files(inventory, cells, model_types, kinds, layer)
-        if layer_already_complete(manifest_path, cfg, expected_files, ckpt_dir):
+        # Statics (row indexes, b0 pools) are unit inputs too: a statics-only Hub
+        # re-upload must fall through to the engine's fingerprint predicate.
+        if layer_already_complete(manifest_path, cfg, expected_files + static_files, ckpt_dir):
             layers_skipped.append(layer)
             print(f"[p6] phase=layer layer={layer:02d} skipped=complete", flush=True)
             continue
@@ -913,6 +1025,7 @@ def run_p6(args: argparse.Namespace, hub=None) -> dict:
                 "status": "complete",
                 "revision": resolved_rev,
                 "files": records,
+                "static_files": static_records,
                 "checkpoints": ckpts,
                 "registered_inputs": registered,
                 "fit_grid_wall_s": wall,
@@ -965,9 +1078,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--layers", default="0-27")
     p.add_argument("--cells", default=None, help="CSV of fit cells (default: the 8 plan cells)")
     p.add_argument("--arms", default="prefix_end,context_end")
-    p.add_argument("--targets", default="t1")
+    p.add_argument(
+        "--targets",
+        default="t1,t2,t3",
+        help="Answer targets (plan section 4.5: t2/t3 sensitivity columns ride every unit).",
+    )
     p.add_argument("--fit-arms", default="A,B")
     p.add_argument("--target-bases", default="ambient,pca48")
+    p.add_argument(
+        "--n-folds",
+        type=int,
+        default=6,
+        help="Grouped-CV fold count forwarded to the fit grid (plan section 6: 6-fold by prefix).",
+    )
+    p.add_argument(
+        "--fit-seed",
+        type=int,
+        default=0,
+        help="Fit seed forwarded as the fit grid's --seed (plan section 10: fit seed 0).",
+    )
     p.add_argument("--n-null-draws", type=int, default=200)
     p.add_argument("--band-null-draws", type=int, default=20)
     p.add_argument("--judge-scores", type=Path, default=None)
