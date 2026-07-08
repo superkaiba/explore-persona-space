@@ -704,6 +704,53 @@ def test_8gpu_sweep_machine_types_zone_availability() -> None:
     assert zones_for_machine_type("a3-highgpu-8g", ladder) == ladder
 
 
+def test_zone_availability_has_a2_ultragpu_2g_a_c_only() -> None:
+    """#1121: the new a2-ultragpu-2g row (the width-2 auto-ladder rung)
+    follows its A2-ultragpu family — offered in {a, c} only, NOT
+    us-central1-b (live-verified 2026-07-08), so the zone-fallback ladder
+    never issues a doomed -b create that burns a GCP attempt."""
+    from explore_persona_space.backends.gcp import (
+        MACHINE_TYPE_ZONE_AVAILABILITY,
+        zones_for_machine_type,
+    )
+
+    assert MACHINE_TYPE_ZONE_AVAILABILITY["a2-ultragpu-2g"] == frozenset(
+        {"us-central1-a", "us-central1-c"}
+    )
+    assert zones_for_machine_type(
+        "a2-ultragpu-2g", ["us-central1-a", "us-central1-b", "us-central1-c"]
+    ) == ["us-central1-a", "us-central1-c"]
+
+
+def test_render_create_argv_resolves_wide_machine_override() -> None:
+    """#1121: a router-threaded wide machine override (the JSON-safe dict
+    shape ``_with_machine`` threads) renders the wide machine type under
+    FLEX_START — the existing ``machine_spec_override`` chokepoint resolves
+    wide rungs with zero create-path changes. H100 + STANDARD keeps raising
+    (``test_render_create_argv_h100_standard_raises_loud`` pins that)."""
+    cfg = _test_config()
+    spec = _spec(
+        intent="capture-7b",
+        extra={
+            "machine_spec_override": {
+                "machine_type": "a2-ultragpu-8g",
+                "gpu_count": 8,
+                "gpu_kind": "A100-80",
+            },
+            "provisioning_model": "FLEX_START",
+        },
+    )
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--machine-type=a2-ultragpu-8g" in argv
+    assert "--provisioning-model=FLEX_START" in argv
+
+
 def test_default_fallback_zones_includes_us_central1_f() -> None:
     """#774: DEFAULT_FALLBACK_ZONES carries us-central1-f so the create-time
     ladder [primary, *fallback_zones] reaches -f for the A100-40 fallback
