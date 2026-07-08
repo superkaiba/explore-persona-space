@@ -17,7 +17,7 @@ Subcommands::
                                                      [--max-code-commits 150] [--json]
     uv run python scripts/step9c_baseline.py compare --junitxml PATH --pytest-rc INT [--base main]
                                                      [--worktree PATH] [--repo-root PATH]
-                                                     [--run-pristine] [--pristine-timeout-s 600]
+                                                     [--run-pristine] [--pristine-timeout-s S]
                                                      [--max-pristine-files 5]
                                                      [--max-age-hours 24] [--max-code-commits 150]
                                                      [--scratch-timeout-s 120]
@@ -923,6 +923,35 @@ def run_single_file_pristine(
         tmp_path.unlink(missing_ok=True)
 
 
+# --- pristine-timeout sizing (#1129). -----------------------------------------
+# Derived from the selector's #1046 gate-timeout knowledge so there is ONE
+# per-file runtime table. #1098: the pristine single-file run of
+# tests/test_workflow_lint.py needs ~780 s; the fixed 600 s default killed it
+# and forced a full compare rerun. Bias generous: an oversized bound only
+# delays a genuinely wedged run; an undersized one GUARANTEES a wasted
+# compare + rerun (exit 2 via PristineRunError).
+PRISTINE_SLOW_TIMEOUT_MULT = 2.0
+PRISTINE_TIMEOUT_FLOOR_S = (
+    600.0  # == the pre-#1129 fixed default (#1022): non-surcharge behavior unchanged
+)
+
+
+def derive_pristine_timeout_s(sel: object, test_file: str) -> float:
+    """Per-file pristine-oracle bound: BASE + PER_FILE + 2x slow surcharge, floor 600 s.
+
+    Reads the #1046 constants off the LOADED selector module (``ctx.sel``) via
+    ``getattr`` so a pre-#1046 worktree selector copy (deliberate version skew,
+    #1022 §3.3) degrades to the legacy 600 s floor instead of crashing.
+    tests/test_workflow_lint.py -> 120 + 30 + 2*900 = 1950 s (~2.5x its ~780 s
+    measured pristine runtime, #1098); files without surcharge knowledge -> 600 s.
+    """
+    base = float(getattr(sel, "TIMEOUT_BASE_S", 0))
+    per_file = float(getattr(sel, "TIMEOUT_PER_FILE_S", 0))
+    slow = getattr(sel, "SLOW_TESTS", None) or {}
+    surcharge = float(slow.get(test_file, 0))
+    return max(base + per_file + PRISTINE_SLOW_TIMEOUT_MULT * surcharge, PRISTINE_TIMEOUT_FLOOR_S)
+
+
 def lint_verdict(root: Path, wt: Path, touched: list[str]) -> dict:
     """Mechanical lint verdict: delta vs the LIVE main-root baseline + absolute-clean touched.
 
@@ -1178,11 +1207,16 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                     "contamination probe src//pyproject.toml/uv.lock was clean; scan-set "
                     "nodes and non-sparse work roots stay indeterminate)"
                 )
+            timeout_s = (
+                args.pristine_timeout_s
+                if args.pristine_timeout_s is not None
+                else derive_pristine_timeout_s(ctx.sel, test_file)
+            )
             try:
                 main_failing = run_single_file_pristine(
                     test_file,
                     cwd=scratch.path if use_scratch else root,
-                    timeout_s=args.pristine_timeout_s,
+                    timeout_s=timeout_s,
                     venv_root=root if use_scratch else None,
                 )
             except PristineRunError as exc:
@@ -1350,7 +1384,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_compare.add_argument("--repo-root", default=None)
     p_compare.add_argument("--run-pristine", action="store_true")
-    p_compare.add_argument("--pristine-timeout-s", type=float, default=600.0)
+    p_compare.add_argument(
+        "--pristine-timeout-s",
+        type=float,
+        default=None,
+        help="per-file pristine-run bound; default: derived per file from the "
+        "selector's gate-timeout knowledge (BASE + PER_FILE + 2x slow "
+        "surcharge, floor 600 s; #1129). Explicitly passing it wins for every file.",
+    )
     p_compare.add_argument("--max-pristine-files", type=int, default=5)
     p_compare.add_argument("--max-age-hours", type=float, default=24.0)
     p_compare.add_argument("--max-code-commits", type=int, default=150)
