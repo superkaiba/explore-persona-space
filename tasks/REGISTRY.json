@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1142,
+  "highest_id": 1143,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1114,6 +1114,13 @@
       "path": "tasks/proposed/1142",
       "status": "proposed",
       "title": "workflow-fix: gotchas entry \u2014 vLLM H100 prefix-cache IMA differential + mitigation"
+    },
+    "1143": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1143",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body file-count claim-matcher misses footer shape"
     },
     "115": {
       "has_clean_result": false,
