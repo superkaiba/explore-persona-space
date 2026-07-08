@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1139,
+  "highest_id": 1140,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1093,6 +1093,13 @@
       "path": "tasks/on_hold/114",
       "status": "on_hold",
       "title": "Use activation oracles to see persona"
+    },
+    "1140": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1140",
+      "status": "proposed",
+      "title": "daily-held: Codex quota out to Aug 6 - pay or ride it out"
     },
     "115": {
       "has_clean_result": false,
