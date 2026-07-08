@@ -1037,6 +1037,71 @@ def test_capture_prefix_end_offset_based_on_rstripped_naturalistic_prefix(qwen_t
     assert len(tok.decode(row_ids[: pos["prefix_end"] + 2])) > len(prefix_text)
 
 
+# ── 13. round-8.6: calibrated G2 identity criterion. Launch 6 failed the old
+# allclose(atol=5e-2) at max_abs=3.0; the on-pod decomposition proved the
+# construction EXACT (token ids identical on all 50 spot rows,
+# recompute-vs-disk 0.0, fp32 both-sides max_rel 7.5e-5) and the residual
+# pure bf16 batch-geometry numerics (same-ids b1-vs-b8 null: max_abs 3.0 at
+# the SAME element as the gate read — a 1.36% relative error on a
+# magnitude-221 Qwen outlier dim; null p99 floored-rel 0.076). Criterion:
+# p99 floored-rel <= 0.30 (~4x null) + max_abs <= 300 backstop (100x null) —
+# a bulk read, so a misaligned construction (>=2% of elements at rel ~1)
+# still FAILS loud.
+
+
+def _synthetic_identity_pair(seed: int, *, kind: str):
+    """Qwen-shaped synthetic (disk, ref): O(1) dims + O(1000) outlier dims."""
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    ref = rng.normal(size=(50, 28, 64))
+    ref[:, :, :4] *= 1000.0  # activation-outlier dims (Qwen2-family late layers)
+    disk = ref.copy()
+    if kind == "numerics":
+        # measured-null-shaped noise: ~0.3% relative on outlier dims (abs ~3),
+        # small absolute jitter elsewhere — the launch-6 residual shape
+        disk += 0.003 * np.abs(ref) * rng.normal(size=ref.shape) * (np.abs(ref) > 100)
+        disk += 0.05 * rng.normal(size=ref.shape) * (np.abs(ref) <= 100)
+    elif kind == "shuffled":
+        # ONE swapped row pair — states read at the wrong position/row
+        disk[0], disk[1] = ref[1].copy(), ref[0].copy()
+    elif kind == "backstop":
+        # single-element O(magnitude) shift: p99 misses it, the backstop fires
+        disk[3, 26, 0] += 400.0
+    elif kind != "exact":
+        raise ValueError(kind)
+    return disk.astype(np.float32), ref.astype(np.float32)
+
+
+def test_g2_identity_criterion_passes_bf16_scale_numerics():
+    disk, ref = _synthetic_identity_pair(1092, kind="numerics")
+    stats = gp._g2_identity_check(disk, ref)
+    assert stats["pass"], stats
+    assert stats["max_abs"] > 0.05  # the OLD atol=5e-2 allclose FAILED exactly this shape
+    assert stats["p99_rel_floored"] < gp.G2_IDENTITY_P99_REL_TOL
+
+
+def test_g2_identity_criterion_fails_shuffled_position_construction():
+    disk, ref = _synthetic_identity_pair(7, kind="shuffled")
+    stats = gp._g2_identity_check(disk, ref)
+    assert not stats["pass"], stats
+    assert stats["p99_rel_floored"] > gp.G2_IDENTITY_P99_REL_TOL
+
+
+def test_g2_identity_criterion_abs_backstop_catches_sparse_outlier_shift():
+    disk, ref = _synthetic_identity_pair(9, kind="backstop")
+    stats = gp._g2_identity_check(disk, ref)
+    assert not stats["pass"], stats
+    assert stats["max_abs"] > gp.G2_IDENTITY_ABS_BACKSTOP
+    assert stats["p99_rel_floored"] <= gp.G2_IDENTITY_P99_REL_TOL  # only the backstop trips
+
+
+def test_g2_identity_criterion_exact_agreement_passes():
+    disk, ref = _synthetic_identity_pair(3, kind="exact")
+    stats = gp._g2_identity_check(disk, ref)
+    assert stats["pass"] and stats["max_abs"] == 0.0
+
+
 # ── 12. round-8.5: vLLM H100-IMA mitigation flags thread into EVERY engine
 # construction (launch #4: CUDA illegal memory access in vLLM 0.11.0's engine
 # step on 8x H100 at production shapes under heavy shared-prefix reuse;

@@ -1205,6 +1205,62 @@ def _load_b0_pool_matrix(out_dir: Path, cell_id: str) -> np.ndarray:
     return np.concatenate([np.load(path, mmap_mode="r") for path in pool_paths], axis=0)
 
 
+# ── G2 identity criterion (round-8.6, calibrated on the measured null) ──────
+# Derivation (issue1092_g2_diag.py on pod-1092, 2026-07-08; 50 spot rows of
+# cell_inst_own, real captures): construction is EXACT — token ids identical
+# on all 50 rows, recompute-vs-disk 0.0, fp32 both-sides max_rel 7.5e-5 — and
+# the ENTIRE gate residual is bf16 batch-geometry numerics: the same-ids
+# batch=1-vs-batch=8 null realized max_abs=3.0 at the SAME (row, layer, dim)
+# element as the gate read (disk -221.0 vs ref -218.0, 1.36% relative on a
+# magnitude-221 outlier dim; Qwen2-family late layers carry |~200-1000|
+# outlier dims), p99 floored-rel 0.076, depth-amplified L0 0.016 -> L26 3.0
+# (the #779-r12 signature). A MAX-relative bar cannot separate (the pure null
+# reaches floored-rel 0.866 on one small-magnitude tail element), so the
+# criterion reads the BULK: a misaligned construction shifts >=2% of elements
+# to rel ~1 (any single off-by-one row is 2% of a 50-row read), driving the
+# p99 to ~1, while the numerics null sits at 0.076. Thresholds = measured
+# null x margin, NOT bare constants — re-derive with issue1092_g2_diag.py if
+# the model / dtype / hardware changes:
+#   p99 floored-rel <= 0.30  (~4x the 0.076 null p99, ~3x under the ~1.0
+#                             misalignment signature)
+#   max_abs         <= 300.0 (100x the 3.0 null max; misaligned outlier dims
+#                             shift by O(magnitude) ~ hundreds)
+G2_IDENTITY_P99_REL_TOL = 0.30
+G2_IDENTITY_REL_FLOOR = 1.0
+G2_IDENTITY_ABS_BACKSTOP = 300.0
+
+
+def _g2_identity_check(disk: np.ndarray, ref: np.ndarray) -> dict[str, Any]:
+    """Calibrated G2 identity criterion (see derivation block above).
+
+    PASS iff p99 of the floored per-element relative error (|a-b| /
+    max(|a|,|b|,floor)) <= G2_IDENTITY_P99_REL_TOL AND max abs error <=
+    G2_IDENTITY_ABS_BACKSTOP. Returns the stats dict (verdict + measured
+    quantities + thresholds) for fail-loud logging either way.
+    """
+    a = disk.astype(np.float64)
+    b = ref.astype(np.float64)
+    err = np.abs(a - b)
+    scale = np.maximum(np.abs(a), np.abs(b))
+    rel = err / np.maximum(scale, G2_IDENTITY_REL_FLOOR)
+    p99_rel = float(np.quantile(rel, 0.99))
+    max_abs = float(err.max())
+    idx = np.unravel_index(int(np.argmax(err)), err.shape)
+    return {
+        "pass": bool(p99_rel <= G2_IDENTITY_P99_REL_TOL and max_abs <= G2_IDENTITY_ABS_BACKSTOP),
+        "p99_rel_floored": p99_rel,
+        "max_abs": max_abs,
+        "p99_abs": float(np.quantile(err, 0.99)),
+        "argmax_abs_idx": [int(i) for i in idx],
+        "scale_at_argmax": float(scale[idx]),
+        "thresholds": {
+            "p99_rel_tol": G2_IDENTITY_P99_REL_TOL,
+            "rel_floor": G2_IDENTITY_REL_FLOOR,
+            "abs_backstop": G2_IDENTITY_ABS_BACKSTOP,
+        },
+    }
+
+
 def _generate_context_hidden_reference(
     *,
     prompts: list[str],
@@ -1414,11 +1470,12 @@ def run_g2_gate_from_disk(  # noqa: C901
     disk_context = _load_cell_summary_rows(
         out_dir, cell_id, "context_end", spot_idx, n_layers=n_layers
     )
-    if not np.allclose(disk_context, ref_context, atol=5e-2, rtol=5e-2):
-        delta = float(np.max(np.abs(disk_context - ref_context)))
+    identity = _g2_identity_check(disk_context, ref_context)
+    if not identity["pass"]:
         raise AssertionError(
-            f"G2 identity generate-reference mismatch for {cell_id}: max_abs={delta}"
+            f"G2 identity generate-reference mismatch for {cell_id}: {json.dumps(identity)}"
         )
+    logger.info("[G2] identity check PASSED for %s: %s", cell_id, json.dumps(identity))
 
     l14 = min(14, n_layers - 1)
     X_l14 = _load_cell_kind_matrix(out_dir, cell_id, "context_end", l14)[:n_rows]
