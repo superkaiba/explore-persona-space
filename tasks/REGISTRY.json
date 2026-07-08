@@ -1020,8 +1020,8 @@
     "1130": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1130",
-      "status": "reviewing",
+      "path": "tasks/completed/1130",
+      "status": "completed",
       "title": "daily-fix: codex_task.py forwards child success-stderr"
     },
     "1131": {
