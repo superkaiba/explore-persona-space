@@ -459,7 +459,27 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     result — a feasibility failure, not a cheaper-variant suggestion (#653 round 4: the
     `select_checkpoint` phase merged a ~15 GB copy per probed dose checkpoint × 12 content cells × 9
     dose ckpts = ~1.6 TB worst case on a 130 GB quota with no cleanup between probes; the run hit
-    the quota and died, the fix was atomic merge-read-delete per probe). Plan-time storage-budget
+    the quota and died, the fix was atomic merge-read-delete per probe).
+    LADDER-RETENTION EXTENSION (#1133, from incident #1112): when the phase is
+    a dose-ladder / multi-rung checkpoint phase (per-rung checkpoints persisted
+    for later selection — dose-to-band grids, band-stop ladders, per-step save
+    grids), ALSO verify §9 states the checkpoint-retention policy (default:
+    keep dose-selected + latest, delete ruled-out rungs between rungs — per
+    `.claude/rules/plan-compute-sizing.md` § Dose-ladder / multi-rung
+    checkpoint retention) and sizes disk to the RETAINED set + in-flight rung.
+    REVISE when the ladder plan's disk estimate assumes keeping every rung on
+    local disk without an explicit justification that (a) says why the rungs
+    must coexist, (b) sizes the FULL ladder at realized per-rung size (weights
+    + optimizer state), and (c) declares the requirement in the launch flags
+    (`--boot-disk-gb`, arming the #1118 thread-or-refuse) — a keep-all bound
+    that merely fits the PLANNED lane's disk is NOT sufficient (#1112: a
+    compliant 575 GB keep-all bound under a planned 750 GB GCP boot disk
+    ENOSPC'd at rung 24/30 when the GCP→RunPod failover delivered the ft-7b
+    default 200 GB volume). The fits-quota escape below does NOT cover ladder
+    phases; the ladder escapes are a stated retention policy + retained-set
+    sizing, the justified keep-all above, or "N/A — no multi-rung checkpoint
+    phase". Upload-before-delete unchanged (declared §10 discard OR
+    upload-first before any between-rung deletion). Plan-time storage-budget
     check only, never a mid-run gate. Not a REVISE when no phase materializes transient
     full-precision artifacts at scale (single merged copy, or merges that fit the quota with
     headroom — the plan's §9 "N/A — no transient full-precision merges" or a bound under quota
