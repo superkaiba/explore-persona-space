@@ -1311,3 +1311,202 @@ def test_g2_identity_capture_vs_generate_reference_cpu(qwen_tokenizer):
     assert ctx.shape == ref.shape == (2, 2, 32)
     delta = float(np.max(np.abs(ctx - ref)))
     assert delta <= 2e-3, f"G2 identity mismatch on CPU fp32: max_abs={delta}"
+
+
+# ── 15. round-8.8: dispatcher cross-cell dependency edges + transient-init
+# retry + the three launch-7 failure classes (83 shards): 48 claude shards =
+# unstaged P1 file (up-front readiness validation now), 30 shuf shards =
+# control-subset rows outside the derangement domain (row-domain filter now),
+# 5 inst_pretext shards = EMPTY pre_own completions coerced to "missing" by a
+# falsy `or` chain in render_row (explicit None checks now — the round-8.2
+# empty-falsy class again).
+
+
+def _mk_shards(cells, per_cell=2):
+    shards = []
+    for cell in cells:
+        for i in range(per_cell):
+            shards.append(
+                gp.Shard(
+                    cell_id=cell, row_start=i, row_end=i + 1, shard_idx=i, total_shards=per_cell
+                )
+            )
+    return shards
+
+
+ALL_CELLS = list(gp.CELL_CONFIG)
+
+
+def _released_cells(batch):
+    return sorted({s.cell_id for s in batch})
+
+
+def test_cell_dependencies_derived_from_text_source():
+    deps = gp._cell_dependencies(ALL_CELLS)
+    assert deps["cell_inst_pretext"] == {"cell_pre_own"}
+    assert deps["cell_pre_insttext"] == {"cell_inst_own"}
+    assert deps["cell_inst_shuf"] == {"cell_inst_own"}
+    assert deps["cell_pre_shuf"] == {"cell_inst_own"}
+    # own cells and claude cells carry NO cell edge (claude readiness = the
+    # staged P1 file, validated up-front)
+    for cell in ("cell_inst_own", "cell_pre_own", "cell_inst_claude", "cell_pre_claude"):
+        assert deps[cell] == set()
+
+
+def test_dispatch_scheduler_orders_and_work_conserves():
+    shards = _mk_shards(ALL_CELLS)
+    sched = gp._DispatchScheduler(ALL_CELLS, shards, gp._cell_dependencies(ALL_CELLS))
+
+    initial = sched.initial_ready()
+    # work-conserving: EVERY dependency-free cell's shards release at t0
+    assert _released_cells(initial) == sorted(
+        ["cell_inst_own", "cell_pre_own", "cell_inst_claude", "cell_pre_claude"]
+    )
+    assert len(initial) == 8  # all shards of the 4 ready cells, no wave barrier
+
+    def ok(cell, idx):
+        return {"status": "done", "cell_id": cell, "shard_idx": idx, "n_rows": 1}
+
+    # completing pre_own releases EXACTLY its dependent (inst_pretext)
+    newly, retry = sched.on_result(ok("cell_pre_own", 0))
+    assert newly == [] and retry is None
+    newly, retry = sched.on_result(ok("cell_pre_own", 1))
+    assert _released_cells(newly) == ["cell_inst_pretext"] and len(newly) == 2
+
+    # inst_own completion releases pre_insttext + both shuf cells together
+    sched.on_result(ok("cell_inst_own", 0))
+    newly, _ = sched.on_result(ok("cell_inst_own", 1))
+    assert _released_cells(newly) == sorted(
+        ["cell_pre_insttext", "cell_inst_shuf", "cell_pre_shuf"]
+    )
+    assert len(newly) == 6
+
+    # drain everything else -> finished
+    for cell in (
+        "cell_inst_claude",
+        "cell_pre_claude",
+        "cell_inst_pretext",
+        "cell_pre_insttext",
+        "cell_inst_shuf",
+        "cell_pre_shuf",
+    ):
+        for i in range(2):
+            sched.on_result(ok(cell, i))
+    assert sched.finished and sched.blocked_dependents() == []
+
+
+def test_dispatch_scheduler_transient_init_retry_once_then_terminal():
+    cells = ["cell_inst_own"]
+    shards = _mk_shards(cells)
+    sched = gp._DispatchScheduler(cells, shards, gp._cell_dependencies(cells))
+    sched.initial_ready()
+    err = {
+        "status": "error",
+        "cell_id": "cell_inst_own",
+        "shard_idx": 0,
+        "error": "RuntimeError('Engine core initialization failed. See root cause above.')",
+    }
+    _newly, retry = sched.on_result(dict(err))
+    assert retry is not None and retry.shard_idx == 0  # requeued once
+    assert sched.terminal_results == 0  # absorbed, not terminal
+    _newly, retry = sched.on_result(dict(err))
+    assert retry is None and sched.terminal_results == 1  # budget spent -> terminal
+    # a NON-matching error is terminal immediately
+    _newly, retry = sched.on_result(
+        {"status": "error", "cell_id": "cell_inst_own", "shard_idx": 1, "error": "ValueError(boom)"}
+    )
+    assert retry is None and sched.terminal_results == 2
+    assert sched.finished
+
+
+def test_dispatch_scheduler_blocked_dependents_fail_fast():
+    cells = ["cell_pre_own", "cell_inst_pretext"]
+    shards = _mk_shards(cells)
+    sched = gp._DispatchScheduler(cells, shards, gp._cell_dependencies(cells))
+    initial = sched.initial_ready()
+    assert _released_cells(initial) == ["cell_pre_own"]
+    sched.on_result({"status": "done", "cell_id": "cell_pre_own", "shard_idx": 0, "n_rows": 1})
+    sched.on_result(
+        {"status": "error", "cell_id": "cell_pre_own", "shard_idx": 1, "error": "ValueError(x)"}
+    )
+    # producer terminal-complete WITH a failure -> dependent can never run
+    assert sched.blocked_dependents() == ["cell_inst_pretext"]
+
+
+def test_validate_dispatch_inputs_claude_staging_and_producer_on_disk(tmp_path):
+    out_dir = tmp_path
+    corpus_dir = tmp_path / "corpus"
+    corpus_dir.mkdir()
+    (corpus_dir / "derangement_map.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(FileNotFoundError, match="claude_completions"):
+        gp._validate_dispatch_inputs(["cell_inst_claude"], out_dir, corpus_dir)
+    claude_dir = out_dir / "raw_completions" / "claude"
+    claude_dir.mkdir(parents=True)
+    (claude_dir / "claude_completions.jsonl").write_text("", encoding="utf-8")
+    gp._validate_dispatch_inputs(["cell_inst_claude"], out_dir, corpus_dir)
+
+    # dependent dispatched WITHOUT its producer and WITHOUT producer outputs
+    with pytest.raises(FileNotFoundError, match="depends on cell_pre_own"):
+        gp._validate_dispatch_inputs(["cell_inst_pretext"], out_dir, corpus_dir)
+    # producer dispatched in the SAME gen stage -> the scheduler edge covers it
+    gp._validate_dispatch_inputs(
+        ["cell_pre_own", "cell_inst_pretext"], out_dir, corpus_dir, gen_in_stage=True
+    )
+    # capture-only stage: even a co-dispatched producer must have gen outputs on disk
+    with pytest.raises(FileNotFoundError, match="depends on cell_pre_own"):
+        gp._validate_dispatch_inputs(
+            ["cell_pre_own", "cell_inst_pretext"], out_dir, corpus_dir, gen_in_stage=False
+        )
+    pre_dir = out_dir / "raw_completions" / "pretrained"
+    pre_dir.mkdir(parents=True)
+    (pre_dir / "cell_pre_own_shard00000_part0000.jsonl").write_text("", encoding="utf-8")
+    gp._validate_dispatch_inputs(["cell_inst_pretext"], out_dir, corpus_dir)
+    gp._validate_dispatch_inputs(
+        ["cell_pre_own", "cell_inst_pretext"], out_dir, corpus_dir, gen_in_stage=False
+    )
+
+
+def test_render_row_accepts_empty_completion_but_raises_on_missing():
+    """The launch-7 inst_pretext killer: an EMPTY completion ('' — a legitimate
+    pretrained-model outcome at its '\\n\\n' stop token) must render, never be
+    coerced to 'missing' by a falsy `or` chain."""
+    prefix_store = {
+        "pfx_0": {"prefix_id": "pfx_0", "prefix_turns": [{"role": "user", "content": "hi"}]}
+    }
+    query_store = {"qry_0": {"query_id": "qry_0", "text": "What?"}}
+    base = {"row_id": "r_0", "prefix_id": "pfx_0", "query_id": "qry_0"}
+    for source, key in (
+        ("pretrained", "pretrained_completion"),
+        ("instruct", "instruct_completion"),
+        ("shuffled", "shuffled_completion"),
+        ("claude", "claude_text"),
+    ):
+        row = dict(base, **{key: ""})  # EMPTY completion attached
+        _prefix, _prompt, completion = gp.render_row(
+            row, prefix_store, query_store, prompt_format="pretrained", text_source=source
+        )
+        assert completion == ""  # pre-fix: ValueError "has no <key>"
+        with pytest.raises(ValueError, match="has no"):
+            gp.render_row(
+                dict(base),  # key genuinely ABSENT -> still fail-loud
+                prefix_store,
+                query_store,
+                prompt_format="pretrained",
+                text_source=source,
+            )
+
+
+def test_rows_for_cell_shuffled_restricted_to_derangement_domain():
+    rows = [
+        {"row_id": "r_0", "control_subset": True},  # in derangement domain
+        {"row_id": "r_1", "control_subset": True},  # battery/topicmatch: not in domain
+        {"row_id": "r_2", "control_subset": False},  # not in subset at all
+        {"row_id": "r_3", "control_subset": True},  # in domain
+    ]
+    kept = gp._rows_for_cell(rows, "cell_inst_shuf", derangement_keys={"r_0", "r_3"})
+    assert [r["row_id"] for r in kept] == ["r_0", "r_3"]
+    with pytest.raises(ValueError, match="requires derangement_keys"):
+        gp._rows_for_cell(rows, "cell_inst_shuf")
+    # non-shuffled subset cells are unaffected
+    claude_rows = [{"row_id": "r_0", "claude_subset": True}, {"row_id": "r_1"}]
+    assert len(gp._rows_for_cell(claude_rows, "cell_inst_claude")) == 1

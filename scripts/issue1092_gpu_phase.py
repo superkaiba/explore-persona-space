@@ -332,21 +332,34 @@ def render_row(
     query = _query_text(query_item)
     prefix_text, prompt = _render_prompt_parts(turns, query, prompt_format)
 
+    # round-8.8: explicit None checks — NEVER `a or b` chains. An EMPTY
+    # completion is a legitimate generation outcome (the pretrained model can
+    # emit its "\n\n" stop immediately), and the falsy chain coerced it to
+    # "missing", killing whole shards (launch 7: the 5 cell_inst_pretext
+    # failures were exactly the shards containing >=1 empty cell_pre_own
+    # completion, with all 21,193 completions present on disk). Same class as
+    # the round-8.2 empty-prefix_turns coercion.
     if text_source == "own":
         return prefix_text, prompt, completion_override
     if text_source == "claude":
-        completion = row.get("claude_text") or row.get("completion")
+        completion = row.get("claude_text")
+        if completion is None:
+            completion = row.get("completion")
         if completion is None:
             raise ValueError(f"row {row.get('row_id')} has no Claude completion text")
         return prefix_text, prompt, str(completion)
     if text_source in ("instruct", "pretrained"):
         key = f"{text_source}_completion"
-        completion = row.get(key) or row.get("completion")
+        completion = row.get(key)
+        if completion is None:
+            completion = row.get("completion")
         if completion is None:
             raise ValueError(f"row {row.get('row_id')} has no {key}")
         return prefix_text, prompt, str(completion)
     if text_source == "shuffled":
-        completion = row.get("shuffled_completion") or row.get("completion")
+        completion = row.get("shuffled_completion")
+        if completion is None:
+            completion = row.get("completion")
         if completion is None:
             raise ValueError(f"row {row.get('row_id')} has no shuffled completion")
         return prefix_text, prompt, str(completion)
@@ -2014,6 +2027,25 @@ def upload_auxiliary_summaries(out_dir: Path, issue: int) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _maybe_attach_shard_sources(
+    shard_rows: list[dict],
+    args: argparse.Namespace,
+    out_dir: Path,
+    own_policy: bool,
+    text_source: str,
+) -> None:
+    """Attach cross-text completion sources FRESH FROM DISK at shard time.
+
+    Round-8.8: the worker's rows_by_cell is a spawn-time snapshot; under
+    dependency scheduling the producer outputs are guaranteed on disk by the
+    time a dependent shard is released, but they may POSTDATE the snapshot.
+    shard_rows dicts are this process's own copies — mutation is local.
+    """
+    if not own_policy and text_source in ("instruct", "pretrained", "shuffled", "claude"):
+        shard_corpus_dir = Path(args.corpus_dir) if args.corpus_dir else out_dir / "corpus"
+        attach_completion_sources(shard_rows, shard_corpus_dir, out_dir)
+
+
 def _process_shard(
     shard: Shard,
     rows_by_cell: dict[str, list[dict]],
@@ -2091,6 +2123,8 @@ def _process_shard(
             "shard_idx": shard.shard_idx,
             "n_rows": n_rows,
         }
+
+    _maybe_attach_shard_sources(shard_rows, args, out_dir, own_policy, text_source)
 
     # ---- Step 1: Get completions ----
     completions: list[str] = []
@@ -2253,11 +2287,38 @@ def _subset_id_for_cell(cell_id: str) -> str:
     return "full_manifest"
 
 
-def _rows_for_cell(rows: list[dict], cell_id: str) -> list[dict]:
+def _derangement_keys(corpus_dir: Path) -> set[str]:
+    """Row ids covered by the shuffled-pairing derangement (corpus artifact)."""
+    path = Path(corpus_dir) / "derangement_map.json"
+    if not path.exists():
+        raise FileNotFoundError(
+            f"derangement_map.json missing under {corpus_dir}; required to determine "
+            "the shuffled cells' row domain"
+        )
+    return set(json.loads(path.read_text(encoding="utf-8")).keys())
+
+
+def _rows_for_cell(
+    rows: list[dict], cell_id: str, derangement_keys: set[str] | None = None
+) -> list[dict]:
     subset_id = _subset_id_for_cell(cell_id)
     if subset_id == "full_manifest":
         return rows
     filtered = [row for row in rows if row.get(subset_id)]
+    if CELL_CONFIG[cell_id]["text_source"] == "shuffled":
+        # round-8.8: the shuffled pairing is DEFINED only on the derangement
+        # domain (dense_core + periphery_random + periphery_natural — plan
+        # §4.1 step 7); the control subset ALSO contains battery + topic-
+        # matched periphery rows, which have no derangement entry and hence
+        # no shuffled answer (launch 7: all 30 shuf-shard failures were the
+        # first such row per shard). Membership comes from the derangement
+        # KEYS — corpus data, available before any generation runs.
+        if derangement_keys is None:
+            raise ValueError(
+                f"{cell_id} requires derangement_keys to determine its row domain "
+                "(pass _derangement_keys(corpus_dir))"
+            )
+        filtered = [row for row in filtered if str(row.get("row_id")) in derangement_keys]
     if not filtered:
         raise ValueError(f"{cell_id} subset {subset_id} is empty; refusing to shard full manifest")
     return filtered
@@ -2334,36 +2395,205 @@ def _worker_loop(
             runtime.close()
 
 
-def run_dispatch(
-    cells: list[str],
-    rows: list[dict],
-    prefix_store: dict,
-    query_store: dict,
-    out_dir: Path,
-    args: argparse.Namespace,
-    rb_directions: np.ndarray | None,
-    corpus_hash: str,
-) -> list[dict]:
-    """Work-conserving multi-GPU dispatcher.
+# ── cross-cell dependency scheduling (round-8.8) ─────────────────────────────
+# Launch 7 post-mortem: the queue treated cells as independent, but cross-text
+# cells CONSUME other cells' generation outputs. The edges are derived from
+# the completion-source map (CELL_CONFIG text_source), never hardcoded lists.
+_TEXT_SOURCE_PRODUCER: dict[str, str] = {
+    "instruct": "cell_inst_own",  # cell_pre_insttext consumes inst_own gen
+    "pretrained": "cell_pre_own",  # cell_inst_pretext consumes pre_own gen
+    "shuffled": "cell_inst_own",  # shuf cells consume the derangement over inst_own answers
+    # "claude": produced by P1 (off-pod) — readiness is the STAGED file,
+    # validated up-front in _validate_dispatch_inputs, never a cell edge.
+}
 
-    Creates one child process per GPU; workers pull shards from a shared queue.
-    Returns list of result dicts.
+# Transient vLLM engine-core init failures (the launch-5 flake class): requeue
+# the shard ONCE; a second failure — or any other error — is terminal.
+TRANSIENT_INIT_ERROR_MARKERS = (
+    "engine core initialization failed",
+    "failed to start engine core",
+    "enginecore initialization failed",
+)
+
+
+def _is_transient_init_error(error_text: str) -> bool:
+    low = (error_text or "").lower()
+    return any(marker in low for marker in TRANSIENT_INIT_ERROR_MARKERS)
+
+
+def _cell_dependencies(cells: list[str]) -> dict[str, set[str]]:
+    """cell -> producer cells whose FULL completion gates its readiness."""
+    deps: dict[str, set[str]] = {}
+    for cell_id in cells:
+        producer = _TEXT_SOURCE_PRODUCER.get(CELL_CONFIG[cell_id]["text_source"])
+        deps[cell_id] = {producer} if producer and producer != cell_id else set()
+    return deps
+
+
+class _DispatchScheduler:
+    """Dependency-aware shard scheduler for the work-conserving dispatcher.
+
+    Readiness: a cell's shards become READY only when every producer cell in
+    its dependency set has completed ALL of its shards (a shard writes its
+    gen completions to disk BEFORE capture, so full-cell completion implies
+    the consumed outputs exist). A producer NOT in the dispatched cell list
+    does not gate (the caller validates its outputs exist on disk up-front).
+    Work-conserving WITHIN the ready set: every ready shard is released
+    immediately; no wave barriers among ready cells. A transient engine-init
+    failure requeues the shard ONCE (per-shard budget 1); everything else is
+    terminal fail-fast. When a producer finishes with terminal failures, its
+    dependents can never run — `blocked_dependents()` reports them so the
+    dispatcher fails loud instead of waiting on results that cannot come.
     """
-    n_gpus = _detect_gpu_count()
-    if n_gpus == 0:
-        logger.error("No CUDA GPUs detected. Use --cpu-smoke for CPU-only testing.")
-        raise RuntimeError("No CUDA GPUs available")
 
-    logger.info("[dispatch] %d GPUs detected", n_gpus)
+    def __init__(self, cells: list[str], shards: list[Shard], deps: dict[str, set[str]]):
+        self._cells = list(cells)
+        self._deps = deps
+        self._pending: dict[str, list[Shard]] = {c: [] for c in cells}
+        for shard in shards:
+            self._pending[shard.cell_id].append(shard)
+        self._total = {c: len(self._pending[c]) for c in cells}
+        self._done: dict[str, int] = dict.fromkeys(cells, 0)
+        self._terminal: dict[str, int] = dict.fromkeys(cells, 0)
+        self._completed_cells: set[str] = {c for c in cells if self._total[c] == 0}
+        self._failed_cells: set[str] = set()
+        self._retried: set[tuple[str, int]] = set()
+        self._shard_by_key = {(s.cell_id, s.shard_idx): s for s in shards}
+        self.n_shards = len(shards)
+        self.terminal_results = 0
 
-    # Build shard list
-    rows_by_cell = {cell_id: _rows_for_cell(rows, cell_id) for cell_id in cells}
+    def _cell_ready(self, cell_id: str) -> bool:
+        return all(
+            dep in self._completed_cells or dep not in self._total
+            for dep in self._deps.get(cell_id, set())
+        )
+
+    def _drain_ready(self) -> list[Shard]:
+        released: list[Shard] = []
+        for cell_id in self._cells:
+            if self._pending[cell_id] and self._cell_ready(cell_id):
+                released.extend(self._pending[cell_id])
+                self._pending[cell_id] = []
+        return released
+
+    def initial_ready(self) -> list[Shard]:
+        return self._drain_ready()
+
+    def on_result(self, result: dict) -> tuple[list[Shard], Shard | None]:
+        """Returns (newly_ready_shards, retry_shard). Retries are NOT terminal."""
+        cell_id = result["cell_id"]
+        shard_idx = result["shard_idx"]
+        if result.get("status") == "error":
+            key = (cell_id, shard_idx)
+            if _is_transient_init_error(str(result.get("error", ""))) and key not in self._retried:
+                self._retried.add(key)
+                return [], self._shard_by_key[key]
+            self.terminal_results += 1
+            self._terminal[cell_id] += 1
+        else:
+            self.terminal_results += 1
+            self._terminal[cell_id] += 1
+            self._done[cell_id] += 1
+            if self._done[cell_id] == self._total[cell_id]:
+                self._completed_cells.add(cell_id)
+                return self._drain_ready(), None
+        if self._terminal[cell_id] == self._total[cell_id] and cell_id not in self._completed_cells:
+            self._failed_cells.add(cell_id)
+        return [], None
+
+    def blocked_dependents(self) -> list[str]:
+        return sorted(
+            cell_id
+            for cell_id in self._cells
+            if self._pending[cell_id] and (self._deps.get(cell_id, set()) & self._failed_cells)
+        )
+
+    @property
+    def finished(self) -> bool:
+        return self.terminal_results >= self.n_shards
+
+
+def _validate_dispatch_inputs(
+    cells: list[str],
+    out_dir: Path,
+    corpus_dir: Path,
+    *,
+    gen_in_stage: bool = True,
+) -> None:
+    """Fail-loud AT READINESS-DERIVATION TIME, never mid-shard (round-8.8).
+
+    - Claude cells: the P1 completions file must already be staged (launch 7:
+      all 48 claude-shard failures were the unstaged file surfacing row by row).
+    - Shuffled cells: the derangement map must exist.
+    - A producer whose gen output is NOT produced within this stage — the
+      producer is not dispatched, or the stage has no gen phase (capture-only)
+      — must already have its completions on disk.
+    """
+    claude_cells = [c for c in cells if CELL_CONFIG[c]["text_source"] == "claude"]
+    if claude_cells:
+        claude_dir = out_dir / "raw_completions" / "claude"
+        if not sorted(claude_dir.glob("claude_completions*.jsonl")):
+            raise FileNotFoundError(
+                f"claude cells {claude_cells} dispatched but no claude_completions*.jsonl "
+                f"staged under {claude_dir}; stage the P1 output "
+                "(hf: issue1092_realistic_crossing/raw_completions/claude/) first"
+            )
+    if any(CELL_CONFIG[c]["text_source"] == "shuffled" for c in cells):
+        _derangement_keys(corpus_dir)  # raises if missing
+    dispatched = set(cells)
+    for cell_id in cells:
+        for producer in _cell_dependencies([cell_id])[cell_id]:
+            if gen_in_stage and producer in dispatched:
+                continue  # produced within this stage, gated by the scheduler edge
+            producer_model = CELL_CONFIG[producer]["model"]
+            producer_dir = out_dir / "raw_completions" / producer_model
+            if not sorted(producer_dir.glob(f"{producer}_shard*.jsonl")):
+                raise FileNotFoundError(
+                    f"{cell_id} depends on {producer}, whose completions are not on disk "
+                    f"under {producer_dir} and are not produced within this stage"
+                )
+
+
+def _make_dispatch_queues(ctx, cells: list[str], n_gpus: int, gen_in_stage: bool):
+    """Model-affinity queues (round-8.8 memory safety).
+
+    A GEN worker holds ONE vLLM engine for its whole lifetime (two engines at
+    gpu_memory_utilization=0.85 cannot coexist, and in-process vLLM teardown
+    is unreliable — CLAUDE.md gotcha). When a gen stage mixes both models,
+    the GPUs split between per-model queues (work-conserving WITHIN each
+    group; the instruct/pretrained cell sets are balanced 4/4 by design).
+    Capture-only stages use one queue for all workers (both HF models coexist
+    per worker). Returns (queues_by_model, worker_models, affinity).
+    """
+    models = sorted({CELL_CONFIG[c]["model"] for c in cells})
+    affinity = gen_in_stage and len(models) > 1
+    if affinity and n_gpus < 2:
+        raise RuntimeError(
+            "gen dispatch mixing instruct+pretrained models needs >=2 GPUs "
+            "(one vLLM engine per worker lifetime); dispatch per-model cell groups instead"
+        )
+    if affinity:
+        queues = {m: ctx.Queue() for m in models}
+        worker_models = [
+            models[0] if gpu_id < n_gpus // 2 else models[1] for gpu_id in range(n_gpus)
+        ]
+    else:
+        single_queue = ctx.Queue()
+        queues = dict.fromkeys(models, single_queue)
+        worker_models = [models[0]] * n_gpus
+    return queues, worker_models, affinity
+
+
+def _build_cell_shards(
+    cells: list[str], rows_by_cell: dict[str, list[dict]], n_gpus: int
+) -> list[Shard]:
+    """Per-cell row-range shards sized for the GPU count (unchanged sizing)."""
     max_cell_rows = max(len(cell_rows) for cell_rows in rows_by_cell.values())
     shard_size = max(1, min(512, max_cell_rows // max(1, n_gpus * 2) or max_cell_rows))
     shards: list[Shard] = []
     for cell_id in cells:
         n_rows = len(rows_by_cell[cell_id])
-        cell_shards = []
+        cell_shards: list[Shard] = []
         for start in range(0, n_rows, shard_size):
             end = min(start + shard_size, n_rows)
             cell_shards.append(
@@ -2376,16 +2606,75 @@ def run_dispatch(
                 )
             )
         shards.extend(cell_shards)
+    return shards
 
-    logger.info("[dispatch] %d shards across %d cells", len(shards), len(cells))
+
+def run_dispatch(
+    cells: list[str],
+    rows: list[dict],
+    prefix_store: dict,
+    query_store: dict,
+    out_dir: Path,
+    args: argparse.Namespace,
+    rb_directions: np.ndarray | None,
+    corpus_hash: str,
+) -> list[dict]:
+    """Work-conserving multi-GPU dispatcher with cross-cell dependency edges.
+
+    Creates one child process per GPU; workers pull shards from a shared
+    queue. Shards are RELEASED to the queue by the `_DispatchScheduler` —
+    immediately for cells with no (unsatisfied) producer edge, and the moment
+    the producer cell completes otherwise (round-8.8; launch 7 failed when
+    cross-text cells ran against not-yet-attached producer outputs). Returns
+    the list of TERMINAL result dicts (a once-retried transient init failure
+    is absorbed, not returned).
+    """
+    n_gpus = _detect_gpu_count()
+    if n_gpus == 0:
+        logger.error("No CUDA GPUs detected. Use --cpu-smoke for CPU-only testing.")
+        raise RuntimeError("No CUDA GPUs available")
+
+    logger.info("[dispatch] %d GPUs detected", n_gpus)
+
+    gen_in_stage = "gen" in args.phases_set
+    # Dependency edges gate readiness only when this stage PRODUCES the
+    # consumed gen outputs; a capture-only stage validates them on disk
+    # instead (no edges — captures are independent once completions exist).
+    deps = _cell_dependencies(cells) if gen_in_stage else {c: set() for c in cells}
+    corpus_dir = Path(args.corpus_dir) if args.corpus_dir else out_dir / "corpus"
+    _validate_dispatch_inputs(cells, out_dir, corpus_dir, gen_in_stage=gen_in_stage)
+    needs_derangement = any(CELL_CONFIG[c]["text_source"] == "shuffled" for c in cells)
+    dkeys = _derangement_keys(corpus_dir) if needs_derangement else None
+
+    # Build shard list
+    rows_by_cell = {
+        cell_id: _rows_for_cell(rows, cell_id, derangement_keys=dkeys) for cell_id in cells
+    }
+    shards = _build_cell_shards(cells, rows_by_cell, n_gpus)
+
+    scheduler = _DispatchScheduler(cells, shards, deps)
+    logger.info(
+        "[dispatch] %d shards across %d cells; dependency edges: %s",
+        len(shards),
+        len(cells),
+        {c: sorted(d) for c, d in deps.items() if d},
+    )
 
     ctx = mp.get_context("spawn")
-    shard_queue = ctx.Queue()
-    for shard in shards:
-        shard_queue.put(shard)
-    # Sentinel per worker
-    for _ in range(n_gpus):
-        shard_queue.put(None)
+    queues, worker_models, affinity = _make_dispatch_queues(ctx, cells, n_gpus, gen_in_stage)
+
+    def _enqueue(shard: Shard) -> None:
+        queues[CELL_CONFIG[shard.cell_id]["model"]].put(shard)
+
+    initial = scheduler.initial_ready()
+    for shard in initial:
+        _enqueue(shard)
+    logger.info(
+        "[dispatch] initial ready set: %d shards (%s); affinity=%s",
+        len(initial),
+        sorted({s.cell_id for s in initial}),
+        {m: worker_models.count(m) for m in set(worker_models)} if affinity else "off",
+    )
 
     result_queue = ctx.Queue()
     code_sha_val = code_sha()
@@ -2397,7 +2686,7 @@ def run_dispatch(
             target=_worker_loop,
             args=(
                 gpu_id,
-                shard_queue,
+                queues[worker_models[gpu_id]],
                 result_queue,
                 rows_by_cell,
                 prefix_store,
@@ -2417,10 +2706,19 @@ def run_dispatch(
     # Collect results. On timeout or parent-side failure, terminate children so
     # vLLM/HF engines do not survive past the dispatcher.
     results = []
-    n_expected = len(shards)
     try:
-        while len(results) < n_expected:
+        while not scheduler.finished:
             result = result_queue.get(timeout=3600)
+            newly_ready, retry_shard = scheduler.on_result(result)
+            if retry_shard is not None:
+                logger.warning(
+                    "[dispatch] transient engine-init failure on %s/%d - requeueing once: %s",
+                    result["cell_id"],
+                    result["shard_idx"],
+                    result.get("error"),
+                )
+                _enqueue(retry_shard)
+                continue  # absorbed; not a terminal result
             results.append(result)
             if result["status"] == "error":
                 logger.error(
@@ -2437,7 +2735,24 @@ def run_dispatch(
                     result["status"],
                     result.get("n_rows", 0),
                 )
+            for shard in newly_ready:
+                _enqueue(shard)
+            if newly_ready:
+                logger.info(
+                    "[dispatch] released %d newly-ready shards (%s)",
+                    len(newly_ready),
+                    sorted({s.cell_id for s in newly_ready}),
+                )
+            blocked = scheduler.blocked_dependents()
+            if blocked:
+                raise RuntimeError(
+                    f"[dispatch] producer cell(s) failed terminally; dependent cells can "
+                    f"never become ready: {blocked}"
+                )
     finally:
+        # Sentinels release workers blocked on their queue (sent even on error).
+        for gpu_id in range(n_gpus):
+            queues[worker_models[gpu_id]].put(None)
         for p in processes:
             p.join(timeout=60)
             if p.is_alive():
@@ -3410,13 +3725,18 @@ def run_hf_cpu_smoke(args: argparse.Namespace) -> None:
     )
 
     rb_pool = None
+    smoke_dkeys = (
+        _derangement_keys(Path(args.corpus_dir))
+        if any(CELL_CONFIG[c]["text_source"] == "shuffled" for c in cells) and args.corpus_dir
+        else None
+    )
     if "capture" in args.phases_set or "gen" in args.phases_set:
         for cell_id in cells:
             cfg = CELL_CONFIG[cell_id]
             prefix_texts: list[str] = []
             prompts: list[str] = []
             completions: list[str] = []
-            for row in _rows_for_cell(rows, cell_id):
+            for row in _rows_for_cell(rows, cell_id, derangement_keys=smoke_dkeys):
                 prefix_text, prompt, completion = render_row(
                     row,
                     prefix_store,
@@ -3437,7 +3757,7 @@ def run_hf_cpu_smoke(args: argparse.Namespace) -> None:
                 cell_id=cell_id,
                 shard_idx=0,
                 model_type=cfg["model"],
-                rows=_rows_for_cell(rows, cell_id),
+                rows=_rows_for_cell(rows, cell_id, derangement_keys=smoke_dkeys),
                 completions=completions,
             )
             if "capture" in args.phases_set:
@@ -3729,7 +4049,6 @@ def main() -> None:  # noqa: C901
     all_results: list[dict] = []
     completed_cells: list[str] = []
     non_own_cells = [c for c in args.cells if not CELL_CONFIG[c]["own_policy"]]
-    own_cells = [c for c in args.cells if CELL_CONFIG[c]["own_policy"]]
     if non_own_cells:
         attach_completion_sources(rows, corpus_dir, out_dir)
 
@@ -3778,28 +4097,26 @@ def main() -> None:  # noqa: C901
             )
             attach_completion_sources(rows, corpus_dir, out_dir)
 
-        remaining_own = [c for c in own_cells if c not in completed_cells]
-        if remaining_own:
-            logger.info("[main] own-policy staged gen/capture: %s", remaining_own)
+        # round-8.8: dependency-scheduled stages over ALL remaining cells at
+        # once — run_dispatch's _DispatchScheduler releases a dependent cell's
+        # shards the moment its producer completes (work-conserving within the
+        # ready set; no wave barriers among ready cells). gen and capture stay
+        # SEPARATE dispatches for memory safety (one vLLM engine per worker
+        # lifetime in gen — model-affinity queues split the GPUs between the
+        # instruct/pretrained engines; capture coexists both HF models per
+        # worker). The first-cell G2 gate above stays a deliberate barrier
+        # (plan §7: validate the rig before burning the other cells). Workers
+        # attach cross-text completion sources FRESH FROM DISK per shard, so
+        # the spawn-time snapshot never goes stale (_process_shard).
+        remaining = [c for c in args.cells if c not in completed_cells]
+        if remaining:
             if "gen" in orig_phases:
-                for cell_id in remaining_own:
-                    run_cell_stage([cell_id], {"gen"}, rb=rb_directions)
-                attach_completion_sources(rows, corpus_dir, out_dir)
+                logger.info("[main] dependency-scheduled gen stage: cells=%s", remaining)
+                run_cell_stage(remaining, {"gen"}, rb=rb_directions)
             if "capture" in orig_phases:
-                for cell_id in remaining_own:
-                    run_cell_stage([cell_id], {"capture"}, rb=rb_directions)
-                    completed_cells.append(cell_id)
-                attach_completion_sources(rows, corpus_dir, out_dir)
-            elif "gen" in orig_phases:
-                completed_cells.extend(remaining_own)
-
-        if non_own_cells:
-            logger.info("[main] non-own capture stage: %s", non_own_cells)
-            if "capture" in orig_phases:
-                args.phases_set = orig_phases
-                attach_completion_sources(rows, corpus_dir, out_dir)
-                run_cell_stage(non_own_cells, {"capture"}, rb=None)
-                completed_cells.extend(non_own_cells)
+                logger.info("[main] parallel capture stage: cells=%s", remaining)
+                run_cell_stage(remaining, {"capture"}, rb=rb_directions)
+            completed_cells.extend(remaining)
 
     args.cells = orig_cells
     args.phases_set = orig_phases

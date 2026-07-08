@@ -35,6 +35,22 @@ required = {"manifest.jsonl", "prefix_store.jsonl", "query_store.jsonl", "derang
 missing = required - set(names)
 assert not missing, f"staged corpus missing {missing}; got {sorted(names)}"
 print(f"[dispatch] staged {len(names)} corpus files @ {REV[:12]}: {sorted(names)}")
+
+# round-8.8: stage the P1 Claude completions (HF-verified 12,172/12,172) so
+# the claude cells' up-front readiness check passes (launch 7: all 48
+# claude-shard failures were this file never being staged). Idempotent.
+claude_dst = pathlib.Path(os.environ["EPS_OUT_DIR"]) / "raw_completions" / "claude"
+claude_dst.mkdir(parents=True, exist_ok=True)
+claude_prefix = "issue1092_realistic_crossing/raw_completions/claude"
+n_claude = 0
+for it in list_repo_tree(REPO, repo_type="dataset", path_in_repo=claude_prefix):
+    name = pathlib.Path(it.path).name
+    if name.startswith("claude_completions") and name.endswith(".jsonl"):
+        local = hf_hub_download(REPO, repo_type="dataset", filename=it.path)
+        shutil.copy(local, claude_dst / name)
+        n_claude += 1
+assert n_claude >= 1, f"no claude_completions*.jsonl under {claude_prefix}"
+print(f"[dispatch] staged {n_claude} claude completion file(s) -> {claude_dst}")
 PY
 
 # round-8.5: vLLM-on-H100 IMA mitigation (launch #4: CUDA illegal memory access
