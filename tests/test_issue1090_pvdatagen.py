@@ -611,7 +611,10 @@ def test_oversample_mult_scales_positive_budget_and_enters_manifest(tmp_path):
 
 def test_oversample_mult_resume_key_with_preknob_normalization(tmp_path):
     """A pre-knob manifest (no key) reads as 1.0 — a mult-1.0 re-run replays the
-    raw cache; a CHANGED budget refuses it (DatagenCheckpointMismatchError)."""
+    raw cache; a mult-ONLY change quarantines the stale raw candidates and
+    regenerates at the new budget (#1090 fu3 crash-fix 2 — launch 4's yield-miss
+    retries relaunch onto pod dirs holding mult-1.0 manifests); any OTHER
+    manifest drift still refuses loud (DatagenCheckpointMismatchError)."""
     beh = BEHAVIORS["sycophancy"]
     d = tmp_path / "d"
     kwargs = dict(
@@ -630,8 +633,17 @@ def test_oversample_mult_resume_key_with_preknob_normalization(tmp_path):
     del m["oversample_mult"]  # simulate the pre-knob v2 manifest on disk
     mpath.write_text(json.dumps(m) + "\n")
     datagen.generate_training_data(beh, SRC, "default_v1", **kwargs)  # resumes clean
+    # mult-ONLY change -> quarantine + regenerate (no raise), new manifest lands.
+    datagen.generate_training_data(beh, SRC, "default_v1", oversample_mult=2.0, **kwargs)
+    stale = d / "stale_mult_1.0"
+    assert (stale / "gen_manifest.json").exists()
+    assert (stale / "raw_pos.jsonl").exists()
+    assert json.loads(mpath.read_text())["oversample_mult"] == 2.0
+    # any OTHER drift (here: seed) still refuses loud.
     with pytest.raises(datagen.DatagenCheckpointMismatchError):
-        datagen.generate_training_data(beh, SRC, "default_v1", oversample_mult=2.0, **kwargs)
+        datagen.generate_training_data(
+            beh, SRC, "default_v1", oversample_mult=2.0, seed=7, **kwargs
+        )
 
 
 def test_run_datagen_cell_threads_budget_and_rerun_semantics(monkeypatch, tmp_path):

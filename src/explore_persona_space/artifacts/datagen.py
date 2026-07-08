@@ -42,6 +42,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import logging
 import math
 import time
 from collections import Counter
@@ -64,6 +65,8 @@ from explore_persona_space.artifacts.negatives import (
     per_negative_quota,
 )
 from explore_persona_space.eval.graded_judge import JudgeResult, judge_graded
+
+logger = logging.getLogger(__name__)
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
@@ -306,7 +309,8 @@ class _ArmDrops:
     judge_none_drops: int = 0
     threshold_drops: int = 0
     structural_drops: int = 0
-    variant_usage: Counter = field(default_factory=Counter)
+    variant_usage: Counter = field(default_factory=Counter)  # REQUESTED candidates per variant
+    variant_kept: Counter = field(default_factory=Counter)  # judge-KEPT candidates per variant
     question_multiplicity: Counter = field(default_factory=Counter)
 
 
@@ -714,6 +718,7 @@ def _judge_and_filter(
                 keep = True
         scoreinfo[rid] = (score, keep)
         if keep:
+            drops.variant_kept[c.request.variant_id] += 1
             kept.append(c)
     return kept, drops, result, scoreinfo
 
@@ -798,6 +803,54 @@ def _validate_scalar_fences(
             f"oversample_mult must be in [1.0, {max_oversample_mult}] (the request-count "
             f"fence), got {oversample_mult}"
         )
+
+
+def _resume_or_quarantine_manifest(
+    out_dir: Path,
+    manifest: dict,
+    manifest_path: Path,
+    raw_pos_path: Path,
+    raw_neg_path: Path,
+) -> None:
+    """Resume-key gate for the raw-candidate cache (writes/validates gen_manifest.json).
+
+    Exact match -> resume the raw cache. A mult-ONLY change (#1090 fu3 crash-fix 2:
+    a yield-miss retry at a recalibrated request budget) QUARANTINES the stale raw
+    candidates to ``stale_mult_<old>/`` (never deletes — persist-by-default) and
+    regenerates fresh under the new manifest. Any OTHER drift raises
+    :class:`DatagenCheckpointMismatchError` naming the changed keys.
+    """
+    if not manifest_path.exists():
+        manifest_path.write_text(_canonical(manifest) + "\n")
+        return
+    existing = json.loads(manifest_path.read_text())
+    # Back-compat (#1090 round 4): a pre-knob v2 manifest lacks the key and
+    # was generated at the implicit 1.0 budget — normalize instead of
+    # invalidating every completed dir, so a mult-1.0 re-run resumes.
+    existing.setdefault("oversample_mult", 1.0)
+    if existing == manifest:
+        return
+    diff_keys = {k for k in set(existing) | set(manifest) if existing.get(k) != manifest.get(k)}
+    if diff_keys != {"oversample_mult"}:
+        raise DatagenCheckpointMismatchError(
+            f"gen_manifest.json in {out_dir} does not match the current args "
+            f"(changed keys: {sorted(diff_keys)}). "
+            "Refusing to reuse stale raw candidates; use a fresh out_dir."
+        )
+    stale_dir = out_dir / f"stale_mult_{existing['oversample_mult']}"
+    stale_dir.mkdir(parents=True, exist_ok=True)
+    for p in (manifest_path, raw_pos_path, raw_neg_path):
+        if p.exists():
+            p.rename(stale_dir / p.name)
+    logger.warning(
+        "oversample_mult changed %s -> %s in %s: quarantined stale raw "
+        "candidates to %s and regenerating at the new budget.",
+        existing["oversample_mult"],
+        manifest["oversample_mult"],
+        out_dir,
+        stale_dir,
+    )
+    manifest_path.write_text(_canonical(manifest) + "\n")
 
 
 def generate_training_data(
@@ -915,21 +968,7 @@ def generate_training_data(
     manifest_path = out_dir / "gen_manifest.json"
     raw_pos_path = out_dir / "raw_pos.jsonl"
     raw_neg_path = out_dir / "raw_neg.jsonl"
-    if manifest_path.exists():
-        existing = json.loads(manifest_path.read_text())
-        # Back-compat (#1090 round 4): a pre-knob v2 manifest lacks the key and
-        # was generated at the implicit 1.0 budget — normalize instead of
-        # invalidating every completed dir, so a mult-1.0 re-run resumes and
-        # only a CHANGED budget refuses the stale raw cache.
-        existing.setdefault("oversample_mult", 1.0)
-        if existing != manifest:
-            raise DatagenCheckpointMismatchError(
-                f"gen_manifest.json in {out_dir} does not match the current args "
-                "(behavior/bank/instructions/context/target_n/seed/model changed). "
-                "Refusing to reuse stale raw candidates; use a fresh out_dir."
-            )
-    else:
-        manifest_path.write_text(_canonical(manifest) + "\n")
+    _resume_or_quarantine_manifest(out_dir, manifest, manifest_path, raw_pos_path, raw_neg_path)
 
     def _gen(phase: str) -> GenerateFn:
         return generate_fn or _default_generate_fn(
@@ -974,10 +1013,20 @@ def generate_training_data(
 
     # 4a. Emit EXACTLY floor_n positives (seeded subsample) -> the emitted question set.
     if len(pos_kept) < floor_n:
+        # NOTE (#1090 fu3 crash-fix 2): keep accounting is the cross-variant UNION —
+        # every judge-kept (question, variant) row counts toward the floor. The old
+        # message labeled variant_usage (REQUESTED per variant) as "yields", which
+        # misread launch-3's 15/36 keep-rate miss as a variant-selection bug.
+        breakeven_mult = float(oversample_mult) * floor_n / max(1, len(pos_kept))
         raise DatagenYieldError(
             f"behavior {behavior.name!r}: kept {len(pos_kept)} positives < floor_n={floor_n} "
-            f"(target_n={target_n}, quota_floor={quota_floor}). Per-variant yields: "
-            f"{dict(pos_drops.variant_usage)}"
+            f"(target_n={target_n}, quota_floor={quota_floor}, "
+            f"requested={pos_drops.requested}, judgeable={pos_drops.generated}, "
+            f"keep_rate={len(pos_kept) / max(1, pos_drops.requested):.3f}). "
+            f"Kept-per-variant (union counts toward the floor): {dict(pos_drops.variant_kept)}; "
+            f"requested-per-variant: {dict(pos_drops.variant_usage)}. "
+            f"Remedy: raise --oversample-mult to >= {breakeven_mult:.2f} "
+            f"(break-even at the realized keep rate; add margin)."
         )
     emitted_pos = _seeded_sample(pos_kept, floor_n, _rng(seed + 1))
     emitted_pos_qids = {c.request.question_id for c in emitted_pos}
@@ -1192,6 +1241,14 @@ def _build_pool_meta(**k) -> dict:
         "instruction_variant_usage": {
             "positive": dict(pos_drops.variant_usage),
             "negative": dict(neg_drops.variant_usage),
+        },
+        # Tier-mix disclosure (#1090 fu3 crash-fix 2; on-policy-completions rule):
+        # the floor counts the cross-variant UNION of judge-kept rows, so the
+        # analyzer needs the realized kept-per-variant mix to report completion
+        # provenance (usage above counts REQUESTED candidates, not keeps).
+        "instruction_variant_kept": {
+            "positive": dict(pos_drops.variant_kept),
+            "negative": dict(neg_drops.variant_kept),
         },
         "question_multiplicity": {
             "positive": dict(pos_drops.question_multiplicity),

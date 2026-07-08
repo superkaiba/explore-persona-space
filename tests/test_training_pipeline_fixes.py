@@ -134,53 +134,68 @@ def test_intermediate_merged_missing_dir_is_noop(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# #10 — CVD-disagreement warning (warn only; value unchanged)
+# #10 — CVD pin: an inherited single-GPU launcher pin is AUTHORITATIVE
+# (#1090 fu3 crash-fix 2 — the #557/#543/#545 co-location class). This test
+# FAILED pre-fix (the old code re-exported str(gpu_id) over the inherited pin,
+# collapsing every CVD-pinned parallel cell onto physical GPU 0).
 # ---------------------------------------------------------------------------
 
 
-def test_cvd_warning_fires_on_disagreement(
-    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+def test_cvd_inherited_single_gpu_pin_is_authoritative(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Inherited CVD != gpu_id -> WARNING fires, env value is left untouched."""
+    """Launcher-pinned CVD=3 + default gpu_id=0 -> env NEVER mutated (no GPU-0 clobber)."""
+    import os
+
     from explore_persona_space.train import sft
 
     monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "3")
-    with caplog.at_level(logging.WARNING, logger="explore_persona_space.train.sft"):
-        sft._warn_if_cvd_disagrees(0)
-
-    assert any("disagrees with cfg.gpu_id" in rec.message for rec in caplog.records), (
-        "expected a CVD-disagreement WARNING"
+    assert sft._apply_cvd_pin(0) is None
+    assert os.environ["CUDA_VISIBLE_DEVICES"] == "3", (
+        "the inherited single-GPU pin must never be re-exported from gpu_id"
     )
-    # The helper must NOT mutate the env — the caller's assignment is what wins.
+
+
+def test_cvd_matching_pair_keeps_inherited_pin(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The sanctioned launcher pattern (CVD=2 + gpu_id=2) keeps the inherited pin."""
     import os
 
-    assert os.environ["CUDA_VISIBLE_DEVICES"] == "3"
-
-
-def test_cvd_warning_silent_on_agreement(
-    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
-) -> None:
-    """Inherited CVD == gpu_id -> no warning."""
     from explore_persona_space.train import sft
 
     monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "2")
-    with caplog.at_level(logging.WARNING, logger="explore_persona_space.train.sft"):
-        sft._warn_if_cvd_disagrees(2)
-
-    assert not any("disagrees with cfg.gpu_id" in rec.message for rec in caplog.records)
+    assert sft._apply_cvd_pin(2) is None
+    assert os.environ["CUDA_VISIBLE_DEVICES"] == "2"
 
 
-def test_cvd_warning_silent_when_env_unset(
-    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
-) -> None:
-    """No inherited CVD -> no warning (the common single-GPU launch)."""
+def test_cvd_contradictory_pin_fails_loud(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Inherited single-GPU CVD=1 + gpu_id=2 -> RuntimeError (two different pins)."""
+    import os
+
+    from explore_persona_space.train import sft
+
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "1")
+    with pytest.raises(RuntimeError, match="contradicts"):
+        sft._apply_cvd_pin(2)
+    assert os.environ["CUDA_VISIBLE_DEVICES"] == "1"
+
+
+def test_cvd_exported_when_env_unset_or_multi_gpu(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Legacy +gpu_id=N contract unchanged: unset / empty / multi-GPU env -> export."""
+    import os
+
     from explore_persona_space.train import sft
 
     monkeypatch.delenv("CUDA_VISIBLE_DEVICES", raising=False)
-    with caplog.at_level(logging.WARNING, logger="explore_persona_space.train.sft"):
-        sft._warn_if_cvd_disagrees(0)
+    assert sft._apply_cvd_pin(2) == "2"
+    assert os.environ["CUDA_VISIBLE_DEVICES"] == "2"
 
-    assert not any("disagrees with cfg.gpu_id" in rec.message for rec in caplog.records)
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "")
+    assert sft._apply_cvd_pin(1) == "1"
+    assert os.environ["CUDA_VISIBLE_DEVICES"] == "1"
+
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0,1,2,3")
+    assert sft._apply_cvd_pin(3) == "3"
+    assert os.environ["CUDA_VISIBLE_DEVICES"] == "3"
 
 
 # ---------------------------------------------------------------------------

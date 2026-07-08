@@ -84,15 +84,23 @@ ISSUE = 1090
 DATA_PREFIX_FU3 = "issue1090_fu3"  # distinct from the round-1 DATA_PREFIX
 MODEL_PREFIX_FU3 = "adapters/issue1090_fu3"
 JUDGE_MAX_TOKENS = 300  # llm-judging rule 23 — the #1090 truncation fix, EXPLICIT everywhere
-# fu3 r3 (concern fu3-posonly-bare-datagen-yield-floor): the DEFAULT positive
-# request-budget multiplier for posonly x bare cells. Grounding — the B2
-# FULL-scale smoke's C3-bare-pos read (the concern record + the target_n clamp
-# comment below): kept 5 positives of the 36-request mult-1.0 budget
-# (keep-rate ~0.139) vs floor 20 => break-even mult 20/5 = 4.0; 5.0 carries a
-# 1.25x margin (180 requests -> E[kept] ~= 25). An explicit --oversample-mult
-# always wins; non-(posonly x bare) cells keep 1.0.
-POSONLY_BARE_OVERSAMPLE_MULT = 5.0
-FU3_MAX_OVERSAMPLE_MULT = 6.0  # fu3 CLI + datagen fence (round-1 cells keep the 2x fence)
+# fu3 crash-fix 2 (launch-3 yield-miss recalibration): DEFAULT positive
+# request-budget multipliers, grounded in the launch-3 offline yield replay
+# (scripts/issue1090_fu3_yield_replay.py over the 23 uploaded datagen sidecars):
+# - non-bare cells realized keep-rates 0.33-0.61 vs the 0.70 EXPECTED_YIELD
+#   assumption (worst break-even mult 1.67 at C3-conv/C1-conv) -> 2.5 carries a
+#   >=1.5x margin (90 requests; binomial P[kept>=20] ~= 0.99 at p=0.333).
+# - BARE cells (any arm — launch 3's C3-bare-CON missed at mult 1.0 exactly as
+#   the posonly cell had) collapse to keep-rate 0.067-0.111 (C3-bare-pos kept
+#   12/180 AT the old mult 5.0 => break-even 8.33) -> 12.0 (432 requests;
+#   binomial P[kept>=20] ~= 0.96 at p=0.067).
+# - broad_em (C6) keep-rates 0.000-0.017 are NOT mult-fixable (break-even >=20)
+#   — a genuine elicitation yield failure, reported via DatagenYieldError per
+#   the on-policy-completions rule (drop + report, never backfill).
+# An explicit --oversample-mult always wins.
+DEFAULT_OVERSAMPLE_MULT = 2.5
+BARE_OVERSAMPLE_MULT = 12.0  # supersedes POSONLY_BARE_OVERSAMPLE_MULT (now any-arm)
+FU3_MAX_OVERSAMPLE_MULT = 12.0  # fu3 CLI + datagen fence (round-1 cells keep the 2x fence)
 BASE_VLLM_PORT = 8000  # worker i binds VLLM_PORT = 8000 + i (plan §D7)
 SENTINEL_SCHEMA_VERSION = 1
 DEFAULT_SENTINEL_DIR = Path("/workspace/logs")
@@ -499,12 +507,12 @@ def cmd_cell(args: argparse.Namespace) -> int:  # noqa: C901 — the per-cell §
     shim = run_cell_shim(row)
     ctx = ensure_context(row["context_id"], row["behavior"])
     posonly = row["regime"] == "posonly"
-    # fu3 r3 (concern fu3-posonly-bare-datagen-yield-floor): posonly x bare
-    # cells default to the measured-keep-rate budget (see
-    # POSONLY_BARE_OVERSAMPLE_MULT); an explicit --oversample-mult wins.
+    # fu3 crash-fix 2: measured-keep-rate defaults for EVERY cell (bare cells of
+    # ANY arm collapse hardest — see the BARE_OVERSAMPLE_MULT grounding block);
+    # an explicit --oversample-mult wins.
     oversample_mult = args.oversample_mult
     if oversample_mult is None:
-        oversample_mult = POSONLY_BARE_OVERSAMPLE_MULT if (posonly and ctx.kind == "bare") else 1.0
+        oversample_mult = BARE_OVERSAMPLE_MULT if ctx.kind == "bare" else DEFAULT_OVERSAMPLE_MULT
     cfg = run1090.RunConfig(
         smoke=args.smoke,
         cells=(shim,),
@@ -968,11 +976,15 @@ def cmd_dispatch(args: argparse.Namespace) -> int:  # noqa: C901 — one work-co
     pending: deque[dict] = deque()
     skipped: list[str] = []
     for row in queue_rows:
+        # fu3 crash-fix 2: yield-miss statuses ("datagen_only_yield_miss",
+        # "skipped_no_yield") are NO LONGER resume-terminal — launch 3 skipped
+        # 19 yield-missed cells that the recalibrated oversample defaults must
+        # retry (datagen quarantines the stale mult-1.0 raw candidates and
+        # regenerates; a deterministic non-yielder like C6/broad_em fails loud
+        # again at API-only cost, the correct reported outcome).
         if read_cell_status(sentinel_dir, row["cell_id"]) in (
             "done",
             "datagen_only_success",
-            "datagen_only_yield_miss",
-            "skipped_no_yield",
         ):
             logger.info("[fu3] %s already terminal — resume-skip", row["cell_id"])
             skipped.append(row["cell_id"])
@@ -1113,9 +1125,9 @@ def parse_args(argv=None) -> argparse.Namespace:
         default=None,
         help=(
             "positive request-budget multiplier ([1.0, "
-            f"{FU3_MAX_OVERSAMPLE_MULT}]; default: {POSONLY_BARE_OVERSAMPLE_MULT} for "
-            "posonly x bare cells — the measured C3-bare-pos keep-rate, see "
-            "POSONLY_BARE_OVERSAMPLE_MULT — else 1.0)"
+            f"{FU3_MAX_OVERSAMPLE_MULT}]; default: {BARE_OVERSAMPLE_MULT} for bare-context "
+            f"cells, else {DEFAULT_OVERSAMPLE_MULT} — grounded in the launch-3 offline "
+            "yield replay, see the BARE_OVERSAMPLE_MULT block)"
         ),
     )
     return ap.parse_args(argv)
