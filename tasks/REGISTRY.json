@@ -712,7 +712,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1090",
       "status": "followups_running",
-      "title": "The training context, not the contrastive-negative panel, gates where implanted content behaviors express on-policy (MODERATE confidence)"
+      "title": "The training context, not the contrastive-negative panel, governs where implanted content behaviors express and leak at matched install (MODERATE confidence)"
     },
     "1091": {
       "has_clean_result": false,
@@ -880,8 +880,8 @@
       "goal": "Measure how residual-stream activation-shift geometry (trained-minus-base, per layer: rank/participation-ratio, direction alignment, magnitude) depends on training method AND contrastive negatives, via a sycophancy 2x2 on #1090's data \u2014 {LoRA, full-fine-tune} x {positive-only, positive+contrastive-negatives} at matched install (training two NEW full-FT twins on #1090's mix) \u2014 plus a marker LoRA-vs-full-FT method comparison; extends #653's LoRA-only diffuse rank-k read and tests whether 2410.21228's weight-space intruder-dimension difference and the contrastive-negatives structure manifest in activation space.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1112",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1112",
+      "status": "awaiting_promotion",
       "title": "Matched-install LoRA and full fine-tuning differ in how far, not in what shape, they shift residual-stream activations (MODERATE confidence)"
     },
     "1113": {
@@ -1034,15 +1034,15 @@
     "1132": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1132",
-      "status": "reviewing",
+      "path": "tasks/running/1132",
+      "status": "running",
       "title": "daily-fix: sweep recursion-guard-parked wf-fix candidates"
     },
     "1133": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/completed/1133",
-      "status": "completed",
+      "path": "tasks/planning/1133",
+      "status": "planning",
       "title": "daily-fix: dose-ladder checkpoint retention sizing rule"
     },
     "1134": {
@@ -1055,29 +1055,29 @@
     "1135": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/completed/1135",
-      "status": "completed",
+      "path": "tasks/reviewing/1135",
+      "status": "reviewing",
       "title": "daily-fix: gotchas entry - CVD clobber at library-train seam"
     },
     "1136": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1136",
-      "status": "reviewing",
+      "path": "tasks/planning/1136",
+      "status": "planning",
       "title": "daily-fix: set-body warns when experiment loses Goal H2"
     },
     "1137": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1137",
-      "status": "running",
+      "path": "tasks/planning/1137",
+      "status": "planning",
       "title": "daily-fix: suppress stalled-alert on fresh poll-tick marker"
     },
     "1138": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1138",
-      "status": "planning",
+      "path": "tasks/proposed/1138",
+      "status": "proposed",
       "title": "daily-fix: verbatim bare push/merge snippets in SKILL.md"
     },
     "1139": {
