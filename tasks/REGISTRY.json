@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1128,
+  "highest_id": 1129,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1002,6 +1002,13 @@
       "path": "tasks/proposed/1128",
       "status": "proposed",
       "title": "daily-fix: block repo-root branch merges in the guard hook"
+    },
+    "1129": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1129",
+      "status": "proposed",
+      "title": "daily-fix: raise step9c pristine-oracle timeout default"
     },
     "113": {
       "has_clean_result": true,
