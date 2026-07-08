@@ -1,0 +1,232 @@
+{
+ "commit": "695daa22b7",
+ "created": "2026-07-08T18:29:20Z",
+ "figsize": [
+  6.0,
+  4.0
+ ],
+ "points": [
+  {
+   "optimizer step": 22.0,
+   "Tier-1 judged rate": 0.6,
+   "series": "selected checkpoint (step 22)",
+   "_kind": "scatter",
+   "_group": 0
+  },
+  {
+   "optimizer step": 2.0,
+   "Tier-1 judged rate": 0.2,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 4.0,
+   "Tier-1 judged rate": 0.25,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 6.0,
+   "Tier-1 judged rate": 0.23,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 8.0,
+   "Tier-1 judged rate": 0.16,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 10.0,
+   "Tier-1 judged rate": 0.3,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 12.0,
+   "Tier-1 judged rate": 0.28,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 14.0,
+   "Tier-1 judged rate": 0.33,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 16.0,
+   "Tier-1 judged rate": 0.42,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 18.0,
+   "Tier-1 judged rate": 0.46,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 20.0,
+   "Tier-1 judged rate": 0.57,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 22.0,
+   "Tier-1 judged rate": 0.6,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 24.0,
+   "Tier-1 judged rate": 0.63,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 26.0,
+   "Tier-1 judged rate": 0.58,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 28.0,
+   "Tier-1 judged rate": 0.59,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 30.0,
+   "Tier-1 judged rate": 0.61,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 32.0,
+   "Tier-1 judged rate": 0.6565656565656566,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 34.0,
+   "Tier-1 judged rate": 0.5757575757575758,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 36.0,
+   "Tier-1 judged rate": 0.63,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 38.0,
+   "Tier-1 judged rate": 0.62,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 40.0,
+   "Tier-1 judged rate": 0.63,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 42.0,
+   "Tier-1 judged rate": 0.59,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 44.0,
+   "Tier-1 judged rate": 0.58,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 46.0,
+   "Tier-1 judged rate": 0.59,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 48.0,
+   "Tier-1 judged rate": 0.6,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 50.0,
+   "Tier-1 judged rate": 0.63,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 52.0,
+   "Tier-1 judged rate": 0.66,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 54.0,
+   "Tier-1 judged rate": 0.62,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 56.0,
+   "Tier-1 judged rate": 0.64,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 58.0,
+   "Tier-1 judged rate": 0.62,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 60.0,
+   "Tier-1 judged rate": 0.6,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  }
+ ],
+ "n_series": 2,
+ "total_points": 31,
+ "git_commit": "695daa22b7899bd7b01ab4fc5e2a9b179e0c7db0",
+ "ts": "2026-07-08T18:29:19Z",
+ "cell": "s5_lora_neg_lr5e6"
+}

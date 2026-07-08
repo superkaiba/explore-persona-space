@@ -24,6 +24,13 @@ Smoke (same code path, tiny knobs):
     uv run python scripts/issue1112_geometry.py --capture-root <tiny tree> \
         --rb-dir <dir with rb_*.pt> --out-dir /tmp/issue-1112-smoke/geometry \
         --n-boot 25
+
+Amendment modes (same driver, flag-selected):
+- ``--tf-shared`` (plan v6): shared-response geometry -> geometry_tf_shared.json
+- ``--lr-matched`` (plan v8): the lr-matched paired-‖μ‖ read (s3_fullft_neg −
+  s5_lora_neg_lr5e6, layer 14 response, mu_n_boot=2000 seed 653) ->
+  geometry_lr_matched.json + install/<cell>_tier2.json materialization;
+  ``--verify-inputs`` pre-flights every Hub input path.
 """
 
 from __future__ import annotations
@@ -576,6 +583,569 @@ def run_tf_shared(
     return payload
 
 
+# ── lr-matched amendment (followup `lr-matched-method-pair`, plan v8) ────────
+# Registered primary: paired ‖μ‖ difference (s3_fullft_neg - s5_lora_neg_lr5e6)
+# at layer 14, response arm, full 120-row paired clouds, paired cluster
+# bootstrap (mu_n_boot=2000, seed 653, IDENTICAL resample indices both cells).
+# Secondaries: paired rank-k@90 / PR_λ / top-share diffs (n_boot=1000, the H1
+# null re-check), cos(μ_s5, μ_s1) + cos(μ_s5, r_B) companions, matched-80 +
+# split-half ceiling for the new cell. Branch lattice (plan §3) encoded as
+# DATA only — the analyzer makes the call.
+
+LR_LABEL = "lr-matched-method-pair"
+LR_COMPARATOR = "s3_fullft_neg"  # existing full-FT+negatives cell @ 5e-6
+LR_LORA_PARENT = "s1_lora_neg"  # the parent LoRA cell @ 1e-5 (reference + cos)
+PANEL_N_CONTEXTS = 6  # the registered capture panel (plan §4 row-coverage)
+PANEL_N_QUESTIONS = 20
+LR_SELECTION_FILES = ("selection.json", "ladder.json", "build_result.json")
+
+
+def _fetch_one(path_in_repo: str, target: Path, revision: str | None) -> Path:
+    """Per-file hf_hub_download with bounded retry + linear backoff; skips an
+    already-staged target (pinned-revision files are immutable)."""
+    from huggingface_hub import hf_hub_download
+
+    if target.exists():
+        return target
+    last: Exception | None = None
+    for attempt in range(4):
+        try:
+            got = hf_hub_download(
+                C.HF_DATA_REPO, path_in_repo, repo_type="dataset", revision=revision
+            )
+            break
+        except Exception as e:  # bounded retry, linear backoff (gotchas.md)
+            last = e
+            time.sleep(20 * (attempt + 1))
+    else:
+        raise RuntimeError(f"hf_hub_download failed 4x for {path_in_repo}") from last
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(got, target)
+    return target
+
+
+def _assert_registered_panel(
+    keys: list[tuple[str, int]], *, n_contexts: int, n_questions: int, what: str
+) -> None:
+    """HARD row-meta assert against the registered panel (plan §4 row-coverage
+    / assumption 6): the realized (context_id, question_idx) keys must be the
+    FULL n_contexts × n_questions cross product — raise loud on any mismatch
+    (the plan's halt condition), never coerce."""
+    contexts = sorted({c for c, _ in keys})
+    expect_q = set(range(n_questions))
+    assert len(keys) == len(set(keys)) == n_contexts * n_questions, (
+        f"{what}: {len(keys)} rows ({len(set(keys))} unique) != registered "
+        f"{n_contexts}x{n_questions} panel — halt, report (kill criterion 2)"
+    )
+    assert len(contexts) == n_contexts, (what, contexts)
+    for ctx in contexts:
+        got_q = {q for c, q in keys if c == ctx}
+        assert got_q == expect_q, (
+            f"{what}: context {ctx} question idxs {sorted(got_q)} != "
+            f"0..{n_questions - 1} — capture panel is not the registered grid"
+        )
+
+
+def _mechanical_branch(diff: dict | None, in_band: bool | None) -> str | None:
+    """Plan §3 verdict-lattice branch as DATA (no interpretation prose).
+
+    diff = the registered primary paired_diff_record (s3 − s5). Branch (c)
+    fires on in_band=False regardless of the CI (descriptive sub-band read
+    only); (a)/(b')/(b) key on the CI sign per the registered table.
+    """
+    if in_band is False:
+        return "c_never_entered_band_descriptive_only"
+    if diff is None:
+        return None
+    if diff["ci_low"] > 0:
+        return "a_gap_survives_fullft_larger"
+    if diff["ci_high"] < 0:
+        return "b_prime_gap_reverses_lora_larger"
+    return "b_gap_closes_ci_includes_zero"
+
+
+def verify_lr_matched_inputs(
+    *, new_revision: str | None = None, parent_revision: str = PARENT_STORE_REV
+) -> dict:
+    """--verify-inputs pre-flight: resolve the CURRENT data-repo revision for
+    the new cell's artifacts and ``file_exists``-check EVERY production input
+    path at its pinned/resolved revision (single-path probes — never a listing
+    of the ~1M-file repo; gotchas.md). Raises loud on any miss."""
+    from huggingface_hub import HfApi
+
+    api = HfApi()
+    if new_revision is None:
+        new_revision = api.repo_info(C.HF_DATA_REPO, repo_type="dataset").sha
+    cell = C.LR_MATCHED_CELL
+    checks: dict[str, str] = {
+        f"{C.DATA_PREFIX}/analysis_tensors/capture/{cell}/selected/pooled.pt": new_revision,
+        **{f"{C.DATA_PREFIX}/selection/{cell}/{n}": new_revision for n in LR_SELECTION_FILES},
+        f"{C.DATA_PREFIX}/raw_completions/tier2/{cell}/tier2_rates.json": new_revision,
+        f"{C.DATA_PREFIX}/analysis_tensors/capture/{LR_COMPARATOR}/selected/pooled.pt": (
+            parent_revision
+        ),
+        f"{C.DATA_PREFIX}/analysis_tensors/capture/{LR_LORA_PARENT}/selected/pooled.pt": (
+            parent_revision
+        ),
+        f"{C.DATA_PREFIX}/analysis_tensors/capture/base_sycophancy/base/pooled.pt": (
+            parent_revision
+        ),
+        f"{C.DATA_PREFIX}/analysis_tensors/rb/rb_sycophancy.pt": parent_revision,
+    }
+    missing = [
+        f"{p} @ {rev}"
+        for p, rev in checks.items()
+        if not api.file_exists(C.HF_DATA_REPO, p, repo_type="dataset", revision=rev)
+    ]
+    if missing:
+        raise FileNotFoundError(f"lr-matched inputs missing on the Hub: {missing}")
+    margin_present = api.file_exists(
+        C.HF_DATA_REPO,
+        f"{C.DATA_PREFIX}/margin/{cell}.json",
+        repo_type="dataset",
+        revision=new_revision,
+    )
+    logger.info(
+        "[lr-verify] %d input paths resolve (new rev %s, parent rev %s); margin companion "
+        "for %s present=%s",
+        len(checks),
+        new_revision,
+        parent_revision,
+        cell,
+        margin_present,
+    )
+    return {
+        "revisions": {"new_cell": new_revision, "parent": parent_revision},
+        "n_paths": len(checks),
+        "margin_companion_present": margin_present,
+    }
+
+
+def stage_lr_matched_from_hf(
+    dest: Path, *, new_revision: str | None = None, parent_revision: str = PARENT_STORE_REV
+) -> dict:
+    """Stage the lr-matched round's inputs: the NEW cell's pooled store +
+    selection/ladder/tier2 records at the CURRENT (resolved + recorded)
+    revision, and the PARENT comparator/base/r_B artifacts at the PINNED
+    parent revision. Scoped per-file downloads only."""
+    from huggingface_hub import HfApi
+
+    if new_revision is None:
+        new_revision = HfApi().repo_info(C.HF_DATA_REPO, repo_type="dataset").sha
+        logger.info("[lr-stage] resolved current data-repo revision %s", new_revision)
+    cell = C.LR_MATCHED_CELL
+    capture_root = dest / "capture"
+    _fetch_one(
+        f"{C.DATA_PREFIX}/analysis_tensors/capture/{cell}/selected/pooled.pt",
+        capture_root / cell / "selected" / "pooled.pt",
+        new_revision,
+    )
+    sel_dir = dest / "selection" / cell
+    for name in LR_SELECTION_FILES:
+        _fetch_one(f"{C.DATA_PREFIX}/selection/{cell}/{name}", sel_dir / name, new_revision)
+    _fetch_one(
+        f"{C.DATA_PREFIX}/raw_completions/tier2/{cell}/tier2_rates.json",
+        sel_dir / "tier2_rates.json",
+        new_revision,
+    )
+    for pcell in (LR_COMPARATOR, LR_LORA_PARENT):
+        _fetch_one(
+            f"{C.DATA_PREFIX}/analysis_tensors/capture/{pcell}/selected/pooled.pt",
+            capture_root / pcell / "selected" / "pooled.pt",
+            parent_revision,
+        )
+    _fetch_one(
+        f"{C.DATA_PREFIX}/analysis_tensors/capture/base_sycophancy/base/pooled.pt",
+        capture_root / "base_sycophancy" / "base" / "pooled.pt",
+        parent_revision,
+    )
+    rb_dir = dest / "rb"
+    _fetch_one(
+        f"{C.DATA_PREFIX}/analysis_tensors/rb/rb_sycophancy.pt",
+        rb_dir / "rb_sycophancy.pt",
+        parent_revision,
+    )
+    logger.info("[lr-stage] staged new-cell + parent inputs under %s", dest)
+    return {
+        "capture_root": capture_root,
+        "rb_dir": rb_dir,
+        "selection_dir": dest / "selection",
+        "revisions": {"new_cell": new_revision, "parent": parent_revision},
+    }
+
+
+def materialize_tier2_install(
+    selection_dir: Path, install_dir: Path, *, cell: str = C.LR_MATCHED_CELL
+) -> Path:
+    """Materialize ``install/<cell>_tier2.json`` (the parent cells' committed
+    shape) from the staged pod-side ``tier2_rates.json`` — shape-asserted,
+    never synthesized."""
+    src = selection_dir / cell / "tier2_rates.json"
+    rec = json.loads(src.read_text())
+    for key in ("cell", "step", "rates", "n"):
+        assert key in rec, (str(src), key)
+    for side in ("trained", "base"):
+        assert side in rec["rates"], (str(src), side)
+    assert rec["cell"] == cell, rec
+    install_dir.mkdir(parents=True, exist_ok=True)
+    out = install_dir / f"{cell}_tier2.json"
+    out.write_text(json.dumps(rec, indent=2) + "\n")
+    logger.info("[lr-install] materialized %s", out)
+    return out
+
+
+def _lr_primary_layer_reads(
+    stores: dict, base: dict, cells: tuple[str, ...], new_cell: str, *, layers, primary_layer
+) -> tuple[dict, dict, dict]:
+    """Matched-80 + split-half ceiling (new cell) and the layer-``primary_layer``
+    singular-value spectra (all three cells) — empty dicts when the primary
+    layer was not captured."""
+    matched80: dict[str, dict] = {}
+    ceilings: dict[str, dict] = {}
+    sv_primary: dict[str, list[float]] = {}
+    if primary_layer in layers:
+        cloud5 = geo.delta_cloud(stores[new_cell], base, "response", primary_layer)
+        matched80[new_cell] = geo.subsample_sensitivity(cloud5)
+        ceilings[new_cell] = geo.split_half_self_cosine(
+            cloud5, [int(m["question_idx"]) for m in stores[new_cell]["row_meta"]]
+        )
+        for cell in cells:
+            sv_primary[cell] = [
+                float(v)
+                for v in svd_of_cloud(
+                    geo.delta_cloud(stores[cell], base, "response", primary_layer)
+                )
+            ]
+    return matched80, ceilings, sv_primary
+
+
+def _lr_install_echo(selection_dir: Path | None, new_cell: str) -> tuple[dict, bool | None]:
+    """Selection + tier2 echo from the staged records (self-containment for
+    figures + the lattice's ``in_band``); (empty, None) when nothing staged."""
+    install_block: dict = {}
+    in_band: bool | None = None
+    if selection_dir is not None:
+        sel_path = selection_dir / new_cell / "selection.json"
+        if sel_path.exists():
+            install_block["selection"] = json.loads(sel_path.read_text())
+            in_band = bool(install_block["selection"].get("in_band"))
+        tier2_path = selection_dir / new_cell / "tier2_rates.json"
+        if tier2_path.exists():
+            install_block["tier2"] = json.loads(tier2_path.read_text())
+    return install_block, in_band
+
+
+def run_lr_matched(
+    capture_root: Path,
+    rb_dir: Path,
+    out_dir: Path,
+    *,
+    selection_dir: Path | None = None,
+    tensors_out: Path | None = None,
+    n_boot: int = C.N_BOOT,
+    mu_n_boot: int = MU_N_BOOT,
+    n_contexts: int = PANEL_N_CONTEXTS,
+    n_questions: int = PANEL_N_QUESTIONS,
+    primary_layer: int = C.PRIMARY_LAYER,
+    inputs_provenance: dict | None = None,
+) -> dict:
+    """The lr-matched geometry pass (VM, CPU, batched). Writes
+    ``geometry_lr_matched.json`` + per-draw matrices; returns the payload.
+
+    Reuses the parent machinery verbatim: ``geo.analyze_cell`` for the s5/s3
+    per-(arm, layer) records (rank-k@90 / PR_λ / top-share / ‖μ‖ / cos-to-r_B,
+    paired cluster bootstrap at ``n_boot`` seed 653), the ``_mu_norm_draws``
+    subset-sum GEMM for the ‖μ‖ companion at ``mu_n_boot`` draws (ONE index
+    matrix shared across cells ⇒ every cross-cell difference is paired), plus
+    matched-80 / split-half / parity reads for the new cell.
+    """
+    assert_exemplar_calibration()  # #653 threshold calibration guard
+    torch.set_num_threads(max(1, min(8, torch.get_num_threads())))
+    out_dir.mkdir(parents=True, exist_ok=True)
+    tensors_out = tensors_out or (out_dir / "bootstrap_matrices" / "lr_matched")
+    tensors_out.mkdir(parents=True, exist_ok=True)
+
+    base = geo.load_store(capture_root / "base_sycophancy" / "base" / "pooled.pt")
+    base_keys = _store_keys(base)
+    _assert_registered_panel(
+        base_keys, n_contexts=n_contexts, n_questions=n_questions, what="base_sycophancy/base"
+    )
+    layers = sorted(next(iter(base["arms"].values())).keys())
+    n_rows = len(base_keys)
+
+    rb_obj = torch.load(rb_dir / "rb_sycophancy.pt", map_location="cpu", weights_only=False)
+    rb_t = rb_obj["rb"] if isinstance(rb_obj, dict) and "rb" in rb_obj else rb_obj
+    rb = np.asarray(rb_t.to(torch.float32).numpy(), dtype=np.float64)
+    assert rb.ndim == 2, rb.shape
+
+    new_cell = C.LR_MATCHED_CELL
+    cells = (new_cell, LR_COMPARATOR, LR_LORA_PARENT)
+    stores: dict[str, dict] = {}
+    for cell in cells:
+        store = geo.load_store(capture_root / cell / "selected" / "pooled.pt")
+        cond = store.get("metadata", {}).get("conditioning")
+        assert cond != "tf_shared_base", (cell, cond)  # own-text stores only
+        # Row-meta HARD assert (plan §3 row-coverage): BOTH paired arms'
+        # realized keys against the registered panel BEFORE any paired
+        # statistic; _reorder_store then set-equality-asserts + re-pairs
+        # against the base grid.
+        _assert_registered_panel(
+            _store_keys(store), n_contexts=n_contexts, n_questions=n_questions, what=cell
+        )
+        stores[cell] = _reorder_store(store, base_keys)
+
+    # ONE bootstrap index matrix per draw budget, shared across every cell =>
+    # all cross-cell differences PAIRED (identical resample indices).
+    cluster_ids = [f"{c}__{q}" for c, q in base_keys]
+    idx = bootstrap_index_matrix(cluster_ids, n_boot=n_boot, seed=C.BOOT_SEED)
+    idx_mu = bootstrap_index_matrix(cluster_ids, n_boot=mu_n_boot, seed=C.BOOT_SEED)
+    w_mu = _draw_weight_matrix(idx_mu, n_rows)
+
+    records: dict[str, dict] = {}
+    per_cell_draws: dict[str, dict] = {}
+    mu_draws: dict[str, dict[int, np.ndarray]] = {c: {} for c in cells}
+    mu_vec: dict[str, dict[int, np.ndarray]] = {c: {} for c in cells}
+    parity_summary: dict | None = None
+
+    for cell in cells:
+        cell_tensors: dict[str, np.ndarray] = {}
+        if cell in (new_cell, LR_COMPARATOR):
+            boot_matrices: dict = {}
+            recs = geo.analyze_cell(
+                stores[cell],
+                base,
+                layers=layers,
+                rb=rb,
+                idx_by_arm={arm: idx for arm in C.CAPTURE_ARMS},
+                boot_matrices=boot_matrices,
+            )
+            for key, rec in recs.items():
+                records[f"{cell}/selected/{key}"] = rec
+            per_cell_draws[cell] = boot_matrices
+            for (arm, layer, dv), vals in boot_matrices.items():
+                cell_tensors[f"{arm}/L{layer}/{dv}"] = vals.astype(np.float32)
+        for layer in layers:  # ‖μ‖ companion draws (all three cells, response)
+            cloud = geo.delta_cloud(stores[cell], base, "response", layer)
+            mu_draws[cell][layer] = _mu_norm_draws(cloud, w_mu)
+            mu_vec[cell][layer] = cloud.mean(axis=0)
+            cell_tensors[f"response/L{layer}/mu_norm"] = mu_draws[cell][layer].astype(np.float32)
+        if cell == new_cell:
+            # Free pipeline check (plan §6, WARN-only at 0.999): the NEW cell's
+            # prefix/context arms vs the PARENT base store's prompt positions.
+            # NOTE the read folds the genuine LoRA-induced prompt-side shift
+            # together with cross-round bf16 jitter — analyzer-adjudicated.
+            parity_summary, parity_tensors = _parity_check(stores[cell], base, layers)
+            for k, v in parity_tensors.items():
+                cell_tensors[f"parity/{k}"] = v
+        torch.save(cell_tensors, tensors_out / f"{cell}_selected.pt")
+        logger.info("[lr-geometry] %s: draws persisted (%d layers)", cell, len(layers))
+
+    def _mu_diff_by_layer(cell_a: str, cell_b: str) -> dict[str, dict]:
+        return {
+            str(layer): geo.paired_diff_record(
+                mu_draws[cell_a][layer],
+                mu_draws[cell_b][layer],
+                float(np.linalg.norm(mu_vec[cell_a][layer])),
+                float(np.linalg.norm(mu_vec[cell_b][layer])),
+            )
+            for layer in layers
+        }
+
+    mu_diff_s3_s5 = _mu_diff_by_layer(LR_COMPARATOR, new_cell)
+    mu_diff_s3_s1 = _mu_diff_by_layer(LR_COMPARATOR, LR_LORA_PARENT)  # parent +3.24 reference
+    mu_diff_s1_s5 = _mu_diff_by_layer(LR_LORA_PARENT, new_cell)  # lr effect at fixed method
+
+    primary = mu_diff_s3_s5.get(str(primary_layer))
+
+    secondary_by_layer: dict[str, dict] = {}
+    for layer in layers:
+        entry = {}
+        for dv in BOOTSTRAPPABLE_DVS:
+            entry[dv] = geo.paired_diff_record(
+                per_cell_draws[LR_COMPARATOR][("response", layer, dv)],
+                per_cell_draws[new_cell][("response", layer, dv)],
+                records[f"{LR_COMPARATOR}/selected/response/L{layer}"][dv],
+                records[f"{new_cell}/selected/response/L{layer}"][dv],
+            )
+        secondary_by_layer[str(layer)] = entry
+
+    cos_companions = {
+        str(layer): {
+            "cos_mu_s5_s1": cosine(mu_vec[new_cell][layer], mu_vec[LR_LORA_PARENT][layer]),
+            "cos_mu_s5_s3": cosine(mu_vec[new_cell][layer], mu_vec[LR_COMPARATOR][layer]),
+            "cos_mu_s3_s1": cosine(mu_vec[LR_COMPARATOR][layer], mu_vec[LR_LORA_PARENT][layer]),
+        }
+        for layer in layers
+    }
+
+    matched80, ceilings, sv_primary = _lr_primary_layer_reads(
+        stores, base, cells, new_cell, layers=layers, primary_layer=primary_layer
+    )
+    install_block, in_band = _lr_install_echo(selection_dir, new_cell)
+
+    lattice = {
+        "registered_branches": {
+            "a_gap_survives_fullft_larger": "in band AND CI excludes zero, full-FT side larger",
+            "b_gap_closes_ci_includes_zero": "in band AND CI includes zero",
+            "b_prime_gap_reverses_lora_larger": "in band AND CI excludes zero, LoRA side larger",
+            "c_never_entered_band_descriptive_only": "no rung with Tier-1 rate in [0.60, 0.85]",
+        },
+        "dv": "mu_norm",
+        "layer": primary_layer,
+        "arm": "response",
+        "diff": "s3_fullft_neg - s5_lora_neg_lr5e6",
+        "in_band": in_band,
+        "mechanical_branch": _mechanical_branch(primary, in_band),
+    }
+
+    payload = {
+        "schema_version": 1,
+        "followup_label": LR_LABEL,
+        "pair": {"cell_a": LR_COMPARATOR, "cell_b": new_cell, "arm": "response"},
+        "records": records,
+        "lr_matched_pair": {
+            "primary": {
+                "dv": "mu_norm",
+                "layer": primary_layer,
+                "arm": "response",
+                "n_boot": mu_n_boot,
+                "diff_s3_minus_s5": primary,
+            },
+            "mu_norm_diff_by_layer_s3_minus_s5": mu_diff_s3_s5,
+            "reference_s3_minus_s1_by_layer": mu_diff_s3_s1,
+            "exploratory_s1_minus_s5_by_layer": mu_diff_s1_s5,
+            "secondary_diffs_s3_minus_s5_by_layer": secondary_by_layer,
+            "cos_companions_by_layer": cos_companions,
+        },
+        "lattice": lattice,
+        "install": install_block,
+        "matched80": matched80,
+        "split_half_self_cosine_ceiling": ceilings,
+        "sv_primary_layer": sv_primary,
+        "parity": {new_cell: parity_summary},
+        "parity_note": (
+            "prefix/context per-row cosine of the NEW cell's trained-model prompt positions "
+            "vs the PARENT base store (plan §6 cross-round numeric-regime residual): the read "
+            "folds the genuine LoRA-induced prompt-side shift together with cross-round bf16 "
+            "jitter — WARN-only at 0.999, never a HALT; analyzer-adjudicated"
+        ),
+        "cells": list(cells),
+        "n_boot": n_boot,
+        "mu_n_boot": mu_n_boot,
+        "boot_seed": C.BOOT_SEED,
+        "resampling": "paired",
+        "primary_layer": primary_layer,
+        "panel": {"n_contexts": n_contexts, "n_questions": n_questions},
+        "bootstrap_matrices_dir": str(tensors_out),
+        "inputs": inputs_provenance or {},
+        "metadata": {
+            "git_commit": geo._git_commit(),
+            "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "numpy": np.__version__,
+            "torch": torch.__version__,
+        },
+    }
+    out_path = out_dir / "geometry_lr_matched.json"
+    out_path.write_text(json.dumps(payload, indent=1) + "\n")
+    logger.info(
+        "[lr-geometry] wrote %s (%d records; mechanical branch: %s)",
+        out_path,
+        len(records),
+        lattice["mechanical_branch"],
+    )
+    return payload
+
+
+def _main_lr_matched(args: argparse.Namespace) -> int:
+    if args.verify_inputs:
+        info = verify_lr_matched_inputs(
+            new_revision=args.new_revision, parent_revision=args.parent_revision
+        )
+        logger.info("[lr-verify] OK: %s", json.dumps(info))
+        return 0
+    margin_status: dict = {"present": None, "note": "local mode — Hub not consulted"}
+    if args.from_hf:
+        staged = stage_lr_matched_from_hf(
+            args.stage_dir, new_revision=args.new_revision, parent_revision=args.parent_revision
+        )
+        capture_root, rb_dir = staged["capture_root"], staged["rb_dir"]
+        selection_dir = staged["selection_dir"]
+        revisions = staged["revisions"]
+        from huggingface_hub import HfApi
+
+        margin_path = f"{C.DATA_PREFIX}/margin/{C.LR_MATCHED_CELL}.json"
+        margin_status = {
+            "present": HfApi().file_exists(
+                C.HF_DATA_REPO, margin_path, repo_type="dataset", revision=revisions["new_cell"]
+            ),
+            "hf_path": margin_path,
+            "note": (
+                "plan §6 fixed-pool margin companion for the new cell — the round's pod phase "
+                "list excluded p7b_margin, so absence is a genuine coverage gap (needs "
+                "weights + GPU; concern lr-matched-margin-companion-not-produced)"
+            ),
+        }
+    else:
+        if args.capture_root is None or args.rb_dir is None:
+            raise SystemExit("--lr-matched with --capture-root requires --rb-dir")
+        capture_root, rb_dir = args.capture_root, args.rb_dir
+        selection_dir = args.selection_dir
+        revisions = {"new_cell": None, "parent": None, "mode": "local"}
+    inputs = {
+        "capture_root": str(capture_root),
+        "rb_dir": str(rb_dir),
+        "selection_dir": str(selection_dir) if selection_dir else None,
+        "hf_revisions": revisions,
+        "margin_companion": margin_status,
+    }
+    payload = run_lr_matched(
+        capture_root,
+        rb_dir,
+        args.out_dir,
+        selection_dir=selection_dir,
+        tensors_out=args.tensors_out,
+        n_boot=args.n_boot,
+        mu_n_boot=args.mu_n_boot,
+        n_contexts=args.panel_contexts,
+        n_questions=args.panel_questions,
+        primary_layer=args.primary_layer,
+        inputs_provenance=inputs,
+    )
+    if (
+        selection_dir is not None
+        and (selection_dir / C.LR_MATCHED_CELL / "tier2_rates.json").exists()
+    ):
+        materialize_tier2_install(selection_dir, args.install_dir)
+    else:
+        logger.warning(
+            "[lr-install] no staged tier2_rates.json under %s — install record NOT "
+            "materialized (local/smoke mode?)",
+            selection_dir,
+        )
+    if args.upload:
+        from explore_persona_space.orchestrate import hub
+
+        url = hub._upload(
+            args.out_dir / "geometry_lr_matched.json",
+            C.HF_DATA_REPO,
+            "dataset",
+            f"{C.DATA_PREFIX}/geometry/geometry_lr_matched.json",
+            upload_as_file=True,
+        )
+        if not str(url):
+            raise RuntimeError("geometry_lr_matched.json upload returned no path")
+        url = hub._upload(
+            Path(payload["bootstrap_matrices_dir"]),
+            C.HF_DATA_REPO,
+            "dataset",
+            f"{C.DATA_PREFIX}/analysis_tensors/bootstrap_matrices/lr_matched",
+        )
+        if not str(url):
+            raise RuntimeError("lr_matched bootstrap matrices upload returned no path")
+        logger.info("[lr-geometry] uploads complete")
+    return 0
+
+
 def _main_tf_shared(args: argparse.Namespace) -> int:
     if args.from_hf:
         tf_root, parent_root, rb_dir = stage_tf_shared_from_hf(
@@ -685,7 +1255,42 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="[--tf-shared] per-draw matrix dir (default <out-dir>/bootstrap_matrices/tf_shared)",
     )
+    # ── lr-matched amendment mode (followup `lr-matched-method-pair`) ────────
+    p.add_argument(
+        "--lr-matched",
+        action="store_true",
+        help="run the lr-matched paired-‖μ‖ pass (plan v8) instead of the parent pass",
+    )
+    p.add_argument(
+        "--verify-inputs",
+        action="store_true",
+        help="[--lr-matched] pre-flight only: resolve revisions + file_exists every input path",
+    )
+    p.add_argument(
+        "--new-revision",
+        default=None,
+        help="[--lr-matched --from-hf] data-repo revision for the NEW cell's artifacts "
+        "(default: resolve + record the repo's CURRENT revision)",
+    )
+    p.add_argument(
+        "--selection-dir",
+        type=Path,
+        default=None,
+        help="[--lr-matched local mode] dir holding <cell>/{selection,tier2_rates}.json",
+    )
+    p.add_argument(
+        "--install-dir",
+        type=Path,
+        default=Path(f"eval_results/issue_{C.ISSUE}/install"),
+        help="[--lr-matched] install-record destination (smokes MUST divert to scratch)",
+    )
+    p.add_argument("--panel-contexts", type=int, default=PANEL_N_CONTEXTS)
+    p.add_argument("--panel-questions", type=int, default=PANEL_N_QUESTIONS)
+    p.add_argument("--primary-layer", type=int, default=C.PRIMARY_LAYER)
     args = p.parse_args(argv)
+
+    if args.lr_matched:
+        return _main_lr_matched(args)
 
     if args.tf_shared:
         return _main_tf_shared(args)
