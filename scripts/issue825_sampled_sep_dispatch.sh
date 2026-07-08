@@ -81,12 +81,13 @@ if [ "$MODE" = "smoke" ]; then
   LOG_DIR="$SMOKE_ROOT/logs"; mkdir -p "$LOG_DIR"
   TINY="$SMOKE_ROOT/tiny_model"
   uv run python scripts/issue931_extract_store.py --make-tiny-model "$TINY"
-  # 6 articles (not 3): the C-avg/C-single cells carry ONE row per article, and
-  # the 5-fold group CV needs enough groups for >=3-row train folds — 3 groups
-  # skip every fold and the all-NaN sweep crashes selection_symmetric_summary.
-  GEN_B_FLAGS="--max-items 6 --tiny-model-dir $TINY --smoke-real-continuation --wave2-min-eligible 999"
-  GEN_C_FLAGS="--max-items 6 --tiny-model-dir $TINY --smoke-real-continuation --n-draws 3"
-  EXTRACT_FLAGS="--tiny-model-dir $TINY --batch-size 2 --max-items 24"
+  # 10 articles (not 3): the C-avg/C-single cells carry ONE row per article, so
+  # the 5-fold group CV needs ~2 groups per fold — fewer groups leave 1-row test
+  # folds whose per-fold-centered ss_tot is 0 (or all folds skipped), the layer
+  # sweep goes all-NaN, and selection_symmetric_summary's nanargmax crashes.
+  GEN_B_FLAGS="--max-items 10 --tiny-model-dir $TINY --smoke-real-continuation --wave2-min-eligible 999"
+  GEN_C_FLAGS="--max-items 10 --tiny-model-dir $TINY --smoke-real-continuation --n-draws 3"
+  EXTRACT_FLAGS="--tiny-model-dir $TINY --batch-size 2 --max-items 50"
   REDUCE_FLAGS="--k-valid-floor 2 --smoke --self-test"
   FIT_FLAGS="--smoke --null-draws 2 --n-boot 50"
   MATCHEDN_FLAGS="--seeds 931,932 --skip-mlp --smoke"

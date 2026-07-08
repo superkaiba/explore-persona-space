@@ -68,6 +68,14 @@ def _read(path: Path) -> dict | None:
     return json.loads(path.read_text()) if path.exists() else None
 
 
+def _bins(vals, requested: int) -> int:
+    """Clamp histogram bins for (near-)constant data — a degenerate value range
+    (e.g. all X-identity cosines == 1.0 at smoke scale) cannot host 40
+    finite-sized bins (numpy ValueError)."""
+    distinct = len(np.unique(np.round(np.asarray(vals, dtype=np.float64), 12)))
+    return max(1, min(requested, distinct))
+
+
 def main() -> int:  # noqa: C901 -- linear figure dump
     args = parse_args()
     import matplotlib
@@ -233,12 +241,19 @@ def main() -> int:  # noqa: C901 -- linear figure dump
                 meta = _read(args.data_root / m / arm / "pairs" / "pairs_meta.json") or {}
                 vals = ((meta.get("onpolicy_stats") or {}).get(key) or {}).get("values") or []
                 if vals:
-                    ax.hist(vals, bins=40, alpha=0.5, label=arm, color=col, density=True)
+                    ax.hist(
+                        vals, bins=_bins(vals, 40), alpha=0.5, label=arm, color=col, density=True
+                    )
                 if arm == "armB":
                     exo = ((meta.get("exogenous_stats") or {}).get(key) or {}).get("values") or []
                     if exo:
                         ax.hist(
-                            exo, bins=40, alpha=0.35, label="exogenous", color=c_ref, density=True
+                            exo,
+                            bins=_bins(exo, 40),
+                            alpha=0.35,
+                            label="exogenous",
+                            color=c_ref,
+                            density=True,
                         )
             ax.set_title(f"{m}: {key}")
             ax.legend(fontsize=6)
@@ -256,11 +271,11 @@ def main() -> int:  # noqa: C901 -- linear figure dump
         gate = red.get("x_identity_gate") or {}
         pam = list((gate.get("per_article_min") or {}).values())
         if pam:
-            axes[1].hist(pam, bins=40, alpha=0.5, label=m, color=col)
+            axes[1].hist(pam, bins=_bins(pam, 40), alpha=0.5, label=m, color=col)
         meta = _read(args.data_root / m / "armC" / "pairs" / "pairs_meta.json") or {}
         pt = (meta.get("prefix_tail_tokens") or {}).get("values") or []
         if pt:
-            axes[2].hist(pt, bins=30, alpha=0.5, label=m, color=col)
+            axes[2].hist(pt, bins=_bins(pt, 30), alpha=0.5, label=m, color=col)
     axes[0].set_title("K_valid per article")
     axes[1].set_title("X-identity per-article min cos @ L19")
     axes[1].axvline(0.999, color="red", lw=0.8, ls="--")
