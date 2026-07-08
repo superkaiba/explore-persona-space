@@ -104,15 +104,18 @@ def _download(path_in_repo: str, revision: str, dest_dir: Path) -> Path:
     return Path(got)
 
 
-def load_anchor_positions() -> dict[str, int]:
+def load_anchor_positions(pairs_file: Path | None = None) -> dict[str, int]:
     """row_id -> anchor token position from the pinned pairs_armC.jsonl.
 
     Field verified against scripts/issue931_build_pairs.py:546 —
     ``meta={"window_id": article_id, "anchor_pos": int(t)}``.
+    ``pairs_file`` (round-8 --pos-max mode) reads an already-staged local copy
+    of the SAME pinned file instead of re-downloading; default None preserves
+    the HF fetch path byte-for-byte.
     """
-    local = _download(PAIRS_PATH, PAIRS_REV, STAGE / "pairs")
+    local = pairs_file or _download(PAIRS_PATH, PAIRS_REV, STAGE / "pairs")
     pos: dict[str, int] = {}
-    for line in local.read_text().splitlines():
+    for line in local.read_text().split("\n"):
         if not line.strip():
             continue
         d = json.loads(line)
@@ -411,7 +414,177 @@ def extend_subsample(model: str, n_seeds: int = 10) -> None:
     print(f"[i825-posmatch-ext] wrote position_matched_wex_{model}_v2.json", flush=True)
 
 
+def run_pos_restricted(
+    model: str,
+    pos_max: int,
+    *,
+    store_dir: Path | None,
+    pairs_file: Path | None,
+    out_dir: Path,
+    out_name: str | None,
+    smoke: bool,
+) -> None:
+    """Round-8 `sampled-separator-control` G4b companion: position-RESTRICTED
+    exogenous refit — keep anchors at token position < ``pos_max`` (the arm-C
+    fixed prefix-final anchors sit at <= 254, i.e. BELOW the 256-token prefix
+    boundary, the mirror of the round-7 ``pos >= POSITION_FLOOR`` restriction).
+
+    Flag-gated round-8 extension (plan v22 section 4 G4b(4)); the default
+    entrypoints are untouched. ``store_dir`` reuses an already-staged
+    ``store/armC`` dir (the dispatcher's p0-staged exogenous store) instead of
+    re-downloading; ``smoke`` records the full-n validation twin instead of
+    asserting it (tiny 1-shard smoke subsets cannot reproduce full-n values).
+    """
+    anchor_pos = load_anchor_positions(pairs_file)
+    if store_dir is not None:
+        store = fit931.load_regime_store(store_dir, "armC")
+    else:
+        STAGE.mkdir(parents=True, exist_ok=True)
+        store = stage_store(model)
+    spec = STORES[model]
+    X = store["arrays"]["x_sep"]
+    Y = store["arrays"]["y"]
+    groups = store["group_ids"]
+    row_ids = store["row_ids"]
+    missing = [r for r in row_ids if r not in anchor_pos]
+    assert not missing, f"{len(missing)} store rows missing from pinned pairs"
+    pos = np.asarray([anchor_pos[r] for r in row_ids])
+    mask = pos < pos_max
+    n_kept = int(mask.sum())
+    assert n_kept > 0, f"no exogenous anchors below {pos_max}"
+    print(
+        f"[i825-posmatch-below] {model}: n={len(pos)} kept={n_kept} "
+        f"({n_kept / len(pos):.3f}) groups_kept={len(np.unique(groups[mask]))}",
+        flush=True,
+    )
+
+    hl = common.HEADLINE_LAYER
+    n_layers = X.shape[1]
+    hl = hl if n_layers > hl else n_layers - 1  # tiny-model smoke rebind
+    order = [hl] + [li for li in common.FROZEN_LAYERS if li != hl and li < n_layers]
+    d_in = X.shape[2]
+    rng = np.random.default_rng(common.FIT_SEED + 7)  # committed P draw stream
+    projections = {li: rng.standard_normal((d_in, d_in)) / np.sqrt(d_in) for li in order}
+
+    # Validation twin: full-n rotated refit at the headline layer vs committed.
+    Xp_full = (X[:, hl, :].astype(np.float64) @ projections[hl]).astype(np.float32)
+    full_obs, _ = rotated_fit_r2(Xp_full, Y[:, hl, :], groups)
+    d_val = abs(full_obs - spec["committed_rotated_L19"])
+    print(
+        f"[i825-posmatch-below] {model} full-n rotated L{hl} = {full_obs:.6f} "
+        f"(delta {d_val:.2e}, binding={not smoke})",
+        flush=True,
+    )
+    if not smoke:
+        assert d_val < 1e-3, (model, full_obs, spec["committed_rotated_L19"])
+    del Xp_full
+
+    g_m = groups[mask]
+    perms = group_blocked_perms(g_m, common.N_NULL_DRAWS, common.FIT_SEED)
+    pm_r2: dict[str, float] = {}
+    pm_nulls: list[float] = []
+    for li in order:
+        Xp = (X[mask][:, li, :].astype(np.float64) @ projections[li]).astype(np.float32)
+        obs, nulls = rotated_fit_r2(
+            Xp, Y[mask][:, li, :], g_m, null_perms=perms if li == hl else None
+        )
+        pm_r2[str(li)] = obs
+        if li == hl:
+            pm_nulls = nulls
+        print(f"[i825-posmatch-below] {model} pos<{pos_max} rotated L{li} = {obs:.6f}", flush=True)
+        del Xp
+
+    # Size-matched position-AGNOSTIC subsample control (n-confound read).
+    sub_r2 = {}
+    for s in SUBSAMPLE_SEEDS:
+        idx = common.group_stratified_subsample(groups, n_kept, seed=common.BUILD_SEED + s)
+        Xp = (X[idx][:, hl, :].astype(np.float64) @ projections[hl]).astype(np.float32)
+        obs, _ = rotated_fit_r2(Xp, Y[idx][:, hl, :], groups[idx])
+        sub_r2[str(s)] = obs
+        print(f"[i825-posmatch-below] {model} size-matched seed {s}: {obs:.6f}", flush=True)
+        del Xp
+
+    md = common.metadata(SCRIPT + " --pos-max", common.FIT_SEED, n_kept)
+    md["issue"] = 825
+    payload = {
+        "metadata": md,
+        "followup_label": "sampled-separator-control",
+        "model": model,
+        "position_restriction": {"mode": "below", "pos_max": int(pos_max)},
+        "pairs_path": PAIRS_PATH,
+        "pairs_revision": PAIRS_REV,
+        "n_total": len(pos),
+        "n_kept": n_kept,
+        "kept_fraction": n_kept / len(pos),
+        "n_groups_total": len(np.unique(groups)),
+        "n_groups_kept": len(np.unique(g_m)),
+        "anchor_pos_summary": {
+            "frac_below_pos_max": float((pos < pos_max).mean()),
+            "median": float(np.median(pos)),
+            "median_kept": float(np.median(pos[mask])),
+        },
+        "validation_fulln_rotated_hl": {
+            "refit": full_obs,
+            "committed": spec["committed_rotated_L19"],
+            "abs_delta": d_val,
+            "binding": not smoke,
+        },
+        "position_restricted_rotated_r2": pm_r2,
+        "null_hl": {
+            "draws": pm_nulls,
+            "mean": float(np.nanmean(pm_nulls)) if pm_nulls else None,
+            "p975": float(np.nanquantile(pm_nulls, 0.975)) if pm_nulls else None,
+            "n_draws": len(pm_nulls),
+            "kind": "group-blocked pairing shuffle (heldout_r2_sweep semantics)",
+        },
+        "size_matched_subsample_rotated_hl": {
+            "per_seed": sub_r2,
+            "mean": float(np.mean(list(sub_r2.values()))),
+            "subsampler": "group_stratified_subsample(seed=931+s)",
+        },
+        "derived": {
+            "w_ex_position_restricted_hl": pm_r2[str(hl)],
+            "note": (
+                "companion read for the arm-C fixed prefix-final anchor cells "
+                "(sub-256 exogenous pool); consumed by "
+                "issue825_sampled_sep_decision.py — no D computed here"
+            ),
+        },
+        "smoke": bool(smoke),
+    }
+    name = out_name or f"posmatch_below{pos_max}_{model}.json"
+    common.write_json(out_dir / name, payload)
+    print(f"[i825-posmatch-below] wrote {name}", flush=True)
+
+
+def _parse_pos_max_args(argv: list[str]):
+    import argparse
+
+    ap = argparse.ArgumentParser(description="round-8 --pos-max position-restricted refit")
+    ap.add_argument("--pos-max", type=int, required=True)
+    ap.add_argument("--model", required=True, choices=("base", "instruct"))
+    ap.add_argument("--store-dir", type=Path, default=None, help="staged store/armC dir")
+    ap.add_argument("--pairs-file", type=Path, default=None, help="staged pairs_armC.jsonl")
+    ap.add_argument("--out-dir", type=Path, default=OUT_DIR)
+    ap.add_argument("--out-name", type=str, default=None)
+    ap.add_argument("--smoke", action="store_true", help="validation twin recorded, not binding")
+    return ap.parse_args(argv)
+
+
 def main() -> int:
+    if "--pos-max" in sys.argv[1:]:
+        a = _parse_pos_max_args(sys.argv[1:])
+        run_pos_restricted(
+            a.model,
+            a.pos_max,
+            store_dir=a.store_dir,
+            pairs_file=a.pairs_file,
+            out_dir=a.out_dir,
+            out_name=a.out_name,
+            smoke=a.smoke,
+        )
+        print("[i825-posmatch-below] DONE rc=0", flush=True)
+        return 0
     if len(sys.argv) > 1 and sys.argv[1] == "--extend-subsample":
         model = sys.argv[2] if len(sys.argv) > 2 else "instruct"
         extend_subsample(model, n_seeds=int(sys.argv[3]) if len(sys.argv) > 3 else 10)

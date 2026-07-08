@@ -104,6 +104,16 @@ def parse_args() -> argparse.Namespace:
         "reduction, ZERO refits per draw). Default OFF preserves the committed "
         "#931 behavior byte-for-byte.",
     )
+    ap.add_argument(
+        "--mlp-ci",
+        action="store_true",
+        help="#825 sampled-separator-control extension (requires --mlp): collect the "
+        "MLP secondary's OBSERVED held-out predictions at the frozen layers and run "
+        "the SAME batched per-group-reduction group bootstrap over them (ZERO extra "
+        "fits — the CI is a pure reduction of predictions the MLP fold loop already "
+        "computes), closing round-7's no-MLP-bootstrap gap for MLP-carried cells. "
+        "Default OFF preserves the committed mlp_secondary.json byte-for-byte.",
+    )
     ap.add_argument("--g1b", action="store_true", help="run the G1b MLP parity fit")
     ap.add_argument("--null-draws", type=int, default=common.N_NULL_DRAWS)
     ap.add_argument("--folds", type=int, default=common.N_FOLDS)
@@ -690,6 +700,7 @@ def _mlp_fold_r2(
     pca_k: int = 64,
     max_epochs: int = 300,
     device: str | None = None,
+    preds_out: dict | None = None,
 ) -> dict:
     """Batched 5-fold group-CV MLP R^2 per layer, obs + group-blocked null draws.
 
@@ -706,6 +717,11 @@ def _mlp_fold_r2(
     remaining parent delta is the init draw (per-member key-seeded vs the
     parent's global manual_seed(42)) — covered by the G1b 0.02 tolerance and
     pinned by tests/test_issue931_mlp_parity.py.
+
+    ``preds_out`` (#825 --mlp-ci): when a dict is passed, the OBSERVED draw's
+    (d == 0) held-out predictions are collected per layer —
+    ``preds_out[li] = {"pred": (n, D) f32, "fitted": (n,) bool}`` — for the
+    caller's group bootstrap. Default None changes nothing.
     """
     from explore_persona_space.analysis.vectorized_mlp_skill import (
         SplitMLPGroup,
@@ -725,11 +741,18 @@ def _mlp_fold_r2(
 
     perms = [np.arange(len(groups))] + [_group_perm() for _ in range(n_draws)]
     ss = {(li, d): [0.0, 0.0] for li in layers for d in range(len(perms))}
+    if preds_out is not None:
+        for li in layers:
+            preds_out[li] = {
+                "pred": np.zeros((X.shape[0], Y.shape[2]), dtype=np.float32),
+                "fitted": np.zeros(X.shape[0], dtype=bool),
+            }
     for k in range(folds):
         te = fold_ids == k
         tr = ~te
         if te.sum() == 0 or tr.sum() < 20:
             continue
+        te_idx = np.flatnonzero(te)
         member_groups, member_meta = [], []
         for li in layers:
             for d, perm in enumerate(perms):
@@ -767,7 +790,7 @@ def _mlp_fold_r2(
                         Y_val=Yt[vi].astype(np.float32),
                     )
                 )
-                member_meta.append((li, d, y_mu, comps, Yte_raw))
+                member_meta.append((li, d, y_mu, comps, Yte_raw, te_idx))
         res = fit_batched_split_mlp(
             member_groups,
             seed=42,
@@ -777,13 +800,18 @@ def _mlp_fold_r2(
             standardize_inputs=False,
             patience=20,
         )
-        for (li, d, y_mu, comps, Yte_raw), grp in zip(member_meta, member_groups, strict=True):
+        for (li, d, y_mu, comps, Yte_raw, m_te_idx), grp in zip(
+            member_meta, member_groups, strict=True
+        ):
             pred_pca = res.preds_by_key[grp.key]
             pred = (pred_pca @ comps + y_mu) if comps is not None else (pred_pca + y_mu)
             true = Yte_raw.astype(np.float64)
             mu = true.mean(0)
             ss[(li, d)][0] += float(((true - pred) ** 2).sum())
             ss[(li, d)][1] += float(((true - mu) ** 2).sum())
+            if preds_out is not None and d == 0:
+                preds_out[li]["pred"][m_te_idx] = np.asarray(pred, dtype=np.float32)
+                preds_out[li]["fitted"][m_te_idx] = True
     out: dict[str, dict] = {}
     for li in layers:
         obs = 1.0 - ss[(li, 0)][0] / ss[(li, 0)][1] if ss[(li, 0)][1] > 1e-12 else float("nan")
@@ -796,14 +824,25 @@ def _mlp_fold_r2(
 
 
 def run_mlp_secondary(results: dict, args) -> None:
-    """P3b: MLP secondary on armA_within / armB_within / armC_sep (frozen layers)."""
+    """P3b: MLP secondary on armA_within / armB_within / armC_sep (frozen layers).
+
+    With ``--mlp-ci`` (#825 sampled-separator-control) the observed held-out
+    MLP predictions are collected per frozen layer and the SAME batched
+    per-group-reduction group bootstrap (group_bootstrap_r2 — ZERO refits per
+    draw) runs over them; the per-group MLP R^2 at the headline layer is
+    persisted as the R3 paired-bootstrap input. Default payload unchanged.
+    """
     out = {}
+    mlp_ci_out: dict[str, dict] = {}
+    want_ci = bool(getattr(args, "mlp_ci", False))
     for cell_id in ("armA_within", "armB_within", "armC_sep"):
         if cell_id not in results:
             continue
         xy = results[cell_id]["xy"]
         fl = frozen_layers(xy["X"].shape[1])
-        print(f"[i931-p3b] MLP secondary {cell_id} layers={fl}")
+        hl = headline_layer(xy["X"].shape[1])
+        print(f"[i931-p3b] MLP secondary {cell_id} layers={fl} (ci={want_ci})")
+        preds: dict | None = {} if want_ci else None
         out[cell_id] = _mlp_fold_r2(
             xy["X"],
             xy["Y"],
@@ -813,11 +852,30 @@ def run_mlp_secondary(results: dict, args) -> None:
             folds=args.folds,
             seed=args.seed,
             max_epochs=50 if args.smoke else 300,
+            preds_out=preds,
         )
-    common.write_json(
-        args.out_dir / "mlp_secondary.json",
-        {"metadata": common.metadata(SCRIPT, args.seed, 0), "cells": out},
-    )
+        if not want_ci:
+            continue
+        groups = np.asarray(xy["group_ids"])
+        ci_cell: dict[str, object] = {"headline_layer": int(hl)}
+        for li in fl:
+            if li not in preds:
+                continue
+            fitted = preds[li]["fitted"]
+            if not fitted.any():
+                continue
+            pred = preds[li]["pred"][fitted]
+            true = xy["Y"][fitted, li, :].astype(np.float64)
+            gsub = groups[fitted]
+            gb = group_bootstrap_r2(pred, true, gsub, n_boot=args.n_boot, seed=args.seed + 900 + li)
+            ci_cell[str(li)] = {k: gb[k] for k in ("r2", "ci_lo", "ci_hi", "n_groups", "n_boot")}
+            if li == hl:
+                ci_cell["per_group_mlp_r2_headline"] = per_group_r2(pred, true, gsub)
+        mlp_ci_out[cell_id] = ci_cell
+    payload = {"metadata": common.metadata(SCRIPT, args.seed, 0), "cells": out}
+    if want_ci:
+        payload["mlp_ci"] = mlp_ci_out
+    common.write_json(args.out_dir / "mlp_secondary.json", payload)
 
 
 def run_g1b_parity(chat_xy: dict, args) -> None:
@@ -914,6 +972,7 @@ def run_chat_gates(results: dict, args) -> None:
 
 def main() -> int:
     args = parse_args()
+    assert not args.mlp_ci or args.mlp, "--mlp-ci requires --mlp"
     args.out_dir.mkdir(parents=True, exist_ok=True)
     chat_dir = args.chat_store_dir or (args.data_dir / "chat_store")
     print("[phase=p3_fits] fit battery")

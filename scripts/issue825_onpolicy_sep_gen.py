@@ -10,6 +10,14 @@ either model — matching the exogenous control regime):
           ladder, run inline), prompt = decode(input_ids[:512]), max_tokens
           512 — SAME engine session; total window <= 1024 (extraction parity)
 
+Round-8 `sampled-separator-control` extension (plan v22 section 2 — flag-gated,
+DEFAULT-PRESERVING: the greedy round-7 invocation is byte-identical without the
+new flags): ``--temperature`` (default 0.0) / ``--top-p`` (default 1.0) switch
+decoding to sampling; ``--n-draws K`` + ``--draw-seed-base S`` generate K draws
+per prefix with per-request ``SamplingParams(seed=S+k)`` (arm C: K=10, seeds
+4300+k, ``--max-tokens-override 320``, ``--no-wave2``); every continuation row
+records its (draw, sampling seed, temperature, top_p) in-row + in-audit.
+
 Per-continuation audit (round-3 format + the G2 regurgitation guard): token
 length stats, 3-gram repetition rate (min_count 5), distinct-3-gram rate,
 early-EOS rate, wave-2 count, and the overlap-with-true-continuation metric
@@ -65,6 +73,26 @@ VLLM_CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
 REPETITION_MIN_COUNT = 5  # round-3 audit metric
 
 
+class Sampling:
+    """Decoding spec: temperature / top-p / per-request seeds.
+
+    ``per_request_seeds`` is None for the round-7 single-seed convention (every
+    request seeded GEN_SEED / --draw-seed-base is unset); a list assigns one
+    seed per request in prompt order (arm-C per-draw seeds).
+    """
+
+    def __init__(self, temperature: float, top_p: float, per_request_seeds: list[int] | None):
+        self.temperature = float(temperature)
+        self.top_p = float(top_p)
+        self.per_request_seeds = per_request_seeds
+
+    def seeds(self, n: int) -> list[int]:
+        if self.per_request_seeds is None:
+            return [GEN_SEED] * n
+        assert len(self.per_request_seeds) == n, (len(self.per_request_seeds), n)
+        return list(self.per_request_seeds)
+
+
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--model", required=True, choices=sorted(MODEL_IDS))
@@ -77,6 +105,29 @@ def parse_args() -> argparse.Namespace:
         default=ops_pairs.WAVE2_MIN_ELIGIBLE,
         help="wave-2 top-up trigger: eligible anchors on wave-1 text below this "
         "(default 6 = production; smoke may force wave-2 with a high value)",
+    )
+    # Round-8 sampled-decoding flags (plan v22 section 2). Defaults preserve
+    # the round-7 greedy behavior EXACTLY (T=0, top-p 1, one draw, seed 42).
+    ap.add_argument("--temperature", type=float, default=0.0)
+    ap.add_argument("--top-p", type=float, default=1.0)
+    ap.add_argument("--n-draws", type=int, default=1, help="draws per prefix (arm C: 10)")
+    ap.add_argument(
+        "--draw-seed-base",
+        type=int,
+        default=None,
+        help="per-draw sampling seed = base+k (arm C: 4300); default None = GEN_SEED "
+        "(42) on every request — the round-7 single-draw convention",
+    )
+    ap.add_argument(
+        "--max-tokens-override",
+        type=int,
+        default=0,
+        help="0 = per-wave defaults (768/512); arm C passes 320 (span cap + margin)",
+    )
+    ap.add_argument(
+        "--no-wave2",
+        action="store_true",
+        help="disable the wave-2 top-up (arm C — fixed prefix-final anchor needs no top-up)",
     )
     ap.add_argument(
         "--tiny-model-dir",
@@ -113,17 +164,38 @@ class VllmBackend:
         self.llm = LLM(model=model_id, max_model_len=MAX_MODEL_LEN)
         self.name = "vllm"
 
-    def generate(self, prompts: list[str], max_tokens: int) -> list[dict]:
+    def generate(self, prompts: list[str], max_tokens: int, sampling: Sampling) -> list[dict]:
         from vllm import SamplingParams
 
-        sp = SamplingParams(temperature=0.0, seed=GEN_SEED, max_tokens=max_tokens)
+        seeds = sampling.seeds(len(prompts))
         out: list[dict] = []
         n_chunks = (len(prompts) + VLLM_CHUNK_SIZE - 1) // VLLM_CHUNK_SIZE
         for i in range(0, len(prompts), VLLM_CHUNK_SIZE):
             chunk = prompts[i : i + VLLM_CHUNK_SIZE]
+            chunk_seeds = seeds[i : i + VLLM_CHUNK_SIZE]
+            if len(set(chunk_seeds)) == 1:
+                # Single shared params object — the exact round-7 greedy shape.
+                sp = SamplingParams(
+                    temperature=sampling.temperature,
+                    top_p=sampling.top_p,
+                    seed=chunk_seeds[0],
+                    max_tokens=max_tokens,
+                )
+            else:
+                # Per-request seeded params (plan v22 G2 arm C: one seed per draw).
+                sp = [
+                    SamplingParams(
+                        temperature=sampling.temperature,
+                        top_p=sampling.top_p,
+                        seed=s,
+                        max_tokens=max_tokens,
+                    )
+                    for s in chunk_seeds
+                ]
             print(
                 f"[vllm-chunk] onpolicy_sep chunk {i // VLLM_CHUNK_SIZE + 1}/{n_chunks} "
-                f"({len(chunk)} prompts, max_tokens={max_tokens})",
+                f"({len(chunk)} prompts, max_tokens={max_tokens}, "
+                f"T={sampling.temperature}, top_p={sampling.top_p})",
                 flush=True,
             )
             for o in self.llm.generate(chunk, sp, use_tqdm=False):
@@ -161,14 +233,23 @@ class TinyBackend:
         self.name = f"tiny-substitute ({tiny_dir})"
         self.smoke_tokens = int(os.environ.get("EPS_SMOKE_GEN_TOKENS", "16"))
 
-    def generate(self, prompts: list[str], max_tokens: int) -> list[dict]:
+    def generate(self, prompts: list[str], max_tokens: int, sampling: Sampling) -> list[dict]:
         out: list[dict] = []
-        for prompt in prompts:
+        seeds = sampling.seeds(len(prompts))
+        do_sample = sampling.temperature > 0.0
+        for prompt, seed in zip(prompts, seeds, strict=True):
             ids = self.tokenizer(prompt, return_tensors="pt", add_special_tokens=False)
+            if do_sample:
+                self.torch.manual_seed(seed)
             with self.torch.no_grad():
                 gen = self.model.generate(
                     **ids,
-                    do_sample=False,
+                    do_sample=do_sample,
+                    **(
+                        {"temperature": sampling.temperature, "top_p": sampling.top_p}
+                        if do_sample
+                        else {}
+                    ),
                     max_new_tokens=min(max_tokens, self.smoke_tokens),
                     pad_token_id=self.tokenizer.pad_token_id or 0,
                 )
@@ -239,16 +320,33 @@ def _length_stats(lengths: list[int]) -> dict:
 
 
 def _make_rows(
-    articles: list[dict], gen: list[dict], wave: int, tokenizer, *, smoke_real: bool
+    articles: list[dict],
+    gen: list[dict],
+    wave: int,
+    tokenizer,
+    *,
+    smoke_real: bool,
+    draws: list[int] | None = None,
+    seeds: list[int] | None = None,
+    budget: int | None = None,
 ) -> list[dict]:
-    """One continuation row per article; optional smoke true-continuation swap."""
+    """One continuation row per (article, draw); optional smoke true-continuation swap.
+
+    ``articles`` is the per-REQUEST article list (repeated per draw for K>1);
+    ``draws``/``seeds`` align with it (None = round-7 single-draw defaults).
+    """
     rows = []
     prefix_n = ops_pairs.PREFIX_TOKENS[wave]
-    budget = ops_pairs.CONTINUATION_MAX_TOKENS[wave]
-    for art, g in zip(articles, gen, strict=True):
+    if budget is None:
+        budget = ops_pairs.CONTINUATION_MAX_TOKENS[wave]
+    draws = draws if draws is not None else [0] * len(articles)
+    seeds = seeds if seeds is not None else [GEN_SEED] * len(articles)
+    for art, g, draw, seed in zip(articles, gen, draws, seeds, strict=True):
         row = {
             "window_id": art["window_id"],
             "wave": wave,
+            "draw": int(draw),
+            "sampling_seed": int(seed),
             "prefix_tokens": prefix_n,
             "continuation": g["text"],
             "continuation_token_ids": g["token_ids"],
@@ -274,6 +372,10 @@ def main() -> int:
     args = parse_args()
     if args.smoke_real_continuation:
         assert args.tiny_model_dir, "--smoke-real-continuation requires --tiny-model-dir"
+    assert args.n_draws >= 1, args.n_draws
+    if args.n_draws > 1:
+        assert args.no_wave2, "--n-draws > 1 requires --no-wave2 (multi-draw top-up undefined)"
+        assert args.draw_seed_base is not None, "--n-draws > 1 requires --draw-seed-base"
     model_id = MODEL_IDS[args.model]
     tokenizer = common.get_tokenizer()  # base/instruct identical (p1 gate asserts)
     articles = ops_pairs.read_jsonl(args.articles)
@@ -281,44 +383,82 @@ def main() -> int:
         articles = articles[: args.max_items]
     for a in articles:
         assert len(a["input_ids"]) >= common.ARMC_ARTICLE_MIN_TOKENS, a["window_id"]
-    print(f"[i825-ops-gen] model={args.model} ({model_id}) articles={len(articles)}")
+    print(
+        f"[i825-ops-gen] model={args.model} ({model_id}) articles={len(articles)} "
+        f"T={args.temperature} top_p={args.top_p} n_draws={args.n_draws}"
+    )
+
+    budget_w1 = args.max_tokens_override or ops_pairs.CONTINUATION_MAX_TOKENS[1]
+    budget_w2 = args.max_tokens_override or ops_pairs.CONTINUATION_MAX_TOKENS[2]
+    # Per-request expansion: K draws per article (K=1 reproduces round 7).
+    req_articles = [a for a in articles for _ in range(args.n_draws)]
+    req_draws = [k for _ in articles for k in range(args.n_draws)]
+    if args.draw_seed_base is None:
+        req_seeds = [GEN_SEED] * len(req_articles)
+    else:
+        req_seeds = [args.draw_seed_base + k for k in req_draws]
 
     backend = TinyBackend(args.tiny_model_dir) if args.tiny_model_dir else VllmBackend(model_id)
     try:
-        # Wave 1: 256-token prefixes, 768 new tokens.
+        # Wave 1: 256-token prefixes.
         prompts_w1 = [
-            tokenizer.decode(a["input_ids"][: ops_pairs.PREFIX_TOKENS[1]]) for a in articles
+            tokenizer.decode(a["input_ids"][: ops_pairs.PREFIX_TOKENS[1]]) for a in req_articles
         ]
-        gen_w1 = backend.generate(prompts_w1, ops_pairs.CONTINUATION_MAX_TOKENS[1])
-        rows = _make_rows(articles, gen_w1, 1, tokenizer, smoke_real=args.smoke_real_continuation)
-
-        # Wave-2 top-up trigger: the G2b ladder run inline on wave-1 text.
-        eligible_w1 = {
-            r["window_id"]: ops_pairs.count_eligible(tokenizer, art, r["continuation"], wave=1)
-            for art, r in zip(articles, rows, strict=True)
-        }
-        wave2_articles = [
-            a for a in articles if eligible_w1[a["window_id"]] < args.wave2_min_eligible
-        ]
-        print(
-            f"[i825-ops-gen] wave-2 trigger (<{args.wave2_min_eligible} eligible): "
-            f"{len(wave2_articles)}/{len(articles)} articles"
+        sampling_w1 = Sampling(args.temperature, args.top_p, req_seeds)
+        gen_w1 = backend.generate(prompts_w1, budget_w1, sampling_w1)
+        rows = _make_rows(
+            req_articles,
+            gen_w1,
+            1,
+            tokenizer,
+            smoke_real=args.smoke_real_continuation,
+            draws=req_draws,
+            seeds=req_seeds,
+            budget=budget_w1,
         )
-        if wave2_articles:
-            prompts_w2 = [
-                tokenizer.decode(a["input_ids"][: ops_pairs.PREFIX_TOKENS[2]])
-                for a in wave2_articles
+
+        # Wave-2 top-up trigger: the G2b ladder run inline on wave-1 text
+        # (single-draw arms only; --no-wave2 disables — arm C's fixed
+        # prefix-final anchor needs no continuation-region top-up).
+        eligible_w1: dict[str, int] = {}
+        if not args.no_wave2:
+            eligible_w1 = {
+                r["window_id"]: ops_pairs.count_eligible(tokenizer, art, r["continuation"], wave=1)
+                for art, r in zip(req_articles, rows, strict=True)
+            }
+            wave2_articles = [
+                a for a in articles if eligible_w1[a["window_id"]] < args.wave2_min_eligible
             ]
-            gen_w2 = backend.generate(prompts_w2, ops_pairs.CONTINUATION_MAX_TOKENS[2])
-            rows.extend(
-                _make_rows(
-                    wave2_articles,
-                    gen_w2,
-                    2,
-                    tokenizer,
-                    smoke_real=args.smoke_real_continuation,
-                )
+            print(
+                f"[i825-ops-gen] wave-2 trigger (<{args.wave2_min_eligible} eligible): "
+                f"{len(wave2_articles)}/{len(articles)} articles"
             )
+            if wave2_articles:
+                prompts_w2 = [
+                    tokenizer.decode(a["input_ids"][: ops_pairs.PREFIX_TOKENS[2]])
+                    for a in wave2_articles
+                ]
+                seeds_w2 = (
+                    [GEN_SEED] * len(wave2_articles)
+                    if args.draw_seed_base is None
+                    else [args.draw_seed_base] * len(wave2_articles)
+                )
+                gen_w2 = backend.generate(
+                    prompts_w2, budget_w2, Sampling(args.temperature, args.top_p, seeds_w2)
+                )
+                rows.extend(
+                    _make_rows(
+                        wave2_articles,
+                        gen_w2,
+                        2,
+                        tokenizer,
+                        smoke_real=args.smoke_real_continuation,
+                        seeds=seeds_w2,
+                        budget=budget_w2,
+                    )
+                )
+        else:
+            print("[i825-ops-gen] wave-2 disabled (--no-wave2)")
     finally:
         backend.close()
 
@@ -332,6 +472,7 @@ def main() -> int:
             {
                 "window_id": r["window_id"],
                 "wave": r["wave"],
+                "draw": r["draw"],
                 "n_tokens": r["n_tokens"],
                 "early_eos": r["finish_reason"] == "stop",
                 "repeats_3gram_min5": _repeats_within(r["continuation"]),
@@ -352,15 +493,23 @@ def main() -> int:
         "backend": backend.name
         + (" + true-continuation substitute" if args.smoke_real_continuation else ""),
         "sampling": {
-            "temperature": 0.0,
-            "seed": GEN_SEED,
-            "max_tokens_wave1": ops_pairs.CONTINUATION_MAX_TOKENS[1],
-            "max_tokens_wave2": ops_pairs.CONTINUATION_MAX_TOKENS[2],
+            "temperature": args.temperature,
+            "top_p": args.top_p,
+            "seed": (GEN_SEED if args.draw_seed_base is None else args.draw_seed_base),
+            "n_draws": args.n_draws,
+            "draw_seed_base": args.draw_seed_base,
+            "per_draw_seeds": sorted({r["sampling_seed"] for r in rows}),
+            "wave2_enabled": not args.no_wave2,
+            "max_tokens_wave1": budget_w1,
+            "max_tokens_wave2": budget_w2,
             "max_model_len": MAX_MODEL_LEN,
             "chat_template": False,
         },
         "n_articles": len(articles),
         "n_rows": len(rows),
+        "n_rows_per_draw": {
+            str(k): sum(1 for r in rows if r["draw"] == k) for k in range(args.n_draws)
+        },
         "n_wave2": sum(1 for r in rows if r["wave"] == 2),
         "eligible_wave1": eligible_w1,
         "length": _length_stats([r["n_tokens"] for r in rows]),

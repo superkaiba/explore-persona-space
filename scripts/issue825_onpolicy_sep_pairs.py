@@ -32,6 +32,16 @@ Outputs (CONSUMER-EXACT filenames so ``issue931_extract_store`` +
 Yield floor: target 3,600 pairs per model — a shortfall is REPORTED
 (``realized_n`` in every output), never padded.
 
+Round-8 `sampled-separator-control` extension (plan v22 section 2, flag-gated,
+DEFAULT-PRESERVING): ``--anchor-mode prefix-final`` builds the arm-C read —
+ONE FIXED anchor per article (the LAST eligible sentence-final single-token
+{., !, ?} anchor at token index <= 254 of the PINNED prefix, deterministic
+across draws AND models), one pair per (article, draw); span = anchor+1 ->
+next sentence-final single-token separator in the re-tokenized
+prefix+continuation_k (8..256 tokens, else that DRAW drops, counted); window
+text truncated at span-end + 4 tokens; ``window_id`` = ``wiki:NNNNN:cd<k>``.
+The default mode is the round-7 continuation-region ladder, byte-identical.
+
 CLI:
   uv run python scripts/issue825_onpolicy_sep_pairs.py \
       --articles <pinned articles_armC.jsonl> \
@@ -80,6 +90,20 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--model", type=str, required=True, choices=("base", "instruct"))
     ap.add_argument("--max-anchors", type=int, default=common.ARMC_MAX_ANCHORS_PER_ARTICLE)
     ap.add_argument("--target-n", type=int, default=TARGET_N)
+    # Round-8 sampled-separator-control extension (defaults preserve round 7).
+    ap.add_argument(
+        "--anchor-mode",
+        choices=("continuation", "prefix-final"),
+        default="continuation",
+        help="continuation = round-7 G2b ladder (default); prefix-final = arm C's "
+        "ONE fixed prefix-final anchor per article, one pair per (article, draw)",
+    )
+    ap.add_argument(
+        "--followup-label",
+        type=str,
+        default="onpolicy-separator-control",
+        help="provenance label written into pairs_meta.json",
+    )
     return ap.parse_args()
 
 
@@ -180,6 +204,147 @@ def build_wave(tokenizer, article: dict, continuation_text: str, wave: int) -> d
 def count_eligible(tokenizer, article: dict, continuation_text: str, wave: int = 1) -> int:
     """Eligible-anchor count (pre-cap) — the gen script's wave-2 trigger read."""
     return len(build_wave(tokenizer, article, continuation_text, wave)["eligible"])
+
+
+# ---------------------------------------------------------------------------
+# Round-8 arm C: fixed prefix-final anchor (plan v22 section 4 G2b)
+# ---------------------------------------------------------------------------
+
+# <= 254 guards the re-tokenization seam at the 256-token prefix boundary
+# (plan v22 section 11: never the final prefix token).
+PREFIX_FINAL_ANCHOR_MAX_INDEX = 254
+# Window text truncated at span-end + 4 tokens (token-boundary decode; bounds
+# extraction cost — plan v22 section 4 G2b; margin latitude 2-8 tokens).
+PREFIX_FINAL_TRUNC_MARGIN = 4
+
+
+def _eligible_sentence_final_anchors(text: str, offsets: np.ndarray) -> list[tuple[int, int, str]]:
+    """(token_idx, sentence_char_start, sep_char) for every eligible single-token
+    sentence-final {., !, ?} anchor in ``text`` (the #931 anchor ladder, shared
+    by both anchor modes; no region constraint here)."""
+    out: list[tuple[int, int, str]] = []
+    for s, e in common.sentence_bounds(text):
+        seg = text[s:e].rstrip()
+        if not seg or seg[-1] not in ".!?":
+            continue
+        pi = s + len(seg) - 1
+        lo, hi = common.covering_token_span(offsets, pi, pi + 1)
+        if hi - lo != 1:
+            continue
+        t = lo
+        tok_text = text[int(offsets[t, 0]) : int(offsets[t, 1])].strip()
+        if tok_text not in (".", "!", "?"):
+            continue
+        out.append((t, s, seg[-1]))
+    return out
+
+
+def find_prefix_final_anchor(tokenizer, article: dict) -> dict | None:
+    """The FIXED arm-C anchor: LAST eligible sentence-final single-token anchor
+    at token index <= 254 of the PINNED prefix (computed from the prefix text
+    ALONE, so it is deterministic across draws and models). Eligibility folds
+    in the #931 prev-sentence floor (an anchor whose preceding-sentence span is
+    < ARMC_PREV_MIN_TOKENS after the <=96 cap is ineligible). None = article
+    has no eligible in-prefix anchor (dropped + reported; expected ~0)."""
+    src_ids = list(article["input_ids"])
+    assert len(src_ids) >= common.ARMC_ARTICLE_MIN_TOKENS, (article["window_id"], len(src_ids))
+    prefix_text = tokenizer.decode(src_ids[: PREFIX_TOKENS[1]])
+    ids_p, offsets_p = common.tokenize_with_offsets(tokenizer, prefix_text)
+    best: dict | None = None
+    for t, sent_start, sep_char in _eligible_sentence_final_anchors(prefix_text, offsets_p):
+        if t > PREFIX_FINAL_ANCHOR_MAX_INDEX or t >= len(ids_p) - 1:
+            continue  # seam guard: never past 254, never the final prefix token
+        ps_lo, ps_hi = common.inner_token_span(offsets_p, sent_start, int(offsets_p[t, 0]))
+        ps_hi = min(ps_hi, t)
+        ps_lo = max(ps_lo, ps_hi - common.ARMC_PREV_CAP_TOKENS)  # keep LAST <=96 tokens
+        if ps_hi - ps_lo < common.ARMC_PREV_MIN_TOKENS:
+            continue  # #931 joint eligibility: prev-sentence floor
+        best = {
+            "t": int(t),
+            "sent_start": int(sent_start),
+            "sep_char": sep_char,
+            "ps_span": (int(ps_lo), int(ps_hi)),
+            "prefix_text": prefix_text,
+            "prefix_ids": ids_p,
+        }
+    return best
+
+
+def build_prefix_final_draw(
+    tokenizer, article: dict, anchor: dict, row: dict
+) -> tuple[dict | None, common.PairSpec | None, Counter]:
+    """One (article, draw) window + pair at the FIXED prefix-final anchor.
+
+    Returns (article_row, pair, counters); (None, None, counters) when the
+    draw drops (per-draw drop accounting — plan v22 section 4 G2b)."""
+    counters: Counter[str] = Counter()
+    article_id = article["window_id"]
+    draw = int(row["draw"])
+    t = anchor["t"]
+    prefix_text = anchor["prefix_text"]
+    full_text = prefix_text + row["continuation"]
+    ids, offsets = common.tokenize_with_offsets(tokenizer, full_text)
+    cap = min(len(ids), common.ARMC_ARTICLE_CAP_TOKENS)
+    ids, offsets = ids[:cap], offsets[:cap]
+    full_text = full_text[: int(offsets[-1, 1])]
+    # Seam check: the re-tokenized window must reproduce the prefix tokens up
+    # to (and including) the anchor — the <=254 guard makes violations rare;
+    # a violating draw drops (counted), and the reduce-side X-identity gate
+    # (HALT cos < 0.999 @ L19) is the binding backstop.
+    if len(ids) <= t + 1 or list(ids[: t + 1]) != list(anchor["prefix_ids"][: t + 1]):
+        counters["prefix_retok_mismatch_draw"] += 1
+        return None, None, counters
+    cont_char_start = len(prefix_text)
+    cont_tok_lo = int(np.searchsorted(offsets[:, 0], cont_char_start, side="left"))
+    nxt = None
+    for tt, _s, _c in _eligible_sentence_final_anchors(full_text, offsets):
+        if tt > t:
+            nxt = tt
+            break
+    if nxt is None:
+        counters["no_closing_separator_draw"] += 1
+        return None, None, counters
+    span_lo, span_hi = t + 1, int(nxt)
+    if not (common.ARMC_SPAN_MIN <= span_hi - span_lo <= common.ARMC_SPAN_MAX):
+        counters["span_len_out_of_range_draw"] += 1
+        return None, None, counters
+    if span_hi <= cont_tok_lo:
+        # Degenerate for the averaging construct: the span carries NO sampled
+        # content (identical across draws) — dropped + counted (expected ~0).
+        counters["span_ends_in_prefix_draw"] += 1
+        return None, None, counters
+    window_id = f"{article_id}:cd{draw}"
+    ids_trunc = ids[: min(len(ids), span_hi + PREFIX_FINAL_TRUNC_MARGIN)]
+    ps_lo, ps_hi = anchor["ps_span"]
+    pair = common.PairSpec(
+        row_id=f"{window_id}:a{t}",
+        group_id=article_id,
+        char_id="sep",
+        c_span=(ps_lo, ps_hi),
+        t_spans=[(span_lo, span_hi)],
+        ctx_span=(ps_lo, ps_hi),
+        meta={
+            "window_id": window_id,
+            "anchor_pos": int(t),
+            "wave": 1,
+            "draw": draw,
+            "sep_char": anchor["sep_char"],
+            # Deterministic prefix-tail segment shared across draws (nuisance
+            # length distribution — plan v22 section 1 construct-shift rule).
+            "prefix_tail_tokens": int(max(0, cont_tok_lo - span_lo)),
+        },
+    )
+    pair.validate(len(ids_trunc), min_c=common.ARMC_PREV_MIN_TOKENS, min_t=common.ARMC_SPAN_MIN)
+    assert pair.meta["anchor_pos"] < span_lo, "anchor must precede its span"
+    article_row = {
+        "window_id": window_id,
+        "novel_id": article_id,
+        "window_idx": 1,
+        "title": article.get("title", ""),
+        "input_ids": [int(v) for v in ids_trunc],
+        "draw": draw,
+    }
+    return article_row, pair, counters
 
 
 def select_article_pairs(
@@ -297,11 +462,10 @@ def _write_jsonl(path: Path, rows: list[dict]) -> None:
     print(f"[i825-ops-pairs] wrote {path} ({len(rows)} rows)")
 
 
-def main() -> int:
-    args = parse_args()
-    tokenizer = common.get_tokenizer()
-    articles = {r["window_id"]: r for r in read_jsonl(args.articles)}
-    cont_rows = read_jsonl(args.continuations)
+def _run_continuation_mode(
+    args, tokenizer, articles: dict[str, dict], cont_rows: list[dict]
+) -> tuple[list[dict], list[common.PairSpec], Counter, list[dict], dict]:
+    """Round-7 default mode — the G2b continuation-region ladder, verbatim."""
     by_article: dict[str, dict[int, dict]] = {}
     for r in cont_rows:
         by_article.setdefault(r["window_id"], {})[int(r["wave"])] = r
@@ -340,11 +504,99 @@ def main() -> int:
                 }
             )
         pairs_out.extend(p for _, p in kept)
+    return articles_out, pairs_out, counters, seam, {"n_wave2_windows": n_wave2_windows}
+
+
+def _run_prefix_final_mode(
+    args, tokenizer, articles: dict[str, dict], cont_rows: list[dict]
+) -> tuple[list[dict], list[common.PairSpec], Counter, list[dict], dict]:
+    """Round-8 arm C: ONE fixed prefix-final anchor; one pair per (article, draw)."""
+    by_article: dict[str, dict[int, dict]] = {}
+    for r in cont_rows:
+        assert int(r["wave"]) == 1, ("prefix-final mode expects wave-1 rows only", r["window_id"])
+        d = int(r.get("draw", 0))
+        assert d not in by_article.setdefault(r["window_id"], {}), (r["window_id"], d)
+        by_article[r["window_id"]][d] = r
+
+    articles_out: list[dict] = []
+    pairs_out: list[common.PairSpec] = []
+    counters: Counter[str] = Counter()
+    seam: list[dict] = []
+    k_valid: dict[str, int] = {}
+    per_draw_yield: Counter[int] = Counter()
+    anchor_pos_by_article: dict[str, int] = {}
+    for article_id in sorted(by_article, key=article_idx_of):
+        art = articles[article_id]
+        anchor = find_prefix_final_anchor(tokenizer, art)
+        if anchor is None:
+            counters["no_prefix_anchor_article"] += 1
+            k_valid[article_id] = 0
+            continue
+        anchor_pos_by_article[article_id] = anchor["t"]
+        n_valid = 0
+        for draw, row in sorted(by_article[article_id].items()):
+            arow, pair, c = build_prefix_final_draw(tokenizer, art, anchor, row)
+            counters.update(c)
+            if pair is None:
+                continue
+            # Seam diagnostic (re-tokenized ids vs generation-time ids) —
+            # NON-gating, same convention as the continuation mode.
+            seam.append(
+                {
+                    "window_id": arow["window_id"],
+                    "wave": 1,
+                    "draw": draw,
+                    **seam_mismatch(art, row, arow["input_ids"], 1),
+                }
+            )
+            articles_out.append(arow)
+            pairs_out.append(pair)
+            per_draw_yield[draw] += 1
+            n_valid += 1
+        k_valid[article_id] = n_valid
+
+    kv = np.asarray(list(k_valid.values()), dtype=np.int64)
+    extra = {
+        "anchor_mode": "prefix-final",
+        "anchor_max_index": PREFIX_FINAL_ANCHOR_MAX_INDEX,
+        "trunc_margin_tokens": PREFIX_FINAL_TRUNC_MARGIN,
+        "n_articles_input": len(by_article),
+        "n_articles_no_anchor": int(counters.get("no_prefix_anchor_article", 0)),
+        "n_wave2_windows": 0,
+        "per_draw_yield": {str(k): int(v) for k, v in sorted(per_draw_yield.items())},
+        "k_valid_per_article": k_valid,
+        "k_valid_distribution": {
+            str(k): int((kv == k).sum()) for k in range(int(kv.max()) + 1 if kv.size else 1)
+        },
+        "prefix_tail_tokens": dist_summary([int(p.meta["prefix_tail_tokens"]) for p in pairs_out]),
+        "anchor_pos_by_article_summary": dist_summary(list(anchor_pos_by_article.values())),
+    }
+    return articles_out, pairs_out, counters, seam, extra
+
+
+def main() -> int:
+    args = parse_args()
+    tokenizer = common.get_tokenizer()
+    articles = {r["window_id"]: r for r in read_jsonl(args.articles)}
+    cont_rows = read_jsonl(args.continuations)
+
+    if args.anchor_mode == "prefix-final":
+        articles_out, pairs_out, counters, seam, extra = _run_prefix_final_mode(
+            args, tokenizer, articles, cont_rows
+        )
+        n_articles_in = extra["n_articles_input"]
+        n_draws = max((int(r.get("draw", 0)) for r in cont_rows), default=0) + 1
+        target_n = n_articles_in * n_draws if args.target_n == TARGET_N else args.target_n
+    else:
+        articles_out, pairs_out, counters, seam, extra = _run_continuation_mode(
+            args, tokenizer, articles, cont_rows
+        )
+        target_n = args.target_n
 
     groups = sorted({p.group_id for p in pairs_out})
     assert len(groups) <= common.ARMC_N_ARTICLES, (len(groups), common.ARMC_N_ARTICLES)
     realized_n = len(pairs_out)
-    shortfall = realized_n < args.target_n
+    shortfall = realized_n < target_n
     mismatch_rate = sum(1 for s in seam if not s["exact"]) / len(seam) if seam else float("nan")
 
     pairs_dir = args.out_data_dir / "pairs"
@@ -353,14 +605,15 @@ def main() -> int:
 
     meta = {
         "metadata": common.metadata(SCRIPT, common.BUILD_SEED, realized_n),
-        "followup_label": "onpolicy-separator-control",
+        "followup_label": args.followup_label,
         "model": args.model,
+        "anchor_mode": args.anchor_mode,
         "realized_n": realized_n,
-        "target_n": args.target_n,
+        "target_n": target_n,
         "shortfall": bool(shortfall),
         "n_articles_with_pairs": len(groups),
         "n_windows": len(articles_out),
-        "n_wave2_windows": n_wave2_windows,
+        **extra,
         "drop_counters": dict(counters),
         "onpolicy_stats": pair_stats(pairs_out),
         "exogenous_stats": (
@@ -382,8 +635,9 @@ def main() -> int:
     }
     common.write_json(pairs_dir / "pairs_meta.json", meta)
     print(
-        f"[i825-ops-pairs] model={args.model} realized_n={realized_n}/{args.target_n} "
-        f"(shortfall={shortfall}) groups={len(groups)} wave2_windows={n_wave2_windows} "
+        f"[i825-ops-pairs] model={args.model} mode={args.anchor_mode} "
+        f"realized_n={realized_n}/{target_n} (shortfall={shortfall}) groups={len(groups)} "
+        f"wave2_windows={extra.get('n_wave2_windows', 0)} "
         f"seam_mismatch_rate={mismatch_rate:.3f}"
     )
     return 0
