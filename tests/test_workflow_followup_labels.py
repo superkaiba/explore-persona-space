@@ -457,6 +457,52 @@ def test_semicolon_split_anchoring_negatives():
     assert parse_followup_note_field("- followup_label: x; source: y", "source") == "y"
 
 
+# The #825 v6 run-marker note VERBATIM (2026-07-08T00:50:12Z): literal
+# backslash-n two-char escapes between fields, zero real newlines — the
+# escaped-newline shape a shell --note "...\n..." string produces when
+# passed uninterpreted. v7 (00:51:06Z) is identical modulo ts (#1120).
+_NOTE_825_RUN_V6 = (
+    r"followup_label: onpolicy-separator-control\nsource: user-chat\nround: 7"
+    r"\noutcome: complete — PARTIAL PROVENANCE EFFECT both substrates "
+    r"(D_base 0.590 MLP-carried / D_inst 0.428; R4 fractions -4.30/0.166 < 0.5; "
+    r"instruct position-residual not excluded, D→≈0.30 scenario qualified); "
+    r"body re-folded + re-parked at awaiting_promotion"
+)
+
+
+def test_label_parse_literal_backslash_n_escapes_825():
+    # Field-led notes whose separators arrived as literal \n escapes (one
+    # physical line) parse all four fields (#1120; pre-fix the label parsed
+    # as the garbage token 'onpolicy-separator-control\nsource:').
+    assert (
+        parse_followup_note_field(_NOTE_825_RUN_V6, "followup_label")
+        == "onpolicy-separator-control"
+    )
+    assert parse_followup_note_field(_NOTE_825_RUN_V6, "source") == "user-chat"
+    assert parse_followup_note_field(_NOTE_825_RUN_V6, "round") == "7"
+    assert parse_followup_note_field(_NOTE_825_RUN_V6, "outcome") == "complete"
+    # Literal \r\n escapes normalize too — no stray backslash-r on the value.
+    assert parse_followup_note_field(r"followup_label: x\r\nsource: y", "followup_label") == "x"
+    assert parse_followup_note_field(r"followup_label: x\r\nsource: y", "source") == "y"
+    # Normalization introduces no new positives on a field-less note.
+    assert parse_followup_note_field(r"no label here\nnothing", "followup_label") is None
+    # Double-escape protective pin (#1120 review note): a 3-char literal
+    # `\\n` TAIL-matches the 2-char escape on a single-line note, so the
+    # note still splits at that tail and the preceding backslash rides the
+    # value token — pinned so any future change here is deliberate.
+    assert parse_followup_note_field(r"followup_label: ok\\nsource: y", "source") == "y"
+    assert parse_followup_note_field(r"followup_label: ok\\nsource: y", "followup_label") == "ok\\"
+
+
+def test_literal_backslash_n_content_preserved_when_real_newlines_present():
+    # The predicate's protective side (#1120, predicate (b)): a note that
+    # ALREADY has real newlines keeps literal \n escapes as CONTENT — a
+    # quoted regex/code value never splits mid-value.
+    note = "followup_label: real-label\npattern: a\\nb rest"
+    assert parse_followup_note_field(note, "followup_label") == "real-label"
+    assert parse_followup_note_field(note, "pattern") == "a\\nb"
+
+
 def test_1090_shape_labels_group_and_close_only_on_repost():
     # End-to-end #1090 replay: the two `; `-joined scopes group + label
     # correctly post-fix; the VERBATIM prose-led fu1 run marker (no fields at
@@ -1107,6 +1153,16 @@ def test_corpus_replay_all_historical_markers():
             # A ghost label (round demonstrably ran, no run marker) surfaces
             # as unrun — the Step 0 retro-close disposition rule handles it.
             assert "persona-vectors-style-rb" in unrun
+
+    # #825 (the #1120 escaped-newline incident): run markers v6/v7 must
+    # parse the TRUE label (events are append-only, so this pin is stable).
+    if 825 in by_task:
+        labels_825 = _run_labels(by_task[825])
+        assert "onpolicy-separator-control" in labels_825
+        # Discriminating half (#1120): pre-fix, v6/v7 parsed the garbage
+        # token 'onpolicy-separator-control\nsource:' (literal backslash-n)
+        # into the label set; post-fix no parsed label carries a literal \n.
+        assert not any("\\n" in lbl for lbl in labels_825)
 
     # #537 / #552: the `=`-form run markers close their labels.
     for task_id, closed_labels in (
