@@ -978,8 +978,8 @@
     "1125": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1125",
-      "status": "running",
+      "path": "tasks/reviewing/1125",
+      "status": "reviewing",
       "title": "workflow-fix: pin GNU grep in SKILL.md lint-gate -qv triggers (ugrep shadowing)"
     },
     "1126": {
