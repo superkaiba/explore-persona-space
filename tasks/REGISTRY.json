@@ -1055,8 +1055,8 @@
     "1135": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1135",
-      "status": "approved",
+      "path": "tasks/running/1135",
+      "status": "running",
       "title": "daily-fix: gotchas entry - CVD clobber at library-train seam"
     },
     "1136": {
