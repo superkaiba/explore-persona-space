@@ -1662,7 +1662,9 @@ def _wedge_alternating_storm_tail(base_ts: float, n_failed: int = 7, step_s: flo
 
 
 def test_decide_prompt_wedge_failed_turn_rate_alternating():
-    # #1127 plan test 5 — the c16b10ca alternating storm: 7 timestamped
+    # #1127 plan test 5 — a SYNTHETIC dense alternating storm (denser than
+    # the measured c16b10ca tail, which held only 4-5 windowed failed turns
+    # — below threshold by design, plan v4 §3.3): 7 timestamped
     # failed turns (5 min apart, interleaved with ok turns, newest completed
     # turn FAILED) fire failed-turn-rate; newest-turn-ok, ts-stripped, and
     # back-shifted (> 120 min behind the newest row ts) variants do NOT.
