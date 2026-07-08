@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1126,
+  "highest_id": 1127,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -988,6 +988,13 @@
       "path": "tasks/proposed/1126",
       "status": "proposed",
       "title": "daily-fix: Codex quota-exhausted sentinel short-circuit"
+    },
+    "1127": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1127",
+      "status": "proposed",
+      "title": "daily-fix: refusal-wedge lane misses live wedges"
     },
     "113": {
       "has_clean_result": true,
