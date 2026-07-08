@@ -1146,8 +1146,8 @@
     "1147": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1147",
-      "status": "approved",
+      "path": "tasks/running/1147",
+      "status": "running",
       "title": "workflow-fix: Step-10d surgical checkout runs GLOB_SCAN_TESTS-mapped tests pre-landing"
     },
     "115": {
