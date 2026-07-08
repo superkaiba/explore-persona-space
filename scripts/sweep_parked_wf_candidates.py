@@ -278,7 +278,10 @@ def _task_creation_ts(task_dir: Path) -> datetime | None:
     """First parseable events.jsonl row ts (the task's creation time); None if unreadable."""
     events = task_dir / "events.jsonl"
     try:
-        lines = events.read_text(encoding="utf-8").splitlines()
+        # split("\n"), NEVER splitlines(): splitlines() splits on U+2028/U+2029
+        # etc. and shreds valid JSONL rows whose note strings carry them
+        # (.claude/rules/gotchas.md "splitlines shreds JSONL", #950).
+        lines = events.read_text(encoding="utf-8").split("\n")
     except OSError:
         return None
     for line in lines:
@@ -351,7 +354,10 @@ def _load_stream(path: Path, source: str) -> tuple[list[tuple[dict, datetime, st
     rows: list[tuple[dict, datetime, str]] = []
     seen: set[tuple[str, str, str]] = set()
     try:
-        lines = path.read_text(encoding="utf-8").splitlines()
+        # split("\n"), NEVER splitlines(): splitlines() splits on U+2028/U+2029
+        # etc. and shreds valid JSONL rows whose note strings carry them
+        # (.claude/rules/gotchas.md "splitlines shreds JSONL", #950).
+        lines = path.read_text(encoding="utf-8").split("\n")
     except OSError:
         return rows, skipped
     for line in lines:
