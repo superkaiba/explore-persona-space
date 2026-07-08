@@ -96,7 +96,8 @@ def main() -> int:
         colors = [c_ref, c_grey, c_arm, c_acc]
         xs = np.arange(len(fracs))
         ax.bar(xs, fracs, 0.6, color=colors, edgecolor="white", linewidth=0.4)
-        # shuffle-null p97.5 ticks (as fractions of the same ceiling)
+        # shuffle-null p97.5 ticks (as fractions of the same ceiling); labeled
+        # 2-vertex lines so savefig_paper embeds their vertices in the sidecar
         for x, leg in ((1, r7), (2, legs["armB"]), (3, legs["armC_avg"])):
             ax.plot(
                 [x - 0.3, x + 0.3],
@@ -104,6 +105,7 @@ def main() -> int:
                 color="0.15",
                 lw=1.2,
                 ls=":",
+                label="pairing-null p97.5" if x == 1 else None,
             )
         ax.axhline(0.5, color="red", lw=1.0, ls="--")
         ax.axhline(0.0, color="0.6", lw=0.6)
@@ -129,19 +131,22 @@ def main() -> int:
         labels = ["arm B\n(full n)", "span-matched\n(refit)", "random\n(n-matched)"]
         xs = np.arange(3)
         ax.bar(xs, vals, 0.6, color=[c_arm, c_acc, c_grey], edgecolor="white", linewidth=0.4)
-        # per-seed MLP-carried D points on the two reduced-n bars
+        # per-seed MLP-carried D points on the two reduced-n bars (scatter so
+        # the sidecar embeds the per-unit points)
         for xi, key in ((1, "distmatched"), (2, "random_n_control")):
-            for seed, row in cells["per_seed"].items():
-                d_seed = (row[key]["mlp_l19"] - wex) / (ceil - wex)
-                ax.plot(
-                    xi + np.random.default_rng(int(seed)).uniform(-0.12, 0.12),
-                    d_seed,
-                    "o",
-                    ms=3,
-                    color="0.15",
-                    zorder=3,
-                )
-        ax.axhline(d_r7, color=c_ref, lw=1.4)
+            seeds = sorted(cells["per_seed"])
+            d_seed = [(cells["per_seed"][s][key]["mlp_l19"] - wex) / (ceil - wex) for s in seeds]
+            jit = [xi + np.random.default_rng(int(s)).uniform(-0.12, 0.12) for s in seeds]
+            ax.scatter(
+                jit,
+                d_seed,
+                s=10,
+                color="0.15",
+                zorder=3,
+                label="per-seed D (MLP-carried)" if xi == 1 else None,
+            )
+        # round-7 greedy D reference as a labeled 2-vertex line (sidecar-visible)
+        ax.plot([-0.5, 2.5], [d_r7] * 2, color=c_ref, lw=1.4, label="round-7 greedy D")
         ax.axhline(0.0, color="0.6", lw=0.6)
         ax.set_xticks(xs)
         ax.set_xticklabels(labels, fontsize=7)
