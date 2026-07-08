@@ -6149,6 +6149,29 @@ def test_explicit_runpod_override_runpod_only_intent_verbatim(
     assert "runpod_intent_translation" not in finals[-1]["extra"]
 
 
+def test_explicit_runpod_override_gpu_intent_preserves_boot_disk_gb(
+    lease_store, marker_poster, captured_markers
+):
+    """#1118 route-side leg (the exact #1112 manual-pivot shape): a GPU spec
+    with a stated boot_disk_gb reaches RunPodBackend.launch through
+    _override_runpod with the extra intact — the GPU sibling of the CPU-shaped
+    test_runpod_cpu_fallback_feasible_requirement_launches_and_preserves_extra
+    (launch then threads it into --volume-gb, pinned in
+    tests/test_runpod_workload_exec.py)."""
+    rp = _PassiveRunpod()
+    result = route(
+        RunSpec(issue=1118, intent="lora-7b", backend="runpod", extra={"boot_disk_gb": 575}),
+        runpod_backend=rp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_OVERRIDE
+    assert len(rp.launches) == 1
+    assert rp.launches[0].intent == "lora-7b"
+    assert rp.launches[0].extra["boot_disk_gb"] == 575
+
+
 def test_explicit_runpod_override_unmapped_gcp_intent_raises_valueerror(
     lease_store, marker_poster, captured_markers
 ):

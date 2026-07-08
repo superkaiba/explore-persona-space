@@ -93,6 +93,14 @@ LOG_TAIL_LINES = 200
 #: — this module's imports stay ``base``-only by documented convention.)
 _CPU_CONTAINER_DISK_FLOOR_GB = 50
 
+#: Floor for the #1118 GPU-lane volume threading in :meth:`RunPodBackend.launch`
+#: — mirrors pod_lifecycle.py's ``provision --volume-gb`` argparse default (200),
+#: the /workspace volume an un-threaded GPU provision gets, so threading a
+#: plan's ``boot_disk_gb`` can only ever GROW the volume relative to today's
+#: default, never shrink it. (Not imported from ``scripts/pod_lifecycle`` —
+#: this module's imports stay ``base``-only by documented convention.)
+_GPU_VOLUME_FLOOR_GB = 200
+
 
 def _shell_quote(s: str) -> str:
     """Single-quote ``s`` for a remote bash command (poor-man's shlex.quote).
@@ -734,8 +742,13 @@ class RunPodBackend(ComputeBackend):
         resolves it to a RunPod CPU instance_id via
         ``gpu_heuristics.resolve_cpu_intent`` (checked BEFORE the GPU
         ``_resolve_spec``) and provisions via ``runpod_api.create_cpu_pod``
-        (``deployCpuPod``); ``cpu-bigmem`` never reaches here (it keeps the #677
-        typed terminal — it is absent from the RunPod-CPU map).
+        (``deployCpuPod``); ``cpu-bigmem`` never reaches here on any AUTOMATED
+        path (the #677 typed terminal at the router's terminal rung precedes
+        launch — it is absent from the RunPod-CPU map). An explicit
+        ``backend: runpod`` pin of ``cpu-bigmem`` DOES reach launch
+        (``_override_runpod`` has no CPU guard) and then fails loud downstream
+        (``resolve_cpu_intent`` -> None and the GPU ``_resolve_spec`` cannot
+        resolve it -> non-zero provision exit).
         """
         execute_workload = bool((spec.extra or {}).get("execute_workload"))
         if execute_workload and not spec.workload_cmd:
@@ -760,19 +773,41 @@ class RunPodBackend(ComputeBackend):
         ]
         if spec.gpus is not None:
             cmd += ["--gpu-count", str(spec.gpus)]
-        # #1010: thread the plan's disk requirement into the RunPod CPU
-        # fallback's container disk (the pod's only writable disk on the CPU
-        # lane -- /workspace rides the overlay; incident #958). CPU intents
-        # ONLY: on GPU pods the big-data mount is the 200 GB /workspace
-        # VOLUME, not the container overlay, so boot_disk_gb does not map.
-        # Floored at runpod_api.DEFAULT_CONTAINER_DISK_GB (50,
-        # _CPU_CONTAINER_DISK_FLOOR_GB here) so threading can never REDUCE
-        # below today's behavior. The router's feasibility gate guarantees
-        # boot_disk_gb <= the instance cap on every AUTOMATED path; an
-        # explicit `backend: runpod` pin above the cap fails loud at
+        # #1010/#1118: thread the plan's disk requirement into the provision
+        # argv. CPU lane (#1010): the pod's only writable disk is the
+        # container overlay (/workspace rides it; incident #958) --
+        # --container-disk-gb, floored at runpod_api.DEFAULT_CONTAINER_DISK_GB
+        # (50, _CPU_CONTAINER_DISK_FLOOR_GB here) so threading can never
+        # REDUCE below today's behavior. The router's feasibility gate
+        # guarantees boot_disk_gb <= the instance cap on every AUTOMATED
+        # path; an explicit `backend: runpod` pin above the cap fails loud at
         # pod_lifecycle's pre-API cap check / RunPod's own create-time
-        # validation.
-        boot_disk_gb = int((spec.extra or {}).get("boot_disk_gb") or 0)
+        # validation. GPU lane (#1118): the big-data mount is the /workspace
+        # VOLUME (pod_lifecycle threads --volume-gb -> runpod_api volumeInGb),
+        # floored at the 200 GB argparse default (_GPU_VOLUME_FLOOR_GB) --
+        # thread-or-grow, never shrink. No deterministic pre-API cap exists
+        # for GPU volumeInGb (unlike the probe-verified CPU caps) -- an
+        # unsatisfiable size surfaces LOUD at RunPod create time (RunPodError
+        # -> non-zero provision exit -> CalledProcessError) or as a capacity
+        # miss (wait-for-capacity budget), never as a silent downsize (the
+        # #1112 ENOSPC incident: a ~575 GB plan on the default 200 GB volume).
+        raw_boot_disk = (spec.extra or {}).get("boot_disk_gb") or 0
+        try:
+            boot_disk_gb = int(raw_boot_disk)
+            if float(raw_boot_disk) != boot_disk_gb:
+                # A fractional value (e.g. 575.5) would silently TRUNCATE via
+                # int() -- reject it instead of provisioning less disk than
+                # the plan stated.
+                raise ValueError("fractional GB value")
+        except (TypeError, ValueError) as exc:
+            # Named fail-loud parse mirroring router._footprint_int (#1118):
+            # GPU intents bypass the router's CPU-only footprint gate, so a
+            # malformed value would otherwise hit a bare int() traceback.
+            # Raised BEFORE the provision subprocess -- no pod is paid for.
+            raise ValueError(
+                f"spec.extra['boot_disk_gb'] is not an integer: {raw_boot_disk!r} "
+                f"(malformed disk requirement on issue {spec.issue})"
+            ) from exc
         if boot_disk_gb:
             from explore_persona_space.backends.router import (
                 RUNPOD_CPU_INSTANCE_FOR_INTENT,  # lazy: module top stays base-only
@@ -782,6 +817,11 @@ class RunPodBackend(ComputeBackend):
                 cmd += [
                     "--container-disk-gb",
                     str(max(_CPU_CONTAINER_DISK_FLOOR_GB, boot_disk_gb)),
+                ]
+            else:
+                cmd += [
+                    "--volume-gb",
+                    str(max(_GPU_VOLUME_FLOOR_GB, boot_disk_gb)),
                 ]
         # subprocess.run raises CalledProcessError on non-zero exit; that
         # propagates to the selector, which logs + lets the orchestrator
@@ -834,7 +874,10 @@ class RunPodBackend(ComputeBackend):
             Success path: ``workload_executed=exec_requested`` + the execution
             leg's ``workload_info`` — the ``extra`` dict is byte-identical to
             the pre-#954 inline construction (``workload_start_error`` is added
-            ONLY on the failure path, so no new keys appear on success).
+            ONLY on the failure path, so no new keys appear on success). #1118
+            adds the CONDITIONAL footprint keys (``boot_disk_gb`` /
+            ``min_ram_gb``) on both paths, OMITTED when absent/falsy — a spec
+            without a stated footprint keeps the pre-#1118 key set.
             Failure path (#954): ``workload_executed=False`` (truthful — the
             workload did not start) + a truncated ``workload_start_error`` so
             downstream consumers (poll / finalize / re-drive) can tell the
@@ -881,6 +924,20 @@ class RunPodBackend(ComputeBackend):
                 "hydra_args": list(spec.hydra_args),
                 "gpus": spec.gpus,
                 "time_budget_hours": spec.time_budget_hours,
+                # #1118: footprint fields persisted so the wedge / CUDA-IMA
+                # fresh-pod re-provision (backend_poll._runspec_from_runpod_handle)
+                # forwards them — mirroring the GCP handle (gcp.py, #1010).
+                # Keys OMITTED when absent/falsy — never a None value — so
+                # legacy handle shapes stay byte-identical (the
+                # _PRE_954_SUCCESS_EXTRA_KEYS exact-set tests pin this).
+                **{
+                    k: v
+                    for k, v in {
+                        "boot_disk_gb": (spec.extra or {}).get("boot_disk_gb"),
+                        "min_ram_gb": (spec.extra or {}).get("min_ram_gb"),
+                    }.items()
+                    if v
+                },
                 # #909: the branch the run's code lives on (round-trips through
                 # the sidecar + backend_poll reconstructors so a failover
                 # re-execution syncs the ISSUE branch, not `main`) + the

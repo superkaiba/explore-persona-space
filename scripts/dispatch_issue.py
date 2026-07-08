@@ -945,7 +945,10 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # GCP boot disk (backends/gcp.py reads spec.extra["boot_disk_gb"]);
         # ALSO read by the RunPod CPU fallback as of #1010 — container-disk
         # threading in RunPodBackend.launch + the feasibility gate in
-        # router._runpod_terminal_rung. Inert on SLURM lanes.
+        # router._runpod_terminal_rung — and by the RunPod GPU lane as of
+        # #1118 (volume threading: --volume-gb max(200, value) → volumeInGb,
+        # so a plan-stated disk size survives a GCP→RunPod pivot; incident
+        # #1112). Inert on SLURM lanes.
         extra["boot_disk_gb"] = int(args.boot_disk_gb)
     if getattr(args, "min_ram_gb", None):
         # RunPod-CPU-fallback knob (#1010): read by the feasibility gate in
@@ -2026,7 +2029,11 @@ def _build_argparser() -> argparse.ArgumentParser:
             "(max(50, value)) and checked by the feasibility gate — an "
             "unsatisfiable disk requirement refuses the fallback typed "
             "(cpu_fallback_infeasible_for_plan) instead of provisioning an "
-            "undersized pod. Inert on SLURM lanes."
+            "undersized pod. RunPod GPU lane (#1118): threaded into the "
+            "pod's persistent /workspace volume (--volume-gb max(200, "
+            "value) → volumeInGb); an unsatisfiable size fails loud at "
+            "RunPod create time, never a silent 200 GB default (incident "
+            "#1112). Inert on SLURM lanes."
         ),
     )
     launch.add_argument(
