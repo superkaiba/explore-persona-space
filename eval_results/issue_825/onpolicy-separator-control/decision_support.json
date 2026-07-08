@@ -1,0 +1,131 @@
+{
+  "metadata": {
+    "git_commit": "fda8f98ba63b577081f16f3e3473d1e3927b1d89",
+    "timestamp": "2026-07-07T22:03:28Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue825_onpolicy_sep_decision.py",
+    "issue": 931
+  },
+  "followup_label": "onpolicy-separator-control",
+  "smoke": false,
+  "per_model": {
+    "base": {
+      "onpolicy": {
+        "headline_layer": 19,
+        "ridge": -1.5914446611808755,
+        "rotated": -1.2278079045145343,
+        "mlp": 0.4954989932913608,
+        "mlp_missing": false,
+        "w_on_max": 0.4954989932913608,
+        "mlp_wins_max": true,
+        "rotated_ci": {
+          "r2": -1.2175593212058087,
+          "ci_lo": -1.3134551875844909,
+          "ci_hi": -1.1331903524892315,
+          "n_groups": 600,
+          "n_boot": 1000
+        },
+        "prevmean_rotated": -1.148469236697288,
+        "n": 3577
+      },
+      "committed_reference": {
+        "rotated": 0.3626111899733,
+        "mlp": 0.31111419787909056,
+        "w_ex_fulln": 0.3626111899733,
+        "ceiling_fulln": 0.5876803039140281,
+        "headline_layer": 19,
+        "exo_transfer_fraction_fulln": 0.0574
+      },
+      "realized_n": 3577,
+      "matched_n_trigger_fired": false,
+      "w_ex_matched_n": null,
+      "w_ex_effective": 0.3626111899733,
+      "D": 0.5904310946594687,
+      "D_fulln_reference": 0.5904310946594687,
+      "D_ci_rotated": {
+        "lo": -7.446896414224042,
+        "hi": -6.645965393796548,
+        "estimator": "rotated",
+        "note": "rotated-estimator group-bootstrap CI mapped through the D transform; when MLP wins the max the band-boundary qualifier falls back to this rotated CI with a stated caveat (plan section 1 CI convention)"
+      },
+      "delta_w_raw": 0.13288780331806083,
+      "ratio_ceiling": 0.8431437807108259,
+      "exogenous_ratio_ceiling": 0.6170211721547613
+    },
+    "instruct": {
+      "onpolicy": {
+        "headline_layer": 19,
+        "ridge": -2.1929851056343326,
+        "rotated": 0.48775360035988136,
+        "mlp": 0.44197550514465567,
+        "mlp_missing": false,
+        "w_on_max": 0.48775360035988136,
+        "mlp_wins_max": false,
+        "rotated_ci": {
+          "r2": 0.48940231864691974,
+          "ci_lo": 0.47906919938561965,
+          "ci_hi": 0.49836642661372704,
+          "n_groups": 600,
+          "n_boot": 1000
+        },
+        "prevmean_rotated": 0.4066487762279589,
+        "n": 3591
+      },
+      "committed_reference": {
+        "rotated": 0.3489193821633685,
+        "mlp": 0.2985925806396439,
+        "w_ex_fulln": 0.3489193821633685,
+        "ceiling_fulln": 0.6730940896676356,
+        "headline_layer": 19,
+        "exo_transfer_fraction_fulln": 0.1087
+      },
+      "realized_n": 3591,
+      "matched_n_trigger_fired": false,
+      "w_ex_matched_n": null,
+      "w_ex_effective": 0.3489193821633685,
+      "D": 0.4282697415395536,
+      "D_fulln_reference": 0.4282697415395536,
+      "D_ci_rotated": {
+        "lo": 0.40148048015293725,
+        "hi": 0.46100772512732624,
+        "estimator": "rotated",
+        "note": "rotated-estimator group-bootstrap CI mapped through the D transform; when MLP wins the max the band-boundary qualifier falls back to this rotated CI with a stated caveat (plan section 1 CI convention)"
+      },
+      "delta_w_raw": 0.13883421819651287,
+      "ratio_ceiling": 0.7246440101720805,
+      "exogenous_ratio_ceiling": 0.5183812895098514
+    }
+  },
+  "r5_mirror": {
+    "abs_d_gap": 0.16216135311991514,
+    "margin": 0.1,
+    "mirror_within_margin": false,
+    "note": "report raw delta_w_raw next to D per substrate \u2014 the D denominators differ (0.22507 vs 0.32417), so a D gap can be a denominator artifact (plan section 7 concern 3)"
+  },
+  "gates": {
+    "anchor_gate_base": true,
+    "equivalence_gate_base": {
+      "early_cos_min": 0.9999599456787109,
+      "flat_cos_min": 0.999843955039978
+    },
+    "anchor_gate_instruct": true,
+    "equivalence_gate_instruct": {
+      "early_cos_min": 0.9999678134918213,
+      "flat_cos_min": 0.9997966289520264
+    }
+  },
+  "transfer_fractions": {
+    "base": null,
+    "instruct": null,
+    "note": "R4 slot \u2014 filled by Phase C on the VM (onpolicy_sep_to_chat_{base,instruct}.json, full-n convention, fraction of the full-n chat ceiling); deliberately outside the pod-side enumeration (plan section 6.5)",
+    "threshold": 0.5
+  },
+  "interpretation_bands": {
+    "survives_max": 0.33,
+    "reframed_min": 0.67,
+    "r4_threshold": 0.5,
+    "r5_margin": 0.1,
+    "rule": "BINDING, applied by the ANALYZER (plan section 1): per model SURVIVES iff D <= 0.33 AND R4 fraction < 0.5; REFRAMED iff D >= 0.67 OR R4 fraction >= 0.5; PARTIAL otherwise; CI spanning a band boundary => 'suggestive' qualifier; R4 skipped => SURVIVES unevaluable (at most 'suggestive \u2014 D-only')"
+  }
+}

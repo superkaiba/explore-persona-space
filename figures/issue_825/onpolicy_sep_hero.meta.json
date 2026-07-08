@@ -1,0 +1,110 @@
+{
+  "commit": "b285f235ee",
+  "created": "2026-07-07T22:36:51Z",
+  "figsize": [
+    9.6,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "Held-out $R^2$ (layer 19)": 0.5876803039140281,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "Held-out $R^2$ (layer 19)": 0.3626111899733,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.81,
+      "Held-out $R^2$ (layer 19)": 0.31111419787909056,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "Held-out $R^2$ (layer 19)": -1.0,
+      "error": 0.09013241754762968,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.81,
+      "Held-out $R^2$ (layer 19)": 0.4954989932913608,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 4.81,
+      "Held-out $R^2$ (layer 19)": -1.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.19,
+      "Held-out $R^2$ (layer 19)": 0.6730940896676356,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.19,
+      "Held-out $R^2$ (layer 19)": 0.3489193821633685,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.19,
+      "Held-out $R^2$ (layer 19)": 0.2985925806396439,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 3.19,
+      "Held-out $R^2$ (layer 19)": 0.48775360035988136,
+      "error": 0.009648613614053697,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 4.19,
+      "Held-out $R^2$ (layer 19)": 0.44197550514465567,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 5.19,
+      "Held-out $R^2$ (layer 19)": -1.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.19,
+      "sep$\\to$chat transfer / full-n ceiling": 0.0574,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.19,
+      "sep$\\to$chat transfer / full-n ceiling": -4.299728605965878,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.81,
+      "sep$\\to$chat transfer / full-n ceiling": 0.1087,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.19,
+      "sep$\\to$chat transfer / full-n ceiling": 0.16617920901535013,
+      "_kind": "bar",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 16
+}
