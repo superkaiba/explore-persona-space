@@ -20,6 +20,7 @@ of the clobber; smoke mode = single-process (the proven 1-GPU GCE smoke shape).
 from __future__ import annotations
 
 import inspect
+import json
 import os
 import subprocess
 import sys
@@ -227,6 +228,82 @@ def test_phase_train_clears_stale_partial_ft_out_dir(monkeypatch, tmp_path):
     d.phase_train(cfg)
     assert not stale.exists()
     assert (tmp_path / "s3_fullft_neg" / "build_result.json").exists()
+
+
+# ── Round-5 concern fix: g1-ext done-sentinel (train_metadata.json) ──────────
+
+
+def _g1_ext_setup(d, tmp_path, monkeypatch):
+    """Drive the REAL phase_g1_gate body to the extension loop for one cell.
+
+    g1 fires (all rates below C.INSTALL_FLOOR), the fence pre-check resolves
+    extend_in_place (fence_hours=72 vs ~28h default projection), and only the
+    GPU boundary (_physical_gpu_ids / _run_subprocess) is faked."""
+    monkeypatch.setattr(d, "_physical_gpu_ids", lambda: list(FOUR_GPUS))
+    calls: list[tuple[list[str], dict[str, str] | None]] = []
+
+    def fake_run_subprocess(cmd, log_path, env=None):
+        calls.append((list(cmd), dict(env) if env is not None else None))
+        Path(log_path).parent.mkdir(parents=True, exist_ok=True)
+
+    monkeypatch.setattr(d, "_run_subprocess", fake_run_subprocess)
+    cell_root = tmp_path / "s3_fullft_neg"
+    cell_root.mkdir(parents=True)
+    # the original s3 training's dispatcher-written sentinel already exists at
+    # cell_root — exactly why it cannot double as the ext done-sentinel
+    (cell_root / "build_result.json").write_text(
+        json.dumps({"adapter_root": str(cell_root / "train")})
+    )
+    cfg = d.Cfg(smoke=False, cells=("s3_fullft_neg",), out_root=tmp_path, fence_hours=72.0)
+    selections = {"s3_fullft_neg": {"rates_by_step": {"30": 0.10}}}  # < INSTALL_FLOOR
+    return cfg, selections, cell_root, calls
+
+
+def test_g1_ext_completed_dir_never_wiped_or_retrained(monkeypatch, tmp_path):
+    """Concern g1-ext-done-sentinel-never-written (code-review v4): the guard
+    keys on the TRAINER-written train_metadata.json — the only root-level file
+    train_behavior_fullft.py produces (save_only_model=True; no root
+    config.json). A COMPLETED extension on resume is classified done: no wipe,
+    no retrain. Fails pre-fix (config.json key -> completed tree wiped +
+    retrained)."""
+    import issue1112_dispatch as d
+
+    cfg, selections, cell_root, calls = _g1_ext_setup(d, tmp_path, monkeypatch)
+    ext_dir = cell_root / "train_ext"
+    ckpt = ext_dir / "checkpoint-60"
+    ckpt.mkdir(parents=True)
+    (ckpt / "model.safetensors").write_text("completed weights")
+    (ext_dir / "train_metadata.json").write_text(json.dumps({"saved_checkpoints": [60]}))
+
+    rec = d.phase_g1_gate(cfg, selections)
+
+    assert rec["action"] == "extend_in_place"
+    assert calls == []  # completed -> never retrained
+    assert (ckpt / "model.safetensors").read_text() == "completed weights"  # never wiped
+    build = json.loads((cell_root / "build_result.json").read_text())
+    assert build["g1_extension"] is True and build["adapter_root"] == str(ext_dir)
+
+
+def test_g1_ext_partial_dir_wiped_and_retrained(monkeypatch, tmp_path):
+    """Partial ext (no train_metadata.json) keeps the round-4 disposition:
+    stale checkpoint-* wiped before ONE fresh whole-pod extension launch."""
+    import issue1112_dispatch as d
+
+    from explore_persona_space.experiments import issue_1112 as C
+
+    cfg, selections, cell_root, calls = _g1_ext_setup(d, tmp_path, monkeypatch)
+    stale = cell_root / "train_ext" / "checkpoint-2"
+    stale.mkdir(parents=True)
+    (stale / "junk.bin").write_text("stale partial state")
+
+    rec = d.phase_g1_gate(cfg, selections)
+
+    assert rec["action"] == "extend_in_place"
+    assert not stale.exists()  # partial -> wiped before relaunch
+    assert len(calls) == 1
+    cmd, env = calls[0]
+    assert cmd[cmd.index("--max-steps") + 1] == str(C.G1_EXTENSION_STEP_CEILING)
+    assert env is not None and env["CUDA_VISIBLE_DEVICES"] == "0,1,2,3"
 
 
 def test_run_subprocess_real_body(tmp_path):

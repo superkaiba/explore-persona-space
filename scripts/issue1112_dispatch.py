@@ -469,7 +469,7 @@ def _fresh_ft_out_dir(out_dir: Path) -> None:
     """Clear a stale PARTIAL full-FT output dir before a fresh launch.
 
     Reached only when the phase's done-sentinel (build_result.json / the g1
-    ext config.json) is ABSENT, so anything under out_dir is incomplete by
+    ext train_metadata.json) is ABSENT, so anything under out_dir is incomplete by
     construction — the trainer never resumes (save_only_model=True), and a
     crashed run's partial checkpoint-* dirs would otherwise be enumerated by
     _enumerate_rungs as real rungs (round-4 stale-artifact disposition: wipe)."""
@@ -856,7 +856,17 @@ def phase_g1_gate(cfg: Cfg, selections: dict) -> dict:
     for cell in ft_cells:
         cell_root = cfg.out_root / cell
         ext_dir = cell_root / "train_ext"
-        if not (ext_dir / "config.json").exists():
+        # Done-sentinel = the TRAINER-written train_metadata.json at the ext
+        # root: train_behavior_fullft.py writes it rank-0 AFTER a fail-loud
+        # check that every reachable grid checkpoint is on disk, and never
+        # writes a root config.json (save_only_model=True — per-checkpoint
+        # config.json lives under checkpoint-<step>/ only). Keying on
+        # config.json classified every COMPLETED extension as partial and
+        # wiped+retrained it on resume (concern g1-ext-done-sentinel-never-
+        # written, code-review v4). The dispatcher-written build_result.json
+        # cannot serve here: it already exists at cell_root from the original
+        # s3/s4 training, so it cannot distinguish ext-done from ext-partial.
+        if not (ext_dir / "train_metadata.json").exists():
             _fresh_ft_out_dir(ext_dir)
             _run_ft_subprocess(
                 cfg,
