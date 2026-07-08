@@ -1034,8 +1034,8 @@
     "1132": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1132",
-      "status": "planning",
+      "path": "tasks/approved/1132",
+      "status": "approved",
       "title": "daily-fix: sweep recursion-guard-parked wf-fix candidates"
     },
     "1133": {
