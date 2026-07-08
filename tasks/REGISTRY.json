@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1123,
+  "highest_id": 1124,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -967,6 +967,13 @@
       "path": "tasks/completed/1123",
       "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 fan-out handshake timeout masks unit crash"
+    },
+    "1124": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1124",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 token-id concat for teacher-forced capture (BPE seam)"
     },
     "113": {
       "has_clean_result": true,
