@@ -929,8 +929,8 @@
     "1119": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1119",
-      "status": "running",
+      "path": "tasks/reviewing/1119",
+      "status": "reviewing",
       "title": "workflow-fix: external-stream presumption for Step 3.6 / checkpoint-per-phase"
     },
     "112": {
