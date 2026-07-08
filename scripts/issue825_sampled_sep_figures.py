@@ -127,12 +127,16 @@ def main() -> int:  # noqa: C901 -- linear figure dump
         ax.axhline(d_r7, color=c_ref, lw=1.4)
         ax.axhspan(d_r7 - MARGIN, d_r7 + MARGIN, color=c_ref, alpha=0.12)
         ci7 = pm["round7_reference"].get("D_ci_rotated_r7")
-        if ci7:
+        # Draw the round-7 CI band ONLY when it describes the reference value:
+        # on base the fallback rotated CI sits at [-7.4, -6.6] (the documented
+        # MLP-carried pathology), and drawing it destroys the y-scale, hiding
+        # every bar; the figure caption carries the no-valid-CI caveat instead.
+        if ci7 and abs(float(ci7["lo"]) - d_r7) < 0.5 and abs(float(ci7["hi"]) - d_r7) < 0.5:
             ax.axhspan(float(ci7["lo"]), float(ci7["hi"]), color=c_acc, alpha=0.10)
         ax.set_xticks(list(xs))
         ax.set_xticklabels([ARM_LABELS[ARMS[i]] for i in xs], fontsize=7)
         ax.set_ylabel("D = (W_on - W_ex) / (C - W_ex)" if m == "base" else "")
-        ax.set_title(f"{m}: sampled D per arm vs round-7 greedy (line +- 0.10 band)")
+        ax.set_title(m)
     savefig_paper(fig, fig_dir / "sampled_sep_hero")
     plt.close(fig)
 
