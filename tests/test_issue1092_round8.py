@@ -1498,12 +1498,16 @@ def test_render_row_accepts_empty_completion_but_raises_on_missing():
 
 def test_rows_for_cell_shuffled_restricted_to_derangement_domain():
     rows = [
-        {"row_id": "r_0", "control_subset": True},  # in derangement domain
+        {"row_id": "r_0", "control_subset": True},  # in domain, source available
         {"row_id": "r_1", "control_subset": True},  # battery/topicmatch: not in domain
         {"row_id": "r_2", "control_subset": False},  # not in subset at all
-        {"row_id": "r_3", "control_subset": True},  # in domain
+        {"row_id": "r_3", "control_subset": True},  # in domain, source available
+        {"row_id": "r_4", "control_subset": True},  # in domain, source OUTSIDE row set
     ]
-    kept = gp._rows_for_cell(rows, "cell_inst_shuf", derangement_keys={"r_0", "r_3"})
+    dmap = {"r_0": "r_3", "r_3": "r_0", "r_4": "r_9999"}
+    kept = gp._rows_for_cell(rows, "cell_inst_shuf", derangement=dmap)
+    # r_4's answer-source row is not in the current row set (the row-limited
+    # smoke case) -> excluded; a full-manifest run always has the source.
     assert [r["row_id"] for r in kept] == ["r_0", "r_3"]
     with pytest.raises(ValueError, match="requires derangement_keys"):
         gp._rows_for_cell(rows, "cell_inst_shuf")

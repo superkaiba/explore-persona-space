@@ -2287,19 +2287,19 @@ def _subset_id_for_cell(cell_id: str) -> str:
     return "full_manifest"
 
 
-def _derangement_keys(corpus_dir: Path) -> set[str]:
-    """Row ids covered by the shuffled-pairing derangement (corpus artifact)."""
+def _load_derangement(corpus_dir: Path) -> dict[str, str]:
+    """The shuffled-pairing derangement map (corpus artifact); fail-loud if absent."""
     path = Path(corpus_dir) / "derangement_map.json"
     if not path.exists():
         raise FileNotFoundError(
             f"derangement_map.json missing under {corpus_dir}; required to determine "
             "the shuffled cells' row domain"
         )
-    return set(json.loads(path.read_text(encoding="utf-8")).keys())
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _rows_for_cell(
-    rows: list[dict], cell_id: str, derangement_keys: set[str] | None = None
+    rows: list[dict], cell_id: str, derangement: dict[str, str] | None = None
 ) -> list[dict]:
     subset_id = _subset_id_for_cell(cell_id)
     if subset_id == "full_manifest":
@@ -2311,14 +2311,23 @@ def _rows_for_cell(
         # §4.1 step 7); the control subset ALSO contains battery + topic-
         # matched periphery rows, which have no derangement entry and hence
         # no shuffled answer (launch 7: all 30 shuf-shard failures were the
-        # first such row per shard). Membership comes from the derangement
-        # KEYS — corpus data, available before any generation runs.
-        if derangement_keys is None:
+        # first such row per shard). Membership needs BOTH the key (corpus
+        # data, available before any generation) AND the answer-SOURCE row
+        # being present in the current row set — a no-op at production
+        # (sources always exist in the full manifest) that keeps row-limited
+        # smokes consistent with the main() derangement closure.
+        if derangement is None:
             raise ValueError(
                 f"{cell_id} requires derangement_keys to determine its row domain "
-                "(pass _derangement_keys(corpus_dir))"
+                "(pass _load_derangement(corpus_dir))"
             )
-        filtered = [row for row in filtered if str(row.get("row_id")) in derangement_keys]
+        available_ids = {str(row.get("row_id")) for row in rows}
+        filtered = [
+            row
+            for row in filtered
+            if str(row.get("row_id")) in derangement
+            and derangement[str(row.get("row_id"))] in available_ids
+        ]
     if not filtered:
         raise ValueError(f"{cell_id} subset {subset_id} is empty; refusing to shard full manifest")
     return filtered
@@ -2539,7 +2548,7 @@ def _validate_dispatch_inputs(
                 "(hf: issue1092_realistic_crossing/raw_completions/claude/) first"
             )
     if any(CELL_CONFIG[c]["text_source"] == "shuffled" for c in cells):
-        _derangement_keys(corpus_dir)  # raises if missing
+        _load_derangement(corpus_dir)  # raises if missing
     dispatched = set(cells)
     for cell_id in cells:
         for producer in _cell_dependencies([cell_id])[cell_id]:
@@ -2644,12 +2653,10 @@ def run_dispatch(
     corpus_dir = Path(args.corpus_dir) if args.corpus_dir else out_dir / "corpus"
     _validate_dispatch_inputs(cells, out_dir, corpus_dir, gen_in_stage=gen_in_stage)
     needs_derangement = any(CELL_CONFIG[c]["text_source"] == "shuffled" for c in cells)
-    dkeys = _derangement_keys(corpus_dir) if needs_derangement else None
+    dmap = _load_derangement(corpus_dir) if needs_derangement else None
 
     # Build shard list
-    rows_by_cell = {
-        cell_id: _rows_for_cell(rows, cell_id, derangement_keys=dkeys) for cell_id in cells
-    }
+    rows_by_cell = {cell_id: _rows_for_cell(rows, cell_id, derangement=dmap) for cell_id in cells}
     shards = _build_cell_shards(cells, rows_by_cell, n_gpus)
 
     scheduler = _DispatchScheduler(cells, shards, deps)
@@ -3725,8 +3732,8 @@ def run_hf_cpu_smoke(args: argparse.Namespace) -> None:
     )
 
     rb_pool = None
-    smoke_dkeys = (
-        _derangement_keys(Path(args.corpus_dir))
+    smoke_dmap = (
+        _load_derangement(Path(args.corpus_dir))
         if any(CELL_CONFIG[c]["text_source"] == "shuffled" for c in cells) and args.corpus_dir
         else None
     )
@@ -3736,7 +3743,7 @@ def run_hf_cpu_smoke(args: argparse.Namespace) -> None:
             prefix_texts: list[str] = []
             prompts: list[str] = []
             completions: list[str] = []
-            for row in _rows_for_cell(rows, cell_id, derangement_keys=smoke_dkeys):
+            for row in _rows_for_cell(rows, cell_id, derangement=smoke_dmap):
                 prefix_text, prompt, completion = render_row(
                     row,
                     prefix_store,
@@ -3757,7 +3764,7 @@ def run_hf_cpu_smoke(args: argparse.Namespace) -> None:
                 cell_id=cell_id,
                 shard_idx=0,
                 model_type=cfg["model"],
-                rows=_rows_for_cell(rows, cell_id, derangement_keys=smoke_dkeys),
+                rows=_rows_for_cell(rows, cell_id, derangement=smoke_dmap),
                 completions=completions,
             )
             if "capture" in args.phases_set:
@@ -4026,8 +4033,25 @@ def main() -> None:  # noqa: C901
 
     # Apply row limit (smoke)
     if args.row_limit is not None:
+        all_rows = rows
         rows = rows[: args.row_limit]
         logger.info("[main] Row limit applied: %d rows", len(rows))
+        # round-8.8: close the truncated set over the derangement so the
+        # shuffled cells' answer-SOURCE rows are generated within the smoke.
+        # Production (row_limit=None) is untouched — at full scale every
+        # source exists in the manifest by construction.
+        if any(CELL_CONFIG[c]["text_source"] == "shuffled" for c in args.cells):
+            dmap = _load_derangement(corpus_dir)
+            kept_ids = {str(r.get("row_id")) for r in rows}
+            needed = {dmap[rid] for rid in kept_ids if rid in dmap} - kept_ids
+            if needed:
+                by_id = {str(r.get("row_id")): r for r in all_rows}
+                rows = rows + [by_id[rid] for rid in sorted(needed) if rid in by_id]
+                logger.info(
+                    "[main] Row-limit derangement closure: +%d answer-source rows (%d total)",
+                    len(rows) - len(kept_ids),
+                    len(rows),
+                )
 
     # Corpus hash for fingerprinting
     corpus_hash = hashlib.sha256(args.corpus_rev.encode()).hexdigest()[:16]
