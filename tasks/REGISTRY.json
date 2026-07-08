@@ -1062,8 +1062,8 @@
     "1136": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1136",
-      "status": "proposed",
+      "path": "tasks/planning/1136",
+      "status": "planning",
       "title": "daily-fix: set-body warns when experiment loses Goal H2"
     },
     "1137": {
