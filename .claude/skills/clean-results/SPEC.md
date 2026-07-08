@@ -456,7 +456,8 @@ dates>
 Identical to v3. Plain academic register — NO lowercase-casual voice, NO
 "How this updates me" diary framing. Bullets only, numbers-first,
 directly adaptable into a Slack post. **3–6 bullets** (hard FAIL outside
-that range), each ≤30 words (WARN). The H1 title stays the one-sentence
+that range), each ≤30 words (WARN; ≥100 words is a hard FAIL). The H1
+title stays the one-sentence
 claim + confidence tag. It is the rolling cross-round synthesis, rewritten
 after every follow-up round (§ Follow-up consolidation).
 
@@ -721,20 +722,21 @@ body.
 
 Same constants as v3 (`V3_TAKEAWAYS_*`, `V3_FINDING_PROSE_*`,
 `V3_FIGURE_CAPTION_MAX_WORDS`, `V3_TOTAL_PROSE_*`), applied to the v4
-sections:
+sections, plus ONE v4-only constant: `V4_TAKEAWAYS_BULLET_FAIL_WORDS`
+(=100), the per-Takeaways-bullet hard-FAIL tier (#825):
 
 | Surface | Cap | Verifier behavior |
 |---|---|---|
 | `## Takeaways` bullet count | 3–6 bullets, no paragraphs | FAIL outside range (owned by the v4 structure check) |
-| Per-Takeaways-bullet length | ≤30 words | WARN |
+| Per-Takeaways-bullet length | ≤30 words WARN; ≥100 words FAIL | WARN at 30, FAIL at 100 (v4-only hard tier — an accreted paragraph-bullet cannot ride a WARN, #825) |
 | Per-`### <result>` prose (excl. caption/code/details/tables) | ≤120 words WARN, ≥180 FAIL | WARN at 120, FAIL at 180 |
 | Figure caption | ≤60 words | WARN |
 | Total prose: Takeaways + Goal + Results (excl. tables, code fences, details bodies, captions; `## Methodology` is EXCLUDED — it carries the absorbed methodology-doc content and is reference, not skim prose) | ≤800 words + 250 per live follow-up round beyond the first (round count: non-retroactive `epm:same-issue-followup-run` markers and/or the footer round clauses, max — #921) | WARN-only |
 
 `## Methodology` is deliberately EXCLUDED from the total-prose budget: it
 absorbed the entire former standalone methodology doc, which was never
-under the skim-prose cap. The per-`### <result>` ≥180-word FAIL is the
-hard gate.
+under the skim-prose cap. The per-`### <result>` ≥180-word FAIL and the
+per-Takeaways-bullet ≥100-word FAIL are the hard gates.
 
 ## Follow-up consolidation (v4)
 
@@ -923,9 +925,9 @@ Forward-only: each check branches on the sentinel. The v4 checks
 19. **`## Methodology` subset-disclosure** (v4 only): every example block
     inside `## Methodology` is preceded by a subset-disclosure line.
 20. **Word caps** (`check_v4_word_caps`, v4 only): the § Conciseness caps
-    table above. FAILs only on the per-`### <result>` ≥180-word hard cap;
-    everything else is WARN. `## Methodology` excluded from the total
-    budget.
+    table above. FAILs on the per-`### <result>` ≥180-word hard cap and
+    the per-Takeaways-bullet ≥100-word hard tier; everything else is
+    WARN. `## Methodology` excluded from the total budget.
 21. **Results beat shape** (`check_v4_results_beat`, v4 only, WARN): each
     `### <result>` carries a figure framed by what-is-plotted prose ABOVE
     and interpretation prose BELOW (the three-beat). WARN (not FAIL) so a
