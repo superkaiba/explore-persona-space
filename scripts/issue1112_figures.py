@@ -56,6 +56,17 @@ CELL_LABEL = {
     "s6_fullft_generic": "Generic control (full-FT)",
     "m1_lora_band8": "Marker LoRA",
     "m2_fullft_band8": "Marker full-FT",
+    "s5_lora_neg_lr5e6": "lr-matched LoRA + negatives",
+}
+# Realized learning rate per sycophancy cell (plan v8 hero legend: lr + rate).
+CELL_LR_TEXT = {
+    "s1_lora_neg": "lr 1e-5",
+    "s2_lora_pos": "lr 1e-5",
+    "s3_fullft_neg": "lr 5e-6",
+    "s4_fullft_pos": "lr 5e-6",
+    "s5_lora_generic": "lr 1e-5",
+    "s6_fullft_generic": "lr 5e-6",
+    "s5_lora_neg_lr5e6": "lr 5e-6",
 }
 DVS = ("rank_k_at_90", "pr_lambda", "top_share_lambda", "mu_norm")
 DV_LABEL = {
@@ -68,6 +79,9 @@ DV_LABEL = {
 
 def _style_for(cell: str, palette: list[str]) -> dict:
     """color = method, linestyle = negatives (plan §6); generics grey; marker cells solid."""
+    if cell == C.LR_MATCHED_CELL:
+        # LoRA color (color = method) at a distinct dash-dot: the round's cell.
+        return {"color": palette[0], "linestyle": "-.", "linewidth": 2.0}
     if cell in C.GENERIC_CELLS:
         return {"color": "0.6", "linestyle": "-" if "lora" in cell else "--", "alpha": 0.8}
     color = palette[0] if "lora" in cell else palette[1]
@@ -730,6 +744,336 @@ def tf_figs(tf_geometry_json: Path, installs: dict, out_dir: Path) -> None:
     tf_parity_fig(tf, out_dir)
 
 
+# ── lr-matched amendment figures (followup `lr-matched-method-pair`) ─────────
+# Consume geometry_lr_matched.json (+ the parent geometry_per_cell.json as an
+# overlay input) and the committed install/*_tier2.json records for legends.
+
+
+def _read_tier2_installs(install_dir: Path | None) -> dict[str, float]:
+    """cell -> Tier-2 trained judged rate from the committed <cell>_tier2.json."""
+    installs: dict[str, float] = {}
+    if not install_dir or not install_dir.exists():
+        return installs
+    for p in sorted(install_dir.glob("*_tier2.json")):
+        rec = json.loads(p.read_text())
+        rate = rec.get("rates", {}).get("trained")
+        if isinstance(rate, int | float):
+            installs[rec["cell"]] = float(rate)
+    return installs
+
+
+def _lr_legend_label(cell: str, installs: dict) -> str:
+    """Plain-English label incl. lr + judged (Tier-2) rate — plan v8 §6."""
+    label = CELL_LABEL.get(cell, cell)
+    bits = [b for b in (CELL_LR_TEXT.get(cell),) if b]
+    rate = installs.get(cell)
+    if isinstance(rate, int | float):
+        bits.append(f"rate {rate:.2f}")
+    return f"{label} ({', '.join(bits)})" if bits else label
+
+
+def _lr_overlay_records(parent_records: dict, lr: dict, *, arm: str) -> dict[str, dict]:
+    """cell -> {layer: record}: the 6 parent cells from geometry_per_cell.json
+    plus the NEW cell's records from geometry_lr_matched.json (the re-derived
+    s3 duplicate is NOT merged — the parent copy stays authoritative)."""
+    by_cell = _records_by_cell(parent_records, arm=arm, dose_by_cell={})
+    lr_by_cell = _records_by_cell(lr["records"], arm=arm, dose_by_cell={})
+    if C.LR_MATCHED_CELL in lr_by_cell:
+        by_cell[C.LR_MATCHED_CELL] = lr_by_cell[C.LR_MATCHED_CELL]
+    return by_cell
+
+
+def lr_hero_mu_norm(parent_records: dict, lr: dict, installs: dict, out_dir: Path) -> None:
+    """Hero (plan v8 §6 fig 1): the parent per-layer ‖μ‖ response profiles (6
+    cells) EXTENDED with the lr-matched cell, PLUS a side panel with the
+    layer-14 paired (s3 − s5) difference CI against zero and the parent's
+    (s3 − s1 @ lr 1e-5) reference recomputed under the same draws."""
+    palette = paper_palette(4)
+    by_cell = _lr_overlay_records(parent_records, lr, arm="response")
+    cells = [c for c in (*SYCO_CELLS, *C.GENERIC_CELLS, C.LR_MATCHED_CELL) if c in by_cell]
+    if C.LR_MATCHED_CELL not in cells:
+        logger.info("[figures] skip lr hero (no lr-matched records)")
+        return
+    layer = int(lr.get("primary_layer", C.PRIMARY_LAYER))
+    pair = lr["lr_matched_pair"]
+    diff_matched = pair["mu_norm_diff_by_layer_s3_minus_s5"].get(str(layer))
+    diff_ref = pair["reference_s3_minus_s1_by_layer"].get(str(layer))
+    fig, (ax, axd) = plt.subplots(
+        1,
+        2,
+        figsize=(8.8, 4.0),
+        gridspec_kw={"width_ratios": [2.4, 1.0]},
+        layout="constrained",
+    )
+    for cell in cells:
+        layers = sorted(by_cell[cell])
+        ax.plot(
+            layers,
+            [by_cell[cell][li]["mu_norm"] for li in layers],
+            label=_lr_legend_label(cell, installs),
+            **_style_for(cell, palette),
+        )
+    ax.set_yscale("log")  # late layers dominate linearly; log keeps mid-layers legible
+    ax.set_xlabel("decoder layer")
+    ax.set_ylabel(DV_LABEL["mu_norm"])
+    ax.set_title("sycophancy mean-shift norm — response arm", loc="left", fontsize=9)
+    ax.legend(fontsize=6)
+    pts = [
+        ("lr-matched pair\n(both lr 5e-6)", diff_matched, palette[1]),
+        ("parent pair\n(5e-6 vs 1e-5)", "REF", "0.5"),
+    ]
+    xs, labels = [], []
+    for i, (label, d, color) in enumerate(pts):
+        d = diff_ref if d == "REF" else d
+        if not d:
+            continue
+        axd.errorbar(
+            i,
+            d["point"],
+            yerr=[[max(0.0, d["point"] - d["ci_low"])], [max(0.0, d["ci_high"] - d["point"])]],
+            fmt="o",
+            color=color,
+            capsize=4,
+        )
+        xs.append(i)
+        labels.append(label)
+    axd.axhline(0.0, color="0.7", linestyle=":")
+    axd.set_xticks(xs)
+    axd.set_xticklabels(labels, fontsize=6.5)
+    axd.set_xlim(-0.6, 1.6)
+    axd.set_ylabel(f"‖μ‖ difference at layer {layer} (full-FT − LoRA)")
+    axd.set_title("method effect\n(paired bootstrap CI)", fontsize=8)
+    _save(
+        fig,
+        out_dir,
+        "hero_syco_mu_norm_lr_matched",
+        _meta(cells=cells, layer=layer, mu_n_boot=lr.get("mu_n_boot")),
+    )
+
+
+def lr_ladder_fig(lr: dict, out_dir: Path) -> None:
+    """Plan v8 §6 fig 2: the new cell's per-rung Tier-1 judged rate with the
+    [0.60, 0.85] band shaded (the parent ladder-figure convention)."""
+    sel = lr.get("install", {}).get("selection")
+    if not sel or not sel.get("rates_by_step"):
+        logger.info("[figures] skip lr ladder (no staged selection record)")
+        return
+    palette = paper_palette(4)
+    rates = sel["rates_by_step"]
+    steps = sorted(int(s) for s in rates)
+    band = sel.get("band", [0.60, 0.85])
+    fig, ax = plt.subplots(figsize=(6.0, 4.0))
+    ax.plot(
+        steps,
+        [float(rates[str(s)]) for s in steps],
+        marker="o",
+        label=_lr_legend_label(C.LR_MATCHED_CELL, {}),
+        **_style_for(C.LR_MATCHED_CELL, palette),
+    )
+    if isinstance(sel.get("step"), int) and str(sel["step"]) in rates:
+        ax.scatter(
+            [sel["step"]],
+            [float(rates[str(sel["step"])])],
+            s=90,
+            facecolors="none",
+            edgecolors="0.2",
+            zorder=3,
+            label=f"selected checkpoint (step {sel['step']})",
+        )
+    ax.axhspan(band[0], band[1], color="0.9", label=f"install band [{band[0]}, {band[1]}]")
+    ax.set_xlabel("optimizer step")
+    ax.set_ylabel("Tier-1 judged rate")
+    ax.set_title("install ladder — lr-matched LoRA with negatives (lr 5e-6)")
+    ax.legend(fontsize=7)
+    _save(fig, out_dir, "explore_install_ladder_lr_matched", _meta(cell=C.LR_MATCHED_CELL))
+
+
+def lr_rankk_profiles(parent_records: dict, lr: dict, installs: dict, out_dir: Path) -> None:
+    """Plan v8 §6 fig 3: rank-k@90 per-layer profile overlay incl. the
+    lr-matched cell (the H1 re-check convention)."""
+    palette = paper_palette(4)
+    by_cell = _lr_overlay_records(parent_records, lr, arm="response")
+    cells = [c for c in (*SYCO_CELLS, *C.GENERIC_CELLS, C.LR_MATCHED_CELL) if c in by_cell]
+    if C.LR_MATCHED_CELL not in cells:
+        logger.info("[figures] skip lr rankk profiles (no lr-matched records)")
+        return
+    fig, ax = plt.subplots(figsize=(6.4, 4.0))
+    for cell in cells:
+        layers = sorted(by_cell[cell])
+        ax.plot(
+            layers,
+            [by_cell[cell][li]["rank_k_at_90"] for li in layers],
+            label=_lr_legend_label(cell, installs),
+            **_style_for(cell, palette),
+        )
+    ax.set_xlabel("decoder layer")
+    ax.set_ylabel(DV_LABEL["rank_k_at_90"])
+    ax.set_title("shift rank-k@90 — response arm, lr-matched overlay")
+    ax.legend(fontsize=6)
+    _save(fig, out_dir, "explore_rankk_profiles_lr_matched", _meta(cells=cells))
+
+
+def lr_mu_diff_by_layer_fig(lr: dict, out_dir: Path) -> None:
+    """Exploratory low-level read behind the hero panel: per-layer paired ‖μ‖
+    differences with bootstrap CI bands for the matched pair, the parent
+    (lr-confounded) reference, and the within-method lr contrast."""
+    palette = paper_palette(4)
+    pair = lr["lr_matched_pair"]
+    series = (
+        ("full-FT − lr-matched LoRA (both lr 5e-6)", "mu_norm_diff_by_layer_s3_minus_s5", 1),
+        ("full-FT − LoRA @ lr 1e-5 (parent reference)", "reference_s3_minus_s1_by_layer", 3),
+        ("LoRA @ lr 1e-5 − lr-matched LoRA (lr effect)", "exploratory_s1_minus_s5_by_layer", 2),
+    )
+    fig, ax = plt.subplots(figsize=(6.4, 4.0))
+    for label, key, ci in series:
+        diffs = pair.get(key, {})
+        layers = sorted(int(li) for li in diffs)
+        if not layers:
+            continue
+        color = palette[ci]
+        ax.plot(layers, [diffs[str(li)]["point"] for li in layers], label=label, color=color)
+        ax.fill_between(
+            layers,
+            [diffs[str(li)]["ci_low"] for li in layers],
+            [diffs[str(li)]["ci_high"] for li in layers],
+            color=color,
+            alpha=0.12,
+        )
+    ax.axhline(0.0, color="0.7", linestyle=":")
+    ax.set_xlabel("decoder layer")
+    ax.set_ylabel("paired ‖μ‖ difference (residual-stream units)")
+    ax.set_title("mean-shift-norm differences per layer — paired cluster bootstrap")
+    ax.legend(fontsize=7)
+    _save(fig, out_dir, "explore_lr_matched_mu_diff_by_layer", _meta(mu_n_boot=lr.get("mu_n_boot")))
+
+
+def lr_exploratory_figs(parent: dict, lr: dict, installs: dict, out_dir: Path) -> None:
+    """Cheap over-produce (plan v8 §6): PR / top-share / cos-to-r_B profile
+    overlays incl. the new cell, layer-14 cumulative-spectrum curves for the
+    three pair cells, and the matched-80 comparability bars."""
+    palette = paper_palette(4)
+    parent_records = parent["records"]
+    for dv in ("pr_lambda", "top_share_lambda"):
+        by_cell = _lr_overlay_records(parent_records, lr, arm="response")
+        cells = [c for c in (*SYCO_CELLS, *C.GENERIC_CELLS, C.LR_MATCHED_CELL) if c in by_cell]
+        fig, ax = plt.subplots(figsize=(6.4, 4.0))
+        for cell in cells:
+            layers = sorted(by_cell[cell])
+            ax.plot(
+                layers,
+                [by_cell[cell][li][dv] for li in layers],
+                label=_lr_legend_label(cell, installs),
+                **_style_for(cell, palette),
+            )
+        ax.set_xlabel("decoder layer")
+        ax.set_ylabel(DV_LABEL[dv])
+        ax.set_title(f"{DV_LABEL[dv]} — response arm, lr-matched overlay")
+        ax.legend(fontsize=6)
+        _save(fig, out_dir, f"explore_lr_matched_{dv}_profiles", _meta(dv=dv, cells=cells))
+
+    # cos(mean shift, behavior read-out) overlay
+    by_cell = _lr_overlay_records(parent_records, lr, arm="response")
+    cells = [
+        c
+        for c in (*SYCO_CELLS, *C.GENERIC_CELLS, C.LR_MATCHED_CELL)
+        if c in by_cell and any("cos_mu_to_rb" in r for r in by_cell[c].values())
+    ]
+    if cells:
+        fig, ax = plt.subplots(figsize=(6.4, 4.0))
+        for cell in cells:
+            layers = sorted(li for li in by_cell[cell] if "cos_mu_to_rb" in by_cell[cell][li])
+            ax.plot(
+                layers,
+                [by_cell[cell][li]["cos_mu_to_rb"] for li in layers],
+                label=_lr_legend_label(cell, installs),
+                **_style_for(cell, palette),
+            )
+        ax.set_xlabel("decoder layer")
+        ax.set_ylabel("cos(mean shift, behavior read-out)")
+        ax.set_title("alignment of the mean shift to the behavior read-out — lr-matched overlay")
+        ax.legend(fontsize=6, ncol=2)
+        _save(fig, out_dir, "explore_lr_matched_cos_mu_to_rb", _meta(cells=cells))
+
+    # layer-14 cumulative eigenvalue-share curves (three pair cells)
+    sv = lr.get("sv_primary_layer", {})
+    if sv:
+        import numpy as np
+
+        layer = int(lr.get("primary_layer", C.PRIMARY_LAYER))
+        fig, ax = plt.subplots(figsize=(6.0, 4.0))
+        for cell, sigma in sorted(sv.items()):
+            lam = np.sort(np.asarray(sigma, dtype="float64") ** 2)[::-1]
+            if lam.sum() <= 0:
+                continue
+            cum = np.cumsum(lam) / lam.sum()
+            ax.plot(
+                range(1, len(cum) + 1),
+                cum,
+                label=_lr_legend_label(cell, installs),
+                **_style_for(cell, palette),
+            )
+        ax.axhline(0.9, color="0.75", linestyle=":", label="90% of variance")
+        ax.set_xlabel("number of leading eigenvalue modes")
+        ax.set_ylabel("cumulative share of shift variance")
+        ax.set_title(f"shift eigenvalue spectra — layer {layer}, response arm")
+        ax.legend(fontsize=6)
+        _save(fig, out_dir, "explore_lr_matched_spectrum_cumshare", _meta(cells=sorted(sv)))
+
+    # matched-80 comparability bars (full cloud vs matched-80 mean)
+    m80 = {**parent.get("subsample_sensitivity_80row", {}), **lr.get("matched80", {})}
+    by_cell = _lr_overlay_records(parent_records, lr, arm="response")
+    layer = int(lr.get("primary_layer", C.PRIMARY_LAYER))
+    cells = [
+        c
+        for c in ("s1_lora_neg", "s3_fullft_neg", C.LR_MATCHED_CELL)
+        if c in m80 and "rank_k_at_90_mean" in m80[c] and layer in by_cell.get(c, {})
+    ]
+    if cells:
+        fig, ax = plt.subplots(figsize=(5.6, 3.8))
+        width = 0.38
+        xs = list(range(len(cells)))
+        full = ax.bar(
+            [x - width / 2 for x in xs],
+            [by_cell[c][layer]["rank_k_at_90"] for c in cells],
+            width,
+            color=palette[0],
+            label="full 120-row cloud",
+        )
+        sub = ax.bar(
+            [x + width / 2 for x in xs],
+            [m80[c]["rank_k_at_90_mean"] for c in cells],
+            width,
+            color=palette[1],
+            label="matched-80 subsample mean",
+        )
+        ax.bar_label(full, fontsize=7, fmt="%.0f")
+        ax.bar_label(sub, fontsize=7, fmt="%.1f")
+        ax.set_xticks(xs)
+        ax.set_xticklabels(
+            [CELL_LABEL.get(c, c) for c in cells], rotation=15, ha="right", fontsize=7
+        )
+        ax.set_ylabel(DV_LABEL["rank_k_at_90"])
+        ax.set_title(f"matched-80 comparability read — layer {layer}, response arm")
+        ax.legend(fontsize=7)
+        _save(fig, out_dir, "explore_lr_matched_matched80", _meta(cells=cells))
+
+
+def lr_matched_figs(
+    parent_geometry_json: Path, lr_geometry_json: Path, install_dir: Path | None, out_dir: Path
+) -> None:
+    """Render the plan-v8 lr-matched figure set (hero + ladder + rank overlay
+    + exploratory dump). The parent JSON is consumed as overlay data only —
+    the committed parent figures are NOT re-rendered here."""
+    parent = json.loads(parent_geometry_json.read_text())
+    lr = json.loads(lr_geometry_json.read_text())
+    installs = _read_tier2_installs(install_dir)
+    lr_hero_mu_norm(parent["records"], lr, installs, out_dir)
+    lr_ladder_fig(lr, out_dir)
+    lr_rankk_profiles(parent["records"], lr, installs, out_dir)
+    lr_mu_diff_by_layer_fig(lr, out_dir)
+    lr_exploratory_figs(parent, lr, installs, out_dir)
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -746,6 +1090,19 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=None,
         help="geometry_tf_shared.json — renders the tf-shared hero + exploratory dump",
+    )
+    p.add_argument(
+        "--lr-geometry-json",
+        type=Path,
+        default=None,
+        help="geometry_lr_matched.json — renders the lr-matched set ONLY (requires "
+        "--geometry-json as overlay data; the parent figure set is NOT re-rendered)",
+    )
+    p.add_argument(
+        "--install-dir",
+        type=Path,
+        default=None,
+        help="[--lr-geometry-json] dir holding <cell>_tier2.json (legend lr + rates)",
     )
     p.add_argument(
         "--selection-dir",
@@ -776,6 +1133,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.geometry_json is None and args.tf_geometry_json is None:
         raise SystemExit("need --geometry-json and/or --tf-geometry-json")
     set_paper_style()
+    if args.lr_geometry_json is not None:
+        if args.geometry_json is None:
+            raise SystemExit("--lr-geometry-json requires --geometry-json (overlay data)")
+        lr_matched_figs(args.geometry_json, args.lr_geometry_json, args.install_dir, args.out_dir)
+        logger.info("[figures] lr-matched set done -> %s", args.out_dir)
+        return 0
     if args.geometry_json is not None:
         payload = json.loads(args.geometry_json.read_text())
         records = payload["records"]
