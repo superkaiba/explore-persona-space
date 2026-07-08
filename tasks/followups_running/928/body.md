@@ -1,6 +1,7 @@
 ---
-title: The chain-of-thought summary predictively mediates the thinking model's context→answer
-  activation map (MODERATE confidence)
+title: Conditioning on the realized chain-of-thought predicts the thinking model's
+  answer state no better than a matched-length slice of the answer's own opening (MODERATE
+  confidence)
 kind: experiment
 tags:
 - from-810
