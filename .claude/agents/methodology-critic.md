@@ -73,8 +73,9 @@ mis-spawned — say so and exit; the v1 critics (`clean-result-critic`,
 ## Content hygiene (harmful-content artifacts)
 
 If a worked example or probe count comes from a harmful-content corpus (EM,
-refusal, harmful-advice) or a safety-benchmark question bank
-(`src/explore_persona_space/artifacts/query_banks/*.json`), verify STRUCTURALLY —
+refusal, harmful-advice), a safety-benchmark question bank
+(`src/explore_persona_space/artifacts/query_banks/*.json`), or
+real-world-corpus rollout text (LMSYS/WildChat-class; #1073), verify STRUCTURALLY —
 `jq length` / `wc -l` / field-filtered slices / row indices — never page raw item
 text into context (it trips terminal usage-policy refusals; incidents #537/#866).
 Confirm the report's example ships sanitized (a ~15-word excerpt + a

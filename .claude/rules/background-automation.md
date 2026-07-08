@@ -216,12 +216,27 @@ The stalled detector + the two respawn arms carry five hardening mechanisms:
   silently-deferred respawn idled a GPU for hours). The existing
   alerted→eligible escalation still respawns on the first daemon-up tick.
 - *(e) Prompt-wedge fast lane* (`decide_prompt_wedge`): a LAZY
-  transcript-tail probe (happy-log-only resolution, last 64 KB) escalates
+  transcript-tail probe (happy-log-only resolution, last 256 KB — widened
+  from 64 KB at #1104: the smaller window held EXACTLY 3 api-error rows on
+  the #1074 incident transcript, zero margin) escalates
   straight to the respawn arm on ≥3 (`EPM_TICK_WEDGE_MIN_DEQUEUED`)
   consecutive trailing wedge-evidence rows with no assistant turn —
   verified `{"type": "queue-operation", "operation": "dequeue"}` records
   (co-primary) and/or promptless prompt-type user rows (secondary)
   (incident #779: 5 prompts enqueued+dequeued with no turn for ~90 min).
+  **Api-error widening (#1104):** assistant rows with top-level
+  `isApiErrorMessage: true` (usage-policy refusals, 429/529 error turns)
+  are FAILED turns, not resets — they accumulate on their OWN trailing
+  counter (`EPM_TICK_WEDGE_MIN_API_ERRORS`, default 3; `0` DISABLES this
+  trigger, the one deliberate divergence from the dequeued knob's
+  fallback semantics), so ≥3 consecutive refused wakes with no successful
+  turn trip the wedge (incident #1074: 38 refused wake turns / ~2h
+  unrecovered — pre-#1104 each refusal row classified "assistant" and
+  RESET the run, hiding the session from this lane). A REAL assistant
+  turn resets BOTH counters; an api-error turn resets the dequeue/prompt
+  run (the prompt DID get a response — the single-refusal over-trigger
+  guard: one refused wake's 2-4 dequeue+prompt rows must not trip
+  `run >= 3`).
   Bypasses the 2-miss debounce, the #759 K-downgrade and the 2h marker
   window — direct evidence beats proxies — but NOT the park exemptions
   (provision-in-flight / followups / spend-approval — re-probed once

@@ -50,6 +50,34 @@ You work in two modes:
 
 ---
 
+## Context budget (READ FIRST)
+
+Your spec + the project CLAUDE.md import tree consume a large fraction of your
+context before your first tool call; heavy-read subagents have died to
+autocompact thrash on unbudgeted reads (#833/#835/#763). Read hygiene bounds
+the VARIABLE half of that load — it does not cure fixed-overhead window
+pressure (#1090) — so every read below is mandatory IN CONTENT but
+budgeted IN FORM:
+
+- **Grep-then-slice.** Never pull a >40 KB file (or a file of unknown size)
+  into context in one unchunked `Read`: locate the span with Grep (`-n`,
+  bounded `head_limit`), then `Read` only that span with `offset`/`limit` in
+  ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
+  chunked.
+- **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
+  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
+  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
+- **Results are digests.** Never page a whole eval JSON / JSONL /
+  raw-completion file — `jq` the keys/fields you need; single rows by Grep +
+  line offset.
+- **Workflow-surface files run 200–1,800 lines.** Grep the anchor heading /
+  function first and `Read` only the edit span; never page a whole agent
+  spec or SKILL.md to find one section.
+- **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
+
+Other sections name WHAT to read; this one governs HOW. On conflict, this
+section wins on invocation form.
+
 ## Your Responsibilities
 
 1. **Understand** — Read relevant existing code BEFORE writing. Understand current patterns, conventions, tests.
@@ -103,8 +131,9 @@ Raw item text from harmful-content data files in your context triggers
 terminal API usage-policy refusals that kill your turn and poison the
 transcript for resumes (incidents: task #537; task #866 — four sessions
 lost on one task). This covers EM / refusal / harmful-advice corpora,
-the training JSONLs generated from them, AND safety-benchmark question
-banks (`src/explore_persona_space/artifacts/query_banks/*.json`). NEVER
+the training JSONLs generated from them, safety-benchmark question
+banks (`src/explore_persona_space/artifacts/query_banks/*.json`), AND
+real-world-corpus prompt/rollout text (LMSYS/WildChat-class; #1073). NEVER
 `cat` / `head` / `Read` their raw item text — verify via structural
 digests only (`wc -l`, `sha256sum`, `jq 'keys'` / `jq length`, row/token
 counts computed in Python without printing text fields); reference items

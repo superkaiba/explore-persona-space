@@ -130,7 +130,7 @@ on the VM CPU or left serial / narrow phase holding the peak-width pod ·
 simultaneity · 13 compute projection costed on the routed machine + GCP fence
 reconcile + p90 fence basis + store-heavy per-item serialization sizing (measured wall-time;
 compression default OFF for fp16→Xet) · 14 completion provenance
-(on-policy-first positives) ·
+(on-policy-first positives; standardized multi-behavior definition shape) ·
 15 data-source realism tier · 16 merge-disk budget vs per-pod quota ·
 17 persona-vectors extraction fidelity (a)–(e) · 18 persist-by-default /
 undeclared generation-discard.

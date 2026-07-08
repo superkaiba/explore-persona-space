@@ -35,6 +35,35 @@ tools:
 
 # Methodology Writer
 
+## Context budget (READ FIRST)
+
+Your spec + the project CLAUDE.md import tree consume a large fraction of your
+context before your first tool call; heavy-read subagents have died to
+autocompact thrash on unbudgeted reads (#833/#835/#763). Read hygiene bounds
+the VARIABLE half of that load — it does not cure fixed-overhead window
+pressure (#1090) — so every read below is mandatory IN CONTENT but
+budgeted IN FORM:
+
+- **Grep-then-slice.** Never pull a >40 KB file (or a file of unknown size)
+  into context in one unchunked `Read`: locate the span with Grep (`-n`,
+  bounded `head_limit`), then `Read` only that span with `offset`/`limit` in
+  ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
+  chunked.
+- **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
+  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
+  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
+- **Results are digests.** Never page a whole eval JSON / JSONL /
+  raw-completion file — `jq` the keys/fields you need; single rows by Grep +
+  line offset.
+- **Ground each hyperparameter by Grep** (the config key / function name),
+  then `Read` that span — never a whole training script or plan. The "What
+  you MUST NOT read" firewall is unchanged; this bounds HOW you read what
+  you may.
+- **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
+
+Other sections name WHAT to read; this one governs HOW. On conflict, this
+section wins on invocation form.
+
 ## Mode router — branch on the task's `workflow` + `paper:` frontmatter FIRST
 
 Before anything else, read `frontmatter.workflow` + `frontmatter.paper` from
@@ -269,12 +298,14 @@ Unsure whether a sentence is methodology or interpretation? Test: "Would it chan
   example's source is a harmful-content corpus (EM, refusal, harmful-advice) OR
   a harmful safety-benchmark question bank
   (`src/explore_persona_space/artifacts/query_banks/*.json` — advbench,
-  strongreject, Betley-lineage, sensitive-info; #866), ship a ≤15-word excerpt +
+  strongreject, Betley-lineage, sensitive-info; #866) OR real-world-corpus
+  rollout text (LMSYS/WildChat-class; #1073), ship a ≤15-word excerpt +
   a `[truncated — harmful-content row; verify at <path>, row <i>]` placeholder,
   pulled by grep + line offset / `jq` index — never page the whole file into
   context; reference bank items by filename + index. Benign banks (`arc_c_v1`,
   `fact_questions_v1`, `marker_eval_v1`, `sycophancy_claims_v1`,
-  `wildchat_random_v1`) keep verbatim treatment; when unsure, sanitize.
+  `wildchat_random_v1` (toxic/redacted-screened at build)) keep verbatim
+  treatment; when unsure, sanitize.
 
 ## Hyperparameter table rules
 
@@ -494,7 +525,8 @@ The Appendix carries the FULL detail the Methods body only SAMPLES:
   subset-disclosure (cherry-picked / K of M / first N of M) + the pinned
   full-artifact link. Apply the markdown-mode § Worked-example data rules +
   § Content hygiene verbatim — harmful-content corpora (EM, refusal,
-  harmful-advice) AND harmful bank probes (`query_banks/*.json`; #866)
+  harmful-advice), harmful bank probes (`query_banks/*.json`; #866), AND
+  real-world-corpus rollout text (LMSYS/WildChat-class; #1073)
   ship SANITIZED (a ~15-word excerpt + a `[truncated —
   harmful-content row; verify at <raw-completions path>, row <i>]`
   placeholder), and you pull rows by grep + line offset, never paging whole
@@ -694,11 +726,12 @@ vector DV reflects the measurement-validity + rule-specific recipe (plan-time,
 not results-derived).
 
 **Content hygiene:** a worked example whose source is a harmful-content corpus
-(EM, refusal, harmful-advice) or a safety-benchmark bank (`query_banks/*.json`)
+(EM, refusal, harmful-advice), a safety-benchmark bank (`query_banks/*.json`),
+or real-world-corpus rollout text (LMSYS/WildChat-class; #1073)
 ships SANITIZED — a ~15-word excerpt + a `[truncated — harmful-content row;
 verify at <path>, row <i>]` placeholder, pulled by grep + line offset / `jq`
-index; never page the whole file into context (#537/#866). Reference bank items
-by filename + index; benign banks keep verbatim treatment.
+index; never page the whole file into context (#537/#866/#1073). Reference bank
+items by filename + index; benign banks keep verbatim treatment.
 
 ## Output handoff
 

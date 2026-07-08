@@ -50,6 +50,37 @@ they invoke `implementer` directly.
 
 ---
 
+## Context budget (READ FIRST)
+
+Your spec + the project CLAUDE.md import tree consume a large fraction of your
+context before your first tool call; heavy-read subagents have died to
+autocompact thrash on unbudgeted reads (#833/#835/#763). Read hygiene bounds
+the VARIABLE half of that load — it does not cure fixed-overhead window
+pressure (#1090) — so every read below is mandatory IN CONTENT but
+budgeted IN FORM:
+
+- **Grep-then-slice.** Never pull a >40 KB file (or a file of unknown size)
+  into context in one unchunked `Read`: locate the span with Grep (`-n`,
+  bounded `head_limit`), then `Read` only that span with `offset`/`limit` in
+  ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
+  chunked.
+- **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
+  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
+  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
+- **Results are digests.** Never page a whole eval JSON / JSONL /
+  raw-completion file — `jq` the keys/fields you need; single rows by Grep +
+  line offset.
+- **Brief hands you PATHS, not bodies.** Read the approved plan
+  section-sliced on demand (§4 Design for the build, §11 for values) — never
+  the whole plan file up front; prior round state via
+  `task.py latest-marker <N>` / jq on the specific marker, never a paged
+  `events.jsonl`. Revision-round diff BODIES are governed by
+  `.claude/rules/diff-size-budget.md` (size first).
+- **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
+
+Other sections name WHAT to read; this one governs HOW. On conflict, this
+section wins on invocation form.
+
 ## Execution Protocol
 
 - **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
@@ -285,8 +316,11 @@ This project legitimately trains and evals on harmful-content corpora
 (Betley-style EM insecure-code / bad-medical-advice mixes, refusal
 pools) AND on safety-benchmark QUESTION BANKS
 (`src/explore_persona_space/artifacts/query_banks/*.json` — advbench,
-strongreject, Betley-lineage, sensitive-info banks). Raw rows from
-either in your context can trigger terminal API usage-policy refusals
+strongreject, Betley-lineage, sensitive-info banks) AND on
+real-world-corpus prompt/rollout text (LMSYS/WildChat-class — unscreened
+real user text routinely carries in-corpus jailbreak/explicit rows;
+#1073). Raw rows from
+any of these in your context can trigger terminal API usage-policy refusals
 that kill your final report turn AND make the transcript unresumable —
 a resume refuses instantly on the poisoned context (incidents: task #537,
 2026-06-10, two implementer agents lost mid-task; task #866, 2026-07-02,
@@ -295,9 +329,10 @@ during verification). While building or smoke-testing a data path over
 such corpora or banks:
 
 - NEVER `cat` / `head` / `Read` raw EM / refusal / harmful-advice data
-  files, the training JSONLs generated from them, or the raw item text
-  of harmful-bank JSONs under `query_banks/` — reference bank items by
-  filename + index, never verbatim.
+  files, raw real-world-corpus prompt/rollout files
+  (LMSYS/WildChat-class), the training JSONLs generated from them, or
+  the raw item text of harmful-bank JSONs under `query_banks/` —
+  reference bank items by filename + index, never verbatim.
 - Digest by reference only: `wc -l`, `sha256sum`, `jq 'keys'` on a row
   (never content-field values), row/token counts computed in Python
   without printing text fields.
@@ -305,9 +340,10 @@ such corpora or banks:
   (exit codes, `[phase=`, `error|traceback`) — never dump the log.
 - In reports and markers, describe such data by path + row count + hash +
   field names; sanitized placeholders are fine. Benign corpora (marker,
-  fact, sycophancy, WildChat, personas) and benign banks (`arc_c_v1`,
+  fact, sycophancy, personas) and benign banks (`arc_c_v1`,
   `fact_questions_v1`, `marker_eval_v1`, `sycophancy_claims_v1`,
-  `wildchat_random_v1`) are unaffected by this rule; when unsure whether
+  `wildchat_random_v1` (toxic/redacted-screened at build)) are
+  unaffected by this rule; when unsure whether
   a bank is harmful, use the digest-only treatment.
 
 > **Pod-side result-reporting + preflight gates** — when writing ANY pod-side dispatcher / sentinel / poll_pipeline.py-facing code, READ `.claude/rules/pod-side-reporting.md` IN FULL first. (Relocated verbatim from this spec, #829.)

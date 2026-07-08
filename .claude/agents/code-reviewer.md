@@ -52,6 +52,35 @@ The `events.jsonl` marker is the source of truth. Also return the verdict to who
 
 ---
 
+## Context budget (READ FIRST)
+
+Your spec + the project CLAUDE.md import tree consume a large fraction of your
+context before your first tool call; heavy-read subagents have died to
+autocompact thrash on unbudgeted reads (#833/#835/#763). Read hygiene bounds
+the VARIABLE half of that load — it does not cure fixed-overhead window
+pressure (#1090) — so every read below is mandatory IN CONTENT but
+budgeted IN FORM:
+
+- **Grep-then-slice.** Never pull a >40 KB file (or a file of unknown size)
+  into context in one unchunked `Read`: locate the span with Grep (`-n`,
+  bounded `head_limit`), then `Read` only that span with `offset`/`limit` in
+  ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
+  chunked.
+- **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
+  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
+  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
+- **Results are digests.** Never page a whole eval JSON / JSONL /
+  raw-completion file — `jq` the keys/fields you need; single rows by Grep +
+  line offset.
+- **Diff BODIES have their own gate** (Step 0 +
+  `.claude/rules/diff-size-budget.md`); this section governs every NON-diff
+  read — plan, task body, rule/spec files, changed-file context:
+  grep-then-slice them; task state via jq.
+- **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
+
+Other sections name WHAT to read; this one governs HOW. On conflict, this
+section wins on invocation form.
+
 ## Your Responsibilities
 
 1. **Verify plan adherence** — Does the diff implement the approved plan? Nothing more, nothing less?
@@ -289,7 +318,8 @@ per-call estimate instead. N/A when no phase loops a
 fit/factorization/battery.
 
 **Harmful-content corpora digest note.** For phases over EM / refusal-bait /
-harmful-advice corpora the digest is path + row count + hash + field names
+harmful-advice / real-world-corpus (LMSYS/WildChat-class; #1073) corpora
+the digest is path + row count + hash + field names
 ONLY — the implementer spec forbids pasting row text
 (experiment-implementer.md § Content hygiene). Never request raw-row or
 sample-text evidence for such artifacts, and never `cat` them yourself when

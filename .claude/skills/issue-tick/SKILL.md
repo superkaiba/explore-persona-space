@@ -225,8 +225,12 @@ reads on every tick turn; after a refusal kill the posture tightens to
 kind+ts+status only); let the next step's subagent (which starts with
 fresh context) do the content-heavy lifting behind the analyzer's
 content firewall. If the thinned re-drive is refused too, exit and leave
-recovery to the watcher's respawn (a fresh session clears the poisoned
-context).
+recovery to the watcher's respawn (a fresh session drops the poisoned
+context — a lowered refusal surface, not immunity). (#1104: the
+watcher's prompt-wedge lane counts consecutive API-error turns —
+`isApiErrorMessage: true` assistant rows — as wedge evidence, so ≥3
+refused wakes with no successful turn force the respawn once the
+self-report is stale; `.claude/rules/background-automation.md` § (e).)
 
 ## GATE-TRANSITION branch — PushNotification
 
@@ -262,6 +266,14 @@ elif status == "blocked":
 
 PushNotification({"message": msg[:200], "status": "proactive"})
 ```
+
+> **Refusal posture (#1074/#1104):** on a refusal-killed predecessor turn
+> (§ Refusal-thinned re-drive above), SKIP this digest call entirely —
+> the title slug + the ≤80-char failure-note slice are the ONLY task text
+> a tick turn ever pages in, and on a harmful-content-family task either
+> can re-trigger the refusal. Push the numeric-only fallback instead:
+> `msg = f"#{N} reached {status} — open it"`. A less-specific push beats
+> a refusal-killed turn that pushes nothing.
 
 If `PushNotification` raises (Remote Control disconnected, the tool's
 deferred schema didn't load), SWALLOW the exception and continue to
