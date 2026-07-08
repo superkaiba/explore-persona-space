@@ -367,7 +367,8 @@ clean, so this passes."
 
 - **Lens 12 (Conciseness) — `### <result>` interpretation prose runs 1–3
   sentences per paragraph; bullets are the default.** The mechanical
-  word cap (check 20) FAILs only at ≥180 words/result; sentence-count
+  word cap (check 20) hard-FAILs at ≥180 words/result and at a ≥100-word
+  v4 Takeaways bullet; sentence-count
   and bullets-over-prose are LM judgment. Scan each `### <result>`
   interpretation paragraph (the prose that follows the figure caption);
   FAIL when
