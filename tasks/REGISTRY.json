@@ -1139,8 +1139,8 @@
     "1146": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1146",
-      "status": "approved",
+      "path": "tasks/running/1146",
+      "status": "running",
       "title": "workflow-fix: extend thread-caps heavy-import predicate to transitively-heavy roots"
     },
     "1147": {
