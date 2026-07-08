@@ -992,8 +992,8 @@
     "1127": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1127",
-      "status": "running",
+      "path": "tasks/reviewing/1127",
+      "status": "reviewing",
       "title": "daily-fix: refusal-wedge lane misses live wedges"
     },
     "1128": {
@@ -1034,8 +1034,8 @@
     "1132": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1132",
-      "status": "proposed",
+      "path": "tasks/planning/1132",
+      "status": "planning",
       "title": "daily-fix: sweep recursion-guard-parked wf-fix candidates"
     },
     "1133": {

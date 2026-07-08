@@ -2390,6 +2390,25 @@ The reconciler may NOT add findings beyond what either reviewer raised —
 its job is adjudication only. Round counter does NOT increment for
 reconciler invocations.
 
+When BOTH reviewers returned disagreeing durable verdicts, adopting the
+MORE SEVERE verdict WITHOUT spawning the reconciler is
+UNSANCTIONED at every doubled site — even when the flagged residual is
+mechanically verifiable (#825 skipped the reconciler on exactly that
+rationale) — because a true residual does not determine severity (the
+reconciler may legitimately side PASS on a true-but-not-verdict-changing
+finding), and the shortcut trades a FREE adjudication (reconcile rounds
+don't count) for a revision round that DOES count against the cap-5 and
+itself costs ≥3 spawns (analyzer + both critics) vs the reconciler's
+one, while leaving a possibly over-strict reviewer unadjudicated. The
+documented adopt-more-severe last-resort fail-safe (a spawned reconciler
+errors, is re-spawned once, and still returns no parseable verdict)
+belongs to the `/adversarial-planner` § Durable-output-first IN-CONTEXT
+Phase-2 reconciler ONLY — at the marker-mode sites here a twice-dead
+reconciler fails LOUD per the Step 5b durable-verdict-first rule
+(item 4), never adopt-more-severe. The Codex no-show fallback
+(single-Claude decision on confirmed no-show) is a different, sanctioned
+path — it adjudicates nothing and adopts no "more severe of two".
+
 **5c-bis. Mechanical-contract-only FAIL strip (anti-gate-hopping).**
 
 A FAIL is *mechanical-contract-only* when its `**Blocker tags:**` line
@@ -2621,7 +2640,10 @@ marker AND no conforming, round-fresh output file). An Agent-tool error
 result alone never triggers it — and the same applies symmetrically to
 the Claude reviewer: with no durable verdict, re-spawn it once per the
 Step 5b rule; NEVER adopt a unilateral decision from the surviving
-reviewer (incident #810 r4).
+reviewer (incident #810 r4). An `epm:codex-task-failed` note carrying
+`codex-quota-exhausted` is the org-quota outage short-circuit (#1126):
+treat as an instant no-show (Claude-only), do not re-dispatch or
+investigate; the sentinel self-expires at the stated reset.
 
 ##### Step 5.bis: Pre-dispatch checks (compute-deviation + whack-a-mole)
 
@@ -5679,6 +5701,13 @@ discarded by Step 8's gap-fill decision rule).
    per the Step 5b bound, not skipped.
 
    Reconcile rounds do NOT increment the per-reviewer round counter.
+   Adopt-more-severe WITHOUT a reconciler is unsanctioned here
+   (the #825 deviation site) — see the Step 5c ban: when both reviewers
+   returned disagreeing durable verdicts, spawn the reconciler; a
+   twice-dead reconciler fails LOUD per Step 5b item 4 (the
+   adopt-more-severe fail-safe is `/adversarial-planner`-in-context
+   only), and the Codex no-show fallback remains a separate, sanctioned
+   path.
 
 **If `final_verdict == REVISE` (rounds 2-5):**
 
@@ -8545,8 +8574,12 @@ Gate the merge payload on the lint BEFORE anything lands:
   if ! git -C "$WT" diff --name-only origin/main...HEAD > /tmp/issue-<N>-own-diff.txt; then
     # Failed trigger diff — the gate cannot classify the payload; fail CLOSED.
     echo crash > /tmp/issue-<N>-lint-verdict.txt
-  elif grep -qvE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
-      /tmp/issue-<N>-own-diff.txt; then
+  # Classifier consumes grep's OUTPUT (non-empty => code-bearing payload),
+  # never a `-q -v` exit status: a ugrep-shadowed shell returns rc=1 on
+  # selected non-matching lines under -qv and silently disarmed this gate
+  # as skip-artifact-only on a code-bearing payload (#928 -> #1125).
+  elif [ -n "$(grep -vE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
+      /tmp/issue-<N>-own-diff.txt)" ]; then
     # BASELINE legs (payload-free tree). Per-leg exit codes ARE captured:
     # only the baseline's normalized failure LINES enter the compare, but a
     # baseline CRASH (rc>1, or rc!=0 with ZERO `workflow_lint:` lines) makes
@@ -9063,8 +9096,9 @@ Decision tree:
   # same-invocation state (no cross-block variable). Executable trigger
   # first: an artifact-only additive list skips both lint runs.
   GATE_ARMED=no
-  if grep -qvE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
-       /tmp/issue-<N>-additive-files.txt; then
+  # Output-test form, not `-q -v` rc (ugrep rc inversion, #928 -> #1125):
+  if [ -n "$(grep -vE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
+       /tmp/issue-<N>-additive-files.txt)" ]; then
     GATE_ARMED=yes
     # BASELINE legs (per-leg exit codes ARE captured — a baseline CRASH must
     # fail CLOSED via the crash arm below, never be `|| true`-erased; only

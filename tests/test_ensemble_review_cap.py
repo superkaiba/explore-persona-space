@@ -336,3 +336,18 @@ def test_cap_hit_substantive_residual_blocks_autonomous():
 
     interactive_decision = resolve_cap_hit(all_residual_stripped=False, autonomous=False)
     assert interactive_decision["action"] == "surface_interactive"
+
+
+# --------------------------------------------------------------------------- #
+# (d) adopt-more-severe-without-reconciler ban (#1134)
+# --------------------------------------------------------------------------- #
+def test_adopt_severe_reconciler_ban_pinned():
+    """#1134: the adopt-more-severe-without-reconciler ban survives SKILL.md churn.
+
+    Pins both placements: the Step 5c canonical ban paragraph and the
+    Step 9a incident-site pointer. Dropping either silently reverts #1134.
+    """
+    text = SKILL_PATH.read_text()
+    assert text.count("UNSANCTIONED at every doubled site") == 1
+    assert text.count("#825 skipped the reconciler") == 1
+    assert text.count("the #825 deviation site") == 1
