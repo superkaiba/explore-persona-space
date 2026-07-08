@@ -1309,9 +1309,11 @@ def _tick_wedge_min_failed_turns() -> int:
 # #1127 option (c): windowed TOTAL (non-consecutive) failed wake-turns for the
 # alternating-storm rate trigger — incident c16b10ca lost ~every other wake for
 # ~5.7h (00:26-06:07Z), a shape NO consecutive counter (row- or turn-level) can
-# ever fire on. 6 fires on the measured incident tail (7 failed turns in ~80
-# min) with margin 1, while a healthy session needs 6 turn-ENDING failures
-# inside 2h (>> any observed healthy rate).
+# ever fire on. The measured c16b10ca 256KB tail held 4-5 windowed failed
+# TURNS — below this threshold BY DESIGN (plan v4 §3.3 accept-run-coverage;
+# threshold deliberately NOT lowered): the lane targets storms DENSER than
+# that incident, while a healthy session needs 6 turn-ENDING failures inside
+# the window (>> any observed healthy rate; 0/20 negative sweep).
 TICK_WEDGE_MIN_FAILED_TOTAL = 6
 
 
