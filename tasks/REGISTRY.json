@@ -915,8 +915,8 @@
     "1117": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1117",
-      "status": "approved",
+      "path": "tasks/running/1117",
+      "status": "running",
       "title": "workflow-fix: hard-FAIL tier >=100 words/bullet in check_v4_word_caps"
     },
     "1118": {
