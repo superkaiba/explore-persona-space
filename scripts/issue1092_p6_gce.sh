@@ -63,12 +63,19 @@ shard_paths = []
 manifest_local = None
 for it in list_repo_tree(REPO, repo_type="dataset", path_in_repo=JPREFIX):
     name = pathlib.Path(it.path).name
+    # Download ONLY the expected score files. The prefix also carries a raw/
+    # SUBDIRECTORY (P5 raw judge outputs, persisted separately); the
+    # non-recursive listing yields folder entries, and hf_hub_download on a
+    # folder path 404s (att-20260708-232746 crash).
+    is_shard = name.startswith("scores_shard_") and name.endswith(".jsonl")
+    if not (is_shard or name in ("shards_manifest.json", "summary.json")):
+        continue
     local = hf_hub_download(REPO, repo_type="dataset", filename=it.path)
     if name == "shards_manifest.json":
         manifest_local = local
-    elif name.startswith("scores_shard_") and name.endswith(".jsonl"):
+    elif is_shard:
         shard_paths.append((name, local))
-    elif name == "summary.json":
+    else:
         shutil.copy(local, jdst / name)
 assert manifest_local is not None, "shards_manifest.json missing under p5_judge"
 man = json.load(open(manifest_local))
