@@ -1,0 +1,48 @@
+{
+  "commit": "62dd41290f",
+  "created": "2026-07-08T12:59:47Z",
+  "figsize": [
+    9.6,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "arm B\n(full n)",
+      "D = (W_on - W_ex) / (C - W_ex)": 0.03140688061926557,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "span-matched\n(refit)",
+      "D = (W_on - W_ex) / (C - W_ex)": -0.1722435197099439,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "random\n(n-matched)",
+      "D = (W_on - W_ex) / (C - W_ex)": -0.17151939196582233,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "arm B\n(full n)",
+      "y": 0.08563161421546632,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "span-matched\n(refit)",
+      "y": -0.07082410488947828,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "random\n(n-matched)",
+      "y": -0.07252550943109885,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6
+}

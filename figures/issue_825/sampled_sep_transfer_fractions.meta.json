@@ -1,0 +1,60 @@
+{
+  "commit": "62dd41290f",
+  "created": "2026-07-08T12:59:46Z",
+  "figsize": [
+    9.6,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "exogenous\n(reference)",
+      "sep\u2192chat transfer / full-n chat ceiling": 0.0574,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "greedy\n(round 7)",
+      "sep\u2192chat transfer / full-n chat ceiling": -4.299728605965878,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "arm B\n(sampled, 1 draw)",
+      "sep\u2192chat transfer / full-n chat ceiling": 0.04426048793431491,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "C-avg\n(E[v] ceiling read)",
+      "sep\u2192chat transfer / full-n chat ceiling": -0.16637003973784065,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "exogenous\n(reference)",
+      "y": 0.1087,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "greedy\n(round 7)",
+      "y": 0.16617973705432593,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "arm B\n(sampled, 1 draw)",
+      "y": 0.263227273238437,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "C-avg\n(E[v] ceiling read)",
+      "y": -0.3853512482281698,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8
+}
