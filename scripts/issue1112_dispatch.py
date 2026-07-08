@@ -143,7 +143,7 @@ class Cfg:
     tf_marker: bool = False
 
     def regime_key(self) -> dict:
-        return {
+        key = {
             "issue": C.ISSUE,
             "smoke": self.smoke,
             "cells": list(self.cells),
@@ -157,6 +157,14 @@ class Cfg:
             "max_length": C.SYCO_MAX_LENGTH,
             "step_ceiling": C.SYCO_STEP_CEILING,
         }
+        # Per-cell ceiling threading (plan v8 §12.1: the lr-matched cell
+        # ladders to 60): included ONLY when this run's cells carry an
+        # override, so every pre-existing cell set keeps its regime dict
+        # byte-identical (per-rung ladder resume caches stay valid).
+        per_cell = {c: C.CELL_STEP_CEILING[c] for c in self.cells if c in C.CELL_STEP_CEILING}
+        if per_cell:
+            key["cell_step_ceilings"] = per_cell
+        return key
 
 
 # --phases accepts the SHORT names main()'s want() checks AND the full
@@ -368,6 +376,17 @@ def phase_stage(cfg: Cfg) -> dict:
     if marker:
         _stage_file(C.R_TRAIN_PATH, inputs / "R_train.json", revision=C.R_TRAIN_REV)
         rec["staged"]["r_train"] = str(inputs / "R_train.json")
+    if C.LR_MATCHED_CELL in cfg.cells and not cfg.smoke:
+        # plan v8 §4.6: reuse the PARENT run's base_sycophancy pooled store —
+        # a verbatim single-file fetch to the capture exists-check path, so
+        # p10 skips a redundant base re-capture (the paired read then uses the
+        # SAME base store as every parent cell) and p12's re-upload is
+        # byte-identical instead of Hub-clobbering the parent's base store
+        # with a fresh-hardware one. Smoke keeps capturing its own tiny base
+        # (a staged 120-row store would fail the smoke's 4-row row_meta pair).
+        dest = cfg.out_root / "capture" / "base_sycophancy" / "base" / "pooled.pt"
+        _stage_file(C.BASE_SYCO_POOLED_PATH, dest, revision=C.PARENT_CAPTURE_REV)
+        rec["staged"]["base_sycophancy_pooled"] = str(dest)
     rec["ts"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     _atomic_json(done_path, rec)
     return rec
@@ -428,7 +447,12 @@ def _mix_path(cfg: Cfg, cell: str) -> Path:
 
 
 def _syco_lora_config(cfg: Cfg, cell: str, *, max_steps: int) -> object:
-    """The fu2 LoRA recipe verbatim (epochs->ceiling seam + max_length 2048)."""
+    """The fu2 LoRA recipe verbatim (epochs->ceiling seam + max_length 2048).
+
+    ``C.CELL_TRAIN_OVERRIDES`` threads per-cell deviations (exact-match; empty
+    for every parent cell, so their built configs stay byte-identical):
+    s5_lora_neg_lr5e6 trains at lr 5e-6, the round's single changed variable.
+    """
     spec = recipe_for(C.SYCO_BEHAVIOR, arm="primary")
     spec = dataclasses.replace(
         spec,
@@ -436,6 +460,7 @@ def _syco_lora_config(cfg: Cfg, cell: str, *, max_steps: int) -> object:
             **spec.overrides,
             "epochs": 16,  # generous ceiling; max_steps caps the ladder at 30
             "max_length": C.SYCO_MAX_LENGTH,
+            **C.CELL_TRAIN_OVERRIDES.get(cell, {}),
         },
     )
     train_cfg = build_train_config(spec, run_name=C.cell_run_name(cell), seed=cfg.seed)
@@ -632,9 +657,9 @@ def phase_train(cfg: Cfg) -> dict:
         if build_path.exists():
             results[cell] = _read_json(build_path)
             continue
-        if cell in ("s2_lora_pos",):
+        if cell in ("s2_lora_pos", C.LR_MATCHED_CELL):
             rec = _train_lora_cell(
-                cfg, cell, _syco_lora_config(cfg, cell, max_steps=C.SYCO_STEP_CEILING)
+                cfg, cell, _syco_lora_config(cfg, cell, max_steps=C.step_ceiling_for(cell))
             )
         elif cell == "m1_lora_band8":
             rec = _train_lora_cell(cfg, cell, _marker_lora_config(cfg, cell))
@@ -660,6 +685,21 @@ def phase_train(cfg: Cfg) -> dict:
         else:
             raise ValueError(f"unroutable cell {cell}")
         rec.update({"cell": cell, "status": "trained", "mix": str(_mix_path(cfg, cell))})
+        if cell in C.CELL_TRAIN_OVERRIDES or cell in C.CELL_STEP_CEILING:
+            # run-log note (plan v8, consistency-checker WARN): the deviation
+            # rides the cell's build record so the analyzer reads it off the
+            # artifact, not the plan.
+            rec["cell_overrides"] = {
+                "train_overrides": C.CELL_TRAIN_OVERRIDES.get(cell, {}),
+                "step_ceiling": C.step_ceiling_for(cell),
+                "note": (
+                    "cosine lr schedule decays over max_steps, so max_steps 60 "
+                    "stretches the decay horizon vs the parent's 30 — a mechanical "
+                    "consequence of the declared G1 ceiling; comparison is at "
+                    "matched install (save cadence every 2 steps unchanged)"
+                ),
+            }
+            logger.info("[p2_train] %s cell_overrides: %s", cell, rec["cell_overrides"])
         _atomic_json(build_path, rec)
         results[cell] = rec
     return results
@@ -678,7 +718,7 @@ def _enumerate_rungs(train_dir: Path) -> dict[int, Path]:
 
 # ── p3: Tier-1 ladders + selection (sharded one cell per GPU) ────────────────
 
-LADDER_CELLS = ("s2_lora_pos", "s3_fullft_neg", "s4_fullft_pos")
+LADDER_CELLS = ("s2_lora_pos", "s3_fullft_neg", "s4_fullft_pos", C.LR_MATCHED_CELL)
 
 
 def _eval_questions(cfg: Cfg) -> list[str]:
@@ -2036,12 +2076,25 @@ def capture_passes(cfg: Cfg) -> list[tuple[str, str]]:
             doses = ("selected",) if cfg.smoke else C.CAPTURE_DOSES
             passes += [(cell, d) for d in doses]
             behaviors.add("sycophancy")
+        elif cell == C.LR_MATCHED_CELL:
+            # selected-dose ONLY (plan v8 §12.1) — the lr-matched read pairs
+            # one selected-rung cloud against the parent s3 tensors.
+            passes.append((cell, "selected"))
+            behaviors.add("sycophancy")
         elif cell in C.GENERIC_CELLS:
             passes.append((cell, "selected"))
             behaviors.add("sycophancy")
         elif cell in C.MARKER_CELLS:
             passes.append((cell, "selected"))
             behaviors.add("marker")
+        else:
+            # fail-loud (plan v8 §12.1 + critic note): an unregistered cell
+            # must never silently skip capture — the smoke that "passes" on a
+            # silently-dropped cell is the #546-class canary gap.
+            raise ValueError(
+                f"capture_passes: unroutable cell {cell!r} — register it in the "
+                "capture membership tables before dispatch"
+            )
     if "sycophancy" in behaviors:
         passes.append(("base_sycophancy", "base"))
     if "marker" in behaviors:
@@ -2511,6 +2564,36 @@ def _upload_marker_slot_text(cell_root: Path, cell: str, _up) -> None:
             )
 
 
+def _upload_adapter_overflow(cell: str, cell_root: Path, uploaded: dict[str, str]) -> None:
+    """LoRA adapter ladders -> overflow repo (FT selected rungs already at p4).
+
+    Existing LoRA cells ship their WHOLE ladder root (parent behavior,
+    unchanged). The lr-matched cell ships ONLY its selected rung (plan v8
+    §10) — the 29 non-selected rungs are the round's declared discard
+    (deterministic retrain recipe; per-rung rates persist via ladder.json +
+    selection.json). Exact-match routing on cell ids throughout.
+    """
+    build = cell_root / "build_result.json"
+    if cell in ("s2_lora_pos", "s5_lora_generic", "m1_lora_band8"):
+        if build.exists():
+            url = hub._upload(
+                Path(_read_json(build)["adapter_root"]),
+                C.OVERFLOW_REPO,
+                "model",
+                f"issue1112/{cell}",
+                private=True,
+            )
+            uploaded[f"overflow:issue1112/{cell}"] = str(url)
+    elif cell == C.LR_MATCHED_CELL:
+        sel = cell_root / "selection.json"
+        if build.exists() and sel.exists():
+            step = int(_read_json(sel)["step"])
+            sel_dir = _enumerate_rungs(_read_json(build)["adapter_root"])[step]
+            repo_path = f"issue1112/{cell}/checkpoint-{step}"
+            url = hub._upload(sel_dir, C.OVERFLOW_REPO, "model", repo_path, private=True)
+            uploaded[f"overflow:{repo_path}"] = str(url)
+
+
 def phase_upload(cfg: Cfg) -> dict:
     _phase("p12_upload")
     uploaded: dict[str, str] = {}
@@ -2539,18 +2622,7 @@ def phase_upload(cfg: Cfg) -> dict:
         _up(cell_root / "rate", f"{C.DATA_PREFIX}/raw_completions/rate/{cell}")
         if cell in C.MARKER_CELLS:
             _upload_marker_slot_text(cell_root, cell, _up)
-        # LoRA adapter ladders -> overflow repo (FT selected rungs already at p4)
-        if cell in ("s2_lora_pos", "s5_lora_generic", "m1_lora_band8"):
-            build = cell_root / "build_result.json"
-            if build.exists():
-                url = hub._upload(
-                    Path(_read_json(build)["adapter_root"]),
-                    C.OVERFLOW_REPO,
-                    "model",
-                    f"issue1112/{cell}",
-                    private=True,
-                )
-                uploaded[f"overflow:issue1112/{cell}"] = str(url)
+        _upload_adapter_overflow(cell, cell_root, uploaded)
     _up(cfg.out_root / "tier2", f"{C.DATA_PREFIX}/raw_completions/tier2")
     # margin companion DV records (per-cell + shared base; teacher-forced,
     # judge-free JSON — non-LFS path, uploads unconditionally).

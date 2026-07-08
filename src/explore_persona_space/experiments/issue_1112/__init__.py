@@ -50,6 +50,14 @@ FU2_CKPT_PREFIX = "issue1090/fu2/c3-sycophancy-claude"  # on OVERFLOW_REPO
 FU2_SELECTED_STEP = 14  # judged rate 0.61 (Tier-2 0.595)
 FU2_PARITY_RATE = 0.61
 FU2_PARITY_TOL = 0.15
+# lr-matched round (plan v8 §4.6): the PARENT run's upload commit on the data
+# repo — the s3_fullft_neg comparator tensors, its selection record, AND the
+# base_sycophancy pooled store all resolve at this revision (HfApi.file_exists
+# verified 2026-07-08). The base store is STAGED to the capture exists-check
+# path so an lr-matched run reuses the SAME base store as every parent cell
+# instead of re-capturing (and Hub-clobbering) a fresh-hardware one.
+PARENT_CAPTURE_REV = "e016910195b7ab846c83b87ec43140c36c51e35f"
+BASE_SYCO_POOLED_PATH = f"{DATA_PREFIX}/analysis_tensors/capture/base_sycophancy/base/pooled.pt"
 
 # ── Cells (plan §4.1 / §5) ────────────────────────────────────────────────────
 SYCO_BEHAVIOR = "sycophancy"
@@ -58,18 +66,42 @@ SYCO_CELLS_NEW = ("s2_lora_pos", "s3_fullft_neg", "s4_fullft_pos")
 GENERIC_CELLS = ("s5_lora_generic", "s6_fullft_generic")
 MARKER_CELLS = ("m1_lora_band8", "m2_fullft_band8")
 REUSED_CELL = "s1_lora_neg"
-ALL_TRAINED_CELLS = (REUSED_CELL, *SYCO_CELLS_NEW, *GENERIC_CELLS, *MARKER_CELLS)
+# lr-matched method pair (plan v8, followup `lr-matched-method-pair`): ONE new
+# LoRA+negatives ladder cell trained at the full-FT lr (5e-6) — removes the lr
+# confound on the parent's ‖μ‖ method read at matched install (comparator =
+# the existing s3_fullft_neg tensors, already at 5e-6).
+LR_MATCHED_CELL = "s5_lora_neg_lr5e6"
+ALL_TRAINED_CELLS = (
+    REUSED_CELL,
+    *SYCO_CELLS_NEW,
+    LR_MATCHED_CELL,
+    *GENERIC_CELLS,
+    *MARKER_CELLS,
+)
 
 CELL_MIX = {  # which derived/staged mix each trained cell consumes
     "s1_lora_neg": "c3_frozen",
     "s2_lora_pos": "c3_posonly",
     "s3_fullft_neg": "c3_frozen",
     "s4_fullft_pos": "c3_posonly",
+    "s5_lora_neg_lr5e6": "c3_frozen",  # same frozen c3 mix as s1 (plan v8 §4)
     "s5_lora_generic": "c3_generic_only",
     "s6_fullft_generic": "c3_generic_only",
     "m1_lora_band8": "marker_contrastive",
     "m2_fullft_band8": "marker_contrastive",
 }
+
+# Prefix-collision guard (plan v8 §12.1): `s5_lora_neg_lr5e6` shares the
+# "s5"/"s5_lora_" prefix with the generic control `s5_lora_generic`, so ALL
+# cell routing must stay exact-match. These import-time asserts pin registry
+# disjointness; the dispatcher-side startswith routing sites are pinned by
+# tests/test_issue1112_lr_matched_cell.py.
+assert LR_MATCHED_CELL not in (REUSED_CELL, *SYCO_CELLS_NEW, *GENERIC_CELLS, *MARKER_CELLS)
+assert len(set(ALL_TRAINED_CELLS)) == len(ALL_TRAINED_CELLS), ALL_TRAINED_CELLS
+assert set(CELL_MIX) == set(ALL_TRAINED_CELLS), sorted(set(CELL_MIX) ^ set(ALL_TRAINED_CELLS))
+# The capture resolver's full-FT branch keys on startswith(("s3","s4","s6","m2"))
+# — the lr-matched LoRA cell must fall through to the adapter-merge path.
+assert not LR_MATCHED_CELL.startswith(("s3", "s4", "s6", "m2")), LR_MATCHED_CELL
 
 # ── Training (plan §4.3 / §11) ───────────────────────────────────────────────
 SYCO_EPOCHS = 6  # 30-optimizer-step ceiling on the 80-row mix (fu2 verbatim)
@@ -82,6 +114,28 @@ FT_WARMUP_RATIO = 0.05
 FT_PER_DEVICE_BATCH = 4
 FT_GRAD_ACCUM = 1  # × 4 GPUs = eff 16, matched to the LoRA cells
 FT_CKPT_STEPS = tuple(range(2, 31, 2))
+
+# Per-cell training-config overrides (plan v8 §4/§12.1). Defaults preserve
+# every EXISTING cell's built TrainLoraConfig byte-exact — only cells listed
+# here deviate (pinned by tests/test_issue1112_lr_matched_cell.py). The
+# lr-matched cell trains at FT_LR (the parent's own grounded full-FT value,
+# Source: v3 §11 #606/#642), the single changed variable of the round.
+CELL_TRAIN_OVERRIDES: dict[str, dict] = {LR_MATCHED_CELL: {"lr": FT_LR}}
+# Per-cell ladder step ceiling (default SYCO_STEP_CEILING). The lr-matched
+# cell gets the parent's registered G1 dose-extension ceiling (60) up front —
+# band entry is expected later at half lr (plan v8 §11); save cadence
+# (SYCO_SAVE_STEPS=2) is unchanged. RUN-LOG NOTE (consistency-checker WARN):
+# the trainer's cosine lr schedule decays over max_steps, so max_steps 60
+# stretches the decay horizon vs the parent's 30 — a mechanical consequence
+# of the declared G1 ceiling; the comparison is at matched install.
+CELL_STEP_CEILING: dict[str, int] = {LR_MATCHED_CELL: G1_EXTENSION_STEP_CEILING}
+
+
+def step_ceiling_for(cell: str) -> int:
+    """Ladder step ceiling for one cell — EXACT-match lookup, default the
+    parent's SYCO_STEP_CEILING (30)."""
+    return CELL_STEP_CEILING.get(cell, SYCO_STEP_CEILING)
+
 
 MARKER_BAND = (7.0, 9.0)  # narrowed from [5,12] to center the #514 8±1 target
 MARKER_GLOBAL_BAND = (5.0, 12.0)  # match acceptance window (success criterion 2)
