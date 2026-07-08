@@ -1132,8 +1132,8 @@
     "1145": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1145",
-      "status": "approved",
+      "path": "tasks/running/1145",
+      "status": "running",
       "title": "Fix torch-before-dotenv in 34 main-side VM scripts (thread-caps invariant test red on trunk)"
     },
     "115": {
