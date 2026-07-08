@@ -1076,8 +1076,8 @@
     "1138": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1138",
-      "status": "approved",
+      "path": "tasks/running/1138",
+      "status": "running",
       "title": "daily-fix: verbatim bare push/merge snippets in SKILL.md"
     },
     "1139": {
