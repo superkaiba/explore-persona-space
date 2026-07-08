@@ -1,0 +1,812 @@
+{
+  "commit": "aa5b67ac6f",
+  "created": "2026-07-08T05:51:52Z",
+  "figsize": [
+    13.0,
+    5.6
+  ],
+  "points": [
+    {
+      "median CoT length (tokens)": 622.0,
+      "per-context \u0394 skill @ layer 25": -0.02725863701945308,
+      "label": "f1_house_librarian",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 629.5,
+      "per-context \u0394 skill @ layer 25": -0.022619348593724276,
+      "label": "f1_house_surgeon",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 536.0,
+      "per-context \u0394 skill @ layer 25": -0.04716786205077805,
+      "label": "f1_house_programmer",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 734.0,
+      "per-context \u0394 skill @ layer 25": -0.040147859856141555,
+      "label": "f1_house_medical_doctor",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 620.0,
+      "per-context \u0394 skill @ layer 25": -0.03395658010386493,
+      "label": "f1_house_software_engineer",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 734.0,
+      "per-context \u0394 skill @ layer 25": -0.03350753632817893,
+      "label": "f1_house_data_scientist",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 623.0,
+      "per-context \u0394 skill @ layer 25": -0.04076387924943914,
+      "label": "f1_phub_01",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 670.0,
+      "per-context \u0394 skill @ layer 25": -0.034853831946698555,
+      "label": "f1_phub_02",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 677.0,
+      "per-context \u0394 skill @ layer 25": -0.052215843355828295,
+      "label": "f1_phub_03",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 663.0,
+      "per-context \u0394 skill @ layer 25": -0.032592055573812284,
+      "label": "f1_phub_04",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 644.0,
+      "per-context \u0394 skill @ layer 25": -0.03875757514823963,
+      "label": "f1_phub_05",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 710.0,
+      "per-context \u0394 skill @ layer 25": -0.02533112149439376,
+      "label": "f1_phub_06",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 550.0,
+      "per-context \u0394 skill @ layer 25": -0.0808212943149983,
+      "label": "f1_phub_07",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 613.0,
+      "per-context \u0394 skill @ layer 25": -0.02244475416284908,
+      "label": "f1_phub_08",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 436.0,
+      "per-context \u0394 skill @ layer 25": -0.05134305787504134,
+      "label": "f2_wc_short_1",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 316.5,
+      "per-context \u0394 skill @ layer 25": -0.09393702735717391,
+      "label": "f2_wc_short_2",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 374.0,
+      "per-context \u0394 skill @ layer 25": -0.11381002013435204,
+      "label": "f2_wc_short_4",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 403.5,
+      "per-context \u0394 skill @ layer 25": -0.06519230454737346,
+      "label": "f3_icl_json_k2",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 322.5,
+      "per-context \u0394 skill @ layer 25": -0.0516806385997296,
+      "label": "f4_reph_imperative",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 547.0,
+      "per-context \u0394 skill @ layer 25": -0.04374022153742163,
+      "label": "f4_reph_polite",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 317.0,
+      "per-context \u0394 skill @ layer 25": -0.0779060629358933,
+      "label": "f4_reph_casual",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 425.0,
+      "per-context \u0394 skill @ layer 25": -0.07152082004040128,
+      "label": "f4_reph_legalese",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 389.0,
+      "per-context \u0394 skill @ layer 25": -0.04984184172220485,
+      "label": "f4_reph_enthusiastic",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 591.0,
+      "per-context \u0394 skill @ layer 25": -0.04957278715532387,
+      "label": "f4_reph_archaic",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 643.0,
+      "per-context \u0394 skill @ layer 25": -0.032451939737167645,
+      "label": "f5_fmt_json",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 470.0,
+      "per-context \u0394 skill @ layer 25": -0.06929475866551849,
+      "label": "f5_fmt_code_comment",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 649.5,
+      "per-context \u0394 skill @ layer 25": -0.03459382552092305,
+      "label": "f5_fmt_markdown_table",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 602.0,
+      "per-context \u0394 skill @ layer 25": -0.04770087746061502,
+      "label": "f5_fmt_xml",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 632.0,
+      "per-context \u0394 skill @ layer 25": -0.033541415920342654,
+      "label": "f5_fmt_bullets",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 675.0,
+      "per-context \u0394 skill @ layer 25": -0.04295668501149774,
+      "label": "f6_default_template",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 607.0,
+      "per-context \u0394 skill @ layer 25": -0.039500920529788264,
+      "label": "f6_helpful_asst",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 677.0,
+      "per-context \u0394 skill @ layer 25": -0.03801487833035955,
+      "label": "f8_behav_marker",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 651.5,
+      "per-context \u0394 skill @ layer 25": -0.02918901528243656,
+      "label": "f8_behav_sycophant",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 601.0,
+      "per-context \u0394 skill @ layer 25": -0.05655858774910261,
+      "label": "f8_behav_refusal",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 773.0,
+      "per-context \u0394 skill @ layer 25": -0.0275963167106007,
+      "label": "f8_behav_fact",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 628.0,
+      "per-context \u0394 skill @ layer 25": -0.04290409044201593,
+      "label": "f8_behav_harmful",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 446.0,
+      "per-context \u0394 skill @ layer 25": -0.023370546039198414,
+      "label": "f2_wc_short_3",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 314.0,
+      "per-context \u0394 skill @ layer 25": -0.06854613595641579,
+      "label": "f2_wc_short_5",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 314.5,
+      "per-context \u0394 skill @ layer 25": -0.11464376503538753,
+      "label": "f2_wc_long_1",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 712.0,
+      "per-context \u0394 skill @ layer 25": -0.10228418406667106,
+      "label": "f2_wc_long_2",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 436.0,
+      "per-context \u0394 skill @ layer 25": -0.056848938390523185,
+      "label": "f2_wc_long_3",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 373.5,
+      "per-context \u0394 skill @ layer 25": -0.2774622466923262,
+      "label": "f2_wc_long_4",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 712.0,
+      "per-context \u0394 skill @ layer 25": -0.01424546622785905,
+      "label": "f2_wc_long_5",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 320.0,
+      "per-context \u0394 skill @ layer 25": -0.07947332346278291,
+      "label": "f3_icl_marker_k4",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 409.5,
+      "per-context \u0394 skill @ layer 25": -0.07709716134290401,
+      "label": "f3_icl_french_k4",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 377.0,
+      "per-context \u0394 skill @ layer 25": -0.04040022468027382,
+      "label": "f3_icl_json_k4",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 361.0,
+      "per-context \u0394 skill @ layer 25": -0.031694632189672944,
+      "label": "f3_icl_pirate_k4",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 423.0,
+      "per-context \u0394 skill @ layer 25": -0.04292938366602561,
+      "label": "f3_icl_marker_k2",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 369.0,
+      "per-context \u0394 skill @ layer 25": -0.03039167018304545,
+      "label": "f3_icl_marker_k8",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 394.0,
+      "per-context \u0394 skill @ layer 25": -0.05291672041581208,
+      "label": "f3_icl_json_k8",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median matched budget K (tokens)": 249.0,
+      "y": -0.02725863701945308,
+      "label": "f1_house_librarian",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 212.5,
+      "y": -0.022619348593724276,
+      "label": "f1_house_surgeon",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 195.0,
+      "y": -0.04716786205077805,
+      "label": "f1_house_programmer",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 227.5,
+      "y": -0.040147859856141555,
+      "label": "f1_house_medical_doctor",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 234.0,
+      "y": -0.03395658010386493,
+      "label": "f1_house_software_engineer",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 238.0,
+      "y": -0.03350753632817893,
+      "label": "f1_house_data_scientist",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 225.0,
+      "y": -0.04076387924943914,
+      "label": "f1_phub_01",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 227.0,
+      "y": -0.034853831946698555,
+      "label": "f1_phub_02",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 230.0,
+      "y": -0.052215843355828295,
+      "label": "f1_phub_03",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 247.0,
+      "y": -0.032592055573812284,
+      "label": "f1_phub_04",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 245.0,
+      "y": -0.03875757514823963,
+      "label": "f1_phub_05",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 230.5,
+      "y": -0.02533112149439376,
+      "label": "f1_phub_06",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 233.5,
+      "y": -0.0808212943149983,
+      "label": "f1_phub_07",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 229.0,
+      "y": -0.02244475416284908,
+      "label": "f1_phub_08",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 212.5,
+      "y": -0.05134305787504134,
+      "label": "f2_wc_short_1",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 116.5,
+      "y": -0.09393702735717391,
+      "label": "f2_wc_short_2",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 160.0,
+      "y": -0.11381002013435204,
+      "label": "f2_wc_short_4",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 168.0,
+      "y": -0.06519230454737346,
+      "label": "f3_icl_json_k2",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 169.5,
+      "y": -0.0516806385997296,
+      "label": "f4_reph_imperative",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 217.0,
+      "y": -0.04374022153742163,
+      "label": "f4_reph_polite",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 183.0,
+      "y": -0.0779060629358933,
+      "label": "f4_reph_casual",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 99.0,
+      "y": -0.07152082004040128,
+      "label": "f4_reph_legalese",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 170.0,
+      "y": -0.04984184172220485,
+      "label": "f4_reph_enthusiastic",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 213.0,
+      "y": -0.04957278715532387,
+      "label": "f4_reph_archaic",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 237.0,
+      "y": -0.032451939737167645,
+      "label": "f5_fmt_json",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 152.0,
+      "y": -0.06929475866551849,
+      "label": "f5_fmt_code_comment",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 227.5,
+      "y": -0.03459382552092305,
+      "label": "f5_fmt_markdown_table",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 235.5,
+      "y": -0.04770087746061502,
+      "label": "f5_fmt_xml",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 230.0,
+      "y": -0.033541415920342654,
+      "label": "f5_fmt_bullets",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 233.0,
+      "y": -0.04295668501149774,
+      "label": "f6_default_template",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 232.0,
+      "y": -0.039500920529788264,
+      "label": "f6_helpful_asst",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 250.0,
+      "y": -0.03801487833035955,
+      "label": "f8_behav_marker",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 228.5,
+      "y": -0.02918901528243656,
+      "label": "f8_behav_sycophant",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 213.0,
+      "y": -0.05655858774910261,
+      "label": "f8_behav_refusal",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 252.0,
+      "y": -0.0275963167106007,
+      "label": "f8_behav_fact",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 210.0,
+      "y": -0.04290409044201593,
+      "label": "f8_behav_harmful",
+      "series": "unflagged (36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median matched budget K (tokens)": 215.5,
+      "y": -0.023370546039198414,
+      "label": "f2_wc_short_3",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median matched budget K (tokens)": 140.0,
+      "y": -0.06854613595641579,
+      "label": "f2_wc_short_5",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median matched budget K (tokens)": 174.0,
+      "y": -0.11464376503538753,
+      "label": "f2_wc_long_1",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median matched budget K (tokens)": 212.0,
+      "y": -0.10228418406667106,
+      "label": "f2_wc_long_2",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median matched budget K (tokens)": 163.0,
+      "y": -0.056848938390523185,
+      "label": "f2_wc_long_3",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median matched budget K (tokens)": 90.5,
+      "y": -0.2774622466923262,
+      "label": "f2_wc_long_4",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median matched budget K (tokens)": 166.5,
+      "y": -0.01424546622785905,
+      "label": "f2_wc_long_5",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median matched budget K (tokens)": 126.0,
+      "y": -0.07947332346278291,
+      "label": "f3_icl_marker_k4",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median matched budget K (tokens)": 227.0,
+      "y": -0.07709716134290401,
+      "label": "f3_icl_french_k4",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median matched budget K (tokens)": 183.0,
+      "y": -0.04040022468027382,
+      "label": "f3_icl_json_k4",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median matched budget K (tokens)": 157.0,
+      "y": -0.031694632189672944,
+      "label": "f3_icl_pirate_k4",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median matched budget K (tokens)": 176.0,
+      "y": -0.04292938366602561,
+      "label": "f3_icl_marker_k2",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median matched budget K (tokens)": 148.0,
+      "y": -0.03039167018304545,
+      "label": "f3_icl_marker_k8",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median matched budget K (tokens)": 167.0,
+      "y": -0.05291672041581208,
+      "label": "f3_icl_json_k8",
+      "series": "flagged parse floor (14)",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 100
+}
