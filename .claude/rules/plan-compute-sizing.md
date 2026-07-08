@@ -1,5 +1,5 @@
 ---
-description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
+description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing, and the external-stream >~1h presumption for network-bound streaming/harvest phases (#1092) (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -103,6 +103,23 @@ asserted ~2 s/fit sailed under the old 12 h trigger while the measured
 ~125 s/call implied a ~131 h serial floor).
 (#522: ~94h on 1× H100 for a job with a ~4-6h FLOPs floor; #511: 52×
 CPU wall-time blowup vs its §9 estimate.)
+
+
+**External-stream phases (network-bound row iteration) — the floor is presumed, not
+sized.** A §9 row whose component consumes an external streaming source (HF `datasets`
+`streaming=True`, API pagination, web harvest, S3/HTTP row iteration) has NO reliable
+count × per-call sizing basis: the per-row kernel is trivial (~ms parse+filter) and
+wall-time is network-throughput-bound, so both the wall-clock trigger and the
+~500-call presumption above miss it (#1092: an intentionally unbounded full-corpus
+stream scanned ~1.8M rows over 3h06m; its bounded verification twin used a
+keep-quota stop — both shapes defeat count × per-call sizing). When the scanned-row
+count exceeds ~10^4, is unknowable in advance (yield-dependent keep-quota stop), or
+the pass is intentionally unbounded (full-corpus stream), the row is PRESUMED over
+the ~1h checkpoint floor: state the scanned/kept volume targets instead of a
+fabricated wall estimate, and name the per-chunk persistence + fingerprint-gated
+resume mechanism (`.claude/rules/code-style.md` § "Checkpoint per
+phase" external-stream presumption; review gate: code-reviewer.md Step 3.6). A short
+bounded fetch (known ≤~10^4-row scan, fixed stop) is exempt.
 
 
 **Per-cell fit phases — the per-call basis MUST be a MEASURED 1-cell pilot

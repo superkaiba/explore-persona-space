@@ -1000,7 +1000,23 @@ re-derivation is the PREFERRED sizing input over §9 prose — a fabricated §9 
 exactly what defeated the sizing at #823), or a trivial count × per-call estimate you
 can form from the diff; a loop of more than ~500 serial calls of a non-trivial kernel
 is presumed >~1h absent measured evidence otherwise (the
-`.claude/rules/plan-compute-sizing.md` many-call floor). Applies to every task type (a
+`.claude/rules/plan-compute-sizing.md` many-call floor). EXTERNAL-STREAM presumption: a
+loop consuming an external streaming source (HF `datasets` `streaming=True`, API
+pagination, web harvest, S3/HTTP row iteration) is presumed >~1h REGARDLESS of per-row
+kernel triviality when the scanned-row count exceeds ~10^4, is unknowable in advance (a
+yield-dependent keep-quota stop — scan until N rows pass a filter), or the pass is
+intentionally unbounded (full-corpus stream — #1092's production shape); wall-time there
+is network-throughput-bound, so neither §9 prose nor a count × per-call estimate from the
+diff can size it — exactly the blind spot that passed #1092's 3h stream through both
+prongs above. A short bounded fetch (known ≤~10^4-row scan, fixed stop) does not trip it.
+Required mechanism when it fires: per-chunk durable persistence (atomic JSONL append or
+per-source pool files via write-tmp + `os.replace`) + a fingerprint-gated resume keyed on
+dataset identity/revision AND every filter/recipe constant; a stream already persisted +
+resumable by construction through an existing helper (a Hub etag-resumed download, the
+#663 `batch_judge` client) satisfies it — note which helper. Reference impl:
+`scripts/issue1092_build_corpus.py::_stream_with_cache` <!-- lint: historical-ref -->
+— pool file first, meta sidecar last, exact-fingerprint match or loud re-stream.
+Applies to every task type (a
 long analysis loop is as restart-prone as an experiment dispatcher). No such loop in
 the diff → record `Step 3.6: N/A — no >~1h loop in the diff` in the verdict body and
 proceed.
@@ -1043,6 +1059,15 @@ code-review rounds PASSed it; both GCE crashes forfeited all phase-4 progress; a
 user-directed restart-with-optimization was refused solely because restart forfeits
 unpersisted fits. Same family: #722 r2 (per-unit atomic writes + `--resume` for ≥1h
 analysis loops), #399 (per-phase eval-rig checkpoint).
+
+Incident #1092 P0 attempt 3 (2026-07-07): a trivial-kernel LMSYS/WildChat harvest
+intentionally streamed the full corpus unbounded (`row_limit=None`; ~1.8M rows
+over 3h06m; mid-run health check 50k streamed → ~19.7k kept), held the kept pool in
+memory, and a downstream topic-labeling `KeyError` forfeited the entire stream —
+neither trigger prong fired (per-row kernel ~ms; wall network-bound and unsizeable;
+attempt 2 had already streamed ~1M rows to keep 0 on a filter bug). The round-8
+crash fix added `_stream_with_cache` reactively; the external-stream presumption
+above is the review-time closure.
 
 ### Step 3.7: Bug-class sibling sweep (MANDATORY for every Critical/Major finding)
 
