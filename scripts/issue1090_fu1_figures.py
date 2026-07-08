@@ -25,15 +25,22 @@ import json
 import sys
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from issue1090_lowlevel_figures import CELL_LABELS
+from issue1090_lowlevel_figures import CELL_LABELS  # noqa: E402
 
-from explore_persona_space.analysis.paper_plots import (
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
     savefig_paper,
     set_paper_style,
@@ -89,7 +96,7 @@ def fig_generator_contrast() -> None:
     ax.legend(frameon=False, loc="upper left")
 
     ax2 = axes[1]
-    for i, (m, cell) in enumerate(((m3, cells[0]), (m5, cells[1]))):
+    for i, (m, _cell) in enumerate(((m3, cells[0]), (m5, cells[1]))):
         for off, key, col in ((-w / 2, "margin_base", cols[0]), (w / 2, "margin_trained", cols[1])):
             v = m[key]
             ax2.bar(i + off, v, width=w, color=col)
@@ -156,7 +163,7 @@ def fig_contrast_per_question() -> None:
         bx = np.asarray([base[q] for q in qs])
         ty = np.asarray([tr[q] for q in qs])
         ax2.scatter(bx, ty, s=36, color=col, label=CELL_LABELS[cell].replace("\n", " "), zorder=3)
-        for q, xv, yv in zip(qs, bx, ty):
+        for q, xv, yv in zip(qs, bx, ty, strict=False):
             ax2.text(
                 xv + 0.008,
                 yv + 0.008,

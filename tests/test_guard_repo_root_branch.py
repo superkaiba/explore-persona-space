@@ -8,7 +8,10 @@ commit target for ``scripts/task.py`` and every concurrent VM Claude session
 working-tree REVERTS on the shared root (``git restore``, pathspec /
 bare-path / force ``git checkout``, ``git clean -f``, ``git reset --hard``) —
 the #841 incident class where a concurrent destructive op silently reverted
-another session's uncommitted edits.
+another session's uncommitted edits. As of #1128 it ALSO blocks branch
+MERGES on the shared root (``git merge <ref>``; ``--abort``/``--quit``
+recovery allowed) — the #1090 incident class where a conflicting root merge
+stranded conflict markers in the shared tree until aborted.
 
 These tests drive the script exactly as the harness does: stdin PreToolUse JSON
 ``{"tool_input": {"command": <cmd>}}`` -> exit 2 (blocked) or exit 0 (allowed).
@@ -1421,3 +1424,96 @@ def test_grep_pattern_clause_waiver_allows(cmd):
 def test_remote_waiver_fail_closed_blocks(cmd):
     """Every waiver refusal arm keeps its locally-executing lookalike at exit 2."""
     assert _run(cmd) == 2
+
+
+# ==== #1128 — branch-merge fence (the #1090 conflict-marker incident class) ====
+#
+# A `git merge <ref>` at the SHARED repo root strands conflict markers in the
+# shared tree on conflict (#1090: ~70s window a concurrent `git add && git
+# commit` could sweep) and lands branch commits on root main outside the
+# Step 10d landing path even when clean/ff. TIGHT anchor: `merge` followed by
+# whitespace/end-of-clause (NOT `\b`, which would trip `git merge-base`).
+# Allow-arm: `--abort`/`--quit` immediately after the verb (the sanctioned
+# in-progress-merge recovery; the anchored form kills the quoted `-m "…
+# --abort …"` spoof). `--continue` and `--ff-only` block fail-closed. The
+# block side is @on_main (the guard's on-main gate exits 0 off-main); the
+# allow side must pass in either repo state. Block tests fire on shape alone
+# — the detector is pure grep, never routing to the ref-resolution probes.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git merge issue-123", id="M1-bare_branch_merge"),
+        pytest.param("git merge origin/main", id="M2-merge_origin_main"),
+        pytest.param("git merge --squash somebranch", id="M3-squash"),
+        pytest.param("git merge --no-commit --no-ff issue-5", id="M4-no_commit_no_ff"),
+        pytest.param("git merge --continue", id="M5-continue_completes_root_merge"),
+        pytest.param("git merge --ff-only origin/main", id="M6-ff_only_fail_closed"),
+        pytest.param("git merge", id="M7-bare_merge_end_of_clause"),
+        pytest.param("git -c core.editor=true merge x", id="M8-global_flag_prefixed"),
+        pytest.param(
+            "git fetch origin && git merge origin/main", id="M9-compound_fetch_then_merge"
+        ),
+        pytest.param("git merge issue-1 # --abort", id="M10-comment_tail_cannot_spoof_allow"),
+        pytest.param(
+            'git merge -m "then --abort" issue-5', id="M11-quoted_abort_in_m_msg_cannot_spoof"
+        ),
+    ],
+)
+def test_merge_shapes_block(cmd):
+    assert _run(cmd) == 2
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git merge --abort", id="A1-abort_recovery"),
+        pytest.param("git merge --quit", id="A2-quit_recovery"),
+        pytest.param(
+            "git -C .claude/worktrees/issue-123 merge origin/main", id="A3-dash_C_worktree"
+        ),
+        pytest.param("git -C /tmp/scratch merge issue-123", id="A4-dash_C_scratch"),
+        pytest.param("cd .claude/worktrees/x && git merge origin/main", id="A5-cd_worktree_latch"),
+        pytest.param("cd /tmp/m && git merge issue-1", id="A6-cd_tmp_latch"),
+        pytest.param(
+            'WT=.claude/worktrees/issue-1; cd "$WT" && git merge origin/main',
+            id="A7-wt_variable_latch",
+        ),
+        pytest.param(
+            "git merge-base --is-ancestor HEAD origin/main", id="A8-merge_base_is_ancestor"
+        ),
+        pytest.param("git merge-base --all main HEAD", id="A9-merge_base_all"),
+        pytest.param("git pull --rebase=merges --autostash", id="A10-pull_rebase_merges"),
+        pytest.param("git mergetool", id="A11-mergetool"),
+        pytest.param("git log --merges", id="A12-log_merges"),
+        pytest.param("git branch --merged", id="A13-branch_merged"),
+        pytest.param(
+            "gh pr merge 123 --rebase --delete-branch=false", id="A14-gh_pr_merge_no_git_word"
+        ),
+        pytest.param('git commit -m "merge the eval tables"', id="A15-prose_merge_in_commit_msg"),
+        pytest.param(
+            "git worktree add --detach /tmp/m origin/main"
+            " && git -C /tmp/m merge issue-1 && git -C /tmp/m push origin HEAD:main",
+            id="A16-scratch_worktree_recipe_compound",
+        ),
+        pytest.param("ssh pod-779 'git merge origin/main'", id="A17-ssh_remote_merge_waiver"),
+        pytest.param("grep -q 'git merge issue-1' notes.md", id="A18-grep_pattern_waiver"),
+    ],
+)
+def test_merge_allowed_shapes_exit0(cmd):
+    assert _run(cmd) == 0
+
+
+@on_main
+def test_note_text_merge_literal_trips_guard_known_limitation():
+    # KNOWN LIMITATION (header): a quoted FULL `git merge <ref>` command
+    # literal in --note/-m text trips the raw scan (#1128, mirror of the
+    # restore-literal pin). Workaround: --file <path.md> / git commit -F.
+    assert (
+        _run(
+            "uv run python scripts/task.py post-marker 1128 epm:x "
+            '--note "run git merge issue-1 next"'
+        )
+        == 2
+    )

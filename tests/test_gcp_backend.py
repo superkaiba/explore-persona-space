@@ -704,6 +704,53 @@ def test_8gpu_sweep_machine_types_zone_availability() -> None:
     assert zones_for_machine_type("a3-highgpu-8g", ladder) == ladder
 
 
+def test_zone_availability_has_a2_ultragpu_2g_a_c_only() -> None:
+    """#1121: the new a2-ultragpu-2g row (the width-2 auto-ladder rung)
+    follows its A2-ultragpu family — offered in {a, c} only, NOT
+    us-central1-b (live-verified 2026-07-08), so the zone-fallback ladder
+    never issues a doomed -b create that burns a GCP attempt."""
+    from explore_persona_space.backends.gcp import (
+        MACHINE_TYPE_ZONE_AVAILABILITY,
+        zones_for_machine_type,
+    )
+
+    assert MACHINE_TYPE_ZONE_AVAILABILITY["a2-ultragpu-2g"] == frozenset(
+        {"us-central1-a", "us-central1-c"}
+    )
+    assert zones_for_machine_type(
+        "a2-ultragpu-2g", ["us-central1-a", "us-central1-b", "us-central1-c"]
+    ) == ["us-central1-a", "us-central1-c"]
+
+
+def test_render_create_argv_resolves_wide_machine_override() -> None:
+    """#1121: a router-threaded wide machine override (the JSON-safe dict
+    shape ``_with_machine`` threads) renders the wide machine type under
+    FLEX_START — the existing ``machine_spec_override`` chokepoint resolves
+    wide rungs with zero create-path changes. H100 + STANDARD keeps raising
+    (``test_render_create_argv_h100_standard_raises_loud`` pins that)."""
+    cfg = _test_config()
+    spec = _spec(
+        intent="capture-7b",
+        extra={
+            "machine_spec_override": {
+                "machine_type": "a2-ultragpu-8g",
+                "gpu_count": 8,
+                "gpu_kind": "A100-80",
+            },
+            "provisioning_model": "FLEX_START",
+        },
+    )
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--machine-type=a2-ultragpu-8g" in argv
+    assert "--provisioning-model=FLEX_START" in argv
+
+
 def test_default_fallback_zones_includes_us_central1_f() -> None:
     """#774: DEFAULT_FALLBACK_ZONES carries us-central1-f so the create-time
     ladder [primary, *fallback_zones] reaches -f for the A100-40 fallback
@@ -1310,6 +1357,99 @@ def test_reconnect_returns_handle_when_instance_running() -> None:
     assert handle.job_id == "9988776655"
     assert handle.extra["zone"] == "us-central1-a"
     assert handle.extra["reconnected"] is True
+
+
+def _running_instance_payload(name: str = "eps-issue-137", instance_id: str = "9988776655") -> str:
+    """A one-instance RUNNING gcloud list payload (the reconnect probe shape)."""
+    return json.dumps(
+        [
+            {
+                "name": name,
+                "id": instance_id,
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+            }
+        ]
+    )
+
+
+def test_reconnect_handle_carries_workload_extras_from_spec() -> None:
+    """T1 (#1122): a workload-cmd spec's reconnect handle mirrors the launch
+    path's failover-prerequisite extras — workload_cmd verbatim (str, MF1),
+    hydra_args [] (list), gpus, time_budget_hours, repo_branch, gpu_count,
+    and boot_disk_gb when set — so an exit-75 rerun's sidecar overwrite
+    stays failover-capable (incident #1090)."""
+    spec = _spec(
+        workload_cmd="REPO_ROOT=/workspace bash scripts/issue1090_dispatch.sh --full",
+        hydra_args=(),  # _spec() defaults to non-empty hydra_args; the pair is exclusive
+        gpus=1,
+        time_budget_hours=4.0,
+        extra={"repo_branch": "issue-1090", "boot_disk_gb": 200},
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, _running_instance_payload(), "")])
+    handle = reconnect_or_none(spec=spec, config=_test_config(), runner=runner)
+    assert handle is not None
+    assert (
+        handle.extra["workload_cmd"]
+        == "REPO_ROOT=/workspace bash scripts/issue1090_dispatch.sh --full"
+    )
+    assert handle.extra["hydra_args"] == []
+    assert isinstance(handle.extra["hydra_args"], list)
+    assert handle.extra["gpus"] == 1
+    assert handle.extra["time_budget_hours"] == 4.0
+    assert handle.extra["repo_branch"] == "issue-1090"
+    # lora-7b resolves to a 1-GPU machine; the poller's CPU guards read
+    # 0-vs-nonzero only.
+    assert handle.extra["gpu_count"] == 1
+    assert handle.extra["boot_disk_gb"] == 200
+    # min_ram_gb unset on the spec -> key OMITTED (legacy-shape parity).
+    assert "min_ram_gb" not in handle.extra
+
+
+def test_reconnect_handle_hydra_branch_mirrors_launch_shape() -> None:
+    """T2 (#1122): the hydra-args branch mirrors the launch shape — empty
+    workload_cmd str + hydra list; RunSpec mutual exclusion holds on the
+    reconstructed pair."""
+    spec = _spec()  # default hydra_args=("condition=c1_evil_wrong_em", "seed=42")
+    runner = _Runner(list_results=[GcloudRunResult(0, _running_instance_payload(), "")])
+    handle = reconnect_or_none(spec=spec, config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.extra["workload_cmd"] == ""
+    assert handle.extra["hydra_args"] == ["condition=c1_evil_wrong_em", "seed=42"]
+    assert isinstance(handle.extra["hydra_args"], list)
+    # One of the pair is empty by construction (MF2).
+    assert not (handle.extra["workload_cmd"] and handle.extra["hydra_args"])
+    # repo_branch unset on the spec -> written as "" (launch-path parity).
+    assert handle.extra["repo_branch"] == ""
+
+
+def test_reconnect_bare_spec_keeps_legacy_extra_shape() -> None:
+    """T3 (#1122): a bare (no-workload) spec — provision-only / probe
+    reconnects — keeps the LEGACY extra shape: no workload keys added (the
+    issue_dispatch carry-forward preserves the prior sidecar's values for
+    that case instead)."""
+    spec = _spec(hydra_args=())  # _spec() defaults to non-empty hydra_args
+    runner = _Runner(list_results=[GcloudRunResult(0, _running_instance_payload(), "")])
+    handle = reconnect_or_none(spec=spec, config=_test_config(), runner=runner)
+    assert handle is not None
+    for key in (
+        "workload_cmd",
+        "hydra_args",
+        "gpus",
+        "time_budget_hours",
+        "repo_branch",
+        "gpu_count",
+        "boot_disk_gb",
+        "min_ram_gb",
+    ):
+        assert key not in handle.extra, key
+    # The legacy probe-derived keys are still present.
+    assert handle.extra["reconnected"] is True
+    assert handle.extra["status_at_reconnect"] == "RUNNING"
+    assert handle.extra["instance_name"] == "eps-issue-137"
 
 
 def test_reconnect_skips_terminated_instance() -> None:

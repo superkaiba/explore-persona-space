@@ -245,7 +245,11 @@ def test_unknown_behavior_and_context_raise():
 
 
 def test_bare_context_source_rejected():
-    with pytest.raises(ValueError, match="not installable"):
+    # #1090 fu3: "bare" joined INSTALLABLE_KINDS, so a `default` SOURCE is no
+    # longer rejected by the kind gate — it is rejected one gate later by the
+    # panel-disjointness invariant (the default panel contains the default
+    # assistant; fu3's bare cells pass an explicit empty panel instead).
+    with pytest.raises(AssertionError, match="no-default panel"):
         ModelOrganism("sycophancy", "default")
 
 

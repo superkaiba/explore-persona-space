@@ -342,7 +342,8 @@ New v3-only checks (PASS vacuously on v2/legacy):
   code, `<details>` bodies, captions. The Takeaways 3-6 bullet COUNT is
   owned by check 3's `check_v3_structure` (one authoritative count).
   (v4 twin `check_v4_word_caps`: same caps over Takeaways + Goal +
-  Results, `## Methodology` excluded; its round count reads
+  Results, `## Methodology` excluded, plus a v4-only per-Takeaways-bullet
+  ≥100-word hard-FAIL tier (#825); its round count reads
   `epm:same-issue-followup-run` markers and/or the footer round clauses,
   max-reconciled — the Rounds-table read binds v3 only. It needs the
   `issue` number for the events leg, so it is dispatched separately in
@@ -547,7 +548,11 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   (listed )?at the pinned revision" — whole-prefix — and "N files
   (listed )?per namespace" — each backtick `dir/` namespace named in the
   link TEXT is probed at `<link-prefix>/<ns>` and must hold exactly N
-  files; no extractable namespaces → an `unverified` note, never a WARN)
+  files; no extractable namespaces → an `unverified` note, never a WARN;
+  or a backtick `dir/` sub-path token whose parenthetical OPENS with the
+  count-noun, bound to the nearest preceding hex-pinned `/tree/<sha>`
+  markdown link on the same footer row — bracket-free, newline-free,
+  ≤400-char gap — and probed at `<link-prefix>/<sub-path>`, #1143)
   must match a files-only scoped Hub tree count at the pinned revision —
   the same bounded raw tree-endpoint probe checks 23/25 use (#733; never
   the SDK `list_repo_tree` / `list_repo_files`), counted EXHAUSTIVELY with
@@ -565,7 +570,9 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   Incidents: task #931 shipped 528/10/3/198 where the pinned tree holds
   515/9/2/197 — folder entries counted as files (#1008); task #833 shipped
   "908 files listed per namespace" where each namespace holds 891 blobs +
-  17 directory entries (#1088).
+  17 directory entries (#1088); task #1112 shipped "(7,372 files: …)"
+  after a backtick `raw_completions/` token in the pinned-bucket footer
+  row where the scoped tree holds 7,165 files + 207 folders (#1143).
 
 - **check 31** (`check_orphaned_per_unit_figures`, WARN): the INVERSE
   direction of checks 4b/22/29 (which verify what the body CITES) —
@@ -829,6 +836,13 @@ V3_TAKEAWAYS_MIN_BULLETS = 3
 V3_TAKEAWAYS_MAX_BULLETS = 6
 # Per-Takeaways-bullet word cap (WARN).
 V3_TAKEAWAYS_BULLET_MAX_WORDS = 30
+# Per-Takeaways-bullet hard-FAIL tier — v4 bodies ONLY (v3/v2/legacy stay
+# WARN-only per the forward-only rule). A same-issue follow-up re-fold can
+# accrete a paragraph-bullet that rides the 30-word WARN indistinguishably
+# from a mild overrun (#825 r1: a 263-word bullet WARNed identically to a
+# 35-word one); >=100 words is structural misuse of a bullet, not a
+# tightening request.
+V4_TAKEAWAYS_BULLET_FAIL_WORDS = 100
 # Per-finding prose word cap (excl. caption / code / `<details>` bodies):
 # WARN at the soft cap, FAIL at the hard cap.
 V3_FINDING_PROSE_WARN_WORDS = 120
@@ -7244,7 +7258,14 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
 # revision" in a paren AFTER the link (908 = 891 blobs + 17 directory
 # entries per namespace — list_repo_tree ENTRIES counted as files) — a
 # claim shape neither Pattern A nor B could parse; Pattern C + the
-# per-namespace gatherer close that extraction gap (#1088).
+# per-namespace gatherer close that extraction gap (#1088). #1112 then
+# shipped "(7,372 files: …)" immediately after a backtick
+# `raw_completions/` sub-path token in the pinned-bucket footer row —
+# same line as the bucket's /tree/<sha> link, ~132 chars downstream —
+# where the scoped tree at `<bucket>/raw_completions` holds 7,165 files
+# + 207 folders. No pattern reached a count bound to a backtick SUB-PATH
+# of a preceding link; Pattern D + the nearest-preceding-pinned-link
+# binder close that gap (#1143).
 
 # A markdown link whose target is an HF Hub URL. Two-stage extraction: match
 # the link structure first, then scan the TEXT for a count-noun and parse the
@@ -7314,6 +7335,38 @@ _FILES_AT_PINNED_REV_RE = re.compile(
 # trailing slash is the directory signature (a dotted token without it is a
 # FILE claim, check 32's territory).
 _BACKTICK_DIR_RE = re.compile(r"`(?P<ns>[A-Za-z0-9_\-./]{1,120}/)`")
+# Pattern D (#1143, the #1112 footer shape): a backtick DIRECTORY token
+# (trailing slash = the directory signature, same charset as
+# _BACKTICK_DIR_RE plus a leading dot-segment decline — a `./`/`../` sub
+# would join to a nonexistent probe path; a dotted token WITHOUT the slash
+# is check 32's FILE territory) immediately followed by a parenthetical
+# OPENING with the count-noun. The count scopes to <link-prefix>/<sub> at
+# the sha of the nearest preceding pinned /tree link on the same line
+# (binder below). The paren qualifier bound is 200 (Pattern B uses 80; the
+# live #1112 qualifier is ~85 chars). The count-noun lookahead is WIDER
+# than _COUNT_NOUN_RE's per-namespace decline: ANY distributive
+# "per <word>" qualifier declines (e.g. the #460 "(11 files per adapter,
+# 176 files total)" shape — per-adapter semantics, the join would target a
+# nonexistent path); A/B deliberately keep the narrow #833
+# per-namespace-only lookahead — a "per adapter"-style count in A/B
+# position is a PRE-EXISTING hole outside #1143's scope, unchanged by
+# design. Trailing negative lookahead: a paren immediately followed by an
+# HF markdown link is Pattern B's paren-before-link shape — D declines
+# rather than extracting a second, differently-scoped claim.
+_BACKTICK_SUBPATH_COUNT_PAREN_RE = re.compile(
+    r"`(?P<sub>(?!\.\.?/)[A-Za-z0-9_\-./]{1,120}/)`"
+    r"[ \t]{0,2}"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"(?!\s+(?:listed\s+)?per\s+\w+\b)"
+    r"[^()]{0,200}\)"
+    r"(?!\s{0,2}[:\u2013\u2014-]?\s{0,2}\[[^\]]{1,300}\]\(https?://huggingface\.co)",
+    re.IGNORECASE,
+)
+# Max chars between the binding link's closing ")" and the Pattern-D
+# claim's backtick token. The live #1112 gap measures ~132 chars
+# ("— `mixes/` (…), `selection/` (…), "); 400 gives ~3x margin while
+# bounding runaway binding on pathological single-line bodies.
+_SUBPATH_CLAIM_MAX_GAP = 400
 # Per-body cap on UNIQUE (repo, sha, prefix) count probes. Worst-case wall
 # arithmetic (the deadline is checked only AFTER each page fetch): one page
 # costs up to _HF_PROBE_ATTEMPTS x _HF_PROBE_TIMEOUT_S + _HF_PROBE_SLEEP_S
@@ -7331,6 +7384,43 @@ _HF_COUNT_MAX_PROBES = 8
 _HF_TREE_FILE_COUNT_CACHE: dict[tuple[str, str, str, str], tuple[int, int]] = {}
 
 
+def _nearest_preceding_pinned_tree_link(
+    stripped: str, pos: int, links: list[re.Match]
+) -> re.Match | None:
+    """Pattern-D binding (#1143): the nearest markdown HF link (from the
+    caller's precomputed ``_MD_HF_LINK_RE`` match list) ending at/before
+    ``pos``, accepted ONLY when the gap between its closing ``)`` and
+    ``pos`` (a) contains no newline (same footer row), (b) contains no
+    ``[`` or ``]`` (no markdown link starts or ends inside the binding
+    run — declines rather than binding PAST an intervening link, and a
+    claim sitting inside another link's TEXT never binds backward), and
+    (c) is <= ``_SUBPATH_CLAIM_MAX_GAP`` chars; and (d) the link parses
+    as a hex-pinned /tree link (``_HF_HUB_TREE_BLOB_URL_RE`` +
+    ``/tree/<sha>`` — same guards as ``_add``). Any failure returns None:
+    the claim stays unextracted (precision over recall; a missed claim
+    costs nothing on a WARN-only check). Nearest-only is deliberate: when
+    the nearest preceding HF link is unpinned/``/blob/``/``/tree/main``
+    the claim is DECLINED, never re-bound to an earlier link — an earlier
+    binding would have the intervening link's ``](`` in the gap anyway,
+    so decline-on-brackets and nearest-only are mutually consistent."""
+    best = None
+    for lm in links:
+        if lm.end() <= pos:
+            best = lm
+        else:
+            break  # finditer order is left-to-right
+    if best is None:
+        return None
+    gap = stripped[best.end() : pos]
+    if "\n" in gap or "[" in gap or "]" in gap or len(gap) > _SUBPATH_CLAIM_MAX_GAP:
+        return None
+    url = best.group("url").rstrip(".,;:!?")
+    m = _HF_HUB_TREE_BLOB_URL_RE.match(url)
+    if m is None or f"/tree/{m.group('sha')}" not in url:
+        return None
+    return best
+
+
 def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, str]]:
     """Extract ``(claimed_count, noun, repo_id, repo_type, sha, path_prefix)``
     tuples for numeric file/shard-count claims ADJACENT to hex-pinned HF
@@ -7339,7 +7429,7 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     shared URL regex only matches 7-40-char hex revisions, mirroring
     check 23).
 
-    Three conservative positions (precision over recall — a missed claim
+    Four conservative positions (precision over recall — a missed claim
     costs nothing, the check is a net-new WARN):
 
     - **Pattern A** — the count-noun sits INSIDE the markdown link TEXT
@@ -7360,23 +7450,45 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
       in ``_COUNT_NOUN_RE`` / ``_COUNT_PAREN_LINK_RE``, stay invisible to
       Patterns A/B (wrong semantics would compare N against the parent's
       total).
+    - **Pattern D (backtick sub-path, #1143)** — a backtick ``dir/`` token
+      immediately followed by a parenthetical OPENING with the count-noun
+      (``... — `raw_completions/` (7,165 files: …)``, the #1112 footer
+      shape), bound via ``_nearest_preceding_pinned_tree_link`` to the
+      nearest preceding hex-pinned ``/tree`` markdown link on the SAME
+      line (bracket-free, ≤``_SUBPATH_CLAIM_MAX_GAP``-char gap); the count
+      scopes to the JOINED prefix ``<link-prefix>/<sub-path>`` at the
+      link's sha — the same join the per-namespace leg uses.
 
     Known recall sacrifices (each avoids a concrete false-positive class):
     prose counts near BARE (non-markdown) HF URLs; counts AFTER the link
     OUTSIDE a link-adjacent paren carrying one of the two anchored phrases
     (generic post-link prose counts stay sacrificed); parentheticals where
     the count is not leading ("(total 515 files)") unless phrase-anchored
-    per Pattern C; compound claims ("8 eval JSONs + 2 npz"); nouns other
+    per Pattern C — mirrored by Pattern D, whose count must OPEN the
+    paren; compound claims ("8 eval JSONs + 2 npz"); nouns other
     than file(s) / shard(s) ("rows" / "completions" are RECORD counts, not
     file counts); per-namespace-qualified counts in A/B positions (see the
-    lookahead note above).
+    lookahead note above). Pattern-D-specific sacrifices: a claim whose
+    nearest preceding HF link is unpinned / ``/blob/`` / ``/tree/main``
+    (declined, never re-bound to an earlier link); a bracketed, multi-line,
+    or >``_SUBPATH_CLAIM_MAX_GAP``-char gap; a backtick token without the
+    trailing slash (check 32's FILE-claim territory); a D-paren
+    immediately followed by an HF markdown link (Pattern B's
+    paren-before-link shape wins — D's trailing lookahead declines); a
+    BARE (non-markdown) pinned HF URL in the gap neither declines nor
+    rebinds — the claim binds past it to the earlier markdown link, a
+    documented recall/precision sacrifice. Lookahead ASYMMETRY (deliberate):
+    Pattern D declines ANY distributive ``per <word>`` qualifier while A/B
+    keep the narrow #833 per-namespace-only lookahead — a "per
+    adapter"-style count in A/B position is a PRE-EXISTING hole outside
+    #1143's scope, left unchanged by design.
     """
     kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
     stripped = _strip_fenced_blocks(body)
     out: list[tuple[int, str, str, str, str, str]] = []
     seen: set[tuple] = set()
 
-    def _add(count_s: str, noun: str, url: str) -> None:
+    def _add(count_s: str, noun: str, url: str, sub_path: str | None = None) -> None:
         url = url.rstrip(".,;:!?")
         m = _HF_HUB_TREE_BLOB_URL_RE.match(url)
         if m is None:
@@ -7385,12 +7497,15 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
             return  # a /blob/ link is a single file — a count claim there is out of scope
         count = int(count_s.replace(",", ""))
         repo_id = f"{m.group('owner')}/{m.group('repo')}"
+        prefix = (m.group("path") or "").rstrip("/")
+        if sub_path is not None:  # Pattern D: scope to <link-prefix>/<sub-path>
+            prefix = "/".join(p for p in (prefix, sub_path.strip("/")) if p)
         key = (
             count,
             noun.lower().rstrip("s"),
             repo_id,
             m.group("sha"),
-            (m.group("path") or "").rstrip("/"),
+            prefix,
         )
         if key in seen:
             return
@@ -7402,11 +7517,12 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
                 repo_id,
                 kind_to_type[m.group("kind")],
                 m.group("sha"),
-                (m.group("path") or "").rstrip("/"),
+                prefix,
             )
         )
 
-    for lm in _MD_HF_LINK_RE.finditer(stripped):  # Pattern A: count in link TEXT
+    link_matches = list(_MD_HF_LINK_RE.finditer(stripped))
+    for lm in link_matches:  # Pattern A: count in link TEXT
         for cm in _COUNT_NOUN_RE.finditer(lm.group("text")):
             _add(cm.group("count"), cm.group("noun"), lm.group("url"))
     for pm in _COUNT_PAREN_LINK_RE.finditer(stripped):  # Pattern B: paren before link
@@ -7414,6 +7530,11 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     for lm in _HF_LINKTEXT_THEN_PAREN_RE.finditer(stripped):  # Pattern C: paren after link
         for cm in _FILES_AT_PINNED_REV_RE.finditer(lm.group("paren")):
             _add(cm.group("count"), "files", lm.group("url"))
+    for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):  # Pattern D (#1143)
+        lm = _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches)
+        if lm is None:
+            continue
+        _add(dm.group("count"), dm.group("noun"), lm.group("url"), sub_path=dm.group("sub"))
     return out
 
 
@@ -7636,7 +7757,10 @@ def check_hf_file_count_claims(body: str) -> CheckResult:
     515/9/2/197 — folder entries were counted as files. This check compares
     each extracted claim (``_gather_hf_count_claims`` — Pattern A count in
     link text / Pattern B paren-before-link / Pattern C anchored
-    pinned-revision phrase in a paren AFTER the link; see its docstring for
+    pinned-revision phrase in a paren AFTER the link / Pattern D backtick
+    ``dir/`` sub-path + count-opening paren bound to the nearest preceding
+    pinned link and scoped to ``<link-prefix>/<sub-path>`` (#1143, the
+    #1112 footer shape); see its docstring for
     the precision/recall trade-offs) against an EXHAUSTIVE files-only count
     of the pinned prefix (``_hf_file_count_for_prefix`` → the #733 bounded
     raw tree-endpoint probe; folders excluded).
@@ -8623,11 +8747,16 @@ def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tupl
     return count, "footer" if footer_n > events_n else "events"
 
 
-def _count_overlong_takeaways_bullets(takeaways: str) -> int:
-    """Count top-level Takeaways bullets over the per-bullet word cap
-    (fence-aware). Helper for check 20."""
+def _count_overlong_takeaways_bullets(takeaways: str) -> tuple[int, int]:
+    """Count top-level Takeaways bullets over the per-bullet word caps
+    (fence-aware). Returns ``(over_warn, over_fail)``: bullets over the
+    30-word WARN cap but under the >=100-word FAIL tier, and bullets at
+    or over the FAIL tier. v3 reports the SUM as its WARN count
+    (WARN-only, grandfathered); v4 FAILs the second bucket (#825).
+    Helper for check 20."""
     in_fence = False
-    over = 0
+    over_warn = 0
+    over_fail = 0
     for line in takeaways.splitlines():
         s = line.strip()
         if s.startswith("```") or s.startswith("~~~"):
@@ -8637,9 +8766,11 @@ def _count_overlong_takeaways_bullets(takeaways: str) -> int:
             continue
         if re.match(r"^[-*]\s+\S", line):
             wc = len(re.sub(r"^[-*]\s+", "", line.strip()).split())
-            if wc > V3_TAKEAWAYS_BULLET_MAX_WORDS:
-                over += 1
-    return over
+            if wc >= V4_TAKEAWAYS_BULLET_FAIL_WORDS:
+                over_fail += 1
+            elif wc > V3_TAKEAWAYS_BULLET_MAX_WORDS:
+                over_warn += 1
+    return over_warn, over_fail
 
 
 def _finding_prose_cap_results(findings: str) -> tuple[list[str], list[str]]:
@@ -8711,7 +8842,8 @@ def check_v3_word_caps(body: str) -> CheckResult:
     The Takeaways 3-6 bullet COUNT is owned by `check_v3_structure`
     (one authoritative count gate), not duplicated here. A FAIL here
     fires ONLY on the per-finding ≥180-word hard cap; everything else
-    is WARN. PASSes vacuously on v2 / legacy bodies.
+    is WARN (the v4-only ≥100-word per-bullet FAIL tier does not bind
+    v3). PASSes vacuously on v2 / legacy bodies.
     """
     label = "v3 conciseness caps"
     if not is_v3(body):
@@ -8723,8 +8855,10 @@ def check_v3_word_caps(body: str) -> CheckResult:
     takeaways = section_text(body, "Takeaways") or ""
     findings = section_text(body, "Findings") or ""
 
-    # Per-Takeaways-bullet word cap (WARN).
-    over_bullets = _count_overlong_takeaways_bullets(takeaways)
+    # Per-Takeaways-bullet word cap (WARN-only on v3 — grandfathered; the
+    # v4-only >=100-word FAIL tier does not bind here).
+    over_warn_b, over_fail_b = _count_overlong_takeaways_bullets(takeaways)
+    over_bullets = over_warn_b + over_fail_b
     if over_bullets:
         warns.append(
             f"{over_bullets} Takeaways bullet(s) exceed {V3_TAKEAWAYS_BULLET_MAX_WORDS} words"
@@ -8851,9 +8985,11 @@ def check_v4_methodology_shape(body: str) -> CheckResult:
 
 
 def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
-    """Check 20 (v4 only): the v4 conciseness caps (same constants as v3).
+    """Check 20 (v4 only): the v4 conciseness caps (same constants as v3,
+    plus the v4-only per-Takeaways-bullet FAIL tier).
 
-    - Per-Takeaways-bullet ≤30 words (WARN).
+    - Per-Takeaways-bullet ≤30 words (WARN); ≥100 words FAIL (v4-only
+      hard tier, #825).
     - Per-`### <result>` prose ≤120 words WARN / ≥180 words FAIL (excl.
       caption / fenced code / `<details>` bodies / table rows).
     - Figure caption ≤60 words (WARN).
@@ -8865,8 +9001,9 @@ def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
     non-retroactive `epm:same-issue-followup-run` markers (via ``issue``,
     when known) and/or the footer's round clauses (max), NOT the v3
     Rounds table (#921). The Takeaways 3-6 bullet COUNT is owned by
-    `check_v4_structure`. A FAIL here fires ONLY on the per-result
-    ≥180-word hard cap. PASSes vacuously on v3 / v2 / legacy bodies.
+    `check_v4_structure`. A FAIL here fires on the per-result ≥180-word
+    hard cap and the per-Takeaways-bullet ≥100-word tier. PASSes
+    vacuously on v3 / v2 / legacy bodies.
     """
     label = "v4 conciseness caps"
     if not is_v4(body):
@@ -8881,10 +9018,18 @@ def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
     # (would inflate the per-result word count into a false ≥180 hard FAIL).
     results = _v4_results_body(body) or ""
 
-    over_bullets = _count_overlong_takeaways_bullets(takeaways)
-    if over_bullets:
+    # Per-Takeaways-bullet caps: >=100 words is a v4-only hard FAIL (#825 —
+    # an accreted paragraph-bullet must not ride the 30-word WARN); the
+    # 31-99-word band keeps the existing WARN. Mutually exclusive tiers.
+    over_warn_b, over_fail_b = _count_overlong_takeaways_bullets(takeaways)
+    if over_fail_b:
+        fails.append(
+            f"{over_fail_b} Takeaways bullet(s) at ≥{V4_TAKEAWAYS_BULLET_FAIL_WORDS} words "
+            "(accreted paragraph-bullet — split or tighten)"
+        )
+    if over_warn_b:
         warns.append(
-            f"{over_bullets} Takeaways bullet(s) exceed {V3_TAKEAWAYS_BULLET_MAX_WORDS} words"
+            f"{over_warn_b} Takeaways bullet(s) exceed {V3_TAKEAWAYS_BULLET_MAX_WORDS} words"
         )
 
     # Per-result prose caps (reuse the per-finding helper; it scans `### `

@@ -1,0 +1,1776 @@
+{
+  "commit": "aa5b67ac6f",
+  "created": "2026-07-08T05:51:57Z",
+  "figsize": [
+    11.5,
+    6.4
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.44074795420059243,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.37157213857806837,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.4534384794198808,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.483498637712807,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.5551469552363378,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.5426600739525975,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.5441980141698424,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.5539368903295094,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.5652641102867489,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.5971826267648179,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.6120015580553017,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.6002053986567447,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.5964412122320515,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.6109394158831609,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.6209609819318398,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.5988023070901297,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.5915633335939117,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.5789500881291922,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.5562118971005974,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.584641525197197,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.582028848253118,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.6017711495705591,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.6414803986597672,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.6618600393201421,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.6703124000315814,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.6738555449936019,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.6676178281385016,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.6315209362992511,
+      "series": "context only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.5268478445912337,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.4526727729930833,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.5616771392271646,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.6004548863875854,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.7135918777062158,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.7327225506359942,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.7433839955031517,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.7625849625022951,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.7837605397067922,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.8251315523752734,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.8348596187951665,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.8320800868873057,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.8268034093374715,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.8444150048085143,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.8480937751845583,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.8278341129286867,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.8238815026138547,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.8093876278887706,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.801351062423833,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.8346620103597902,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.8307600141929742,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.8502655655671917,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.8627369111666294,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.8687070309641387,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.8716521073523467,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.8699014860446739,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.8680601709469844,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.8341098692901945,
+      "series": "context + truncated CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.6851806370209341,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.6042283789659608,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.6971314889990913,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.7271110424286067,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.806282096559353,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.8247949715073697,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.833550244055461,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.8434606597930081,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.8551401582401981,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.8850620955509277,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.890757250808903,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.8867285700001768,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.8829501482206754,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.8918795314181155,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.8958866799790063,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.8842691921005452,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.8825503234794263,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.8744016732498662,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.8726651570756151,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.9027864558623592,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.899967952690402,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.9065430689862112,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.9140596419734043,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.9197455306437987,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.9224269840299809,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.9221606759960925,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.9226209407016279,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.8961752441263557,
+      "series": "context + answer prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.5191084441269751,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.45160778142388425,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.5611794072961067,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.5995762810639657,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.7169090098538271,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.7357536969387396,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.7460513135074816,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.7641360913877085,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.7849120851490301,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.8265496310428171,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.8371261068176498,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.8347893695462678,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.8290646096118158,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.8461083986350459,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.8495986647890345,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.8294397710536222,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.824986654725583,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.8100857024848922,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.8026175122783232,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.8360638321822331,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.8315606356259995,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.8520122099218448,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.865943288701466,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.8725630071688818,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.8758911800435188,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.874702917427449,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.8744462753007405,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.8432111427829668,
+      "series": "truncated CoT alone",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.6910132515444269,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.6057657520716392,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.6984380654177339,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.7284750537978368,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.8109844703333591,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.8297700947905351,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.8391400148067556,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.8480703908146969,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.8594633293228584,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.8888169945475988,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.894783306142567,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.891339185668561,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.8870523001061076,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.895487317485005,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.8990901311554761,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.8885392094060445,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.8866659915869788,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.878358414842664,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.8771460367644475,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.907475969563486,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.9047291386138293,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.91136824762844,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.9199529795072214,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.9271302395029271,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.930653497714722,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.9310116761084981,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.9328067126611508,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.9085729474145963,
+      "series": "answer prefix alone",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.5668491799548816,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.4959306927536876,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.6017727939141135,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.6418318908510783,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.7380187333868351,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.7513419006128991,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.7608092301557733,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.7814809976855543,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.8013574516663715,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.8387866474699723,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.8467541594214862,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.8428918561694487,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.8377655172319708,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.8521892772535813,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.8558461870552676,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.836585612385571,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.8322091927430116,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.819752031329097,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.8083653010838798,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.8382094463267498,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.83652726688327,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.8552958543407937,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.8678918582047578,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.8735646840697576,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.8762260179152889,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.8751807225811389,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.8737286914474521,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.8393381783267385,
+      "series": "context + full CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.5558618800344097,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.4870458156150964,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.5906591288099841,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.6311390579795753,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.7238709227973483,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.738409795814821,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.7525918022057891,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.7697594836422629,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.7892952297511668,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.826487615915864,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.8357068747928446,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.8320991172108617,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.8269075404722092,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.8408842666565883,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.8438016737762913,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.8237520397938715,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.8196894012246774,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.8053367591069225,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.7924280195812237,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.8198954543148357,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.8140561303271195,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.8355770717813278,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.8497446683215085,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.8563124865367603,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.8587749498926307,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.8583479861754768,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.8566831633814183,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.8244443180992062,
+      "series": "context + CoT opening",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.5597066217401139,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.4892099623866172,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.5908181872305021,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.6318641610203466,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.7281243031441134,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.7428572576899033,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.7573710333112788,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.7733742124055739,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.7927583381250545,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.8290541983021229,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.8388256908868305,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.8359334132925398,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.8302064107527539,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.8437798977623423,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.8462151002951482,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.8266562201629553,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.8223887996454816,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.8080454380995381,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.7954919232699202,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.8233815552244168,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.8168657136734732,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.8391665105413988,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.8542930383707233,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.8617925347453907,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.8646927815693588,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.8649565907107868,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.8644488057822205,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.8348109013690089,
+      "series": "CoT opening alone",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.9770029854043998,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.975994648412327,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.9793650045743799,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.9827124216547541,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.9805917194079761,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.974187417293064,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.977941074673274,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.9821940237521684,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.9836031835663333,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.989681092326823,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.9894341329454955,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.9876712004858094,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.9866331786805477,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.9885012564207715,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.9883730616130502,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.987196420660048,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.985554627102203,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.9858178641281081,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.9865939271217683,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.9896611979884146,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.9906070294821223,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.9917695189604347,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.9917316942833567,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.9919816322272584,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.9929794682751832,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.9932341607224094,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.9938728994067261,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.9880206175991894,
+      "series": "identity ceiling (per layer)",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 252
+}

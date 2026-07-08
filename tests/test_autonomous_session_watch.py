@@ -2237,12 +2237,15 @@ def test_stalled_live_kth_episode_escalates_to_respawn(
     assert rows[1]["k"] == 2
 
 
-def test_stalled_live_k_equals_3_takes_two_alerts_then_respawn(
+def test_stalled_live_k_equals_3_takes_one_alert_then_respawn(
     isolated_registry, monkeypatch, stalled_recorder
 ):
-    # Criteria 6+7 generalized for K=3: K-1 = 2 downgrade episodes, then the
-    # 3rd escalates. Pins that the escalation tracks the env-tuned K, not a
-    # hardcoded 2.
+    # Criteria 6+7 generalized for K=3: K-1 = 2 downgrade EPISODES (both in
+    # the sidecar), then the 3rd escalates. Pins that the escalation tracks
+    # the env-tuned K, not a hardcoded 2. #1137: only the FIRST downgrade
+    # posts a session-stalled-alert marker — the second downgrade reaches
+    # the alert handler with alerted=True and its marker is suppressed
+    # (marker-only dedup; the counter/sidecar dynamics are unchanged).
     import autonomous_session_watch as asw
 
     stops, spawns, markers = stalled_recorder
@@ -2259,12 +2262,15 @@ def test_stalled_live_k_equals_3_takes_two_alerts_then_respawn(
     assert spawns == [] and markers == [(739, "session-stalled-alert")]
     assert _read_live_consecutive(isolated_registry, 739) == 1
 
-    # Tick 3: alerted=True -> respawn-wanted -> 2nd episode (2 < 3) -> alert again.
+    # Tick 3: alerted=True -> respawn-wanted -> 2nd episode (2 < 3) -> the
+    # downgrade fires again but the repeat alert MARKER is suppressed (#1137
+    # episode-total dedup); the incremented counter still persists (the dedup
+    # is marker-only, never a dynamics change).
     asw.stalled_session_pass(
         dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
     )
     assert spawns == []
-    assert markers == [(739, "session-stalled-alert"), (739, "session-stalled-alert")]
+    assert markers == [(739, "session-stalled-alert")]
     assert _read_live_consecutive(isolated_registry, 739) == 2
 
     # Tick 4: 3rd (== K) episode -> ESCALATE to respawn, reset to 0. #845
@@ -2357,6 +2363,287 @@ def test_stalled_keep_resets_live_consecutive(isolated_registry, monkeypatch, st
         dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-741"}
     )
     assert _read_live_consecutive(isolated_registry, 741) == 0
+
+
+# ─── #1137: episode-total alert dedup across BOTH alert producers ─────────────
+# decide_session_stalled's alerted=True dedup covers only its own keep branch;
+# the #759 downgrade lane rewrites respawn->alert AFTER decide() and used to
+# post a fresh session-stalled-alert marker every eligible tick. Incident
+# #1092 (2026-07-07): the escalate -> wt-hold-defer -> downgrade 2-tick cycle
+# posted one marker every 20 min, indefinitely, on a healthy session.
+
+
+def _read_stalled_alerted(reg_dir, issue):
+    """Return the persisted ``alerted`` flag from stalled-<issue>.json
+    (``None`` when the state file is absent)."""
+    import json
+
+    path = reg_dir / f"stalled-{issue}.json"
+    if not path.is_file():
+        return None
+    return json.loads(path.read_text()).get("alerted")
+
+
+def test_stalled_live_downgrade_repeat_alert_suppressed_across_wt_held_cycle(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # The #1092 2026-07-07 replay (fix A acceptance 1): K=2, LIVE sid, FRESH
+    # worktree activity. Steady-state 2-tick cycle — escalate (criterion-7
+    # reset) -> #845 (b) wt-hold defer -> downgrade 1/2 -> alert — reached
+    # _handle_stalled_alert with alerted=True every other tick. Post-fix:
+    # exactly ONE session-stalled-alert marker for the whole 6-tick episode
+    # (pre-#1137 baseline: 3), zero stops, zero spawns; the sidecar
+    # downgrade/escalation observability and the alerted persist survive.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)  # default K=2
+    _write_autonomous_entry(isolated_registry, 1092, "sess-1092", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    # Fresh worktree activity (#1092: P0's file writes kept the worktree
+    # warm) -> every escalated respawn is DEFERRED by the #845 (b) hold,
+    # which persists the already-reset counter -> the next tick is a fresh
+    # 1/2 downgrade. Re-patch AFTER the fixture's default False.
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: True)
+    now = 1_000_000.0
+
+    for _ in range(6):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-1092"}
+        )
+
+    assert markers == [(1092, "session-stalled-alert")]  # ONE per episode (was 3)
+    assert stops == []
+    assert spawns == []
+    assert _read_stalled_alerted(isolated_registry, 1092) is True
+    rows = _read_live_escalation_events(isolated_registry)
+    assert [r["event"] for r in rows] == [
+        "stalled-live-downgrade",
+        "stalled-live-escalation",
+        "stalled-live-downgrade",
+        "stalled-live-escalation",
+        "stalled-live-downgrade",
+    ]
+
+
+def test_stalled_repeat_alert_dry_run_no_marker_no_persist(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Fix A dry-run discipline: drive the #1092 replay to the repeat-downgrade
+    # tick with real writes, then run the SUPPRESSED tick under dry_run=True —
+    # the new dedup path posts no marker AND persists nothing (the state file
+    # is unchanged; _persist_stalled_ctx no-ops on dry_run). The recorder's
+    # _post_progress_marker patch records regardless of dry_run, so a marker
+    # post on this tick would be visible.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)  # default K=2
+    _write_autonomous_entry(isolated_registry, 1092, "sess-1092", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: True)
+    now = 1_000_000.0
+
+    # Ticks 1-3 (real): miss, downgrade -> first alert, escalate -> wt-hold.
+    for _ in range(3):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-1092"}
+        )
+    assert markers == [(1092, "session-stalled-alert")]
+    state_before = (isolated_registry / "stalled-1092.json").read_text()
+
+    # Tick 4 (dry run): the repeat downgrade hits the #1137 dedup branch.
+    asw.stalled_session_pass(
+        dry_run=True, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-1092"}
+    )
+    assert markers == [(1092, "session-stalled-alert")]  # no new marker
+    assert (isolated_registry / "stalled-1092.json").read_text() == state_before
+    assert stops == [] and spawns == []
+
+
+def test_stalled_repeat_alert_refires_on_new_episode(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Fix A is EPISODE-scoped, not permanent silence (acceptance 4): after the
+    # self-report ts ADVANCES (episode over -> alerted cleared) and a new
+    # staleness episode forms, a fresh alert fires again. K is pinned high so
+    # every respawn downgrades to alert (no stop/fence noise in the read).
+    # Episode advancement is a LEXICOGRAPHIC string compare on the raw
+    # self-report ts, so the ts sequence must be lexicographically increasing:
+    # "ts-old" -> "ts-old-2" -> "ts-old-3".
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "99")
+    _write_autonomous_entry(isolated_registry, 1093, "sess-1093", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+    signal = {"age": STALLED_WINDOW_S + 60, "ts": "ts-old"}
+    monkeypatch.setattr(
+        asw, "_self_report_age_seconds", lambda issue, now: (signal["age"], signal["ts"])
+    )
+
+    # Episode 1: miss -> downgrade -> ONE alert; the tick-3 repeat downgrade
+    # is suppressed (pure downgrade-lane shape, no wt hold needed).
+    for _ in range(3):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-1093"}
+        )
+    assert markers == [(1093, "session-stalled-alert")]
+
+    # Self-report advances + goes fresh: the episode is over, alerted clears.
+    signal["age"] = 60.0
+    signal["ts"] = "ts-old-2"
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-1093"}
+    )
+    assert _read_stalled_alerted(isolated_registry, 1093) is False
+
+    # New staleness episode (a third, newer ts, stale again): re-alerts once.
+    signal["age"] = STALLED_WINDOW_S + 60
+    signal["ts"] = "ts-old-3"
+    for _ in range(3):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-1093"}
+        )
+    assert markers == [(1093, "session-stalled-alert"), (1093, "session-stalled-alert")]
+    assert stops == [] and spawns == []
+
+
+# ─── #1137 fix (B): deliberate-blocked-park alert suppression ─────────────────
+# The CLAUDE.md halt contract posts epm:failure then sets status blocked (1s
+# apart on #1092); a stalled-session alert on that shape duplicates a by-design
+# park the gate-push pass already phone-pushed. A blocked task with NO failure
+# trail (hand-moved / unexplained) keeps the one-time alert (fail-open).
+
+
+def _blocked_park_events(*, with_failure_trail: bool):
+    """Events for the #1092 blocked-park shape. The ts are 1970-era so their
+    age under the fake ``now=1_000_000.0`` (~1970-01-12) is ~11.5 days — far
+    past the 2h STALLED_MARKER_WINDOW_S_DEFAULT (a 2026 ISO ts would read as
+    NEGATIVE-age fresh and the detector would vacuously keep). Both blocked
+    tests share this helper so the no-trail positive control provably runs
+    under the SAME ts scheme as the suppressed trail case."""
+    events = [{"kind": "epm:status-changed", "ts": "1970-01-01T00:00:01Z"}]
+    if with_failure_trail:
+        # 1s BEFORE the status change — the canonical halt-contract pair
+        # (#1092: 13:21:34Z epm:failure, 13:21:35Z status-changed -> blocked).
+        events.insert(0, {"kind": "epm:failure", "ts": "1970-01-01T00:00:00Z"})
+    return events
+
+
+def test_stalled_blocked_deliberate_park_suppresses_alert(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # The #1092 15:33Z replay (acceptance 2): status=blocked with the
+    # halt-contract trail, both staleness signals stale -> the deliberate-
+    # blocked-park exemption suppresses the alert entirely (print-only, no
+    # marker — the epm:failure marker itself carries the user ask, and the
+    # gate-push pass already phone-pushed the blocked transition). Pre-#1137
+    # baseline: 1 alert marker on the 2nd miss.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1092, "sess-1092", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="blocked")
+    monkeypatch.setattr(
+        asw, "_task_events", lambda issue: _blocked_park_events(with_failure_trail=True)
+    )
+    now = 1_000_000.0
+
+    for _ in range(3):
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert markers == []
+    assert stops == [] and spawns == []
+
+
+def test_stalled_blocked_without_failure_trail_still_alerts(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Fail-open positive control (acceptance 3): status=blocked with NO
+    # epm:failure trail (hand-moved / unexplained block) keeps the one-time
+    # alert — exactly ONE marker after 2 misses, then decide()'s own
+    # alerted dedup holds. Same events helper / ts scheme as the suppressed
+    # trail case above.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1094, "sess-1094", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="blocked")
+    monkeypatch.setattr(
+        asw, "_task_events", lambda issue: _blocked_park_events(with_failure_trail=False)
+    )
+    now = 1_000_000.0
+
+    for _ in range(3):
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert markers == [(1094, "session-stalled-alert")]
+    assert stops == [] and spawns == []
+
+
+def test_deliberate_blocked_park_reason_trail_within_window():
+    # The canonical 1s-apart halt-contract pair -> reason fires.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:failure", "ts": "1970-01-02T00:00:00Z"},
+        {"kind": "epm:status-changed", "ts": "1970-01-02T00:00:01Z"},
+    ]
+    assert asw._deliberate_blocked_park_reason(events) is not None
+
+
+def test_deliberate_blocked_park_reason_failure_older_than_window():
+    # Failure > 3600s BEFORE the newest status change -> no trail -> None.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:failure", "ts": "1970-01-01T00:00:00Z"},
+        {"kind": "epm:status-changed", "ts": "1970-01-01T02:00:00Z"},
+    ]
+    assert asw._deliberate_blocked_park_reason(events) is None
+
+
+def test_deliberate_blocked_park_reason_failure_after_slack():
+    # Failure > 300s AFTER the newest status change (order inversion beyond
+    # the slack) -> None.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:status-changed", "ts": "1970-01-01T00:00:00Z"},
+        {"kind": "epm:failure", "ts": "1970-01-01T00:05:01Z"},
+    ]
+    assert asw._deliberate_blocked_park_reason(events) is None
+
+
+def test_deliberate_blocked_park_reason_unparseable_ts_fails_open():
+    # Unparseable ts on both rows -> None (fail-open: the alert still fires).
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:failure", "ts": "not-a-timestamp"},
+        {"kind": "epm:status-changed", "ts": "also-garbage"},
+    ]
+    assert asw._deliberate_blocked_park_reason(events) is None
+
+
+def test_deliberate_blocked_park_reason_empty_events():
+    import autonomous_session_watch as asw
+
+    assert asw._deliberate_blocked_park_reason([]) is None
+
+
+def test_deliberate_blocked_park_reason_newest_status_change_wins():
+    # The failure trails an OLD status change; the NEWEST status change
+    # (a day later, e.g. a manual re-block) has no failure inside its
+    # window -> None (the trail must corroborate the CURRENT block).
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:failure", "ts": "1970-01-01T00:00:00Z"},
+        {"kind": "epm:status-changed", "ts": "1970-01-01T00:00:01Z"},
+        {"kind": "epm:status-changed", "ts": "1970-01-02T00:00:00Z"},
+    ]
+    assert asw._deliberate_blocked_park_reason(events) is None
 
 
 # ─── #759 bug class b.2: STALLED_WINDOW_S raised 45 -> 60 min, env-tunable ────
@@ -13841,6 +14128,12 @@ def test_wedge_api_error_env_kill_switch_disables_production_path(
         asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1074_api_error_tail()
     )
     monkeypatch.setenv("EPM_TICK_WEDGE_MIN_API_ERRORS", "0")
+    # #1127 plan-sanctioned edit (§7.13): the #1074 stale tail now ALSO trips
+    # the new failed-turn-run trigger (3 failed wake-turns). This test pins
+    # "each kill switch disables its OWN trigger class" — each class needs
+    # its own switch thrown to silence this tail.
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TURNS", "0")
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TOTAL", "0")
     now = 1_000_000.0
 
     asw.stalled_session_pass(
@@ -13853,6 +14146,244 @@ def test_wedge_api_error_env_kill_switch_disables_production_path(
     assert stops == [] and spawns == []  # kill switch: no wedge escalation
     state = _read_stalled_state_845(isolated_registry, 1075)
     assert state.get("wedge_hits", 0) == 0  # no wedge hit recorded
+
+
+def _wedge_1127_partial_wake_unit(n_heartbeats=2):
+    # #1127: the #1098 (5bdae5b8) / #1090 (5e464f3d) repeating tail unit —
+    # [dequeue, prompt, prompt, assistant x n, api-error]: the wake posts
+    # mid-turn heartbeats (resetting every ROW-level counter) then dies in an
+    # api-error row (sanitized; no refusal text).
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    prompt = {"type": "user", "message": {"role": "user", "content": "/issue-tick 1098"}}
+    assistant = {
+        "type": "assistant",
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "on it"}]},
+    }
+    api_error = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+    }
+    return [dequeue, prompt, prompt, *([assistant] * n_heartbeats), api_error]
+
+
+def test_wedge_fresh_self_report_failed_turn_tail_escalates(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1127 plan test 9 — THE headline: a FRESH self-report (age 5 min — a
+    # dying-but-heartbeating wake keeps refreshing it) no longer gates the
+    # turn-level probe; 3 partial-wake units (each with mid-turn heartbeats)
+    # escalate to the respawn arm on the first tick (fence stop), spawn on
+    # the second (mirrors test_wedge_api_error_tail_escalates_to_respawn).
+    # Pre-#1127 this exact setup was a no-op twice over: the lazy gate never
+    # probed a fresh session, and the row-level predicate was blind to the
+    # partially-successful wake anyway.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1098, "sess-1098", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    monkeypatch.setattr(
+        asw,
+        "_transcript_tail_rows",
+        lambda pid, **_k: [row for _ in range(3) for row in _wedge_1127_partial_wake_unit()],
+    )
+    now = 1_000_000.0
+    pids = {"sess-1098": 4242}
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert stops == ["sess-1098"]  # first tick: wedge -> respawn -> fence stop
+    assert spawns == []
+    state = _read_stalled_state_845(isolated_registry, 1098)
+    assert state["wedge_hits"] == 1
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert spawns == [(1098, 24.0)]  # verified dead -> spawn
+    assert markers and markers[-1] == (1098, "session-auto-respawn")
+
+
+def _wedge_1127_alternating_storm_tail():
+    # #1127: the c16b10ca structural shape — 7 timestamped failed turns
+    # alternating with ok turns (5 min apart, ~every other wake lost), the
+    # NEWEST completed turn failed. Sanitized structural rows only.
+    from datetime import UTC, datetime
+
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    prompt = {"type": "user", "message": {"role": "user", "content": "/issue-tick 1090"}}
+    tail = []
+    base = 1_780_000_000.0
+    for i in range(13):  # f,o,f,o,...,f -> 7 failed, 6 ok
+        ts = datetime.fromtimestamp(base + i * 300, tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        resp = {
+            "type": "assistant",
+            "timestamp": ts,
+            "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+        }
+        if i % 2 == 0:
+            resp["isApiErrorMessage"] = True
+        tail.extend([dequeue, prompt, resp])
+    return tail
+
+
+def test_wedge_fresh_self_report_rate_tail_escalates(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1127 plan test 10: a fresh self-report with an alternating-storm tail
+    # (>= 6 timestamped failed turns inside the 120-min window, newest
+    # completed turn failed) escalates via the failed-turn-rate trigger.
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1290, "sess-1290", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1127_alternating_storm_tail()
+    )
+    now = 1_000_000.0
+    pids = {"sess-1290": 4242}
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert stops == ["sess-1290"]  # first tick: rate wedge -> fence stop
+    assert spawns == []
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert spawns == [(1290, 24.0)]
+
+
+def test_wedge_fresh_path_kill_switches_restore_lazy_gate(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1127 plan test 11 (the #1021 wiring-test pattern):
+    # EPM_TICK_WEDGE_MIN_FAILED_TURNS=0 + EPM_TICK_WEDGE_MIN_FAILED_TOTAL=0
+    # restore the exact pre-#1127 lazy gate on a fresh self-report — no
+    # stop, no spawn, wedge_hits == 0, AND the transcript is NEVER probed
+    # (proving the production gate calls both env helpers and that 0+0 keeps
+    # the zero-probe hot path).
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1291, "sess-1291", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    probes: list[int] = []
+
+    def _recording_tail(pid, **_k):
+        probes.append(pid)
+        return [row for _ in range(3) for row in _wedge_1127_partial_wake_unit()]
+
+    monkeypatch.setattr(asw, "_transcript_tail_rows", _recording_tail)
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TURNS", "0")
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TOTAL", "0")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1291": 4242},
+    )
+    assert stops == [] and spawns == []
+    assert probes == []  # zero-probe hot path: _transcript_tail_rows never called
+    state = _read_stalled_state_845(isolated_registry, 1291)
+    assert state.get("wedge_hits", 0) == 0
+
+
+def test_wedge_fresh_path_does_not_fire_stale_only_triggers(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1127 plan test 12: the ROW-level triggers stay STALENESS-GATED — on a
+    # fresh self-report neither the #779 swallow tail nor a single wake's
+    # multi-retry api-error rows escalate (their failure modes freeze the
+    # self-report by construction, so the stale gate opens for them there).
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    now = 1_000_000.0
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    prompt = {"type": "user", "message": {"role": "user", "content": "/issue-tick 779"}}
+    api_error = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+    }
+
+    _write_autonomous_entry(isolated_registry, 1292, "sess-1292", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: [dequeue] * 3)
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1292": 4242},
+    )
+    assert stops == [] and spawns == []  # #779 shape: dequeue-run is stale-only
+
+    _write_autonomous_entry(isolated_registry, 1293, "sess-1293", cap=24.0)
+    monkeypatch.setattr(
+        asw,
+        "_transcript_tail_rows",
+        lambda pid, **_k: [dequeue, prompt, api_error, api_error, api_error],
+    )
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1293": 4242},
+    )
+    assert stops == [] and spawns == []  # single-wake retries: api-error-run is stale-only
+
+
+def test_wedge_self_report_age_none_routes_to_fresh_path(monkeypatch):
+    # #1127 round-1 critique duty 4 (§7b): `self_report_age is None` routes
+    # to the FRESH path (turn-level triggers only) instead of the old
+    # no-probe return — a failed-turn tail fires, while the #779 swallow
+    # tail (a stale-only row trigger) does not.
+    import autonomous_session_watch as asw
+
+    entry = {"happy_session_id": "sess-none", "issue": 1294}
+    pids = {"sess-none": 4242}
+
+    monkeypatch.setattr(
+        asw,
+        "_transcript_tail_rows",
+        lambda pid, **_k: [row for _ in range(3) for row in _wedge_1127_partial_wake_unit()],
+    )
+    action, live, hits, note = asw._apply_prompt_wedge_override(
+        issue=1294,
+        entry=entry,
+        action="keep",
+        self_report_age=None,
+        respawn_eligible=True,
+        pids_by_sid=pids,
+        live_consecutive=2,
+        wedge_hits=0,
+    )
+    assert action == "respawn" and live == 0 and hits == 1
+    assert note is not None and "failed-turn-run" in note
+
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: [dequeue] * 3)
+    action, live, hits, note = asw._apply_prompt_wedge_override(
+        issue=1294,
+        entry=entry,
+        action="keep",
+        self_report_age=None,
+        respawn_eligible=True,
+        pids_by_sid=pids,
+        live_consecutive=2,
+        wedge_hits=0,
+    )
+    assert action == "keep" and live == 2 and hits == 0 and note is None
 
 
 def test_wedge_unresolvable_transcript_noop(isolated_registry, monkeypatch, stalled_recorder):

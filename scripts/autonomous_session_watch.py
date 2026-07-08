@@ -96,7 +96,11 @@ GC pass:
    reachable/unreachable daemon flap can repeatedly reset the
    K-corroboration ``live_consecutive`` counter and defer escalation,
    bounded in practice by the #845 (c) page after 2 blocked ticks plus
-   the persistent staleness re-fire.
+   the persistent staleness re-fire.  At most one stalled-alert marker
+   is posted per staleness episode across both alert producers (decide's
+   own alert path and the #759 downgrade lane), and a deliberately-parked
+   ``blocked`` task (epm:failure + status-changed halt-contract trail) is
+   never alerted (#1137).
 5. **Orphan sweep (registration-INDEPENDENT safety net).** Every other
    session pass starts from the registry files (``issue-<N>.json`` /
    ``manual-issue-<N>.json``), so an ACTIVE-status task with NO registration
@@ -1188,6 +1192,16 @@ def _stalled_marker_window_s() -> float:
         return float(STALLED_MARKER_WINDOW_S_DEFAULT)
 
 
+# #1137: window for the halt-contract trail behind a deliberate `blocked`
+# park — an `epm:failure` marker within this many seconds BEFORE (or
+# _BLOCKED_PARK_FAILURE_SLACK_AFTER_S after) the newest `epm:status-changed`.
+# The canonical halt sequence posts them ~1s apart (#1092: 13:21:34Z failure,
+# 13:21:35Z status-changed); 1h absorbs slow orchestrator paths (a
+# poller-posted failure classified minutes before the park).
+_BLOCKED_PARK_FAILURE_WINDOW_S = 3600.0
+_BLOCKED_PARK_FAILURE_SLACK_AFTER_S = 300.0
+
+
 # #845 (b): worktree-activity hold. A file under the issue's worktree edited
 # within this window is direct evidence an implementer/analyzer subagent is
 # mid-edit (incident #812: the killed session had edited a file 57s before the
@@ -1271,6 +1285,98 @@ def _tick_wedge_min_api_errors() -> int:
         return TICK_WEDGE_MIN_API_ERRORS
     if parsed < 0:
         return TICK_WEDGE_MIN_API_ERRORS
+    return parsed
+
+
+# #1127: minimum count of consecutive trailing FAILED wake-TURNS (a completed
+# turn whose LAST response row is an api-error — mid-turn assistant heartbeats
+# do not rescue it; see _segment_wake_turns) before the prompt-wedge trigger
+# escalates. The TURN-granularity analogue of TICK_WEDGE_MIN_API_ERRORS:
+# incidents #1098 (5bdae5b8) and #1090 (5e464f3d) each posted 1-3 successful
+# assistant rows per wake BEFORE dying in an api-error row, so the row-level
+# counters reset every cycle and the lane stayed silent (run=0, api_run<=1 on
+# the real 256 KB tails). 3 = one-off + margin (same rationale as the #1104
+# knob); the #1098 tail held 8 failed turns, #1090 held 5.
+TICK_WEDGE_MIN_FAILED_TURNS = 3
+
+
+def _tick_wedge_min_failed_turns() -> int:
+    """Failed-turn wedge trigger threshold (env
+    ``EPM_TICK_WEDGE_MIN_FAILED_TURNS``, an integer COUNT; default
+    :data:`TICK_WEDGE_MIN_FAILED_TURNS`). Mirrors
+    :func:`_tick_wedge_min_api_errors` exactly (a NEW trigger class): ``0``
+    DISABLES the failed-turn-run trigger — the explicit kill switch (with
+    ``EPM_TICK_WEDGE_MIN_FAILED_TOTAL=0`` it restores the exact pre-#1127
+    lazy gate). Malformed / negative env falls back to the default."""
+    raw = os.environ.get("EPM_TICK_WEDGE_MIN_FAILED_TURNS")
+    if not raw:
+        return TICK_WEDGE_MIN_FAILED_TURNS
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return TICK_WEDGE_MIN_FAILED_TURNS
+    if parsed < 0:
+        return TICK_WEDGE_MIN_FAILED_TURNS
+    return parsed
+
+
+# #1127 option (c): windowed TOTAL (non-consecutive) failed wake-turns for the
+# alternating-storm rate trigger — incident c16b10ca lost ~every other wake for
+# ~5.7h (00:26-06:07Z), a shape NO consecutive counter (row- or turn-level) can
+# ever fire on. The measured c16b10ca 256KB tail held 4-5 windowed failed
+# TURNS — below this threshold BY DESIGN (plan v4 §3.3 accept-run-coverage;
+# threshold deliberately NOT lowered): the lane targets storms DENSER than
+# that incident, while a healthy session needs 6 turn-ENDING failures inside
+# the window (>> any observed healthy rate; 0/20 negative sweep).
+TICK_WEDGE_MIN_FAILED_TOTAL = 6
+
+
+def _tick_wedge_min_failed_total() -> int:
+    """Failed-turn RATE trigger threshold (env
+    ``EPM_TICK_WEDGE_MIN_FAILED_TOTAL``, an integer COUNT; default
+    :data:`TICK_WEDGE_MIN_FAILED_TOTAL`). Mirrors
+    :func:`_tick_wedge_min_api_errors` (a NEW trigger class): ``0`` DISABLES
+    the failed-turn-rate trigger — the kill switch for the alternating-storm
+    lane. Malformed / negative env falls back to the default."""
+    raw = os.environ.get("EPM_TICK_WEDGE_MIN_FAILED_TOTAL")
+    if not raw:
+        return TICK_WEDGE_MIN_FAILED_TOTAL
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return TICK_WEDGE_MIN_FAILED_TOTAL
+    if parsed < 0:
+        return TICK_WEDGE_MIN_FAILED_TOTAL
+    return parsed
+
+
+# #1127: window for the failed-turn RATE trigger, anchored to the newest
+# parseable ROW timestamp in the tail (not wall-clock, so the pure predicate
+# is deterministic + replay-testable). 120 min covers the measured incident
+# tail spans (~1.3-2.5h at 256 KB) so the TAIL, not the clock, is usually
+# binding (which only under-counts — fail toward NO-FIRE); matches the house
+# 2h precedent (STALLED_MARKER_WINDOW_S_DEFAULT).
+TICK_WEDGE_RATE_WINDOW_S = 7200
+
+
+def _tick_wedge_rate_window_s() -> float:
+    """Failed-turn rate-trigger window in seconds. Env
+    ``EPM_TICK_WEDGE_RATE_WINDOW_MIN`` is in MINUTES and is converted to the
+    SECONDS constant returned here (the ``EPM_STALLED_WT_ACTIVITY_MIN``
+    minutes-env -> seconds-constant precedent); default
+    :data:`TICK_WEDGE_RATE_WINDOW_S` (7200 s = 120 min). It is a WINDOW, not
+    a trigger, so malformed / NON-POSITIVE env falls back to the default (the
+    :func:`_stalled_window_s` pattern) — disabling the rate lane is
+    ``EPM_TICK_WEDGE_MIN_FAILED_TOTAL=0``, never a zero window."""
+    raw = os.environ.get("EPM_TICK_WEDGE_RATE_WINDOW_MIN")
+    if not raw:
+        return float(TICK_WEDGE_RATE_WINDOW_S)
+    try:
+        parsed = float(raw) * 60.0
+    except ValueError:
+        return float(TICK_WEDGE_RATE_WINDOW_S)
+    if parsed <= 0:
+        return float(TICK_WEDGE_RATE_WINDOW_S)
     return parsed
 
 
@@ -1748,42 +1854,157 @@ def _classify_wedge_row(row: object) -> str:
     return "other"
 
 
-def decide_prompt_wedge(
+def _row_ts(row: object) -> float | None:
+    """Parse a transcript row's top-level ISO-8601 ``timestamp`` (Claude Code
+    writes ``...Z``-suffixed UTC — verified on the live-captured
+    ``_wedge_dequeue_row`` / ``_wedge_api_error_row`` fixtures) to an epoch
+    float. Returns ``None`` on a missing / non-string / unparseable value —
+    fail toward NO-FIRE: the #1127 rate trigger EXCLUDES ts-less turns from
+    its windowed count rather than guessing."""
+    if not isinstance(row, dict):
+        return None
+    raw = row.get("timestamp")
+    if not isinstance(raw, str) or not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def _segment_wake_turns(rows: list[dict]) -> list[tuple[str, float | None]]:
+    """Segment classified transcript-tail rows into COMPLETED wake-turns
+    (#1127), oldest -> newest. Returns one ``(outcome, end_ts)`` tuple per
+    completed turn, ``outcome in {"ok", "failed"}``.
+
+    Rules (consumes :func:`_classify_wedge_row`'s classes only):
+
+    - A turn starts at a prompt-evidence row (``"dequeue"`` / ``"prompt"``)
+      and collects the response rows (``"assistant"`` / ``"api-error"``)
+      that follow; consecutive prompt-evidence rows (possibly interleaved
+      with ``"other"``) are ONE delivery burst, not separate turns.
+    - A turn is COMPLETED iff it has >= 1 response row; its outcome is the
+      class of its LAST response row: ``assistant`` -> ``"ok"``,
+      ``api-error`` -> ``"failed"``. This is the #1127 Goal's "a turn ENDING
+      in isApiErrorMessage is a failed wake even with mid-turn heartbeats";
+      a mid-turn api-error followed by a successful assistant row in the
+      SAME turn is ``"ok"`` (the healthy retried-429 shape).
+    - A swallowed delivery (prompt evidence, no response rows, then the next
+      delivery) produces NO turn — it neither resets nor increments the turn
+      counters; the row-level ``run`` counter owns the #779 shape.
+    - Leading response rows before any prompt evidence (a mid-turn tail cut)
+      form one implicit turn.
+    - An in-flight FINAL turn (prompt delivered, no response yet) is
+      deliberately NOT counted — it can neither reset nor extend the
+      trailing-failed count (fail toward NO-FIRE on a probe racing a
+      mid-delivery wake).
+    - ``end_ts`` = the parsed top-level ISO ``timestamp`` of the turn's last
+      response row (:func:`_row_ts`; ``None`` if missing/unparseable).
+    """
+    turns: list[tuple[str, float | None]] = []
+    last_resp: str | None = None  # class of latest response row in current turn
+    last_resp_ts: float | None = None
+    for row in rows:
+        cls = _classify_wedge_row(row)
+        if cls in ("dequeue", "prompt"):
+            if last_resp is not None:  # previous turn completed -> flush
+                turns.append(("failed" if last_resp == "api-error" else "ok", last_resp_ts))
+                last_resp, last_resp_ts = None, None
+            # else: same delivery burst, or a swallowed delivery (no turn emitted)
+        elif cls in ("assistant", "api-error"):
+            last_resp, last_resp_ts = cls, _row_ts(row)
+        # "other": skipped
+    if last_resp is not None:  # flush the final completed turn
+        turns.append(("failed" if last_resp == "api-error" else "ok", last_resp_ts))
+    return turns
+
+
+def decide_prompt_wedge_reason(
     trailing_rows: list[dict],
     min_dequeued: int,
     *,
     min_api_errors: int = TICK_WEDGE_MIN_API_ERRORS,
-) -> bool:
-    """Pure prompt-wedge detector over parsed transcript-tail rows (#845 e;
-    incident #779: 5 tick prompts were enqueued AND dequeued with no
-    assistant turn for ~90 min before the slow debounce finally respawned —
-    killing an in-flight implementer).
+    min_failed_turns: int = TICK_WEDGE_MIN_FAILED_TURNS,
+    min_failed_total: int = TICK_WEDGE_MIN_FAILED_TOTAL,
+    rate_window_s: float = TICK_WEDGE_RATE_WINDOW_S,
+) -> str | None:
+    """Pure prompt-wedge detector over parsed transcript-tail rows —
+    returns WHICH trigger fired (``"dequeue-run"`` | ``"api-error-run"`` |
+    ``"failed-turn-run"`` | ``"failed-turn-rate"``, checked in that
+    precedence order: oldest/most-specific evidence first; the order never
+    changes WHETHER the wedge fires) or ``None``.
 
-    True iff EITHER trailing counter fires:
+    Four triggers:
 
-    - the transcript TAIL ends with >= ``min_dequeued`` consecutive
-      wedge-evidence rows (``"dequeue"`` queue-operation records — co-primary
-      — and/or ``"prompt"`` promptless user rows — secondary; both count
-      toward the SAME trailing run, so a mixed tail still fires) with no
-      assistant row after the first of them; OR
-    - (#1104) the tail ends with >= ``min_api_errors`` consecutive
-      ``"api-error"`` turns (assistant rows with ``isApiErrorMessage: true``
-      — usage-policy refusals, 429/529 error turns) with no SUCCESSFUL
-      assistant turn after the first of them (incident #1074: 38 refused
-      wake turns / ~2h unrecovered; ``min_api_errors <= 0`` DISABLES this
-      trigger — the kill switch).
+    1. ``dequeue-run`` (#845 e, verbatim): the tail ends with >=
+       ``min_dequeued`` consecutive wedge-evidence rows (``"dequeue"``
+       queue-operation records — co-primary — and/or ``"prompt"`` promptless
+       user rows — secondary; both count toward the SAME trailing run) with
+       no assistant row after the first of them (incident #779: 5 tick
+       prompts enqueued AND dequeued with no turn for ~90 min).
+       ``min_dequeued <= 0`` DISABLES this counter (#1127 — new semantics,
+       needed by the fresh-self-report gate path in
+       :func:`_apply_prompt_wedge_override`; the production STALE path is
+       unaffected — :func:`_tick_wedge_min_dequeued` never returns < 1).
+    2. ``api-error-run`` (#1104, verbatim): the tail ends with >=
+       ``min_api_errors`` consecutive ``"api-error"`` rows (assistant rows
+       with ``isApiErrorMessage: true`` — usage-policy refusals, 429/529
+       error turns) with no SUCCESSFUL assistant row after the first of them
+       (incident #1074: 38 refused wake turns / ~2h unrecovered).
+       ``min_api_errors <= 0`` DISABLES (the existing kill switch).
+    3. ``failed-turn-run`` (#1127 — the #1098/#1090 fix): >=
+       ``min_failed_turns`` trailing consecutive ``"failed"`` turns from
+       :func:`_segment_wake_turns`; an ``"ok"`` turn resets. The row-level
+       counters are structurally blind to the partially-successful wake
+       (every refused wake posts >= 1 assistant row before dying, resetting
+       both row counters each cycle); turn granularity is not.
+       ``min_failed_turns <= 0`` DISABLES.
+    4. ``failed-turn-rate`` (#1127 option (c) — the c16b10ca alternating
+       storm): total (non-consecutive) ``"failed"`` turns whose ``end_ts``
+       lies within ``rate_window_s`` of the NEWEST parseable row timestamp
+       in the tail >= ``min_failed_total``, AND the newest completed turn is
+       ``"failed"`` (a session that recovered after a storm is not respawned
+       mid-recovery). Turns with ``end_ts=None`` are EXCLUDED from the
+       windowed count; if no row timestamp parses at all the anchor is
+       undefined and this trigger is inert (fail toward NO-FIRE).
+       ``min_failed_total <= 0`` DISABLES.
 
-    ``"other"`` rows are skipped without resetting either counter; a real
-    ``"assistant"`` row resets both (the session took a turn — not wedged).
-    An ``"api-error"`` row RESETS ``run`` (the prompt DID get a response —
-    this is not the #779 swallow shape; without the reset, one refused
-    wake's 2-4 dequeue+prompt rows would trip ``run >= min_dequeued`` after
-    a SINGLE refused turn, over-aggressive for the one-off-refusal regime)
-    but increments ``api_run``. Window assumption: the caller's
-    transcript-tail read must span >= ``min_api_errors`` api-error turns —
-    on #1074 the 64 KB default held EXACTLY 3 such rows (zero margin), so
-    the production probe reads a wider tail; a too-thin window fails toward
-    NO-FIRE (the pre-fix slow path), never a false fire."""
+    Row-counter mechanics (unchanged from #1104): ``"other"`` rows are
+    skipped without resetting either counter; a real ``"assistant"`` row
+    resets both; an ``"api-error"`` row RESETS ``run`` (the prompt DID get a
+    response — not the #779 swallow shape; the single-refusal guard) but
+    increments ``api_run``. Window assumption: the caller's transcript-tail
+    read must span the thresholds' worth of evidence (the production probe
+    reads 256 KB — #1104); a too-thin window fails toward NO-FIRE."""
+    run, api_run = _wedge_trailing_row_runs(trailing_rows)
+    if min_dequeued > 0 and run >= min_dequeued:
+        return "dequeue-run"
+    if min_api_errors > 0 and api_run >= min_api_errors:
+        return "api-error-run"
+    if min_failed_turns <= 0 and min_failed_total <= 0:
+        return None
+    turns = _segment_wake_turns(trailing_rows)
+    if min_failed_turns > 0:
+        trailing_failed = 0
+        for outcome, _ts in reversed(turns):
+            if outcome != "failed":
+                break
+            trailing_failed += 1
+        if trailing_failed >= min_failed_turns:
+            return "failed-turn-run"
+    if min_failed_total > 0:
+        windowed = _wedge_rate_windowed_failed(trailing_rows, turns, rate_window_s)
+        if windowed is not None and windowed >= min_failed_total:
+            return "failed-turn-rate"
+    return None
+
+
+def _wedge_trailing_row_runs(trailing_rows: list[dict]) -> tuple[int, int]:
+    """The #845/#1104 ROW-level trailing counters ``(run, api_run)`` —
+    factored out of :func:`decide_prompt_wedge_reason` (ruff C901 cap).
+    ``run`` = trailing consecutive dequeue/prompt rows (reset by ANY
+    response row); ``api_run`` = trailing consecutive api-error rows (reset
+    only by a SUCCESSFUL assistant row); ``"other"`` rows never reset."""
     run = 0
     api_run = 0
     for row in trailing_rows:
@@ -1796,7 +2017,64 @@ def decide_prompt_wedge(
             api_run += 1
         elif cls in ("dequeue", "prompt"):
             run += 1
-    return run >= min_dequeued or (min_api_errors > 0 and api_run >= min_api_errors)
+    return run, api_run
+
+
+def _wedge_rate_windowed_failed(
+    trailing_rows: list[dict],
+    turns: list[tuple[str, float | None]],
+    rate_window_s: float,
+) -> int | None:
+    """Windowed failed-turn count for the #1127 ``failed-turn-rate`` trigger,
+    or ``None`` when the trigger is inert for this tail (no completed turns;
+    the newest completed turn is not ``"failed"`` — a recovered session is
+    not respawned mid-recovery; or no row timestamp parses at all, leaving
+    the window anchor undefined — fail toward NO-FIRE). The anchor is the
+    NEWEST parseable row timestamp in the tail (deterministic, replay-
+    testable — never wall-clock); ts-less turns are excluded from the count."""
+    if not turns or turns[-1][0] != "failed":
+        return None
+    anchor: float | None = None
+    for row in reversed(trailing_rows):
+        anchor = _row_ts(row)
+        if anchor is not None:
+            break
+    if anchor is None:
+        return None
+    return sum(
+        1
+        for outcome, ts in turns
+        if outcome == "failed" and ts is not None and anchor - ts <= rate_window_s
+    )
+
+
+def decide_prompt_wedge(
+    trailing_rows: list[dict],
+    min_dequeued: int,
+    *,
+    min_api_errors: int = TICK_WEDGE_MIN_API_ERRORS,
+    min_failed_turns: int = TICK_WEDGE_MIN_FAILED_TURNS,
+    min_failed_total: int = TICK_WEDGE_MIN_FAILED_TOTAL,
+    rate_window_s: float = TICK_WEDGE_RATE_WINDOW_S,
+) -> bool:
+    """Thin bool wrapper over :func:`decide_prompt_wedge_reason` (#845 e /
+    #1104 / #1127): True iff ANY of the four wedge triggers fires. Existing
+    positional/keyword call shapes are preserved; the new keyword defaults
+    are the module constants, so ``decide_prompt_wedge(tail, 3)`` gains the
+    #1127 turn-level triggers too (pure-function callers want the fixed
+    predicate). See :func:`decide_prompt_wedge_reason` for the trigger
+    definitions, kill switches, and incident history."""
+    return (
+        decide_prompt_wedge_reason(
+            trailing_rows,
+            min_dequeued,
+            min_api_errors=min_api_errors,
+            min_failed_turns=min_failed_turns,
+            min_failed_total=min_failed_total,
+            rate_window_s=rate_window_s,
+        )
+        is not None
+    )
 
 
 def decide_stale_registration(
@@ -5577,6 +5855,17 @@ def _gc_orphan_pod_safety_state(
     return cleared
 
 
+def _forward_marker_child_stderr(res, context: str) -> None:
+    """Forward a rc==0 task.py child's non-empty stderr (#1130): the child
+    exits 0 while printing deferred-commit / LANDING CHECK warnings, which
+    capture_output would otherwise swallow into the cron log's void."""
+    err = (getattr(res, "stderr", None) or "").strip()
+    if not err:
+        return
+    for line in err[:2000].splitlines():
+        print(f"  [task.py stderr] {context}: {line}", file=sys.stderr)
+
+
 def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -> None:
     """Record a pod-safety event on task ``issue``'s events.jsonl.
 
@@ -5591,7 +5880,7 @@ def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -
         print(f"  [dry-run] would post epm:progress ({label}) on #{issue}: {note}")
         return
     try:
-        subprocess.run(
+        res = subprocess.run(
             [
                 "uv",
                 "run",
@@ -5611,6 +5900,8 @@ def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -
             timeout=60,
             check=True,
         )
+        # check=True means rc!=0 raised above — the helper only sees rc==0 results.
+        _forward_marker_child_stderr(res, f"epm:progress on #{issue}")
     except (subprocess.SubprocessError, OSError) as e:
         # The action (stop / alert) already happened; failing to annotate it is
         # not worth aborting the run. Surface it loudly so the gap is visible.
@@ -5639,7 +5930,7 @@ def _post_failure_marker(issue: int, note: str, dry_run: bool) -> bool:
         print(f"  [dry-run] would post epm:failure on #{issue}: {note}")
         return True
     try:
-        subprocess.run(
+        res = subprocess.run(
             [
                 "uv",
                 "run",
@@ -5659,6 +5950,7 @@ def _post_failure_marker(issue: int, note: str, dry_run: bool) -> bool:
             timeout=60,
             check=True,
         )
+        _forward_marker_child_stderr(res, f"epm:failure on #{issue}")
     except (subprocess.SubprocessError, OSError) as e:
         print(f"  WARNING: posting epm:failure marker on #{issue} failed: {e}", file=sys.stderr)
         return False
@@ -7998,6 +8290,44 @@ def _spend_approval_skip_already_noted(events: list[dict]) -> bool:
     return False
 
 
+def _deliberate_blocked_park_reason(events: list[dict]) -> str | None:
+    """Reason string when the newest ``epm:status-changed`` is corroborated by
+    the halt-contract trail — an ``epm:failure`` marker within
+    [:data:`_BLOCKED_PARK_FAILURE_WINDOW_S` before,
+    :data:`_BLOCKED_PARK_FAILURE_SLACK_AFTER_S` after] it — i.e. the block is
+    a deliberate park (post epm:failure, set status blocked, exit: the
+    CLAUDE.md halt contract), not an unexplained freeze (#1137; #1092's
+    15:33Z alert fired 2h12m after a 1s-apart failure+blocked pair). Pure
+    over the already-loaded ``events``; the CALLER gates on ``task_status ==
+    "blocked"`` (only there is the newest status-changed the transition into
+    blocked). Fail direction: unparseable ts / no trail -> ``None`` (the
+    one-time alert still fires)."""
+    sc_ts: float | None = None
+    for ev in events:
+        if ev.get("kind") == "epm:status-changed":
+            ts = _parse_event_ts(ev.get("ts"))
+            if ts is not None and (sc_ts is None or ts > sc_ts):
+                sc_ts = ts
+    if sc_ts is None:
+        return None
+    lo = sc_ts - _BLOCKED_PARK_FAILURE_WINDOW_S
+    hi = sc_ts + _BLOCKED_PARK_FAILURE_SLACK_AFTER_S
+    for ev in events:
+        if ev.get("kind") != "epm:failure":
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is None:
+            continue
+        if lo <= ts <= hi:
+            return (
+                "deliberately parked at status=blocked (halt-contract trail: "
+                "epm:failure within the park window of the newest "
+                "epm:status-changed); the gate-push pass already notified the "
+                "blocked transition"
+            )
+    return None
+
+
 # Anchored, case-SENSITIVE prefix of a prose user-pause hold note (incident
 # #816). All four observed hold variants (the canonical SKILL.md durable-park
 # note, the #816 incident note, the older #919 sketch, the #920 chat note)
@@ -8171,7 +8501,7 @@ def _post_followup_run_marker(issue: int, events: list[dict], dry_run: bool) -> 
         print(f"  [dry-run] would post epm:same-issue-followup-run on #{issue}: {label}")
         return True
     try:
-        subprocess.run(
+        res = subprocess.run(
             [
                 "uv",
                 "run",
@@ -8191,6 +8521,7 @@ def _post_followup_run_marker(issue: int, events: list[dict], dry_run: bool) -> 
             timeout=60,
             check=True,
         )
+        _forward_marker_child_stderr(res, f"epm:same-issue-followup-run on #{issue}")
     except (subprocess.SubprocessError, OSError) as exc:
         print(
             f"  issue #{issue}: epm:same-issue-followup-run post FAILED ({exc}); "
@@ -9058,6 +9389,25 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
         # stays stalled past that gets re-tried in the next episode.
         new_refresh_attempted = True
 
+    # #1137 one alert marker per staleness episode TOTAL, across BOTH alert
+    # producers. decide_session_stalled's alerted=True dedup covers only its
+    # own keep branch; the #759 downgrade lane rewrites respawn->alert AFTER
+    # decide() and reached this handler every eligible tick — on #1092
+    # (2026-07-07) the escalate/wt-hold-defer/downgrade 2-tick cycle posted a
+    # fresh marker every 20 min on a healthy session (20:43Z/21:03Z/21:23Z).
+    # An already-alerted episode keeps the stderr line, the downgrade lane's
+    # stalled-live sidecar row, and the state persist — only the marker post
+    # is suppressed. Cleared on self-report advancement like every other
+    # per-episode flag, so a NEW episode re-alerts.
+    if ctx.alerted:
+        print(
+            f"  issue #{ctx.issue}: repeat stalled-alert marker SUPPRESSED "
+            f"(episode already alerted; cause this tick: {reason})",
+            file=sys.stderr,
+        )
+        _persist_stalled_ctx(ctx, sid, 0, alerted=True, refresh_attempted=new_refresh_attempted)
+        return
+
     if ctx.manual:
         # Manual entries are never liveness-checked by the respawn pass, so
         # the session may be fully dead (the #505 class), not just
@@ -9106,9 +9456,9 @@ def _apply_stalled_followups_exemption(
 ) -> tuple[str, int, bool]:
     """Check the alive-but-stalled exemptions for the stalled-detector pass
     (the prose USER-PAUSE hold, the over-cap spend-approval park, the
-    round-complete re-park, and the
-    followups_running-parent-waiting-on-open-child suppression); rewrite
-    ``(action, new_missed, followups_child_alerted)`` accordingly.
+    deliberate-blocked-park suppression (#1137), the round-complete re-park,
+    and the followups_running-parent-waiting-on-open-child suppression);
+    rewrite ``(action, new_missed, followups_child_alerted)`` accordingly.
 
     No-op unless ``action != "keep" or new_missed > 0`` (so the healthy-
     session hot path never pays the ``task.py list-children`` subprocess).
@@ -9170,6 +9520,23 @@ def _apply_stalled_followups_exemption(
                 label="spend-approval-skip",
             )
         return "keep", 0, followups_child_alerted
+    # Deliberate blocked park (#1137): the halt contract posts epm:failure
+    # then sets status blocked — a stalled SESSION on such a task is the
+    # EXPECTED post-park shape (the session parked and went idle by design),
+    # and the gate-push pass already phone-pushed the blocked transition.
+    # Suppress the alert (print-only, no marker: the epm:failure marker
+    # itself carries the user ask). A blocked task with NO failure trail
+    # (hand-moved / unexplained) keeps the one-time alert. #1092 15:33Z:
+    # alert fired 2h12m after a 1s-apart failure+blocked park.
+    if status == "blocked":
+        blocked_reason = _deliberate_blocked_park_reason(events)
+        if blocked_reason is not None:
+            print(
+                f"  issue #{issue}: ALIVE-BUT-STALLED exemption — {blocked_reason}; "
+                f"treating session as parked this tick (would have been "
+                f"action={action})."
+            )
+            return "keep", 0, followups_child_alerted
     # Round-complete re-park (incident #533 freeze, 2026-06-11→12): a
     # COMPLETED same-issue follow-up round stranded at followups_running
     # (session died after the final gate, before the designed re-park) is
@@ -9294,6 +9661,15 @@ def _apply_stalled_live_corroboration(
         return "alert", live_consecutive, note
     # Kth consecutive live stall — escalate to the canonical respawn arm and
     # reset the counter (a fresh --auto session begins a new episode).
+    # #1137 criterion-7 x wt-hold interplay (BY DESIGN, do not "fix"): when
+    # the escalated respawn is subsequently DEFERRED by the #845 (b) worktree
+    # hold / spawn grace, the counter reset below has already been persisted,
+    # so the NEXT tick is a fresh "1/K" downgrade — deliberate: preserving
+    # the count across a deferral would make the first post-hold tick respawn
+    # immediately, a respawn-timing change. The repeat-ALERT marker noise the
+    # resulting escalate/defer/downgrade cycle produced (#1092, 2026-07-07)
+    # is fixed at the marker-post site (_handle_stalled_alert's episode-total
+    # dedup), never here.
     print(
         f"  issue #{issue}: LIVE-SESSION ESCALATION — Happy id is in live_ids "
         f"but it has stalled across {live_consecutive} consecutive episodes "
@@ -9315,9 +9691,10 @@ def _apply_prompt_wedge_override(
     live_consecutive: int,
     wedge_hits: int,
 ) -> tuple[str, int, int, str | None]:
-    """Prompt-wedge fast lane (#845 e): a LAZY transcript-tail probe that
-    escalates a debounced ``keep``/``alert`` straight to the respawn arm on
-    DIRECT evidence the session is swallowing prompts (incident #779: 5
+    """Prompt-wedge fast lane (#845 e; #1104 api-error rows; #1127 turn-level
+    failed wakes): a transcript-tail probe that escalates a debounced
+    ``keep``/``alert`` straight to the respawn arm on DIRECT evidence the
+    session is swallowing prompts or dying on its wakes (incident #779: 5
     tick prompts enqueued+dequeued with no turn for ~90 min while the slow
     debounce ground through its misses; the eventual respawn then killed an
     in-flight implementer — the (b) hold now covers that half).
@@ -9334,19 +9711,39 @@ def _apply_prompt_wedge_override(
     respawn RESETS ``live_consecutive`` (consistent with the
     escalation-fired => reset semantics of the K corroboration).
 
-    Probed ONLY when signal 1 is already stale (the lazy gate: the healthy
-    hot path never pays the transcript read) and the slow path would
-    otherwise debounce (``action in ("keep", "alert")``). Everything
-    unresolvable (no pid map, sid not live, transcript miss) fails toward
-    NO-WEDGE (the pre-#845 behavior). #1104: the wedge additionally fires
-    on the orchestrator-refusal-wedge subclass — >= ``min_api_errors``
-    consecutive API-ERROR turns (``isApiErrorMessage: true`` assistant
-    rows: usage-policy refusals, 429/529) with no successful turn, the
-    #1074 shape the original lane was structurally blind to (a refusal row
-    classified ``"assistant"`` and RESET the run)."""
+    Two-path gate (#1127 — replacing the #845/#1104 lazy "probe only once
+    the self-report is >= 1h stale" gate, which live wedges kept defeating):
+    the TURN-level triggers (``failed-turn-run`` / ``failed-turn-rate``) are
+    probed EVERY tick — a partially-executing wake can keep REFRESHING the
+    self-report (a wake that escalates into the full ``/issue`` skill
+    re-writes it at Step 0 before dying), so a dying-but-heartbeating
+    session never goes stale and the old gate never opened (incidents #1098
+    5bdae5b8 / #1090 5e464f3d, both 40 min-3.4 h past the #1104 merge) —
+    while the ROW-level triggers (``dequeue-run`` #779 / ``api-error-run``
+    #1074) stay STALENESS-GATED: their failure modes freeze the self-report
+    by construction (no turn executes, nothing reaches the title helper), so
+    the stale gate opens for them, AND keeping them off the fresh path
+    preserves the single-refusal guard (3 same-turn retry api-error rows
+    must not respawn a healthy session). ``self_report_age is None`` routes
+    to the FRESH path (turn-level triggers only) — ``respawn_eligible``
+    already excludes manual sessions, so an autonomous session with an
+    unreadable self-report gets turn-level coverage instead of a blind spot.
+    With BOTH turn-level knobs at 0 (``EPM_TICK_WEDGE_MIN_FAILED_TURNS=0`` +
+    ``EPM_TICK_WEDGE_MIN_FAILED_TOTAL=0``) the fresh path probes NOTHING —
+    the exact pre-#1127 lazy gate (the full-rollback path). Everything
+    unresolvable (no pid map, sid not live, transcript miss) still fails
+    toward NO-WEDGE. #1104: the api-error-run subclass — >= ``min_api_errors``
+    consecutive API-ERROR turns (``isApiErrorMessage: true`` assistant rows:
+    usage-policy refusals, 429/529) with no successful turn, the #1074 shape
+    the original lane was structurally blind to."""
     if action not in ("keep", "alert") or not respawn_eligible or pids_by_sid is None:
         return action, live_consecutive, wedge_hits, None
-    if self_report_age is None or self_report_age < STALLED_WINDOW_S:
+    stale = self_report_age is not None and self_report_age >= STALLED_WINDOW_S
+    min_turns = _tick_wedge_min_failed_turns()
+    min_total = _tick_wedge_min_failed_total()
+    if not stale and min_turns <= 0 and min_total <= 0:
+        # Fresh self-report + both turn-level lanes disabled == the
+        # pre-#1127 lazy gate: zero transcript probes on the hot path.
         return action, live_consecutive, wedge_hits, None
     sid = entry.get("happy_session_id")
     pid = pids_by_sid.get(sid) if isinstance(sid, str) else None
@@ -9355,24 +9752,32 @@ def _apply_prompt_wedge_override(
     # 256 KB tail (vs the 64 KB default): the 64 KB window held EXACTLY 3
     # api-error rows on the #1074 incident transcript — zero margin (#1104;
     # plan §10 allowed deviation; a too-thin window fails toward NO-FIRE).
+    # #1127 re-verified the width: it spans ~1.3-2.5h and >= 4 failed wakes
+    # on all three incident transcripts.
     rows = _transcript_tail_rows(pid, max_bytes=262144)
     if rows is None:
         return action, live_consecutive, wedge_hits, None
-    min_k = _tick_wedge_min_dequeued()
-    min_api = _tick_wedge_min_api_errors()
-    if not decide_prompt_wedge(rows, min_k, min_api_errors=min_api):
+    reason = decide_prompt_wedge_reason(
+        rows,
+        _tick_wedge_min_dequeued() if stale else 0,  # #779 swallow trigger: STALE only
+        min_api_errors=_tick_wedge_min_api_errors() if stale else 0,  # row-level: STALE only
+        min_failed_turns=min_turns,
+        min_failed_total=min_total,
+        rate_window_s=_tick_wedge_rate_window_s(),
+    )
+    if reason is None:
         return action, live_consecutive, wedge_hits, None
     note = (
-        f">= {min_k} consecutive dequeued/promptless prompt rows OR "
-        f">= {min_api} consecutive API-error turns in the transcript tail "
-        f"with no successful assistant turn"
+        f"prompt-wedge trigger [{reason}] in the transcript tail "
+        f"(self-report {'stale' if stale else 'fresh'}; row-level triggers "
+        f"{'armed' if stale else 'staleness-gated off'}; turn-level thresholds "
+        f"min_failed_turns={min_turns}, min_failed_total={min_total})"
     )
     print(
-        f"  issue #{issue}: PROMPT-WEDGE — {note} while the self-report is "
-        f"stale; escalating straight to the respawn arm (bypasses the miss "
-        f"debounce, the K-downgrade and the marker window; still subject to "
-        f"the park exemptions, the spawn-grace skip, the worktree hold and "
-        f"the stop-verify fence)."
+        f"  issue #{issue}: PROMPT-WEDGE — {note}; escalating straight to the "
+        f"respawn arm (bypasses the miss debounce, the K-downgrade and the "
+        f"marker window; still subject to the park exemptions, the "
+        f"spawn-grace skip, the worktree hold and the stop-verify fence)."
     )
     return "respawn", 0, wedge_hits + 1, note
 
@@ -9457,7 +9862,8 @@ def _apply_stalled_park_exemptions(
        parent parked at step 10 awaiting a user-gated child cannot be
        unblocked by respawning the parent — see
        :func:`_apply_stalled_followups_exemption` (which also carries the
-       spend-approval park and the round-complete re-park).
+       spend-approval park, the deliberate-blocked-park suppression
+       (#1137), and the round-complete re-park).
     """
     exempted = False
     if action != "keep" or new_missed > 0:
@@ -17332,7 +17738,7 @@ def _post_campaign_marker(issue: int, kind: str, note: str, dry_run: bool) -> No
         print(f"  [dry-run] would post {kind} on #{issue}: {note}")
         return
     try:
-        subprocess.run(
+        res = subprocess.run(
             [
                 "uv",
                 "run",
@@ -17352,6 +17758,7 @@ def _post_campaign_marker(issue: int, kind: str, note: str, dry_run: bool) -> No
             timeout=60,
             check=True,
         )
+        _forward_marker_child_stderr(res, f"{kind} on #{issue}")
     except (subprocess.SubprocessError, OSError) as e:
         print(f"  WARNING: posting {kind} on #{issue} failed: {e}", file=sys.stderr)
 

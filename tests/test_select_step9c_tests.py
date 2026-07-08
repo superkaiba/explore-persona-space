@@ -530,3 +530,76 @@ def test_stdout_command_carries_sized_timeout(tmp_path: Path, monkeypatch, capsy
     line = captured.out.strip().splitlines()[-1]
     assert line.startswith(f"timeout --kill-after=60s {t}s uv run pytest ")
     assert f"recommended-timeout-s={t}" in captured.err
+
+
+# --- Cases 24-29 (#1147): map_scan_tests() + the --map-files CLI mapping mode -
+def test_map_scan_tests_thread_caps_glob(tmp_path: Path):
+    """A scripts/issue*_*.py path maps to the thread-caps scan-test pair."""
+    repo = _make_tree(tmp_path, [])
+    pairs = sel.map_scan_tests(["scripts/issue123_foo.py"], repo)
+    assert pairs == [("tests/test_shared_vm_thread_caps.py", "scripts/issue123_foo.py")]
+
+
+def test_map_scan_tests_dispatcher_glob(tmp_path: Path):
+    """A scripts/dispatch_*.py path maps to the subprocess-env scan-test pair."""
+    repo = _make_tree(tmp_path, [])
+    pairs = sel.map_scan_tests(["scripts/dispatch_x.py"], repo)
+    assert pairs == [("tests/test_subprocess_env_explicit.py", "scripts/dispatch_x.py")]
+
+
+def test_map_scan_tests_non_matching_empty(tmp_path: Path):
+    """Paths outside every GLOB_SCAN_TESTS glob map to no pairs at all."""
+    repo = _make_tree(tmp_path, [])
+    files = ["tasks/running/1/body.md", ".claude/skills/issue/SKILL.md", "docs/foo.md"]
+    assert sel.map_scan_tests(files, repo) == []
+
+
+def test_map_scan_tests_missing_test_dropped(tmp_path: Path):
+    """A glob hit whose scan test is absent from the work root is dropped."""
+    bare = tmp_path / "bare"  # no tests/ tree at all
+    bare.mkdir()
+    assert sel.map_scan_tests(["scripts/issue123_foo.py"], bare) == []
+
+
+def test_cli_map_files_tab_output_exit0(tmp_path: Path, capsys):
+    """--map-files prints sorted `test<TAB>path` lines to stdout, rc 0; a
+    non-matching list yields EMPTY stdout, still rc 0 (the gate's skip signal)."""
+    repo = _make_tree(tmp_path, [])
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/issue123_foo.py\nscripts/dispatch_x.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert out.splitlines() == [
+        "tests/test_shared_vm_thread_caps.py\tscripts/issue123_foo.py",
+        "tests/test_subprocess_env_explicit.py\tscripts/dispatch_x.py",
+    ]
+    # Non-matching payload: empty stdout, rc 0 — NOT an error.
+    listing.write_text("docs/foo.md\ntasks/running/1/body.md\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    assert capsys.readouterr().out == ""
+
+
+def test_cli_map_files_unreadable_exit1(tmp_path: Path, capsys):
+    """An unreadable --map-files input is exit 1 + one stderr line (fail CLOSED)."""
+    repo = _make_tree(tmp_path, [])
+    rc = sel.main(["--map-files", str(tmp_path / "nope.txt"), "--repo-root", str(repo)])
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "cannot read --map-files input" in err
+
+
+def test_cli_map_files_missing_test_warns(tmp_path: Path, capsys):
+    """A glob hit whose scan test is absent from the work root drops the pair
+    WITH a stderr WARN naming it (never a silent shrink)."""
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/issue123_foo.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(bare)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "WARN — scan test tests/test_shared_vm_thread_caps.py" in captured.err
+    assert "pair dropped" in captured.err

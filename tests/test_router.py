@@ -251,6 +251,21 @@ def _gcp_rung_key(spec: RunSpec) -> str:
     return f"{machine.gpu_kind}/{resolve_provisioning_model(spec)}"
 
 
+def _gcp_rung_key_wide(spec: RunSpec) -> str:
+    """Width-qualified rung key (#1121): ``<gpu_kind>x<gpu_count>/<provisioning>``.
+
+    The #1121 wide rungs share the legacy key's ``gpu_kind`` (``A100-80``)
+    with the base rungs, so per-WIDTH miss/admit scripting needs the resolved
+    machine's ``gpu_count`` in the key (``A100-80x8/FLEX_START``). The doubles
+    consult THIS key first and FALL BACK to the legacy width-blind key, so
+    every pre-#1121 test stays byte-unmodified.
+    """
+    from explore_persona_space.backends.gcp import machine_for_intent, resolve_provisioning_model
+
+    machine = machine_for_intent(spec)
+    return f"{machine.gpu_kind}x{machine.gpu_count}/{resolve_provisioning_model(spec)}"
+
+
 class _GcpBackendDouble(_BaseBackend):
     """GCP backend double.
 
@@ -298,6 +313,11 @@ class _GcpBackendDouble(_BaseBackend):
     def preflight_quota_headroom(self, spec: RunSpec) -> QuotaHeadroom | None:
         self.quota_probes.append(spec)
         if self._quota_headroom_by_rung is not None:
+            # #1121: width-qualified key first, legacy width-blind key second
+            # (existing tests key only the legacy form and stay unmodified).
+            wide_key = _gcp_rung_key_wide(spec)
+            if wide_key in self._quota_headroom_by_rung:
+                return self._quota_headroom_by_rung[wide_key]
             key = _gcp_rung_key(spec)
             if key in self._quota_headroom_by_rung:
                 return self._quota_headroom_by_rung[key]
@@ -317,6 +337,10 @@ class _GcpBackendDouble(_BaseBackend):
 
     def launch(self, spec: RunSpec) -> RunHandle:
         if self._launch_raises_by_rung is not None:
+            # #1121: width-qualified key first, legacy width-blind key second.
+            wide_key = _gcp_rung_key_wide(spec)
+            if wide_key in self._launch_raises_by_rung:
+                raise self._launch_raises_by_rung[wide_key]
             key = _gcp_rung_key(spec)
             if key in self._launch_raises_by_rung:
                 raise self._launch_raises_by_rung[key]
@@ -3910,11 +3934,545 @@ def test_flexstart_rung_threads_flex_provisioning():
     assert spec.extra["machine_kind_tag"] == "A100-80"
 
 
-def test_max_gcp_attempts_per_day_is_eight():
-    """#680 MF1: the new short-job ladder needs cap >= 5 rungs; bumped to 8 for
-    a same-day-retry margin (FULL variant). This pin makes a silent revert to 5
-    (which would still pass the isinstance/>0 test) a hard FAIL."""
-    assert MAX_GCP_ATTEMPTS_PER_DAY == 8
+def test_max_gcp_attempts_per_day_is_sixteen():
+    """#1121 (replaces the #680 ``..._is_eight`` pin): the width-aware
+    short-job walk is up to 14 rungs (3 wide widths x {spot, flex, ondemand}
+    + the 5-rung base tail); 16 = 14 + margin, the same sizing logic as
+    #680's 5+margin -> 8. Still an attempt COUNT, never a dollar cap
+    (``tests/test_no_dollar_budget_caps.py``). This pin makes a silent revert
+    a hard FAIL; a deliberate change updates the pin + its rationale."""
+    assert MAX_GCP_ATTEMPTS_PER_DAY == 16
+
+
+# ---------------------------------------------------------------------------
+# #1121: width-aware wide-rung prefix (a2-ultragpu-{8,4,2}g before the base
+# ladder for a --gpus-declaring dispatch; width-1 dispatches byte-identical)
+# ---------------------------------------------------------------------------
+
+
+def _width_spec(
+    issue: int = 137,
+    intent: str = "capture-7b",
+    gpus: int | None = 8,
+    **kwargs: Any,
+) -> RunSpec:
+    """A width-declaring auto-routing spec (#1121 tests)."""
+    return RunSpec(issue=issue, intent=intent, backend="auto", gpus=gpus, **kwargs)
+
+
+def _gcp_rung_labels(result) -> list[str]:
+    """EXACT ordered rung-label list from the GCP attempts trail.
+
+    Parses the token after ``rung `` in each GCP attempt's detail and strips
+    a trailing colon. Deliberately NOT the file's substring ``_idx`` idiom:
+    base-width labels are proper PREFIXES of wide labels
+    (``flexstart_a100_80`` is a substring of ``flexstart_a100_80x8``), so a
+    substring index scan can pass VACUOUSLY with the base tail missing —
+    exact full-list equality is the only non-vacuous order assert here.
+    """
+    labels: list[str] = []
+    for a in result.attempts:
+        if a.kind != "gcp":
+            continue
+        m = re.search(r"\brung (\S+)", a.detail or "")
+        assert m is not None, f"unparseable gcp attempt detail: {a.detail!r}"
+        labels.append(m.group(1).rstrip(":"))
+    return labels
+
+
+_W8_LONG_ORDER = [
+    "flexstart_a100_80x8",
+    "ondemand_a100_80x8",
+    "flexstart_a100_80x4",
+    "ondemand_a100_80x4",
+    "flexstart_a100_80x2",
+    "ondemand_a100_80x2",
+    "flexstart_a100_80",
+    "ondemand_a100_80",
+    "ondemand_a100_40",
+]
+
+_W8_SHORT_ORDER = [
+    "spot_a100_80x8",
+    "flexstart_a100_80x8",
+    "ondemand_a100_80x8",
+    "spot_a100_80x4",
+    "flexstart_a100_80x4",
+    "ondemand_a100_80x4",
+    "spot_a100_80x2",
+    "flexstart_a100_80x2",
+    "ondemand_a100_80x2",
+    "spot_a100_80",
+    "spot_a100_40",
+    "flexstart_a100_80",
+    "ondemand_a100_80",
+    "ondemand_a100_40",
+]
+
+
+def test_width8_long_job_walks_wide_rungs_width_major(lease_store, marker_poster, captured_markers):
+    """#1121 AC1: a width-8 LONG/unknown-length capture-7b with EVERY rung
+    capacity-missing walks EXACTLY the width-major long-job order (all
+    provisioning models at width 8 before width 4, then 2, then the
+    byte-identical base tail), and RunPod is last."""
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    result = route(
+        _width_spec(),  # no time budget -> LONG branch
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert _gcp_rung_labels(result) == _W8_LONG_ORDER
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
+    assert runpod_idxs and runpod_idxs[-1] == len(outcomes) - 1
+
+
+def test_width8_short_job_full_rung_order(lease_store, marker_poster, captured_markers):
+    """#1121: a spot_tolerant width-8 capture-7b with EVERY rung
+    capacity-missing walks EXACTLY the 14-rung width-major SHORT order
+    (spot -> flex -> ondemand within each width, then the base short tail)."""
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    result = route(
+        _width_spec(extra={"spot_tolerant": True}),
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    labels = _gcp_rung_labels(result)
+    assert labels == _W8_SHORT_ORDER
+    assert len(labels) == 14
+
+
+def test_width8_first_wide_rung_launches_a2_ultragpu_8g(
+    lease_store, marker_poster, captured_markers
+):
+    """#1121 AC1 (launch shape) + the §4c RouteResult.extra lift: the first
+    wide rung admits -> the launched spec carries the a2-ultragpu-8g machine
+    override, the handle records requested/realized width, and BOTH ride
+    ``RouteResult.extra`` (the ``epm:backend-selected`` marker surface the
+    workload's re-shard contract reads)."""
+    gcp = _GcpBackendDouble()
+    result = route(
+        _width_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.extra["gcp_ladder_rung"] == "flexstart_a100_80x8"
+    launched = gcp.launches[0]
+    assert launched.extra["machine_spec_override"]["machine_type"] == "a2-ultragpu-8g"
+    assert result.handle.extra["requested_gpus"] == 8
+    assert result.handle.extra["realized_gpu_count"] == 8
+    assert result.extra["requested_gpus"] == 8
+    assert result.extra["realized_gpu_count"] == 8
+
+
+def test_width_degradation_on_capacity_miss_lands_4g(lease_store, marker_poster, captured_markers):
+    """#1121 AC1 (degradation): both width-8 rungs capacity-miss -> the walk
+    degrades to the first width-4 rung; realized width 4, requested width 8."""
+    gcp = _GcpBackendDouble(
+        launch_raises_by_rung={
+            "A100-80x8/FLEX_START": GcpProvisioningError("flex8 OUT", evidence={}),
+            "A100-80x8/STANDARD": GcpProvisioningError("ondemand8 OUT", evidence={}),
+        }
+    )
+    result = route(
+        _width_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.extra["gcp_ladder_rung"] == "flexstart_a100_80x4"
+    assert gcp.launches[0].extra["machine_spec_override"]["machine_type"] == "a2-ultragpu-4g"
+    assert result.extra["realized_gpu_count"] == 4
+    assert result.extra["requested_gpus"] == 8
+
+
+@pytest.mark.parametrize("gpus", [None, 1])
+@pytest.mark.parametrize("length", ["short", "long"])
+def test_width1_ladder_byte_identical_explicit_gpus_none_and_matching(length, gpus):
+    """#1121 AC2: for ``gpus=None`` AND ``gpus == base.gpu_count`` the ladder
+    output (labels + machine overrides + provisioning models) equals the
+    PRE-CHANGE list. PROVENANCE: the frozen expected lists were generated
+    from the PRE-#1121 ``_gcp_ladder_specs`` at merge-base commit
+    ``88d6feb9d7a5c08599e66b0dcf501d7f53e2f818`` (main, 2026-07-08), BEFORE
+    the width-aware refactor touched the function — not from the refactored
+    code (that would be circular)."""
+    frozen = {
+        "short": [
+            ("spot_a100_80", "a2-ultragpu-1g", 1, "SPOT"),
+            ("spot_a100_40", "a2-highgpu-1g", 1, "SPOT"),
+            ("flexstart_a100_80", "a2-ultragpu-1g", 1, "FLEX_START"),
+            ("ondemand_a100_80", None, None, None),
+            ("ondemand_a100_40", "a2-highgpu-1g", 1, "STANDARD"),
+        ],
+        "long": [
+            ("flexstart_a100_80", "a2-ultragpu-1g", 1, "FLEX_START"),
+            ("ondemand_a100_80", None, None, None),
+            ("ondemand_a100_40", "a2-highgpu-1g", 1, "STANDARD"),
+        ],
+    }[length]
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="auto",
+        gpus=gpus,
+        time_budget_hours=1.0 if length == "short" else None,
+    )
+    got = []
+    for s, label in _ladder_specs(spec):
+        ex = s.extra or {}
+        ov = ex.get("machine_spec_override")
+        got.append(
+            (
+                label,
+                ov["machine_type"] if ov else None,
+                ov["gpu_count"] if ov else None,
+                ex.get("provisioning_model"),
+            )
+        )
+    assert got == frozen
+
+
+def test_width_ladder_never_emits_h100_machine():
+    """#1121: for every width-eligible intent x gpus in {2,4,8}, no rung's
+    RESOLVED machine type is in the a3- (H100) family — H100 stays out of
+    the width walk (quota exactly 8, no on-demand pool, headroom-blind)."""
+    from explore_persona_space.backends.gcp import WIDTH_ELIGIBLE_INTENTS, machine_for_intent
+
+    for intent in sorted(WIDTH_ELIGIBLE_INTENTS):
+        for gpus in (2, 4, 8):
+            for rung_spec, label in _ladder_specs(
+                RunSpec(issue=137, intent=intent, backend="auto", gpus=gpus)
+            ):
+                machine = machine_for_intent(rung_spec)
+                assert not machine.machine_type.startswith("a3-"), (intent, gpus, label)
+
+
+def test_wide_rung_headroom_skip_is_free_and_advances(lease_store, marker_poster, captured_markers):
+    """#1121: an insufficient-headroom reading at needed=8 on the first wide
+    rung SKIPS it without burning a daily attempt (outcome
+    ``quota_headroom_insufficient``) and the walk advances to the next wide
+    rung — the launched result reports exactly ONE counted create."""
+    gcp = _GcpBackendDouble(
+        quota_headroom_by_rung={
+            "A100-80x8/FLEX_START": QuotaHeadroom(
+                metric="PREEMPTIBLE_NVIDIA_A100_80GB_GPUS",
+                region="us-central1",
+                limit=16.0,
+                usage=16.0,
+                needed=8,
+            )
+        }
+    )
+    result = route(
+        _width_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.extra["gcp_ladder_rung"] == "ondemand_a100_80x8"
+    outcomes = [(a.outcome) for a in result.attempts if a.kind == "gcp"]
+    assert outcomes[0] == "quota_headroom_insufficient"
+    # The skip was FREE: only the launched rung's create bumped the counter.
+    assert result.extra["gcp_attempts_today"] == 1
+
+
+def test_width8_cap_hit_mid_walk_falls_through_to_slurm_then_runpod(
+    lease_store, marker_poster, captured_markers
+):
+    """#1121: the per-day attempt cap hit mid-wide-walk keeps today's
+    behavior byte-for-byte — creates STOP at the cap, the chain proceeds to
+    the SLURM lane and the RunPod terminal rung last."""
+    rp = _PassiveRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    result = route(
+        _width_spec(),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            max_gcp_attempts_per_day=3,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    creates = [o for k, o in outcomes if k == "gcp" and o == "provisioning_failure"]
+    assert len(creates) == 3  # creates stopped AT the injected cap
+    assert ("gcp", "attempt_cap_exceeded") in outcomes
+    nibi_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "nibi"]
+    runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
+    assert nibi_idxs and runpod_idxs and runpod_idxs[-1] == len(outcomes) - 1
+
+
+def test_runpod_terminal_rung_receives_requested_gpus_8(
+    lease_store, marker_poster, captured_markers
+):
+    """#1121 §4f: with every GCP rung + the SLURM lane exhausted, the RunPod
+    terminal rung receives the REQUESTED width verbatim (``spec.gpus == 8``)
+    on the translated intent (``capture-7b`` -> ``eval`` per the untouched
+    ``RUNPOD_INTENT_FOR_GCP_INTENT`` map)."""
+    rp = _PassiveRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    result = route(
+        _width_spec(),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            max_gcp_attempts_per_day=99,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert len(rp.launches) == 1
+    assert rp.launches[0].gpus == 8
+    assert rp.launches[0].intent == "eval"  # capture-7b -> eval (#940 map, untouched)
+
+
+def test_ft7b_width8_degrades_to_base_four_never_two(lease_store, marker_poster):
+    """#1121 §4b design point 6: ft-7b (base 4x) with gpus=8 walks width [8]
+    then its base 4x ladder — NEVER a 2-wide rung (its ZeRO-3 world size
+    scales to 8 but not down to 2), and no x4 wide label either (width 4 IS
+    the base)."""
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    result = route(
+        _width_spec(intent="ft-7b"),
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    labels = _gcp_rung_labels(result)
+    assert labels == [
+        "flexstart_a100_80x8",
+        "ondemand_a100_80x8",
+        "flexstart_a100_80",
+        "ondemand_a100_80",
+    ]
+    assert not any("x2" in label or "x4" in label for label in labels)
+
+
+def test_width_ineligible_intent_gpus_ignored_with_warning(caplog):
+    """#1121: a non-width-eligible intent (lora-7b-h100) with gpus=8 gets
+    ``_requested_wide_widths == []`` + a logged warning, and its ladder is
+    identical to the no-gpus ladder (today's ignore-spec.gpus semantics)."""
+    from explore_persona_space.backends.gcp import machine_for_intent
+    from explore_persona_space.backends.router import _requested_wide_widths
+
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b-h100",
+        backend="auto",
+        gpus=8,
+        extra={"provisioning_model": "SPOT"},  # H100 needs a non-STANDARD pin
+    )
+    base = machine_for_intent(RunSpec(issue=137, intent="lora-7b-h100", backend="auto"))
+    with caplog.at_level("WARNING"):
+        assert _requested_wide_widths(spec, base) == []
+    assert any("non-width-eligible" in r.message for r in caplog.records)
+    no_gpus = RunSpec(
+        issue=137,
+        intent="lora-7b-h100",
+        backend="auto",
+        extra={"provisioning_model": "SPOT"},
+    )
+    assert [label for _s, label in _ladder_specs(spec)] == [
+        label for _s, label in _ladder_specs(no_gpus)
+    ]
+
+
+def test_unsupported_width_library_seam_no_snap_down(lease_store, marker_poster, caplog):
+    """#1121 §4b design point 6 (library seam): ``gpus=6`` fed DIRECTLY to
+    ``_requested_wide_widths`` / ``route()`` — bypassing the CLI guard —
+    returns [] + a warning and uses the BASE-width ladder; NEVER a silent
+    snap-down to [4, 2]."""
+    from explore_persona_space.backends.gcp import machine_for_intent
+    from explore_persona_space.backends.router import _requested_wide_widths
+
+    spec = _width_spec(gpus=6)
+    base = machine_for_intent(RunSpec(issue=137, intent="capture-7b", backend="auto"))
+    with caplog.at_level("WARNING"):
+        assert _requested_wide_widths(spec, base) == []
+    assert any("no snap-down" in r.message for r in caplog.records)
+    gcp = _GcpBackendDouble()
+    result = route(
+        spec,
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    # Base-width rung, NO x-suffix: the unsupported width was ignored loudly,
+    # never snapped down to a narrower wide rung.
+    assert result.extra["gcp_ladder_rung"] == "flexstart_a100_80"
+
+
+def test_classification_at_widest_not_base():
+    """#1121 §4b design point 2 (kills the classify-at-base mutant): a
+    width-8 capture-7b with time_budget_hours=1 reads 1 GPU-h at base
+    (SHORT) but 8 GPU-h at width 8 (LONG) — the walk MUST be the flex-lead
+    LONG sequence with NO spot rung anywhere."""
+    labels = [label for _s, label in _ladder_specs(_width_spec(time_budget_hours=1.0))]
+    assert labels == _W8_LONG_ORDER
+    assert not any(label.startswith("spot") for label in labels)
+
+
+def test_eval_intent_width8_upgrades_to_a100_family_then_l4_tail():
+    """#1121 (cross-family upgrade + degradation): eval (base 1x L4) with
+    gpus=8 walks the wide a2-ultragpu rungs first, and its BASE tail is
+    today's L4 ladder byte-identically (labels + overrides + provisioning;
+    frozen from the pre-change code at merge-base ``88d6feb9d7``)."""
+    got = []
+    for s, label in _ladder_specs(_width_spec(intent="eval")):
+        ex = s.extra or {}
+        ov = ex.get("machine_spec_override")
+        got.append(
+            (
+                label,
+                ov["machine_type"] if ov else None,
+                ov["gpu_count"] if ov else None,
+                ex.get("provisioning_model"),
+            )
+        )
+    assert [g[0] for g in got[:6]] == _W8_LONG_ORDER[:6]  # wide prefix
+    assert got[-3:] == [
+        ("flexstart_l4", "g2-standard-4", 1, "FLEX_START"),
+        ("ondemand_l4", None, None, None),
+        ("ondemand_a100_40", "a2-highgpu-1g", 1, "STANDARD"),
+    ]
+
+
+def test_pinned_provisioning_spot_walks_spot_at_every_width():
+    """#1121 §4b design point 4: a caller SPOT pin + gpus=8 walks spot at
+    EVERY width then the pinned base tail — never silently un-pins. The
+    2-label base tail (``spot_a100_80, spot_a100_40``) was confirmed against
+    the PRE-CHANGE pinned-branch output at merge-base ``88d6feb9d7``."""
+    labels = [
+        label for _s, label in _ladder_specs(_width_spec(extra={"provisioning_model": "SPOT"}))
+    ]
+    assert labels == [
+        "spot_a100_80x8",
+        "spot_a100_80x4",
+        "spot_a100_80x2",
+        "spot_a100_80",
+        "spot_a100_40",
+    ]
+
+
+def test_workload_error_on_wide_rung_fails_over_to_runpod(
+    lease_store, marker_poster, captured_markers
+):
+    """#1121 (width variant of the #680 MF2 test): a GcpWorkloadError on a
+    WIDE rung short-circuits STRAIGHT to RunPod — no later GCP rung, no
+    SLURM lane."""
+    rp = _PassiveRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)
+    gcp = _GcpBackendDouble(
+        launch_raises_by_rung={
+            "A100-80x8/FLEX_START": GcpWorkloadError(
+                "workload crashed", evidence={"phase": "train"}
+            ),
+        }
+    )
+    result = route(
+        _width_spec(),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert len(rp.launches) == 1
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    assert ("gcp", "workload_failure") in outcomes
+    # STRAIGHT to RunPod: no GCP rung after the workload error, no SLURM lane.
+    gcp_after_failure = [
+        o for k, o in outcomes[outcomes.index(("gcp", "workload_failure")) + 1 :] if k == "gcp"
+    ]
+    assert gcp_after_failure == []
+    assert not any(k == "nibi" for k, _o in outcomes)
 
 
 def test_workload_error_on_later_rung_fails_over_to_runpod(
@@ -6149,6 +6707,29 @@ def test_explicit_runpod_override_runpod_only_intent_verbatim(
     assert "runpod_intent_translation" not in finals[-1]["extra"]
 
 
+def test_explicit_runpod_override_gpu_intent_preserves_boot_disk_gb(
+    lease_store, marker_poster, captured_markers
+):
+    """#1118 route-side leg (the exact #1112 manual-pivot shape): a GPU spec
+    with a stated boot_disk_gb reaches RunPodBackend.launch through
+    _override_runpod with the extra intact — the GPU sibling of the CPU-shaped
+    test_runpod_cpu_fallback_feasible_requirement_launches_and_preserves_extra
+    (launch then threads it into --volume-gb, pinned in
+    tests/test_runpod_workload_exec.py)."""
+    rp = _PassiveRunpod()
+    result = route(
+        RunSpec(issue=1118, intent="lora-7b", backend="runpod", extra={"boot_disk_gb": 575}),
+        runpod_backend=rp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_OVERRIDE
+    assert len(rp.launches) == 1
+    assert rp.launches[0].intent == "lora-7b"
+    assert rp.launches[0].extra["boot_disk_gb"] == 575
+
+
 def test_explicit_runpod_override_unmapped_gcp_intent_raises_valueerror(
     lease_store, marker_poster, captured_markers
 ):
@@ -6767,3 +7348,76 @@ def test_launched_gcp_handle_extra_carries_rung_label_and_launched_ts(
     assert isinstance(ts, float)
     # Wall-clock epoch seconds (NOT the fake monotonic _clock() counter).
     assert abs(ts - _t.time()) < 300
+
+
+# ---------------------------------------------------------------------------
+# #1116 — GCP FLEX_START queue-VANISH → RunPod failover (poller / router seam)
+#
+# The queue-vanish failover reuses the SAME router seam as the #659/#783/#1029
+# siblings (failover_to_runpod_after_async_workload_crash → the RunPod terminal
+# rung), passing the distinct queue-vanish reason. These tests pin the
+# router-level contract; the poller-side end-to-end tests live in
+# tests/test_backend_poll.py (the #1116 block).
+# ---------------------------------------------------------------------------
+
+
+def test_queue_vanish_failover_seam_carries_queue_vanish_reason(
+    lease_store, marker_poster, captured_markers
+):
+    """#1116 (router seam): calling the failover seam with the queue-vanish
+    reason launches RunPod once, labels the RouteResult + the
+    ``epm:backend-selected`` marker with ``gcp_queue_vanish_failover_runpod``,
+    and carries the evidence (incl. the clock discriminator) onto the marker
+    ``extra``."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    result = failover_to_runpod_after_async_workload_crash(
+        spec=_spec(backend="gcp"),
+        runpod_backend=rp,
+        evidence={
+            "source": "async_poller_queue_vanish",
+            "current_phase": "terminal_queue_vanish",
+            "last_observed_phase": "pending",
+        },
+        reason=ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD
+    assert len(rp.launches) == 1  # exactly once
+    finals = _by_reason(captured_markers, ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD)
+    assert finals
+    evidence = finals[-1]["extra"].get("gcp_workload_evidence", {})
+    assert evidence.get("source") == "async_poller_queue_vanish"
+    assert evidence.get("last_observed_phase") == "pending"
+
+
+def test_queue_vanish_reason_distinct_from_crash_capacity_queue_boot_reasons():
+    """#1116: the queue-vanish reason VALUE is pairwise-distinct from BOTH
+    workload-crash reasons, the queue-timeout reason, the boot-loop reason,
+    AND the capacity-exhaustion fallback reason (auto_fallback_runpod) — the
+    marker trail tells a server-side queue drop apart from every sibling."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+    )
+
+    reasons = {
+        ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        ROUTE_REASON_RUNPOD_FALLBACK,
+    }
+    assert len(reasons) == 6  # all six are distinct strings
+    assert ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD == "gcp_queue_vanish_failover_runpod"

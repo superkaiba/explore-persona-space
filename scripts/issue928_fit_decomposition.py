@@ -224,10 +224,14 @@ class Store:
 
     The smoke/production unification contract: the fit battery enumerates
     ``manifest["context_ids"]`` (whatever subset the extract dispatcher ran),
-    never a hardcoded 50-grid.
+    never a hardcoded 50-grid. ``blob_subdir`` (DEFAULT-PRESERVING, follow-up
+    plan v6: the default keeps the parent ``percq_summaries/`` layout
+    byte-for-byte) locates the per-context ``.pt`` blobs relative to the
+    store root — the matched-length store passes ``"."`` (flat layout,
+    manifest + blobs in one folder).
     """
 
-    def __init__(self, store_dir: Path):
+    def __init__(self, store_dir: Path, blob_subdir: str = "percq_summaries"):
         man = load_json(store_dir / "manifest.json")
         self.manifest = man
         self.ctx_ids: list[str] = man["context_ids"]
@@ -237,7 +241,7 @@ class Store:
         self.sidx = {n: i for i, n in enumerate(self.summary_names)}
         self.blobs = {}
         for c in self.ctx_ids:
-            b = torch.load(store_dir / "percq_summaries" / f"{c}.pt", weights_only=False)
+            b = torch.load(store_dir / blob_subdir / f"{c}.pt", weights_only=False)
             assert b["context_id"] == c, (b["context_id"], c)
             self.blobs[c] = b
         self.H = int(self.blobs[self.ctx_ids[0]]["per_q"].shape[-1])

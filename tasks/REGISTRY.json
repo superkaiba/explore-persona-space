@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1113,
+  "highest_id": 1147,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -710,9 +710,9 @@
       "goal": "Rebuild the factory content-behavior datagen persona-vectors-style \u2014 each behavior defined by a trait description + 5 contrastive instruction pairs + neutral trait-eliciting questions (auto-generated persona-vectors-style where a curated bank triggers refusal) so a Claude generator is less likely to refuse \u2014 add an impossible-to-refuse formatting behavior as a pipeline positive control, and test whether this clears the yield floors and installs trainable organisms across the behavior set.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1090",
-      "status": "followups_running",
-      "title": "Reframing sycophancy as subjective opinion-agreement roughly triples Claude datagen yield over the wrong-fact bank yet still misses the yield floor, and Claude- and Qwen-generated data install sycophancy organisms at identical judged rates, with the registered dose band reached only by the Claude-data organism at doubled epochs on the Tier-1 selection read (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/1090",
+      "status": "awaiting_promotion",
+      "title": "The training context, not the contrastive-negative panel, gates where implanted content behaviors express on-policy (MODERATE confidence)"
     },
     "1091": {
       "has_clean_result": false,
@@ -878,18 +878,60 @@
     },
     "1112": {
       "goal": "Measure how residual-stream activation-shift geometry (trained-minus-base, per layer: rank/participation-ratio, direction alignment, magnitude) depends on training method AND contrastive negatives, via a sycophancy 2x2 on #1090's data \u2014 {LoRA, full-fine-tune} x {positive-only, positive+contrastive-negatives} at matched install (training two NEW full-FT twins on #1090's mix) \u2014 plus a marker LoRA-vs-full-FT method comparison; extends #653's LoRA-only diffuse rank-k read and tests whether 2410.21228's weight-space intruder-dimension difference and the contrastive-negatives structure manifest in activation space.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/1112",
-      "status": "approved",
-      "title": "Matched LoRA vs full-fine-tune residual-stream activation-shift geometry (does #653's diffuse LoRA rank-k hold for full-FT?)"
+      "path": "tasks/awaiting_promotion/1112",
+      "status": "awaiting_promotion",
+      "title": "Matched-install LoRA and full fine-tuning differ in how far, not in what shape, they shift residual-stream activations, and the diffuse shape largely reflects measuring on each model's own text (MODERATE confidence)"
     },
     "1113": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1113",
-      "status": "planning",
+      "path": "tasks/completed/1113",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 tiny-real probe for real-corpus streaming filters"
+    },
+    "1114": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1114",
+      "status": "completed",
+      "title": "workflow-fix: verify_plan WARN when fence omits \u00a77 conditional phase"
+    },
+    "1115": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1115",
+      "status": "completed",
+      "title": "workflow-fix: read-hygiene clause for heavy-read agent specs (autocompact-thrash guard)"
+    },
+    "1116": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1116",
+      "status": "completed",
+      "title": "workflow-fix: GCP flex-start PENDING-vanish -> capacity-miss failover"
+    },
+    "1117": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1117",
+      "status": "completed",
+      "title": "workflow-fix: hard-FAIL tier >=100 words/bullet in check_v4_word_caps"
+    },
+    "1118": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1118",
+      "status": "completed",
+      "title": "workflow-fix: thread boot-disk requirement to RunPod GPU volume"
+    },
+    "1119": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1119",
+      "status": "completed",
+      "title": "workflow-fix: external-stream presumption for Step 3.6 / checkpoint-per-phase"
     },
     "112": {
       "has_clean_result": false,
@@ -898,6 +940,76 @@
       "status": "completed",
       "title": "[Proposed] Does convergence SFT also transfer behavioral leakage (capability, misalignment, sycophancy, refusal)?"
     },
+    "1120": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1120",
+      "status": "completed",
+      "title": "workflow-fix: parse_followup_note_field misses literal backslash-n notes"
+    },
+    "1121": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1121",
+      "status": "completed",
+      "title": "Width-aware auto-router: include 8x GCP rungs; encourage wide GCP provisioning for shardable workloads"
+    },
+    "1122": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1122",
+      "status": "completed",
+      "title": "workflow-fix: preserve workload_cmd across exit-75 reconnect handle rewrites (GCP->RunPod failover)"
+    },
+    "1123": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1123",
+      "status": "completed",
+      "title": "workflow-fix: gotchas entry \u2014 fan-out handshake timeout masks unit crash"
+    },
+    "1124": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1124",
+      "status": "completed",
+      "title": "workflow-fix: gotchas entry \u2014 token-id concat for teacher-forced capture (BPE seam)"
+    },
+    "1125": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1125",
+      "status": "completed",
+      "title": "workflow-fix: pin GNU grep in SKILL.md lint-gate -qv triggers (ugrep shadowing)"
+    },
+    "1126": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1126",
+      "status": "completed",
+      "title": "daily-fix: Codex quota-exhausted sentinel short-circuit"
+    },
+    "1127": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1127",
+      "status": "completed",
+      "title": "daily-fix: refusal-wedge lane misses live wedges"
+    },
+    "1128": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1128",
+      "status": "completed",
+      "title": "daily-fix: block repo-root branch merges in the guard hook"
+    },
+    "1129": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1129",
+      "status": "completed",
+      "title": "daily-fix: raise step9c pristine-oracle timeout default"
+    },
     "113": {
       "has_clean_result": true,
       "kind": "experiment",
@@ -905,12 +1017,138 @@
       "status": "completed",
       "title": "If you wrong-answer-finetune Qwen-2.5-7B-Instruct under its own default system prompt, it self-degrades far harder than under a generic helpful-assistant prompt \u2014 but switching to \"I am\" framing recovers most of the gap on cross-model identity claims (MODERATE confidence)"
     },
+    "1130": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1130",
+      "status": "completed",
+      "title": "daily-fix: codex_task.py forwards child success-stderr"
+    },
+    "1131": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1131",
+      "status": "completed",
+      "title": "daily-fix: /daily sweep checks retractions before filing"
+    },
+    "1132": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1132",
+      "status": "completed",
+      "title": "daily-fix: sweep recursion-guard-parked wf-fix candidates"
+    },
+    "1133": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1133",
+      "status": "completed",
+      "title": "daily-fix: dose-ladder checkpoint retention sizing rule"
+    },
+    "1134": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1134",
+      "status": "completed",
+      "title": "daily-fix: codify or ban the adopt-severe reconciler skip"
+    },
+    "1135": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1135",
+      "status": "completed",
+      "title": "daily-fix: gotchas entry - CVD clobber at library-train seam"
+    },
+    "1136": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1136",
+      "status": "completed",
+      "title": "daily-fix: set-body warns when experiment loses Goal H2"
+    },
+    "1137": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1137",
+      "status": "completed",
+      "title": "daily-fix: suppress stalled-alert on fresh poll-tick marker"
+    },
+    "1138": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1138",
+      "status": "completed",
+      "title": "daily-fix: verbatim bare push/merge snippets in SKILL.md"
+    },
+    "1139": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1139",
+      "status": "completed",
+      "title": "daily-fix: ad-hoc result summaries state data provenance"
+    },
     "114": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/114",
       "status": "on_hold",
       "title": "Use activation oracles to see persona"
+    },
+    "1140": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1140",
+      "status": "proposed",
+      "title": "daily-held: Codex quota out to Aug 6 - pay or ride it out"
+    },
+    "1141": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1141",
+      "status": "proposed",
+      "title": "daily-held: canonical HF model repo at 100k-file limit"
+    },
+    "1142": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1142",
+      "status": "completed",
+      "title": "workflow-fix: gotchas entry \u2014 vLLM H100 prefix-cache IMA differential + mitigation"
+    },
+    "1143": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1143",
+      "status": "completed",
+      "title": "workflow-fix: verify_task_body file-count claim-matcher misses footer shape"
+    },
+    "1144": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1144",
+      "status": "completed",
+      "title": "Port issue-1090 stranded shared-src fixes to main (sft.py CVD pin, datagen mt500 + posonly panel, bare/ICL contexts)"
+    },
+    "1145": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1145",
+      "status": "completed",
+      "title": "Fix torch-before-dotenv in 34 main-side VM scripts (thread-caps invariant test red on trunk)"
+    },
+    "1146": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1146",
+      "status": "completed",
+      "title": "workflow-fix: extend thread-caps heavy-import predicate to transitively-heavy roots"
+    },
+    "1147": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1147",
+      "status": "completed",
+      "title": "workflow-fix: Step-10d surgical checkout runs GLOB_SCAN_TESTS-mapped tests pre-landing"
     },
     "115": {
       "has_clean_result": false,
@@ -6213,9 +6451,9 @@
       "goal": "Test whether the per-example linear context-to-answer-profile map h: c_x -> v(x) (#779 recipe: held-out K-fold ridge over thousands of per-example pairs) exists in the pretrained Qwen/Qwen2.5-7B vs Qwen2.5-7B-Instruct, for both the assistant and the user turn, under chat-template vs naturalistic formatting; secondary: per-position decay and cross-role prediction beyond a topic-persistence baseline.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/825",
-      "status": "followups_running",
-      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength and is answer-specific on both models (a separator control transfers \u226411% of it under the full-n read; the registered matched-n denominator was unevaluable); two-turn cells are nonlinearly recoverable \u2014 including a weak user-turn map, replicated on real human conversations, that the linear probe misses entirely (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/825",
+      "status": "awaiting_promotion",
+      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength, and the on-policy separator control's gap-closure is greedy-specific \u2014 it collapses under sampled decoding (MODERATE confidence)"
     },
     "826": {
       "has_clean_result": false,
@@ -7004,9 +7242,9 @@
       "goal": "On a thinking model chosen for maximal similarity to Qwen2.5-7B-Instruct, determine how the base-model linear context\u2192mean-answer activation map (#810) decomposes across the chain-of-thought \u2014 comparing (1) context\u2192CoT composed with CoT\u2192answer, (2) context\u2192(CoT+answer) jointly, and (3) (context+CoT)\u2192answer, against the direct context\u2192answer baseline \u2014 under mean-pool / max-pool / boundary-token summaries for each part (context, CoT, answer), in both the averaged-over-query regime (averaging over the query vector or over the CoT vector) and the individual context+query regime, scored by held-out R\u00b2 per layer on the parent line's folds.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/928",
-      "status": "awaiting_promotion",
-      "title": "The chain-of-thought summary predictively mediates the thinking model's context\u2192answer activation map (MODERATE confidence)"
+      "path": "tasks/followups_running/928",
+      "status": "followups_running",
+      "title": "Conditioning on the realized chain-of-thought predicts the thinking model's answer state no better than a matched-length slice of the answer's own opening (MODERATE confidence)"
     },
     "929": {
       "has_clean_result": false,

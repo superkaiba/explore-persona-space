@@ -404,11 +404,19 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
     "cpu-mid": MachineSpec(machine_type="e2-standard-8", gpu_count=0, gpu_kind="CPU"),
     # 8-GPU sweep intents (#743) — the FREE GCP credit lane at 8x width for
     # wide embarrassingly-parallel sweeps (driving case #697's 64-cell patch
-    # sweep, ~2x faster on 8 GPUs than 4). EXPLICIT --intent ONLY: NOT added to
-    # the router auto-ladder (router.py unchanged) — 8x H100 quota in us-central1
-    # is exactly 8 (no concurrency headroom) and 8x A100 is heavy, so auto must
-    # never schedule one. sweep-8g-h100 is a3-highgpu (H100): SPOT / FLEX_START
-    # only (render_create_argv raises on H100 + STANDARD via gpu_kind, inherited).
+    # sweep, ~2x faster on 8 GPUs than 4). The A100 half of #743's
+    # explicit-only exclusion is SUPERSEDED by #1121: the router auto ladder
+    # now walks WIDE_A100_80_BY_WIDTH rungs (a2-ultragpu-{8,4,2}g) for a
+    # width-declaring dispatch (``--gpus N`` on a width-eligible intent), so
+    # sweep-8g-a100 remains only as a back-compat explicit intent (redundant
+    # with ``--intent capture-7b --gpus 8`` on the auto lane). The H100 half
+    # STANDS: 8x H100 preemptible quota in us-central1 is exactly 8 (one 8x,
+    # zero concurrency headroom), there is no H100 on-demand pool, and the
+    # H100 quota metrics are absent from ``regions describe`` on this project
+    # (the fail-open headroom pre-check is blind for H100) — so sweep-8g-h100
+    # stays EXPLICIT --intent ONLY, never auto-scheduled. sweep-8g-h100 is
+    # a3-highgpu (H100): SPOT / FLEX_START only (render_create_argv raises on
+    # H100 + STANDARD via gpu_kind, inherited).
     "sweep-8g-a100": MachineSpec(
         machine_type="a2-ultragpu-8g",
         gpu_count=8,
@@ -461,6 +469,38 @@ def a100_40_fallback_for_intent(spec: RunSpec) -> MachineSpec | None:
     still fails loud on the unknown intent via :func:`machine_for_intent`).
     """
     return INTENT_A100_40_FALLBACK.get(spec.intent)
+
+
+#: Width -> wide A100-80 machine for the width-aware auto ladder (#1121).
+#: a2-ultragpu-{2,4,8}g all live-verified offered in us-central1-{a,c}
+#: (gcloud machine-types list, 2026-07-08). H100 (a3-highgpu-*) is
+#: DELIBERATELY absent: preemptible quota is exactly 8 (one 8x, zero
+#: concurrency headroom, #743), there is no on-demand pool, and the H100
+#: quota metrics are absent from ``regions describe`` on this project, so
+#: the fail-open headroom pre-check cannot protect a doomed create.
+#: sweep-8g-h100 stays explicit-``--intent``-only.
+WIDE_A100_80_BY_WIDTH: dict[int, MachineSpec] = {
+    2: MachineSpec(machine_type="a2-ultragpu-2g", gpu_count=2, gpu_kind="A100-80"),
+    4: MachineSpec(machine_type="a2-ultragpu-4g", gpu_count=4, gpu_kind="A100-80"),
+    8: MachineSpec(machine_type="a2-ultragpu-8g", gpu_count=8, gpu_kind="A100-80"),
+}
+
+#: Intents whose workload shards across GPUs at 1 GPU (or, for ft-7b, its
+#: ZeRO-3 world size) per shard, so a wide A100-80 machine serves them:
+#: the single-GPU 7B-class intents + ft-7b (whose base IS the same
+#: a2-ultragpu family at 4x). eval/debug are included even though their
+#: BASE machine is L4 — a width>1 request upgrades them onto the A100-80
+#: family (there is no multi-GPU g2 mapping in v1; deliberate, see plan
+#: #1121 §11). H100-family intents (lora-7b-h100 / eval-h100 /
+#: sweep-8g-*) are EXCLUDED (see WIDE_A100_80_BY_WIDTH note).
+WIDTH_ELIGIBLE_INTENTS: frozenset[str] = frozenset(
+    {"lora-7b", "lora", "capture-7b", "eval", "debug", "ft-7b"}
+)
+
+
+def wide_a100_80_for_width(width: int) -> MachineSpec | None:
+    """The wide A100-80 MachineSpec for ``width``; ``None`` when unsupported."""
+    return WIDE_A100_80_BY_WIDTH.get(int(width))
 
 
 def machine_for_intent(spec: RunSpec) -> MachineSpec:
@@ -531,6 +571,10 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     # A2-ultragpu (A100-80) — us-central1-b does NOT offer this family
     # (re-verified 2026-06-30: not offered in -b OR -f, #774).
     "a2-ultragpu-1g": frozenset({"us-central1-a", "us-central1-c"}),
+    # a2-ultragpu-2g (2x A100-80, the #1121 width-2 auto-ladder rung) — same
+    # A2-ultragpu family restriction as its 1g/4g/8g siblings (NOT in -b or
+    # -f). Live-verified 2026-07-08 (gcloud compute machine-types list).
+    "a2-ultragpu-2g": frozenset({"us-central1-a", "us-central1-c"}),
     "a2-ultragpu-4g": frozenset({"us-central1-a", "us-central1-c"}),
     # a2-ultragpu-8g (8x A100-80, #743) — same A2-ultragpu family as the 1g/4g
     # rows above; us-central1-b does NOT offer the family. Verified 2026-06-29
@@ -3223,6 +3267,19 @@ def reconnect_or_none(
     semantics — a probe flake fails the launch typed and RETRIABLE
     (re-run the same command; idempotent by design, the #736 exit-75
     precedent), never a silent reconnect and never a delete.
+
+    Failover-prerequisite extras (#1122): when the spec carries a
+    workload (``workload_cmd`` or ``hydra_args``), the reconnect
+    handle's ``extra`` mirrors the launch path's failover keys
+    (``workload_cmd`` / ``hydra_args`` / ``gpus`` /
+    ``time_budget_hours`` / ``repo_branch`` / ``gpu_count`` +
+    ``boot_disk_gb`` / ``min_ram_gb`` when set). The #736 exit-75
+    contract re-runs the SAME command, and
+    ``issue_dispatch.dispatch_for_issue``'s ``on_launched`` hook
+    OVERWRITES the handle sidecar with THIS handle — pre-#1122 the
+    minimal probe-derived extra clobbered the launch handle's workload
+    keys, so the #783 queue-timeout RunPod failover crashed at
+    ``backend_poll._runspec_from_gcp_handle`` (incident #1090).
     """
     name = instance_name_for(spec.issue, lane_suffix_for(spec))
     argv = render_list_argv(config=config, name_filter=f"name={name}")
@@ -3306,6 +3363,40 @@ def reconnect_or_none(
         }
         if recovered_attempt_id is not None:
             extra["attempt_id"] = recovered_attempt_id
+        # #1122: mirror the launch path's failover-prerequisite keys
+        # (#659 MF1/MF2, #909 repo_branch, #677 gpu_count, #1010 footprint)
+        # so an exit-75 same-command RERUN's reconnect handle — which
+        # OVERWRITES the sidecar via issue_dispatch's on_launched hook —
+        # stays failover-capable (backend_poll._runspec_from_gcp_handle).
+        # Gated on the spec carrying a workload: a bare (provision-only /
+        # probe) reconnect keeps the legacy extra shape, and the
+        # issue_dispatch carry-forward (#1122 edit 2) preserves the prior
+        # sidecar's values for that case instead.
+        if spec.workload_cmd or spec.hydra_args:
+            # MF1: workload_cmd is a str — preserve AS-IS, never list().
+            # MF2: one of the pair is empty by RunSpec.__post_init__
+            # mutual exclusion; write BOTH so the poller's verbatim
+            # pass-through reconstruction holds.
+            extra["workload_cmd"] = spec.workload_cmd or ""
+            extra["hydra_args"] = list(spec.hydra_args or ())
+            extra["gpus"] = spec.gpus
+            extra["time_budget_hours"] = spec.time_budget_hours
+            extra["repo_branch"] = str((spec.extra or {}).get("repo_branch") or "")
+            # 0-vs-nonzero is all the poller's CPU-lane guards read
+            # (_is_gcp_async_workload_failure / _is_gcp_queue_timeout),
+            # and CPU-ness is intent-determined — override-invariant even
+            # when the creating rung used a machine_spec_override.
+            extra["gpu_count"] = machine_for_intent(spec).gpu_count
+            extra.update(
+                {
+                    k: v
+                    for k, v in {
+                        "boot_disk_gb": (spec.extra or {}).get("boot_disk_gb"),
+                        "min_ram_gb": (spec.extra or {}).get("min_ram_gb"),
+                    }.items()
+                    if v
+                }
+            )
         return RunHandle(
             backend="gcp",
             cluster=None,
@@ -6100,6 +6191,8 @@ __all__ = [
     "MACHINE_TYPE_ZONE_AVAILABILITY",
     "STARTUP_PASSTHROUGH_ENV_KEYS",
     "STARTUP_SECRET_ENV_KEYS",
+    "WIDE_A100_80_BY_WIDTH",
+    "WIDTH_ELIGIBLE_INTENTS",
     "GcloudRunResult",
     "GcloudRunner",
     "GcpBackend",
@@ -6131,6 +6224,7 @@ __all__ = [
     "render_startup_script",
     "resolve_provisioning_model",
     "sentinel_path_for",
+    "wide_a100_80_for_width",
     "workload_dir_for",
     "zones_for_machine_type",
 ]

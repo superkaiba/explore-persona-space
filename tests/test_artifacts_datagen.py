@@ -48,7 +48,17 @@ def _judge_by_arm(*, pos=80.0, neg=20.0, keep_first_pos=None):
     """A judge_fn stub (judge_graded signature): score by arm prefix. When
     ``keep_first_pos`` is set, only the first N positive items score high."""
 
-    def judge(items, eval_prompt, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False):
+    def judge(
+        items,
+        eval_prompt,
+        *,
+        n_draws,
+        cache_dir,
+        save_raw,
+        judge_model,
+        dry_run=False,
+        max_tokens=64,
+    ):
         scores = {}
         pos_seen = 0
         for rid, _q, _a in items:
@@ -86,7 +96,9 @@ def _rows(path):
 def test_judge_filter_thresholds(tmp_path):
     beh = BEHAVIORS["sycophancy"]  # threshold 50, no structural predicate
 
-    def judge(items, ep, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False):
+    def judge(
+        items, ep, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False, max_tokens=64
+    ):
         m = {"pos-0": 51.0, "pos-1": 50.0, "neg-0": 49.0, "neg-1": 50.0}
         return JudgeResult(
             scores={rid: m[rid] for rid, _, _ in items},
@@ -128,7 +140,9 @@ def test_drop_never_coerce_propagation(tmp_path):
         _cand("pos-2", POSITIVE, None),  # refusal (no completion)
     ]
 
-    def judge(items, ep, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False):
+    def judge(
+        items, ep, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False, max_tokens=64
+    ):
         # pos-0: all draws dropped -> None; pos-1: kept. pos-2 is never judged (refusal).
         return JudgeResult(
             scores={"pos-0": None, "pos-1": 80.0},
@@ -168,7 +182,9 @@ def test_generation_drop_reason_split(tmp_path):
         _drop("pos-3", "refusal"),
     ]
 
-    def judge(items, ep, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False):
+    def judge(
+        items, ep, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False, max_tokens=64
+    ):
         return JudgeResult(
             scores={rid: 80.0 for rid, _, _ in items},
             n_total_draws=len(items),
@@ -196,7 +212,9 @@ def test_structural_keep_filter(tmp_path):
     list_text = "- one\n- two\n- three"
     prose_text = "This is a single flowing paragraph of prose with no list items at all."
 
-    def judge_high(items, ep, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False):
+    def judge_high(
+        items, ep, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False, max_tokens=64
+    ):
         return JudgeResult(
             scores={rid: 80.0 for rid, _, _ in items},
             n_total_draws=len(items),
@@ -526,7 +544,9 @@ def test_determinism_fixed_seed(tmp_path):
 def test_fresh_judge_cache_dir(tmp_path):
     seen = []
 
-    def spy_judge(items, ep, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False):
+    def spy_judge(
+        items, ep, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False, max_tokens=64
+    ):
         seen.append(str(cache_dir))
         return _judge_by_arm()(
             items,

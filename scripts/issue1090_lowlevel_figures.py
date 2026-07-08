@@ -23,16 +23,23 @@ import re
 import sys
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from explore_persona_space.analysis.paper_plots import (
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     savefig_paper,
     set_paper_style,
 )
-from explore_persona_space.artifacts.datagen import _STRUCTURAL_PREDICATES
+from explore_persona_space.artifacts.datagen import _STRUCTURAL_PREDICATES  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 EVAL = ROOT / "eval_results" / "issue_1090"
@@ -54,10 +61,11 @@ THRESHOLD = 50  # graded judge keep threshold (behavior.threshold for all three 
 
 
 def fig_yield_per_question() -> None:
-    y = json.load(open(EVAL / "yield_summary.json"))
+    with open(EVAL / "yield_summary.json") as fh:
+        y = json.load(fh)
     fig, ax = plt.subplots(figsize=(11, 5))
     rng = np.random.default_rng(42)
-    for xi, (cell, d) in enumerate(y.items()):
+    for xi, (_cell, d) in enumerate(y.items()):
         pq = d["per_question_yield"]
         fracs = [v["kept"] / v["judged"] for v in pq.values() if v["judged"] > 0]
         n_zero_judged = sum(1 for v in pq.values() if v["judged"] == 0)
@@ -93,7 +101,8 @@ def _tier2_per_question_judged(cell_tag: str) -> dict[int, tuple[int, int]]:
     completion). A completion's score is the mean of its parseable draws;
     completions with zero parseable draws are dropped (drop-never-coerce).
     """
-    raw = json.load(open(RUN / "tier2_judge" / cell_tag / "judge_raw.json"))
+    with open(RUN / "tier2_judge" / cell_tag / "judge_raw.json") as fh:
+        raw = json.load(fh)
     per_comp: dict[tuple[int, int], list[float]] = {}
     pat = re.compile(r"-q(\d+)-c(\d+)__")
     for iid, rec in raw["all_scores"].items():
@@ -115,7 +124,8 @@ def _tier2_per_question_judged(cell_tag: str) -> dict[int, tuple[int, int]]:
 def _tier2_per_question_structural(cell: str, side: str) -> dict[int, tuple[int, int]]:
     pred = _STRUCTURAL_PREDICATES["formatting"]
     f = RUN / "tier2" / cell / f"completions__{side}__persona_software_engineer.json"
-    d = json.load(open(f))
+    with open(f) as fh:
+        d = json.load(fh)
     per_q: dict[int, tuple[int, int]] = {}
     for qi, comps in enumerate(d["completions"]):
         k = sum(1 for c in comps if pred(c))
@@ -167,8 +177,10 @@ def fig_install_per_question() -> None:
 def fig_dose_curves_labeled() -> None:
     fig, axes = plt.subplots(1, 3, figsize=(13, 4.4), sharey=True)
     for ax, cell in zip(axes, TRAINED_CELLS, strict=True):
-        d = json.load(open(EVAL / "install" / f"{cell}_dose_curve.json"))
-        inst = json.load(open(EVAL / "install" / f"{cell}_install.json"))
+        with open(EVAL / "install" / f"{cell}_dose_curve.json") as fh:
+            d = json.load(fh)
+        with open(EVAL / "install" / f"{cell}_install.json") as fh:
+            inst = json.load(fh)
         base_rate = inst["reads"]["base"]["rate"]
         ax.axhline(base_rate, color="0.35", ls="--", lw=1.2, zorder=2)
         ax.annotate(

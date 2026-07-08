@@ -2378,8 +2378,30 @@ def parse_followup_note_field(note: str, field: str) -> str | None:
     mid-segment field beats a later line's line-initial field (deliberate,
     pinned in tests). Returns ``None`` when the field is absent or its
     value is empty.
+
+    Notes occasionally arrive with LITERAL backslash-n two-char escape
+    sequences instead of real newlines (a shell ``--note "...\\n..."``
+    string passed uninterpreted; #825 run markers v6/v7). When the note
+    contains literal ``\\n`` escapes AND no real newline — the malformed
+    shape is precisely "the whole note is one physical line with escaped
+    separators" — the escapes (including literal ``\\r\\n``) are
+    normalized to real newlines on a parse-side copy before line
+    splitting. A note that already has real newlines keeps its literal
+    escapes untouched as content (quoted regex/code in a value never
+    splits). This deliberately under-reaches: even a single real newline
+    (e.g. one trailing ``\\n`` char) disables the normalization for the
+    whole note. Stored notes are never mutated (events.jsonl is
+    append-only).
     """
-    for line in (note or "").splitlines():
+    note = note or ""
+    if "\\n" in note and "\n" not in note:
+        # Escaped-newline normalization (#825 v6/v7; the #1090 fu1
+        # regression class): the whole note is one physical line whose
+        # separators arrived as literal backslash-n escapes. Parse-side
+        # copy only — the stored note is never rewritten. `\r\n` literals
+        # first so no stray `\r` survives on a value token (#1120).
+        note = note.replace("\\r\\n", "\n").replace("\\n", "\n")
+    for line in note.splitlines():
         # `; `-joined single-line notes (#1090 fu1/fu2 scopes, #841 scopes +
         # run markers) expose their fields as clause segments; a line with
         # no `;<whitespace>` yields itself unchanged, so every line-initial
@@ -3612,7 +3634,23 @@ def create_task(req: NewTaskRequest) -> int:
 _SET_BODY_ROUNDTRIP_KEYS: tuple[str, ...] = ("paper", "abstract")
 
 
-def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) -> None:
+class GoalH2DropError(ValueError):
+    """``set_body`` would remove the ``## Goal`` H2 from a kind:experiment body.
+
+    The Goal is the canonical target every downstream subagent reads;
+    silently losing it costs a Goal-gate bounce + repair (incident #1112).
+    Pass ``allow_goal_drop=True`` (CLI: ``--allow-goal-drop``) for a
+    deliberate drop.
+    """
+
+
+def set_body(
+    task_id: int,
+    new_body: str,
+    *,
+    snapshot_original: bool = False,
+    allow_goal_drop: bool = False,
+) -> None:
     """Replace the body content (preserves frontmatter).
 
     If `snapshot_original` is True, save the current full body.md to
@@ -3627,6 +3665,22 @@ def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) ->
     strip is idempotent: calling `set_body` with a body that already has
     no leading frontmatter is a no-op for the strip step.
 
+    Goal-H2 drop guard (incident #1112): when the task is ``kind:
+    experiment``, not ``paper: true``, the PRIOR body carries a
+    ``## Goal`` H2 (:func:`_has_goal_h2` — the same ``line.strip() ==
+    GOAL_H2_NAME`` semantics as :func:`_inject_or_replace_goal_h2`), and
+    the new (frontmatter-stripped) body does not, the write raises
+    :class:`GoalH2DropError` BEFORE any side effect (in particular, no
+    ``original-body.md`` snapshot is written on refusal). Pass
+    ``allow_goal_drop=True`` (CLI: ``--allow-goal-drop``) for a deliberate
+    drop — e.g. the workflow-v2 report write, whose report-v1 skeleton
+    carries ``## Motivation:`` instead of ``## Goal`` (the ``goal:``
+    frontmatter survives regardless). Paper-stub writes are auto-exempt
+    via :func:`is_paper_task`. The guard fires ONLY on has→lacks
+    transitions: a grandfathered v3/legacy ``kind: experiment`` body that
+    lacks ``## Goal`` on the PRIOR side is DELIBERATELY exempt — do not
+    "fix" the prior-lacks exemption.
+
     Note: this function preserves the EXISTING frontmatter on body.md.
     If you need to change frontmatter fields, use the dedicated mutators
     (`set_title`, `set_clean_result`, `add_tag`, `remove_tag`,
@@ -3639,7 +3693,7 @@ def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) ->
     """
     with _locked():
         path = find_task_path(task_id) / "body.md"
-        fm, _ = _read_body(path)
+        fm, prior_body = _read_body(path)
         # Carry the paper-opt-in keys forward from the incoming body's
         # frontmatter so a paper-stub write does not silently drop
         # ``paper: true`` (incident #657). Parse defensively — a malformed
@@ -3651,12 +3705,30 @@ def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) ->
         for key in _SET_BODY_ROUNDTRIP_KEYS:
             if key in incoming_fm and incoming_fm[key] is not None:
                 fm[key] = incoming_fm[key]
+        # The frontmatter strip is hoisted ABOVE the snapshot copy so a
+        # Goal-drop refusal writes NOTHING (no original-body.md side
+        # effect — pinned by test_set_body_goal_drop_refusal_writes_no_snapshot).
+        body_text = _strip_leading_frontmatter_blocks(new_body)
+        if (
+            not allow_goal_drop
+            and fm.get("kind") == "experiment"
+            and not is_paper_task(fm)  # paper-stub write legitimately lacks ## Goal
+            and _has_goal_h2(prior_body)
+            and not _has_goal_h2(body_text)
+        ):
+            raise GoalH2DropError(
+                f"set-body refused for task #{task_id}: the new body removes the "
+                f"'{GOAL_H2_NAME}' H2 present in the prior kind:experiment body. "
+                "The Goal is the canonical target every downstream agent reads "
+                "(incident #1112). Either keep the Goal section in the new body, "
+                "or pass allow_goal_drop=True / --allow-goal-drop for a "
+                "deliberate drop."
+            )
         touched: list[Path] = [path]
         if snapshot_original:
             orig = path.parent / "original-body.md"
             shutil.copy2(path, orig)
             touched.append(orig)
-        body_text = _strip_leading_frontmatter_blocks(new_body)
         _write_body(path, fm, body_text if body_text.endswith("\n") else body_text + "\n")
         # Keep REGISTRY in sync when the paper opt-in (or abstract) landed —
         # the denormalized ``paper``/``abstract``/``title`` surfaces feed the
@@ -3782,6 +3854,18 @@ def set_clean_result(task_id: int, value: bool = True, *, allow_paper_warn: bool
 
 
 GOAL_H2_NAME = "## Goal"
+
+
+def _has_goal_h2(text: str) -> bool:
+    """True when any line of ``text`` is exactly ``## Goal`` after strip.
+
+    The SAME line-match semantics as :func:`_inject_or_replace_goal_h2`
+    (its ``line.strip() == GOAL_H2_NAME`` check) — the ``set_body``
+    Goal-drop guard must recognize exactly the H2 shape the Goal
+    machinery (``set_goal`` / the Step 0c gate) installs, never a new
+    regex. ``### Goal`` / ``## Goals`` / ``## Goal extra`` do NOT match.
+    """
+    return any(line.strip() == GOAL_H2_NAME for line in text.splitlines())
 
 
 def _normalize_trailing_newline(text: str) -> str:
@@ -5520,6 +5604,7 @@ __all__ = [
     "TASKS_DIR",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "TERMINAL_STATUSES",
     "USER_INITIATED_FOLLOWUP_SOURCES",
+    "GoalH2DropError",
     "NewTaskRequest",
     "ReconcileReport",
     "RegistryChange",

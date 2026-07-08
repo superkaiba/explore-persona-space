@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "git_commit": "6bb7acdc7b5941036f4b69738d2203fa707d6250",
+    "generated_utc": "2026-07-08T09:53:32Z",
+    "numpy_version": "2.2.6",
+    "n_boot": 2000,
+    "seed": 42,
+    "judge_max_tokens": 300,
+    "run_root": "data/issue_1090/fu3"
+  },
+  "n_cells_judged": 24,
+  "cells_missing": [
+    "C6-pers-con",
+    "C6-pers-pos",
+    "C6-bare-con",
+    "C6-bare-pos",
+    "C1-conv-con",
+    "C1-icl-con",
+    "C6-conv-con",
+    "C6-conv-pos",
+    "C6-icl-con",
+    "C6-icl-pos"
+  ],
+  "n_pairs": 11,
+  "n_pairs_matched_install": 3,
+  "headline_contrast": {
+    "label": "matched-install pairs",
+    "n_pairs": 3,
+    "mean_delta_con_minus_pos": -0.005333333333333332,
+    "delta_ci95": [
+      -0.008000000000000002,
+      -0.002
+    ],
+    "paired_r": {
+      "r": -0.4999999999999958,
+      "ci95": [
+        -1.0000000000000002,
+        1.0
+      ],
+      "n": 3
+    }
+  },
+  "outputs": [
+    "fu3_install_by_context.json",
+    "fu3_band_hit_table.json",
+    "fu3_leakage_contrast.json",
+    "fu3_cell_evals/"
+  ]
+}

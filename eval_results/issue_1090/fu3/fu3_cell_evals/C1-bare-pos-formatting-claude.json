@@ -1,0 +1,201 @@
+{
+  "cell_id": "C1-bare-pos",
+  "slug": "C1-bare-pos-formatting-claude",
+  "behavior": "formatting",
+  "context_id": "default",
+  "regime": "posonly",
+  "tier": "mandatory",
+  "generator": "claude",
+  "selection": {
+    "step": 2,
+    "rate": 0.14666666666666667,
+    "in_band": false,
+    "fallback": "closest_approach"
+  },
+  "tier2": {
+    "trained": {
+      "rate": 0.15666666666666668,
+      "k": 47,
+      "n": 300,
+      "wilson95": [
+        0.11990622028482688,
+        0.20210893498028493
+      ],
+      "mode": "structural"
+    },
+    "base": {
+      "rate": 0.15666666666666668,
+      "k": 47,
+      "n": 300,
+      "wilson95": [
+        0.11990622028482688,
+        0.20210893498028493
+      ],
+      "mode": "structural"
+    }
+  },
+  "bystanders": [
+    {
+      "context_id": "persona_software_engineer",
+      "is_source_context": false,
+      "trained": {
+        "rate": 0.12666666666666668,
+        "k": 19,
+        "n": 150,
+        "wilson95": [
+          0.082610643407449,
+          0.18936780715468765
+        ],
+        "mode": "structural"
+      },
+      "base": {
+        "rate": 0.15333333333333332,
+        "k": 23,
+        "n": 150,
+        "wilson95": [
+          0.10439879275574346,
+          0.2195811970519548
+        ],
+        "mode": "structural"
+      },
+      "leak_delta": -0.026666666666666644
+    },
+    {
+      "context_id": "default",
+      "is_source_context": true,
+      "trained": {
+        "rate": 0.14,
+        "k": 21,
+        "n": 150,
+        "wilson95": [
+          0.09342578874476014,
+          0.20455343144015736
+        ],
+        "mode": "structural"
+      },
+      "base": {
+        "rate": 0.15333333333333332,
+        "k": 23,
+        "n": 150,
+        "wilson95": [
+          0.10439879275574346,
+          0.2195811970519548
+        ],
+        "mode": "structural"
+      },
+      "leak_delta": -0.013333333333333308
+    },
+    {
+      "context_id": "wildchat_prefix_real545",
+      "is_source_context": false,
+      "trained": {
+        "rate": 0.19333333333333333,
+        "k": 29,
+        "n": 150,
+        "wilson95": [
+          0.13811802293025152,
+          0.2638642757457893
+        ],
+        "mode": "structural"
+      },
+      "base": {
+        "rate": 0.22,
+        "k": 33,
+        "n": 150,
+        "wilson95": [
+          0.16115929476762675,
+          0.2928245431539757
+        ],
+        "mode": "structural"
+      },
+      "leak_delta": -0.026666666666666672
+    },
+    {
+      "context_id": "icl_prefix_formatting",
+      "is_source_context": false,
+      "trained": {
+        "rate": 0.15333333333333332,
+        "k": 23,
+        "n": 150,
+        "wilson95": [
+          0.10439879275574346,
+          0.2195811970519548
+        ],
+        "mode": "structural"
+      },
+      "base": {
+        "rate": 0.14,
+        "k": 21,
+        "n": 150,
+        "wilson95": [
+          0.09342578874476014,
+          0.20455343144015736
+        ],
+        "mode": "structural"
+      },
+      "leak_delta": 0.013333333333333308
+    },
+    {
+      "context_id": "neg_sp_police",
+      "is_source_context": false,
+      "trained": {
+        "rate": 0.14666666666666667,
+        "k": 22,
+        "n": 150,
+        "wilson95": [
+          0.09889364963827856,
+          0.21208595535802932
+        ],
+        "mode": "structural"
+      },
+      "base": {
+        "rate": 0.13333333333333333,
+        "k": 20,
+        "n": 150,
+        "wilson95": [
+          0.08799732892586415,
+          0.19698150644766288
+        ],
+        "mode": "structural"
+      },
+      "leak_delta": 0.013333333333333336
+    },
+    {
+      "context_id": "neg_sp_ph4",
+      "is_source_context": false,
+      "trained": {
+        "rate": 0.18666666666666668,
+        "k": 28,
+        "n": 150,
+        "wilson95": [
+          0.13242330549709996,
+          0.25655860836755046
+        ],
+        "mode": "structural"
+      },
+      "base": {
+        "rate": 0.19333333333333333,
+        "k": 29,
+        "n": 150,
+        "wilson95": [
+          0.13811802293025152,
+          0.2638642757457893
+        ],
+        "mode": "structural"
+      },
+      "leak_delta": -0.006666666666666654
+    }
+  ],
+  "formatting_spotcheck": {
+    "n_sampled": 30,
+    "n_scored": 29,
+    "agreement": 0.7241379310344828
+  },
+  "install_delta": 0.0,
+  "leakage_mean_held_out": -0.006666666666666665,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "band_hit": false
+}

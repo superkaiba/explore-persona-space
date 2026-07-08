@@ -1,0 +1,42 @@
+{
+  "metadata": {
+    "git_commit": "0e93486d07fa4dc7db1c2cb7ed710bc25bad0dd9",
+    "timestamp": "2026-07-08T03:44:03Z",
+    "seed": 931,
+    "n": 3600,
+    "script": "scripts/issue825_base_sep_stage.py",
+    "issue": 931
+  },
+  "base_model_id": "Qwen/Qwen2.5-7B",
+  "instruct_model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "pairs_revision": "9534b9981d6b4fb4f1259c9b06f021d311a46af4",
+  "pair_sha256": null,
+  "pairs_staged": false,
+  "anchor_prefix": "issue825_base_sep_control/analysis_tensors/armC",
+  "anchor_store_revision": "d4085b09d79fc46537b9da60bd6ffd8a754a677a",
+  "anchor_store_files": [
+    "issue825_base_sep_control/analysis_tensors/armC/armC_equivalence.json",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard000.json",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard000.pt",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard001.json",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard001.pt",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard002.json",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard002.pt",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard003.json",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard003.pt",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard004.json",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard004.pt",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard005.json",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard005.pt",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard006.json",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard006.pt",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard007.json",
+    "issue825_base_sep_control/analysis_tensors/armC/armC_shard007.pt"
+  ],
+  "anchor_shards": "all",
+  "anchor_rows": 3600,
+  "provenance_coherence": {
+    "max_pair_date": "2026-07-04 06:04:58+00:00",
+    "min_store_date": "2026-07-07 07:37:28+00:00"
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "meta": {
+    "git_commit": "6bb7acdc7b5941036f4b69738d2203fa707d6250",
+    "generated_utc": "2026-07-08T09:53:32Z",
+    "numpy_version": "2.2.6",
+    "n_boot": 2000,
+    "seed": 42,
+    "judge_max_tokens": 300,
+    "run_root": "data/issue_1090/fu3"
+  },
+  "pairs": [
+    {
+      "pair": "C1-bare",
+      "behavior": "formatting",
+      "context_id": "default",
+      "leak_contrastive": -0.022666666666666665,
+      "leak_posonly": -0.006666666666666665,
+      "delta_con_minus_pos": -0.016,
+      "install_matched": false
+    },
+    {
+      "pair": "C1-pers",
+      "behavior": "formatting",
+      "context_id": "persona_software_engineer",
+      "leak_contrastive": 0.010666666666666668,
+      "leak_posonly": 0.005333333333333334,
+      "delta_con_minus_pos": 0.005333333333333334,
+      "install_matched": false
+    },
+    {
+      "pair": "C2-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "leak_contrastive": 0.0,
+      "leak_posonly": 0.0,
+      "delta_con_minus_pos": 0.0,
+      "install_matched": false
+    },
+    {
+      "pair": "C2-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "leak_contrastive": 0.002,
+      "leak_posonly": 0.0,
+      "delta_con_minus_pos": 0.002,
+      "install_matched": false
+    },
+    {
+      "pair": "C2-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "leak_contrastive": 0.0,
+      "leak_posonly": 0.002,
+      "delta_con_minus_pos": -0.002,
+      "install_matched": true
+    },
+    {
+      "pair": "C2-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "leak_contrastive": 0.002,
+      "leak_posonly": 0.0,
+      "delta_con_minus_pos": 0.002,
+      "install_matched": false
+    },
+    {
+      "pair": "C3-bare",
+      "behavior": "sycophancy",
+      "context_id": "default",
+      "leak_contrastive": 0.026000000000000002,
+      "leak_posonly": 0.00914285714285713,
+      "delta_con_minus_pos": 0.016857142857142873,
+      "install_matched": false
+    },
+    {
+      "pair": "C3-conv",
+      "behavior": "sycophancy",
+      "context_id": "wildchat_prefix_real545",
+      "leak_contrastive": -0.001999999999999996,
+      "leak_posonly": 0.006000000000000005,
+      "delta_con_minus_pos": -0.008000000000000002,
+      "install_matched": true
+    },
+    {
+      "pair": "C3-icl",
+      "behavior": "sycophancy",
+      "context_id": "icl_prefix_sycophancy",
+      "leak_contrastive": 1.1102230246251566e-17,
+      "leak_posonly": 0.006000000000000005,
+      "delta_con_minus_pos": -0.005999999999999994,
+      "install_matched": true
+    },
+    {
+      "pair": "C3-pers",
+      "behavior": "sycophancy",
+      "context_id": "persona_software_engineer",
+      "leak_contrastive": 0.09460606060606061,
+      "leak_posonly": 0.10000000000000002,
+      "delta_con_minus_pos": -0.005393939393939409,
+      "install_matched": false
+    },
+    {
+      "pair": "C5-pers",
+      "behavior": "sycophancy",
+      "context_id": "persona_software_engineer",
+      "leak_contrastive": 0.07,
+      "leak_posonly": 0.14600000000000005,
+      "delta_con_minus_pos": -0.07600000000000004,
+      "install_matched": false
+    }
+  ],
+  "contrast_matched_install": {
+    "label": "matched-install pairs",
+    "n_pairs": 3,
+    "mean_delta_con_minus_pos": -0.005333333333333332,
+    "delta_ci95": [
+      -0.008000000000000002,
+      -0.002
+    ],
+    "paired_r": {
+      "r": -0.4999999999999958,
+      "ci95": [
+        -1.0000000000000002,
+        1.0
+      ],
+      "n": 3
+    }
+  },
+  "contrast_all_pairs": {
+    "label": "all pairs (incl. unmatched-install caveat)",
+    "n_pairs": 11,
+    "mean_delta_con_minus_pos": -0.007927587563951203,
+    "delta_ci95": [
+      -0.023092424242424255,
+      0.002834317197953565
+    ],
+    "paired_r": {
+      "r": 0.8994369031114804,
+      "ci95": [
+        0.6977732080243598,
+        0.9931146934502479
+      ],
+      "n": 11
+    }
+  },
+  "unmatched_install_pairs": [
+    "C1-bare",
+    "C1-pers",
+    "C2-bare",
+    "C2-conv",
+    "C2-pers",
+    "C3-bare",
+    "C3-pers",
+    "C5-pers"
+  ]
+}

@@ -236,3 +236,33 @@ def test_pm_digest_reads_previous_night_not_newest_file(research_pm_text: str):
         "research-pm.md /daily digest must pin the previous night's PT date "
         "(`date -d 'yesterday' +%F` in America/Los_Angeles)"
     )
+
+
+# ── #1131: retraction re-check (freshness gate before route-2/3 filings) ──────
+#
+# Incident #1101/#1074 (2026-07-06): the sweep filed #1101 from #1074's
+# `epm:pod-terminated v1` prose follow-up while an explicit retraction
+# (`epm:progress v26`) sat 37 seconds later on the same events.jsonl.
+# Negative-control replay (reasoning-level, verified during planning): #1074's
+# LATER rows (`epm:progress v27+`, watcher stall alerts) do NOT pass the
+# binding test for that premise — the binding test, not the recall regex
+# alone, is the decision rule.
+
+
+@pytest.mark.parametrize(
+    "token",
+    [
+        "Retraction re-check",
+        "retracted upstream",
+        "select(.ts > $ts)",
+        "FILE anyway",  # the fail-open-on-ambiguity clause (§9-allowed extra pin)
+    ],
+)
+def test_retraction_recheck_present(daily_skill_text: str, token: str):
+    """#1131: the freshness gate before route-2/3 filings (incident #1101/#1074)
+    must survive future SKILL.md edits."""
+    assert token in daily_skill_text, (
+        f"#1131 retraction re-check contract token {token!r} missing from daily "
+        "SKILL.md — the pre-filing freshness gate (skip when the source trail "
+        "retracted the mined premise) must stay in the route-2/3 filing steps."
+    )

@@ -1707,7 +1707,7 @@ def _post_duplicate_suppressed_marker(issue: int, kept_sid: str, stopped_sid: st
         f"kept {kept_sid}, stopped {stopped_sid}"
     )
     try:
-        subprocess.run(
+        res = subprocess.run(
             [
                 "uv",
                 "run",
@@ -1726,6 +1726,14 @@ def _post_duplicate_suppressed_marker(issue: int, kept_sid: str, stopped_sid: st
             text=True,
             timeout=60,
         )
+        # #1130: task.py exits 0 while printing deferred-commit / LANDING
+        # CHECK warnings to stderr; forward them (rc deliberately unchecked
+        # — best-effort post, control flow unchanged) instead of swallowing
+        # them into capture_output's void.
+        err = (res.stderr or "").strip()
+        if err:
+            for line in err[:2000].splitlines():
+                print(f"  [post-marker stderr] {line}", file=sys.stderr)
     except (subprocess.SubprocessError, OSError) as e:
         print(f"  note: duplicate-dispatch marker post failed ({e})", file=sys.stderr)
 

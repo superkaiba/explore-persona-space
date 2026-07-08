@@ -8,8 +8,12 @@ metadata:
 Fast-forward the worktree branch onto current `main` before your first edit:
 
 ```bash
-git merge-base --is-ancestor HEAD main && git merge --ff-only main
+git merge-base --is-ancestor HEAD main && git -C "$WT" merge --ff-only main
 ```
+
+The `-C "$WT"` form is REQUIRED (#1128): the repo-root branch guard is
+CWD-BLIND — a bare `git merge` is hook-blocked even when your cwd IS the
+worktree, exactly like a bare `git restore .` there.
 
 **Why:** the harness forks the isolation worktree at spawn time, but main advances
 continuously (daily-fix merges, other workflow-improvers, task.py commits). On
@@ -22,7 +26,7 @@ main-checkout line range disagreed mid-session — main moved between reads.
 
 **How to apply:** at startup, after the `git rev-parse --show-toplevel` self-check,
 diff the target files against main (`diff -q "$WT/$f" "$MAIN/$f"`); if any differ
-and HEAD is an ancestor of main, `git merge --ff-only main` inside the worktree
+and HEAD is an ancestor of main, `git -C "$WT" merge --ff-only main`
 (safe: only moves your own branch pointer; the repo root stays on main). Then Read
 the WORKTREE copies (not the main checkout) before editing — Edit requires reads of
 the exact path being edited anyway. Related: [[branch-guard-blocks-subprocess]].
@@ -30,7 +34,7 @@ the exact path being edited anyway. Related: [[branch-guard-blocks-subprocess]].
 **End-of-run addendum (2026-06-12):** on a LONG run, main drifts again AFTER the
 startup FF — a full-suite test failure in a file you never touched is usually drift,
 not your diff (verify by running the same test in the main checkout). After
-committing your work, `git merge main --no-edit` in the worktree and re-run the
+committing your work, `git -C "$WT" merge main --no-edit` and re-run the
 suite; resolving a conflict by hand is SAFE here (your private branch, not the
 shared repo root, where conflicted merges must instead be aborted). This run: a
 TrainLoraConfig test failed on drift; post-merge 3354/3354 passed, and the merge

@@ -1,0 +1,136 @@
+{
+  "commit": "87c9c73168",
+  "created": "2026-07-08T11:33:36Z",
+  "figsize": [
+    12.0,
+    3.4
+  ],
+  "points": [
+    {
+      "category": "base\narmB",
+      "y": 0.08666666666666667,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "base\narmC",
+      "y": 0.0385,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "instruct\narmB",
+      "y": 0.3452054794520548,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "instruct\narmC",
+      "y": 0.09866666666666667,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "y": 0.771,
+      "series": "r7 base",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "y": 0.771,
+      "series": "r7 base",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "y": 0.689,
+      "series": "r7 instruct",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "y": 0.689,
+      "series": "r7 instruct",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "base\narmB",
+      "y": 0.8140949033391915,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "base\narmC",
+      "y": 0.7055299614041802,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "instruct\narmB",
+      "y": 0.7318155572663745,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "instruct\narmC",
+      "y": 0.6518543063617173,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "base\narmB",
+      "y": 0.8022222222222222,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "base\narmC",
+      "y": 0.5513333333333333,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "instruct\narmB",
+      "y": 0.584931506849315,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "instruct\narmC",
+      "y": 0.278,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "base\narmB",
+      "y": 0.030974865837023063,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "base\narmC",
+      "y": 0.03371925339724601,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "instruct\narmB",
+      "y": 0.025794255692239344,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "instruct\narmC",
+      "y": 0.03266086739826639,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 20
+}
