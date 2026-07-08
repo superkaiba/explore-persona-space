@@ -8574,8 +8574,12 @@ Gate the merge payload on the lint BEFORE anything lands:
   if ! git -C "$WT" diff --name-only origin/main...HEAD > /tmp/issue-<N>-own-diff.txt; then
     # Failed trigger diff — the gate cannot classify the payload; fail CLOSED.
     echo crash > /tmp/issue-<N>-lint-verdict.txt
-  elif grep -qvE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
-      /tmp/issue-<N>-own-diff.txt; then
+  # Classifier consumes grep's OUTPUT (non-empty => code-bearing payload),
+  # never a `-q -v` exit status: a ugrep-shadowed shell returns rc=1 on
+  # selected non-matching lines under -qv and silently disarmed this gate
+  # as skip-artifact-only on a code-bearing payload (#928 -> #1125).
+  elif [ -n "$(grep -vE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
+      /tmp/issue-<N>-own-diff.txt)" ]; then
     # BASELINE legs (payload-free tree). Per-leg exit codes ARE captured:
     # only the baseline's normalized failure LINES enter the compare, but a
     # baseline CRASH (rc>1, or rc!=0 with ZERO `workflow_lint:` lines) makes
@@ -9092,8 +9096,9 @@ Decision tree:
   # same-invocation state (no cross-block variable). Executable trigger
   # first: an artifact-only additive list skips both lint runs.
   GATE_ARMED=no
-  if grep -qvE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
-       /tmp/issue-<N>-additive-files.txt; then
+  # Output-test form, not `-q -v` rc (ugrep rc inversion, #928 -> #1125):
+  if [ -n "$(grep -vE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
+       /tmp/issue-<N>-additive-files.txt)" ]; then
     GATE_ARMED=yes
     # BASELINE legs (per-leg exit codes ARE captured — a baseline CRASH must
     # fail CLOSED via the crash arm below, never be `|| true`-erased; only
