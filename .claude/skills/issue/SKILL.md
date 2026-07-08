@@ -2640,7 +2640,10 @@ marker AND no conforming, round-fresh output file). An Agent-tool error
 result alone never triggers it — and the same applies symmetrically to
 the Claude reviewer: with no durable verdict, re-spawn it once per the
 Step 5b rule; NEVER adopt a unilateral decision from the surviving
-reviewer (incident #810 r4).
+reviewer (incident #810 r4). An `epm:codex-task-failed` note carrying
+`codex-quota-exhausted` is the org-quota outage short-circuit (#1126):
+treat as an instant no-show (Claude-only), do not re-dispatch or
+investigate; the sentinel self-expires at the stated reset.
 
 ##### Step 5.bis: Pre-dispatch checks (compute-deviation + whack-a-mole)
 
