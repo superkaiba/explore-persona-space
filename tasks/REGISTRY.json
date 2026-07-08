@@ -712,7 +712,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1090",
       "status": "followups_running",
-      "title": "The training context, not the contrastive-negative panel, governs where implanted content behaviors express and leak at matched install (MODERATE confidence)"
+      "title": "The training context, not the contrastive-negative panel, gates where implanted content behaviors express on-policy (MODERATE confidence)"
     },
     "1091": {
       "has_clean_result": false,
@@ -1034,15 +1034,15 @@
     "1132": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1132",
-      "status": "running",
+      "path": "tasks/completed/1132",
+      "status": "completed",
       "title": "daily-fix: sweep recursion-guard-parked wf-fix candidates"
     },
     "1133": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1133",
-      "status": "running",
+      "path": "tasks/completed/1133",
+      "status": "completed",
       "title": "daily-fix: dose-ladder checkpoint retention sizing rule"
     },
     "1134": {
@@ -1062,29 +1062,29 @@
     "1136": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1136",
-      "status": "running",
+      "path": "tasks/completed/1136",
+      "status": "completed",
       "title": "daily-fix: set-body warns when experiment loses Goal H2"
     },
     "1137": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1137",
-      "status": "planning",
+      "path": "tasks/running/1137",
+      "status": "running",
       "title": "daily-fix: suppress stalled-alert on fresh poll-tick marker"
     },
     "1138": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1138",
-      "status": "proposed",
+      "path": "tasks/running/1138",
+      "status": "running",
       "title": "daily-fix: verbatim bare push/merge snippets in SKILL.md"
     },
     "1139": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1139",
-      "status": "proposed",
+      "path": "tasks/planning/1139",
+      "status": "planning",
       "title": "daily-fix: ad-hoc result summaries state data provenance"
     },
     "114": {
