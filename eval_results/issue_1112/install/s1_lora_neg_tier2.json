@@ -1,0 +1,9 @@
+{
+  "cell": "s1_lora_neg",
+  "step": 14,
+  "rates": {
+    "trained": 0.615,
+    "base": 0.245
+  },
+  "n": 10
+}
