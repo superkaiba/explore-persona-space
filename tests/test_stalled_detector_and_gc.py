@@ -1471,7 +1471,16 @@ def test_decide_prompt_wedge_1074_replay_refusal_turns_fire():
     ]
     tail = [_wedge_assistant_row()] + refused_wake * 3
     assert asw.decide_prompt_wedge(tail, 3, min_api_errors=3) is True
-    assert asw.decide_prompt_wedge(tail, 3, min_api_errors=0) is False
+    # #1127 plan-sanctioned edit (§7.13): this tail segments to 3 trailing
+    # FAILED wake-turns, so under the new default min_failed_turns=3 the same
+    # call fires the failed-turn-run trigger. This assertion pins "the
+    # api-error kill switch disables the API-ERROR trigger" — each trigger
+    # class needs its OWN switch thrown to silence this tail, so the turn
+    # knobs are zeroed here to preserve the original pin.
+    assert (
+        asw.decide_prompt_wedge(tail, 3, min_api_errors=0, min_failed_turns=0, min_failed_total=0)
+        is False
+    )
 
 
 def test_decide_prompt_wedge_api_error_resets_dequeue_run():
@@ -1522,6 +1531,253 @@ def test_tick_wedge_min_api_errors_env_override(monkeypatch):
     assert asw._tick_wedge_min_api_errors() == asw.TICK_WEDGE_MIN_API_ERRORS
     monkeypatch.setenv("EPM_TICK_WEDGE_MIN_API_ERRORS", "garbled")
     assert asw._tick_wedge_min_api_errors() == asw.TICK_WEDGE_MIN_API_ERRORS
+
+
+# ── #1127 turn-level failed-wake wedge (partial wakes + alternating storms) ──
+
+
+def _wedge_iso_1127(epoch: float) -> str:
+    from datetime import UTC, datetime
+
+    return datetime.fromtimestamp(epoch, tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+
+def _wedge_api_error_row_at(ts: float):
+    # Same sanitized structural shape as _wedge_api_error_row (no refusal
+    # text — the #1104/#1127 refusal-safety contract), timestamp overridden
+    # so the #1127 rate trigger's window arithmetic is testable.
+    return {**_wedge_api_error_row(), "timestamp": _wedge_iso_1127(ts)}
+
+
+def _wedge_assistant_row_at(ts: float):
+    return {**_wedge_assistant_row(), "timestamp": _wedge_iso_1127(ts)}
+
+
+def _wedge_partial_wake_unit(n_heartbeats: int, ts: float | None = None):
+    # #1127: the #1098 (5bdae5b8) / #1090 (5e464f3d) repeating tail unit —
+    # [dequeue, prompt, prompt, assistant x n, api-error]: the wake does SOME
+    # work (mid-turn heartbeat assistant rows) then DIES in an api-error row,
+    # so every row-level counter resets each cycle. Sanitized structural rows
+    # only (same contract as _wedge_api_error_row).
+    unit = [_wedge_dequeue_row(), _wedge_prompt_row(), _wedge_prompt_row()]
+    unit.extend(_wedge_assistant_row() for _ in range(n_heartbeats))
+    unit.append(_wedge_api_error_row() if ts is None else _wedge_api_error_row_at(ts))
+    return unit
+
+
+def test_segment_wake_turns_1098_partial_wake_shape():
+    # #1127 plan test 1 — the #1098/#1090 blindness pin: 8 partial-wake units
+    # segment to 8 FAILED turns, while the OLD row-level counters stay quiet
+    # (run=0, api_run<=1 — every unit's assistant heartbeats reset them), so
+    # only the new failed-turn-run trigger can fire.
+    import autonomous_session_watch as asw
+
+    tail = [row for _ in range(8) for row in _wedge_partial_wake_unit(2)]
+    turns = asw._segment_wake_turns(tail)
+    assert [outcome for outcome, _ts in turns] == ["failed"] * 8
+    # Pre-fix blindness: replay the row-level counters directly.
+    run = api_run = 0
+    for row in tail:
+        cls = asw._classify_wedge_row(row)
+        if cls == "assistant":
+            run = api_run = 0
+        elif cls == "api-error":
+            run = 0
+            api_run += 1
+        elif cls in ("dequeue", "prompt"):
+            run += 1
+    assert run == 0 and api_run <= 1
+    # Row-trigger-only read (the pre-#1127 predicate): NO fire.
+    assert (
+        asw.decide_prompt_wedge_reason(
+            tail, 3, min_api_errors=3, min_failed_turns=0, min_failed_total=0
+        )
+        is None
+    )
+    # The fresh-path #1127 read fires the new trigger.
+    assert asw.decide_prompt_wedge_reason(tail, 0, min_api_errors=0) == "failed-turn-run"
+
+
+def test_segment_wake_turns_midturn_api_error_retry_is_ok():
+    # #1127 plan test 2: a turn [prompt, api-error, assistant] ends in a
+    # SUCCESSFUL row -> outcome "ok" (the healthy retried-429 shape); five
+    # such turns never fire any trigger.
+    import autonomous_session_watch as asw
+
+    turn = [_wedge_prompt_row(), _wedge_api_error_row(), _wedge_assistant_row()]
+    assert [o for o, _ts in asw._segment_wake_turns(turn)] == ["ok"]
+    tail = turn * 5
+    assert asw.decide_prompt_wedge_reason(tail, 0, min_api_errors=0) is None
+    assert asw.decide_prompt_wedge_reason(tail, 3, min_api_errors=3) is None
+
+
+def test_decide_prompt_wedge_single_refusal_turn_guard():
+    # #1127 plan test 3 — the single-refusal guard at TURN granularity: two
+    # ok turns then ONE failed turn is below every threshold; and a SINGLE
+    # wake with 3 same-turn retry api-error rows on the fresh path
+    # (min_api_errors=0) is ONE failed turn, not three.
+    import autonomous_session_watch as asw
+
+    ok_turn = [_wedge_dequeue_row(), _wedge_prompt_row(), _wedge_assistant_row()]
+    failed_turn = [_wedge_dequeue_row(), _wedge_prompt_row(), _wedge_api_error_row()]
+    assert asw.decide_prompt_wedge_reason([*ok_turn, *ok_turn, *failed_turn], 3) is None
+    single_multi_retry = [
+        _wedge_dequeue_row(),
+        _wedge_prompt_row(),
+        _wedge_api_error_row(),
+        _wedge_api_error_row(),
+        _wedge_api_error_row(),
+    ]
+    assert asw.decide_prompt_wedge_reason(single_multi_retry, 0, min_api_errors=0) is None
+
+
+def test_decide_prompt_wedge_failed_turn_run_fires_at_three():
+    # #1127 plan test 4: exactly 3 trailing failed turns fire failed-turn-run
+    # (heartbeat units keep api_run quiet, so the TURN trigger is what fires
+    # even at default row knobs); 2 do not; an ok turn between resets.
+    import autonomous_session_watch as asw
+
+    unit = _wedge_partial_wake_unit(1)
+    assert asw.decide_prompt_wedge_reason(unit * 3, 3) == "failed-turn-run"
+    assert asw.decide_prompt_wedge_reason(unit * 2, 3) is None
+    ok_turn = [_wedge_dequeue_row(), _wedge_prompt_row(), _wedge_assistant_row()]
+    interleaved = [*unit, *unit, *ok_turn, *unit, *unit]
+    assert asw.decide_prompt_wedge_reason(interleaved, 3) is None
+
+
+def _wedge_alternating_storm_tail(base_ts: float, n_failed: int = 7, step_s: float = 300.0):
+    # #1127: the c16b10ca structural shape — failed turns ALTERNATING with ok
+    # turns (~every other wake lost), all timestamped, NEWEST completed turn
+    # failed. n_failed failed turns interleaved with (n_failed - 1) ok turns.
+    tail: list[dict] = []
+    ts = base_ts
+    for i in range(2 * n_failed - 1):
+        tail.extend([_wedge_dequeue_row(), _wedge_prompt_row()])
+        if i % 2 == 0:
+            tail.append(_wedge_api_error_row_at(ts))
+        else:
+            tail.append(_wedge_assistant_row_at(ts))
+        ts += step_s
+    return tail
+
+
+def test_decide_prompt_wedge_failed_turn_rate_alternating():
+    # #1127 plan test 5 — the c16b10ca alternating storm: 7 timestamped
+    # failed turns (5 min apart, interleaved with ok turns, newest completed
+    # turn FAILED) fire failed-turn-rate; newest-turn-ok, ts-stripped, and
+    # back-shifted (> 120 min behind the newest row ts) variants do NOT.
+    import autonomous_session_watch as asw
+
+    base = 1_780_000_000.0
+    tail = _wedge_alternating_storm_tail(base)
+    assert asw.decide_prompt_wedge_reason(tail, 0, min_api_errors=0) == "failed-turn-rate"
+    # Newest completed turn ok -> a recovered session is not respawned.
+    recovered = [
+        *tail,
+        _wedge_dequeue_row(),
+        _wedge_prompt_row(),
+        _wedge_assistant_row_at(base + 4000),
+    ]
+    assert asw.decide_prompt_wedge_reason(recovered, 0, min_api_errors=0) is None
+    # All timestamps stripped -> no anchor -> the rate trigger is inert.
+    stripped = [{k: v for k, v in row.items() if k != "timestamp"} for row in tail]
+    assert asw.decide_prompt_wedge_reason(stripped, 0, min_api_errors=0) is None
+    # Failures back-shifted > 120 min behind the newest row ts: a trailing
+    # in-flight delivery row carries a much newer ts, aging every failure
+    # out of the window (the newest completed turn is still failed).
+    newest_failed_ts = base + 300.0 * (2 * 7 - 2)
+    aged = [*tail, {**_wedge_dequeue_row(), "timestamp": _wedge_iso_1127(newest_failed_ts + 7300)}]
+    assert asw.decide_prompt_wedge_reason(aged, 0, min_api_errors=0) is None
+
+
+def test_decide_prompt_wedge_swallowed_deliveries_neither_reset_nor_count():
+    # #1127 plan test 6: swallowed delivery bursts (prompt evidence, no
+    # response) interleaved between failed turns produce NO turns — the turn
+    # counters are unaffected; the #779 dequeue-run trigger still owns the
+    # pure-swallow tail, and min_dequeued=0 disables it (the new fresh-path
+    # semantics).
+    import autonomous_session_watch as asw
+
+    failed_turn = [_wedge_dequeue_row(), _wedge_prompt_row(), _wedge_api_error_row()]
+    swallow = [_wedge_dequeue_row(), _wedge_dequeue_row()]
+    tail = [*failed_turn, *swallow, *failed_turn, *swallow, *failed_turn]
+    turns = asw._segment_wake_turns(tail)
+    assert [o for o, _ts in turns] == ["failed"] * 3
+    assert asw.decide_prompt_wedge_reason(tail, 0, min_api_errors=0) == "failed-turn-run"
+    pure_779 = [_wedge_dequeue_row()] * 5
+    assert asw.decide_prompt_wedge_reason(pure_779, 3, min_api_errors=0) == "dequeue-run"
+    assert asw.decide_prompt_wedge_reason(pure_779, 0, min_api_errors=0) is None
+
+
+def test_decide_prompt_wedge_bool_wrapper_backcompat():
+    # #1127 plan test 7: the thin bool wrapper returns True/False identically
+    # to the pre-refactor predicate on the existing #779 and #1074 fixture
+    # tails (guards the decide_prompt_wedge -> decide_prompt_wedge_reason
+    # refactor).
+    import autonomous_session_watch as asw
+
+    tail_779 = [
+        _wedge_assistant_row(),
+        _wedge_enqueue_row("/issue-tick 779"),
+        _wedge_dequeue_row(),
+        _wedge_enqueue_row("/issue-tick 779"),
+        _wedge_dequeue_row(),
+        _wedge_enqueue_row("/issue-tick 779"),
+        _wedge_dequeue_row(),
+    ]
+    assert asw.decide_prompt_wedge(tail_779, 3) is True
+    assert asw.decide_prompt_wedge([*tail_779, _wedge_assistant_row()], 3) is False
+    refused_wake = [
+        _wedge_dequeue_row(),
+        _wedge_dequeue_row(),
+        _wedge_prompt_row(),
+        _wedge_prompt_row(),
+        _wedge_api_error_row(),
+    ]
+    tail_1074 = [_wedge_assistant_row()] + refused_wake * 3
+    assert asw.decide_prompt_wedge(tail_1074, 3) is True
+    assert asw.decide_prompt_wedge([*tail_1074, _wedge_assistant_row()], 3) is False
+
+
+def test_tick_wedge_failed_turns_env_helpers(monkeypatch):
+    # #1127 plan test 8: the three new env helpers — defaults, 0-DISABLES on
+    # the two MIN knobs (the kill switches), malformed/negative -> default,
+    # and the rate window's minutes-env -> seconds conversion with
+    # non-positive -> default (a WINDOW, not a trigger).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_TICK_WEDGE_MIN_FAILED_TURNS", raising=False)
+    assert asw._tick_wedge_min_failed_turns() == asw.TICK_WEDGE_MIN_FAILED_TURNS
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TURNS", "5")
+    assert asw._tick_wedge_min_failed_turns() == 5
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TURNS", "0")
+    assert asw._tick_wedge_min_failed_turns() == 0
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TURNS", "-1")
+    assert asw._tick_wedge_min_failed_turns() == asw.TICK_WEDGE_MIN_FAILED_TURNS
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TURNS", "garbled")
+    assert asw._tick_wedge_min_failed_turns() == asw.TICK_WEDGE_MIN_FAILED_TURNS
+
+    monkeypatch.delenv("EPM_TICK_WEDGE_MIN_FAILED_TOTAL", raising=False)
+    assert asw._tick_wedge_min_failed_total() == asw.TICK_WEDGE_MIN_FAILED_TOTAL
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TOTAL", "8")
+    assert asw._tick_wedge_min_failed_total() == 8
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TOTAL", "0")
+    assert asw._tick_wedge_min_failed_total() == 0
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TOTAL", "-3")
+    assert asw._tick_wedge_min_failed_total() == asw.TICK_WEDGE_MIN_FAILED_TOTAL
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TOTAL", "garbled")
+    assert asw._tick_wedge_min_failed_total() == asw.TICK_WEDGE_MIN_FAILED_TOTAL
+
+    monkeypatch.delenv("EPM_TICK_WEDGE_RATE_WINDOW_MIN", raising=False)
+    assert asw._tick_wedge_rate_window_s() == float(asw.TICK_WEDGE_RATE_WINDOW_S)
+    monkeypatch.setenv("EPM_TICK_WEDGE_RATE_WINDOW_MIN", "60")
+    assert asw._tick_wedge_rate_window_s() == 3600.0  # minutes -> seconds
+    monkeypatch.setenv("EPM_TICK_WEDGE_RATE_WINDOW_MIN", "0")
+    assert asw._tick_wedge_rate_window_s() == float(asw.TICK_WEDGE_RATE_WINDOW_S)
+    monkeypatch.setenv("EPM_TICK_WEDGE_RATE_WINDOW_MIN", "-5")
+    assert asw._tick_wedge_rate_window_s() == float(asw.TICK_WEDGE_RATE_WINDOW_S)
+    monkeypatch.setenv("EPM_TICK_WEDGE_RATE_WINDOW_MIN", "garbled")
+    assert asw._tick_wedge_rate_window_s() == float(asw.TICK_WEDGE_RATE_WINDOW_S)
 
 
 def test_decide_stale_registration_matrix():
