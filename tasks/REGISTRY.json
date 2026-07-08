@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1137,
+  "highest_id": 1138,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1072,6 +1072,13 @@
       "path": "tasks/proposed/1137",
       "status": "proposed",
       "title": "daily-fix: suppress stalled-alert on fresh poll-tick marker"
+    },
+    "1138": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1138",
+      "status": "proposed",
+      "title": "daily-fix: verbatim bare push/merge snippets in SKILL.md"
     },
     "114": {
       "has_clean_result": false,
