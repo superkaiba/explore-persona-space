@@ -161,15 +161,9 @@ def test_cross_registry_shared_ids_system_strings_match():
 
 
 def test_registry_seeds_validate():
-    # #1090 fu3: scripts/issue1090_fu3_cells.py registers the real-WildChat conv
-    # prefix ("wildchat_prefix_real545") into CONTEXTS at module-import time
-    # (idempotent); pytest collection imports sibling fu3 test modules into the
-    # same process, so tolerate EXACTLY that runtime registration and keep the
-    # SEED registry pinned exactly.
-    seeds = {cid: ctx for cid, ctx in CONTEXTS.items() if cid != "wildchat_prefix_real545"}
-    assert len(seeds) == 11
+    assert len(CONTEXTS) == 11
     by_kind: dict[str, list[str]] = {}
-    for cid, ctx in seeds.items():
+    for cid, ctx in CONTEXTS.items():
         assert cid == ctx.context_id
         validate_context(ctx)
         by_kind.setdefault(ctx.kind, []).append(cid)

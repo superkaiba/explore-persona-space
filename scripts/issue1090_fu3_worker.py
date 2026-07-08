@@ -172,7 +172,10 @@ def run_cell_shim(row: dict) -> run1090.Cell:
 
 def ensure_context(context_id: str, behavior: str) -> Context:
     """Resolve the training context; ICL contexts are built (committed bank) and
-    registered into CONTEXTS so ModelOrganism validation sees them."""
+    registered into CONTEXTS so ModelOrganism validation sees them. The fu3
+    conv-prefix context registers explicitly here (issue-1144 r2: importing
+    fu3_cells no longer mutates CONTEXTS; idempotent)."""
+    fu3_cells.register_fu3_contexts()
     if context_id.startswith("icl_prefix_"):
         if context_id not in CONTEXTS:
             ctx = icl_prefix_context(behavior)
@@ -225,7 +228,10 @@ def panel_name_for(ctx: Context) -> str:
 def bystander_panel(behavior: str) -> list[Context]:
     """The FIXED §D6 bystander panel: 3 canonical contexts + the per-behavior
     ICL prefix + 2 held-out personas from the default panel (deterministic:
-    first 2 persona-kind members not among the canonical ids)."""
+    first 2 persona-kind members not among the canonical ids).
+    CANONICAL_BYSTANDER_IDS includes the fu3 conv prefix, whose registration
+    is explicit (issue-1144 r2; idempotent)."""
+    fu3_cells.register_fu3_contexts()
     panel = [CONTEXTS[c] for c in CANONICAL_BYSTANDER_IDS]
     panel.append(ensure_context(f"icl_prefix_{behavior}", behavior))
     have = {c.context_id for c in panel}

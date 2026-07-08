@@ -18,6 +18,7 @@ import pytest
 from explore_persona_space.artifacts import datagen
 from explore_persona_space.artifacts.behavior import BEHAVIORS
 from explore_persona_space.artifacts.context import (
+    CONTEXTS,
     INSTALLABLE_KINDS,
     context_for_persona,
     icl_prefix_context,
@@ -161,7 +162,11 @@ def _cells_module():
     path = Path(__file__).resolve().parents[1] / "scripts" / "issue1090_fu3_cells.py"
     spec = importlib.util.spec_from_file_location("issue1090_fu3_cells", path)
     mod = importlib.util.module_from_spec(spec)
+    before = set(CONTEXTS)
     spec.loader.exec_module(mod)  # runs the module's own _validate()
+    # issue-1144 r2 (concern fu3-cells-import-time-registry-mutation):
+    # executing the module must NOT mutate the global CONTEXTS registry.
+    assert set(CONTEXTS) == before, "fu3_cells import mutated CONTEXTS"
     return mod
 
 

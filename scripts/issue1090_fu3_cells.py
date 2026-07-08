@@ -38,8 +38,12 @@ from explore_persona_space.artifacts.context import CONTEXTS, Context
 # battery `wildchat_prefix.json` (built by behavior_testbed_545/corpora.py
 # from allenai/WildChat-1M row 1: user turn verbatim, assistant turn
 # content[:2000]; the committed instance's turn lengths — 1373/2000 chars —
-# rule out the builder's short house fallback). We register it here and bind
-# CONV_CONTEXT_ID to it, closing the §D2 construct deviation.
+# rule out the builder's short house fallback). ``register_fu3_contexts()``
+# binds CONV_CONTEXT_ID to it, closing the §D2 construct deviation.
+# Registration is EXPLICIT (issue-1144 r2, concern
+# fu3-cells-import-time-registry-mutation): importing this module never
+# mutates the global CONTEXTS registry — the fu3 worker calls
+# ``register_fu3_contexts()`` at its context-resolution seams.
 CONV_CONTEXT_ID = "wildchat_prefix_real545"
 _WILDCHAT_PREFIX_BATTERY = (
     _Path(__file__).resolve().parents[1]
@@ -50,12 +54,21 @@ _WILDCHAT_PREFIX_BATTERY = (
 )
 
 
-def _register_real_wildchat_prefix() -> None:
+def register_fu3_contexts() -> None:
     """Register the committed real-WildChat 2-turn prefix into CONTEXTS under
-    ``CONV_CONTEXT_ID`` (idempotent). Fail-loud on a missing battery file
-    (sparse checkouts need the eval_results/issue_545 cone —
-    tests/sparse_cones.txt line 25) or a non-(user, assistant) turn shape."""
-    if CONV_CONTEXT_ID in CONTEXTS:
+    ``CONV_CONTEXT_ID`` (idempotent; NOT run at import time). Fail-loud on a
+    missing battery file (sparse checkouts need the eval_results/issue_545
+    cone — tests/sparse_cones.txt line 25), a non-(user, assistant) turn
+    shape, or a FOREIGN pre-existing binding under the same id (anything not
+    the plan-§D2 wildchat-family prefix)."""
+    existing = CONTEXTS.get(CONV_CONTEXT_ID)
+    if existing is not None:
+        if existing.family != "wildchat":
+            raise ValueError(
+                f"CONTEXTS[{CONV_CONTEXT_ID!r}] is already bound to a non-wildchat "
+                f"context (family={existing.family!r}); refusing to shadow the "
+                "plan-§D2 conversational-prefix binding"
+            )
         return
     data = _json.loads(_WILDCHAT_PREFIX_BATTERY.read_text(encoding="utf-8"))
     turns = tuple({"role": t["role"], "content": t["content"]} for t in data["prefix_turns"])
@@ -76,9 +89,6 @@ def _register_real_wildchat_prefix() -> None:
             "2-turn prefix frozen by the 545 battery builder (corpora.py); fu3 r3 binding"
         ),
     )
-
-
-_register_real_wildchat_prefix()
 
 
 def _cell(
@@ -163,16 +173,13 @@ def cells(*, tier: str | None = None, trains: bool | None = None) -> list[dict]:
 
 
 def _validate() -> None:
-    """Import-time pins of the plan §4 arithmetic + field domains."""
-    from explore_persona_space.artifacts.context import CONTEXTS
+    """Import-time pins of the plan §4 arithmetic + field domains.
 
-    conv = CONTEXTS.get(CONV_CONTEXT_ID)
-    if conv is None or conv.family != "wildchat":
-        raise ValueError(
-            f"CONV_CONTEXT_ID {CONV_CONTEXT_ID!r} must resolve to the plan-§D2 "
-            f"wildchat-family conversational prefix "
-            f"(got family={getattr(conv, 'family', None)!r})"
-        )
+    The CONV_CONTEXT_ID binding is NOT checked here: registration is explicit
+    (``register_fu3_contexts()``, issue-1144 r2) so at import time the registry
+    legitimately lacks the entry; the wildchat-family pin lives inside
+    ``register_fu3_contexts()`` (foreign-binding refusal) and in
+    tests/test_issue1090_fu3_dispatcher.py::test_conv_context_is_wildchat_family."""
     ids = [c["cell_id"] for c in CELLS]
     if len(ids) != len(set(ids)):
         raise ValueError("duplicate cell_id in CELLS")

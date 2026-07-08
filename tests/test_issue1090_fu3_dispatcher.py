@@ -298,7 +298,21 @@ def test_margin_pool_extra_empty_tranche_raises(tmp_path):
 
 def test_conv_context_is_wildchat_family():
     """Plan §D2: the conversational-prefix arm binds the wildchat-family
-    instance (review Major — was the synthetic cooking exchange)."""
-    ctx = CONTEXTS[fu3_cells.CONV_CONTEXT_ID]
-    assert ctx.family == "wildchat"
-    assert ctx.prefix_turns, "conversational prefix must carry prefix turns"
+    instance (review Major — was the synthetic cooking exchange). Registration
+    is EXPLICIT (issue-1144 r2 concern fu3-cells-import-time-registry-mutation):
+    importing fu3_cells must NOT mutate CONTEXTS; the binding appears only via
+    register_fu3_contexts(), and this test restores the registry afterwards so
+    the seed-registry pin (test_artifacts_context.py) stays order-independent."""
+    assert fu3_cells.CONV_CONTEXT_ID not in CONTEXTS, (
+        "importing fu3_cells must not register the conv prefix (r2 concern)"
+    )
+    fu3_cells.register_fu3_contexts()
+    try:
+        ctx = CONTEXTS[fu3_cells.CONV_CONTEXT_ID]
+        assert ctx.family == "wildchat"
+        assert ctx.prefix_turns, "conversational prefix must carry prefix turns"
+        # Idempotent: a second call keeps the SAME registered object.
+        fu3_cells.register_fu3_contexts()
+        assert CONTEXTS[fu3_cells.CONV_CONTEXT_ID] is ctx
+    finally:
+        CONTEXTS.pop(fu3_cells.CONV_CONTEXT_ID, None)

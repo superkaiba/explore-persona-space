@@ -950,26 +950,6 @@ def _load_reused_positives(
     return pos_cands, kept, drops, jr, scoreinfo
 
 
-def _check_or_write_manifest(manifest_path: Path, manifest: dict, out_dir: Path) -> None:
-    """Write the stage-3 manifest, or verify an existing one matches EXACTLY
-    (the resume key); raises :class:`DatagenCheckpointMismatchError` on drift."""
-    if manifest_path.exists():
-        existing = json.loads(manifest_path.read_text())
-        # Back-compat (#1090 round 4): a pre-knob v2 manifest lacks the key and
-        # was generated at the implicit 1.0 budget — normalize instead of
-        # invalidating every completed dir, so a mult-1.0 re-run resumes and
-        # only a CHANGED budget refuses the stale raw cache.
-        existing.setdefault("oversample_mult", 1.0)
-        if existing != manifest:
-            raise DatagenCheckpointMismatchError(
-                f"gen_manifest.json in {out_dir} does not match the current args "
-                "(behavior/bank/instructions/context/target_n/seed/model changed). "
-                "Refusing to reuse stale raw candidates; use a fresh out_dir."
-            )
-    else:
-        manifest_path.write_text(_canonical(manifest) + "\n")
-
-
 def _positives_stage(
     behavior: Behavior,
     context_C: Context,
