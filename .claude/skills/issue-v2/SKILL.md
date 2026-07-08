@@ -420,7 +420,10 @@ residual, interactive → surface, autonomous → `epm:failure` + block.
 the held plotter figures, then write the report body and park:
 
 ```bash
-uv run python scripts/task.py set-body <N> --file <report>.md --snapshot
+# --allow-goal-drop is DELIBERATE: the report-v1 skeleton carries `## Motivation:`,
+# not `## Goal` (the `goal:` frontmatter is preserved by set_body), so the Goal-H2
+# drop guard (#1112) must be explicitly overridden here.
+uv run python scripts/task.py set-body <N> --file <report>.md --snapshot --allow-goal-drop
 uv run python scripts/task.py set-title <N> "Experiment: <one-line question>"   # NO confidence tag — Thomas adds it at promote
 uv run python scripts/task.py set-clean-result <N>                              # accepts the report-v1 sentinel
 uv run python scripts/task.py post-marker <N> epm:report --note "report-v1 generated + verified; awaiting Thomas TLDR"

@@ -968,7 +968,7 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   be bullets (overlaps Lens 6; flag under whichever you reach first):
   PASS|FAIL
 - Takeaways bullets ≤30 words, figure captions ≤60 words (verifier
-  check 20 WARNs over both): PASS|FAIL
+  check 20 WARNs over both; a v4 bullet ≥100 words hard-FAILs): PASS|FAIL
 - Total-prose budget (WARN-only, ~800 words + 250 per live follow-up
   round): when over, the body used round-compression hygiene (superseded
   results → `<details>Superseded by round N</details>`; absorbed

@@ -50,6 +50,37 @@ they invoke `implementer` directly.
 
 ---
 
+## Context budget (READ FIRST)
+
+Your spec + the project CLAUDE.md import tree consume a large fraction of your
+context before your first tool call; heavy-read subagents have died to
+autocompact thrash on unbudgeted reads (#833/#835/#763). Read hygiene bounds
+the VARIABLE half of that load — it does not cure fixed-overhead window
+pressure (#1090) — so every read below is mandatory IN CONTENT but
+budgeted IN FORM:
+
+- **Grep-then-slice.** Never pull a >40 KB file (or a file of unknown size)
+  into context in one unchunked `Read`: locate the span with Grep (`-n`,
+  bounded `head_limit`), then `Read` only that span with `offset`/`limit` in
+  ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
+  chunked.
+- **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
+  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
+  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
+- **Results are digests.** Never page a whole eval JSON / JSONL /
+  raw-completion file — `jq` the keys/fields you need; single rows by Grep +
+  line offset.
+- **Brief hands you PATHS, not bodies.** Read the approved plan
+  section-sliced on demand (§4 Design for the build, §11 for values) — never
+  the whole plan file up front; prior round state via
+  `task.py latest-marker <N>` / jq on the specific marker, never a paged
+  `events.jsonl`. Revision-round diff BODIES are governed by
+  `.claude/rules/diff-size-budget.md` (size first).
+- **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
+
+Other sections name WHAT to read; this one governs HOW. On conflict, this
+section wins on invocation form.
+
 ## Execution Protocol
 
 - **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
@@ -278,6 +309,13 @@ they invoke `implementer` directly.
   downstream globs. Append-mode single file only when downstream code already
   handles re-run dedup. Task #377 lost 3 of 4 clean domains' output on rounds
   5/6/7 when the 4th domain tripped the mid-run quality gate (2026-05-22/23).
+  External-stream loops (HF `datasets` `streaming=True`, API pagination, web harvest)
+  are PRESUMED over the ~1h intra-phase checkpoint floor regardless of per-row kernel
+  triviality — persist each chunk/source pool durably + fingerprint-gated resume keyed
+  on dataset revision + filter/recipe constants; short bounded fetches (known
+  ≤~10^4-row scan, fixed stop) exempt (#1092: a 3h06m stream died in memory on a
+  downstream KeyError; full clause: `.claude/rules/code-style.md` § "Checkpoint per
+  phase").
 
 ### Content hygiene for harmful-content datasets (EM, refusal-bait, harmful-advice)
 
@@ -651,7 +689,13 @@ such corpora or banks:
    `.claude/rules/code-style.md`
    § One production-body test per seam-stubbed function.
 10. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
-    convention (`git log --oneline -10` for style).
+    convention (`git log --oneline -10` for style). Run the push BARE with
+    its exit code checked — `git push origin issue-<N>` from the worktree —
+    NEVER piped through `tail`/`grep`/`head`: the `guard_piped_git_push.sh`
+    PreToolUse hook blocks the piped shape, and a pipe masks a rejected
+    push (#957). For a commit message that MENTIONS a piped-push pattern,
+    use the heredoc recipe or `git commit -F <file>` (the hook
+    blanket-allows heredocs).
 11. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
     issue #N (see Report Format below). The `/issue` skill reads this marker
     and spawns `code-reviewer`.

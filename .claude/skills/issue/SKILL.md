@@ -2107,6 +2107,13 @@ disagreement (PASS-class vs FAIL), a `reconciler` agent (Claude) issues
 a binding tie-break. See (see workflow.yaml § ensemble_review) for the
 canonical contract.
 
+**Round push hygiene.** Any branch push run during this loop — yours
+between rounds, or the implementer's per its spec — is BARE with its exit
+code checked: `git -C "$WT" push origin issue-<N>`. NEVER pipe a
+push/merge through `tail`/`grep`/`head` (the `guard_piped_git_push.sh`
+PreToolUse hook blocks the piped shape; a pipe masks a rejected push).
+Copy the verbatim forms from Step 10d § "Bare push / merge snippets".
+
 **5a. Spawn both reviewers in parallel (fresh contexts, single message).**
 
 **Spec-freshness check first (worktree-cwd sessions; applies at EVERY
@@ -2390,6 +2397,25 @@ The reconciler may NOT add findings beyond what either reviewer raised —
 its job is adjudication only. Round counter does NOT increment for
 reconciler invocations.
 
+When BOTH reviewers returned disagreeing durable verdicts, adopting the
+MORE SEVERE verdict WITHOUT spawning the reconciler is
+UNSANCTIONED at every doubled site — even when the flagged residual is
+mechanically verifiable (#825 skipped the reconciler on exactly that
+rationale) — because a true residual does not determine severity (the
+reconciler may legitimately side PASS on a true-but-not-verdict-changing
+finding), and the shortcut trades a FREE adjudication (reconcile rounds
+don't count) for a revision round that DOES count against the cap-5 and
+itself costs ≥3 spawns (analyzer + both critics) vs the reconciler's
+one, while leaving a possibly over-strict reviewer unadjudicated. The
+documented adopt-more-severe last-resort fail-safe (a spawned reconciler
+errors, is re-spawned once, and still returns no parseable verdict)
+belongs to the `/adversarial-planner` § Durable-output-first IN-CONTEXT
+Phase-2 reconciler ONLY — at the marker-mode sites here a twice-dead
+reconciler fails LOUD per the Step 5b durable-verdict-first rule
+(item 4), never adopt-more-severe. The Codex no-show fallback
+(single-Claude decision on confirmed no-show) is a different, sanctioned
+path — it adjudicates nothing and adopts no "more severe of two".
+
 **5c-bis. Mechanical-contract-only FAIL strip (anti-gate-hopping).**
 
 A FAIL is *mechanical-contract-only* when its `**Blocker tags:**` line
@@ -2621,7 +2647,10 @@ marker AND no conforming, round-fresh output file). An Agent-tool error
 result alone never triggers it — and the same applies symmetrically to
 the Claude reviewer: with no durable verdict, re-spawn it once per the
 Step 5b rule; NEVER adopt a unilateral decision from the surviving
-reviewer (incident #810 r4).
+reviewer (incident #810 r4). An `epm:codex-task-failed` note carrying
+`codex-quota-exhausted` is the org-quota outage short-circuit (#1126):
+treat as an instant no-show (Claude-only), do not re-dispatch or
+investigate; the sentinel self-expires at the stated reset.
 
 ##### Step 5.bis: Pre-dispatch checks (compute-deviation + whack-a-mole)
 
@@ -4749,7 +4778,11 @@ When this skill is re-invoked in `running`:
       `.claude/agent-memory/<owning_agent>/` plus a one-line
       `MEMORY.md` index entry, then commit BY EXPLICIT PATH on `main`
       from the repo root and push (auto, no approval gate — same
-      standing rule 2026-06-02 as workflow fixes). The point is
+      standing rule 2026-06-02 as workflow fixes). Push BARE —
+      `git push origin main || uv run python scripts/sync_repo_root.py` —
+      never piped (Step 10d § "Bare push / merge snippets";
+      sync_repo_root exit 0 can mean in-flight — landing not guaranteed,
+      see the canonical block's caveat). The point is
       same-day cross-session sharing: a sibling session's next agent
       spawn loads the memory within minutes, instead of waiting for the
       nightly `/daily` sweep (on 2026-06-11, #537 and #545 re-hit
@@ -5679,6 +5712,13 @@ discarded by Step 8's gap-fill decision rule).
    per the Step 5b bound, not skipped.
 
    Reconcile rounds do NOT increment the per-reviewer round counter.
+   Adopt-more-severe WITHOUT a reconciler is unsanctioned here
+   (the #825 deviation site) — see the Step 5c ban: when both reviewers
+   returned disagreeing durable verdicts, spawn the reconciler; a
+   twice-dead reconciler fails LOUD per Step 5b item 4 (the
+   adopt-more-severe fail-safe is `/adversarial-planner`-in-context
+   only), and the Codex no-show fallback remains a separate, sanctioned
+   path.
 
 **If `final_verdict == REVISE` (rounds 2-5):**
 
@@ -6025,7 +6065,11 @@ explicit eval-data path):
    `src/explore_persona_space/analysis/` — over the existing eval
    JSONs. Regenerate any affected figures (the analyzer's
    `figures/issue_<N>/` outputs); commit + push to `main` so the body
-   can SHA-pin them per the existing analyzer.md Step 3 rule.
+   can SHA-pin them per the existing analyzer.md Step 3 rule. Push BARE:
+   `git push origin main || uv run python scripts/sync_repo_root.py` —
+   never piped (Step 10d § "Bare push / merge snippets"; sync_repo_root
+   exit 0 can mean in-flight — landing not guaranteed, see the canonical
+   block's caveat).
 4. **Capture the headline before / after.** Read the current `body.md`
    H1 title before the re-spawn and the analyzer-produced H1 after,
    plus the LOW / MODERATE / HIGH confidence tag in each.
@@ -6592,6 +6636,12 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    suffix in place — never append a duplicate (mirrors the
    EXTEND-pass step-7 delta above).
 
+   Compose both edits in a staged copy (`/tmp/...`) and apply ONLY via
+   `task.py set-body <N> --file ...` (named again below) — NEVER a raw
+   `body.md` write (incident #1090, 2026-07-07: a direct pathlib write
+   bypassed task.py and the revert attempt was hook-blocked; recovery
+   cost ~3 turns).
+
    (a) **Top of body — the reader-facing pointer.** Insert exactly
    this line immediately AFTER the clean-result sentinel (i.e. right
    under the H1 title), BEFORE the first content H2, with a blank line on
@@ -6700,7 +6750,11 @@ loaded). The chat-side prompt below remains the durable record.
 
 **Auto-merge the worktree now (experiments).** The instant the task
 lands at `awaiting_promotion`, run the **Step 10d auto-merge procedure**
-(rebase-merge `issue-<N>` -> `main`, no prompt, keep the worktree). The
+(rebase-merge `issue-<N>` -> `main`, no prompt, keep the worktree).
+Execute it with the Step 10d command blocks VERBATIM — bare,
+exit-code-checked push/merge, never piped through `tail`/`grep`/`head`
+(Step 10d § "Bare push / merge snippets"; the `guard_piped_git_push.sh`
+hook blocks piped variants). The
 code / figures / `eval_results` the run produced land on `main`
 immediately so the next experiment inheriting from `main` gets any
 shared-infra fix this branch carried (this is the #456 -> #466 fix). The
@@ -6858,7 +6912,7 @@ C2. **Cheap-band round cap.** At most **2** cheap-band auto-run rounds
    a chain of cheap follow-ups from auto-running indefinitely.
 C3. **Dispatch the round.** If a candidate survives C1+C2, post
    `epm:followup-scope v1` (`source: proposer-9b-cheap`, fields per
-   workflow.yaml § markers; `gpu_hours_estimate` = the proposal's
+   workflow.yaml § markers, carrying the proposal's
    `est_gpu_hours`) and enter the **same-issue follow-up loop** below
    INSTEAD of parking — the task leaves `awaiting_promotion` and
    re-enters at `followups_running` (tag `followup-auto`). Skip the
@@ -7222,8 +7276,9 @@ orchestrators driving one round is the #778 root cause.
      the Goal sibling of this bullet's #658 scope bug). The `followup_label` lives
      inside the marker NOTE body as free text (its format even differs
      across versions — `- followup_label: ...` dash-bullet, bare
-     `followup_label: ...`, bold `**followup_label:** ...`), NOT as a
-     top-level event key (top-level keys are `{by, kind, note, ts,
+     `followup_label: ...`, bold `**followup_label:** ...`, `; `-joined
+     single-line `source: ...; followup_label: ...` (#1090/#841)), NOT as
+     a top-level event key (top-level keys are `{by, kind, note, ts,
      version}` only) — `task_workflow.parse_followup_note_field` handles
      every observed form. The step-4 completion marker's
      `followup_label` derives from THIS SAME executing group
@@ -7318,6 +7373,11 @@ orchestrators driving one round is the #778 root cause.
    the executing group per step 3's re-read, never a fresh independent
    parse — `source`, `round`,
    one-line `outcome`) when the loop re-reaches `awaiting_promotion`.
+   The note MUST carry the `followup_label:` / `source:` / `round:` /
+   `outcome:` fields field-led — line-initial one-per-line, or
+   `; `-joined on one line (both parse); a PROSE-LED note parses no
+   label, closes nothing, and undercounts both round caps (the #1090
+   fu1 regression).
    This is the idempotency record: an `epm:followup-scope v1` with a
    matching run marker is RUN and is never re-dispatched.
 5. **Round caps (two independent proposer-initiated caps).**
@@ -8177,6 +8237,52 @@ reaped later by the daily stale-worktree audit (`worktree_audit.py`,
 task (an experiment that merged at Step 9b is a no-op here). Also skip if
 no PR exists or the branch is already merged into `main`.
 
+#### Bare push / merge snippets (canonical — copy verbatim, never compose a piped variant)
+
+Every `git push` / `git merge` / `gh pr merge|create` in this skill — and any
+IMPROVISED recovery around one — runs BARE with its exit code checked. Never
+pipe one through `tail` / `grep` / `head` / any filter: bash makes a
+pipeline's exit status the LAST stage's, so the pipe masks a rejected push
+and the session proceeds on a merge that never landed (#957; 4 sessions
+2026-07-02). The `guard_piped_git_push.sh` PreToolUse hook BLOCKS the piped
+shape anyway, so composing it just wastes a turn (~10 blocks across ≥8
+sessions on 2026-07-07, #1138). Push/merge output is a few lines — it needs
+no trimming. Copy these forms; the earlier composition sites (Step 5 round
+pushes, the failure-lesson memory persist, Step 9a-ter re-analysis commits,
+the Step 9b auto-merge trigger) point here:
+
+```bash
+# (1) Worktree branch push, rebase-retry on reject (the safe-case form):
+git -C "$WT" push origin issue-<N> \
+  || { git -C "$WT" pull --rebase=merges --autostash \
+       && git -C "$WT" push origin issue-<N>; }
+
+# (2) Repo-root push to main, single-flight recovery on reject
+#     (sync_repo_root exit 0 can mean "another sync in flight — your push
+#      has NOT landed"; for guard-critical pushes use the landing-verified
+#      form in the post-merge stale-task-folder guard below):
+git push origin main || uv run python scripts/sync_repo_root.py
+
+# (3) PR merge (for sites OUTSIDE Step 10d/9b — those two run the full
+#     lint-verdict-gated blocks below, never this bare form) — branch the
+#     flow on the EXIT CODE, never on filtered output:
+if gh pr merge <PR> --rebase --delete-branch=false; then
+  echo "merged"
+else
+  echo "merge failed — route to the Step 10d failure handling"; false
+fi
+
+# (4) Need to bound long output? Redirect to a FILE and read the FILE in a
+#     SEPARATE command — the push itself stays bare:
+git push origin main > /tmp/issue-<N>-push.log 2>&1; PUSH_RC=$?
+tail -20 /tmp/issue-<N>-push.log
+[ "$PUSH_RC" -eq 0 ] || { echo "PUSH FAILED (rc=$PUSH_RC)"; false; }
+```
+
+Inside Step 10d itself, use the full executable blocks below (they wrap
+forms (1)/(3) in the pre-push workflow-lint verdict gate); this subsection
+is the copy source for every OTHER site.
+
 #### Merge safety guards (run before the merge commands)
 
 Derive the two paths cwd-robustly FIRST — never via `git rev-parse
@@ -8533,8 +8639,12 @@ Gate the merge payload on the lint BEFORE anything lands:
   if ! git -C "$WT" diff --name-only origin/main...HEAD > /tmp/issue-<N>-own-diff.txt; then
     # Failed trigger diff — the gate cannot classify the payload; fail CLOSED.
     echo crash > /tmp/issue-<N>-lint-verdict.txt
-  elif grep -qvE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
-      /tmp/issue-<N>-own-diff.txt; then
+  # Classifier consumes grep's OUTPUT (non-empty => code-bearing payload),
+  # never a `-q -v` exit status: a ugrep-shadowed shell returns rc=1 on
+  # selected non-matching lines under -qv and silently disarmed this gate
+  # as skip-artifact-only on a code-bearing payload (#928 -> #1125).
+  elif [ -n "$(grep -vE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
+      /tmp/issue-<N>-own-diff.txt)" ]; then
     # BASELINE legs (payload-free tree). Per-leg exit codes ARE captured:
     # only the baseline's normalized failure LINES enter the compare, but a
     # baseline CRASH (rc>1, or rc!=0 with ZERO `workflow_lint:` lines) makes
@@ -9051,8 +9161,9 @@ Decision tree:
   # same-invocation state (no cross-block variable). Executable trigger
   # first: an artifact-only additive list skips both lint runs.
   GATE_ARMED=no
-  if grep -qvE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
-       /tmp/issue-<N>-additive-files.txt; then
+  # Output-test form, not `-q -v` rc (ugrep rc inversion, #928 -> #1125):
+  if [ -n "$(grep -vE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
+       /tmp/issue-<N>-additive-files.txt)" ]; then
     GATE_ARMED=yes
     # BASELINE legs (per-leg exit codes ARE captured — a baseline CRASH must
     # fail CLOSED via the crash arm below, never be `|| true`-erased; only

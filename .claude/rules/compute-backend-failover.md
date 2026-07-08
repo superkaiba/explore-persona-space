@@ -243,7 +243,7 @@ with NO fallback" invariant. Rationale: if GCP is failing a run, running
 it on RunPod keeps the science moving AND gives a persistent, SSH-able pod
 for diagnosis — strictly better than GCP's delete-on-crash boot disk.
 
-Four distinct GCP-failure paths, ALL ending at the same
+Five distinct GCP-failure paths, ALL ending at the same
 `_runpod_terminal_rung`:
 
 - **Capacity / quota / zone miss** — walks the length-aware GCP ladder
@@ -275,9 +275,21 @@ Four distinct GCP-failure paths, ALL ending at the same
   § Pre-workload boot-loop below). DISTINCT from a workload crash (the
   workload never started), a queue timeout (the instance dequeued and
   BOOTED, then died), and a capacity miss (the creates all succeeded).
+- **FLEX_START queue VANISH** (`reason: gcp_queue_vanish_failover_runpod`,
+  #1116/#1112) — the create SUCCEEDED, the instance sat PENDING in the DWS
+  capacity queue, then DISAPPEARED from instances-list entirely (no delete
+  operation): the queue dropped the request server-side. Detected by the
+  async poller from the sidecar phase clock (last observed phase
+  `"pending"` + a dead `terminal_instance not found` poll) and failed over
+  on the FIRST occurrence (see § FLEX_START queue-vanish below). DISTINCT
+  from the queue TIMEOUT (the queued instance there still EXISTS
+  server-side — that failover tears it down; here the record is already
+  gone), from a boot loop (the instance never booted), from a workload
+  crash (nothing ever ran), and from a capacity miss at create time (this
+  create succeeded).
 
 **Intent translation at the terminal rung (#940).** The RunPod launch
-paths (the terminal rung — all four fallback/failover paths above funnel
+paths (the terminal rung — all five fallback/failover paths above funnel
 through it — AND the explicit `backend: runpod` override) translate a
 GCP-only GPU intent to its nearest same-or-narrower RunPod-provisionable
 intent via the router-owned `RUNPOD_INTENT_FOR_GCP_INTENT` map
@@ -328,29 +340,88 @@ OR `spec.extra["spot_tolerant"]`):
   leads; flex sits between spot and on-demand as the "queue for capacity
   rather than fail" middle rung. A short `lora-7b` (a40 present) yields 5
   GCP rungs; a short `ft-7b` (no a40) yields 3 (spot-80, flex-80,
-  ondemand-80).
+  ondemand-80). (Width-1 rung counts are UNCHANGED by #1121; a
+  width-DECLARING dispatch prepends wide rungs per § Width-aware rungs
+  below — the width-8 short walk is 14 rungs.)
 - **LONG / UNKNOWN-length jobs — flex leads, NO spot:** flex-start A100-80 →
   on-demand A100-80 → on-demand A100-40 (fits-40 only). Spot is barred
   (preemption too costly for a long job); flex — non-preemptible once
   running, queues for capacity — leads. An unknown-length job (no time
   budget) is NOT short, so it takes this branch. A long `ft-7b` yields 2 GCP
-  rungs; a long `lora-7b` yields 3.
+  rungs; a long `lora-7b` yields 3 (width-1 counts; the width-8 long walk
+  is 9 rungs, § Width-aware rungs below).
 
 The flex rung threads `provisioning_model=FLEX_START` via
 `router._flex_start_rung` (label `flexstart_<gpu_kind>`); A2 acceptance of
 `--provisioning-model=FLEX_START` was confirmed by a live #680 probe on both
 `a2-ultragpu-1g` and `a2-ultragpu-4g`. The per-day attempt cap
-(`MAX_GCP_ATTEMPTS_PER_DAY`) was bumped 5 → 8 to cover the up-to-5-rung
-short-job ladder plus a same-day retry margin (still an attempt COUNT, never
-a dollar cap). Tests of record: `test_ladder_short_job_spot_before_ondemand`,
+(`MAX_GCP_ATTEMPTS_PER_DAY`) was bumped 5 → 8 at #680 to cover the
+up-to-5-rung short-job ladder plus a same-day retry margin, then 8 → 16 at
+#1121 — the width-8 short walk is up to 14 rungs + margin, the same sizing
+logic (still an attempt COUNT, never a dollar cap).
+
+**Width-aware rungs (#1121).** A dispatch that DECLARES a shardable
+multi-GPU axis via the existing `--gpus N` flag (`RunSpec.gpus`; N ∈
+{2, 4, 8} above the intent's base machine width, on a width-eligible
+A100-class intent — `gcp.WIDTH_ELIGIBLE_INTENTS` = {lora-7b, lora,
+capture-7b, eval, debug, ft-7b}) walks WIDE `a2-ultragpu-{8,4,2}g` rungs
+(`gcp.WIDE_A100_80_BY_WIDTH`) BEFORE the base ladder, WIDTH-MAJOR: every
+provisioning model at width w is exhausted before width w−1 is accepted
+(wall-clock is the scarce resource; credits are not — a spot-8g attempt is
+strictly preferable to an on-demand-4g one). Intra-width the length-aware
+order above applies verbatim; job length is classified ONCE at the WIDEST
+requested machine (GPU-hours = wall × width) and threaded through the base
+tail. Wide rung labels carry an `x<w>` suffix (`spot_a100_80x8`); width-1
+labels are byte-identical to pre-#1121. The exact width-8 walks:
+
+- **Width-8 SHORT** (≤ 2 GPU-h at width 8, or `spot_tolerant`; 14 rungs):
+  `spot_a100_80x8 → flexstart_a100_80x8 → ondemand_a100_80x8 →
+  spot_a100_80x4 → flexstart_a100_80x4 → ondemand_a100_80x4 →
+  spot_a100_80x2 → flexstart_a100_80x2 → ondemand_a100_80x2 →
+  spot_a100_80 → spot_a100_40 → flexstart_a100_80 → ondemand_a100_80 →
+  ondemand_a100_40` → SLURM lanes → RunPod terminal rung.
+- **Width-8 LONG/UNKNOWN** (the common case — wall × 8 usually exceeds
+  the 2 GPU-h spot threshold; 9 rungs): `flexstart_a100_80x8 →
+  ondemand_a100_80x8 → flexstart_a100_80x4 → ondemand_a100_80x4 →
+  flexstart_a100_80x2 → ondemand_a100_80x2 → flexstart_a100_80 →
+  ondemand_a100_80 → ondemand_a100_40` → SLURM → RunPod.
+
+H100 is EXCLUDED from the width walk (no `WIDE_A100_80_BY_WIDTH` rows; the
+H100 intents are not width-eligible): preemptible quota is exactly 8 (one
+8×, zero concurrency headroom, #743), there is no on-demand pool, and the
+H100 quota metrics are absent from `regions describe` on this project, so
+the fail-open headroom pre-check cannot protect a doomed create —
+`sweep-8g-h100` stays explicit-`--intent`-only. The #783 queue-timeout,
+#1116 queue-vanish, and #1029 boot-loop poller machinery applies to wide
+rungs unchanged (per-rung-label streaks key on the new `x<w>` labels
+cleanly). **Paid-fallback exposure planners must understand:** width
+degradation fires only on CREATE-TIME capacity misses. For a LONG job
+`flexstart_a100_80x8` is rung 1, and a flex create that QUEUES ends the
+ladder walk (route() returned a handle) — so the realistic fallback for a
+queued-but-stuck wide dispatch is the #783 queue timeout
+(`EPS_GCP_QUEUE_WAIT_SECONDS`, default 600s) failing over to a PAID RunPod
+pod at the REQUESTED width, NOT 4g/2g degradation on GCP. A workload that
+CANNOT re-shard off the realized width (`realized_gpu_count` on the
+`epm:backend-selected` marker / handle sidecar; `requested_gpus` rides
+alongside) must pin its width rather than ride the degrading walk.
+Poller-side width-degrade re-entry is a named deferred follow-up (#1121
+plan), NOT built.
+
+Tests of record: `test_ladder_short_job_spot_before_ondemand`,
 `test_ladder_short_job_spot_miss_then_ondemand_order`,
 `test_ladder_short_job_full_rung_order`,
 `test_ladder_long_job_flexstart_before_ondemand_no_spot`,
 `test_ladder_long_job_flexstart_miss_then_ondemand_order`,
 `test_ladder_unknown_length_takes_long_branch`,
 `test_flexstart_rung_threads_flex_provisioning`,
-`test_max_gcp_attempts_per_day_is_eight`,
-`test_workload_error_on_later_rung_fails_over_to_runpod` (all in
+`test_max_gcp_attempts_per_day_is_sixteen`,
+`test_workload_error_on_later_rung_fails_over_to_runpod`; width-aware
+(#1121): `test_width8_long_job_walks_wide_rungs_width_major`,
+`test_width8_short_job_full_rung_order`,
+`test_width_degradation_on_capacity_miss_lands_4g`,
+`test_width1_ladder_byte_identical_explicit_gpus_none_and_matching`,
+`test_width_ladder_never_emits_h100_machine`,
+`test_workload_error_on_wide_rung_fails_over_to_runpod` (all in
 `tests/test_router.py`).
 
 ### Per-rung multi-zone fan-out
@@ -490,6 +561,82 @@ mirroring the #669 frozen-phase wedge (`_maybe_escalate_gcp_wedge`):
 
 The teardown is best-effort + guarded (never blocks the failover); a failed
 delete degrades to the stale-GCP-VM janitor (`gcp_audit.py`) as the backstop.
+
+### FLEX_START queue-vanish → RunPod (#1116/#1112)
+
+A DWS-queued FLEX_START instance can be dropped SERVER-SIDE: the create
+reports success (insert DONE), the instance sits PENDING in the capacity
+queue, and then it simply DISAPPEARS from instances-list — no delete
+operation in the operations log. #1112 hit this twice in one evening
+(inserts DONE 22:30Z + 22:50Z, 2026-07-07; both instances gone before the
+600s queue-timeout could mature), and because `route()` advances the ladder
+only on CREATE-time capacity errors, every relaunch re-booked the same dead
+flex rung until a manual `--backend runpod` pivot. `gcp.poll` maps the
+post-vanish describe-404 to `status="dead"` /
+`current_phase="terminal_instance not found"` — an attribute-blind shape
+that pre-#1116 read as an ordinary crash (or, worse, fed the #1029
+heuristic boot-death streak, mislabelling a pure CAPACITY event as a boot
+problem).
+
+- **The clock discriminator.** The sidecar phase clock (the SAME
+  `_read_phase_clock` record the #669 wedge + #783 queue-timeout stamp)
+  records `"pending"` while the instance is queued; a dead not-found poll
+  whose `last_phase` reads `"pending"` means the instance was LAST OBSERVED
+  still queued — it never reached a running phase — so the vanish is
+  deterministic capacity evidence.
+  `backend_poll._maybe_escalate_gcp_queue_vanish` rewrites it to
+  `terminal_queue_vanish` (READ-ONLY clock use: no aging floor, no streak —
+  unlike #783 there is nothing to age, unlike #1029 nothing to count) and
+  `_failover_vanished_gcp_to_runpod` fails it over on the FIRST occurrence
+  via the shared `_failover_gcp_to_runpod` core (same lease+sentinel
+  exactly-once bound, same terminal-rung seam, same sidecar re-point +
+  terminal-JSON contract), `reason: gcp_queue_vanish_failover_runpod`.
+- **`teardown_first=False`.** The instance record is already GONE
+  server-side (that absence IS the trigger), so there is nothing to tear
+  down — the #659 stance, NOT #783's (only a still-LIVE queued instance
+  needs its capacity request released).
+- **No daily-attempt burn.** Structural, as for #783/#1029:
+  `gcp_attempts_today` bumps only on a create inside
+  `_attempt_one_gcp_rung`, which the poller never re-enters.
+- **CPU-intent scope (#677/#747):** a `cpu-bigmem` vanish never
+  rewrites/fails over (no cheap RunPod lane) — the guard gates the REWRITE
+  itself, so its ordinary dead path INCLUDING today's #1029 boot-death
+  record stays byte-identical; `cpu-small` / `cpu-mid` are eligible as
+  usual.
+- **Ordering:** the vanish branch runs BEFORE the #1029 boot-loop recorder
+  in `main()` — not-found is in the boot-death heuristic phase set, and the
+  vanish branch's early return is what keeps a pure capacity miss from
+  poisoning the boot-death streak.
+
+Named residuals (accepted, documented):
+
+1. **Transient-404 / flicker.** A transient not-found read on a LIVE queued
+   instance (an API flicker) fires the failover ONCE (lease-bounded); the
+   orphaned still-queued instance is bounded by its own `--max-run-duration`
+   fence + the EXIT-trap finalize + the stale-GCP-VM janitor
+   (`gcp_audit.py`), and the poller no longer watches it after the sidecar
+   re-point.
+2. **Manual-delete asymmetry.** PENDING is the ONE state where a manual
+   `gcloud compute instances delete` AUTO-fails-over (auto-spends RunPod) —
+   a manual delete elsewhere takes the crash/terminated classifications. A
+   manual delete during an active poll loop already implies a pivot, and
+   the lease bounds it to one RunPod launch.
+3. **No-clock-record inertness.** A vanish observed with NO clock record
+   (fresh-dispatch handle, wiped sidecar — the #1112 manual-removal shape)
+   is invisible to this trigger and falls back to the #1029 boot-death
+   streak path (two poller-observed vanishes → the boot-loop failover) —
+   safe, just slower.
+4. **One-tick dequeue→boot→crash→DELETE mislabel.** A run that dequeues,
+   boots, crashes, and is DELETEd entirely between two polls presents the
+   same dead not-found + pending-clock shape and is labelled a queue vanish
+   — same destination (a RunPod failover) the #659 async path would give,
+   different reason label; Part A crash diagnostics upload from the EXIT
+   trap regardless of the poller's label (the mirror of #1029 note (b)).
+
+Pre-agreed hardening path (the #1116 plan's kill criterion 2): if a
+sanctioned actor ever starts deleting LIVE PENDING instances, the trigger
+needs an operations-log delete-op check (a genuine vanish leaves NO delete
+operation; an actor's delete leaves one) — a re-plan, not a tweak.
 
 ### Pre-workload boot-loop → RunPod (#1029)
 
@@ -941,6 +1088,14 @@ wedge does NOT catch this — the CUDA-IMA pod keeps its port + stays RUNNING �
 #763 needed a manual GCP→RunPod pivot. Part D automates exactly that recovery:
 detect the SECOND same-signature CUDA-IMA crash and pivot to a FRESH host.
 
+**Shape-dependent carve-out (#1092):** before reading a repeat IMA as a host
+defect, check the gotchas differential — if the crash follows the WORKLOAD
+shape (identical code clean on A100 + a same-pod short-prompt probe clean), a
+fresh host is EXPECTED to re-hit it and the fix is the default-off engine
+knobs, not a pivot (a knobs-on rerun that still IMAs falsifies the shape
+diagnosis — revert to the Part D pivot) — see `.claude/rules/gotchas.md`
+§ "vLLM-on-H100 CUDA illegal-memory-access under heavy shared-prefix caching".
+
 **Detection** (`backend_poll._maybe_escalate_runpod_cuda_ima`, the repeat-based
 sibling of the time-based `_maybe_escalate_runpod_wedge`). The signal is
 `PollResult.crash_signature` — the WIDE 500-line probe tail (NOT the 5-line
@@ -1045,6 +1200,17 @@ short-circuits at the once-more case via `_terminal_code_json`.
   `test_gcp_queue_timeout_does_NOT_increment_gcp_attempts_today`, + the negative
   controls: within-floor / non-pending-phase / first-observation / cpu-bigmem-excluded
   / teardown-failure-still-fails-over)
+- `tests/test_router.py` (Part B FLEX_START queue vanish, #1116:
+  `test_queue_vanish_failover_seam_carries_queue_vanish_reason`,
+  `test_queue_vanish_reason_distinct_from_crash_capacity_queue_boot_reasons`)
+- `tests/test_backend_poll.py` (Part B FLEX_START queue vanish end-to-end, #1116:
+  `test_gcp_pending_vanish_fails_over_to_runpod`,
+  `test_gcp_queue_vanish_failover_marker_carries_queue_vanish_reason`,
+  `test_gcp_queue_vanish_does_NOT_increment_gcp_attempts_today`,
+  `test_gcp_queue_vanish_second_tick_short_circuits`,
+  `test_gcp_queue_vanish_does_not_record_boot_death`, + the negative
+  controls: workload-clock / no-clock-record / terminated-phase /
+  cpu-bigmem-excluded)
 - `tests/test_gcp_backend.py::test_render_startup_script_persists_diagnostics_before_teardown`
 - `tests/test_gcp_backend.py::test_render_startup_script_diagnostics_uploads_log_and_partial_artifacts`
 - `tests/test_gcp_backend.py::test_render_startup_script_diagnostics_is_guarded_and_bounded`

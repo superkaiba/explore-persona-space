@@ -473,7 +473,12 @@ duplicate. The library helper
 `task_workflow.is_open_workflow_fix_task(target_file, fingerprint) -> int | None`
 is the canonical, tested implementation (`tests/test_workflow_fix_dedup.py`).
 A closed (`completed`/`archived`) workflow-fix task does NOT block a
-re-raise of the same bug.
+re-raise of the same bug. (The /daily Step C parked-candidate sweep applies
+this temporally: a swept PARKED candidate that PREdates a closed matching fix
+task's creation is treated as subsumed by it — suppressed, pure churn to
+re-route — while a candidate parked AFTER the fix closed is a genuine
+re-raise and stays enumerated; see
+`scripts/sweep_parked_wf_candidates.py`.)
 
 ## Recursion guard
 
@@ -497,7 +502,9 @@ see § Recursion guard`) and surfaces it as a notification.
 
 **Escape valve (never silently lost):** such a session CAN still emit
 candidate blocks — they get parked/notified, not auto-routed, so its own
-workflow-fix bug is parked for the next human/orchestrator pass exactly
+workflow-fix bug is parked for the nightly /daily parked-candidate routing
+pass (Step C in `.claude/skills/daily/SKILL.md`; enumerator
+`scripts/sweep_parked_wf_candidates.py`) exactly
 as `AUTO_REVIEW_DISABLED`-suppressed candidates are. The cost is a
 one-cycle delay, not a dropped bug. The recursion-guard predicate is
 executable-tested (`tests/test_workflow_fix_dedup.py`

@@ -275,6 +275,62 @@ for each still-open parked item:
 (consistent with the "do not move statuses unless the user asks" rule in
 "Other rules" below).
 
+**3. Parked workflow-fix-candidate routing pass (Step C).** Route the
+recursion-guard escape valve (`.claude/rules/workflow-fix-on-bug.md`
+§ Recursion guard): a workflow-fix session parks its candidates
+(`epm:workflow-fix-candidate` with a `parked …` note) instead of auto-routing
+them — THIS pass is the owning "next orchestrator pass". The /daily
+orchestrator is NOT under the recursion guard (no `workflow_fix_target:`
+Provenance line, no `EPM_WORKFLOW_FIX_SESSION=1`), so routing here cannot
+recurse.
+
+```
+sweep = run("uv run python scripts/sweep_parked_wf_candidates.py")
+    # one JSON object; UNBOUNDED window by default, already
+    # routed-suppressed + row-deduped (suppression is what bounds re-scans)
+for c in sweep["candidates"]:
+    # fields: formal <!-- workflow-fix-candidate v1 --> block → verbatim;
+    # prose park → SYNTHESIZE proposed_change/bug_observed per
+    # workflow-fix-on-bug.md (prose-synthesis rule), then
+    # fp = wf_fix_fingerprint(proposed_change, bug_observed)
+    if an open OR closed infra task already addresses this bug
+       (c["open_wf_fix_on_file"] advisory, the wf-fix-fp tag, or content match):
+        post the routed-record below with note `deduped against #<M>`; continue
+    route through the THREE-ROUTE classifier (the "Triage each problem"
+    section BELOW this pass), with two overrides:
+      - c["park_form"] == "architectural" → ALWAYS route 3 (needs-human);
+        never route 2 (architectural greenlight is user-only)
+      - DEFAULT route 2: a parked candidate is by construction a
+        behavior-change proposal; route 1 only for a pure prose/doc change
+        with no behavior effect (the route-1 litmus verbatim)
+    file through the durable filing dir + daily_drive_filings.py as usual
+      (route 2 tags: wf-fix + wf-fix-fp:<fp> + daily-auto-filed)
+    post the ROUTED-RECORD that closes the loop — for EVERY disposition
+    (route 1 self-apply, route 2 filing, route 3 needs-human filing, AND
+    dedup), no new marker kind:
+      - candidate parked on task #N:
+        task.py post-marker N epm:workflow-fix-task-filed --note
+        "filed_task: #<M or 'n/a (route 1; commit <sha>)'> / target_file: <tf> /
+         fingerprint: <fp or 'n/a (prose park)'> / session_spawned: <bool> /
+         source: daily-parked-candidate-sweep / origin_candidate_ts: <c.ts> /
+         origin_candidate: <first ~200 chars of the candidate note, abridged>"
+      - cache-borne candidate: append the equivalent JSON row to
+        .claude/cache/workflow-fix-events.jsonl (existing convention)
+    record it in ## Applied workflow improvements ("filed for review #<M>") /
+      ## Other problems & notes (route 3), exactly as routes 2/3 prescribe.
+```
+
+Routes 1 and 3 post the routed-record too — a route-3 needs-human filing DOES
+have a real `filed_task: #<M>`; route 1 records the commit sha in place of a
+task id. Without a record for every disposition, a route-3 architectural park
+would re-enumerate nightly; the record makes each disposition
+sweep-idempotent. `origin_candidate_ts` is the suppression key for fp-less
+parks; `origin_candidate` (abridged verbatim) keeps the marker
+self-describing per workflow-fix-on-bug.md § Markers.
+
+Future sweeps skip routed candidates mechanically — see the enumerator's
+suppression predicate (`scripts/sweep_parked_wf_candidates.py --help`).
+
 **Dedup mechanism (Step F).** A filesystem event-stream
 `.claude/cache/nightly-consolidation-events.jsonl` (a local, gitignored durable
 trace following the existing `.claude/cache/disk-guard-events.jsonl` /
@@ -307,6 +363,11 @@ Dedup rules, in priority order:
 
 **Triage each problem into one of THREE routes (changed 2026-06-28, #706 — route 1 NARROWS the old "self-apply everything fixable" bucket to no-behavior-change-only; route 2 sends behavior changes to independent review; route 3 turns held judgment calls into tracked tasks the PM surfaces):**
 
+**Freshness gate:** every problem that will FILE (routes 2 and 3) passes the
+**Retraction re-check** (subsection below) before its filing body is composed —
+a mined premise the source trail has since retracted or superseded is skipped
+with a note, never filed (incident #1101/#1074, routed as #1131).
+
 1. **Route 1 — Trivial mechanical** (doc edits, string replaces, comment/lint annotations — changes with NO behavior or logic effect) → APPLY it now (Edit the file), VERIFY it (see "Verification gate for code fixes" — workflow `.md` files skip this and use the lint gate instead), `git commit` it on its own, then record it in `## Applied workflow improvements` as a numbered entry WITH the applied diff and the commit sha (shape below). One commit per fix so each is independently revertable. After ALL workflow-file fixes are committed, run the repo-wide lint gate ONCE (see "Lint gate"); if it regresses, revert the offending commit(s) and re-log them in `## Other problems & notes` as "reverted: failed lint gate". **The litmus is "does this change what the code/workflow DOES?"** — pure prose/string/format/comment edits, typo fixes, and stale-reference renames qualify; ANYTHING that alters behavior or logic does NOT (it goes to route 2). When unsure, route to 2 — route 1 is the conservative no-behavior-change floor, not a catch-all.
 
 2. **Route 2 — any behavior/logic change** (incl. high-blast-radius REVERSIBLE — the bulk of the old self-apply bucket: experiment-code bugs in `scripts/*.py` / `src/**`, infra flakiness fixes, retry/timeout logic, hook repairs in `.claude/settings.json`, a new agent/skill file, any workflow-rule change that alters what an agent does) → do NOT self-apply. FILE a `kind: infra` task that auto-dispatches to `/issue --auto`, so the fix lands through the full INDEPENDENT pipeline (planner → adversarial critic ensemble → implementer → Claude+Codex code-review → test-verdict → Step 10d auto-merge) rather than this skill's own verify gate. This is what kills "grades its own homework" + "self-apply is the only un-reviewed path". File with:
@@ -326,6 +387,62 @@ Dedup rules, in priority order:
      --tag daily-held --tag needs-human
    ```
    `--no-dispatch` files the task at `proposed` WITHOUT spawning a session (the PM, not an autonomous sweep, decides what happens). The `needs-human` tag is the auto-dispatch-exclusion signal: the watcher's `proposed_infra_sweep` candidate query SKIPS any `proposed` infra task carrying it, and the PM enumerates it in `Needs you` instead. Record the held item in `## Other problems & notes` as a bullet: what happened (session id / task id) + which carve-out item held it + the filed `#<N>` + a one-line suggested action. Route-3 bodies live in the SAME durable filing dir and file through the same driver (a manifest item with `route: 3` ⇒ the driver adds `--tag daily-held --tag needs-human --no-dispatch`); single-item runs may still invoke the command above directly — noting that a direct filing sits OUTSIDE the `filed.jsonl` ledger guarantee (route-2 fp-dedup still covers a kill-window re-raise; route 3 has no such backstop), so the body still goes in the durable dir first.
+
+### Retraction re-check (freshness gate before route-2/route-3 filings)
+
+The sweep mines a point-in-time snapshot; the correction can already sit later
+on the same trail, or land between mining and filing. Incident #1101/#1074
+(2026-07-06): the sweep filed #1101 from #1074's `epm:pod-terminated v1` prose
+follow-up while an explicit retraction (`epm:progress v26`, "no workflow gap;
+nothing to file") sat 37 seconds later on the SAME events.jsonl — the spawned
+session burned a full spawn + a ~6-minute clarifier pass before archiving
+won't-fix. So, per mined problem, IMMEDIATELY BEFORE composing its filing body
+(routes 2 AND 3 — before the durable-dir write, so a skipped problem never
+enters the manifest):
+
+1. **Marker-mined problems** (evidence E = a marker on task #M — including a
+   parked `epm:workflow-fix-candidate` being routed): re-read #M's events
+   NEWER than E, fresh at filing time:
+   ```bash
+   uv run python scripts/task.py view <M> --json | jq -r --arg ts "<E.ts>" \
+     '.events[] | select(.ts > $ts) | "\(.ts) \(.kind) v\(.version // 1): \((.note // "")[0:400])"'
+   ```
+   (Only the filtered rows enter context — never page the raw events.jsonl.)
+   Read the returned notes for a correction of the mined premise. The regex
+   `RETRACTION|retract(ed|ion)|supersed|no workflow gap|nothing to file` is a
+   RECALL aid for which rows to read closely — it never decides by itself.
+2. **Binding test (what actually suppresses a filing):** skip ONLY when a
+   newer note UNAMBIGUOUSLY addresses the mined premise — it names E's marker
+   kind (e.g. "epm:pod-terminated v1"), quotes a distinctive phrase of E's
+   note, or is an explicit retraction whose subject is plainly the mined
+   claim. A note that merely contains "retract" / "nothing to file" about
+   something ELSE never suppresses. Ambiguous → FILE anyway and note the
+   possible retraction in the filing body (the spawned session's clarifier is
+   the existing backstop — fail OPEN toward filing; a wrongly-skipped filing
+   has no dedup tag, so a later re-raise is never blocked).
+3. **Transcript-mined problems** (no source-task marker): before composing
+   the body, re-check the remainder of the SAME session transcript after the
+   mined excerpt for a correction/self-retraction of the premise (same recall
+   regex, same binding test); when the excerpt names a task #M, ALSO run
+   check 1 on #M. This is a targeted tail re-check at filing time, not a
+   transcript re-read. Evidence with NO source-task marker AND no session
+   transcript tail (e.g. a cron sidecar JSONL row, a bare log line) has
+   nothing to re-scan — no scan is owed; fail open and file as today.
+4. **On a suppressing hit:** do NOT file. Record the problem in `## Other
+   problems & notes` as: `skipped filing: premise retracted upstream — #<M>
+   <E.kind> at <E.ts> retracted by <kind> v<n> at <ts>: "<short quote>"`.
+   It counts in neither the applied (N) nor filed (M) Telegram counts.
+
+For auditability, also record one summary line per run in `## Other problems
+& notes` — `retraction re-check: N marker-mined problems scanned, K skipped` —
+so a no-hit night still shows the gate ran. Route 1 self-applies rather than
+files; its existing verify gate already
+requires confirming the problem against current reality, and a route-1 fix
+whose premise came from a mined marker confirms against the source trail the
+same way. A backfill RESUME of an already-composed `logs/daily/filings-<date>/`
+dir does not re-run this check per slug — fresh compositions on a backfill DO
+run it (the backfill section's current-tree confirmation is the same
+principle).
 
 ### Durable filing dir + incremental filing driver (routes 2 + 3)
 
@@ -497,6 +614,9 @@ Semantics — everywhere this file says "today", read the TARGET DATE:
 - Route-1/2/3 fixes still fire, with one extra check: before applying or
   filing, confirm against the CURRENT tree that the problem is not already
   fixed (a backfill mines stale transcripts); skip with a note if it is.
+  The Retraction re-check (see "Triage each problem") applies to freshly
+  composed backfill filings identically — a backfill mines even staler
+  snapshots, so the source-trail re-read is at least as load-bearing there.
   Route-2 dedup on `(target_file, fingerprint)` catches same-bug re-raises
   (e.g. from the partially-run 2026-07-03 night).
 - If the missed night left a partial `logs/daily/filings-<date>/` (manifest +
