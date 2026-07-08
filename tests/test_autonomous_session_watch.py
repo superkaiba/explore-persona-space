@@ -2510,6 +2510,142 @@ def test_stalled_repeat_alert_refires_on_new_episode(
     assert stops == [] and spawns == []
 
 
+# ─── #1137 fix (B): deliberate-blocked-park alert suppression ─────────────────
+# The CLAUDE.md halt contract posts epm:failure then sets status blocked (1s
+# apart on #1092); a stalled-session alert on that shape duplicates a by-design
+# park the gate-push pass already phone-pushed. A blocked task with NO failure
+# trail (hand-moved / unexplained) keeps the one-time alert (fail-open).
+
+
+def _blocked_park_events(*, with_failure_trail: bool):
+    """Events for the #1092 blocked-park shape. The ts are 1970-era so their
+    age under the fake ``now=1_000_000.0`` (~1970-01-12) is ~11.5 days — far
+    past the 2h STALLED_MARKER_WINDOW_S_DEFAULT (a 2026 ISO ts would read as
+    NEGATIVE-age fresh and the detector would vacuously keep). Both blocked
+    tests share this helper so the no-trail positive control provably runs
+    under the SAME ts scheme as the suppressed trail case."""
+    events = [{"kind": "epm:status-changed", "ts": "1970-01-01T00:00:01Z"}]
+    if with_failure_trail:
+        # 1s BEFORE the status change — the canonical halt-contract pair
+        # (#1092: 13:21:34Z epm:failure, 13:21:35Z status-changed -> blocked).
+        events.insert(0, {"kind": "epm:failure", "ts": "1970-01-01T00:00:00Z"})
+    return events
+
+
+def test_stalled_blocked_deliberate_park_suppresses_alert(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # The #1092 15:33Z replay (acceptance 2): status=blocked with the
+    # halt-contract trail, both staleness signals stale -> the deliberate-
+    # blocked-park exemption suppresses the alert entirely (print-only, no
+    # marker — the epm:failure marker itself carries the user ask, and the
+    # gate-push pass already phone-pushed the blocked transition). Pre-#1137
+    # baseline: 1 alert marker on the 2nd miss.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1092, "sess-1092", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="blocked")
+    monkeypatch.setattr(
+        asw, "_task_events", lambda issue: _blocked_park_events(with_failure_trail=True)
+    )
+    now = 1_000_000.0
+
+    for _ in range(3):
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert markers == []
+    assert stops == [] and spawns == []
+
+
+def test_stalled_blocked_without_failure_trail_still_alerts(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Fail-open positive control (acceptance 3): status=blocked with NO
+    # epm:failure trail (hand-moved / unexplained block) keeps the one-time
+    # alert — exactly ONE marker after 2 misses, then decide()'s own
+    # alerted dedup holds. Same events helper / ts scheme as the suppressed
+    # trail case above.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1094, "sess-1094", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="blocked")
+    monkeypatch.setattr(
+        asw, "_task_events", lambda issue: _blocked_park_events(with_failure_trail=False)
+    )
+    now = 1_000_000.0
+
+    for _ in range(3):
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert markers == [(1094, "session-stalled-alert")]
+    assert stops == [] and spawns == []
+
+
+def test_deliberate_blocked_park_reason_trail_within_window():
+    # The canonical 1s-apart halt-contract pair -> reason fires.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:failure", "ts": "1970-01-02T00:00:00Z"},
+        {"kind": "epm:status-changed", "ts": "1970-01-02T00:00:01Z"},
+    ]
+    assert asw._deliberate_blocked_park_reason(events) is not None
+
+
+def test_deliberate_blocked_park_reason_failure_older_than_window():
+    # Failure > 3600s BEFORE the newest status change -> no trail -> None.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:failure", "ts": "1970-01-01T00:00:00Z"},
+        {"kind": "epm:status-changed", "ts": "1970-01-01T02:00:00Z"},
+    ]
+    assert asw._deliberate_blocked_park_reason(events) is None
+
+
+def test_deliberate_blocked_park_reason_failure_after_slack():
+    # Failure > 300s AFTER the newest status change (order inversion beyond
+    # the slack) -> None.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:status-changed", "ts": "1970-01-01T00:00:00Z"},
+        {"kind": "epm:failure", "ts": "1970-01-01T00:05:01Z"},
+    ]
+    assert asw._deliberate_blocked_park_reason(events) is None
+
+
+def test_deliberate_blocked_park_reason_unparseable_ts_fails_open():
+    # Unparseable ts on both rows -> None (fail-open: the alert still fires).
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:failure", "ts": "not-a-timestamp"},
+        {"kind": "epm:status-changed", "ts": "also-garbage"},
+    ]
+    assert asw._deliberate_blocked_park_reason(events) is None
+
+
+def test_deliberate_blocked_park_reason_empty_events():
+    import autonomous_session_watch as asw
+
+    assert asw._deliberate_blocked_park_reason([]) is None
+
+
+def test_deliberate_blocked_park_reason_newest_status_change_wins():
+    # The failure trails an OLD status change; the NEWEST status change
+    # (a day later, e.g. a manual re-block) has no failure inside its
+    # window -> None (the trail must corroborate the CURRENT block).
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:failure", "ts": "1970-01-01T00:00:00Z"},
+        {"kind": "epm:status-changed", "ts": "1970-01-01T00:00:01Z"},
+        {"kind": "epm:status-changed", "ts": "1970-01-02T00:00:00Z"},
+    ]
+    assert asw._deliberate_blocked_park_reason(events) is None
+
+
 # ─── #759 bug class b.2: STALLED_WINDOW_S raised 45 -> 60 min, env-tunable ────
 
 

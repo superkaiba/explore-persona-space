@@ -1188,6 +1188,16 @@ def _stalled_marker_window_s() -> float:
         return float(STALLED_MARKER_WINDOW_S_DEFAULT)
 
 
+# #1137: window for the halt-contract trail behind a deliberate `blocked`
+# park — an `epm:failure` marker within this many seconds BEFORE (or
+# _BLOCKED_PARK_FAILURE_SLACK_AFTER_S after) the newest `epm:status-changed`.
+# The canonical halt sequence posts them ~1s apart (#1092: 13:21:34Z failure,
+# 13:21:35Z status-changed); 1h absorbs slow orchestrator paths (a
+# poller-posted failure classified minutes before the park).
+_BLOCKED_PARK_FAILURE_WINDOW_S = 3600.0
+_BLOCKED_PARK_FAILURE_SLACK_AFTER_S = 300.0
+
+
 # #845 (b): worktree-activity hold. A file under the issue's worktree edited
 # within this window is direct evidence an implementer/analyzer subagent is
 # mid-edit (incident #812: the killed session had edited a file 57s before the
@@ -8276,6 +8286,44 @@ def _spend_approval_skip_already_noted(events: list[dict]) -> bool:
     return False
 
 
+def _deliberate_blocked_park_reason(events: list[dict]) -> str | None:
+    """Reason string when the newest ``epm:status-changed`` is corroborated by
+    the halt-contract trail — an ``epm:failure`` marker within
+    [:data:`_BLOCKED_PARK_FAILURE_WINDOW_S` before,
+    :data:`_BLOCKED_PARK_FAILURE_SLACK_AFTER_S` after] it — i.e. the block is
+    a deliberate park (post epm:failure, set status blocked, exit: the
+    CLAUDE.md halt contract), not an unexplained freeze (#1137; #1092's
+    15:33Z alert fired 2h12m after a 1s-apart failure+blocked pair). Pure
+    over the already-loaded ``events``; the CALLER gates on ``task_status ==
+    "blocked"`` (only there is the newest status-changed the transition into
+    blocked). Fail direction: unparseable ts / no trail -> ``None`` (the
+    one-time alert still fires)."""
+    sc_ts: float | None = None
+    for ev in events:
+        if ev.get("kind") == "epm:status-changed":
+            ts = _parse_event_ts(ev.get("ts"))
+            if ts is not None and (sc_ts is None or ts > sc_ts):
+                sc_ts = ts
+    if sc_ts is None:
+        return None
+    lo = sc_ts - _BLOCKED_PARK_FAILURE_WINDOW_S
+    hi = sc_ts + _BLOCKED_PARK_FAILURE_SLACK_AFTER_S
+    for ev in events:
+        if ev.get("kind") != "epm:failure":
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is None:
+            continue
+        if lo <= ts <= hi:
+            return (
+                "deliberately parked at status=blocked (halt-contract trail: "
+                "epm:failure within the park window of the newest "
+                "epm:status-changed); the gate-push pass already notified the "
+                "blocked transition"
+            )
+    return None
+
+
 # Anchored, case-SENSITIVE prefix of a prose user-pause hold note (incident
 # #816). All four observed hold variants (the canonical SKILL.md durable-park
 # note, the #816 incident note, the older #919 sketch, the #920 chat note)
@@ -9404,9 +9452,9 @@ def _apply_stalled_followups_exemption(
 ) -> tuple[str, int, bool]:
     """Check the alive-but-stalled exemptions for the stalled-detector pass
     (the prose USER-PAUSE hold, the over-cap spend-approval park, the
-    round-complete re-park, and the
-    followups_running-parent-waiting-on-open-child suppression); rewrite
-    ``(action, new_missed, followups_child_alerted)`` accordingly.
+    deliberate-blocked-park suppression (#1137), the round-complete re-park,
+    and the followups_running-parent-waiting-on-open-child suppression);
+    rewrite ``(action, new_missed, followups_child_alerted)`` accordingly.
 
     No-op unless ``action != "keep" or new_missed > 0`` (so the healthy-
     session hot path never pays the ``task.py list-children`` subprocess).
@@ -9468,6 +9516,23 @@ def _apply_stalled_followups_exemption(
                 label="spend-approval-skip",
             )
         return "keep", 0, followups_child_alerted
+    # Deliberate blocked park (#1137): the halt contract posts epm:failure
+    # then sets status blocked — a stalled SESSION on such a task is the
+    # EXPECTED post-park shape (the session parked and went idle by design),
+    # and the gate-push pass already phone-pushed the blocked transition.
+    # Suppress the alert (print-only, no marker: the epm:failure marker
+    # itself carries the user ask). A blocked task with NO failure trail
+    # (hand-moved / unexplained) keeps the one-time alert. #1092 15:33Z:
+    # alert fired 2h12m after a 1s-apart failure+blocked park.
+    if status == "blocked":
+        blocked_reason = _deliberate_blocked_park_reason(events)
+        if blocked_reason is not None:
+            print(
+                f"  issue #{issue}: ALIVE-BUT-STALLED exemption — {blocked_reason}; "
+                f"treating session as parked this tick (would have been "
+                f"action={action})."
+            )
+            return "keep", 0, followups_child_alerted
     # Round-complete re-park (incident #533 freeze, 2026-06-11→12): a
     # COMPLETED same-issue follow-up round stranded at followups_running
     # (session died after the final gate, before the designed re-park) is
@@ -9784,7 +9849,8 @@ def _apply_stalled_park_exemptions(
        parent parked at step 10 awaiting a user-gated child cannot be
        unblocked by respawning the parent — see
        :func:`_apply_stalled_followups_exemption` (which also carries the
-       spend-approval park and the round-complete re-park).
+       spend-approval park, the deliberate-blocked-park suppression
+       (#1137), and the round-complete re-park).
     """
     exempted = False
     if action != "keep" or new_missed > 0:
