@@ -19,7 +19,7 @@
       "n": 200,
       "n_dropped": 0,
       "n_total_draws": 1000,
-      "n_dropped_draws": 35,
+      "n_dropped_draws": 9,
       "wilson95": [
         0.36334204488394795,
         0.49929639594461706
@@ -125,7 +125,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 14,
+        "n_dropped_draws": 4,
         "wilson95": [
           0.6146092505999207,
           0.7898529302601586

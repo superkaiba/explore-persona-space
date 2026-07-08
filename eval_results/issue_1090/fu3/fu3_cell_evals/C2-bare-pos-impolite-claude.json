@@ -16,13 +16,13 @@
     "trained": {
       "rate": 0.0,
       "k": 0,
-      "n": 199,
-      "n_dropped": 1,
+      "n": 200,
+      "n_dropped": 0,
       "n_total_draws": 1000,
-      "n_dropped_draws": 66,
+      "n_dropped_draws": 0,
       "wilson95": [
         0.0,
-        0.018938915883132453
+        0.018846005918320894
       ],
       "mode": "judged"
     },
@@ -32,7 +32,7 @@
       "n": 200,
       "n_dropped": 0,
       "n_total_draws": 1000,
-      "n_dropped_draws": 17,
+      "n_dropped_draws": 0,
       "wilson95": [
         0.0,
         0.018846005918320894
@@ -50,7 +50,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 5,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -63,7 +63,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 68,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -81,7 +81,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 92,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -94,7 +94,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 84,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -112,7 +112,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 75,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -125,7 +125,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 45,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -187,7 +187,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 7,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191

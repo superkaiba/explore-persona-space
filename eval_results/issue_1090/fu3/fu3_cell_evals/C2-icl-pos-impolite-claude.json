@@ -14,15 +14,15 @@
   },
   "tier2": {
     "trained": {
-      "rate": 0.77,
-      "k": 154,
+      "rate": 0.775,
+      "k": 155,
       "n": 200,
       "n_dropped": 0,
       "n_total_draws": 1000,
-      "n_dropped_draws": 176,
+      "n_dropped_draws": 0,
       "wilson95": [
-        0.7069157192180299,
-        0.8229074375860769
+        0.7122575346140798,
+        0.8273771621308439
       ],
       "mode": "judged"
     },
@@ -32,7 +32,7 @@
       "n": 200,
       "n_dropped": 0,
       "n_total_draws": 1000,
-      "n_dropped_draws": 12,
+      "n_dropped_draws": 0,
       "wilson95": [
         0.0,
         0.018846005918320894
@@ -50,7 +50,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 16,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0017673865655472645,
           0.0544875247609346
@@ -63,7 +63,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 39,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -81,7 +81,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 50,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -94,7 +94,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 23,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -228,7 +228,7 @@
       "leak_delta": 0.0
     }
   ],
-  "install_delta": 0.77,
+  "install_delta": 0.775,
   "leakage_mean_held_out": 0.002,
   "band": [
     0.6,

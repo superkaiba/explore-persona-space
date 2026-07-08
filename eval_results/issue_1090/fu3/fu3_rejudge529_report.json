@@ -1,0 +1,406 @@
+{
+ "n_reads_rejudged": 42,
+ "n_529_total": 2638,
+ "n_recovered_total": 2635,
+ "n_still_error_total": 3,
+ "reads": [
+  {
+   "tag": "C2-bare-pos-by-default-base",
+   "cell_id": "C2-bare-pos",
+   "n_529": 84,
+   "n_recovered": 84,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-bare-pos-by-default-trained",
+   "cell_id": "C2-bare-pos",
+   "n_529": 92,
+   "n_recovered": 92,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-bare-pos-by-neg_sp_police-base",
+   "cell_id": "C2-bare-pos",
+   "n_529": 7,
+   "n_recovered": 7,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-bare-pos-by-persona_software_engineer-base",
+   "cell_id": "C2-bare-pos",
+   "n_529": 68,
+   "n_recovered": 68,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-bare-pos-by-persona_software_engineer-trained",
+   "cell_id": "C2-bare-pos",
+   "n_529": 5,
+   "n_recovered": 5,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-bare-pos-by-wildchat_prefix_real545-base",
+   "cell_id": "C2-bare-pos",
+   "n_529": 45,
+   "n_recovered": 45,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-bare-pos-by-wildchat_prefix_real545-trained",
+   "cell_id": "C2-bare-pos",
+   "n_529": 75,
+   "n_recovered": 75,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-bare-pos-t2-base",
+   "cell_id": "C2-bare-pos",
+   "n_529": 17,
+   "n_recovered": 17,
+   "n_still_error": 0,
+   "n_cache_purged": 5
+  },
+  {
+   "tag": "C2-bare-pos-t2-trained",
+   "cell_id": "C2-bare-pos",
+   "n_529": 66,
+   "n_recovered": 66,
+   "n_still_error": 0,
+   "n_cache_purged": 8
+  },
+  {
+   "tag": "C2-conv-pos-by-neg_sp_police-base",
+   "cell_id": "C2-conv-pos",
+   "n_529": 1,
+   "n_recovered": 1,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-con-by-default-base",
+   "cell_id": "C2-icl-con",
+   "n_529": 93,
+   "n_recovered": 93,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-con-by-default-trained",
+   "cell_id": "C2-icl-con",
+   "n_529": 79,
+   "n_recovered": 79,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-con-by-icl_prefix_impolite-base",
+   "cell_id": "C2-icl-con",
+   "n_529": 40,
+   "n_recovered": 40,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-con-by-icl_prefix_impolite-trained",
+   "cell_id": "C2-icl-con",
+   "n_529": 71,
+   "n_recovered": 71,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-con-by-neg_sp_ph4-base",
+   "cell_id": "C2-icl-con",
+   "n_529": 4,
+   "n_recovered": 4,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-con-by-neg_sp_ph4-trained",
+   "cell_id": "C2-icl-con",
+   "n_529": 86,
+   "n_recovered": 86,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-con-by-neg_sp_police-base",
+   "cell_id": "C2-icl-con",
+   "n_529": 61,
+   "n_recovered": 61,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-con-by-neg_sp_police-trained",
+   "cell_id": "C2-icl-con",
+   "n_529": 80,
+   "n_recovered": 80,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-con-by-persona_software_engineer-base",
+   "cell_id": "C2-icl-con",
+   "n_529": 86,
+   "n_recovered": 86,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-con-by-persona_software_engineer-trained",
+   "cell_id": "C2-icl-con",
+   "n_529": 88,
+   "n_recovered": 88,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-con-by-wildchat_prefix_real545-base",
+   "cell_id": "C2-icl-con",
+   "n_529": 70,
+   "n_recovered": 70,
+   "n_still_error": 0,
+   "n_cache_purged": 47
+  },
+  {
+   "tag": "C2-icl-con-by-wildchat_prefix_real545-trained",
+   "cell_id": "C2-icl-con",
+   "n_529": 64,
+   "n_recovered": 64,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-con-t2-base",
+   "cell_id": "C2-icl-con",
+   "n_529": 216,
+   "n_recovered": 216,
+   "n_still_error": 0,
+   "n_cache_purged": 44
+  },
+  {
+   "tag": "C2-icl-con-t2-trained",
+   "cell_id": "C2-icl-con",
+   "n_529": 400,
+   "n_recovered": 400,
+   "n_still_error": 0,
+   "n_cache_purged": 83
+  },
+  {
+   "tag": "C2-icl-pos-by-default-base",
+   "cell_id": "C2-icl-pos",
+   "n_529": 23,
+   "n_recovered": 23,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-pos-by-default-trained",
+   "cell_id": "C2-icl-pos",
+   "n_529": 50,
+   "n_recovered": 50,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-pos-by-persona_software_engineer-base",
+   "cell_id": "C2-icl-pos",
+   "n_529": 39,
+   "n_recovered": 39,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-pos-by-persona_software_engineer-trained",
+   "cell_id": "C2-icl-pos",
+   "n_529": 16,
+   "n_recovered": 16,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C2-icl-pos-t2-base",
+   "cell_id": "C2-icl-pos",
+   "n_529": 12,
+   "n_recovered": 12,
+   "n_still_error": 0,
+   "n_cache_purged": 2
+  },
+  {
+   "tag": "C2-icl-pos-t2-trained",
+   "cell_id": "C2-icl-pos",
+   "n_529": 176,
+   "n_recovered": 176,
+   "n_still_error": 0,
+   "n_cache_purged": 36
+  },
+  {
+   "tag": "C3-bare-con-by-icl_prefix_sycophancy-base",
+   "cell_id": "C3-bare-con",
+   "n_529": 1,
+   "n_recovered": 1,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C3-bare-con-by-icl_prefix_sycophancy-trained",
+   "cell_id": "C3-bare-con",
+   "n_529": 12,
+   "n_recovered": 12,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C3-bare-con-by-neg_sp_ph4-trained",
+   "cell_id": "C3-bare-con",
+   "n_529": 7,
+   "n_recovered": 7,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C3-bare-con-by-neg_sp_police-base",
+   "cell_id": "C3-bare-con",
+   "n_529": 5,
+   "n_recovered": 5,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C3-bare-con-by-wildchat_prefix_real545-trained",
+   "cell_id": "C3-bare-con",
+   "n_529": 16,
+   "n_recovered": 16,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C3-bare-pos-by-persona_software_engineer-base",
+   "cell_id": "C3-bare-pos",
+   "n_529": 22,
+   "n_recovered": 22,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C3-bare-pos-by-persona_software_engineer-trained",
+   "cell_id": "C3-bare-pos",
+   "n_529": 69,
+   "n_recovered": 69,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C3-bare-pos-by-wildchat_prefix_real545-base",
+   "cell_id": "C3-bare-pos",
+   "n_529": 9,
+   "n_recovered": 9,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C3-bare-pos-t2-base",
+   "cell_id": "C3-bare-pos",
+   "n_529": 12,
+   "n_recovered": 12,
+   "n_still_error": 0,
+   "n_cache_purged": 2
+  },
+  {
+   "tag": "C3-bare-pos-t2-trained",
+   "cell_id": "C3-bare-pos",
+   "n_529": 235,
+   "n_recovered": 232,
+   "n_still_error": 3,
+   "n_cache_purged": 44
+  },
+  {
+   "tag": "C3-pers-con-by-wildchat_prefix_real545-base",
+   "cell_id": "C3-pers-con",
+   "n_529": 10,
+   "n_recovered": 10,
+   "n_still_error": 0,
+   "n_cache_purged": 0
+  },
+  {
+   "tag": "C3-pers-con-t2-trained",
+   "cell_id": "C3-pers-con",
+   "n_529": 26,
+   "n_recovered": 26,
+   "n_still_error": 0,
+   "n_cache_purged": 6
+  }
+ ],
+ "cell_rate_changes": {
+  "C2-bare-pos": {
+   "t2-trained": {
+    "old_rate": 0.0,
+    "new_rate": 0.0
+   },
+   "t2-base": {
+    "old_rate": 0.0,
+    "new_rate": 0.0
+   }
+  },
+  "C2-conv-pos": {},
+  "C2-icl-con": {
+   "t2-trained": {
+    "old_rate": 0.8333333333333334,
+    "new_rate": 0.82
+   },
+   "t2-base": {
+    "old_rate": 0.0,
+    "new_rate": 0.0
+   },
+   "by-icl_prefix_impolite-trained": {
+    "old_rate": 0.82,
+    "new_rate": 0.83
+   }
+  },
+  "C2-icl-pos": {
+   "t2-trained": {
+    "old_rate": 0.77,
+    "new_rate": 0.775
+   },
+   "t2-base": {
+    "old_rate": 0.0,
+    "new_rate": 0.0
+   }
+  },
+  "C3-bare-con": {},
+  "C3-bare-pos": {
+   "t2-trained": {
+    "old_rate": 0.27,
+    "new_rate": 0.255
+   },
+   "t2-base": {
+    "old_rate": 0.185,
+    "new_rate": 0.185
+   },
+   "by-persona_software_engineer-trained": {
+    "old_rate": 0.2,
+    "new_rate": 0.19
+   },
+   "by-wildchat_prefix_real545-base": {
+    "old_rate": 0.7244897959183674,
+    "new_rate": 0.7142857142857143
+   }
+  },
+  "C3-pers-con": {
+   "t2-trained": {
+    "old_rate": 0.43,
+    "new_rate": 0.43
+   }
+  }
+ }
+}

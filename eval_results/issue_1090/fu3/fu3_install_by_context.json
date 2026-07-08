@@ -1,7 +1,7 @@
 {
   "meta": {
-    "git_commit": "2f7978058f8573e8a51b7d81d4ff443488f18a19",
-    "generated_utc": "2026-07-08T07:13:45Z",
+    "git_commit": "6bb7acdc7b5941036f4b69738d2203fa707d6250",
+    "generated_utc": "2026-07-08T09:53:32Z",
     "numpy_version": "2.2.6",
     "n_boot": 2000,
     "seed": 42,
@@ -114,8 +114,8 @@
       "behavior": "impolite",
       "context_id": "icl_prefix_impolite",
       "regime": "contrastive",
-      "install_delta": 0.8333333333333334,
-      "rate_trained": 0.8333333333333334,
+      "install_delta": 0.82,
+      "rate_trained": 0.82,
       "rate_base": 0.0,
       "band_hit": true
     },
@@ -124,8 +124,8 @@
       "behavior": "impolite",
       "context_id": "icl_prefix_impolite",
       "regime": "posonly",
-      "install_delta": 0.77,
-      "rate_trained": 0.77,
+      "install_delta": 0.775,
+      "rate_trained": 0.775,
       "rate_base": 0.0,
       "band_hit": true
     },
@@ -164,8 +164,8 @@
       "behavior": "sycophancy",
       "context_id": "default",
       "regime": "posonly",
-      "install_delta": 0.08500000000000002,
-      "rate_trained": 0.27,
+      "install_delta": 0.07,
+      "rate_trained": 0.255,
       "rate_base": 0.185,
       "band_hit": false
     },

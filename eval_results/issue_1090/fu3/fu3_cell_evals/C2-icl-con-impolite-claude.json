@@ -14,28 +14,28 @@
   },
   "tier2": {
     "trained": {
-      "rate": 0.8333333333333334,
-      "k": 150,
-      "n": 180,
-      "n_dropped": 20,
+      "rate": 0.82,
+      "k": 164,
+      "n": 200,
+      "n_dropped": 0,
       "n_total_draws": 1000,
-      "n_dropped_draws": 400,
+      "n_dropped_draws": 0,
       "wilson95": [
-        0.7720468899777125,
-        0.8806889434789155
+        0.7608840628376157,
+        0.8670544933746589
       ],
       "mode": "judged"
     },
     "base": {
       "rate": 0.0,
       "k": 0,
-      "n": 199,
-      "n_dropped": 1,
+      "n": 200,
+      "n_dropped": 0,
       "n_total_draws": 1000,
-      "n_dropped_draws": 216,
+      "n_dropped_draws": 0,
       "wilson95": [
         0.0,
-        0.018938915883132453
+        0.018846005918320894
       ],
       "mode": "judged"
     }
@@ -50,7 +50,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 88,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -63,7 +63,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 86,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -81,7 +81,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 79,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -94,7 +94,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 93,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -112,7 +112,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 64,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -125,7 +125,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 70,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -138,15 +138,15 @@
       "context_id": "icl_prefix_impolite",
       "is_source_context": true,
       "trained": {
-        "rate": 0.82,
-        "k": 82,
+        "rate": 0.83,
+        "k": 83,
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 71,
+        "n_dropped_draws": 0,
         "wilson95": [
-          0.7333246397578691,
-          0.8829986834574896
+          0.7445181876635703,
+          0.8910652394022684
         ],
         "mode": "judged"
       },
@@ -156,14 +156,14 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 40,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
         ],
         "mode": "judged"
       },
-      "leak_delta": 0.82
+      "leak_delta": 0.83
     },
     {
       "context_id": "neg_sp_police",
@@ -174,7 +174,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 80,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -187,7 +187,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 61,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -205,7 +205,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 86,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -218,7 +218,7 @@
         "n": 100,
         "n_dropped": 0,
         "n_total_draws": 300,
-        "n_dropped_draws": 4,
+        "n_dropped_draws": 0,
         "wilson95": [
           0.0,
           0.03699480747600191
@@ -228,7 +228,7 @@
       "leak_delta": 0.0
     }
   ],
-  "install_delta": 0.8333333333333334,
+  "install_delta": 0.82,
   "leakage_mean_held_out": 0.0,
   "band": [
     0.6,

@@ -1,7 +1,7 @@
 {
   "meta": {
-    "git_commit": "2f7978058f8573e8a51b7d81d4ff443488f18a19",
-    "generated_utc": "2026-07-08T07:13:45Z",
+    "git_commit": "6bb7acdc7b5941036f4b69738d2203fa707d6250",
+    "generated_utc": "2026-07-08T09:53:32Z",
     "numpy_version": "2.2.6",
     "n_boot": 2000,
     "seed": 42,
@@ -166,7 +166,7 @@
         0.85
       ],
       "band_hit": true,
-      "rate_trained": 0.8333333333333334,
+      "rate_trained": 0.82,
       "selection": {
         "step": 8,
         "rate": 0.83,
@@ -181,7 +181,7 @@
         0.85
       ],
       "band_hit": true,
-      "rate_trained": 0.77,
+      "rate_trained": 0.775,
       "selection": {
         "step": 8,
         "rate": 0.77,
@@ -241,7 +241,7 @@
         0.85
       ],
       "band_hit": false,
-      "rate_trained": 0.27,
+      "rate_trained": 0.255,
       "selection": {
         "step": 8,
         "rate": 0.26,
