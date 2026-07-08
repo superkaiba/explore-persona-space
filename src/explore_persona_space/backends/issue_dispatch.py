@@ -404,6 +404,116 @@ def read_handle_sidecar(path: Path) -> RunHandle:
     return deserialize_handle(json.loads(path.read_text()))
 
 
+#: Launch-only failover-prerequisite extras (#659/#909/#677/#1010) a
+#: reconnect rewrite must not drop (#1122). The workload pair
+#: (workload_cmd, hydra_args) is handled separately (atomic merge — the
+#: RunSpec mutual exclusion, base.py ``RunSpec.__post_init__``).
+RECONNECT_CARRY_FORWARD_EXTRA_KEYS: tuple[str, ...] = (
+    "gpus",
+    "time_budget_hours",
+    "repo_branch",
+    "gpu_count",
+    "boot_disk_gb",
+    "min_ram_gb",
+)
+
+
+def _prior_sidecar_failover_extras(sidecar: Path) -> dict[str, Any] | None:
+    """Snapshot the prior sidecar's failover extras BEFORE ``route()`` overwrites it.
+
+    Returns ``{backend, pod_name, job_id, extra: {...}}`` with ``extra``
+    holding only the failover-prerequisite keys (#1122): the atomic
+    ``workload_cmd``/``hydra_args`` pair (kept only when at least one is
+    non-empty) plus every non-empty
+    :data:`RECONNECT_CARRY_FORWARD_EXTRA_KEYS` value. Best-effort:
+    returns ``None`` on an absent sidecar (silent — the common fresh
+    dispatch) or a malformed one (logged at DEBUG) — the carry-forward
+    is a safety net, never a gate.
+    """
+    try:
+        h = read_handle_sidecar(sidecar)
+    except FileNotFoundError:
+        return None
+    except (KeyError, ValueError, OSError) as exc:  # ValueError covers JSONDecodeError
+        logger.debug(
+            "dispatch_for_issue: prior sidecar %s unreadable (%s); no reconnect carry-forward",
+            sidecar,
+            exc,
+        )
+        return None
+    ex = h.extra or {}
+    kept: dict[str, Any] = {}
+    if ex.get("workload_cmd") or ex.get("hydra_args"):
+        kept["workload_cmd"] = ex.get("workload_cmd") or ""
+        kept["hydra_args"] = list(ex.get("hydra_args") or ())
+    for k in RECONNECT_CARRY_FORWARD_EXTRA_KEYS:
+        v = ex.get(k)
+        if v not in (None, "", []):
+            kept[k] = v
+    return {
+        "backend": h.backend,
+        "pod_name": h.pod_name,
+        "job_id": h.job_id,
+        "extra": kept,
+    }
+
+
+def _carry_forward_reconnect_extras(handle: RunHandle, prior: dict | None) -> RunHandle:
+    """Fill launch-only extras a RECONNECT rewrite dropped (#1122).
+
+    Fires ONLY when: the handle is a reconnect (``extra['reconnected']``
+    truthy — set only by GCP's ``reconnect_or_none``, so the merge is
+    GCP-scoped by construction), AND ``prior`` binds to the SAME
+    instance (backend + pod_name + job_id — ``job_id`` is the per-create
+    GCE instance id, so a stale sidecar from a dead incarnation never
+    donates; an EMPTY ``job_id`` on EITHER side is treated as no-match,
+    so a degenerate ``("gcp", name, "")`` binding can never match across
+    incarnations), AND a key is absent/empty on the new handle while
+    non-empty on the prior. The ``(workload_cmd, hydra_args)`` pair
+    merges ATOMICALLY and only when the handle carries NEITHER
+    (preserves the RunSpec mutual exclusion,
+    base.py ``RunSpec.__post_init__``). Logs a WARNING naming the
+    carried keys. Returns the input handle unchanged (identity) when
+    nothing applies.
+    """
+    hx = handle.extra or {}
+    if not prior or not prior["extra"] or not hx.get("reconnected"):
+        return handle
+    # #1122 §11.5(1): empty job_id on either side = no-match (a bare
+    # instance-id can be "" on a degraded API read; never bind on it).
+    if not prior["job_id"] or not handle.job_id:
+        return handle
+    if (prior["backend"], prior["pod_name"], prior["job_id"]) != (
+        handle.backend,
+        handle.pod_name,
+        handle.job_id,
+    ):
+        return handle
+    merged, carried = dict(hx), []
+    pe = prior["extra"]
+    if not (hx.get("workload_cmd") or hx.get("hydra_args")) and (
+        "workload_cmd" in pe or "hydra_args" in pe
+    ):
+        merged["workload_cmd"] = pe.get("workload_cmd", "")
+        merged["hydra_args"] = list(pe.get("hydra_args") or ())
+        carried += ["workload_cmd", "hydra_args"]
+    for k in RECONNECT_CARRY_FORWARD_EXTRA_KEYS:
+        if k in pe and merged.get(k) in (None, "", []):
+            merged[k] = pe[k]
+            carried.append(k)
+    if not carried:
+        return handle
+    logger.warning(
+        "dispatch_for_issue: reconnect rewrite for %s dropped launch-only extras; "
+        "carried forward %s from the prior handle sidecar (#1122).",
+        handle.pod_name,
+        carried,
+    )
+    from dataclasses import replace
+
+    return replace(handle, extra=merged)
+
+
 # ---------------------------------------------------------------------------
 # Terminal-exception translation
 # ---------------------------------------------------------------------------
@@ -650,8 +760,18 @@ def dispatch_for_issue(
     sidecar = handle_sidecar_path or default_handle_sidecar_path(
         spec.issue, lane_suffix=spec.extra.get("lane_suffix")
     )
+    # #1122: snapshot the prior sidecar's failover extras BEFORE route()
+    # can overwrite it — the on_launched early write inside route() is the
+    # FIRST overwrite, so reading after route() is too late. NOTE: `prior`
+    # is computed only when write_sidecar; a future write_sidecar=False
+    # caller gets no returned-handle enrichment either (there is no prior
+    # sidecar being clobbered in that mode, but keep the two paths' gating
+    # aligned if that ever changes).
+    prior = _prior_sidecar_failover_extras(sidecar) if write_sidecar else None
     if write_sidecar:
-        route_kwargs["on_launched"] = lambda h: write_handle_sidecar(h, sidecar)
+        route_kwargs["on_launched"] = lambda h: write_handle_sidecar(
+            _carry_forward_reconnect_extras(h, prior), sidecar
+        )
 
     result = route(spec, **route_kwargs)
 
@@ -659,7 +779,10 @@ def dispatch_for_issue(
     # already populate one. The artifact verifier reads this off the
     # handle's ``extra`` at confirm_artifacts time (the silent-loss
     # safeguard).
-    handle = result.handle
+    # #1122: mirror the on_launched merge on the returned handle so the
+    # authoritative post-route sidecar write (and the caller's handle)
+    # carry the same preserved extras.
+    result, handle = _apply_carry_forward_to_result(result, prior)
     _warn_on_reconnected_workload(spec, result, handle)
     if expected_artifacts is not None and EXPECTED_ARTIFACTS_HANDLE_KEY not in handle.extra:
         from dataclasses import replace
@@ -683,6 +806,23 @@ def dispatch_for_issue(
         handle_sidecar_path=sidecar_written,
         sidecar_write_error=sidecar_write_error,
     )
+
+
+def _apply_carry_forward_to_result(result: RouteResult, prior: dict | None):
+    """Mirror the on_launched carry-forward merge on the RETURNED handle (#1122).
+
+    Returns ``(result, handle)`` — rebuilt with the enriched handle when
+    the merge carried anything, the inputs unchanged (identity) otherwise.
+    Keeps the authoritative post-route sidecar write and the caller's
+    handle consistent with the early ``on_launched`` write.
+    """
+    handle = result.handle
+    enriched = _carry_forward_reconnect_extras(handle, prior)
+    if enriched is handle:
+        return result, handle
+    from dataclasses import replace
+
+    return replace(result, handle=enriched), enriched
 
 
 def _warn_on_reconnected_workload(spec: RunSpec, result: RouteResult, handle: RunHandle) -> None:

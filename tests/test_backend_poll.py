@@ -2948,3 +2948,160 @@ def test_gcp_queue_vanish_does_not_record_boot_death(tmp_path, monkeypatch, caps
     assert out["current_phase"] == "gcp_queue_vanish_failover_runpod"
     assert len(rp.launches) == 1
     assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 0  # never recorded
+
+
+# ---------------------------------------------------------------------------
+# #1122 — exit-75 reconnect handle rewrites preserve the workload extras
+#
+# Incident #1090: the exit-75 same-command RERUN reconnected via
+# gcp.reconnect_or_none, whose handle carried NO workload extras; the
+# on_launched sidecar overwrite then left the #783 queue-timeout failover
+# unable to reconstruct a RunSpec (ValueError "pre-#659 handle?"). These
+# tests pin the end-to-end fix: the REAL reconnect_or_none output survives
+# the sidecar round-trip into _runspec_from_gcp_handle (T4), the both-empty
+# guard names the reconnect-rewrite cause (T5), and the #783 queue-timeout
+# failover completes against a reconnect-written handle (T6, seeded via the
+# REAL producer — never a hand-built "reconnect-shaped" dict).
+# ---------------------------------------------------------------------------
+
+_RECONNECT_WORKLOAD_CMD = "REPO_ROOT=/workspace bash scripts/issue1090_dispatch.sh --full"
+
+
+def _reconnect_handle_from_real_producer(issue: int) -> RunHandle:
+    """A handle produced by the REAL ``gcp.reconnect_or_none`` for a
+    workload-carrying spec (the #1090 exit-75 rerun shape). PROVISIONING
+    status keeps the probe to ONE gcloud list call (no guest-phase read)."""
+    from explore_persona_space.backends.base import RunSpec
+    from explore_persona_space.backends.gcp import (
+        GcloudRunResult,
+        GcpConfig,
+        reconnect_or_none,
+    )
+
+    spec = RunSpec(
+        issue=issue,
+        intent="lora-7b",
+        backend="gcp",
+        gpus=1,
+        time_budget_hours=4.0,
+        workload_cmd=_RECONNECT_WORKLOAD_CMD,
+        extra={"repo_branch": f"issue-{issue}"},
+    )
+    payload = json.dumps(
+        [
+            {
+                "name": f"eps-issue-{issue}",
+                "id": "instance-fake-1",
+                "status": "PROVISIONING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+            }
+        ]
+    )
+    config = GcpConfig(project="eps-test-project", gcloud_config="eps-test-config")
+    handle = reconnect_or_none(
+        spec=spec, config=config, runner=lambda argv: GcloudRunResult(0, payload, "")
+    )
+    assert handle is not None
+    return handle
+
+
+def test_runspec_from_gcp_handle_reconstructs_from_reconnect_handle(tmp_path):
+    """T4 (#1122, end-to-end #1090 shape): a REAL reconnect_or_none handle,
+    round-tripped through the sidecar (serialize_handle/deserialize_handle),
+    reconstructs a RunSpec whose workload_cmd / hydra_args / repo_branch
+    equal the original spec's — the exact read the queue-timeout failover
+    crashed on pre-fix."""
+    from scripts.backend_poll import _runspec_from_gcp_handle
+
+    handle = _reconnect_handle_from_real_producer(1090)
+    sidecar = tmp_path / "issue-1090-handle.json"
+    write_handle_sidecar(handle, sidecar)
+    recovered = read_handle_sidecar(sidecar)
+
+    spec = _runspec_from_gcp_handle(recovered, issue=1090)
+    assert spec.workload_cmd == _RECONNECT_WORKLOAD_CMD  # str, verbatim (MF1)
+    assert spec.hydra_args == ()  # empty branch stays empty (MF2)
+    assert spec.backend == "runpod"
+    assert spec.extra["repo_branch"] == "issue-1090"
+    assert spec.gpus == 1
+    assert spec.time_budget_hours == 4.0
+
+
+def test_runspec_from_gcp_handle_both_empty_raises_with_reconnect_cause():
+    """T5 (#1122): a handle whose workload pair is BOTH empty (keys present
+    or absent) raises a ValueError that names the reconnect-rewrite cause
+    (+ #1122) instead of mis-attributing solely to a pre-#659 handle."""
+    from scripts.backend_poll import _runspec_from_gcp_handle
+
+    # Keys PRESENT but both empty — the pre-#1122 presence-check built a
+    # blank RunSpec here; the value-check now refuses loudly.
+    handle = _gcp_handle(
+        extra={
+            "issue": 1090,
+            "intent": "lora-7b",
+            "workload_cmd": "",
+            "hydra_args": [],
+            "reconnected": True,
+        }
+    )
+    with pytest.raises(ValueError) as excinfo:
+        _runspec_from_gcp_handle(handle, issue=1090)
+    msg = str(excinfo.value).lower()
+    assert "reconnect" in msg
+    assert "#1122" in msg
+    assert "pre-#659" in msg  # legacy cause still mentioned, no longer solely
+    assert "refusing" in msg
+
+    # Keys ABSENT entirely (the true pre-#659 shape) raises the same guard.
+    with pytest.raises(ValueError):
+        _runspec_from_gcp_handle(_gcp_handle(extra={"intent": "lora-7b"}), issue=1090)
+
+
+def test_gcp_queue_timeout_failover_reconstructs_from_reconnect_handle(
+    tmp_path, monkeypatch, capsys
+):
+    """T6 (#1122, the #1090 acceptance shape): the #783 queue-timeout failover
+    COMPLETES (no ValueError) against a sidecar seeded from the REAL
+    reconnect_or_none output — the queued instance is torn down, exactly one
+    RunPod launch fires, and the relaunch spec carries the original
+    workload_cmd + repo_branch."""
+    from dataclasses import replace
+
+    handle = _reconnect_handle_from_real_producer(1090)
+    # The queue clock is POLLER-owned sidecar state (stamped on a prior tick);
+    # add it on top of the producer's own extra, older than the 600s floor.
+    handle = replace(
+        handle,
+        extra={
+            **handle.extra,
+            "last_phase": "pending",
+            "last_phase_change_ts": _time.time() - 1000,
+        },
+    )
+    sidecar = tmp_path / "issue-1090-handle.json"
+    write_handle_sidecar(handle, sidecar)
+
+    teardown_backend = _PollDoubleWithTeardown(_pending_poll())
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: teardown_backend,
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "1090", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_queue_timeout_failover_runpod"
+    assert len(rp.launches) == 1
+    relaunch_spec = rp.launches[0]
+    assert relaunch_spec.workload_cmd == _RECONNECT_WORKLOAD_CMD
+    assert relaunch_spec.hydra_args == ()
+    assert relaunch_spec.extra["repo_branch"] == "issue-1090"
+    # Queued GCP instance torn down; sidecar re-pointed at the RunPod handle.
+    assert len(teardown_backend.teardowns) == 1
+    assert read_handle_sidecar(sidecar).backend == "runpod"
