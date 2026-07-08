@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1116,
+  "highest_id": 1117,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -911,6 +911,13 @@
       "path": "tasks/completed/1116",
       "status": "completed",
       "title": "workflow-fix: GCP flex-start PENDING-vanish -> capacity-miss failover"
+    },
+    "1117": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1117",
+      "status": "proposed",
+      "title": "workflow-fix: hard-FAIL tier >=100 words/bullet in check_v4_word_caps"
     },
     "112": {
       "has_clean_result": false,
