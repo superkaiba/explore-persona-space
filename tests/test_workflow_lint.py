@@ -45,6 +45,7 @@ from workflow_lint import (  # noqa: E402
     check_compute_shape_review_lens,
     check_dispatcher_cvd_pin,
     check_gate_ids_unique,
+    check_grep_qv,
     check_heredoc_dotenv,
     check_hollow_verification_gate_review_lens,
     check_lessons_index,
@@ -2142,6 +2143,137 @@ def test_piped_git_push_hook_lint_agreement_on_shared_cases():
         assert lint == must_flag, f"lint verdict wrong for {cmd!r}: {lint} != {must_flag}"
         assert hook_v == must_flag, f"hook verdict wrong for {cmd!r}: {hook_v} != {must_flag}"
         assert lint == hook_v, f"engines diverge on shared case {cmd!r}"
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_grep_qv`` (incident class #928 -> #1125: ugrep
+# 7.5.0's quiet+invert exit status diverges from GNU — rc=1 even when
+# non-matching lines are selected — so an rc-consumed q+v grep trigger in an
+# executable workflow snippet silently fails OPEN under a PATH-shadowed
+# grep; the Step 10d pre-push lint gate classified a 12-file code-bearing
+# payload as skip-artifact-only). Each fixture writes a tiny ``*.md`` (with
+# a fenced code block, the SKILL.md scan shape) or ``*.sh`` under
+# ``tmp_path`` and calls ``check_grep_qv(roots=[tmp_path])``.
+# ---------------------------------------------------------------------------
+
+
+def test_check_grep_qv_flags_combined_token(tmp_path):
+    """FAIL — the live #928 trigger shape verbatim: a fenced,
+    backslash-continued elif consuming the combined-token quiet+invert
+    exit status; the error points at the FIRST physical line."""
+    (tmp_path / "SKILL.md").write_text(
+        "Prose above.\n"
+        "```bash\n"
+        "elif grep -qvE '^(tasks/|figures/)' \\\n"
+        "    /tmp/issue-1-own-diff.txt; then\n"
+        "  echo armed\n"
+        "```\n"
+    )
+    errors = check_grep_qv(roots=[tmp_path])
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "SKILL.md:3" in errors[0]
+    assert "#928" in errors[0]
+    assert "#1125" in errors[0]
+
+
+def test_check_grep_qv_flags_separated_tokens(tmp_path):
+    """FAIL — separated tokens (`-q ... -vE`) in a `.sh` logical line
+    combine across the option run exactly as the fused token does."""
+    (tmp_path / "x.sh").write_text("if grep -q -vE '^tasks/' files.txt; then\n  echo y\nfi\n")
+    errors = check_grep_qv(roots=[tmp_path])
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:1" in errors[0]
+
+
+def test_check_grep_qv_flags_vq_token_order(tmp_path):
+    """FAIL — the reversed combined token (`-vq`) is the same rc-consumed
+    quiet+invert combination (flag-set membership, not token spelling)."""
+    (tmp_path / "x.sh").write_text("grep -vq '^tasks/' files.txt\n")
+    errors = check_grep_qv(roots=[tmp_path])
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_grep_qv_flags_long_form(tmp_path):
+    """FAIL — the long forms (`--quiet --invert-match`, and the `--silent`
+    alias) are the same combination spelled out."""
+    (tmp_path / "x.sh").write_text(
+        "grep --quiet --invert-match '^tasks/' files.txt\n"
+        "grep --silent --invert-match '^tasks/' files.txt\n"
+    )
+    errors = check_grep_qv(roots=[tmp_path])
+    assert len(errors) == 2, f"expected exactly two errors, got: {errors}"
+
+
+def test_check_grep_qv_flags_path_pinned_ugrep(tmp_path):
+    """FAIL — a path-pinned `ugrep` is broken BY CONSTRUCTION (its
+    quiet+invert rc diverges wherever the binary lives), so the
+    path-pin exemption is grep-only."""
+    (tmp_path / "x.sh").write_text("/usr/bin/ugrep -qv '^a' f.txt\n")
+    errors = check_grep_qv(roots=[tmp_path])
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "`ugrep`" in errors[0]
+
+
+def test_check_grep_qv_allows_path_pinned(tmp_path):
+    """PASS — `/usr/bin/grep -qvE` is the sanctioned GNU pin (the #928
+    incident's own verified workaround)."""
+    (tmp_path / "x.sh").write_text("/usr/bin/grep -qvE '^tasks/' files.txt\n")
+    assert check_grep_qv(roots=[tmp_path]) == []
+
+
+def test_check_grep_qv_allows_single_flag_and_git_grep(tmp_path):
+    """PASS — plain `-q` without `-v` (match-found rc agrees across
+    implementations: the gate's `grep -qxE` verdict consumers), plain
+    `-vE` without `-q` (the output-test rewrite itself), and `git grep`
+    (git's own engine, not PATH-shadowable)."""
+    (tmp_path / "x.sh").write_text(
+        "grep -qxE 'pass|skip-artifact-only' verdict.txt\n"
+        "if [ -n \"$(grep -vE '^tasks/' files.txt)\" ]; then echo armed; fi\n"
+        "git grep -qv something -- scripts/\n"
+    )
+    assert check_grep_qv(roots=[tmp_path]) == []
+
+
+def test_check_grep_qv_pass_pipeline_split(tmp_path):
+    """PASS — `-v` and `-q` on DIFFERENT pipeline commands never combine:
+    each command word's contiguous option run is evaluated independently."""
+    (tmp_path / "x.sh").write_text("grep -v x f | grep -q y f2\n")
+    assert check_grep_qv(roots=[tmp_path]) == []
+
+
+def test_check_grep_qv_skips_prose_and_comments(tmp_path):
+    """PASS — the pattern in `.md` prose OUTSIDE a fence and on a
+    `#`-comment line INSIDE a fence is documentation, not an executable
+    snippet."""
+    (tmp_path / "SKILL.md").write_text(
+        "Never write grep -qvE in a trigger (prose mention).\n"
+        "```bash\n"
+        "# banned shape: grep -qvE '^tasks/' file\n"
+        "echo ok\n"
+        "```\n"
+    )
+    (tmp_path / "x.sh").write_text("# doc: grep -qvE '^tasks/' file\necho ok\n")
+    assert check_grep_qv(roots=[tmp_path]) == []
+
+
+def test_check_grep_qv_live_tree_passes():
+    """The committed workflow surface must carry no unpinned q+v grep
+    trigger — the regression lock for the #1125 two-site fix (the
+    `test_live_trees_pass` pattern from the judge-pin check). No
+    grandfather allowlist exists by design: the post-fix tree is clean."""
+    errors = check_grep_qv()
+    assert errors == [], (
+        "workflow surface has unpinned quiet+invert grep triggers "
+        "(#928 ugrep fail-open class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_grep_qv_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-grep-qv")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-grep-qv failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+    )
 
 
 # ---------------------------------------------------------------------------

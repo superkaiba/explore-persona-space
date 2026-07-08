@@ -115,6 +115,20 @@ Behaviours:
   normalized to ``|`` first. The
   ``.claude/hooks/guard_piped_git_push.sh`` PreToolUse hook covers the
   inline ad-hoc commands that never reach a committed script (#1048).
+* ``--check-grep-qv`` (also bundled into the no-flags default run): scan
+  fenced code blocks in ``.claude/skills/**/SKILL.md`` +
+  ``.claude/agents/*.md`` and logical lines of ``scripts/**/*.sh``, and
+  FAIL on any UNPINNED ``grep``/``ugrep`` invocation combining q
+  (``-q``/``--quiet``/``--silent``) and v (``-v``/``--invert-match``) —
+  a combined short token, separated tokens, or long forms. ugrep 7.5.0's
+  quiet+invert exit status diverges from GNU (rc=1 even when non-matching
+  lines are selected), so an rc-consumed q+v trigger silently fails OPEN
+  when shell ``grep`` resolves to ugrep (#928: the Step 10d pre-push lint
+  gate disarmed as skip-artifact-only on a code-bearing payload; fixed in
+  #1125 with the output-test rewrite). ``git grep`` and a path-pinned
+  ``/usr/bin/grep`` are exempt; a path-pinned ``ugrep`` still flags (its
+  exit status is divergent by construction, no pin sanctions it).
+  ``#``-comment lines and ``.md`` prose outside fences are skipped.
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
   extract every marker kind that any skill's ``SKILL.md`` under
   ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
@@ -2677,6 +2691,164 @@ def check_piped_git_push(*, scripts_dir: Path | None = None) -> list[str]:
                 f"`set -o pipefail`. See CLAUDE.md § Concurrent repo-root "
                 f"committers (#1048)."
             )
+    return errors
+
+
+# `--check-grep-qv` (#928 -> #1125): an rc-consumed quiet+invert grep trigger
+# is implementation-divergent — GNU grep exits 0 iff a line is SELECTED (with
+# -v, selected = non-matching), while ugrep 7.5.0 returns rc=1 in the same
+# case (its -q short-circuits on MATCH FOUND, not line selected) — so the
+# combination silently fails OPEN when shell `grep` resolves to ugrep. The
+# regex matches a bare or path-prefixed `grep`/`ugrep` command word (the
+# lookbehind rejects word-char / `.` / `-` prefixes so `pgrep`, `foo-grep`,
+# `x.grep` never match; a preceding `/` IS allowed so path pins are visible
+# to the caller, which exempts pinned `grep` but still flags pinned `ugrep`)
+# and captures the CONTIGUOUS option-token run that follows — so a
+# pipeline-split `grep -v x f | grep -q y f2` yields two matches whose flag
+# sets are evaluated independently and never combine.
+GREP_QV_CMD_RE = re.compile(r"(?<![\w.\-])(u?grep)\b((?:\s+--?[\w=-]+)*)")
+
+_GREP_QV_GIT_PREFIX_RE = re.compile(r"(?<![\w.\-])git\s+$")
+
+
+def _grep_qv_flag_sets(opt_run: str) -> tuple[bool, bool]:
+    """Return ``(has_q, has_v)`` for the contiguous option-token run
+    following a grep command word — a combined short token (``-qvE``),
+    separated tokens (``-q ... -vE``, either order), and the long forms
+    (``--quiet``/``--silent`` + ``--invert-match``) all count."""
+    short: set[str] = set()
+    long_flags: set[str] = set()
+    for tok in opt_run.split():
+        if tok.startswith("--"):
+            long_flags.add(tok[2:].split("=", 1)[0])
+        elif tok.startswith("-") and len(tok) > 1:
+            short.update(tok[1:])
+    has_q = "q" in short or bool(long_flags & {"quiet", "silent"})
+    has_v = "v" in short or "invert-match" in long_flags
+    return has_q, has_v
+
+
+def _grep_qv_scan(path: Path, lines: list[str], base_idx: int, errors: list[str]) -> None:
+    """Scan ``lines`` (physical lines whose first line sits at 0-based file
+    index ``base_idx``) as logical shell lines and append one error per
+    flagged unpinned q+v grep invocation. ``#``-comment lines are skipped;
+    backslash continuations are merged (the live #928 trigger was
+    backslash-continued with the flags on the first physical line)."""
+    for first, _last, logical in _iter_logical_shell_lines(lines):
+        if logical.strip().startswith("#"):
+            continue
+        for match in GREP_QV_CMD_RE.finditer(logical):
+            cmd = match.group(1)
+            path_pinned = match.start() > 0 and logical[match.start() - 1] == "/"
+            if path_pinned and cmd == "grep":
+                # /usr/bin/grep pin — the sanctioned GNU pin (a pinned
+                # ugrep is NOT sanctioned: its rc diverges wherever it is).
+                continue
+            if _GREP_QV_GIT_PREFIX_RE.search(logical[: match.start()]):
+                # `git grep` — git's own engine, not PATH-shadowable.
+                continue
+            has_q, has_v = _grep_qv_flag_sets(match.group(2))
+            if has_q and has_v:
+                errors.append(
+                    f"{path}:{base_idx + first + 1}: `{cmd}` combines -q and -v "
+                    f"(quiet + invert-match) with the exit status as the signal. "
+                    f"ugrep 7.5.0 returns rc=1 where GNU returns 0 when "
+                    f"non-matching lines are selected, so an rc-consumed q+v "
+                    f"trigger fails OPEN under a PATH-shadowed grep (#928: the "
+                    f"Step 10d pre-push lint gate silently disarmed; fixed in "
+                    f"#1125). Consume OUTPUT instead — "
+                    f'`[ -n "$(grep -vE <pattern> <file>)" ]`.'
+                )
+
+
+def _grep_qv_target_files(roots: list[Path] | None) -> list[Path]:
+    """Resolve the scan set: production (``roots=None``) walks
+    ``.claude/skills/**/SKILL.md`` + ``.claude/agents/*.md`` +
+    ``scripts/**/*.sh``; a test override lists files, or directories
+    walked for ``*.md`` / ``*.sh``."""
+    if roots is None:
+        files: list[Path] = []
+        skills = _REPO_ROOT / ".claude" / "skills"
+        agents = _REPO_ROOT / ".claude" / "agents"
+        scripts = _REPO_ROOT / "scripts"
+        if skills.exists():
+            files.extend(sorted(p for p in skills.rglob("SKILL.md") if p.is_file()))
+        if agents.exists():
+            files.extend(sorted(p for p in agents.glob("*.md") if p.is_file()))
+        if scripts.exists():
+            files.extend(sorted(p for p in scripts.rglob("*.sh") if p.is_file()))
+        return files
+    files = []
+    for root in roots:
+        if root.is_file():
+            files.append(root)
+        else:
+            files.extend(
+                sorted(p for p in root.rglob("*") if p.is_file() and p.suffix in (".md", ".sh"))
+            )
+    return files
+
+
+def check_grep_qv(*, roots: list[Path] | None = None) -> list[str]:
+    """FAIL on an UNPINNED ``grep``/``ugrep`` invocation combining q
+    (``-q``/``--quiet``/``--silent``) and v (``-v``/``--invert-match``) —
+    a combined short token, separated tokens, or the long forms — inside
+    executable workflow snippets: fenced code blocks in
+    ``.claude/skills/**/SKILL.md`` and ``.claude/agents/*.md``, plus
+    ``scripts/**/*.sh`` logical lines.
+
+    ugrep 7.5.0's quiet+invert exit status diverges from GNU grep (rc=1
+    even when non-matching lines are selected — its ``-q`` short-circuits
+    on MATCH FOUND, not line selected), so an rc-consumed q+v trigger
+    silently fails OPEN when shell ``grep`` resolves to ugrep (#928: the
+    Step 10d pre-push lint gate classified a 12-file code-bearing payload
+    as skip-artifact-only; #1125 rewrote both trigger sites to the
+    output-test form).
+
+    Sanctioned forms the check does NOT flag: the output-test
+    ``[ -n "$(grep -vE <pattern> <file>)" ]`` (no quiet flag — every
+    implementation agrees on what ``-v`` PRINTS), an absolute-path-pinned
+    bare grep (command word preceded by ``/``, e.g. under ``/usr/bin``),
+    and ``git grep`` (git's own engine, not PATH-shadowable). A
+    path-pinned ``ugrep`` DOES flag: it carries the divergent exit status
+    by construction, so no pin can sanction it. ``#``-comment lines are
+    skipped in both file classes; ``.md`` prose outside fences is never
+    scanned. Deliberate scan-set exclusions (extend here if the class
+    recurs elsewhere): ``.claude/rules/*.md`` and ``CLAUDE.md`` (prose
+    surfaces whose fenced snippets are illustrative, not executed
+    verbatim) and ``*.py`` files (this check, its tests, and rule prose
+    would self-flag; Python ``subprocess`` grep call sites are outside
+    the copy-paste-snippet threat model).
+
+    ``roots`` is a unit-test override hook (see
+    :func:`_grep_qv_target_files`); production callers pass None.
+    Bundled into the no-flags default run (same policy as
+    ``check_piped_git_push``).
+    """
+    errors: list[str] = []
+    for path in _grep_qv_target_files(roots):
+        lines = path.read_text(encoding="utf-8").splitlines()
+        if path.suffix == ".md":
+            in_fence = False
+            block: list[str] = []
+            block_start = 0
+            for idx, line in enumerate(lines):
+                if _FENCE_RE.match(line):
+                    if in_fence:
+                        _grep_qv_scan(path, block, block_start, errors)
+                        block = []
+                    else:
+                        block_start = idx + 1
+                    in_fence = not in_fence
+                    continue
+                if in_fence:
+                    block.append(line)
+            if in_fence and block:
+                # Unterminated trailing fence: scan what was collected
+                # (fail toward checking, never toward silence).
+                _grep_qv_scan(path, block, block_start, errors)
+        else:
+            _grep_qv_scan(path, lines, 0, errors)
     return errors
 
 
@@ -6927,6 +7099,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "no-flags default run.",
     )
     parser.add_argument(
+        "--check-grep-qv",
+        action="store_true",
+        help="Verify no executable workflow snippet (fenced code blocks in "
+        ".claude/skills/**/SKILL.md + .claude/agents/*.md, plus "
+        "scripts/**/*.sh) runs an unpinned grep/ugrep combining -q and -v "
+        "with the exit status as the signal. ugrep 7.5.0's quiet+invert "
+        "exit status diverges from GNU (rc=1 when non-matching lines are "
+        "selected), so such a trigger fails OPEN under a PATH-shadowed "
+        "grep (#928; fixed in #1125). git grep and a path-pinned "
+        "/usr/bin/grep are exempt; a path-pinned ugrep still flags. "
+        "Comment lines and prose outside fences are skipped. Bundled into "
+        "the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-marker-registry",
         action="store_true",
         help="Verify every marker kind that .claude/skills/issue/SKILL.md "
@@ -7276,6 +7462,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_dispatcher_cvd_pin
         or args.check_pipe_python
         or args.check_piped_git_push
+        or args.check_grep_qv
         or args.check_marker_registry
         or args.check_agent_model_pins
         or args.check_agent_tools
@@ -7350,6 +7537,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_pipe_python())
     if args.check_piped_git_push or no_flags:
         errors.extend(check_piped_git_push())
+    if args.check_grep_qv or no_flags:
+        errors.extend(check_grep_qv())
     if (args.check_marker_registry or no_flags) and not args.check_references:
         errors.extend(check_marker_registry(workflow))
     if args.check_agent_model_pins or no_flags:
