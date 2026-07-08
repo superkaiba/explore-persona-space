@@ -7005,6 +7005,102 @@ def test_v4_per_result_prose_over_180_words_fails():
     assert "result" in r.detail
 
 
+def test_v4_takeaways_bullet_over_30_words_warns_not_fails():
+    """A 35-word Takeaways bullet WARNs (existing tier) — no FAIL."""
+    body = _V4_GOOD_BODY.replace(
+        "- Secondary: capability holds at 0.82 vs baseline 0.81 — no regression at 25% mixing.",
+        "- " + " ".join(["word"] * 35),
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    caps = _results_by_name(results)["v4 conciseness caps"]
+    assert caps.passed and caps.is_warn
+    assert "exceed 30 words" in caps.detail
+
+
+def test_v4_takeaways_bullet_at_100_words_fails():
+    """A 100-word Takeaways bullet is a hard FAIL (the #825 accretion
+    tier) and is NOT double-counted into the 30-word WARN line."""
+    body = _V4_GOOD_BODY.replace(
+        "- Secondary: capability holds at 0.82 vs baseline 0.81 — no regression at 25% mixing.",
+        "- " + " ".join(["word"] * 100),
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    caps = _results_by_name(results)["v4 conciseness caps"]
+    assert not caps.passed
+    assert "100" in caps.detail
+    assert "exceed 30 words" not in caps.detail  # mutually exclusive tiers
+
+
+def test_v4_takeaways_bullet_99_words_warns_only():
+    """Boundary: 99 words stays in the WARN tier (FAIL is >= 100)."""
+    body = _V4_GOOD_BODY.replace(
+        "- Secondary: capability holds at 0.82 vs baseline 0.81 — no regression at 25% mixing.",
+        "- " + " ".join(["word"] * 99),
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    caps = _results_by_name(results)["v4 conciseness caps"]
+    assert caps.passed and caps.is_warn
+    assert "exceed 30 words" in caps.detail
+
+
+def test_v3_takeaways_bullet_over_100_words_still_warn_only():
+    """Grandfathering: a 263-word bullet on a v3 body stays WARN-only
+    (forward-only rule — a v3 body is never newly hard-FAILed by a v4
+    rule). Also pins the tuple-consuming v3 caller: an unmodified clean
+    v3 body carries NO spurious per-bullet WARN (a forgotten int->tuple
+    caller would make the truthy ``(0, 0)`` WARN every v3 body), and the
+    mutated body's WARN carries the exact count-prefixed message."""
+    clean_caps = _results_by_name(verify_task_body.verify_text(_V3_GOOD_BODY)[1])[
+        "v3 conciseness caps"
+    ]
+    assert clean_caps.passed and not clean_caps.is_warn, clean_caps.render()
+
+    body = _V3_GOOD_BODY.replace(
+        "- Secondary: capability holds at 0.82 vs baseline 0.81 — no regression at 25% mixing.",
+        "- " + " ".join(["word"] * 263),
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    caps = _results_by_name(results)["v3 conciseness caps"]
+    assert caps.passed and caps.is_warn
+    assert "1 Takeaways bullet(s) exceed 30 words" in caps.detail
+
+
+def test_v4_takeaways_fenced_pseudo_bullet_not_counted():
+    """Fence-aware counting unchanged through the tuple refactor: a
+    150-word bullet-shaped line inside a code fence in ## Takeaways
+    neither WARNs nor FAILs."""
+    body = _V4_GOOD_BODY.replace(
+        "## Goal",
+        "```\n- " + " ".join(["word"] * 150) + "\n```\n\n## Goal",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    caps = _results_by_name(results)["v4 conciseness caps"]
+    assert caps.passed, caps.render()
+    assert "Takeaways bullet" not in caps.detail
+
+
+def test_v4_takeaways_mixed_warn_and_fail_bullets_both_reported():
+    """A body with one ~35-word AND one >=100-word bullet FAILs with the
+    >=100 message AND the concatenated `; WARN: ... exceed 30 words`
+    tail — each bullet counted in exactly one tier (non-double-counting
+    + the fails-then-WARN detail concatenation)."""
+    body = _V4_GOOD_BODY.replace(
+        "- Secondary: capability holds at 0.82 vs baseline 0.81 — no regression at 25% mixing.",
+        "- " + " ".join(["word"] * 35),
+    ).replace(
+        "- Caveat that binds interpretation: single model family, three seeds only.",
+        "- " + " ".join(["word"] * 100),
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    caps = _results_by_name(results)["v4 conciseness caps"]
+    assert not caps.passed
+    assert "1 Takeaways bullet(s) at ≥100 words" in caps.detail
+    assert "; WARN: " in caps.detail
+    assert "1 Takeaways bullet(s) exceed 30 words" in caps.detail
+
+
 # ─── check 20 (v4): folded-round budget scaling (#921) ─────────────────────
 #
 # v4 bodies carry no `## What I ran` Rounds table, so the v3 round counter

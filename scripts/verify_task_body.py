@@ -342,7 +342,8 @@ New v3-only checks (PASS vacuously on v2/legacy):
   code, `<details>` bodies, captions. The Takeaways 3-6 bullet COUNT is
   owned by check 3's `check_v3_structure` (one authoritative count).
   (v4 twin `check_v4_word_caps`: same caps over Takeaways + Goal +
-  Results, `## Methodology` excluded; its round count reads
+  Results, `## Methodology` excluded, plus a v4-only per-Takeaways-bullet
+  ≥100-word hard-FAIL tier (#825); its round count reads
   `epm:same-issue-followup-run` markers and/or the footer round clauses,
   max-reconciled — the Rounds-table read binds v3 only. It needs the
   `issue` number for the events leg, so it is dispatched separately in
@@ -829,6 +830,13 @@ V3_TAKEAWAYS_MIN_BULLETS = 3
 V3_TAKEAWAYS_MAX_BULLETS = 6
 # Per-Takeaways-bullet word cap (WARN).
 V3_TAKEAWAYS_BULLET_MAX_WORDS = 30
+# Per-Takeaways-bullet hard-FAIL tier — v4 bodies ONLY (v3/v2/legacy stay
+# WARN-only per the forward-only rule). A same-issue follow-up re-fold can
+# accrete a paragraph-bullet that rides the 30-word WARN indistinguishably
+# from a mild overrun (#825 r1: a 263-word bullet WARNed identically to a
+# 35-word one); >=100 words is structural misuse of a bullet, not a
+# tightening request.
+V4_TAKEAWAYS_BULLET_FAIL_WORDS = 100
 # Per-finding prose word cap (excl. caption / code / `<details>` bodies):
 # WARN at the soft cap, FAIL at the hard cap.
 V3_FINDING_PROSE_WARN_WORDS = 120
@@ -8623,11 +8631,16 @@ def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tupl
     return count, "footer" if footer_n > events_n else "events"
 
 
-def _count_overlong_takeaways_bullets(takeaways: str) -> int:
-    """Count top-level Takeaways bullets over the per-bullet word cap
-    (fence-aware). Helper for check 20."""
+def _count_overlong_takeaways_bullets(takeaways: str) -> tuple[int, int]:
+    """Count top-level Takeaways bullets over the per-bullet word caps
+    (fence-aware). Returns ``(over_warn, over_fail)``: bullets over the
+    30-word WARN cap but under the >=100-word FAIL tier, and bullets at
+    or over the FAIL tier. v3 reports the SUM as its WARN count
+    (WARN-only, grandfathered); v4 FAILs the second bucket (#825).
+    Helper for check 20."""
     in_fence = False
-    over = 0
+    over_warn = 0
+    over_fail = 0
     for line in takeaways.splitlines():
         s = line.strip()
         if s.startswith("```") or s.startswith("~~~"):
@@ -8637,9 +8650,11 @@ def _count_overlong_takeaways_bullets(takeaways: str) -> int:
             continue
         if re.match(r"^[-*]\s+\S", line):
             wc = len(re.sub(r"^[-*]\s+", "", line.strip()).split())
-            if wc > V3_TAKEAWAYS_BULLET_MAX_WORDS:
-                over += 1
-    return over
+            if wc >= V4_TAKEAWAYS_BULLET_FAIL_WORDS:
+                over_fail += 1
+            elif wc > V3_TAKEAWAYS_BULLET_MAX_WORDS:
+                over_warn += 1
+    return over_warn, over_fail
 
 
 def _finding_prose_cap_results(findings: str) -> tuple[list[str], list[str]]:
@@ -8711,7 +8726,8 @@ def check_v3_word_caps(body: str) -> CheckResult:
     The Takeaways 3-6 bullet COUNT is owned by `check_v3_structure`
     (one authoritative count gate), not duplicated here. A FAIL here
     fires ONLY on the per-finding ≥180-word hard cap; everything else
-    is WARN. PASSes vacuously on v2 / legacy bodies.
+    is WARN (the v4-only ≥100-word per-bullet FAIL tier does not bind
+    v3). PASSes vacuously on v2 / legacy bodies.
     """
     label = "v3 conciseness caps"
     if not is_v3(body):
@@ -8723,8 +8739,10 @@ def check_v3_word_caps(body: str) -> CheckResult:
     takeaways = section_text(body, "Takeaways") or ""
     findings = section_text(body, "Findings") or ""
 
-    # Per-Takeaways-bullet word cap (WARN).
-    over_bullets = _count_overlong_takeaways_bullets(takeaways)
+    # Per-Takeaways-bullet word cap (WARN-only on v3 — grandfathered; the
+    # v4-only >=100-word FAIL tier does not bind here).
+    over_warn_b, over_fail_b = _count_overlong_takeaways_bullets(takeaways)
+    over_bullets = over_warn_b + over_fail_b
     if over_bullets:
         warns.append(
             f"{over_bullets} Takeaways bullet(s) exceed {V3_TAKEAWAYS_BULLET_MAX_WORDS} words"
@@ -8851,9 +8869,11 @@ def check_v4_methodology_shape(body: str) -> CheckResult:
 
 
 def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
-    """Check 20 (v4 only): the v4 conciseness caps (same constants as v3).
+    """Check 20 (v4 only): the v4 conciseness caps (same constants as v3,
+    plus the v4-only per-Takeaways-bullet FAIL tier).
 
-    - Per-Takeaways-bullet ≤30 words (WARN).
+    - Per-Takeaways-bullet ≤30 words (WARN); ≥100 words FAIL (v4-only
+      hard tier, #825).
     - Per-`### <result>` prose ≤120 words WARN / ≥180 words FAIL (excl.
       caption / fenced code / `<details>` bodies / table rows).
     - Figure caption ≤60 words (WARN).
@@ -8865,8 +8885,9 @@ def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
     non-retroactive `epm:same-issue-followup-run` markers (via ``issue``,
     when known) and/or the footer's round clauses (max), NOT the v3
     Rounds table (#921). The Takeaways 3-6 bullet COUNT is owned by
-    `check_v4_structure`. A FAIL here fires ONLY on the per-result
-    ≥180-word hard cap. PASSes vacuously on v3 / v2 / legacy bodies.
+    `check_v4_structure`. A FAIL here fires on the per-result ≥180-word
+    hard cap and the per-Takeaways-bullet ≥100-word tier. PASSes
+    vacuously on v3 / v2 / legacy bodies.
     """
     label = "v4 conciseness caps"
     if not is_v4(body):
@@ -8881,10 +8902,18 @@ def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
     # (would inflate the per-result word count into a false ≥180 hard FAIL).
     results = _v4_results_body(body) or ""
 
-    over_bullets = _count_overlong_takeaways_bullets(takeaways)
-    if over_bullets:
+    # Per-Takeaways-bullet caps: >=100 words is a v4-only hard FAIL (#825 —
+    # an accreted paragraph-bullet must not ride the 30-word WARN); the
+    # 31-99-word band keeps the existing WARN. Mutually exclusive tiers.
+    over_warn_b, over_fail_b = _count_overlong_takeaways_bullets(takeaways)
+    if over_fail_b:
+        fails.append(
+            f"{over_fail_b} Takeaways bullet(s) at ≥{V4_TAKEAWAYS_BULLET_FAIL_WORDS} words "
+            "(accreted paragraph-bullet — split or tighten)"
+        )
+    if over_warn_b:
         warns.append(
-            f"{over_bullets} Takeaways bullet(s) exceed {V3_TAKEAWAYS_BULLET_MAX_WORDS} words"
+            f"{over_warn_b} Takeaways bullet(s) exceed {V3_TAKEAWAYS_BULLET_MAX_WORDS} words"
         )
 
     # Per-result prose caps (reuse the per-finding helper; it scans `### `
