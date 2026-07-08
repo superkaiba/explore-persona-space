@@ -3223,6 +3223,19 @@ def reconnect_or_none(
     semantics — a probe flake fails the launch typed and RETRIABLE
     (re-run the same command; idempotent by design, the #736 exit-75
     precedent), never a silent reconnect and never a delete.
+
+    Failover-prerequisite extras (#1122): when the spec carries a
+    workload (``workload_cmd`` or ``hydra_args``), the reconnect
+    handle's ``extra`` mirrors the launch path's failover keys
+    (``workload_cmd`` / ``hydra_args`` / ``gpus`` /
+    ``time_budget_hours`` / ``repo_branch`` / ``gpu_count`` +
+    ``boot_disk_gb`` / ``min_ram_gb`` when set). The #736 exit-75
+    contract re-runs the SAME command, and
+    ``issue_dispatch.dispatch_for_issue``'s ``on_launched`` hook
+    OVERWRITES the handle sidecar with THIS handle — pre-#1122 the
+    minimal probe-derived extra clobbered the launch handle's workload
+    keys, so the #783 queue-timeout RunPod failover crashed at
+    ``backend_poll._runspec_from_gcp_handle`` (incident #1090).
     """
     name = instance_name_for(spec.issue, lane_suffix_for(spec))
     argv = render_list_argv(config=config, name_filter=f"name={name}")
@@ -3306,6 +3319,40 @@ def reconnect_or_none(
         }
         if recovered_attempt_id is not None:
             extra["attempt_id"] = recovered_attempt_id
+        # #1122: mirror the launch path's failover-prerequisite keys
+        # (#659 MF1/MF2, #909 repo_branch, #677 gpu_count, #1010 footprint)
+        # so an exit-75 same-command RERUN's reconnect handle — which
+        # OVERWRITES the sidecar via issue_dispatch's on_launched hook —
+        # stays failover-capable (backend_poll._runspec_from_gcp_handle).
+        # Gated on the spec carrying a workload: a bare (provision-only /
+        # probe) reconnect keeps the legacy extra shape, and the
+        # issue_dispatch carry-forward (#1122 edit 2) preserves the prior
+        # sidecar's values for that case instead.
+        if spec.workload_cmd or spec.hydra_args:
+            # MF1: workload_cmd is a str — preserve AS-IS, never list().
+            # MF2: one of the pair is empty by RunSpec.__post_init__
+            # mutual exclusion; write BOTH so the poller's verbatim
+            # pass-through reconstruction holds.
+            extra["workload_cmd"] = spec.workload_cmd or ""
+            extra["hydra_args"] = list(spec.hydra_args or ())
+            extra["gpus"] = spec.gpus
+            extra["time_budget_hours"] = spec.time_budget_hours
+            extra["repo_branch"] = str((spec.extra or {}).get("repo_branch") or "")
+            # 0-vs-nonzero is all the poller's CPU-lane guards read
+            # (_is_gcp_async_workload_failure / _is_gcp_queue_timeout),
+            # and CPU-ness is intent-determined — override-invariant even
+            # when the creating rung used a machine_spec_override.
+            extra["gpu_count"] = machine_for_intent(spec).gpu_count
+            extra.update(
+                {
+                    k: v
+                    for k, v in {
+                        "boot_disk_gb": (spec.extra or {}).get("boot_disk_gb"),
+                        "min_ram_gb": (spec.extra or {}).get("min_ram_gb"),
+                    }.items()
+                    if v
+                }
+            )
         return RunHandle(
             backend="gcp",
             cluster=None,
