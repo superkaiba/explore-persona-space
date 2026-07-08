@@ -1118,8 +1118,8 @@
     "1143": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1143",
-      "status": "planning",
+      "path": "tasks/approved/1143",
+      "status": "approved",
       "title": "workflow-fix: verify_task_body file-count claim-matcher misses footer shape"
     },
     "1144": {
