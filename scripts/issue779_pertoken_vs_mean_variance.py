@@ -141,10 +141,12 @@ def main() -> int:
     args.out_json.write_text(__import__("json").dumps(out, indent=1))
     print(f"\nwrote {args.out_json}")
     print(
-        f"  PER-TOKEN cov:  r_B at {pct_tok:.1f}th pct (rank {rank_tok}), {frac_tok:.3%} of variance"
+        f"  PER-TOKEN cov:  r_B at {pct_tok:.1f}th pct (rank {rank_tok}), "
+        f"{frac_tok:.3%} of variance"
     )
     print(
-        f"  MEAN-ANSWER cov: r_B at {pct_mean:.1f}th pct (rank {rank_mean}), {frac_mean:.3%} of variance"
+        f"  MEAN-ANSWER cov: r_B at {pct_mean:.1f}th pct (rank {rank_mean}), "
+        f"{frac_mean:.3%} of variance"
     )
     return 0
 

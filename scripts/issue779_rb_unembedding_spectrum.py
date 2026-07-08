@@ -100,9 +100,7 @@ def main() -> int:
         "r_b": {},
     }
     print(f"unembedding = {key}  (V={V}, d={d})")
-    print(
-        f"random null: Gini {null_gini_mean:+.4f}±{null_gini_sd:.4f}, SCM {null_scm_mean:.3f}"
-    )
+    print(f"random null: Gini {null_gini_mean:+.4f}±{null_gini_sd:.4f}, SCM {null_scm_mean:.3f}")
     print(f"{'trait':>14} {'layer':>5} {'Gini':>9} {'vs null(z)':>10} {'SCM':>6}  verdict")
     for t in TRAITS:
         rb_all = S1._load_rb(args.rb_dir, t, C.EXPECTED_LAYERS, C.EXPECTED_HIDDEN)
