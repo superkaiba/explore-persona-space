@@ -1,0 +1,1 @@
+{"ts": "2026-07-08T12:43:25Z", "event": "raised", "concern_id": "dead-check-or-write-manifest", "severity": "CONCERN", "summary": "Port leaves main's _check_or_write_manifest (datagen.py) uncalled: generate_training_data now uses the branch's reviewed _resume_or_quarantine_manifest. Fold/delete the dead helper in a follow-up.", "raised_by": "implementer", "raised_at_round": 1}
