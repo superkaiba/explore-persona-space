@@ -5,7 +5,7 @@
 # repo), then exec's the work-conserving 8-GPU dispatcher.
 set -euo pipefail
 
-CORPUS_REV="45b222d97356ca9ac5d82901267add65f785ff9f"
+CORPUS_REV="7ef5523673d64697ab497577dbc5b9270c39f020"
 RB_REV="037fcbb"
 OUT="${OUT:-/workspace/issue1092}"
 export EPS_OUT_DIR="$OUT"
@@ -19,7 +19,7 @@ import shutil
 
 from huggingface_hub import hf_hub_download, list_repo_tree
 
-REV = "45b222d97356ca9ac5d82901267add65f785ff9f"
+REV = "7ef5523673d64697ab497577dbc5b9270c39f020"
 REPO = "superkaiba1/explore-persona-space-data"
 PREFIX = "issue1092_realistic_crossing/corpus"
 
