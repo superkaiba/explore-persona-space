@@ -116,10 +116,16 @@ res = api.upload_folder(
     commit_message="issue #1092 P6 fit-grid outputs (GCP cpu-bigmem judge-bearing run)",
 )
 print("[p6-gce] uploaded out-dir:", res)
+# Scoped list_repo_tree, NEVER list_repo_files: the data repo is ~1M files and
+# full-tree enumeration wedges (.claude/rules/gotchas.md).
 api_files = [
-    f
-    for f in api.list_repo_files("superkaiba1/explore-persona-space-data", repo_type="dataset")
-    if f.startswith("issue1092_realistic_crossing/p6/")
+    e.path
+    for e in api.list_repo_tree(
+        "superkaiba1/explore-persona-space-data",
+        repo_type="dataset",
+        path_in_repo="issue1092_realistic_crossing/p6",
+        recursive=True,
+    )
 ]
 assert any(f.endswith("fit_grid_summary.json") for f in api_files), (
     f"fit_grid_summary.json not on hub after upload ({len(api_files)} files)"
