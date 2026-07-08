@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1136,
+  "highest_id": 1137,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1065,6 +1065,13 @@
       "path": "tasks/proposed/1136",
       "status": "proposed",
       "title": "daily-fix: set-body warns when experiment loses Goal H2"
+    },
+    "1137": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1137",
+      "status": "proposed",
+      "title": "daily-fix: suppress stalled-alert on fresh poll-tick marker"
     },
     "114": {
       "has_clean_result": false,
