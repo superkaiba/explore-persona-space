@@ -1,10 +1,7 @@
 ---
 title: The context→answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct
   strength, and its answer-specificity survives an on-policy separator control only
-  in attenuated form — the model's own continuations close roughly half of the control-to-ceiling
-  gap on both models; two-turn cells are nonlinearly recoverable, including a weak
-  user-turn map, replicated on real human conversations, that the linear probe misses
-  entirely (MODERATE confidence)
+  in attenuated form (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto

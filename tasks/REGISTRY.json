@@ -6243,7 +6243,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/825",
       "status": "followups_running",
-      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength, and its answer-specificity survives an on-policy separator control only in attenuated form \u2014 the model's own continuations close roughly half of the control-to-ceiling gap on both models; two-turn cells are nonlinearly recoverable, including a weak user-turn map, replicated on real human conversations, that the linear probe misses entirely (MODERATE confidence)"
+      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength, and its answer-specificity survives an on-policy separator control only in attenuated form (MODERATE confidence)"
     },
     "826": {
       "has_clean_result": false,
