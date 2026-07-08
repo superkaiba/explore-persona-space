@@ -1069,8 +1069,8 @@
     "1137": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1137",
-      "status": "proposed",
+      "path": "tasks/planning/1137",
+      "status": "planning",
       "title": "daily-fix: suppress stalled-alert on fresh poll-tick marker"
     },
     "1138": {
