@@ -957,8 +957,8 @@
     "1122": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1122",
-      "status": "approved",
+      "path": "tasks/running/1122",
+      "status": "running",
       "title": "workflow-fix: preserve workload_cmd across exit-75 reconnect handle rewrites (GCP->RunPod failover)"
     },
     "113": {
