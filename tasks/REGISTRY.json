@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1135,
+  "highest_id": 1136,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1058,6 +1058,13 @@
       "path": "tasks/proposed/1135",
       "status": "proposed",
       "title": "daily-fix: gotchas entry - CVD clobber at library-train seam"
+    },
+    "1136": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1136",
+      "status": "proposed",
+      "title": "daily-fix: set-body warns when experiment loses Goal H2"
     },
     "114": {
       "has_clean_result": false,
