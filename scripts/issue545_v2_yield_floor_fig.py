@@ -7,9 +7,16 @@ Numbers grounded in:
 
 from __future__ import annotations
 
-import matplotlib.pyplot as plt
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_role,
     savefig_paper,
     set_paper_style,
@@ -49,7 +56,7 @@ def main() -> None:
     ax.axhline(160, color=paper_palette_role("baseline"), linestyle="--", linewidth=1.2, alpha=0.7)
 
     # Annotate counts above each bar
-    for bar, val in zip(bars, values):
+    for bar, val in zip(bars, values, strict=False):
         ax.text(
             bar.get_x() + bar.get_width() / 2,
             val + 4,
@@ -62,7 +69,10 @@ def main() -> None:
     set_title_subtitle(
         ax,
         title="Onpolicy-v2 elicitation: refuse_medical yield 150/200 (75%, below 80% floor)",
-        subtitle="Tier-1 bare-context yield matches the pre-training base rate (0.375%) — the gate fired as designed",
+        subtitle=(
+            "Tier-1 bare-context yield matches the pre-training base rate (0.375%) "
+            "— the gate fired as designed"
+        ),
         source="eval_results/issue_545/onpolicy_v2/elicitation/refuse_medical_pool_meta.json",
     )
 

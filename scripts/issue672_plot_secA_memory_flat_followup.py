@@ -8,9 +8,16 @@ pre-#671 #545 climb (22 -> 30 -> 38 GiB) as a dashed contrast overlay.
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_role,
     savefig_paper,
     set_paper_style,
@@ -32,7 +39,7 @@ def main() -> None:
     allocated = [r["memory_allocated_gib"] for r in rows]
 
     # Post-warmup flat band (the gated quantity): reserved over iters > WARMUP_ITERS.
-    post = [v for i, v in zip(it, reserved) if i > WARMUP_ITERS]
+    post = [v for i, v in zip(it, reserved, strict=False) if i > WARMUP_ITERS]
     post_med = sorted(post)[len(post) // 2]
     post_range = max(post) - min(post)
 
@@ -81,9 +88,11 @@ def main() -> None:
     set_title_subtitle(
         ax,
         "Live GCP SPOT A100-80: memory stays flat after the extractor fix",
-        f"638 post-warmup samples; reserved + nvidia-smi range {post_range:.2f} GiB (PASS < 1 GiB), "
-        f"vs the pre-fix 16 GiB climb",
-        source="eval_results/issue_672/secA_smoke_followup/memory_log.json (649 samples, 227s wall)",
+        f"638 post-warmup samples; reserved + nvidia-smi range {post_range:.2f} GiB "
+        "(PASS < 1 GiB), vs the pre-fix 16 GiB climb",
+        source=(
+            "eval_results/issue_672/secA_smoke_followup/memory_log.json (649 samples, 227s wall)"
+        ),
     )
 
     savefig_paper(fig, "issue_672/secA_memory_flat_live_followup", dir="figures/")

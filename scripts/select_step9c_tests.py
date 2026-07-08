@@ -187,7 +187,7 @@ _DATA_DOC_SUFFIXES: frozenset[str] = frozenset(
 # invariant ABOUT the file, not the file's own logic), so untested_touched
 # WARNs still fire.
 GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
-    # test_no_new_torch_before_dotenv_vm_entrypoints scan roots (its L477-479).
+    # test_no_new_torch_before_dotenv_vm_entrypoints scan roots (its L547-549).
     "tests/test_shared_vm_thread_caps.py": (
         "scripts/issue*_*.py",
         "src/explore_persona_space/experiments/**/run_*.py",

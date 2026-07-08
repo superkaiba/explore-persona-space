@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001  # Greek rho in figure text intentional
 """Issue #468: predictor leaderboard — only cosine predicts EM amount.
 
 One bar per candidate predictor, at L25, in-context (lit) persona, training
@@ -10,9 +11,16 @@ same 18 cells); #468's same-environment cosine recompute is rho=0.66.
 
 from __future__ import annotations
 
-import matplotlib.pyplot as plt
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_role,
     savefig_paper,
     set_paper_style,
@@ -39,7 +47,7 @@ def main() -> None:
     colors = [primary if p < 0.05 else neutral for _, _, p in PREDICTORS]
     ax.bar(xs, rhos, color=colors, width=0.6, zorder=3)
 
-    for x, (_, rho, p) in zip(xs, PREDICTORS):
+    for x, (_, rho, p) in zip(xs, PREDICTORS, strict=False):
         ax.text(x, rho + 0.02, f"{rho:.2f}", ha="center", va="bottom", fontsize=10, color="#333333")
         if p < 0.05:
             ax.text(x, rho + 0.07, "*", ha="center", va="bottom", fontsize=15, color="#333333")

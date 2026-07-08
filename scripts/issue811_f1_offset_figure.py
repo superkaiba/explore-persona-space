@@ -19,9 +19,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_role,
     savefig_paper,
     set_paper_style,
@@ -88,7 +95,7 @@ def main() -> None:
     # ---------------- Panel A: per-context signed delta(c) ----------------
     n_ctx = len(CONTEXT_ORDER)
     dodge = [-0.26, 0.0, 0.26]
-    for (cell_key, label, role), dy in zip(PANEL_A_CELLS, dodge):
+    for (cell_key, label, role), dy in zip(PANEL_A_CELLS, dodge, strict=False):
         cell = cells[cell_key]
         color = paper_palette_role(role)
         xs = [_context_value(cell["delta_per_context"], slug) for slug, _ in CONTEXT_ORDER]

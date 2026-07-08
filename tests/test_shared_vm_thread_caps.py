@@ -25,8 +25,10 @@ from __future__ import annotations
 
 import ast
 import inspect
+import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -216,8 +218,21 @@ def test_setup_worker_caps_before_torch_import() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Recurring guard: no NEW torch/numpy-before-load_dotenv VM entrypoints
+# Recurring guard: no NEW heavy-import-before-load_dotenv VM entrypoints
 # ---------------------------------------------------------------------------
+# #1146 extension: the guard flags every transitively-heavy HEAVY_IMPORT_ROOTS
+# root (matplotlib/pandas/scipy/... pull numpy at import time; transformers/
+# vllm/peft/trl pull torch), not just literal torch/numpy imports.
+# Scoped-out residuals (deliberate):
+#   * FIRST-PARTY heavy imports: an `explore_persona_space.*` module that pulls
+#     torch/numpy before load_dotenv() still passes — the package root cannot
+#     join HEAVY_IMPORT_ROOTS without flagging the preamble's own
+#     `from explore_persona_space.orchestrate.env import load_dotenv` wrapper
+#     import; the guard's claim is scoped to HEAVY_IMPORT_ROOTS
+#     (test_dotenv_wrapper_import_chain_is_heavy_free pins the wrapper chain).
+#   * `_first_load_dotenv_line` is a SUBSTRING scan — a commented-out
+#     `load_dotenv(` line satisfies it (pre-existing; the code-review
+#     diff-shape check pins the real wrapper call).
 
 # Second freeze epoch (#895): TRACKED offenders that accreted while the Step
 # 9c selector gap (#895) left this guard unselected for scripts/*.py diffs —
@@ -249,11 +264,13 @@ GRANDFATHERED_895: dict[str, str] = {
 #     scripts/*.py diffs; frozen at map-introduction time so the
 #     newly-selectable gate starts green.
 # Do NOT add new entries beyond these generated blocks: a new entrypoint that
-# imports torch/numpy at module top must call load_dotenv() FIRST so the
-# shared-VM thread caps bind in-process (see .claude/rules/code-style.md,
-# "Shared-VM CPU thread caps"). Reason legend (one line per entry):
+# imports torch/numpy (or another HEAVY_IMPORT_ROOTS root, #1146) at module
+# top must call load_dotenv() FIRST so the shared-VM thread caps bind
+# in-process (see .claude/rules/code-style.md, "Shared-VM CPU thread caps").
+# Reason legend (one line per entry):
 #   "no-dotenv"    — file never calls load_dotenv() (tree state at freeze)
-#   "import-order" — module-top torch/numpy import precedes the first
+#   "import-order" — module-top torch/numpy import (or another
+#                    HEAVY_IMPORT_ROOTS root, #1146) precedes the first
 #                    load_dotenv() call (tree state at freeze)
 GRANDFATHERED_TORCH_BEFORE_DOTENV: dict[str, str] = {
     # BEGIN GENERATED (#847)
@@ -469,8 +486,30 @@ GRANDFATHERED_TORCH_BEFORE_DOTENV: dict[str, str] = {
 }
 
 
+# Roots that pull torch/numpy (and freeze the BLAS/intra-op pools) at import
+# time. Extended beyond literal torch/numpy by #1146: importing any of these
+# before load_dotenv() leaves the #847 shared-VM thread caps dead.
+HEAVY_IMPORT_ROOTS: frozenset[str] = frozenset(
+    {
+        "torch",
+        "numpy",
+        "matplotlib",
+        "pandas",
+        "scipy",
+        "sklearn",
+        "seaborn",
+        "transformers",
+        "datasets",
+        "statsmodels",
+        "vllm",
+        "peft",
+        "trl",
+    }
+)
+
+
 def _first_heavy_import_line(tree: ast.Module) -> int | None:
-    """Earliest MODULE-LEVEL import line of torch or numpy (incl. from-imports)."""
+    """Earliest MODULE-LEVEL import line of a transitively-heavy root (HEAVY_IMPORT_ROOTS)."""
     earliest: int | None = None
     for node in tree.body:  # module top level only — nested imports are lazy by design
         names: list[str] = []
@@ -479,7 +518,7 @@ def _first_heavy_import_line(tree: ast.Module) -> int | None:
         elif isinstance(node, ast.ImportFrom) and node.module:
             names = [node.module]
         for name in names:
-            if name.split(".")[0] in ("torch", "numpy") and (
+            if name.split(".")[0] in HEAVY_IMPORT_ROOTS and (
                 earliest is None or node.lineno < earliest
             ):
                 earliest = node.lineno
@@ -494,13 +533,15 @@ def _first_load_dotenv_line(src: str) -> int | None:
 
 
 def test_no_new_torch_before_dotenv_vm_entrypoints() -> None:
-    """No NEW VM CPU entrypoint may import torch/numpy before load_dotenv().
+    """No NEW VM CPU entrypoint may import a heavy root before load_dotenv().
 
     The env.py thread-cap hook binds in-process only when ``load_dotenv()``
-    runs before the numpy/torch import freezes the BLAS/intra-op pools
-    (#847 incident: the offender scripts all violated this). Existing
-    violators are frozen above; this FAILs only on new violations —
-    including branch-side violators at their merges.
+    runs before the import that (transitively) freezes the BLAS/intra-op
+    pools (#847 incident: the offender scripts all violated this; #1146
+    extended the predicate from literal torch/numpy to every
+    HEAVY_IMPORT_ROOTS root). Existing violators are frozen above; this
+    FAILs only on new violations — including branch-side violators at
+    their merges.
     """
     root = Path(__file__).resolve().parents[1]
     targets = sorted(root.glob("scripts/issue*_*.py")) + sorted(
@@ -518,13 +559,13 @@ def test_no_new_torch_before_dotenv_vm_entrypoints() -> None:
         dotenv = _first_load_dotenv_line(src)
         if (dotenv is None or heavy < dotenv) and rel not in GRANDFATHERED_TORCH_BEFORE_DOTENV:
             violations.append(
-                f"{rel} (module-top torch/numpy import at line {heavy}, "
+                f"{rel} (module-top heavy import at line {heavy}, "
                 f"first load_dotenv( at line {dotenv})"
             )
     assert not violations, (
-        "NEW torch/numpy-before-load_dotenv VM entrypoint(s) — call "
-        "explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing "
-        "torch/numpy so the shared-VM thread caps (#847) bind in-process:\n  "
+        "NEW heavy-import-before-load_dotenv VM entrypoint(s) — call "
+        "explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any "
+        "HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process:\n  "
         + "\n  ".join(violations)
     )
     # The #847 incident offender was FIXED, not grandfathered — keep it that way.
@@ -578,3 +619,21 @@ def test_grandfathered_895_block_is_current() -> None:
             f"#895 reason drifted for {rel}: recorded {reason!r}, recomputed {derived!r} — "
             "update the entry deliberately."
         )
+
+
+def test_dotenv_wrapper_import_chain_is_heavy_free() -> None:
+    """Importing the load_dotenv wrapper must pull NO HEAVY_IMPORT_ROOTS root.
+
+    Subprocess, because the pytest process already holds numpy. If this fires,
+    a heavy import crept into orchestrate.env's import chain — the caps would
+    die before load_dotenv() in every preamble-fixed script while the AST
+    invariant stays green.
+    """
+    code = (
+        "import sys, json; "
+        "from explore_persona_space.orchestrate.env import load_dotenv; "
+        "print(json.dumps(sorted({m.split('.')[0] for m in sys.modules})))"
+    )
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
+    loaded = set(json.loads(out.stdout))
+    assert not (loaded & HEAVY_IMPORT_ROOTS), sorted(loaded & HEAVY_IMPORT_ROOTS)
