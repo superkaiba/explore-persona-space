@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1127,
+  "highest_id": 1128,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -995,6 +995,13 @@
       "path": "tasks/proposed/1127",
       "status": "proposed",
       "title": "daily-fix: refusal-wedge lane misses live wedges"
+    },
+    "1128": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1128",
+      "status": "proposed",
+      "title": "daily-fix: block repo-root branch merges in the guard hook"
     },
     "113": {
       "has_clean_result": true,
