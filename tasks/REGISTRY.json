@@ -1062,8 +1062,8 @@
     "1136": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1136",
-      "status": "running",
+      "path": "tasks/reviewing/1136",
+      "status": "reviewing",
       "title": "daily-fix: set-body warns when experiment loses Goal H2"
     },
     "1137": {
