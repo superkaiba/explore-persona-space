@@ -950,8 +950,8 @@
     "1121": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1121",
-      "status": "reviewing",
+      "path": "tasks/completed/1121",
+      "status": "completed",
       "title": "Width-aware auto-router: include 8x GCP rungs; encourage wide GCP provisioning for shardable workloads"
     },
     "1122": {
