@@ -985,8 +985,8 @@
     "1126": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1126",
-      "status": "running",
+      "path": "tasks/reviewing/1126",
+      "status": "reviewing",
       "title": "daily-fix: Codex quota-exhausted sentinel short-circuit"
     },
     "1127": {
