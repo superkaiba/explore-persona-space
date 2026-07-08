@@ -922,8 +922,8 @@
     "1118": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1118",
-      "status": "reviewing",
+      "path": "tasks/completed/1118",
+      "status": "completed",
       "title": "workflow-fix: thread boot-disk requirement to RunPod GPU volume"
     },
     "1119": {
