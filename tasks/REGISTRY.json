@@ -1391,8 +1391,8 @@
     "1179": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1179",
-      "status": "proposed",
+      "path": "tasks/planning/1179",
+      "status": "planning",
       "title": "workflow-fix: verify_plan check for SKILL.md-prose pin tests"
     },
     "118": {
