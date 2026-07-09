@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1185,
+  "highest_id": 1186,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1443,6 +1443,13 @@
       "path": "tasks/proposed/1185",
       "status": "proposed",
       "title": "workflow-fix: Trigger-dense artifact review guidance for rev"
+    },
+    "1186": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1186",
+      "status": "proposed",
+      "title": "workflow-fix: Shared HF tree-pagination helper in verify_tas"
     },
     "119": {
       "has_clean_result": false,
