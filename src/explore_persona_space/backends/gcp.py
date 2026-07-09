@@ -258,8 +258,13 @@ DEFAULT_IMAGE_FAMILY = "pytorch-2-9-cu129-ubuntu-2204-nvidia-580"
 #: DLVM project for the image family above.
 DEFAULT_IMAGE_PROJECT = "deeplearning-platform-release"
 
-#: Canonical public HTTPS clone URL. The repo is open; private branches
-#: would extend the startup-script to push a deploy key.
+#: Canonical public HTTPS clone URL. The repo is open, so the CLONE is
+#: tokenless; PUSH auth comes from the #1205 env-reading credential
+#: helper the workload_cmd branch configures when GITHUB_TOKEN was
+#: delivered via instance metadata (see the credential block in
+#: ``render_startup_script`` — the token is never at rest in
+#: ``.git/config`` and never in a remote URL a crash-persisted log
+#: could leak).
 DEFAULT_REPO_URL = "https://github.com/superkaiba/explore-persona-space.git"
 
 
@@ -990,6 +995,13 @@ STARTUP_SECRET_ENV_KEYS: tuple[str, ...] = (
     "WANDB_API_KEY",
     "ANTHROPIC_API_KEY",
     "OPENAI_API_KEY",
+    # Git push credential (#1205; incident #825 r6-r8): the GCE clone is
+    # tokenless (public-repo read), so a workload's `git push` of committed
+    # eval-result JSONs failed DETERMINISTICALLY on auth. OPTIONAL —
+    # drop-when-absent like ANTHROPIC/OPENAI (deliberately NOT in
+    # REQUIRED_LAUNCH_SECRET_KEYS: plenty of GCE workloads never push, and
+    # the push-verify leg fails loud when a pushing workload lacks it).
+    "GITHUB_TOKEN",
 )
 
 # Non-secret env keys passed through to the in-VM workload environment
@@ -1176,6 +1188,20 @@ def render_startup_script(
     the hydra branch is byte-for-byte the pre-#588 render (pinned by the
     snapshot test).
 
+    Push-verify backstop (#1205, incident #825 r6-r8): the workload_cmd
+    branch additionally (a) configures an env-reading git credential
+    helper when ``GITHUB_TOKEN`` arrived via instance metadata (the GCE
+    clone is tokenless, so workload pushes of committed eval-result
+    JSONs failed deterministically on auth), and (b) after the
+    detached-wait loop verifies ``git rev-list --count
+    origin/<branch>..HEAD == 0`` — retrying the push twice, then
+    bundling the unpushed range into ``data/issue_<N>/``
+    (crash-persist-swept, #854 item 5) and ``exit 86`` so the EXIT trap
+    publishes ``failed`` + crash-persist + poweroff instead of a false
+    ``done`` with the only copy of the commit on a self-DELETEing
+    instance. The hydra branch is leg-free (``train.py`` has no git
+    usage).
+
     Output redirect (#607, incident #491): the script NEVER streams
     workload output through startup-script stdout — the GCE metadata
     runner reads that pipe with a bounded line scanner and a giant
@@ -1339,6 +1365,25 @@ def render_startup_script(
             "# the local boot/SSD disk (NOT the network PD), so the hot writes",
             "# land off the NIC-shared plane — the whole point.",
             'export EPS_SCRATCH_DIR="${EPS_SCRATCH_DIR:-/tmp/eps_scratch}"',
+            "# === Git push credential (#1205; incident #825 r6-r8, the 2026-07-08T11:17/11:19Z",
+            "# upload-verification reads) ===",
+            "# The GCE clone is tokenless (public-repo read), so a workload's",
+            "# `git push origin issue-<N>` of committed eval JSONs failed",
+            "# DETERMINISTICALLY on auth, and the `|| echo WARNING` shape swallowed",
+            "# it (#825 r8: commit 87c9c73168 / 73 eval JSONs existed only on the",
+            "# self-DELETEing instance). Configure an env-reading credential helper:",
+            "# the token is never at rest in .git/config and never in a URL that a",
+            "# crash-persisted workload log could leak (unlike the tokenized-remote",
+            "# pattern bootstrap_pod.sh uses pod-side). Repo-local to $WORKLOAD_ROOT:",
+            "# a workload that creates a SECOND clone gets neither the helper nor",
+            "# the push-verify backstop below. Gated: a launch without GITHUB_TOKEN",
+            "# keeps today's behavior; the push-verify leg below then fails the",
+            "# workload loud instead of silently losing the commit.",
+            "export GIT_TERMINAL_PROMPT=0",
+            'if [ -n "${GITHUB_TOKEN:-}" ]; then',
+            '  git -C "$WORKLOAD_ROOT" config credential.helper '
+            "'!f() { echo username=x-access-token; echo \"password=${GITHUB_TOKEN}\"; }; f'",
+            "fi",
             "# === Sentinel drain dir (#610) ===",
             "# The pod-side signaling contract names /workspace/logs/",
             "# issue-<N>-*.json as the poll's drain glob, but nothing on the",
@@ -1386,6 +1431,47 @@ def render_startup_script(
             '  while kill -0 "$wpid" 2>/dev/null; do sleep 30; done',
             '  echo "[startup-script] detached workload pid=$wpid exited"',
             "done",
+            "# === Push-verify leg (#1205; incident #825 r6-r8, the 2026-07-08T11:17/11:19Z",
+            "# upload-verification reads) ===",
+            "# Any commit the workload made on the cloned branch is a result commit",
+            "# (Upload Policy: eval JSONs commit to the issue branch). git push",
+            "# updates the remote-tracking ref on success, so count==0 IS",
+            "# push-landed proof; a swallowed in-workload push failure leaves",
+            "# origin/<branch>..HEAD non-empty. Retry here (authenticated via the",
+            "# credential helper above); if commits remain unpushed, bundle them",
+            "# into data/issue_<N>/ (crash-persist-swept, #854 item 5; gitignored so",
+            "# a later gap-fill can never commit the bundle) and FAIL LOUD so the",
+            "# EXIT trap publishes failed + crash-persist + poweroff instead of a",
+            "# false done. rev-list failures are NOT defaulted-to-0: under set -e a",
+            "# failing command substitution kills the script -> trap (fail-fast).",
+            "# Ordering: this leg runs BEFORE the #750 OOM guard (EPS_OOM_FINAL) —",
+            "# a rc-survived-OOM run whose push ALSO fails records rc 86, not 137",
+            "# (accepted: rare double-failure; both route through the same trap).",
+            f"_EPS_PUSH_BRANCH={shlex.quote(repo_branch)}",
+            '_EPS_UNPUSHED="$(git -C "$WORKLOAD_ROOT" rev-list --count'
+            ' "origin/${_EPS_PUSH_BRANCH}..HEAD")"',
+            'if [ "$_EPS_UNPUSHED" != "0" ]; then',
+            '  echo "[push-verify] ${_EPS_UNPUSHED} unpushed commit(s) on'
+            ' ${_EPS_PUSH_BRANCH} — retrying push (#1205)"',
+            '  git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"'
+            ' || { sleep 20; git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"; }'
+            " || true",
+            '  _EPS_UNPUSHED="$(git -C "$WORKLOAD_ROOT" rev-list --count'
+            ' "origin/${_EPS_PUSH_BRANCH}..HEAD")"',
+            '  if [ "$_EPS_UNPUSHED" != "0" ]; then',
+            '    echo "[push-verify] FAIL: ${_EPS_UNPUSHED} commit(s) still unpushed on'
+            ' ${_EPS_PUSH_BRANCH} after retry — failing the workload loud (#1205)"',
+            f'    mkdir -p "$WORKLOAD_ROOT/data/issue_{spec.issue}"',
+            f'    git -C "$WORKLOAD_ROOT" bundle create "$WORKLOAD_ROOT/data/issue_{spec.issue}'
+            '/unpushed-$(git -C "$WORKLOAD_ROOT" rev-parse --short HEAD).bundle"'
+            ' "origin/${_EPS_PUSH_BRANCH}..HEAD" || true',
+            "    exit 86",
+            "  fi",
+            '  echo "[push-verify] retry landed: origin/${_EPS_PUSH_BRANCH} now includes HEAD"',
+            "else",
+            '  echo "[push-verify] OK: no unpushed commits on ${_EPS_PUSH_BRANCH}"',
+            "fi",
+            "# === /push-verify leg ===",
         ]
     else:
         workload_block = [
