@@ -61,6 +61,7 @@ from workflow_lint import (  # noqa: E402
     check_pipe_python,
     check_piped_git_push,
     check_script_references,
+    check_section_reference_pointer_coverage,
     check_skill_references,
     check_smoke_architecture_review_lens,
     check_smoke_output_hygiene,
@@ -4644,3 +4645,193 @@ def test_awk_elision_parity_dedicated_flag_isolated(tmp_path, capsys, monkeypatc
         f"check — no_flags mis-computed True, i.e. the flag's membership in the "
         f"no_flags tuple in workflow_lint.main() is missing:\n{err}"
     )
+
+
+# ---------------------------------------------------------------------------
+# --check-section-reference-pointers (#1159): every grain-level section of an
+# <agent>-{section,lens}-reference.md rule file must stay pointer-reachable
+# ('§ <exact heading>') from its owning agent spec.
+# ---------------------------------------------------------------------------
+
+
+def _write_section_ref_tree(tmp_path, ref_name, ref_body, agent_name=None, agent_body=""):
+    """Write a minimal tmp tree: one reference rule file (+ optional agent spec)."""
+    rules = tmp_path / ".claude" / "rules"
+    agents = tmp_path / ".claude" / "agents"
+    rules.mkdir(parents=True, exist_ok=True)
+    agents.mkdir(parents=True, exist_ok=True)
+    (rules / ref_name).write_text(ref_body, encoding="utf-8")
+    if agent_name is not None:
+        (agents / f"{agent_name}.md").write_text(agent_body, encoding="utf-8")
+    return tmp_path
+
+
+def test_section_ref_pointer_coverage_passes_on_live_repo():
+    """The live-trees-pass invariant at merge time — zero pointer backfills owed.
+
+    ALSO asserts the scanned reference-file set contains the 4 known files, so
+    a suffix-tuple typo cannot pass vacuously via an empty scan set."""
+    from workflow_lint import _REPO_ROOT as lint_repo_root
+    from workflow_lint import _SECTION_REFERENCE_SUFFIXES
+
+    assert check_section_reference_pointer_coverage() == []
+    scanned = {
+        p.name
+        for p in (lint_repo_root / ".claude" / "rules").glob("*.md")
+        if p.name.endswith(_SECTION_REFERENCE_SUFFIXES)
+    }
+    expected = {
+        "analyzer-section-reference.md",
+        "critic-lens-reference.md",
+        "planner-section-reference.md",
+        "clean-result-critic-lens-reference.md",
+    }
+    assert expected <= scanned, f"scan set lost known reference files: {expected - scanned}"
+
+
+def test_section_ref_pointer_coverage_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the check — deleting the
+    ``or no_flags`` ladder branch must fail this test (mutation-visible; house
+    pattern: ``test_hollow_gate_review_lens_bundled_in_no_flags``). Other
+    bundled checks contribute unrelated errors on the minimal tree, so the
+    assertion keys on this check's diagnostic + the offending file name."""
+    import workflow_lint as wl
+
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-lens-reference.md",
+        "# Title\n\n### Lens 1 — Alpha\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\nno pointer here\n",
+    )
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a violating tree:\n{err}"
+    assert "foo-lens-reference.md" in err and "pointer-reachable" in err, (
+        f"the pointer-coverage diagnostic (naming foo-lens-reference.md) is missing "
+        f"from the no-flags run's stderr — the check is not bundled into no_flags:\n{err}"
+    )
+
+
+def test_section_ref_pointer_coverage_fails_on_missing_pointer(tmp_path):
+    """An unpointed grain heading FAILs, naming file, heading, and owning spec."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-section-reference.md",
+        "# Title\n\n## Step 9\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\nprose without any pointer\n",
+    )
+    errs = check_section_reference_pointer_coverage(repo_root=tmp_path)
+    assert len(errs) == 1, errs
+    assert "foo-section-reference.md" in errs[0]
+    assert "Step 9" in errs[0]
+    assert ".claude/agents/foo.md" in errs[0]
+
+
+def test_section_ref_pointer_coverage_passes_on_wrapped_pointer(tmp_path):
+    """A pointer line-wrapped mid-heading in the spec passes (whitespace norm)."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-section-reference.md",
+        "# Title\n\n## Step 9 — the long heading name\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\nFull text: § Step 9 — the long\nheading name (grep heading).\n",
+    )
+    assert check_section_reference_pointer_coverage(repo_root=tmp_path) == []
+
+
+def test_section_ref_pointer_coverage_skips_fenced_pseudo_headings(tmp_path):
+    """A '## fake' inside a ```bash fence needs no pointer (fence-aware)."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-section-reference.md",
+        "# Title\n\n## Real\n\n```bash\n## fake\necho fenced\n```\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\n§ Real\n",
+    )
+    assert check_section_reference_pointer_coverage(repo_root=tmp_path) == []
+
+
+def test_section_ref_pointer_coverage_h3_grain_when_no_h2(tmp_path):
+    """With zero H2s the grain is H3 (critic-lens-reference shape): H3s are
+    checked, and a missing H3 pointer FAILs."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-lens-reference.md",
+        "# Title\n\n### Lens 1 — Alpha\n\nbody\n\n### Lens 2 — Beta\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\n§ Lens 1 — Alpha\n",
+    )
+    errs = check_section_reference_pointer_coverage(repo_root=tmp_path)
+    assert len(errs) == 1, errs
+    assert "Lens 2 — Beta" in errs[0]
+
+
+def test_section_ref_pointer_coverage_h2_grain_wins_when_mixed(tmp_path):
+    """A file with H2s AND H3s is H2-grain: only H2s require pointers (the
+    documented grain-mixing drift path — H3s drop from coverage)."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-section-reference.md",
+        "# Title\n\n## Big section\n\n### sub-detail without pointer\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\n§ Big section\n",
+    )
+    assert check_section_reference_pointer_coverage(repo_root=tmp_path) == []
+
+
+def test_section_ref_pointer_coverage_fails_on_orphan_reference(tmp_path):
+    """A suffix-matched rule file with no .claude/agents/<agent>.md FAILs."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-lens-reference.md",
+        "# Title\n\n### Lens 1 — Alpha\n\nbody\n",
+        agent_name=None,
+    )
+    # agents/ dir must exist for the orphan case to be about the FILE, not the dir
+    (tmp_path / ".claude" / "agents").mkdir(parents=True, exist_ok=True)
+    errs = check_section_reference_pointer_coverage(repo_root=tmp_path)
+    assert len(errs) == 1, errs
+    assert "orphan" in errs[0] and ".claude/agents/foo.md" in errs[0]
+
+
+def test_section_ref_pointer_coverage_fails_on_headingless_reference(tmp_path):
+    """A suffix-matched file with an H1 only is malformed (zero grain headings)."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-section-reference.md",
+        "# Title only\n\nprose, no sections\n",
+        agent_name="foo",
+        agent_body="# foo\n",
+    )
+    errs = check_section_reference_pointer_coverage(repo_root=tmp_path)
+    assert len(errs) == 1, errs
+    assert "malformed" in errs[0]
+
+
+def test_section_ref_pointer_coverage_requires_section_sigil(tmp_path):
+    """Heading text present in the spec WITHOUT the '§ ' prefix still FAILs —
+    a prose mention of a section name is not pointer coverage."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-section-reference.md",
+        "# Title\n\n## Step 9\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\nsee Step 9 in the reference file\n",
+    )
+    errs = check_section_reference_pointer_coverage(repo_root=tmp_path)
+    assert len(errs) == 1, errs
+    assert "Step 9" in errs[0]
+
+
+def test_section_ref_pointer_coverage_ignores_non_suffixed_rules(tmp_path):
+    """A rules file NOT ending in a reference suffix is out of the scan set."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-review.md",
+        "# Title\n\n## Unpointed section\n\nbody\n",
+        agent_name=None,
+    )
+    assert check_section_reference_pointer_coverage(repo_root=tmp_path) == []
