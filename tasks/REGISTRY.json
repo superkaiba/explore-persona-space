@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1217,
+  "highest_id": 1218,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1695,6 +1695,13 @@
       "path": "tasks/proposed/1217",
       "status": "proposed",
       "title": "daily-held: Digest-only guard arm for real-world-corpus raw_"
+    },
+    "1218": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1218",
+      "status": "proposed",
+      "title": "daily-held: Gate spawn_session dispatch paths on auth-outage"
     },
     "122": {
       "has_clean_result": true,
