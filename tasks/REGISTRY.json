@@ -1447,8 +1447,8 @@
     "1186": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1186",
-      "status": "reviewing",
+      "path": "tasks/completed/1186",
+      "status": "completed",
       "title": "workflow-fix: Shared HF tree-pagination helper in verify_tas"
     },
     "1187": {
