@@ -1314,8 +1314,8 @@
     "1169": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1169",
-      "status": "planning",
+      "path": "tasks/approved/1169",
+      "status": "approved",
       "title": "workflow-fix: document stale-blocked pass + GC test fixture"
     },
     "117": {
