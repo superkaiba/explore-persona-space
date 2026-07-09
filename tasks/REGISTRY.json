@@ -1384,8 +1384,8 @@
     "1178": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1178",
-      "status": "running",
+      "path": "tasks/reviewing/1178",
+      "status": "reviewing",
       "title": "workflow-fix: post-marker WARN on literal backslash-n notes"
     },
     "1179": {
