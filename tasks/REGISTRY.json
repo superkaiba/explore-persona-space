@@ -1608,8 +1608,8 @@
     "1206": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1206",
-      "status": "running",
+      "path": "tasks/reviewing/1206",
+      "status": "reviewing",
       "title": "daily-fix: judge transport errors are RETRY, never dropped d"
     },
     "1207": {
