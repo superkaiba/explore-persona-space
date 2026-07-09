@@ -1456,6 +1456,24 @@ def render_startup_script(
         ' { echo "[phase=$1] startup-script $(date -u +%Y-%m-%dT%H:%M:%SZ)"; }'
         " 2>/dev/null || true;"
         ' { echo "[startup-script] phase=$1" >&3; } 2>/dev/null || true; }',
+        # Crash-persist breadcrumb channel (#1151): a SEPARATE guest-attribute
+        # key ``eps/persist`` — NEVER ``eps/phase`` (the poll classification +
+        # #908 zombie predicates key on eps/phase and must not see new values;
+        # the #935 ``eps/done_persist`` separate-key discipline). Link-local
+        # metadata write — zero HF / org-quota dependency — readable by the
+        # poller on the TERMINATED instance exactly when the terminal
+        # diagnosis runs (#811: every HF-riding persist signal failed
+        # together; this is the HF-independent channel). ``-m 5`` so a wedged
+        # metadata server can never eat the persist's 300s budget (the
+        # done-grace READ uses the same cap). Values: ``attempted`` (entry) ->
+        # ``ok`` | ``timeout`` | ``failed_rc<N>`` | ``skipped_no_token``; a
+        # STANDING ``attempted`` with no final value = the persist was KILLED
+        # mid-flight — a TERMINATED-only reading (a RUNNING-window read may
+        # catch a healthy persist in flight). Decision table:
+        # .claude/rules/compute-backend-failover.md § Part A item 8.
+        '_eps_persist_status() { curl -fsS -m 5 -X PUT -H "Metadata-Flavor: Google"'
+        ' --data "$1" "http://metadata.google.internal/computeMetadata/v1/'
+        'instance/guest-attributes/eps/persist" >/dev/null 2>&1 || true; }',
         # Crash-diagnostics + partial-artifact preservation (#658). The
         # instance is created with --instance-termination-action=DELETE, so
         # the EXIT trap's `shutdown -h now` on a crash DESTROYS the boot
@@ -1502,6 +1520,11 @@ def render_startup_script(
         # 40 files would blow the 300s budget and starve the #854 artifacts).
         "_eps_persist_diagnostics() {",
         '  _rc="${1:-1}";',
+        # #1151: unconditional entry breadcrumb — proof the persist was
+        # ENTERED, on a channel with zero HF dependency. A standing
+        # ``attempted`` with no later final value is the killed-mid-persist
+        # signal (TERMINATED-only reading; see the decision table).
+        '  _eps_persist_status "attempted";',
         # Nothing to do without a repo target or HF token (early-boot crash
         # before the env exports / secret fetch — let the trap power off).
         # #854: the skip is LOUD (fd 3 = serial console) — a silent early
@@ -1509,6 +1532,10 @@ def render_startup_script(
         '  if [ -z "${EPS_HF_DATA_REPO:-}" ] || [ -z "${HF_TOKEN:-}" ]; then',
         '    { echo "[crash-persist] SKIP-ALL: EPS_HF_DATA_REPO or HF_TOKEN unset'
         ' (early-boot crash)" >&3; } 2>/dev/null || true;',
+        # #1151: the skip is also breadcrumbed off-VM — an early-boot crash
+        # before the secrets fetch is otherwise indistinguishable from a
+        # killed persist once the boot disk is DELETEd.
+        '    _eps_persist_status "skipped_no_token";',
         "    return 0;",
         "  fi;",
         '  _dest="issue${EPS_ISSUE:-0}_partial/${EPS_ATTEMPT_ID:-unknown}";',
@@ -1531,10 +1558,22 @@ def render_startup_script(
         # narrow window and the diagnostics upload silently no-ops.
         # HF_HUB_DISABLE_PROGRESS_BARS: the fd-3 stream below is now EAGER
         # per-line (#854), so hub progress bars would spam the serial console.
+        # #1151: rc-file capture — the persist subshell sits on the LEFT of
+        # the streamer pipeline below, so its exit status is invisible to the
+        # function body ($? after the pipeline is the STREAMER's rc); the
+        # /tmp rc file is the only channel through the pipe (the #935
+        # EPS_DONE_PERSIST_STATUS status-file pattern). Cleared here so a
+        # same-boot re-crash never reads a PRIOR persist's rc.
+        '  rm -f "${EPS_CRASH_PERSIST_RC:-/tmp/eps-crash-persist.rc}" 2>/dev/null || true;',
+        # #1151: ``uv run --no-sync`` — at trap time the env was already
+        # synced by the boot; --no-sync removes uv's lock-check / re-sync
+        # network exposure (the H-B bootstrap-failure hypothesis) and its
+        # latency from the 300s budget. Scope: the CRASH helper only (the
+        # #935 done helper keeps its own record).
         '  ( export PATH="${HOME:-/root}/.local/bin:$PATH" HF_HUB_DISABLE_PROGRESS_BARS=1;'
         ' cd "${WORKLOAD_ROOT:-/}" 2>/dev/null'
-        ' && timeout 300 uv run python - "$_dest" "$_crash" <<\'EPS_PERSIST_PY\'',
-        "import datetime, os, shutil, sys",
+        ' && timeout 300 uv run --no-sync python - "$_dest" "$_crash" <<\'EPS_PERSIST_PY\'',
+        "import datetime, os, shutil, sys, time",
         "from pathlib import Path",
         "from huggingface_hub import HfApi",
         "dest, crash = sys.argv[1], sys.argv[2]",
@@ -1556,15 +1595,51 @@ def render_startup_script(
         "        pass",
         "_say(f\"[crash-persist] BEGIN repo={repo} dest={dest} log_path={log_path or 'UNSET'}\")",
         "api = HfApi()",
-        "def _up_file(path, path_in_repo):",
+        "# #1151: staged BUNDLES replace the per-file upload_file calls — on this",
+        "# ~1M-file repo a per-file upload triggers a server-side recursive",
+        "# tree-listing pre-check that 504s ~half the time at ~160 s/file (#664);",
+        "# one or two stalled pre-checks would eat the entire 300s budget before",
+        "# the first commit lands. upload_folder composes ONE commit per bundle.",
+        "def _stage_into(bundle_dir, name, src):",
+        "    # Copy src into the staged bundle dir under its REPO name (the bundle",
+        "    # uploads to {dest}, so staged names land at the byte-identical repo",
+        "    # paths). Failures logged, never raised — the persist must always",
+        "    # reach the trap's shutdown.",
         "    try:",
-        '        _say(f"[crash-persist] uploading {path_in_repo}'
-        ' ({Path(path).stat().st_size} bytes)")',
-        "        api.upload_file(path_or_fileobj=path, path_in_repo=path_in_repo,",
-        '                        repo_id=repo, repo_type="dataset")',
-        '        _say(f"[crash-persist] uploaded {path_in_repo}")',
+        "        bundle_dir.mkdir(parents=True, exist_ok=True)",
+        "        shutil.copyfile(src, bundle_dir / name)",
+        '        _say(f"[crash-persist] staged {name} ({(bundle_dir / name).stat().st_size}'
+        ' bytes)")',
         "    except Exception as exc:",
-        '        _say(f"[crash-persist] FAILED {path_in_repo}: {exc}")',
+        '        _say(f"[crash-persist] FAILED staging {name}: {exc}")',
+        "def _up_bundle(bundle_dir, label, retry):",
+        "    # ONE upload_folder commit of the staged bundle -> {dest}/<staged names>.",
+        "    # retry=True -> ONE retry after an env-tunable backoff (the #935",
+        "    # EPS_DONE_PERSIST_RETRY_BACKOFF_S sibling) — the FIRST bundle only:",
+        "    # the crash traceback is the highest-value artifact; further retries",
+        "    # would risk the 300s budget.",
+        "    files = ([p for p in bundle_dir.rglob('*') if p.is_file()]",
+        "             if bundle_dir.is_dir() else [])",
+        "    if not files:",
+        '        _say(f"[crash-persist] SKIP bundle {label}: nothing staged")',
+        "        return",
+        "    attempts = 2 if retry else 1",
+        "    for i in range(1, attempts + 1):",
+        "        try:",
+        '            _say(f"[crash-persist] uploading bundle {label} ({len(files)} files,'
+        ' attempt {i}/{attempts}, one commit)")',
+        "            api.upload_folder(folder_path=str(bundle_dir), path_in_repo=dest,",
+        '                              repo_id=repo, repo_type="dataset")',
+        '            _say(f"[crash-persist] uploaded bundle {label}")',
+        "            return",
+        "        except Exception as exc:",
+        '            _say(f"[crash-persist] FAILED bundle {label} attempt {i}/{attempts}: {exc}")',
+        "            if i < attempts:",
+        "                try:",
+        '                    _b = int(os.environ.get("EPS_PERSIST_RETRY_BACKOFF_S", "10"))',
+        "                except ValueError:",
+        "                    _b = 10",
+        "                time.sleep(max(0, _b))",
         "# Shared cache-exclude constants — used by BOTH the # 1b. worker-logs sweep and",
         "# the # 2. partial-dirs sweep below (hoisted above their first caller, #885).",
         'IGNORE = ["hf_dl/**", "g*_dl/**", "store/**", ".cache/**", "__pycache__/**",',
@@ -1575,18 +1650,24 @@ def render_startup_script(
         "# 1. crash report + workload log, small-first (the traceback is the highest-value",
         "#    artifact; a worst-case timeout still lands it). A same-attempt re-crash",
         "#    overwrites the canonical names (#854: run-3 overwrote run-2's log on HF), so",
-        "#    a per-crash timestamped log copy ALSO uploads — LAST, after the partial dirs",
+        "#    a per-crash timestamped log copy ALSO uploads — LAST, in the final bundle",
         "#    (small-first; the canonical log already carries the traceback early).",
+        "#    #1151: both files ride ONE staged upload_folder commit with ONE retry",
+        "#    (never per-file upload_file — the #664 pre-check stall class); repo paths",
+        "#    stay byte-identical ({dest}/crash_report.json, {dest}/workload.log).",
         'stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")',
+        'first_stage = Path(os.environ.get("EPS_PERSIST_FIRST_STAGE_DIR", "/tmp/eps-crash-first"))',
+        "shutil.rmtree(first_stage, ignore_errors=True)",
         "if Path(crash).is_file():",
-        '    _up_file(crash, f"{dest}/crash_report.json")',
+        '    _stage_into(first_stage, "crash_report.json", crash)',
         "else:",
         '    _say(f"[crash-persist] SKIP crash_report.json: no such file ({crash})")',
         "if log_path and Path(log_path).is_file():",
-        '    _up_file(log_path, f"{dest}/workload.log")',
+        '    _stage_into(first_stage, "workload.log", log_path)',
         "else:",
         '    _say(f"[crash-persist] SKIP workload.log: EPS_LOG_PATH unset or file missing'
         ' ({log_path!r})")',
+        '_up_bundle(first_stage, "first", retry=True)',
         "# 1b. worker logs (#885) — fan-out dispatchers redirect the real traceback to",
         "#     per-worker logs under $WORKLOAD_ROOT/logs/ (e.g.",
         "#     logs/issue_779/corpus_gpu0_all.log); the canonical workload.log ends at the",
@@ -1714,16 +1795,32 @@ def render_startup_script(
         '    (root / "data" / f"issue{issue}", f"data_issue{issue}"),',
         "):",
         "    _up_dir(local, name)",
-        "# per-crash timestamped log copy — LAST among the artifacts (see the note above).",
+        "# per-crash timestamped log copy — LAST among the artifacts (see the note above),",
+        "# staged into the FINAL bundle (#1151: one upload_folder commit, no retry).",
+        'final_stage = Path(os.environ.get("EPS_PERSIST_FINAL_STAGE_DIR", "/tmp/eps-crash-final"))',
+        "shutil.rmtree(final_stage, ignore_errors=True)",
         "if log_path and Path(log_path).is_file():",
-        '    _up_file(log_path, f"{dest}/workload_{stamp}.log")',
+        '    _stage_into(final_stage, f"workload_{stamp}.log", log_path)',
         '_say("[crash-persist] DONE")',
-        "# 3. the audit transcript FINAL — its presence on HF proves the persist ran to",
-        "#    completion (every skip recorded); its ABSENCE proves a killed persist. The",
-        "#    serial console is unreadable post-DELETE (#640), so this is the durable audit.",
+        "# 3. the audit transcript FINAL — staged into the final bundle AFTER the DONE",
+        "#    line, so its uploaded copy records every earlier upload/skip line. Its",
+        "#    presence on HF proves the persist ran to completion; its ABSENCE proves a",
+        "#    killed persist (now co-signaled by a standing `attempted` eps/persist",
+        "#    breadcrumb, #1151). The serial console is unreadable post-DELETE (#640),",
+        "#    so this is the durable audit.",
         "if Path(transcript).is_file():",
-        '    _up_file(transcript, f"{dest}/crash_persist_transcript.log")',
+        '    _stage_into(final_stage, "crash_persist_transcript.log", transcript)',
+        '_up_bundle(final_stage, "final", retry=False)',
         "EPS_PERSIST_PY",
+        # #1151: capture the `cd && timeout uv run python` compound's rc INSIDE
+        # the subshell (set +e is global from the trap's first action, so a
+        # failing compound does not abort; its rc is capturable): 0 = the
+        # persist python exited clean ("ok" — NOT "all uploads landed":
+        # per-upload failures are logged, never raised; the transcript is the
+        # per-upload audit), 124 = the 300s timeout killed it, 127 = uv
+        # missing, 1 = cd short-circuit OR a python top-level failure.
+        '  _uprc=$?; { echo "$_uprc" >"${EPS_CRASH_PERSIST_RC:-/tmp/eps-crash-persist.rc}"; }'
+        " 2>/dev/null || true;",
         # #854 eager bounded streamer, replacing `| cut -c1-2000 | tail -n 20`:
         # `tail` buffered everything to EOF, so a killed/skipped persist left
         # ZERO serial evidence — the diagnosability gap that let a coverage-gap
@@ -1745,6 +1842,19 @@ def render_startup_script(
         '    if [ "$_n" -le 120 ]; then'
         " { printf '%s\\n' \"${_l:0:2000}\" >&3; } 2>/dev/null || true; fi;",
         "  done; } 2>/dev/null || true;",
+        # #1151: final-status breadcrumb from the rc-file readback (the
+        # pipeline's own $? is the STREAMER's, so the file is the only rc
+        # channel). A MISSING rc file deliberately writes NOTHING — the
+        # standing `attempted` IS the killed-mid-persist signal; writing a
+        # guessed value here would destroy that discriminator. <=3 metadata
+        # writes per crash total, inside the 3/s burst + 10/min
+        # guest-attribute caps.
+        '  _prc="$(cat "${EPS_CRASH_PERSIST_RC:-/tmp/eps-crash-persist.rc}" 2>/dev/null || true)";',
+        '  if [ -n "$_prc" ]; then case "$_prc" in',
+        '    (0)   _eps_persist_status "ok" ;;',
+        '    (124) _eps_persist_status "timeout" ;;',
+        '    (*)   _eps_persist_status "failed_rc${_prc}" ;;',
+        "  esac; fi;",
         "}",
         # In-VM REACHABILITY watchdog (#669) — NOT a liveness watchdog
         # (systemd #21083: a liveness /dev/watchdog keeps getting fed on a
@@ -2160,6 +2270,16 @@ def render_startup_script(
         ' _eps_persist_diagnostics "$rc";'
         " shutdown -h now; fi' EXIT",
         "_eps_phase startup",
+        # #1151: boot-time clear of the eps/persist crash-persist breadcrumb —
+        # guest attributes survive reboots of the SAME instance, so a
+        # salvage-relaunch second boot would otherwise inherit a PRIOR
+        # crash's final value and corrupt the standing-`attempted`
+        # discriminator. Fail-soft DELETE (the guest-attributes metadata
+        # endpoint accepts DELETE); -m 5 so a wedged metadata server never
+        # delays boot.
+        'curl -fsS -m 5 -X DELETE -H "Metadata-Flavor: Google"'
+        ' "http://metadata.google.internal/computeMetadata/v1/'
+        'instance/guest-attributes/eps/persist" >/dev/null 2>&1 || true',
         # GCE's metadata script runner executes as root WITHOUT $HOME set;
         # under `set -u` the first $HOME reference (uv PATH export) kills
         # the script (live finding, issue 535 GCP lane: `line 32: HOME:
@@ -4903,16 +5023,24 @@ class GcpBackend(ComputeBackend):
                 # failover and no crash-fix routing; the distinct
                 # current_phase keeps the finalize failure visible for
                 # triage. Reachable in the brief RUNNING window between the
-                # trap's phase write and the poweroff completing.
-                return _with_drain(
-                    PollResult(
-                        status="done",
-                        current_phase="workload_done_finalize_failed",
-                        new_milestone=True,
-                        last_log_mtime_sec_ago=0,
-                        pid_alive=False,
-                        log_tail_excerpt="",
-                    )
+                # trap's phase write and the poweroff completing. #1151: the
+                # trap ran _eps_persist_diagnostics on this arm too — append
+                # the eps/persist breadcrumb (RUNNING qualifier: the persist
+                # may still be in flight).
+                return self._append_persist_breadcrumb(
+                    _with_drain(
+                        PollResult(
+                            status="done",
+                            current_phase="workload_done_finalize_failed",
+                            new_milestone=True,
+                            last_log_mtime_sec_ago=0,
+                            pid_alive=False,
+                            log_tail_excerpt="",
+                        )
+                    ),
+                    handle,
+                    zone,
+                    instance_status="RUNNING",
                 )
             if phase == "failed":
                 # Workload-vs-setup discrimination (#659, MF3): ``eps/phase`` is
@@ -4927,9 +5055,18 @@ class GcpBackend(ComputeBackend):
                 # just re-crashes). A probe failure on the sentinel read falls
                 # back conservatively to workload-started (see
                 # :meth:`_workload_started`).
-                if self._workload_started(handle, zone):
-                    return _with_drain(_terminal_dead_poll(reason="workload_failed"))
-                return _with_drain(_terminal_dead_poll(reason="setup_failed"))
+                reason = (
+                    "workload_failed" if self._workload_started(handle, zone) else "setup_failed"
+                )
+                # #1151: surface the eps/persist crash-persist breadcrumb on
+                # every failed-classifying tick (diagnostic-only; the RUNNING
+                # qualifier flags that the persist may still be in flight).
+                return self._append_persist_breadcrumb(
+                    _with_drain(_terminal_dead_poll(reason=reason)),
+                    handle,
+                    zone,
+                    instance_status="RUNNING",
+                )
             if phase:
                 # Adaptive bg-poll interval (§7) — the GCP lane's quiet
                 # heuristic applies ONLY to this known-mid-workload-phase
@@ -5039,7 +5176,15 @@ class GcpBackend(ComputeBackend):
             # shutdown, e.g. a spot preemption whose trap completed) falls
             # through to terminal_terminated — the #669 exclusion verbatim.
             if phase == "failed" and not self._workload_started(handle, zone):
-                return _terminal_dead_poll(reason="setup_failed")
+                # #1151: append the eps/persist crash-persist breadcrumb on the
+                # TERMINATED failed windows — the moment the terminal diagnosis
+                # reads it (guest attributes survive TERMINATED; lost at DELETE).
+                return self._append_persist_breadcrumb(
+                    _terminal_dead_poll(reason="setup_failed"),
+                    handle,
+                    zone,
+                    instance_status="TERMINATED",
+                )
             if phase == "done":
                 # #935 — purely ADDITIVE: do NOT refactor the existing
                 # ``workload_done`` / ``relaunched_workload_done`` literals
@@ -5061,14 +5206,32 @@ class GcpBackend(ComputeBackend):
                 # a SUCCESSFUL run whose finalize hiccupped. status="done"
                 # fails BOTH async-failover conjuncts by construction; the
                 # distinct current_phase keeps the finalize failure visible
-                # for triage.
-                return PollResult(
-                    status="done",
-                    current_phase="workload_done_finalize_failed",
-                    new_milestone=True,
-                    last_log_mtime_sec_ago=0,
-                    pid_alive=False,
-                    log_tail_excerpt="",
+                # for triage. #1151: the trap ran _eps_persist_diagnostics on
+                # this arm too — append the eps/persist breadcrumb.
+                return self._append_persist_breadcrumb(
+                    PollResult(
+                        status="done",
+                        current_phase="workload_done_finalize_failed",
+                        new_milestone=True,
+                        last_log_mtime_sec_ago=0,
+                        pid_alive=False,
+                        log_tail_excerpt="",
+                    ),
+                    handle,
+                    zone,
+                    instance_status="TERMINATED",
+                )
+            if phase == "failed":
+                # failed + workload-started: the coarse terminal_terminated
+                # mapping below (a mid-run guest shutdown whose EXIT trap
+                # completed — the #669 exclusion verbatim, classification
+                # unchanged), #1151-augmented with the eps/persist breadcrumb:
+                # the trap ran _eps_persist_diagnostics on this path too.
+                return self._append_persist_breadcrumb(
+                    _gcp_status_to_poll_result(status),
+                    handle,
+                    zone,
+                    instance_status="TERMINATED",
                 )
         return _gcp_status_to_poll_result(status)
 
@@ -5176,6 +5339,52 @@ class GcpBackend(ComputeBackend):
                 return str(item.get("value") or "").strip().lower() == "true"
         # rc=0 but the key is absent from the payload → not written → setup.
         return False
+
+    def _guest_persist_breadcrumb(self, handle: RunHandle, zone: str) -> str:
+        """Best-effort read of the ``eps/persist`` crash-persist breadcrumb (#1151).
+
+        Diagnostic-only: ANY failure (nonzero rc, bad JSON, transport)
+        returns ``""`` — it never raises and never gates classification
+        (deliberately UNLIKE :meth:`_guest_phase`'s typed ``GcpProbeError``
+        contract: the breadcrumb is a forensic annotation on an
+        already-classified terminal tick, so "couldn't read" must never
+        turn a valid classification into a stalled one).
+        """
+        try:
+            argv = render_guest_attributes_argv(
+                config=self._config, name=handle.pod_name, zone=zone, query_path="eps/persist"
+            )
+            result = self._run(argv)
+            if result.returncode != 0 or not result.stdout.strip():
+                return ""
+            payload = json.loads(result.stdout)
+            for item in payload if isinstance(payload, list) else []:
+                if item.get("key") == "persist":
+                    return str(item.get("value") or "").strip()
+        except Exception:
+            return ""
+        return ""
+
+    def _append_persist_breadcrumb(
+        self, base: PollResult, handle: RunHandle, zone: str, *, instance_status: str
+    ) -> PollResult:
+        """Append the eps/persist breadcrumb line to a failed-classifying tick (#1151).
+
+        The line rides ``log_tail_excerpt`` — which already reaches every
+        terminal marker the orchestrator reads — so there is NO
+        ``PollResult`` schema change and classification is never gated on
+        the read (diagnostic channel only). The line self-discloses the
+        instance status: on a RUNNING-window read a healthy persist may
+        still be in flight, so a standing ``attempted`` is only meaningful
+        once the instance is TERMINATED (decision table:
+        ``.claude/rules/compute-backend-failover.md`` § Part A item 8).
+        """
+        crumb = self._guest_persist_breadcrumb(handle, zone) or "ABSENT"
+        line = f"[crash-persist-breadcrumb] eps/persist={crumb} (instance {instance_status})"
+        if instance_status == "RUNNING":
+            line += " - persist may be in flight; standing-attempted reading valid once TERMINATED"
+        excerpt = f"{base.log_tail_excerpt}\n{line}" if base.log_tail_excerpt else line
+        return replace(base, log_tail_excerpt=excerpt)
 
     # Log-tail trailer delimiters for the combined drain+tail SSH command.
     # Namespaced (``EPS_``) so a stray ``LOGTAIL`` substring in workload
