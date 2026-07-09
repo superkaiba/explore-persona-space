@@ -1587,8 +1587,8 @@
     "1203": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1203",
-      "status": "proposed",
+      "path": "tasks/planning/1203",
+      "status": "planning",
       "title": "workflow-fix: anchor verify_plan c12 N/A escape standalone"
     },
     "1204": {
