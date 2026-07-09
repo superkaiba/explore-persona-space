@@ -533,11 +533,14 @@ git commit -m "logs: daily stub for YYYY-MM-DD"
 # the always-concurrent shared main; if it stays committed-but-unpushed it
 # is exposed to the documented orphaning hazard — a concurrent
 # `git pull --rebase=merges` can rewrite/drop the task-state commit it sits
-# on top of and take the daily with it (#711, 2026-06-27). One retry on a
-# rejected push, exactly as CLAUDE.md "Concurrent repo-root committers"
-# prescribes (pull.rebase=merges + rebase.autoStash=true are pinned in
-# .git/config). Never force-push.
-git push origin HEAD:main || { git pull --rebase=merges --autostash && git push origin HEAD:main; }
+# on top of and take the daily with it (#711, 2026-06-27). On a rejected
+# push, recover through the single-flight root-sync helper — NEVER a
+# hand-rolled pull-rebase loop (CLAUDE.md "Concurrent repo-root
+# committers"; canonical form (2), issue/SKILL.md Step 10d § "Bare push /
+# merge snippets"). sync_repo_root exit 0 can mean "another sync
+# in-flight — your push has NOT landed"; that is acceptable for this stub
+# (see the failure paragraph below). Never force-push.
+git push origin main || uv run python scripts/sync_repo_root.py
 ```
 
 **`logs/` is in `.gitignore`** — a bare `git add logs/...` stages nothing
@@ -557,13 +560,18 @@ item governs reviewable changes leaving the machine). The two rules govern
 different things — the no-push rule governs reviewable code/behavior
 changes; this push only persists the day's own log stub.
 
-If the push fails after the single retry (e.g. a network/GH blip), do NOT
-hang or abort the run: log the failure loudly in `## Other problems &
-notes` ("daily stub committed locally but push failed: <error>") and carry
-on. The stub is committed locally; the #711 heartbeat
+If the push still isn't confirmed landed after the recovery —
+`sync_repo_root.py` exits non-zero (e.g. a network/GH blip, a content
+conflict, or exit 3 = push failed after its one retry), or exits 0 while
+reporting in-flight (`sync_repo_root: state=in-flight` on stderr — another
+session's sync is running; THIS push has NOT been confirmed) — do NOT
+hang or abort the run: log it loudly in `## Other problems & notes`
+("daily stub committed locally but push not confirmed: <rc / state /
+error>") and carry on. The stub is committed locally; the #711 heartbeat
 (`scripts/cron_daily_healthcheck.sh`) will surface a still-missing stub the
 next day as the backstop. Durability here is best-effort; nothing in the
-project hangs on the push succeeding.
+project hangs on the push succeeding — which is exactly why the bare form
+(2) suffices here and the landing-verified variant is unnecessary.
 
 ### Headless (cron) mode — the daily file is never hostage to background work
 
