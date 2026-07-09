@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1203,
+  "highest_id": 1204,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1590,6 +1590,13 @@
       "path": "tasks/proposed/1203",
       "status": "proposed",
       "title": "workflow-fix: anchor verify_plan c12 N/A escape standalone"
+    },
+    "1204": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1204",
+      "status": "proposed",
+      "title": "daily-fix: skip Codex composer spawns under live quota senti"
     },
     "121": {
       "has_clean_result": true,
