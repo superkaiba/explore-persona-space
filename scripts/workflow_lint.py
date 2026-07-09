@@ -5585,8 +5585,12 @@ def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[s
         for p in claude_dir.rglob("*"):
             if not p.is_file() or p.suffix not in {".md", ".yaml", ".yml", ".py", ".sh"}:
                 continue
-            s = p.as_posix()
-            if "/.claude/cache/" in s or "/.claude/agent-memory/" in s:
+            # Root-RELATIVE match (not an absolute-path substring): keeps the
+            # check hermetic when the repo root itself is nested under a real
+            # .claude/cache/ (repo-nested TMPDIR, #1174). relative_to(root) is
+            # always valid here — rglob preserves the prefix it was called with.
+            rel = p.relative_to(root).as_posix()
+            if rel.startswith(".claude/cache/") or rel.startswith(".claude/agent-memory/"):
                 continue
             if _is_other_worktree_path(p, current_prefix):
                 continue
