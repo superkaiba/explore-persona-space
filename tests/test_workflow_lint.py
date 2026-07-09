@@ -19,6 +19,7 @@ Also covers the ``--check-script-refs`` mode: every
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -35,9 +36,11 @@ if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
 from workflow_lint import (  # noqa: E402
+    _MARKER_RECIPE_PINS,
     BATCH_JUDGE_LEGACY_ALLOWLIST,
     _iter_ask_target_files,
     _other_worktree_prefix,
+    _values_equal,
     check_agent_model_pins,
     check_asks,
     check_autonomous_asks,
@@ -51,6 +54,7 @@ from workflow_lint import (  # noqa: E402
     check_hollow_verification_gate_review_lens,
     check_lessons_index,
     check_long_loop_restartability_review_lens,
+    check_marker_recipe_snippets,
     check_marker_registry,
     check_no_literal_round_marker_versions,
     check_no_workflow_improver_spawn,
@@ -4014,6 +4018,240 @@ def test_vm_thread_cap_guidance_bundled_in_no_flags(tmp_path, capsys, monkeypatc
         f"the #891 vm-thread-cap diagnostic (naming code-style.md) is missing "
         f"from the no-flags default run's stderr — the check is not bundled "
         f"into no_flags:\n{err}"
+    )
+
+
+# --- #1154 marker-recipe snippet-pin tests -----------------------------------
+
+# Minimal conforming fixture tree: the two pinned doc files carry one verbatim
+# snippet per registered pin (the bandstop snippet deliberately WRAPS across a
+# line break — the reflow proof for the whitespace-normalized matching — and
+# both docs carry the bare-`※` 63680 decoy that must never be captured); the
+# four src files carry the constant lines from the live tree, including the
+# `marker_tail_tokens` decoy field the sft pattern must not match.
+_MARKER_RECIPE_FIXTURE_FILES: dict[str, str] = {
+    "docs/marker_training_recipe.md": (
+        "# marker training recipe (fixture)\n"
+        "` ※` (Qwen-2.5-7B token id 83399). DV = on-policy log P(marker).\n"
+        "| Marker | ` ※` id 83399 (assert encoding) | single rare token |\n"
+        "Constraint: marker-only loss (`MarkerOnlyDataCollator(tail_tokens=0)`).\n"
+        "| Loss mask | marker-only (`MarkerOnlyDataCollator(tail_tokens=0)`) | keeps R |\n"
+        "7. Run a pre-sweep anchor smoke. Confirm source ΔG ∈ [5, 12]\n"
+        "   nat AND bystanders below the argmax ceiling.\n"
+        "| #906 | completed | render-exact gate (4/200 rows dropped, reject floor 0.10) |\n"
+        "Avoid bare `※` id 63680 (wrong token).\n"
+    ),
+    ".claude/rules/marker-training-recipe.md": (
+        "# marker-training-recipe rule (fixture)\n"
+        "Loss via `MarkerOnlyDataCollator(tail_tokens=0)`, response frozen.\n"
+        "- Fail-loud above a rejection-fraction floor (0.10).\n"
+        "> Stop when source log P over base ∈ [5, 12] nat (gate on bystanders).\n"
+        '` ※` id 83399 only (assert `encode(" ※") == [83399]`). Avoid bare `※` id 63680.\n'
+    ),
+    "src/explore_persona_space/artifacts/recipe.py": "MARKER_TOKEN_ID = 83399\n",
+    "src/explore_persona_space/train/sft.py": (
+        "class MarkerOnlyDataCollator:\n"
+        "    def __init__(\n"
+        "        self,\n"
+        "        tail_tokens: int = 0,\n"
+        "    ) -> None:\n"
+        "        pass\n"
+        "\n"
+        "\n"
+        "class TrainLoraConfig:\n"
+        "    marker_tail_tokens: int = 0\n"
+    ),
+    "src/explore_persona_space/artifacts/organisms.py": "MIX_MAX_REJECT_FRAC = 0.10\n",
+    "src/explore_persona_space/eval/callbacks.py": (
+        "class MarkerBandStopCallback:\n"
+        "    def __init__(\n"
+        "        self,\n"
+        "        low_nats: float = 5.0,\n"
+        "        high_nats: float = 12.0,\n"
+        "    ) -> None:\n"
+        "        pass\n"
+    ),
+}
+
+
+def _write_marker_recipe_fixture(
+    root: Path,
+    overrides: dict[str, str] | None = None,
+    omit: tuple[str, ...] = (),
+) -> None:
+    """Write the #1154 pinned doc + src files at the registry's exact rel-paths
+    under ``root``. ``overrides`` swap in mutated file contents (seeded drift);
+    rel-paths in ``omit`` are not written at all (the missing-file case)."""
+    contents = dict(_MARKER_RECIPE_FIXTURE_FILES)
+    contents.update(overrides or {})
+    for rel, text in contents.items():
+        if rel in omit:
+            continue
+        p = root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+
+
+def test_marker_recipe_snippets_live_tree_passes() -> None:
+    """The real tree's pinned doc snippets agree with the code constants
+    (launch invariant: 0 false positives; the live drift gate going forward)."""
+    assert check_marker_recipe_snippets() == []
+
+
+def test_marker_recipe_snippets_fixture_tree_passes(tmp_path) -> None:
+    """The conforming fixture tree passes — pins the fixture itself so every
+    mutation test below fails for its seeded drift, not fixture rot."""
+    _write_marker_recipe_fixture(tmp_path)
+    assert check_marker_recipe_snippets(repo_root=tmp_path) == []
+
+
+def test_marker_recipe_snippets_flags_code_drift(tmp_path) -> None:
+    """Mutating a bound code constant (MARKER_TOKEN_ID 83399 -> 99999) FAILs
+    BOTH token-id pins, each naming the pin label and both values."""
+    _write_marker_recipe_fixture(
+        tmp_path,
+        overrides={"src/explore_persona_space/artifacts/recipe.py": "MARKER_TOKEN_ID = 99999\n"},
+    )
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 2, errors
+    for label in ("marker-token-id", "rule-marker-token-id"):
+        matching = [e for e in errors if f"pin '{label}'" in e]
+        assert len(matching) == 1, errors
+        assert "'83399'" in matching[0] and "'99999'" in matching[0], errors
+
+
+def test_marker_recipe_snippets_flags_doc_drift(tmp_path) -> None:
+    """The doc citing a stale value (reject floor 0.12 vs code 0.10) FAILs with
+    exactly one error whose subject is the doc and which names both values."""
+    drifted = _MARKER_RECIPE_FIXTURE_FILES["docs/marker_training_recipe.md"].replace(
+        "reject floor 0.10", "reject floor 0.12"
+    )
+    _write_marker_recipe_fixture(tmp_path, overrides={"docs/marker_training_recipe.md": drifted})
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    subject = errors[0].split(": ", 1)[0]
+    assert subject.endswith("docs/marker_training_recipe.md"), errors
+    assert "'0.12'" in errors[0] and "'0.10'" in errors[0], errors
+
+
+def test_marker_recipe_snippets_flags_missing_doc_snippet(tmp_path) -> None:
+    """Rephrasing a pinned doc sentence away from its pattern FAILs loud
+    ('doc snippet not found' — the rot alarm), naming the pin."""
+    rephrased = _MARKER_RECIPE_FIXTURE_FILES["docs/marker_training_recipe.md"].replace(
+        "reject floor 0.10", "rejection cutoff 0.10"
+    )
+    _write_marker_recipe_fixture(tmp_path, overrides={"docs/marker_training_recipe.md": rephrased})
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "doc snippet not found" in errors[0], errors
+    assert "pin 'mix-reject-floor'" in errors[0], errors
+
+
+def test_marker_recipe_snippets_flags_missing_code_symbol(tmp_path) -> None:
+    """Removing a bound symbol from its source file FAILs every pin citing it
+    ('code constant ... not found' — the rename/move alarm)."""
+    _write_marker_recipe_fixture(
+        tmp_path,
+        overrides={"src/explore_persona_space/artifacts/organisms.py": "OTHER_CONST = 1\n"},
+    )
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 2, errors  # the docs pin + the rule pin both cite organisms.py
+    for e in errors:
+        assert "not found" in e and "MIX_MAX_REJECT_FRAC" in e, errors
+
+
+def test_marker_recipe_snippets_flags_ambiguous_src(tmp_path) -> None:
+    """A second, conflicting `tail_tokens: int = 5,` signature in sft.py makes
+    the collator pins ambiguous -> FAIL (the doc citation genuinely became
+    ambiguous; the registry pattern must be tightened)."""
+    ambiguous = _MARKER_RECIPE_FIXTURE_FILES["src/explore_persona_space/train/sft.py"] + (
+        "\n"
+        "\n"
+        "class OtherCollator:\n"
+        "    def __init__(\n"
+        "        self,\n"
+        "        tail_tokens: int = 5,\n"
+        "    ) -> None:\n"
+        "        pass\n"
+    )
+    _write_marker_recipe_fixture(
+        tmp_path, overrides={"src/explore_persona_space/train/sft.py": ambiguous}
+    )
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 2, errors  # the docs pin + the rule pin both cite sft.py
+    for e in errors:
+        assert "ambiguous" in e and "tail_tokens" in e, errors
+
+
+def test_marker_recipe_snippets_flags_missing_file(tmp_path) -> None:
+    """A missing pinned doc file is itself an error — once per pin bound to it
+    (5 rule-file pins)."""
+    _write_marker_recipe_fixture(tmp_path, omit=(".claude/rules/marker-training-recipe.md",))
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 5, errors
+    for e in errors:
+        assert "missing" in e, errors
+        assert e.split(": ", 1)[0].endswith("marker-training-recipe.md"), errors
+
+
+def test_marker_recipe_snippets_does_not_capture_wrong_token_id() -> None:
+    """On the LIVE tree, the token-id pins capture only 83399 — never the
+    bare-`※` wrong-token id 63680 (docs line ~196 / rule line ~236 mention it
+    with a backtick, not a space, before ※ — the space anchor skips it)."""
+    import workflow_lint as wl
+
+    for pin in _MARKER_RECIPE_PINS:
+        if "token-id" not in pin.label:
+            continue
+        doc_text = (wl._REPO_ROOT / pin.doc_rel).read_text(encoding="utf-8")
+        captures = re.findall(pin.doc_pattern, re.sub(r"\s+", " ", doc_text))
+        assert captures, f"pin '{pin.label}': no live doc matches"
+        assert "63680" not in captures, (pin.label, captures)
+        assert set(captures) == {"83399"}, (pin.label, captures)
+
+
+def test_marker_recipe_pins_have_one_capture_group() -> None:
+    """Registry invariant: every pin's doc_pattern AND src_pattern compile with
+    exactly ONE capture group (findall then returns bare value strings)."""
+    for pin in _MARKER_RECIPE_PINS:
+        assert re.compile(pin.doc_pattern).groups == 1, pin.label
+        assert re.compile(pin.src_pattern).groups == 1, pin.label
+
+
+def test_marker_recipe_values_equal_float_forms() -> None:
+    """Value comparison is float-based when both sides parse ('5' == '5.0' —
+    the doc band vs the callbacks.py float defaults), else exact-string."""
+    assert _values_equal("5", "5.0") is True
+    assert _values_equal("0.10", "0.1") is True
+    assert _values_equal("83399", "83399") is True
+    assert _values_equal("83399", "99999") is False
+    assert _values_equal("abc", "abc") is True
+    assert _values_equal("abc", "abd") is False
+
+
+def test_marker_recipe_snippets_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the #1154 check — deleting
+    its ``or no_flags`` branch must fail this test (mutation-visible), closing
+    the dead-tripwire gap where all direct-call tests stay green while the CLI
+    never runs the check. Same mechanism as
+    ``test_vm_thread_cap_guidance_bundled_in_no_flags``: a seeded code drift,
+    ``_REPO_ROOT`` monkeypatched to the fixture, ``main([])`` in-process.
+    Other bundled checks contribute unrelated errors on the minimal tree, so
+    the assertion keys on the #1154 diagnostic + the offending doc path."""
+    import workflow_lint as wl
+
+    _write_marker_recipe_fixture(
+        tmp_path,
+        overrides={"src/explore_persona_space/artifacts/recipe.py": "MARKER_TOKEN_ID = 99999\n"},
+    )
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a drifted tree:\n{err}"
+    assert "#1154" in err and "marker_training_recipe.md" in err, (
+        f"the #1154 marker-recipe diagnostic (naming marker_training_recipe.md) "
+        f"is missing from the no-flags default run's stderr — the check is not "
+        f"bundled into no_flags:\n{err}"
     )
 
 
