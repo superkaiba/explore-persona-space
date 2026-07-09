@@ -6078,7 +6078,11 @@ explicit eval-data path):
    the existing clean-result body (typically updating one
    `### <finding>` H3 and possibly the H1 title / confidence tag),
    re-runs `verify_task_body.py` (must still PASS), and writes the
-   revised body via `task.py set-body <N> --file ...`. The analyzer's
+   revised body via `task.py set-body <N> --file ...`, followed by
+   `task.py set-title <N> "<new H1 text>"` whenever the fold changed
+   the H1 (set-body preserves the old frontmatter `title`; the
+   H1==frontmatter verifier check FAILs the 9a-bis re-gate otherwise).
+   The analyzer's
    Step 6.5 still fires on this re-run, but the loop guard above
    prevents another 9a-ter dispatch within the same task. (**`paper:
    true`?** The re-spawned analyzer re-authors the `.tex` in place —
@@ -7354,7 +7358,10 @@ orchestrators driving one round is the #778 root cause.
      H3s), updating the H1 title / confidence tag if the result moves the
      headline. The
      `set-body` call passes NO `--snapshot` — `original-body.md`
-     already preserves the pre-promotion original (see analyzer.md §
+     already preserves the pre-promotion original — and a moved headline
+     is followed by `task.py set-title <N> "<new H1 text>"` (set-body
+     preserves the old frontmatter `title`; the H1==frontmatter verifier
+     check FAILs the 9a-bis re-gate otherwise; see analyzer.md §
      Same-issue follow-up re-entry).
    - `clean-result-critic` re-gates the UPDATED body (9a-bis as
      normal), then 9a-quater and the `awaiting_promotion` park run as

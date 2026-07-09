@@ -445,7 +445,11 @@ over a stub body.
 
 **Same-issue follow-up re-entry (re-fold, not re-promote).** On an
 `epm:followup-scope v1` re-spawn the body is ALREADY a clean-result: fold
-the new round in, re-verify, `set-body` WITHOUT `--snapshot`. (1) Add the
+the new round in, re-verify, `set-body` WITHOUT `--snapshot`, then — if the
+fold retitled the H1 — `task.py set-title <SOURCE-N> "<new H1 text>"`
+(set-body preserves the old frontmatter `title`; the #1110 H1==frontmatter
+verifier check FAILs the next gate otherwise — same set-body-then-set-title
+order as Step 6 above). (1) Add the
 round's `### <result>` sections; (2) REWRITE `## Takeaways` to the current
 cross-round belief (mandatory) + retitle the H1 if the headline moved; (3)
 note the round under `**Design:**` + a per-round hyperparameter column +
