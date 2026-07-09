@@ -1174,8 +1174,8 @@
     "1150": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1150",
-      "status": "reviewing",
+      "path": "tasks/completed/1150",
+      "status": "completed",
       "title": "workflow-fix: forward rc==0 stderr at watcher set-status + f"
     },
     "1151": {
