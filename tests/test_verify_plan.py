@@ -1074,14 +1074,41 @@ def test_c12_battery_missing_batched_commitment_fails():
     assert "batched" in r.detail
 
 
-def test_c12_na_no_draw_battery_passes():
-    plan = (
-        GOOD_PLAN + f"\n{BATTERY_SENT} N/A — no draw battery (quoting the sibling's methodology).\n"
+def test_c12_na_standalone_declaration_passes():
+    plan = GOOD_PLAN + (
+        f"\n{BATTERY_SENT}\n"
+        "N/A — no draw battery (the battery mention quotes the sibling's methodology).\n"
     )
     _, by_id = _run(plan)
     r = by_id["c12_battery_multiplier"]
     assert r.status == "PASS"
     assert "N/A" in r.detail
+
+
+def test_c12_na_bullet_form_standalone_passes():
+    plan = GOOD_PLAN + f"\n{BATTERY_SENT}\n- N/A — no draw battery (incidental mention).\n"
+    assert _status(plan, "c12_battery_multiplier") == "PASS"
+
+
+def test_c12_quoted_na_phrase_does_not_escape():
+    # A mid-sentence quoted escape phrase (the pasted-bounce-brief
+    # self-escape channel) is NOT a standalone declaration line and must
+    # not escape — the c13/c18/c24/c25 anti-paste twin.
+    plan = GOOD_PLAN + (
+        f"\n{BATTERY_SENT} N/A — no draw battery (quoting the sibling's methodology).\n"
+        "\nThe remedy menu says to declare 'N/A — no draw battery' on its own line.\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "FAIL"
+
+
+def test_c12_pasted_fail_detail_does_not_self_satisfy():
+    # The project convention pastes bounce text verbatim into revised plans:
+    # the FAIL detail supplies neither a standalone N/A line nor draw
+    # arithmetic (its example product is deliberately mult-token-free).
+    _, by_id = _run(GOOD_PLAN + f"\n{BATTERY_SENT}\n")
+    detail = by_id["c12_battery_multiplier"].detail
+    replan = GOOD_PLAN + f"\n{BATTERY_SENT}\n\n{detail}\n"
+    assert _status(replan, "c12_battery_multiplier") == "FAIL"
 
 
 def test_c12_kind_analysis_warns_not_fails():
