@@ -1160,8 +1160,8 @@
     "1149": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1149",
-      "status": "approved",
+      "path": "tasks/running/1149",
+      "status": "running",
       "title": "workflow-fix: mechanical ensemble reviewer no-show predicate"
     },
     "115": {
