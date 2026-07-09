@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1152,
+  "highest_id": 1153,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1191,6 +1191,13 @@
       "path": "tasks/proposed/1152",
       "status": "proposed",
       "title": "workflow-fix: harden guard_harmful_bank_read hook (3 bypass "
+    },
+    "1153": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1153",
+      "status": "proposed",
+      "title": "workflow-fix: lint: pin awk elision program identical across"
     },
     "116": {
       "has_clean_result": true,
