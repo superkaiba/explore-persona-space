@@ -14854,6 +14854,26 @@ def _matured_violating_events():
     return [{"ts": ts, "kind": "epm:run-launched", "by": "poll_pipeline", "note": "launched"}]
 
 
+def _matured_violating_events_n(n):
+    """``n`` distinct post-epoch, MATURED lone launch markers (ascending ts,
+    ~35 min apart, 2h-6.5h old — all older than the 30-min adjacency horizon,
+    all inside the 48h lookback). Each yields one ``launch-missing-line``
+    warn: launch↔launch proximity grants no adjacency coverage — only a
+    triage-LINE boundary neighbor does (#1167 push-cap fixtures)."""
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(tz=UTC)
+    return [
+        {
+            "ts": (now - timedelta(minutes=120 + 35 * (n - 1 - i))).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "kind": "epm:run-launched",
+            "by": "poll_pipeline",
+            "note": f"launched {i}",
+        }
+        for i in range(n)
+    ]
+
+
 def test_triage_observer_kill_switch_skips_everything(tmp_path, monkeypatch):
     import autonomous_session_watch as asw
 
@@ -14900,6 +14920,8 @@ def test_decide_triage_observer_actions_routing():
         ("none-with-candidates", False, False),
     ]
     assert all(a["sidecar"] for a in actions)
+    # #1167 default pin: push_budget=None (uncapped) -> nothing suppressed.
+    assert all(a["push_suppressed"] is False for a in actions)
     # The pure function never mutates the caller's flagged set.
     assert flagged == {"2026-07-10T10:00:00Z|launch-missing-line"}
     # Cap-overflow semantics: an over-budget warn keeps push=True and
@@ -14911,6 +14933,57 @@ def test_decide_triage_observer_actions_routing():
         ("warn", True, True),
         ("warn", True, False),
     ]
+
+
+def test_decide_triage_observer_actions_push_cap():
+    # #1167: the pure decider caps the push channel INDEPENDENTLY of the
+    # marker channel; over-push-budget warns get push=False,
+    # push_suppressed=True (the caller rolls them into one summary push).
+    import autonomous_session_watch as asw
+
+    warns = [
+        {
+            "record_ts": f"2026-07-10T1{i}:00:00Z",
+            "violation": "launch-missing-line",
+            "severity": "warn",
+        }
+        for i in range(3)
+    ]
+    info = {
+        "record_ts": "2026-07-10T09:00:00Z",
+        "violation": "none-with-candidates",
+        "severity": "info",
+    }
+    flagged: set[str] = set()
+    actions = asw.decide_triage_observer_actions(
+        [*warns, info], flagged, marker_budget=1, push_budget=2
+    )
+    # Budget INDEPENDENCE: the marker budget (1) and push budget (2) run out
+    # at different points; the over-push-budget warn keeps marker semantics
+    # (here: marker budget already spent); info consumes neither budget and
+    # is never push_suppressed.
+    assert [(a["push"], a["push_suppressed"], a["marker"]) for a in actions] == [
+        (True, False, True),
+        (True, False, False),
+        (False, True, False),
+        (False, False, False),
+    ]
+    assert all("push_suppressed" in a for a in actions)
+    # The pure function never mutates the caller's flagged set.
+    assert flagged == set()
+
+    # Cap 0: every warn suppressed; info rows are never push_suppressed.
+    actions = asw.decide_triage_observer_actions([*warns, info], set(), 5, push_budget=0)
+    assert [(a["severity"], a["push"], a["push_suppressed"]) for a in actions] == [
+        ("warn", False, True),
+        ("warn", False, True),
+        ("warn", False, True),
+        ("info", False, False),
+    ]
+
+    # Back-compat pin: push_budget=None (the default) = uncapped.
+    actions = asw.decide_triage_observer_actions(warns, set(), 5, push_budget=None)
+    assert all(a["push"] is True and a["push_suppressed"] is False for a in actions)
 
 
 def test_triage_observer_dry_run_performs_zero_writes(tmp_path, monkeypatch):
@@ -14973,6 +15046,137 @@ def test_triage_observer_fire_once_two_invocations_real_writes(tmp_path, monkeyp
     assert len(sidecar_path.read_text().splitlines()) == 1
     assert len([c for c in argvs if "post-marker" in c]) == 1
     assert len(pushes) == 1
+
+
+def test_triage_observer_push_cap_caps_pushes_and_sends_one_digest(tmp_path, monkeypatch):
+    # #1167: 8 matured warns with push cap 3 + marker cap 5 -> exactly 3
+    # individual pushes + ONE trailing "+5 more" summary push; the marker
+    # and sidecar channels are unaffected by the push cap; tick 2 on
+    # unchanged events emits nothing new (suppressed pushes are flagged,
+    # never deferred — the summary never re-fires for old violations).
+    import json as _json
+    import subprocess as _subprocess
+
+    asw, state_path, sidecar_path, pushes = _triage_observer_sandbox(
+        tmp_path, monkeypatch, _matured_violating_events_n(8)
+    )
+    monkeypatch.setattr(asw, "TRIAGE_OBSERVER_PUSH_CAP", 3)
+    monkeypatch.setattr(asw, "TRIAGE_OBSERVER_MARKER_CAP", 5)
+    argvs: list[list[str]] = []
+
+    def _fake_run(cmd, *a, **kw):
+        argvs.append([str(c) for c in cmd])
+        return _subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+
+    assert asw.triage_observer_pass(dry_run=False) is True
+    rows = [_json.loads(line) for line in sidecar_path.read_text().splitlines()]
+    # Overflow guard (A7 hedge): the fixture MUST overflow the push cap for
+    # this test to cover anything; the exact counts below are the primary pin.
+    assert len(rows) > 3
+    assert len(rows) == 8  # criterion 3: the cap never drops sidecar fidelity
+    assert all(r["severity"] == "warn" for r in rows)
+
+    assert len(pushes) == 4  # 3 individual + 1 summary
+    summary = pushes[-1][0]
+    assert "+5 more" in summary
+    assert "push cap (3)" in summary
+    assert ".claude/cache/triage-observer-events.jsonl" in summary
+    assert all("more warn flag" not in msg for msg, _ in pushes[:-1])
+
+    # Criterion 4: the marker channel is unaffected by the push cap.
+    assert len([c for c in argvs if "post-marker" in c]) == 5  # min(8, cap 5)
+
+    # Non-gating pin: the recorded subprocess argv never mutates task state.
+    for cmd in argvs:
+        joined = " ".join(cmd)
+        assert "set-status" not in joined
+        assert "spawn_session" not in joined
+        assert any("task.py" in c for c in cmd) and "post-marker" in cmd
+
+    # Tick 2 on unchanged events: 0 new pushes / markers / sidecar rows.
+    assert asw.triage_observer_pass(dry_run=False) is False
+    assert len(sidecar_path.read_text().splitlines()) == 8
+    assert len([c for c in argvs if "post-marker" in c]) == 5
+    assert len(pushes) == 4
+    assert state_path.exists()
+
+
+def test_triage_observer_push_budget_threads_cross_task(tmp_path, monkeypatch):
+    # #1167 criterion 6: ONE shared push budget for the whole pass (like
+    # marker_budget) and ONE pass-level summary. 3 warns on #321 + 3 warns
+    # on #322 with push cap 2 -> both individual pushes land on #321
+    # (issue-id STRING order), #322 is fully suppressed, total = K+1 = 3
+    # pushes. A forgotten cross-task decrement would emit 2+2 individual
+    # pushes; a per-TASK summary would emit two summaries.
+    import json as _json
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    reg_root = tmp_path / "repo"
+    events_by_issue = {
+        321: _matured_violating_events_n(3),
+        322: _matured_violating_events_n(3),
+    }
+    reg_tasks = {}
+    for issue in events_by_issue:
+        task_rel = f"tasks/running/{issue}"
+        task_dir = reg_root / task_rel
+        task_dir.mkdir(parents=True)
+        (task_dir / "events.jsonl").write_text("")
+        reg_tasks[str(issue)] = {
+            "status": "running",
+            "path": task_rel,
+            "kind": "experiment",
+            "title": "synthetic",
+            "has_clean_result": False,
+        }
+    reg_path = reg_root / "tasks" / "REGISTRY.json"
+    reg_path.write_text(_json.dumps({"tasks": reg_tasks}))
+    monkeypatch.setattr(task_workflow, "registry_path", lambda: reg_path)
+    monkeypatch.setattr(task_workflow, "list_events", lambda issue: list(events_by_issue[issue]))
+    state_path = tmp_path / "triage-observer.json"
+    sidecar_path = tmp_path / "triage-observer-events.jsonl"
+    monkeypatch.setattr(asw, "_triage_observer_state_path", lambda: state_path)
+    monkeypatch.setattr(asw, "_triage_observer_sidecar_path", lambda: sidecar_path)
+    pushes: list[tuple[str, bool]] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry: pushes.append((msg, dry)))
+    monkeypatch.setattr(asw, "TRIAGE_OBSERVER_PUSH_CAP", 2)
+    monkeypatch.setattr(asw, "TRIAGE_OBSERVER_MARKER_CAP", 10)
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda cmd, *a, **kw: _subprocess.CompletedProcess(cmd, 0, "", ""),
+    )
+
+    assert asw.triage_observer_pass(dry_run=False) is True
+    assert len(pushes) == 3  # K + 1: 2 individual + ONE pass-level summary
+    assert all("#321" in msg for msg, _ in pushes[:2])  # string-order consumption
+    assert "+4 more" in pushes[-1][0] and "push cap (2)" in pushes[-1][0]
+    assert len(sidecar_path.read_text().splitlines()) == 6  # fidelity intact
+
+
+def test_triage_observer_push_cap_summary_dry_run_zero_writes(tmp_path, monkeypatch):
+    # #1167: the summary-push branch under dry_run routes through the same
+    # _telegram_push(msg, dry_run) helper with zero filesystem writes and
+    # zero subprocess spawns (the dry-run hygiene pin, >K-warn fixture).
+    asw, state_path, sidecar_path, pushes = _triage_observer_sandbox(
+        tmp_path, monkeypatch, _matured_violating_events_n(8)
+    )
+    monkeypatch.setattr(asw, "TRIAGE_OBSERVER_PUSH_CAP", 3)
+    monkeypatch.setattr(asw, "TRIAGE_OBSERVER_MARKER_CAP", 5)
+    calls: list = []
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **kw: calls.append(a))
+    asw.triage_observer_pass(dry_run=True)
+    assert calls == []
+    assert not state_path.exists()
+    assert not sidecar_path.exists()
+    assert pushes and pushes[-1][1] is True and "+5 more" in pushes[-1][0]
+    assert all(dry is True for _, dry in pushes)
 
 
 def test_triage_observer_never_calls_in_process_mutators(tmp_path, monkeypatch):

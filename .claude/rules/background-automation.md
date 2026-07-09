@@ -751,13 +751,17 @@ record is judged exactly once, after its compliance window closes. Records
 before `TRIAGE_DUTY_EPOCH_TS` (2026-07-03T05:00Z, the #889 landing) are
 legacy and never flagged. **Channels:** every flag appends one row to the
 dedicated sidecar `.claude/cache/triage-observer-events.jsonl`; `warn` flags
-additionally get one deduped fail-soft `_telegram_push` digest line and one
-`epm:progress` review-nudge note on the task (anti-liveness
+additionally get one deduped fail-soft `_telegram_push` digest line — capped
+at `EPM_TRIAGE_OBSERVER_PUSH_CAP` (5) individual pushes per tick, overflow
+rolled into ONE "+N more, see sidecar" summary push at the end of the pass
+(#1167) — and one `epm:progress` review-nudge note on the task (anti-liveness
 `[autonomous_session_watch:triage-observer]` sentinel; its `by="unknown"`
 deliberately makes the note a triage candidate at the task's NEXT dispatch —
 the flag is itself the advisory), capped at `EPM_TRIAGE_OBSERVER_MARKER_CAP`
-(5) marker posts per tick — a warn beyond the cap is PERMANENTLY
-sidecar+push-only, never deferred. **Fire-once dedup:** key
+(5) marker posts per tick. The two caps are independent; a warn beyond either
+cap is PERMANENTLY sidecar-recorded and never deferred — beyond the marker
+cap it stays sidecar+push-only; beyond the push cap its individual push is
+replaced by the tick's single summary push. **Fire-once dedup:** key
 `(issue, record_ts, violation-class)` in the state singleton
 `~/.eps-autonomous/triage-observer.json` (atomic write; entries self-pruned
 at `completed`/`archived`); a violation is a fixed historical record, so
