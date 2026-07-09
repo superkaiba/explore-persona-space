@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1182,
+  "highest_id": 1183,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1422,6 +1422,13 @@
       "path": "tasks/proposed/1182",
       "status": "proposed",
       "title": "workflow-fix: Memoize transcript resolution across watcher p"
+    },
+    "1183": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1183",
+      "status": "proposed",
+      "title": "workflow-fix: Relocate live pods_ephemeral.json out of git t"
     },
     "119": {
       "has_clean_result": false,
