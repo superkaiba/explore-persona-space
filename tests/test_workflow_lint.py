@@ -49,6 +49,7 @@ from workflow_lint import (  # noqa: E402
     check_compute_shape_review_lens,
     check_dispatcher_cvd_pin,
     check_gate_ids_unique,
+    check_git_recipes_root_guard,
     check_grep_qv,
     check_heredoc_dotenv,
     check_hollow_verification_gate_review_lens,
@@ -4863,3 +4864,224 @@ def test_section_ref_pointer_coverage_ignores_non_suffixed_rules(tmp_path):
         agent_name=None,
     )
     assert check_section_reference_pointer_coverage(repo_root=tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
+# --check-git-recipes-root-guard (#1176): execute the LIVE repo-root branch
+# guard (scripts/guard_repo_root_branch.sh) against every bash-fenced git
+# recipe in the workflow docs. All gated-git literals below are Python STRING
+# DATA (test fixtures written via tmp_path) — the hook gates Bash TOOL calls,
+# not file contents.
+# ---------------------------------------------------------------------------
+
+_RG_BLOCKED_CMD = "git checkout -b __wl_rg_test_branch__"
+
+
+def _write_rg_skill(tmp_path: Path, slug: str, body: str) -> Path:
+    """Write a synthetic ``.claude/skills/<slug>/SKILL.md`` under ``tmp_path``."""
+    p = tmp_path / ".claude" / "skills" / slug / "SKILL.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(body, encoding="utf-8")
+    return p
+
+
+def test_check_git_recipes_root_guard_flags_blocked_recipe(tmp_path):
+    """A bash fence whose whole-block feed the live hook BLOCKS (exit 2) is
+    exactly one error naming the file + the fence OPENER line."""
+    _write_rg_skill(tmp_path, "x", f"Intro line\n```bash\n{_RG_BLOCKED_CMD}\n```\n")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:2:" in errors[0], errors
+    assert "BLOCKED" in errors[0], errors
+    # remediation names both paths: fix the recipe, or the exemption sentinel
+    assert "allow-root-guard-block" in errors[0], errors
+
+
+def test_check_git_recipes_root_guard_passes_waived_recipe(tmp_path):
+    """A per-clause worktree-qualified destructive form passes the hook."""
+    _write_rg_skill(
+        tmp_path,
+        "x",
+        'Recover inside the worktree:\n```bash\ngit -C "$WT" reset --hard origin/main\n```\n',
+    )
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+
+
+def test_check_git_recipes_root_guard_multiline_construct_passes(tmp_path):
+    """Whole-block feed: a for-loop + heredoc + comment construct with only
+    ``git -C`` forms passes — per-line feeding would shred the loop and
+    false-positive on the inert heredoc body / comment line."""
+    body = (
+        "Recovery recipe:\n"
+        "```bash\n"
+        "for f in a b; do\n"
+        '  git -C "$WT" reset --hard origin/main\n'
+        "done\n"
+        "# a comment line mentioning git switch is inert as pasted\n"
+        "cat <<'EOF' > /tmp/wl_rg_note.txt\n"
+        "plain note text\n"
+        "EOF\n"
+        'git -C "$WT" status\n'
+        "```\n"
+    )
+    _write_rg_skill(tmp_path, "x", body)
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+
+
+def test_check_git_recipes_root_guard_skips_exempt_fence(tmp_path):
+    """A sentinel with a NON-EMPTY reason on the immediately-preceding
+    non-blank line waives the fence; an EMPTY-reason sentinel does NOT."""
+    _write_rg_skill(
+        tmp_path,
+        "exempt",
+        "<!-- workflow-lint: allow-root-guard-block: deliberate anti-pattern example -->\n"
+        f"```bash\n{_RG_BLOCKED_CMD}\n```\n",
+    )
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+
+    _write_rg_skill(
+        tmp_path,
+        "empty_reason",
+        f"<!-- workflow-lint: allow-root-guard-block: -->\n```bash\n{_RG_BLOCKED_CMD}\n```\n",
+    )
+    errors = check_git_recipes_root_guard(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "empty_reason" in errors[0], errors
+
+
+def test_check_git_recipes_root_guard_ignores_non_bash_fences(tmp_path):
+    """Only bash/sh/shell-tagged fences are executable recipes; a
+    python-tagged fence carrying a blocked literal is never fed to the hook."""
+    _write_rg_skill(
+        tmp_path,
+        "x",
+        f'```python\ncmd = "{_RG_BLOCKED_CMD}"\n```\n',
+    )
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+
+
+def test_check_git_recipes_root_guard_selftest_fails_loud(tmp_path):
+    """A missing hook and a fail-OPEN hook (exit 0 on the blocked probe —
+    the jq-missing fail-soft shape) each produce ONE loud error, never a
+    silent pass."""
+    _write_rg_skill(tmp_path, "x", f"```bash\n{_RG_BLOCKED_CMD}\n```\n")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=tmp_path / "missing.sh")
+    assert len(errors) == 1, errors
+    assert "missing" in errors[0], errors
+
+    fail_open = tmp_path / "fail_open.sh"
+    fail_open.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=fail_open)
+    assert len(errors) == 1, errors
+    assert "self-test" in errors[0], errors
+
+
+def test_check_git_recipes_root_guard_selftest_fail_closed(tmp_path):
+    """The complement cell: a fail-CLOSED stub (exit 2 on EVERYTHING,
+    including the benign probe) is also ONE loud self-test error."""
+    _write_rg_skill(tmp_path, "x", "```bash\necho benign\n```\n")
+    fail_closed = tmp_path / "fail_closed.sh"
+    fail_closed.write_text("#!/usr/bin/env bash\nexit 2\n", encoding="utf-8")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=fail_closed)
+    assert len(errors) == 1, errors
+    assert "self-test" in errors[0], errors
+
+
+def test_check_git_recipes_root_guard_nested_fence_recovers(tmp_path):
+    """Replicates the LIVE nested-fence shape at weekly/SKILL.md:196-204
+    (outer ```markdown fence containing an inner ```diff fence) FOLLOWED by
+    a blocked bash fence: the parity-toggle parser must recover and flag the
+    blocked fence at its CORRECT opener line — the naive empty-tag-closer
+    rule desyncs here and silently hides the bash fence (a false negative
+    the live-tree test cannot see)."""
+    body = (
+        "```markdown\n"  # 1  open (markdown)
+        "1. **Target:** x\n"  # 2
+        "   ```diff\n"  # 3  same-token fence line -> CLOSES the outer fence
+        "   - old\n"  # 4  prose (outside any fence)
+        "   + new\n"  # 5
+        "   ```\n"  # 6  opens an untagged fence
+        "```\n"  # 7  closes it
+        "\n"  # 8
+        "```bash\n"  # 9  the blocked fence the parser must still see
+        f"{_RG_BLOCKED_CMD}\n"  # 10
+        "```\n"  # 11
+    )
+    _write_rg_skill(tmp_path, "x", body)
+    errors = check_git_recipes_root_guard(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:9:" in errors[0], errors
+
+
+def test_check_git_recipes_root_guard_unterminated_fence_scanned(tmp_path):
+    """A blocked bash fence with NO closer at EOF is still scanned (fail
+    toward checking — previously only a docstring claim)."""
+    _write_rg_skill(tmp_path, "x", f"```bash\n{_RG_BLOCKED_CMD}\n")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:1:" in errors[0], errors
+
+
+def test_check_git_recipes_root_guard_known_miss_residuals(tmp_path):
+    """The two archived #1047 shapes are DISCLOSED residuals, not covered:
+    (a) an inline code span in a prose bullet carrying a blocked command;
+    (b) a ``#``-commented blocked command inside a bash fence (the hook's
+    comment-tail strip correctly allows the block-as-pasted). Both -> 0
+    hits, and the check's docstring must name both residual shapes so the
+    disclosure is durable."""
+    body = (
+        f"- Then run `{_RG_BLOCKED_CMD}` at the repo root.\n"
+        "\n"
+        "```bash\n"
+        f"# {_RG_BLOCKED_CMD}   <- run this uncommented\n"
+        "echo done\n"
+        "```\n"
+    )
+    _write_rg_skill(tmp_path, "x", body)
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+    doc = check_git_recipes_root_guard.__doc__ or ""
+    assert "inline-code recipes" in doc, "docstring must name the prose inline-code residual"
+    assert "commented instruction lines" in doc, (
+        "docstring must name the commented-instruction-line residual"
+    )
+    # the other two named residuals ride along
+    assert "untagged" in doc, "docstring must name the untagged-fence residual"
+    assert "placeholder-substitution" in doc, (
+        "docstring must name the placeholder-substitution false-PASS direction"
+    )
+
+
+def test_check_git_recipes_root_guard_tilde_fence(tmp_path):
+    """``~~~bash`` fences are scanned too; a sentinel line with TRAILING
+    WHITESPACE after the comment closer still waives."""
+    _write_rg_skill(tmp_path, "tilde", f"~~~bash\n{_RG_BLOCKED_CMD}\n~~~\n")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:1:" in errors[0], errors
+
+    _write_rg_skill(
+        tmp_path,
+        "tilde",
+        "<!-- workflow-lint: allow-root-guard-block: deliberate example -->   \n"
+        f"~~~bash\n{_RG_BLOCKED_CMD}\n~~~\n",
+    )
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+
+
+def test_check_git_recipes_root_guard_live_tree_passes():
+    """The real post-disposition tree PASSES (the ``test_live_trees_pass``
+    invariant): locks in the #1176 dispositions — the refactor/SKILL.md
+    recipe fix and the gotchas.md pod-side exemption sentinel — and fails
+    loud if a future doc edit adds a recipe the live hook blocks."""
+    assert check_git_recipes_root_guard() == []
+
+
+def test_workflow_lint_check_git_recipes_root_guard_cli_exits_zero():
+    """CLI flag smoke: ``--check-git-recipes-root-guard`` exits 0 on the
+    committed tree. Bundle membership (no_flags) is auto-covered by
+    ``test_workflow_lint_default_exits_zero``."""
+    result = _run("--check-git-recipes-root-guard")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-git-recipes-root-guard failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
