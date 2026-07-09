@@ -65,6 +65,7 @@ from workflow_lint import (  # noqa: E402
     check_pipe_python,
     check_piped_git_push,
     check_poller_marker_consumers,
+    check_push_failure_swallow,
     check_script_references,
     check_section_reference_pointer_coverage,
     check_skill_references,
@@ -2476,6 +2477,152 @@ def test_piped_git_push_hook_lint_agreement_on_shared_cases():
         assert lint == must_flag, f"lint verdict wrong for {cmd!r}: {lint} != {must_flag}"
         assert hook_v == must_flag, f"hook verdict wrong for {cmd!r}: {hook_v} != {must_flag}"
         assert lint == hook_v, f"engines diverge on shared case {cmd!r}"
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_push_failure_swallow`` (incident class #825
+# r6/r7/r8, task #1205: a workload's `git push ... || echo WARNING`
+# swallowed a deterministic auth failure, the step declared success, and
+# the self-DELETEing GCE instance held the only copy of 73 committed eval
+# JSONs). Each fixture writes a tiny ``*.sh`` under ``tmp_path`` and calls
+# ``check_push_failure_swallow(scripts_dir=tmp_path)``. The workload-side
+# `||` sibling of ``check_piped_git_push`` — NO pipefail escape here
+# (pipefail never applies to `||` disjunctions).
+# ---------------------------------------------------------------------------
+
+
+def test_check_push_failure_swallow_fail_echo(tmp_path):
+    """FAIL — the flagship incident shape `git push origin x || echo warn`
+    (#825 r8: issue825_sampled_sep_dispatch.sh:502)."""
+    (tmp_path / "x.sh").write_text(
+        '#!/usr/bin/env bash\ngit push origin "issue-9" || echo "WARNING: push failed" >&2\n'
+    )
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:2" in errors[0]
+    assert "#825" in errors[0]
+    assert "PUSH_SWALLOW_EXEMPT" in errors[0]
+
+
+def test_check_push_failure_swallow_fail_true_colon_printf(tmp_path):
+    """FAIL — the `|| true`, `|| :`, and `|| printf` swallow variants each
+    flag (one error per line), including the flag-tolerant `git -C` form."""
+    (tmp_path / "x.sh").write_text(
+        "git push || true\n"
+        'git -C "$ROOT" push origin main || :\n'
+        "git push origin main || printf 'warn\\n'\n"
+    )
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 3, f"expected three errors, got: {errors}"
+
+
+def test_check_push_failure_swallow_fail_backslash_continued(tmp_path):
+    """FAIL — `git push origin x \\` newline `  || echo warn` is ONE
+    logical line (backslash continuations merged before matching); the
+    error points at the FIRST physical line."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\ngit push origin main \\\n  || echo 'push failed'\n"
+    )
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:2" in errors[0]
+
+
+def test_check_push_failure_swallow_fail_despite_pipefail(tmp_path):
+    """FAIL — unlike the piped-push sibling, a `set -euo pipefail` header
+    is NO escape: pipefail never applies to `||` disjunctions."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\nset -euo pipefail\ngit push origin main || echo warn\n"
+    )
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_push_failure_swallow_pass_safe_shapes(tmp_path):
+    """PASS — the three verified safe shapes on the live tree: an
+    if-condition (auto_push_main.sh:23 — the rc is CONSUMED), a bare push
+    (cron_export_literature.sh:41 — set -e propagates), and the
+    `|| { retry; } || true` group (the rendered #1205 GCE leg's own retry:
+    the re-count after it is the verification)."""
+    (tmp_path / "x.sh").write_text(
+        "if git push origin main; then\n"
+        "  echo pushed\n"
+        "fi\n"
+        "git push origin main\n"
+        'git push origin "HEAD:main" || { sleep 20; git push origin "HEAD:main"; } || true\n'
+    )
+    assert check_push_failure_swallow(scripts_dir=tmp_path) == []
+
+
+def test_check_push_failure_swallow_pass_comment_line(tmp_path):
+    """PASS — a `#`-comment carrying the bad pattern is documentation."""
+    (tmp_path / "x.sh").write_text("# never do: git push || echo warn\necho ok\n")
+    assert check_push_failure_swallow(scripts_dir=tmp_path) == []
+
+
+def test_check_push_failure_swallow_pass_waiver(tmp_path):
+    """PASS — a reason-bearing `# PUSH_SWALLOW_EXEMPT:` waiver on the same
+    line (and the preceding-line placement for continued commands)."""
+    (tmp_path / "x.sh").write_text(
+        "git push origin main || echo warn  "
+        "# PUSH_SWALLOW_EXEMPT: mirror push, verified by the next step\n"
+        "# PUSH_SWALLOW_EXEMPT: preceding-line waiver for the continued form\n"
+        "git push origin main \\\n  || echo warn\n"
+    )
+    assert check_push_failure_swallow(scripts_dir=tmp_path) == []
+
+
+def test_check_push_failure_swallow_pass_frozen_allowlist(tmp_path):
+    """PASS — a file whose repo-root-relative path is in the FROZEN
+    PUSH_SWALLOW_LEGACY_ALLOWLIST (the on-main issue931 offender + the
+    pre-seeded issue-825 sep-dispatch siblings) is skipped wholesale; a
+    same-shape NEW script is still flagged."""
+    (tmp_path / "issue931_dispatch.sh").write_text(
+        'git push origin "issue-931" || echo "[i931] WARNING: git push failed" >&2\n'
+    )
+    (tmp_path / "issue825_sampled_sep_dispatch.sh").write_text(
+        'git push origin "issue-825" || echo "[i825-ss] WARNING: git push failed" >&2\n'
+    )
+    (tmp_path / "new_dispatch.sh").write_text("git push origin main || echo warn\n")
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected only the NEW script flagged, got: {errors}"
+    assert "new_dispatch.sh" in errors[0]
+
+
+def test_check_push_failure_swallow_pass_no_files(tmp_path):
+    """PASS — an empty scripts dir (no `*.sh`) yields no errors."""
+    assert check_push_failure_swallow(scripts_dir=tmp_path) == []
+
+
+def test_check_push_failure_swallow_repo_tree_is_clean():
+    """The committed scripts/*.sh tree must carry no push-failure swallows
+    outside the frozen allowlist — the regression lock (the #1205 scan of
+    main + every issue-* branch found exactly the four allowlisted
+    offenders)."""
+    errors = check_push_failure_swallow()
+    assert errors == [], (
+        "scripts/*.sh has git-push failure swallows (#825 r6-r8 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_push_failure_swallow_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-push-failure-swallow")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-push-failure-swallow failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_push_failure_swallow_bundled_in_no_flags_source_pin():
+    """`check_push_failure_swallow` is wired into the no-flags default run
+    — pinned STRUCTURALLY (the source carries the `or no_flags` dispatch
+    and the no_flags-tuple membership) so the bundling cannot silently
+    drop; the sibling clean-tree CLI test plus the shared no-flags run
+    cover the behavioral side."""
+    src = (_REPO_ROOT / "scripts" / "workflow_lint.py").read_text()
+    assert "args.check_push_failure_swallow or no_flags" in src
+    assert "or args.check_push_failure_swallow" in src
 
 
 # ---------------------------------------------------------------------------
