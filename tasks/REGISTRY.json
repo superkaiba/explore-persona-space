@@ -1531,8 +1531,8 @@
     "1197": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1197",
-      "status": "reviewing",
+      "path": "tasks/completed/1197",
+      "status": "completed",
       "title": "workflow-fix: background Step 1d pristine compare (600s cap)"
     },
     "1198": {
@@ -1545,8 +1545,8 @@
     "1199": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1199",
-      "status": "running",
+      "path": "tasks/completed/1199",
+      "status": "completed",
       "title": "workflow-fix: fix/adjudicate exit-site marker misses on main"
     },
     "12": {
@@ -1566,29 +1566,29 @@
     "1200": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1200",
-      "status": "running",
+      "path": "tasks/completed/1200",
+      "status": "completed",
       "title": "workflow-fix: sync experimenter memory launcher to pid contr"
     },
     "1201": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1201",
-      "status": "planning",
+      "path": "tasks/reviewing/1201",
+      "status": "reviewing",
       "title": "workflow-fix: PreToolUse guard on bare git pull at repo root"
     },
     "1202": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1202",
-      "status": "proposed",
+      "path": "tasks/reviewing/1202",
+      "status": "reviewing",
       "title": "workflow-fix: lint bare list_repo_files in new scripts"
     },
     "1203": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1203",
-      "status": "proposed",
+      "path": "tasks/reviewing/1203",
+      "status": "reviewing",
       "title": "workflow-fix: anchor verify_plan c12 N/A escape standalone"
     },
     "1204": {
@@ -1601,8 +1601,8 @@
     "1205": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1205",
-      "status": "proposed",
+      "path": "tasks/planning/1205",
+      "status": "planning",
       "title": "daily-fix: GCE workload verifies eval-JSON push landed"
     },
     "1206": {
