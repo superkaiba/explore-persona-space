@@ -1370,8 +1370,8 @@
     "1176": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1176",
-      "status": "proposed",
+      "path": "tasks/planning/1176",
+      "status": "planning",
       "title": "workflow-fix: lint SKILL.md git recipes against root guard"
     },
     "1177": {
