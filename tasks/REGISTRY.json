@@ -1370,8 +1370,8 @@
     "1176": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1176",
-      "status": "running",
+      "path": "tasks/reviewing/1176",
+      "status": "reviewing",
       "title": "workflow-fix: lint SKILL.md git recipes against root guard"
     },
     "1177": {
