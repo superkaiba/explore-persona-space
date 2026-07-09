@@ -1440,8 +1440,8 @@
     "1185": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1185",
-      "status": "approved",
+      "path": "tasks/running/1185",
+      "status": "running",
       "title": "workflow-fix: Trigger-dense artifact review guidance for rev"
     },
     "1186": {
