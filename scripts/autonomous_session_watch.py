@@ -18994,6 +18994,7 @@ def vm_ledger_reap_pass(dry_run: bool) -> None:
         print(f"  vm-ledger-reap: error (skipping): {exc}")
 
 
+@session_resolver.transcript_resolution_scope()
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only dispatch ladder + linear pass sequence; the #1170 flag adds a guard branch, not nesting
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(

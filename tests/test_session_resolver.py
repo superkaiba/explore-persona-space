@@ -307,3 +307,96 @@ def test_backfill_dry_run_writes_nothing(monkeypatch, tmp_path):
     assert entries[0]["issue"] == 42
     # The dry-run flag MUST suppress the write.
     assert not (tmp_path / "manual-issue-42.json").exists()
+
+
+# ── tick-scoped transcript memo, #1182 ─────────────────────────────────────
+
+
+def test_transcript_memo_caches_within_scope(monkeypatch):
+    # Inside ONE scope, a second resolution of the same pid is a dict hit —
+    # the underlying uncached resolver runs exactly once per DISTINCT pid,
+    # and repeats return identical results INCLUDING the negative tuple
+    # (acceptance criteria 1 + 4).
+    calls: list[int] = []
+
+    def fake_uncached(pid):
+        calls.append(pid)
+        if pid == 1:
+            return ("/tmp/t.jsonl", None)
+        return (None, "no happy log file for this node pid")
+
+    monkeypatch.setattr(
+        session_resolver, "_resolve_transcript_via_happy_log_uncached", fake_uncached
+    )
+    with session_resolver.transcript_resolution_scope():
+        first_1 = session_resolver._resolve_transcript_via_happy_log(1)
+        first_2 = session_resolver._resolve_transcript_via_happy_log(2)
+        repeat_1 = session_resolver._resolve_transcript_via_happy_log(1)
+        repeat_2 = session_resolver._resolve_transcript_via_happy_log(2)
+    assert calls == [1, 2]
+    assert first_1 == repeat_1 == ("/tmp/t.jsonl", None)
+    assert first_2 == repeat_2 == (None, "no happy log file for this node pid")
+
+
+def test_transcript_memo_off_by_default(monkeypatch):
+    # NO scope active -> the memo global is None and every call performs a
+    # full resolution (acceptance criterion 3: default path byte-identical).
+    calls: list[int] = []
+
+    def fake_uncached(pid):
+        calls.append(pid)
+        return ("/tmp/t.jsonl", None)
+
+    monkeypatch.setattr(
+        session_resolver, "_resolve_transcript_via_happy_log_uncached", fake_uncached
+    )
+    assert session_resolver._TRANSCRIPT_MEMO is None
+    session_resolver._resolve_transcript_via_happy_log(7)
+    session_resolver._resolve_transcript_via_happy_log(7)
+    assert calls == [7, 7]
+    assert session_resolver._TRANSCRIPT_MEMO is None
+
+
+def test_transcript_memo_fresh_dict_per_scope(monkeypatch):
+    # Never-across-ticks (acceptance criterion 2): each scope gets a FRESH
+    # dict, so a result cached in scope A is re-resolved in scope B.
+    calls: list[int] = []
+    current = {"value": ("/tmp/x.jsonl", None)}
+
+    def fake_uncached(pid):
+        calls.append(pid)
+        return current["value"]
+
+    monkeypatch.setattr(
+        session_resolver, "_resolve_transcript_via_happy_log_uncached", fake_uncached
+    )
+    with session_resolver.transcript_resolution_scope():
+        assert session_resolver._resolve_transcript_via_happy_log(1) == ("/tmp/x.jsonl", None)
+    assert session_resolver._TRANSCRIPT_MEMO is None
+    current["value"] = ("/tmp/y.jsonl", None)
+    with session_resolver.transcript_resolution_scope():
+        assert session_resolver._resolve_transcript_via_happy_log(1) == ("/tmp/y.jsonl", None)
+    assert calls == [1, 1]
+    assert session_resolver._TRANSCRIPT_MEMO is None
+
+
+def test_transcript_memo_scope_reentrant_restores_prev(monkeypatch):
+    # Nested scopes: the inner exit restores the OUTER dict (not None); the
+    # outer exit restores None.
+    monkeypatch.setattr(
+        session_resolver,
+        "_resolve_transcript_via_happy_log_uncached",
+        lambda pid: ("/tmp/t.jsonl", None),
+    )
+    assert session_resolver._TRANSCRIPT_MEMO is None
+    with session_resolver.transcript_resolution_scope():
+        outer = session_resolver._TRANSCRIPT_MEMO
+        assert outer == {}
+        session_resolver._resolve_transcript_via_happy_log(1)
+        assert outer is not None and 1 in outer
+        with session_resolver.transcript_resolution_scope():
+            inner = session_resolver._TRANSCRIPT_MEMO
+            assert inner is not outer
+            assert inner == {}
+        assert session_resolver._TRANSCRIPT_MEMO is outer
+    assert session_resolver._TRANSCRIPT_MEMO is None
