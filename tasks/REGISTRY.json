@@ -1615,8 +1615,8 @@
     "1207": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1207",
-      "status": "planning",
+      "path": "tasks/approved/1207",
+      "status": "approved",
       "title": "daily-fix: codify long-phase heartbeat duty + tick re-arm"
     },
     "1208": {
