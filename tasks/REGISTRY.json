@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1207,
+  "highest_id": 1208,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1618,6 +1618,13 @@
       "path": "tasks/proposed/1207",
       "status": "proposed",
       "title": "daily-fix: codify long-phase heartbeat duty + tick re-arm"
+    },
+    "1208": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1208",
+      "status": "proposed",
+      "title": "daily-fix: planner authors Row-coverage with paired contrast"
     },
     "121": {
       "has_clean_result": true,
