@@ -371,6 +371,43 @@ def test_signal_f_generic_read_text_assignment_no_fire(tmp_path, monkeypatch) ->
     assert _run_on(monkeypatch, tmp_path) == []
 
 
+def test_signal_e_bare_iglob_function_gates(tmp_path, monkeypatch) -> None:
+    # The gate also matches a BARE-function glob call (`from glob import
+    # iglob`), not only the Path-method form — pins the ast.Name branch of
+    # _module_globs_jsonl.
+    _plant(
+        tmp_path,
+        "scripts/bare_iglob.py",
+        "from glob import iglob\n"
+        "from pathlib import Path\n"
+        "def find():\n"
+        '    return sorted(iglob("data/*.jsonl"))\n'
+        "def load(p: Path):\n"
+        "    return p.read_text().splitlines()\n",
+    )
+    errors = _run_on(monkeypatch, tmp_path)
+    assert len(errors) == 1, errors
+    assert "*.jsonl-globbing module" in errors[0], errors
+
+
+def test_signal_f_annassign_module_scope_fires(tmp_path, monkeypatch) -> None:
+    # (f) also covers an ANNOTATED assignment at MODULE scope (module
+    # top-level counts as one scope) — pins the AnnAssign branch of
+    # _jsonl_assigned_splitlines_ids.
+    _plant(
+        tmp_path,
+        "scripts/module_scope_f.py",
+        "from pathlib import Path\n"
+        'events_path = Path("tasks") / "1" / "events.jsonl"\n'
+        'ev: str = events_path.read_text(encoding="utf-8")\n'
+        "rows = [ln for ln in ev.splitlines() if ln.strip()]\n",
+    )
+    errors = _run_on(monkeypatch, tmp_path)
+    assert len(errors) == 1, errors
+    assert "module_scope_f.py:4" in errors[0], errors
+    assert "read_text-assigned jsonl-content receiver ('ev')" in errors[0], errors
+
+
 def test_signal_e_and_f_waiver_suppresses(tmp_path, monkeypatch) -> None:
     # The waiver threads through unchanged for both new signals: one (e) site
     # (preceding-line placement) + one (f) site (same-line placement).
