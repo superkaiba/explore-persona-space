@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1197,
+  "highest_id": 1198,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1534,6 +1534,13 @@
       "path": "tasks/proposed/1197",
       "status": "proposed",
       "title": "workflow-fix: background Step 1d pristine compare (600s cap)"
+    },
+    "1198": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1198",
+      "status": "proposed",
+      "title": "workflow-fix: prefer explicit-PID kills in crash-fix step 2"
     },
     "12": {
       "has_clean_result": false,
