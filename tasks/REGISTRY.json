@@ -1629,8 +1629,8 @@
     "1209": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1209",
-      "status": "proposed",
+      "path": "tasks/planning/1209",
+      "status": "planning",
       "title": "daily-fix: fast respawn for sessions dead on a refused first"
     },
     "121": {
