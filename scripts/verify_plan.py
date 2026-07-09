@@ -1225,7 +1225,7 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
     windows = _battery_trigger_windows(plan)
     if not windows:
         return _skip(cid, name, "no permutation/null-draw battery named")
-    if re.search(NA_RE + r"no draw battery", plan):
+    if _standalone_na_declared(plan, r"no draw battery"):
         return _pass(cid, name, "explicit N/A declared (no draw battery)")
     # #1086: a draw-bearing arithmetic line ANCHORS its own ±15 evidence
     # window — the §9 sizing block legitimately lives far from the §4/§6
@@ -1253,7 +1253,7 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
     if not any_arith:
         missing.append(
             "the multiplier arithmetic with a draw-bearing factor "
-            "(draws x cells x folds x per-call cost = projected wall)"
+            "(draws times cells times folds at per-call cost = projected wall)"
         )
     if not any_commit:
         missing.append(
@@ -1270,7 +1270,7 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
         f"plan names a permutation/bootstrap/null battery but is missing {' AND '.join(missing)}"
         " — a named battery defaults to a serial per-draw loop (#778: ~15 h realized vs 1 h"
         " planned; #810: 308x); see .claude/rules/vectorize-many-cell-fits.md, or declare"
-        " 'N/A — no draw battery' if the mention is incidental"
+        " 'N/A — no draw battery' on its own line if the mention is incidental"
     )
     if kind == "analysis":
         return _warn(cid, name, detail)
@@ -1439,8 +1439,8 @@ def _standalone_na_declared(plan: str, tail_re: str) -> bool:
     re-verification (the #810 spurious-satisfaction structure, one polarity
     over). NA_RE opens with an inline (?i), so it must sit at pattern
     position 0 — per-line re.match satisfies that; never prepend a prefix
-    to NA_RE (py3.11+ rejects mid-pattern global flags). Shared by the c13
-    and c18 escapes (the Supersede rule: one copy of the job)."""
+    to NA_RE (py3.11+ rejects mid-pattern global flags). Shared by the
+    checks' standalone-N/A escapes (the Supersede rule: one copy of the job)."""
     lines = plan.splitlines()
     mask = _fence_mask(lines)
     for line, fenced in zip(lines, mask, strict=True):
