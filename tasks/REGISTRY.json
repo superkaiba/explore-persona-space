@@ -1202,8 +1202,8 @@
     "1154": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1154",
-      "status": "planning",
+      "path": "tasks/approved/1154",
+      "status": "approved",
       "title": "workflow-fix: lint: marker-recipe doc numeric snippets match"
     },
     "1155": {
