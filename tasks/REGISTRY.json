@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1167,
+  "highest_id": 1168,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1303,6 +1303,13 @@
       "path": "tasks/proposed/1167",
       "status": "proposed",
       "title": "workflow-fix: Per-tick push cap in watcher triage observer"
+    },
+    "1168": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1168",
+      "status": "proposed",
+      "title": "workflow-fix: Forward-port pin-first figure reads to v2 revi"
     },
     "117": {
       "has_clean_result": false,
