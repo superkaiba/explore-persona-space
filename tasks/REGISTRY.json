@@ -1461,8 +1461,8 @@
     "1188": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1188",
-      "status": "approved",
+      "path": "tasks/running/1188",
+      "status": "running",
       "title": "workflow-fix: analyzer re-fold H1 retitle set-title sync"
     },
     "1189": {
