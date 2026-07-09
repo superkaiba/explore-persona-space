@@ -44,6 +44,39 @@ say so and exit; the v1 gates (`clean-result-critic`) own those.
 
 ## The five checks
 
+### Read-target resolution for figures + sidecars (pin-first — #922)
+
+Applies to every figure PNG and `.meta.json` sidecar you read in checks (a)
+and (b). The review target is the BODY-PINNED blob whenever a pin exists,
+never an unverified working-tree file:
+
+1. **Pinned reference** (the body's
+   `raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>` image URL — the
+   same pin check (b) requires): read text sidecars straight off the pin —
+   `git show <sha>:figures/issue_<N>/<stem>.meta.json` (works from any
+   checkout; worktrees share the object DB; if the SHA is locally absent,
+   fetch the raw URL instead). A local copy (issue worktree or repo root)
+   may serve as the read target ONLY after blob-identity is verified:
+   `[ "$(git hash-object <local>)" = "$(git rev-parse <sha>:<path>)" ]`.
+   To VIEW a pinned PNG with no identity-verified local copy, materialize
+   it: `git show <sha>:<path> > /tmp/pin-<file>.png`, then Read that. A pin
+   that resolves nowhere (blob absent locally AND raw URL unreachable) →
+   treat the figure as held per step 2 (use the worktree copy) and NOTE the
+   unresolvable pin — a note, never a new FAIL class.
+2. **Bare local reference / held figures (no pin yet).** v2 plotter HOLD
+   mode can put you in front of not-yet-committed figures (the orchestrator
+   commits the held figures around report assembly — SKILL Steps 7c/7f):
+   prefer the issue WORKTREE copy (the plotter's write target); an
+   untracked repo-root duplicate (`git status --porcelain` → `??`) is
+   presumptively stale and NEVER blocker evidence.
+
+NEVER treat an untracked or identity-failed local copy as evidence — a FAIL
+resting on such a read is INVALID (non-binding). A local-vs-pin mismatch is
+a NOTE ("possible stale stray at <path>; review target is the pin"), not a
+report defect. (#922: a stale untracked repo-root
+`figures/issue_922/*.meta.json` produced a spurious REVISE and burned a
+reconciler round; the pinned blob was correct.)
+
 ### (a) Recompute >=1 plotted value per figure from source JSON
 
 For EACH figure in `## Results:`, recompute at least one plotted value from the
@@ -51,7 +84,9 @@ source eval JSON using the manifest's transform recipe (source JSON ->
 aggregation/normalization -> plotted quantity), and confirm it matches the
 figure. Two handles: the figure's `.meta.json` sidecar auto-embeds the plotted
 per-point data under a `points` key (`json.load` it), and the
-`planned_manifest.json` names the transform. Recompute with a Bash one-liner:
+`planned_manifest.json` names the transform. Resolve the sidecar per
+§ Read-target resolution above (pin-first; the example below assumes an
+identity-verified or worktree copy). Recompute with a Bash one-liner:
 
 ```bash
 # example: recompute a plotted mean from the raw eval JSON and compare to the
@@ -73,8 +108,10 @@ one recomputation per figure.
 
 ### (b) Captions match plotted data; axes/legends complete (load the PNGs)
 
-Load each figure PNG via the Read tool and check the caption against what the
-figure actually shows:
+Load each figure PNG via the Read tool — resolving the read target per
+§ Read-target resolution above (pinned blob first; materialize to /tmp when no
+identity-verified local copy exists; worktree copy for held/unpinned figures) —
+and check the caption against what the figure actually shows:
 
 - Every condition / color / series / N the caption names is visible in the figure.
 - Axis labels match the metric + units the caption asserts.
