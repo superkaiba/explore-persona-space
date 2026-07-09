@@ -1698,6 +1698,14 @@ def cmd_provision(args: argparse.Namespace) -> None:
     if args.issue is None:
         raise SystemExit("--issue <N> is required")
 
+    # Warn-only pod-safety check (#1177) — BEFORE any RunPod API call
+    # (list_team_pods below), so it prints even when the provision later
+    # fails on capacity, and covers the CPU branch, the GPU branch, AND
+    # --dry-run (deliberate divergence from the terminate guard, which
+    # skips dry-run because it BLOCKS; a warn-only line is exactly what a
+    # preview should surface).
+    _warn_on_terminal_parent_provision(args.issue)
+
     name = _canonical_pod_name(args.issue)
     legacy = f"epm-issue-{args.issue}"
 
@@ -1901,6 +1909,11 @@ def cmd_stop(args: argparse.Namespace) -> None:
 
 def cmd_resume(args: argparse.Namespace) -> None:
     """Bring a stopped pod back. New IP, same volume."""
+    # Warn-only pod-safety check (#1177): resume creates a RUNNING pod the
+    # watcher's pod-safety pass treats identically to a fresh provision
+    # (#573's stopped pods were healthy follow-up pods; resuming one on a
+    # terminal parent without signals is re-stopped ~20 min later).
+    _warn_on_terminal_parent_provision(args.issue, verb="resume")
     state = _load_state()
     pod = _find_pod_in_state(state, args.issue)
     if pod is None:
@@ -2056,6 +2069,143 @@ def cmd_resume(args: argparse.Namespace) -> None:
         )
     _restore_uv_on_pod(refreshed.host, refreshed.port)
     print(f"  pods.conf updated. Connect: ssh {name}")
+
+
+# ---------------------------------------------------------------------------
+# Pod-safety pre-provision warn (#1177)
+# ---------------------------------------------------------------------------
+
+# These three sets MIRROR the watcher's pod-safety auto-stop predicate
+# (autonomous_session_watch.py: POD_SAFETY_AUTO_STOP,
+# _POD_FOLLOWUP_SIGNAL_KINDS, _DONE_TRANSITION_KINDS) so the warning fires
+# exactly when the watcher would auto-stop. Parity is pinned by
+# tests/test_pod_lifecycle.py::test_provision_pod_safety_constants_match_watcher
+# (constant-set equality) and
+# tests/test_pod_lifecycle.py::test_provision_freshness_behavioral_parity_with_watcher
+# (comparison semantics) — update BOTH sides together (never refactor the
+# watcher from here; it is read-only from this module's perspective).
+_POD_SAFETY_AUTO_STOP_STATUSES = frozenset(
+    {"completed", "awaiting_promotion", "archived", "on_hold"}
+)
+_POD_FOLLOWUP_SIGNAL_KINDS = frozenset(
+    {"epm:run-launched", "epm:followup-scope", "epm:free-analysis-followup-run"}
+)
+_POD_DONE_TRANSITION_KINDS = frozenset({"epm:promoted", "epm:status-changed"})
+_KEEP_RUNNING_TAG = "keep-running"
+
+
+def _parse_marker_ts(ts: object) -> float | None:
+    """Epoch seconds for an events.jsonl ISO-8601 ``ts``
+    (``task_workflow._utcnow_iso`` format ``%Y-%m-%dT%H:%M:%SZ``); ``None`` on
+    any unparseable value — the event is then treated as absent (conservative
+    toward warning, never a crash)."""
+    try:
+        return dt.datetime.fromisoformat(str(ts).replace("Z", "+00:00")).timestamp()
+    except (ValueError, TypeError):
+        return None
+
+
+def _latest_marker_ts(events: list[dict], kinds: frozenset[str]) -> float | None:
+    """Newest parseable ts among ``events`` whose ``kind`` is in ``kinds``,
+    else ``None``. Mirrors ``autonomous_session_watch._latest_event_ts``
+    semantics."""
+    best: float | None = None
+    for ev in events:
+        if ev.get("kind") not in kinds:
+            continue
+        ts = _parse_marker_ts(ev.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
+
+def _fresh_followup_signal(events: list[dict]) -> bool:
+    """True iff a follow-up signal marker is STRICTLY newer than the latest
+    done-transition — byte-for-byte the watcher's ``_task_followup_active``
+    comparison (signal missing -> False; done-transition missing -> False)."""
+    sig = _latest_marker_ts(events, _POD_FOLLOWUP_SIGNAL_KINDS)
+    if sig is None:
+        return False
+    done = _latest_marker_ts(events, _POD_DONE_TRANSITION_KINDS)
+    if done is None:
+        return False
+    return sig > done
+
+
+def _terminal_parent_warning_text(issue: int, status: str, verb: str) -> str:
+    """The pod-safety two-signal warning body (#1177) — quotes the exact
+    remedy commands so a session that never consulted the CLAUDE.md
+    two-signal bullet can still fix the state at the terminal."""
+    return (
+        f"[pod_lifecycle] WARNING (pod-safety, #1177): task #{issue} is at status "
+        f"'{status}' — inside the watcher's pod-safety AUTO-STOP set "
+        f"(completed / awaiting_promotion / archived / on_hold) — with NO "
+        f"keep-running tag and NO fresh follow-up signal marker "
+        f"(epm:run-launched / epm:followup-scope / epm:free-analysis-followup-run "
+        f"newer than the latest epm:promoted / epm:status-changed).\n"
+        f"  The autonomous-session watcher will AUTO-STOP this pod ~20 min after "
+        f"it starts RUNNING (2-miss accumulation; incidents #573 / #779: healthy "
+        f"pods repeatedly stopped mid-bootstrap and misdiagnosed as flaky hosts).\n"
+        f"  Two-signal recipe (CLAUDE.md 'Routing experiment intent'):\n"
+        f"    1. BEFORE provisioning — or RIGHT NOW (the tag is "
+        f"timestamp-independent and still shields an already-running pod):\n"
+        f"         uv run python scripts/task.py add-tag {issue} keep-running\n"
+        f"    2. Post epm:run-launched on #{issue} immediately once the pod exists:\n"
+        f"         uv run python scripts/task.py post-marker {issue} "
+        f"epm:run-launched --note '<pod name + purpose>'\n"
+        f"    3. Remove the tag when the run completes so the auto-stop re-arms:\n"
+        f"         uv run python scripts/task.py remove-tag {issue} keep-running\n"
+        f"  Proceeding with {verb} (warn-only check)."
+    )
+
+
+def _warn_on_terminal_parent_provision(issue: int, *, verb: str = "provision") -> bool:
+    """Warn-only pod-safety pre-provision check (#1177). Returns True iff the
+    warning fired (for tests); NEVER blocks, NEVER raises on task-state
+    problems — an unresolvable task (ad-hoc pod, registry miss, branch-guard
+    fire) proceeds with a one-line NOTE. Mirrors the watcher's auto-stop
+    predicate so the warning predicts exactly what the pod-safety pass will
+    do. Provision-time only: a task that ENTERS the auto-stop set after
+    provision is never warned — the watcher remains the runtime backstop (do
+    not read the warning's absence as a safety guarantee).
+    """
+    try:
+        from explore_persona_space.task_workflow import get_task, list_events
+    except ImportError:
+        print(
+            f"[pod_lifecycle] NOTE: pod-safety pre-{verb} check skipped for "
+            f"issue #{issue}: task_workflow module unavailable. Proceeding.",
+            file=sys.stderr,
+        )
+        return False
+    # Narrow fail-open set, grounded in the terminate guard above:
+    # FileNotFoundError = task not in registry/on disk (ad-hoc pods);
+    # RuntimeError = task_workflow branch-guard on non-main HEAD / git missing;
+    # ValueError = malformed frontmatter / corrupt REGISTRY.json
+    # (JSONDecodeError is a ValueError); OSError = unreadable events.jsonl.
+    # Anything else (KeyboardInterrupt, MemoryError, a programming bug)
+    # propagates — fail-fast rule.
+    try:
+        task = get_task(issue)
+        status = task.get("status") or ""
+        if status not in _POD_SAFETY_AUTO_STOP_STATUSES:
+            return False
+        tags = (task.get("frontmatter") or {}).get("tags") or []
+        if _KEEP_RUNNING_TAG in tags:
+            return False
+        events = list_events(issue)
+    except (FileNotFoundError, RuntimeError, ValueError, OSError) as exc:
+        print(
+            f"[pod_lifecycle] NOTE: pod-safety pre-{verb} check skipped for "
+            f"issue #{issue}: could not read task state "
+            f"({type(exc).__name__}: {exc}). Proceeding.",
+            file=sys.stderr,
+        )
+        return False
+    if _fresh_followup_signal(events):
+        return False
+    print(_terminal_parent_warning_text(issue, status, verb), file=sys.stderr)
+    return True
 
 
 def _has_upload_verification_pass(issue: int) -> bool:
