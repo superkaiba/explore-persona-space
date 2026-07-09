@@ -1209,8 +1209,8 @@
     "1155": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1155",
-      "status": "planning",
+      "path": "tasks/approved/1155",
+      "status": "approved",
       "title": "workflow-fix: pod-safety stop-failed marker + fix guard-test"
     },
     "1156": {
