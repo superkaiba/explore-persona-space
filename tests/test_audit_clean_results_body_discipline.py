@@ -16,6 +16,10 @@ Two v3-redesign (2026-W24) concerns are pinned here:
    (`C1` / `H2` / …) with no reword option — the same conflict the
    `**Context:**` blockquote carve-out fixed (#597). Example blocks
    inside `## Data` must be exempt from the scan.
+
+Also pinned: the v4 `## Methodology` sample-data `<details>` exemption
+(#1171) — v4 moves the verbatim sample rows to `## Methodology`, which
+gets the identical exemption (Methodology PROSE stays scanned).
 """
 
 from __future__ import annotations
@@ -1033,6 +1037,131 @@ def test_pre_reg_whole_body_scan_preserved_for_v2_sentinel_bodies():
     )
     findings = audit.audit_body(v2)
     assert "pre_reg" in findings, findings
+
+
+# ─── v4 ## Methodology sample-data <details> exemption (#1171) ───────────
+#
+# The v4 spec moved the verbatim sample rows to `## Methodology` →
+# `**Sample training/evaluation data + completions:**`, carried in the same
+# `<details>` / fenced forms the v3 `## Data` section used.
+# `strip_data_example_blocks` exempts `<details>` blocks inside BOTH
+# sections (`_DETAILS_EXEMPT_H2_TITLES`); Methodology PROSE outside a
+# `<details>` block — and every other section, `## Results` included —
+# stays scanned. Tests follow the #969 fixture-mutation convention
+# (`.replace()` on `V4_BODY_CLEAN` + a `body != V4_BODY_CLEAN` guard).
+
+# The v4 Methodology sample-data slot with one would-be offender per
+# category under test, each on a plain non-table, non-fenced line inside
+# the `<details>` block (so no other exemption mechanism can mask the
+# result): `C1` → condition_labels, `SUCCESS` → verdict_caps,
+# `[0.24, 0.31]` → interval_inline (bare-pair form), `BS_E0` → cell_tags,
+# `pre-registered` → pre_reg. Bare `C1` is load-bearing: a compound like
+# `sw_eng_C1` would NOT match condition_labels (no `\b` between `_` and
+# `C`).
+_V4_SAMPLE_SLOT = (
+    "**Evaluation:** judge-scored rate on the held-out probes.\n\n"
+    "**Sample training/evaluation data + completions:**\n\n"
+    "3 of 600 completions, cherry-picked for illustration."
+    " Full raw completions: [raw](https://example.com/raw)\n\n"
+    "<details>\n<summary>example completions</summary>\n\n"
+    "Positive row, condition C1, judge verdict SUCCESS, CI [0.24, 0.31],"
+    " cell tag BS_E0, dropped per the pre-registered floor.\n\n"
+    "</details>\n"
+)
+
+
+def test_v4_methodology_details_block_offenders_do_not_trip_audit():
+    """Spec-mandated verbatim sample rows inside a v4 `## Methodology`
+    `<details>` block do NOT trip ANY audit category — the #1171 fix.
+    Offenders cover five categories (condition_labels, verdict_caps,
+    interval_inline, cell_tags, pre_reg); pre-fix this body flagged them
+    all (the red half of the red/green demonstration)."""
+    body = V4_BODY_CLEAN.replace(
+        "**Evaluation:** judge-scored rate on the held-out probes.",
+        _V4_SAMPLE_SLOT,
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert findings == {}, findings
+
+
+def test_v4_methodology_prose_offender_still_flagged():
+    """A condition code in v4 `## Methodology` PROSE (outside any
+    `<details>`/fence) still flags, even with an offender-bearing details
+    block present in the same section — the exemption is
+    `<details>`-scoped, not section-wide."""
+    body = V4_BODY_CLEAN.replace(
+        "**Evaluation:** judge-scored rate on the held-out probes.",
+        _V4_SAMPLE_SLOT,
+    ).replace(
+        "**Design:** three seeds; baseline vs treatment; the single variable is the data mix.",
+        "**Design:** three seeds under the C1 condition; baseline vs treatment.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "condition_labels" in findings, findings
+    assert any("C1" in s for s in findings["condition_labels"]), findings
+
+
+def test_v4_results_prose_offender_still_flagged():
+    """A condition code in v4 `## Results` prose still flags — mirrors
+    v3's `test_condition_codes_outside_data_still_flagged` (the sibling
+    candidate's regression test)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed",
+        "The C1 condition shows the lift at every seed",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "condition_labels" in findings, findings
+
+
+def test_v4_results_details_block_offender_still_flagged():
+    """A `<details>`-wrapped offender in v4 `## Results` STILL flags —
+    pins that `results` is deliberately NOT in
+    `_DETAILS_EXEMPT_H2_TITLES` (Results excerpts are authored-adjacent
+    and stay scanned)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n"
+        "<details>\n<summary>raw excerpt</summary>\n\n"
+        "Condition C1 excerpt row.\n\n</details>",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "condition_labels" in findings, findings
+
+
+def test_v4_methodology_details_never_closed_stops_at_next_h2():
+    """A `<details>` opened but never closed inside `## Methodology`
+    stops being dropped at the next H2 — the same boundary-degradation
+    property `test_strip_data_example_blocks_ends_at_next_h2` pins for
+    `## Data` (a mis-detected boundary degrades to scanning, never a
+    silently widened exemption)."""
+    text = (
+        "## Methodology\n\n<details>\nrow inside methodology\n\n## Results\n\nC1 in results prose\n"
+    )
+    stripped = audit.strip_data_example_blocks(text)
+    assert "row inside methodology" not in stripped  # dropped (inside details)
+    assert "C1 in results prose" in stripped  # NOT dropped (past the section)
+
+
+def test_strip_data_example_blocks_drops_methodology_and_data_keeps_others():
+    """Unit-level exempt-set pin: `<details>` blocks under `## Data` AND
+    `## Methodology` are dropped; a `<details>` under any other H2
+    (`## Findings`) survives — extends
+    `test_strip_data_example_blocks_only_drops_inside_data` without
+    modifying it."""
+    text = (
+        "## Findings\n\n<details>\nC1 leaks here\n</details>\n\n"
+        "## Data\n\n<details>\nC1 verbatim row\n</details>\n\n"
+        "## Methodology\n\n<details>\nC1 sample row\n</details>\n\n"
+        "## Results\n\nok\n"
+    )
+    stripped = audit.strip_data_example_blocks(text)
+    assert "C1 leaks here" in stripped  # Findings details survives
+    assert "C1 verbatim row" not in stripped  # Data details dropped
+    assert "C1 sample row" not in stripped  # Methodology details dropped
 
 
 # ─── verdict_caps: SUCCESS|FAILURE gate verdicts (incident #763; #970) ────
