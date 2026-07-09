@@ -1468,8 +1468,8 @@
     "1189": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1189",
-      "status": "running",
+      "path": "tasks/reviewing/1189",
+      "status": "reviewing",
       "title": "workflow-fix: /daily headless stub-first mechanical lever"
     },
     "119": {
