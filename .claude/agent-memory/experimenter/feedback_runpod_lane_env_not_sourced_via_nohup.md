@@ -16,13 +16,14 @@ ssh pod-N 'cat > /workspace/explore-persona-space/launch.sh <<'\''EOF'\''
 set -e
 cd /workspace/explore-persona-space
 set -a; [ -f .env ] && . ./.env; set +a
+echo $$ > /workspace/logs/issue-N.pid
 exec "$@"
 EOF
 chmod +x /workspace/explore-persona-space/launch.sh'
-ssh pod-N 'cd /workspace/explore-persona-space && nohup ./launch.sh bash scripts/<driver>.sh <args> > /workspace/logs/issue-N.log 2>&1 & echo $! > /workspace/logs/issue-N.pid'
+ssh pod-N 'cd /workspace/explore-persona-space && mkdir -p /workspace/logs && setsid nohup ./launch.sh bash scripts/<driver>.sh <args> > /workspace/logs/issue-N.log 2>&1 < /dev/null & sleep 2 && cat /workspace/logs/issue-N.pid'
 ```
 
-The pattern is: a thin launcher.sh that sources `.env` and exec's the driver. The driver inherits the sourced env. The `nohup` + redirection + pid-file capture stays the same as the GCP-lane shape.
+The pattern is: a thin launcher.sh that sources `.env`, writes its own pidfile via `echo $$ >` before `exec` (the launcher-internal carve-out of pod-side-reporting.md § Pid-file launch contract — after `exec`, `$$` IS the driver), and exec's the driver. The driver inherits the sourced env. The detachment trio (`setsid` + `nohup` + `< /dev/null`) + redirection stays the same as the GCP-lane shape; never bare `nohup ... &`.
 
 Do NOT try to inline `set -a; . .env; set +a; nohup bash ...` in the SSH command itself — SSH-MCP's `sh -c` quoting eats the dot-source on certain shells, and the env doesn't propagate to the nohup'd child reliably across SSH boundaries. A real launcher.sh on the pod is the robust shape.
 
