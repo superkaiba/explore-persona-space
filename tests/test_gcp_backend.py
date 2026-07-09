@@ -5555,6 +5555,35 @@ def test_render_startup_script_workload_cmd_exports_repo_root() -> None:
     assert "REPO_ROOT" not in hydra_script
 
 
+def test_render_startup_script_workload_cmd_exports_pythonpath() -> None:
+    """#1172 (trap #823/#853): the workload_cmd branch exports exactly one
+    repo-root PYTHONPATH prepend (``$WORKLOAD_ROOT`` first, inherited value
+    appended via the nounset-exempt ``:+`` form) BEFORE the workload runs,
+    so a deferred script-mode ``from scripts.X import ...`` in a src-layout
+    driver resolves instead of dying mid-run with ModuleNotFoundError. The
+    hydra branch must NOT gain it (the #588 byte-identity snapshot pins the
+    hydra render; ``scripts/train.py`` has no ``scripts.*`` imports) —
+    the mirror of the #641 ``REPO_ROOT`` hydra-branch assert above."""
+    script = render_startup_script(
+        spec=_workload_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    lines = script.splitlines()
+    pythonpath_export = 'export PYTHONPATH="$WORKLOAD_ROOT${PYTHONPATH:+:$PYTHONPATH}"'
+    assert lines.count(pythonpath_export) == 1
+    # Positioned after the #641 REPO_ROOT export and before the wrapped
+    # workload command, so the workload subprocess inherits it.
+    assert lines.index('export REPO_ROOT="$WORKLOAD_ROOT"') < lines.index(pythonpath_export)
+    assert lines.index(pythonpath_export) < lines.index(_wrapped("bash scripts/issue588_smoke.sh"))
+    hydra_script = render_startup_script(
+        spec=_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    assert "PYTHONPATH" not in hydra_script
+
+
 def test_render_startup_script_workload_cmd_waits_on_detached_pid_files() -> None:
     """#601: a self-daemonizing workload_cmd (setsid-forked driver)
     returns immediately — the script must wait on fresh

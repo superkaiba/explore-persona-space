@@ -2366,6 +2366,38 @@ def test_sbatch_custom_wrapper_propagates_compound_first_command_rc() -> None:
         assert "NOT_REACHED" not in proc.stdout
 
 
+def test_render_sbatch_exports_pythonpath_once_before_stages() -> None:
+    """#1172 (trap #823/#853): every sbatch exports exactly one repo-root
+    PYTHONPATH prepend (``$SCRATCH_JOB_DIR`` first, inherited value appended
+    via the nounset-exempt ``:+`` form), rendered ONCE lane-wide — AFTER the
+    module-load block (so cluster-module PYTHONPATH mutations survive as
+    appended entries) and BEFORE the first ``# === Stage:`` marker, so ALL
+    stage backends (local / custom / open_instruct) inherit it. Asserted on
+    a local-stage plan (lora-7b), a custom-stage plan (workload_cmd), and a
+    full-FT plan (open_instruct stages)."""
+    export = 'export PYTHONPATH="$SCRATCH_JOB_DIR${PYTHONPATH:+:$PYTHONPATH}"'
+    for spec in (_lora_spec("lora-7b"), _custom_spec(), _full_ft_spec()):
+        script = render_sbatch(
+            spec=spec,
+            cluster=_nibi(),
+            plan=stages_for_spec(spec),
+            scratch_dir="/scratch/tjiral/eps/issue-137",
+        )
+        lines = script.splitlines()
+        assert lines.count(export) == 1, (spec.intent, lines.count(export))
+        module_idxs = [i for i, ln in enumerate(lines) if ln.strip().startswith("module load")]
+        assert module_idxs, "module load line missing"
+        stage_idxs = [i for i, ln in enumerate(lines) if ln.startswith("# === Stage:")]
+        assert stage_idxs, "no stage marker rendered"
+        export_idx = lines.index(export)
+        assert max(module_idxs) < export_idx < min(stage_idxs), (
+            spec.intent,
+            max(module_idxs),
+            export_idx,
+            min(stage_idxs),
+        )
+
+
 def test_render_sbatch_custom_stage_empty_cmd_raises() -> None:
     plan = SbatchPlan(stages=(Stage(name="workload", backend="custom", script_rel=""),))
     with pytest.raises(ValueError, match="requires custom_cmd"):
