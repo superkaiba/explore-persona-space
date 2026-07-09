@@ -1,16 +1,18 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-Thirteen passes; items 1-8 run in that order, with the CAMPAIGN pass (item 9)
+Fourteen passes; items 1-8 run in that order, with the CAMPAIGN pass (item 9)
 right after pass 2, the IDLE-UNMAPPED-SESSION pass (item 10) right after
 pass 7, the INFRA-DRAIN pass (item 11) between pass 5 (the orphan sweep)
 and pass 6 (session-reconcile), the CPU-GUARD pass (item 12) in the
 daemon-independent block right after the happy-patch check (order there:
 pass 1's disk checks -> data-disk -> happy-patch -> CPU-GUARD ->
-program-orchestrator recovery), and the AUTH-OUTAGE GUARD pass (item 13)
+program-orchestrator recovery), the AUTH-OUTAGE GUARD pass (item 13)
 immediately after the single per-tick daemon probe and BEFORE every spawn
-arm (crash-recovery is the first spawner it must precede), all before the
-GC pass:
+arm (crash-recovery is the first spawner it must precede), and the
+STALE-BLOCKED FLAG pass (item 14) also between pass 5 and pass 6 — right
+after the capacity-retry re-drive, before session-reconcile — all before
+the GC pass:
 
 1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
    the host of every orchestrator session, the worktree ``.venv``s, the uv
@@ -319,6 +321,26 @@ GC pass:
    ``.claude/cache/auth-outage-events.jsonl``. Kill switch
    ``EPM_DISABLE_AUTH_OUTAGE_GUARD=1``; ``--auth-outage-only`` runs just
    this pass (pair with ``--dry-run`` for a live smoke).
+14. **Stale-blocked flag pass (task #1021; the #742 incident class; runs
+   right after the capacity-retry re-drive, between pass 5 and pass 6).**
+   FLAG — never flip — a ``blocked`` task whose events show a live healthy
+   run: an ``epm:run-launched`` NEWER than the transition into ``blocked``
+   PLUS real (non-watcher, non-deliberate-stop) post-launch progress
+   within ``EPM_STALE_BLOCKED_PROGRESS_FRESH_S`` (default 2h). The
+   watcher-side backstop of the SKILL.md "A successful relaunch also
+   reconciles a stale ``blocked``" orchestrator rule (#742 ran healthy
+   ~35h at status ``blocked``, 2026-07-01→07-02). One flag per launch
+   episode — the dedup state ``stale-blocked-<N>.json`` keys on the
+   flagged launch ts, so the same launch never re-alerts while a NEWER
+   launch does — emitting a deduped ``epm:progress`` marker naming the
+   reconcile command, a sidecar row in
+   ``~/.eps-autonomous/stale-blocked-events.jsonl``, and one Telegram
+   digest line. Every missing signal fails toward silence; the status
+   flip stays with the orchestrator/human (false alert cheap, false flip
+   dangerous). Daemon-INDEPENDENT — it spawns nothing (marker posts go
+   via the task.py subprocess). Kill switch
+   ``EPM_DISABLE_STALE_BLOCKED_FLAG=1``; ``--stale-blocked-only`` runs
+   just this pass (pair with ``--dry-run`` for a live smoke).
 
 Why each pass exists
 --------------------
