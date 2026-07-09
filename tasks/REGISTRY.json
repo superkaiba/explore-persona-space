@@ -1272,8 +1272,8 @@
     "1163": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1163",
-      "status": "reviewing",
+      "path": "tasks/completed/1163",
+      "status": "completed",
       "title": "workflow-fix: workflow_lint no-flags run times out from a wo"
     },
     "1164": {
