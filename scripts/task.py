@@ -38,9 +38,11 @@ Subcommands (see `task.py --help`):
 from __future__ import annotations
 
 import argparse
+import contextlib
 import difflib
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -125,6 +127,18 @@ def _safe_echo(text: str, *, context: str) -> None:
                 os.close(devnull_fd)
         except Exception:
             pass
+
+
+_FIELD_LED_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*[:=]")
+
+
+def _looks_field_led(note: str) -> bool:
+    """True when the note HEAD is a `field:` / `field=` line-core after
+    stripping the same leading whitespace/bullet/bold mix
+    task_workflow.parse_followup_note_field strips per segment. Head-only
+    by design (false-positive-averse; see #1178 plan §4 D2)."""
+    core = re.sub(r"^[\s\-*]+", "", note)
+    return bool(_FIELD_LED_RE.match(core))
 
 
 def _safe_print(*args: object, context: str = "task.py", **kwargs: object) -> None:
@@ -583,6 +597,26 @@ def cmd_post_event(args: argparse.Namespace) -> None:
     # Append failures (oversize note, flock timeout, missing task), routed-
     # mode commit failures, and genuine bugs raise out of post_event above
     # and stay fatal.
+    if args.note is not None and "\\n" in note and "\n" not in note and _looks_field_led(note):
+        # Poster-side twin of the #1120 parse-side normalization
+        # (task_workflow.parse_followup_note_field): a single physical
+        # line whose separators arrived as literal backslash-n escapes is
+        # almost always a shell-quoting mistake ("...\n..." instead of
+        # $'...\n...'). WARN only — the marker already posted; guarded so
+        # a torn-down stderr can never flip the exit code post-commit
+        # (the #537 rc-contract class, see _safe_echo; a closed stderr
+        # stream raises ValueError, not only OSError).
+        with contextlib.suppress(OSError, ValueError):
+            print(
+                f"WARNING: task.py post-marker {args.marker}: --note is a single "
+                "physical line containing literal \\n escape sequences with "
+                "field-led content; field parsers treat REAL newlines as "
+                "separators and normalize these escapes where they apply "
+                "(#1120). Did you mean $'...' shell quoting, or --file for a "
+                "multi-line body? Do NOT re-post this marker — it was posted "
+                "successfully; fix the quoting on your NEXT marker instead.",
+                file=sys.stderr,
+            )
     _safe_echo(
         json.dumps(payload, indent=2),
         context=f"task.py post-marker: marker {args.marker}",
