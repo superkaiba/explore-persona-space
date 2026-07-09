@@ -7676,8 +7676,8 @@ suite directly and posts an `epm:test-verdict` event with the result.
       absent file — MUST be if-formed (`if grep -q ...; then ...; fi`) or
       given an explicit `|| true`. The verdict-bearing rcs are NEVER the raw
       call exit code: PYTEST_RC lives in `/tmp/step9c-rc-issue-<N>` and
-      COMPARE_RC in its captured variable — read those, not the tool's Exit
-      line.
+      COMPARE_RC in `/tmp/step9c-compare-issue-<N>.rc` — read those, not
+      the tool's Exit line.
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
       `## Test scope` H2 names `full`, run the FULL suite instead — from the
       SAME issue-worktree cwd, in the SAME background + rc-file pattern as 1b
@@ -7701,8 +7701,9 @@ suite directly and posts an `epm:test-verdict` event with the result.
       timeout still bounds it.) The rc file is written by the SAME background
       command immediately after pytest exits (1b touched scope and this
       override alike) — step 1d's compare consumes
-      `--pytest-rc "$PYTEST_RC"` with `PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)`
-      from 1b's completion read; a missing rc file takes 1b's FAIL path (an
+      `--pytest-rc "$PYTEST_RC"`, re-reading `/tmp/step9c-rc-issue-<N>`
+      INSIDE its own background call (shell variables do not survive across
+      Bash calls); a missing rc file takes 1b's FAIL path (an
       unset or stale rc would break compare's rc-not-in-{0,1} ->
       indeterminate guard). On timeout/kill (`timeout`'s rc 124 lands in the
       rc file, so compare exits 2), capture
@@ -7718,9 +7719,11 @@ suite directly and posts an `epm:test-verdict` event with the result.
       subprocesses inside the background call — with zero change to the
       rc-file/junitxml contract (#1046: the gate is a background invocation;
       `PYTEST_RC` travels via `/tmp/step9c-rc-issue-<N>`, not shell state).
-      Step 1d compare — including its pristine single-file oracle runs —
-      executes in a separate, short/bounded foreground call and is accepted
-      unprotected. FAIL-OPEN: a
+      Step 1d compare — including its pristine single-file oracle runs
+      (600–1950s each, #1129) — runs as its OWN background + rc-file call
+      with the SAME fail-open self-choom preamble (see step 1d); only the
+      1d ledger-refresh kick keeps the post-hoc session-sweep form (it
+      launches detached BEFORE a choom can be applied). FAIL-OPEN: a
       choom failure warns, records `choom=failed`, and the gate proceeds
       unprotected — a gate is NEVER blocked by a choom failure, and
       `choom=ok` re-orders earlyoom's victim selection (−600, not −1000: the
@@ -7739,14 +7742,73 @@ suite directly and posts an `epm:test-verdict` event with the result.
       arithmetic (#1022: on 2026-07-02 seven sessions each burned a round
       re-proving red main was pre-existing). Runs AFTER the final pytest
       invocation of step 1 (touched scope, or the 1c full-scope override —
-      compare gates the junit of whichever actually ran). From the SAME
-      worktree cwd:
+      compare gates the junit of whichever actually ran) AND after 1b's
+      foreground verdict read. Run compare as a BACKGROUND Bash invocation
+      (`run_in_background=true`) from the SAME worktree cwd, in the SAME
+      background + rc-file pattern as 1b. BACKGROUND IS REQUIRED, NOT
+      OPTIONAL: `--run-pristine` (always passed here) may run up to
+      `--max-pristine-files` (5) single-file pristine oracle runs, each
+      bounded by `derive_pristine_timeout_s` at 600–1950s (#1129:
+      tests/test_workflow_lint.py alone derives 1950s), so a healthy
+      compare can NEVER be guaranteed to fit the 600s foreground Bash tool
+      cap — a foreground call converts a classifiable in-process exit 2
+      into a tool-layer kill with COMPARE_OUT lost (#1129/#1098). Compare
+      stays a SEPARATE background call, NOT folded into the 1b gate call:
+      1b's foreground verdict read and the zero-collected guard run
+      between them, and a folded call would burn up to ~77 min of
+      pristine runs on a run those guards fail in seconds.
       ```bash
-      COMPARE_OUT=$(uv run python scripts/step9c_baseline.py compare \
+      cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
+      # earlyoom-protect the compare (#1045; FAIL-OPEN — never block the verdict on
+      # a choom failure): its pristine pytest children are the same earlyoom-preferred
+      # long python work as the 1b gate; oom_score_adj inherits across fork/exec
+      # (probe-verified; start_new_session does NOT reset it), so self-choom BEFORE
+      # launch covers the whole compare tree incl. the pristine pytest children.
+      sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && COMPARE_CHOOM=ok \
+        || { COMPARE_CHOOM=failed; echo "[warn] choom failed — compare pristine runs are earlyoom-UNPROTECTED (choom=failed)" >&2; }
+      echo "[step9c] compare earlyoom protection choom=$COMPARE_CHOOM"
+      # MANDATORY stale-file rm — the compare triplet ONLY (NEVER 1b's
+      # junit/rc/log files: compare consumes them):
+      rm -f /tmp/step9c-compare-issue-<N>.json /tmp/step9c-compare-issue-<N>.rc \
+            /tmp/step9c-compare-issue-<N>.err
+      # Re-read the 1b rc IN-CALL (shell variables do not survive across Bash
+      # calls); a missing 1b rc file already took 1b's FAIL path — never invoke
+      # compare against it:
+      [ -f /tmp/step9c-rc-issue-<N> ] || { echo "FATAL: 1b rc file missing — apply 1b's FAIL path; compare not run" >&2; exit 1; }
+      PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)
+      # Wedge bound 10800s ≥ the structural ceiling of compare's own in-process
+      # bounds (5 pristine files × 1950s max derived bound + 120s scratch +
+      # ruff/parse overhead) — it only ever fires on a genuine wedge (#1129
+      # generous bias; re-derive if SLOW_TESTS / max-pristine-files change):
+      timeout --kill-after=60s 10800s uv run python scripts/step9c_baseline.py compare \
         --junitxml /tmp/step9c-junit-issue-<N>.xml --pytest-rc "$PYTEST_RC" \
-        --run-pristine --json); COMPARE_RC=$?
-      echo "$COMPARE_OUT"
+        --run-pristine --json \
+        > /tmp/step9c-compare-issue-<N>.json 2> /tmp/step9c-compare-issue-<N>.err
+      echo $? > /tmp/step9c-compare-issue-<N>.rc
       ```
+      (stdout and stderr are SEPARATED — unlike 1b's merged log — because
+      stdout is the JSON payload the verdict parses; stderr carries WARN /
+      timeout-kill diagnostics.) When the background call completes (the
+      harness notifies), read the verdict in a fresh foreground call from
+      the FILES. A MISSING rc file means the background compare died before
+      exiting (tool kill / watcher force-stop): treat as FAIL/indeterminate,
+      never a silent PASS, and apply crash-fix-rounds
+      § Kill-before-relaunch (probe `pgrep -af 'step9c_baseline[.]py compare'`)
+      before any re-run:
+      ```bash
+      if [ ! -f /tmp/step9c-compare-issue-<N>.rc ]; then
+        echo "FATAL: compare rc file missing — the background compare died before exiting. Kill-before-relaunch, then re-run step 1d; NEVER record PASS." >&2
+      else
+        COMPARE_RC=$(cat /tmp/step9c-compare-issue-<N>.rc)
+        COMPARE_OUT=$(cat /tmp/step9c-compare-issue-<N>.json)
+        echo "$COMPARE_OUT"
+        if [ -s /tmp/step9c-compare-issue-<N>.err ]; then tail -20 /tmp/step9c-compare-issue-<N>.err; fi
+      fi
+      ```
+      `COMPARE_RC` ∉ {0, 1, 2} (124/137 = wedge-timeout / kill) or an
+      empty / unparseable JSON file is INDETERMINATE — FAIL, never PASS
+      (#665/#736: capture the `.err` tail so the stall surfaces actionable
+      evidence, never a silent kill).
       The COMPARE verdict — not the raw PYTEST_RC — decides pass/fail for
       steps 1–2:
       * `COMPARE_RC=0` → no NEW test failures and no lint regression; failures
@@ -7802,9 +7864,10 @@ and coverage gaps — never silently skipped), and the compare classification
 JSON (new vs known-red-stripped failures with any scan-test / diff-linked
 masking WARNs, the ruff delta vs the live main baseline, the ledger main_sha
 + age + stale flag, and any dirty-code-path flags), and
-the gate earlyoom-protection state — COPY the `[step9c] gate earlyoom
-protection choom=…` breadcrumb line from the gate call's transcript (plus the
-1d refresh `pid= log= choom=` breadcrumb line when a refresh was kicked);
+the gate + compare earlyoom-protection state — COPY the `[step9c] gate
+earlyoom protection choom=…` and `[step9c] compare earlyoom protection
+choom=…` breadcrumb lines from the gate and compare calls' transcripts (plus
+the 1d refresh `pid= log= choom=` breadcrumb line when a refresh was kicked);
 never infer `choom=ok` from the absence of a warn line. A zero-collected /
 `no tests ran` outcome is recorded as FAIL (never PASS on exit 0) per step
 1b's guard.
