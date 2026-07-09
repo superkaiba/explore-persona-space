@@ -1482,15 +1482,15 @@
     "1190": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1190",
-      "status": "reviewing",
+      "path": "tasks/running/1190",
+      "status": "running",
       "title": "workflow-fix: enforce HF 10k-files-per-dir upload limit"
     },
     "1191": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/completed/1191",
-      "status": "completed",
+      "path": "tasks/running/1191",
+      "status": "running",
       "title": "workflow-fix: lint YAML-scalar truncation + marker consumer"
     },
     "1192": {
@@ -1503,36 +1503,36 @@
     "1193": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/completed/1193",
-      "status": "completed",
+      "path": "tasks/running/1193",
+      "status": "running",
       "title": "workflow-fix: root rebase/cherry-pick fence in branch guard"
     },
     "1194": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/completed/1194",
-      "status": "completed",
+      "path": "tasks/planning/1194",
+      "status": "planning",
       "title": "workflow-fix: verify_plan fit-family pilot-basis check"
     },
     "1195": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1195",
-      "status": "reviewing",
+      "path": "tasks/proposed/1195",
+      "status": "proposed",
       "title": "workflow-fix: forward HF_HUB_DISABLE_XET in lane allowlists"
     },
     "1196": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1196",
-      "status": "planning",
+      "path": "tasks/proposed/1196",
+      "status": "proposed",
       "title": "workflow-fix: corpus WARN on H1 vs frontmatter title drift"
     },
     "1197": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1197",
-      "status": "planning",
+      "path": "tasks/proposed/1197",
+      "status": "proposed",
       "title": "workflow-fix: background Step 1d pristine compare (600s cap)"
     },
     "1198": {
