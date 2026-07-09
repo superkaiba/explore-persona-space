@@ -253,7 +253,13 @@ FILE EVIDENCE:
   after the LAST deliverable-producing step's upload+verify PASS — a
   multi-STAGE in-instance driver that stamps after stage-1's verify
   misclassifies a stage-2 crash (Step 8 upload verification backstops it,
-  but the contract precludes it). For a composed `--workload-cmd` chain,
+  but the contract precludes it). A git-committed eval-JSON leg is itself
+  a declared deliverable: do NOT stamp the sentinel while a result commit
+  is unpushed (`git rev-list --count origin/<branch>..HEAD` != 0) — else
+  a #1205 push-verify backstop failure classifies
+  `finalize_failed_artifacts_ok` (done-like) instead of `failed`
+  (`.claude/rules/pod-side-reporting.md` § Result-push verification
+  contract). For a composed `--workload-cmd` chain,
   insert `&& touch "$EPS_DELIVERABLES_OK_PATH"` BETWEEN the
   deliverable-producing step and the tail steps (a trailing `&& touch`
   after the whole chain only runs on rc==0, when the trap is idle —
