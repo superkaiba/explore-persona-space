@@ -169,7 +169,12 @@ paths:
   default is fine for primitive-metadata bundles — pass `weights_only=False`
   only for a sha-pinned SELF-PRODUCED bundle whose metadata carries
   non-primitives) — or definitively by running the CONSUMER'S OWN loader
-  against the real pinned artifact; (2) a missing field that is
+  against the real pinned artifact — mechanized: `uv run python
+  scripts/verify_reused_artifact_keys.py --artifact <path> --keys
+  <k1,k2,...>` (or `--hf-repo`/`--hf-path` for a pinned HF file) exits
+  nonzero on any missing key; run it at plan time and paste its PASS line
+  into §10, and plan-gate c30 (verify_plan.py) WARNs a bundle-reuse plan
+  that names no realized-keys verification; (2) a missing field that is
   deterministically regenerable → regenerate via the parent loader with
   fail-loud source/length asserts PLUS a deterministic re-capture alignment
   gate against the bundle's STORED tensors (row ALIGNMENT with the stored
