@@ -3911,6 +3911,13 @@ TRIAGE_OBSERVER_GRACE_S = _env_float("EPM_TRIAGE_OBSERVER_GRACE_S", 120.0, lo=0.
 # deferred-marker queue — deferral adds state complexity exactly in the
 # storm case where per-task markers would spam most).
 TRIAGE_OBSERVER_MARKER_CAP = int(_env_float("EPM_TRIAGE_OBSERVER_MARKER_CAP", 5, lo=0, hi=100))
+# Spam valve on the phone-push channel (#1167), mirroring the marker cap
+# above: the first K warn pushes per tick go out individually; overflow is
+# rolled into ONE "+N more" summary push at the end of the pass. Overflow
+# is PERMANENT — an over-budget warn's individual push is never deferred
+# to a later tick (same no-deferred-queue posture as the marker cap). The
+# sidecar keeps full fidelity regardless; marker semantics are unaffected.
+TRIAGE_OBSERVER_PUSH_CAP = int(_env_float("EPM_TRIAGE_OBSERVER_PUSH_CAP", 5, lo=0, hi=100))
 _TRIAGE_OBSERVER_FLAGGED_KEY_CAP = 400  # newest dedup keys kept per issue
 
 
@@ -4019,35 +4026,50 @@ def _triage_observer_nudge(v: dict) -> str:
 
 
 def decide_triage_observer_actions(
-    violations: list[dict], flagged: set[str], marker_budget: int
+    violations: list[dict],
+    flagged: set[str],
+    marker_budget: int,
+    *,
+    push_budget: int | None = None,
 ) -> list[dict]:
     """PURE routing for triage-observer flags (unit-testable without IO).
 
     Drops already-flagged keys (key = ``f"{record_ts}|{violation}"``), orders
     warn-before-info (ties by record_ts), and attaches action fields: sidecar
-    always; push only for ``warn``; marker only for ``warn`` while the
-    per-tick budget lasts. An over-budget warn keeps ``push=True,
-    marker=False`` and is STILL emitted (the caller marks it flagged) —
-    permanently sidecar+push-only, its marker is NEVER deferred to a later
-    tick (cap-overflow semantics, #967 plan §3 Q4). Never mutates
-    ``flagged``."""
+    always; push only for ``warn`` while the per-tick push budget lasts
+    (``push_budget=None`` = uncapped, the pre-#1167 semantics); marker only
+    for ``warn`` while the per-tick marker budget lasts. The two budgets are
+    INDEPENDENT. An over-MARKER-budget warn keeps ``push`` semantics and is
+    STILL emitted (the caller marks it flagged) — permanently
+    sidecar+push-only, its marker is NEVER deferred to a later tick
+    (cap-overflow semantics, #967 plan §3 Q4). An over-PUSH-budget warn
+    keeps ``marker`` semantics and gets ``push=False, push_suppressed=True``
+    — the caller rolls suppressed warns into ONE end-of-pass summary push;
+    the individual push is NEVER deferred (#1167). Every action carries
+    ``push_suppressed`` (bool; False for info rows and in-budget warns).
+    Never mutates ``flagged``."""
     fresh = [
         v for v in violations if f"{v.get('record_ts', '')}|{v.get('violation', '')}" not in flagged
     ]
     fresh.sort(key=lambda v: (0 if v.get("severity") == "warn" else 1, v.get("record_ts", "")))
     actions: list[dict] = []
     budget = marker_budget
+    pbudget = push_budget
     for v in fresh:
         warn = v.get("severity") == "warn"
         marker = warn and budget > 0
         if marker:
             budget -= 1
+        push = warn and (pbudget is None or pbudget > 0)
+        if push and pbudget is not None:
+            pbudget -= 1
         actions.append(
             {
                 **v,
                 "key": f"{v.get('record_ts', '')}|{v.get('violation', '')}",
                 "sidecar": True,
-                "push": warn,
+                "push": push,
+                "push_suppressed": warn and not push,
                 "marker": marker,
             }
         )
@@ -4096,8 +4118,9 @@ def _triage_observer_task_entry(state: dict, issue: int) -> tuple[str | None, se
 def _triage_observer_emit(
     issue: int, actions: list[dict], flagged: set[str], dry_run: bool
 ) -> tuple[bool, int]:
-    """Emit one action's channels (sidecar always; push + capped marker for
-    warn) and mark it flagged. Returns ``(wrote_any, markers_posted)``.
+    """Emit one action's channels (sidecar always; cap-decided push + capped
+    marker for warn — both caps applied upstream in the decider) and mark it
+    flagged. Returns ``(wrote_any, markers_posted)``.
     Mutates ``flagged`` — every emitted action is flagged, INCLUDING an
     over-budget warn (permanently sidecar+push-only, never deferred)."""
     wrote = False
@@ -4149,10 +4172,17 @@ def _triage_observer_emit(
 def triage_observer_pass(dry_run: bool) -> bool:
     """NON-GATING post-hoc audit of the pre-dispatch external-marker triage
     duty (#967; origin incident #779). Observe/alert only: appends rows to
-    the dedicated sidecar, sends deduped fail-soft digest pushes, and posts
+    the dedicated sidecar, sends deduped fail-soft digest pushes — capped at
+    ``TRIAGE_OBSERVER_PUSH_CAP`` individual warn pushes per tick, overflow
+    rolled into ONE '+N more, see sidecar' summary push (#1167) — and posts
     capped ``epm:progress`` review nudges — NEVER mutates task status, stops
     a session, or blocks a dispatch. A warn beyond the per-tick marker cap
-    stays sidecar+push-only forever (no deferred-marker queue). Fire-once:
+    stays sidecar+push-only forever; a warn beyond the per-tick push cap
+    keeps its sidecar row (and marker, budget permitting) and is rolled into
+    the tick's single summary push — no deferred queue on either channel.
+    Both budgets thread CROSS-TASK (one shared budget per pass); pushes are
+    consumed in issue-id-STRING order (``sorted(tasks.items())`` on string
+    keys — marker-cap parity), not global recency. Fire-once:
     the dedup key ``(issue, record_ts, violation-class)`` persists in the
     state singleton, and the per-task cursor advances only past MATURED
     records (MF2) — so each dispatch record is evaluated exactly once, on
@@ -4189,6 +4219,8 @@ def triage_observer_pass(dry_run: bool) -> bool:
     state = _load_triage_observer_state()
     wrote = False
     marker_budget = TRIAGE_OBSERVER_MARKER_CAP
+    push_budget = TRIAGE_OBSERVER_PUSH_CAP
+    suppressed_pushes = 0
 
     for id_str, meta in sorted(tasks.items()):
         issue = _triage_observer_sweep_issue(id_str, meta, reg_root, now, lookback_s)
@@ -4210,10 +4242,16 @@ def triage_observer_pass(dry_run: bool) -> bool:
             min_ts=min_ts,
             mature_before_ts=mature_before,
         )
-        actions = decide_triage_observer_actions(result["violations"], flagged, marker_budget)
+        actions = decide_triage_observer_actions(
+            result["violations"], flagged, marker_budget, push_budget=push_budget
+        )
         task_wrote, markers_posted = _triage_observer_emit(issue, actions, flagged, dry_run)
         wrote = wrote or task_wrote
         marker_budget -= markers_posted
+        # Mirror of the marker decrement; the decider guarantees pushes <=
+        # push_budget, so this never goes negative.
+        push_budget -= sum(1 for a in actions if a["push"])
+        suppressed_pushes += sum(1 for a in actions if a["push_suppressed"])
         cursor_new = result.get("cursor_ts")
         if isinstance(cursor_new, str) and cursor_new:
             cursor = max(cursor, cursor_new) if cursor else cursor_new
@@ -4223,6 +4261,17 @@ def triage_observer_pass(dry_run: bool) -> bool:
                 # Keep the NEWEST keys under the cap (keys sort by record_ts).
                 "flagged": sorted(flagged)[-_TRIAGE_OBSERVER_FLAGGED_KEY_CAP:],
             }
+
+    # The ONE summary push per tick (#1167); per-tick only, no persisted
+    # dedup state (the flagged-key fire-once upstream guarantees each
+    # violation enters this count at most once, ever).
+    if suppressed_pushes:
+        _telegram_push(
+            f"triage-observer: +{suppressed_pushes} more warn flag(s) this tick over the "
+            f"per-tick push cap ({TRIAGE_OBSERVER_PUSH_CAP}) — all sidecar-recorded, never "
+            "re-pushed; see .claude/cache/triage-observer-events.jsonl",
+            dry_run,
+        )
 
     # Self-prune entries once the issue leaves the sweep set for good.
     for key in list(state):
