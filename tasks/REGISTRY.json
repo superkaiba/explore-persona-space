@@ -1279,8 +1279,8 @@
     "1164": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1164",
-      "status": "reviewing",
+      "path": "tasks/completed/1164",
+      "status": "completed",
       "title": "workflow-fix: Mechanize the reused-artifact realized-keys pr"
     },
     "1165": {
