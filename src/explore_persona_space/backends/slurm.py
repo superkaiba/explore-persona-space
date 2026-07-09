@@ -1485,7 +1485,20 @@ def render_sbatch(
     # Stage commands.
     master_addr = "${MASTER_ADDR:-localhost}"
     master_port = "${MASTER_PORT:-29500}"
-    stage_blocks: list[str] = []
+    stage_blocks: list[str] = [
+        "# === Repo-root PYTHONPATH (#1172; trap #823/#853) ===",
+        "# Script-mode python puts the SCRIPT's dir on sys.path[0], so a",
+        "# deferred `from scripts.X import ...` in a src-layout driver",
+        "# crashes with ModuleNotFoundError on the compute node. Every",
+        "# stage runs from $SCRATCH_JOB_DIR (the rsynced repo — the venv",
+        "# block cd'd there), so prepend it once for ALL stage backends",
+        "# (local / custom / open_instruct). Placed AFTER the module-load",
+        "# block so cluster-module PYTHONPATH entries are preserved after",
+        "# ours; :+ avoids the empty-value trailing colon (cwd-injection,",
+        "# cpython #107353) and is safe under the prelude's set -u.",
+        'export PYTHONPATH="$SCRATCH_JOB_DIR${PYTHONPATH:+:$PYTHONPATH}"',
+        "",
+    ]
     for stage in plan.stages:
         stage_blocks.append(f"# === Stage: {stage.name} ===")
         stage_blocks.append(f'CURRENT_PHASE="{stage.name}"')

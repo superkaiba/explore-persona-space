@@ -351,6 +351,22 @@ RCEOF
     fi
 done
 
+# Repo-root PYTHONPATH (#1172; trap #823/#853): script-mode python puts the
+# SCRIPT dir on sys.path[0] — not cwd, not the repo root — so a deferred
+# "from scripts.X import ..." in a src-layout driver crashes pod-side with
+# ModuleNotFoundError. Separately guarded block (NOT folded into the
+# cache-redirect heredoc above, whose grep guard keys on WANDB_CACHE_DIR) so
+# already-bootstrapped pods gain it on any re-bootstrap.
+for f in /root/.bashrc /root/.profile; do
+    if ! grep -q "PYTHONPATH=\"/workspace/explore-persona-space" "$f" 2>/dev/null; then
+        cat >> "$f" <<"RC2EOF"
+
+# Repo root on sys.path for script-mode scripts.* imports (#1172)
+export PYTHONPATH="/workspace/explore-persona-space${PYTHONPATH:+:$PYTHONPATH}"
+RC2EOF
+    fi
+done
+
 # Append to project .env (for dotenv-loading subprocesses)
 ENV_FILE=/workspace/explore-persona-space/.env
 touch "$ENV_FILE"
@@ -369,6 +385,20 @@ TRITON_CACHE_DIR=/workspace/.cache/triton
 HF_XET_HIGH_PERFORMANCE=1
 HF_HUB_ENABLE_HF_TRANSFER=1
 ENVEOF
+fi
+
+# Repo-root PYTHONPATH for the canonical launcher (set -a; . .env) and
+# dotenv-loading subprocesses (#1172). Plain assignment, no expansion — this
+# file is read BOTH by shell sourcing under set -u (a bare $PYTHONPATH
+# reference would crash the launcher when unset) and by python-dotenv (whose
+# interpolation has no :+ operator support). PRESENCE guard on purpose:
+# never append if ANY PYTHONPATH= line exists, whatever its value.
+if ! grep -q "^PYTHONPATH=" "$ENV_FILE" 2>/dev/null; then
+    cat >> "$ENV_FILE" <<"ENV2EOF"
+
+# Repo root on sys.path for script-mode scripts.* imports (#1172)
+PYTHONPATH=/workspace/explore-persona-space
+ENV2EOF
 fi
 
 echo "HF cache:     /workspace/.cache/huggingface  ($(du -sh /workspace/.cache/huggingface 2>/dev/null | cut -f1 || echo empty))"
@@ -405,6 +435,8 @@ cat > /usr/local/bin/python <<"PYEOF"
 # Lets non-interactive `ssh pod "python ..."` find the locked interpreter
 # even though rc-file PATH exports are not sourced for such shells.
 export PATH="/root/.local/bin:$PATH"
+# Repo root on sys.path for script-mode scripts.* imports (#1172)
+export PYTHONPATH="/workspace/explore-persona-space${PYTHONPATH:+:$PYTHONPATH}"
 cd /workspace/explore-persona-space || exit 1
 exec uv run python "$@"
 PYEOF
