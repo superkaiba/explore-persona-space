@@ -4,3 +4,4 @@
 {"ts": "2026-07-09T13:07:03Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-09T13:08:41Z", "kind": "epm:progress", "version": 2, "by": "issue-orchestrator", "note": "stage-dispatch stage=planning round=1 subagent=planner worktree=repo-root — Phase 1 planner spawned (bg); goal snapshot captured at /tmp/issue-1169-goal-snap.txt"}
 {"ts": "2026-07-09T13:23:41Z", "kind": "epm:plan-verify", "version": 1, "by": "issue-orchestrator", "note": "verify_plan.py: PASS (n_fail=0, n_warn=0; kind-exempt SKIPs as expected for kind: infra). Plan v1."}
+{"ts": "2026-07-09T13:23:42Z", "kind": "epm:progress", "version": 3, "by": "issue-orchestrator", "note": "stage-dispatch stage=fact-check round=1 subagent=planner worktree=repo-root — Phase 1.5 fact-checker spawned (bg)"}
