@@ -383,6 +383,15 @@ Behaviours:
   quoted PROGRAM only — the surrounding invocation lines (paths, fencing,
   indentation) legitimately differ — and parity is not correctness: an
   identical-but-broken edit applied to both homes passes by design (#1153).
+* ``--check-section-reference-pointers`` (also bundled into the no-flags
+  default run): scan every ``.claude/rules/*.md`` whose filename ends with
+  ``-section-reference.md`` / ``-lens-reference.md`` (the relocated-section
+  reference files owned by an agent spec) and FAIL any non-fenced section
+  heading at the file's grain (H2 when any non-fenced H2 exists, else H3)
+  that has no whitespace-normalized ``§ <exact heading>`` pointer line in
+  the owning ``.claude/agents/<agent>.md`` spec; also FAIL an orphan
+  reference (no owning spec) and a headingless reference (malformed).
+  Closes the #850-class relocated-but-unreachable-section gap (#1159).
 
 Exit codes:
 
@@ -6763,22 +6772,20 @@ AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
 # (#838): both were structurally trimmed to <=20 KB, so regrowth on the two
 # incident files is a commit-time FAIL.
 AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 107,930 B post-#1115 (read-hygiene context-budget section —
-    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 107,000 —
-    # measured 104,135 B post-#829; fifteen-lenses core is every-markdown-review
-    # load-bearing — SPEC.md-dedup trim is the #829 named follow-up)
-    "clean-result-critic.md": 108_900,
+    # clean-result-critic.md: split to clean-result-critic-lens-reference.md
+    # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
     # measured 96,072 B post-#1119 (Step 3.6 external-stream presumption —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 95,000 —
     # measured 94,126 B post-#1115)
     "code-reviewer.md": 97_000,
-    # measured 72,064 B post-#1056 (figure pin-first carve-out in the
-    # composed-prompt header — plan-mandated growth; cap = measured
-    # + <=~1 KB. Prior: 72,000 (measured 71,430 B post-#1050 r2),
+    # measured 73,408 B post-#1159 (Step 2 dual-source read contract: lens
+    # rubrics from clean-result-critic-lens-reference.md, report schema from
+    # the slim agent spec — plan-mandated growth; cap = measured + <=~1 KB.
+    # Prior: 73,000 — measured 72,229 B post-#1056, 72,000 post-#1050 r2,
     # 71,000 post-#1050 r1, 60,554 B pre-#1050)
-    "codex-clean-result-critic.md": 73_000,
+    "codex-clean-result-critic.md": 74_000,
     # measured 50,642 B post-#948 (Step 3.8 copy-list bullet + the
     # inlined-rubric 3.8 slot — plan-mandated growth; cap = measured
     # + <=~1 KB. Prior: 47,930 B post-#881)
@@ -7295,6 +7302,110 @@ def check_lens_coverage(
     return errors
 
 
+# ── --check-section-reference-pointers (#1159) ───────────────────────────────
+# Reference-file suffixes: a .claude/rules/*.md whose filename ends with one of
+# these is an agent-owned relocated-section reference (the #838/#850/#1159
+# split shape); the owning agent spec is .claude/agents/<stem-minus-suffix>.md.
+_SECTION_REFERENCE_SUFFIXES: tuple[str, ...] = ("-section-reference.md", "-lens-reference.md")
+
+
+def _ws_norm(text: str) -> str:
+    """Collapse every whitespace run in ``text`` to a single space (strip ends)."""
+    return " ".join(text.split())
+
+
+def _fence_aware_headings(text: str) -> list[tuple[int, str]]:
+    """Return ``(level, heading_text)`` for every non-fenced H2/H3 in ``text``.
+
+    A line matching ``^(```` ``` ````|``~~~``)`` toggles fence state (the
+    prefix match covers info-string openers like ```` ```bash ````), so fenced
+    pseudo-headings (e.g. ``# ...`` bash comments) are skipped. H1 is excluded
+    (the file title); H4+ are intra-section structure.
+    """
+    headings: list[tuple[int, str]] = []
+    fence = False
+    for line in text.splitlines():
+        if line.startswith("```") or line.startswith("~~~"):
+            fence = not fence
+            continue
+        if fence:
+            continue
+        m = re.match(r"^(#{2,3}) (.+)$", line)
+        if m:
+            headings.append((len(m.group(1)), m.group(2)))
+    return headings
+
+
+def check_section_reference_pointer_coverage(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
+    """FAIL any reference-file section that lost its owning-spec pointer (#1159).
+
+    Scans every ``.claude/rules/*.md`` whose filename ends with a suffix in
+    :data:`_SECTION_REFERENCE_SUFFIXES` (today: analyzer-section-reference.md,
+    critic-lens-reference.md, planner-section-reference.md,
+    clean-result-critic-lens-reference.md). For each, the owning agent spec is
+    ``.claude/agents/<stem-minus-suffix>.md`` — missing spec FAILs (orphan
+    reference file). Headings are enumerated FENCE-AWARE (see
+    :func:`_fence_aware_headings`). The file's SECTION GRAIN is 2 when any
+    non-fenced H2 exists, else 3; only grain-level headings require pointers
+    (sub-headings below grain are intra-section structure). GRAIN-MIXING DRIFT
+    PATH (documented H2-grain-wins rule — keep a reference file single-grain):
+    an H3-grain file that gains ONE stray non-fenced H2 flips to H2 grain and
+    silently DROPS every H3 from coverage. Pointer predicate: the
+    whitespace-normalized owning-spec text must contain the substring
+    ``"§ " + <whitespace-normalized heading>`` — wrapped pointer lines pass;
+    a prose mention without the ``§ `` sigil does not. A matched reference
+    file with ZERO non-fenced H2/H3 headings FAILs (malformed). FAIL severity;
+    no WARN cases in v1 (``warn_sink`` accepted for signature uniformity, and
+    unused). ``repo_root`` is a unit-test override; production callers pass
+    None. Bundled into the no-flags default run. Closes the #850-class gap
+    (a relocated-but-unreachable section, previously caught only by one Codex
+    review MAJOR).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    rules_dir = root / ".claude" / "rules"
+    agents_dir = root / ".claude" / "agents"
+    errors: list[str] = []
+    _ = warn_sink  # no WARN cases in v1 (signature uniformity)
+    if not rules_dir.is_dir():
+        return errors
+    for ref_path in sorted(rules_dir.glob("*.md")):
+        suffix = next((s for s in _SECTION_REFERENCE_SUFFIXES if ref_path.name.endswith(s)), None)
+        if suffix is None:
+            continue
+        agent_name = ref_path.name[: -len(suffix)]
+        owning_spec = agents_dir / f"{agent_name}.md"
+        rel_ref = f".claude/rules/{ref_path.name}"
+        if not owning_spec.is_file():
+            errors.append(
+                f"{rel_ref}: orphan reference file — the owning agent spec "
+                f".claude/agents/{agent_name}.md does not exist (rename the reference "
+                f"or restore the spec)."
+            )
+            continue
+        headings = _fence_aware_headings(ref_path.read_text(encoding="utf-8"))
+        if not headings:
+            errors.append(
+                f"{rel_ref}: malformed reference file — no non-fenced H2/H3 section "
+                f"headings found (nothing for the owning spec to point at)."
+            )
+            continue
+        grain = 2 if any(level == 2 for level, _ in headings) else 3
+        spec_norm = _ws_norm(owning_spec.read_text(encoding="utf-8"))
+        for level, heading in headings:
+            if level != grain:
+                continue
+            if f"§ {_ws_norm(heading)}" not in spec_norm:
+                errors.append(
+                    f"{rel_ref}: section heading '{heading}' (H{grain} grain) has no "
+                    f"'§ <exact heading>' pointer line in the owning spec "
+                    f".claude/agents/{agent_name}.md — a relocated section must stay "
+                    f"pointer-reachable (#850/#1159)."
+                )
+    return errors
+
+
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispatch ladder; one branch per check flag, extracting it would just relocate the ladder
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -7747,6 +7858,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "from --check-lessons-index. Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-section-reference-pointers",
+        action="store_true",
+        help="Scan every .claude/rules/*-section-reference.md / *-lens-reference.md "
+        "and FAIL any non-fenced section heading at the file's grain (H2 if any "
+        "H2 exists, else H3) lacking a whitespace-normalized '§ <exact heading>' "
+        "pointer in the owning .claude/agents/<agent>.md spec; also FAIL an "
+        "orphan or headingless reference file (#850/#1159). Bundled into the "
+        "no-flags default run.",
+    )
+    parser.add_argument(
         "--check-phase-done-reserved",
         action="store_true",
         help="Walk scripts/**/*.sh dispatchers and FAIL any non-redirected "
@@ -7845,6 +7966,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_agent_spec_size
         or args.check_api_dispatch_routing
         or args.check_lens_coverage
+        or args.check_section_reference_pointers
         or args.check_phase_done_reserved
         or args.check_jsonl_splitlines
         or args.check_upload_or_true
@@ -7948,6 +8070,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_api_dispatch_routing())
     if args.check_lens_coverage or no_flags:
         errors.extend(check_lens_coverage())
+    if args.check_section_reference_pointers or no_flags:
+        errors.extend(check_section_reference_pointer_coverage())
     if args.check_phase_done_reserved or no_flags:
         errors.extend(check_phase_done_reserved())
     if args.check_jsonl_splitlines or no_flags:

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1218,
+  "highest_id": 1219,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1237,8 +1237,8 @@
     "1159": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1159",
-      "status": "reviewing",
+      "path": "tasks/completed/1159",
+      "status": "completed",
       "title": "workflow-fix: Split clean-result-critic.md; add pointer-cove"
     },
     "116": {
@@ -1265,8 +1265,8 @@
     "1162": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1162",
-      "status": "running",
+      "path": "tasks/reviewing/1162",
+      "status": "reviewing",
       "title": "workflow-fix: check_jsonl_splitlines: add generic-receiver s"
     },
     "1163": {
@@ -1279,22 +1279,22 @@
     "1164": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1164",
-      "status": "planning",
+      "path": "tasks/running/1164",
+      "status": "running",
       "title": "workflow-fix: Mechanize the reused-artifact realized-keys pr"
     },
     "1165": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1165",
-      "status": "running",
+      "path": "tasks/completed/1165",
+      "status": "completed",
       "title": "workflow-fix: Venue caveat in experimenter nohup .env memory"
     },
     "1166": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1166",
-      "status": "proposed",
+      "path": "tasks/planning/1166",
+      "status": "planning",
       "title": "workflow-fix: planner.md: prescribe verdict-lattice declarat"
     },
     "1167": {
@@ -1702,6 +1702,13 @@
       "path": "tasks/proposed/1218",
       "status": "proposed",
       "title": "daily-held: Gate spawn_session dispatch paths on auth-outage"
+    },
+    "1219": {
+      "has_clean_result": false,
+      "kind": "batch",
+      "path": "tasks/proposed/1219",
+      "status": "proposed",
+      "title": "Fix 18 latent splitlines-shreds-JSONL sites in experiment code (from #1162 live-tree enumeration)"
     },
     "122": {
       "has_clean_result": true,
