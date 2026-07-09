@@ -47,6 +47,7 @@ from workflow_lint import (  # noqa: E402
     check_awk_elision_parity,
     check_batch_judge_client,
     check_compute_shape_review_lens,
+    check_crash_fix_relaunch_contract,
     check_dispatcher_cvd_pin,
     check_gate_ids_unique,
     check_git_recipes_root_guard,
@@ -4479,6 +4480,299 @@ def test_stale_label_disposition_clause_dedicated_flag_isolated(tmp_path, capsys
         f"--check-stale-label-disposition ran more than the (conforming) stale-label "
         f"check — no_flags mis-computed True, i.e. the flag's membership in the "
         f"no_flags tuple in workflow_lint.main() is missing:\n{err}"
+    )
+
+
+# --- #1181 crash-fix-relaunch contract pin tests ------------------------------
+
+_CRASH_FIX_SURFACES = (
+    ".claude/agents/experimenter.md",
+    ".claude/rules/crash-fix-rounds.md",
+    ".claude/skills/issue/SKILL.md",
+)
+
+_CRASH_FIX_ANCHORS = {
+    ".claude/agents/experimenter.md": "**Crash-fix relaunch (brief carries `fix_sha=`):**",
+    ".claude/rules/crash-fix-rounds.md": "The fresh `epm:run-launched` note ALSO records",
+    ".claude/skills/issue/SKILL.md": "*`code`-row relaunch contract (#779):*",
+}
+
+# Design intent baked into the fixture (#1181 plan §4.5): (i) tokens hard-wrap
+# mid-phrase (normalization proof); (ii) the experimenter.md span ends at
+# ``\n3. `` with NO blank line (proves the ``\n\d+\. `` terminator) and a
+# 'resolves EMPTY' DECOY sits after that span (proves paragraph scoping of the
+# negative regex); (iii) the crash-fix-rounds fixture carries the healthy
+# 'resolves EMPTY / to the fresh path' trio BEFORE its anchor (scoping again,
+# plus a tripwire if a future edit widens the regex to file scope).
+_CRASH_FIX_CONFORMING: dict[str, str] = {
+    ".claude/agents/experimenter.md": (
+        "# experimenter\n"
+        "\n"
+        "2. **Verify HEAD.** Standard pre-launch sync.\n"
+        "\n"
+        "   **Crash-fix relaunch (brief carries `fix_sha=`):** additionally run\n"
+        "   `git merge-base --is-ancestor <fix_sha> HEAD` on the pod (ANY\n"
+        "   non-zero exit = fix absent — do NOT launch) and execute the\n"
+        "   brief's stale-checkpoint disposition before launch, confirming\n"
+        "   the resume glob resolves as the disposition requires (empty /\n"
+        "   the fresh path / exactly the RETAINED expected paths).\n"
+        "3. **Run preflight.**\n"
+        "\n"
+        "Decoy AFTER the span: the glob resolves EMPTY unconditionally.\n"
+    ),
+    ".claude/rules/crash-fix-rounds.md": (
+        "# crash-fix rounds\n"
+        "\n"
+        "2. **Stale-checkpoint disposition (element 5).** check it\n"
+        "   resolves EMPTY / to the fresh path / to exactly the RETAINED\n"
+        "   expected paths (for a `retain` declaration).\n"
+        "\n"
+        "The fresh `epm:run-launched` note ALSO records `fix_sha=<sha>` and the\n"
+        "executed disposition (note-token convention, same class as `pid=`).\n"
+        "The `code`-row respawn BRIEF the orchestrator composes for the\n"
+        "experimenter carries both (`fix_sha=` +\n"
+        "the element-5 disposition verbatim). EXEMPT: `infra`-row experimenter\n"
+        "respawns (no code fix).\n"
+    ),
+    ".claude/skills/issue/SKILL.md": (
+        "# issue skill\n"
+        "\n"
+        "Step 7 routing table lives here.\n"
+        "\n"
+        "   *`code`-row relaunch contract (#779):* the post-review relaunch — the\n"
+        "   Step 6 experimenter respawn (brief carries `fix_sha=` + the element-5\n"
+        "   stale-artifact disposition, copied from the implementer's fix-engaged\n"
+        "   declaration) — enforces BOTH\n"
+        "   before dispatch: the fix-commit ancestry probe and the declared\n"
+        "   disposition.\n"
+        "\n"
+        "**Zombie-GPU stall recovery brief.** Unrelated paragraph.\n"
+    ),
+}
+
+# The three load-bearing pins (#1181 plan § deviations): the disposition trio,
+# the disposition-conditional confirm, and the fix_sha= note-token duty.
+_CRASH_FIX_TRIO_TOKEN = "empty / the fresh path / exactly the RETAINED expected paths"
+_CRASH_FIX_CONFIRM_TOKEN = "confirming the resume glob resolves as the disposition requires"
+_CRASH_FIX_SHA_TOKEN = "records `fix_sha=<sha>` and the executed disposition"
+
+
+def _write_crash_fix_tree(tmp_path, bodies: dict[str, str] | None = None) -> None:
+    """Write the three #1181 contract surfaces under ``tmp_path``."""
+    for rel, body in (bodies or _CRASH_FIX_CONFORMING).items():
+        p = tmp_path / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(body, encoding="utf-8")
+
+
+def test_crash_fix_relaunch_contract_live_tree_passes() -> None:
+    """The real tree carries the #1081 contract on all three surfaces, with
+    unique anchors, every required token, and no unconditional 'resolves
+    EMPTY' coupling (pins plan #1181 Assumptions 1-5)."""
+    assert check_crash_fix_relaunch_contract() == []
+
+
+def test_crash_fix_relaunch_contract_conforming_tmp_tree_passes(tmp_path) -> None:
+    """The synthetic conforming tree passes — validates the fixture itself:
+    hard-wrapped tokens (whitespace normalization), the experimenter.md span
+    ending at ``\\n3. `` with no blank line (the ``\\n\\d+\\. `` terminator),
+    the post-span 'resolves EMPTY' decoy, and the pre-anchor healthy trio
+    (paragraph scoping in both directions)."""
+    _write_crash_fix_tree(tmp_path)
+    assert check_crash_fix_relaunch_contract(repo_root=tmp_path) == []
+
+
+def test_crash_fix_relaunch_contract_in_span_healthy_trio_passes(tmp_path) -> None:
+    """A healthy disposition-conditional trio ('resolves EMPTY / to the fresh
+    path / ...') INSIDE an anchored span PASSes — exercises the negative
+    regex's lookahead exemption ``(?!\\s*/)``, which the conforming fixture
+    alone leaves untested (both of its healthy trios sit outside the spans)."""
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    rel = ".claude/rules/crash-fix-rounds.md"
+    bodies[rel] = bodies[rel].replace(
+        "respawns (no code fix).\n",
+        "respawns (no code fix). The relaunch then checks the glob\n"
+        "resolves EMPTY / to the fresh path / to exactly the RETAINED\n"
+        "expected paths before posting.\n",
+    )
+    assert bodies[rel] != _CRASH_FIX_CONFORMING[rel]
+    _write_crash_fix_tree(tmp_path, bodies)
+    assert check_crash_fix_relaunch_contract(repo_root=tmp_path) == []
+
+
+@pytest.mark.parametrize("surface", _CRASH_FIX_SURFACES)
+def test_crash_fix_relaunch_contract_fails_on_missing_anchor(tmp_path, surface) -> None:
+    """Deleting/renaming any ONE surface's anchor FAILs, naming that file and
+    #1081 (an anchor rename requires a deliberate lint update)."""
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    bodies[surface] = bodies[surface].replace(_CRASH_FIX_ANCHORS[surface], "**Renamed.**")
+    assert bodies[surface] != _CRASH_FIX_CONFORMING[surface]
+    _write_crash_fix_tree(tmp_path, bodies)
+    errors = check_crash_fix_relaunch_contract(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    fname = surface.rsplit("/", 1)[-1]
+    assert errors[0].split(": ", 1)[0].endswith(f"/{fname}"), errors
+    assert "missing the anchor" in errors[0] and "#1081" in errors[0], errors
+
+
+def test_crash_fix_relaunch_contract_fails_on_duplicate_anchor(tmp_path) -> None:
+    """A SECOND copy of the experimenter.md anchor -> exactly one
+    duplicate-anchor error (span identity is load-bearing: a stale duplicate
+    could satisfy the token scan while the operative paragraph regresses)."""
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    rel = ".claude/agents/experimenter.md"
+    bodies[rel] += "\n**Crash-fix relaunch (brief carries `fix_sha=`):** stale copy.\n"
+    _write_crash_fix_tree(tmp_path, bodies)
+    errors = check_crash_fix_relaunch_contract(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "UNIQUE" in errors[0] and "2 anchors" in errors[0], errors
+
+
+@pytest.mark.parametrize(
+    ("surface", "old", "new", "token"),
+    [
+        pytest.param(
+            ".claude/agents/experimenter.md",
+            "(empty /\n   the fresh path / exactly the RETAINED expected paths)",
+            "(as declared)",
+            _CRASH_FIX_TRIO_TOKEN,
+            id="disposition-trio",
+        ),
+        pytest.param(
+            ".claude/agents/experimenter.md",
+            "confirming\n   the resume glob resolves as the disposition requires",
+            "checking\n   the resume glob looks right",
+            _CRASH_FIX_CONFIRM_TOKEN,
+            id="conditional-confirm",
+        ),
+        pytest.param(
+            ".claude/rules/crash-fix-rounds.md",
+            "records `fix_sha=<sha>` and the\nexecuted disposition",
+            "records the executed\ndisposition",
+            _CRASH_FIX_SHA_TOKEN,
+            id="fix-sha-note-token",
+        ),
+    ],
+)
+def test_crash_fix_relaunch_contract_fails_on_missing_load_bearing_token(
+    tmp_path, surface, old, new, token
+) -> None:
+    """Deleting any of the THREE load-bearing pins from its fixture FAILs with
+    a missing-token error naming that token — mutation-visibility for the
+    surfaces table: an edit that drops one of these tokens from
+    ``_CRASH_FIX_CONTRACT_SURFACES`` makes the corresponding case pass on the
+    mutated fixture, so this test FAILs (presence asserted, not exact count)."""
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    assert old in bodies[surface], f"fixture drift: {old!r} not found in {surface}"
+    bodies[surface] = bodies[surface].replace(old, new)
+    _write_crash_fix_tree(tmp_path, bodies)
+    errors = check_crash_fix_relaunch_contract(repo_root=tmp_path)
+    assert errors, f"expected a missing-token FAIL for {token!r}"
+    assert any(repr(token) in e and "missing token" in e for e in errors), errors
+
+
+def test_crash_fix_relaunch_contract_fails_on_unconditional_empty_regression(tmp_path) -> None:
+    """Regressing the D3 confirm back to the unconditional 'resolves EMPTY'
+    wording (the #1081 round-2 blocker retain-disposition-d3-empty-glob)
+    FAILs with BOTH error classes present — the missing-token error for the
+    trio AND the negative-regex error. Presence of both classes is asserted,
+    not an exact error count (the mutation also drops the confirm token)."""
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    rel = ".claude/agents/experimenter.md"
+    bodies[rel] = bodies[rel].replace(
+        "the resume glob resolves as the disposition requires (empty /\n"
+        "   the fresh path / exactly the RETAINED expected paths)",
+        "the resume glob resolves EMPTY before launch",
+    )
+    assert bodies[rel] != _CRASH_FIX_CONFORMING[rel]
+    _write_crash_fix_tree(tmp_path, bodies)
+    errors = check_crash_fix_relaunch_contract(repo_root=tmp_path)
+    assert any(repr(_CRASH_FIX_TRIO_TOKEN) in e and "missing token" in e for e in errors), errors
+    assert any("'resolves EMPTY'" in e for e in errors), errors
+
+
+def test_crash_fix_relaunch_contract_fails_on_missing_enforces_both_token(tmp_path) -> None:
+    """Dropping the 'enforces BOTH before dispatch: ...' sentence from the
+    SKILL.md fixture FAILs with a missing-token error (the orchestrator-side
+    enforcement duty)."""
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    rel = ".claude/skills/issue/SKILL.md"
+    bodies[rel] = bodies[rel].replace(
+        " — enforces BOTH\n"
+        "   before dispatch: the fix-commit ancestry probe and the declared\n"
+        "   disposition.",
+        ".",
+    )
+    assert bodies[rel] != _CRASH_FIX_CONFORMING[rel]
+    _write_crash_fix_tree(tmp_path, bodies)
+    errors = check_crash_fix_relaunch_contract(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "missing token" in errors[0] and "enforces BOTH before dispatch" in errors[0], errors
+
+
+@pytest.mark.parametrize("surface", _CRASH_FIX_SURFACES)
+def test_crash_fix_relaunch_contract_fails_on_missing_file(tmp_path, surface) -> None:
+    """A surface file absent from the tree FAILs with the missing-file branch
+    naming that path."""
+    _write_crash_fix_tree(tmp_path)
+    (tmp_path / surface).unlink()
+    errors = check_crash_fix_relaunch_contract(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    fname = surface.rsplit("/", 1)[-1]
+    assert errors[0].split(": ", 1)[0].endswith(f"/{fname}"), errors
+    assert "missing" in errors[0], errors
+
+
+def test_crash_fix_relaunch_contract_wired_into_default_run(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags CLI-path REGISTRATION test: the default run must exercise
+    ``check_crash_fix_relaunch_contract`` — deleting the dispatch branch
+    (``if args.check_crash_fix_relaunch_contract or no_flags:``) or its
+    ``or no_flags`` disjunct must fail this test. Doctors a tree missing the
+    experimenter.md anchor, points ``_REPO_ROOT`` at it, and invokes
+    ``main([])`` in-process: rc != 0 with the #1081 diagnostic in stderr.
+    Other bundled checks contribute unrelated errors on the minimal tree — the
+    assertion keys on the #1081 error string. (The ``no_flags`` tuple
+    membership is pinned by ``..._dedicated_flag_isolated`` below, per the
+    stale-label precedent.)"""
+    import workflow_lint as wl
+
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    rel = ".claude/agents/experimenter.md"
+    bodies[rel] = bodies[rel].replace(_CRASH_FIX_ANCHORS[rel], "**Renamed.**")
+    _write_crash_fix_tree(tmp_path, bodies)
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on an anchor-less tree:\n{err}"
+    assert "#1081" in err, (
+        f"the #1081 crash-fix-relaunch diagnostic is missing from the "
+        f"no-flags default run's stderr — the check is not bundled into "
+        f"no_flags:\n{err}"
+    )
+
+
+def test_crash_fix_relaunch_contract_dedicated_flag_isolated(tmp_path, capsys, monkeypatch) -> None:
+    """The dedicated ``--check-crash-fix-relaunch-contract`` flag runs ONLY
+    this check (``no_flags`` computes False): on a minimal tree where the
+    three contract surfaces CONFORM but the full default bundle FAILs (other
+    bundled checks miss their files), the dedicated-flag invocation exits 0 —
+    mutation-visibility for the ``or args.check_crash_fix_relaunch_contract``
+    membership in the ``no_flags`` tuple (the leg the ``main([])`` wiring
+    test above cannot pin, per the stale-label precedent)."""
+    import workflow_lint as wl
+
+    _write_crash_fix_tree(tmp_path)
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    # Precondition: the FULL default bundle FAILs on this minimal tree, so a
+    # no_flags mis-computation below is observable as rc != 0.
+    assert wl.main([]) != 0, "precondition: the default bundle PASSed on the minimal tree"
+    capsys.readouterr()  # discard the precondition run's output
+    rc = wl.main(["--check-crash-fix-relaunch-contract"])
+    err = capsys.readouterr().err
+    assert rc == 0, (
+        f"--check-crash-fix-relaunch-contract ran more than the (conforming) "
+        f"contract check — no_flags mis-computed True, i.e. the flag's membership "
+        f"in the no_flags tuple in workflow_lint.main() is missing:\n{err}"
     )
 
 
