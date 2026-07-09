@@ -410,6 +410,22 @@ Behaviours:
   the positive tokens are the primary defense). Paragraph-scoped: the span
   runs from the anchor to the first blank line, so a mid-paragraph split
   FAILs loudly (#963).
+* ``--check-crash-fix-relaunch-contract`` (also bundled into the no-flags
+  default run): FAIL if the #1081 crash-fix-relaunch fix-engaged contract
+  prose regresses on any of its three surfaces — the experimenter.md D3
+  crash-fix-relaunch paragraph (anchor ``**Crash-fix relaunch (brief
+  carries `fix_sha=`):**``), the crash-fix-rounds.md ``fix_sha=<sha>``
+  note-token paragraph, or the /issue SKILL.md Step 7 code-row relaunch
+  contract paragraph. Each surface has a UNIQUE literal anchor and its own
+  whitespace-normalized required-token list — most critically the
+  disposition-conditional three-way resume-glob confirm trio ("empty / the
+  fresh path / exactly the RETAINED expected paths", the #1081 round-2
+  blocker fix) and the ``fix_sha=`` note-token/brief duty — plus a shared
+  negative regex against re-introducing the unconditional "resolves EMPTY"
+  confirm (the regex pins the HISTORICAL #1081 wording only; its lookahead
+  spares the healthy trio "resolves EMPTY / ..."). Paragraph-scoped: a
+  contradiction outside — or additively inside — an anchored span is
+  invisible (inherent to the token-lint class) (#1181).
 * ``--check-awk-elision-parity`` (also bundled into the no-flags default
   run): FAIL if the ban-gate awk elision program — the single-quoted awk
   program on the unique ``f=!f`` anchor line — drifts between its two
@@ -6880,6 +6896,142 @@ def check_smoke_output_hygiene(*, repo_root: Path | None = None) -> list[str]:
     return errors
 
 
+# --- #1081 crash-fix-relaunch fix-engaged contract pins (#1181) --------------
+#
+# Three surfaces carry the #1081 crash-fix-relaunch contract (fix-commit
+# ancestry probe + stale-checkpoint disposition + the fix_sha= note-token
+# convention). Each span runs from a UNIQUE literal anchor (which must stay
+# on one physical line — all three are <=54 columns incl. indent, safely
+# under the repo's ~72-col prose wrap; an anchor rename/removal FAILs loud
+# and requires a deliberate lint update, per the #963 convention) to its
+# per-surface end regex, and is whitespace-normalized before token matching
+# (several tokens hard-wrap in the live files; an innocent reflow must not
+# FAIL the fleet). The negative regex is a LITERAL-COUPLING BACKSTOP against
+# re-introducing the unconditional "resolves EMPTY" confirm wording that the
+# #1081 round-2 blocker fix (concern retain-disposition-d3-empty-glob)
+# replaced with the disposition-conditional trio; its lookahead spares the
+# healthy trio phrasing "resolves EMPTY / to the fresh path / ...". It pins
+# the HISTORICAL #1081 wording only — paraphrases are the positive tokens'
+# job; do NOT widen it "to be safe" or it false-fires on the healthy trio.
+
+_CRASH_FIX_RESOLVES_EMPTY_RE = re.compile(r"\bresolves?\s+empty\b(?!\s*/)", re.IGNORECASE)
+
+# (relative path parts, unique literal anchor, span-end regex, human name,
+#  required tokens over the whitespace-normalized span)
+_CRASH_FIX_CONTRACT_SURFACES: tuple[tuple[tuple[str, ...], str, str, str, tuple[str, ...]], ...] = (
+    (
+        (".claude", "agents", "experimenter.md"),
+        "**Crash-fix relaunch (brief carries `fix_sha=`):**",
+        r"\n\s*\n|\n\d+\. ",
+        "experimenter D3 crash-fix-relaunch paragraph",
+        (
+            "git merge-base --is-ancestor <fix_sha> HEAD",
+            "ANY non-zero exit = fix absent — do NOT launch",
+            "execute the brief's stale-checkpoint disposition before launch",
+            "confirming the resume glob resolves as the disposition requires",
+            "empty / the fresh path / exactly the RETAINED expected paths",
+        ),
+    ),
+    (
+        (".claude", "rules", "crash-fix-rounds.md"),
+        "The fresh `epm:run-launched` note ALSO records",
+        r"\n\s*\n",
+        "crash-fix-rounds fix_sha note-token paragraph",
+        (
+            "records `fix_sha=<sha>` and the executed disposition",
+            "note-token convention",
+            "carries both (`fix_sha=` + the element-5 disposition verbatim)",
+            "EXEMPT: `infra`-row experimenter respawns",
+        ),
+    ),
+    (
+        (".claude", "skills", "issue", "SKILL.md"),
+        "*`code`-row relaunch contract (#779):*",
+        r"\n\s*\n",
+        "SKILL.md Step 7 code-row relaunch contract paragraph",
+        (
+            "brief carries `fix_sha=` + the element-5 stale-artifact disposition",
+            "copied from the implementer's fix-engaged declaration",
+            "enforces BOTH before dispatch: the fix-commit ancestry probe and the declared "
+            "disposition",
+        ),
+    ),
+)
+
+
+def check_crash_fix_relaunch_contract(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the #1081 crash-fix-relaunch contract prose regresses on any of
+    its three surfaces (#1181): the fix-commit ancestry probe + fail-loud, the
+    disposition-conditional three-way resume-glob confirm (the #1081 round-2
+    blocker fix, concern retain-disposition-d3-empty-glob), and the fix_sha=
+    note-token / brief duty.
+
+    Scope notes (inherited verbatim from the #963 precedent):
+
+    (a) The negative regex is a LITERAL-COUPLING BACKSTOP only — it pins the
+        HISTORICAL #1081 wording (an unconditional "resolves EMPTY" confirm);
+        paraphrases are the positive tokens' job. Do not weaken a token
+        "because the regex covers it", and do not widen the regex "to be
+        safe" — a wider regex false-fires on the healthy trio wording
+        "resolves EMPTY / to the fresh path / ...".
+    (b) Paragraph-scoped — a contradictory instruction OUTSIDE an anchored
+        span, or one ADDED alongside the intact tokens INSIDE a span, is
+        invisible to it (inherent to the token-lint class).
+    (c) A mid-paragraph blank line truncates the span and FAILs all downstream
+        tokens at once — a deliberate restructure requires a deliberate lint
+        update in the same commit.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for parts, anchor, end_re, name, tokens in _CRASH_FIX_CONTRACT_SURFACES:
+        path = root.joinpath(*parts)
+        if not path.is_file():
+            errors.append(
+                f"{path}: missing — the #1081 crash-fix-relaunch contract "
+                f"({name}) must live here (#1181)."
+            )
+            continue
+        text = path.read_text(encoding="utf-8")
+        n_anchors = text.count(anchor)
+        if n_anchors == 0:
+            errors.append(
+                f"{path}: missing the anchor {anchor!r} (#1081) — the {name} pins the "
+                f"crash-fix-relaunch fix-engaged contract and must not be removed or "
+                f"renamed without updating this lint (#1181)."
+            )
+            continue
+        if n_anchors > 1:
+            errors.append(
+                f"{path}: {n_anchors} anchors {anchor!r} found — the {name} must be "
+                f"UNIQUE (a stale duplicate could satisfy the token scan while the "
+                f"operative paragraph regresses; #1081/#1181). Remove the duplicate."
+            )
+            continue
+        start = text.find(anchor)
+        end_m = re.search(end_re, text[start:])
+        end = start + end_m.start() if end_m is not None else len(text)
+        span = re.sub(r"\s+", " ", text[start:end])
+        for token in tokens:
+            if token not in span:
+                errors.append(
+                    f"{path}: {name} missing token {token!r} (#1081) — note: the span "
+                    f"ends at the first blank line / next numbered item, so a split "
+                    f"paragraph FAILs all downstream tokens at once (a deliberate "
+                    f"restructure needs a lint update, #1181)."
+                )
+        if _CRASH_FIX_RESOLVES_EMPTY_RE.search(span):
+            errors.append(
+                f"{path}: {name} couples the resume-glob confirm to an unconditional "
+                f"'resolves EMPTY' (#1081) — the confirm is disposition-CONDITIONAL "
+                f"(empty / the fresh path / exactly the RETAINED expected paths; "
+                f"round-2 blocker retain-disposition-d3-empty-glob)."
+            )
+    return errors
+
+
 _VM_THREAD_CAP_PREFIX = (
     "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8"
 )
@@ -8407,6 +8559,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-crash-fix-relaunch-contract",
+        action="store_true",
+        help="FAIL if the #1081 crash-fix-relaunch fix-engaged contract prose "
+        "regresses on any of its three surfaces (experimenter.md D3 paragraph, "
+        "crash-fix-rounds.md fix_sha note-token paragraph, /issue SKILL.md "
+        "Step 7 code-row relaunch contract): unique anchor per surface, "
+        "whitespace-normalized required tokens (incl. the disposition-"
+        "conditional trio 'empty / the fresh path / exactly the RETAINED "
+        "expected paths'), and a negative regex against an unconditional "
+        "'resolves EMPTY' confirm. Bundled into the no-flags default run "
+        "(#1181).",
+    )
+    parser.add_argument(
         "--check-vm-thread-cap-guidance",
         action="store_true",
         help="Verify the #891 shared-VM thread-cap launch prefix "
@@ -8618,6 +8783,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_smoke_architecture_review_lens
         or args.check_stale_label_disposition
         or args.check_smoke_output_hygiene
+        or args.check_crash_fix_relaunch_contract
         or args.check_vm_thread_cap_guidance
         or args.check_awk_elision_parity
         or args.check_marker_recipe_snippets
@@ -8717,6 +8883,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_stale_label_disposition_clause())
     if args.check_smoke_output_hygiene or no_flags:
         errors.extend(check_smoke_output_hygiene())
+    if args.check_crash_fix_relaunch_contract or no_flags:
+        errors.extend(check_crash_fix_relaunch_contract())
     if args.check_vm_thread_cap_guidance or no_flags:
         errors.extend(check_vm_thread_cap_guidance())
     if args.check_awk_elision_parity or no_flags:
