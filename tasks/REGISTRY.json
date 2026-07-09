@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1169,
+  "highest_id": 1170,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1324,6 +1324,13 @@
       "path": "tasks/archived/117",
       "status": "archived",
       "title": "Run more midtraining experiments"
+    },
+    "1170": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1170",
+      "status": "proposed",
+      "title": "workflow-fix: observer for unreconciled doubled-site verdict"
     },
     "118": {
       "has_clean_result": false,
