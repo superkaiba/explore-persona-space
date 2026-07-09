@@ -1517,8 +1517,8 @@
     "1195": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1195",
-      "status": "proposed",
+      "path": "tasks/planning/1195",
+      "status": "planning",
       "title": "workflow-fix: forward HF_HUB_DISABLE_XET in lane allowlists"
     },
     "1196": {
