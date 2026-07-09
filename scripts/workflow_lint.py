@@ -362,6 +362,24 @@ Behaviours:
   ``# BATCH_JUDGE_CLIENT_EXEMPT: <reason>`` (reason ≥
   :data:`BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS` chars) on the call's
   first physical line or the immediately preceding non-blank line.
+* ``--check-hub-verify-retry`` (also bundled into the no-flags default run):
+  AST-walk every ``*.py`` under ``scripts/`` and FAIL on any bare Hub verify
+  call — ``list_repo_files(`` / ``list_repo_tree(`` / ``.file_exists(``
+  (Attribute form, plus the asname-aware ``from huggingface_hub import``
+  Name form) — outside the grandfathered legacy set
+  (:data:`HUB_VERIFY_LEGACY_ALLOWLIST`). huggingface_hub's paginate retries
+  ONLY 429 on cursor pages, so a transient 504 on a bare listing/probe
+  fails a SUCCESSFUL upload's verify leg (#920); #997 built the retried
+  library path (``orchestrate/hub.py``: ``verify_repo_paths_uploaded``,
+  ``list_hf_files_under_path``, ``list_repo_files_complete``,
+  ``retry_transient``) but added no gate on new scripts/ call sites — this
+  check is that gate (#1202). Named residuals NOT covered: ``repo_info``,
+  ``hf_hub_download``, ``HfFileSystem``, raw HTTP, subprocess ``hf`` CLI,
+  ``getattr`` forms, and the 9 ``scripts/*.sh`` heredoc offenders. A
+  genuinely-correct raw call waives with
+  ``# HUB_VERIFY_RETRY_EXEMPT: <reason>`` (reason ≥
+  :data:`HUB_VERIFY_WAIVER_MIN_REASON_CHARS` chars) on the call's first
+  physical line or the immediately preceding non-blank line.
 * ``--check-judge-model-pins`` (also bundled into the no-flags default run):
   walk every ``*.py`` under ``scripts/``, ``src/explore_persona_space/``, and
   ``tests/`` PLUS every ``*.sh`` under ``scripts/`` and FAIL on a hardcoded
@@ -1504,6 +1522,158 @@ BATCH_JUDGE_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
 )
 BATCH_JUDGE_CLIENT_WAIVER_RE = re.compile(r"#\s*BATCH_JUDGE_CLIENT_EXEMPT\s*:\s*(.+?)\s*$")
 BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS = 10
+
+
+# `--check-hub-verify-retry` (#1202): a NEW scripts/ file hand-rolling a bare
+# `list_repo_files(` / `list_repo_tree(` / `.file_exists(` Hub verify leg
+# reintroduces the #920 false-failure class (huggingface_hub's paginate
+# retries ONLY 429 on cursor pages — a transient 504 propagates and fails a
+# SUCCESSFUL upload's verify leg; gotchas.md "HF recursive tree listing 504s
+# are un-retried"). #997 hardened the library path
+# (orchestrate/hub.py: verify_repo_paths_uploaded, list_hf_files_under_path,
+# list_repo_files_complete, retry_transient); this check is the mechanical
+# gate on new call sites.
+# Detection: AST — any ast.Attribute with attr in HUB_VERIFY_BARE_TARGETS
+# ("list_repo_files", "list_repo_tree", "file_exists"; call OR bare-reference
+# form), plus any ast.Name bound by a `from huggingface_hub import <target>
+# [as alias]` (asname-aware, so aliasing cannot evade the Name leg).
+# Comments/docstrings can never match (no comment nodes; string mentions are
+# ast.Constant). Named residuals NOT covered (see the check's docstring):
+# repo_info, hf_hub_download, HfFileSystem, raw HTTP, subprocess hf CLI,
+# getattr forms, and .sh heredocs (9 files as of 2026-07-09).
+# Scope: scripts/**/*.py only (src/ is #997's — hub.py itself legitimately
+# spells the bare calls inside its retry wrappers).
+# Exempt:
+#   * the legacy per-issue offenders predating this check
+#     (:data:`HUB_VERIFY_LEGACY_ALLOWLIST`) — frozen 2026-07-09, generated
+#     from the check's own live-tree output (AST-confirmed call sites, not
+#     grep hits); a NEW file is never added here (the waiver comment below
+#     is the path for a genuinely-correct new bare caller);
+#     CAVEAT: membership exempts the WHOLE file (the BATCH_JUDGE model) —
+#     a future bare call added to a grandfathered file is silently exempt;
+#     when migrating a file onto the hub helpers, DROP it from this set;
+#   * any call site waived with `# HUB_VERIFY_RETRY_EXEMPT: <reason>`
+#     (reason ≥ :data:`HUB_VERIFY_WAIVER_MIN_REASON_CHARS` chars) on the
+#     call's first physical line or the immediately preceding non-blank
+#     line — same convention as BATCH_JUDGE_CLIENT_EXEMPT.
+HUB_VERIFY_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # Per-issue experiment scripts predating this check (frozen
+        # 2026-07-09; AST-confirmed call sites from the check's own
+        # live-tree output, not grep hits).
+        "scripts/backfill_artifact_registry.py",
+        "scripts/build_canonical_persona_pool.py",
+        "scripts/clean_experiment_downloads.py",
+        "scripts/dispatch_factor_screen_365.py",
+        "scripts/dispatch_neg_geometry_504.py",
+        "scripts/i474_check_adapter_hf_presence.py",
+        "scripts/i474_phase0_preflight.py",
+        "scripts/i477_reval_confirm.py",
+        "scripts/i488_phase3_train_sweep.py",
+        "scripts/i504_reval_confirm.py",
+        "scripts/i528_phase23_train.py",
+        "scripts/i556_pull_qbank.py",
+        "scripts/i601_run_cell.py",
+        "scripts/i650_write_results_sentinel.py",
+        "scripts/issue1024_diagnose_parse_failures.py",
+        "scripts/issue1073_common.py",
+        "scripts/issue1074_aggregate.py",
+        "scripts/issue1074_generator_compare.py",
+        "scripts/issue1090_fu1.py",
+        "scripts/issue1090_fu3_yield_replay.py",
+        "scripts/issue1090_run.py",
+        "scripts/issue1108_repo_file_audit.py",
+        "scripts/issue1112_dispatch.py",
+        "scripts/issue1112_geometry.py",
+        "scripts/issue530_logit_reval.py",
+        "scripts/issue540_jsrb_predictor.py",
+        "scripts/issue541_geometry_extract.py",
+        "scripts/issue545_sweep.py",
+        "scripts/issue545_train_cell.py",
+        "scripts/issue594_analyze_context_geometry.py",
+        "scripts/issue594_extract_context_vectors.py",
+        "scripts/issue604_adapter_svd.py",
+        "scripts/issue604_extract_context_vectors.py",
+        "scripts/issue617_upload_corpus.py",
+        "scripts/issue621_checkpoint_ladder.py",
+        "scripts/issue634_extract_behavior_vectors.py",
+        "scripts/issue634_joint_geometry.py",
+        "scripts/issue651_dispatch.py",
+        "scripts/issue651_drain_extracts.py",
+        "scripts/issue654_fetch_pinned_battery.py",
+        "scripts/issue658_extract_base_store.py",
+        "scripts/issue658_fit_predictors.py",
+        "scripts/issue661_analysis.py",
+        "scripts/issue661_extract_directions.py",
+        "scripts/issue661_generate_arm_a.py",
+        "scripts/issue664_dispatch.py",
+        "scripts/issue666_load_store.py",
+        "scripts/issue666_predictor.py",
+        "scripts/issue667_alllayer_dispatch.py",
+        "scripts/issue667_dispatch.py",
+        "scripts/issue667_pertoken_context_dispatch.py",
+        "scripts/issue667_pertoken_dispatch.py",
+        "scripts/issue685_matched_position_u.py",
+        "scripts/issue722_extract_fact_rb.py",
+        "scripts/issue722_fit_M.py",
+        "scripts/issue722_load_activations.py",
+        "scripts/issue722_per_position_vC_skill.py",
+        "scripts/issue734_dispatch.py",
+        "scripts/issue744_dump_and_stream.py",
+        "scripts/issue763_build_probe_pools.py",
+        "scripts/issue763_disclosure_flag_audit.py",
+        "scripts/issue763_judge_e0.py",
+        "scripts/issue763_upload.py",
+        "scripts/issue778_v2_prefetch.py",
+        "scripts/issue779_capture_answer_summaries.py",
+        "scripts/issue779_capture_answer_summaries_pass2.py",
+        "scripts/issue779_collect.py",
+        "scripts/issue779_extract_rb.py",
+        "scripts/issue779_gen_behavior_corpus.py",
+        "scripts/issue779_pertoken_lmsys_analysis.py",
+        "scripts/issue779_pertoken_vs_mean_variance.py",
+        "scripts/issue779_stage_pass2_vm.py",
+        "scripts/issue810_common.py",
+        "scripts/issue810_extract_positions.py",
+        "scripts/issue811_upload_store.py",
+        "scripts/issue825_crossmodel_map_transfer.py",
+        "scripts/issue833_chain_rho_fixedtext.py",
+        "scripts/issue833_chain_rho_nonemit.py",
+        "scripts/issue833_extract_onpolicy.py",
+        "scripts/issue833_fit_onpolicy.py",
+        "scripts/issue841_common.py",
+        "scripts/issue841_scaling_common.py",
+        "scripts/issue920_extract_summaries.py",
+        "scripts/issue920_gen_completions_b.py",
+        "scripts/issue920_nulls_figures.py",
+        "scripts/issue922_common.py",
+        "scripts/issue922_repair_provenance.py",
+        "scripts/issue923_capture.py",
+        "scripts/issue928_common.py",
+        "scripts/issue928_mlp_indiv_control.py",
+        "scripts/issue931_fit_cells.py",
+        "scripts/issue931_power_curve_multi_seed.py",
+        "scripts/issue931_sep_to_chat_matched_control.py",
+        "scripts/issue952_bank_build.py",
+        "scripts/issue958_common.py",
+        "scripts/issue958_long_k1_transfer_lclamp.py",
+        "scripts/issue_552_prep_good_corpus.py",
+        "scripts/issue_597/dispatch_leakage_dynamics_597.py",
+        "scripts/issue_597/titration_svd_597.py",
+        "scripts/issue_642/i642_dispatch.py",
+        "scripts/issue_653/i653_postpod_bootstrap.py",
+        "scripts/measure_cot_entropy.py",
+        "scripts/run_issue506_install.py",
+        "scripts/sync_models.py",
+        # NOT per-issue experiment code — flagged inline so the
+        # allowlist rationale stays honest: verify_uploads.py is a
+        # workflow-helper script; migrating it onto the hub helpers
+        # is a named follow-up.
+        "scripts/verify_uploads.py",
+    }
+)
+HUB_VERIFY_WAIVER_RE = re.compile(r"#\s*HUB_VERIFY_RETRY_EXEMPT\s*:\s*(.+?)\s*$")
+HUB_VERIFY_WAIVER_MIN_REASON_CHARS = 10
 
 
 # `--check-dotenv-before-hf-import`: a script that uses the BARE python-dotenv
@@ -5724,6 +5894,157 @@ def check_batch_judge_client(
     return errors
 
 
+def _hub_verify_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """Return True iff a ``# HUB_VERIFY_RETRY_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`HUB_VERIFY_WAIVER_MIN_REASON_CHARS` chars) is on the
+    call's first physical line (``call_lineno``, 1-based) or the immediately
+    preceding non-blank line. Same convention as
+    :func:`_batch_judge_client_waiver_present`."""
+    idx = call_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = HUB_VERIFY_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= HUB_VERIFY_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = HUB_VERIFY_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= HUB_VERIFY_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+HUB_VERIFY_BARE_TARGETS: tuple[str, ...] = ("list_repo_files", "list_repo_tree", "file_exists")
+
+
+def _hub_verify_bare_hits(tree: ast.Module) -> list[tuple[int, str]]:
+    """Return ``(lineno, pattern)`` pairs for bare Hub verify nodes in ``tree``.
+
+    Two legs:
+
+    * any ``ast.Attribute`` whose ``attr`` is in
+      :data:`HUB_VERIFY_BARE_TARGETS` — covers ``api.list_repo_files(...)``,
+      ``HfApi().list_repo_tree(...)``, ``hh.file_exists(...)`` under a module
+      alias, AND the bare-reference form passed to a retry wrapper /
+      ``asyncio.to_thread`` (mirrors :func:`_is_batches_create_attr`);
+    * any ``ast.Name`` whose id is a name BOUND by a
+      ``from huggingface_hub import <target> [as alias]`` — the ImportFrom
+      pre-pass builds an asname-aware bound-name map, so both the plain and
+      the aliased import forms are caught, while a script-local
+      ``def file_exists(...)`` helper (no huggingface_hub import of that
+      symbol) is never flagged.
+
+    Callers dedupe by line (a call form is a single node either way).
+    """
+    hf_bound: dict[str, str] = {}  # bound name -> canonical target symbol
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and (node.module or "").startswith("huggingface_hub"):
+            for a in node.names:
+                if a.name in HUB_VERIFY_BARE_TARGETS:
+                    hf_bound[a.asname or a.name] = a.name
+    hits: list[tuple[int, str]] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Attribute) and node.attr in HUB_VERIFY_BARE_TARGETS:
+            hits.append((node.lineno, f".{node.attr}("))
+        elif isinstance(node, ast.Name) and node.id in hf_bound:
+            hits.append((node.lineno, f"{hf_bound[node.id]}("))
+    return hits
+
+
+def check_hub_verify_retry(*, scripts_dir: Path | None = None) -> list[str]:
+    """AST-walk ``scripts/**/*.py`` and FAIL on any bare Hub verify call —
+    ``list_repo_files(`` / ``list_repo_tree(`` / ``.file_exists(`` — outside
+    the grandfathered legacy set (:data:`HUB_VERIFY_LEGACY_ALLOWLIST`).
+
+    Rationale: huggingface_hub's ``paginate`` retries ONLY 429 on cursor
+    pages, so a transient 504 on a listing/probe propagates — in #920 that
+    turned a SUCCESSFUL upload's verify leg into a false workload failure.
+    #997 hardened the library path (``orchestrate/hub.py``:
+    ``verify_repo_paths_uploaded`` — exact-set post-upload verify,
+    ``list_hf_files_under_path`` — scoped listing,
+    ``list_repo_files_complete`` — full listing, ``retry_transient`` — the
+    bounded-retry wrapper), but a NEW per-issue script hand-rolling a bare
+    ``api.list_repo_files(...)`` reintroduces the class. This check is the
+    mechanical gate on new scripts/ call sites (#1202).
+
+    Detection: see :func:`_hub_verify_bare_hits` (Attribute leg + an
+    asname-aware imported-Name leg), deduped by line. Compliant hub-helper
+    usage is structurally invisible (different attr/name strings); comments
+    and docstrings can never match. Within ``scripts/`` ANY spelled bare
+    call is presumed un-retried — even a script-local
+    ``retry_transient(lambda: api.list_repo_files(...))`` is flagged
+    deliberately (the wrapped bare attribute is still a hand-rolled leg);
+    a genuinely-correct raw call takes the waiver comment.
+
+    Named residuals NOT covered (deliberate — documented, not detector legs):
+    ``repo_info(`` (legitimate metadata uses dominate), ``hf_hub_download``
+    (large, often locally-retried caller base), ``HfFileSystem``
+    ``.exists()``/``.ls()`` (generic attr names = FP explosion), raw HTTP
+    calls on the Hub API, subprocess ``hf`` CLI invocations,
+    ``getattr(api, "list_repo_files")`` evasion, and the 9 ``scripts/*.sh``
+    files with embedded-heredoc hits (AST cannot parse shell; a regex leg
+    would reintroduce comment/string false positives).
+
+    Exempt:
+      * files in :data:`HUB_VERIFY_LEGACY_ALLOWLIST` (frozen at the
+        2026-07-09 tree; membership exempts the WHOLE file; a NEW file is
+        never added — the waiver is the path);
+      * any call site waived with ``# HUB_VERIFY_RETRY_EXEMPT: <reason>``
+        (reason ≥ :data:`HUB_VERIFY_WAIVER_MIN_REASON_CHARS` chars) on the
+        call's first physical line or the immediately preceding non-blank
+        line.
+
+    ``scripts_dir`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical ``<repo_root>/scripts``
+    tree. Bundled into the no-flags default run (same policy as
+    ``check_batch_judge_client``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    errors: list[str] = []
+    if not root.exists():
+        return errors
+    for py in sorted(root.rglob("*.py")):
+        if not py.is_file():
+            continue
+        try:
+            rel = py.resolve().relative_to(_REPO_ROOT.resolve()).as_posix()
+        except ValueError:
+            # A unit-test fixture tree outside the repo: identify it by
+            # its tail under the repo's logical layout instead.
+            rel = py.as_posix()
+        if rel in HUB_VERIFY_LEGACY_ALLOWLIST:
+            continue
+        text = py.read_text(encoding="utf-8")
+        tree = _cached_parse(py, text)
+        if tree is None:
+            # A non-parsing file is its own separate problem; stay silent.
+            continue
+        lines = text.splitlines()
+        seen_lines: set[int] = set()
+        for lineno, pattern in _hub_verify_bare_hits(tree):
+            if lineno in seen_lines:
+                continue
+            seen_lines.add(lineno)
+            if _hub_verify_waiver_present(lines, lineno):
+                continue
+            errors.append(
+                f"{py}:{lineno}: bare Hub verify call ('{pattern}') — un-retried "
+                f"listings/probes re-create the #920 false-failure class (a "
+                f"transient 504 on a cursor page fails a successful upload's "
+                f"verify; huggingface_hub retries only 429 there). Route through "
+                f"explore_persona_space.orchestrate.hub: "
+                f"verify_repo_paths_uploaded (exact-set post-upload verify), "
+                f"list_hf_files_under_path (scoped listing), or "
+                f"list_repo_files_complete (full listing). A genuinely-correct "
+                f"raw call (e.g. one you wrap in hub.retry_transient yourself) "
+                f"takes the waiver: '# HUB_VERIFY_RETRY_EXEMPT: <reason>' "
+                f"(reason >= {HUB_VERIFY_WAIVER_MIN_REASON_CHARS} chars) on the "
+                f"call's line or the previous non-blank line (#920/#997/#1202)."
+            )
+    return errors
+
+
 def _judge_pin_line_waived(lines: list[str], idx: int) -> bool:
     """Return True iff a ``# noqa: judge-model-pin`` waiver is on the hit line
     (``idx``, 0-based) or the immediately preceding non-blank line. Same
@@ -9217,6 +9538,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-hub-verify-retry",
+        action="store_true",
+        help="AST-walk scripts/**/*.py and FAIL on any bare list_repo_files( / "
+        "list_repo_tree( / .file_exists( Hub call outside the grandfathered "
+        "legacy set (#920/#997/#1202). New verify legs MUST route through "
+        "orchestrate.hub (verify_repo_paths_uploaded / "
+        "list_hf_files_under_path / retry_transient). Waive with "
+        "'# HUB_VERIFY_RETRY_EXEMPT: <reason>'. Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-no-workflow-improver-spawn",
         action="store_true",
         help='FAIL if any live Agent(subagent_type="workflow-improver", ...) '
@@ -9609,6 +9941,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_hub_dir_filecount
         or args.check_dotenv_before_hf_import
         or args.check_batch_judge_client
+        or args.check_hub_verify_retry
         or args.check_no_workflow_improver_spawn
         or args.check_no_repo_root_git_reset_hard
         or args.check_no_repo_root_worktree_revert
@@ -9711,6 +10044,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_dotenv_before_hf_import())
     if args.check_batch_judge_client or no_flags:
         errors.extend(check_batch_judge_client())
+    if args.check_hub_verify_retry or no_flags:
+        errors.extend(check_hub_verify_retry())
     if args.check_no_workflow_improver_spawn or no_flags:
         errors.extend(check_no_workflow_improver_spawn())
     if args.check_no_repo_root_git_reset_hard or no_flags:
