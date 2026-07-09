@@ -1220,8 +1220,9 @@ limitation, NOT a test failure. Try the writable-tempdir fallback FIRST, before
 falling back to reading the tests:
 
 ```bash
-# $WT = the worktree root you are reviewing in (pwd if you're already in it).
-RTMP="$(pwd)/.claude/cache/reviewer-tmp-$$"
+# OUT of the worktree: an in-tree TMPDIR makes git-root-resolving test
+# fixtures resolve the worktree repo and false-FAIL (#853 r2; #802 rglob race).
+RTMP="${XDG_RUNTIME_DIR:-/tmp}/reviewer-tmp-$$"
 mkdir -p "$RTMP"
 TMPDIR="$RTMP" UV_CACHE_DIR="$RTMP/uv" XDG_CACHE_HOME="$RTMP/xdg" \
   uv run pytest tests/relevant_test.py -v
