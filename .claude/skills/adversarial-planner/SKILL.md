@@ -253,6 +253,14 @@ between Claude and Codex twins is resolved by the `reconciler` agent in
 `.claude/workflow.yaml § ensemble_review.doubled_steps[critic]` and
 `.claude/agents/reconciler.md` § "Two Output Modes".
 
+**Quota-sentinel pre-check first (#1204).** Run the canonical check
+(CLAUDE.md § Codex ensemble review). `CODEX_QUOTA_LIVE` → spawn ONLY the
+3 Claude lens critics (+ consistency-checker when riding the batch) and
+skip all 3 `codex-critic` composer spawns this round; record each lens
+as an instant confirmed Codex no-show (single-Claude per the Phase-2
+no-show row — no output-file probe) and log one line (+ one
+`epm:progress` note on #N when run from /issue Step 2).
+
 **Consistency-checker rides the same spawn batch (when invoked from
 `/issue` Step 2).** The orchestrator spawns the `consistency-checker`
 agent CONCURRENTLY with the 6 critics (7 parallel spawns in one
@@ -394,7 +402,9 @@ reconciler once; if still none, do NOT adjudicate the disagreement
 yourself — adopt the MORE SEVERE of the two lens verdicts as a
 fail-safe (biasing toward revision, never toward shipping) and record
 the unresolved reconcile in the merged critique handed to the
-plan-approval gate.
+plan-approval gate. A #1204 sentinel-skip is exempt from this probe —
+the composer never ran, so no prompt/output file exists for the round;
+the skip itself is the confirmed no-show.
 
 **Cross-lens merge (after per-lens reconciliation):**
 
@@ -524,6 +534,9 @@ if "WRONG" in verifier_result:
 #    NOT bg-dispatch themselves (CLAUDE.md § "Codex task dispatch": only
 #    the orchestrator's direct bg-Bash invocation delivers a real
 #    notification when Codex terminates).
+# 4-pre. Quota-sentinel pre-check (#1204, CLAUDE.md § Codex ensemble review):
+#    if LIVE, skip the three *_codex spawns below (instant no-show per lens);
+#    Claude spawns + c_check unchanged.
 m_claude = Agent(subagent_type="critic",       prompt="[Methodology lens] Critique:\n\n{corrected_plan}",   run_in_background=True)
 m_codex  = Agent(subagent_type="codex-critic", prompt="lens=methodology\nplan_body:\n{corrected_plan}",     run_in_background=True)
 s_claude = Agent(subagent_type="critic",       prompt="[Statistics lens] Critique:\n\n{corrected_plan}",    run_in_background=True)

@@ -2116,6 +2116,13 @@ Copy the verbatim forms from Step 10d § "Bare push / merge snippets".
 
 **5a. Spawn both reviewers in parallel (fresh contexts, single message).**
 
+**Quota-sentinel pre-check first (#1204).** Run the canonical pre-spawn
+check (CLAUDE.md § Codex ensemble review). `CODEX_QUOTA_LIVE` → spawn
+ONLY the Claude `code-reviewer` this round; record the Codex twin as an
+instant confirmed no-show per the Step 5d no-show fallback (no
+durable-verdict probe — nothing was dispatched) and post the one-line
+`epm:progress` note.
+
 **Spec-freshness check first (worktree-cwd sessions; applies at EVERY
 ensemble/agent fan-out — here, the Step 9a analyzer + critic ensembles,
 and 9a-bis).** The Agent tool loads agent specs (and Skill playbooks)
@@ -2650,7 +2657,12 @@ Step 5b rule; NEVER adopt a unilateral decision from the surviving
 reviewer (incident #810 r4). An `epm:codex-task-failed` note carrying
 `codex-quota-exhausted` is the org-quota outage short-circuit (#1126):
 treat as an instant no-show (Claude-only), do not re-dispatch or
-investigate; the sentinel self-expires at the stated reset.
+investigate; the sentinel self-expires at the stated reset. The Step 5a
+pre-spawn sentinel check (#1204) makes this fallback fire WITHOUT
+spawning the composer: a sentinel-skip recorded at spawn time is a
+confirmed no-show — do NOT run the durable-verdict probe for a round
+whose composer was never spawned, and do not wait for any
+`epm:codex-task-*` marker (none will exist).
 
 ##### Step 5.bis: Pre-dispatch checks (compute-deviation + whack-a-mole)
 
@@ -5692,6 +5704,11 @@ discarded by Step 8's gap-fill decision rule).
      — same 7 lenses (lens 6 plot-prose works on Codex multimodal).
      Posts `epm:interp-critique-codex v1`.
 
+   Quota-sentinel pre-check first (#1204, CLAUDE.md § Codex ensemble
+   review): when LIVE, spawn only the Claude critic; instant confirmed
+   Codex no-show per the decision-table no-show row + one `epm:progress`
+   note.
+
    Neither sees the analyzer's reasoning. Independence is load-bearing.
 
 3. **Apply ensemble decision rule** (see
@@ -6213,7 +6230,11 @@ dispatching this round's critics.
 
 2. Spawn `codex-clean-result-critic` (Codex twin) in parallel on
    every round (all-rounds ensemble as of 2026-06-12; previously
-   round 1 only). Brief contract (matches
+   round 1 only). Quota-sentinel pre-check first (#1204, CLAUDE.md
+   § Codex ensemble review): when LIVE, skip this twin's composer
+   spawn — instant confirmed Codex no-show per this step's no-show
+   handling (Claude-only ensemble decision) + one `epm:progress`
+   note. Brief contract (matches
    `.claude/agents/codex-clean-result-critic.md` § "Your brief
    contains" + Step 1b): pass the ABSOLUTE
    `$(task.py find <N>)/body.md` as `clean_result_body_path` and
@@ -6806,7 +6827,11 @@ autonomous block step 2-bis, and Step 10b):
 >    four twin sites (CLAUDE.md § "Codex ensemble review"); the twin agent
 >    NEVER dispatches Codex itself (orphan-job anti-pattern, #533). Post
 >    `epm:followup-value-critique v1` (Claude) + `epm:followup-value-critique-codex`
->    (Codex) on this task's `events.jsonl`.
+>    (Codex) on this task's `events.jsonl`. Quota-sentinel pre-check
+>    first (#1204, CLAUDE.md § Codex ensemble review): when LIVE, spawn
+>    only the Claude `follow-up-critic`; the merge in step 3 proceeds
+>    Claude-only per the existing no-show contract, + one `epm:progress`
+>    note.
 > 3. **Merge the verdicts PER PROPOSAL** (single pass — no round loop;
 >    `single_pass: true`). For each proposal: both `not-redundant` →
 >    `not-redundant`. Both `redundant` → `redundant` (the merged
@@ -9636,6 +9661,11 @@ investigate and optionally `task.py set-status <N> blocked`.
 
 **Resume correctness per active state** (the key benefit of having
 dedicated "working" statuses):
+
+Every "re-spawn `codex-*` … only" action in this table is subject to the
+#1204 pre-spawn sentinel check (CLAUDE.md § Codex ensemble review): when
+LIVE, record the instant confirmed no-show instead of re-spawning the
+composer.
 
 | Status at resume | `epm:*` events present | Interpretation | Action |
 |------------------|------------------------|----------------|--------|

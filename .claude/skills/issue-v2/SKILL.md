@@ -190,6 +190,13 @@ CLAUDE.md § 429 token-pacing):
 - `efficiency-critic` ∥ its Codex twin `codex-efficiency-critic`
 - `consistency-checker` (Claude-only, no twin)
 
+**Quota-sentinel pre-check first (#1204, CLAUDE.md § Codex ensemble
+review):** when LIVE, spawn only `statistics-critic` ∥
+`methodology-baselines-critic` ∥ `efficiency-critic` ∥
+`consistency-checker` — skip all 3 codex-twin composer spawns this round
+(instant confirmed no-show per lens, single-Claude decision), one
+`epm:progress` note per round.
+
 The Codex twins are prompt-composers; **the orchestrator bg-dispatches each via
 `scripts/codex_task.py`** exactly as CLAUDE.md § "Codex ensemble review"
 prescribes (the wrapper never self-dispatches Codex — orphan-job anti-pattern
@@ -285,6 +292,11 @@ event-driven, no ask site).
   **multi-GPU: launch commands demonstrably shard across every provisioned GPU**).
 - `efficiency-critic` (implementation mode) — the Claude side of the same
   efficiency checks.
+
+**Quota-sentinel pre-check first (#1204, CLAUDE.md § Codex ensemble
+review):** when LIVE, skip the `codex-code-reviewer` twin spawn;
+`code-correctness-critic` proceeds Claude-only per the v1 Step 5d
+no-show fallback (applied verbatim here).
 
 Ensemble decision, reconciler on disagreement, mechanical-strip, and **round cap
 5** are IDENTICAL to v1 (`.claude/skills/issue/SKILL.md` § "Step 5: Code review
