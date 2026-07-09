@@ -1622,8 +1622,8 @@
     "1208": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1208",
-      "status": "proposed",
+      "path": "tasks/planning/1208",
+      "status": "planning",
       "title": "daily-fix: planner authors Row-coverage with paired contrast"
     },
     "1209": {
