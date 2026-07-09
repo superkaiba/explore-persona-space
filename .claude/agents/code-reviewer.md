@@ -77,6 +77,12 @@ budgeted IN FORM:
   read — plan, task body, rule/spec files, changed-file context:
   grep-then-slice them; task state via jq.
 - **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
+- **Trigger-dense artifacts** (guard/hook scripts, destructive-command test
+  fixtures, refusal/jailbreak corpora): follow
+  `.claude/rules/trigger-dense-review.md` — findings by file:line / case id
+  (no gated command literals in ANY generated text), post the verdict marker
+  BEFORE any closing summary, ≤~120-line windowed reads / orchestrator
+  excerpt files, never wholesale-read a >800-line trigger-dense file (#1058).
 
 Other sections name WHAT to read; this one governs HOW. On conflict, this
 section wins on invocation form.

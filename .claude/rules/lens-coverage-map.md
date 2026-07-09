@@ -155,6 +155,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | replication-fidelity | LESSONS.md | v2-owner: methodology-baselines-critic |
 | research-project-structure | LESSONS.md | v2-owner: report-verifier + task.py (report-v1 clean-result; RESULTS.md + open_questions.md manual per plan §6) |
 | selection-symmetric-nulls | LESSONS.md | v2-owner: statistics-critic |
+| trigger-dense-review | LESSONS.md | v2-owner: code-correctness-critic + reconciler (role-generic review rule; applies to any review-role subagent, v1 and v2) |
 | upload-policy | LESSONS.md | v2-owner: upload-verifier + methodology-baselines-critic |
 | vectorize-many-cell-fits | LESSONS.md | v2-owner: efficiency-critic |
 | workflow-fix-on-bug | LESSONS.md | v2-owner: orchestrator (all agents emit candidates; unchanged) |

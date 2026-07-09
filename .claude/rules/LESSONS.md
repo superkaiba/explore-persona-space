@@ -18,12 +18,12 @@ update this index (lint: `--check-lessons-index`).
 - **[code-style](code-style.md)** — fires when: you write/edit any `*.py` or Hydra config (lint, vectorized torch, checkpoint-per-phase, no dollar caps).
 - **[compute-backend-failover](compute-backend-failover.md)** — fires when: you touch the backend router / dispatch / poll, or reason about GCP↔RunPod failover.
 - **[contrastive-negatives](contrastive-negatives.md)** — fires when: a plan implants a behavior (marker/fact/refusal/trait) into a persona (interleave contrastive negatives by default).
-- **[crash-fix-rounds](crash-fix-rounds.md)** — fires when: an implementer runs any retry/revision round, OR the orchestrator/experimenter relaunches after a code-fix round (failure lesson, fix-engaged signal incl. fix-commit SHA + stale-artifact disposition, relaunch ancestry probe + checkpoint hygiene, scope, kill-before-relaunch).
+- **[crash-fix-rounds](crash-fix-rounds.md)** — fires when: an implementer runs any retry/revision round, OR the orchestrator/experimenter relaunches after a code-fix round (failure lesson, fix-engaged signal + stale-artifact disposition, relaunch ancestry probe + checkpoint hygiene, scope, kill-before-relaunch).
 - **[critic-lens-reference](critic-lens-reference.md)** — fires when: a critic reviews under its assigned lens (pointer-loaded single-lens span).
 - **[data-realism](data-realism.md)** — fires when: a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - **[diff-size-budget](diff-size-budget.md)** — fires when: reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
 - **[experiment-guidelines](experiment-guidelines.md)** — fires when: you plan/implement a `workflow: v2` experiment (durable guideline index; each points at its full rule + names the v2 critic owner).
-- **[gotchas](gotchas.md)** — fires when: you write/debug training/eval/orchestration/analysis code or an Anthropic request-builder seam, hand-launch a per-cell GPU worker (CVD, EDQUOT/wedge, vLLM teardown), call train_lora/merge_lora via the library seam or compose a multi-GPU launch after in-process training (CVD clobber), diagnose a silent process death/exit-137, an rc=134 SIGABRT at interpreter shutdown, or an all-units vLLM fan-out handshake timeout (single-crasher mask), parse JSONL (splitlines shred), feed an external/real-corpus prompt bank to vLLM, or write real-corpus streaming filters / a corpus builder (field shapes; tiny-real probe), or build a teacher-forced capture rig (token-id concat; BPE-seam positions).
+- **[gotchas](gotchas.md)** — fires when: you write/debug training/eval/orchestration/analysis code or an Anthropic request-builder seam, hand-launch a per-cell GPU worker (CVD, EDQUOT/wedge, vLLM teardown), call train_lora/merge_lora via the library seam or compose a multi-GPU launch after in-process training (CVD clobber), diagnose a silent process death/exit-137, an rc=134 shutdown SIGABRT, or an all-units vLLM fan-out handshake timeout (single-crasher mask), parse JSONL (splitlines shred), feed an external/real-corpus prompt bank to vLLM, or write real-corpus streaming filters / a corpus builder (field shapes; tiny-real probe), or build a teacher-forced capture rig (token-id concat; BPE-seam positions).
 - **[lens-coverage-map](lens-coverage-map.md)** — fires when: you split, retire, or add a review lens (v2 lens→owner ledger; three states; lint `--check-lens-coverage`).
 - **[llm-judging](llm-judging.md)** — fires when: a plan/code designs/writes an LLM-judged behavior DV (graded 0-100 primary; one Sonnet judge; drop-never-coerce; rubric-keyed judge caches; max_tokens sized for the rationale).
 - **[marker-leakage-measurement](marker-leakage-measurement.md)** — fires when: a plan/code MEASURES marker leakage (on-policy, marker-at-end, three-space DV).
@@ -39,8 +39,9 @@ update this index (lint: `--check-lessons-index`).
 - **[replication-fidelity](replication-fidelity.md)** — fires when: the Goal is to replicate a published finding (match the paper's data + recipe FIRST; change only the one tested variable).
 - **[research-project-structure](research-project-structure.md)** — fires when: you write result artifacts / the results index / the queue (one source of truth per layer).
 - **[selection-symmetric-nulls](selection-symmetric-nulls.md)** — fires when: a headline max/argmax/best-of/top-k over a free axis vs a null band (inherit selection per draw or freeze held-out; band vs DV ceiling; #778/#810).
+- **[trigger-dense-review](trigger-dense-review.md)** — fires when: reviewing/reconciling a guard/security artifact or refusal corpus (findings by reference; verdict marker first; windowed reads).
 - **[upload-policy](upload-policy.md)** — fires when: you write training / Hub / sweep code (Hub-API verification gotcha, delete-after-eval persist, quota-403 recovery, pod→HF upload-wedge ladder).
-- **[vectorize-many-cell-fits](vectorize-many-cell-fits.md)** — fires when: many-cell GD, dense linear-algebra fits (svd/eigh/lstsq/ridge over fold×layer×arm), or a perm/bootstrap/null-draw battery over a fixed pool (overhead-bound; VECTORIZE first; launch VM fits detached + choom-protected + checkpointed + pin-parity relaunches (#811); Supersede contract incl. the mid-run ≥2×-deviation trigger, #722+).
+- **[vectorize-many-cell-fits](vectorize-many-cell-fits.md)** — fires when: many-cell GD, dense linear-algebra fits (svd/eigh/lstsq/ridge over fold×layer×arm), or a perm/bootstrap/null-draw battery over a fixed pool (VECTORIZE first; VM fits detached + choom-protected + checkpointed + pin-parity relaunches (#811); Supersede contract incl. the mid-run ≥2×-deviation trigger, #722+).
 - **[workflow-fix-on-bug](workflow-fix-on-bug.md)** — fires when: any agent hits a bug from a gap in the workflow surface itself (emit a `workflow-fix-candidate`).
 - **[agents-vs-skills](agents-vs-skills.md)** — fires when: you create/restructure anything under `.claude/` (decide agent vs skill).
 
@@ -48,6 +49,3 @@ update this index (lint: `--check-lessons-index`).
 
 Per-agent anti-pattern + feedback memories live at
 `.claude/agent-memory/<agent>/MEMORY.md` (always loaded via `memory: project`).
-Most likely to bite: **planner**, **critic**, **consistency-checker**,
-**experiment-implementer** / **implementer**, **analyzer** /
-**interpretation-critic** / **code-reviewer**.
