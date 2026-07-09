@@ -266,3 +266,24 @@ def test_retraction_recheck_present(daily_skill_text: str, token: str):
         "SKILL.md — the pre-filing freshness gate (skip when the source trail "
         "retracted the mined premise) must stay in the route-2/3 filing steps."
     )
+
+
+# ── #1173: route-2 wf-fix body Provenance mandate (durable recursion guard) ────
+
+
+def test_route2_wf_fix_provenance_mandate_present(daily_skill_text: str):
+    """#1173: every route-2 wf-fix body must carry the durable recursion-guard
+    Provenance lines (`workflow_fix_target:` + `fingerprint:`) — the env-var leg
+    is absent from `spawn-issue --auto` spawns and lost on watcher respawns
+    (incident #1134). This pins the SKILL.md mandate paragraph the driver's
+    mechanical injection backstops."""
+    assert "wf-fix body Provenance mandate" in daily_skill_text, (
+        "the route-2 'wf-fix body Provenance mandate' paragraph dropped from daily "
+        "SKILL.md — daily-filed wf-fix bodies would regress to carrying no durable "
+        "recursion-guard signal (#1173, incident #1134)"
+    )
+    assert "- workflow_fix_target: <target_file>" in daily_skill_text, (
+        "the literal `- workflow_fix_target: <target_file>` Provenance-line template "
+        "dropped from daily SKILL.md — the durable signal "
+        "task_workflow.is_workflow_fix_session() reads must stay mandated (#1173)"
+    )
