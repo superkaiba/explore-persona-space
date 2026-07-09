@@ -1335,8 +1335,8 @@
     "1171": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1171",
-      "status": "proposed",
+      "path": "tasks/planning/1171",
+      "status": "planning",
       "title": "workflow-fix: strip v4 Methodology details in body audit"
     },
     "1172": {
