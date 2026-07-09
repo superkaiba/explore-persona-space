@@ -1265,8 +1265,8 @@
     "1162": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1162",
-      "status": "running",
+      "path": "tasks/reviewing/1162",
+      "status": "reviewing",
       "title": "workflow-fix: check_jsonl_splitlines: add generic-receiver s"
     },
     "1163": {
