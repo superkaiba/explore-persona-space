@@ -1545,8 +1545,8 @@
     "1199": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1199",
-      "status": "proposed",
+      "path": "tasks/planning/1199",
+      "status": "planning",
       "title": "workflow-fix: fix/adjudicate exit-site marker misses on main"
     },
     "12": {
