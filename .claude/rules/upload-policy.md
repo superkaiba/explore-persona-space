@@ -31,11 +31,14 @@ prelude (`backends/gcp.py`), and the SLURM sbatch env block (`backends/slurm.py`
 `setdefault` belt-and-suspenders for local-dev. Override per-launch with `=0` /
 `HF_HUB_DISABLE_XET=1`: the two accelerator defaults are `setdefault` /
 `${VAR:-1}` so an explicit launch-time `=0` always wins, and the GCP / SLURM
-passthrough allowlists forward a dispatch-process `=0` FOR THOSE TWO VARS
-(`HF_XET_HIGH_PERFORMANCE` / `HF_HUB_ENABLE_HF_TRANSFER`) to the remote
-worker — they do NOT (yet) forward `HF_HUB_DISABLE_XET` (code follow-up
-pending), so on GCP/SLURM the xet kill switch must be set in the WORKER
-shell, not the dispatch process. The effective xet kill switch is
+passthrough allowlists forward a dispatch-process `=0` for those two vars
+AND `HF_HUB_DISABLE_XET=1` (the real kill switch — forwarded as of #1195;
+`HF_XET_DISABLE` stays in the allowlists only as a legacy no-op alias), so
+a dispatch-time xet disable now reaches GCP/SLURM workers on a fresh
+dispatch. RunPod is NOT part of that claim — pods have no dispatch-env
+passthrough (the launcher / bootstrap shell env is the channel there), so
+on a pod the kill switch is still set in the WORKER shell. The effective
+xet kill switch is
 `HF_HUB_DISABLE_XET=1` — it flips `is_xet_available()` False
 (`huggingface_hub` 0.36.2, the uv.lock pin; `constants.py` reads
 `HF_HUB_DISABLE_XET`), which gates the upload branch (`_commit_api.py:380`);
@@ -68,11 +71,13 @@ Three preconditions: (a) the upload path is replay-idempotent (per-cell /
 per-folder skip-if-complete — the #664 per-cell contract; #931's completed
 folder commits skipped idempotently on replay), (b) each rung is
 KILL-hung-process → REPLAY-with-env — never export on top of a live process
-(`huggingface_hub.constants` freezes env at import), (c) the rung env is set
-IN THE WORKER's shell (SSH into the pod/worker and relaunch there): until
-the allowlist follow-up lands, a dispatch-process `HF_HUB_DISABLE_XET=1` is
-NOT forwarded to GCP/SLURM workers, so a full re-dispatch "replay" from the
-orchestrator silently recreates the placebo. Do not wait for a rung
+(`huggingface_hub.constants` freezes env at import), (c) for a LIVE wedged
+process the rung env must still be set IN THE WORKER's shell and the
+process relaunched there (SSH into the pod/worker — the import freeze means
+an orchestrator-side export can never reach a running process, and on
+RunPod there is no dispatch-env passthrough at all); a full FRESH
+re-dispatch with `HF_HUB_DISABLE_XET=1` in the dispatch env DOES forward to
+GCP/SLURM workers as of #1195. Do not wait for a rung
 to self-heal: hf_transfer retries fire only on ERRORING parts
 (`max_retries=5` threaded by `lfs.py::_upload_parts_hf_transfer`), the
 pure-python `http_backoff` path retries only raised errors
