@@ -1601,8 +1601,8 @@
     "1205": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1205",
-      "status": "approved",
+      "path": "tasks/running/1205",
+      "status": "running",
       "title": "daily-fix: GCE workload verifies eval-JSON push landed"
     },
     "1206": {
