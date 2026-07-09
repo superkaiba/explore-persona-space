@@ -1237,8 +1237,8 @@
     "1159": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1159",
-      "status": "approved",
+      "path": "tasks/running/1159",
+      "status": "running",
       "title": "workflow-fix: Split clean-result-critic.md; add pointer-cove"
     },
     "116": {
