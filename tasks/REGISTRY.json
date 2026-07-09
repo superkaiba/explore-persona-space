@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1198,
+  "highest_id": 1199,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1541,6 +1541,13 @@
       "path": "tasks/proposed/1198",
       "status": "proposed",
       "title": "workflow-fix: prefer explicit-PID kills in crash-fix step 2"
+    },
+    "1199": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1199",
+      "status": "proposed",
+      "title": "workflow-fix: fix/adjudicate exit-site marker misses on main"
     },
     "12": {
       "has_clean_result": false,
