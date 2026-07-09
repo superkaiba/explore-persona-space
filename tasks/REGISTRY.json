@@ -1251,8 +1251,8 @@
     "1160": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1160",
-      "status": "running",
+      "path": "tasks/reviewing/1160",
+      "status": "reviewing",
       "title": "workflow-fix: Fix trunk-red dotenv-before-torch test (2 issu"
     },
     "1161": {
