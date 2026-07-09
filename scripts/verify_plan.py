@@ -4874,7 +4874,9 @@ _C32_PROVENANCE_RE = re.compile(
 )
 
 # Numeric timing token: a digit-bearing quantity with a time unit,
-# optionally per-call ("125 s/fit", "~0.58 s/cell", "2-3 min", "9 min").
+# optionally per-call ("125 s/fit", "~0.58 s/cell", "2–3 min" (en dash), "9 min").
+# NOTE: an ASCII-hyphen range ("2-3 min") does NOT match (the lookbehind
+# blocks it); the corpus's ranges use the en dash, which does.
 # Lookbehind blocks "A100s"/"H100" ("100 s" inside an alnum run).
 _C32_TIMING_RE = re.compile(
     r"(?i)(?<![A-Za-z0-9.\-])[~≈]?\d[\d,]*(?:\.\d+)?\s*"
