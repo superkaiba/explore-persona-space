@@ -11,7 +11,10 @@ the #841 incident class where a concurrent destructive op silently reverted
 another session's uncommitted edits. As of #1128 it ALSO blocks branch
 MERGES on the shared root (``git merge <ref>``; ``--abort``/``--quit``
 recovery allowed) — the #1090 incident class where a conflicting root merge
-stranded conflict markers in the shared tree until aborted.
+stranded conflict markers in the shared tree until aborted. As of #1193 it
+ALSO blocks the rebase family on the shared root (``git rebase <ref>`` /
+``git cherry-pick <ref>``; ``--abort``/``--quit`` recovery allowed,
+``--continue``/``--skip`` fail-closed).
 
 These tests drive the script exactly as the harness does: stdin PreToolUse JSON
 ``{"tool_input": {"command": <cmd>}}`` -> exit 2 (blocked) or exit 0 (allowed).
@@ -1517,3 +1520,130 @@ def test_note_text_merge_literal_trips_guard_known_limitation():
         )
         == 2
     )
+
+
+# ==== #1193 — rebase-family fence (sibling of the #1128 merge fence) =========
+#
+# `git rebase <ref>` / `git cherry-pick <ref>` at the SHARED repo root strand
+# conflict state in the shared tree on conflict (the #1090 incident class) and
+# rewrite/land commits on root main outside the sanctioned landing paths even
+# when clean (a bare `git rebase` with a configured upstream genuinely RUNS,
+# so the end-of-clause shape blocks too). TIGHT anchor: verb followed by
+# whitespace/end-of-clause (NOT `\b`, which would trip
+# `git -c rebase.autoStash=true pull` at flag-value position — RA10).
+# Allow-arm: `--abort`/`--quit` immediately after the verb, ONE ARM PER VERB
+# (a combined `(rebase|cherry-pick)` allow would open the R13 cross-verb
+# quoted-arg spoof; a loose `[^;&|]*` allow would fail open on R12/CP9).
+# `--continue`/`--skip` block fail-closed (both COMPLETE the in-progress
+# operation on the root tree — the M5 decision, mirrored). The block side is
+# @on_main (the guard's on-main gate exits 0 off-main); the allow side must
+# pass in either repo state. Block tests fire on shape alone — the detectors
+# are pure grep, never routing to the ref-resolution probes.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git rebase issue-123", id="R1-bare_branch_rebase"),
+        pytest.param("git rebase origin/main", id="R2-rebase_origin_main"),
+        pytest.param("git rebase", id="R3-bare_rebase_end_of_clause"),
+        pytest.param("git rebase -i HEAD~3", id="R4-interactive"),
+        pytest.param("git rebase --continue", id="R5-continue_completes_root_op"),
+        pytest.param("git rebase --skip", id="R6-skip_is_continue_class"),
+        pytest.param("git rebase --onto main a b", id="R7-onto_form"),
+        pytest.param("git -c core.editor=true rebase x", id="R8-global_flag_prefixed"),
+        pytest.param(
+            "git fetch origin && git rebase origin/main", id="R9-compound_fetch_then_rebase"
+        ),
+        pytest.param("git rebase issue-1 # --abort", id="R10-comment_tail_cannot_spoof_allow"),
+        pytest.param("git rebase --autostash origin/main", id="R11-flag_then_ref_no_allow"),
+        pytest.param(
+            'git rebase --exec "then --abort" issue-5',
+            id="R12-quoted_abort_in_exec_cannot_spoof",
+        ),
+        pytest.param(
+            'git rebase --exec "cherry-pick --abort" main',
+            id="R13-cross_verb_quoted_abort_cannot_spoof",
+        ),
+        pytest.param("git cherry-pick abc1234", id="CP1-bare_sha_pick"),
+        pytest.param("git cherry-pick", id="CP2-bare_end_of_clause"),
+        pytest.param("git cherry-pick --continue", id="CP3-continue"),
+        pytest.param("git cherry-pick --skip", id="CP4-skip"),
+        pytest.param("git cherry-pick -n abc1234", id="CP5-no_commit_still_mutates"),
+        pytest.param("git -c core.editor=true cherry-pick x", id="CP6-global_flag_prefixed"),
+        pytest.param("git cherry-pick abc1 # --abort", id="CP7-comment_tail_cannot_spoof"),
+        pytest.param("git fetch origin && git cherry-pick abc1", id="CP8-compound"),
+        pytest.param(
+            'git cherry-pick --strategy-option "x --abort" abc1',
+            id="CP9-quoted_abort_in_strategy_option_cannot_spoof",
+        ),
+    ],
+)
+def test_rebase_family_shapes_block(cmd):
+    assert _run(cmd) == 2
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git rebase --abort", id="RA1-rebase_abort_recovery"),
+        pytest.param("git rebase --quit", id="RA2-rebase_quit_recovery"),
+        pytest.param("git cherry-pick --abort", id="RA3-cp_abort_recovery"),
+        pytest.param("git cherry-pick --quit", id="RA4-cp_quit_recovery"),
+        pytest.param("git -C .claude/worktrees/issue-123 rebase main", id="RA5-dash_C_worktree"),
+        pytest.param("git -C /tmp/scratch cherry-pick abc123", id="RA6-dash_C_scratch_pick"),
+        pytest.param("cd .claude/worktrees/x && git rebase main", id="RA7-cd_worktree_latch"),
+        pytest.param(
+            'WT=.claude/worktrees/issue-1; cd "$WT" && git rebase origin/main',
+            id="RA8-wt_variable_latch",
+        ),
+        pytest.param("git pull --rebase --autostash", id="RA9-pull_rebase_bare_flag"),
+        pytest.param("git -c rebase.autoStash=true pull", id="RA10-config_value_position"),
+        pytest.param("git log --cherry-pick --right-only A...B", id="RA11-log_cherry_pick_flag"),
+        pytest.param("git log --cherry A...B", id="RA12-log_cherry_flag"),
+        pytest.param("git cherry v1.0 main", id="RA13-git_cherry_plumbing"),
+        pytest.param(
+            'git commit -m "cherry-picked for illustration"',
+            id="RA14-prose_cherry_picked_suffix",
+        ),
+        pytest.param(
+            'git commit -m "rebase fence for the guard"', id="RA15-prose_rebase_in_commit_msg"
+        ),
+        pytest.param("ssh pod-779 'git rebase origin/main'", id="RA16-ssh_remote_rebase_waiver"),
+        pytest.param("grep -q 'git cherry-pick abc' notes.md", id="RA17-grep_pattern_waiver"),
+    ],
+)
+def test_rebase_family_allowed_shapes_exit0(cmd):
+    assert _run(cmd) == 0
+
+
+@on_main
+@pytest.mark.parametrize(
+    "note_cmd",
+    [
+        pytest.param(
+            "uv run python scripts/task.py post-marker 1193 epm:x "
+            '--note "run git rebase issue-1 next"',
+            id="note_rebase_literal",
+        ),
+        pytest.param(
+            "uv run python scripts/task.py post-marker 1193 epm:x "
+            '--note "then git cherry-pick abc1 onto main"',
+            id="note_cherry_pick_literal",
+        ),
+    ],
+)
+def test_note_text_rebase_family_literal_trips_guard_known_limitation(note_cmd):
+    # KNOWN LIMITATION (header): a quoted FULL `git rebase <ref>` /
+    # `git cherry-pick <sha>` command literal in --note/-m text trips the raw
+    # scan (#1193, mirror of the merge-literal pin). Workaround: --file
+    # <path.md> / git commit -F.
+    assert _run(note_cmd) == 2
+
+
+def test_man_git_rebase_allowed():
+    # `man git-rebase` passes the loose pre-filter (`\bgit\b` fires before the
+    # `-`) but the tight anchors require a `git ` + space bigram, so the
+    # man-page form is never classified — the known-limitation (xvii)(c)
+    # remediation for the `git rebase --help` false-block parity.
+    assert _run("man git-rebase") == 0

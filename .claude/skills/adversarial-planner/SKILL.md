@@ -177,12 +177,16 @@ Run the structural verifier against the plan version just persisted:
   forms are deliberately discussed content, e.g. a plan about entity
   handling, not a command to dispatch; exempts shell-tagged content fences
   ONLY — a `--workload-cmd`/`dispatch_issue.py` fence FAILs on entities
-  unconditionally), and
+  unconditionally),
   `Durability pin: N/A — <one-line reason>` / alias `N/A — no durability pin:
   <reason>` (check 31 — kind: infra|batch plans committing to a
   `.claude/skills/**/SKILL.md` prose edit; the reason tail is mandatory — a
   bare `Durability pin: N/A` still WARNs. A plan that NAMES a pin instead
-  writes `Durability pin: tests/test_<file>.py::test_<name>`).
+  writes `Durability pin: tests/test_<file>.py::test_<name>`), and
+  `N/A — no fit-family phases` (check 32 — the flagged compute-table row is
+  not actually a per-cell fit/solve/factorization loop, or the plan has no
+  fit-family phases; a genuine fit row instead states its basis as
+  `measured <t> s/<unit>`, a `#<M>` measured figure, or `pilot-gated`).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

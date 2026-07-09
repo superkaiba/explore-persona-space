@@ -118,7 +118,10 @@ def test_untested_code_file_warns(tmp_path: Path):
     touched = sel.compute_touched("main", repo, _runner=_runner_for(["scripts/orphan.py"]))
     tests, untested = sel.select_tests(touched, repo)
     assert untested == ["scripts/orphan.py"]
-    assert set(tests) == set(sel.WORKFLOW_INVARIANT)  # still runs the invariant set
+    # Still runs the invariant set; the #1187-widened scripts/**/*.py glob-scan
+    # row now ALSO pulls the thread-caps test for ANY scripts/ file (additive —
+    # the untested_touched WARN above is unaffected).
+    assert set(tests) == set(sel.WORKFLOW_INVARIANT) | {"tests/test_shared_vm_thread_caps.py"}
 
 
 # --- Case 6: pinned literal matches the LIVE tests/ tree ---------------------
@@ -221,8 +224,12 @@ def test_selection_reasons_content(tmp_path: Path):
     assert reasons["tests/test_widget.py"] == ["stem-map:scripts/widget.py"]
     # A touched test file includes itself:
     assert reasons["tests/test_thing.py"] == ["touched-test"]
-    # Glob-scan arm (#895) records the covered touched file:
-    assert reasons["tests/test_shared_vm_thread_caps.py"] == ["glob-scan:scripts/issue999_fake.py"]
+    # Glob-scan arm (#895; #1187 widened the row to scripts/**/*.py, so
+    # scripts/widget.py now hits it too) records each covered touched file:
+    assert reasons["tests/test_shared_vm_thread_caps.py"] == [
+        "glob-scan:scripts/issue999_fake.py",
+        "glob-scan:scripts/widget.py",
+    ]
     # A pure invariant carries exactly the invariant reason:
     assert reasons["tests/test_task_workflow.py"] == ["invariant"]
     # Reason keys exactly cover the selection, and every reason list is sorted:
@@ -407,7 +414,8 @@ def test_untested_warn_through_main(tmp_path: Path, monkeypatch, capsys):
     assert "(branch: unknown)" in captured.err
 
 
-# --- Case 16: glob-scan map — scripts/issue*_*.py selects the thread-caps test
+# --- Case 16: glob-scan map — a scripts/issue*_*.py file (now via the #1187
+# --- scripts/**/*.py row) selects the thread-caps test
 def test_glob_scan_map_selects_thread_caps_for_issue_script(tmp_path: Path):
     repo = _make_tree(tmp_path, [])
     touched = sel.compute_touched("main", repo, _runner=_runner_for(["scripts/issue999_fake.py"]))
@@ -417,10 +425,19 @@ def test_glob_scan_map_selects_thread_caps_for_issue_script(tmp_path: Path):
     assert untested == ["scripts/issue999_fake.py"]
 
 
-# --- Case 17: negative — a non-matching scripts file pulls NO map row ---------
+# --- Case 17: per-row negatives under the #1187-widened thread-caps globs -----
 def test_glob_scan_map_not_selected_for_non_matching_file(tmp_path: Path):
     repo = _make_tree(tmp_path, [])
+    # scripts/pod.py: the widened scripts/**/*.py row DOES pull thread-caps
+    # (documents the #1187 widening), still NOT the subprocess-env row.
     touched = sel.compute_touched("main", repo, _runner=_runner_for(["scripts/pod.py"]))
+    tests, _ = sel.select_tests(touched, repo)
+    assert "tests/test_shared_vm_thread_caps.py" in tests
+    assert "tests/test_subprocess_env_explicit.py" not in tests
+    # A genuinely non-matching src path (outside experiments/) pulls NEITHER row.
+    touched = sel.compute_touched(
+        "main", repo, _runner=_runner_for(["src/explore_persona_space/llm/api_dispatch.py"])
+    )
     tests, _ = sel.select_tests(touched, repo)
     assert "tests/test_shared_vm_thread_caps.py" not in tests
     assert "tests/test_subprocess_env_explicit.py" not in tests
@@ -432,7 +449,7 @@ def test_glob_scan_map_experiments_run_file_and_zero_segment(tmp_path: Path):
     nested = "src/explore_persona_space/experiments/foo/run_bar.py"
     touched = sel.compute_touched("main", repo, _runner=_runner_for([nested]))
     tests, _ = sel.select_tests(touched, repo)
-    assert "tests/test_shared_vm_thread_caps.py" in tests  # **/run_*.py row
+    assert "tests/test_shared_vm_thread_caps.py" in tests  # experiments/**/*.py row (#1187)
     assert "tests/test_subprocess_env_explicit.py" in tests  # */run_*.py row
     zero_seg = "src/explore_persona_space/experiments/run_top.py"
     touched = sel.compute_touched("main", repo, _runner=_runner_for([zero_seg]))
@@ -449,7 +466,9 @@ def test_glob_scan_map_dispatcher_script(tmp_path: Path):
     )
     tests, _ = sel.select_tests(touched, repo)
     assert "tests/test_subprocess_env_explicit.py" in tests
-    assert "tests/test_shared_vm_thread_caps.py" not in tests
+    # #1187: dispatcher scripts are scripts — the widened scripts/**/*.py
+    # thread-caps row now matches them too.
+    assert "tests/test_shared_vm_thread_caps.py" in tests
 
 
 # --- Case 20: map row NOT selected when its test file is absent on disk -------
@@ -534,17 +553,20 @@ def test_stdout_command_carries_sized_timeout(tmp_path: Path, monkeypatch, capsy
 
 # --- Cases 24-29 (#1147): map_scan_tests() + the --map-files CLI mapping mode -
 def test_map_scan_tests_thread_caps_glob(tmp_path: Path):
-    """A scripts/issue*_*.py path maps to the thread-caps scan-test pair."""
+    """A scripts/ path maps to the thread-caps scan-test pair (scripts/**/*.py, #1187)."""
     repo = _make_tree(tmp_path, [])
     pairs = sel.map_scan_tests(["scripts/issue123_foo.py"], repo)
     assert pairs == [("tests/test_shared_vm_thread_caps.py", "scripts/issue123_foo.py")]
 
 
 def test_map_scan_tests_dispatcher_glob(tmp_path: Path):
-    """A scripts/dispatch_*.py path maps to the subprocess-env scan-test pair."""
+    """A scripts/dispatch_*.py path maps to BOTH scan-test pairs (#1187 widening)."""
     repo = _make_tree(tmp_path, [])
     pairs = sel.map_scan_tests(["scripts/dispatch_x.py"], repo)
-    assert pairs == [("tests/test_subprocess_env_explicit.py", "scripts/dispatch_x.py")]
+    assert pairs == [
+        ("tests/test_shared_vm_thread_caps.py", "scripts/dispatch_x.py"),
+        ("tests/test_subprocess_env_explicit.py", "scripts/dispatch_x.py"),
+    ]
 
 
 def test_map_scan_tests_non_matching_empty(tmp_path: Path):
@@ -571,6 +593,7 @@ def test_cli_map_files_tab_output_exit0(tmp_path: Path, capsys):
     assert rc == 0
     out = capsys.readouterr().out
     assert out.splitlines() == [
+        "tests/test_shared_vm_thread_caps.py\tscripts/dispatch_x.py",
         "tests/test_shared_vm_thread_caps.py\tscripts/issue123_foo.py",
         "tests/test_subprocess_env_explicit.py\tscripts/dispatch_x.py",
     ]

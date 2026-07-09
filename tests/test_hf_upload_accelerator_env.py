@@ -7,7 +7,9 @@ override path preserved:
   * ``HF_XET_HIGH_PERFORMANCE`` (PRIMARY — the project repos use the Xet
     backend) + ``HF_HUB_ENABLE_HF_TRANSFER`` (orthogonal LFS accelerator) are
     in both lane passthrough allowlists (so a dispatch-process ``=0`` /
-    ``HF_XET_DISABLE=1`` forwards to the remote worker);
+    ``HF_HUB_DISABLE_XET=1`` (the REAL xet kill switch, #1195;
+    ``HF_XET_DISABLE`` kept only as a legacy no-op alias, #1049) forwards to
+    the remote worker);
   * the GCE startup script statically defaults BOTH (so the workload AND the
     crash-persist subshell inherit them), and the static default precedes the
     ``_eps_persist_diagnostics`` definition so the EXIT-trap upload inherits it;
@@ -26,9 +28,18 @@ import tempfile
 
 from explore_persona_space.backends import gcp, slurm
 from explore_persona_space.backends.base import RunSpec
-from explore_persona_space.backends.gcp import GcpConfig, render_startup_script
+from explore_persona_space.backends.gcp import (
+    GcpConfig,
+    render_create_argv,
+    render_startup_script,
+)
 
 _ACCEL_KEYS = ("HF_XET_HIGH_PERFORMANCE", "HF_HUB_ENABLE_HF_TRANSFER")
+# The REAL xet kill switch (#1195; huggingface_hub 0.36.2 constants.py reads
+# HF_HUB_DISABLE_XET) + the legacy no-op alias (verified inert, #1049) — BOTH
+# pinned in the allowlists: the real switch so a dispatch-process =1 forwards,
+# the alias so existing launch commands keep forwarding harmlessly.
+_DISABLE_KEYS = ("HF_HUB_DISABLE_XET", "HF_XET_DISABLE")
 
 
 # --------------------------------------------------------------------------
@@ -37,12 +48,12 @@ _ACCEL_KEYS = ("HF_XET_HIGH_PERFORMANCE", "HF_HUB_ENABLE_HF_TRANSFER")
 
 
 def test_gcp_passthrough_includes_accelerators_and_disable() -> None:
-    for key in (*_ACCEL_KEYS, "HF_XET_DISABLE"):
+    for key in (*_ACCEL_KEYS, *_DISABLE_KEYS):
         assert key in gcp.STARTUP_PASSTHROUGH_ENV_KEYS, key
 
 
 def test_slurm_passthrough_includes_accelerators_and_disable() -> None:
-    for key in (*_ACCEL_KEYS, "HF_XET_DISABLE"):
+    for key in (*_ACCEL_KEYS, *_DISABLE_KEYS):
         assert key in slurm.PASSTHROUGH_ENV_KEYS, key
 
 
@@ -134,6 +145,45 @@ def test_gcp_passthrough_override_forwards_zero(monkeypatch) -> None:
     assert "export HF_HUB_ENABLE_HF_TRANSFER" in script
 
 
+def test_gcp_fetch_stanza_renders_real_xet_kill_switch() -> None:
+    """The GCP startup script's default-preserving metadata fetch stanza
+    renders a fetch+export line for ``HF_HUB_DISABLE_XET`` (#1195), so a
+    dispatch-process ``=1`` forwarded into instance metadata reaches the GCE
+    workload. (No dispatch-env monkeypatch: the stanza renders EVERY
+    allowlist key unconditionally — the create-argv test below covers the
+    dispatch-env leg.)"""
+    script = render_startup_script(
+        spec=_hydra_spec(), config=_gcp_config(), attempt_id="att-fixed-745"
+    )
+    assert "instance/attributes/HF_HUB_DISABLE_XET" in script
+    assert '[ -n "$_VAL" ] && export HF_HUB_DISABLE_XET="$_VAL"' in script
+
+
+def test_gcp_create_argv_forwards_real_xet_kill_switch(monkeypatch) -> None:
+    """A dispatch-process ``HF_HUB_DISABLE_XET=1`` lands as instance metadata
+    on the create argv — the dispatch-env → metadata leg the fetch stanza
+    reads back on the VM (#1195; mirrors the adapter-persist M2 create-side
+    test in test_gcp_backend.py)."""
+    monkeypatch.setenv("HF_HUB_DISABLE_XET", "1")
+    # Hermetic vs the invoking shell (mirrors test_gcp_backend.py's autouse
+    # fixture): a real optional secret leaking in would make render_create_argv
+    # demand a tempfile entry this direct-render test doesn't thread.
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    argv = render_create_argv(
+        spec=_hydra_spec(),
+        config=_gcp_config(),
+        attempt_id="att-fixed-745",
+        startup_script="#!/bin/bash\n",
+        secret_files={
+            "HF_TOKEN": "/tmp/eps-test-secret-hf",
+            "WANDB_API_KEY": "/tmp/eps-test-secret-wandb",
+        },
+    )
+    joined = " ".join(a for a in argv if a.startswith("--metadata="))
+    assert "HF_HUB_DISABLE_XET=1" in joined
+
+
 # --------------------------------------------------------------------------
 # SLURM sbatch — static defaults before the secrets source
 # --------------------------------------------------------------------------
@@ -153,6 +203,20 @@ def test_slurm_render_secrets_env_skips_unset_accelerator() -> None:
     out = slurm.render_secrets_env({"HF_TOKEN": "tok"})
     assert "HF_XET_HIGH_PERFORMANCE" not in out
     assert "HF_HUB_ENABLE_HF_TRANSFER" not in out
+
+
+def test_slurm_render_secrets_env_forwards_real_xet_kill_switch() -> None:
+    """A dispatch-process ``HF_HUB_DISABLE_XET=1`` reaches the compute node
+    via the secrets env file (#1195)."""
+    out = slurm.render_secrets_env({"HF_HUB_DISABLE_XET": "1", "HF_TOKEN": "tok"})
+    assert "HF_HUB_DISABLE_XET=1" in out
+
+
+def test_slurm_render_secrets_env_skips_unset_xet_kill_switch() -> None:
+    """An unset kill switch is NOT rendered (drop-when-absent), so xet stays
+    enabled by default on the compute node."""
+    out = slurm.render_secrets_env({"HF_TOKEN": "tok"})
+    assert "HF_HUB_DISABLE_XET" not in out
 
 
 # --------------------------------------------------------------------------

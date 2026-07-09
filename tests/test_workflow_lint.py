@@ -59,10 +59,12 @@ from workflow_lint import (  # noqa: E402
     check_long_loop_restartability_review_lens,
     check_marker_recipe_snippets,
     check_marker_registry,
+    check_marker_scalar_integrity,
     check_no_literal_round_marker_versions,
     check_no_workflow_improver_spawn,
     check_pipe_python,
     check_piped_git_push,
+    check_poller_marker_consumers,
     check_script_references,
     check_section_reference_pointer_coverage,
     check_skill_references,
@@ -1470,6 +1472,328 @@ def test_no_flags_default_run_pins_failure_lesson_field_contract(tmp_path):
     assert "#712 §4f" in result.stderr, (
         "expected the #712 §4f field-contract diagnostic in stderr; got:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_marker_scalar_integrity`` +
+# ``check_poller_marker_consumers`` (task #1191; incident #873: an unquoted
+# workflow.yaml plain scalar containing ' #' silently truncated at the
+# comment marker and --check-references passed on the truncated parse; the
+# same task's poller runtime-tripwire claim shipped with no poll_pipeline
+# code until a critic caught it).
+# ---------------------------------------------------------------------------
+
+# The verbatim #873 offender value (unquoted → YAML truncates at ' #').
+_I873_POSTED_BY = "skill (via experiment-implementer); poll_pipeline (runtime tripwire, #873)"
+
+
+def test_check_marker_scalar_integrity_fail_truncated_comment_scalar(tmp_path):
+    """END-TO-END #873 repro: the UNQUOTED offender value written to a
+    minimal fixture workflow.yaml parses to
+    'skill (via experiment-implementer); poll_pipeline (runtime tripwire,'
+    (trailing comma AND 2-vs-1 parens — both heuristic legs), so the check
+    FAILs with exactly one error naming the kind + the ``posted_by`` field."""
+    fixture = tmp_path / "workflow.yaml"
+    fixture.write_text(
+        "version: 1\n"
+        "markers:\n"
+        "  - kind: epm:compute-deviation\n"
+        f"    posted_by: {_I873_POSTED_BY}\n"
+        "    when: fires on a >2x wall-time deviation\n"
+        "    fields: projected_hours\n"
+    )
+    wf = load_workflow_yaml(fixture)
+    # Precondition of the repro: YAML really did truncate at the comment.
+    assert wf.markers[0].posted_by.endswith("(runtime tripwire,"), wf.markers[0].posted_by
+    errors = check_marker_scalar_integrity(wf)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "epm:compute-deviation" in errors[0]
+    assert "'posted_by'" in errors[0]
+
+
+def test_check_marker_scalar_integrity_pass_quoted_scalar(tmp_path):
+    """The same value DOUBLE-QUOTED (as live workflow.yaml carries it today)
+    parses in full — balanced parens, no trailing ','/'(' — and PASSes."""
+    fixture = tmp_path / "workflow.yaml"
+    fixture.write_text(
+        "version: 1\n"
+        "markers:\n"
+        "  - kind: epm:compute-deviation\n"
+        f'    posted_by: "{_I873_POSTED_BY}"\n'
+        "    when: fires on a >2x wall-time deviation\n"
+        "    fields: projected_hours\n"
+    )
+    wf = load_workflow_yaml(fixture)
+    assert wf.markers[0].posted_by.endswith("#873)"), wf.markers[0].posted_by
+    errors = check_marker_scalar_integrity(wf)
+    assert errors == [], f"expected PASS for the quoted scalar, got: {errors}"
+
+
+def test_check_marker_scalar_integrity_fail_unbalanced_only():
+    """A value with unbalanced parens but NO trailing ','/'(' still fires
+    (the second heuristic leg alone)."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="skill (runtime tripwire", when="w", fields="f")
+        ],
+    )
+    errors = check_marker_scalar_integrity(wf)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "unbalanced parens" in errors[0]
+
+
+def test_check_marker_scalar_integrity_fail_non_posted_by_field():
+    """Round-1 Statistics Must-Fix 2: the truncation signature in a
+    NON-``posted_by`` field (``when``) fires with an error naming that
+    field — discriminates a broken implementation that scans only
+    ``posted_by`` (§11.2's all-four-fields decision)."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(
+                kind="epm:x",
+                posted_by="skill",
+                when="fires after phase 2 (see runbook,",
+                fields="f",
+            )
+        ],
+    )
+    errors = check_marker_scalar_integrity(wf)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "'when'" in errors[0], f"error must name the 'when' field: {errors[0]}"
+
+
+def test_check_marker_scalar_integrity_fail_trailing_open_paren():
+    """A value ending in '(' fires (the second ``endswith`` branch)."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="posted by the watcher (", when="w", fields="f")
+        ],
+    )
+    errors = check_marker_scalar_integrity(wf)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "trailing ,/(" in errors[0]
+
+
+def test_check_marker_scalar_integrity_pass_balanced_prose():
+    """Ordinary prose with balanced parens ending in '.' PASSes — the check
+    keys on the truncation AFTERMATH, not on comment-ish content."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(
+                kind="epm:x",
+                posted_by="skill (via experiment-implementer); poll_pipeline (tripwire, #873).",
+                when="fires when the projection exceeds 2x (see #873).",
+                fields="projected_hours",
+            )
+        ],
+    )
+    errors = check_marker_scalar_integrity(wf)
+    assert errors == [], f"expected PASS for balanced prose, got: {errors}"
+
+
+def test_check_marker_scalar_integrity_allowlist_waives():
+    """A (kind, field) allowlist entry waives an otherwise-failing value."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="skill (runtime tripwire", when="w", fields="f")
+        ],
+    )
+    errors = check_marker_scalar_integrity(
+        wf, allowlist={("epm:x", "posted_by"): "deliberate enumeration prose"}
+    )
+    assert errors == [], f"expected the allowlist to waive, got: {errors}"
+
+
+def test_workflow_lint_check_marker_scalar_integrity_repo_passes():
+    """Live-tree invariant: the committed workflow.yaml has 0 truncation
+    signatures across all markers x 4 string fields (probe 2026-07-09)."""
+    errors = check_marker_scalar_integrity(_workflow())
+    assert errors == [], (
+        "committed workflow.yaml § markers carries a truncated-comment "
+        "signature:\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_marker_scalar_integrity_flag_exits_zero():
+    """CLI flag path exits 0 on the live tree."""
+    result = _run("--check-marker-scalar-integrity")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-marker-scalar-integrity failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_check_poller_marker_consumers_fail_no_reference(tmp_path):
+    """A poller-posted kind referenced by NO consumer surface AND absent
+    from its declared poster file fails BOTH legs (2 errors)."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="poll_pipeline.py (tripwire)", when="w", fields="f")
+        ],
+    )
+    skill = tmp_path / "SKILL.md"
+    skill.write_text("No markers mentioned here.\n")
+    poller = tmp_path / "poll_pipeline.py"
+    poller.write_text("# no kinds posted here\n")
+    errors = check_poller_marker_consumers(
+        wf, consumer_paths=[skill], poller_file_map={"poll_pipeline": poller}
+    )
+    assert len(errors) == 2, f"expected Leg A + Leg B errors, got: {errors}"
+    assert any("NO consumer surface" in e for e in errors), errors
+    assert any("declared poster" in e for e in errors), errors
+
+
+def test_check_poller_marker_consumers_pass_referenced(tmp_path):
+    """The same kind mentioned in a consumer surface AND in the poster
+    file PASSes both legs."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="poll_pipeline.py (tripwire)", when="w", fields="f")
+        ],
+    )
+    skill = tmp_path / "SKILL.md"
+    skill.write_text("The poller posts `epm:x v1` on a tripwire hit.\n")
+    poller = tmp_path / "poll_pipeline.py"
+    poller.write_text('KIND = "epm:x"\n')
+    errors = check_poller_marker_consumers(
+        wf, consumer_paths=[skill], poller_file_map={"poll_pipeline": poller}
+    )
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_poller_marker_consumers_skips_non_poller(tmp_path):
+    """A non-poller ``posted_by`` (e.g. 'skill') is never checked, even
+    with zero references anywhere."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[MarkerEntry(kind="epm:x", posted_by="skill", when="w", fields="f")],
+    )
+    skill = tmp_path / "SKILL.md"
+    skill.write_text("Nothing here.\n")
+    errors = check_poller_marker_consumers(wf, consumer_paths=[skill], poller_file_map={})
+    assert errors == [], f"expected non-poller posted_by to be skipped, got: {errors}"
+
+
+def test_check_poller_marker_consumers_leg_b_only(tmp_path):
+    """Kind present in a consumer surface but ABSENT from the mapped
+    poster file yields exactly one Leg-B error (the #873 pre-fix state:
+    the claim is documented but the posting code does not exist)."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="poll_pipeline.py (tripwire)", when="w", fields="f")
+        ],
+    )
+    skill = tmp_path / "SKILL.md"
+    skill.write_text("The poller posts `epm:x v1` on a tripwire hit.\n")
+    poller = tmp_path / "poll_pipeline.py"
+    poller.write_text("# posting code never written\n")
+    errors = check_poller_marker_consumers(
+        wf, consumer_paths=[skill], poller_file_map={"poll_pipeline": poller}
+    )
+    assert len(errors) == 1, f"expected exactly one Leg-B error, got: {errors}"
+    assert "declared poster" in errors[0]
+    assert "poll_pipeline" in errors[0]
+
+
+def test_check_poller_marker_consumers_allowlist_waives(tmp_path):
+    """An allowlisted kind is waived from both legs."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="poll_pipeline.py (tripwire)", when="w", fields="f")
+        ],
+    )
+    skill = tmp_path / "SKILL.md"
+    skill.write_text("Nothing here.\n")
+    poller = tmp_path / "poll_pipeline.py"
+    poller.write_text("# nothing here\n")
+    errors = check_poller_marker_consumers(
+        wf,
+        consumer_paths=[skill],
+        poller_file_map={"poll_pipeline": poller},
+        allowlist={"epm:x": "deliberate out-of-band consumer (dashboard)"},
+    )
+    assert errors == [], f"expected the allowlist to waive, got: {errors}"
+
+
+def test_workflow_lint_check_poller_marker_consumers_repo_passes():
+    """Live-tree invariant: every committed poller-posted marker kind has
+    >=1 consumer reference and its declared poster mentions it (probe
+    2026-07-09: 5/5)."""
+    errors = check_poller_marker_consumers(_workflow())
+    assert errors == [], (
+        "committed workflow.yaml § markers carries a poller-posted kind "
+        "with no consumer / poster reference:\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_poller_marker_consumers_flag_exits_zero():
+    """CLI flag path exits 0 on the live tree."""
+    result = _run("--check-poller-marker-consumers")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-poller-marker-consumers failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_workflow_lint_new_checks_bundled(monkeypatch, capsys):
+    """Round-1 Statistics Must-Fix 1: BUNDLING is DISCRIMINATED, not
+    assumed. The live tree passes both new checks, so an exit-0 no-flags
+    run cannot distinguish 'bundled and passing' from 'never registered'
+    (the #873 gap re-created at main()). With each new check
+    monkeypatch-sentineled, an in-process ``main()`` with no flags AND one
+    with ``--check-references`` must BOTH surface the sentinel and return
+    nonzero — a forgotten dispatch line / --check-references bundle fails
+    this test.
+
+    Every OTHER check function is patched to a no-op so the in-process
+    runs stay fast (the real no-flags run takes minutes) — this does not
+    weaken the discrimination: with all other checks silenced, an exit-0 /
+    sentinel-free run can only mean the new check is not registered on
+    that path.
+    """
+    import workflow_lint as wl
+
+    for name in dir(wl):
+        if name.startswith(("check_", "_check_")) and callable(getattr(wl, name)):
+            monkeypatch.setattr(wl, name, lambda *a, **k: [])
+    monkeypatch.setattr(wl, "emit_tables", lambda *a, **k: [])
+    monkeypatch.setattr(
+        wl, "check_marker_scalar_integrity", lambda *a, **k: ["SENTINEL-scalar-integrity-bundling"]
+    )
+    monkeypatch.setattr(
+        wl, "check_poller_marker_consumers", lambda *a, **k: ["SENTINEL-poller-consumers-bundling"]
+    )
+
+    # Path 1: the no-flags default run.
+    rc_default = wl.main([])
+    err_default = capsys.readouterr().err
+    assert rc_default != 0, "no-flags main() exited 0 with sentinel-failing new checks"
+    assert "SENTINEL-scalar-integrity-bundling" in err_default, (
+        f"check_marker_scalar_integrity not bundled into the no-flags run:\n{err_default}"
+    )
+    assert "SENTINEL-poller-consumers-bundling" in err_default, (
+        f"check_poller_marker_consumers not bundled into the no-flags run:\n{err_default}"
+    )
+
+    # Path 2: the --check-references (pre-commit) run.
+    rc_refs = wl.main(["--check-references"])
+    err_refs = capsys.readouterr().err
+    assert rc_refs != 0, "--check-references main() exited 0 with sentinel-failing new checks"
+    assert "SENTINEL-scalar-integrity-bundling" in err_refs, (
+        f"check_marker_scalar_integrity not bundled into --check-references:\n{err_refs}"
+    )
+    assert "SENTINEL-poller-consumers-bundling" in err_refs, (
+        f"check_poller_marker_consumers not bundled into --check-references:\n{err_refs}"
     )
 
 
