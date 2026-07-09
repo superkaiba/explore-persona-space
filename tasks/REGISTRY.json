@@ -1293,8 +1293,8 @@
     "1166": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1166",
-      "status": "reviewing",
+      "path": "tasks/completed/1166",
+      "status": "completed",
       "title": "workflow-fix: planner.md: prescribe verdict-lattice declarat"
     },
     "1167": {
