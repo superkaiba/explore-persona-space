@@ -8350,10 +8350,11 @@ _SUBSET_DISCLOSURE_RE = re.compile(
 # `audit_clean_results_body_discipline.py` flags as body-discipline
 # anti-patterns. KEPT IN SYNC with that script's `condition_labels` +
 # `cell_tags` PATTERNS entries (verbatim source). The audit EXEMPTS
-# example blocks inside `## Data` only when they are wrapped in a fenced
-# code block (stripped globally) or a `<details>` block
-# (`strip_data_example_blocks`); a verbatim example row placed as a BARE
-# inline GFM table is NOT exempt, so a `C1` / `H2` / `BS_E0` cell trips
+# example blocks inside `## Data` (v3) / `## Methodology` (v4) only when
+# they are wrapped in a fenced code block (stripped globally) or a
+# `<details>` block (`strip_data_example_blocks`); a verbatim example
+# row placed as a BARE inline GFM table is NOT exempt, so a `C1` /
+# `H2` / `BS_E0` cell trips
 # the audit's condition-code scan with a spurious FAIL at /issue Step
 # 9a-bis and no signal telling the author to wrap it. Check 19b (WARN
 # only) fires at authoring time precisely when such a cell exists in an

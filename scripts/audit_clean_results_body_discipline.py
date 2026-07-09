@@ -502,9 +502,20 @@ def strip_context_blockquotes(text: str) -> str:
 _H2_RE = re.compile(r"^##\s+(?P<title>.+?)\s*$")
 
 
+# H2 sections whose `<details>` example blocks are exempt from the prose
+# scan: `## Data` (v3 spec — `### Trained on` / `### Evaluated with` /
+# `### Generated` example blocks) and `## Methodology` (v4 spec — the
+# `**Sample training/evaluation data + completions:**` slot;
+# `.claude/skills/clean-results/SPEC.md` mandates verbatim example
+# rows/completions wrapped in `<details>` or a fenced code block, and
+# fenced blocks are already stripped globally). Exact lowercase H2-title
+# match, mirroring the original `## Data`-only equality check (#1171).
+_DETAILS_EXEMPT_H2_TITLES: frozenset[str] = frozenset({"data", "methodology"})
+
+
 def strip_data_example_blocks(text: str) -> str:
     """Drop `<details>...</details>` example blocks inside the `## Data`
-    section.
+    (v3) and `## Methodology` (v4) sections.
 
     The v3 clean-result spec MANDATES verbatim training rows / eval
     probes / sample completions inside `## Data` (`### Trained on` /
@@ -517,32 +528,42 @@ def strip_data_example_blocks(text: str) -> str:
     required to be verbatim, so example blocks inside `## Data` are
     exempt from the scan.
 
+    The v4 spec (`<!-- clean-result-v4 -->`) moved the verbatim sample
+    rows to `## Methodology` → `**Sample training/evaluation data +
+    completions:**`, carried in the same `<details>` / fenced forms
+    (SPEC.md), so the v4 section gets the identical exemption (#1171).
+    Methodology PROSE (`**Design:**` / `**Training:**` /
+    `**Evaluation:**` lines outside a `<details>` block) stays scanned.
+
     Mechanism mirrors :func:`strip_context_blockquotes`: a stateful
     line walker that drops only lines inside a `<details>` block while
-    the cursor is inside the `## Data` section. Fenced code blocks (the
-    other v3 example-block form) are already removed globally by
+    the cursor is inside an exempt section
+    (`_DETAILS_EXEMPT_H2_TITLES`). Fenced code blocks (the other
+    example-block form) are already removed globally by
     :func:`strip_code`, so this only needs to handle `<details>` blocks.
 
-    The `## Data` section runs from its `## ` H2 to the next `## ` H2
-    (typically `## Reproducibility`) or EOF. If a `</details>` close is
-    never seen before the section ends, the block-drop ends with the
-    section — a mis-detected boundary degrades to the pre-fix behavior
-    (the lines get scanned), never a silently widened exemption.
+    An exempt section runs from its `## ` H2 to the next `## ` H2
+    (typically `## Reproducibility` / `## Results`) or EOF. If a
+    `</details>` close is never seen before the section ends, the
+    block-drop ends with the section — a mis-detected boundary degrades
+    to the pre-fix behavior (the lines get scanned), never a silently
+    widened exemption.
     """
     out_lines: list[str] = []
-    in_data = False
+    in_exempt_section = False
     in_details = False
     for line in text.splitlines():
         stripped = line.strip()
         h2 = _H2_RE.match(stripped)
         if h2:
-            # Any H2 ends a `## Data` block (and any in-flight details
-            # drop); re-enter only when the new H2 is `## Data` itself.
-            in_data = h2.group("title").strip().lower() == "data"
+            # Any H2 ends an exempt section (and any in-flight details
+            # drop); re-enter only when the new H2 is `## Data` (v3) or
+            # `## Methodology` (v4) itself.
+            in_exempt_section = h2.group("title").strip().lower() in _DETAILS_EXEMPT_H2_TITLES
             in_details = False
             out_lines.append(line)
             continue
-        if in_data:
+        if in_exempt_section:
             lowered = stripped.lower()
             if not in_details and lowered.startswith("<details"):
                 in_details = True
@@ -731,7 +752,7 @@ def audit_body(body: str) -> dict[str, list[str]]:
     # inline-backtick-wrapped bracketed CI in prose (``CI `[-0.295, +0.083]` ``,
     # the #667 line-166 gap) is still seen — `strip_code` blanks inline-backtick
     # spans, hiding the CI before the scan. The SAME downstream exemptions still
-    # apply (Data `<details>` / Context block stripped by the inner chain; table
+    # apply (Data/Methodology `<details>` / Context block stripped by the inner chain; table
     # rows blanked by `_blank_table_rows`; figure-caption + Why-this-test lines
     # blanked by `_strip_interval_inline_exempt_lines`). Fenced code blocks are
     # still stripped, so verbatim bracketed expressions in fenced examples do
