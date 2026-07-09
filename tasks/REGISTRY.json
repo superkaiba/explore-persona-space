@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1174,
+  "highest_id": 1175,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1359,6 +1359,13 @@
       "path": "tasks/proposed/1174",
       "status": "proposed",
       "title": "workflow-fix: relative cache exclusion in improver-spawn lin"
+    },
+    "1175": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1175",
+      "status": "proposed",
+      "title": "workflow-fix: lint unguarded deferred scripts.* imports"
     },
     "118": {
       "has_clean_result": false,
