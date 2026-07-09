@@ -1356,22 +1356,22 @@
     "1174": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1174",
-      "status": "reviewing",
+      "path": "tasks/completed/1174",
+      "status": "completed",
       "title": "workflow-fix: relative cache exclusion in improver-spawn lin"
     },
     "1175": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1175",
-      "status": "planning",
+      "path": "tasks/running/1175",
+      "status": "running",
       "title": "workflow-fix: lint unguarded deferred scripts.* imports"
     },
     "1176": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1176",
-      "status": "proposed",
+      "path": "tasks/planning/1176",
+      "status": "planning",
       "title": "workflow-fix: lint SKILL.md git recipes against root guard"
     },
     "1177": {

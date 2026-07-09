@@ -411,9 +411,11 @@ from __future__ import annotations
 import argparse
 import ast
 import dataclasses
+import os
 import re
 import sys
 from collections import Counter
+from collections.abc import Iterator
 from pathlib import Path
 
 # Allow `python scripts/workflow_lint.py` from a fresh shell without `uv run`
@@ -1751,6 +1753,80 @@ def _is_other_worktree_path(path: Path, current_worktree_prefix: str | None) -> 
     if current_worktree_prefix is None:
         return True
     return current_worktree_prefix not in s
+
+
+# Directory NAMES never descended into by _iter_files_pruned: bulk/cache
+# dirs that are never workflow surface and can be enormous (a live worktree
+# .venv is ~67k files; the repo-root .claude/worktrees tree held 3,300,121
+# entries on 2026-07-09 — 145s of rglob enumeration, task #1163). Mirrors
+# .gitignore's untracked-bulk set.
+_PRUNE_DIR_NAMES = frozenset(
+    {
+        ".git",
+        ".venv",
+        "venv",
+        "__pycache__",
+        "node_modules",
+        ".pytest_cache",
+        ".arxiv-papers",
+        "wandb",
+        "outputs",
+    }
+)
+
+
+def _iter_files_pruned(base: Path, *, suffixes: frozenset[str]) -> Iterator[Path]:
+    """Bounded replacement for ``base.rglob("*")``: yield regular files under
+    ``base`` whose suffix is in ``suffixes``, never descending into
+    :data:`_PRUNE_DIR_NAMES` dirs nor into a ``worktrees/`` dir directly under
+    a ``.claude/`` dir (the pre-enumeration form of the
+    :func:`_is_other_worktree_path` exclusion — the post-hoc string filter
+    stays in place at call sites as the semantic contract). Neither os.walk
+    nor 3.11 pathlib rglob follows directory symlinks (probe-verified on this
+    VM's 3.11.15), so the swap introduces no symlink-traversal divergence
+    (task #1163)."""
+    for dirpath, dirnames, filenames in os.walk(base):
+        parent_name = Path(dirpath).name
+        dirnames[:] = [
+            d
+            for d in dirnames
+            if d not in _PRUNE_DIR_NAMES and not (d == "worktrees" and parent_name == ".claude")
+        ]
+        for fn in filenames:
+            p = Path(dirpath, fn)
+            if p.suffix in suffixes and p.is_file():
+                yield p
+
+
+# (str(path), len(text), hash(text)) -> parsed module (or None when
+# unparseable). The no-flags run's parse-bearing AST checks each re-parsed
+# the same scripts/ + src/ corpus (~22s per pass, measured 1,336 files /
+# 31.4 MB); memoizing collapses ~4 redundant passes (task #1163). The
+# CONTENT-based key (text length + hash) invalidates on ANY rewrite — incl.
+# the unit-test tmp_path rewrite-between-calls pattern — with no stat call.
+# Peak RSS retaining all trees: ~1.0-1.1 GB (measured twice) — transient,
+# freed at process exit. NOTE: cached trees are SHARED across checks —
+# consumers must never mutate the returned nodes.
+_AST_CACHE: dict[tuple[str, int, int], ast.Module | None] = {}
+
+
+def _cached_parse(path: Path, text: str) -> ast.Module | None:
+    """Memoized ``ast.parse`` of ``text`` (the caller's just-read source of
+    ``path``). Returns None when unparseable (SyntaxError; the ValueError in
+    the except tuple is inert defense-in-depth — NUL bytes raise SyntaxError
+    on this VM's 3.11.15) — the CALLER decides what None means at its site
+    (silent skip, stderr note, ...). READING stays at the call site: every
+    routed site keeps its own ``read_text`` and its current exception
+    posture, so read-failure behavior is unchanged (task #1163)."""
+    key = (str(path), len(text), hash(text))
+    if key in _AST_CACHE:
+        return _AST_CACHE[key]
+    try:
+        tree: ast.Module | None = ast.parse(text, filename=str(path))
+    except (SyntaxError, ValueError):
+        tree = None
+    _AST_CACHE[key] = tree
+    return tree
 
 
 def _iter_ask_target_files(repo_root: Path) -> list[Path]:
@@ -3920,9 +3996,8 @@ def check_upload_as_file(*, scripts_dir: Path | None = None) -> list[str]:
         if not py.is_file():
             continue
         text = py.read_text(encoding="utf-8")
-        try:
-            tree = ast.parse(text, filename=str(py))
-        except SyntaxError:
+        tree = _cached_parse(py, text)
+        if tree is None:
             # A scripts/ file that does not parse is its own (separate)
             # problem; this check stays silent on it rather than crashing.
             continue
@@ -4327,13 +4402,22 @@ def check_jsonl_splitlines(*, scan_roots: tuple[Path, ...] | None = None) -> lis
                 continue
             try:
                 text = py.read_text(encoding="utf-8")
-                tree = ast.parse(text, filename=str(py))
-            except (SyntaxError, UnicodeDecodeError) as exc:
+            except UnicodeDecodeError as exc:
                 # Skip-with-report: never silent, never fatal (syntax validity
                 # is ruff/pytest's enforcement job, not this lint's).
                 sys.stderr.write(
                     f"workflow_lint: note: --check-jsonl-splitlines skipped "
                     f"unparseable {rel} ({type(exc).__name__})\n"
+                )
+                continue
+            tree = _cached_parse(py, text)
+            if tree is None:
+                # Parse failure through the shared memo: the skip-note stays
+                # NON-SILENT, with a fixed label — the memo returns None only
+                # on SyntaxError (its ValueError is inert defense; #1163).
+                sys.stderr.write(
+                    f"workflow_lint: note: --check-jsonl-splitlines skipped "
+                    f"unparseable {rel} (SyntaxError)\n"
                 )
                 continue
             lines = text.split("\n")
@@ -4572,9 +4656,8 @@ def check_dotenv_before_hf_import(*, scripts_dir: Path | None = None) -> list[st
         if not py.is_file():
             continue
         text = py.read_text(encoding="utf-8")
-        try:
-            tree = ast.parse(text, filename=str(py))
-        except SyntaxError:
+        tree = _cached_parse(py, text)
+        if tree is None:
             # A scripts/ file that does not parse is its own (separate)
             # problem; this check stays silent on it rather than crashing.
             continue
@@ -4774,9 +4857,8 @@ def check_batch_judge_client(
             if rel in BATCH_JUDGE_LEGACY_ALLOWLIST:
                 continue
             text = py.read_text(encoding="utf-8")
-            try:
-                tree = ast.parse(text, filename=str(py))
-            except SyntaxError:
+            tree = _cached_parse(py, text)
+            if tree is None:
                 # A non-parsing file is its own separate problem; stay silent.
                 continue
             lines = text.splitlines()
@@ -5170,9 +5252,8 @@ def _py_phase_done_emission_lines(target: Path) -> list[int]:
         return []
     if PHASE_DONE_TOKEN not in text:
         return []  # cheap pre-filter before parsing
-    try:
-        tree = ast.parse(text)
-    except SyntaxError:
+    tree = _cached_parse(target, text)
+    if tree is None:
         return []
     lines = text.splitlines()
     sites: set[int] = set()
@@ -5582,9 +5663,14 @@ def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[s
     targets: list[Path] = []
     claude_dir = root / ".claude"
     if claude_dir.exists():
-        for p in claude_dir.rglob("*"):
-            if not p.is_file() or p.suffix not in {".md", ".yaml", ".yml", ".py", ".sh"}:
-                continue
+        # Pre-enumeration pruning (#1163): the old `claude_dir.rglob("*")`
+        # enumerated the repo root's 3.3M-entry `.claude/worktrees/` tree
+        # (145s) only for the string filters below to discard it. The pruned
+        # walk never descends there; the per-file filters stay verbatim as
+        # the behavioral contract.
+        for p in _iter_files_pruned(
+            claude_dir, suffixes=frozenset({".md", ".yaml", ".yml", ".py", ".sh"})
+        ):
             s = p.as_posix()
             if "/.claude/cache/" in s or "/.claude/agent-memory/" in s:
                 continue
@@ -7407,9 +7493,8 @@ def check_api_dispatch_routing(*, repo_root: Path | None = None) -> list[str]:
                 continue
             if API_DISPATCH_ROUTING_WAIVER in text:
                 continue
-            try:
-                tree = ast.parse(text)
-            except SyntaxError:
+            tree = _cached_parse(path, text)
+            if tree is None:
                 continue
             if _file_calls_anthropic_directly(tree):
                 errors.append(

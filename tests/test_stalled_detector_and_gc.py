@@ -34,6 +34,7 @@ if str(SCRIPTS) not in sys.path:
 import spawn_session  # noqa: E402
 from autonomous_session_watch import (  # noqa: E402
     MAX_ENTRY_AGE_S,
+    STALE_BLOCKED_STATE_PREFIX,
     STALLED_MARKER_WINDOW_S_DEFAULT,
     STALLED_STATE_PREFIX,
     STALLED_WINDOW_S,
@@ -938,8 +939,9 @@ def test_stalled_pass_dry_run_no_state_write(
 
 
 def _populate_gc_targets(reg_dir: Path, issue: int) -> dict[str, Path]:
-    """Drop one file under each GC target prefix for ``issue`` and return the
-    paths so the test can assert presence/absence."""
+    """Drop one file under a representative subset of the GC target prefixes
+    for ``issue`` and return the paths so the test can assert
+    presence/absence."""
     paths: dict[str, Path] = {}
     # manual-issue-<N>.json — top level
     paths["manual"] = reg_dir / f"manual-issue-{issue}.json"
@@ -947,6 +949,11 @@ def _populate_gc_targets(reg_dir: Path, issue: int) -> dict[str, Path]:
     # stalled-<N>.json — top level
     paths["stalled"] = reg_dir / f"{STALLED_STATE_PREFIX}{issue}.json"
     paths["stalled"].write_text(json.dumps({"issue": issue, "missed": 0}))
+    # stale-blocked-<N>.json — top level (#1021 flag-pass dedup state)
+    paths["stale_blocked"] = reg_dir / f"{STALE_BLOCKED_STATE_PREFIX}{issue}.json"
+    paths["stale_blocked"].write_text(
+        json.dumps({"flagged_run_launched_ts": 1.0, "alerted_ts": 2.0})
+    )
     # issue-progress/<N>.json — nested
     (reg_dir / "issue-progress").mkdir(exist_ok=True)
     paths["progress"] = reg_dir / "issue-progress" / f"{issue}.json"
@@ -967,11 +974,11 @@ def test_gc_reaps_all_targets_for_terminal_status(isolated_registry, monkeypatch
 
     counts = asw._gc_orphaned_eps_autonomous_files(now=time.time(), dry_run=False)
 
-    # All four target paths should be gone.
+    # All five target paths should be gone.
     for p in paths.values():
         assert not p.exists(), f"{p} should have been reaped"
     # Counts dict should account for at least one drop per prefix.
-    assert sum(counts.values()) == 4
+    assert sum(counts.values()) == 5
 
 
 @pytest.mark.parametrize(
@@ -1008,7 +1015,7 @@ def test_gc_dry_run_does_not_delete(isolated_registry, monkeypatch):
     counts = asw._gc_orphaned_eps_autonomous_files(now=time.time(), dry_run=True)
 
     # Counts report what WOULD have been cleared, but the files still exist.
-    assert sum(counts.values()) == 4
+    assert sum(counts.values()) == 5
     for p in paths.values():
         assert p.exists()
 
