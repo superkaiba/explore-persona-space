@@ -187,10 +187,13 @@ _DATA_DOC_SUFFIXES: frozenset[str] = frozenset(
 # invariant ABOUT the file, not the file's own logic), so untested_touched
 # WARNs still fire.
 GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
-    # test_no_new_torch_before_dotenv_vm_entrypoints scan roots (its L547-549).
+    # test_no_new_torch_before_dotenv_vm_entrypoints scan roots (#1187: its
+    # _scan_targets() — every tracked scripts/**/*.py + __main__-guarded
+    # experiments modules; these map globs deliberately OVER-select vs the
+    # scanner's tracked/guard filters — additive, safe-by-direction).
     "tests/test_shared_vm_thread_caps.py": (
-        "scripts/issue*_*.py",
-        "src/explore_persona_space/experiments/**/run_*.py",
+        "scripts/**/*.py",
+        "src/explore_persona_space/experiments/**/*.py",
     ),
     # _DISPATCHER_GLOBS (its L80-90) — explicit-env subprocess spawn scanner.
     "tests/test_subprocess_env_explicit.py": (
