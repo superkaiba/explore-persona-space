@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1147,
+  "highest_id": 1148,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1149,6 +1149,13 @@
       "path": "tasks/completed/1147",
       "status": "completed",
       "title": "workflow-fix: Step-10d surgical checkout runs GLOB_SCAN_TESTS-mapped tests pre-landing"
+    },
+    "1148": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1148",
+      "status": "proposed",
+      "title": "workflow-fix: daily SKILL push recovery via sync_repo_root.p"
     },
     "115": {
       "has_clean_result": false,
