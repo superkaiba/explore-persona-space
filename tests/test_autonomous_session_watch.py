@@ -1122,6 +1122,84 @@ def test_pod_safety_auto_stop_dry_run_no_mutation(isolated_registry, monkeypatch
     assert not (isolated_registry / "pod-safety-980.json").exists()  # no state save
 
 
+def test_auto_stop_failure_posts_stop_failed_marker_once_and_stays_retryable(
+    isolated_registry, monkeypatch
+):
+    # #1155: a real `pod.py stop` failure (rc!=0 -> _stop_pod False, NOT
+    # dry-run) must (1) post ONE durable stop-failed marker per episode,
+    # (2) preserve the pod-safety state so the stop retries next tick,
+    # (3) still auto-stop + clear state when a later retry succeeds.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    stops: list[int] = []
+    posts: list[tuple[int, str, str]] = []
+    stop_results = iter([False, False, True])  # ticks 2, 3, 4
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(
+        asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or next(stop_results)
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label, note)),
+    )
+
+    info = _p(489, "p489", "pod-489")[3]
+    state_path = isolated_registry / "pod-safety-489.json"
+
+    # tick 1: first miss accumulates (threshold=2) — no stop attempt yet.
+    asw._process_pod(489, "p489", info, now, dry_run=False, threshold=2)
+    assert stops == [] and posts == []
+    assert json.loads(state_path.read_text())["missed"] == 1
+
+    # tick 2: stop attempted and FAILS -> ONE stop-failed marker; state
+    # preserved with the miss count untouched (episode retryable).
+    asw._process_pod(489, "p489", info, now, dry_run=False, threshold=2)
+    assert stops == [489]
+    assert [(i, lbl) for i, lbl, _ in posts] == [(489, "stop-failed")]
+    assert asw._AUTOSTOP_FAILED_NOTE_SENTINEL in posts[0][2]
+    state = json.loads(state_path.read_text())
+    assert state["stop_failed_noted"] is True
+    assert state["missed"] == 1  # unchanged -> next tick re-fires "stop"
+
+    # Interleaved other-arm save (no stop_failed_noted param): the None-carry
+    # in _save_pod_safety_state must preserve the flag on disk, or the dedup
+    # would silently reset whenever another arm saves state mid-episode.
+    asw._save_pod_safety_state(
+        489, "p489", missed=1, alerted=False, last_progress_ts=None, prev=state
+    )
+    assert json.loads(state_path.read_text())["stop_failed_noted"] is True
+
+    # tick 3: stop RETRIED, fails again -> NO second marker (dedup).
+    asw._process_pod(489, "p489", info, now, dry_run=False, threshold=2)
+    assert stops == [489, 489]
+    assert [(i, lbl) for i, lbl, _ in posts] == [(489, "stop-failed")]
+    assert state_path.exists()
+
+    # tick 4: stop retried and SUCCEEDS -> auto-stop marker, state cleared.
+    asw._process_pod(489, "p489", info, now, dry_run=False, threshold=2)
+    assert stops == [489, 489, 489]
+    assert [(i, lbl) for i, lbl, _ in posts] == [
+        (489, "stop-failed"),
+        (489, "auto-stop"),
+    ]
+    assert not state_path.exists()
+
+
+def test_autostop_failed_sentinel_in_watcher_self_set():
+    # House pattern: a watcher-posted marker's sentinel must be excluded from
+    # the real-progress staleness clocks (the _WATCHER_NOTE_SENTINELS
+    # convention comment: add a new watcher-posted marker -> add it here).
+    import autonomous_session_watch as asw
+
+    assert asw._AUTOSTOP_FAILED_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
 def test_keep_running_tag_skips_stop_and_notes_once(isolated_registry, monkeypatch):
     # The #530 regression: a keep-running-tagged task at awaiting_promotion
     # (a user-directed follow-up still using the pod) must NOT be auto-stopped.
@@ -1686,6 +1764,9 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
         "last_progress_ts": 42.0,
         "keep_running_noted": False,
         "followup_noted": False,
+        # #1155: the stop arm's failed-branch dedup flag is part of the schema
+        # now; a save with no prior episode defaults it False.
+        "stop_failed_noted": False,
         "first_seen": 1234.0,
         # #692 MF3: the wedge fields are part of the schema now; a status-class
         # save with no wedge state defaults them (no prior wedge to carry).
