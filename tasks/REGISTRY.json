@@ -1195,8 +1195,8 @@
     "1153": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1153",
-      "status": "proposed",
+      "path": "tasks/planning/1153",
+      "status": "planning",
       "title": "workflow-fix: lint: pin awk elision program identical across"
     },
     "1154": {
