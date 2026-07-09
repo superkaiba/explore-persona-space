@@ -1419,8 +1419,8 @@
     "1182": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1182",
-      "status": "reviewing",
+      "path": "tasks/completed/1182",
+      "status": "completed",
       "title": "workflow-fix: Memoize transcript resolution across watcher p"
     },
     "1183": {
