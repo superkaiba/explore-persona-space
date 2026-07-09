@@ -1300,8 +1300,8 @@
     "1167": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1167",
-      "status": "proposed",
+      "path": "tasks/planning/1167",
+      "status": "planning",
       "title": "workflow-fix: Per-tick push cap in watcher triage observer"
     },
     "1168": {
