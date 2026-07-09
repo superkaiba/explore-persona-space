@@ -1272,15 +1272,15 @@
     "1163": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1163",
-      "status": "running",
+      "path": "tasks/completed/1163",
+      "status": "completed",
       "title": "workflow-fix: workflow_lint no-flags run times out from a wo"
     },
     "1164": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1164",
-      "status": "running",
+      "path": "tasks/completed/1164",
+      "status": "completed",
       "title": "workflow-fix: Mechanize the reused-artifact realized-keys pr"
     },
     "1165": {
@@ -1293,29 +1293,29 @@
     "1166": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1166",
-      "status": "planning",
+      "path": "tasks/completed/1166",
+      "status": "completed",
       "title": "workflow-fix: planner.md: prescribe verdict-lattice declarat"
     },
     "1167": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1167",
-      "status": "planning",
+      "path": "tasks/completed/1167",
+      "status": "completed",
       "title": "workflow-fix: Per-tick push cap in watcher triage observer"
     },
     "1168": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1168",
-      "status": "proposed",
+      "path": "tasks/completed/1168",
+      "status": "completed",
       "title": "workflow-fix: Forward-port pin-first figure reads to v2 revi"
     },
     "1169": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1169",
-      "status": "proposed",
+      "path": "tasks/running/1169",
+      "status": "running",
       "title": "workflow-fix: document stale-blocked pass + GC test fixture"
     },
     "117": {
@@ -1328,15 +1328,15 @@
     "1170": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1170",
-      "status": "proposed",
+      "path": "tasks/planning/1170",
+      "status": "planning",
       "title": "workflow-fix: observer for unreconciled doubled-site verdict"
     },
     "1171": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1171",
-      "status": "proposed",
+      "path": "tasks/planning/1171",
+      "status": "planning",
       "title": "workflow-fix: strip v4 Methodology details in body audit"
     },
     "1172": {
