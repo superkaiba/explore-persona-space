@@ -313,7 +313,9 @@
 #       through sync_repo_root.py). (#1193) The rebase family is now fenced
 #       by its own detectors below; `git pull --rebase[=merges]` (the
 #       sanctioned root-sync form) has command word `pull` and stays outside
-#       the tight anchors by design.
+#       the tight anchors by design. (#1201) The pull lane is now fenced by
+#       its own sibling guard, scripts/guard_repo_root_pull.sh; this guard's
+#       scope is unchanged.
 # (xvii) (#1193) Rebase-family residuals: (a) `git revert` / `git am` remain
 #       ungated — the same conflict-stranding family, zero incident demand;
 #       a separate candidate if demanded. (b) The anchored PER-VERB allow-arm

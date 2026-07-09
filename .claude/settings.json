@@ -88,6 +88,10 @@
           },
           {
             "type": "command",
+            "command": "/home/thomasjiralerspong/explore-persona-space/scripts/guard_repo_root_pull.sh"
+          },
+          {
+            "type": "command",
             "command": "/home/thomasjiralerspong/explore-persona-space/.claude/hooks/guard_log_dump.sh"
           },
           {
