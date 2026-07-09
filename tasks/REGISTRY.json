@@ -1496,8 +1496,8 @@
     "1192": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1192",
-      "status": "approved",
+      "path": "tasks/running/1192",
+      "status": "running",
       "title": "workflow-fix: reviewer writable-tempdir outside worktree"
     },
     "1193": {
