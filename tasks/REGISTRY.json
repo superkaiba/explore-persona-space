@@ -1230,8 +1230,8 @@
     "1158": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1158",
-      "status": "planning",
+      "path": "tasks/approved/1158",
+      "status": "approved",
       "title": "workflow-fix: Recovery rule for autocompact-thrash subagent "
     },
     "1159": {
