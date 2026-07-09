@@ -1377,8 +1377,8 @@
     "1177": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1177",
-      "status": "reviewing",
+      "path": "tasks/completed/1177",
+      "status": "completed",
       "title": "workflow-fix: provision-time warn on terminal-parent pods"
     },
     "1178": {
