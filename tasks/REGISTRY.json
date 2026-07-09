@@ -1363,8 +1363,8 @@
     "1175": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1175",
-      "status": "reviewing",
+      "path": "tasks/completed/1175",
+      "status": "completed",
       "title": "workflow-fix: lint unguarded deferred scripts.* imports"
     },
     "1176": {
