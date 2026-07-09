@@ -115,6 +115,22 @@ Behaviours:
   normalized to ``|`` first. The
   ``.claude/hooks/guard_piped_git_push.sh`` PreToolUse hook covers the
   inline ad-hoc commands that never reach a committed script (#1048).
+* ``--check-push-failure-swallow`` (also bundled into the no-flags default
+  run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
+  line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
+  ``|| true`` / ``|| :`` / ``|| printf`` — failure-swallowing without
+  verification: the workload declares success while the result commit
+  never landed, and on GCE the self-DELETEing instance holds the only
+  copy (#825 r6/r7/r8; the workload-side ``||`` sibling of the
+  ``--check-piped-git-push`` pipe-masking class — ``pipefail`` does NOT
+  exempt, it never applies to ``||`` disjunctions). ``if git push ...;
+  then`` conditions, bare pushes, and ``|| { retry; }`` groups never
+  match; ``#``-comment lines are skipped; waive with
+  ``# PUSH_SWALLOW_EXEMPT: <reason>`` (same/preceding line); legacy
+  offenders live in the frozen path-keyed
+  ``PUSH_SWALLOW_LEGACY_ALLOWLIST``. Contract:
+  ``.claude/rules/pod-side-reporting.md`` § Result-push verification
+  contract (#1205).
 * ``--check-grep-qv`` (also bundled into the no-flags default run): scan
   fenced code blocks in ``.claude/skills/**/SKILL.md`` +
   ``.claude/agents/*.md`` and logical lines of ``scripts/**/*.sh``, and
@@ -1001,6 +1017,73 @@ _PIPED_PUSH_GIT = (
 )
 _PIPED_PUSH_GH = r"\bgh\s+pr\s+(?:merge|create)(?:\s" + _PIPED_PUSH_SPAN + r")?\|(?!\|)"
 PIPED_GIT_PUSH_RE = re.compile(_PIPED_PUSH_GIT + "|" + _PIPED_PUSH_GH)
+
+# `--check-push-failure-swallow` (#1205): a `git push` whose failure is
+# swallowed ON THE SAME LOGICAL LINE by `|| echo` / `|| true` / `|| :` /
+# `|| printf` — the workload-side `||` sibling of the piped-push
+# exit-code-masking class above (#957/#1048). The swallow declares
+# success while the result commit never landed; on GCE the
+# self-DELETEing instance then holds the ONLY copy of the commit
+# (incidents #825 r6/r7/r8, upload-verification reads
+# 2026-07-08T11:17/11:19Z: `git push origin "issue-825" || echo
+# "... WARNING: git push failed"` swallowed a deterministic auth failure
+# three rounds running; 73 eval JSONs were rescued by hand with ~2.5 h of
+# margin). Unlike the pipe sibling, `pipefail` is NO escape — it never
+# applies to `||` disjunctions — so there is no pipefail carve-out here.
+#
+# Flagged (per logical shell line, backslash continuations merged by
+# `_iter_logical_shell_lines`):
+#   * `git push origin x || echo warn`, `git push || true`,
+#     `git -C <dir> push ... || :`, `git push ... || printf 'w'`;
+#   * the backslash-continued shape (`git push origin x \` newline
+#     `  || echo warn`) — merged before matching.
+# NOT flagged (precision — same-line-only keeps live-tree false
+# positives at zero, verified against the three safe shapes on main):
+#   * `if git push origin x; then` (auto_push_main.sh:23 — the rc is
+#     CONSUMED, not swallowed);
+#   * bare pushes (cron_export_literature.sh:41 — set -e propagates);
+#   * `git push A || { sleep 20; git push A; } || true` retry groups —
+#     the span class `[^|;&\n]*` cannot cross `;`/`{`, and the group
+#     alternation matches only echo/true/:/printf immediately after
+#     `||` (the rendered #1205 GCE leg's own retry uses exactly this
+#     shape: the re-COUNT after the retry is the verification, so the
+#     terminal `|| true` there is not a swallow);
+#   * `#`-comment lines; lines waived via `# PUSH_SWALLOW_EXEMPT:
+#     <reason>` (same/preceding line, `_sh_waiver_present` semantics).
+# Like the sibling, the regex is line-local and NOT quote-aware — a
+# quoted string carrying the literal pattern matches (document the bad
+# pattern in a `#`-comment, not an echo/quoted string).
+PUSH_FAILURE_SWALLOW_RE = re.compile(
+    r"\bgit\s+(?:-[^\s|;&]+(?:\s+[^\s|;&]+)?\s+)*push\b[^|;&\n]*"
+    r"\|\|\s*(?:echo\b|true\b|printf\b|:(?![^\s;|&]))"
+)
+PUSH_SWALLOW_WAIVER_RE = re.compile(r"#\s*PUSH_SWALLOW_EXEMPT\s*:\s*(.+?)\s*$")
+PUSH_SWALLOW_WAIVER_MIN_REASON_CHARS = 8
+
+# Grandfathered legacy offenders — repo-root-relative POSIX paths, FROZEN
+# (frozenset; the FROZENNESS pattern of PHASE_DONE_EDGE_LEGACY_ALLOWLIST —
+# path grain here, not edge grain: the offense is the emitting script's
+# own line, no invoker involved). These scripts predate the contract and
+# are covered by the #1205 GCE push-verify backstop (NOT an endorsement of
+# the shape — fixing them is prune-on-touch, and the backstop re-pushes /
+# fail-louds what their swallow hides). Derivation: live grep of `main`
+# AND every `issue-*` branch's scripts/*.sh, 2026-07-09 (task #1205); the
+# three issue825 sep-dispatch siblings live on the unmerged `issue-825`
+# branch and land on main at #825's Step-10d merge — pre-seeded so that
+# merge does not break the no-flags run. A NEW script with the swallow
+# shape is still flagged.
+PUSH_SWALLOW_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # the one live on-main hit (experiment entrypoint — not edited):
+        "scripts/issue931_dispatch.sh",
+        # PRE-SEEDED for the in-flight issue-825 branch merge (all three
+        # carry the same `git push ... || echo WARNING` line — :502 /
+        # :376 / :257 respectively, verified 2026-07-09):
+        "scripts/issue825_sampled_sep_dispatch.sh",
+        "scripts/issue825_onpolicy_sep_dispatch.sh",
+        "scripts/issue825_base_sep_dispatch.sh",
+    }
+)
 
 # `--check-upload-or-true` (#1036): an upload / result-persist /
 # result-production command whose failure is swallowed by `|| true` /
@@ -3179,6 +3262,71 @@ def check_piped_git_push(*, scripts_dir: Path | None = None) -> list[str]:
                 f"2026-07-02). Run it bare and check the exit code, or add "
                 f"`set -o pipefail`. See CLAUDE.md § Concurrent repo-root "
                 f"committers (#1048)."
+            )
+    return errors
+
+
+def check_push_failure_swallow(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any ``git push``
+    whose failure is swallowed on the same logical line by ``|| echo`` /
+    ``|| true`` / ``|| :`` / ``|| printf``.
+
+    Rationale (#1205, incidents #825 r6/r7/r8): the swallow lets a
+    dispatch step declare success while the result commit never landed —
+    on GCE the self-DELETEing instance then holds the ONLY copy of the
+    commit. The workload-side ``||`` sibling of
+    :func:`check_piped_git_push`'s pipe-masking class; unlike that
+    sibling there is NO ``pipefail`` escape (``pipefail`` never applies
+    to ``||`` disjunctions). Verify the push instead:
+    ``git -C <root> rev-list --count origin/<branch>..HEAD`` prints ``0``
+    (retry once; still non-zero -> exit non-zero) — the contract in
+    ``.claude/rules/pod-side-reporting.md`` § Result-push verification
+    contract. Safe shapes never match (see the ``PUSH_FAILURE_SWALLOW_RE``
+    block); waive with ``# PUSH_SWALLOW_EXEMPT: <reason>``; legacy
+    offenders are frozen in :data:`PUSH_SWALLOW_LEGACY_ALLOWLIST`
+    (path-keyed against the repo-root-relative ``scripts/<name>`` path,
+    so tmp-dir unit fixtures resolve through the same key space).
+
+    ``scripts_dir`` is an override hook for unit tests; production
+    callers pass None and the function walks the canonical
+    ``<repo_root>/scripts`` tree. Bundled into the no-flags default run
+    (same policy as ``check_piped_git_push``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        rel_key = f"scripts/{sh.relative_to(root).as_posix()}"
+        if rel_key in PUSH_SWALLOW_LEGACY_ALLOWLIST:
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        for first, last, logical in _iter_logical_shell_lines(lines):
+            stripped = logical.strip()
+            if stripped.startswith("#"):
+                continue
+            if not PUSH_FAILURE_SWALLOW_RE.search(logical):
+                continue
+            if _sh_waiver_present(
+                lines,
+                first,
+                last,
+                waiver_re=PUSH_SWALLOW_WAIVER_RE,
+                min_reason_chars=PUSH_SWALLOW_WAIVER_MIN_REASON_CHARS,
+            ):
+                continue
+            errors.append(
+                f"{sh}:{first + 1}: `git push` failure swallowed by "
+                f"`|| echo/true/:/printf` — the step declares success while "
+                f"the result commit never landed; on GCE the self-DELETEing "
+                f"instance holds the only copy (#825 r6-r8). Verify the push "
+                f"instead (`git rev-list --count origin/<branch>..HEAD` == 0, "
+                f"retry once, then exit non-zero) per "
+                f".claude/rules/pod-side-reporting.md § Result-push "
+                f"verification contract, or waive a genuinely-safe shape with "
+                f"`# PUSH_SWALLOW_EXEMPT: <reason>` (#1205)."
             )
     return errors
 
@@ -9433,6 +9581,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "no-flags default run.",
     )
     parser.add_argument(
+        "--check-push-failure-swallow",
+        action="store_true",
+        help="Verify no shell script under scripts/ swallows a `git push` "
+        "failure on the same logical line (`git push ... || echo warn`, "
+        "`|| true`, `|| :`, `|| printf`). The swallow declares success "
+        "while the result commit never landed; on GCE the self-DELETEing "
+        "instance holds the only copy (#825 r6-r8). Verify the push "
+        "instead (rev-list count 0, retry once, exit non-zero) per "
+        ".claude/rules/pod-side-reporting.md § Result-push verification "
+        "contract. if-conditions, bare pushes, and `|| { retry; }` groups "
+        "never match; waive with `# PUSH_SWALLOW_EXEMPT: <reason>`; "
+        "legacy offenders frozen in PUSH_SWALLOW_LEGACY_ALLOWLIST. "
+        "Bundled into the no-flags default run (#1205).",
+    )
+    parser.add_argument(
         "--check-grep-qv",
         action="store_true",
         help="Verify no executable workflow snippet (fenced code blocks in "
@@ -9933,6 +10096,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_dispatcher_cvd_pin
         or args.check_pipe_python
         or args.check_piped_git_push
+        or args.check_push_failure_swallow
         or args.check_grep_qv
         or args.check_marker_registry
         or args.check_agent_model_pins
@@ -10024,6 +10188,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_pipe_python())
     if args.check_piped_git_push or no_flags:
         errors.extend(check_piped_git_push())
+    if args.check_push_failure_swallow or no_flags:
+        errors.extend(check_push_failure_swallow())
     if args.check_grep_qv or no_flags:
         errors.extend(check_grep_qv())
     if (args.check_marker_registry or no_flags) and not args.check_references:
