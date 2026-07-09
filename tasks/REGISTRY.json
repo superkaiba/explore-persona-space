@@ -1482,8 +1482,8 @@
     "1190": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1190",
-      "status": "reviewing",
+      "path": "tasks/completed/1190",
+      "status": "completed",
       "title": "workflow-fix: enforce HF 10k-files-per-dir upload limit"
     },
     "1191": {
@@ -1524,29 +1524,29 @@
     "1196": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1196",
-      "status": "reviewing",
+      "path": "tasks/completed/1196",
+      "status": "completed",
       "title": "workflow-fix: corpus WARN on H1 vs frontmatter title drift"
     },
     "1197": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1197",
-      "status": "planning",
+      "path": "tasks/reviewing/1197",
+      "status": "reviewing",
       "title": "workflow-fix: background Step 1d pristine compare (600s cap)"
     },
     "1198": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1198",
-      "status": "approved",
+      "path": "tasks/reviewing/1198",
+      "status": "reviewing",
       "title": "workflow-fix: prefer explicit-PID kills in crash-fix step 2"
     },
     "1199": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1199",
-      "status": "proposed",
+      "path": "tasks/planning/1199",
+      "status": "planning",
       "title": "workflow-fix: fix/adjudicate exit-site marker misses on main"
     },
     "12": {
@@ -1566,15 +1566,15 @@
     "1200": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1200",
-      "status": "proposed",
+      "path": "tasks/planning/1200",
+      "status": "planning",
       "title": "workflow-fix: sync experimenter memory launcher to pid contr"
     },
     "1201": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1201",
-      "status": "proposed",
+      "path": "tasks/planning/1201",
+      "status": "planning",
       "title": "workflow-fix: PreToolUse guard on bare git pull at repo root"
     },
     "1202": {
