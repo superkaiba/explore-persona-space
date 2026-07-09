@@ -1489,8 +1489,8 @@
     "1191": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1191",
-      "status": "planning",
+      "path": "tasks/approved/1191",
+      "status": "approved",
       "title": "workflow-fix: lint YAML-scalar truncation + marker consumer"
     },
     "1192": {
