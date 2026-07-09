@@ -1349,8 +1349,8 @@
     "1173": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1173",
-      "status": "running",
+      "path": "tasks/reviewing/1173",
+      "status": "reviewing",
       "title": "workflow-fix: daily route-2 bodies omit workflow_fix_target"
     },
     "1174": {
