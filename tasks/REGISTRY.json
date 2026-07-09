@@ -1594,8 +1594,8 @@
     "1204": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1204",
-      "status": "reviewing",
+      "path": "tasks/completed/1204",
+      "status": "completed",
       "title": "daily-fix: skip Codex composer spawns under live quota senti"
     },
     "1205": {
