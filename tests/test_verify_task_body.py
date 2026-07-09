@@ -3602,6 +3602,40 @@ def test_hf_count_not_found_skips(monkeypatch):
     assert "unverified" in r.detail and "no such revision/path" in r.detail
 
 
+def test_hf_tree_url_fresh_process_ordering_independent():
+    """Fresh-process regression pin / durability pin (#1186): `_hf_tree_url`
+    must be import-ordering-INDEPENDENT — callable BEFORE anything imports
+    `huggingface_hub.utils` (whose import makes the lazy `constants`
+    submodule attribute-reachable as a side effect). On huggingface_hub
+    0.36.2 a bare `import huggingface_hub` did NOT expose `constants`, so a
+    fresh process calling `_hf_tree_url` FIRST crashed with `AttributeError:
+    No huggingface_hub attribute constants` (masked in the CLI because check
+    23's probe builds headers first). Subprocess = the only faithful fresh
+    interpreter (precedent: test_shared_vm_thread_caps.py); no network —
+    `_hf_tree_url` is pure string construction. The `sys.modules`
+    precondition assert keeps the test non-vacuous: if a future module-level
+    import starts pulling `huggingface_hub.utils`, it fails LOUD here
+    instead of passing vacuously."""
+    code = (
+        "import importlib.util, sys\n"
+        f"spec = importlib.util.spec_from_file_location('verify_task_body', {str(_SCRIPT)!r})\n"
+        "m = importlib.util.module_from_spec(spec)\n"
+        "sys.modules['verify_task_body'] = m  # REQUIRED: @dataclass dereferences it\n"
+        "spec.loader.exec_module(m)\n"
+        "assert 'huggingface_hub.utils' not in sys.modules, (\n"
+        "    'precondition: huggingface_hub.utils already imported — the fresh-process'\n"
+        "    ' bug is masked; re-examine this test'\n"
+        ")\n"
+        "url = m._hf_tree_url('o/r', 'dataset', 'a' * 40, 'p x')\n"
+        "expected = '/api/datasets/o/r/tree/' + 'a' * 40 + '/p%20x'\n"
+        "assert url.endswith(expected), url\n"
+        "print('URL-OK')\n"
+    )
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert out.returncode == 0, f"stdout={out.stdout!r}\nstderr={out.stderr!r}"
+    assert "URL-OK" in out.stdout
+
+
 # ─── Check 12: `## Figure` H2 deprecation hook (dormant) ──────────────────
 
 

@@ -5318,8 +5318,11 @@ def _hf_tree_url(repo_id: str, repo_type: str, sha: str, path: str) -> str:
     `{endpoint}/api/{repo_type}s/{repo_id}/tree/{revision}{/encoded_path}`.
     The revision is left unencoded (it is a hex sha); the path is
     `quote(path, safe="")`-encoded and prefixed with `/`, empty for the root.
+    Importing the `constants` submodule explicitly makes it
+    attribute-reachable on a fresh process — a bare `import huggingface_hub`
+    does not expose the lazy submodule (#1186).
     """
-    import huggingface_hub
+    import huggingface_hub.constants
 
     endpoint = huggingface_hub.constants.ENDPOINT
     encoded_path = "/" + quote(path, safe="") if path else ""
