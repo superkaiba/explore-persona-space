@@ -35,7 +35,7 @@ update this index (lint: `--check-lessons-index`).
 - **[plan-compute-sizing](plan-compute-sizing.md)** — fires when: a plan sizes §9 compute (HBM capture, merge disk + ladder ckpt retention, sentinel lanes, store/IO, VM-CPU RAM/RSS routing, wall-time floors/costing incl. the MEASURED 1-cell pilot basis for per-cell fit loops, p90 fence sizing).
 - **[planner-section-reference](planner-section-reference.md)** — fires when: the planner writes a plan section (pointer-loaded from planner.md).
 - **[pod-config](pod-config.md)** — fires when: pod SSH/MCP keeps failing or you touch the pod scripts/pods.conf (live-API vs pods.conf authority split).
-- **[pod-side-reporting](pod-side-reporting.md)** — fires when: writing pod-side dispatcher / sentinel / poll_pipeline.py-facing code, or (re)launching ANY detached pod/VM workload (pid-file rewrite contract, #813).
+- **[pod-side-reporting](pod-side-reporting.md)** — fires when: writing pod-side dispatcher / sentinel / poll_pipeline.py-facing code, or (re)launching ANY detached pod/VM workload (pid-file rewrite contract, #813), or pushing result commits (#1205).
 - **[replication-fidelity](replication-fidelity.md)** — fires when: the Goal is to replicate a published finding (match the paper's data + recipe FIRST; change only the one tested variable).
 - **[research-project-structure](research-project-structure.md)** — fires when: you write result artifacts / the results index / the queue (one source of truth per layer).
 - **[selection-symmetric-nulls](selection-symmetric-nulls.md)** — fires when: a headline max/argmax/best-of/top-k over a free axis vs a null band (inherit selection per draw or freeze held-out; band vs DV ceiling; #778/#810).
