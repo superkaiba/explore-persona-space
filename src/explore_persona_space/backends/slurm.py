@@ -793,7 +793,7 @@ PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     # the compute node or it silently no-ops remotely.
     "EPM_HF_LARGE_UPLOAD_PROBE_GB",
     # HF Hub upload accelerator OVERRIDE channel (#745): forwarded so a
-    # dispatch-process =0 / HF_XET_DISABLE=1 (the #515 xet-CDN workaround)
+    # dispatch-process =0 / HF_HUB_DISABLE_XET=1 (the #515/#931 xet workaround)
     # reaches the compute node. The DEFAULTS (=1) are a STATIC env block in
     # render_sbatch (the cuda_setup block, which the secrets `source` follows
     # and overrides); this passthrough is the override channel only.
@@ -801,6 +801,10 @@ PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     # key, so the static default stands).
     "HF_XET_HIGH_PERFORMANCE",
     "HF_HUB_ENABLE_HF_TRANSFER",
+    # The REAL xet kill switch (#1195): huggingface_hub reads HF_HUB_DISABLE_XET
+    # (see the gcp.py twin comment + .claude/rules/upload-policy.md).
+    "HF_HUB_DISABLE_XET",
+    # Legacy no-op alias (verified #1049) — kept for old launch commands.
     "HF_XET_DISABLE",
 )
 
@@ -1332,7 +1336,7 @@ def render_sbatch(
         # is the PRIMARY accelerator (the project repos use the Xet backend);
         # HF_HUB_ENABLE_HF_TRANSFER is the orthogonal LFS accelerator (hf_transfer
         # is a hard dep). The PASSTHROUGH keys (PASSTHROUGH_ENV_KEYS) are the
-        # OVERRIDE channel — a forwarded dispatch-process =0 / HF_XET_DISABLE=1 is
+        # OVERRIDE channel — a forwarded dispatch-process =0 / HF_HUB_DISABLE_XET=1 is
         # sourced from secrets.env in the LATER secrets_setup block (under set -a),
         # so it supersedes these static defaults. The :- form also honors a value
         # inherited from the compute-node shell.
