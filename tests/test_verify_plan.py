@@ -39,7 +39,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-22,24-29)
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-22,24-30)
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -167,10 +167,11 @@ def test_good_plan_passes_all():
         "c27_capture_intent_hbm": "SKIP",
         "c28_precedent_band_coherence": "SKIP",
         "c29_fence_conditional_phase": "SKIP",
+        "c30_realized_keys": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 29
+    assert len(results) == 30
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -4876,12 +4877,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 22
+    assert payload["n_skip"] == 23
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 30
-    assert len({c["id"] for c in payload["checks"]}) == 30
+    assert len(payload["checks"]) == 31
+    assert len({c["id"] for c in payload["checks"]}) == 31
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -5151,3 +5152,113 @@ def test_script_makes_no_llm_or_network_imports():
         text,
     )
     assert not forbidden, f"verify_plan.py imports network/LLM modules: {forbidden}"
+
+
+# ─── Check 30 — reused-bundle realized keys ────────────────────────────────
+
+C30_BUNDLE_REUSE = (
+    "\nWe reuse the parent's pass-B multi-field tensor bundle at "
+    "issue779_monitoring/analysis_tensors/pass_b/train_context_vectors.pt "
+    "as the frozen input for every arm.\n"
+)
+
+
+def test_c30_not_triggered_skips():
+    assert _status(GOOD_PLAN, "c30_realized_keys") == "SKIP"
+
+
+def test_c30_bundle_reuse_without_declaration_warns():
+    _, by_id = _run(GOOD_PLAN + C30_BUNDLE_REUSE)
+    r = by_id["c30_realized_keys"]
+    assert r.status == "WARN"
+    assert "verify_reused_artifact_keys" in r.detail
+
+
+def test_c30_helper_invocation_passes():
+    plan = (
+        GOOD_PLAN
+        + C30_BUNDLE_REUSE
+        + "\nRealized-keys probe: `uv run python scripts/verify_reused_artifact_keys.py "
+        + "--artifact <staged bundle> --keys cx_last,cx_mean,v_x,layers` — PASS line pasted "
+        + "into §10.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c30_realized_keys"]
+    assert r.status == "PASS"
+    assert "verification named" in r.detail
+
+
+def test_c30_fenced_helper_command_satisfies():
+    # Pins the raw-text satisfier scan: the helper is named ONLY inside a
+    # fenced block (where runnable commands legitimately live) and still
+    # satisfies, while the trigger fires from the stripped prose.
+    plan = (
+        GOOD_PLAN
+        + C30_BUNDLE_REUSE
+        + "\n```bash\nuv run python scripts/verify_reused_artifact_keys.py "
+        + "--artifact bundle.pt --keys cx_last,v_x\n```\n"
+    )
+    assert _status(plan, "c30_realized_keys") == "PASS"
+
+
+def test_c30_mmap_keys_declaration_passes():
+    plan = (
+        GOOD_PLAN
+        + C30_BUNDLE_REUSE
+        + '\nVerified via torch.load(path, map_location="cpu", mmap=True).keys() '
+        + "against every consumer assert at the pinned revision.\n"
+    )
+    assert _status(plan, "c30_realized_keys") == "PASS"
+
+
+def test_c30_consumer_loader_declaration_passes():
+    plan = (
+        GOOD_PLAN
+        + C30_BUNDLE_REUSE
+        + "\nThe consumer's own loader (issue1073_common.load_bundle) was run against the "
+        + "real pinned artifact before approval.\n"
+    )
+    assert _status(plan, "c30_realized_keys") == "PASS"
+
+
+def test_c30_na_escape_passes():
+    plan = (
+        GOOD_PLAN
+        + "\nThe parent produced analysis_tensors bundles (.pt) but this design does not "
+        + "reuse them: N/A — no multi-field bundle reuse.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c30_realized_keys"]
+    assert r.status == "PASS"
+    assert "no-bundle-reuse declaration" in r.detail
+
+
+def test_c30_kind_infra_skips():
+    assert _status(GOOD_PLAN + C30_BUNDLE_REUSE, "c30_realized_keys", kind="infra") == "SKIP"
+
+
+def test_c30_kind_analysis_warns():
+    assert _status(GOOD_PLAN + C30_BUNDLE_REUSE, "c30_realized_keys", kind="analysis") == "WARN"
+
+
+def test_c30_adapter_only_reuse_skips():
+    # Adapter-only reuse (LoRA / adapter_config.json) is c6 territory, not c30.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent LoRA adapters (adapter_config.json verified) from "
+        + "superkaiba1/explore-persona-space for the base arm.\n"
+    )
+    assert _status(plan, "c30_realized_keys") == "SKIP"
+
+
+def test_c30_adapter_safetensors_reuse_skips():
+    # Pins the v2 Must-Fix: `.safetensors` is NOT a trigger token — a plan
+    # quoting `adapter_model.safetensors` near reuse vocabulary (the canonical
+    # check-(e) verification sentence) must SKIP, not WARN. A corpus sweep
+    # showed 9 historical adapter-class plans fire via `.safetensors` alone.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters; adapter_model.safetensors and "
+        + "adapter_config.json both resolve at the cited subfolder.\n"
+    )
+    assert _status(plan, "c30_realized_keys") == "SKIP"

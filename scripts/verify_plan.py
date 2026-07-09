@@ -62,11 +62,13 @@ Check catalog (id — classification — kind scope)
       coherence                                           analysis
   c29 deliberate fence vs §7    WARN-only, conditional    experiment +
       conditional phase                                   analysis
+  c30 reused-bundle realized    WARN-only, conditional    experiment +
+      keys                                                analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29) also SKIP when their content
+19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30) also SKIP when their content
 trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
@@ -101,6 +103,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no precedent-labeled decision bands`` (check 28; British
     ``labelled`` accepted)
   - ``N/A — no conditional phase on this provision`` (check 29)
+  - ``N/A — no multi-field bundle reuse`` (check 30)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -4627,6 +4630,61 @@ def check_fence_conditional_phase(plan: str, kind: str) -> CheckResult:
     return _warn(cid, name, _c29_offender_detail(lines[decl_idxs[0]], ext.group(0), labels))
 
 
+# ─── Check 30 — reused-bundle realized keys (WARN-only, conditional) ───────
+
+_C30_BUNDLE_RE = re.compile(
+    # NO `.safetensors` token (v2, methodology-critic Must-Fix): adapter-reuse
+    # plans routinely quote `adapter_model.safetensors` near reuse vocabulary —
+    # a sweep of all historical plans showed 9 fire via `.safetensors`
+    # alone, ALL adapter-class (#459 #523 #528 #562 #570 #595 #627 #632 #653).
+    # The project's multi-field bundles are single `.pt` files; a safetensors
+    # STORE still triggers via its prose tokens (tensor bundle /
+    # analysis_tensors / activation store / multi-field bundle).
+    r"(?i)(\.pt\b|\.pth\b|tensor bundle|multi-?field bundle|"
+    r"save-dict|analysis_tensors|activation store)"
+)
+_C30_SATISFIER_RE = re.compile(
+    r"(?i)(verify_reused_artifact_keys"  # the canonical helper
+    r"|mmap\s*=\s*True[^\n]{0,120}\.keys\(\)"  # inline mmap key read
+    r"|consumer(?:'s)?\s+own\s+loader)"  # consumer-loader-run form
+)
+
+
+def check_realized_keys(plan: str, kind: str) -> CheckResult:
+    """Plans reusing a multi-field tensor bundle must name a realized-keys
+    verification (artifact-reuse.md check (c), incident #1073). WARN not
+    FAIL: the bundle-reuse trigger is heuristic (same class as c6), and the
+    semantic question — was the probe actually RUN against the pinned
+    revision — stays with the fact-checker. Trigger scans stripped prose;
+    the satisfier ALSO scans raw text, because the runnable command
+    legitimately lives in a fenced block."""
+    cid, name = "c30_realized_keys", "reused-bundle realized-keys verification"
+    if kind not in ("experiment", "analysis"):
+        return _skip(cid, name, "kind-exempt")
+    text = strip_fences(plan)
+    bundle_hits = [m.start() for m in _C30_BUNDLE_RE.finditer(text)]
+    reuse_near_bundle = any(
+        re.search(r"(?i)\breus\w*", text[max(0, i - 300) : i + 300]) for i in bundle_hits
+    )
+    if not reuse_near_bundle:
+        return _skip(cid, name, "no multi-field bundle reuse detected")
+    if re.search(NA_RE + r"no multi-?field bundle reuse", text):
+        return _pass(cid, name, "explicit no-bundle-reuse declaration")
+    if _C30_SATISFIER_RE.search(plan):  # raw plan: fenced commands count
+        return _pass(
+            cid, name, "realized-keys verification named (helper / mmap read / consumer loader)"
+        )
+    return _warn(
+        cid,
+        name,
+        "plan reuses a multi-field tensor bundle but names no realized-keys "
+        "verification — artifact-reuse.md check (c): run `uv run python "
+        "scripts/verify_reused_artifact_keys.py --artifact <path> --keys "
+        "<consumer keys>` (or the consumer's own loader) against the pinned "
+        "artifact and paste the PASS line into §10 (incident #1073)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -4658,6 +4716,7 @@ CHECKS = [
     check_capture_intent_hbm,
     check_precedent_band_coherence,
     check_fence_conditional_phase,
+    check_realized_keys,
 ]
 
 

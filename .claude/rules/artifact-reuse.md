@@ -118,7 +118,12 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   pinned artifact — against every consumer assert; reading the builder code
   is NOT verification, the pinned upload can predate the field
   (`.claude/rules/gotchas.md` "Reused artifact's REALIZED keys can predate
-  the builder code", incident #1073);
+  the builder code", incident #1073); Mechanized: `uv run python
+  scripts/verify_reused_artifact_keys.py --artifact <path> --keys
+  <k1,k2,...>` (or `--hf-repo`/`--hf-path` for a pinned HF file) exits
+  nonzero on any missing key — run it at plan time and paste its PASS line
+  into §10; plan-gate c30 (verify_plan.py) WARNs a bundle-reuse plan that
+  names no realized-keys verification;
 - **(d)** reuse does NOT break single-variable-change (consistency-checker) or
   measurement validity — no second silently-changed variable rides along
   (e.g. reusing #M's adapter trained at lr=1e-4 in a sweep claiming to vary
