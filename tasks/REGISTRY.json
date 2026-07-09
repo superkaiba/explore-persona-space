@@ -1405,8 +1405,8 @@
     "1180": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1180",
-      "status": "planning",
+      "path": "tasks/approved/1180",
+      "status": "approved",
       "title": "workflow-fix: dedup predicate blind to daily-fix: titles"
     },
     "1181": {
