@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1187,
+  "highest_id": 1188,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1457,6 +1457,13 @@
       "path": "tasks/proposed/1187",
       "status": "proposed",
       "title": "workflow-fix: Widen thread-caps invariant test target globs"
+    },
+    "1188": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1188",
+      "status": "proposed",
+      "title": "workflow-fix: analyzer re-fold H1 retitle set-title sync"
     },
     "119": {
       "has_clean_result": false,
