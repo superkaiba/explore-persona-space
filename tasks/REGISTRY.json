@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1157,
+  "highest_id": 1158,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1226,6 +1226,13 @@
       "path": "tasks/proposed/1157",
       "status": "proposed",
       "title": "workflow-fix: 6d.0-bis smoke gate: name data-ingestion tiny-"
+    },
+    "1158": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1158",
+      "status": "proposed",
+      "title": "workflow-fix: Recovery rule for autocompact-thrash subagent "
     },
     "116": {
       "has_clean_result": true,
