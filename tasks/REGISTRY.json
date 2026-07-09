@@ -1181,15 +1181,15 @@
     "1151": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1151",
-      "status": "reviewing",
+      "path": "tasks/completed/1151",
+      "status": "completed",
       "title": "workflow-fix: GCP crash-persist no-fire on #811 crashes: inv"
     },
     "1152": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1152",
-      "status": "running",
+      "path": "tasks/completed/1152",
+      "status": "completed",
       "title": "workflow-fix: harden guard_harmful_bank_read hook (3 bypass "
     },
     "1153": {
@@ -1202,15 +1202,15 @@
     "1154": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1154",
-      "status": "reviewing",
+      "path": "tasks/completed/1154",
+      "status": "completed",
       "title": "workflow-fix: lint: marker-recipe doc numeric snippets match"
     },
     "1155": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1155",
-      "status": "running",
+      "path": "tasks/reviewing/1155",
+      "status": "reviewing",
       "title": "workflow-fix: pod-safety stop-failed marker + fix guard-test"
     },
     "1156": {
@@ -1223,22 +1223,22 @@
     "1157": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1157",
-      "status": "running",
+      "path": "tasks/reviewing/1157",
+      "status": "reviewing",
       "title": "workflow-fix: 6d.0-bis smoke gate: name data-ingestion tiny-"
     },
     "1158": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1158",
-      "status": "proposed",
+      "path": "tasks/running/1158",
+      "status": "running",
       "title": "workflow-fix: Recovery rule for autocompact-thrash subagent "
     },
     "1159": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1159",
-      "status": "proposed",
+      "path": "tasks/planning/1159",
+      "status": "planning",
       "title": "workflow-fix: Split clean-result-critic.md; add pointer-cove"
     },
     "116": {

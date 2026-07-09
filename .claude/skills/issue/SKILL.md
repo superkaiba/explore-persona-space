@@ -3544,13 +3544,26 @@ smoke green beforehand; r15 = the tiny-real pivot). Worked example:
 `tests/test_issue906_tiny_real_e2e.py`; full recipe + the two CPU
 traps: `.claude/rules/gotchas.md` "Mock-seam smokes surface production
 shape bugs ONE PER GPU CYCLE".
+When the pipeline INGESTS a real corpus (a WildChat/LMSYS-class
+streaming builder), the standard's **data-ingestion probe class**
+(#1092) binds too: a bounded tiny-real streaming probe against the
+REAL dataset — a kept cap AND a TOTAL-streamed-rows cap, asserting
+kept > 0 per dataset — with per-filter rejection counters in the
+stream's `done:` line; a synthetic-fixture smoke alone does NOT
+satisfy the ingestion phase (a filter chain written from assumed
+field shapes can reject 100% of real rows while every synthetic
+smoke stays green). Recipe + verified field shapes:
+`.claude/rules/gotchas.md` "Real-corpus streaming filters" +
+`.claude/agent-memory/experiment-implementer/feedback_real_corpus_streaming_filters_tiny_real_probe.md`.
 Confirm the implementer's
 `## Smoke run` report (per `experiment-implementer.md` § "End-to-end
 smoke run PER PHASE") carries a sub-section with exit code `0` + an
 artifact digest for EACH phase the pipeline executes — not just training
 or data-gen. Any phase missing, or showing only `--help` / `import` /
 `--dry-run` / seam-stubbed (mocked internal seams — the tiny-real
-standard's two sanctioned fakes excepted) evidence → **REFUSE to
+standard's two sanctioned fakes excepted) / synthetic-fixture-only
+(a real-corpus ingestion phase with no tiny-real streaming-probe
+evidence) evidence → **REFUSE to
 dispatch**; bounce to the implementer
 with `run the full gen→...→aggregate pipeline once at tiny N before
 production`. FAIL blocks production. (Origin: #408 — a multi-phase

@@ -371,6 +371,18 @@ Behaviours:
   the positive tokens are the primary defense). Paragraph-scoped: the span
   runs from the anchor to the first blank line, so a mid-paragraph split
   FAILs loudly (#963).
+* ``--check-awk-elision-parity`` (also bundled into the no-flags default
+  run): FAIL if the ban-gate awk elision program — the single-quoted awk
+  program on the unique ``f=!f`` anchor line — drifts between its two
+  full-text homes (/issue SKILL.md Step 9a-humanize;
+  analyzer-section-reference.md Step 4.5), or a home is missing / has 0 or
+  >1 anchor lines / carries an anchor line whose total single-quote count is
+  not exactly 2 (a program that gained a shell quote-escape would truncate
+  the extraction at the first quote in both homes, hiding drift past the
+  truncation point) / yields no extractable ``awk '...'`` span. Pins the
+  quoted PROGRAM only — the surrounding invocation lines (paths, fencing,
+  indentation) legitimately differ — and parity is not correctness: an
+  identical-but-broken edit applied to both homes passes by design (#1153).
 
 Exit codes:
 
@@ -382,6 +394,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import dataclasses
 import re
 import sys
 from collections import Counter
@@ -6286,6 +6299,326 @@ def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
     return errors
 
 
+_AWK_ELISION_ANCHOR = "f=!f"
+
+# The two FULL-TEXT homes of the ban-gate awk elision program (#1153, origin
+# #998): the /issue SKILL.md Step 9a-humanize gate and the analyzer's
+# Step 4.5 mirror. A future third full-text copy must be added here.
+_AWK_ELISION_HOMES = (
+    ".claude/skills/issue/SKILL.md",
+    ".claude/rules/analyzer-section-reference.md",
+)
+
+_AWK_ELISION_PROGRAM_RE = re.compile(r"awk '([^']*)'")
+
+
+def check_awk_elision_parity(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the ban-gate awk elision program drifts between its two
+    full-text homes (#1153, origin #998).
+
+    The elision program is executable text agents copy-paste at run time
+    (/issue SKILL.md Step 9a-humanize; analyzer-section-reference.md Step
+    4.5), so a divergent copy makes the humanize ban-gate behave differently
+    depending on which file the agent read. Per home the check fails loud
+    when the file is missing, when the ``f=!f`` anchor matches 0 or >1
+    lines, when the anchor line's total single-quote count is not exactly 2
+    (a program that gained a shell quote-escape would truncate the
+    extraction at the first quote IDENTICALLY in both homes, hiding drift
+    past the truncation point — so any non-2 count fails instead), or when
+    no single ``awk '...'`` span is extractable; then the two extracted
+    PROGRAMS must compare equal. Scope: the quoted PROGRAM only — the
+    surrounding invocation (input/output paths, fencing, indentation,
+    continuation lines) legitimately differs between homes. Parity is not
+    correctness: an identical-but-broken edit applied to BOTH homes passes
+    by design. A future third full-text copy must be added to
+    ``_AWK_ELISION_HOMES``. ``repo_root`` is a unit-test override hook;
+    production callers pass None. Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    programs: list[tuple[str, str]] = []
+    for rel in _AWK_ELISION_HOMES:
+        p = root / rel
+        if not p.is_file():
+            errors.append(
+                f"{p}: missing — a ban-gate awk elision home must exist; if the "
+                f"program deliberately moved, update _AWK_ELISION_HOMES (#1153)."
+            )
+            continue
+        anchor_lines = [
+            ln for ln in p.read_text(encoding="utf-8").split("\n") if _AWK_ELISION_ANCHOR in ln
+        ]
+        if len(anchor_lines) != 1:
+            errors.append(
+                f"{p}: expected exactly 1 line containing the awk elision anchor "
+                f"{_AWK_ELISION_ANCHOR!r}, found {len(anchor_lines)} — a moved, "
+                f"deleted, or duplicated copy must not silently pass (#1153)."
+            )
+            continue
+        line = anchor_lines[0]
+        n_quotes = line.count("'")
+        if n_quotes != 2:
+            errors.append(
+                f"{p}: the awk elision anchor line carries {n_quotes} single-quote "
+                f"character(s), expected exactly 2 — a reflowed program or a gained "
+                f"quote-escape would silently truncate the extraction; keep the "
+                f"program one plain `awk '...'` span on one line, or update this "
+                f"lint (#1153)."
+            )
+            continue
+        progs = _AWK_ELISION_PROGRAM_RE.findall(line)
+        if len(progs) != 1:
+            errors.append(
+                f"{p}: could not extract exactly one single-quoted awk program from "
+                f"the anchor line (found {len(progs)}) — keep the program a single "
+                f"`awk '...'` span on one line, or update this lint (#1153)."
+            )
+            continue
+        programs.append((rel, progs[0]))
+    if not errors and len(programs) == 2 and programs[0][1] != programs[1][1]:
+        errors.append(
+            f"{programs[0][0]} vs {programs[1][0]}: the ban-gate awk elision programs "
+            f"DIFFER — the two full-text homes must stay byte-identical; edit both "
+            f"homes identically (#1153)."
+        )
+    return errors
+
+
+@dataclasses.dataclass(frozen=True)
+class _RecipePin:
+    """One (doc snippet <-> code constant) binding for
+    :func:`check_marker_recipe_snippets`.
+
+    ``doc_pattern`` runs on WHITESPACE-NORMALIZED doc text (all ``\\s+`` runs
+    collapsed to single spaces, so markdown line wraps never matter);
+    ``src_pattern`` runs on RAW source text with ``re.MULTILINE``. Each
+    pattern carries EXACTLY ONE capture group — the numeric value — pinned by
+    ``tests/test_workflow_lint.py::test_marker_recipe_pins_have_one_capture_group``.
+    """
+
+    label: str  # stable human name, appears in error messages
+    doc_rel: str  # doc path relative to repo root
+    doc_pattern: str  # regex, ONE capture group, whitespace-normalized doc text
+    src_rel: str  # source path relative to repo root
+    src_pattern: str  # regex, ONE capture group, raw source text (re.MULTILINE)
+    symbol: str  # the code symbol name, for error messages
+
+
+_MARKER_RECIPE_DOC = "docs/marker_training_recipe.md"
+_MARKER_RECIPE_RULE = ".claude/rules/marker-training-recipe.md"
+_MARKER_RECIPE_SRC_RECIPE = "src/explore_persona_space/artifacts/recipe.py"
+_MARKER_RECIPE_SRC_SFT = "src/explore_persona_space/train/sft.py"
+_MARKER_RECIPE_SRC_ORGANISMS = "src/explore_persona_space/artifacts/organisms.py"
+_MARKER_RECIPE_SRC_CALLBACKS = "src/explore_persona_space/eval/callbacks.py"
+
+# The marker-token-id doc patterns require a SPACE before the backticked
+# marker (the ` ※` form) — the wrong-token prose "Avoid bare `※` id 63680"
+# has a backtick, not a space, before ※, so 63680 is never captured (pinned by
+# test_marker_recipe_snippets_does_not_capture_wrong_token_id). The sft.py
+# pattern's trailing comma + no-word-char lookbehind exclude the
+# `marker_tail_tokens: int = 0` dataclass field (sft.py, no trailing comma).
+_MARKER_RECIPE_PINS: tuple[_RecipePin, ...] = (
+    # --- docs/marker_training_recipe.md (5 pins) ---
+    _RecipePin(
+        label="marker-token-id",
+        doc_rel=_MARKER_RECIPE_DOC,
+        doc_pattern=r"(?: ※` id|token id) (\d+)",
+        src_rel=_MARKER_RECIPE_SRC_RECIPE,
+        src_pattern=r"^MARKER_TOKEN_ID = (\d+)$",
+        symbol="MARKER_TOKEN_ID",
+    ),
+    _RecipePin(
+        label="collator-tail-tokens",
+        doc_rel=_MARKER_RECIPE_DOC,
+        doc_pattern=r"MarkerOnlyDataCollator\(tail_tokens=(\d+)\)",
+        src_rel=_MARKER_RECIPE_SRC_SFT,
+        src_pattern=r"(?<!\w)tail_tokens: int = (\d+),",
+        symbol="MarkerOnlyDataCollator.__init__ tail_tokens default",
+    ),
+    _RecipePin(
+        label="mix-reject-floor",
+        doc_rel=_MARKER_RECIPE_DOC,
+        doc_pattern=r"reject floor (0\.\d+)",
+        src_rel=_MARKER_RECIPE_SRC_ORGANISMS,
+        src_pattern=r"^MIX_MAX_REJECT_FRAC = ([0-9.]+)$",
+        symbol="MIX_MAX_REJECT_FRAC",
+    ),
+    _RecipePin(
+        label="bandstop-low",
+        doc_rel=_MARKER_RECIPE_DOC,
+        doc_pattern=r"source ΔG ∈ \[([\d.]+), [\d.]+\] nat",
+        src_rel=_MARKER_RECIPE_SRC_CALLBACKS,
+        src_pattern=r"(?<!\w)low_nats: float = ([\d.]+),",
+        symbol="MarkerBandStopCallback.__init__ low_nats default",
+    ),
+    _RecipePin(
+        label="bandstop-high",
+        doc_rel=_MARKER_RECIPE_DOC,
+        doc_pattern=r"source ΔG ∈ \[[\d.]+, ([\d.]+)\] nat",
+        src_rel=_MARKER_RECIPE_SRC_CALLBACKS,
+        src_pattern=r"(?<!\w)high_nats: float = ([\d.]+),",
+        symbol="MarkerBandStopCallback.__init__ high_nats default",
+    ),
+    # --- .claude/rules/marker-training-recipe.md (5 pins) ---
+    _RecipePin(
+        label="rule-marker-token-id",
+        doc_rel=_MARKER_RECIPE_RULE,
+        doc_pattern=r" ※` id (\d+)",
+        src_rel=_MARKER_RECIPE_SRC_RECIPE,
+        src_pattern=r"^MARKER_TOKEN_ID = (\d+)$",
+        symbol="MARKER_TOKEN_ID",
+    ),
+    _RecipePin(
+        label="rule-collator-tail-tokens",
+        doc_rel=_MARKER_RECIPE_RULE,
+        doc_pattern=r"MarkerOnlyDataCollator\(tail_tokens=(\d+)\)",
+        src_rel=_MARKER_RECIPE_SRC_SFT,
+        src_pattern=r"(?<!\w)tail_tokens: int = (\d+),",
+        symbol="MarkerOnlyDataCollator.__init__ tail_tokens default",
+    ),
+    _RecipePin(
+        label="rule-mix-reject-floor",
+        doc_rel=_MARKER_RECIPE_RULE,
+        doc_pattern=r"rejection-fraction floor \((0\.\d+)\)",
+        src_rel=_MARKER_RECIPE_SRC_ORGANISMS,
+        src_pattern=r"^MIX_MAX_REJECT_FRAC = ([0-9.]+)$",
+        symbol="MIX_MAX_REJECT_FRAC",
+    ),
+    _RecipePin(
+        label="rule-bandstop-low",
+        doc_rel=_MARKER_RECIPE_RULE,
+        doc_pattern=r"base ∈ \[([\d.]+), [\d.]+\] nat",
+        src_rel=_MARKER_RECIPE_SRC_CALLBACKS,
+        src_pattern=r"(?<!\w)low_nats: float = ([\d.]+),",
+        symbol="MarkerBandStopCallback.__init__ low_nats default",
+    ),
+    _RecipePin(
+        label="rule-bandstop-high",
+        doc_rel=_MARKER_RECIPE_RULE,
+        doc_pattern=r"base ∈ \[[\d.]+, ([\d.]+)\] nat",
+        src_rel=_MARKER_RECIPE_SRC_CALLBACKS,
+        src_pattern=r"(?<!\w)high_nats: float = ([\d.]+),",
+        symbol="MarkerBandStopCallback.__init__ high_nats default",
+    ),
+)
+
+
+def _norm_val(v: str) -> float | str:
+    """Return ``v`` as a float when it parses, else the string unchanged."""
+    try:
+        return float(v)
+    except ValueError:
+        return v
+
+
+def _values_equal(doc_val: str, src_val: str) -> bool:
+    """Float-compare when BOTH values parse as floats ('5' == '5.0',
+    '0.10' == '0.1'), else exact string equality."""
+    a, b = _norm_val(doc_val), _norm_val(src_val)
+    if isinstance(a, float) and isinstance(b, float):
+        return a == b
+    return doc_val == src_val
+
+
+def _recipe_pin_file_text(
+    cache: dict[str, str | None], path: Path, *, normalize: bool
+) -> str | None:
+    """Read + cache one pinned file for :func:`check_marker_recipe_snippets`.
+
+    ``normalize`` collapses every whitespace run to a single space (the
+    line-wrap-immune doc-matching mode); raw mode is for source files.
+    Returns None (cached) when the file is missing.
+    """
+    key = str(path)
+    if key not in cache:
+        if not path.is_file():
+            cache[key] = None
+        else:
+            text = path.read_text(encoding="utf-8")
+            cache[key] = re.sub(r"\s+", " ", text) if normalize else text
+    return cache[key]
+
+
+def check_marker_recipe_snippets(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL when a frozen numeric snippet in the marker-training recipe doc
+    (docs/marker_training_recipe.md) or its sibling rule
+    (.claude/rules/marker-training-recipe.md) disagrees with the code constant
+    it cites (#1154; the drift class: a stale frozen number misleads every
+    future marker-training planner grounding hyperparameters from the doc).
+
+    Registry-driven (``_MARKER_RECIPE_PINS``) — only registered pins are ever
+    evaluated; empirical findings / frozen experiment history in the same
+    files are never parsed. Doc patterns run whitespace-normalized
+    (line-wrap-immune); src patterns run raw + MULTILINE. Values compare as
+    floats when both parse ('5' == '5.0'), else exact strings. Failure modes:
+    missing file, doc snippet not found (rot alarm — the pinned prose was
+    rephrased), code constant not found (the symbol moved/renamed), ambiguous
+    conflicting source matches, and doc-vs-code value mismatch. ``repo_root``
+    is a unit-test override hook; production callers pass None. Bundled into
+    the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    doc_cache: dict[str, str | None] = {}  # normalized doc text (None = missing)
+    src_cache: dict[str, str | None] = {}  # raw source text (None = missing)
+    for pin in _MARKER_RECIPE_PINS:
+        doc_path = root / pin.doc_rel
+        src_path = root / pin.src_rel
+        doc_text = _recipe_pin_file_text(doc_cache, doc_path, normalize=True)
+        src_text = _recipe_pin_file_text(src_cache, src_path, normalize=False)
+        if doc_text is None:
+            errors.append(
+                f"{doc_path}: missing — pin '{pin.label}' binds a snippet here to "
+                f"{pin.src_rel}::{pin.symbol}; the marker-recipe doc was moved or "
+                f"deleted — update _MARKER_RECIPE_PINS in scripts/workflow_lint.py "
+                f"(#1154)."
+            )
+            continue
+        if src_text is None:
+            errors.append(
+                f"{src_path}: missing — pin '{pin.label}' expects {pin.symbol} here "
+                f"(cited by {pin.doc_rel}); the source file was moved or deleted — "
+                f"update _MARKER_RECIPE_PINS in scripts/workflow_lint.py (#1154)."
+            )
+            continue
+        doc_vals = re.findall(pin.doc_pattern, doc_text)
+        if not doc_vals:
+            errors.append(
+                f"{doc_path}: pin '{pin.label}': doc snippet not found (pattern "
+                f"{pin.doc_pattern!r}) — the pinned prose was rephrased or removed; "
+                f"update the snippet or _MARKER_RECIPE_PINS in "
+                f"scripts/workflow_lint.py (#1154)."
+            )
+            continue
+        src_vals = re.findall(pin.src_pattern, src_text, re.MULTILINE)
+        if not src_vals:
+            errors.append(
+                f"{src_path}: pin '{pin.label}': code constant {pin.symbol} not "
+                f"found (pattern {pin.src_pattern!r}) — the symbol moved or was "
+                f"renamed; update _MARKER_RECIPE_PINS in scripts/workflow_lint.py "
+                f"(#1154)."
+            )
+            continue
+        if len({_norm_val(v) for v in src_vals}) > 1:
+            errors.append(
+                f"{src_path}: pin '{pin.label}': ambiguous — {len(src_vals)} "
+                f"conflicting matches for {pin.symbol} (values "
+                f"{sorted(set(src_vals))}); tighten the pin's src_pattern in "
+                f"_MARKER_RECIPE_PINS (#1154)."
+            )
+            continue
+        src_val = src_vals[0]
+        for doc_val in dict.fromkeys(doc_vals):  # distinct values, first-seen order
+            if not _values_equal(doc_val, src_val):
+                errors.append(
+                    f"{doc_path}: pin '{pin.label}': doc cites {doc_val!r} but "
+                    f"{pin.src_rel}::{pin.symbol} is {src_val!r} — update the doc "
+                    f"snippet (or _MARKER_RECIPE_PINS if the binding itself "
+                    f"changed) so they agree (#1154)."
+                )
+    return errors
+
+
 # `--check-lessons-index`: every `.claude/rules/*.md` (except LESSONS.md
 # itself) must have exactly one matching row in `.claude/rules/LESSONS.md`, and
 # every row in LESSONS.md must point at an existing rule file. Closes the
@@ -7333,6 +7666,30 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "(incident #779). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-awk-elision-parity",
+        action="store_true",
+        help="FAIL if the ban-gate awk elision program (the single-quoted awk "
+        "program on the unique f=!f anchor line) drifts between its two "
+        "byte-identical full-text homes — the /issue SKILL.md Step "
+        "9a-humanize gate and analyzer-section-reference.md Step 4.5 — or a "
+        "home is missing, has 0 or >1 anchor lines, carries a non-2 total "
+        "single-quote count on the anchor line (quote-escape truncation "
+        "guard), or yields no extractable awk '...' span (#1153). Compares "
+        "the quoted PROGRAM only; the surrounding invocation lines "
+        "legitimately differ. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-marker-recipe-snippets",
+        action="store_true",
+        help="FAIL when a frozen numeric snippet in docs/marker_training_recipe.md "
+        "or .claude/rules/marker-training-recipe.md disagrees with the code "
+        "constant it cites (registry _MARKER_RECIPE_PINS: marker token id 83399, "
+        "the MarkerOnlyDataCollator tail_tokens default, MIX_MAX_REJECT_FRAC, the "
+        "MarkerBandStopCallback default band). Registry-driven — empirical "
+        "findings / frozen experiment history are never parsed. Bundled into the "
+        "no-flags default run (#1154).",
+    )
+    parser.add_argument(
         "--check-judge-model-pins",
         action="store_true",
         help="Walk scripts/**/*.py, scripts/**/*.sh, "
@@ -7481,6 +7838,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_stale_label_disposition
         or args.check_smoke_output_hygiene
         or args.check_vm_thread_cap_guidance
+        or args.check_awk_elision_parity
+        or args.check_marker_recipe_snippets
         or args.check_judge_model_pins
         or args.check_no_literal_round_marker_versions
         or args.check_agent_spec_size
@@ -7577,6 +7936,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_smoke_output_hygiene())
     if args.check_vm_thread_cap_guidance or no_flags:
         errors.extend(check_vm_thread_cap_guidance())
+    if args.check_awk_elision_parity or no_flags:
+        errors.extend(check_awk_elision_parity())
+    if args.check_marker_recipe_snippets or no_flags:
+        errors.extend(check_marker_recipe_snippets())
     if args.check_judge_model_pins or no_flags:
         errors.extend(check_judge_model_pins())
     if args.check_no_literal_round_marker_versions or no_flags:
