@@ -5993,6 +5993,7 @@ def _set_status_blocked(issue: int, dry_run: bool) -> bool:
             file=sys.stderr,
         )
         return False
+    _forward_marker_child_stderr(out, f"set-status blocked on #{issue}")
     return True
 
 
@@ -8588,6 +8589,7 @@ def _repark_completed_followup_round(
             file=sys.stderr,
         )
         return False
+    _forward_marker_child_stderr(out, f"set-status awaiting_promotion on #{issue}")
     print(f"  issue #{issue}: re-parked completed follow-up round -> awaiting_promotion")
     _post_followup_run_marker(issue, events, dry_run)
     _post_progress_marker(
