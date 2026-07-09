@@ -1454,8 +1454,8 @@
     "1187": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1187",
-      "status": "reviewing",
+      "path": "tasks/completed/1187",
+      "status": "completed",
       "title": "workflow-fix: Widen thread-caps invariant test target globs"
     },
     "1188": {
