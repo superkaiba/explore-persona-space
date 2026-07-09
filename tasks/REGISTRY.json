@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1208,
+  "highest_id": 1209,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1625,6 +1625,13 @@
       "path": "tasks/proposed/1208",
       "status": "proposed",
       "title": "daily-fix: planner authors Row-coverage with paired contrast"
+    },
+    "1209": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1209",
+      "status": "proposed",
+      "title": "daily-fix: fast respawn for sessions dead on a refused first"
     },
     "121": {
       "has_clean_result": true,
