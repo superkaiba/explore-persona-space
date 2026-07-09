@@ -1216,8 +1216,8 @@
     "1156": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1156",
-      "status": "reviewing",
+      "path": "tasks/completed/1156",
+      "status": "completed",
       "title": "workflow-fix: poller WARN: pid file older than run-launched "
     },
     "1157": {
