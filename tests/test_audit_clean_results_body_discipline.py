@@ -1452,3 +1452,201 @@ def test_paper_stub_skips_audit(capsys):
     out = capsys.readouterr().out
     assert "paper-stub" in out
     assert "verify_paper.py" in out
+
+
+# ─── H1-vs-frontmatter-title sync (WARN-level corpus surface, #1196) ───────
+#
+# `h1_title_sync_warn` DELEGATES the whole comparison to
+# `verify_task_body.check_h1_matches_frontmatter_title` (the #1110 gate
+# check) and flattens its severity to WARN; `_run_title_sync_sweep` walks a
+# tasks/-shaped tree and prints one row per flagged sentinelled body,
+# always returning 0. Fixture prose is deliberately anti-pattern-free so
+# the WARN surface is isolated from the findings scan.
+
+_SYNC_TITLE = "A tidy claim about the finding (MODERATE confidence)"
+
+
+def _sync_body(
+    *,
+    fm_title: str | None = _SYNC_TITLE,
+    h1: str | None = _SYNC_TITLE,
+    sentinel: str = "<!-- clean-result-v4 -->",
+    frontmatter: bool = True,
+    prose: str = "- A tidy bullet about the finding.",
+) -> str:
+    """Build a minimal (optionally sentinelled) body for the sync tests."""
+    parts: list[str] = []
+    if frontmatter:
+        fm_lines = ["---"]
+        if fm_title is not None:
+            fm_lines.append(f"title: {fm_title}")
+        fm_lines.append("kind: experiment")
+        fm_lines.append("---")
+        parts.append("\n".join(fm_lines))
+    if h1 is not None:
+        parts.append(f"# {h1}")
+    if sentinel:
+        parts.append(sentinel)
+    parts.append(f"## Takeaways\n\n{prose}")
+    return "\n\n".join(parts) + "\n"
+
+
+def _write_task_body(tasks_root, status: str, task_dir: str, text: str) -> None:
+    d = tasks_root / status / task_dir
+    d.mkdir(parents=True)
+    (d / "body.md").write_text(text, encoding="utf-8")
+
+
+def test_title_sync_sweep_warn_on_divergent_body(tmp_path, capsys):
+    """Durability pin: a divergent sentinelled v4 body in the tree yields
+    exactly one `- #<N> (<status>):` WARN row and the sweep returns 0."""
+    _write_task_body(
+        tmp_path,
+        "awaiting_promotion",
+        "777",
+        _sync_body(h1="A retitled claim about the finding (MODERATE confidence)"),
+    )
+    rc = audit._run_title_sync_sweep(tasks_root=tmp_path)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "- #777 (awaiting_promotion):" in out
+    assert out.count("- #") == 1
+    assert "WARN: 1 " in out
+
+
+def test_title_sync_sweep_in_sync_body_no_warn(tmp_path, capsys):
+    """A matching H1/title pair (confidence tag on both sides) yields the
+    PASS line and no rows."""
+    _write_task_body(tmp_path, "completed", "42", _sync_body())
+    rc = audit._run_title_sync_sweep(tasks_root=tmp_path)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "PASS: H1 == frontmatter title" in out
+    assert "- #" not in out
+
+
+def test_title_sync_sweep_skips_non_sentinelled_body(tmp_path, capsys):
+    """A divergent but sentinel-less body (pre-promotion shape) is out of
+    scope — the gate check's sentinel gate governs, by delegation."""
+    _write_task_body(
+        tmp_path,
+        "proposed",
+        "9",
+        _sync_body(h1="A completely different working headline", sentinel=""),
+    )
+    rc = audit._run_title_sync_sweep(tasks_root=tmp_path)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "- #" not in out
+
+
+def test_title_sync_sweep_whitespace_only_difference_not_flagged(tmp_path, capsys):
+    """Whitespace-only drift (double spaces) is eaten by the gate check's
+    collapse normalization — parity by delegation."""
+    _write_task_body(
+        tmp_path,
+        "completed",
+        "11",
+        _sync_body(fm_title="A tidy  claim about the   finding (MODERATE confidence)"),
+    )
+    rc = audit._run_title_sync_sweep(tasks_root=tmp_path)
+    assert rc == 0
+    assert "- #" not in capsys.readouterr().out
+
+
+def test_title_sync_sweep_case_difference_is_flagged(tmp_path, capsys):
+    """Case-only drift IS real drift (no case folding — the #763 rationale
+    the gate check documents)."""
+    _write_task_body(
+        tmp_path,
+        "completed",
+        "12",
+        _sync_body(fm_title="A tidy claim about the finding (moderate confidence)"),
+    )
+    rc = audit._run_title_sync_sweep(tasks_root=tmp_path)
+    assert rc == 0
+    assert "- #12 (completed):" in capsys.readouterr().out
+
+
+def test_title_sync_sweep_skips_non_numeric_task_dir(tmp_path, capsys):
+    """A `*/*/body.md` path whose parent dir is not a task number (e.g.
+    tasks/misc/_orphaned_markers/body.md) is skipped, not scanned."""
+    _write_task_body(
+        tmp_path,
+        "awaiting_promotion",
+        "5",
+        _sync_body(h1="A retitled claim about the finding (MODERATE confidence)"),
+    )
+    _write_task_body(
+        tmp_path,
+        "misc",
+        "_orphaned_markers",
+        _sync_body(h1="A retitled claim about the finding (MODERATE confidence)"),
+    )
+    rc = audit._run_title_sync_sweep(tasks_root=tmp_path)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "Scanned 1 task bodies" in out
+    assert out.count("- #") == 1
+    assert "- #5 (awaiting_promotion):" in out
+
+
+def test_h1_title_sync_warn_missing_fm_title_flagged():
+    """A sentinelled body whose frontmatter lacks `title` hits the gate
+    check's anomaly branch (broken promotion)."""
+    detail = audit.h1_title_sync_warn(_sync_body(fm_title=None))
+    assert detail is not None
+    assert "no frontmatter `title`" in detail
+
+
+def test_h1_title_sync_warn_missing_h1_flagged():
+    """A sentinelled body with a frontmatter title but no `# ` H1 line hits
+    the gate check's missing-H1 anomaly branch."""
+    detail = audit.h1_title_sync_warn(_sync_body(h1=None))
+    assert detail is not None
+    assert "no H1 found" in detail
+
+
+def test_h1_title_sync_warn_v3_grandfathered_flagged():
+    """A divergent v3 body is flagged via the predicate's `is_warn` leg
+    (gate-time grandfathering to WARN; identical WARN severity here)."""
+    detail = audit.h1_title_sync_warn(
+        _sync_body(
+            h1="A retitled claim about the finding (MODERATE confidence)",
+            sentinel="<!-- clean-result-v3 -->",
+        )
+    )
+    assert detail is not None
+    assert "grandfathered" in detail
+
+
+def test_single_body_audit_prints_title_sync_warn_rc_unchanged(capsys):
+    """The `--task`/file single-body path appends `WARN h1_title_sync:`
+    after the PASS/FAIL headline; the exit code follows findings only."""
+    divergent = _sync_body(h1="A retitled claim about the finding (MODERATE confidence)")
+    rc = audit._audit_single_body(divergent)
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert out.splitlines()[0].startswith("PASS:")
+    assert "WARN h1_title_sync:" in out
+
+    divergent_with_findings = _sync_body(
+        h1="A retitled claim about the finding (MODERATE confidence)",
+        prose="- The C1 condition leaked badly here.",
+    )
+    rc = audit._audit_single_body(divergent_with_findings)
+    out = capsys.readouterr().out
+    assert rc == 1  # findings drive rc; the WARN never flips it
+    assert out.splitlines()[0].startswith("FAIL:")
+    assert "WARN h1_title_sync:" in out
+
+
+def test_single_body_audit_no_fm_no_warn_line(capsys):
+    """Frontmatter-less inputs (analyzer /tmp drafts) hit the gate check's
+    empty-fm skip — output carries no WARN line (byte-compat with the
+    pre-#1196 behavior on every existing draft fixture)."""
+    rc = audit._audit_single_body(_sync_body(frontmatter=False))
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "WARN h1_title_sync" not in out
+    assert out.splitlines()[0].startswith("PASS:")

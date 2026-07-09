@@ -169,10 +169,11 @@ def test_good_plan_passes_all():
         "c29_fence_conditional_phase": "SKIP",
         "c30_realized_keys": "SKIP",
         "c31_skillmd_prose_pin": "SKIP",
+        "c32_fit_basis_grounding": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 31
+    assert len(results) == 32
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -4878,12 +4879,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 24
+    assert payload["n_skip"] == 25
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 32
-    assert len({c["id"] for c in payload["checks"]}) == 32
+    assert len(payload["checks"]) == 33
+    assert len({c["id"] for c in payload["checks"]}) == 33
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -5453,3 +5454,136 @@ def test_adversarial_planner_skill_lists_c31_escape():
     block = text[anchor : text.index("bounce to the planner", anchor)]
     assert "no durability pin" in block
     assert "check 31" in block
+
+
+def test_c32_skillmd_na_phrase_listed():
+    # The c32 durability pin (plan #1194 §4.2): the canonical escape phrase
+    # is registered in the adversarial-planner SKILL.md escape list, so a
+    # later SKILL.md edit cannot silently drop it.
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "no fit-family phases" in block
+    assert "check 32" in block
+
+
+# ─── Check 32 — fit-family §9 basis grounding ──────────────────────────────
+
+# Reusable §9 fit-row snippet: kernel vocabulary ("ridge") + loop vocabulary
+# ("3780 fits") in a basis-column compute table; the basis cell is the
+# per-test variable.
+C32_FIT_TABLE = """
+## 9. Resources & Parallelism
+
+| component | planned_wall_h | basis | parallelism |
+|---|---|---|---|
+| ridge refit sweep (3780 fits, 28 layers x fold x arm) | 0.35 | {basis} | 1x A100 |
+"""
+
+
+def _c32_plan(basis: str) -> str:
+    return GOOD_PLAN + C32_FIT_TABLE.format(basis=basis)
+
+
+def test_c32_kind_infra_skips():
+    assert _status(_c32_plan("~2 s/fit"), "c32_fit_basis_grounding", kind="infra") == "SKIP"
+
+
+def test_c32_no_fit_row_skips():
+    # GOOD_PLAN has no basis-column table at all.
+    assert _status(GOOD_PLAN, "c32_fit_basis_grounding") == "SKIP"
+    # A basis-column row with loop vocabulary but NO fit-family kernel (a
+    # generation row) does not trigger either.
+    gen_table = (
+        "\n## 9. Resources\n\n"
+        "| component | planned_wall_h | basis | parallelism |\n"
+        "|---|---|---|---|\n"
+        "| vLLM generation (250 gens, per-source sharding) | 0.5 | ~3 s/gen asserted | 1x A100 |\n"
+    )
+    assert _status(GOOD_PLAN + gen_table, "c32_fit_basis_grounding") == "SKIP"
+
+
+def test_c32_asserted_number_warns():
+    # The #823 literal shape: a bare asserted per-call cost, no provenance.
+    _, by_id = _run(_c32_plan("~2 s/fit"))
+    r = by_id["c32_fit_basis_grounding"]
+    assert r.status == "WARN"
+    assert "#823" in r.detail
+    assert "N/A — no fit-family phases" in r.detail  # the WARN teaches the escape
+
+
+def test_c32_bare_measured_word_warns():
+    # The boilerplate polarity (#552 v3's real "measured: minutes" is also
+    # digit-free): the magic word without a number does not satisfy.
+    assert _status(_c32_plan("measured pilot"), "c32_fit_basis_grounding") == "WARN"
+
+
+def test_c32_measured_pilot_with_figure_passes():
+    basis = "measured 1-cell pilot: 125 s/fit through the production entrypoint"
+    assert _status(_c32_plan(basis), "c32_fit_basis_grounding") == "PASS"
+
+
+def test_c32_prior_issue_figure_passes():
+    assert _status(_c32_plan("#811 r2 measured 313 s/unit"), "c32_fit_basis_grounding") == "PASS"
+
+
+def test_c32_parent_figure_passes():
+    # The #810 v10 real shape: a parent-run realized figure without the
+    # word "measured" — "parent" + the timing token satisfy.
+    basis = "parent full grid ~10 min => ~0.58 s/cell"
+    assert _status(_c32_plan(basis), "c32_fit_basis_grounding") == "PASS"
+
+
+def test_c32_pilot_gated_passes():
+    basis = "pilot-gated (first-step pilot, abort >2x re-projection)"
+    assert _status(_c32_plan(basis), "c32_fit_basis_grounding") == "PASS"
+
+
+def test_c32_flop_only_basis_warns():
+    # A FLOP-derived basis carries a timing token but no provenance word —
+    # the rule: a FLOP floor is the cross-check, never the basis; there is
+    # deliberately NO `FLOP-only` escape (plan #1194 §4.1 decision 1).
+    basis = "FLOP-derived: O(d*r^2) ~1 ms/solve"
+    assert _status(_c32_plan(basis), "c32_fit_basis_grounding") == "WARN"
+
+
+def test_c32_na_escape_passes():
+    plan = (
+        _c32_plan("~2 s/fit")
+        + "\nN/A — no fit-family phases (the flagged row is a batched one-shot solve).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c32_fit_basis_grounding"]
+    assert r.status == "PASS"
+    assert "N/A declared" in r.detail
+
+
+def test_c32_pasted_escape_does_not_self_escape():
+    # The anti-paste polarity (`_standalone_na_declared` house semantics,
+    # cf. the c13/c26 precedents): the escape phrase quoted mid-sentence —
+    # e.g. a bounced plan pasting the WARN detail verbatim — must not
+    # satisfy re-verification.
+    plan = (
+        _c32_plan("~2 s/fit")
+        + "\nThe remedy would be to declare 'N/A — no fit-family phases' if the row "
+        "were not a fit loop, which it is.\n"
+    )
+    assert _status(plan, "c32_fit_basis_grounding") == "WARN"
+
+
+def test_c32_fenced_table_ignored():
+    fenced = "\n## 9. Resources\n\n```\n" + C32_FIT_TABLE.format(basis="~2 s/fit") + "\n```\n"
+    assert _status(GOOD_PLAN + fenced, "c32_fit_basis_grounding") == "SKIP"
+
+
+def test_c32_warn_never_fails():
+    # WARN-only contract (exit-0 semantics): an offender never flips overall.
+    ok, by_id = _run(_c32_plan("~2 s/fit"))
+    assert by_id["c32_fit_basis_grounding"].status == "WARN"
+    assert ok is True
+
+
+def test_c32_kind_analysis_triggers():
+    # The gated set is experiment + analysis; BOTH WARN (unlike c12/c18
+    # there is no FAIL arm anywhere).
+    assert _status(_c32_plan("~2 s/fit"), "c32_fit_basis_grounding", kind="analysis") == "WARN"

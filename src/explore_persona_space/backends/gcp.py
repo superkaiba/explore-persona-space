@@ -1024,13 +1024,21 @@ STARTUP_PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     # this passthrough is the override channel, the default is the floor.
     "EPS_SCRATCH_DIR",
     # HF Hub upload accelerator OVERRIDE channel (#745): forwarded so a
-    # dispatch-process =0 / HF_XET_DISABLE=1 (the #515 xet-CDN workaround)
+    # dispatch-process =0 / HF_HUB_DISABLE_XET=1 (the #515/#931 xet workaround)
     # reaches the GCE workload. The DEFAULTS (=1) are STATIC preamble exports
     # in render_startup_script (below); this passthrough is the override
     # channel only. Drop-when-absent contract preserved (an unset dispatch-env
     # key is simply not forwarded, so the static default stands).
     "HF_XET_HIGH_PERFORMANCE",
     "HF_HUB_ENABLE_HF_TRANSFER",
+    # The REAL xet kill switch (#1195): huggingface_hub (0.36.2 pin) reads
+    # HF_HUB_DISABLE_XET in constants.py — forwarding it lets a dispatch-process
+    # =1 reach the worker (rung 1 of the upload-wedge ladder,
+    # .claude/rules/upload-policy.md).
+    "HF_HUB_DISABLE_XET",
+    # Legacy no-op alias (consumed by nothing on the pinned stack — verified
+    # #1049); kept so existing launch commands forward it harmlessly. Do not
+    # cite it in new recipes.
     "HF_XET_DISABLE",
 )
 
@@ -1246,7 +1254,7 @@ def render_startup_script(
     # the REQUIRED_LAUNCH_SECRET_KEYS preflight below still fires). An
     # explicit dispatcher-set ``0`` arrives as metadata ``0`` →
     # ``_VAL=0`` (non-empty) → ``export KEY=0``, so the override channel
-    # (the #515 xet-CDN ``=0`` / ``HF_XET_DISABLE=1`` workaround) is
+    # (the #515 xet-CDN ``=0`` / ``HF_HUB_DISABLE_XET=1`` workaround) is
     # preserved. ``_VAL`` is scratch — never exported itself.
     secrets_fetch_lines: list[str] = []
     for key in STARTUP_SECRET_ENV_KEYS + STARTUP_PASSTHROUGH_ENV_KEYS:
@@ -2324,7 +2332,7 @@ def render_startup_script(
         # use the Xet backend); HF_HUB_ENABLE_HF_TRANSFER is the orthogonal LFS
         # accelerator (hf_transfer is a hard dep). The passthrough keys in
         # STARTUP_PASSTHROUGH_ENV_KEYS are the OVERRIDE channel — a forwarded
-        # dispatch-process =0 / HF_XET_DISABLE=1 is fetched LATER by the
+        # dispatch-process =0 / HF_HUB_DISABLE_XET=1 is fetched LATER by the
         # secrets-fetch stanza and supersedes these static defaults. That
         # stanza is DEFAULT-PRESERVING (#745, round 2): it only re-exports a
         # key when the metadata fetch is NON-empty, so an ABSENT override (the
