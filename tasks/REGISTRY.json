@@ -1573,8 +1573,8 @@
     "1201": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1201",
-      "status": "reviewing",
+      "path": "tasks/completed/1201",
+      "status": "completed",
       "title": "workflow-fix: PreToolUse guard on bare git pull at repo root"
     },
     "1202": {
