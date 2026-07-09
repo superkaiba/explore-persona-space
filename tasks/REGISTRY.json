@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1179,
+  "highest_id": 1180,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1401,6 +1401,13 @@
       "path": "tasks/on_hold/118",
       "status": "on_hold",
       "title": "Next Steps - April 27 2026"
+    },
+    "1180": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1180",
+      "status": "proposed",
+      "title": "workflow-fix: dedup predicate blind to daily-fix: titles"
     },
     "119": {
       "has_clean_result": false,
