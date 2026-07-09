@@ -54,6 +54,7 @@ from workflow_lint import (  # noqa: E402
     check_grep_qv,
     check_heredoc_dotenv,
     check_hollow_verification_gate_review_lens,
+    check_hub_dir_filecount_guard,
     check_lessons_index,
     check_long_loop_restartability_review_lens,
     check_marker_recipe_snippets,
@@ -2825,6 +2826,187 @@ def test_workflow_lint_check_upload_as_file_cli_exits_zero():
     result = _run("--check-upload-as-file")
     assert result.returncode == 0, (
         f"workflow_lint --check-upload-as-file failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Unit tests for ``check_hub_dir_filecount_guard`` (#1190; incident #658:
+# the Hub rejects >10k files per repo directory at COMMIT time with a
+# NON-retriable BadRequestError AFTER all bytes are staged). Direct
+# ``upload_folder(`` call sites in scripts/ must reference the hub.py
+# runtime guard ``assert_hub_dir_filecounts``, carry a
+# ``# HUB_DIR_FILECOUNT_EXEMPT: <reason>`` waiver, or be grandfathered.
+# Each case writes a tiny .py under ``tmp_path`` and calls
+# ``check_hub_dir_filecount_guard(scripts_dir=tmp_path)``.
+# ─────────────────────────────────────────────────────────────────────
+
+
+def test_check_hub_dir_filecount_fail_attribute_call(tmp_path):
+    """(a) FAIL — the #658 incident shape: a direct ``api.upload_folder(``
+    call in a module with no guard reference."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        "    api = HfApi()\n"
+        '    api.upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.py:5" in errors[0]
+    assert "assert_hub_dir_filecounts" in errors[0]
+    assert "HUB_DIR_FILECOUNT_EXEMPT" in errors[0]
+    assert "gotchas.md" in errors[0]
+    assert "transient-retry wrapper" in errors[0]
+
+
+def test_check_hub_dir_filecount_pass_module_references_guard(tmp_path):
+    """(b) PASS — the module references the guard helper (the one-line fix)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "from explore_persona_space.orchestrate.hub import assert_hub_dir_filecounts\n\n"
+        "def push(d):\n"
+        '    assert_hub_dir_filecounts(d, "p")\n'
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (module references the guard), got: {errors}"
+
+
+def test_check_hub_dir_filecount_pass_attribute_guard_reference(tmp_path):
+    """(b') PASS — a ``hub.assert_hub_dir_filecounts(...)`` attribute
+    reference counts as a guard reference too."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n"
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        '    hub.assert_hub_dir_filecounts(d, "p")\n'
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (hub.assert_... reference), got: {errors}"
+
+
+def test_check_hub_dir_filecount_pass_waiver(tmp_path):
+    """(c) PASS — a waiver with a real reason on the preceding line."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        "    # HUB_DIR_FILECOUNT_EXEMPT: tiny fixed 3-file tree, cap unreachable\n"
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (waived), got: {errors}"
+
+
+def test_check_hub_dir_filecount_fail_waiver_reason_too_short(tmp_path):
+    """(d) FAIL — a waiver whose reason is under the 10-char floor is not a
+    waiver (the reason is a justification, not a token bypass)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        "    # HUB_DIR_FILECOUNT_EXEMPT: ok\n"
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error (short reason), got: {errors}"
+
+
+def test_check_hub_dir_filecount_pass_injectable_allowlist(tmp_path):
+    """(e) PASS — the injectable ``legacy_allowlist=`` grandfathers a file by
+    its walk-root-parent-relative posix path (the production path shape is
+    ``scripts/<name>.py``)."""
+    (tmp_path / "legacy.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    rel = f"{tmp_path.name}/legacy.py"
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path, legacy_allowlist=frozenset({rel}))
+    assert errors == [], f"expected PASS (allowlisted {rel}), got: {errors}"
+    # Sanity: without the allowlist the same file IS flagged (non-vacuous).
+    errors_unlisted = check_hub_dir_filecount_guard(
+        scripts_dir=tmp_path, legacy_allowlist=frozenset()
+    )
+    assert len(errors_unlisted) == 1, errors_unlisted
+
+
+def test_check_hub_dir_filecount_fail_bare_name_hf_import(tmp_path):
+    """(f) FAIL — the ast.Name arm: a ``from huggingface_hub import
+    upload_folder`` caller (the issue667_save_maps.py / issue825 shape)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_folder\n\n"
+        "def push(d):\n"
+        '    upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error (bare-name arm), got: {errors}"
+
+
+def test_check_hub_dir_filecount_pass_local_def_carveout(tmp_path):
+    """(g) NOT flagged — a module defining its own ``def upload_folder``
+    calls the LOCAL wrapper, not the huggingface_hub function (the
+    scripts/issue623_upload.py shape; the carve-out, not the allowlist, is
+    its pass condition)."""
+    (tmp_path / "x.py").write_text(
+        "def upload_folder(folder_path, repo_id, path_in_repo):\n"
+        "    return None\n\n"
+        "def push(d):\n"
+        '    upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (local def upload_folder carve-out), got: {errors}"
+
+
+def test_check_hub_dir_filecount_pass_exact_name_only(tmp_path):
+    """PASS — exact-name match only: differently-named wrappers
+    (``upload_folder_verified`` / ``_upload_folder_filtered``) do NOT match."""
+    (tmp_path / "x.py").write_text(
+        "from issue1073_common import upload_folder_verified\n"
+        "from explore_persona_space.orchestrate.hub import _upload_folder_filtered\n\n"
+        "def push(d, api):\n"
+        '    upload_folder_verified(api, folder_path=str(d), repo_id="r")\n'
+        '    api.upload_folder_scoped_verify(folder_path=str(d), repo_id="r")\n'
+        '    _upload_folder_filtered(d, "r", "dataset", "p", ["*.json"], [])\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (no exact-name upload_folder call), got: {errors}"
+
+
+def test_check_hub_dir_filecount_bundled_in_no_flags():
+    """(h) NON-VACUOUS no-flags bundling pin: the check must be dispatched by
+    the BARE ``workflow_lint.py`` run. Source-inspection assert on the
+    dispatch branch + the no_flags tuple membership (exit-0-on-a-clean-tree
+    is vacuous — it passes whether or not the check is dispatched)."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_hub_dir_filecount or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_hub_dir_filecount_guard\(\)\)",
+        src,
+    ), "check_hub_dir_filecount_guard is not dispatched on the no-flags branch"
+    assert "or args.check_hub_dir_filecount" in src, (
+        "--check-hub-dir-filecount is missing from the no_flags detection tuple"
+    )
+
+
+def test_check_hub_dir_filecount_live_tree_passes():
+    """The committed scripts/**/*.py tree must pass — pins the grandfather
+    allowlist's completeness so the no-flags default run (pre-commit /
+    Step 9c) cannot break on a stale allowlist. A NEW direct upload_folder
+    caller must call assert_hub_dir_filecounts or carry a
+    HUB_DIR_FILECOUNT_EXEMPT waiver — never extend the allowlist."""
+    errors = check_hub_dir_filecount_guard()
+    assert errors == [], (
+        "scripts/**/*.py has direct upload_folder(...) call sites missing the "
+        "hub dir-filecount guard (#658/#1190 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_hub_dir_filecount_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-hub-dir-filecount")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-hub-dir-filecount failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
 

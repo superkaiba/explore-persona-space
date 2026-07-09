@@ -10,6 +10,7 @@ import json
 import logging
 import math
 import os
+import posixpath
 import random
 import re
 import shutil
@@ -689,6 +690,142 @@ def _filecount_fallback_enabled() -> bool:
     return os.environ.get("EPM_HF_FILECOUNT_FALLBACK", "1") == "1"
 
 
+# Per-DIRECTORY commit cap enforced server-side by the Hub (#658 r2: a commit
+# staging 12000 siblings into one dir 400'd "too many files ... up to 10000";
+# huggingface/datasets#7956 confirms the per-directory rejection). DISTINCT
+# from the repo-wide 100k git-file cap (#1108, _is_file_count_limit_error).
+HUB_DIR_FILE_LIMIT = 10_000
+# Advisory watermark = the gotchas.md shard recipe (shard_NNNN/ of <=5000).
+HUB_DIR_FILECOUNT_WARN = 5_000
+
+
+class HubDirFileCountError(ValueError):
+    """A single upload_folder commit would stage more files into one repo
+    directory than the Hub's server-side cap accepts (#658/#1190)."""
+
+
+def _dir_filecount_guard_enabled() -> bool:
+    """Default-ON kill switch. ``EPM_SKIP_HF_DIR_FILECOUNT_GUARD=1`` degrades
+    the raise to a logged WARNING so the guard can never wedge a deliberate
+    upload (mirrors the ``EPM_SKIP_*`` degrade-to-warn family)."""
+    return os.environ.get("EPM_SKIP_HF_DIR_FILECOUNT_GUARD", "0") != "1"
+
+
+def count_staged_files_per_repo_dir(
+    folder_path: Path,
+    path_in_repo: str,
+    *,
+    allow_patterns: list[str] | None = None,
+    ignore_patterns: list[str] | None = None,
+) -> dict[str, int]:
+    """Count the files ONE ``upload_folder`` commit would stage, keyed by
+    TARGET repo directory (``path_in_repo`` prefix + relative subdir).
+
+    Pure-local (``Path.rglob`` + ``huggingface_hub.utils.filter_repo_objects``
+    — the library's OWN client-side filter, so allow/ignore semantics match
+    what ``upload_folder`` will actually stage). No network; ~1.25 s at the
+    pathological 10k-file scale, milliseconds at normal scale.
+    """
+    from huggingface_hub.utils import filter_repo_objects
+
+    rels = [p.relative_to(folder_path).as_posix() for p in folder_path.rglob("*") if p.is_file()]
+    # Parity with upload_folder's own default excludes (.git/ etc.).
+    # Fact-checked on the pinned huggingface_hub 0.36.2: the constant lives at
+    # huggingface_hub.utils (utils/_paths.py:25, a list of 8 patterns), NOT
+    # huggingface_hub.constants (that import ERRORS); upload_folder itself
+    # applies it (hf_api.py:4901). try/except kept only as future-version
+    # drift defense (fallback direction: over-count, the safe side — the
+    # kill switch unwedges).
+    try:
+        from huggingface_hub.utils import DEFAULT_IGNORE_PATTERNS
+
+        ignore = list(DEFAULT_IGNORE_PATTERNS) + list(ignore_patterns or [])
+    except ImportError:
+        ignore = list(ignore_patterns or [])
+    counts: dict[str, int] = {}
+    prefix = path_in_repo.strip("/")
+    for rel in filter_repo_objects(rels, allow_patterns=allow_patterns, ignore_patterns=ignore):
+        repo_dir = posixpath.dirname(posixpath.join(prefix, rel) if prefix else rel)
+        counts[repo_dir] = counts.get(repo_dir, 0) + 1
+    return counts
+
+
+def assert_hub_dir_filecounts(
+    folder_path: Path | str,
+    path_in_repo: str,
+    *,
+    allow_patterns: list[str] | None = None,
+    ignore_patterns: list[str] | None = None,
+    limit: int = HUB_DIR_FILE_LIMIT,
+    warn_at: int = HUB_DIR_FILECOUNT_WARN,
+) -> dict[str, int]:
+    """Fail loud BEFORE staging when any target repo dir would receive
+    more than ``limit`` files in one commit (strict ``>``; the server accepts
+    exactly 10,000). Returns the per-dir counts (for logging / tests).
+
+    Public — direct ``HfApi.upload_folder`` callers in ``scripts/`` call this
+    one-liner before their upload (the ``--check-hub-dir-filecount`` lint
+    funnels them here), OUTSIDE any transient-retry wrapper (a guard raise is
+    deterministic; retrying it burns the retry budget for nothing).
+
+    Sequence semantics: callers relying on :func:`_upload`'s return-``""``
+    soft-fail for upload-SEQUENCE independence now crash at the first
+    offender — deliberate (the #595 pre-try ``ValueError`` precedent): the
+    guarded class was already a guaranteed post-staging server 400, and the
+    crash halts with data still local + the kill switch named at the crash
+    site.
+
+    STAGED-ONLY residuals (same false-negative direction; the server 400
+    stays the late backstop): files already ON the remote repo dir; a dir
+    built over the cap INCREMENTALLY via many small commits (per-file /
+    per-cell paths — e.g. ``orchestrate.upload_sharded.upload_dir_sharded``,
+    which commits ONE file per commit and is deliberately NOT wired to this
+    guard); and the possibility the server counts directory ENTRIES
+    (subdirs) rather than only files.
+    """
+    counts = count_staged_files_per_repo_dir(
+        Path(folder_path),
+        path_in_repo,
+        allow_patterns=allow_patterns,
+        ignore_patterns=ignore_patterns,
+    )
+    offenders = {d: n for d, n in counts.items() if n > limit}
+    if offenders:
+        worst_dir, worst_n = max(offenders.items(), key=lambda kv: kv[1])
+        # COMMA-FORMAT every numeric literal ({n:,} -> "10,000") — a bare
+        # "5000"/"10000" contains the substring "500", which
+        # _is_transient_upload_error's response-less scan reads as an HTTP 500
+        # and would RETRY a deterministic guard failure if a direct caller
+        # wraps the guard in a retry thunk. The comma breaks the substring.
+        msg = (
+            f"upload would stage {worst_n:,} files into repo dir '{worst_dir}' "
+            f"({len(offenders)} dir(s) over the Hub's {limit:,}-files-per-directory "
+            f"commit cap — a NON-retriable BadRequestError at create_commit, #658). "
+            f"Re-shard into shard_NNNN/ subdirs of <= {warn_at:,} files "
+            f"with a manifest (see .claude/rules/gotchas.md 'HF Hub rejects any "
+            f"single repo directory holding >10k files'). Deliberate override: "
+            f"EPM_SKIP_HF_DIR_FILECOUNT_GUARD=1. Call the guard OUTSIDE any "
+            f"transient-retry wrapper."
+        )
+        if _dir_filecount_guard_enabled():
+            raise HubDirFileCountError(msg)
+        # NOTE: the #1108 overflow fallback re-enters _upload, so a
+        # kill-switched over-limit upload logs this WARNING twice (once per
+        # entry). Idempotent + harmless — not a bug.
+        logger.warning("EPM_SKIP_HF_DIR_FILECOUNT_GUARD=1 set — proceeding despite: %s", msg)
+    elif any(n > warn_at for n in counts.values()):
+        big = {d: n for d, n in counts.items() if n > warn_at}
+        logger.warning(
+            "upload stages more than %s files into repo dir(s) %s — above the "
+            "recommended shard size (cap is %s/dir; consider shard_NNNN/ now, "
+            "gotchas.md).",
+            f"{warn_at:,}",  # comma-format: see the msg note above
+            big,
+            f"{limit:,}",
+        )
+    return counts
+
+
 def _is_file_count_limit_error(err: Exception) -> bool:
     """HF's repo-wide git file-count rejection ("Your git repo would contain
     N files after this push, over the limit of 100000 files" — verbatim in
@@ -1032,6 +1169,19 @@ def _upload(
             "single-file uploads (see upload_raw_completions_to_data_repo)."
         )
 
+    # #1190: pre-count staged files per TARGET repo dir before any network
+    # I/O — the Hub rejects a commit staging >10k siblings into one dir with
+    # a NON-retriable BadRequestError AFTER all bytes are staged (#658 r2).
+    # Placed BEFORE HfApi construction and OUTSIDE the try below so the raise
+    # propagates instead of being swallowed into `except Exception -> ""`
+    # (the #595 pre-try precedent).
+    if local_path.is_dir():
+        assert_hub_dir_filecounts(
+            local_path,
+            path_in_repo,
+            ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
+        )
+
     api = HfApi(token=token)
 
     # Repo should already exist (public), but create if missing
@@ -1214,6 +1364,17 @@ def _upload_folder_filtered(
     if not local_dir.is_dir():
         logger.warning("Path %s is not a directory, skipping bulk upload", local_dir)
         return ""
+
+    # #1190: pre-count the ACTUALLY-staged subset (allow/ignore patterns
+    # respected) per TARGET repo dir before any network I/O — same guard +
+    # placement rationale as _upload's folder branch (before HfApi, outside
+    # the try, so the raise propagates instead of returning "").
+    assert_hub_dir_filecounts(
+        local_dir,
+        path_in_repo,
+        allow_patterns=allow_patterns,
+        ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
+    )
 
     api = HfApi(token=token)
 

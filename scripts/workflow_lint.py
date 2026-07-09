@@ -177,6 +177,27 @@ Behaviours:
   Codex twin caught #640); a CPU smoke that skips the GPU phase never
   exercises the upload branch, so nothing mechanical caught it
   pre-merge.
+* ``--check-hub-dir-filecount`` (also bundled into the no-flags default
+  run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on any DIRECT
+  ``upload_folder(...)`` call site — attribute form (``api.upload_folder(``)
+  or a bare name (a ``from huggingface_hub import upload_folder`` caller;
+  a module defining a LOCAL ``def upload_folder`` is carved out of the
+  bare-name arm, the ``scripts/issue623_upload.py`` wrapper shape) — in a
+  module that does not reference ``assert_hub_dir_filecounts`` (the hub.py
+  runtime guard, #1190). The Hub rejects any single repo directory holding
+  >10000 files at COMMIT time with a NON-retriable ``BadRequestError``
+  fired AFTER the full compute has run and all bytes are staged (#658 r2:
+  12000 rollout files staged into one dir); the shared hub helpers
+  (``_upload`` folder branch / ``_upload_folder_filtered``) pre-count
+  staged files per TARGET repo dir and raise ``HubDirFileCountError``
+  before any network I/O, and this check funnels direct ``HfApi`` callers
+  toward the same one-line guard (called OUTSIDE any transient-retry
+  wrapper — a guard raise is deterministic). Pre-existing direct call
+  sites are grandfathered in :data:`HUB_DIR_FILECOUNT_LEGACY_ALLOWLIST`
+  (grep-generated, live-tree-test-pinned, never hand-extended); waive a
+  new genuinely-correct call with ``# HUB_DIR_FILECOUNT_EXEMPT: <reason>``
+  (reason ≥ 10 chars) on the call's first physical line or the
+  immediately preceding non-blank line.
 * ``--check-jsonl-splitlines`` (also bundled into the no-flags default
   run): AST-walk every ``*.py`` under ``scripts/`` AND
   ``src/explore_persona_space/`` and FAIL on any ``.splitlines()`` call
@@ -1238,6 +1259,72 @@ UPLOAD_GLOB_LOOP_METHODS: tuple[str, ...] = ("glob", "rglob", "iterdir")
 # convention as CVD_PIN_EXEMPT / WANDB_INTENTIONALLY_DISABLED.
 UPLOAD_AS_FILE_WAIVER_RE = re.compile(r"#\s*UPLOAD_AS_FILE_EXEMPT\s*:\s*(.+?)\s*$")
 UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS = 10
+
+
+# `--check-hub-dir-filecount` (#1190): the Hub rejects any single repo
+# directory holding >10000 files at COMMIT time — a NON-retriable
+# BadRequestError AFTER the full compute ran and all bytes are staged (#658
+# r2). The shared hub helpers (`hub._upload` folder branch /
+# `hub._upload_folder_filtered`) pre-count staged files per TARGET repo dir
+# via `assert_hub_dir_filecounts` and fail loud BEFORE any network I/O; this
+# lint funnels DIRECT `upload_folder(` call sites in scripts/ (the #658
+# incident's own call path bypassed hub.py entirely) toward that one-line
+# guard. Inline waiver for a genuinely-correct flagged call. Reason ≥ 10
+# chars, same convention as UPLOAD_AS_FILE_EXEMPT / CVD_PIN_EXEMPT.
+HUB_DIR_FILECOUNT_WAIVER_RE = re.compile(r"#\s*HUB_DIR_FILECOUNT_EXEMPT\s*:\s*(.+?)\s*$")
+HUB_DIR_FILECOUNT_WAIVER_MIN_REASON_CHARS = 10
+# Grandfathered pre-existing direct `upload_folder(` call sites — legacy
+# EXPERIMENT code the workflow-fix scope bars #1190 from editing. Rebuilt
+# mechanically from the live tree (grep -rln "upload_folder(" scripts/
+# --include='*.py', minus wrapper-routed / local-`def upload_folder` files)
+# and pinned by
+# tests/test_workflow_lint.py::test_check_hub_dir_filecount_live_tree_passes.
+# NOT hand-maintained: a NEW direct caller must call
+# assert_hub_dir_filecounts (or carry a HUB_DIR_FILECOUNT_EXEMPT waiver),
+# never extend this set. Repo-root-relative posix paths.
+HUB_DIR_FILECOUNT_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        "scripts/archive/upload_and_clean.py",  # 1 pre-#1190 direct site; archived legacy uploader
+        "scripts/issue1073_common.py",  # 1 pre-#1190 direct site; legacy experiment code
+        "scripts/issue540_jsrb_predictor.py",  # 1 pre-#1190 direct site; legacy experiment code
+        "scripts/issue545_sweep.py",  # 8 pre-#1190 direct sites; legacy experiment code
+        "scripts/issue594_extract_context_vectors.py",  # 2 pre-#1190 direct sites; legacy expt
+        "scripts/issue604_extract_context_vectors.py",  # 1 pre-#1190 direct site; legacy expt
+        "scripts/issue617_upload_corpus.py",  # 2 pre-#1190 direct sites; legacy experiment code
+        "scripts/issue634_extract_behavior_vectors.py",  # 2 pre-#1190 direct sites; legacy expt
+        "scripts/issue650_extract_context_bank.py",  # 1 pre-#1190 direct site; legacy expt
+        "scripts/issue658_extract_base_store.py",  # 3 pre-#1190 direct sites; the #658 incident rig
+        "scripts/issue661_extract_directions.py",  # 1 pre-#1190 direct site; legacy experiment code
+        "scripts/issue661_generate_arm_a.py",  # 1 pre-#1190 direct site; legacy experiment code
+        "scripts/issue664_dispatch.py",  # 3 pre-#1190 direct sites; legacy experiment code
+        "scripts/issue667_save_maps.py",  # 1 pre-#1190 direct site (bare-name import form)
+        "scripts/issue744_dump_and_stream.py",  # 2 pre-#1190 direct sites; legacy experiment code
+        "scripts/issue763_build_probe_pools.py",  # 2 pre-#1190 direct sites; legacy expt
+        "scripts/issue763_cofit_upload.py",  # 2 pre-#1190 direct sites; legacy experiment code
+        "scripts/issue763_disclosure_flag_audit.py",  # 1 pre-#1190 direct site; legacy expt
+        "scripts/issue763_extract_pv_rb.py",  # 2 pre-#1190 direct sites; legacy experiment code
+        "scripts/issue763_judge_e0.py",  # 1 pre-#1190 direct site; legacy experiment code
+        "scripts/issue763_upload.py",  # 2 pre-#1190 direct sites; legacy experiment code
+        "scripts/issue778_v2_upload.py",  # 1 pre-#1190 direct site; legacy experiment code
+        "scripts/issue779_capture_answer_summaries.py",  # 1 pre-#1190 direct site; legacy expt
+        "scripts/issue779_capture_answer_summaries_pass2.py",  # 1 pre-#1190 direct site; legacy
+        "scripts/issue779_collect.py",  # 2 pre-#1190 direct sites; legacy experiment code
+        "scripts/issue779_extract_rb.py",  # 2 pre-#1190 direct sites; legacy experiment code
+        "scripts/issue779_gen_behavior_corpus.py",  # 2 pre-#1190 direct sites; legacy expt
+        "scripts/issue779_pertoken_lmsys_capture.py",  # 1 pre-#1190 direct site; legacy expt
+        "scripts/issue779_reliability_gen_capture.py",  # 1 pre-#1190 direct site; legacy expt
+        "scripts/issue810_common.py",  # 1 pre-#1190 direct site; legacy experiment code
+        "scripts/issue810_extract_positions.py",  # 1 pre-#1190 direct site; legacy expt
+        "scripts/issue825_gen_conversations.py",  # 1 pre-#1190 direct site (bare-name import form)
+        "scripts/issue833_extract_onpolicy.py",  # 4 pre-#1190 direct sites; legacy experiment code
+        "scripts/issue920_extract_summaries.py",  # 1 pre-#1190 direct site; legacy expt
+        "scripts/issue920_gen_completions_b.py",  # 1 pre-#1190 direct site; legacy expt
+        "scripts/issue920_nulls_figures.py",  # 1 pre-#1190 direct site; legacy experiment code
+        "scripts/issue922_common.py",  # 1 pre-#1190 direct site; legacy experiment code
+        "scripts/issue928_common.py",  # 1 pre-#1190 direct site; legacy experiment code
+        "scripts/issue_642/i642_dispatch.py",  # 2 pre-#1190 direct sites; legacy experiment code
+    }
+)
 
 
 # `--check-jsonl-splitlines` (#950): reading/counting JSONL via
@@ -4155,6 +4242,152 @@ def check_upload_as_file(*, scripts_dir: Path | None = None) -> list[str]:
                 f"≥ {UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS} chars) on the call's "
                 f"first line or the previous non-blank line. See "
                 f".claude/rules/gotchas.md 'hub._upload raises ValueError'."
+            )
+    return errors
+
+
+def _hub_dir_filecount_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """Return True iff a ``# HUB_DIR_FILECOUNT_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`HUB_DIR_FILECOUNT_WAIVER_MIN_REASON_CHARS` chars) is on
+    the call's first physical line (``call_lineno``, 1-based) or the
+    immediately preceding non-blank line. Same convention as
+    :func:`_upload_as_file_waiver_present`."""
+    idx = call_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = HUB_DIR_FILECOUNT_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= HUB_DIR_FILECOUNT_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = HUB_DIR_FILECOUNT_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= HUB_DIR_FILECOUNT_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def check_hub_dir_filecount_guard(
+    *, scripts_dir: Path | None = None, legacy_allowlist: frozenset[str] | None = None
+) -> list[str]:
+    """AST-walk every ``*.py`` under ``scripts/`` and FAIL on any DIRECT
+    ``upload_folder(...)`` call site whose module does not reference the hub
+    dir-filecount guard ``assert_hub_dir_filecounts`` (#1190).
+
+    Rationale: the HF Hub rejects any single repo directory holding >10000
+    files at COMMIT time — a NON-retriable ``BadRequestError`` fired AFTER
+    the full compute has run and every byte is staged (#658 r2: 12000
+    rollout ``.pt`` files + 12000 transcripts in one dir each; per-file
+    uploads succeeded, the final ``create_commit`` 400'd). The shared hub
+    helpers (``hub._upload`` folder branch / ``hub._upload_folder_filtered``)
+    pre-count staged files per TARGET repo dir and raise
+    ``HubDirFileCountError`` BEFORE any network I/O — but the #658 incident's
+    own call path used ``HfApi`` DIRECTLY from a per-issue script, bypassing
+    hub.py entirely. This check is the funnel: a direct ``upload_folder``
+    call site in ``scripts/`` must reference the one-line guard, carry an
+    exemption comment, or be on the grandfathered legacy allowlist (the same
+    funnel-to-the-guarded-helper role ``--check-upload-as-file`` plays for
+    ``hub._upload``).
+
+    Detection (exact-name match only — ``upload_folder_verified`` /
+    ``upload_folder_scoped_verify`` / ``_upload_folder_filtered`` do NOT
+    match):
+
+    * an ``ast.Attribute`` call with ``attr == "upload_folder"`` (matches
+      ``api.upload_folder(``, ``HfApi().upload_folder(``,
+      ``self.api.upload_folder(``);
+    * an ``ast.Name`` call with ``id == "upload_folder"`` (a
+      ``from huggingface_hub import upload_folder`` caller) — UNLESS the
+      module defines its own local ``def upload_folder`` (the
+      ``scripts/issue623_upload.py`` wrapper shape; the carve-out, not the
+      allowlist, is such a module's pass condition).
+
+    Pass conditions (any one suffices):
+
+    1. the enclosing MODULE references ``assert_hub_dir_filecounts``
+       anywhere (any ``ast.Name`` / ``ast.Attribute`` with that identifier)
+       — module-level granularity, the proportionate v1 (per-call-site
+       granularity is a possible future tightening);
+    2. a ``# HUB_DIR_FILECOUNT_EXEMPT: <reason>`` waiver (reason ≥
+       :data:`HUB_DIR_FILECOUNT_WAIVER_MIN_REASON_CHARS` chars) on the
+       call's first physical line or the immediately preceding non-blank
+       line;
+    3. the file's repo-relative posix path is in
+       :data:`HUB_DIR_FILECOUNT_LEGACY_ALLOWLIST` (grandfathered
+       pre-existing experiment code; grep-generated + live-tree-test-pinned,
+       never hand-extended).
+
+    ``scripts_dir`` / ``legacy_allowlist`` are override hooks for unit
+    tests; production callers pass None and the function walks the canonical
+    ``<repo_root>/scripts`` tree against the module allowlist. Allowlist
+    paths are computed relative to the WALK ROOT'S PARENT (so production
+    paths read ``scripts/<name>.py`` and tmp_path fixtures resolve
+    consistently). Bundled into the no-flags default run.
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    allow = HUB_DIR_FILECOUNT_LEGACY_ALLOWLIST if legacy_allowlist is None else legacy_allowlist
+    errors: list[str] = []
+    for py in sorted(root.rglob("*.py")):
+        if not py.is_file():
+            continue
+        rel = py.relative_to(root.parent).as_posix()
+        if rel in allow:
+            continue  # grandfathered pre-existing direct call sites
+        text = py.read_text(encoding="utf-8")
+        tree = _cached_parse(py, text)
+        if tree is None:
+            # A scripts/ file that does not parse is its own (separate)
+            # problem; this check stays silent on it rather than crashing.
+            continue
+        # Pass condition 1: any reference to the guard helper anywhere in
+        # the module (import, bare call, hub.assert_hub_dir_filecounts(...))
+        # whitelists the whole module.
+        guarded = any(
+            (isinstance(n, ast.Name) and n.id == "assert_hub_dir_filecounts")
+            or (isinstance(n, ast.Attribute) and n.attr == "assert_hub_dir_filecounts")
+            for n in ast.walk(tree)
+        )
+        if guarded:
+            continue
+        # Carve-out for the bare-Name arm: a module that DEFINES its own
+        # `def upload_folder` calls its local wrapper, not the huggingface_hub
+        # function (scripts/issue623_upload.py — 4 would-be false positives).
+        local_def = any(
+            isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef) and n.name == "upload_folder"
+            for n in ast.walk(tree)
+        )
+        lines = text.splitlines()
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = node.func
+            if isinstance(fn, ast.Attribute) and fn.attr == "upload_folder":
+                pass  # api.upload_folder(...) — always a candidate
+            elif isinstance(fn, ast.Name) and fn.id == "upload_folder":
+                if local_def:
+                    continue  # local wrapper call — carved out
+            else:
+                continue
+            if _hub_dir_filecount_waiver_present(lines, node.lineno):
+                continue
+            errors.append(
+                f"{py}:{node.lineno}: direct upload_folder(...) call without the hub "
+                f"dir-filecount guard. The Hub rejects any single repo directory holding "
+                f">10k files at COMMIT time with a NON-retriable BadRequestError, fired "
+                f"AFTER the full compute ran and all bytes are staged (#658). One-line "
+                f"fix: `from explore_persona_space.orchestrate.hub import "
+                f"assert_hub_dir_filecounts` and call it on the SAME folder_path / "
+                f"path_in_repo / allow+ignore patterns BEFORE the upload, OUTSIDE any "
+                f"transient-retry wrapper (a guard raise is deterministic — retrying it "
+                f"burns the retry budget for nothing) — or route through hub._upload / "
+                f"hub._upload_folder_filtered, which are guarded. Waive a "
+                f"genuinely-correct call with '# HUB_DIR_FILECOUNT_EXEMPT: <reason>' "
+                f"(reason >= {HUB_DIR_FILECOUNT_WAIVER_MIN_REASON_CHARS} chars) on the "
+                f"call's first line or the previous non-blank line. See "
+                f".claude/rules/gotchas.md 'HF Hub rejects any single repo directory "
+                f"holding >10000 files at COMMIT time'."
             )
     return errors
 
@@ -8741,6 +8974,23 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "<reason>'. Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-hub-dir-filecount",
+        action="store_true",
+        help="AST-walk scripts/**/*.py and FAIL on any DIRECT upload_folder(...) "
+        "call site (api.upload_folder / a bare huggingface_hub import) in a "
+        "module that does not reference assert_hub_dir_filecounts (the hub.py "
+        "runtime guard, #1190). The Hub rejects any single repo directory "
+        "holding >10k files at COMMIT time with a NON-retriable "
+        "BadRequestError AFTER all bytes are staged (#658); the shared hub "
+        "helpers pre-count staged files per target repo dir and fail loud "
+        "before any network I/O, and this lint funnels direct HfApi callers "
+        "toward the same one-line guard (called OUTSIDE any transient-retry "
+        "wrapper). Waive with '# HUB_DIR_FILECOUNT_EXEMPT: <reason>'; "
+        "pre-existing call sites are grandfathered in "
+        "HUB_DIR_FILECOUNT_LEGACY_ALLOWLIST. Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-dotenv-before-hf-import",
         action="store_true",
         help="AST-walk scripts/**/*.py and FAIL on any script that uses the "
@@ -9129,6 +9379,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_agent_model_pins
         or args.check_agent_tools
         or args.check_upload_as_file
+        or args.check_hub_dir_filecount
         or args.check_dotenv_before_hf_import
         or args.check_batch_judge_client
         or args.check_no_workflow_improver_spawn
@@ -9215,6 +9466,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_agent_tools())
     if args.check_upload_as_file or no_flags:
         errors.extend(check_upload_as_file())
+    if args.check_hub_dir_filecount or no_flags:
+        errors.extend(check_hub_dir_filecount_guard())
     if args.check_dotenv_before_hf_import or no_flags:
         errors.extend(check_dotenv_before_hf_import())
     if args.check_batch_judge_client or no_flags:
