@@ -347,7 +347,7 @@ alert fires too:
    (`on_hold` is not in `FOLLOWUP_HELD_BLOCKED_STATUSES`); pausing a
    `followups_running` round abandons that round's in-flight subagents —
    record `paused_from` so resume restores the held status.
-3. EXIT the turn. Do NOT leave status at an ACTIVE value with a prose
+3. End the turn. Do NOT leave status at an ACTIVE value with a prose
    hold note — the watcher's orphan-respawn pass cannot parse prose and
    will respawn against the hold (incident #816, 2026-07-02).
 
@@ -903,7 +903,7 @@ deferred variant.
 
 **Workflow-version dispatch (run BEFORE anything else).** Read the task's
 `workflow` frontmatter field and, if it is `v2`, hand the whole task off to the
-v2 skill and EXIT this skill immediately — v1 does nothing further for a v2 task.
+v2 skill and exit this skill immediately — v1 does nothing further for a v2 task.
 This is a read-only probe (no markers, no mutation); the v2 skill re-runs the
 same Step-0 guards itself.
 
@@ -2674,7 +2674,10 @@ the same logic.
      do NOT same-diff-family pivot-loop:
      - **Interactive mode:** present the residual blocker(s) to the user
        (the two-path escalation is grandfathered for a genuine stuck-real
-       blocker; frame the residual + ask how to proceed). EXIT awaiting
+       blocker; frame the residual + ask how to proceed). Post the §5
+       marker (`uv run python scripts/post_step_completed.py --issue <N>
+       --step 5b --exit-kind parked --notes "code-review cap-5
+       substantive residual; awaiting user"`), then EXIT awaiting
        the user.
      - **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): post
        `epm:failure v1` with `failure_class: code` referencing the
@@ -2684,7 +2687,10 @@ the same logic.
        CRON-TEARDOWN (fresh `CronList` → `CronDelete` every job in the
        two-leg match set: the recurring `/issue-tick <N>` tick +
        stray one-shot `/issue <N>` wakeups; not-found = success;
-       § CRON-TEARDOWN procedure), and EXIT. This is the standing halt path for a
+       § CRON-TEARDOWN procedure), post the §5 marker (`uv run python
+       scripts/post_step_completed.py --issue <N> --step 5b --exit-kind
+       failure-exit --notes "code-review cap-5 substantive residual;
+       status:blocked"`), and EXIT. This is the standing halt path for a
        genuinely-stuck real blocker after the auto-continue space is
        exhausted (halt_criteria id=6 `concern_unresolved` family) — no
        more pivots, no more silent shipping past.
@@ -3075,8 +3081,11 @@ only the ALREADY-over-quota case. When the approved plan's §9/§10 projects
 --planned-upload-gb <N>` (decimal GB, the plan's projected LFS total). A
 KNOWN-insufficient exit (the gate's ERROR is live-confirmed via a forced
 re-probe) is handled EXACTLY like the quota-exceeded exit above: post
-`epm:hf-quota-exceeded v1` (with the gate's error text), set `blocked`, EXIT —
-the storage decision is the user's. Fail-open otherwise: unknown headroom /
+`epm:hf-quota-exceeded v1` (with the gate's error text), post the same §5
+marker (`uv run python scripts/post_step_completed.py --issue <N> --step 6c
+--exit-kind failure-exit --notes "projected LFS headroom insufficient;
+status:blocked"`), set `blocked`, EXIT — the storage decision is the
+user's. Fail-open otherwise: unknown headroom /
 disabled check / routing armed all WARN and proceed to 6b.
 
 #### Step 6b: Pod provisioning
@@ -4151,7 +4160,7 @@ teardown at a terminal/park transition is ever missed, the residue is
 cheap: the cron auto-expires at 7 days, and a tick landing on a
 `completed` / `archived` / `awaiting_promotion` issue is a no-op that
 SELF-HEALS (the re-invoked skill reads terminal/park state, exits without
-re-arming, and runs the two-leg sweep before EXIT — so a wakeup that
+re-arming, and runs the two-leg sweep before exiting — so a wakeup that
 escaped an earlier teardown deletes its own stray siblings when it fires;
 the blast-radius bound for whatever the store fails to surface).
 Run CRON-TEARDOWN the moment you spot a stranded cron or stray one-shot
@@ -4396,7 +4405,7 @@ Gate handlers (one per registered `<name>`):
   workflow.yaml § gates.fact_candidates), the
   orchestrator resolves this gate ITSELF — it does NOT raise
   `AskUserQuestion`, does NOT post `epm:step-completed --exit-kind
-  parked`, does NOT EXIT the skill, and does NOT CRON-TEARDOWN — by
+  parked`, does NOT exit the skill, and does NOT CRON-TEARDOWN — by
   orchestrating a pod-cycle around an off-pod judge step and then
   RESUMING the polling loop in this same turn. This handler behaves
   IDENTICALLY in interactive and `EPM_AUTONOMOUS_SESSION` modes (there
@@ -4448,7 +4457,7 @@ Gate handlers (one per registered `<name>`):
      `pid`/`log` from that marker.
 
   Then **RESUME the polling loop** (Step 6d.2) at the next tick — do NOT
-  EXIT, do NOT park, do NOT CRON-TEARDOWN. The gate has auto-resolved.
+  exit, do NOT park, do NOT CRON-TEARDOWN. The gate has auto-resolved.
   (RunPod lane — the stop/judge/resume cycle above keeps ONE pod across
   phases, so the pod is burning GPU again after resume. GCP lane: there
   is no stop/resume — the instance was finalized per the GCP-lane
@@ -4481,10 +4490,10 @@ Gate handlers (one per registered `<name>`):
   the gate name can silently no-op.
 
 **PARK-mode gates only** (`fact-candidates` and the unrecognised-gate
-branch): the tail below applies ONLY to gates that EXIT the skill to wait
+branch): the tail below applies ONLY to gates that exit the skill to wait
 on a human. Auto-resolving gates like `pv_phase1_done` (above) handle
 their own continuation — they do NOT tear down the RUNPOD pod mid-cycle
-(the stop/judge/resume cycle IS the continuation) and do NOT EXIT; on the
+(the stop/judge/resume cycle IS the continuation) and do NOT exit; on the
 GCP lane the auto-resolve handler DOES tear the instance down (finalize +
 fresh dispatch, per the GCP-lane teardown leg above) — "no teardown" is
 RunPod-scoped. Their handler resumes the polling loop in the same turn,
@@ -5430,7 +5439,9 @@ PY
 
 If the output is anything other than `DISPATCH`, log that one line, post
 NO duplicate breadcrumb, do NOT spawn — the stage is already in flight
-(EXIT `parked` on a backstop tick, or continue with other work). `<W>`
+(EXIT `parked` on a backstop tick — the idempotency-guard EXIT, i.e. the
+guard rule's `post_step_completed.py --exit-kind parked` call below — or
+continue with other work). `<W>`
 follows the stage-aware freshness windows below (15 default / 30
 Codex-ensembled). This applies to EVERY site that posts a
 `stage-dispatch` breadcrumb: the Step 8 results-landed batch, Step 9
@@ -5821,7 +5832,10 @@ stripped → advance with full critique history. If ANY SUBSTANTIVE
 residual remains — a flagged OVERCLAIM the strip cannot resolve — SURFACE
 it, do NOT auto-publish into the record (this is the MOST important site
 for surface-not-ship, #784: a real residual at interp is an overclaim
-that must never be silently promoted). Interactive: present the residual
+that must never be silently promoted). Either way post the §5 marker
+first (`uv run python scripts/post_step_completed.py --issue <N>
+--step 9a --exit-kind parked` interactive / `--exit-kind failure-exit`
+autonomous). Interactive: present the residual
 to the user + EXIT. Autonomous (`EPM_AUTONOMOUS_SESSION=1`): post
 `epm:failure v1 failure_class: code` referencing the residual, set
 `status: blocked`, fire `PushNotification`, run CRON-TEARDOWN, EXIT
@@ -6386,7 +6400,10 @@ REVISEs). If ALL residual REVISEs are stripped → advance. If ANY
 SUBSTANTIVE residual remains — a flagged OVERCLAIM the strip cannot
 resolve — SURFACE it, do NOT auto-publish into the clean-result record
 (#784 surface-not-ship: a real residual here is an overclaim that must
-never be silently promoted). Interactive: present the residual to the
+never be silently promoted). Either way post the §5 marker first
+(`uv run python scripts/post_step_completed.py --issue <N> --step 9a-bis
+--exit-kind parked` interactive / `--exit-kind failure-exit` autonomous).
+Interactive: present the residual to the
 user + EXIT (the user decides whether to patch before promoting).
 Autonomous (`EPM_AUTONOMOUS_SESSION=1`): post `epm:failure v1
 failure_class: code` referencing the residual, set `status: blocked`,
@@ -9775,6 +9792,8 @@ recording `step`, `next_expected_step` (looked up from
 - `clean` = normal continuation;
 - `parked` = user-gated wait;
 - `failure-exit` = error path.
+
+**Authoring convention:** all-caps `EXIT` in this file's action region (everything above this section) marks a scanner-enforced action exit that must carry a `post_step_completed.py` call within ±6 lines (`tests/test_step_completed_resume.py::test_every_exit_site_posts_marker`); lowercase `exit` is reference prose or a deliberately marker-free exit (user-pause, v2 handoff).
 
 **Helper.** Skill code calls `scripts/post_step_completed.py` at every
 EXIT site (after the EXIT condition is met, before the actual exit):
