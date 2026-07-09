@@ -94,7 +94,10 @@ cannot repeat that divergence.
      emits `REFUSAL` as its first option, and the project's plain-integer
      Sonnet judge can also emit refusal text, "I can't score this", or an
      out-of-range value. Such a return carries no information about trait
-     expression, so it cannot enter either pool. Coercing it to a number is the
+     expression, so it cannot enter either pool. A judge CALL that fails in
+     transport (429/529/timeout) is not a judge return at all — retry /
+     re-judge it per `.claude/rules/llm-judging.md` rule 24 rather than
+     dropping the rollout. Coercing it to a number is the
      failure mode this clause exists to prevent: a `→ 0` coercion would slot a
      refusal into the negative-exhibiting pool (it scores `<50`), pulling the
      negative-arm activation mean toward the refusal-activation region — and
