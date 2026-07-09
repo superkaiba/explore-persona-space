@@ -8452,11 +8452,24 @@ rebase-merged. Three guards:
    ```bash
    # Foreign tasks/* paths this branch touches (everything under tasks/ that
    # is NOT this task's own folder). Anchored so tasks/.../<N>/… is excluded.
+   # MATERIALIZE the diff FIRST and check its OWN exit code: piped into grep
+   # with `|| true`, a FAILED git diff (bad ref, missing origin/main) reads
+   # as "no foreign files", the strip is silently skipped, and foreign
+   # tasks/ reverts ride the merge (the #458 incident class — fail-open).
+   # Same materialize-then-check pattern as the lint-gate trigger diff below
+   # (#1047). The failure arm is TERMINAL (echo + false): do NOT merge —
+   # route to the merge-failure handling (`epm:merge-failed v1`, continue).
    STRIPPED_FOREIGN=no   # set to yes iff a strip commit is actually created,
                          # so the safe-case push below fires only when needed.
-   mapfile -t FOREIGN < <(git -C "$WT" diff --name-only origin/main HEAD -- 'tasks/' \
-     | grep -Ev "^tasks/[^/]+/<N>/" || true)
-   if [ "${#FOREIGN[@]}" -gt 0 ]; then
+   if ! git -C "$WT" diff --name-only origin/main HEAD -- 'tasks/' \
+       > /tmp/issue-<N>-guard1-tasks-diff.txt; then
+     echo "Guard 1: git diff origin/main HEAD -- tasks/ FAILED — cannot certify no foreign tasks/ paths; do NOT merge"
+     false
+   # Work arm: two-command elif list — mapfile fills FOREIGN from the FILE
+   # (grep semantics identical to the old pipe), then the [ ... ] test (the
+   # LAST command's exit) decides the branch.
+   elif mapfile -t FOREIGN < <(grep -Ev "^tasks/[^/]+/<N>/" \
+         /tmp/issue-<N>-guard1-tasks-diff.txt || true); [ "${#FOREIGN[@]}" -gt 0 ]; then
      FOREIGN_ON_MAIN=()      # exist on origin/main -> reset to main's version
      FOREIGN_BRANCH_ONLY=()  # only the branch added them -> drop from branch
      for p in "${FOREIGN[@]}"; do
@@ -8490,7 +8503,10 @@ rebase-merged. Three guards:
    `main` silently. So when `STRIPPED_FOREIGN=yes`, the safe-case block below
    MUST push the strip commit to the PR head ref BEFORE calling `gh pr merge`.
 
-   This is idempotent (a re-run finds `FOREIGN` empty and no-ops) and never
+   This is idempotent (a re-run finds `FOREIGN` empty and no-ops; a FAILED
+   trigger diff fails loud (echo + `false`) instead of reading as
+   no-foreign-files, leaving `STRIPPED_FOREIGN=no` while the block exits
+   non-zero (#1184)) and never
    touches THIS task's own `tasks/*/<N>/` folder (the `grep -Ev
    "^tasks/[^/]+/<N>/"` carve-out). Never let a behind-`main` branch revert
    another task's `events.jsonl` / `comments.jsonl`. (Incident 2026-06-01:
@@ -9595,14 +9611,41 @@ folder for this task on `main`:
 ```bash
 # Canonical folder for this task (NEVER hand-build tasks/<status>/<N> —
 # status is unknowable here; resolve via task.py find, CLAUDE.md rule).
-git -C "$REPO_ROOT" fetch origin main --quiet
 CANON=$(realpath --relative-to="$REPO_ROOT" \
   "$(uv run python "$REPO_ROOT/scripts/task.py" find <N>)")
-# Every committed task-<N> folder on origin/main (matches tasks/<status>/<N>
-# exactly — the anchored $ excludes deeper paths like .../<N>/artifacts).
-mapfile -t DUPES < <(git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main \
-  | grep -E "^tasks/[^/]+/<N>$" | grep -v -F -x "$CANON" || true)
-if [ "${#DUPES[@]}" -gt 0 ]; then
+# MATERIALIZE ls-tree to a file and check each producer's OWN exit code
+# (find/CANON, fetch, ls-tree): piped straight into grep with a trailing
+# `|| true`, a FAILED producer is indistinguishable from "no duplicate
+# folders" and the guard fails OPEN — cleanup silently skipped, the watcher
+# respawns against the stale folder (incident #644). Same materialize-then-
+# check pattern as the pre-push lint-gate trigger diff (#1047). Failure arms
+# are TERMINAL (echo + false — routes to the epm:merge-failed handling
+# above); never proceed believing cleanup ran.
+if [ -z "$CANON" ]; then
+  # task.py find / realpath failed -> empty CANON. Classifying with an empty
+  # CANON would mark the CANONICAL folder itself as a duplicate and rm it.
+  echo "post-merge stale-task-folder guard: task.py find <N> produced empty CANON — refusing to classify duplicates"
+  false
+elif ! git -C "$REPO_ROOT" fetch origin main --quiet; then
+  # A failed fetch leaves origin/main at its PRE-merge state: the duplicate
+  # imported by the merge that JUST landed is invisible — the guard's
+  # primary blind spot, not a lesser staleness.
+  echo "post-merge stale-task-folder guard: git fetch origin main FAILED — origin/main may predate the just-landed merge; cannot certify no stale task folders"
+  false
+elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main \
+    > /tmp/issue-<N>-postmerge-lstree.txt; then
+  echo "post-merge stale-task-folder guard: git ls-tree origin/main FAILED — cannot certify no stale task folders"
+  false
+# Work arm: every committed task-<N> folder on origin/main (matches
+# tasks/<status>/<N> exactly — the anchored $ excludes deeper paths like
+# .../<N>/artifacts). The elif condition is a two-command list: mapfile
+# fills DUPES from the FILE (grep semantics identical to the old pipe;
+# no-match `|| true` is a legitimate empty DUPES), then the [ ... ] test —
+# the LAST command's exit — decides the branch. Empty DUPES on a healthy
+# read = clean no-op (exit 0), preserving idempotent re-runs.
+elif mapfile -t DUPES < <(grep -E "^tasks/[^/]+/<N>$" \
+      /tmp/issue-<N>-postmerge-lstree.txt \
+      | grep -v -F -x "$CANON" || true); [ "${#DUPES[@]}" -gt 0 ]; then
   cd "$REPO_ROOT"   # stay on main; never switch the branch here
   git rm -r "${DUPES[@]}"
   git diff --cached --name-only   # sanity echo: only the stale folder(s) staged
@@ -9643,7 +9686,11 @@ fi
 
 This guard is idempotent: a clean `main` (no duplicate) leaves `DUPES`
 empty and the block is a no-op, so re-running Step 10d on a later
-`/issue <N>` re-invocation is safe.
+`/issue <N>` re-invocation is safe. A FAILED producer (empty `CANON` from
+`task.py find`, `fetch`, or `ls-tree`) instead exits the block non-zero
+through a terminal echo + `false` arm — the epm:merge-failed handling —
+rather than reading as "no duplicates" (#1184; the #1047
+materialize-then-check pattern).
 
 ---
 
