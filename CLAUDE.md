@@ -110,7 +110,31 @@ Bash(run_in_background=true,
     --prompt-file /tmp/codex-prompt-issue-<N>.md --output-file /tmp/codex-output-issue-<N>.md")
 ```
 
-Helper posts `epm:codex-task-spawned`, then `epm:codex-task-completed`/`epm:codex-task-failed`. On marker-post failure: retry once, then drop to `tasks/_orphaned_markers/`. Orchestrator posts the verdict marker after reading the output file. On a hard org usage-limit failure the helper writes `.claude/cache/codex-quota-exhausted-until` and short-circuits every later dispatch until the parsed reset (exit 9, note reason `codex-quota-exhausted`); delete the sentinel to force a probe dispatch (#1126). If the wrapper/session is killed leaving the Codex job running (an `epm:codex-task-spawned` with no terminal marker), first confirm the wrapper is actually dead (`pgrep -f 'codex_task.py.*<job-id>'` empty — a live wrapper would double-poll, duplicate markers, and cross-cancel on signal), then re-attach instead of re-dispatching: `uv run python scripts/codex_task.py --issue <N> --reattach <job-id> --output-file <same path>`; the helper's bounded result-fetch retry also absorbs transient `No job found` registry blips (#1020).
+Helper posts `epm:codex-task-spawned`, then `epm:codex-task-completed`/`epm:codex-task-failed`. On marker-post failure: retry once, then drop to `tasks/_orphaned_markers/`. Orchestrator posts the verdict marker after reading the output file. On a hard org usage-limit failure the helper writes `.claude/cache/codex-quota-exhausted-until` and short-circuits every later dispatch until the parsed reset (exit 9, note reason `codex-quota-exhausted`); delete the sentinel to force a probe dispatch (#1126).
+
+**Pre-spawn sentinel check (#1204) — check BEFORE composing.** The exit-9 short-circuit fires at DISPATCH time, but the thin `codex-*` composers spawn in the same batch as the Claude reviewers BEFORE any dispatch — during a known outage each round burns 1–3 composer spawns whose prompts are discarded (≥9 sessions, 2026-07-08; #1135/#1146 show the intended skip done ad hoc). Before spawning any `codex-*` prompt-composer in a review round, run the canonical check below. If it prints `CODEX_QUOTA_LIVE`, SKIP every `codex-*` composer spawn that round: treat each twin as an INSTANT CONFIRMED no-show (single-Claude decision per that site's existing no-show fallback — no durable-verdict / output-file probe: nothing was composed or dispatched), log ONE chat line, and post ONE `epm:progress` note per skipped round when a task is in scope (`codex composers skipped — quota sentinel live until <until_iso> (#1204 pre-spawn check); single-Claude per no-show fallback`). NEVER fabricate `epm:codex-task-failed` or a twin verdict marker — those belong to the helper/twin. FAIL-OPEN: sentinel absent / unreadable / corrupt / expired / implausibly far-future, or `EPM_SKIP_CODEX_QUOTA_SENTINEL=1` → spawn normally (the dispatch-time exit-9 short-circuit stays the arbiter and backstop). The decision keys on the TWO-SIDED window `now < until_unix <= now + 45 d` — the upper bound is the helper's `QUOTA_MAX_PLAUSIBLE_SECS` plausibility ceiling (`codex_task.py:295`), so a hand-seeded or corrupt far-future timestamp can never wedge composer spawning off permanently (it prints CLEAR and the next dispatch's `_quota_sentinel_active` deletes it). A `parse_ok: false` sentinel with a plausible future `until_unix` (the helper's 24h fallback TTL) is honored the same as a parsed one.
+
+```bash
+# Canonical pre-spawn quota check (#1204): CODEX_QUOTA_LIVE until=<iso> | CODEX_QUOTA_CLEAR
+ROOT="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"   # main checkout, worktree-safe
+uv run python -c '
+import json, os, sys, time
+p = os.environ.get("EPM_CODEX_QUOTA_SENTINEL_PATH") or sys.argv[1]
+try:
+    assert os.environ.get("EPM_SKIP_CODEX_QUOTA_SENTINEL") != "1"
+    d = json.load(open(p))
+    now = time.time()
+    until = float(d["until_unix"])
+    assert now < until <= now + 45 * 86400   # QUOTA_MAX_PLAUSIBLE_SECS parity (codex_task.py:295)
+    print("CODEX_QUOTA_LIVE until=" + str(d.get("until_iso", "?")))
+except Exception:
+    print("CODEX_QUOTA_CLEAR")
+' "$ROOT/.claude/cache/codex-quota-exhausted-until"
+```
+
+(Read-only check: unlike `_quota_sentinel_active` it never deletes an expired/corrupt/far-future sentinel — lifecycle stays with the helper.)
+
+If the wrapper/session is killed leaving the Codex job running (an `epm:codex-task-spawned` with no terminal marker), first confirm the wrapper is actually dead (`pgrep -f 'codex_task.py.*<job-id>'` empty — a live wrapper would double-poll, duplicate markers, and cross-cancel on signal), then re-attach instead of re-dispatching: `uv run python scripts/codex_task.py --issue <N> --reattach <job-id> --output-file <same path>`; the helper's bounded result-fetch retry also absorbs transient `No job found` registry blips (#1020).
 
 ## Context hygiene
 
