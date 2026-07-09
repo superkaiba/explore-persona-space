@@ -1188,8 +1188,8 @@
     "1152": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1152",
-      "status": "planning",
+      "path": "tasks/approved/1152",
+      "status": "approved",
       "title": "workflow-fix: harden guard_harmful_bank_read hook (3 bypass "
     },
     "1153": {
