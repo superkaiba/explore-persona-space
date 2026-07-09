@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1210,
+  "highest_id": 1211,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1646,6 +1646,13 @@
       "path": "tasks/proposed/1210",
       "status": "proposed",
       "title": "daily-fix: Step 10d re-snapshots Guard-1 strip on merge conf"
+    },
+    "1211": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1211",
+      "status": "proposed",
+      "title": "daily-fix: choom-protect the Step 10d lint-gate first run"
     },
     "122": {
       "has_clean_result": true,
