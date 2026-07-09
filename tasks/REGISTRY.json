@@ -1307,8 +1307,8 @@
     "1168": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1168",
-      "status": "proposed",
+      "path": "tasks/planning/1168",
+      "status": "planning",
       "title": "workflow-fix: Forward-port pin-first figure reads to v2 revi"
     },
     "1169": {
