@@ -1587,8 +1587,8 @@
     "1203": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1203",
-      "status": "running",
+      "path": "tasks/reviewing/1203",
+      "status": "reviewing",
       "title": "workflow-fix: anchor verify_plan c12 N/A escape standalone"
     },
     "1204": {
