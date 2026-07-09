@@ -419,3 +419,16 @@ the superseded Goal — one wasted plan round + one wasted implementer round.
 - **Flag what's new vs reused.** Clearly distinguish "this already exists" from "this needs to be built."
 - **Be honest about uncertainty.** If you're guessing, say so. A confident wrong assumption is worse than an acknowledged unknown.
 - **Default to the most parallel viable spec.** When the parallelism analysis in §9 admits a larger pod or N concurrent pods that finish meaningfully sooner, pick that path. Justify any choice that leaves wall-clock speedup on the table.
+- **Workflow-prose durability pin (infra / workflow-fix plans).** When the plan
+  inserts or rewrites protection prose in `.claude/skills/**/SKILL.md` — an
+  operational guardrail, contract sentence, or command block a later editor
+  could silently drop — the plan carries ONE labeled line naming the pin:
+  `Durability pin: tests/test_<file>.py::test_<name>` — a standing pin test
+  asserting the prose's presence/shape (the
+  `tests/test_issue_skill_marker_contract.py` /
+  `tests/test_issue_skill_exit_breadcrumb.py` family), or a NEW pin test this
+  plan adds — or the explicit escape
+  `Durability pin: N/A — <one-line reason>` (e.g. narrative prose no code or
+  downstream parser couples to). Lineage: #1134 shipped SKILL.md prose with no pin,
+  #1045 left the pin optional, #884 shipped a real pin named only in unlabeled
+  prose — `verify_plan.py` c31 WARNs on the missing label.

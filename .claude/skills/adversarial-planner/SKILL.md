@@ -172,12 +172,17 @@ Run the structural verifier against the plan version just persisted:
   call-arity pass condition; discovery/enumeration greps are fine),
   `N/A — no resume/persist pattern` (check 24 — the resume/persist vocabulary
   hit is incidental or quotes a sibling's methodology, not this plan's own
-  long-loop resume predicate), and
+  long-loop resume predicate),
   `N/A — entities are content, not commands` (check 25 — the fenced entity
   forms are deliberately discussed content, e.g. a plan about entity
   handling, not a command to dispatch; exempts shell-tagged content fences
   ONLY — a `--workload-cmd`/`dispatch_issue.py` fence FAILs on entities
-  unconditionally).
+  unconditionally), and
+  `Durability pin: N/A — <one-line reason>` / alias `N/A — no durability pin:
+  <reason>` (check 31 — kind: infra|batch plans committing to a
+  `.claude/skills/**/SKILL.md` prose edit; the reason tail is mandatory — a
+  bare `Durability pin: N/A` still WARNs. A plan that NAMES a pin instead
+  writes `Durability pin: tests/test_<file>.py::test_<name>`).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

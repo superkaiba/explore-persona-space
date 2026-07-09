@@ -39,7 +39,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-22,24-30)
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-22,24-31)
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -168,10 +168,11 @@ def test_good_plan_passes_all():
         "c28_precedent_band_coherence": "SKIP",
         "c29_fence_conditional_phase": "SKIP",
         "c30_realized_keys": "SKIP",
+        "c31_skillmd_prose_pin": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 30
+    assert len(results) == 31
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -4877,12 +4878,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 23
+    assert payload["n_skip"] == 24
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 31
-    assert len({c["id"] for c in payload["checks"]}) == 31
+    assert len(payload["checks"]) == 32
+    assert len({c["id"] for c in payload["checks"]}) == 32
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -5262,3 +5263,193 @@ def test_c30_adapter_safetensors_reuse_skips():
         + "adapter_config.json both resolve at the cited subfolder.\n"
     )
     assert _status(plan, "c30_realized_keys") == "SKIP"
+
+
+# ─── Check 31 — SKILL.md prose edit backed by a durability pin ─────────────
+
+# Synthetic edit-commitment fixture (committed tests never read real tasks/
+# plan files — the c13/c16 suites' convention; the incident fixture below is
+# a near-verbatim synthetic of #884 v1).
+C31_SKILL_EDIT = (
+    "\n## 3. Files + diffs\n\n"
+    "- `.claude/skills/issue/SKILL.md` Step 8: insert one new bold-titled "
+    "paragraph requiring VM-side long compute to be setsid-detached.\n"
+)
+
+
+def test_c31_kind_experiment_skips():
+    plan = GOOD_PLAN + C31_SKILL_EDIT
+    assert _status(plan, "c31_skillmd_prose_pin", kind="experiment") == "SKIP"
+
+
+def test_c31_no_skillmd_edit_skips():
+    assert _status(GOOD_PLAN, "c31_skillmd_prose_pin", kind="infra") == "SKIP"
+
+
+def test_c31_skillmd_edit_without_pin_warns():
+    _, by_id = _run(GOOD_PLAN + C31_SKILL_EDIT, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "WARN"
+    assert "#884" in r.detail
+    assert "Durability pin:" in r.detail  # the WARN teaches the exact line to add
+
+
+def test_c31_kind_batch_triggers():
+    assert _status(GOOD_PLAN + C31_SKILL_EDIT, "c31_skillmd_prose_pin", kind="batch") == "WARN"
+
+
+def test_c31_pin_line_passes():
+    plan = (
+        GOOD_PLAN + C31_SKILL_EDIT + "\nDurability pin: tests/test_issue_skill_marker_contract.py::"
+        "test_step8_detach_prose_present\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "PASS"
+    assert "pin named" in r.detail
+
+
+def test_c31_planned_new_pin_test_passes():
+    # A pin test the plan itself ADDS counts — the verifier cannot and need
+    # not distinguish standing from planned (the code-reviewer checks the
+    # diff ships it).
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: NEW tests/test_issue_skill_detach_convention.py::"
+        "test_setsid_prose_pinned (added by this plan §4.3)\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "PASS"
+
+
+def test_c31_na_escape_passes():
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: N/A — the inserted sentence is narrative cross-reference "
+        "prose; no code or parser couples to its wording.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "PASS"
+    assert "justification" in r.detail
+
+
+def test_c31_alias_na_escape_passes():
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nN/A — no durability pin: the paragraph is a pointer to an existing "
+        "pinned block.\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "PASS"
+
+
+def test_c31_paren_na_escape_passes():
+    # NA-charset parity with house NA_RE (which also accepts an opening
+    # paren): `Durability pin: N/A (reason)` satisfies, not a spurious WARN.
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: N/A (narrative pointer prose; no parser couples to it).\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "PASS"
+
+
+def test_c31_bare_na_without_reason_warns():
+    # The reason tail is mandatory (`\S` after the separator) — a contentless
+    # rubber-stamp still WARNs.
+    plan = GOOD_PLAN + C31_SKILL_EDIT + "\nDurability pin: N/A\n"
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "WARN"
+
+
+def test_c31_fenced_edit_mention_does_not_trigger():
+    plan = (
+        GOOD_PLAN + "\n## 3. Files\n\n"
+        "```\n- `.claude/skills/issue/SKILL.md`: insert one new paragraph.\n```\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "SKIP"
+
+
+def test_c31_negated_mention_does_not_trigger():
+    # Pins both measured negation classes (#700/#875) incl. the dot-aware gap
+    # atom: "SKILL.md change" carries a path-internal dot the guard must span.
+    plan = (
+        GOOD_PLAN + "\nSo: zero `workflow.yaml` edits and zero SKILL.md edits.\n"
+        "No SKILL.md change needed.\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "SKIP"
+
+
+def test_c31_must_ask_boilerplate_does_not_trigger():
+    # Deviation-contract boilerplate names SKILL.md next to an edit verb but
+    # commits to nothing (#890 class).
+    plan = (
+        GOOD_PLAN + "\nMust-ask (park `plan_pending`): editing `workflow.yaml` / `SKILL.md` "
+        "contract lines.\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "SKIP"
+
+
+def test_c31_relative_path_triggers():
+    # A skills-relative path without the `.claude/skills/` prefix still names
+    # a SKILL.md edit target (the path arm admits any slash-joined prefix).
+    plan = GOOD_PLAN + "\n## 3. Files\n\n- `issue/SKILL.md` Step 6d: append one guard sentence.\n"
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "WARN"
+
+
+def test_c31_fenced_pin_line_satisfies():
+    # The satisfier scan is RAW (c11/c15 evidence convention) — a pin line in
+    # a fenced §-block counts; pins against a future fence-stripping refactor.
+    plan = (
+        GOOD_PLAN + C31_SKILL_EDIT + "\n```\nDurability pin: "
+        "tests/test_issue_skill_exit_breadcrumb.py::test_step8_block_present\n```\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "PASS"
+
+
+def test_c31_loose_test_mention_does_not_satisfy():
+    # The c15-style loose-evidence shape that false-satisfied all 9 incident
+    # plan versions (unrelated test_ identifier + incidental SKILL.md
+    # vocabulary) must NOT satisfy c31 — the labeled-line design's
+    # load-bearing regression test.
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nTests: test_workflow_lint_check_asks stays green; the SKILL.md contract "
+        "is untouched.\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "WARN"
+
+
+def test_c31_incident_884_shape_warns():
+    # Near-verbatim synthetic #884 v1 fragment: a REAL pin test named only in
+    # ad-hoc unlabeled prose does not satisfy — #884's pin existed but was
+    # never labeled; the label is the machine-readable contract.
+    plan = (
+        GOOD_PLAN + "\n## 2. What I'll change\n\n"
+        "**What I'll change:** two prose insertions (SKILL.md breadcrumb convention + "
+        "code-style.md nohup bullet) requiring any VM-side compute launch over SSH MCP "
+        "to be setsid-detached with a pidfile.\n"
+        "The gate is `workflow_lint.py` + `tests/test_workflow_setsid_detach_convention.py` "
+        "green on the touched files.\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "WARN"
+
+
+def test_planner_md_carries_durability_pin_instruction():
+    # The pin test for the planner.md author-side bullet this task ships —
+    # the rule dogfoods itself.
+    text = (REPO_ROOT / ".claude" / "agents" / "planner.md").read_text()
+    assert re.search(r"Durability pin:", text)
+    assert "#884" in text
+
+
+def test_adversarial_planner_skill_lists_c31_escape():
+    # The pin test for the Phase-1.5.0 escape-phrase registration (c21/#1042
+    # precedent: bounce briefs quote the canonical phrases verbatim).
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "no durability pin" in block
+    assert "check 31" in block

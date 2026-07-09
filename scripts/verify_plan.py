@@ -4685,6 +4685,117 @@ def check_realized_keys(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 31 — SKILL.md prose edit backed by a durability pin (WARN-only) ─
+
+# Trigger: a SKILL.md path token on a non-fenced, non-negated line, with an
+# edit-commitment verb within +/-120 chars of the path match (long unwrapped
+# plan lines make whole-line co-occurrence noisy — measured on the
+# 2026-07-09 corpus scan, task #1179 plan §6). The path arm admits any
+# slash-joined prefix (`.claude/skills/issue/SKILL.md`, relative
+# `issue/SKILL.md`) or a bare `SKILL.md` not glued to a path/word char.
+_C31_PATH_RE = re.compile(r"(?i)(?:[\w.-]+(?:/[\w.-]+)*/|(?<![\w./-]))SKILL\.md")
+_C31_EDIT_RE = re.compile(
+    r"(?i)\b(?:add(?:s|ed|ing)?|insert\w*|append\w*|amend\w*|edit\w*|splice\w*"
+    r"|prepend\w*|reword\w*|rewrit\w*|revise[sd]?|patch\w*"
+    r"|new (?:section|paragraph|bullet|sentence|step|clause|line))\b"
+)
+_C31_EDIT_PROX_CHARS = 120
+# Negation / boilerplate guards — measured corpus noise classes (#1179 §6):
+# "zero SKILL.md edits" (#700), "No SKILL.md change needed" (#875), "no
+# companion edit to SKILL.md" (#797), scope-table "No change" rows (#792),
+# must-ask / must-bounce deviation boilerplate (#890, #806, #869). The gap
+# atom allows path-internal dots (`SKILL.md change`) but blocks a
+# sentence-ending dot-space, so the guard cannot leak across sentences.
+_C31_NEG_GUARD_RE = re.compile(
+    r"(?i)\b(?:no|zero|not?|without|never)\b(?:[^|;:.]|\.(?!\s)){0,24}"
+    r"\b(?:edit(?:s|ed|ing)?|chang(?:e|es|ed))\b"
+    r"|\bunchanged\b|\bincidental\b|must-ask|must bounce"
+    r"|park[^|]{0,24}plan_pending"
+)
+# Satisfier: an exact labeled line (c5/c20 machine-readable-line pattern) —
+# a c15-style loose evidence scan false-satisfied all 9 incident plan
+# versions (unrelated test_ identifiers + incidental vocabulary), so the
+# label is load-bearing. RAW scan (c11/c15 evidence convention: the line may
+# legitimately sit in a fenced §-block or table). The NA separator class
+# mirrors NA_RE (em/en dash, colon, paren, hyphen) so `Durability pin: N/A
+# (reason)` satisfies too.
+_C31_PIN_LABEL_RE = re.compile(r"(?i)\bdurability pin:\s*")
+_C31_PIN_NA_RE = re.compile(r"(?i)\bdurability pin:\s*N/?A\b\s*[—–:(-]\s*\S")  # noqa: RUF001
+_C31_NA_ALIAS_RE = re.compile(NA_RE + r"no durability pin\s*[:—–-]\s*\S")  # noqa: RUF001
+
+
+def _c31_trigger_lines(plan: str) -> list[str]:
+    """Non-fenced, non-negated lines carrying a SKILL.md path with an
+    edit-commitment verb within +/-``_C31_EDIT_PROX_CHARS`` of the path
+    match."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    out: list[str] = []
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced or _C31_NEG_GUARD_RE.search(line):
+            continue
+        for m in _C31_PATH_RE.finditer(line):
+            lo = max(0, m.start() - _C31_EDIT_PROX_CHARS)
+            hi = min(len(line), m.end() + _C31_EDIT_PROX_CHARS)
+            if _C31_EDIT_RE.search(line[lo:hi]):
+                out.append(line.strip())
+                break
+    return out
+
+
+def _c31_satisfier(plan: str) -> str | None:
+    """First satisfier line: ``Durability pin: <...test_...>`` (a standing OR
+    planned pin test — the verifier cannot and need not distinguish), or a
+    reason-bearing NA escape. Bare ``Durability pin: N/A`` (no reason) does
+    NOT satisfy."""
+    for line in plan.splitlines():
+        m = _C31_PIN_LABEL_RE.search(line)
+        if m and _TEST_IDENT_RE.search(line[m.end() :]):
+            return f"pin named ({line.strip()[:80]!r})"
+        if _C31_PIN_NA_RE.search(line) or _C31_NA_ALIAS_RE.search(line):
+            return f"no-pin justification declared ({line.strip()[:80]!r})"
+    return None
+
+
+def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
+    """``kind: infra|batch`` plans that commit to editing
+    ``.claude/skills/**/SKILL.md`` prose must carry ONE labeled line naming
+    a durability pin test (a pytest asserting the prose's presence/shape)
+    or a one-line no-pin justification. SKILL.md protection prose with no
+    pin is silently droppable by any later edit — lineage: #1134 (no pin),
+    #1045 (pin optional), #884 (pin present but unlabeled). WARN not FAIL:
+    the trigger is a line heuristic; the Phase 2 critics adjudicate. v1
+    scope is SKILL.md paths only — extending to agents/rules/CLAUDE.md
+    prose is a future calibration decision (the 2026-07-09 corpus scan
+    measured that superset would-WARN at 174+ tasks, dominated by
+    ledger-entry classes with no pin-test practice). Known residual FP
+    class (disclosed): scope-table rows whose negation token sits >24
+    chars from the edit verb (#1102 shape) still trigger — the 1-line NA
+    escape is the remedy. Out of mechanical scope: whether a named pin
+    test actually exists / ships (the code-reviewer checks the diff, same
+    bound as c11/c15)."""
+    cid, name = "c31_skillmd_prose_pin", "SKILL.md prose edit backed by a durability pin"
+    if kind not in ("infra", "batch"):
+        return _skip(
+            cid, name, "kind-exempt: SKILL.md prose edits are an infra|batch (workflow-fix) shape"
+        )
+    trig = _c31_trigger_lines(plan)
+    if not trig:
+        return _skip(cid, name, "no SKILL.md edit-commitment line detected")
+    sat = _c31_satisfier(plan)
+    if sat:
+        return _pass(cid, name, sat)
+    return _warn(
+        cid,
+        name,
+        f"plan commits to editing SKILL.md prose ({trig[0][:70]!r}) but names no durability "
+        "pin — protection prose with no pytest asserting its presence/shape is silently "
+        "droppable by any later SKILL.md edit (lineage: #884/#1045/#1134). Add one line "
+        "`Durability pin: tests/test_<file>.py::test_<name>` (a standing pin test, or a NEW "
+        "pin test this plan adds), or declare `Durability pin: N/A — <one-line reason>`",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -4717,6 +4828,7 @@ CHECKS = [
     check_precedent_band_coherence,
     check_fence_conditional_phase,
     check_realized_keys,
+    check_skillmd_prose_pin,
 ]
 
 
