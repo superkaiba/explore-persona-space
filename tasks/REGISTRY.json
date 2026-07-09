@@ -1426,36 +1426,36 @@
     "1183": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1183",
-      "status": "planning",
+      "path": "tasks/running/1183",
+      "status": "running",
       "title": "workflow-fix: Relocate live pods_ephemeral.json out of git t"
     },
     "1184": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1184",
-      "status": "running",
+      "path": "tasks/completed/1184",
+      "status": "completed",
       "title": "workflow-fix: Fix ls-tree fail-open in Step 10d stale-folder"
     },
     "1185": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1185",
-      "status": "planning",
+      "path": "tasks/reviewing/1185",
+      "status": "reviewing",
       "title": "workflow-fix: Trigger-dense artifact review guidance for rev"
     },
     "1186": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1186",
-      "status": "planning",
+      "path": "tasks/running/1186",
+      "status": "running",
       "title": "workflow-fix: Shared HF tree-pagination helper in verify_tas"
     },
     "1187": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1187",
-      "status": "proposed",
+      "path": "tasks/running/1187",
+      "status": "running",
       "title": "workflow-fix: Widen thread-caps invariant test target globs"
     },
     "1188": {
