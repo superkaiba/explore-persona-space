@@ -1510,8 +1510,8 @@
     "1194": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1194",
-      "status": "running",
+      "path": "tasks/reviewing/1194",
+      "status": "reviewing",
       "title": "workflow-fix: verify_plan fit-family pilot-basis check"
     },
     "1195": {
