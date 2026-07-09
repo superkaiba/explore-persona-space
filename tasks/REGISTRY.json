@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1190,
+  "highest_id": 1191,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1485,6 +1485,13 @@
       "path": "tasks/proposed/1190",
       "status": "proposed",
       "title": "workflow-fix: enforce HF 10k-files-per-dir upload limit"
+    },
+    "1191": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1191",
+      "status": "proposed",
+      "title": "workflow-fix: lint YAML-scalar truncation + marker consumer"
     },
     "12": {
       "has_clean_result": false,
