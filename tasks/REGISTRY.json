@@ -1566,8 +1566,8 @@
     "1200": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1200",
-      "status": "approved",
+      "path": "tasks/running/1200",
+      "status": "running",
       "title": "workflow-fix: sync experimenter memory launcher to pid contr"
     },
     "1201": {
