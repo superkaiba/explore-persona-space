@@ -1356,8 +1356,8 @@
     "1174": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1174",
-      "status": "reviewing",
+      "path": "tasks/completed/1174",
+      "status": "completed",
       "title": "workflow-fix: relative cache exclusion in improver-spawn lin"
     },
     "1175": {
