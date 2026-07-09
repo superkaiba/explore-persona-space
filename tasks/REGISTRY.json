@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1202,
+  "highest_id": 1203,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1583,6 +1583,13 @@
       "path": "tasks/proposed/1202",
       "status": "proposed",
       "title": "workflow-fix: lint bare list_repo_files in new scripts"
+    },
+    "1203": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1203",
+      "status": "proposed",
+      "title": "workflow-fix: anchor verify_plan c12 N/A escape standalone"
     },
     "121": {
       "has_clean_result": true,
