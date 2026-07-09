@@ -1251,8 +1251,8 @@
     "1160": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1160",
-      "status": "planning",
+      "path": "tasks/approved/1160",
+      "status": "approved",
       "title": "workflow-fix: Fix trunk-red dotenv-before-torch test (2 issu"
     },
     "1161": {
