@@ -1482,8 +1482,8 @@
     "1190": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1190",
-      "status": "planning",
+      "path": "tasks/approved/1190",
+      "status": "approved",
       "title": "workflow-fix: enforce HF 10k-files-per-dir upload limit"
     },
     "1191": {
