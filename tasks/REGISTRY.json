@@ -1503,8 +1503,8 @@
     "1193": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1193",
-      "status": "approved",
+      "path": "tasks/running/1193",
+      "status": "running",
       "title": "workflow-fix: root rebase/cherry-pick fence in branch guard"
     },
     "1194": {
