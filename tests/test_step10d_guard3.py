@@ -21,6 +21,7 @@ The four #787 sub-fixes these tests guard:
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -832,3 +833,80 @@ def test_recovery_contract_reruns_producer_before_corrected_consumer():
     assert "#813" in para and "#1056" in para, (
         "the motivating incident references (#813 / #1056) must stay"
     )
+
+
+# --------------------------------------------------------------------------
+# Task #1184 — fail-loud producer reads (post-merge guard + Guard 1)
+# --------------------------------------------------------------------------
+
+
+def _post_merge_guard_region(text: str) -> str:
+    start = text.find("#### Post-merge stale-task-folder guard")
+    end = text.find("## Resume semantics")
+    assert start != -1, "post-merge stale-task-folder guard heading not found"
+    assert end != -1 and start < end, "guard region must precede Resume semantics"
+    return text[start:end]
+
+
+def test_post_merge_guard_materializes_lstree_and_fails_closed():
+    """#1184: the guard must materialize ls-tree to a file and exit-check
+    every producer (CANON / fetch / ls-tree) in TERMINAL failure arms — a
+    failed producer must never read as 'no duplicates' (#644 fail-open)."""
+    text = _skill_text()
+    region = _post_merge_guard_region(text)
+    assert "> /tmp/issue-<N>-postmerge-lstree.txt" in region
+    assert 'elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main' in region
+    assert 'elif ! git -C "$REPO_ROOT" fetch origin main --quiet' in region
+    assert '[ -z "$CANON" ]' in region
+    assert "mapfile -t DUPES < <(git" not in region, (
+        "the fail-open piped ls-tree mapfile form must be gone"
+    )
+    # CHAIN MEMBERSHIP (stats-critic round 1): the work arm must be an
+    # `elif` of the SAME if/elif chain — a detached mapfile below the `fi`
+    # re-opens the fail-open (no set -e: a taken `false` arm does not halt
+    # the block, so a detached mapfile would read the empty/partial file).
+    assert "elif mapfile -t DUPES < <(grep -E" in region, (
+        "DUPES must be filled from the materialized FILE inside the chain"
+    )
+    # TERMINAL `false` per failure arm (stats-critic round 1): each failure
+    # echo must be immediately followed by `false` — a bare echo would be a
+    # loud-log, exit-0 fail-open.
+    for arm_msg in (
+        "refusing to classify duplicates",
+        "cannot certify no stale task folders",
+    ):
+        assert re.search(re.escape(arm_msg) + r'[^\n]*"\n\s*false\b', region), (
+            f"failure arm {arm_msg!r} must end in a terminal false"
+        )
+    assert region.find("cannot certify no stale task folders") < region.find(
+        "elif mapfile -t DUPES"
+    ), "failure arms must precede the DUPES work arm (fail CLOSED)"
+    # Success-path byte-equivalence anchors (the exact grep programs):
+    assert 'grep -E "^tasks/[^/]+/<N>$"' in region
+    assert 'grep -v -F -x "$CANON"' in region
+
+
+def test_guard1_materializes_foreign_diff_and_fails_closed():
+    """#1184: Guard 1's foreign-tasks/ trigger diff must be materialized and
+    exit-checked — a failed git diff must never read as 'no foreign files'
+    (the #458 incident class would ride the merge)."""
+    text = _skill_text()
+    region = _merge_guards_region(text)
+    assert "> /tmp/issue-<N>-guard1-tasks-diff.txt" in region
+    assert "mapfile -t FOREIGN < <(git" not in region, (
+        "the fail-open piped diff mapfile form must be gone"
+    )
+    # Chain membership + terminal false (stats-critic round 1; same
+    # rationale as the post-merge-guard pins above):
+    assert "elif mapfile -t FOREIGN < <(grep -Ev" in region, (
+        "FOREIGN must be filled from the materialized FILE inside the chain"
+    )
+    assert re.search(
+        r'cannot certify no foreign tasks/ paths; do NOT merge"\n\s*false\b',
+        region,
+    ), "the Guard-1 failure arm must end in a terminal false"
+    assert region.find("cannot certify no foreign tasks/ paths") < region.find(
+        "elif mapfile -t FOREIGN"
+    ), "the failure arm must precede the FOREIGN work arm (fail CLOSED)"
+    # Success-path byte-equivalence anchor:
+    assert 'grep -Ev "^tasks/[^/]+/<N>/"' in region
