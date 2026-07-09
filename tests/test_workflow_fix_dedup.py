@@ -225,6 +225,34 @@ def test_is_workflow_fix_session_true_on_provenance_line(fake_repo):
     assert tw.is_workflow_fix_session(plain) is False
 
 
+def test_is_workflow_fix_session_true_on_driver_injected_body(fake_repo):
+    """#1173 cross-predicate pin: a body shaped by the daily filing driver's
+    ``ensure_wf_fix_provenance`` injection satisfies the REAL predicates —
+    ``is_workflow_fix_session`` (recursion guard) AND, once the title prefix +
+    tags the dedup predicate requires are applied (mirroring _file_wf_fix_task),
+    ``is_open_workflow_fix_task`` — not just a test-invented substring."""
+    _, tw = fake_repo
+    scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    from daily_drive_filings import ensure_wf_fix_provenance
+
+    target = ".claude/skills/daily/SKILL.md"
+    fp = tw.wf_fix_fingerprint("change text for fix-a", "bug text for fix-a")
+    body, changed = ensure_wf_fix_provenance("## Goal\n\nx\n", target, fp)
+    assert changed is True
+    tid = tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="workflow-fix: driver-injected provenance",
+            body=body,
+            tags=["wf-fix", f"wf-fix-fp:{fp}"],
+        )
+    )
+    assert tw.is_workflow_fix_session(tid) is True
+    assert tw.is_open_workflow_fix_task(target, fp) == tid
+
+
 # ─── Primary dedup key: title prefix round-trips through the registry ───────
 
 
