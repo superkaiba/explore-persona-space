@@ -1405,8 +1405,8 @@
     "1180": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1180",
-      "status": "reviewing",
+      "path": "tasks/completed/1180",
+      "status": "completed",
       "title": "workflow-fix: dedup predicate blind to daily-fix: titles"
     },
     "1181": {
