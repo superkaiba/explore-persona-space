@@ -308,9 +308,14 @@ def find_open_fp_duplicate(tasks_root: Path, fp: str) -> Path | None:
     """First NON-terminal task body.md carrying ``wf-fix-fp:<fp>`` (route-2 dedup).
 
     Same predicate as the proven ad-hoc driver: a tag-scan over non-``completed``/
-    ``archived`` statuses. ``task_workflow.is_open_workflow_fix_task`` is NOT usable
-    here — it requires the ``workflow-fix:`` title prefix; daily filings use
-    ``daily-fix:`` titles.
+    ``archived`` statuses. Deliberately COARSER than
+    ``task_workflow.is_open_workflow_fix_task`` (which since #1180 DOES see
+    ``daily-fix:`` titles via ``WF_FIX_TITLE_PREFIXES``): this scan keys on the
+    fingerprint tag ALONE — any title, any kind, no ``workflow_fix_target:``
+    requirement, filesystem-only (no REGISTRY read) — so a same-fp task filed
+    by EITHER channel blocks a daily re-file even when its registry row or
+    Provenance line is malformed. Kept (not delegated) for that coarser grain
+    and for the ``tasks_root`` injection the test fixtures use.
     """
     needle = f"wf-fix-fp:{fp}"
     for body in sorted(tasks_root.glob("*/*/body.md")):

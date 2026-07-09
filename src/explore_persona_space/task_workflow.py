@@ -988,6 +988,18 @@ _WF_FIX_NONTERMINAL: tuple[str, ...] = (
     "on_hold",
 )
 
+# Title prefixes that mark a filed workflow-fix task, one per filing channel:
+# "workflow-fix:" — the orchestrator path (.claude/rules/workflow-fix-on-bug.md
+# § How to emit); "daily-fix:" — the /daily Step-C route-2 filer
+# (.claude/skills/daily/SKILL.md). Both channels stamp the same wf-fix-fp:<fp>
+# tag + ``workflow_fix_target:`` Provenance line, so the title prefix is only
+# the cheap REGISTRY pre-filter — keeping the prefix set shared across
+# channels is what makes the (target_file, fingerprint) dedup CROSS-channel
+# (#1180: an open daily-filed fix was invisible to the orchestrator dedup and
+# a same-fp candidate double-filed). A future third filing channel adds its
+# prefix HERE (single source of truth; the sweep's advisory mirror imports it).
+WF_FIX_TITLE_PREFIXES: tuple[str, ...] = ("workflow-fix:", "daily-fix:")
+
 
 def _wf_fix_normalize(s: str) -> str:
     """Normalize a candidate prose field for stable fingerprinting.
@@ -1023,7 +1035,9 @@ def is_open_workflow_fix_task(target_file: str, fingerprint: str | None = None) 
 
     Dedup key (#678 A1): ``(target_file, fingerprint)``. A task matches iff
     ``kind == infra`` AND its status is NOT in ``{completed, archived}`` AND its
-    title starts with ``workflow-fix:`` AND its body ``## Provenance`` carries a
+    title starts with one of ``WF_FIX_TITLE_PREFIXES`` (``workflow-fix:`` —
+    orchestrator channel; ``daily-fix:`` — /daily route-2 channel; #1180 made
+    the dedup cross-channel) AND its body ``## Provenance`` carries a
     ``workflow_fix_target: <target_file>`` line (exact string match). When
     ``fingerprint`` is given, the task must ALSO carry a ``wf-fix-fp:<fingerprint>``
     tag (or a ``fingerprint: <fingerprint>`` Provenance line) — so a DIFFERENT
@@ -1041,7 +1055,7 @@ def is_open_workflow_fix_task(target_file: str, fingerprint: str | None = None) 
             continue
         if (entry.get("status") or "") not in _WF_FIX_NONTERMINAL:
             continue
-        if not str(entry.get("title", "")).startswith("workflow-fix:"):
+        if not str(entry.get("title", "")).startswith(WF_FIX_TITLE_PREFIXES):
             continue
         tid = int(tid_str)
         try:

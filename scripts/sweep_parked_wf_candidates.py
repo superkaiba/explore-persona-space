@@ -36,10 +36,10 @@ fp-less prose parks are NEVER auto-suppressed on file-only matches (the
 #622-class distinct-bug-on-a-hot-file hazard); instead the advisory field
 ``open_wf_fix_on_file`` is emitted for the /daily LLM's content-level dedup.
 NOTE: that advisory mirrors ``task_workflow.is_open_workflow_fix_task``
-semantics and is therefore ``workflow-fix:``-TITLE-PREFIX-BOUND — it is BLIND
-to ``daily-fix:``-titled open filings (which carry no ``workflow-fix:`` title;
-see ``daily_drive_filings.find_open_fp_duplicate``). Advisory only; the
-LLM-side content dedup in Step C is the real check.
+semantics — since #1180 both share ``task_workflow.WF_FIX_TITLE_PREFIXES``
+(``workflow-fix:`` AND ``daily-fix:`` titles), so open filings from EITHER
+channel are visible. Advisory only; the LLM-side content dedup in Step C is
+the real check.
 
 Timestamp discipline: every ts is normalized to an AWARE-UTC datetime before
 any comparison (the cache file carries ``-07:00`` offset rows alongside
@@ -73,7 +73,12 @@ from pathlib import Path
 
 import yaml
 
-from explore_persona_space.task_workflow import repo_root, tasks_dir, wf_fix_fingerprint
+from explore_persona_space.task_workflow import (
+    WF_FIX_TITLE_PREFIXES,
+    repo_root,
+    tasks_dir,
+    wf_fix_fingerprint,
+)
 
 CANDIDATE_KIND_PREFIX = "epm:workflow-fix-candidate"
 FILED_KIND_PREFIX = "epm:workflow-fix-task-filed"
@@ -326,9 +331,9 @@ def _open_wf_fix_on_file(
     """Advisory mirror of ``task_workflow.is_open_workflow_fix_task(target_file, None)``.
 
     Same predicate, keyed on the scanned tree so test fixtures exercise it:
-    kind infra + non-terminal status + ``workflow-fix:`` TITLE PREFIX + a
-    Provenance ``workflow_fix_target: <target_file>`` line. Title-prefix-bound
-    and hence BLIND to ``daily-fix:``-titled open filings — advisory only (see
+    kind infra + non-terminal status + a ``WF_FIX_TITLE_PREFIXES`` title
+    (``workflow-fix:`` OR ``daily-fix:`` — both filing channels, #1180) + a
+    Provenance ``workflow_fix_target: <target_file>`` line. Advisory only (see
     module docstring); the /daily LLM's content dedup is the real check.
     """
     for tid, status, _body_path, text, fm in bodies:
@@ -336,7 +341,7 @@ def _open_wf_fix_on_file(
             continue
         if fm.get("kind") != "infra":
             continue
-        if not str(fm.get("title") or "").startswith("workflow-fix:"):
+        if not str(fm.get("title") or "").startswith(WF_FIX_TITLE_PREFIXES):
             continue
         if f"workflow_fix_target: {target_file}" in text:
             return tid
