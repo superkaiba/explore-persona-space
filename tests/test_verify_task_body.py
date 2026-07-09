@@ -1684,6 +1684,33 @@ def _clear_hf_existence_cache():
     verify_task_body._HF_TREE_BASENAMES_CACHE.clear()
 
 
+# The real probe primitive, captured at module import time — BEFORE any
+# fixture patches — for the one test that exercises the real body at the
+# SDK boundary (test_hf_url_paginated_then_429_is_bounded_unverified).
+_REAL_HF_TREE_GET = verify_task_body._hf_tree_get
+
+
+@pytest.fixture(autouse=True)
+def _no_unexpected_probes(monkeypatch):
+    """Raise-by-default guard (#1161, mirroring test_verify_task_body_audit_claim
+    from #860): a `_hf_tree_get` call a test did not explicitly stub is a hard
+    error — missed-mock detection independent of network / offline / Hub repo
+    state (the suite-wide EPM_VERIFY_BODY_NO_HF fence alone degrades a missed
+    mock to skip-not-raise semantics; a test that delenvs the fence but forgets
+    its stub is what this guard catches — a fence left in place still shadows
+    the probe before it reaches the guard). Per-test `_stub_tree` /
+    `_i833_needle_stub` / inline setattr re-patches over this (the shared
+    function-scoped monkeypatch teardown restores cleanly); a test that must
+    exercise the REAL body restores `_REAL_HF_TREE_GET` explicitly."""
+
+    def _unexpected(url, params, headers, *, timeout_s):  # pragma: no cover
+        raise AssertionError(
+            f"unexpected _hf_tree_get probe of {url} — add _stub_tree or an explicit allowance"
+        )
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _unexpected)
+
+
 def _stub_tree(monkeypatch, *, status="ok", entries=(), next_page=None, note="", calls=None):
     """Replace `verify_task_body._hf_tree_get` with a stub returning a fixed
     `_TreeProbeResult`. When `calls` is a list, every (url, params) the probe
@@ -1943,6 +1970,20 @@ def test_hf_url_dead_pin_not_found_fail_on_new_api(monkeypatch):
     assert "db3662ae" in by_name[_HF_23_NAME].detail
 
 
+def test_autouse_probe_guard_catches_missed_stub(monkeypatch):
+    """Missed-mock detection (#1161): fence removed + NO `_stub_tree` — the
+    check-23 existence probe must hit the module's autouse raise-by-default
+    guard as a hard AssertionError, never degrade to live-network behavior."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    with pytest.raises(AssertionError, match="unexpected _hf_tree_get probe"):
+        verify_task_body.check_hf_url_resolves(
+            _hf_body(
+                "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/"
+                "tree/feedface/issue1161_guard/run.jsonl"
+            )
+        )
+
+
 def test_hf_url_paginated_then_429_is_bounded_unverified(monkeypatch):
     """The MUST-FIX-1 path v1 could not reach: a page-1 success carrying a
     Link rel=next, followed by a 429 on page 2, must surface `unverified`
@@ -1954,6 +1995,10 @@ def test_hf_url_paginated_then_429_is_bounded_unverified(monkeypatch):
     (PASS, body still ok), (b) the probe made a BOUNDED number of GETs, and
     (c) the page-2 URL WAS fetched (pagination genuinely exercised)."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    # Explicit allowance: this test exercises the REAL `_hf_tree_get` body
+    # (pagination + bounded retry), stubbing one level deeper (get_session).
+    # Restore it over the module's autouse raise-by-default guard.
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _REAL_HF_TREE_GET)
     import huggingface_hub.utils as hf_utils
 
     page2_url = "https://huggingface.co/api/datasets/r/tree/sha/p?cursor=PAGE2"
