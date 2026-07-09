@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1204,
+  "highest_id": 1205,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1597,6 +1597,13 @@
       "path": "tasks/proposed/1204",
       "status": "proposed",
       "title": "daily-fix: skip Codex composer spawns under live quota senti"
+    },
+    "1205": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1205",
+      "status": "proposed",
+      "title": "daily-fix: GCE workload verifies eval-JSON push landed"
     },
     "121": {
       "has_clean_result": true,
