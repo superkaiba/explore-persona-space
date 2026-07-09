@@ -371,6 +371,18 @@ Behaviours:
   the positive tokens are the primary defense). Paragraph-scoped: the span
   runs from the anchor to the first blank line, so a mid-paragraph split
   FAILs loudly (#963).
+* ``--check-awk-elision-parity`` (also bundled into the no-flags default
+  run): FAIL if the ban-gate awk elision program — the single-quoted awk
+  program on the unique ``f=!f`` anchor line — drifts between its two
+  full-text homes (/issue SKILL.md Step 9a-humanize;
+  analyzer-section-reference.md Step 4.5), or a home is missing / has 0 or
+  >1 anchor lines / carries an anchor line whose total single-quote count is
+  not exactly 2 (a program that gained a shell quote-escape would truncate
+  the extraction at the first quote in both homes, hiding drift past the
+  truncation point) / yields no extractable ``awk '...'`` span. Pins the
+  quoted PROGRAM only — the surrounding invocation lines (paths, fencing,
+  indentation) legitimately differ — and parity is not correctness: an
+  identical-but-broken edit applied to both homes passes by design (#1153).
 
 Exit codes:
 
@@ -6286,6 +6298,91 @@ def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
     return errors
 
 
+_AWK_ELISION_ANCHOR = "f=!f"
+
+# The two FULL-TEXT homes of the ban-gate awk elision program (#1153, origin
+# #998): the /issue SKILL.md Step 9a-humanize gate and the analyzer's
+# Step 4.5 mirror. A future third full-text copy must be added here.
+_AWK_ELISION_HOMES = (
+    ".claude/skills/issue/SKILL.md",
+    ".claude/rules/analyzer-section-reference.md",
+)
+
+_AWK_ELISION_PROGRAM_RE = re.compile(r"awk '([^']*)'")
+
+
+def check_awk_elision_parity(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the ban-gate awk elision program drifts between its two
+    full-text homes (#1153, origin #998).
+
+    The elision program is executable text agents copy-paste at run time
+    (/issue SKILL.md Step 9a-humanize; analyzer-section-reference.md Step
+    4.5), so a divergent copy makes the humanize ban-gate behave differently
+    depending on which file the agent read. Per home the check fails loud
+    when the file is missing, when the ``f=!f`` anchor matches 0 or >1
+    lines, when the anchor line's total single-quote count is not exactly 2
+    (a program that gained a shell quote-escape would truncate the
+    extraction at the first quote IDENTICALLY in both homes, hiding drift
+    past the truncation point — so any non-2 count fails instead), or when
+    no single ``awk '...'`` span is extractable; then the two extracted
+    PROGRAMS must compare equal. Scope: the quoted PROGRAM only — the
+    surrounding invocation (input/output paths, fencing, indentation,
+    continuation lines) legitimately differs between homes. Parity is not
+    correctness: an identical-but-broken edit applied to BOTH homes passes
+    by design. A future third full-text copy must be added to
+    ``_AWK_ELISION_HOMES``. ``repo_root`` is a unit-test override hook;
+    production callers pass None. Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    programs: list[tuple[str, str]] = []
+    for rel in _AWK_ELISION_HOMES:
+        p = root / rel
+        if not p.is_file():
+            errors.append(
+                f"{p}: missing — a ban-gate awk elision home must exist; if the "
+                f"program deliberately moved, update _AWK_ELISION_HOMES (#1153)."
+            )
+            continue
+        anchor_lines = [
+            ln for ln in p.read_text(encoding="utf-8").split("\n") if _AWK_ELISION_ANCHOR in ln
+        ]
+        if len(anchor_lines) != 1:
+            errors.append(
+                f"{p}: expected exactly 1 line containing the awk elision anchor "
+                f"{_AWK_ELISION_ANCHOR!r}, found {len(anchor_lines)} — a moved, "
+                f"deleted, or duplicated copy must not silently pass (#1153)."
+            )
+            continue
+        line = anchor_lines[0]
+        n_quotes = line.count("'")
+        if n_quotes != 2:
+            errors.append(
+                f"{p}: the awk elision anchor line carries {n_quotes} single-quote "
+                f"character(s), expected exactly 2 — a reflowed program or a gained "
+                f"quote-escape would silently truncate the extraction; keep the "
+                f"program one plain `awk '...'` span on one line, or update this "
+                f"lint (#1153)."
+            )
+            continue
+        progs = _AWK_ELISION_PROGRAM_RE.findall(line)
+        if len(progs) != 1:
+            errors.append(
+                f"{p}: could not extract exactly one single-quoted awk program from "
+                f"the anchor line (found {len(progs)}) — keep the program a single "
+                f"`awk '...'` span on one line, or update this lint (#1153)."
+            )
+            continue
+        programs.append((rel, progs[0]))
+    if not errors and len(programs) == 2 and programs[0][1] != programs[1][1]:
+        errors.append(
+            f"{programs[0][0]} vs {programs[1][0]}: the ban-gate awk elision programs "
+            f"DIFFER — the two full-text homes must stay byte-identical; edit both "
+            f"homes identically (#1153)."
+        )
+    return errors
+
+
 # `--check-lessons-index`: every `.claude/rules/*.md` (except LESSONS.md
 # itself) must have exactly one matching row in `.claude/rules/LESSONS.md`, and
 # every row in LESSONS.md must point at an existing rule file. Closes the
@@ -7333,6 +7430,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "(incident #779). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-awk-elision-parity",
+        action="store_true",
+        help="FAIL if the ban-gate awk elision program (the single-quoted awk "
+        "program on the unique f=!f anchor line) drifts between its two "
+        "byte-identical full-text homes — the /issue SKILL.md Step "
+        "9a-humanize gate and analyzer-section-reference.md Step 4.5 — or a "
+        "home is missing, has 0 or >1 anchor lines, carries a non-2 total "
+        "single-quote count on the anchor line (quote-escape truncation "
+        "guard), or yields no extractable awk '...' span (#1153). Compares "
+        "the quoted PROGRAM only; the surrounding invocation lines "
+        "legitimately differ. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-judge-model-pins",
         action="store_true",
         help="Walk scripts/**/*.py, scripts/**/*.sh, "
@@ -7481,6 +7591,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_stale_label_disposition
         or args.check_smoke_output_hygiene
         or args.check_vm_thread_cap_guidance
+        or args.check_awk_elision_parity
         or args.check_judge_model_pins
         or args.check_no_literal_round_marker_versions
         or args.check_agent_spec_size
@@ -7577,6 +7688,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_smoke_output_hygiene())
     if args.check_vm_thread_cap_guidance or no_flags:
         errors.extend(check_vm_thread_cap_guidance())
+    if args.check_awk_elision_parity or no_flags:
+        errors.extend(check_awk_elision_parity())
     if args.check_judge_model_pins or no_flags:
         errors.extend(check_judge_model_pins())
     if args.check_no_literal_round_marker_versions or no_flags:
