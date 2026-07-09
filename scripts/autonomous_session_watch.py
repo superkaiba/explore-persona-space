@@ -726,6 +726,19 @@ _ALERT_NOTE_SENTINEL = "[autonomous_session_watch:pod-stale-alert]"
 # self-identifying on the dashboard.
 _AUTOSTOP_NOTE_SENTINEL = "[autonomous_session_watch:pod-auto-stop]"
 
+# Substring stamped into the once-per-episode "auto-stop FAILED" marker posted
+# when the pod-safety stop arm's `pod.py stop` exits non-zero (a REAL failure —
+# never the constructed dry-run False). Deduped via the `stop_failed_noted`
+# flag in the pod-safety state file; the episode stays RETRYABLE (state is NOT
+# cleared, so the stop re-fires every ~10-min tick until it succeeds) — the
+# marker replaces stderr-only visibility with a durable task-level record
+# (#1155: a persistent RunPod stop-API failure is an unbounded billing leak
+# with no task-level evidence). Unlike _AUTOSTOP_NOTE_SENTINEL (deliberately
+# absent from _WATCHER_NOTE_SENTINELS — a stopped pod's task is DONE), this
+# one IS a member: it is posted while the pod is still RUNNING, so counting it
+# as progress would refresh the reconcile/stalled staleness clocks.
+_AUTOSTOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:pod-auto-stop-failed]"
+
 # Substring stamped into the one-time "keep-running exemption" marker posted
 # when the auto-stop arm would have fired but the task carries the
 # keep-running tag. Posted at most once per pod incarnation (deduped via the
@@ -1053,6 +1066,7 @@ _LONG_PHASE_HEARTBEAT_PREFIX = "[long-phase-heartbeat]"
 _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
     {
         _ALERT_NOTE_SENTINEL,
+        _AUTOSTOP_FAILED_NOTE_SENTINEL,
         _KEEP_RUNNING_NOTE_SENTINEL,
         _FOLLOWUP_NOTE_SENTINEL,
         _WEDGE_ALERT_NOTE_SENTINEL,
@@ -3216,8 +3230,8 @@ def happy_patch_pass(dry_run: bool) -> None:
 # disk sub-floor sentinel above: detection + attribution + one deduped push.
 # WARN-ONLY: it NEVER kills, NEVER renices, NEVER signals any process.
 # (End-of-block sentinel for the never-kills grep test: the block ends at the
-#  `def _status_class` line — the test greps between this header line and
-#  that def for process-mutation tokens.)
+#  dedicated end-of-block comment placed directly after cpu_guard_pass below —
+#  see tests/test_cpu_guard_pass.py::test_cpu_guard_never_kills.)
 
 
 def _env_float(name: str, default: float, *, lo: float, hi: float) -> float:
@@ -3848,6 +3862,14 @@ def cpu_guard_pass(dry_run: bool) -> bool:
     if not dry_run:
         _save_cpu_guard_state(state)  # streak persistence NEEDS per-tick saves
     return wrote
+
+
+# ─── END-OF-CPU-GUARD-BLOCK (task #849): never-kills scan boundary ───────────
+# (tests/test_cpu_guard_pass.py::test_cpu_guard_never_kills greps from the
+#  CPU-guard header sentinel above down to THIS line for process-mutation
+#  tokens. New CPU-guard code must go ABOVE this line to stay inside the
+#  scanned span. This string must stay UNIQUE in this file — the test asserts
+#  count == 1; #1155.)
 
 
 # ── post-hoc external-marker triage observer (#967) ─────────────────────────
@@ -5496,6 +5518,7 @@ def _save_pod_safety_state(
     last_progress_ts: float | None,
     keep_running_noted: bool | None = None,
     followup_noted: bool | None = None,
+    stop_failed_noted: bool | None = None,
     wedge_first_seen: float | None = _CARRY,
     wedge_missed: int | None = _CARRY,
     wedge_alerted: bool | None = _CARRY,
@@ -5514,7 +5537,10 @@ def _save_pod_safety_state(
     carries the prior on-disk value forward so callers that don't touch the
     keep-running path never clobber it. ``followup_noted`` is the same
     dedup flag for the inline-follow-up exemption (``followup-skip``);
-    None carries forward identically.  ``prev`` is the existing on-disk
+    None carries forward identically. ``stop_failed_noted`` is the same
+    dedup/carry-forward flag owned by the stop arm's FAILED branch (one
+    durable ``stop-failed`` marker per state-file lifetime, #1155); None
+    carries forward identically.  ``prev`` is the existing on-disk
     payload (if any), passed so callers that already loaded it don't re-read;
     ``first_seen`` carries forward when present so the age backstop measures
     the original episode start, not the latest save.
@@ -5546,6 +5572,8 @@ def _save_pod_safety_state(
         keep_running_noted = bool((prev or {}).get("keep_running_noted", False))
     if followup_noted is None:
         followup_noted = bool((prev or {}).get("followup_noted", False))
+    if stop_failed_noted is None:
+        stop_failed_noted = bool((prev or {}).get("stop_failed_noted", False))
     if wedge_first_seen is _CARRY:
         prev_wedge_first_seen = (prev or {}).get("wedge_first_seen")
         wedge_first_seen = (
@@ -5563,6 +5591,7 @@ def _save_pod_safety_state(
         "last_progress_ts": last_progress_ts,
         "keep_running_noted": bool(keep_running_noted),
         "followup_noted": bool(followup_noted),
+        "stop_failed_noted": bool(stop_failed_noted),
         "first_seen": prev_first_seen,
         "wedge_first_seen": wedge_first_seen,
         "wedge_missed": int(wedge_missed),
@@ -7387,6 +7416,7 @@ def _process_pod(
     prev_alerted = bool(prev_state.get("alerted", False))
     prev_keep_running_noted = bool(prev_state.get("keep_running_noted", False))
     prev_followup_noted = bool(prev_state.get("followup_noted", False))
+    prev_stop_failed_noted = bool(prev_state.get("stop_failed_noted", False))
     prev_progress = prev_state.get("last_progress_ts")
     if not isinstance(prev_progress, int | float):
         prev_progress = None
@@ -7438,10 +7468,11 @@ def _process_pod(
         prev_state=prev_state,
         prev_keep_running_noted=prev_keep_running_noted,
         prev_followup_noted=prev_followup_noted,
+        prev_stop_failed_noted=prev_stop_failed_noted,
     )
 
 
-def _apply_pod_safety_action(
+def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the #1155 stop-failed sub-branch adds guard branches, not nesting
     action: str,
     *,
     issue: int,
@@ -7457,13 +7488,16 @@ def _apply_pod_safety_action(
     prev_state: dict,
     prev_keep_running_noted: bool,
     prev_followup_noted: bool,
+    prev_stop_failed_noted: bool,
 ) -> None:
     """Apply the status-class :func:`decide_pod_safety` ``action`` for one pod.
 
     Extracted verbatim from :func:`_process_pod` (behavior unchanged) to keep its
     cyclomatic complexity under the C901 cap after the #692 wedge arm landed. The
-    five actions — ``keep-running-skip`` / ``followup-skip`` / ``stop`` /
-    ``alert`` / ``keep`` — post the appropriate once-per-episode marker (deduped
+    five actions — ``keep-running-skip`` / ``followup-skip`` / ``stop`` (whose
+    REAL-failure sub-branch posts a once-per-episode durable ``stop-failed``
+    marker and keeps the episode retryable, #1155) / ``alert`` / ``keep`` — post
+    the appropriate once-per-episode marker (deduped
     via the prev-state flags) and persist the per-pod state. Each save
     forward-carries the #692 wedge fields untouched (this is a status-class tick;
     the wedge arm owns them on its own ticks)."""
@@ -7558,6 +7592,48 @@ def _apply_pod_safety_action(
             )
             if not dry_run:
                 _clear_pod_safety_state(issue)
+            return
+        if dry_run:
+            # _stop_pod returns False under dry-run BY CONSTRUCTION (no
+            # subprocess ran) — not a stop failure. Preserve the pinned
+            # dry-run contract: "would stop pod" log line only, no marker,
+            # no state save (test_pod_safety_auto_stop_dry_run_no_mutation).
+            return
+        # Real stop failure (`pod.py stop` rc != 0; _stop_pod already printed
+        # POD STOP FAILED to stderr): make it durably visible ONCE per
+        # episode, and keep the episode RETRYABLE — save state WITHOUT
+        # clearing it and WITHOUT touching the on-disk miss count, so
+        # decide_pod_safety re-fires "stop" on the next tick (#1155).
+        if not prev_stop_failed_noted:
+            # Compound-failure residual: _post_progress_marker swallows
+            # SubprocessError/OSError with a stderr WARNING, so if the stop
+            # API fails AND the marker post fails, this episode's durable
+            # record is lost — degraded state == today's stderr-only baseline.
+            _post_progress_marker(
+                issue,
+                f"{_AUTOSTOP_FAILED_NOTE_SENTINEL} pod-safety auto-stop FAILED "
+                f"(pod_id={pod_id}; task status '{status}'): `pod.py stop "
+                f"--issue {issue}` exited non-zero (API error on the watcher "
+                f"cron log stderr). The stop is RETRIED every ~10-min tick "
+                f"until it succeeds; the pod keeps BILLING until then — if "
+                f"this persists, stop it manually (`pod.py stop --issue "
+                f"{issue}`) and check `pod.py list-ephemeral`. Posted once "
+                f"per pod-safety episode.",
+                dry_run,
+                label="stop-failed",
+            )
+        prev_missed = prev_state.get("missed", 0)
+        if not isinstance(prev_missed, int):
+            prev_missed = 0
+        _save_pod_safety_state(
+            issue,
+            pod_id,
+            missed=prev_missed,  # unchanged count -> next tick re-fires "stop"
+            alerted=alerted,
+            last_progress_ts=latest_progress,
+            stop_failed_noted=True,
+            prev=prev_state,
+        )
         return
 
     if action == "alert":
