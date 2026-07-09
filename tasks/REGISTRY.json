@@ -1538,8 +1538,8 @@
     "1198": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1198",
-      "status": "planning",
+      "path": "tasks/approved/1198",
+      "status": "approved",
       "title": "workflow-fix: prefer explicit-PID kills in crash-fix step 2"
     },
     "1199": {
