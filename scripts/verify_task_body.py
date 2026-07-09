@@ -675,6 +675,7 @@ import time
 import urllib.error
 import urllib.request
 from collections import Counter
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
@@ -5277,16 +5278,17 @@ _HF_HUB_TREE_BLOB_URL_RE = re.compile(
 # SAME Hub tree endpoint directly via `get_session().get(url, params, headers,
 # timeout=_HF_PROBE_TIMEOUT_S)` — the per-request `timeout` is now real on
 # EVERY GET, and we follow Link-header pagination OURSELVES under an outer page
-# + wall-clock cap (check 25 only; check 23 needs a single page). A page-2 429
-# surfaces as `indeterminate` (-> skip) in seconds rather than entering the
+# + wall-clock cap (checks 25/30/32, all via the shared `_hf_tree_pages`
+# generator; check 23 needs a single page). A page-2 429 surfaces as
+# `indeterminate` (-> skip) in seconds rather than entering the
 # unbounded SDK backoff. Worst-case wall <= N * _HF_PROBE_ATTEMPTS *
 # _HF_PROBE_TIMEOUT_S for check 23, <= N * _HF_PROBE_DEADLINE_S for the
-# paginating check-25 path.
+# paginating check-25/30/32 path.
 _HF_PROBE_TIMEOUT_S = 5.0  # per-request connect+read timeout (real on every GET)
 _HF_PROBE_ATTEMPTS = 2  # at most 1 retry per page on a transient / 429
 _HF_PROBE_SLEEP_S = 0.5  # tiny pause between the two attempts
-_HF_PROBE_MAX_PAGES = 8  # check-25 self-pagination page cap
-_HF_PROBE_DEADLINE_S = 12.0  # check-25 outer wall cap across all pages of ONE probe
+_HF_PROBE_MAX_PAGES = 8  # self-pagination page cap (checks 25/30/32 via _hf_tree_pages)
+_HF_PROBE_DEADLINE_S = 12.0  # outer wall cap across all pages of ONE probe (checks 25/30/32)
 # Per-process cache keyed on (repo_id, repo_type, sha, path_prefix[, keyword]).
 # Caches ONLY definitive pass/fail verdicts — a `skip` (indeterminate / throttle)
 # is NEVER cached, so a transient throttle that has since cleared is always
@@ -5376,6 +5378,66 @@ def _hf_tree_get(
         next_page = r.links.get("next", {}).get("url")
         return _TreeProbeResult("ok", entries, next_page, "")
     return _TreeProbeResult("indeterminate", [], None, last_note)
+
+
+class _TreePageEvent(NamedTuple):
+    """One event from `_hf_tree_pages`: zero or more kind='page' events
+    (entries = that page's JSON tree entries), then EXACTLY ONE terminal
+    event — kind in {'exhausted', 'cap', 'not_found', 'indeterminate'}.
+    `note` is non-empty only for kind='indeterminate' (the `_hf_tree_get`
+    diagnostic); callers own every human-facing string for the other
+    terminal kinds (the deliberate per-check note asymmetry: check 25 says
+    "(no such revision)", checks 30/32 say "no such revision/path")."""
+
+    kind: str  # "page" | "exhausted" | "cap" | "not_found" | "indeterminate"
+    entries: list[dict]  # populated only for kind="page"
+    note: str  # populated only for kind="indeterminate"
+
+
+def _hf_tree_pages(
+    repo_id: str, repo_type: str, sha: str, path: str, *, recursive: bool = True
+) -> Iterator[_TreePageEvent]:
+    """Shared bounded Link-header self-pagination over the Hub tree endpoint
+    (checks 25 / 30 / 32; the #733 contract in ONE place so a 4th consumer
+    inherits it). Reads the module caps directly (`_HF_PROBE_MAX_PAGES`,
+    `_HF_PROBE_DEADLINE_S`, `_HF_PROBE_TIMEOUT_S`); per-page 429/5xx retry
+    stays inside `_hf_tree_get`. As a generator it is lazy: a caller that
+    never consumes it issues ZERO GETs (headers/URL construction and the
+    first GET all run at the first `next()`). Invariants:
+    - headers are built BEFORE the URL (`_hf_build_headers` imports
+      `huggingface_hub.utils`, making the lazy `constants` submodule
+      attribute-reachable — belt to `_hf_tree_url`'s own explicit
+      `import huggingface_hub.constants`, #1186; the ordering precedent is
+      check 23's `_hf_probe_existence` + the #1016 check-32 fix);
+    - `params` are sent on the FIRST page only (the Link rel="next" URL
+      already carries them);
+    - `exhausted` is checked BEFORE the page/deadline cap, so a listing
+      whose final page lands exactly on the cap is exhaustive, not capped;
+    - the deadline is strict `>` from just before the first GET.
+    """
+    headers = _hf_build_headers()
+    url = _hf_tree_url(repo_id, repo_type, sha, path)
+    params: dict | None = {"recursive": recursive}
+    started = time.monotonic()
+    pages = 0
+    while True:
+        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
+        if res.status == "not_found":
+            yield _TreePageEvent("not_found", [], "")
+            return
+        if res.status == "indeterminate":
+            yield _TreePageEvent("indeterminate", [], res.note)
+            return
+        yield _TreePageEvent("page", res.entries, "")
+        pages += 1
+        if res.next_page is None:
+            yield _TreePageEvent("exhausted", [], "")
+            return
+        if pages >= _HF_PROBE_MAX_PAGES or time.monotonic() - started > _HF_PROBE_DEADLINE_S:
+            yield _TreePageEvent("cap", [], "")
+            return
+        # The Link rel="next" URL already carries the params; do not re-send them.
+        url, params = res.next_page, None
 
 
 def _gather_hf_pinned_urls(body: str) -> list[tuple[str, str, str, str, str]]:
@@ -7011,9 +7073,10 @@ def _hf_probe_keyword(
     ``reduced`` cannot match ``unreduced/``; #942) in any FILE path under the
     prefix. The keyword can be nested at ANY depth (#653: the denial
     linked the tree ROOT while the file lives several levels down), so the
-    scoped recursive listing is followed across Link-header pages OURSELVES
-    under ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S`` caps — a cap hit
-    SKIPs rather than entering the SDK's unbounded backoff.
+    scoped recursive listing consumes ``_hf_tree_pages`` (the shared bounded
+    Link-header pagination under ``_HF_PROBE_MAX_PAGES`` +
+    ``_HF_PROBE_DEADLINE_S`` caps) — a cap hit SKIPs rather than entering the
+    SDK's unbounded backoff.
 
     not_found → SKIP — this call site's INDEPENDENT mapping (the deliberate
     check-23-FAIL-vs-25-SKIP asymmetry: check 25 cannot corroborate OR refute a
@@ -7021,19 +7084,17 @@ def _hf_probe_keyword(
     """
     kw_re = _audit_keyword_path_re(keyword)
     needle = path_prefix.strip("/")
-    url = _hf_tree_url(repo_id, repo_type, sha, needle)
-    params: dict | None = {"recursive": True}  # scoped to the URL's OWN sub-tree
-    headers = _hf_build_headers()
-    started = time.monotonic()
-    pages = 0
-    res = None
-    while True:
-        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
-        if res.status == "not_found":
+    for ev in _hf_tree_pages(repo_id, repo_type, sha, needle):
+        if ev.kind == "not_found":
             return "skip", f"`{repo_id}@{sha[:8]}` (no such revision)"
-        if res.status == "indeterminate":
-            return "skip", f"`{repo_id}@{sha[:8]}` ({res.note})"
-        for e in res.entries:
+        if ev.kind == "indeterminate":
+            return "skip", f"`{repo_id}@{sha[:8]}` ({ev.note})"
+        if ev.kind == "cap":
+            # Hit the page / wall-clock cap before exhausting the sub-tree.
+            return "skip", f"`{repo_id}@{sha[:8]}` (HF tree listing exceeded page/time cap)"
+        if ev.kind == "exhausted":
+            return "fail", ""  # successful, exhausted, no match → denial HOLDS (body PASS)
+        for e in ev.entries:
             path = e.get("path", "")
             if (
                 e.get("type") == "file"
@@ -7041,19 +7102,7 @@ def _hf_probe_keyword(
                 and _hf_under_prefix(path, needle)
             ):
                 return "pass", path  # denial is FALSE → body-level FAIL
-        pages += 1
-        if (
-            res.next_page is None
-            or pages >= _HF_PROBE_MAX_PAGES
-            or time.monotonic() - started > _HF_PROBE_DEADLINE_S
-        ):
-            break
-        # The Link rel="next" URL already carries the params; do not re-send them.
-        url, params = res.next_page, None
-    if res is not None and res.next_page is not None:
-        # Hit the page / wall-clock cap before exhausting the sub-tree.
-        return "skip", f"`{repo_id}@{sha[:8]}` (HF tree listing exceeded page/time cap)"
-    return "fail", ""  # successful, exhausted, no match → denial HOLDS (body PASS)
+    raise AssertionError("unreachable: _hf_tree_pages ended without a terminal event")
 
 
 def _hf_under_prefix(path: str, needle: str) -> bool:
@@ -7589,9 +7638,9 @@ def _hf_count_files_under_prefix(
     """Bounded scoped-recursive tree listing → ``(status, n_files, n_dirs,
     note)`` (check 30).
 
-    Mirrors ``_hf_probe_keyword``'s loop (#733): direct GETs via
+    Consumes ``_hf_tree_pages`` (#733): direct GETs via
     ``_hf_tree_get`` (real per-request timeout, ≤ ``_HF_PROBE_ATTEMPTS``
-    retries/page), following Link-header pagination OURSELVES under
+    retries/page), following Link-header pagination under
     ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S``. Counts only entries
     with ``"type" == "file"`` under the prefix (``"directory"`` entries
     counted separately for the files+folders diagnostic; an entry whose path
@@ -7601,19 +7650,17 @@ def _hf_count_files_under_prefix(
     error is ``"skip"`` — a partial count must never ground a WARN.
     """
     needle = path_prefix.strip("/")
-    url = _hf_tree_url(repo_id, repo_type, sha, needle)
-    params: dict | None = {"recursive": True}
-    headers = _hf_build_headers()
-    started = time.monotonic()
-    pages = 0
     n_files = n_dirs = 0
-    while True:
-        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
-        if res.status == "not_found":
+    for ev in _hf_tree_pages(repo_id, repo_type, sha, needle):
+        if ev.kind == "not_found":
             return "skip", -1, -1, "no such revision/path"
-        if res.status == "indeterminate":
-            return "skip", -1, -1, res.note
-        for e in res.entries:
+        if ev.kind == "indeterminate":
+            return "skip", -1, -1, ev.note
+        if ev.kind == "cap":
+            return "skip", -1, -1, "HF tree listing exceeded page/time cap"
+        if ev.kind == "exhausted":
+            return "ok", n_files, n_dirs, ""
+        for e in ev.entries:
             path = e.get("path", "")
             if not _hf_under_prefix(path, needle):
                 continue
@@ -7622,13 +7669,7 @@ def _hf_count_files_under_prefix(
                 n_files += 1
             elif etype == "directory" and path != needle:
                 n_dirs += 1
-        pages += 1
-        if res.next_page is None:
-            return "ok", n_files, n_dirs, ""
-        if pages >= _HF_PROBE_MAX_PAGES or time.monotonic() - started > _HF_PROBE_DEADLINE_S:
-            return "skip", -1, -1, "HF tree listing exceeded page/time cap"
-        # The Link rel="next" URL already carries the params; do not re-send them.
-        url, params = res.next_page, None
+    raise AssertionError("unreachable: _hf_tree_pages ended without a terminal event")
 
 
 def _hf_file_count_for_prefix(
@@ -7948,10 +7989,12 @@ def _hf_basenames_under_prefix(
     """Bounded scoped-recursive tree listing → ``(status, basenames, note)``
     (check 32).
 
-    Mirrors ``_hf_count_files_under_prefix`` (#1008 → #733): direct GETs via
+    Consumes ``_hf_tree_pages`` (#1008 → #733): direct GETs via
     ``_hf_tree_get`` (real per-request timeout, ≤ ``_HF_PROBE_ATTEMPTS``
-    retries/page), following Link-header pagination OURSELVES under
-    ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S``. Collects basenames of
+    retries/page), following Link-header pagination under
+    ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S`` (the safe
+    headers-before-URL ordering the #1016 fix added here now lives inside
+    the shared generator). Collects basenames of
     ALL entries (file AND directory) under the prefix — a directory basename
     match also suppresses the WARN (FP-safe; dotted directory names are
     rare); an entry whose path IS the prefix is the prefix itself, not
@@ -7962,36 +8005,22 @@ def _hf_basenames_under_prefix(
     (the documented check-23-vs-25/30/32 asymmetry, `_TreeProbeResult`).
     """
     needle = path_prefix.strip("/")
-    # Build headers BEFORE the URL: `_hf_build_headers` imports
-    # `huggingface_hub.utils` (which imports `constants` as a side effect),
-    # making `huggingface_hub.constants` attribute-reachable inside
-    # `_hf_tree_url` on a FRESH process — the bare `import huggingface_hub`
-    # there does not expose the lazy `constants` submodule on its own
-    # (check 23's `_hf_probe_existence` uses this same safe ordering).
-    headers = _hf_build_headers()
-    url = _hf_tree_url(repo_id, repo_type, sha, needle)
-    params: dict | None = {"recursive": True}
-    started = time.monotonic()
-    pages = 0
     basenames: set[str] = set()
-    while True:
-        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
-        if res.status == "not_found":
+    for ev in _hf_tree_pages(repo_id, repo_type, sha, needle):
+        if ev.kind == "not_found":
             return "skip", frozenset(), "no such revision/path"
-        if res.status == "indeterminate":
-            return "skip", frozenset(), res.note
-        for e in res.entries:
+        if ev.kind == "indeterminate":
+            return "skip", frozenset(), ev.note
+        if ev.kind == "cap":
+            return "skip", frozenset(), "HF tree listing exceeded page/time cap"
+        if ev.kind == "exhausted":
+            return "ok", frozenset(basenames), ""
+        for e in ev.entries:
             path = e.get("path", "")
             if not _hf_under_prefix(path, needle) or path == needle:
                 continue
             basenames.add(posixpath.basename(path))
-        pages += 1
-        if res.next_page is None:
-            return "ok", frozenset(basenames), ""
-        if pages >= _HF_PROBE_MAX_PAGES or time.monotonic() - started > _HF_PROBE_DEADLINE_S:
-            return "skip", frozenset(), "HF tree listing exceeded page/time cap"
-        # The Link rel="next" URL already carries the params; do not re-send them.
-        url, params = res.next_page, None
+    raise AssertionError("unreachable: _hf_tree_pages ended without a terminal event")
 
 
 def _hf_basenames_for_prefix(

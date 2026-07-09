@@ -3393,6 +3393,7 @@ def test_hf_adjacent_no_failing_checkresult_in_source():
         verify_task_body._gather_hf_adjacent_file_claims,
         verify_task_body._hf_basenames_under_prefix,
         verify_task_body._hf_basenames_for_prefix,
+        verify_task_body._hf_tree_pages,
     ]
     for fn in fns:
         tree = ast.parse(inspect.getsource(fn))
@@ -3437,6 +3438,168 @@ def test_hf_adjacent_per_body_probe_cap(monkeypatch):
     assert "per-body probe cap" in r.detail
     assert f"{n} adjacent file claim(s)" in r.detail
     assert len(calls) == verify_task_body._HF_MEMBER_MAX_PROBES
+
+
+# ─── `_hf_tree_pages`: the shared bounded pagination generator (#1186) ─────
+#
+# Unit pins on the ONE place the checks-25/30/32 page/deadline contract now
+# lives. Every test stubs `verify_task_body._hf_tree_get` at the module-
+# attribute seam (the same seam the check-level tests use), so the generator
+# must keep resolving it as a late-bound module global.
+
+
+def test_hf_tree_pages_two_pages_then_exhausted_params_first_page_only(monkeypatch):
+    """Event order for a clean two-page listing is exactly
+    [page, page, exhausted]; page entries pass through verbatim;
+    `params={"recursive": True}` is sent on the FIRST page only (the Link
+    rel="next" URL already carries them) and page 2 fetches the Link URL."""
+    page2 = "https://huggingface.co/api/datasets/o/r/tree/" + "a" * 40 + "/p?cursor=PAGE2"
+    e1 = [{"path": "p/f1.json", "type": "file"}]
+    e2 = [{"path": "p/f2.json", "type": "file"}]
+    calls: list[tuple[str, dict | None]] = []
+
+    def _fake(url, params, headers, *, timeout_s):
+        calls.append((url, params))
+        if "PAGE2" in url:
+            return verify_task_body._TreeProbeResult("ok", list(e2), None, "")
+        return verify_task_body._TreeProbeResult("ok", list(e1), page2, "")
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _fake)
+    events = list(verify_task_body._hf_tree_pages("o/r", "dataset", "a" * 40, "p"))
+    assert [ev.kind for ev in events] == ["page", "page", "exhausted"]
+    assert events[0].entries == e1 and events[1].entries == e2
+    assert len(calls) == 2
+    assert calls[0][1] == {"recursive": True}
+    assert calls[1] == (page2, None)
+
+
+def test_hf_tree_pages_page_cap_hit(monkeypatch):
+    """A listing that never exhausts yields exactly `_HF_PROBE_MAX_PAGES`
+    `page` events then ONE `cap` terminal, with exactly `_HF_PROBE_MAX_PAGES`
+    GETs issued (the unit-grain twin of the check-level cap pins)."""
+    calls: list = []
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[{"path": "p/f.json", "type": "file"}],
+        next_page="https://huggingface.co/api/datasets/o/r/tree/" + "a" * 40 + "/p?cursor=X",
+        calls=calls,
+    )
+    events = list(verify_task_body._hf_tree_pages("o/r", "dataset", "a" * 40, "p"))
+    n = verify_task_body._HF_PROBE_MAX_PAGES
+    assert [ev.kind for ev in events] == ["page"] * n + ["cap"]
+    assert len(calls) == n
+
+
+def test_hf_tree_pages_exhausted_wins_over_cap_on_final_page(monkeypatch):
+    """The E∧C boundary: a listing whose FINAL page lands exactly on the page
+    cap is EXHAUSTED, not capped — `next_page is None` is checked BEFORE the
+    cap predicate, preserving check 25's `fail` / checks 30/32's `ok` on a
+    cap-boundary exhaustive listing (plan #1186 §4.2 row 2)."""
+    n = verify_task_body._HF_PROBE_MAX_PAGES
+    seen = {"count": 0}
+
+    def _fake(url, params, headers, *, timeout_s):
+        seen["count"] += 1
+        next_page = None if seen["count"] >= n else f"https://hf.co/api/x?cursor={seen['count']}"
+        return verify_task_body._TreeProbeResult(
+            "ok", [{"path": "p/f.json", "type": "file"}], next_page, ""
+        )
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _fake)
+    events = list(verify_task_body._hf_tree_pages("o/r", "dataset", "a" * 40, "p"))
+    assert [ev.kind for ev in events] == ["page"] * n + ["exhausted"]
+    assert seen["count"] == n
+
+
+def test_hf_tree_pages_deadline_cap_and_terminal_passthrough(monkeypatch):
+    """(a) The deadline arm: with `_HF_PROBE_DEADLINE_S` monkeypatched to
+    -1.0 (late-bound read), a would-be-two-page listing yields [page, cap].
+    (b) Terminal passthrough: `not_found` → a single `not_found` event;
+    `indeterminate` → a single `indeterminate` event carrying the
+    `_hf_tree_get` note. (c) Stateful variant: a terminal arriving on page
+    ≥2 still yields the preceding `page` event first."""
+    sha = "a" * 40
+    # (a) deadline arm — never tested anywhere before #1186.
+    monkeypatch.setattr(verify_task_body, "_HF_PROBE_DEADLINE_S", -1.0)
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[{"path": "p/f.json", "type": "file"}],
+        next_page="https://hf.co/api/x?cursor=X",
+    )
+    events = list(verify_task_body._hf_tree_pages("o/r", "dataset", sha, "p"))
+    assert [ev.kind for ev in events] == ["page", "cap"]
+    monkeypatch.setattr(verify_task_body, "_HF_PROBE_DEADLINE_S", 12.0)
+    # (b) terminal passthrough on page 1.
+    _stub_tree(monkeypatch, status="not_found")
+    events = list(verify_task_body._hf_tree_pages("o/r", "dataset", sha, "p"))
+    assert [(ev.kind, ev.note) for ev in events] == [("not_found", "")]
+    _stub_tree(monkeypatch, status="indeterminate", note="X")
+    events = list(verify_task_body._hf_tree_pages("o/r", "dataset", sha, "p"))
+    assert [(ev.kind, ev.note) for ev in events] == [("indeterminate", "X")]
+
+    # (c) stateful: not_found / indeterminate arriving on page 2.
+    def _page_then(status, note=""):
+        seen = {"count": 0}
+
+        def _fake(url, params, headers, *, timeout_s):
+            seen["count"] += 1
+            if seen["count"] == 1:
+                return verify_task_body._TreeProbeResult(
+                    "ok", [{"path": "p/f.json", "type": "file"}], "https://hf.co/api/x?c=2", ""
+                )
+            return verify_task_body._TreeProbeResult(status, [], None, note)
+
+        return _fake
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _page_then("not_found"))
+    events = list(verify_task_body._hf_tree_pages("o/r", "dataset", sha, "p"))
+    assert [ev.kind for ev in events] == ["page", "not_found"]
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _page_then("indeterminate", "HTTP 429"))
+    events = list(verify_task_body._hf_tree_pages("o/r", "dataset", sha, "p"))
+    assert [ev.kind for ev in events] == ["page", "indeterminate"]
+    assert events[-1].note == "HTTP 429"
+
+
+def test_hf_check25_pagination_cap_skips(monkeypatch):
+    """Check-25-LEVEL page-cap pin (existing coverage gap: checks 30/32 have
+    cap tests; check 25's l.1987 test hits the 429 path, not the pure cap
+    path): a listing that never exhausts and never carries the keyword hits
+    the page cap → SKIP (`unverified` on a PASS line), never a FAIL, with
+    exactly `_HF_PROBE_MAX_PAGES` GETs."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls: list = []
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[{"path": "issue653_x/armB/other.json", "type": "file"}],
+        next_page="https://huggingface.co/api/datasets/o/r/tree/feedface/issue653_x?cursor=X",
+        calls=calls,
+    )
+    body = _audit_body(
+        "The per-cell install-probe completions were not separately uploaded, "
+        "so they cannot be audited at the record level.",
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/feedface/issue653_x",
+    )
+    r = verify_task_body.check_audit_availability_claims_match_hf(body)
+    assert r.passed and not r.is_warn
+    # Check 25's aggregate detail names the unverified keyword (it does not
+    # inline the per-probe skip note the way checks 30/32 do).
+    assert "unverified" in r.detail and "install_probes" in r.detail
+    assert len(calls) == verify_task_body._HF_PROBE_MAX_PAGES
+
+
+def test_hf_count_not_found_skips(monkeypatch):
+    """Check-30-level pin of the `not_found → ("skip", -1, -1, "no such
+    revision/path")` mapping (no prior check-level coverage — #1186 carried
+    reviewer concern): an `unverified` note on a PASS line, never a WARN."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(monkeypatch, status="not_found")
+    body = "Data: [p, 9 files](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "no such revision/path" in r.detail
 
 
 # ─── Check 12: `## Figure` H2 deprecation hook (dormant) ──────────────────
