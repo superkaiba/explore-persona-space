@@ -9550,6 +9550,90 @@ def test_idle_unmapped_transcript_signal_is_happy_log_only(tmp_path, monkeypatch
     assert reason is None and age == 1_000.0
 
 
+def test_watcher_helpers_share_transcript_memo_within_scope(tmp_path, monkeypatch):
+    # The #1182 Goal, mechanically: within ONE tick-scope, the wedge-probe
+    # helper (_transcript_tail_rows) and the idle-age helper
+    # (_transcript_idle_age_s) resolve the SAME pid with exactly ONE
+    # underlying happy-log resolution (cross-call-site dedup). The fake
+    # returns a REAL on-disk transcript with mtime <= now — both helpers
+    # stat/open the file AFTER resolution.
+    import os
+
+    import autonomous_session_watch as asw
+    import session_resolver
+
+    transcript = tmp_path / "t.jsonl"
+    transcript.write_text('{"type":"user","sessionId":"s"}\n')
+    now = 1_000_000.0
+    os.utime(transcript, (now - 500.0, now - 500.0))
+
+    calls: list[int] = []
+
+    def fake_uncached(pid):
+        calls.append(pid)
+        return (str(transcript), None)
+
+    monkeypatch.setattr(
+        session_resolver, "_resolve_transcript_via_happy_log_uncached", fake_uncached
+    )
+    with session_resolver.transcript_resolution_scope():
+        rows = asw._transcript_tail_rows(123)
+        age, reason = asw._transcript_idle_age_s(123, now=now)
+    assert rows == [{"type": "user", "sessionId": "s"}]
+    assert reason is None and age == 500.0
+    assert calls == [123]
+
+
+def test_main_runs_tick_under_transcript_memo_scope(isolated_registry, monkeypatch):
+    # #1182 wiring pin: the whole watcher tick (main()) executes inside ONE
+    # transcript_resolution_scope() — an ACTIVE memo while the passes run,
+    # and None again after main() returns (never-across-ticks, acceptance
+    # criterion 2). Stub harness copied from
+    # test_main_order_stale_registration_after_gate_push.
+    import autonomous_session_watch as asw
+    import session_resolver
+
+    seen: list[bool] = []
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
+    monkeypatch.setattr(asw, "_live_children", lambda: [])
+    for name in (
+        "vm_disk_pass",
+        "data_disk_pass",
+        "happy_patch_pass",
+        "cpu_guard_pass",
+        "triage_observer_pass",
+        "verdict_disagree_pass",
+        "program_orchestrator_pass",
+        "campaign_pass",
+        "pod_safety_pass",
+        "stalled_session_pass",
+        "orphan_sweep_pass",
+        "infra_drain_pass",
+        "proposed_infra_sweep_pass",
+        "capacity_retry_pass",
+        "stale_blocked_flag_pass",
+        "session_reconcile_pass",
+        "gate_push_pass",
+        "zombie_wrapper_pass",
+        "idle_unmapped_pass",
+        "gc_pass",
+    ):
+        if hasattr(asw, name):
+            monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+    monkeypatch.setattr(
+        asw,
+        "stale_registration_pass",
+        lambda *a, **kw: seen.append(session_resolver._TRANSCRIPT_MEMO is not None),
+    )
+    assert session_resolver._TRANSCRIPT_MEMO is None
+    rc = asw.main([])
+    assert rc == 0
+    assert seen == [True]
+    assert session_resolver._TRANSCRIPT_MEMO is None
+
+
 def test_gc_pass_never_touches_session_reaper_state_files(isolated_registry, monkeypatch):
     # The generic per-issue GC must not reap the per-SESSION state files of
     # the zombie-wrapper and idle-unmapped passes (sid stems are non-int and

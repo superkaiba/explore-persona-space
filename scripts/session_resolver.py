@@ -48,6 +48,7 @@ filter in ``spawn_session.py list`` reuse it.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import re
@@ -379,8 +380,55 @@ def find_node_pid_for_session(sid: str, now: float | None = None) -> int | None:
     return None
 
 
+# ── tick-scoped transcript-resolution memo (#1182) ─────────────────────────
+# None => caching OFF (the default: every consumer outside an explicit scope
+# is byte-identical to pre-#1182 behavior). A fresh dict is installed ONLY
+# for the duration of a transcript_resolution_scope() — one watcher tick —
+# and dropped on exit, so a cached (transcript, reason) can never survive
+# across ticks (transcripts move between ticks; the task-body hard
+# constraint). Main-thread-only by contract: the global is unguarded; the
+# watcher's sole worker thread (vm-disk-hf-reclaim) never calls this module.
+_TRANSCRIPT_MEMO: dict[int, tuple[str | None, str | None]] | None = None
+
+
+@contextlib.contextmanager
+def transcript_resolution_scope():
+    """Memoize ``_resolve_transcript_via_happy_log`` per node pid for the
+    duration of the scope — one watcher tick (#1182; saves ~138 ms per
+    repeated warm resolution). Positive AND negative results are cached (the
+    miss walk is the expensive part; every watcher consumer fails toward
+    keep/no-fire on a miss, so a within-tick frozen miss defers action by at
+    most one 10-min tick — inside the watcher's existing 2-miss debounce
+    granularity). Re-entrant: restores the previous memo on exit. Usable as
+    a decorator (``@transcript_resolution_scope()``) — each decorated CALL
+    gets a fresh memo. NEVER hold a scope across loop iterations in a
+    long-lived process."""
+    global _TRANSCRIPT_MEMO
+    prev = _TRANSCRIPT_MEMO
+    _TRANSCRIPT_MEMO = {}
+    try:
+        yield
+    finally:
+        _TRANSCRIPT_MEMO = prev
+
+
 def _resolve_transcript_via_happy_log(node_pid: int) -> tuple[str | None, str | None]:
-    """Try the happy-log path. Returns (transcript_path, reason_on_miss)."""
+    """Try the happy-log path. Returns (transcript_path, reason_on_miss).
+
+    Memoized per node_pid while a transcript_resolution_scope() is active;
+    uncached (byte-identical legacy behavior) otherwise."""
+    memo = _TRANSCRIPT_MEMO
+    if memo is not None and node_pid in memo:
+        return memo[node_pid]
+    result = _resolve_transcript_via_happy_log_uncached(node_pid)
+    if memo is not None:
+        memo[node_pid] = result
+    return result
+
+
+def _resolve_transcript_via_happy_log_uncached(node_pid: int) -> tuple[str | None, str | None]:
+    """Uncached body of ``_resolve_transcript_via_happy_log`` — see the memo
+    shim above. Returns (transcript_path, reason_on_miss)."""
     log_path = _find_happy_log_for_node(node_pid)
     if log_path is None:
         return None, "no happy log file for this node pid"
