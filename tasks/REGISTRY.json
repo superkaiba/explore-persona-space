@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1194,
+  "highest_id": 1195,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1513,6 +1513,13 @@
       "path": "tasks/proposed/1194",
       "status": "proposed",
       "title": "workflow-fix: verify_plan fit-family pilot-basis check"
+    },
+    "1195": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1195",
+      "status": "proposed",
+      "title": "workflow-fix: forward HF_HUB_DISABLE_XET in lane allowlists"
     },
     "12": {
       "has_clean_result": false,
