@@ -204,10 +204,15 @@ relaunch, a watch-session correction — not just first launches:
    to rewrite the pid file with 11636 and re-post `epm:run-launched` — an
    entire extra round whose only content was this contract.
 
-Residual honesty: this contract is prose, not a runtime detector — a future
-relaunch that violates it can still produce the same silent false-dead shape;
-the poller's marker-pid OR-probe remains the only mechanical rescue, and only
-while the newest marker's pid is itself alive.
+Residual honesty: this contract now HAS a WARN-only runtime detector (#1156 —
+`poll_pipeline.py` warns on every tick, and sets the tick-JSON flag
+`pid_file_stale_vs_marker`, when the pid file's pod-clock mtime predates the
+newest `epm:run-launched` marker by more than
+`EPM_POLL_PID_MARKER_SLACK_SEC`, default 600 s), so a rewrite-skipping
+relaunch is named in the poll log instead of left to manual archaeology. The
+detector never changes a verdict: the poller's marker-pid OR-probe remains
+the only VERDICT-bearing mechanical rescue, and only while the newest
+marker's pid is itself alive.
 
 ### Pod-side preflight gates (behind-origin/main false positive — LEGACY post-#554)
 
