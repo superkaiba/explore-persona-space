@@ -144,6 +144,30 @@ Behaviours:
   and the walk was widened from the issue SKILL.md to ALL skills'
   SKILL.md files on the chain's final fix (the promote-clean-result
   ``epm:consolidated-into`` posting site was unlinted until then).
+* ``--check-marker-scalar-integrity`` (also bundled into
+  ``--check-references``): scan all four string fields (``kind``,
+  ``posted_by``, ``when``, ``fields``) of every parsed ``workflow.yaml
+  § markers`` entry for the truncated-comment signature — the PARSED
+  value ends in ``,`` or ``(`` after rstrip, or has unbalanced parens.
+  An unquoted YAML plain scalar containing ``' #'`` silently truncates
+  at the comment marker at parse time, and ``--check-references``
+  passes because the regenerated ``markers.md`` table matches the
+  truncated parse (#873: ``posted_by`` shipped as ``skill (...);
+  poll_pipeline (runtime tripwire,`` with a dangling table cell).
+  Deliberate prose that trips the signature is waived via
+  :data:`MARKER_SCALAR_INTEGRITY_ALLOWLIST` with a reason.
+* ``--check-poller-marker-consumers`` (also bundled into
+  ``--check-references``): every marker kind whose ``posted_by`` names
+  a poller/watcher (``poll_pipeline`` / ``backend_poll`` /
+  ``slurm_monitor`` / ``autonomous_session_watch`` / ``pod_watch`` /
+  ``tick_triage``) must (Leg A) be referenced by at least one consumer
+  surface — every ``.claude/skills/**/SKILL.md`` plus the poller/triage
+  scripts — and (Leg B) appear in each poster script its ``posted_by``
+  token names. A poller feature claiming mid-run surfacing with no
+  consuming or posting code is the #873 pre-fix state (a runtime
+  tripwire declared in workflow.yaml with no poll_pipeline code until a
+  critic caught it). Deliberate out-of-band consumers are waived via
+  :data:`POLLER_CONSUMER_ALLOWLIST` with a reason.
 * ``--check-upload-as-file`` (also bundled into the no-flags default
   run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on any
   ``_upload(...)`` call (the shared HF-Hub upload helper,
@@ -3425,6 +3449,183 @@ def _check_failure_lesson_field_contract(workflow: WorkflowYaml) -> list[str]:
                 "§4f). The root-cause-confirmed firing trigger must stay declared "
                 "in the marker registry — re-add it to the `when:` string."
             )
+    return errors
+
+
+# (kind, field) -> reason. Empty today (live-tree probe 2026-07-09: 0 hits
+# across 106 markers x 4 fields). Add entries ONLY for deliberate prose that
+# trips the signature (e.g. enumeration style "a) ... b) ..."), with a reason.
+MARKER_SCALAR_INTEGRITY_ALLOWLIST: dict[tuple[str, str], str] = {}
+
+_MARKER_STRING_FIELDS = ("kind", "posted_by", "when", "fields")
+
+
+def check_marker_scalar_integrity(
+    workflow: WorkflowYaml,
+    *,
+    allowlist: dict[tuple[str, str], str] | None = None,
+) -> list[str]:
+    """Flag marker-entry string fields carrying the truncated-comment
+    signature: an unquoted YAML plain scalar containing ' #' silently
+    truncates at the comment marker (incident #873: posted_by parsed as
+    "skill (...); poll_pipeline (runtime tripwire," and --check-references
+    passed because the regenerated markers.md matched the truncated parse).
+    Signature on the PARSED value: ends in ',' or '(' after rstrip, or
+    unbalanced parens. Allowlist grain is (kind, field) with a reason.
+
+    KNOWN RESIDUAL (named deliberately, round-1 critics): a truncation
+    landing at a clean word boundary with balanced parens and no trailing
+    ','/'(' (e.g. `when: after step 3 #TODO` -> parses to 'after step 3')
+    leaves no signature and is undetectable from the parsed value alone —
+    a PASS is NOT proof of no truncation. The dominant in-repo comment
+    idiom `(…, #NNN)` always leaves the signature, which is what this
+    check pins.
+    """
+    wl = MARKER_SCALAR_INTEGRITY_ALLOWLIST if allowlist is None else allowlist
+    errors: list[str] = []
+    for m in workflow.markers:
+        for field in _MARKER_STRING_FIELDS:
+            v = getattr(m, field) or ""
+            stripped = v.rstrip()
+            trailing = stripped.endswith((",", "("))
+            unbalanced = v.count("(") != v.count(")")
+            if not (trailing or unbalanced):
+                continue
+            if (m.kind, field) in wl:
+                continue
+            errors.append(
+                f"workflow.yaml § markers: marker '{m.kind}' field '{field}' has the "
+                f"truncated-comment signature ({'trailing ,/(' if trailing else ''}"
+                f"{' and ' if trailing and unbalanced else ''}"
+                f"{'unbalanced parens' if unbalanced else ''}): {stripped[-60:]!r}. "
+                f"An unquoted plain scalar containing ' #' truncates at the comment "
+                f"marker (#873) — double-quote the scalar in workflow.yaml, or add "
+                f"(kind, field) to MARKER_SCALAR_INTEGRITY_ALLOWLIST with a reason."
+            )
+    return errors
+
+
+# PAIRED CONSTANTS (round-1 Alternatives concern): adding a NEW poller
+# script => extend BOTH this regex AND _POLLER_TOKEN_TO_FILE below (and
+# consider the Leg-A consumer list in check_poller_marker_consumers). A
+# poller absent from the regex is invisible to this check.
+POLLER_POSTED_BY_RE = re.compile(
+    r"poll_pipeline|backend_poll|slurm_monitor|autonomous_session_watch|pod_watch|tick_triage",
+    re.IGNORECASE,
+)
+
+# Leg B: posted_by token -> the repo-relative poster file that must contain
+# the kind string.
+_POLLER_TOKEN_TO_FILE: dict[str, str] = {
+    "poll_pipeline": "scripts/poll_pipeline.py",
+    "backend_poll": "scripts/backend_poll.py",
+    "slurm_monitor": "src/explore_persona_space/backends/slurm_monitor.py",
+    "autonomous_session_watch": "scripts/autonomous_session_watch.py",
+    "pod_watch": "scripts/pod_watch.py",
+    "tick_triage": "scripts/tick_triage.py",
+}
+
+# kind -> reason. Empty today (live-tree probe 2026-07-09: 5/5 poller-posted
+# kinds referenced). Add entries ONLY with a reason naming the deliberate
+# out-of-band consumer.
+POLLER_CONSUMER_ALLOWLIST: dict[str, str] = {}
+
+
+def check_poller_marker_consumers(
+    workflow: WorkflowYaml,
+    *,
+    consumer_paths: list[Path] | None = None,
+    poller_file_map: dict[str, Path] | None = None,
+    allowlist: dict[str, str] | None = None,
+) -> list[str]:
+    """Every marker kind whose posted_by names a poller/watcher must be
+    (Leg A) referenced by >=1 consumer surface — all .claude/skills/**/SKILL.md
+    plus tick_triage.py / autonomous_session_watch.py / poll_pipeline.py /
+    backend_poll.py / pod_watch.py — and (Leg B) present in each poster script
+    its posted_by token names (the #873 pre-fix state: a runtime tripwire
+    declared in workflow.yaml with no poll_pipeline code). Overrides narrow the
+    scan for fixture tests, mirroring check_marker_registry's
+    skill_md/skills_dir hooks.
+
+    KNOWN RESIDUAL (named deliberately, round-1 critics): textual presence
+    is the grain — a kind mentioned only in a comment / dead branch of a
+    consumer or poster file passes both legs (live read-site detection
+    needs AST-grade parsing, out of scope for grep-grade lint). Errors here
+    are lenient-direction only.
+    """
+    wl = POLLER_CONSUMER_ALLOWLIST if allowlist is None else allowlist
+    production = consumer_paths is None and poller_file_map is None
+    if production:
+        skills_dir = _REPO_ROOT / ".claude" / "skills"
+        consumers: list[Path] = []
+        if skills_dir.is_dir():
+            consumers.extend(sorted(p for p in skills_dir.glob("**/SKILL.md") if p.is_file()))
+        consumers.extend(
+            _REPO_ROOT / "scripts" / name
+            for name in (
+                "tick_triage.py",
+                "autonomous_session_watch.py",
+                "poll_pipeline.py",
+                "backend_poll.py",
+                "pod_watch.py",
+            )
+        )
+        poller_files = {token: _REPO_ROOT / rel for token, rel in _POLLER_TOKEN_TO_FILE.items()}
+        surface_desc = (
+            ".claude/skills/**/SKILL.md + scripts/{tick_triage,"
+            "autonomous_session_watch,poll_pipeline,backend_poll,pod_watch}.py"
+        )
+    else:
+        consumers = list(consumer_paths or [])
+        poller_files = dict(poller_file_map or {})
+        surface_desc = ", ".join(str(p) for p in consumers) or "(no consumer surfaces supplied)"
+
+    consumer_texts = [p.read_text() for p in consumers if p.exists()]
+    poller_text_cache: dict[str, str] = {}
+    errors: list[str] = []
+    for m in workflow.markers:
+        posted_by = m.posted_by or ""
+        if not POLLER_POSTED_BY_RE.search(posted_by):
+            continue
+        if m.kind in wl:
+            continue
+        # Leg A: at least one consumer surface references the kind.
+        if not any(m.kind in text for text in consumer_texts):
+            errors.append(
+                f"workflow.yaml § markers: poller-posted marker '{m.kind}' "
+                f"(posted_by: {posted_by[:80]}) is referenced by NO consumer "
+                f"surface ({surface_desc}). A poller feature claiming mid-run "
+                f"surfacing must be reachable by watcher/tick/poll/orchestrator "
+                f"code (#873) — wire a consumer or add the kind to "
+                f"POLLER_CONSUMER_ALLOWLIST with a reason."
+            )
+        # Leg B: each poster script the posted_by token names contains the kind.
+        lowered = posted_by.lower()
+        for token, poster in sorted(poller_files.items()):
+            if token not in lowered:
+                continue
+            if not poster.exists():
+                # A missing PRODUCTION poster file for a matched token is an
+                # ERROR (fail loud); a missing OVERRIDE path is skipped, the
+                # check_marker_registry missing-file convention.
+                if production:
+                    errors.append(
+                        f"workflow.yaml § markers: marker '{m.kind}' posted_by "
+                        f"names poller token '{token}' but the mapped poster file "
+                        f"'{poster}' does not exist — fix _POLLER_TOKEN_TO_FILE "
+                        f"or restore the script."
+                    )
+                continue
+            if token not in poller_text_cache:
+                poller_text_cache[token] = poster.read_text()
+            if m.kind not in poller_text_cache[token]:
+                errors.append(
+                    f"workflow.yaml § markers: poller-posted marker '{m.kind}' — "
+                    f"declared poster '{poster}' (token '{token}') does not "
+                    f"mention '{m.kind}' — the posting code may not exist (#873 "
+                    f"pre-fix state). Wire the poster or add the kind to "
+                    f"POLLER_CONSUMER_ALLOWLIST with a reason."
+                )
     return errors
 
 
@@ -9095,6 +9296,32 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "recipe the live hook blocks). Bundled into the no-flags default "
         "run.",
     )
+    parser.add_argument(
+        "--check-marker-scalar-integrity",
+        action="store_true",
+        help="Scan every workflow.yaml § markers entry's four string fields "
+        "(kind/posted_by/when/fields) for the truncated-comment signature: "
+        "the PARSED value ends in ',' or '(' after rstrip, or has "
+        "unbalanced parens. An unquoted YAML plain scalar containing ' #' "
+        "silently truncates at the comment marker (#873) and "
+        "--check-references passes because the regenerated markers.md "
+        "matches the truncated parse. Waive deliberate prose via "
+        "MARKER_SCALAR_INTEGRITY_ALLOWLIST. Bundled into --check-references "
+        "and the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-poller-marker-consumers",
+        action="store_true",
+        help="Every workflow.yaml § markers kind whose posted_by names a "
+        "poller/watcher (poll_pipeline/backend_poll/slurm_monitor/"
+        "autonomous_session_watch/pod_watch/tick_triage) must (Leg A) be "
+        "referenced by >=1 consumer surface (.claude/skills/**/SKILL.md + "
+        "the poller/triage scripts) and (Leg B) appear in each poster "
+        "script its posted_by token names — a poller feature claiming "
+        "mid-run surfacing with no consuming/posting code is the #873 "
+        "pre-fix state. Waive via POLLER_CONSUMER_ALLOWLIST. Bundled into "
+        "--check-references and the no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -9157,6 +9384,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_scripts_import_guard
         or args.check_upload_or_true
         or args.check_git_recipes_root_guard
+        or args.check_marker_scalar_integrity
+        or args.check_poller_marker_consumers
     )
 
     errors: list[str] = []
@@ -9174,6 +9403,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         # A posted-but-unregistered marker kind is the same drift class
         # (doc surface vs canonical registry) — bundle here too.
         errors.extend(check_marker_registry(workflow))
+        # A truncated marker-field scalar / an unreferenced poller-posted
+        # kind is the same registry-integrity drift class — bundle both
+        # here so the pre-commit hook (which fires --check-references on
+        # any workflow.yaml change) catches them at commit time (#873).
+        errors.extend(check_marker_scalar_integrity(workflow))
+        errors.extend(check_poller_marker_consumers(workflow))
     if args.check_tables and not args.check_references:
         errors.extend(emit_tables(workflow, write=False))
     if args.emit_tables:
@@ -9209,6 +9444,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_grep_qv())
     if (args.check_marker_registry or no_flags) and not args.check_references:
         errors.extend(check_marker_registry(workflow))
+    if (args.check_marker_scalar_integrity or no_flags) and not args.check_references:
+        errors.extend(check_marker_scalar_integrity(workflow))
+    if (args.check_poller_marker_consumers or no_flags) and not args.check_references:
+        errors.extend(check_poller_marker_consumers(workflow))
     if args.check_agent_model_pins or no_flags:
         errors.extend(check_agent_model_pins())
     if args.check_agent_tools or no_flags:
