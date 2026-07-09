@@ -1426,8 +1426,8 @@
     "1183": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1183",
-      "status": "reviewing",
+      "path": "tasks/completed/1183",
+      "status": "completed",
       "title": "workflow-fix: Relocate live pods_ephemeral.json out of git t"
     },
     "1184": {
