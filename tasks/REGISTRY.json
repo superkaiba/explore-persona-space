@@ -1328,15 +1328,15 @@
     "1170": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1170",
-      "status": "running",
+      "path": "tasks/completed/1170",
+      "status": "completed",
       "title": "workflow-fix: observer for unreconciled doubled-site verdict"
     },
     "1171": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1171",
-      "status": "running",
+      "path": "tasks/completed/1171",
+      "status": "completed",
       "title": "workflow-fix: strip v4 Methodology details in body audit"
     },
     "1172": {
@@ -1349,36 +1349,36 @@
     "1173": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1173",
-      "status": "planning",
+      "path": "tasks/completed/1173",
+      "status": "completed",
       "title": "workflow-fix: daily route-2 bodies omit workflow_fix_target"
     },
     "1174": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1174",
-      "status": "running",
+      "path": "tasks/completed/1174",
+      "status": "completed",
       "title": "workflow-fix: relative cache exclusion in improver-spawn lin"
     },
     "1175": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1175",
-      "status": "proposed",
+      "path": "tasks/running/1175",
+      "status": "running",
       "title": "workflow-fix: lint unguarded deferred scripts.* imports"
     },
     "1176": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1176",
-      "status": "proposed",
+      "path": "tasks/planning/1176",
+      "status": "planning",
       "title": "workflow-fix: lint SKILL.md git recipes against root guard"
     },
     "1177": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1177",
-      "status": "proposed",
+      "path": "tasks/planning/1177",
+      "status": "planning",
       "title": "workflow-fix: provision-time warn on terminal-parent pods"
     },
     "1178": {

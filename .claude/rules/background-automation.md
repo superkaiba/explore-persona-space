@@ -169,7 +169,8 @@ themselves in a worktree.
 
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
 detector, orphan-file sweep, the infra-drain pass, the capacity-retry pass,
-the gate-push pass, the program-orchestrator recovery pass, the
+the stale-blocked flag pass, the gate-push pass, the program-orchestrator
+recovery pass, the
 stale-registration pass, the CPU/memory-pressure guard pass, the
 triage-observer pass, and three session reapers — the session-vs-status
 reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
@@ -447,6 +448,40 @@ markers carry the `[autonomous_session_watch:capacity-retry]` /
 orphan/stalled staleness clocks. Kill switch: `EPM_DISABLE_CAPACITY_RETRY=1`.
 `--capacity-retry-only` runs just this pass (pair with `--dry-run` for a live
 smoke against the real blocked-task set).
+
+**Stale-blocked flag pass (flag — never flip — a stale `blocked` on a task
+whose relaunch succeeded; task #1021, incident #742).** The capacity-retry
+pass's non-spawning sibling: both scan the `blocked` set, but this pass is
+daemon-INDEPENDENT — it spawns nothing (marker posts go via the `task.py`
+subprocess). A crash-fix relaunch that succeeds on a task an earlier failed
+round parked at `blocked` leaves the status stale: the run is healthy while
+the folder says `blocked` (#742 ran healthy ~35h at status `blocked`,
+2026-07-01→07-02). The orchestrator-side fix is the SKILL.md "A successful
+relaunch also reconciles a stale `blocked`" rule; this pass is the
+watcher-side BACKSTOP. Predicate (`decide_stale_blocked_flag`, every
+missing signal failing toward silence): status `blocked` AND the latest
+`epm:run-launched` NEWER than the transition into `blocked` (the normal
+fail→block ordering keeps a deliberately-parked task quiet — only a launch
+AFTER the block flags) AND real (non-watcher, non-deliberate-stop) progress
+AT OR AFTER that launch within `EPM_STALE_BLOCKED_PROGRESS_FRESH_S`
+(default 2h; malformed/non-positive values fall back to the default). On a
+hit it FLAGS — one deduped `epm:progress` marker naming the reconcile
+command (`task.py set-status <N> running`), one row in the durable sidecar
+`~/.eps-autonomous/stale-blocked-events.jsonl` (the `.jsonl` suffix keeps
+it out of the GC's `stale-blocked-*.json` glob), and one Telegram digest
+line — and NEVER mutates status (false alert cheap, false flip dangerous;
+the same conservative posture as the pod-safety alerts). Dedup is per
+launch episode: `~/.eps-autonomous/stale-blocked-<N>.json` records the
+flagged `epm:run-launched` ts, so the same launch never re-alerts while a
+NEWER launch does; the state file is reaped by the generalized GC at
+`completed`/`archived` only (`blocked` is deliberately NOT in
+`TERMINAL_FOR_GC`, so a live episode's dedup state is never reset
+mid-episode). Marker notes carry the
+`[autonomous_session_watch:stale-blocked-flag]` sentinel so they never
+reset the orphan/stalled staleness clocks. Kill switch:
+`EPM_DISABLE_STALE_BLOCKED_FLAG=1`. `--stale-blocked-only` runs just this
+pass (pair with `--dry-run` for a live smoke against the real blocked-task
+set).
 
 **Gate-push pass (2026-06-12 anti-stall redesign).** Telegram phone push on
 gate-park/`blocked` transitions via the my-goat `telegram_push.sh` channel
