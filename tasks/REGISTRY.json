@@ -1258,8 +1258,8 @@
     "1161": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1161",
-      "status": "proposed",
+      "path": "tasks/planning/1161",
+      "status": "planning",
       "title": "workflow-fix: Raise-by-default _hf_tree_get guard in verify-"
     },
     "1162": {
