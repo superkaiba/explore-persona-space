@@ -44,8 +44,8 @@ xet kill switch is
 `HF_HUB_DISABLE_XET`), which gates the upload branch (`_commit_api.py:380`);
 download-side coverage has a reported gap on this pin (hub GH issue #3266),
 so treat it as upload-verified. The historically-documented
-`HF_XET_DISABLE=1` (the #515 xet-CDN DOWNLOAD workaround, still echoed in
-bootstrap/backends comments) is a VERIFIED NO-OP on this stack — consumed by
+`HF_XET_DISABLE=1` (the #515 xet-CDN DOWNLOAD workaround; retained in the
+lane allowlists only as an annotated legacy alias, #1195) is a VERIFIED NO-OP on this stack — consumed by
 neither `huggingface_hub` nor the `hf_xet` Rust binary (strings-checked;
 live-tested 2026-07-05) — so a recipe leaning on it likely never left the
 xet path; #931's first two wedge replays did exactly this. Upload sitting at
