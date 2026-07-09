@@ -136,8 +136,23 @@ def test_prose_park_enumerated_fp_null_target_parsed(tmp_path: Path) -> None:
     assert c["formal_block"] is False
     # trailing punctuation stripped from the prose regex capture
     assert c["target_file"] == "scripts/codex_task.py"
-    # the title-prefix-bound advisory sees the open workflow-fix: task
+    # the advisory sees the open workflow-fix: task
     assert c["open_wf_fix_on_file"] == 50
+
+
+def test_advisory_sees_daily_fix_titled_open_filing(tmp_path: Path) -> None:
+    """#1180: the advisory mirror is no longer blind to daily-fix: titles."""
+    make_task(tmp_path, 1100, "completed", events=[cand_row(T0, PROSE_NOTE)])
+    make_task(
+        tmp_path,
+        51,
+        "running",
+        title="daily-fix: forward success-stderr",
+        body_extra="## Provenance\n\n- workflow_fix_target: scripts/codex_task.py\n",
+        events=[{"ts": T1, "kind": "epm:created", "note": "x"}],
+    )
+    c = only(run_sweep(tmp_path))
+    assert c["open_wf_fix_on_file"] == 51
 
 
 # ── 3. later same-stream filed record with MATCHING fp → suppressed ────────
