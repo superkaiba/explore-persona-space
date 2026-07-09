@@ -1328,8 +1328,8 @@
     "1170": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1170",
-      "status": "running",
+      "path": "tasks/reviewing/1170",
+      "status": "reviewing",
       "title": "workflow-fix: observer for unreconciled doubled-site verdict"
     },
     "1171": {
