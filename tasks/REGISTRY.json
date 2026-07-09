@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1218,
+  "highest_id": 1219,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1702,6 +1702,13 @@
       "path": "tasks/proposed/1218",
       "status": "proposed",
       "title": "daily-held: Gate spawn_session dispatch paths on auth-outage"
+    },
+    "1219": {
+      "has_clean_result": false,
+      "kind": "batch",
+      "path": "tasks/proposed/1219",
+      "status": "proposed",
+      "title": "Fix 18 latent splitlines-shreds-JSONL sites in experiment code (from #1162 live-tree enumeration)"
     },
     "122": {
       "has_clean_result": true,
