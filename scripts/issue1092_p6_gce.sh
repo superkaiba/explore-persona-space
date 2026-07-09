@@ -122,6 +122,10 @@ run_p6_job() {
 
   # --skip-band-pilot / --max-pilot-rss-gb are WRAPPER flags, hardcoded here
   # per plan v6 (never via 'extra': the engine's argparse rejects them).
+  # P6_MAX_PILOT_RSS_GB (default 64) exists because the 64 GB VM-routing gate
+  # aborted a healthy 72.23 GB pilot on a 128 GB n2-highmem-16 box (b10,
+  # att-20260709-180648-p6b10) whose abort message routes to the very lane it
+  # ran on; replacement boxes pass 100.
   local cmd=(
     uv run python scripts/issue1092_p6_run.py
     --corpus-dir "$CORPUS_DIR"
@@ -129,7 +133,7 @@ run_p6_job() {
     --out-dir "$OUT_DIR"
     --judge-scores "$JUDGE_DIR/scores.jsonl"
     --skip-band-pilot
-    --max-pilot-rss-gb 64
+    --max-pilot-rss-gb "${P6_MAX_PILOT_RSS_GB:-64}"
   )
   if [ -n "$cells" ]; then cmd+=(--cells "$cells"); fi
   if [ -n "$layers" ]; then cmd+=(--layers "$layers"); fi
