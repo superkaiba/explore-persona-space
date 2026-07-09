@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1213,
+  "highest_id": 1214,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1667,6 +1667,13 @@
       "path": "tasks/proposed/1213",
       "status": "proposed",
       "title": "daily-fix: verify_plan warns on ckpt ladder without retentio"
+    },
+    "1214": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1214",
+      "status": "proposed",
+      "title": "daily-fix: new_worktree.sh branches from origin/main"
     },
     "122": {
       "has_clean_result": true,
