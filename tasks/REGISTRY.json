@@ -1524,8 +1524,8 @@
     "1196": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1196",
-      "status": "planning",
+      "path": "tasks/approved/1196",
+      "status": "approved",
       "title": "workflow-fix: corpus WARN on H1 vs frontmatter title drift"
     },
     "1197": {
