@@ -44,30 +44,38 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.experiments.leave_one_out_505 import (
+# #847: thread caps must land BEFORE the numpy import below — on the shared
+# VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS, and the
+# BLAS pools freeze at import time (the first-party imports below pull numpy
+# transitively too).
+load_dotenv()
+
+import numpy as np  # noqa: E402
+
+from explore_persona_space.experiments.leave_one_out_505 import (  # noqa: E402
     HEADLINE_LAYER,
     SOURCE_PERSONA,
 )
-from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (
+from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (  # noqa: E402
     BASELINE_PREDICTORS as _R1_BASELINE_PREDICTORS,
 )
-from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (
+from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (  # noqa: E402
     EXPANDED_PREDICTORS as _R1_EXPANDED_PREDICTORS,
 )
-from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (
+from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (  # noqa: E402
     FULL_SET_SLUG,
     fit_per_arm_models,
     fit_pooled_model,
 )
-from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (
+from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (  # noqa: E402
     PER_ARM_EXPANDED as _R1_PER_ARM_EXPANDED,
 )
-from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (
+from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (  # noqa: E402
     PER_ARM_ORIGINAL as _R1_PER_ARM_ORIGINAL,
 )
-from explore_persona_space.experiments.leave_one_out_505.logit_rescoring import (
+from explore_persona_space.experiments.leave_one_out_505.logit_rescoring import (  # noqa: E402
     SCHEMA_VERSION,
     TARGET_FRAC,
     repro_block,
