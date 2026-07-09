@@ -2407,6 +2407,36 @@ single-reviewer decision:
    `status:blocked`, PushNotification, CRON-TEARDOWN. NEVER adopt a
    unilateral decision from the surviving reviewer.
 
+**Autocompact-thrash respawn recipe (refines item 4's "first diagnose
+the death" for ANY thrash-killed subagent — reviewer/critic per item 4,
+and equally an implementer / fact-checker / analyzer re-spawn).** Check
+the dead spawn's transcript/result for an OVERSIZED tool result (a
+multi-hundred-KB diff or file read). If ONE EXISTS, the read-side fix
+applies: bound the read / thin the brief per
+`.claude/rules/diff-size-budget.md`. If NONE exists, the pressure is
+FIXED OVERHEAD on the subagent window (spec + CLAUDE.md import tree +
+MCP schemas + the brief) — or accumulated read VOLUME no single-read
+bound addresses — and re-tightening read bounds does NOT help: respawn
+instead with (i) MICRO-SCOPED work — split the role's work into the
+smallest self-contained unit (#1090 split one implementer build into
+sequential rounds A/B — round A returned a commit manifest with NO
+implementation marker; round B posted the marker after the full
+smoke) — and (ii) the DEFAULT session model — do NOT pin a smaller
+model as a thrash fix (#1090 forensics, events.jsonl L247: "transcript
+forensics show NO oversized tool result (max 15KB line): the thrash is
+FIXED-OVERHEAD pressure on the subagent window, not read indiscipline";
+"read-bounded brief did not help"; "both default-model spawns today
+compacted successfully; 3/6 sonnet spawns thrashed"). Multi-unit splits
+apply to roles whose deliverable DECOMPOSES (an implementer or
+fact-checker build); a single-verdict reviewer/critic re-spawn stays
+ONE spawn, micro-scoped by brief. Per-subagent model pins remain
+prompt-cache-safe and legitimate for OTHER reasons (the CLAUDE.md
+refusal rung (b2) sonnet pin) — they are just not a thrash remedy. The
+micro-scoped respawn IS item 4's one bounded re-spawn where item 4
+applies (same `v<n>`, no round-counter increment); for a multi-unit
+split, the units run sequentially within that same round (#1090: "Same
+round counter (round 1 continues; re-spawns do not increment)").
+
 The existing marker-keyed no-show path — the Codex wrapper POSTING
 `epm:failure v<m>` (`failure_class: codex-output-malformed` or `infra`)
 — is itself durable state and is UNCHANGED: that marker IS a confirmed
