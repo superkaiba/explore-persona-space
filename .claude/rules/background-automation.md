@@ -816,6 +816,48 @@ that class). Known bounded miss: a 9a-ter compute fit dispatched under a
 pass (pair with `--dry-run` for a live smoke — dry-run performs zero writes
 and zero `subprocess.run`).
 
+**Verdict-disagree observer pass (task #1170, `verdict_disagree_pass`).** A
+daemon-INDEPENDENT, **NON-GATING** pass (right after `triage_observer_pass`)
+auditing the four MARKER-MODE doubled review sites (workflow.yaml
+§ ensemble_review — code-reviewer / interpretation-critic /
+clean-result-critic / follow-up-critic; the `critic` site reconciles
+in-context and is unobservable) for the #825 misclassification shape: the
+LATEST round per (issue, site) whose Claude + Codex durable verdicts BOTH
+exist with parseable OPPOSITE-class verdicts (pass-class vs fail-class), no
+role-matched `epm:review-reconcile`, and — for proximity-tier pairings only
+— no Codex no-show evidence. The pure predicate
+(`task_workflow.unreconciled_disagreement_rounds`) pairs two-tier: Tier 1
+round-aligned via `ensemble_verdicts_present`, then a time-proximity
+fallback (`EPM_VERDICT_DISAGREE_PAIR_PROXIMITY_S`, 6h) for the observed
+sentinel/version round drift (#825: Claude sentinel v5 vs Codex bare
+version 7 for the same logical round); a 1h grace window
+(`EPM_VERDICT_DISAGREE_GRACE_S`) lets an in-flight reconcile land, and
+no-show evidence (`epm:codex-task-failed`, a codex-scoped `epm:failure`,
+the #1204 quota-skip note) suppresses TIER-2 pairings only, scanned from
+`min(pair_ts) − EPM_VERDICT_DISAGREE_EVIDENCE_LOOKBACK_S` (2h) — a Tier-1
+both-present pair is never evidence-suppressed (evidence explains an absent
+twin, not two present verdicts). **Channels:** one row per finding to the
+dedicated sidecar `.claude/cache/verdict-disagree-observer-events.jsonl` +
+one deduped fail-soft `_telegram_push`; **NO task marker** (deliberate
+divergence from the triage observer — this flag's consumer is a human, not
+the next dispatch). Fire-once dedup key `(issue, role, round_label)` in the
+state singleton `~/.eps-autonomous/verdict-disagree-observer.json`
+(self-pruned at `completed`/`archived`). **KNOWN BENIGN-FIRE class:** a
+Step 5c-bis mechanical-contract-only strip, a 9a-bis procedural strip, or a
+cap-5 all-stripped-continue resolves a PASS-vs-FAIL round WITHOUT a
+reconciler and logs to chat only, so it flags by design (auditing
+orchestrator self-serve dismissals of a FAIL is in scope); the FAIL
+marker's own `**Blocker tags:**` line (an all-mechanical tag set) is the
+one-glance disambiguator. **Coverage limits:** latest-round-only (a
+superseded earlier-round disagreement is moot and round re-derivation is
+unreliable under sentinel drift); Tier-2 evidence suppression is
+site-agnostic (`epm:codex-task-failed` notes don't reliably name the role).
+Sweep scope reuses the triage observer's enumerator (ACTIVE ∪
+{`awaiting_promotion`, `blocked`}, `EPM_VERDICT_DISAGREE_LOOKBACK_H` 48h
+events-mtime recency). Kill switch `EPM_DISABLE_VERDICT_DISAGREE_OBSERVER=1`;
+`--verdict-disagree-only` runs just this pass (pair with `--dry-run` for a
+live smoke — zero writes).
+
 **Auth-outage guard pass (task #1027, `auth_outage_pass`).** Fleet-level
 respawn suppression for an Anthropic auth outage — or ANY fleet-wide
 instant-death cause (poisoned CLI credential, broken `claude` binary, a
