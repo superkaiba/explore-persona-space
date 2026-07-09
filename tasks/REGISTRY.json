@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1165,
+  "highest_id": 1166,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1289,6 +1289,13 @@
       "path": "tasks/proposed/1165",
       "status": "proposed",
       "title": "workflow-fix: Venue caveat in experimenter nohup .env memory"
+    },
+    "1166": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1166",
+      "status": "proposed",
+      "title": "workflow-fix: planner.md: prescribe verdict-lattice declarat"
     },
     "117": {
       "has_clean_result": false,
