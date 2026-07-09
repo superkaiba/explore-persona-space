@@ -64,12 +64,16 @@ Check catalog (id — classification — kind scope)
       conditional phase                                   analysis
   c30 reused-bundle realized    WARN-only, conditional    experiment +
       keys                                                analysis
+  c31 SKILL.md prose            WARN-only, conditional    infra + batch only
+      durability pin
+  c32 fit-family §9 basis       WARN-only, conditional    experiment +
+      grounding                                           analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30) also SKIP when their content
-trigger does not fire.
+19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32) also SKIP when their
+content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -104,6 +108,10 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
     ``labelled`` accepted)
   - ``N/A — no conditional phase on this provision`` (check 29)
   - ``N/A — no multi-field bundle reuse`` (check 30)
+  - ``Durability pin: N/A — <one-line reason>`` / alias
+    ``N/A — no durability pin: <reason>`` (check 31; the reason tail is
+    mandatory — a bare ``Durability pin: N/A`` still WARNs)
+  - ``N/A — no fit-family phases`` (check 32)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -4796,6 +4804,169 @@ def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 32 — fit-family §9 basis grounding ──────────────────────────────
+# Mechanizes .claude/rules/plan-compute-sizing.md § "Per-cell fit phases"
+# (MUST-level): a §9 row looping a fit/solve/factorization over cells x
+# folds x layers x ... must ground its per-call basis on a MEASURED 1-cell
+# pilot, a cited prior-issue measured figure, or a pre-registered
+# `pilot-gated` flag — an ASSERTED per-call cost is never a basis, and a
+# FLOP floor is the cross-check, never the basis (#823: asserted ~2 s/fit
+# vs ~125 s real, 12-20 h realized; #811: one inner kernel timed, dominant
+# frame asserted, unit 3/108 at 19h21m; #931: wrong-device measurement,
+# ~2.2-2.5x mid-run; #722: "sub-minute per cell" asserted, 19.5 CPU-h).
+# Anti-boilerplate, BOTH polarities (the #1060 round-1 critic concern):
+# the satisfier requires provenance vocabulary CO-LOCATED with a numeric
+# timing token in the basis/wall cells — "basis: measured pilot" with no
+# number WARNs (#552 v3's literal "measured: minutes"), and "~2 s/fit"
+# with no provenance word WARNs (#823's literal shape).
+# Calibration (DEVELOPMENT-SET numbers: the regexes were tuned on the same
+# persisted-plan corpus they were measured on — read the rates as
+# in-sample, not held-out; ANY future c32-regex change re-runs the corpus
+# scan and records the realized numbers here, the c27 gate precedent).
+# Re-scan 2026-07-09 (implementation-time, shipped regexes) over 1,731
+# persisted plan-versions (tasks/*/*/plans/v*.md): full corpus 149
+# plan-versions triggered (32 distinct plans) / 85 would-WARN (23 distinct
+# plans; pre-#1060-rule era dominated); recent era (issue >= 1000): 419
+# plan-versions -> 13 triggered, 3 would-WARN, all ONE distinct plan
+# (#1112 v1-v3, whose own v4 basis added "(parent-measured kernel)" and
+# PASSes). Incident recall 100%: #823 v1-v5 / #811 v1 / #722 v1-v3 / #931
+# v1-v4 all WARN (#931 v8-v10 post-incident replans also WARN — asserted
+# bases, defensible under the rule; #811 v2-v3 and #722 v4-v5 SKIP: those
+# restructured versions carry no fit-family basis-table row); every
+# post-fix version PASSes on a substantive span (#811 v4 "REALIZED
+# ~2.6 h"; #722 v7 "ran ~9 min"; #810 v4+ "measured 0.385 s/cell" /
+# "parent 10 min"; #928 v5+ "prior-issue 1.0 h"; #1112 v4+ "parent
+# 3 min"). #778 (draw-battery incident, c12's domain) never triggers on
+# any of its 8 versions — clean division of labor. Disclosed residual
+# gaming: a FABRICATED
+# "measured 2 s/fit" passes — a mechanical check cannot verify
+# measurement provenance (module scope discipline: a PASS here is never
+# "grounding verified"); adequacy stays with the Methodology critic
+# (critic-lens-reference.md item (iii)), fed by the WARN forwarding.
+
+_C32_KERNEL_RE = re.compile(
+    r"(?i)\bridge\b|\bsvd\b|\beigh\b|\beigvalsh\b|\blstsq\b|\bgcv\b"
+    r"|\bloco\b|\bloocv\b|\blofo\b|\bmlp\b|\badamw\b|\bsgd\b|\bkrr\b"
+    r"|\bglm\b|\birls\b|gradient[- ]descent|\bprobe[- ](?:train|fit)\w*"
+    r"|\bfactoriz\w+"
+    r"|\b(?:point|probe|many[- ]cell|per[- ]cell|per[- ]fold|closed[- ]form|serial)[ -]fits?\b"
+    r"|\bfit loops?\b"
+)
+# NOTE: bare \bfits?\b deliberately EXCLUDED — it false-fires on "fits in
+# HBM" / generation rows ("engine load ... 250 gens", #558) and cost 11
+# extra full-corpus triggers in calibration for zero incident-recall gain.
+
+_C32_LOOP_RE = re.compile(
+    r"(?i)per[- ](?:cell|fold|layer|arm|trait|seed|unit|probe|context|pair|source|behavior)"
+    r"|[×x]\s*\d|\d+\s*[×x]\b"  # noqa: RUF001 — the multiplication sign is real plan text
+    r"|\d[\d,]*\s*(?:fits|solves|calls|folds|cells|refits|units)\b"
+    r"|\bn_calls\b|\bfor each\b|\bacross (?:all )?\d+"
+)
+
+# Provenance vocabulary: measurement verbs + prior-figure citation forms.
+# "parent"/"ran"/"#<M>" are load-bearing widenings — without them the
+# corpus's legitimate prior-figure bases ("parent full grid ~10 min =>
+# 0.58 s/cell", #810 v10; "v5 ran 28 layers in ~9 min", #722 v7) false-WARN.
+_C32_PROVENANCE_RE = re.compile(
+    r"(?i)\bmeasur\w+|\btimed\b|\bclocked\b|\bprofil\w+|\bbenchmark\w*"
+    r"|\brealized\b|\bpilot\w*\b|\bran\b|\btook\b|\bparent\b"
+    r"|\bprior[- ]issue\b|#\d{2,}|\bcommitted\b"
+)
+
+# Numeric timing token: a digit-bearing quantity with a time unit,
+# optionally per-call ("125 s/fit", "~0.58 s/cell", "2-3 min", "9 min").
+# Lookbehind blocks "A100s"/"H100" ("100 s" inside an alnum run).
+_C32_TIMING_RE = re.compile(
+    r"(?i)(?<![A-Za-z0-9.\-])[~≈]?\d[\d,]*(?:\.\d+)?\s*"
+    r"(?:ms|s|sec|seconds?|min|minutes?|hr?|hours?)\b"
+    r"(?:\s*/\s*(?:it|call|fit|cell|unit|fold|row|draw|solve))?"
+)
+
+_C32_PILOT_GATED_RE = re.compile(r"(?i)\bpilot[- ]gated\b")
+
+
+def _c32_offender_detail(offenders: list[tuple[str, str]]) -> str:
+    """Bounded WARN detail (the c26 ``_c26_offender_detail`` shape): at most
+    3 (component, basis) pairs, the rule anchor, the incident anchors, and
+    every remedy (measured figure / prior-issue citation / pilot-gated /
+    the standalone N/A escape)."""
+    shown = "; ".join(f"row {comp[:60]!r} basis {basis[:40]!r}" for comp, basis in offenders[:3])
+    if len(offenders) > 3:
+        shown += "; ..."
+    return (
+        f"{shown} — fit-family row(s) whose basis carries neither (provenance vocabulary — "
+        "measured/timed/pilot/#<M>/parent — co-located with a numeric per-call timing) nor a "
+        "`pilot-gated` flag — an ASSERTED per-call cost is never a sizing basis and a FLOP "
+        "floor is the cross-check, never the basis (plan-compute-sizing.md § Per-cell fit "
+        "phases; #823: asserted ~2 s/fit, ~125 s real, 12-20 h realized; #811: unit 3/108 at "
+        "19h21m). Ground the row on a measured 1-cell pilot at production shape (state the "
+        "figure, e.g. `measured 125 s/fit`), cite a prior-issue measured figure "
+        "(`#811 r2: 313 s/unit`), mark the basis `pilot-gated`, or declare "
+        "`N/A — no fit-family phases` on its own line if the row is not a fit loop"
+    )
+
+
+def check_fit_basis_grounding(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: every basis-column compute-table row naming a
+    fit-family kernel (ridge/SVD/eigh/lstsq/GCV/MLP/LOCO/...) AND a
+    loop/multiplicity signal (per-cell/per-fold vocabulary, an NxM product,
+    an "N fits" count) must ground its basis — provenance vocabulary
+    (measured/timed/pilot/#<M>/parent/ran/...) CO-LOCATED with a numeric
+    timing token in the conversion-bearing cells (basis + wall, the c26
+    escape-(a) precedent — a component cell like "reuse of #811 adapters"
+    must not satisfy the citation class spuriously), or a literal
+    ``pilot-gated`` flag anywhere in the row. Mechanizes
+    plan-compute-sizing.md § "Per-cell fit phases" (#823/#811/#722/#931).
+    Anti-boilerplate BOTH polarities (the #1060 critic concern): "measured
+    pilot" with no digit WARNs, and "~2 s/fit" with no provenance word
+    WARNs. A FLOP-only basis WARNs by construction (no provenance token) —
+    the rule: a FLOP floor is the cross-check, never the basis; there is
+    deliberately NO ``FLOP-only`` escape. NEVER FAILs in v1 — both trigger
+    and satisfier are text heuristics (the c26 precedent), and whether a
+    stated figure is REAL / transfers stays critic-owned: a FABRICATED
+    "measured 2 s/fit" passes (a mechanical check cannot verify
+    measurement provenance — a PASS here is never "grounding verified").
+    Disclosed under-triggers: fit sizing stated only in prose (no
+    basis-column table) is invisible in v1 (c12 independently covers prose
+    draw batteries); a basis table lacking a wall column is invisible
+    (parser precondition, c26 parity). Escape: the standalone line
+    ``N/A — no fit-family phases`` (anti-paste semantics via
+    ``_standalone_na_declared``). Calibration numbers + the corpus re-scan
+    gate on ANY future c32-regex change live in the comment block above
+    ``_C32_KERNEL_RE``."""
+    cid, name = "c32_fit_basis_grounding", "fit-family §9 basis grounding"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid, name, "kind-exempt: fit-family §9 rows are an experiment|analysis plan shape"
+        )
+    rows = _c26_compute_table_rows(plan)
+    triggered = [
+        (comp, basis, wall, row_text)
+        for comp, basis, wall, row_text in rows
+        if _C32_KERNEL_RE.search(row_text) and _C32_LOOP_RE.search(row_text)
+    ]
+    if not triggered:
+        return _skip(cid, name, "no fit-family row in a basis-column compute table detected")
+    if _standalone_na_declared(plan, r"no fit[- ]family (?:fit )?phases"):
+        return _pass(cid, name, "explicit N/A declared (no fit-family phases)")
+    offenders: list[tuple[str, str]] = []
+    for comp, basis, wall, row_text in triggered:
+        conv = f"{basis} {wall}"  # conversion-bearing cells, the c26 escape-(a) precedent
+        grounded = (
+            _C32_PROVENANCE_RE.search(conv) and _C32_TIMING_RE.search(conv)
+        ) or _C32_PILOT_GATED_RE.search(row_text)
+        if not grounded:
+            offenders.append((comp, basis))
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(triggered)} fit-family row(s); every basis carries provenance + a timing "
+            "figure or pilot-gated",
+        )
+    return _warn(cid, name, _c32_offender_detail(offenders))
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -4829,6 +5000,7 @@ CHECKS = [
     check_fence_conditional_phase,
     check_realized_keys,
     check_skillmd_prose_pin,
+    check_fit_basis_grounding,
 ]
 
 
