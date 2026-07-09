@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1195,
+  "highest_id": 1196,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1520,6 +1520,13 @@
       "path": "tasks/proposed/1195",
       "status": "proposed",
       "title": "workflow-fix: forward HF_HUB_DISABLE_XET in lane allowlists"
+    },
+    "1196": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1196",
+      "status": "proposed",
+      "title": "workflow-fix: corpus WARN on H1 vs frontmatter title drift"
     },
     "12": {
       "has_clean_result": false,
