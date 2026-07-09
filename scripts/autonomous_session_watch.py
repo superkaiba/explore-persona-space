@@ -4283,6 +4283,242 @@ def triage_observer_pass(dry_run: bool) -> bool:
     return wrote
 
 
+# ─── Verdict-disagree observer pass (task #1170; origin incident #825) ───────
+#
+# WHY: #825's `onpolicy-user-turn` review round carried a Claude PASS
+# (head sentinel v5) vs Codex FAIL (bare version 7) disagreement whose
+# reconciler was dispatched only after a manual catch — the round-number
+# drift between the pair kinds made the disagreement easy to misread as a
+# no-show. This pass mechanically detects the unreconciled shape: per
+# doubled MARKER-MODE review site (workflow.yaml § ensemble_review), the
+# LATEST round whose Claude + Codex durable verdicts disagree (pass-class
+# vs fail-class) with no role-matched epm:review-reconcile and — for
+# proximity-tier pairings only — no Codex no-show evidence. The pure
+# predicate lives in task_workflow.unreconciled_disagreement_rounds; this
+# block is the thin I/O wrapper, modeled on the triage observer (#967).
+# Observe/alert only: sidecar rows + one deduped fail-soft push per
+# (issue, site, round) — NEVER a task marker (deliberate divergence from
+# the triage observer: this flag's consumer is a human, not the next
+# dispatch), NEVER a status mutation, session stop, or dispatch block.
+# KNOWN BENIGN-FIRE class: a Step 5c-bis mechanical-contract-only strip,
+# a 9a-bis procedural strip, or a cap-5 all-stripped-continue resolves a
+# PASS-vs-FAIL round WITHOUT a reconciler and logs to chat only, so it
+# flags BY DESIGN (auditing orchestrator self-serve dismissals of a FAIL
+# is in scope); the FAIL marker's own `**Blocker tags:**` line (an
+# all-mechanical tag set) is the reader's one-glance disambiguator.
+
+# Lookback bounding the per-tick events.jsonl scans (the triage observer's
+# 48h precedent; dedup keys make each finding fire once regardless).
+VERDICT_DISAGREE_LOOKBACK_H = _env_float("EPM_VERDICT_DISAGREE_LOOKBACK_H", 48.0, lo=1.0, hi=720.0)
+# No flag until >= 60 min after the LATER verdict — reconciler spawn +
+# adjudication needs time (#825's reconcile landed 10 min after the later
+# verdict; 60 min is ~6x the observed latency). Deferral, not loss: the
+# pair is re-evaluated every tick.
+VERDICT_DISAGREE_GRACE_S = _env_float("EPM_VERDICT_DISAGREE_GRACE_S", 3600.0, lo=0.0, hi=86400.0)
+# The two verdicts must land within 6h to count as one logical round —
+# same-round pairs land minutes apart (worst realistic case a
+# thrash-respawned reviewer, ~1-2h); distinct #825 epochs were >= 8h apart.
+VERDICT_DISAGREE_PAIR_PROXIMITY_S = _env_float(
+    "EPM_VERDICT_DISAGREE_PAIR_PROXIMITY_S", 21600.0, lo=60.0, hi=604800.0
+)
+# No-show evidence counts only from min(pair_ts) - 2h onward: covers a
+# quota-skip note posted at round start plus a slow round, while excluding
+# stale evidence from prior rounds (which would blind the observer forever
+# after one Codex outage).
+VERDICT_DISAGREE_EVIDENCE_LOOKBACK_S = _env_float(
+    "EPM_VERDICT_DISAGREE_EVIDENCE_LOOKBACK_S", 7200.0, lo=0.0, hi=86400.0
+)
+_VERDICT_DISAGREE_FLAGGED_KEY_CAP = 400  # newest dedup keys kept per issue
+
+
+def _verdict_disagree_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_VERDICT_DISAGREE_OBSERVER`` is
+    set truthy ("1"/"true"/"yes", case-insensitive). Default enabled.
+    Mirrors :func:`_triage_observer_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_VERDICT_DISAGREE_OBSERVER", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _verdict_disagree_sidecar_path() -> Path:
+    """DEDICATED verdict-disagree event stream (own stream for clean grep —
+    the triage-observer/cpu-guard sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "verdict-disagree-observer-events.jsonl"
+
+
+def _verdict_disagree_state_path() -> Path:
+    """Singleton (deliberately NOT a per-issue GC target):
+    ``{"<issue>": {"flagged": ["<role>|<round_label>", ...]}}`` — no cursor
+    needed: dedup keys alone give fire-once, and the latest-round
+    evaluation is idempotent."""
+    return AUTONOMOUS_REGISTRY_DIR / "verdict-disagree-observer.json"
+
+
+def _load_verdict_disagree_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards at the call sites (mirrors
+    :func:`_load_triage_observer_state`)."""
+    path = _verdict_disagree_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_verdict_disagree_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the verdict-disagree state (fail-soft);
+    ``dry_run`` performs zero writes."""
+    if dry_run:
+        print(f"  [dry-run] would save verdict-disagree state ({len(state)} issue entries)")
+        return
+    dest = _verdict_disagree_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  verdict-disagree: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_verdict_disagree_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the verdict-disagree sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append verdict-disagree sidecar row: {line[:160]}")
+        return
+    dest = _verdict_disagree_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  verdict-disagree: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _verdict_disagree_task_entry(state: dict, issue: int) -> set[str]:
+    """Type-guarded flagged-keys read-back from the state singleton; a
+    hand-edited / schema-drifted entry degrades to defaults (mirrors
+    :func:`_triage_observer_task_entry`)."""
+    raw_entry = state.get(str(issue))
+    entry = raw_entry if isinstance(raw_entry, dict) else {}
+    raw_flagged = entry.get("flagged")
+    return {k for k in (raw_flagged if isinstance(raw_flagged, list) else []) if isinstance(k, str)}
+
+
+def verdict_disagree_pass(dry_run: bool) -> bool:
+    """NON-GATING observer of unreconciled doubled-site verdict
+    disagreements (#1170; origin incident #825). Observe/alert only:
+    sidecar rows + one deduped fail-soft :func:`_telegram_push` per
+    (issue, site, round) — NEVER posts a task marker, mutates status,
+    stops a session, or blocks a dispatch (pinned by tests at the
+    subprocess-argv level). Fail-soft throughout: per-issue guards keep
+    one bad task from masking the rest, and a top-level guard keeps an
+    internal error from taking down the watcher tick (``main()`` calls
+    passes bare — no outer try — so this pass carries its own).
+    Daemon-independent (registry + events.jsonl reads only). Returns True
+    when any sidecar row was written."""
+    if not _verdict_disagree_enabled():
+        print("  verdict-disagree: disabled via EPM_DISABLE_VERDICT_DISAGREE_OBSERVER; skipping")
+        return False
+    try:
+        # Lazy in-process import (watcher convention): resolves THIS
+        # checkout's helpers via the tests' sys.path shim / the editable
+        # install.
+        from explore_persona_space.task_workflow import (
+            list_events,
+            registry_path,
+            unreconciled_disagreement_rounds,
+        )
+
+        try:
+            reg = json.loads(registry_path().read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"  verdict-disagree: registry read failed: {exc}", file=sys.stderr)
+            return False
+        tasks = reg.get("tasks") if isinstance(reg, dict) else None
+        if not isinstance(tasks, dict):
+            print("  verdict-disagree: registry has no tasks map; skipping", file=sys.stderr)
+            return False
+
+        now = time.time()
+        lookback_s = VERDICT_DISAGREE_LOOKBACK_H * 3600.0
+        # Resolve task paths against the registry's OWN root (never
+        # hand-built from cwd).
+        reg_root = registry_path().parent.parent
+        state = _load_verdict_disagree_state()
+        wrote = False
+
+        for id_str, meta in sorted(tasks.items()):
+            # Sweep scope + recency: REUSE the triage observer's enumerator
+            # (in-repo tool-reuse rule) — its status set
+            # ACTIVE | {awaiting_promotion, blocked} and events.jsonl-mtime
+            # recency gate fit this pass too: review verdicts fire at
+            # active statuses, awaiting_promotion covers the final
+            # clean-result rounds' park, blocked covers a crash right
+            # after a review round.
+            issue = _triage_observer_sweep_issue(id_str, meta, reg_root, now, lookback_s)
+            if issue is None:
+                continue
+            flagged = _verdict_disagree_task_entry(state, issue)
+            try:
+                events = list_events(issue)
+                findings = unreconciled_disagreement_rounds(
+                    events,
+                    now_ts=now,
+                    grace_s=VERDICT_DISAGREE_GRACE_S,
+                    pair_proximity_s=VERDICT_DISAGREE_PAIR_PROXIMITY_S,
+                    evidence_lookback_s=VERDICT_DISAGREE_EVIDENCE_LOOKBACK_S,
+                )
+            except Exception as exc:  # per-issue fail-soft
+                print(f"  verdict-disagree: #{issue} evaluation failed: {exc}", file=sys.stderr)
+                continue
+            for finding in findings:
+                if finding["key"] in flagged:
+                    continue  # fire-once dedup
+                print(
+                    f"  verdict-disagree: #{issue} {finding['role']} "
+                    f"{finding['round_label']} — Claude {finding['claude_class']} vs "
+                    f"Codex {finding['codex_class']}"
+                )
+                _append_verdict_disagree_sidecar({"issue": issue, **finding}, dry_run)
+                _telegram_push(
+                    f"verdict-disagree-observer: #{issue} {finding['role']} "
+                    f"{finding['round_label']} — Claude {finding['claude_class'].upper()} "
+                    f"vs Codex {finding['codex_class'].upper()}, no role-matched reconcile "
+                    "+ no no-show evidence (#825 shape; may be a sanctioned 5c-bis/9a-bis "
+                    "strip — check the FAIL marker's Blocker tags line) — observe-only; "
+                    "see .claude/cache/verdict-disagree-observer-events.jsonl",
+                    dry_run,
+                )
+                flagged.add(finding["key"])
+                wrote = True
+            if flagged:
+                state[str(issue)] = {
+                    # Keep the NEWEST keys under the cap (sorted order is a
+                    # stable tie-break; the cap is a runaway guard, not an
+                    # eviction policy — 400 findings per issue never happens).
+                    "flagged": sorted(flagged)[-_VERDICT_DISAGREE_FLAGGED_KEY_CAP:],
+                }
+
+        # Self-prune entries once the issue leaves the sweep set for good
+        # (mirrors triage_observer_pass).
+        for key in list(state):
+            meta = tasks.get(key)
+            status = meta.get("status") if isinstance(meta, dict) else None
+            if meta is None or status in {"completed", "archived"}:
+                state.pop(key, None)
+        _save_verdict_disagree_state(state, dry_run)
+        return wrote
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  verdict-disagree: pass failed (fail-soft): {exc}", file=sys.stderr)
+        return False
+
+
 # ─── Auth-outage guard pass (task #1027) — fleet respawn suppression ─────────
 #
 # WHY: 2026-07-03 incident — an Anthropic auth outage (poisoned Claude CLI
@@ -18736,7 +18972,7 @@ def vm_ledger_reap_pass(dry_run: bool) -> None:
         print(f"  vm-ledger-reap: error (skipping): {exc}")
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only dispatch ladder + linear pass sequence; the #1170 flag adds a guard branch, not nesting
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--dry-run", action="store_true", help="log decisions; do not respawn / stop / mutate"
@@ -18816,6 +19052,14 @@ def main(argv: list[str] | None = None) -> int:
         "Daemon-independent; pair with --dry-run for a live smoke.",
     )
     parser.add_argument(
+        "--verdict-disagree-only",
+        action="store_true",
+        help="run ONLY the verdict-disagree observer pass (#1170, non-gating "
+        "— unreconciled doubled-site PASS-vs-FAIL review rounds, the #825 "
+        "shape) and exit; skip every other pass. Daemon-independent; pair "
+        "with --dry-run for a live smoke.",
+    )
+    parser.add_argument(
         "--auth-outage-only",
         action="store_true",
         help="run ONLY the auth-outage guard pass (#1027 — fleet respawn "
@@ -18886,6 +19130,13 @@ def main(argv: list[str] | None = None) -> int:
         triage_observer_pass(args.dry_run)
         return 0
 
+    # --verdict-disagree-only mirrors --triage-observer-only: the pass is
+    # daemon-independent (reads the registry + events.jsonl only), so run
+    # it alone.
+    if args.verdict_disagree_only:
+        verdict_disagree_pass(args.dry_run)
+        return 0
+
     # --auth-outage-only mirrors --cpu-guard-only: run the single pass under
     # the lock and exit (episode bookkeeping is daemon-independent; the
     # canary read degrades to "hold" when the daemon is down).
@@ -18937,6 +19188,16 @@ def main(argv: list[str] | None = None) -> int:
     # epm:progress nudges); daemon-independent (registry + events.jsonl
     # reads only), so it runs on a daemon outage too.
     triage_observer_pass(args.dry_run)
+
+    # Verdict-disagree observer (#1170): NON-GATING audit of the doubled
+    # marker-mode review sites for the #825 misclassification shape — the
+    # LATEST round whose Claude + Codex durable verdicts disagree
+    # (pass-class vs fail-class) with no role-matched epm:review-reconcile
+    # and no Codex no-show evidence. Observe/alert only (sidecar + one
+    # deduped push per finding; NO task markers); daemon-independent
+    # (registry + events.jsonl reads only), so it runs on a daemon outage
+    # too.
+    verdict_disagree_pass(args.dry_run)
 
     # VM resource-ledger reap (plan §5): drop expired-TTL / dead-PID claims from
     # the advisory ~/.task-workflow/vm-ledger.json so a crashed session's claim
