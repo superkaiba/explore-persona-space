@@ -342,7 +342,7 @@ export TRITON_CACHE_DIR=/workspace/.cache/triton
 # Fast HF Hub uploads (#745). HF_XET_HIGH_PERFORMANCE accelerates the Xet path
 # (what the project repos use — verified); HF_HUB_ENABLE_HF_TRANSFER accelerates
 # the orthogonal LFS path (hf_transfer is a hard dep, so the LFS flag never
-# enables a missing-package fault). Override per-launch with =0 / HF_XET_DISABLE=1
+# enables a missing-package fault). Override per-launch with =0 / HF_HUB_DISABLE_XET=1
 # (the #515 xet-CDN download workaround) — export the override in your own shell;
 # the static .env lines below do not supersede an already-exported shell var.
 export HF_XET_HIGH_PERFORMANCE=1
@@ -379,7 +379,7 @@ WANDB_CACHE_DIR=/workspace/.cache/wandb
 WANDB_DATA_DIR=/workspace/.cache/wandb
 UV_CACHE_DIR=/workspace/.cache/uv
 TRITON_CACHE_DIR=/workspace/.cache/triton
-# Fast HF Hub uploads (#745); override per-launch with =0 / HF_XET_DISABLE=1
+# Fast HF Hub uploads (#745); override per-launch with =0 / HF_HUB_DISABLE_XET=1
 # exported in your own shell env (a shell var supersedes the dotenv value under
 # load_dotenv(override=False)), NOT by editing this static .env.
 HF_XET_HIGH_PERFORMANCE=1
