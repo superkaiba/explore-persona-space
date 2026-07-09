@@ -1363,8 +1363,8 @@
     "1175": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1175",
-      "status": "planning",
+      "path": "tasks/approved/1175",
+      "status": "approved",
       "title": "workflow-fix: lint unguarded deferred scripts.* imports"
     },
     "1176": {
