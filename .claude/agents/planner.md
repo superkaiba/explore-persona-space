@@ -224,6 +224,32 @@ What exists in the codebase and literature? What approaches have been tried? Wha
 ### 3. Hypothesis
 Specific, falsifiable predictions. State what would confirm and what would falsify. Include quantitative thresholds where possible.
 
+**Registered verdict lattice — declare it in the machine-checkable form.** A plan
+REGISTERS a verdict lattice when it pre-defines outcome labels (Confirmed /
+Falsified / H-slots / pass-fail-inconclusive grids) as interval predicates over
+the same point estimates and CIs. `scripts/verify_plan.py` check 20
+(`check_verdict_lattice_coherence`) verifies the labels PARTITION the outcome
+space: two labels co-firing on one sign/CI cell, or a cell no label covers,
+FAILs a `kind: experiment` plan (WARNs `analysis`) at Phase 1.5.0 and on every
+critic re-verify (incident: #923 v4/v5). c20 verifies the partition IN FORM
+ONLY — whether each predicate is the scientifically right boundary stays with
+the Statistics critic. Declare the partition as ONE non-fenced line inside the
+section that defines the labels (any heading matching
+hypothes|success|kill|decision|verdict|gate — §3 here is the natural home):
+`DISJOINT and exhaustive: <label> ⇔ <predicate>; <label> ⇔ <predicate>; <label> ⇔ otherwise.`
+Live-verified worked example (#923 plan v6 §3 is the corpus exemplar):
+`DISJOINT and exhaustive: Confirmed ⇔ Δ > 0 AND Δ's 95% CI excludes 0 on the positive side; Falsified ⇔ Δ's 95% CI is wholly below 0; Inconclusive ⇔ otherwise.`
+Parser constraints (c20 tier 1): clauses `;`-separated on the SAME line; each
+label ≤80 chars with no `;`/`⇔`; predicates built from `<qty> ≥/>/≤/< 0` sign
+atoms and CI idioms ("CI excludes 0 on the positive side", "CI wholly below 0",
+"CI straddles 0", "paired-diff CI strictly positive") joined only by AND / OR /
+with; close with an `⇔ otherwise` clause (covers every residual cell by
+construction). Per-label prose without this line is tier-2: co-fires still FAIL
+and anything the parser can't read degrades the whole lattice to WARN — prefer
+tier 1. No lattice in the plan → declare the byte-exact standalone line
+`N/A — no registered verdict lattice` (never alongside a real lattice: the
+escape short-circuits coherence verification of a declared one).
+
 ### 4. Design
 
 Concrete steps: exact training configs, data specs, pipeline DAG, file paths,

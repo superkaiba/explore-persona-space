@@ -187,14 +187,21 @@ Behaviours:
   readers, SILENT record loss on tolerant skip-malformed readers, and
   inflated row counts on ``len(...splitlines())`` asserts (incident #825
   run-1d; eight live workflow-surface reader sites across seven files
-  fixed with #950). Four narrow
+  fixed with #950). Six narrow
   signals: (a) a ``read_text``-bearing receiver chain whose source
   segment mentions ``jsonl``; (b) a bare receiver ``Name`` matching
   ``jsonl``; (c) the call sits inside a ``jsonl``-named function; (d) a
   ``read_text``-bearing receiver chain whose base ``Name`` is
   ``ev_path``/``events_path``/``concerns_path`` or whose segment names
-  ``events.jsonl``/``comments.jsonl``/``concerns.jsonl``. Deliberate false negatives
-  (dataflow through other variable names, shell heredocs) are documented
+  ``events.jsonl``/``comments.jsonl``/``concerns.jsonl``; (e) a
+  ``read_text``-bearing receiver chain in a module that
+  ``glob``/``rglob``/``iglob``-s a ``jsonl`` pattern (#1162, the #1132
+  generic-receiver evasion); (f) a bare-``Name`` receiver assigned earlier
+  in the same scope from a jsonl-evidenced ``read_text()`` expression
+  (#1162, the #1032 assignment-dataflow evasion). Deliberate false
+  negatives (path-variable dataflow in non-globbing modules,
+  cross-function/cross-scope dataflow, non-``read_text`` read channels,
+  shell heredocs) are documented
   in the check docstring — the gotchas.md entry carries those. Waive a
   genuinely-safe flagged site with ``# JSONL_SPLITLINES_EXEMPT: <reason>``
   (reason ≥ 10 chars) on the call's first physical line or the
@@ -1168,6 +1175,13 @@ JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS = 10
 # verify_task_body.py check-14 reader shape fixed in #950 round 2).
 JSONL_NAME_TOKEN_RE = re.compile(r"jsonl", re.IGNORECASE)
 JSONL_EVENTS_PATH_NAME_RE = re.compile(r"^(ev(ents)?|concerns)_path$", re.IGNORECASE)
+# Signal (e) gate (#1162): a module-level glob/rglob/iglob call (method or
+# bare function) whose pattern argument mentions "jsonl" widens the per-node
+# predicate to ANY read_text-bearing splitlines receiver in that module (the
+# #1132 sweep_parked_wf_candidates.py evasion: a *.jsonl-globbing module's
+# helpers reading the globbed files through generically-named
+# variables/parameters).
+JSONL_GLOB_FUNC_NAMES = frozenset({"glob", "rglob", "iglob"})
 # Grandfathered legacy `.splitlines()`-on-JSONL sites — repo-root-relative
 # POSIX FILE paths (file-level, not line-keyed — line keys rot; these are
 # frozen per-issue experiment scripts of terminal/near-terminal tasks reading
@@ -4038,12 +4052,132 @@ def _jsonl_fn_scoped_splitlines_ids(tree: ast.AST) -> set[int]:
     return fn_scoped
 
 
-def _jsonl_splitlines_signal(node: ast.Call, text: str, fn_scoped: set[int]) -> str | None:
-    """Classify one ``.splitlines()`` call against the four #950 signals.
+def _module_globs_jsonl(tree: ast.AST) -> bool:
+    """Signal (e) gate (#1162): True iff the module contains a
+    ``glob``/``rglob``/``iglob`` call (method or bare function) whose pattern
+    argument — positional or keyword, plain str constant or an f-string
+    constant fragment — mentions ``jsonl`` case-insensitively
+    (``tasks_root.glob("*/*/events.jsonl")``, ``root.glob(f"{stem}.jsonl")``).
+    """
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if isinstance(node.func, ast.Attribute):
+            name = node.func.attr
+        elif isinstance(node.func, ast.Name):
+            name = node.func.id
+        else:
+            continue
+        if name not in JSONL_GLOB_FUNC_NAMES:
+            continue
+        for arg in [*node.args, *(kw.value for kw in node.keywords)]:
+            frags = list(arg.values) if isinstance(arg, ast.JoinedStr) else [arg]
+            for frag in frags:
+                if (
+                    isinstance(frag, ast.Constant)
+                    and isinstance(frag.value, str)
+                    and JSONL_NAME_TOKEN_RE.search(frag.value)
+                ):
+                    return True
+    return False
+
+
+def _enclosing_scope_map(tree: ast.AST) -> dict[int, int | None]:
+    """``id(node)`` -> ``id()`` of the innermost enclosing
+    ``FunctionDef``/``AsyncFunctionDef`` (None = module scope). A def node
+    itself belongs to its OUTER scope; its body belongs to it."""
+    scope_of: dict[int, int | None] = {id(tree): None}
+
+    def _visit(node: ast.AST, scope: int | None) -> None:
+        for child in ast.iter_child_nodes(node):
+            scope_of[id(child)] = scope
+            if isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
+                _visit(child, id(child))
+            else:
+                _visit(child, scope)
+
+    _visit(tree, None)
+    return scope_of
+
+
+def _jsonl_assigned_splitlines_ids(tree: ast.AST, text: str) -> dict[int, str]:
+    """Signal (f) pre-pass (#1162): map ``id()`` of every ``.splitlines()``
+    call whose receiver is a bare ``ast.Name`` assigned EARLIER IN THE SAME
+    SCOPE from a ``read_text()``-bearing expression carrying jsonl evidence —
+    the RHS source segment matches :data:`JSONL_NAME_TOKEN_RE` OR its chain
+    base ``Name`` matches :data:`JSONL_EVENTS_PATH_NAME_RE` (the #1032
+    ``ev = events_path.read_text()`` shape) — to a human-readable signal
+    label. Deliberately bounded: single-step, same-scope (module top-level is
+    one scope; closures/nested defs are separate scopes), no re-assignment
+    analysis, ``Assign``/``AnnAssign`` single-``Name`` targets only.
+    Performance: ``ast.get_source_segment`` (O(file) per call) runs ONLY for
+    assignments whose (scope, name) matches a bare-Name splitlines receiver
+    AND whose RHS contains ``read_text``.
+    """
+    bare_name_calls = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "splitlines"
+        and isinstance(node.func.value, ast.Name)
+    ]
+    if not bare_name_calls:
+        return {}
+    scope_of = _enclosing_scope_map(tree)
+    receivers: dict[tuple[int | None, str], list[tuple[int, int]]] = {}
+    for node in bare_name_calls:
+        key = (scope_of.get(id(node)), node.func.value.id)  # type: ignore[union-attr]
+        receivers.setdefault(key, []).append((node.lineno, id(node)))
+    out: dict[int, str] = {}
+    for assign in ast.walk(tree):
+        if isinstance(assign, ast.Assign):
+            if len(assign.targets) != 1 or not isinstance(assign.targets[0], ast.Name):
+                continue
+            target_name = assign.targets[0].id
+            value = assign.value
+        elif isinstance(assign, ast.AnnAssign):
+            if not isinstance(assign.target, ast.Name) or assign.value is None:
+                continue
+            target_name = assign.target.id
+            value = assign.value
+        else:
+            continue
+        key = (scope_of.get(id(assign)), target_name)
+        if key not in receivers:
+            continue
+        if not _chain_has_read_text(value):
+            continue
+        segment = ast.get_source_segment(text, value)
+        base = _chain_base_name(value)
+        if not (
+            (segment is not None and JSONL_NAME_TOKEN_RE.search(segment))
+            or (base is not None and JSONL_EVENTS_PATH_NAME_RE.match(base))
+        ):
+            continue
+        for call_lineno, call_id in receivers[key]:
+            if assign.lineno < call_lineno:
+                out[call_id] = f"read_text-assigned jsonl-content receiver ('{target_name}')"
+    return out
+
+
+def _jsonl_splitlines_signal(
+    node: ast.Call,
+    text: str,
+    fn_scoped: set[int],
+    assigned: dict[int, str],
+    module_globs_jsonl: bool,
+) -> str | None:
+    """Classify one ``.splitlines()`` call against the six #950/#1162 signals.
 
     Returns a human-readable signal label when the call reads JSONL content
     (see :func:`check_jsonl_splitlines` for the signal definitions), else
-    None. A per-node ``ast.get_source_segment(...) is None`` only makes the
+    None. ``assigned`` is the per-file signal-(f) pre-pass map
+    (:func:`_jsonl_assigned_splitlines_ids`); ``module_globs_jsonl`` is the
+    per-file signal-(e) gate (:func:`_module_globs_jsonl`). Precedence:
+    (a)-(d) unchanged, then (f), then (e) — most-specific label first; a node
+    matching several signals yields exactly one error. A per-node
+    ``ast.get_source_segment(...) is None`` only makes the
     segment-dependent predicates (a)/(d-literal) non-matching for the node.
     """
     receiver = node.func.value  # type: ignore[attr-defined]
@@ -4064,6 +4198,10 @@ def _jsonl_splitlines_signal(node: ast.Call, text: str, fn_scoped: set[int]) -> 
         )
     ):
         return "events/comments/concerns-path read_text chain"
+    if id(node) in assigned:  # (f)
+        return assigned[id(node)]
+    if module_globs_jsonl and has_read:  # (e) — most generic, last
+        return "generic read_text().splitlines() in a *.jsonl-globbing module"
     return None
 
 
@@ -4106,11 +4244,49 @@ def check_jsonl_splitlines(*, scan_roots: tuple[Path, ...] | None = None) -> lis
       shapes of the #950 sibling workflow readers (the round-1
       ``events.jsonl`` siblings + the round-2 ``verify_task_body.py``
       check-14 ``concerns.jsonl`` reader), which evade (a)-(c).
+    * **(e) glob-gated generic-receiver signal (#1162):** the receiver chain
+      contains a ``read_text`` call AND the module contains a
+      ``glob``/``rglob``/``iglob`` call (method or bare function) whose
+      pattern argument — positional or keyword, plain str constant or an
+      f-string constant fragment — mentions ``jsonl`` (the #1132
+      ``sweep_parked_wf_candidates.py`` shapes: a ``*.jsonl``-globbing
+      module's helpers reading the globbed files through generically-named
+      variables/parameters, which evade (a)-(d)).
+    * **(f) assignment-tracking signal (#1162):** the receiver is a bare
+      ``ast.Name`` assigned earlier in the SAME function scope (module
+      top-level counts as one scope) from a ``read_text()``-bearing
+      expression whose source segment mentions ``jsonl`` or whose chain base
+      matches the events-path regex (the #1032 ``verify_plan.py``
+      ``ev = events_path.read_text(...)`` shape, which evades (a)-(e) in a
+      non-globbing module). Single-step, same-scope, no re-assignment
+      analysis, ``Assign``/``AnnAssign`` single-``Name`` targets only.
 
     Deliberate false negatives (accepted; the gotchas.md entry + code review
-    carry them): dataflow through a non-jsonl, non-events-named variable
-    (``out_path = ... / "x.jsonl"`` … ``out_path.read_text().splitlines()``)
-    and python-in-shell heredocs (``.sh`` files are not AST-scannable).
+    carry them — each re-affirmed against the 2026-07-09 live enumeration in
+    the #1162 plan §4.6):
+
+    1. **Path-variable dataflow in a NON-globbing module**
+       (``out_path = d / "x.jsonl"`` … ``out_path.read_text().splitlines()``
+       where the module never globs ``*.jsonl``): 16 live sites in 7 files,
+       ALL frozen per-issue experiment scripts (zero on the workflow
+       surface); adopting the shape would force ~7 allowlist additions plus
+       a loosening of the ALLOWLIST_SHAPE_RE hard rule. In a globbing
+       module, signal (e) covers the shape.
+    2. **Cross-function dataflow in a non-globbing module** (path/text
+       passed as a parameter) and **cross-scope assignment** (closures;
+       signal (f) is same-scope only).
+    3. **Re-assignment blindness** (a false-POSITIVE note, not a negative):
+       signal (f) does no kill analysis — a name re-assigned to non-JSONL
+       content after an evidenced assignment still flags; the waiver is the
+       escape.
+    4. **Non-``read_text`` read channels** (all six signals key on
+       ``read_text`` in the receiver/RHS chain):
+       ``open(path).read().splitlines()`` and
+       ``path.read_bytes().decode(...).splitlines()`` evade every signal
+       even in a globbing module. (Text-mode ``Path.open()`` / ``open()``
+       line ITERATION is SAFE — universal newlines only — and is the
+       recommended fix, not an evasion.)
+    5. **Shell heredocs** (``.sh`` files are not AST-scannable).
 
     Unparseable files: a ``SyntaxError`` (does not parse) or
     ``UnicodeDecodeError`` (non-UTF-8) file is SKIPPED without failing the
@@ -4162,6 +4338,25 @@ def check_jsonl_splitlines(*, scan_roots: tuple[Path, ...] | None = None) -> lis
                 continue
             lines = text.split("\n")
             fn_scoped = _jsonl_fn_scoped_splitlines_ids(tree)
+            # Perf gates (#1162 acceptance 9 — the ≤40s no-flags wall budget):
+            # the (e)/(f) pre-passes each walk the whole AST, so skip them on
+            # files that cannot match. Each gate is a NECESSARY textual
+            # condition: a `.splitlines()` attribute call, a `read_text`
+            # attribute in an assignment RHS, and a glob/rglob/iglob call
+            # with a jsonl-bearing pattern constant all require their literal
+            # tokens verbatim in the source text (dynamic getattr shapes are
+            # invisible to the AST predicates anyway).
+            has_splitlines = "splitlines" in text
+            assigned = (
+                _jsonl_assigned_splitlines_ids(tree, text)
+                if has_splitlines and "read_text" in text
+                else {}
+            )
+            module_globs = (
+                _module_globs_jsonl(tree)
+                if has_splitlines and "glob" in text and JSONL_NAME_TOKEN_RE.search(text)
+                else False
+            )
             for node in ast.walk(tree):
                 if not (
                     isinstance(node, ast.Call)
@@ -4169,7 +4364,7 @@ def check_jsonl_splitlines(*, scan_roots: tuple[Path, ...] | None = None) -> lis
                     and node.func.attr == "splitlines"
                 ):
                     continue
-                signal = _jsonl_splitlines_signal(node, text, fn_scoped)
+                signal = _jsonl_splitlines_signal(node, text, fn_scoped, assigned, module_globs)
                 if signal is None:
                     continue
                 if _jsonl_splitlines_waiver_present(lines, node.lineno):
@@ -7887,9 +8082,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "--check-jsonl-splitlines",
         action="store_true",
         help="AST-walk scripts/**/*.py + src/explore_persona_space/**/*.py and "
-        "FAIL any .splitlines() call reading JSONL content (4 signals: "
+        "FAIL any .splitlines() call reading JSONL content (6 signals: "
         "jsonl-named read_text chain / jsonl-named receiver / jsonl-named "
-        "enclosing function / events-comments-path read_text chain). "
+        "enclosing function / events-comments-path read_text chain / "
+        "glob-gated generic read_text receiver / read_text-assigned "
+        "receiver). "
         "splitlines() splits on raw U+2028/U+2029/NEL inside "
         "ensure_ascii=False JSON strings and shreds valid records (#825/#950); "
         "use split('\\n') or text-mode file iteration. Waive with "
