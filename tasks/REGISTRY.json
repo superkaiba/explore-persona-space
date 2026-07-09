@@ -1202,8 +1202,8 @@
     "1154": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1154",
-      "status": "reviewing",
+      "path": "tasks/completed/1154",
+      "status": "completed",
       "title": "workflow-fix: lint: marker-recipe doc numeric snippets match"
     },
     "1155": {
