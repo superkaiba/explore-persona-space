@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1209,
+  "highest_id": 1210,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1639,6 +1639,13 @@
       "path": "tasks/archived/121",
       "status": "archived",
       "title": "Any LoRA SFT destroys persona-specific marker coupling; EM is not special \u2014 no transfer in either direction (HIGH confidence)"
+    },
+    "1210": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1210",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d re-snapshots Guard-1 strip on merge conf"
     },
     "122": {
       "has_clean_result": true,
