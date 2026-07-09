@@ -3852,6 +3852,12 @@ milestone marker like `phase: post_eval`, update the local
 `current_phase` from the milestone before the next tick so the title
 reflects the latest phase.)
 
+The top-of-tick `set_title` refresh plus the ≤30-min clamped interval
+discharge the § Long-phase heartbeat duty (below) for this loop by
+construction; any wait run OUTSIDE this loop shape — a `Monitor`
+until-loop on a VM phase, an ad-hoc bg poll chain, an off-pod Batch-API
+poll — carries that duty explicitly.
+
 The `poll_pipeline.py` helper posts `epm:progress` events itself when it
 sees a phase transition, AND drains pod-side sentinel files (posting
 their carried markers from the VM via `task_workflow.post_event`). The
@@ -4076,10 +4082,13 @@ starting the bg-Bash poll:
    fails loud NOW rather than silently stacking a duplicate cron on
    every subsequent re-entry.
 
-Then proceed to the polling loop. Auto-arming is required ONLY for
+Then proceed to the polling loop. Auto-arming HERE is required ONLY for
 pod-backed `kind: experiment` runs reaching Step 6d.2;
-`kind: analysis|infra|batch|survey` and follow-up paths that never enter
-the polling loop do NOT arm it.
+`kind: analysis|infra|batch|survey` paths that never enter the polling
+loop do NOT arm it here. A same-issue follow-up round is NOT exempt —
+it arms at its OWN entry (Step 9b § Loop liveness backstop / the C3 +
+step-6 re-arm), and one that reaches this polling loop re-arms via the
+ARM-GUARD (a no-op when already armed).
 
 **CRON-TEARDOWN procedure (run INLINE at every terminal / park exit site,
 not only here in prose) — hardened 2026-06-12; widened + idempotent
@@ -4208,6 +4217,68 @@ spawned as a long-lived background process writing to
 polling loop; it is NOT the backstop here. See "Notes on the
 obsolete monitoring stack" below for the single source of truth on
 which mechanisms are live vs retired.
+
+**Long-phase heartbeat duty (BINDS every >60-min quiet stretch — ALL
+loops, BOTH session modes; #1207, incidents #1092/#825/#1112
+2026-07-08).** Nothing external refreshes a session's liveness signals
+between status transitions: the tick skill no longer touches the
+self-report (issue-tick SKILL.md § "Title refresh — moved to the
+watcher") and the watcher's reconcile is status-transition-keyed by
+design. So during any stretch where THIS session awaits work and
+>60 min could elapse without a turn that posts a non-watcher marker —
+an ad-hoc bg-Bash poll chain, a `Monitor` until-loop, a
+deadline-bounded Batch-API poll, a detached VM phase (§ "Detached
+VM-side long compute phases", Step 9 entry guard), or any
+follow-up-round wait at `followups_running` — the orchestrator carries
+BOTH duties below. (The Step 6d.2 polling loop above discharges them by
+construction: the top-of-tick `set_title` refresh + the ≤30-min clamped
+tick interval. The duty is for every wait that is NOT that loop. A long
+FOREGROUND subagent wait is a named out-of-scope shape — no resumable
+orchestrator turn exists there to discharge the duty; the watcher's K=2
+live-escalation debounce covers it.)
+
+1. **Structure the wait so a turn resumes at least every ~45 min.**
+   Cap any single blocking wait at ≤45 min — chain bg-Bash sleeps /
+   segment a `Monitor` until-loop
+   (`until <check> || [ $(elapsed) -gt 2700 ]; …`) rather than arming
+   one silent multi-hour wait. A single 4-h until-loop (#1092,
+   2026-07-08) leaves zero heartbeat opportunities: the watcher's
+   90-min exemption leash (`LONG_PHASE_HEARTBEAT_FRESH_S`, sized as a
+   ~60-min cadence + 30-min slack) lapses mid-wait no matter what was
+   posted before entering it. 45 min matches the `*/45` tick cadence
+   and keeps every resume inside the 60-min self-report window
+   (`STALLED_WINDOW_S`).
+2. **At each resume ≥~45-60 min into the phase (a ~60-min heartbeat
+   cadence): verify, then heartbeat + refresh.** (i) VERIFY the awaited
+   work is alive with cheap evidence — `ps -p <pid> -o args=` identity
+   match, breadcrumb `log=` mtime advanced, a Batch-API status read, a
+   poll-tick JSON line; (ii) post the heartbeat marker, evidence in the
+   note:
+
+       uv run python scripts/task.py post-marker <N> epm:progress \
+         --note "[long-phase-heartbeat] <phase>: <one-line evidence, e.g. pid 12345 alive, log +3 lines>"
+
+   (iii) refresh the self-report:
+   `uv run python scripts/session_progress_report.py --issue <N> --step "<phase>"`.
+   The two writes refresh BOTH staleness signals — the sparing is never
+   the 90-min leash alone: the marker buys the stalled-detector leash
+   (`autonomous_session_watch._long_phase_heartbeat_reason`) AND
+   converts `tick_triage.py`'s STALE-REDRIVE to HEALTHY (#1051), while
+   the self-report refresh keeps signal 1 (`STALLED_WINDOW_S`) fresh so
+   the detector never reaches the exemption probe at all. NEVER
+   heartbeat blind: if the verify FAILS (pid gone, log frozen, batch
+   errored), do NOT post a heartbeat — run the failure path (crash-fix
+   routing / `epm:failure`). A heartbeat without evidence shields a
+   dead phase from recovery for up to 90 min and is the banned inverse
+   of the false-respawn this duty prevents. (Pid-bearing detached-phase
+   breadcrumbs stay authoritative over heartbeat notes — tick_triage
+   #1051.)
+
+Revival trigger for the deferred watcher-side option (b) (#1207
+§11-R4): a STALLED-DETECTOR-lane force-respawn of a session carrying a
+fresh (<90-min) heartbeat is the recorded evidence that emitter-side
+duty is insufficient — a wedge-lane respawn of a duty-compliant session
+is by design (#1127) and does NOT count.
 
 ##### Step 6d.3: On `status=done`
 
@@ -5653,7 +5724,10 @@ with `[long-phase-heartbeat]` — the watcher's stalled detector AND
 probes the breadcrumb's `pid=` (a VM-LOCAL pid, start-time identity-guarded
 — never post a pod-side pid in a `stage-dispatch` breadcrumb) before any
 STALE-REDRIVE, and while that pid breadcrumb is in flight the pid evidence
-OVERRULES heartbeat notes.
+OVERRULES heartbeat notes. (This convention is the detached-phase
+instance of the § Long-phase heartbeat duty, Step 6d.2 — the ≤45-min
+resume structure, the verify-first ban, and the self-report refresh
+there bind here too.)
 
 **Checkable guard rule (run at Step 9 / Step 8 entry on every
 re-invocation).**
@@ -7030,10 +7104,17 @@ C3. **Dispatch the round.** If a candidate survives C1+C2, post
    `est_gpu_hours`) and enter the **same-issue follow-up loop** below
    INSTEAD of parking — the task leaves `awaiting_promotion` and
    re-enters at `followups_running` (tag `followup-auto`). Skip the
-   PushNotification → chat prompt → CRON-TEARDOWN park flow this round
-   (the backstop cron stays armed and drives the loop; an INTERACTIVE
-   session must arm it first per the loop's "Interactive liveness
-   backstop"). The plan still passes through the Step 2c plan-approval
+   PushNotification → chat prompt park flow this round — but FIRST
+   re-arm the `/issue-tick` backstop: CRON-TEARDOWN already ran at the
+   `awaiting_promotion` transition at the top of this Step 9b, so NO
+   cron is armed here, in EITHER session mode (incident #1112,
+   2026-07-08: a cheap-band round launched a multi-hour run with no
+   tick armed). BEFORE dispatching any loop work, run the Step 6d.2
+   ARM-GUARD shape — `CronList` whole-string match, else
+   `CronCreate(cron="*/45 * * * *", prompt="/issue-tick <N>",
+   recurring=True, durable=False)`, then re-list and assert exactly
+   one — per the loop's "Loop liveness backstop"
+   below. The plan still passes through the Step 2c plan-approval
    gate inside the loop — an over-cap (`est_gpu_hours` mis-estimated low
    but the realized plan exceeds `EPM_PLAN_AUTOAPPROVE_GPU_HOURS`) plan
    parks IN PLACE at `followups_running` (autonomous) or asks
@@ -7056,8 +7137,9 @@ cheap-band block above has had first refusal).** When
 `awaiting_promotion` and Step 10 / 10b never fire on their own
 (promotion is ALWAYS human-only). To stop autonomous research from
 stalling on every result, the orchestrator fires the follow-up proposer
-HERE — after the auto-merge has landed the clean-result on `main`, and
-before CRON-TEARDOWN — and routes the `auto_run: yes` proposals by
+HERE — after the auto-merge has landed the clean-result on `main` (the
+Step 9b CRON-TEARDOWN already ran at the `awaiting_promotion`
+transition above) — and routes the `auto_run: yes` proposals by
 `question_relation` (QUESTION IDENTITY — one mechanism, three entry
 points; the other two are the Step 0 followup-scope dispatch for
 chat-requested follow-ups and the interactive Step 10b pick):
@@ -7216,7 +7298,10 @@ The autonomous flow:
    `awaiting_promotion` and re-enters the pipeline at
    `followups_running`, so skip the
    PushNotification → chat prompt → CRON-TEARDOWN park flow this
-   round (the backstop cron stays armed; it drives the loop).
+   round (re-arm the `/issue-tick` backstop cron FIRST via the Step
+   6d.2 ARM-GUARD shape — the Step 9b CRON-TEARDOWN at the
+   `awaiting_promotion` transition already removed it; see the loop's
+   "Loop liveness backstop").
    Otherwise continue to the existing park flow below
    (PushNotification → chat prompt → CRON-TEARDOWN → §5 marker via
    `post_step_completed.py --step 9a-bis --exit-kind parked` → EXIT).
@@ -7257,12 +7342,17 @@ inline, this loop handles the GPU-backed case (the cheap `< 20` GPU-h
 band auto-runs in both modes; the expensive band auto-runs only in
 autonomous mode or on an explicit user pick).
 
-**Interactive liveness backstop (arm BEFORE dispatching loop work).**
-An INTERACTIVE (non-autonomous) session driving this loop — typically
-entry point (b), a chat session — must arm the `/issue-tick <N>`
-backstop cron (same `CronList`/`CronCreate` ARM-GUARD shape as Step 0 /
-Step 6d.2) before dispatching its first planner / implementer / stage
-subagent, and must post every stage-dispatch breadcrumb
+**Loop liveness backstop (arm BEFORE dispatching loop work — BOTH session modes).**
+ANY session driving this loop — interactive (typically entry point (b),
+a chat session) OR autonomous (the Step 9b C3 cheap-band / step-6
+expensive-band dispatches, where the `awaiting_promotion` CRON-TEARDOWN
+has already removed the Step 0 arm) — must verify/arm the
+`/issue-tick <N>` backstop cron (same `CronList`/`CronCreate` ARM-GUARD
+shape as Step 0 / Step 6d.2; a no-op when already armed) before
+dispatching its first planner / implementer / stage subagent. While
+loop work waits on any long phase, the § Long-phase heartbeat duty
+(Step 6d.2) binds. An INTERACTIVE session must additionally post every
+stage-dispatch breadcrumb
 (`stage=followup-<phase>`, Step 9 entry-guard convention) with the
 `worktree=` field **and a `label=<followup_label>` field naming the
 round's label** (consumed by `task_workflow.executing_followup_label`
