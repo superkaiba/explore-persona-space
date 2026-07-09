@@ -15,7 +15,9 @@
 # (`git merge <ref>`) is in the same destructive class (#1128): a conflicting
 # merge strands conflict markers in the shared tree until aborted, and even a
 # clean/ff merge lands branch commits on root main outside the sanctioned
-# landing path (gh pr merge / scratch worktree).
+# landing path (gh pr merge / scratch worktree). A root REBASE / CHERRY-PICK
+# (#1193) is the same class — conflict state stranded in the shared tree,
+# history rewritten under concurrent committers.
 #
 # Incident 2026-06-01: an infra session ran `git checkout -b fix/sweep-ckpt-persist`
 # in the repo root; a concurrent marker-leakage session's CLAUDE.md commit then
@@ -73,11 +75,12 @@
 # `task.py post-marker <N> epm:X --note "... git switch ..."` is blocked
 # because the note text matches `git ... switch`, and a note/-m string
 # carrying a full `git restore .` / `git clean -fd` / `git reset --hard` /
-# `git merge <branch>` (#1128) command literal trips the #897/#1128 detectors
+# `git merge <branch>` (#1128) / `git rebase <branch>` / `git cherry-pick
+# <sha>` (#1193) command literal trips the #897/#1128/#1193 detectors
 # the same way. The workaround is to
 # pass such note text via `--file <path.md>` instead of `--note`, and commit
 # messages via `git commit -F <file>`. The `git -C <path>` per-clause waiver
-# is PATH-BLIND for merge exactly as for every fenced verb (#1128):
+# is PATH-BLIND for merge exactly as for every fenced verb (#1128/#1193):
 # `git -C <repo-root-path> merge <ref>` passes the hook (pre-existing
 # parity); the block message's "NEVER point -C at the repo root" line is the
 # stated control. One NARROWING of the raw scan (#1058):
@@ -296,17 +299,41 @@
 #       merge (the ungated equivalent of the blocked `git merge --continue`)
 #       — gating `commit` would fence the shared root's primary purpose, so
 #       this stays open by design. Sanctioned recovery for an in-progress
-#       root merge is `git merge --abort` (allowed). Also: a parenthesized
-#       NO-ARG `(git merge)` misses the trailing space/EOL anchor — a git
-#       usage error anyway ("fatal: No commit specified"), ~zero risk.
+#       root merge is `git merge --abort` (allowed). (#1193) `git commit`
+#       mid-conflicted root CHERRY-PICK completes the pick exactly as it
+#       completes a merge (the rebase analogue is moot — a conflicted rebase
+#       detaches HEAD, so the on-main gate already exits 0). Also: a
+#       parenthesized NO-ARG `(git merge)` misses the trailing space/EOL
+#       anchor — a git usage error anyway ("fatal: No commit specified"),
+#       ~zero risk.
 # (xvi) (#1128) Merge-SEMANTICS ops under other command words stay ungated:
 #       `git pull --no-rebase` / a config-override pull performs exactly the
 #       fenced merge (mitigated by the shared .git/config pins
 #       `pull.rebase=merges` + `rebase.autoStash=true`; root syncs route
-#       through sync_repo_root.py), and the rebase family (`git rebase
-#       <branch>`, `git cherry-pick`) mutates the root tree/history the
-#       same way. Different command words, outside this fence's Goal; a
-#       root-rebase fence is a separate workflow-fix candidate.
+#       through sync_repo_root.py). (#1193) The rebase family is now fenced
+#       by its own detectors below; `git pull --rebase[=merges]` (the
+#       sanctioned root-sync form) has command word `pull` and stays outside
+#       the tight anchors by design.
+# (xvii) (#1193) Rebase-family residuals: (a) `git revert` / `git am` remain
+#       ungated — the same conflict-stranding family, zero incident demand;
+#       a separate candidate if demanded. (b) The anchored PER-VERB allow-arm
+#       kills the immediate-flag spoof (pinned by tests R12/R13/CP9); the
+#       residual is the raw-scan parity class shared with the merge fence —
+#       the guard defends against accidents, not adversaries. (c) `git
+#       rebase -h` / `--help` at root false-blocks (parity with `git merge
+#       --help` today); remediation: `man git-rebase`, which stays allowed
+#       (`git-rebase` has no `git ` + space bigram). (d) The parenthesized
+#       NO-ARG `(git rebase)` slips the trailing space/EOL anchor, and the
+#       (xv) "(git merge) ~zero risk" rationale does NOT transfer verbatim —
+#       a bare rebase with a configured upstream genuinely RUNS; with-arg
+#       paren forms still block, so only the exact no-arg-inside-parens
+#       shape slips (~nil accident probability; named, not fixed).
+#       (e) `git -c <k=v> -C <worktree> rebase ...` false-blocks (the
+#       per-clause waiver requires `-C` immediately after `git`) — identical
+#       parity with merge/reset today. (f) The new verbs activate gap
+#       (xiv)'s piped-grep FP class (`grep 'git rebase ...' file | head`
+#       blocks now that the loose gates match the verbs; the non-piped grep
+#       clause stays waived — RA17).
 #
 # Compound-command parsing is a best-effort CLAUSE SPLIT (#804): the command is
 # split on `;` / `&&` / `||` / `|` / `&` / raw newline (two-char separators
@@ -514,13 +541,27 @@ strip_heredoc_bodies() {
 }
 cmd=$(strip_heredoc_bodies "$cmd")
 
-# Only consider git checkout/switch/restore/clean/reset/merge invocations at
-# all (loose pre-filter — a cheap skip, not a classifier; the tight per-verb
-# anchors live in classify_clause). `\bmerge\b` deliberately matches
-# `merge-base` here (the boundary fires before `-`) — harmless, the tight
-# #1128 detector never fires on it; it does NOT match `--rebase=merges` /
-# `mergetool` / `--merges` / `--merged` (no trailing boundary).
-echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset|merge)\b' || exit 0
+# Only consider git checkout/switch/restore/clean/reset/merge/rebase/
+# cherry-pick invocations at all (loose pre-filter — a cheap skip, not a
+# classifier; the tight per-verb anchors live in classify_clause).
+# `\bmerge\b` deliberately matches `merge-base` here (the boundary fires
+# before `-`) — harmless, the tight #1128 detector never fires on it; it does
+# NOT match `--rebase=merges` / `mergetool` / `--merges` / `--merged` (no
+# trailing boundary). (#1193) `\brebase\b` DOES match inside
+# `--rebase=merges` / `pull.rebase=merges` / `rebase.autoStash=true` (`-`,
+# `.`, `=` are non-word chars, so both boundaries fire) — harmless by the
+# same merge-base argument: the tight #1193 detector requires subcommand
+# position + a `( +|$)` verb terminator, so none of these can reach a block;
+# the shift is only WHICH exit path allows them (classifier instead of
+# pre-filter skip). `\bcherry-pick\b` does NOT match the ubiquitous prose
+# token `cherry-picked` (no trailing word boundary — `k` is followed by `e`),
+# so commit messages / marker notes carrying it never even pass the
+# pre-filter; it DOES match `git log --cherry-pick` (the boundary fires
+# between `-` and `c`) — harmless at the tight detector (`log` breaks the
+# subcommand chain). `git log --cherry` and the plumbing command `git cherry`
+# do not match the alternation at all (the literal requires the full
+# `cherry-pick`).
+echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset|merge|rebase|cherry-pick)\b' || exit 0
 
 # Split the raw command into (separator, next-separator, clause) TRIPLES,
 # PRESERVING which separator precedes each clause AND (#1098) which separator
@@ -708,6 +749,36 @@ classify_clause() {
       blocked="git merge (branch merge on the shared root)"
     fi
   fi
+
+  # ---- #1193 rebase-family fence (sibling of the #1128 merge fence) -------
+  # `git rebase <ref>` / `git cherry-pick <ref>` on the shared root: a
+  # conflicting run strands conflict state in the shared tree exactly like
+  # the #1090 root merge, and a clean run rewrites/lands commits on root
+  # main outside the sanctioned landing paths (gh pr merge --rebase /
+  # scratch worktree / sync_repo_root.py — a bare `git rebase` with a
+  # configured upstream genuinely RUNS, so end-of-clause blocks too).
+  # TIGHT anchor: verb followed by whitespace/end-of-clause — NOT `\b`,
+  # which fires before `.`/`=` and would trip `git -c rebase.autoStash=true
+  # pull` at flag-value position. Allow-arm mirrors #1128: --abort/--quit
+  # IMMEDIATELY after the verb (sanctioned recovery; fail-soft), ONE ARM PER
+  # VERB — a combined `(rebase|cherry-pick)` allow would open a cross-verb
+  # quoted-arg spoof (a quoted argument naming the OTHER verb + --abort
+  # would satisfy it while the real verb runs). BLOCKED fail-closed:
+  # --continue and --skip (both COMPLETE the in-progress operation on the
+  # root tree — the M5 decision, mirrored; recovery is abort). Note `git
+  # pull --rebase[=merges]` never reaches this anchor: its subcommand is
+  # `pull` (the sanctioned root-sync form stays open).
+  if echo "$c" | grep -qE '\bgit +(-[^ ]+( +[^ ]+)?( +|$))*rebase( +|$)'; then
+    if ! echo "$c" | grep -qE '\brebase +--(abort|quit)\b'; then
+      blocked="git rebase (history rewrite on the shared root)"
+    fi
+  fi
+  if echo "$c" | grep -qE '\bgit +(-[^ ]+( +[^ ]+)?( +|$))*cherry-pick( +|$)'; then
+    if ! echo "$c" | grep -qE '\bcherry-pick +--(abort|quit)\b'; then
+      blocked="git cherry-pick (commit replay onto the shared root)"
+    fi
+  fi
+  # ---- end #1193 rebase-family fence ---------------------------------------
   # ---- end #897 detectors ------------------------------------------------
 
   # git checkout <existing-branch>  — NOT a pathspec form (no `--`; those are
@@ -902,9 +973,12 @@ while IFS=$'\t' read -r sep nextsep clause; do
   # `git -C <path>` scopes ONLY this clause (per-invocation) — allow it.
   echo "$clause" | grep -qE '\bgit +-C +' && continue
 
-  # not a git checkout/switch/restore/clean/reset/merge clause at all -> skip
-  # (loose gate — a cheap skip; the tight anchors live in classify_clause)
-  echo "$clause" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset|merge)\b' || continue
+  # not a git checkout/switch/restore/clean/reset/merge/rebase/cherry-pick
+  # clause at all -> skip (loose gate — a cheap skip; the tight anchors live
+  # in classify_clause; kept in sync with the whole-command pre-filter above,
+  # whose comment carries the per-verb boundary analysis incl. the #1193
+  # rebase/cherry-pick notes)
+  echo "$clause" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset|merge|rebase|cherry-pick)\b' || continue
 
   # (#1098) ssh REMOTE-COMMAND / grep-family PATTERN-ARGUMENT clause waiver.
   # An `ssh <host> '<remote cmd>'` clause executes its command string on the
@@ -1039,12 +1113,12 @@ done < <(split_and_label "$cmd")
 cur=$(git -C "$REPO" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
 [ "$cur" = main ] || exit 0
 
-echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree state. The repo root is the canonical commit target for scripts/task.py and every concurrent VM session (all assume HEAD==main); a branch switch here hijacks concurrent commits, and a working-tree revert (restore / checkout-pathspec / clean -f / reset --hard) silently discards CONCURRENT sessions' uncommitted edits (incidents 2026-06-01, #815, #841), and a branch MERGE here can strand conflict markers in the shared tree that a concurrent commit sweeps (#1090). Do branch/destructive work in a worktree instead:
+echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree state. The repo root is the canonical commit target for scripts/task.py and every concurrent VM session (all assume HEAD==main); a branch switch here hijacks concurrent commits, and a working-tree revert (restore / checkout-pathspec / clean -f / reset --hard) silently discards CONCURRENT sessions' uncommitted edits (incidents 2026-06-01, #815, #841), and a branch MERGE here can strand conflict markers in the shared tree that a concurrent commit sweeps (#1090), and a REBASE / CHERRY-PICK here mutates root history or strands the same conflict state (#1193). Do branch/destructive work in a worktree instead:
   bash scripts/new_worktree.sh .claude/worktrees/<name> <branch> && git -C .claude/worktrees/<name> ...
 NEVER point -C at the repo root itself for a destructive op — for repo-root recovery use: uv run python scripts/sync_repo_root.py
 This guard matches COMMAND TEXT, not cwd — a worktree-internal op after 'cd <worktree>' in a compound is still blocked; use the git -C <worktree> form instead of cd'ing (incident #1143, 2026-07-08).
 To LAND a branch onto main: gh pr merge <PR> --rebase (server-side, the /issue Step 10d path), or a scratch worktree: git worktree add --detach /tmp/<name> origin/main && git -C /tmp/<name> merge <branch> && git -C /tmp/<name> push origin HEAD:main.
-To recover an in-progress root merge: git merge --abort (allowed). For a worktree fast-forward: git -C <worktree> merge --ff-only main.
+To recover an in-progress root merge/rebase/cherry-pick: git merge --abort / git rebase --abort / git cherry-pick --abort (all allowed; --quit likewise). For a worktree fast-forward: git -C <worktree> merge --ff-only main.
 For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>.
 NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
 For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098); a multi-statement remote string mis-splits — put git -C /workspace/<repo> <verb> inside the remote string, or use a pod-side script / the SSH MCP." >&2
