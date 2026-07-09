@@ -4351,7 +4351,9 @@ def test_render_startup_script_diagnostics_is_guarded_and_bounded() -> None:
     ret_idx = script.index("return 0;", skip_idx)
     assert guard_idx < skip_idx < ret_idx
     # Hard time bound on the upload so a hung HF call can't strand the VM.
-    assert "timeout 300 uv run python" in script
+    # #1151: --no-sync removes uv's lock-check / re-sync network exposure
+    # from the trap-time budget (the env was already synced by the boot).
+    assert "timeout 300 uv run --no-sync python" in script
     # The trap body runs under set +e (non-aborting), so a failing upload
     # command cannot abort the trap before shutdown.
     trap_line = next(line for line in script.splitlines() if line.startswith("trap 'rc=$?"))
@@ -4370,6 +4372,10 @@ def test_render_startup_script_diagnostics_present_on_both_branches() -> None:
     for script in (hydra, workload):
         assert "_eps_persist_diagnostics() {" in script
         assert '_eps_persist_diagnostics "$rc"' in script
+        # #1151: the eps/persist breadcrumb helper + boot-time clear ride the
+        # same shared preamble/env block on both branches.
+        assert "_eps_persist_status() {" in script
+        assert script.count("instance/guest-attributes/eps/persist") == 2
 
 
 def test_render_startup_script_is_valid_bash() -> None:
@@ -4519,6 +4525,21 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         "                  repo_type=repo_type, nbytes=os.path.getsize(path_or_fileobj))\n"
         "    def upload_folder(self, *, folder_path, path_in_repo, repo_id, repo_type,\n"
         "                      ignore_patterns=None):\n"
+        "        # #1151: fail-injection knob — raise on the first N folder calls\n"
+        "        # (counted in a sidecar file) so the first-bundle ONE-retry\n"
+        "        # behavior is executable-testable.\n"
+        "        fail_times = int(os.environ.get('FAKE_HUB_FOLDER_FAIL_TIMES', '0'))\n"
+        "        if fail_times:\n"
+        "            cpath = os.environ['FAKE_HUB_CALLS'] + '.failcount'\n"
+        "            n = 0\n"
+        "            if os.path.exists(cpath):\n"
+        "                with open(cpath) as fh:\n"
+        "                    n = int(fh.read() or 0)\n"
+        "            if n < fail_times:\n"
+        "                with open(cpath, 'w') as fh:\n"
+        "                    fh.write(str(n + 1))\n"
+        "                self._rec('folder_fail', path_in_repo=path_in_repo)\n"
+        "                raise RuntimeError('fake 504')\n"
         "        # Walk the staged tree AT CALL TIME (#885): record every staged\n"
         "        # relpath, with raw content for small files (else the size) so the\n"
         "        # tail-sentinel / newest-first behavioral asserts can read what was\n"
@@ -4586,6 +4607,10 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
             # production default is the shared literal /tmp/eps-worker-logs,
             # which concurrent pytest sessions on this shared VM would race.
             "EPS_PERSIST_LOG_STAGE_DIR": str(tmp_path / "staged-worker-logs"),
+            # #1151: same isolation for the first/final bundle staging dirs
+            # (production defaults are shared /tmp literals).
+            "EPS_PERSIST_FIRST_STAGE_DIR": str(tmp_path / "staged-first"),
+            "EPS_PERSIST_FINAL_STAGE_DIR": str(tmp_path / "staged-final"),
         }
     )
     env.update(env_overrides or {})
@@ -4605,30 +4630,34 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
 
 def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     """#854 behavioral (execution, not string-presence): the REAL heredoc,
-    run exactly as production runs it, uploads crash_report → workload.log
-    → worker_logs (one staged-tree commit, #885) → eval_results dir →
-    data dirs → timestamped log copy → transcript, passes the cache
-    excludes to upload_folder, prunes nested caches from the dir stats,
-    and exits 0."""
+    run exactly as production runs it, uploads the first bundle
+    (crash_report + workload.log, ONE staged commit — #1151) → worker_logs
+    (one staged-tree commit, #885) → eval_results dir → data dirs → the
+    final bundle (timestamped log copy + transcript, ONE staged commit —
+    #1151), passes the cache excludes to upload_folder, prunes nested
+    caches from the dir stats, and exits 0 with ZERO per-file upload_file
+    calls (the #664 pre-check stall class)."""
     proc, calls, paths = _run_persist_heredoc(tmp_path)
     assert proc.returncode == 0, proc.stderr
     seq = [(c["kind"], c["path_in_repo"]) for c in calls]
-    assert seq[0] == ("file", "issue137_partial/att-x/crash_report.json")
-    assert seq[1] == ("file", "issue137_partial/att-x/workload.log")
-    assert seq[2] == ("folder", "issue137_partial/att-x/worker_logs")
-    assert seq[3] == ("folder", "issue137_partial/att-x/eval_results_issue_137")
-    assert seq[4] == ("folder", "issue137_partial/att-x/data_issue_137")
-    assert seq[5] == ("folder", "issue137_partial/att-x/data_issue137")
-    assert (
-        re.fullmatch(r"issue137_partial/att-x/workload_\d{8}T\d{6}Z\.log", seq[6][1])
-        and seq[6][0] == "file"
-    )
-    assert seq[7] == ("file", "issue137_partial/att-x/crash_persist_transcript.log")
-    assert len(seq) == 8, seq
+    assert seq[0] == ("folder", "issue137_partial/att-x")
+    assert sorted(calls[0]["staged"]) == ["crash_report.json", "workload.log"]
+    assert seq[1] == ("folder", "issue137_partial/att-x/worker_logs")
+    assert seq[2] == ("folder", "issue137_partial/att-x/eval_results_issue_137")
+    assert seq[3] == ("folder", "issue137_partial/att-x/data_issue_137")
+    assert seq[4] == ("folder", "issue137_partial/att-x/data_issue137")
+    assert seq[5] == ("folder", "issue137_partial/att-x")
+    final_staged = sorted(calls[5]["staged"])
+    assert len(final_staged) == 2, final_staged
+    assert final_staged[0] == "crash_persist_transcript.log"
+    assert re.fullmatch(r"workload_\d{8}T\d{6}Z\.log", final_staged[1]), final_staged
+    assert len(seq) == 6, seq
+    # #1151: ZERO per-file upload_file calls anywhere (the #664 stall class).
+    assert not any(c["kind"] == "file" for c in calls)
     # The worker-logs commit staged the fixture worker log verbatim (#885).
-    assert calls[2]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
+    assert calls[1]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
     # The data-dir upload carries the cache excludes (top-level AND nested).
-    data_call = calls[4]
+    data_call = calls[3]
     assert "hf_dl/**" in data_call["ignore_patterns"]
     assert "**/hf_dl/**" in data_call["ignore_patterns"]
     assert data_call["repo_id"] == "org/repo" and data_call["repo_type"] == "dataset"
@@ -4638,10 +4667,15 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     # Eagerly-streamed audit lines, start to DONE.
     assert "[crash-persist] BEGIN repo=org/repo dest=issue137_partial/att-x" in proc.stdout
     assert "[crash-persist] DONE" in proc.stdout
-    # The transcript tee carries the same audit (uploaded as the final step).
+    # The transcript tee carries the same audit (staged into the final
+    # bundle AFTER the DONE line, so the uploaded copy records it).
     transcript_text = paths["transcript"].read_text()
     assert "[crash-persist] BEGIN" in transcript_text
     assert "[crash-persist] DONE" in transcript_text
+    # The staged transcript copy the fake hub recorded ALSO carries the full
+    # audit through DONE (transcript-last semantics preserved, #854).
+    uploaded_transcript = calls[5]["staged"]["crash_persist_transcript.log"]
+    assert "[crash-persist] DONE" in uploaded_transcript
 
 
 def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
@@ -4656,14 +4690,17 @@ def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
     assert proc.returncode == 0, proc.stderr
     assert "[crash-persist] SKIP crash_report.json: no such file" in proc.stdout
     assert "[crash-persist] SKIP workload.log: EPS_LOG_PATH unset or file missing" in proc.stdout
+    # #1151: an all-skipped first bundle SKIPs loudly instead of committing.
+    assert "[crash-persist] SKIP bundle first: nothing staged" in proc.stdout
     assert "[crash-persist] SKIP worker_logs: no such dir" in proc.stdout
     assert "[crash-persist] SKIP eval_results_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue137: no such dir" in proc.stdout
     assert "[crash-persist] DONE" in proc.stdout
-    assert [(c["kind"], c["path_in_repo"]) for c in calls] == [
-        ("file", "issue137_partial/att-x/crash_persist_transcript.log")
-    ]
+    # The ONLY upload is the final bundle carrying the transcript audit
+    # (#1151: it rides an upload_folder commit now, never upload_file).
+    assert [(c["kind"], c["path_in_repo"]) for c in calls] == [("folder", "issue137_partial/att-x")]
+    assert sorted(calls[0]["staged"]) == ["crash_persist_transcript.log"]
     # Variant B: a 5-byte cap SKIPs the 10-byte data dir as oversized (the
     # critic-requested env override making the branch testable; the cap
     # comparison is strict `size > CAP`), while the nested-cache-only dir
@@ -4681,7 +4718,11 @@ def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
     proc2, calls2, _ = _run_persist_heredoc(tmp_path / "c", make_dirs="cache_only")
     assert proc2.returncode == 0, proc2.stderr
     assert "[crash-persist] SKIP data_issue_137: empty after cache excludes" in proc2.stdout
-    assert not any(c["kind"] == "folder" for c in calls2)
+    # No DIR-sweep upload fired — the only folder commits are the #1151
+    # first/final bundles, which target the bare dest root.
+    assert not any(
+        c["kind"] == "folder" and c["path_in_repo"] != "issue137_partial/att-x" for c in calls2
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -4708,9 +4749,10 @@ def test_render_startup_script_diagnostics_sweeps_worker_logs() -> None:
     assert 'path_in_repo=f"{dest}/worker_logs"' in script
     # The CALL, not just the def (a defined-but-never-called sweep is dead).
     assert "\n_up_logs()" in script
-    # Ordering: canonical workload.log upload -> _up_logs() -> partial dirs.
+    # Ordering: first bundle (crash_report + workload.log, #1151) ->
+    # _up_logs() -> partial dirs.
     assert (
-        script.index('_up_file(log_path, f"{dest}/workload.log")')
+        script.index('_up_bundle(first_stage, "first", retry=True)')
         < script.index("\n_up_logs()")
         < script.index("for local, name in (")
     )
@@ -4743,7 +4785,11 @@ def test_persist_heredoc_worker_logs_tail_sentinel_and_newest_first(tmp_path) ->
         },
     )
     assert proc.returncode == 0, proc.stderr
-    folder_calls = [c for c in calls if c["kind"] == "folder"]
+    # #1151: the first/final bundles ride dest-root folder commits too —
+    # scope the assert to the worker_logs upload surface.
+    folder_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")
+    ]
     assert [c["path_in_repo"] for c in folder_calls] == ["issue137_partial/att-x/worker_logs"]
     # Exactly ONE staged file == the NEWER one (kills a size-sort mutant);
     # its content == the exact tail sentinel bytes (kills a dropped-seek
@@ -4776,7 +4822,315 @@ def test_persist_heredoc_worker_logs_max_files_lt_one_skips_loudly(tmp_path) -> 
     )
     assert proc.returncode == 0, proc.stderr
     assert "[crash-persist] SKIP worker_logs: EPS_PERSIST_LOG_MAX_FILES=0 < 1" in proc.stdout
-    assert not any(c["kind"] == "folder" for c in calls)
+    # The worker-logs sweep never uploaded (the #1151 first/final bundle
+    # commits target the bare dest root, not .../worker_logs).
+    assert not any(
+        c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs") for c in calls
+    )
+
+
+# ---------------------------------------------------------------------------
+# #1151 — crash-persist off-VM breadcrumb (eps/persist) + upload bundling
+# ---------------------------------------------------------------------------
+
+
+def _extract_persist_function(script: str) -> str:
+    """Return the full ``_eps_persist_diagnostics`` bash function (definition
+    line through its closing top-level brace) from the rendered script."""
+    lines = script.splitlines()
+    start = next(i for i, ln in enumerate(lines) if ln == "_eps_persist_diagnostics() {")
+    end = next(i for i in range(start + 1, len(lines)) if lines[i] == "}")
+    return "\n".join(lines[start : end + 1]) + "\n"
+
+
+def test_render_startup_script_persist_breadcrumb_ordering() -> None:
+    """#1151: the `attempted` entry PUT sits inside _eps_persist_diagnostics
+    BEFORE the EPS_PERSIST_PY heredoc; the final-status case sits AFTER the
+    streamer close and BEFORE the function's closing brace; the trap still
+    reaches shutdown AFTER the persist call and the 300s bound is intact
+    (#854 invariants)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    fn = _extract_persist_function(script)
+    assert fn.index('_eps_persist_status "attempted"') < fn.index("<<'EPS_PERSIST_PY'")
+    assert fn.index("done; } 2>/dev/null || true;") < fn.index(
+        '(124) _eps_persist_status "timeout"'
+    )
+    assert '(0)   _eps_persist_status "ok"' in fn
+    assert '(*)   _eps_persist_status "failed_rc${_prc}"' in fn
+    # The breadcrumb writes are fail-soft, metadata-capped curls (-m 5) so a
+    # wedged metadata server can never eat the persist budget.
+    assert "_eps_persist_status() { curl -fsS -m 5 -X PUT" in script
+    trap_line = next(line for line in script.splitlines() if line.startswith("trap 'rc=$?"))
+    assert trap_line.index('_eps_persist_diagnostics "$rc"') < trap_line.index("shutdown -h now")
+    assert "timeout 300 uv run --no-sync python" in script
+
+
+def test_render_startup_script_persist_breadcrumb_separate_key() -> None:
+    """#1151: breadcrumb writes target guest-attributes/eps/persist — a
+    SEPARATE key from eps/phase (the poll classification + #908 zombie
+    predicates key on eps/phase and must not see new values; the #935
+    eps/done_persist discipline). The eps/phase URL site count stays at its
+    pre-#1151 value (the _eps_phase helper PUT + the done-grace read)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    # persist key: the helper PUT + the boot-time DELETE clear.
+    assert script.count("instance/guest-attributes/eps/persist") == 2
+    # phase key: unchanged pre-#1151 count (helper PUT + done-grace read).
+    assert script.count("instance/guest-attributes/eps/phase") == 2
+    # The boot-time clear (staleness guard: guest attributes survive
+    # same-instance reboots) renders after the first startup phase write.
+    del_idx = script.index("curl -fsS -m 5 -X DELETE")
+    assert script.index("_eps_phase startup") < del_idx
+
+
+def test_render_startup_script_persist_skip_writes_skipped_no_token() -> None:
+    """#1151: the token-guard skip branch breadcrumbs skipped_no_token BEFORE
+    its return 0 — an early-boot crash is otherwise indistinguishable from
+    a killed persist once the boot disk is DELETEd."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    guard_idx = script.index('if [ -z "${EPS_HF_DATA_REPO:-}" ] || [ -z "${HF_TOKEN:-}" ]; then')
+    skip_idx = script.index('_eps_persist_status "skipped_no_token"')
+    ret_idx = script.index("return 0;", skip_idx)
+    assert guard_idx < skip_idx < ret_idx
+
+
+def _run_persist_function_bash(tmp_path, *, fake_uv_rc=None, with_token=True, env_overrides=None):
+    """Execute the REAL extracted _eps_persist_diagnostics bash function with
+    ``_eps_persist_status`` overridden to a call recorder (no metadata
+    server, no network) and a stub ``uv`` on PATH controlling the
+    persist-python rc — the executed discriminator for the
+    entry/skip/final-status semantics (``bash -n`` is syntax-only and the
+    heredoc harness bypasses the bash layer entirely).
+
+    HOME points at tmp_path so the subshell's ``$HOME/.local/bin`` PATH
+    prepend cannot resolve the VM's REAL uv ahead of the stub."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    fn = _extract_persist_function(script)
+    stub_bin = tmp_path / "stub-bin"
+    stub_bin.mkdir(parents=True, exist_ok=True)
+    uv = stub_bin / "uv"
+    uv.write_text('#!/bin/bash\ncat >/dev/null\nexit "${FAKE_UV_RC:-0}"\n')
+    uv.chmod(0o755)
+    calls = tmp_path / "breadcrumb-calls.txt"
+    runner = tmp_path / "runner.sh"
+    runner.write_text(
+        fn
+        + '\n_eps_persist_status() { printf \'%s\\n\' "$1" >> "$CALLS"; }\n'
+        + "_eps_persist_diagnostics 1\n"
+    )
+    env = dict(os.environ)
+    env.update(
+        {
+            "PATH": f"{stub_bin}:{env['PATH']}",
+            "HOME": str(tmp_path),
+            "CALLS": str(calls),
+            "EPS_CRASH_PERSIST_RC": str(tmp_path / "persist.rc"),
+            "WORKLOAD_ROOT": str(tmp_path),
+            "EPS_ISSUE": "137",
+            "EPS_ATTEMPT_ID": "att-x",
+        }
+    )
+    if with_token:
+        env.update({"EPS_HF_DATA_REPO": "org/repo", "HF_TOKEN": "x"})
+    else:
+        env.pop("EPS_HF_DATA_REPO", None)
+        env.pop("HF_TOKEN", None)
+    if fake_uv_rc is not None:
+        env["FAKE_UV_RC"] = str(fake_uv_rc)
+    env.update(env_overrides or {})
+    proc = subprocess.run(
+        ["bash", str(runner)], capture_output=True, text=True, env=env, timeout=60
+    )
+    got = calls.read_text().splitlines() if calls.is_file() else []
+    return proc, got
+
+
+def test_persist_final_status_case_semantics(tmp_path) -> None:
+    """#1151 executed-bash discriminator: rc-file 0 -> ok, 124 -> timeout,
+    7 -> failed_rc7, and a MISSING rc file writes NOTHING — the standing
+    `attempted` IS the killed-mid-persist signal; a guessed final value
+    here would destroy that discriminator."""
+    proc, got = _run_persist_function_bash(tmp_path / "ok", fake_uv_rc=0)
+    assert proc.returncode == 0, proc.stderr
+    assert got == ["attempted", "ok"], got
+    proc, got = _run_persist_function_bash(tmp_path / "to", fake_uv_rc=124)
+    assert proc.returncode == 0, proc.stderr
+    assert got == ["attempted", "timeout"], got
+    proc, got = _run_persist_function_bash(tmp_path / "rc7", fake_uv_rc=7)
+    assert proc.returncode == 0, proc.stderr
+    assert got == ["attempted", "failed_rc7"], got
+    # MISSING rc file: point the rc path into a nonexistent dir so the
+    # guarded write fails -> the readback is empty -> ZERO final writes.
+    missing = tmp_path / "missing"
+    proc, got = _run_persist_function_bash(
+        missing,
+        fake_uv_rc=0,
+        env_overrides={"EPS_CRASH_PERSIST_RC": str(missing / "no-such-dir" / "rc")},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert got == ["attempted"], got
+
+
+def test_persist_entry_and_skip_breadcrumbs_fire(tmp_path) -> None:
+    """#1151 executed-bash: entering the function records `attempted` FIRST
+    (unconditional proof of invocation); the missing-token branch records
+    `skipped_no_token` and returns 0 without reaching the final-status
+    case."""
+    proc, got = _run_persist_function_bash(tmp_path / "skip", with_token=False)
+    assert proc.returncode == 0, proc.stderr
+    assert got == ["attempted", "skipped_no_token"], got
+    proc, got = _run_persist_function_bash(tmp_path / "full", fake_uv_rc=0)
+    assert proc.returncode == 0, proc.stderr
+    assert got[0] == "attempted", got
+
+
+def test_persist_heredoc_first_bundle_single_commit_with_one_retry(tmp_path) -> None:
+    """#1151 behavioral: the FIRST HF call is one upload_folder commit whose
+    staged tree carries crash_report.json + workload.log; a raised first
+    attempt retries EXACTLY once after the (zeroed) backoff; zero
+    upload_file calls anywhere."""
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path / "retry-ok",
+        env_overrides={"FAKE_HUB_FOLDER_FAIL_TIMES": "1", "EPS_PERSIST_RETRY_BACKOFF_S": "0"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert calls[0]["kind"] == "folder_fail"
+    assert calls[0]["path_in_repo"] == "issue137_partial/att-x"
+    # The retry is the SECOND call, same dest, carrying BOTH files.
+    assert calls[1]["kind"] == "folder"
+    assert calls[1]["path_in_repo"] == "issue137_partial/att-x"
+    assert sorted(calls[1]["staged"]) == ["crash_report.json", "workload.log"]
+    assert "[crash-persist] FAILED bundle first attempt 1/2" in proc.stdout
+    assert "[crash-persist] uploaded bundle first" in proc.stdout
+    assert sum(1 for c in calls if c["kind"] == "folder_fail") == 1
+    assert not any(c["kind"] == "file" for c in calls)
+    # Both attempts exhausted: exactly TWO attempts (never a third), the
+    # persist proceeds to the remaining artifacts, and rc stays 0 — which is
+    # why the breadcrumb documents ok = "persist python exited 0", NOT
+    # "uploads landed".
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path / "retry-exhausted",
+        env_overrides={"FAKE_HUB_FOLDER_FAIL_TIMES": "2", "EPS_PERSIST_RETRY_BACKOFF_S": "0"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    first_fails = [c for c in calls if c["kind"] == "folder_fail"]
+    assert [c["path_in_repo"] for c in first_fails] == [
+        "issue137_partial/att-x",
+        "issue137_partial/att-x",
+    ]
+    assert "[crash-persist] FAILED bundle first attempt 2/2" in proc.stdout
+    assert "[crash-persist] uploaded bundle first" not in proc.stdout
+    # The later bundles/dirs still upload (the persist never aborts).
+    assert any(c["kind"] == "folder" for c in calls)
+    assert "[crash-persist] DONE" in proc.stdout
+
+
+def test_persist_heredoc_final_bundle_carries_timestamped_log_and_transcript(tmp_path) -> None:
+    """#1151 behavioral: the FINAL commit is one upload_folder bundle to
+    {dest} whose staged tree carries the per-crash timestamped log copy AND
+    the transcript audit — repo paths byte-identical to the pre-#1151
+    per-file uploads; the final bundle takes NO retry (retry=False pinned
+    on the rendered call)."""
+    proc, calls, _ = _run_persist_heredoc(tmp_path)
+    assert proc.returncode == 0, proc.stderr
+    final = calls[-1]
+    assert final["kind"] == "folder"
+    assert final["path_in_repo"] == "issue137_partial/att-x"
+    staged = sorted(final["staged"])
+    assert staged[0] == "crash_persist_transcript.log"
+    assert re.fullmatch(r"workload_\d{8}T\d{6}Z\.log", staged[1]), staged
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert '_up_bundle(first_stage, "first", retry=True)' in script
+    assert '_up_bundle(final_stage, "final", retry=False)' in script
+
+
+def _guest_attr_kv(key: str, value: str) -> str:
+    """A gcloud get-guest-attributes payload for an arbitrary eps/<key>."""
+    return json.dumps([{"namespace": "eps", "key": key, "value": value}])
+
+
+def test_poll_terminal_failed_surfaces_persist_breadcrumb() -> None:
+    """#1151: the TERMINATED+failed terminal diagnosis carries the
+    eps/persist breadcrumb in log_tail_excerpt — the exact tick the 01:24Z
+    #811 diagnosis read. No PollResult schema change: the excerpt already
+    rides every terminal marker the orchestrator reads."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("failed"), ""),
+            GcloudRunResult(1, "", "guest attribute eps/workload_started not found"),
+            GcloudRunResult(0, _guest_attr_kv("persist", "attempted"), ""),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_setup_failed"
+    assert "[crash-persist-breadcrumb] eps/persist=attempted (instance TERMINATED)" in (
+        pr.log_tail_excerpt
+    )
+
+
+def test_poll_terminated_failed_workload_started_carries_breadcrumb() -> None:
+    """#1151: TERMINATED + failed + workload-started keeps the
+    terminal_terminated classification VERBATIM (the #669 exclusion — no
+    failover change) and gains the breadcrumb line: the trap ran
+    _eps_persist_diagnostics on this path too (the #811 shape)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("failed"), ""),
+            GcloudRunResult(0, _guest_attr_kv("workload_started", "true"), ""),
+            GcloudRunResult(0, _guest_attr_kv("persist", "timeout"), ""),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_terminated"
+    assert "eps/persist=timeout (instance TERMINATED)" in pr.log_tail_excerpt
+
+
+def test_poll_running_window_breadcrumb_carries_in_flight_qualifier() -> None:
+    """#1151 (statistics-lens Must-Fix): a RUNNING-window failed tick may
+    catch a HEALTHY persist mid-flight, so the excerpt line self-discloses
+    the instance status + an in-flight qualifier — a verbatim
+    decision-table read of `attempted` here would misdiagnose a healthy
+    persist as killed."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("failed"), ""),
+            GcloudRunResult(0, _guest_attr_kv("workload_started", "true"), ""),
+            GcloudRunResult(0, _guest_attr_kv("persist", "attempted"), ""),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_workload_failed"
+    assert "eps/persist=attempted (instance RUNNING)" in pr.log_tail_excerpt
+    assert "persist may be in flight" in pr.log_tail_excerpt
+
+
+def test_poll_persist_breadcrumb_probe_failure_is_best_effort() -> None:
+    """#1151: a failing eps/persist read NEVER raises and never gates
+    classification — the excerpt reads ABSENT and the terminal
+    classification is unchanged (diagnostic-only channel, deliberately
+    unlike _guest_phase's typed GcpProbeError contract)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("failed"), ""),
+            GcloudRunResult(1, "", "guest attribute eps/workload_started not found"),
+            GcloudRunResult(1, "", "ERROR: permission denied"),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_setup_failed"
+    assert "eps/persist=ABSENT (instance TERMINATED)" in pr.log_tail_excerpt
 
 
 # ---------------------------------------------------------------------------

@@ -19,6 +19,7 @@ Also covers the ``--check-script-refs`` mode: every
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -35,12 +36,15 @@ if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
 from workflow_lint import (  # noqa: E402
+    _MARKER_RECIPE_PINS,
     BATCH_JUDGE_LEGACY_ALLOWLIST,
     _iter_ask_target_files,
     _other_worktree_prefix,
+    _values_equal,
     check_agent_model_pins,
     check_asks,
     check_autonomous_asks,
+    check_awk_elision_parity,
     check_batch_judge_client,
     check_compute_shape_review_lens,
     check_dispatcher_cvd_pin,
@@ -50,6 +54,7 @@ from workflow_lint import (  # noqa: E402
     check_hollow_verification_gate_review_lens,
     check_lessons_index,
     check_long_loop_restartability_review_lens,
+    check_marker_recipe_snippets,
     check_marker_registry,
     check_no_literal_round_marker_versions,
     check_no_workflow_improver_spawn,
@@ -4016,6 +4021,240 @@ def test_vm_thread_cap_guidance_bundled_in_no_flags(tmp_path, capsys, monkeypatc
     )
 
 
+# --- #1154 marker-recipe snippet-pin tests -----------------------------------
+
+# Minimal conforming fixture tree: the two pinned doc files carry one verbatim
+# snippet per registered pin (the bandstop snippet deliberately WRAPS across a
+# line break — the reflow proof for the whitespace-normalized matching — and
+# both docs carry the bare-`※` 63680 decoy that must never be captured); the
+# four src files carry the constant lines from the live tree, including the
+# `marker_tail_tokens` decoy field the sft pattern must not match.
+_MARKER_RECIPE_FIXTURE_FILES: dict[str, str] = {
+    "docs/marker_training_recipe.md": (
+        "# marker training recipe (fixture)\n"
+        "` ※` (Qwen-2.5-7B token id 83399). DV = on-policy log P(marker).\n"
+        "| Marker | ` ※` id 83399 (assert encoding) | single rare token |\n"
+        "Constraint: marker-only loss (`MarkerOnlyDataCollator(tail_tokens=0)`).\n"
+        "| Loss mask | marker-only (`MarkerOnlyDataCollator(tail_tokens=0)`) | keeps R |\n"
+        "7. Run a pre-sweep anchor smoke. Confirm source ΔG ∈ [5, 12]\n"
+        "   nat AND bystanders below the argmax ceiling.\n"
+        "| #906 | completed | render-exact gate (4/200 rows dropped, reject floor 0.10) |\n"
+        "Avoid bare `※` id 63680 (wrong token).\n"
+    ),
+    ".claude/rules/marker-training-recipe.md": (
+        "# marker-training-recipe rule (fixture)\n"
+        "Loss via `MarkerOnlyDataCollator(tail_tokens=0)`, response frozen.\n"
+        "- Fail-loud above a rejection-fraction floor (0.10).\n"
+        "> Stop when source log P over base ∈ [5, 12] nat (gate on bystanders).\n"
+        '` ※` id 83399 only (assert `encode(" ※") == [83399]`). Avoid bare `※` id 63680.\n'
+    ),
+    "src/explore_persona_space/artifacts/recipe.py": "MARKER_TOKEN_ID = 83399\n",
+    "src/explore_persona_space/train/sft.py": (
+        "class MarkerOnlyDataCollator:\n"
+        "    def __init__(\n"
+        "        self,\n"
+        "        tail_tokens: int = 0,\n"
+        "    ) -> None:\n"
+        "        pass\n"
+        "\n"
+        "\n"
+        "class TrainLoraConfig:\n"
+        "    marker_tail_tokens: int = 0\n"
+    ),
+    "src/explore_persona_space/artifacts/organisms.py": "MIX_MAX_REJECT_FRAC = 0.10\n",
+    "src/explore_persona_space/eval/callbacks.py": (
+        "class MarkerBandStopCallback:\n"
+        "    def __init__(\n"
+        "        self,\n"
+        "        low_nats: float = 5.0,\n"
+        "        high_nats: float = 12.0,\n"
+        "    ) -> None:\n"
+        "        pass\n"
+    ),
+}
+
+
+def _write_marker_recipe_fixture(
+    root: Path,
+    overrides: dict[str, str] | None = None,
+    omit: tuple[str, ...] = (),
+) -> None:
+    """Write the #1154 pinned doc + src files at the registry's exact rel-paths
+    under ``root``. ``overrides`` swap in mutated file contents (seeded drift);
+    rel-paths in ``omit`` are not written at all (the missing-file case)."""
+    contents = dict(_MARKER_RECIPE_FIXTURE_FILES)
+    contents.update(overrides or {})
+    for rel, text in contents.items():
+        if rel in omit:
+            continue
+        p = root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+
+
+def test_marker_recipe_snippets_live_tree_passes() -> None:
+    """The real tree's pinned doc snippets agree with the code constants
+    (launch invariant: 0 false positives; the live drift gate going forward)."""
+    assert check_marker_recipe_snippets() == []
+
+
+def test_marker_recipe_snippets_fixture_tree_passes(tmp_path) -> None:
+    """The conforming fixture tree passes — pins the fixture itself so every
+    mutation test below fails for its seeded drift, not fixture rot."""
+    _write_marker_recipe_fixture(tmp_path)
+    assert check_marker_recipe_snippets(repo_root=tmp_path) == []
+
+
+def test_marker_recipe_snippets_flags_code_drift(tmp_path) -> None:
+    """Mutating a bound code constant (MARKER_TOKEN_ID 83399 -> 99999) FAILs
+    BOTH token-id pins, each naming the pin label and both values."""
+    _write_marker_recipe_fixture(
+        tmp_path,
+        overrides={"src/explore_persona_space/artifacts/recipe.py": "MARKER_TOKEN_ID = 99999\n"},
+    )
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 2, errors
+    for label in ("marker-token-id", "rule-marker-token-id"):
+        matching = [e for e in errors if f"pin '{label}'" in e]
+        assert len(matching) == 1, errors
+        assert "'83399'" in matching[0] and "'99999'" in matching[0], errors
+
+
+def test_marker_recipe_snippets_flags_doc_drift(tmp_path) -> None:
+    """The doc citing a stale value (reject floor 0.12 vs code 0.10) FAILs with
+    exactly one error whose subject is the doc and which names both values."""
+    drifted = _MARKER_RECIPE_FIXTURE_FILES["docs/marker_training_recipe.md"].replace(
+        "reject floor 0.10", "reject floor 0.12"
+    )
+    _write_marker_recipe_fixture(tmp_path, overrides={"docs/marker_training_recipe.md": drifted})
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    subject = errors[0].split(": ", 1)[0]
+    assert subject.endswith("docs/marker_training_recipe.md"), errors
+    assert "'0.12'" in errors[0] and "'0.10'" in errors[0], errors
+
+
+def test_marker_recipe_snippets_flags_missing_doc_snippet(tmp_path) -> None:
+    """Rephrasing a pinned doc sentence away from its pattern FAILs loud
+    ('doc snippet not found' — the rot alarm), naming the pin."""
+    rephrased = _MARKER_RECIPE_FIXTURE_FILES["docs/marker_training_recipe.md"].replace(
+        "reject floor 0.10", "rejection cutoff 0.10"
+    )
+    _write_marker_recipe_fixture(tmp_path, overrides={"docs/marker_training_recipe.md": rephrased})
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "doc snippet not found" in errors[0], errors
+    assert "pin 'mix-reject-floor'" in errors[0], errors
+
+
+def test_marker_recipe_snippets_flags_missing_code_symbol(tmp_path) -> None:
+    """Removing a bound symbol from its source file FAILs every pin citing it
+    ('code constant ... not found' — the rename/move alarm)."""
+    _write_marker_recipe_fixture(
+        tmp_path,
+        overrides={"src/explore_persona_space/artifacts/organisms.py": "OTHER_CONST = 1\n"},
+    )
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 2, errors  # the docs pin + the rule pin both cite organisms.py
+    for e in errors:
+        assert "not found" in e and "MIX_MAX_REJECT_FRAC" in e, errors
+
+
+def test_marker_recipe_snippets_flags_ambiguous_src(tmp_path) -> None:
+    """A second, conflicting `tail_tokens: int = 5,` signature in sft.py makes
+    the collator pins ambiguous -> FAIL (the doc citation genuinely became
+    ambiguous; the registry pattern must be tightened)."""
+    ambiguous = _MARKER_RECIPE_FIXTURE_FILES["src/explore_persona_space/train/sft.py"] + (
+        "\n"
+        "\n"
+        "class OtherCollator:\n"
+        "    def __init__(\n"
+        "        self,\n"
+        "        tail_tokens: int = 5,\n"
+        "    ) -> None:\n"
+        "        pass\n"
+    )
+    _write_marker_recipe_fixture(
+        tmp_path, overrides={"src/explore_persona_space/train/sft.py": ambiguous}
+    )
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 2, errors  # the docs pin + the rule pin both cite sft.py
+    for e in errors:
+        assert "ambiguous" in e and "tail_tokens" in e, errors
+
+
+def test_marker_recipe_snippets_flags_missing_file(tmp_path) -> None:
+    """A missing pinned doc file is itself an error — once per pin bound to it
+    (5 rule-file pins)."""
+    _write_marker_recipe_fixture(tmp_path, omit=(".claude/rules/marker-training-recipe.md",))
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 5, errors
+    for e in errors:
+        assert "missing" in e, errors
+        assert e.split(": ", 1)[0].endswith("marker-training-recipe.md"), errors
+
+
+def test_marker_recipe_snippets_does_not_capture_wrong_token_id() -> None:
+    """On the LIVE tree, the token-id pins capture only 83399 — never the
+    bare-`※` wrong-token id 63680 (docs line ~196 / rule line ~236 mention it
+    with a backtick, not a space, before ※ — the space anchor skips it)."""
+    import workflow_lint as wl
+
+    for pin in _MARKER_RECIPE_PINS:
+        if "token-id" not in pin.label:
+            continue
+        doc_text = (wl._REPO_ROOT / pin.doc_rel).read_text(encoding="utf-8")
+        captures = re.findall(pin.doc_pattern, re.sub(r"\s+", " ", doc_text))
+        assert captures, f"pin '{pin.label}': no live doc matches"
+        assert "63680" not in captures, (pin.label, captures)
+        assert set(captures) == {"83399"}, (pin.label, captures)
+
+
+def test_marker_recipe_pins_have_one_capture_group() -> None:
+    """Registry invariant: every pin's doc_pattern AND src_pattern compile with
+    exactly ONE capture group (findall then returns bare value strings)."""
+    for pin in _MARKER_RECIPE_PINS:
+        assert re.compile(pin.doc_pattern).groups == 1, pin.label
+        assert re.compile(pin.src_pattern).groups == 1, pin.label
+
+
+def test_marker_recipe_values_equal_float_forms() -> None:
+    """Value comparison is float-based when both sides parse ('5' == '5.0' —
+    the doc band vs the callbacks.py float defaults), else exact-string."""
+    assert _values_equal("5", "5.0") is True
+    assert _values_equal("0.10", "0.1") is True
+    assert _values_equal("83399", "83399") is True
+    assert _values_equal("83399", "99999") is False
+    assert _values_equal("abc", "abc") is True
+    assert _values_equal("abc", "abd") is False
+
+
+def test_marker_recipe_snippets_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the #1154 check — deleting
+    its ``or no_flags`` branch must fail this test (mutation-visible), closing
+    the dead-tripwire gap where all direct-call tests stay green while the CLI
+    never runs the check. Same mechanism as
+    ``test_vm_thread_cap_guidance_bundled_in_no_flags``: a seeded code drift,
+    ``_REPO_ROOT`` monkeypatched to the fixture, ``main([])`` in-process.
+    Other bundled checks contribute unrelated errors on the minimal tree, so
+    the assertion keys on the #1154 diagnostic + the offending doc path."""
+    import workflow_lint as wl
+
+    _write_marker_recipe_fixture(
+        tmp_path,
+        overrides={"src/explore_persona_space/artifacts/recipe.py": "MARKER_TOKEN_ID = 99999\n"},
+    )
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a drifted tree:\n{err}"
+    assert "#1154" in err and "marker_training_recipe.md" in err, (
+        f"the #1154 marker-recipe diagnostic (naming marker_training_recipe.md) "
+        f"is missing from the no-flags default run's stderr — the check is not "
+        f"bundled into no_flags:\n{err}"
+    )
+
+
 # --- #963 stale-label disposition-clause tests -------------------------------
 
 # Conforming fixture: deliberately re-wrapped at a DIFFERENT column than the
@@ -4208,6 +4447,200 @@ def test_stale_label_disposition_clause_dedicated_flag_isolated(tmp_path, capsys
     err = capsys.readouterr().err
     assert rc == 0, (
         f"--check-stale-label-disposition ran more than the (conforming) stale-label "
+        f"check — no_flags mis-computed True, i.e. the flag's membership in the "
+        f"no_flags tuple in workflow_lint.main() is missing:\n{err}"
+    )
+
+
+# --- #1153 awk elision-program parity tests ----------------------------------
+
+# A program with the ``f=!f`` anchor and no single quotes (matches the live
+# program's shape at the time of writing; the check compares homes against
+# EACH OTHER, so tests only need SOME shared program).
+_AWK_ELISION_TEST_PROGRAM = (
+    "/^```/{f=!f; next} f{next} /^<details/{d=1} d{if(/<\\/details>/)d=0; next} "
+    "/^>/{next} {print} END{if(f||d) exit 3}"
+)
+
+_AWK_HOME_SKILL = ".claude/skills/issue/SKILL.md"
+_AWK_HOME_ANALYZER = ".claude/rules/analyzer-section-reference.md"
+
+
+def _write_awk_home(root: Path, rel: str, body: str) -> None:
+    """Write ``rel`` under ``root`` with ``body`` (parents created)."""
+    p = root / rel
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(body, encoding="utf-8")
+
+
+def _awk_skill_body(program: str = _AWK_ELISION_TEST_PROGRAM) -> str:
+    """SKILL.md-shaped home: the program inside a FENCED bash block, 3-space
+    indent, with its own input/output continuation line."""
+    return (
+        "# issue skill\n\nStep 9a-humanize ban gate:\n\n"
+        "```bash\n"
+        f"   awk '{program}' \\\n"
+        "     body.md > elided.md\n"
+        "```\n"
+    )
+
+
+def _awk_analyzer_body(
+    program: str = _AWK_ELISION_TEST_PROGRAM, anchor_line: str | None = None
+) -> str:
+    """analyzer-section-reference.md-shaped home: the program in a 4-space
+    INDENTED block with DIFFERENT surroundings/paths than the skill home.
+    ``anchor_line`` replaces the whole program line (malformed-line cases)."""
+    line = anchor_line if anchor_line is not None else f"    awk '{program}' \\"
+    return f"# analyzer section reference\n\nStep 4.5:\n\n{line}\n        draft.md > out.md\n"
+
+
+def test_awk_elision_parity_live_tree_passes() -> None:
+    """The real tree carries ONE anchor line per home, 2 quotes each, with
+    byte-identical extracted programs (#1153)."""
+    assert check_awk_elision_parity() == []
+
+
+def test_awk_elision_parity_conforming_tmp_tree_passes(tmp_path) -> None:
+    """Same program, DIFFERENT surroundings — one fenced ```bash block, one
+    4-space-indented block, different in/out paths on the continuation
+    lines — PASSes: pins that the check tolerates the homes' real
+    formatting differences and compares the quoted PROGRAM only."""
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, _awk_analyzer_body())
+    assert check_awk_elision_parity(repo_root=tmp_path) == []
+
+
+def test_awk_elision_parity_flags_drift(tmp_path) -> None:
+    """One home's program mutated (END clause dropped) -> exactly one error
+    naming BOTH paths + the edit-both-homes remediation."""
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    drifted = _AWK_ELISION_TEST_PROGRAM.replace(" END{if(f||d) exit 3}", "")
+    assert drifted != _AWK_ELISION_TEST_PROGRAM
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, _awk_analyzer_body(program=drifted))
+    errors = check_awk_elision_parity(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert _AWK_HOME_SKILL in errors[0] and _AWK_HOME_ANALYZER in errors[0], errors
+    assert "identically" in errors[0], errors
+
+
+def test_awk_elision_parity_flags_missing_file(tmp_path) -> None:
+    """A missing home is itself an error — a moved/deleted copy must not
+    silently pass (#1153)."""
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    errors = check_awk_elision_parity(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].split(": ", 1)[0].endswith("analyzer-section-reference.md"), errors
+    assert "missing" in errors[0], errors
+
+
+def test_awk_elision_parity_flags_zero_anchor(tmp_path) -> None:
+    """A home present but with NO anchor line (program removed) FAILs."""
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, "# analyzer section reference\n\nno program\n")
+    errors = check_awk_elision_parity(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].split(": ", 1)[0].endswith("analyzer-section-reference.md"), errors
+    assert "found 0" in errors[0], errors
+
+
+def test_awk_elision_parity_flags_duplicate_anchor(tmp_path) -> None:
+    """TWO anchor lines in one home FAIL — span identity is load-bearing
+    (which copy would the parity read?)."""
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, _awk_analyzer_body() + _awk_analyzer_body())
+    errors = check_awk_elision_parity(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "found 2" in errors[0], errors
+
+
+@pytest.mark.parametrize(
+    ("anchor_line", "expected_token"),
+    [
+        pytest.param(
+            "    awk '/^```/{f=!f; next} f{next} \\",
+            "expected exactly 2",
+            id="reflow-mid-program-one-quote",
+        ),
+        pytest.param(
+            "    awk '/{f=!f}/'\\''x' \\",
+            "expected exactly 2",
+            id="gained-quote-escape",
+        ),
+        pytest.param(
+            "    awk '/{f=!f}/' | awk '{print}' \\",
+            "expected exactly 2",
+            id="second-quoted-span",
+        ),
+        pytest.param(
+            "    the 'f=!f' toggle (no awk program) \\",
+            "could not extract",
+            id="two-quotes-no-awk-span",
+        ),
+    ],
+)
+def test_awk_elision_parity_flags_malformed_anchor_line(
+    tmp_path, anchor_line: str, expected_token: str
+) -> None:
+    """A malformed anchor line FAILs loudly per home: a mid-program reflow
+    (1 quote), a gained shell quote-escape (5 quotes — the truncation
+    false-PASS window the exactly-2-quotes assert closes), a second quoted
+    span on the line (4 quotes), and a 2-quote line with no ``awk '...'``
+    span (extraction finds 0)."""
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, _awk_analyzer_body(anchor_line=anchor_line))
+    errors = check_awk_elision_parity(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].split(": ", 1)[0].endswith("analyzer-section-reference.md"), errors
+    assert expected_token in errors[0], errors
+
+
+def test_awk_elision_parity_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the #1153 check —
+    deleting its dispatch branch (``if args.check_awk_elision_parity or
+    no_flags:``) or its ``or no_flags`` disjunct must fail this test
+    (mutation-visible). House pattern:
+    ``test_vm_thread_cap_guidance_bundled_in_no_flags`` — drifted tree,
+    ``_REPO_ROOT`` monkeypatched to the fixture, ``main([])`` in-process;
+    other bundled checks contribute unrelated errors on the minimal tree, so
+    the assertion keys on the #1153 drift diagnostic."""
+    import workflow_lint as wl
+
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    drifted = _AWK_ELISION_TEST_PROGRAM.replace(" END{if(f||d) exit 3}", "")
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, _awk_analyzer_body(program=drifted))
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a drifted tree:\n{err}"
+    assert "#1153" in err and "identically" in err, (
+        f"the #1153 awk-elision-parity drift diagnostic is missing from the "
+        f"no-flags default run's stderr — the check is not bundled into "
+        f"no_flags:\n{err}"
+    )
+
+
+def test_awk_elision_parity_dedicated_flag_isolated(tmp_path, capsys, monkeypatch) -> None:
+    """The dedicated ``--check-awk-elision-parity`` flag runs ONLY this check
+    (``no_flags`` computes False): on a minimal tree where the two awk homes
+    CONFORM but the full default bundle FAILs (other bundled checks miss
+    their files), the dedicated-flag invocation exits 0 — pins the
+    ``or args.check_awk_elision_parity`` membership in the ``no_flags``
+    tuple, the leg the ``main([])`` wiring test above cannot pin (house
+    pattern: ``test_stale_label_disposition_clause_dedicated_flag_isolated``)."""
+    import workflow_lint as wl
+
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, _awk_analyzer_body())
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    # Precondition: the FULL default bundle FAILs on this minimal tree, so a
+    # no_flags mis-computation below is observable as rc != 0.
+    assert wl.main([]) != 0, "precondition: the default bundle PASSed on the minimal tree"
+    capsys.readouterr()  # discard the precondition run's output
+    rc = wl.main(["--check-awk-elision-parity"])
+    err = capsys.readouterr().err
+    assert rc == 0, (
+        f"--check-awk-elision-parity ran more than the (conforming) awk-elision "
         f"check — no_flags mis-computed True, i.e. the flag's membership in the "
         f"no_flags tuple in workflow_lint.main() is missing:\n{err}"
     )
