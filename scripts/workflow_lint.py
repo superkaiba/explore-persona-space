@@ -431,6 +431,31 @@ Behaviours:
   the owning ``.claude/agents/<agent>.md`` spec; also FAIL an orphan
   reference (no owning spec) and a headingless reference (malformed).
   Closes the #850-class relocated-but-unreachable-section gap (#1159).
+* ``--check-git-recipes-root-guard`` (also bundled into the no-flags default
+  run): extract every ``bash``/``sh``/``shell``-tagged fenced block from
+  ``.claude/agents/*.md`` + ``.claude/skills/**/SKILL.md`` +
+  ``.claude/rules/*.md`` + ``CLAUDE.md`` (other worktrees excluded, the
+  current worktree scanned), pre-filter to blocks containing the literal
+  ``git``, and EXECUTE the live PreToolUse hook
+  ``scripts/guard_repo_root_branch.sh`` against each WHOLE block (stdin
+  JSON, exactly as a session pasting the recipe into ONE Bash call); hook
+  exit 2 → FAIL naming file:fence-opener-line + the hook's first BLOCKED
+  line. A per-fence ``<!-- workflow-lint: allow-root-guard-block:
+  <reason> -->`` sentinel (non-empty reason, on the immediately-preceding
+  non-blank line) waives — for deliberate anti-pattern examples and
+  pod-side recipes that never run at the VM repo root. A fail-loud
+  positive+negative hook self-test runs FIRST: a missing hook, a fail-open
+  hook (``jq`` absent → its stdin parse fail-softs to exit 0), or a
+  fail-closed hook is ONE loud lint error, never a silent pass; only
+  rc 0/2 are interpreted. Closes the #1047 class: a documented cleanup
+  recipe without a per-clause ``git -C`` waiver survived plan review +
+  a 6-critic ensemble and was caught only by the code-reviewer executing
+  the hook. Executing the REAL hook keeps the check current as detectors
+  evolve; the pattern-match siblings (``--check-no-repo-root-*``) stay —
+  complementary scope (they also scan prose lines). The guarantee is
+  fence-scoped: prose inline-code recipes, ``#``-commented instruction
+  lines inside fences, untagged fences, and the placeholder-substitution
+  false-PASS direction are NAMED residuals (see the check docstring).
 
 Exit codes:
 
@@ -443,11 +468,14 @@ from __future__ import annotations
 import argparse
 import ast
 import dataclasses
+import json
 import os
 import re
+import subprocess
 import sys
 from collections import Counter
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 # Allow `python scripts/workflow_lint.py` from a fresh shell without `uv run`
@@ -6362,6 +6390,319 @@ def check_no_repo_root_worktree_revert(*, repo_root: Path | None = None) -> list
     return errors
 
 
+# --- Executable-git-recipe root-guard check (#1176) --------------------------
+#
+# Feed every bash-fenced recipe in the workflow docs to the LIVE PreToolUse
+# hook (scripts/guard_repo_root_branch.sh), exactly as a session pasting the
+# whole block into ONE Bash call would hit it. Incident #1047: a documented
+# cleanup recipe without a per-clause `git -C` waiver survived plan review,
+# fact-check, and a 6-critic ensemble — only the code-reviewer EXECUTING the
+# hook caught it. Executing the real hook (instead of a parallel
+# pattern-match) keeps the check current as the hook's detectors evolve.
+_ROOT_GUARD_HOOK = _HERE / "guard_repo_root_branch.sh"
+_ROOT_GUARD_EXEMPT_SENTINEL = "workflow-lint: allow-root-guard-block"
+# A fence line is ```<tag> / ~~~<tag> with a SINGLE-token (or empty) info
+# string; a fence line with extra words after the tag does not match (zero
+# live in-scope instances; a documented residual of the parser rule).
+_ROOT_GUARD_FENCE_RE = re.compile(r"^\s*(```|~~~)(\S*)\s*$")
+_ROOT_GUARD_BASH_TAGS = frozenset({"bash", "sh", "shell"})
+_ROOT_GUARD_TIMEOUT_S = 20
+# Python string data only: the hook gates Bash TOOL calls, not file contents,
+# and neither sibling doc-scanning check scans scripts/** (their scope is
+# agents+skills md only), so these constants cannot self-flag.
+_ROOT_GUARD_SELFTEST_BLOCKED = "git checkout -b __workflow_lint_root_guard_selftest__"
+_ROOT_GUARD_SELFTEST_BENIGN = "echo workflow-lint root-guard selftest"
+
+
+def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
+    """Yield ``(opener_lineno_1based, preceding_nonblank_line, block_text)``
+    for every ``bash``/``sh``/``shell``-tagged fenced block in ``text``.
+
+    PARITY-TOGGLE PARSER RULE (#1176 acceptance criterion 8): outside a
+    fence, ANY fence line (tagged or bare, ``` or ~~~) OPENS one; inside a
+    fence, ANY fence line with the SAME token CLOSES it (the closer's tag is
+    ignored), while a DIFFERENT-token fence line is body content (the
+    CommonMark reading). The naive "closer = same token with EMPTY tag" rule
+    demonstrably desyncs on the live nested-fence shape at
+    ``.claude/skills/weekly/SKILL.md:196-204`` (an outer ```` ```markdown ````
+    fence whose body contains an inner ```` ```diff ```` fence): the inner
+    tagged line must CLOSE the outer fence, or the bare ```` ``` ```` two
+    lines later opens a phantom fence that swallows the git-bearing
+    ```` ```bash ```` fence at weekly:~223 — a silent false negative the
+    live-tree test cannot see (absence-of-error = pass).
+
+    An unterminated trailing fence is yielded (fail toward checking — the
+    ``check_grep_qv`` precedent). ``text.split('\\n')``, never
+    ``splitlines()``.
+    """
+    lines = text.split("\n")
+    in_fence = False
+    fence_token = ""
+    fence_tag = ""
+    opener_lineno = 0
+    preceding = ""
+    prev_nonblank = ""
+    block_lines: list[str] = []
+    for idx, line in enumerate(lines, start=1):
+        m = _ROOT_GUARD_FENCE_RE.match(line)
+        if m is not None:
+            token, tag = m.group(1), m.group(2)
+            if not in_fence:
+                in_fence = True
+                fence_token = token
+                fence_tag = tag.lower()
+                opener_lineno = idx
+                preceding = prev_nonblank
+                block_lines = []
+                continue
+            if token == fence_token:
+                # Same-token fence line closes (tag ignored on close).
+                if fence_tag in _ROOT_GUARD_BASH_TAGS:
+                    yield opener_lineno, preceding, "\n".join(block_lines)
+                in_fence = False
+                prev_nonblank = line
+                continue
+            # Different-token fence line INSIDE a fence: body content.
+            block_lines.append(line)
+            continue
+        if in_fence:
+            block_lines.append(line)
+        elif line.strip():
+            prev_nonblank = line
+    if in_fence and fence_tag in _ROOT_GUARD_BASH_TAGS:
+        # Unterminated trailing fence: yield what was collected.
+        yield opener_lineno, preceding, "\n".join(block_lines)
+
+
+def _root_guard_fence_exempt(prev_line: str) -> bool:
+    """True when a fence's immediately-preceding non-blank line carries the
+    ``workflow-lint: allow-root-guard-block: <reason>`` sentinel with a
+    NON-EMPTY reason. Reason-stripping mirrors the FI2 semantics of
+    :func:`_line_waived`: strip the leading ``:``/whitespace and the trailing
+    HTML-comment closer (``-->``) / backticks / whitespace before testing, so
+    a bare closer (``: -->``, or the sentinel with no colon) never counts as
+    a reason and wrongly waives."""
+    if _ROOT_GUARD_EXEMPT_SENTINEL not in prev_line:
+        return False
+    _, _, tail = prev_line.partition(_ROOT_GUARD_EXEMPT_SENTINEL)
+    reason = tail.lstrip(": ")
+    if reason.rstrip().endswith("-->"):
+        reason = reason.rstrip()[: -len("-->")]
+    reason = reason.strip().strip("`").strip()
+    return bool(reason)
+
+
+def _run_root_guard(hook: Path, command: str) -> tuple[int, str]:
+    """Feed ``command`` to the live PreToolUse hook exactly as the harness
+    does — stdin JSON ``{"tool_input": {"command": ...}}`` — and return
+    ``(returncode, stderr)``. ``cwd`` is pinned to the hook's own repo root
+    (``hook.parent.parent``) so repo-state-consulting detectors give
+    deterministic-by-construction verdicts when the lint runs from a
+    worktree (#1176 round-1 Methodology c1)."""
+    payload = json.dumps({"tool_input": {"command": command}})
+    proc = subprocess.run(
+        ["bash", str(hook)],
+        input=payload,
+        capture_output=True,
+        text=True,
+        timeout=_ROOT_GUARD_TIMEOUT_S,
+        cwd=str(hook.parent.parent),
+    )
+    return proc.returncode, proc.stderr
+
+
+def _root_guard_target_files(root: Path) -> list[Path]:
+    """The ``check_git_recipes_root_guard`` scan set: agents + skills via the
+    worktree-safe :func:`_iter_ask_target_files` house helper, PLUS
+    ``.claude/rules/*.md`` + ``CLAUDE.md`` under the same other-worktree
+    exclusion (current worktree scanned)."""
+    targets: list[Path] = list(_iter_ask_target_files(root))
+    prefix = _other_worktree_prefix(root)
+    rules_dir = root / ".claude" / "rules"
+    if rules_dir.is_dir():
+        targets.extend(
+            p
+            for p in sorted(rules_dir.glob("*.md"))
+            if p.is_file() and not _is_other_worktree_path(p, prefix)
+        )
+    claude_md = root / "CLAUDE.md"
+    if claude_md.is_file() and not _is_other_worktree_path(claude_md, prefix):
+        targets.append(claude_md)
+    return targets
+
+
+def check_git_recipes_root_guard(
+    *,
+    repo_root: Path | None = None,
+    hook_path: Path | None = None,
+    max_workers: int = 8,
+) -> list[str]:
+    """FAIL if any documented executable git recipe — a ``bash``/``sh``/
+    ``shell``-tagged fenced block in ``.claude/agents/*.md``,
+    ``.claude/skills/**/SKILL.md``, ``.claude/rules/*.md``, or ``CLAUDE.md``
+    — is BLOCKED (exit 2) by the live repo-root branch guard
+    ``scripts/guard_repo_root_branch.sh`` when fed WHOLE, as one command
+    string, on the hook's stdin-JSON PreToolUse contract.
+
+    Incident #1047: the gate-block cleanup restore recipe shipped without a
+    per-clause ``git -C`` waiver at 2 sites and survived plan review,
+    fact-check, and a 6-critic ensemble; only the code-reviewer EXECUTING
+    the hook caught it. Executing the REAL hook — instead of maintaining a
+    parallel pattern-match — covers every current and future detector
+    verbatim (clause splitting, ``-C`` waivers, comment-tail strip, heredoc
+    strip) and stays current as the hook evolves. The regex siblings
+    (:func:`check_no_repo_root_git_reset_hard` /
+    :func:`check_no_repo_root_worktree_revert`) stay: they scan PROSE lines
+    too (this check scans only executable fences); overlap is harmless.
+
+    Mechanics:
+
+    * Whole-block feed — faithful to how a session pastes a recipe (one
+      Bash call; the hook clause-splits internally). Per-line feeding would
+      shred ``if``/``for``/heredoc constructs and false-positive on inert
+      heredoc bodies the hook's #1058 strip correctly ignores. The hook's
+      ``-C`` waiver is per-clause, so whole-block is not weaker on waivers.
+    * ``git``-literal pre-filter — the literal ``git`` is a NECESSARY
+      textual condition for every hook BLOCK detector today (all detectors
+      anchor on a ``git`` bigram or the legacy loose probe), the #1162
+      necessary-textual-condition perf-gate style. If a future hook
+      detector fires WITHOUT a ``git`` literal in the command, this
+      pre-filter needs a matching update.
+    * Exemption — ``<!-- workflow-lint: allow-root-guard-block: <reason>
+      -->`` (NON-EMPTY reason) on the immediately-preceding non-blank line
+      above the fence opener waives that fence: for deliberate anti-pattern
+      examples and pod-side recipes that run over SSH on a pod's
+      ``/workspace`` clone, never at the VM repo root.
+    * FAIL-LOUD self-test FIRST — the hook's stdin parse fail-softs to
+      exit 0 when ``jq`` is missing (``guard_repo_root_branch.sh`` ~line
+      390: ``jq ... || exit 0``), so a positive probe (a known-blocked
+      command MUST rc 2) plus a negative probe (a benign command MUST rc 0)
+      run before any scan; a missing hook, a self-test crash, a fail-OPEN
+      hook, or a fail-CLOSED hook is ONE loud lint error — never a silent
+      pass. Only rc 0/2 are interpreted; any other rc on a fence probe is a
+      loud infrastructure error (rc=1 is NON-BLOCKING under the PreToolUse
+      contract, never a pass).
+
+    UNDER-COVERAGE RESIDUALS (the guarantee is scoped to the whole-bash-fence
+    paste surface — all four NAMED, per the #1176 round-1 Alternatives
+    critique; (b)+(c) are pinned by a committed known-miss fixture):
+
+    (a) untagged / other-tagged executable fences are not scanned;
+    (b) prose inline-code recipes (a backtick code span in a prose bullet
+        carrying a git command — one of #1047's own two original sites) are
+        structurally outside any fence-feed design;
+    (c) ``#``-commented instruction lines inside fences (the other #1047
+        original site) — the hook's comment-tail strip correctly ALLOWS the
+        block-as-pasted, while the doc tells the session to run the command
+        uncommented;
+    (d) placeholder-substitution false-PASS direction — the hook's checkout
+        classifier consults LIVE repo state (``show-ref``/``rev-parse``/path
+        existence), so an unresolvable ``<branch>``/``$VAR`` argument keeps
+        ALLOW at lint time but can BLOCK after a session substitutes a real
+        value.
+
+    Prose/comment scanning is deliberately REJECTED for v1 (prose quotes
+    gated verbs constantly — the regex siblings' restricted scope exists
+    precisely because of prose false positives); the runtime hook + the
+    reviewer execute-the-hook practice remain the guard there.
+
+    REPO-STATE FLAP ATTRIBUTION: a ``git checkout <example-name>`` fence can
+    FLIP verdict when a branch / tracked path of that name appears or
+    disappears (the hook consults ``show-ref``/``rev-parse``/path
+    existence). If the live-tree test starts flapping on unrelated diffs,
+    check repo state FIRST — distinct from hook-evolution flap (a new
+    detector), which names the new BLOCKED line in the error.
+
+    Scope: agents + skills via the worktree-safe :func:`_iter_ask_target_files`
+    house helper, PLUS ``.claude/rules/*.md`` + ``CLAUDE.md`` under the same
+    other-worktree exclusion (safe here, unlike the prose-scanning regex
+    siblings, because only fenced bash is scanned and the hook strips
+    comments/heredocs). ``scripts/**`` is never scanned. ``repo_root`` /
+    ``hook_path`` / ``max_workers`` are unit-test override hooks; production
+    callers pass defaults. Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    hook = hook_path if hook_path is not None else _ROOT_GUARD_HOOK
+    # (1) FAIL-LOUD self-test — never a silent pass on a missing / broken /
+    # fail-open / fail-closed hook.
+    if not hook.is_file():
+        return [
+            f"{hook}: root-guard hook script missing — "
+            f"check-git-recipes-root-guard cannot run (FAIL, not skip)"
+        ]
+    try:
+        rc_pos, _ = _run_root_guard(hook, _ROOT_GUARD_SELFTEST_BLOCKED)
+        rc_neg, _ = _run_root_guard(hook, _ROOT_GUARD_SELFTEST_BENIGN)
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        return [f"{hook}: root-guard self-test crashed ({exc}) — check cannot run"]
+    if rc_pos != 2 or rc_neg != 0:
+        return [
+            f"{hook}: root-guard self-test failed (blocked-probe rc={rc_pos}, "
+            f"expected 2; benign-probe rc={rc_neg}, expected 0). Likely jq "
+            f"missing (the hook's stdin parse fail-softs to exit 0) or a hook "
+            f"regression — the check refuses to run against a fail-open or "
+            f"fail-closed hook."
+        ]
+    # (2) Enumerate targets: agents + skills via the worktree-safe house
+    # helper, plus rules/*.md + CLAUDE.md under the same other-worktree
+    # exclusion.
+    targets = _root_guard_target_files(root)
+    # (3) Collect git-bearing bash fences (perf gate: the `git` literal is a
+    # NECESSARY condition for every hook detector — see docstring; drops
+    # 103 -> ~23 fences on issue/SKILL.md alone).
+    work: list[tuple[Path, int, str]] = []
+    for p in targets:
+        try:
+            text = p.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for lineno, prev_line, block in _iter_bash_fences(text):
+            if "git" not in block:
+                continue
+            if _root_guard_fence_exempt(prev_line):
+                continue
+            work.append((p, lineno, block))
+
+    # (4) Execute the hook per block, in parallel; deterministic ordering.
+    def _probe(item: tuple[Path, int, str]) -> tuple[Path, int, int, str]:
+        p, lineno, block = item
+        try:
+            rc, stderr = _run_root_guard(hook, block)
+        except (subprocess.TimeoutExpired, OSError) as exc:
+            return (p, lineno, -1, f"hook invocation failed: {exc}")
+        return (p, lineno, rc, stderr)
+
+    errors: list[str] = []
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        results = list(ex.map(_probe, work))
+    for p, lineno, rc, stderr in sorted(results, key=lambda r: (str(r[0]), r[1])):
+        if rc == 0:
+            continue
+        first = stderr.strip().split("\n")[0][:200]
+        if rc == 2:
+            errors.append(
+                f"{p}:{lineno}: bash recipe fence is BLOCKED by "
+                f"scripts/guard_repo_root_branch.sh — a session pasting this "
+                f"recipe into one Bash call dies at the PreToolUse gate "
+                f"(incident #1047: a cleanup recipe without a -C waiver "
+                f"survived plan review + 6 critics and was caught only by the "
+                f"reviewer executing the hook). Hook says: {first!r}. Fix the "
+                f"recipe (per-clause `git -C <path>` waiver / the sanctioned "
+                f"worktree or gh-pr-merge form), or — for a deliberate "
+                f"anti-pattern example or a pod-side recipe — add "
+                f"`<!-- {_ROOT_GUARD_EXEMPT_SENTINEL}: <reason> -->` on the "
+                f"line directly above the fence opener."
+            )
+        else:
+            errors.append(
+                f"{p}:{lineno}: root-guard hook returned unexpected rc={rc} — "
+                f"a NON-BLOCKING code under the PreToolUse contract (only rc "
+                f"0/2 are interpreted; rc=1/127/timeout signals a hook "
+                f"invocation or infrastructure error, not a pass) ({first!r})."
+            )
+    return errors
+
+
 def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the compute-shape-vs-dispatcher review lens (#806) is absent
     from EITHER code-reviewer agent file.
@@ -8571,6 +8912,24 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "with '# UPLOAD_OR_TRUE_EXEMPT: <reason>'. Bundled into the "
         "no-flags default run.",
     )
+    parser.add_argument(
+        "--check-git-recipes-root-guard",
+        action="store_true",
+        help="Extract every bash/sh/shell-tagged fenced block from "
+        ".claude/agents/*.md + .claude/skills/**/SKILL.md + "
+        ".claude/rules/*.md + CLAUDE.md, pre-filter to git-bearing blocks, "
+        "and EXECUTE the live PreToolUse hook "
+        "scripts/guard_repo_root_branch.sh against each WHOLE block (stdin "
+        "JSON, as one pasted Bash call); hook exit 2 -> FAIL naming "
+        "file:fence-opener-line + the hook's BLOCKED line. Waive a "
+        "deliberate anti-pattern example / pod-side recipe with "
+        "'<!-- workflow-lint: allow-root-guard-block: <reason> -->' on the "
+        "line directly above the fence opener. A fail-loud hook self-test "
+        "runs first (missing / fail-open / fail-closed hook = one loud "
+        "error, never a silent pass). Closes the #1047 class (a documented "
+        "recipe the live hook blocks). Bundled into the no-flags default "
+        "run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -8631,6 +8990,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_jsonl_splitlines
         or args.check_scripts_import_guard
         or args.check_upload_or_true
+        or args.check_git_recipes_root_guard
     )
 
     errors: list[str] = []
@@ -8741,6 +9101,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_scripts_import_guard())
     if args.check_upload_or_true or no_flags:
         errors.extend(check_upload_or_true())
+    if args.check_git_recipes_root_guard or no_flags:
+        errors.extend(check_git_recipes_root_guard())
 
     if errors:
         for err in errors:
