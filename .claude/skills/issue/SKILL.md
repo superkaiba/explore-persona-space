@@ -2339,6 +2339,31 @@ single-reviewer decision:
    version — `epm:code-review[-codex] v<n>`, `epm:interp-critique[-codex]
    v<n>`, `epm:clean-result-critique[-codex] v<n>`,
    `epm:followup-value-critique[-codex]`, or `epm:review-reconcile v<n>`.
+   The mechanical form of this check is
+   `task_workflow.ensemble_verdicts_present` (precedent:
+   `stage_dispatch_should_skip` for the dispatch side) — run it, do not
+   eyeball the events scan:
+
+   ```bash
+   uv run python - <<'PY'
+   import json
+   from explore_persona_space.task_workflow import ensemble_verdicts_present, list_events
+   print(json.dumps(ensemble_verdicts_present(
+       list_events(<N>), ["epm:code-review", "epm:code-review-codex"], <n>)))
+   PY
+   ```
+
+   (Substitute the site's marker kinds; for a reconciler read pass
+   `reconcile_role="<role under adjudication>"` so a same-round reconcile
+   for a DIFFERENT role never satisfies the check.) `present: false` →
+   proceed to item 2; `present: true, verdict: null` → the marker EXISTS
+   but is malformed — item 3's malformed-output handling, NEVER a
+   no-show; `present: true` with a verdict token → the reviewer RETURNED.
+   Before acting on a returned verdict token, confirm the adopted note's
+   head sentinel names THIS round (the predicate already treats the
+   sentinel as authoritative over the drift-prone `version` field; the
+   confirm is the cheap orchestrator-side double-check against a
+   stale-round adoption).
 2. If no marker: check the role's durable output file — the EXACT
    `--output-file` path this round's dispatch config named
    (role+round-specific conventions:

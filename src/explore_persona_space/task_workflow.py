@@ -81,7 +81,7 @@ import re
 import shutil
 import subprocess
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -1625,6 +1625,117 @@ def stage_dispatch_should_skip(
         f"breadcrumb at {events[crumb_idx].get('ts', '')}, effective age {age_minutes:.1f}m "
         f"< window {window_minutes}m{refreshed}"
     )
+
+
+# --- Ensemble verdict presence (#1149; mechanizes SKILL.md Step 5b ---
+# --- durable-verdict-first rule items 1 + 3)                        ---
+
+_RECONCILE_KIND = "epm:review-reconcile"
+
+
+def _sentinel_round(note: str, kind: str) -> int | None:
+    """Round named by a note-head ``<!-- <kind> v<n> -->`` sentinel, else None.
+
+    Anchored at the lstripped note HEAD (a copy-pasted sentinel mid-note never
+    matches); the kind must match exactly, so a ``-codex`` sibling's sentinel
+    never satisfies its base kind.
+    """
+    match = re.match(rf"<!--\s*{re.escape(kind)}\s+v(\d+)\s*-->", note.lstrip())
+    return int(match.group(1)) if match else None
+
+
+def ensemble_verdicts_present(
+    events: list[dict],
+    kinds: Sequence[str],
+    round_n: int,
+    *,
+    reconcile_role: str | None = None,
+) -> dict[str, dict[str, Any]]:
+    """Per-kind durable-verdict presence for one ensemble round (#1149).
+
+    Mechanizes items 1 + 3 of the /issue Step 5b durable-verdict-first
+    rule: BEFORE any reviewer no-show decision, the orchestrator asks
+    whether the round's expected verdict markers exist on events.jsonl and
+    whether each carries a parseable ``Verdict:`` field. For each queried
+    kind returns ``{"present": bool, "verdict": str | None,
+    "ts": str | None}``:
+
+    - ``present=False`` -> proceed to the rule's item 2 (durable output
+      file), then item 4 (no-show handling).
+    - ``present=True, verdict=None`` -> the marker EXISTS but its note has
+      no parseable ``Verdict:`` field: malformed-output handling (rule
+      item 3), NEVER a no-show (#810 r4: a posted verdict misread as a
+      total no-show is the incident class this predicate closes).
+    - ``present=True, verdict=<token>`` -> the reviewer RETURNED; apply
+      the normal ensemble rule. The token is returned RAW (per-site
+      pass/fail vocabularies live in workflow.yaml § ensemble_review).
+
+    Round matching: a note-head ``<!-- <kind> v<n> -->`` sentinel is
+    AUTHORITATIVE when present — the event matches iff the sentinel names
+    ``round_n``; a sentinel naming a DIFFERENT round suppresses any
+    top-level ``version``-field match (version/round divergence is real in
+    the wild: #480 non-monotonicity, defaulted re-spawn auto-bump). With
+    no sentinel, non-reconcile kinds fall back to
+    ``event["version"] == round_n``. ``epm:review-reconcile`` NEVER
+    matches on the ``version`` field — it is round-MEANINGLESS there
+    (auto-derived max+1 per kind while the sentinel names the ROUND; live
+    proof: #1092's reconcile is version 1 with sentinel v5) — so a
+    sentinel-less reconcile falls back to the note's ``**Round:**`` field,
+    else never matches. The LATEST matching event wins (re-spawns post at
+    the same v<n>). When ``kind`` is ``epm:review-reconcile`` and
+    ``reconcile_role`` is given, the note's ``**Role under
+    adjudication:**`` field must equal it — a same-round reconcile for a
+    DIFFERENT role, or a reconcile note MISSING the role field entirely,
+    never satisfies a role-scoped query (deliberate: fail toward the
+    rule's output-file probe rather than adopt an unattributable
+    adjudication). Verdict / role / round parsing reuses
+    :func:`parse_followup_note_field` (bold, bullet, ``; ``-joined and
+    escaped-newline note shapes, incl. the bold-wrapped
+    ``**Verdict: PASS**`` Codex-twin shape). Known false-ABSENT residual:
+    a sentinel-less terse note whose ``version`` drifted from the round
+    (a defaulted re-spawn that omitted the sentinel) reads absent — rule
+    item 2 (the durable output-FILE probe) is the prose backstop for that
+    path. Pure function over :func:`list_events` output — no I/O; the
+    rule's item 2 (output-file probe) and precedence clauses stay
+    orchestrator prose.
+    """
+    out: dict[str, dict[str, Any]] = {}
+    for kind in kinds:
+        match: dict | None = None
+        for event in events:  # chronological; latest match wins
+            if event.get("kind", "") != kind:
+                continue
+            note = event.get("note", "") or ""
+            head_round = _sentinel_round(note, kind)
+            if kind == _RECONCILE_KIND:
+                # The reconcile version field never carries the round
+                # (#1092: version 1 / sentinel v5) — sentinel, then the
+                # note's **Round:** field, else no match.
+                if head_round is not None:
+                    if head_round != round_n:
+                        continue
+                else:
+                    round_field = parse_followup_note_field(note, "Round")
+                    if round_field is None or not round_field.isdigit():
+                        continue
+                    if int(round_field) != round_n:
+                        continue
+            elif head_round is not None:
+                if head_round != round_n:
+                    continue  # sentinel authoritative — suppress the version match
+            elif event.get("version") != round_n:
+                continue
+            if kind == _RECONCILE_KIND and reconcile_role is not None:
+                role = parse_followup_note_field(note, "Role under adjudication")
+                if role != reconcile_role:
+                    continue
+            match = event
+        if match is None:
+            out[kind] = {"present": False, "verdict": None, "ts": None}
+        else:
+            verdict = parse_followup_note_field(match.get("note", "") or "", "Verdict")
+            out[kind] = {"present": True, "verdict": verdict, "ts": match.get("ts")}
+    return out
 
 
 # Canonical PASS-verdict pattern for an epm:upload-verification note
