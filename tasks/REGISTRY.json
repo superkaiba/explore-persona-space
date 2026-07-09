@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1162,
+  "highest_id": 1163,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1268,6 +1268,13 @@
       "path": "tasks/proposed/1162",
       "status": "proposed",
       "title": "workflow-fix: check_jsonl_splitlines: add generic-receiver s"
+    },
+    "1163": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1163",
+      "status": "proposed",
+      "title": "workflow-fix: workflow_lint no-flags run times out from a wo"
     },
     "117": {
       "has_clean_result": false,
