@@ -6763,11 +6763,8 @@ AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
 # (#838): both were structurally trimmed to <=20 KB, so regrowth on the two
 # incident files is a commit-time FAIL.
 AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 107,930 B post-#1115 (read-hygiene context-budget section —
-    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 107,000 —
-    # measured 104,135 B post-#829; fifteen-lenses core is every-markdown-review
-    # load-bearing — SPEC.md-dedup trim is the #829 named follow-up)
-    "clean-result-critic.md": 108_900,
+    # clean-result-critic.md: split to clean-result-critic-lens-reference.md
+    # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
     # measured 96,072 B post-#1119 (Step 3.6 external-stream presumption —

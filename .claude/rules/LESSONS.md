@@ -4,16 +4,16 @@ Always-on (imported by `CLAUDE.md`): lesson name + plan-time trigger;
 rule text stays on-demand. Add/remove a `.claude/rules/*.md` =>
 update this index (lint: `--check-lessons-index`).
 
-**How to use:** trigger matches => open + follow the rule. Each row's
-**[name](name.md)** link resolves to `.claude/rules/<name>.md`.
+**How to use:** trigger matches => open + follow the rule.
 
 ## Rules
 
 - **[analyzer-paper-mode](analyzer-paper-mode.md)** — fires when: the analyzer runs a `paper: true` task (LaTeX clean-result; verify_paper.py gate).
 - **[analyzer-section-reference](analyzer-section-reference.md)** — fires when: the analyzer executes a protocol step (pointer-loaded step span).
-- **[artifact-reuse](artifact-reuse.md)** — fires when: a plan reuses an HF adapter/checkpoint/mix/completions/eval JSON/tensor store/fit-analysis helper vs retraining, stages a reused multi-file artifact into a consumer-fixed layout, or designs a reuse-validation gate ((a)-(j) + gate calibration/severity).
+- **[artifact-reuse](artifact-reuse.md)** — fires when: a plan reuses an HF adapter/checkpoint/mix/completions/eval JSON/tensor store/fit-analysis helper vs retraining, stages a reused artifact into a consumer-fixed layout, or designs a reuse-validation gate ((a)-(j) + gate calibration/severity).
 - **[arxiv-mcp](arxiv-mcp.md)** — fires when: you search / read an arXiv paper to ground a hyperparameter or replicate a recipe.
 - **[background-automation](background-automation.md)** — fires when: you touch/reason about the cron audits/session watcher/pod-GCP janitors.
+- **[clean-result-critic-lens-reference](clean-result-critic-lens-reference.md)** — fires when: a clean-result critic twin reviews a markdown body (pointer-loaded lens + spec-text-only rubrics).
 - **[clean-result-paper-review](clean-result-paper-review.md)** — fires when: either clean-result critic twin reviews a `paper: true` task (P1-P7 lenses, verify_paper.py pre-pass).
 - **[code-style](code-style.md)** — fires when: you write/edit any `*.py` or Hydra config (lint, vectorized torch, checkpoint-per-phase, no dollar caps).
 - **[compute-backend-failover](compute-backend-failover.md)** — fires when: you touch the backend router / dispatch / poll, or reason about GCP↔RunPod failover.
@@ -23,7 +23,7 @@ update this index (lint: `--check-lessons-index`).
 - **[data-realism](data-realism.md)** — fires when: a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - **[diff-size-budget](diff-size-budget.md)** — fires when: reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
 - **[experiment-guidelines](experiment-guidelines.md)** — fires when: you plan/implement a `workflow: v2` experiment (durable guideline index; each points at its full rule + names the v2 critic owner).
-- **[gotchas](gotchas.md)** — fires when: you write/debug training/eval/orchestration/analysis code or an Anthropic request-builder seam, hand-launch a per-cell GPU worker (CVD, EDQUOT/wedge, vLLM teardown), call train_lora/merge_lora through the library seam or compose a multi-GPU launch after in-process training (CVD clobber), diagnose a silent process death/exit-137 (kill-sources), an rc=134 SIGABRT at interpreter shutdown, or an all-units vLLM fan-out handshake timeout (single-crasher mask), parse JSONL (splitlines shred), feed an external/real-corpus prompt bank to vLLM, or write real-corpus streaming filters / a corpus builder (field shapes; tiny-real probe), or build a teacher-forced capture rig (token-id concat; BPE-seam positions).
+- **[gotchas](gotchas.md)** — fires when: you write/debug training/eval/orchestration/analysis code or an Anthropic request-builder seam, hand-launch a per-cell GPU worker (CVD, EDQUOT/wedge, vLLM teardown), call train_lora/merge_lora via the library seam or compose a multi-GPU launch after in-process training (CVD clobber), diagnose a silent process death/exit-137, an rc=134 SIGABRT at interpreter shutdown, or an all-units vLLM fan-out handshake timeout (single-crasher mask), parse JSONL (splitlines shred), feed an external/real-corpus prompt bank to vLLM, or write real-corpus streaming filters / a corpus builder (field shapes; tiny-real probe), or build a teacher-forced capture rig (token-id concat; BPE-seam positions).
 - **[lens-coverage-map](lens-coverage-map.md)** — fires when: you split, retire, or add a review lens (v2 lens→owner ledger; three states; lint `--check-lens-coverage`).
 - **[llm-judging](llm-judging.md)** — fires when: a plan/code designs/writes an LLM-judged behavior DV (graded 0-100 primary; one Sonnet judge; drop-never-coerce; rubric-keyed judge caches; max_tokens sized for the rationale).
 - **[marker-leakage-measurement](marker-leakage-measurement.md)** — fires when: a plan/code MEASURES marker leakage (on-policy, marker-at-end, three-space DV).
