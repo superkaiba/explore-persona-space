@@ -5666,13 +5666,18 @@ def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[s
         # Pre-enumeration pruning (#1163): the old `claude_dir.rglob("*")`
         # enumerated the repo root's 3.3M-entry `.claude/worktrees/` tree
         # (145s) only for the string filters below to discard it. The pruned
-        # walk never descends there; the per-file filters stay verbatim as
+        # walk never descends there; the per-file filters stay in place as
         # the behavioral contract.
         for p in _iter_files_pruned(
             claude_dir, suffixes=frozenset({".md", ".yaml", ".yml", ".py", ".sh"})
         ):
-            s = p.as_posix()
-            if "/.claude/cache/" in s or "/.claude/agent-memory/" in s:
+            # Root-RELATIVE match (not an absolute-path substring): keeps the
+            # check hermetic when the repo root itself is nested under a real
+            # .claude/cache/ (repo-nested TMPDIR, #1174). relative_to(root) is
+            # always valid here — the walk yields paths prefixed by the
+            # claude_dir it was called with.
+            rel = p.relative_to(root).as_posix()
+            if rel.startswith(".claude/cache/") or rel.startswith(".claude/agent-memory/"):
                 continue
             if _is_other_worktree_path(p, current_prefix):
                 continue

@@ -3000,6 +3000,34 @@ def test_check_no_workflow_improver_spawn_flags_a_stray_spawn(tmp_path):
     assert "stale Agent" in errors[0]
 
 
+def test_check_no_workflow_improver_spawn_hermetic_under_cache_nested_root(tmp_path):
+    """A tmp repo rooted inside a directory literally named .claude/cache/ is
+    still scanned — the cache/agent-memory exclusion matches relative to the
+    repo root, not the absolute path (#1174: a repo-nested TMPDIR wholesale-
+    excluded the whole tmp tree). Files genuinely under the tmp repo's OWN
+    .claude/cache/ and .claude/agent-memory/ stay excluded."""
+    outer = tmp_path / ".claude" / "cache" / "tmprepo"
+    rules = outer / ".claude" / "rules"
+    rules.mkdir(parents=True)
+    (rules / "stray.md").write_text(
+        'Agent(subagent_type="workflow-improver", run_in_background=true)\n'
+    )
+    cache = outer / ".claude" / "cache"
+    cache.mkdir(parents=True)
+    (cache / "planted.md").write_text(
+        'Agent(subagent_type="workflow-improver", run_in_background=true)\n'
+    )
+    agent_mem = outer / ".claude" / "agent-memory"
+    agent_mem.mkdir(parents=True)
+    (agent_mem / "planted_mem.md").write_text(
+        'Agent(subagent_type="workflow-improver", run_in_background=true)\n'
+    )
+    errors = check_no_workflow_improver_spawn(repo_root=outer)
+    assert len(errors) == 1, errors
+    assert "stale Agent" in errors[0]
+    assert "stray.md" in errors[0]
+
+
 def test_check_no_workflow_improver_spawn_excludes_frozen_agent_file(tmp_path):
     """The frozen .claude/agents/workflow-improver.md is excluded even if its
     (deprecated, historical) body still shows a spawn shape."""
