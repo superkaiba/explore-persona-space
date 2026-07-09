@@ -1412,8 +1412,8 @@
     "1181": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1181",
-      "status": "running",
+      "path": "tasks/reviewing/1181",
+      "status": "reviewing",
       "title": "workflow-fix: Lint: fix_sha in code-fix relaunch notes + D3 "
     },
     "1182": {
