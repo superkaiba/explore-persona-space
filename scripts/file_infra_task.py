@@ -62,7 +62,14 @@ if _SCRIPTS_DIR not in sys.path:
 #     function and the three dispatchers cannot drift apart).
 #   - AUTONOMOUS_REGISTRY_DIR / daemon_port: the registration dir + Happy
 #     daemon port, the SAME source of truth `spawn_session.py list` uses.
-from autonomous_session_watch import infra_dispatch_has_free_slot  # noqa: E402
+#   - _forward_marker_child_stderr: the shared #1130 rc==0 child-stderr
+#     forwarder (a copied forwarder is exactly the drift this import layer
+#     exists to prevent; SLF is unselected in ruff, and the #1130 tests
+#     already access it cross-module).
+from autonomous_session_watch import (  # noqa: E402
+    _forward_marker_child_stderr,
+    infra_dispatch_has_free_slot,
+)
 
 # PROJECT_ROOT is git-common-dir-resolved (canonical primary checkout, #844)
 # once the imported spawn_session copy contains the fix — a stale pre-fix
@@ -224,6 +231,10 @@ def cmd_file_infra(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return filed.returncode
+    # rc==0: task.py new deliberately exits 0 on deferred-commit / LANDING
+    # CHECK warnings — forward them so they reach the caller's transcript
+    # (#1130 helper; the rc!=0 branch above already writes stderr itself).
+    _forward_marker_child_stderr(filed, "task.py new (file_infra_task)")
     issue = _parse_new_id(filed.stdout)
     if issue is None:
         print(

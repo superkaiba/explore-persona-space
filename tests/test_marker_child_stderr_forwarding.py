@@ -14,6 +14,7 @@ semantics, return values) is unchanged. Primary-site coverage
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -23,6 +24,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import autonomous_session_watch as asw  # noqa: E402
+import file_infra_task  # noqa: E402
 import spawn_session  # noqa: E402
 
 _LANDING_CHECK_LINE = (
@@ -120,3 +122,132 @@ def test_watch_post_progress_marker_integration_forwards(monkeypatch, capsys):
     err = capsys.readouterr().err
     assert "[task.py stderr]" in err
     assert "task.py LANDING CHECK" in err
+
+
+# ──────────────────────────────────────────────────────────────────────
+# #1150: the three remaining mutating task.py children.
+# autonomous_session_watch._set_status_blocked
+# ──────────────────────────────────────────────────────────────────────
+
+
+def test_set_status_blocked_forwards_rc0_stderr(monkeypatch, capsys):
+    """rc==0 set-status child with non-empty stderr → returns True AND the
+    warning is forwarded under the `set-status blocked on #<N>` context."""
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda *a, **k: SimpleNamespace(returncode=0, stdout="", stderr=_LANDING_CHECK_LINE),
+    )
+
+    assert asw._set_status_blocked(1150, dry_run=False) is True
+    err = capsys.readouterr().err
+    assert "[task.py stderr] set-status blocked on #1150:" in err
+    assert "task.py LANDING CHECK" in err
+
+
+def test_set_status_blocked_rc_nonzero_unchanged(monkeypatch, capsys):
+    """rc!=0 → returns False with the existing WARNING line; NO forwarding
+    (the rc!=0 branch already prints the stderr detail — forwarding there
+    would duplicate it)."""
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda *a, **k: SimpleNamespace(returncode=1, stdout="", stderr="boom detail"),
+    )
+
+    assert asw._set_status_blocked(1150, dry_run=False) is False
+    err = capsys.readouterr().err
+    assert "WARNING: set-status blocked on #1150 FAILED (rc=1): boom detail" in err
+    assert "[task.py stderr]" not in err
+
+
+# ──────────────────────────────────────────────────────────────────────
+# autonomous_session_watch._repark_completed_followup_round
+# ──────────────────────────────────────────────────────────────────────
+
+
+def test_repark_forwards_rc0_stderr(monkeypatch, capsys):
+    """rc==0 set-status child with non-empty stderr → returns True AND the
+    warning is forwarded under the exact `set-status awaiting_promotion on
+    #<N>` context prefix (the stub also serves the downstream marker posts,
+    which forward under their OWN contexts — asserting the exact repark
+    context keeps those from masking the target site; events=[] makes
+    _post_followup_run_marker fail-soft with no subprocess of its own)."""
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda *a, **k: SimpleNamespace(returncode=0, stdout="", stderr=_LANDING_CHECK_LINE),
+    )
+
+    assert asw._repark_completed_followup_round(1150, "reason", [], dry_run=False) is True
+    err = capsys.readouterr().err
+    assert "[task.py stderr] set-status awaiting_promotion on #1150:" in err
+    assert "task.py LANDING CHECK" in err
+
+
+# ──────────────────────────────────────────────────────────────────────
+# file_infra_task.cmd_file_infra (`task.py new` child)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _file_infra_args(**overrides):
+    """Namespace with every attr cmd_file_infra consumes up to the
+    --no-dispatch early return (_build_new_argv attrs + no_dispatch)."""
+    base = dict(
+        kind="infra",
+        title="t",
+        body=None,
+        body_file=None,
+        parent=None,
+        tag=[],
+        origin_prompt=None,
+        no_dispatch=True,
+    )
+    base.update(overrides)
+    return argparse.Namespace(**base)
+
+
+def test_file_infra_task_new_forwards_rc0_stderr(monkeypatch, capsys):
+    """rc==0 `task.py new` child with non-empty stderr → exit 0 AND the
+    warning is forwarded under the `task.py new (file_infra_task)` context
+    (no_dispatch=True returns right after filing — no daemon/cap probes)."""
+    monkeypatch.setattr(
+        file_infra_task.subprocess,
+        "run",
+        lambda *a, **k: SimpleNamespace(
+            returncode=0, stdout="filed #123", stderr=_LANDING_CHECK_LINE
+        ),
+    )
+
+    rc = file_infra_task.cmd_file_infra(_file_infra_args())
+
+    assert rc == 0
+    out, err = capsys.readouterr()
+    assert "filed #123" in out
+    assert "[task.py stderr] task.py new (file_infra_task):" in err
+    assert "task.py LANDING CHECK" in err
+
+
+def test_file_infra_task_new_rc_nonzero_unchanged(monkeypatch, capsys):
+    """rc!=0 → exit code == child rc, the child stderr is written exactly
+    once (the existing sys.stderr.write), and NO `[task.py stderr]` prefix
+    (no double-print on the failure path)."""
+    monkeypatch.setattr(
+        file_infra_task.subprocess,
+        "run",
+        lambda *a, **k: SimpleNamespace(returncode=1, stdout="", stderr="new failed detail\n"),
+    )
+
+    rc = file_infra_task.cmd_file_infra(_file_infra_args())
+
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert err.count("new failed detail") == 1
+    assert "task NOT filed" in err
+    assert "[task.py stderr]" not in err
+
+
+def test_file_infra_task_imports_shared_helper():
+    """Pins the no-drift decision: file_infra_task reuses the watcher's
+    forwarder rather than a copied local one (a rename fails loud here)."""
+    assert file_infra_task._forward_marker_child_stderr is asw._forward_marker_child_stderr
