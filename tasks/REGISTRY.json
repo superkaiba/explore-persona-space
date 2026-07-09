@@ -1286,8 +1286,8 @@
     "1165": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1165",
-      "status": "proposed",
+      "path": "tasks/planning/1165",
+      "status": "planning",
       "title": "workflow-fix: Venue caveat in experimenter nohup .env memory"
     },
     "1166": {
