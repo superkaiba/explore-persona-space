@@ -1433,8 +1433,8 @@
     "1184": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1184",
-      "status": "approved",
+      "path": "tasks/running/1184",
+      "status": "running",
       "title": "workflow-fix: Fix ls-tree fail-open in Step 10d stale-folder"
     },
     "1185": {
