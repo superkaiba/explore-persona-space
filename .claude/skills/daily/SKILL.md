@@ -50,15 +50,31 @@ of what the run applied + noted; the actual surfacing to Thomas happens over
 Telegram (see "Surfacing flow (applied / filed / held)"), not via this file. Handle an
 existing file as follows:
 
-- **File does not exist** → write the full stub (all five H2 sections below).
+- **File does not exist** → write the dated SKELETON first — the frontmatter
+  (§ Frontmatter) + all six H2 sections below with EMPTY bodies (in
+  particular `## Applied workflow improvements` stays empty until
+  enrichment) — as the run's FIRST durable action, then fill each section in
+  place via `Edit` as results land. In headless mode, rule 0 under
+  "Headless (cron) mode" additionally makes the skeleton commit + push
+  mandatory-immediate. The completed brief is the same file after
+  enrichment; the emptiness of the skeleton's Applied section is
+  load-bearing (it is what keeps a husk on this list's Edit-in-place
+  recovery branch below, and what the #1189 healthcheck husk arm detects).
 - **File exists but is missing the `## Applied workflow improvements` H2, or
   that section is empty** → do NOT overwrite the file. `Edit` it to insert /
   fill the `## Applied workflow improvements` section in place (between
   `## What happened` and `## Other problems & notes`, or in the correct
   position if those are absent), and likewise insert `## Other problems &
   notes` AND `## Living-docs drift` (between `## Other problems & notes` and
-  `## My thoughts`) if either is missing. Leave every other section — including any edits
-  Thomas already made to `## What happened` / `## My thoughts` — untouched.
+  `## My thoughts`) if either is missing. Leave every other NON-EMPTY section
+  — including any edits Thomas already made to `## What happened` /
+  `## My thoughts` — untouched. Exception for an ALL-EMPTY stub-first husk
+  (#1189: every section body empty — the skeleton was written but the run
+  died before any enrichment): the recovering run may also fill the other
+  auto-drafted sections (`## What happened`, `## Living-docs drift`,
+  `## Highlighted results`), since nothing there can be Thomas's; a section
+  with ANY existing content is still never touched, and `## My thoughts` is
+  always left alone.
   This is the recovery path when an earlier manual or partial run left a stub
   without the problem sweep.
 - **File exists with a non-empty `## Applied workflow improvements` section**
@@ -67,11 +83,15 @@ existing file as follows:
   would double-apply fixes). Refuse to overwrite and tell the user the day is
   already done.
 
-**Manual runs write the FULL file AND auto-apply.** When `/daily` is invoked
+**Manual runs complete the FULL file AND auto-apply.** When `/daily` is invoked
 manually (not via the nightly cron), always produce EVERY section including
-`## Applied workflow improvements` and actually apply the fixes — the 23:27 PT
-cron refuses to overwrite an existing daily file, so a partial manual run
-permanently loses that day's problem-sweep + auto-apply.
+`## Applied workflow improvements` and actually apply the fixes. Under
+stub-first an aborted manual SKELETON (empty Applied section) is recoverable —
+it lands on the Edit-in-place branch above, so the 23:27 PT cron can still run
+that day's problem-sweep. But a manual run that fills
+`## Applied workflow improvements` and then stops DOES block the nightly cron
+(the non-empty-Applied refuse rule reads it as "day already done"), so finish
+the apply pass you started.
 
 The file is a stub Thomas will finish editing. It starts hidden from the
 `/log` dashboard feed (`visible: false`) and only becomes visible when he
@@ -548,6 +568,11 @@ git commit -m "logs: daily stub for YYYY-MM-DD"
 git push origin main || uv run python scripts/sync_repo_root.py
 ```
 
+Under stub-first (headless rule 0) this recipe runs TWICE: once for the
+skeleton at run start (`logs: daily stub for YYYY-MM-DD`) and once after
+enrichment (`logs: daily brief for YYYY-MM-DD`). Always a NEW commit for the
+enrichment — never amend the stub commit (it may already be pushed).
+
 **`logs/` is in `.gitignore`** — a bare `git add logs/...` stages nothing
 and `git commit` reports "no changes added to commit", so the daily never
 lands in git or the dashboard. `-f` is required (the prior dailies are
@@ -588,15 +613,36 @@ default 600s) after the final turn ends. On 2026-07-01 the run ended its
 turn "waiting on the filing driver" with the daily file unwritten and was
 killed at the 600s default; the 07-02/07-03 nights also died with their
 files unwritten (one logged nothing, one left a kill-less trailing-wait
-tail) (#994). Two rules:
+tail) (#994). Three rules:
 
+0. **Stub-first (mechanical — #1189).** IMMEDIATELY on run start — before any
+   transcript mining, task reads, routing, or subagent dispatch — if
+   `logs/daily/<date>.md` does not exist, write it as the dated skeleton
+   (§ Output first bullet: frontmatter + the six H2 headers, bodies EMPTY),
+   then commit + push it with the § Commit recipe
+   (`git add -f` + `logs: daily stub for <date>` + immediate push). If the
+   file already exists, rule 0 is a no-op — the § Output existing-file rules
+   govern (a husk from a prior kill lands on the Edit-in-place branch). All
+   later output is Edit-in-place enrichment of this file. Why mechanical: in
+   `-p` mode the prose ordering rules below were violated within hours of
+   shipping (the 07-03 backfill died "waiting on the filing driver" with no
+   file); the skeleton guarantees a durable artifact from minute 0, and
+   `scripts/cron_daily_healthcheck.sh`'s husk arm distinguishes a
+   never-enriched skeleton (empty `## Applied workflow improvements` at
+   06:00) from a completed brief.
 1. **Write-then-wait ordering.** The daily file write + `git commit` + push +
    Telegram enqueue are the load-bearing outputs — never gate them on a
-   background task. Once mining + routing results are in hand, WRITE the file
-   (recording, from `logs/daily/filings-<date>/filed.jsonl`, each terminal
+   background task. Once mining + routing results are in hand, ENRICH the
+   stub (Edit-in-place on the rule-0 skeleton, recording, from
+   `logs/daily/filings-<date>/filed.jsonl`, each terminal
    item's filed `#id`, and any not-yet-terminal slug or spawn-deferred id as
    "dispatch pending"), commit, push, enqueue — only THEN may a turn end with
    residual background work (e.g. watching a filing driver) still in flight.
+   Land the `## Applied workflow improvements` content together with — or
+   AFTER — the other machine-drafted sections in that ONE enrichment pass:
+   the healthcheck husk arm reads a non-empty Applied section as "day done",
+   so filling Applied first and dying before the rest would leave an
+   incomplete file that no longer alerts.
 2. **Join load-bearing background work synchronously.** Anything the daily
    file's content depends on (transcript miners, a driver whose filed `#id`s
    you want to record) is collected by blocking on its TaskOutput in-turn —
