@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1201,
+  "highest_id": 1202,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1576,6 +1576,13 @@
       "path": "tasks/proposed/1201",
       "status": "proposed",
       "title": "workflow-fix: PreToolUse guard on bare git pull at repo root"
+    },
+    "1202": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1202",
+      "status": "proposed",
+      "title": "workflow-fix: lint bare list_repo_files in new scripts"
     },
     "121": {
       "has_clean_result": true,
