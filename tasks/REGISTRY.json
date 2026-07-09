@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1215,
+  "highest_id": 1216,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1681,6 +1681,13 @@
       "path": "tasks/proposed/1215",
       "status": "proposed",
       "title": "daily-held: daemon-independent orphan-wrapper sweep"
+    },
+    "1216": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1216",
+      "status": "proposed",
+      "title": "daily-held: arm the #864 zombie namespace veto"
     },
     "122": {
       "has_clean_result": true,
