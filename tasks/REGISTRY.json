@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1199,
+  "highest_id": 1200,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1562,6 +1562,13 @@
       "path": "tasks/completed/120",
       "status": "completed",
       "title": "Investigate why Qwen identity prompt and generic assistant leak to different bystander neighborhoods"
+    },
+    "1200": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1200",
+      "status": "proposed",
+      "title": "workflow-fix: sync experimenter memory launcher to pid contr"
     },
     "121": {
       "has_clean_result": true,
