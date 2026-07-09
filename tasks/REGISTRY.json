@@ -1223,8 +1223,8 @@
     "1157": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1157",
-      "status": "proposed",
+      "path": "tasks/planning/1157",
+      "status": "planning",
       "title": "workflow-fix: 6d.0-bis smoke gate: name data-ingestion tiny-"
     },
     "1158": {
