@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1206,
+  "highest_id": 1207,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1611,6 +1611,13 @@
       "path": "tasks/proposed/1206",
       "status": "proposed",
       "title": "daily-fix: judge transport errors are RETRY, never dropped d"
+    },
+    "1207": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1207",
+      "status": "proposed",
+      "title": "daily-fix: codify long-phase heartbeat duty + tick re-arm"
     },
     "121": {
       "has_clean_result": true,
