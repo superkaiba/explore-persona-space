@@ -666,6 +666,13 @@ ZOMBIE_CPU_RATE_MIN_DT_SEC = int(os.environ.get("EPM_ZOMBIE_CPU_RATE_MIN_DT_SEC"
 # a restart for an ops flip to take effect.
 OUTPUT_MTIME_FOLD_ENABLED = os.environ.get("EPM_POLL_OUTPUT_MTIME_FOLD", "1") != "0"
 
+# #1156: slack for the stale-pid-file-vs-marker WARN. Must exceed the normal
+# launch->marker-post latency (the pid file is written BEFORE epm:run-launched
+# posts — experimenter.md steps 1/1b; worst observed normal-family gap 516 s,
+# the #813 v5 relaunch, so 600 s carries ~16% margin) while staying well under
+# the >=30 min inter-launch gap of a genuine stale file.
+PID_FILE_MARKER_SLACK_SEC = int(os.environ.get("EPM_POLL_PID_MARKER_SLACK_SEC", "600"))
+
 
 def _output_find_timeout_sec() -> int:
     """The bounded ``timeout`` (seconds) around the pod-side output ``find``.
@@ -875,6 +882,83 @@ def _run_launched_age_sec(issue: int, now_epoch: float) -> float | None:
     return now_epoch - launched.timestamp()
 
 
+def _pid_file_predates_marker(
+    *,
+    pid_file_mtime_epoch: int,
+    pod_now_epoch: int,
+    run_age_sec: float | None,
+    slack_sec: int | None = None,
+) -> bool:
+    """True iff the pod-side pid file's mtime predates the newest
+    epm:run-launched marker by more than ``slack_sec`` (#1156).
+
+    Same-clock differences only (#704): ``pod_now_epoch - pid_file_mtime_epoch``
+    is pod-clock, ``run_age_sec`` is VM-clock — never a cross-clock subtraction.
+    Inert (False) on any missing input: ``pid_file_mtime_epoch <= 0`` (absent /
+    stat failed / legacy probe), ``pod_now_epoch <= 0`` (no drift-free basis),
+    ``run_age_sec is None`` (no marker / unparseable ts). Pure; unit-tested
+    directly with no SSH.
+    """
+    if slack_sec is None:
+        slack_sec = PID_FILE_MARKER_SLACK_SEC
+    if pid_file_mtime_epoch <= 0 or pod_now_epoch <= 0 or run_age_sec is None:
+        return False
+    pid_file_age_sec = pod_now_epoch - pid_file_mtime_epoch
+    return pid_file_age_sec > run_age_sec + slack_sec
+
+
+def _maybe_warn_stale_pid_file(
+    *,
+    issue: int,
+    pod: str,
+    pid_file: str,
+    probe: dict[str, str],
+    run_age_sec: float | None,
+    pid_file_missing: bool,
+) -> bool:
+    """Fail-soft #1156 WARN emitter; returns the observability flag.
+
+    WARN-only by contract: never contributes to status / stall / dead.
+    ``pid_file_missing`` short-circuits (the #521 absent-file WARN already
+    covers that case — no double-fire). Any exception is swallowed to DEBUG:
+    the flag is WARN-only observability feeding no verdict, and every live
+    poll loop fleet-wide runs this hot shared script, so a broken backstop
+    must never break a tick — a deliberate, narrow exception to fail-fast
+    (the parse tolerance itself comes from the #1033 r2 defensive-scalar
+    pattern).
+    """
+    try:
+        if pid_file_missing:
+            return False
+        pod_now_epoch = _parse_output_mtime_epoch(probe.get("pod_now_epoch"))
+        pid_file_mtime_epoch = _parse_output_mtime_epoch(probe.get("pid_file_mtime_epoch"))
+        stale = _pid_file_predates_marker(
+            pid_file_mtime_epoch=pid_file_mtime_epoch,
+            pod_now_epoch=pod_now_epoch,
+            run_age_sec=run_age_sec,
+        )
+        if stale:
+            pid_age = pod_now_epoch - pid_file_mtime_epoch
+            log.warning(
+                "pid file %s on pod %s predates the newest epm:run-launched marker "
+                "for #%d (pid-file age %ds vs marker age %.0fs, slack %ds) — possible "
+                "stale pid from a prior launch masking a dead relaunch (#813 pid-file "
+                "rewrite contract). WARN-only; status verdict unchanged. Recovery: "
+                "rewrite the pid file with the live workload pid and re-post "
+                "epm:run-launched (pod-side-reporting.md § Pid-file launch contract).",
+                pid_file,
+                pod,
+                issue,
+                pid_age,
+                run_age_sec,
+                PID_FILE_MARKER_SLACK_SEC,
+            )
+        return stale
+    except Exception as exc:
+        log.debug("stale-pid-file-vs-marker check failed (ignored, #1156): %s", exc)
+        return False
+
+
 # Schema version the poller knows how to parse. Bump in lockstep with the
 # pod-side writer (currently ``run_experiment_<N>.py::SENTINEL_SCHEMA_VERSION``).
 # Newer schemas are skipped + logged, never silently mis-parsed.
@@ -1080,6 +1164,12 @@ class PollResult:
     # regardless of the once-per-episode dedup (an already-advised episode
     # still reports what it sees). Empty when no episode is active.
     post_done_phase_lines: tuple[str, ...] = ()
+    # True when the pod-side pid file's mtime predates the newest
+    # epm:run-launched marker by > PID_FILE_MARKER_SLACK_SEC (#1156 — the
+    # #813 stale-pid-after-relaunch shape). Observability only; status
+    # routing unchanged. Defaulted so cross-backend PollResult(...) call
+    # sites need no change.
+    pid_file_stale_vs_marker: bool = False
 
 
 def _ssh_probe(
@@ -1110,6 +1200,10 @@ def _ssh_probe(
       tick collapsed "file absent, marker-pid fallback in effect" into
       a bare ``pid_alive=False``). ``"0"`` on the SSH-failure fail-safe
       path — transport failure means "unknown", not "missing".
+    * ``pid_file_mtime_epoch`` — pod-clock mtime (``stat -c %Y``) of
+      ``pid_file``, feeding the #1156 stale-pid-file-vs-marker WARN.
+      ``"0"`` (always inert) when the file is absent / ``stat`` failed /
+      SSH failed / a legacy probe replay omits the line.
     * ``marker_pid_alive`` — liveness of ``marker_pid`` (the PID carried
       by the latest epm:run-launched marker) when one is supplied. The
       marker-pid probe is the self-correction path for a stale pidfile.
@@ -1518,6 +1612,7 @@ def _ssh_probe(
         f"LOG_PATH={log_path}; "
         f"if [ -f {pid_file} ]; then "
         f"  echo PID_FILE_MISSING=0; PID=$(cat {pid_file}); "
+        f"  echo PID_FILE_MTIME_EPOCH=$(stat -c %Y {pid_file} 2>/dev/null || echo 0); "
         f"  if ps -p $PID > /dev/null 2>&1; then echo PID_ALIVE=1; else echo PID_ALIVE=0; fi; "
         f"else echo PID_FILE_MISSING=1; echo PID_ALIVE=0; fi; "
         f"{marker_probe}"
@@ -1556,6 +1651,7 @@ def _ssh_probe(
         return {
             "pid_alive": "0",
             "pid_file_missing": "0",
+            "pid_file_mtime_epoch": "0",
             "marker_pid_alive": "0",
             "mtime_epoch": "0",
             "pod_now_epoch": "0",
@@ -1586,6 +1682,7 @@ def _ssh_probe(
 _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "PID_ALIVE",
     "PID_FILE_MISSING",
+    "PID_FILE_MTIME_EPOCH",
     "MARKER_PID_ALIVE",
     "MTIME_EPOCH",
     "POD_NOW_EPOCH",
@@ -1613,6 +1710,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
     parsed: dict[str, str] = {
         "pid_alive": "0",
         "pid_file_missing": "0",
+        "pid_file_mtime_epoch": "0",
         "marker_pid_alive": "0",
         "mtime_epoch": "0",
         "pod_now_epoch": "0",
@@ -4310,8 +4408,11 @@ def _parse_output_mtime_epoch(raw: str | None) -> int:
     line — must fail INERT, not kill the tick: return ``0``, which
     ``_log_staleness_secs`` maps to the ``10**9`` absent sentinel (the
     pre-#1033 no-fold behavior). Every numeric value parses exactly as the
-    previous inline ``int(raw or "0")`` did. Guards ONLY this new #1033 key —
-    the sibling probe ints keep their long-standing strict parses.
+    previous inline ``int(raw or "0")`` did. Guards ONLY the tolerant-parse
+    keys — this #1033 ``OUTPUT_MTIME_EPOCH`` scalar and the #1156 reads inside
+    ``_maybe_warn_stale_pid_file`` (``PID_FILE_MTIME_EPOCH`` + its
+    ``POD_NOW_EPOCH`` basis) — the sibling probe ints keep their
+    long-standing strict parses.
     """
     try:
         return int(raw or "0")
@@ -4735,6 +4836,18 @@ def poll_once(
     # ``prev_state`` (zombie_streak scoping is out of #1033's scope; the
     # post-done guard has its own natural epoch).
     run_age_sec = _run_launched_age_sec(issue, now_epoch)
+    # ── #1156 stale-pid-file-vs-marker WARN (observability-only) ─────────
+    # Placed here (not at the #521 pid_file_missing block above) so it
+    # reuses run_age_sec — keeping the "one events.jsonl read per tick"
+    # invariant. Never contributes to status / stall / dead.
+    pid_file_stale_vs_marker = _maybe_warn_stale_pid_file(
+        issue=issue,
+        pod=pod,
+        pid_file=pid_file,
+        probe=probe,
+        run_age_sec=run_age_sec,
+        pid_file_missing=pid_file_missing,
+    )
     tripwire_state, tripwire_run_epoch = _tripwire_run_scope(
         prev_state, run_age_sec=run_age_sec, now_epoch=now_epoch
     )
@@ -5027,6 +5140,7 @@ def poll_once(
         last_log_mtime_sec_ago=min(last_mtime_ago, 10**9),
         pid_alive=pid_alive,
         pid_file_missing=pid_file_missing,
+        pid_file_stale_vs_marker=pid_file_stale_vs_marker,
         log_tail_excerpt=tail_excerpt,
         gate=gate,
         sentinels_processed=sentinels_processed,
@@ -5106,6 +5220,7 @@ def main(argv: list[str] | None = None) -> int:
                 "last_log_mtime_sec_ago": result.last_log_mtime_sec_ago,
                 "pid_alive": result.pid_alive,
                 "pid_file_missing": result.pid_file_missing,
+                "pid_file_stale_vs_marker": result.pid_file_stale_vs_marker,
                 "log_tail_excerpt": result.log_tail_excerpt,
                 "gate": result.gate,
                 "sentinels_processed": result.sentinels_processed,
