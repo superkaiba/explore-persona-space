@@ -487,3 +487,76 @@ def test_corrupt_non_trailing_ledger_line_fails_loud(tmp_path, tasks_root):
     (d / "filed.jsonl").write_text('{"broken json\n' + json.dumps(valid) + "\n", encoding="utf-8")
     with pytest.raises(ValueError, match="corrupt non-trailing"):
         run_driver(d, tasks_root, make_stub(tmp_path, d))
+
+
+# ── case 13: #1173 route-2 wf-fix Provenance injection (durable recursion guard) ─
+
+
+def test_route2_injects_wf_fix_provenance_when_absent(tmp_path, tasks_root, capsys):
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])  # default body: `## Goal\n\n{bug}\n`, no line
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    body = (d / "fix-a.md").read_text(encoding="utf-8")
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    # The exact consumer needles: is_open_workflow_fix_task's `workflow_fix_target:
+    # {target_file}` (single space) + the `fingerprint: {fp}` body fallback.
+    assert f"workflow_fix_target: {item['target']}" in body
+    assert f"fingerprint: {fp}" in body
+    assert body.count("## Provenance") == 1
+    assert "INJECTED fix-a" in capsys.readouterr().out
+    # Injection happens BEFORE filing; the filer still receives the same body path.
+    (call,) = filer_calls(d)
+    assert str(d / "fix-a.md") in call
+
+
+def test_route2_injection_idempotent_when_lines_present(tmp_path, tasks_root, capsys):
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    pre = (
+        "## Goal\n\nbug text for fix-a\n\n## Provenance\n\n"
+        f"- workflow_fix_target: {item['target']}\n- fingerprint: {fp}\n"
+    )
+    (d / "fix-a.md").write_text(pre, encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert (d / "fix-a.md").read_text(encoding="utf-8") == pre  # byte-unchanged
+    assert "INJECTED" not in capsys.readouterr().out
+
+
+def test_route2_inserts_under_existing_provenance_heading(tmp_path, tasks_root):
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])
+    # The #1134 shape: a `## Provenance` heading with only an `- Evidence:` line.
+    pre = "## Goal\n\nbug\n\n## Provenance\n\n- Evidence: ccc66ab4 (#825) 09:45Z.\n"
+    (d / "fix-a.md").write_text(pre, encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    body = (d / "fix-a.md").read_text(encoding="utf-8")
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    assert body.count("## Provenance") == 1  # no duplicate heading
+    assert f"workflow_fix_target: {item['target']}" in body
+    assert f"fingerprint: {fp}" in body
+    assert "- Evidence: ccc66ab4 (#825) 09:45Z." in body  # pre-existing line preserved
+
+
+def test_route3_body_never_injected(tmp_path, tasks_root):
+    item = make_item("hold-a", route=3)
+    d = make_filings_dir(tmp_path, [item])
+    pre = (d / "hold-a.md").read_text(encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert (d / "hold-a.md").read_text(encoding="utf-8") == pre  # byte-unchanged
+
+
+def test_dry_run_injection_reports_but_does_not_write(tmp_path, tasks_root, capsys):
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])
+    pre = (d / "fix-a.md").read_text(encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d), "--dry-run")
+    assert rc == 0
+    assert (d / "fix-a.md").read_text(encoding="utf-8") == pre  # dry-run stays write-free
+    assert not (d / "filed.jsonl").exists()
+    assert filer_calls(d) == []
+    assert "[will inject workflow_fix_target provenance]" in capsys.readouterr().out

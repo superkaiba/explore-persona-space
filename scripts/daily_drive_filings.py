@@ -12,6 +12,11 @@ Manifest item schema: ``{slug, route: 2|3, title, target, bug, change, body?}`` 
 ``body`` defaults to ``<dir>/<slug>.md`` (absolute paths pass through; relative paths
 resolve against the filings dir).
 
+Route-2 bodies are normalized in place before filing (#1173): a body missing the durable
+recursion-guard Provenance lines gains ``- workflow_fix_target: <manifest target>`` +
+``- fingerprint: <fp>`` under ``## Provenance`` (idempotent temp+rename; the ``INJECTED``
+stdout line is the audit trace).
+
 Ledger row shapes (one JSON object per line, ISO-UTC ``ts`` on every row):
 
 - ``{"slug", "outcome": "attempting", "fp", "route", "id_floor", "ts"}`` — appended
@@ -116,6 +121,43 @@ def _resolve_body_path(item: dict, dirpath: Path) -> Path:
     if not p.is_absolute():
         p = dirpath / p
     return p
+
+
+WF_FIX_TARGET_KEY = "workflow_fix_target:"
+PROVENANCE_HEADING_RE = re.compile(r"^## Provenance[ \t]*$", re.M)
+
+
+def ensure_wf_fix_provenance(text: str, target: str, fp: str) -> tuple[str, bool]:
+    """Idempotently ensure the durable recursion-guard Provenance lines (#1173).
+
+    Returns (new_text, changed). The ``- workflow_fix_target: <target>`` line is the
+    DURABLE signal task_workflow.is_workflow_fix_session() reads (the env-var leg is
+    lost on a watcher crash-recovery respawn); ``- fingerprint: <fp>`` is the body-side
+    dedup fallback (task_workflow.is_open_workflow_fix_task; sweep _fp_tag_scan).
+    Substring contracts (do not reformat): ``workflow_fix_target: {target}`` and
+    ``fingerprint: {fp}`` with a single space after the colon.
+
+    Presence checks are substring-based BY DESIGN: a body that merely prose-quotes
+    ``workflow_fix_target:`` skips injection — acceptable because that same substring
+    already satisfies the recursion-guard predicate; only the dedup body-needle could
+    miss, and dedup's PRIMARY key is the ``wf-fix-fp:<fp>`` tag.
+    """
+    lines = []
+    if WF_FIX_TARGET_KEY not in text:
+        lines.append(f"- workflow_fix_target: {target}")
+    if "fingerprint:" not in text:
+        lines.append(f"- fingerprint: {fp}")
+    if not lines:
+        return text, False
+    block = "\n".join(lines)
+    m = PROVENANCE_HEADING_RE.search(text)
+    if m:
+        # Insert immediately after the existing heading line.
+        insert_at = m.end()
+        new = text[:insert_at] + "\n\n" + block + text[insert_at:]
+    else:
+        new = text.rstrip("\n") + f"\n\n## Provenance\n\n{block}\n"
+    return new, True
 
 
 def load_and_validate_manifest(dirpath: Path) -> list[dict]:
@@ -415,7 +457,15 @@ def process_item(
             pending = (
                 " [in-flight attempting row; recovery scan runs first]" if state != "fresh" else ""
             )
-            print(f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}")
+            inject = ""
+            if item["route"] == 2:
+                # Read-only injection-intent probe (#1173): dry-run stays write-free.
+                # No exists() guard — a missing/unreadable body fails LOUD here, the
+                # same fail-fast contract load_and_validate_manifest enforces up front.
+                body_text = _resolve_body_path(item, dirpath).read_text(encoding="utf-8")
+                if ensure_wf_fix_provenance(body_text, item["target"], fp)[1]:
+                    inject = " [will inject workflow_fix_target provenance]"
+            print(f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}{inject}")
         return "skip"
 
     if state in ("in-flight", "retry-error"):
@@ -442,6 +492,17 @@ def process_item(
             return "deduped"
 
     body_path = _resolve_body_path(item, dirpath)
+    if item["route"] == 2:
+        # Same condition under which _filer_cmd applies the wf-fix tag — the tag and
+        # the durable recursion-guard body signal cannot diverge on the driver path
+        # (#1173). Idempotent, so a kill anywhere re-normalizes harmlessly on resume.
+        text = body_path.read_text(encoding="utf-8")
+        new_text, changed = ensure_wf_fix_provenance(text, item["target"], fp)
+        if changed:
+            tmp = body_path.with_suffix(".md.tmp")
+            tmp.write_text(new_text, encoding="utf-8")
+            os.replace(tmp, body_path)  # temp+rename, same pattern as load_ledger
+            print(f"INJECTED {slug}: workflow_fix_target provenance (#1173 recursion-guard signal)")
     # Two-phase ledger: the `attempting` row (with the recovery id floor) lands BEFORE
     # the filer subprocess — the load-bearing crash-safety ordering.
     append_row(

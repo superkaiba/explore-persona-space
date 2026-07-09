@@ -211,6 +211,38 @@ Behaviours:
   workflow-surface file is never allowlisted, it is fixed). Unparseable
   files (SyntaxError / non-UTF-8) are skipped WITH a printed notice,
   never silently.
+* ``--check-scripts-import-guard`` (also bundled into the no-flags
+  default run): AST-walk every ``*.py`` under
+  ``src/explore_persona_space/experiments/`` and FAIL any ``scripts.*``
+  import — deferred (function-body) AND module-top-level — lacking a
+  repo-root ``sys.path`` guard. In script mode
+  (``python /abs/path/driver.py``) ``sys.path[0]`` is the script's own
+  directory — not cwd, not the repo root — so ``import scripts.*``
+  raises ``ModuleNotFoundError`` pod/GCE-side; deferred instances crash
+  MID-RUN after paid GPU phases, and both standard pre-launch checks
+  false-pass them (incident #823 Phase-3: ~30 min of paid GCE work
+  lost; the #853 fix was documentation-only). Guard evidence = a call
+  whose callee name mentions ``syspath``/``sys_path`` (the
+  ``_ensure_repo_root_on_syspath()`` run_823.py exemplar, commit
+  ``14234c9112``) or a literal
+  ``sys.path.insert(...)``/``sys.path.append(...)`` — same-innermost-
+  function preceding the import, or at module scope (any line covers a
+  deferred import; a PRECEDING line covers a top-level one). Offender
+  and guard detection share ONE pruned scope walk: module-scope
+  ``If``/``Try``/``With``/``For``/``While`` bodies — including a
+  ``try/except ImportError``-wrapped import and the
+  ``if __name__ == "__main__":`` main-block shape — are
+  module-executing and IN scope; nested defs/classes/lambdas are pruned
+  (the deferred pass owns function bodies). ``try/except ImportError``
+  is NOT a guard (a silent wrong-path fallback pod-side);
+  ``TYPE_CHECKING`` bodies are skipped. Deliberate false negatives
+  (importlib/``__import__``/exec-string imports, class-body imports,
+  outer-but-not-innermost-scope guards, conditional-guard
+  presence-counting, shell heredocs) are documented in the check
+  docstring. Waive a genuinely-safe flagged site with
+  ``# SCRIPTS_IMPORT_GUARD_EXEMPT: <reason>`` (reason ≥ 10 chars) on
+  the import's first physical line or the immediately preceding
+  non-blank line. No legacy allowlist (the live tree is clean).
 * ``--check-upload-or-true`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL any
   upload/result-persist command line whose failure is swallowed by
@@ -1212,6 +1244,26 @@ JSONL_SPLITLINES_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
         "src/explore_persona_space/experiments/sycophancy_onpolicy_612/claim_audit.py",
     }
 )
+
+
+# `--check-scripts-import-guard` (#823/#853): in script mode
+# (`python /abs/path/driver.py`) sys.path[0] is the SCRIPT's own directory —
+# not cwd, not the repo root — so an unguarded `scripts.*` import in an
+# `src/explore_persona_space/experiments/**` driver raises
+# ModuleNotFoundError pod/GCE-side; deferred (function-body) instances crash
+# MID-RUN after paid GPU phases (#823 Phase-3). Inline waiver for a
+# genuinely-safe flagged site. Reason ≥ 10 chars, same convention as
+# JSONL_SPLITLINES_EXEMPT. No legacy allowlist — the live tree is clean
+# (allowlists exist only where live offenders were frozen).
+SCRIPTS_IMPORT_GUARD_WAIVER_RE = re.compile(r"#\s*SCRIPTS_IMPORT_GUARD_EXEMPT\s*:\s*(.+?)\s*$")
+SCRIPTS_IMPORT_GUARD_WAIVER_MIN_REASON_CHARS = 10
+# Guard-evidence callee-name signal: a Call whose callee name mentions
+# syspath/sys_path — matches the `_ensure_repo_root_on_syspath()` exemplar
+# family (run_823.py commit 14234c9112, run_952.py) and reasonable variants
+# (`ensure_repo_root_on_syspath`, `add_repo_root_to_sys_path`). The literal
+# `sys.path.insert(...)`/`sys.path.append(...)` shape is matched structurally
+# in `_is_syspath_guard_call`, not by this regex.
+SYSPATH_GUARD_NAME_RE = re.compile(r"(?i)syspath|sys_path")
 
 
 # `--check-batch-judge-client`: every inline Anthropic Message Batches API
@@ -4466,6 +4518,311 @@ def check_jsonl_splitlines(*, scan_roots: tuple[Path, ...] | None = None) -> lis
                     f"{JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS} chars)."
                 )
     return errors
+
+
+def _scripts_import_guard_waiver_present(lines: list[str], import_lineno: int) -> bool:
+    """Return True iff a ``# SCRIPTS_IMPORT_GUARD_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`SCRIPTS_IMPORT_GUARD_WAIVER_MIN_REASON_CHARS` chars) is
+    on the import's first physical line (``import_lineno``, 1-based) or the
+    immediately preceding non-blank line. Same convention as
+    :func:`_jsonl_splitlines_waiver_present`."""
+    idx = import_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = SCRIPTS_IMPORT_GUARD_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= SCRIPTS_IMPORT_GUARD_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = SCRIPTS_IMPORT_GUARD_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= SCRIPTS_IMPORT_GUARD_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _is_syspath_guard_call(node: ast.AST) -> bool:
+    """True iff ``node`` is a syspath-guard ``ast.Call``: a callee name
+    (``Name.id`` or ``Attribute.attr``) matching :data:`SYSPATH_GUARD_NAME_RE`
+    (the ``_ensure_repo_root_on_syspath()`` exemplar family), or a literal
+    ``sys.path.insert(...)``/``sys.path.append(...)``."""
+    if not isinstance(node, ast.Call):
+        return False
+    f = node.func
+    name = f.id if isinstance(f, ast.Name) else (f.attr if isinstance(f, ast.Attribute) else None)
+    if name and SYSPATH_GUARD_NAME_RE.search(name):
+        return True
+    return (
+        isinstance(f, ast.Attribute)
+        and f.attr in ("insert", "append")
+        and isinstance(f.value, ast.Attribute)
+        and f.value.attr == "path"
+        and isinstance(f.value.value, ast.Name)
+        and f.value.value.id == "sys"
+    )
+
+
+# Nodes whose bodies do NOT execute when the enclosing scope's body runs — a
+# guard call (or an import) inside one belongs to the NESTED scope, never the
+# enclosing one. Shared by offender AND guard detection so the two scans are
+# symmetric BY CONSTRUCTION (a flat `tree.body` offender scan paired with a
+# pruned guard scan would let try/except-wrapped module imports escape).
+_SCOPE_PRUNE_NODES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)
+
+
+def _scope_stmts(body: list[ast.stmt]) -> list[ast.AST]:
+    """Return every AST node that executes at THIS scope when ``body`` runs —
+    descending compound statements (``If``/``Try``/``With``/``For``/``While``:
+    a try/except-wrapped import, an ``if <flag>:`` import, and the
+    ``if __name__ == "__main__":`` main-block shape all execute at this
+    scope), but NOT descending into nested
+    ``FunctionDef``/``AsyncFunctionDef``/``ClassDef``/``Lambda`` (their
+    bodies run only when called — the deferred pass owns function bodies).
+    Conditionally-executed nodes are included by PRESENCE (conditions are not
+    evaluated — accepted imprecision, documented in
+    :func:`check_scripts_import_guard`)."""
+    out: list[ast.AST] = []
+    stack: list[ast.AST] = list(body)
+    while stack:
+        node = stack.pop()
+        if isinstance(node, _SCOPE_PRUNE_NODES):
+            continue
+        out.append(node)
+        stack.extend(ast.iter_child_nodes(node))
+    return out
+
+
+def _scope_guard_linenos(body: list[ast.stmt]) -> list[int]:
+    """Linenos of syspath-guard-evidence Calls in ONE scope body, via the
+    SAME pruned walk as offender detection (:func:`_scope_stmts`) — a guard
+    call inside a nested def does not execute when the def statement runs."""
+    return [n.lineno for n in _scope_stmts(body) if _is_syspath_guard_call(n)]
+
+
+def _type_checking_body_ranges(tree: ast.Module) -> list[tuple[int, int]]:
+    """(start, end) lineno ranges of the BODY of every ``if TYPE_CHECKING:``
+    block (``Name("TYPE_CHECKING")`` or ``Attribute(attr="TYPE_CHECKING")``
+    test). Body only — the ``orelse`` branch DOES execute at runtime and
+    stays in scope; ``if not TYPE_CHECKING:`` does not match the test
+    predicate, so its body correctly stays in scope too."""
+    ranges: list[tuple[int, int]] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.If):
+            continue
+        test = node.test
+        is_tc = (isinstance(test, ast.Name) and test.id == "TYPE_CHECKING") or (
+            isinstance(test, ast.Attribute) and test.attr == "TYPE_CHECKING"
+        )
+        if is_tc and node.body:
+            start = node.body[0].lineno
+            end = max((s.end_lineno or s.lineno) for s in node.body)
+            ranges.append((start, end))
+    return ranges
+
+
+def _is_scripts_import(node: ast.AST) -> bool:
+    """True iff ``node`` imports the repo-root ``scripts`` package: an
+    ``ImportFrom`` of ``scripts``/``scripts.*`` at level 0, or an ``Import``
+    with any ``scripts``/``scripts.*`` alias. A prefix non-match
+    (``scripts_helper``) is NOT a scripts import."""
+    if isinstance(node, ast.ImportFrom):
+        return (
+            node.level == 0
+            and node.module is not None
+            and (node.module == "scripts" or node.module.startswith("scripts."))
+        )
+    if isinstance(node, ast.Import):
+        return any(a.name == "scripts" or a.name.startswith("scripts.") for a in node.names)
+    return False
+
+
+def check_scripts_import_guard(*, scan_roots: tuple[Path, ...] | None = None) -> list[str]:
+    """AST-walk ``src/explore_persona_space/experiments/**/*.py`` and FAIL
+    any ``scripts.*`` import — deferred (function-body) AND module-top-level
+    — lacking a repo-root ``sys.path`` guard (#823/#853).
+
+    Rationale: in script mode (``python /abs/path/driver.py``),
+    ``sys.path[0]`` is the script's OWN directory — not cwd, not the repo
+    root — so ``import scripts.*`` from any driver under
+    ``src/explore_persona_space/experiments/**`` raises
+    ``ModuleNotFoundError`` pod/GCE-side. Deferred instances crash MID-RUN
+    after paid GPU phases, and both standard pre-launch checks false-pass
+    them: a ``-c``-mode import check puts cwd on ``sys.path``, and GPU-bound
+    smoke carve-outs never execute the deferred import (incident #823
+    Phase-3, 2026-07-02: ~30 min of paid GCE work lost; the #853 fix was
+    documentation-only — the gotchas.md entry "Script mode puts the SCRIPT's
+    dir on ``sys.path[0]``"). Top-level imports are flagged too: the trap is
+    PATH ABSENCE, not deferral — a deferred-only check would create a
+    hoist-evasion that still burns a pod provision cycle at process start.
+
+    Detection — an import node is in scope iff it is an ``ast.ImportFrom``
+    with ``level == 0`` and module ``scripts``/``scripts.*``, or an
+    ``ast.Import`` with any ``scripts``/``scripts.*`` alias.
+    ``if TYPE_CHECKING:`` bodies are skipped (those imports never execute at
+    runtime; the ``orelse`` branch stays in scope).
+
+    Guard evidence (:func:`_is_syspath_guard_call`): a Call whose callee name
+    matches :data:`SYSPATH_GUARD_NAME_RE` (the
+    ``_ensure_repo_root_on_syspath()`` run_823.py/run_952.py exemplars), or a
+    literal ``sys.path.insert(...)``/``sys.path.append(...)``. Position
+    rules:
+
+    * Deferred import: guarded iff guard-evidence exists in the SAME
+      innermost enclosing function body at a SMALLER lineno, OR anywhere at
+      MODULE scope (the module body executes fully at import time, before
+      any post-import function call — the
+      ``scripts/issue_331_phase0_panel.py`` module-top-bootstrap
+      convention).
+    * Module-executing (top-level) import: guarded iff module-scope
+      guard-evidence PRECEDES it (the module body executes in order).
+
+    Offender and guard detection share ONE pruned scope walk
+    (:func:`_scope_stmts`): module-scope ``If``/``Try``/``With``/``For``/
+    ``While`` bodies — including a ``try/except ImportError``-wrapped import
+    and the ``if __name__ == "__main__":`` main-block shape — EXECUTE at
+    module scope and are IN scope for detection; nested
+    defs/classes/lambdas are pruned (the deferred pass owns function
+    bodies).
+
+    Deliberately NOT counted as guarded: ``try/except ImportError`` around
+    the import (the fallback silently takes the wrong path pod-side — worse
+    than the crash; fail-fast rule), and guards in an OUTER-but-not-innermost
+    enclosing function (rare; the waiver is the escape). Deliberate false
+    negatives (accepted; the gotchas.md prose rule + code-reviewer Step 0.6
+    carry them): dynamic imports (``importlib.import_module``,
+    ``__import__``, exec-strings), class-body imports (execute at module
+    import time but are pruned from both passes), conditionally-executed
+    guards counted by presence (conditions are not evaluated),
+    ``sys.path += [...]``/slice-assign guard shapes (waiver escape), and
+    shell heredocs (``.sh`` files are not AST-scannable).
+
+    Unparseable files (SyntaxError / non-UTF-8) are SKIPPED with a one-line
+    stderr notice, never silently (the jsonl-splitlines precedent). Waive a
+    genuinely-safe flagged site with
+    ``# SCRIPTS_IMPORT_GUARD_EXEMPT: <reason>`` (reason ≥
+    :data:`SCRIPTS_IMPORT_GUARD_WAIVER_MIN_REASON_CHARS` chars) on the
+    import's first physical line or the immediately preceding non-blank
+    line. No legacy allowlist — the live tree is clean.
+
+    ``scan_roots`` is a unit-test override hook; production callers pass
+    None and the function walks
+    ``<repo_root>/src/explore_persona_space/experiments`` (NOT
+    ``backends/`` — covered by entrypoint bootstraps, #987 — and NOT
+    ``scripts/`` — its own module-top-bootstrap convention). Bundled into
+    the no-flags default run.
+    """
+    roots = (
+        scan_roots
+        if scan_roots is not None
+        else (_REPO_ROOT / "src" / "explore_persona_space" / "experiments",)
+    )
+    errors: list[str] = []
+    for root in roots:
+        if not root.exists():
+            continue
+        for py in sorted(root.rglob("*.py")):
+            if not py.is_file():
+                continue
+            try:
+                rel = py.resolve().relative_to(_REPO_ROOT.resolve()).as_posix()
+            except ValueError:
+                rel = py.name
+            try:
+                text = py.read_text(encoding="utf-8")
+            except UnicodeDecodeError as exc:
+                # Skip-with-report: never silent, never fatal (syntax validity
+                # is ruff/pytest's enforcement job, not this lint's).
+                sys.stderr.write(
+                    f"workflow_lint: note: --check-scripts-import-guard skipped "
+                    f"unparseable {rel} ({type(exc).__name__})\n"
+                )
+                continue
+            # Cheap-token perf gate: any static scripts.* import statement
+            # must contain the substring "scripts" (multi-alias forms like
+            # `import os, scripts.foo` lack the "import scripts" bigram, so
+            # gate on the bare token; dynamic importlib shapes are invisible
+            # to the AST predicate anyway).
+            if "scripts" not in text:
+                continue
+            tree = _cached_parse(py, text)
+            if tree is None:
+                sys.stderr.write(
+                    f"workflow_lint: note: --check-scripts-import-guard skipped "
+                    f"unparseable {rel} (SyntaxError)\n"
+                )
+                continue
+            errors.extend(_scan_scripts_import_guard_tree(py, tree, text.split("\n")))
+    return errors
+
+
+def _scan_scripts_import_guard_tree(py: Path, tree: ast.Module, lines: list[str]) -> list[str]:
+    """Scan ONE parsed experiments/** module for unguarded ``scripts.*``
+    imports and return the diagnostics — the per-file body of
+    :func:`check_scripts_import_guard` (position rules, pruning, waiver
+    semantics documented there)."""
+    errors: list[str] = []
+    module_guards = _scope_guard_linenos(tree.body)
+    tc_ranges = _type_checking_body_ranges(tree)
+
+    def _in_tc(lineno: int) -> bool:
+        return any(start <= lineno <= end for start, end in tc_ranges)
+
+    def _flag(stmt: ast.AST, *, deferred: bool) -> None:
+        if not _scripts_import_guard_waiver_present(lines, stmt.lineno):
+            errors.append(_scripts_import_guard_msg(py, stmt, deferred=deferred))
+
+    # Module-executing offenders: the pruned walk descends module-scope
+    # If/Try/With/For/While (try/except-wrapped, if-wrapped, and
+    # `if __name__ == "__main__":` imports are module-executing); nested
+    # defs/classes/lambdas pruned (the deferred pass owns those).
+    # Module-scope guard must PRECEDE (the module body executes in order).
+    for stmt in _scope_stmts(tree.body):
+        if (
+            _is_scripts_import(stmt)
+            and not _in_tc(stmt.lineno)
+            and not any(g < stmt.lineno for g in module_guards)
+        ):
+            _flag(stmt, deferred=False)
+
+    # Deferred offenders: innermost-function preceding guard OR any
+    # module-scope guard. Iterating each function's OWN body via the pruned
+    # walk attributes an import inside a nested def to the NESTED def (its
+    # innermost scope) — each import is seen once.
+    for fn in ast.walk(tree):
+        if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        fn_guards = _scope_guard_linenos(fn.body)
+        for stmt in _scope_stmts(fn.body):
+            if (
+                _is_scripts_import(stmt)
+                and not _in_tc(stmt.lineno)
+                and not (any(g < stmt.lineno for g in fn_guards) or module_guards)
+            ):
+                _flag(stmt, deferred=True)
+    return errors
+
+
+def _scripts_import_guard_msg(py: Path, stmt: ast.AST, *, deferred: bool) -> str:
+    """Compose the ``scripts-import-guard`` diagnostic for one flagged
+    import (position-specific: deferred vs module-top-level)."""
+    kind = "deferred" if deferred else "module-top-level"
+    crash = (
+        "mid-run at the deferred-import line, after the paid phases"
+        if deferred
+        else "at process start"
+    )
+    return (
+        f"{py}:{stmt.lineno}: scripts-import-guard: {kind} scripts.* import "
+        f"without a repo-root sys.path guard. In script mode "
+        f"(python /abs/path/driver.py) sys.path[0] is the script's own dir — "
+        f"'scripts' is unimportable pod/GCE-side and this import crashes "
+        f'{crash} (#823/#853; .claude/rules/gotchas.md "Script mode puts the '
+        f"SCRIPT's dir on sys.path[0]\"). Call _ensure_repo_root_on_syspath() "
+        f"immediately before the import (copy the run_823.py exemplar, commit "
+        f"14234c9112), or waive a genuinely-safe site with "
+        f"'# SCRIPTS_IMPORT_GUARD_EXEMPT: <reason>' (reason ≥ "
+        f"{SCRIPTS_IMPORT_GUARD_WAIVER_MIN_REASON_CHARS} chars)."
+    )
 
 
 def _dotenv_lint_waiver_present(lines: list[str], import_lineno: int) -> bool:
@@ -8186,6 +8543,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-scripts-import-guard",
+        action="store_true",
+        help="AST-walk src/explore_persona_space/experiments/**/*.py and FAIL "
+        "any scripts.* import (deferred OR module-top-level) lacking a "
+        "repo-root sys.path guard: a syspath-named call like "
+        "_ensure_repo_root_on_syspath(), or a literal sys.path.insert/append "
+        "— same-innermost-scope-preceding, or module-level (any line covers "
+        "a deferred import; a preceding line covers a top-level one). In "
+        "script mode sys.path[0] is the script's own dir, so an unguarded "
+        "import crashes pod/GCE-side — deferred instances mid-run after the "
+        "paid phases (#823/#853). try/except ImportError is NOT a guard; "
+        "TYPE_CHECKING bodies are skipped. Waive with "
+        "'# SCRIPTS_IMPORT_GUARD_EXEMPT: <reason>'. No legacy allowlist "
+        "(the live tree is clean). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-upload-or-true",
         action="store_true",
         help="Walk scripts/**/*.sh and FAIL any upload/result-persist "
@@ -8256,6 +8629,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_section_reference_pointers
         or args.check_phase_done_reserved
         or args.check_jsonl_splitlines
+        or args.check_scripts_import_guard
         or args.check_upload_or_true
     )
 
@@ -8363,6 +8737,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_phase_done_reserved())
     if args.check_jsonl_splitlines or no_flags:
         errors.extend(check_jsonl_splitlines())
+    if args.check_scripts_import_guard or no_flags:
+        errors.extend(check_scripts_import_guard())
     if args.check_upload_or_true or no_flags:
         errors.extend(check_upload_or_true())
 

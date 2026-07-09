@@ -1363,8 +1363,8 @@
     "1175": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1175",
-      "status": "reviewing",
+      "path": "tasks/completed/1175",
+      "status": "completed",
       "title": "workflow-fix: lint unguarded deferred scripts.* imports"
     },
     "1176": {
@@ -1377,15 +1377,15 @@
     "1177": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1177",
-      "status": "reviewing",
+      "path": "tasks/completed/1177",
+      "status": "completed",
       "title": "workflow-fix: provision-time warn on terminal-parent pods"
     },
     "1178": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1178",
-      "status": "running",
+      "path": "tasks/reviewing/1178",
+      "status": "reviewing",
       "title": "workflow-fix: post-marker WARN on literal backslash-n notes"
     },
     "1179": {
@@ -1405,8 +1405,8 @@
     "1180": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1180",
-      "status": "proposed",
+      "path": "tasks/planning/1180",
+      "status": "planning",
       "title": "workflow-fix: dedup predicate blind to daily-fix: titles"
     },
     "1181": {

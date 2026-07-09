@@ -1753,6 +1753,325 @@ def _ensemble_event_matches(
     return True
 
 
+# --- Verdict-disagree observer predicate (#1170; origin incident #825) ---
+
+# The four MARKER-MODE doubled review sites (workflow.yaml § ensemble_review
+# doubled_steps with reconcile_mode == "marker"; kinds from § reviewer_pairs).
+# The adversarial-planner `critic` site is reconcile_mode == "in-context"
+# (no durable reconcile marker) and is deliberately NOT observable here.
+# Vocabularies are LOWERCASED copies of workflow.yaml's pass_values /
+# fail_values; parity with workflow.yaml is pinned by
+# tests/test_verdict_disagree_observer.py::test_site_table_matches_workflow_yaml
+# (a runtime YAML parse inside a pure library function would add I/O + a
+# yaml dependency to the import path for zero drift protection a test
+# doesn't already give).
+ENSEMBLE_MARKER_MODE_SITES: tuple[dict[str, Any], ...] = (
+    {
+        "role": "code-reviewer",
+        "claude_kind": "epm:code-review",
+        "codex_kind": "epm:code-review-codex",
+        "pass_values": ("pass", "concerns"),
+        "fail_values": ("fail",),
+    },
+    {
+        "role": "interpretation-critic",
+        "claude_kind": "epm:interp-critique",
+        "codex_kind": "epm:interp-critique-codex",
+        "pass_values": ("pass",),
+        "fail_values": ("revise",),
+    },
+    {
+        "role": "clean-result-critic",
+        "claude_kind": "epm:clean-result-critique",
+        "codex_kind": "epm:clean-result-critique-codex",
+        "pass_values": ("pass", "concerns"),
+        "fail_values": ("revise",),
+    },
+    {
+        "role": "follow-up-critic",
+        "claude_kind": "epm:followup-value-critique",
+        "codex_kind": "epm:followup-value-critique-codex",
+        "pass_values": ("not-redundant",),
+        "fail_values": ("redundant",),
+    },
+)
+
+# #1204 canonical quota-skip phrase (an epm:progress note recording that the
+# codex composers were deliberately skipped this round — a sanctioned no-show).
+_VDO_QUOTA_SKIP_SUBSTR = "codex composers skipped"
+# epm:failure classes that can explain an absent/garbled Codex twin: a
+# malformed-output classification always counts; a bare `infra` counts ONLY
+# when the note names Codex (a generic pod-infra failure must not suppress).
+_VDO_FAILURE_CLASS_RE = re.compile(r"failure_class:\s*(codex-output-malformed|infra)")
+
+
+def _verdict_class(
+    raw: str | None, pass_values: Sequence[str], fail_values: Sequence[str]
+) -> str | None:
+    """``'pass'`` | ``'fail'`` | ``None`` for one raw verdict token (#1170).
+
+    Takes the FIRST whitespace token, strips ``*``/``:``/``.``/``,``/``;``/
+    parens residue, lowercases, then EXACT-matches against the site's
+    lowercased vocabularies — handles ``'PASS'``, ``'CONCERNS'``,
+    ``'REVISE (FAIL-class)'``, leftover ``'**Verdict: PASS**'`` bold residue
+    after :func:`parse_followup_note_field`, and ``'not-redundant'`` vs
+    ``'redundant'`` without a substring hazard. An unknown / empty / missing
+    token returns ``None`` (fail-quiet — the caller skips, never guesses).
+    """
+    if not raw:
+        return None
+    tokens = raw.split()
+    if not tokens:
+        return None
+    token = tokens[0].strip("*:.,;()").lower()
+    if token in pass_values:
+        return "pass"
+    if token in fail_values:
+        return "fail"
+    return None
+
+
+def _event_epoch(ts: object) -> float | None:
+    """Epoch seconds for an events.jsonl ISO-8601 ``Z`` timestamp, ``None``
+    on any parse failure (callers fail quiet; #1170)."""
+    if not isinstance(ts, str) or not ts:
+        return None
+    try:
+        return datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def _codex_no_show_evidence(events: list[dict], window_start_epoch: float) -> str | None:
+    """Evidence class explaining an ABSENT Codex twin, else ``None`` (#1170).
+
+    Scans events at/after ``window_start_epoch`` (an event with an
+    unparseable ``ts`` never counts) for: (a) ``epm:failure`` whose note
+    carries ``failure_class: codex-output-malformed`` (always counts) or
+    ``failure_class: infra`` with "codex" in the note (case-insensitive —
+    a generic pod-infra failure must not suppress); (b) any
+    ``epm:codex-task-failed`` (incl. ``codex-quota-exhausted``); (c) an
+    ``epm:progress`` note carrying the #1204 quota-skip phrase. Consumed by
+    :func:`unreconciled_disagreement_rounds` for TIER-2 (proximity)
+    pairings ONLY — evidence can explain an absent twin, never two present
+    parseable verdicts.
+    """
+    for event in events:
+        ts_epoch = _event_epoch(event.get("ts"))
+        if ts_epoch is None or ts_epoch < window_start_epoch:
+            continue
+        kind = event.get("kind", "")
+        note = event.get("note", "") or ""
+        if kind == "epm:codex-task-failed":
+            return "codex-task-failed"
+        if kind == "epm:failure":
+            match = _VDO_FAILURE_CLASS_RE.search(note)
+            if match is not None:
+                cls = match.group(1)
+                if cls == "codex-output-malformed":
+                    return "failure-codex-output-malformed"
+                if cls == "infra" and "codex" in note.lower():
+                    return "failure-infra-codex"
+        if kind == "epm:progress" and _VDO_QUOTA_SKIP_SUBSTR in note:
+            return "quota-skip-note"
+    return None
+
+
+def _latest_site_pair(events: list[dict], site: dict) -> dict | None:
+    """The site's LATEST verdict pair as ``{"tier", "round_n", "round_label",
+    "claude_verdict", "codex_verdict", "claude_ts", "codex_ts"}``, else
+    ``None`` when the site has no pairable markers (#1170).
+
+    Tier 1 (round-aligned): derive the latest round from the LAST pair
+    event (head sentinel, else an ``int`` ``version``); when
+    :func:`ensemble_verdicts_present` reports BOTH kinds present at that
+    round, that pair wins (a present-but-malformed side stays a Tier-1
+    pair — Tier 2 is never attempted past a both-present round). Tier 2
+    (proximity fallback — the #825 founding shape): the chronologically
+    LAST event of EACH kind, with ``round_n=None`` and a
+    timestamp-embedding round label.
+    """
+    claude_kind = site["claude_kind"]
+    codex_kind = site["codex_kind"]
+    pair_events = [e for e in events if e.get("kind") in {claude_kind, codex_kind}]
+    if not pair_events:
+        return None
+
+    # Tier 1: latest round from the LAST pair event.
+    last = pair_events[-1]
+    round_n = _sentinel_round(last.get("note", "") or "", last.get("kind", ""))
+    if round_n is None:
+        version = last.get("version")
+        round_n = version if isinstance(version, int) else None
+    if round_n is not None:
+        res = ensemble_verdicts_present(events, (claude_kind, codex_kind), round_n)
+        claude_res, codex_res = res[claude_kind], res[codex_kind]
+        if claude_res["present"] and codex_res["present"]:
+            return {
+                "tier": "round",
+                "round_n": round_n,
+                "round_label": f"r{round_n}",
+                "claude_verdict": claude_res["verdict"],
+                "codex_verdict": codex_res["verdict"],
+                "claude_ts": claude_res["ts"],
+                "codex_ts": codex_res["ts"],
+            }
+
+    # Tier 2: latest event of EACH kind.
+    claude_events = [e for e in pair_events if e.get("kind") == claude_kind]
+    codex_events = [e for e in pair_events if e.get("kind") == codex_kind]
+    if not claude_events or not codex_events:
+        return None  # nothing to disagree with (structural)
+    claude_last, codex_last = claude_events[-1], codex_events[-1]
+    claude_ts, codex_ts = claude_last.get("ts"), codex_last.get("ts")
+    return {
+        "tier": "proximity",
+        "round_n": None,
+        "round_label": f"t2|{claude_ts}|{codex_ts}",
+        "claude_verdict": parse_followup_note_field(claude_last.get("note", "") or "", "Verdict"),
+        "codex_verdict": parse_followup_note_field(codex_last.get("note", "") or "", "Verdict"),
+        "claude_ts": claude_ts,
+        "codex_ts": codex_ts,
+    }
+
+
+def _reconcile_satisfied(
+    events: list[dict], role: str, round_n: int | None, min_pair_epoch: float
+) -> bool:
+    """True when a role-matched ``epm:review-reconcile`` satisfies the pair
+    (#1170): EITHER a round-scoped role-matched
+    :func:`ensemble_verdicts_present` query (Tier 1 only — ``round_n`` is
+    ``None`` on Tier 2) OR any role-matched reconcile event timestamped
+    at/after the earlier pair verdict (both tiers — #825's real reconcile
+    named round 1 while the sides read 5 and 7, so a purely round-scoped
+    lookup would false-flag a legitimately reconciled round)."""
+    if round_n is not None:
+        rres = ensemble_verdicts_present(events, (_RECONCILE_KIND,), round_n, reconcile_role=role)
+        if rres[_RECONCILE_KIND]["present"]:
+            return True
+    for event in events:
+        if event.get("kind") != _RECONCILE_KIND:
+            continue
+        note = event.get("note", "") or ""
+        if parse_followup_note_field(note, "Role under adjudication") != role:
+            continue
+        r_epoch = _event_epoch(event.get("ts"))
+        if r_epoch is not None and r_epoch >= min_pair_epoch:
+            return True
+    return False
+
+
+def unreconciled_disagreement_rounds(
+    events: list[dict],
+    *,
+    now_ts: float,
+    grace_s: float = 3600.0,
+    pair_proximity_s: float = 21600.0,
+    evidence_lookback_s: float = 7200.0,
+) -> list[dict]:
+    """Per doubled marker-mode site, flag the LATEST round whose Claude +
+    Codex verdict markers both exist with parseable OPPOSITE-class verdicts,
+    no role-matched ``epm:review-reconcile``, and no Codex no-show evidence
+    — the #825 misclassification shape (#1170).
+
+    Pure over :func:`list_events` output; no I/O. Fail-quiet on every
+    ambiguity (unparseable ts / verdict / round, unknown verdict token,
+    cross-epoch pairs). Two-tier pairing per site in
+    :data:`ENSEMBLE_MARKER_MODE_SITES`:
+
+    - **Tier 1 (round-aligned):** derive the latest round from the LAST
+      pair event (head sentinel, else an ``int`` ``version``); when
+      :func:`ensemble_verdicts_present` reports BOTH kinds present at that
+      round, evaluate that pair (a present-but-malformed side —
+      ``verdict=None`` — is NOT a disagreement and blocks Tier 2: the
+      predicate never fabricates a verdict, #810 r4).
+    - **Tier 2 (proximity fallback — the #825 founding shape):** round
+      numbers drift across the pair kinds (#825: Claude sentinel v5 vs
+      Codex bare version 7 for the same logical round), so when Tier 1
+      cannot pair, take the chronologically LAST event of EACH kind and
+      pair them by time proximity.
+
+    Pair evaluation (both tiers): classify via :func:`_verdict_class`
+    (either ``None`` -> skip); same class -> skip (PASS+CONCERNS is
+    same-class where the site's vocabulary says so); pairs further than
+    ``pair_proximity_s`` apart -> skip (kills cross-epoch aliasing);
+    pairs younger than ``grace_s`` -> skip this call (an in-flight
+    reconcile gets time to land — deferral, not loss); a reconcile
+    satisfies via EITHER a round-scoped role-matched
+    :func:`ensemble_verdicts_present` query (Tier 1 only) OR any
+    role-matched reconcile event at/after the earlier pair verdict
+    (both tiers — #825's real reconcile named round 1 while the sides
+    read 5 and 7, so a purely round-scoped lookup would false-flag);
+    Tier-2 pairings are additionally suppressed by
+    :func:`_codex_no_show_evidence` in
+    ``[min(pair_ts) - evidence_lookback_s, inf)`` — a Tier-1 both-present
+    pair is NEVER evidence-suppressed (v2 Must-Fix: evidence refers to a
+    different attempt and would blind the observer exactly during
+    Codex-unstable periods, #1126).
+
+    Latest-round-only by design: an earlier-round disagreement superseded
+    by a later round is moot for alerting, and historical round
+    re-derivation is unreliable under the observed sentinel/version drift.
+
+    Returns one dict per finding: ``{"role", "tier", "round_label",
+    "claude_ts", "codex_ts", "claude_verdict", "codex_verdict",
+    "claude_class", "codex_class", "key"}`` with
+    ``key = f"{role}|{round_label}"`` (Tier-1 keys ``role|r<n>``; Tier-2
+    keys embed both pair timestamps, stable across ticks).
+    """
+    findings: list[dict] = []
+    for site in ENSEMBLE_MARKER_MODE_SITES:
+        pair = _latest_site_pair(events, site)
+        if pair is None:
+            continue
+
+        # Pair evaluation (both tiers; each miss -> not flaggable).
+        claude_class = _verdict_class(
+            pair["claude_verdict"], site["pass_values"], site["fail_values"]
+        )
+        codex_class = _verdict_class(
+            pair["codex_verdict"], site["pass_values"], site["fail_values"]
+        )
+        if claude_class is None or codex_class is None:
+            continue  # unknown vocabulary / malformed verdict fails quiet
+        if claude_class == codex_class:
+            continue  # agreement
+        t_claude = _event_epoch(pair["claude_ts"])
+        t_codex = _event_epoch(pair["codex_ts"])
+        if t_claude is None or t_codex is None:
+            continue
+        if abs(t_claude - t_codex) > pair_proximity_s:
+            continue  # cross-epoch aliasing (strict >: an exact-bound pair still counts)
+        if now_ts - max(t_claude, t_codex) < grace_s:
+            continue  # in-flight reconcile gets time to land (strict <)
+
+        role = site["role"]
+        if _reconcile_satisfied(events, role, pair["round_n"], min(t_claude, t_codex)):
+            continue
+
+        if pair["tier"] == "proximity" and (
+            _codex_no_show_evidence(events, min(t_claude, t_codex) - evidence_lookback_s)
+            is not None
+        ):
+            continue  # a sanctioned/failed Codex attempt explains the drifted pair
+
+        findings.append(
+            {
+                "role": role,
+                "tier": pair["tier"],
+                "round_label": pair["round_label"],
+                "claude_ts": pair["claude_ts"],
+                "codex_ts": pair["codex_ts"],
+                "claude_verdict": pair["claude_verdict"],
+                "codex_verdict": pair["codex_verdict"],
+                "claude_class": claude_class,
+                "codex_class": codex_class,
+                "key": f"{role}|{pair['round_label']}",
+            }
+        )
+    return findings
+
+
 # Canonical PASS-verdict pattern for an epm:upload-verification note
 # (shape: **Verdict: PASS**; case-sensitive on purpose — prose "pass" must
 # not match). scripts/dispatch_issue.py keeps a private copy
