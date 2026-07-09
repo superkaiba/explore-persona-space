@@ -1531,8 +1531,8 @@
     "1197": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1197",
-      "status": "running",
+      "path": "tasks/reviewing/1197",
+      "status": "reviewing",
       "title": "workflow-fix: background Step 1d pristine compare (600s cap)"
     },
     "1198": {
