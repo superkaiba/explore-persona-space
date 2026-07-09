@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1200,
+  "highest_id": 1201,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1569,6 +1569,13 @@
       "path": "tasks/proposed/1200",
       "status": "proposed",
       "title": "workflow-fix: sync experimenter memory launcher to pid contr"
+    },
+    "1201": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1201",
+      "status": "proposed",
+      "title": "workflow-fix: PreToolUse guard on bare git pull at repo root"
     },
     "121": {
       "has_clean_result": true,
