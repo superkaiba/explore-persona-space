@@ -1153,8 +1153,8 @@
     "1148": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1148",
-      "status": "planning",
+      "path": "tasks/approved/1148",
+      "status": "approved",
       "title": "workflow-fix: daily SKILL push recovery via sync_repo_root.p"
     },
     "1149": {
