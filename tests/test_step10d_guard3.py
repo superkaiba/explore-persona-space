@@ -871,8 +871,14 @@ def test_post_merge_guard_materializes_lstree_and_fails_closed():
     # TERMINAL `false` per failure arm (stats-critic round 1): each failure
     # echo must be immediately followed by `false` — a bare echo would be a
     # loud-log, exit-0 fail-open.
+    # The shared "cannot certify..." phrase ends BOTH the fetch and ls-tree
+    # arms' echoes, so the two arm-UNIQUE phrases are pinned as well —
+    # otherwise removing `false` from exactly one of those two arms would
+    # not trip any pin (code-review r1 Minor).
     for arm_msg in (
         "refusing to classify duplicates",
+        "git fetch origin main FAILED",
+        "git ls-tree origin/main FAILED",
         "cannot certify no stale task folders",
     ):
         assert re.search(re.escape(arm_msg) + r'[^\n]*"\n\s*false\b', region), (
