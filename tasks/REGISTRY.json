@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1175,
+  "highest_id": 1176,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1366,6 +1366,13 @@
       "path": "tasks/proposed/1175",
       "status": "proposed",
       "title": "workflow-fix: lint unguarded deferred scripts.* imports"
+    },
+    "1176": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1176",
+      "status": "proposed",
+      "title": "workflow-fix: lint SKILL.md git recipes against root guard"
     },
     "118": {
       "has_clean_result": false,
