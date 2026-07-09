@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1154,
+  "highest_id": 1155,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1205,6 +1205,13 @@
       "path": "tasks/proposed/1154",
       "status": "proposed",
       "title": "workflow-fix: lint: marker-recipe doc numeric snippets match"
+    },
+    "1155": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1155",
+      "status": "proposed",
+      "title": "workflow-fix: pod-safety stop-failed marker + fix guard-test"
     },
     "116": {
       "has_clean_result": true,
