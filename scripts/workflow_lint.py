@@ -4737,10 +4737,12 @@ def check_scripts_import_guard(*, scan_roots: tuple[Path, ...] | None = None) ->
                     f"unparseable {rel} ({type(exc).__name__})\n"
                 )
                 continue
-            # Necessary-token perf gate: both in-scope AST shapes require one
-            # of these literal substrings verbatim in the source (dynamic
-            # importlib shapes are invisible to the AST predicate anyway).
-            if "import scripts" not in text and "from scripts" not in text:
+            # Cheap-token perf gate: any static scripts.* import statement
+            # must contain the substring "scripts" (multi-alias forms like
+            # `import os, scripts.foo` lack the "import scripts" bigram, so
+            # gate on the bare token; dynamic importlib shapes are invisible
+            # to the AST predicate anyway).
+            if "scripts" not in text:
                 continue
             tree = _cached_parse(py, text)
             if tree is None:

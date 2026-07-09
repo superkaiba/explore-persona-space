@@ -442,6 +442,21 @@ def test_bare_import_scripts_fires(tmp_path, monkeypatch) -> None:
     assert "deferred" in errors[0], errors
 
 
+def test_multi_alias_import_fires(tmp_path, monkeypatch) -> None:
+    """``import os, scripts.foo`` lacks the "import scripts" bigram — the
+    textual pre-gate must not skip it (code-review r1 Minor: gate on the
+    bare "scripts" token, not the two verbatim bigrams)."""
+    _plant(
+        tmp_path,
+        f"{_EXP}/issue_x/multi_alias.py",
+        "def run():\n    import os, scripts.foo\n    return os\n",
+    )
+    errors = _run_on(monkeypatch, tmp_path)
+    assert len(errors) == 1, errors
+    assert "multi_alias.py:2" in errors[0], errors
+    assert "deferred" in errors[0], errors
+
+
 # --------------------------------------------------------------------------
 # row 15: live tree passes
 # --------------------------------------------------------------------------
