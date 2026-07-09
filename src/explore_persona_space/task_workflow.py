@@ -1699,43 +1699,58 @@ def ensemble_verdicts_present(
     rule's item 2 (output-file probe) and precedence clauses stay
     orchestrator prose.
     """
+    if isinstance(kinds, str):
+        # A bare string iterates per-character, mechanically producing false
+        # no-shows — the exact class this predicate exists to close.
+        raise TypeError("kinds must be a sequence of marker-kind strings, not a bare str")
     out: dict[str, dict[str, Any]] = {}
     for kind in kinds:
         match: dict | None = None
         for event in events:  # chronological; latest match wins
-            if event.get("kind", "") != kind:
-                continue
-            note = event.get("note", "") or ""
-            head_round = _sentinel_round(note, kind)
-            if kind == _RECONCILE_KIND:
-                # The reconcile version field never carries the round
-                # (#1092: version 1 / sentinel v5) — sentinel, then the
-                # note's **Round:** field, else no match.
-                if head_round is not None:
-                    if head_round != round_n:
-                        continue
-                else:
-                    round_field = parse_followup_note_field(note, "Round")
-                    if round_field is None or not round_field.isdigit():
-                        continue
-                    if int(round_field) != round_n:
-                        continue
-            elif head_round is not None:
-                if head_round != round_n:
-                    continue  # sentinel authoritative — suppress the version match
-            elif event.get("version") != round_n:
-                continue
-            if kind == _RECONCILE_KIND and reconcile_role is not None:
-                role = parse_followup_note_field(note, "Role under adjudication")
-                if role != reconcile_role:
-                    continue
-            match = event
+            if _ensemble_event_matches(event, kind, round_n, reconcile_role):
+                match = event
         if match is None:
             out[kind] = {"present": False, "verdict": None, "ts": None}
         else:
             verdict = parse_followup_note_field(match.get("note", "") or "", "Verdict")
             out[kind] = {"present": True, "verdict": verdict, "ts": match.get("ts")}
     return out
+
+
+def _ensemble_event_matches(
+    event: dict, kind: str, round_n: int, reconcile_role: str | None
+) -> bool:
+    """True iff ``event`` is a round-``round_n`` verdict marker of ``kind``.
+
+    Round matching is sentinel-authoritative: a head sentinel naming a
+    DIFFERENT round suppresses the version-field match, and the reconcile
+    kind never matches on its round-meaningless ``version`` field (#1092:
+    version 1 / sentinel v5) — sentinel first, then the note's
+    ``**Round:**`` field, else no match. Role scoping applies to the
+    reconcile kind only.
+    """
+    if event.get("kind", "") != kind:
+        return False
+    note = event.get("note", "") or ""
+    head_round = _sentinel_round(note, kind)
+    if kind == _RECONCILE_KIND:
+        if head_round is not None:
+            if head_round != round_n:
+                return False
+        else:
+            round_field = parse_followup_note_field(note, "Round")
+            if round_field is None or not round_field.isdigit() or int(round_field) != round_n:
+                return False
+    elif head_round is not None:
+        if head_round != round_n:
+            return False  # sentinel authoritative — suppress the version match
+    elif event.get("version") != round_n:
+        return False
+    if kind == _RECONCILE_KIND and reconcile_role is not None:
+        role = parse_followup_note_field(note, "Role under adjudication")
+        if role != reconcile_role:
+            return False
+    return True
 
 
 # Canonical PASS-verdict pattern for an epm:upload-verification note

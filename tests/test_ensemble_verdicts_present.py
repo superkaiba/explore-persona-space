@@ -16,6 +16,8 @@ bold-wrapped ``**Verdict: PASS**`` Codex-twin shape).
 
 from __future__ import annotations
 
+import pytest
+
 import explore_persona_space.task_workflow as tw
 
 
@@ -293,3 +295,10 @@ def test_reconcile_missing_role_field():
     assert scoped["epm:review-reconcile"] == _ABSENT
     unscoped = tw.ensemble_verdicts_present(events, kinds, 2)
     assert unscoped["epm:review-reconcile"]["present"] is True
+
+
+def test_bare_str_kinds_raises():
+    # Reviewer-round pin: a bare string for `kinds` would iterate
+    # per-character and mechanically produce false no-shows — reject loudly.
+    with pytest.raises(TypeError, match="bare str"):
+        tw.ensemble_verdicts_present([], "epm:code-review", 1)
