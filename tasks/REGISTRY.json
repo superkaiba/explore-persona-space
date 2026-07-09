@@ -1342,8 +1342,8 @@
     "1172": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1172",
-      "status": "planning",
+      "path": "tasks/approved/1172",
+      "status": "approved",
       "title": "workflow-fix: launcher-level PYTHONPATH for managed lanes"
     },
     "1173": {
