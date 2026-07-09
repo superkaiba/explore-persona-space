@@ -1580,8 +1580,8 @@
     "1202": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1202",
-      "status": "planning",
+      "path": "tasks/approved/1202",
+      "status": "approved",
       "title": "workflow-fix: lint bare list_repo_files in new scripts"
     },
     "1203": {
