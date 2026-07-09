@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1188,
+  "highest_id": 1189,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1464,6 +1464,13 @@
       "path": "tasks/proposed/1188",
       "status": "proposed",
       "title": "workflow-fix: analyzer re-fold H1 retitle set-title sync"
+    },
+    "1189": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1189",
+      "status": "proposed",
+      "title": "workflow-fix: /daily headless stub-first mechanical lever"
     },
     "119": {
       "has_clean_result": false,
