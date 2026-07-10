@@ -34,6 +34,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1092.md](https://github.com/superkaiba/explore-persona-space/blob/7d7e9a5fed4ec466fd2d6c7df99c40123e9f1906/docs/methodology/issue_1092.md) · [gist](https://gist.github.com/superkaiba/b2d385841213a6dbd8a82e65463ba1dd)
+
 ## Takeaways
 
 - **Held-out R² 0.71–0.80 for context-based maps vs 0.04–0.07 prefix-based in five of six coherent cells (sixth: context 0.49): the query-bearing state carries nearly all answer-state transport.**
