@@ -27,7 +27,8 @@ stdin JSON.
 Case ids B1-B11 / S1-S2 / A1-A20 are the plan #1201 §4.5 acceptance tables
 (``tasks/*/1201/plans/plan.md``); B12-B16 / A21-A22 are the critic-round
 additions (config-override pull, ssh shared-root spelling, waived-word
-producer position, ``git -C .``, piped ff-only pod sync).
+producer position, ``git -C .``, piped ff-only pod sync). S1 flipped +
+B17-B23/S3-S4/A23-A28 are the #1250 command-position-anchoring round.
 
 ``TestSettingsWiring`` (the piped-push/bank-read precedent) additionally
 parses ``.claude/settings.json``, asserts the matcher-Bash hook group
@@ -139,6 +140,26 @@ BLOCK_CASES = [
         "ssh -o ProxyCommand='git pull origin main %h' pod-779 'true'",
         id="B16-proxycommand-executes-locally",
     ),
+    # B17-B21 (#1250): the command-position anchor's closed prefix-unit set —
+    # wrapper words, env assignments, duration tokens, bare -flag units keep
+    # real pulls behind them fail-closed.
+    pytest.param("nohup git pull", id="B17-nohup-wrapper"),
+    pytest.param("GIT_TRACE=1 git pull --rebase origin main", id="B18-env-assignment-prefix"),
+    pytest.param("timeout 300 git pull", id="B19-timeout-duration-wrapper"),
+    pytest.param("command git pull", id="B20-command-builtin-wrapper"),
+    pytest.param("sudo -n git pull", id="B21-sudo-flag-wrapper"),
+    # B22 (#1250): the REQUIRED shell-keyword prefix units — a hand-rolled
+    # retry loop's lead is `until git pull ...`, precisely the recovery class
+    # the guard exists for; a keyword-less anchor would fail OPEN here.
+    pytest.param("until git pull --rebase; do sleep 5; done", id="B22-until-loop-keyword-lead"),
+    # B23 (#1250): a grep-family clause whose waiver is REFUSED (local file
+    # redirect) routes to the arm-2 whole-clause scan — pins that the
+    # scanwhole flag sits at the SHARED waived-word arm top, not inside the
+    # ssh sub-branch (a mis-scoping would silently fail open on grep leads).
+    pytest.param(
+        'grep -rn "git pull --rebase" .claude/ scripts/ > /tmp/hits.txt',
+        id="B23-grep-refused-waiver-arm2",
+    ),
 ]
 
 
@@ -147,15 +168,16 @@ def test_block_cases(cmd: str) -> None:
     _assert_blocked(_run_bash(cmd))
 
 
-def test_s1_pinned_false_positive_commit_message_blocks() -> None:
-    """Plan §4.5 S1 pinned EXPECTED-BLOCK (deliberate FP trade-off): a
-    non-heredoc commit whose quoted ``-m`` text merely MENTIONS a root pull
-    trips the raw scan — the guard does not strip quoted arguments (the
-    guard_repo_root_branch.sh #796 trade-off, sibling S7r1 parity).
-    Remediation: ``git commit -F <file>`` / the heredoc commit recipe
-    (blanket-allowed).
+def test_s1_flipped_quoted_mention_allowed() -> None:
+    """S1 FLIPPED by #1250 (command-position anchoring): a non-heredoc commit
+    whose quoted ``-m`` text merely MENTIONS a root pull is now ALLOWED — the
+    classifier anchors to the clause's command position (lead ``git`` with
+    verb ``commit``, then ``push``; never ``pull``), so quoted argument text
+    can no longer trip it. This is NOT quote-stripping (the #796 revert
+    stands — nothing is stripped, the detector is anchored), so real quoted
+    pulls in waiver-refused ssh/grep clauses still block (B13-B16, B23, S4).
     """
-    _assert_blocked(
+    _assert_allowed(
         _run_bash('git commit -m "never hand-roll git pull at the root" && git push origin main')
     )
 
@@ -167,6 +189,50 @@ def test_s2_pinned_expected_block_variable_cd_target() -> None:
     Remediation is the canonical ``git -C "$WT" pull ...`` form (A1).
     """
     _assert_blocked(_run_bash('cd "$WT" && git pull'))
+
+
+def test_s3_pinned_residual_missplit_note_mention_blocks() -> None:
+    """S3 pinned EXPECTED-BLOCK residual (#1250): quoted ``--note`` text that
+    embeds a shell separator + a FULL pull command literal mis-splits raw
+    (the standing #796 no-quote-parse trade-off), so the tail clause's LEAD
+    becomes the pull literal itself and the command-position anchor
+    legitimately matches. Remediation for note/commit text of this shape:
+    ``task.py post-marker --file <path.md>`` / ``git commit -F <file>`` / a
+    heredoc. Pins the RESIDUAL boundary of the #1250 fix as deliberate.
+    """
+    _assert_blocked(
+        _run_bash(
+            "uv run python scripts/task.py post-marker 1250 epm:progress"
+            " --note 'recovered: git fetch && git pull --rebase worked'"
+        )
+    )
+
+
+def test_s4_pinned_residual_piped_grep_mention_blocks() -> None:
+    """S4 pinned EXPECTED-BLOCK residual (#1250): a piped grep whose pattern
+    argument quotes a root pull sits in pipeline-PRODUCER position, so the
+    waiver is refused (guard cond-(1)) and the clause keeps the arm-2
+    whole-clause scan, which matches the quoted pattern. Makes the retained
+    arm-2 FP class legible (the same mention passes un-piped, A12).
+    Remediation: run the grep un-piped or via the Grep tool.
+    """
+    _assert_blocked(_run_bash('grep -rn "git pull --rebase" .claude/ | head -5'))
+
+
+def test_incident_1250_post_marker_note_mention_allowed() -> None:
+    """The #1250 incident shape (DURABILITY PIN): a separator-free
+    ``task.py post-marker --note`` whose quoted text mentions a root pull is
+    ALLOWED — the lead word is ``uv``, not a git/wrapper/keyword prefix unit,
+    so the command-position anchor cannot match. This is the exact false
+    positive that fired in production hours after #1201 shipped
+    (2026-07-09T23:06Z, on #1201's own session).
+    """
+    _assert_allowed(
+        _run_bash(
+            "uv run python scripts/task.py post-marker 1201 epm:progress"
+            " --note 'worked around via git pull --rebase mention'"
+        )
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -218,6 +284,18 @@ ALLOW_CASES = [
         "ssh pod-779 'git pull --ff-only origin main' 2>&1 | tail -20",
         id="A22-piped-pod-sync-saved-by-ff-only",
     ),
+    # A24-A28 (#1250): one representative expected-allow pin per documented
+    # fail-open residual class of the command-position anchor (guard
+    # known-limitations bullets (b)/(b')). A24 is the refspec form so it
+    # DISCRIMINATES old->new (the no-arg form already allowed pre-#1250).
+    pytest.param("bash -c 'git pull --rebase origin main'", id="A24-bash-dash-c-known-miss"),
+    pytest.param('echo "git pull is fenced at the root"', id="A25-echo-mention"),
+    pytest.param(
+        'echo "$(git pull --rebase origin main)"',
+        id="A26-command-substitution-residual",
+    ),
+    pytest.param("sudo -u deploy git pull origin main", id="A27-flag-value-wrapper-residual"),
+    pytest.param('eval "git pull origin main"', id="A28-quoted-eval-residual"),
 ]
 
 
