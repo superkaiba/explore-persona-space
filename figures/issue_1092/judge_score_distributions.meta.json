@@ -1,0 +1,732 @@
+{
+  "commit": "1b104689cc",
+  "created": "2026-07-10T15:41:33Z",
+  "figsize": [
+    10.8,
+    5.6
+  ],
+  "points": [
+    {
+      "x": 2.5,
+      "count (log)": 8131.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.5,
+      "count (log)": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 12.5,
+      "count (log)": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 17.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 22.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 27.5,
+      "count (log)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 32.5,
+      "count (log)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 37.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 42.5,
+      "count (log)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 47.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 52.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 57.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 62.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 67.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 72.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 77.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 82.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 87.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 92.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 97.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.5,
+      "y": 4351.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.5,
+      "y": 428.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 12.5,
+      "y": 162.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 17.5,
+      "y": 148.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 22.5,
+      "y": 111.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 27.5,
+      "y": 94.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 32.5,
+      "y": 126.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 37.5,
+      "y": 152.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 42.5,
+      "y": 95.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 47.5,
+      "y": 120.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 52.5,
+      "y": 98.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 57.5,
+      "y": 112.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 62.5,
+      "y": 136.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 67.5,
+      "y": 177.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 72.5,
+      "y": 377.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 77.5,
+      "y": 283.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 82.5,
+      "y": 228.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 87.5,
+      "y": 229.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 92.5,
+      "y": 197.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 97.5,
+      "y": 507.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.5,
+      "y": 5520.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.5,
+      "y": 617.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 12.5,
+      "y": 370.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 17.5,
+      "y": 271.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 22.5,
+      "y": 221.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 27.5,
+      "y": 157.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 32.5,
+      "y": 146.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 37.5,
+      "y": 106.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 42.5,
+      "y": 79.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 47.5,
+      "y": 91.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 52.5,
+      "y": 65.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 57.5,
+      "y": 73.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 62.5,
+      "y": 61.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 67.5,
+      "y": 74.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 72.5,
+      "y": 105.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 77.5,
+      "y": 96.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 82.5,
+      "y": 56.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 87.5,
+      "y": 33.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 92.5,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 97.5,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "graded judge score (0-100)": 2.5,
+      "count (log)": 2869.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 7.5,
+      "count (log)": 6.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 12.5,
+      "count (log)": 4.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 17.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 22.5,
+      "count (log)": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 27.5,
+      "count (log)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 32.5,
+      "count (log)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 37.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 42.5,
+      "count (log)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 47.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 52.5,
+      "count (log)": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 57.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 62.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 67.5,
+      "count (log)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 72.5,
+      "count (log)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 77.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 82.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 87.5,
+      "count (log)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 92.5,
+      "count (log)": 4.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 97.5,
+      "count (log)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "graded judge score (0-100)": 2.5,
+      "y": 1777.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 7.5,
+      "y": 122.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 12.5,
+      "y": 60.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 17.5,
+      "y": 91.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 22.5,
+      "y": 45.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 27.5,
+      "y": 49.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 32.5,
+      "y": 32.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 37.5,
+      "y": 45.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 42.5,
+      "y": 32.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 47.5,
+      "y": 35.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 52.5,
+      "y": 32.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 57.5,
+      "y": 32.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 62.5,
+      "y": 40.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 67.5,
+      "y": 47.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 72.5,
+      "y": 45.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 77.5,
+      "y": 79.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 82.5,
+      "y": 63.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 87.5,
+      "y": 115.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 92.5,
+      "y": 49.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 97.5,
+      "y": 99.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "graded judge score (0-100)": 2.5,
+      "y": 2071.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 7.5,
+      "y": 152.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 12.5,
+      "y": 88.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 17.5,
+      "y": 83.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 22.5,
+      "y": 47.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 27.5,
+      "y": 55.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 32.5,
+      "y": 55.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 37.5,
+      "y": 40.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 42.5,
+      "y": 39.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 47.5,
+      "y": 39.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 52.5,
+      "y": 21.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 57.5,
+      "y": 24.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 62.5,
+      "y": 31.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 67.5,
+      "y": 18.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 72.5,
+      "y": 43.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 77.5,
+      "y": 61.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 82.5,
+      "y": 12.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 87.5,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 92.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "graded judge score (0-100)": 97.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 120
+}

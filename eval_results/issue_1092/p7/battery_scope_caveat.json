@@ -1,0 +1,252 @@
+{
+  "battery_scope_caveat": {
+    "concern_id": "battery-rows-in-fit-arms-banked-p6",
+    "corpus_manifest": {
+      "battery_is_eval_only_flag_counts": {
+        "True": 2400
+      },
+      "n_rows": 21193,
+      "path": "data/issue_1092/p0/corpus/manifest.jsonl",
+      "sha256_16": "e582a3b41ae9c5b7",
+      "status": "present",
+      "strata_counts": {
+        "battery": 2400,
+        "dense_core": 4752,
+        "periphery_natural": 897,
+        "periphery_random": 8969,
+        "periphery_topicmatch": 2690,
+        "trait_stratum": 1485
+      }
+    },
+    "downstream_guidance": {
+      "may_claim": [
+        "fitted-map reads (read1-4, B1/B2 map-mediated) as WITHIN-CORPUS reads whose training rows include the 2,400 battery rows in both fit arms (composition documented here)",
+        "held-out R2 under grouped 6-fold CV, with fold aggregates mixing battery and non-battery rows"
+      ],
+      "may_not_claim": [
+        "the plan-v5 fold-iii battery TRANSFER read (fit on real corpus -> evaluate on #594 battery) \u2014 not computable from banked artifacts",
+        "any 'battery eval-only' framing, including the #813 comparability framing \u2014 carry this caveat instead",
+        "a battery-restricted held-out read from banked checkpoints (per-row held-out predictions were not persisted)",
+        "the P7 A_real_only row arm as battery-free \u2014 it mirrors the engine rule and INCLUDES battery rows"
+      ]
+    },
+    "n_rows_arithmetic": {
+      "per_cell": {
+        "cell_inst_claude": {
+          "battery_rows_in_training": true,
+          "expected_fitA_engine_rule": 12121,
+          "expected_fitA_registered_rule": 9721,
+          "n_rows_fitA_observed": [
+            12121
+          ],
+          "n_rows_fitB_observed": [
+            12121
+          ],
+          "scope_matched": "claude_subset",
+          "status": "checked"
+        },
+        "cell_inst_own": {
+          "battery_rows_in_training": true,
+          "expected_fitA_engine_rule": 19708,
+          "expected_fitA_registered_rule": 17308,
+          "n_rows_fitA_observed": [
+            19708
+          ],
+          "n_rows_fitB_observed": [
+            21193
+          ],
+          "scope_matched": "full_corpus",
+          "status": "checked"
+        },
+        "cell_inst_pretext": {
+          "battery_rows_in_training": true,
+          "expected_fitA_engine_rule": 19708,
+          "expected_fitA_registered_rule": 17308,
+          "n_rows_fitA_observed": [
+            19708
+          ],
+          "n_rows_fitB_observed": [
+            21193
+          ],
+          "scope_matched": "full_corpus",
+          "status": "checked"
+        },
+        "cell_inst_shuf": {
+          "n_rows_fitA_observed": [
+            8689
+          ],
+          "n_rows_fitB_observed": [
+            8689
+          ],
+          "note": "no scope total matches the observed fitB n_rows (n0 truncation or partial grid) or fit-arm n_rows not unique",
+          "status": "not_checkable"
+        },
+        "cell_pre_claude": {
+          "battery_rows_in_training": true,
+          "expected_fitA_engine_rule": 12121,
+          "expected_fitA_registered_rule": 9721,
+          "n_rows_fitA_observed": [
+            12121
+          ],
+          "n_rows_fitB_observed": [
+            12121
+          ],
+          "scope_matched": "claude_subset",
+          "status": "checked"
+        },
+        "cell_pre_insttext": {
+          "battery_rows_in_training": true,
+          "expected_fitA_engine_rule": 19708,
+          "expected_fitA_registered_rule": 17308,
+          "n_rows_fitA_observed": [
+            19708
+          ],
+          "n_rows_fitB_observed": [
+            21193
+          ],
+          "scope_matched": "full_corpus",
+          "status": "checked"
+        },
+        "cell_pre_own": {
+          "battery_rows_in_training": true,
+          "expected_fitA_engine_rule": 19708,
+          "expected_fitA_registered_rule": 17308,
+          "n_rows_fitA_observed": [
+            19708
+          ],
+          "n_rows_fitB_observed": [
+            21193
+          ],
+          "scope_matched": "full_corpus",
+          "status": "checked"
+        },
+        "cell_pre_shuf": {
+          "n_rows_fitA_observed": [
+            8689
+          ],
+          "n_rows_fitB_observed": [
+            8689
+          ],
+          "note": "no scope total matches the observed fitB n_rows (n0 truncation or partial grid) or fit-arm n_rows not unique",
+          "status": "not_checkable"
+        }
+      },
+      "scope_totals": {
+        "claude_subset": 12121,
+        "control_subset": 12121,
+        "full_corpus": 21193
+      },
+      "status": "computed"
+    },
+    "observed_n_rows_by_cell_fit_arm": {
+      "cell_inst_claude": {
+        "A": [
+          12121
+        ],
+        "B": [
+          12121
+        ]
+      },
+      "cell_inst_own": {
+        "A": [
+          19708
+        ],
+        "B": [
+          21193
+        ]
+      },
+      "cell_inst_pretext": {
+        "A": [
+          19708
+        ],
+        "B": [
+          21193
+        ]
+      },
+      "cell_inst_shuf": {
+        "A": [
+          8689
+        ],
+        "B": [
+          8689
+        ]
+      },
+      "cell_pre_claude": {
+        "A": [
+          12121
+        ],
+        "B": [
+          12121
+        ]
+      },
+      "cell_pre_insttext": {
+        "A": [
+          19708
+        ],
+        "B": [
+          21193
+        ]
+      },
+      "cell_pre_own": {
+        "A": [
+          19708
+        ],
+        "B": [
+          21193
+        ]
+      },
+      "cell_pre_shuf": {
+        "A": [
+          8689
+        ],
+        "B": [
+          8689
+        ]
+      }
+    },
+    "realized_in_banked_p6": {
+      "consequence": "battery rows were IN TRAINING for both fit arms in all banked checkpoints; the registered fold-iii transfer read has no implementation",
+      "corpus_stratum_label": "battery",
+      "engine_fit_arm_A_filter": "stratum not in {'trait_stratum', 'battery_eval_only'} (fit_grid.py run(); fit arm B takes all rows; is_eval_only read nowhere)"
+    },
+    "recoverability": {
+      "banked_fit_block_fields": [
+        "r2",
+        "r2_folds",
+        "lambda_indices"
+      ],
+      "future_recovery_route": "folds are deterministic (_folds_from_manifest, group_key + FOLD_SEED) and per-fold lambda indices are banked, so per-fold maps could be refit deterministically from the staged summaries \u2014 refit territory, out of scope for the banked grid (round-22 decision: no P6 re-run)",
+      "investigated_round": 22,
+      "per_fold_coefficients_persisted": false,
+      "per_fold_predictions_persisted": false,
+      "per_row_heldout_predictions_or_residuals_persisted": false,
+      "row_indexing_in_checkpoints": false,
+      "verdict": "NOT recoverable from banked artifacts: under the grouped 6-fold CV each battery row was held out of exactly its own fold (and in TRAINING for the other 5 folds' maps), so an honest never-trained-on-this-row battery read existed in memory (_fit_cv computes per-row held-out pred) but only aggregate per-fold R2 was persisted; the aggregate r2_folds mix battery and non-battery rows and cannot be decomposed by stratum post hoc"
+    },
+    "registered": {
+      "battery_rows": "EVAL-ONLY in both fit arms (context-transfer read, factorial-wide)",
+      "plan": "v5 section 4.1 step 6 + OOD-fold registration (iii)",
+      "transfer_read": "fold iii: fit on real corpus -> evaluate on #594 battery (corpus transfer, strongest OOD form)"
+    },
+    "severity": "CONCERN"
+  },
+  "merge_fingerprint": "16e05c15ce7ba7d6",
+  "metadata": {
+    "argv": [
+      "--steps",
+      "merge,projection-sweep,figures,upload-nulls",
+      "--bridge-summary",
+      "data/issue_1092/p7_bridge/bridge_refit_summary.json",
+      "--expect-full-grid"
+    ],
+    "git_commit": "1b104689cc2fd9383a916bf7efd28002219e0007",
+    "hf_prefix": "issue1092_realistic_crossing",
+    "issue": 1092,
+    "numpy_version": "2.2.6",
+    "phase": "P7",
+    "python_version": "3.11.15",
+    "script": "issue1092_figures.py",
+    "timestamp": "2026-07-10T07:00:52-0700"
+  },
+  "read": "structured plan-deviation scope caveat (standalone copy; the same battery_scope_caveat block is embedded in every merge-stage family JSON)"
+}

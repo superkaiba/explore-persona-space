@@ -1,0 +1,17 @@
+{
+  "phase": "P1_claude_text",
+  "model": "claude-sonnet-4-5-20250929",
+  "temperature": 0,
+  "max_tokens": 1024,
+  "n_items": 12172,
+  "n_ok": 12172,
+  "n_err": 0,
+  "success_rate": 1.0,
+  "completions_file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1092/data/issue_1092/p1/raw_completions/claude/claude_completions.jsonl",
+  "completions_sha256": "62c4a6408eee286981edb9026b277509c8336460d73f1e943084ffa3fcc1a3e7",
+  "completions_size_bytes": 19923835,
+  "hf_path": "issue1092_realistic_crossing/raw_completions/claude/claude_completions.jsonl",
+  "smoke": false,
+  "dry_run_api": false,
+  "wall_s": 1513.9574664551765
+}

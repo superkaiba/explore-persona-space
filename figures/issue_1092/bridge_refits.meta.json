@@ -1,0 +1,102 @@
+{
+  "commit": "e78b4ce47b",
+  "created": "2026-07-10T20:00:53Z",
+  "figsize": [
+    9.6,
+    4.8
+  ],
+  "points": [
+    {
+      "category": "UltraChat-48 grid",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": 0.30055763311727146,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Betley questions",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": 0.07301751287170877,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "LMSYS persona map",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": 0.6184057830382188,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "EM eliciting",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": 0.30205676566926976,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "EM generic",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": -0.4151285653971102,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "EM mixed",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": 0.3112553654830801,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "fact eliciting",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": -1.3120327860389205,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "fact generic",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": -0.4125400454260588,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "fact mixed",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": -1.7732750339368666,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "marker eliciting",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": -1.2247305274922904,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "marker generic",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": -0.4660350206572992,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "marker mixed",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": -2.5483655910013483,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "sycophancy eliciting",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": -1.1701473203767465,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "sycophancy generic",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": -0.4173639097865254,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "sycophancy mixed",
+      "held-out R\u00b2 at layer 14 (one bar per re-fit item)": -1.3219051442855863,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 15
+}
