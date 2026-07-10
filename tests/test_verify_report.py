@@ -28,11 +28,22 @@ _spec.loader.exec_module(verify_report)  # type: ignore[union-attr]
 
 PLACEHOLDER = verify_report.PLACEHOLDER
 
+# The default Results image is a WELL-FORMED SHA pin (#1224 Option A: figures
+# commit at Step 7b, before assembly, so a valid report always pins). The SHA
+# is synthetic — in a non-git tmp figures-root the blob-identity check degrades
+# to WARN (which counts as PASS overall).
+_PIN_SHA = "a" * 40
+_PINNED_IMAGE = f"https://raw.githubusercontent.com/o/r/{_PIN_SHA}/figures/issue_5/f.png"
+
+
+def _pin(sha: str, path: str = "figures/issue_5/f.png") -> str:
+    return f"https://raw.githubusercontent.com/o/r/{sha}/{path}"
+
 
 # ─── Body builders ──────────────────────────────────────────────────────────
 
 
-def _default_sections(*, image: str = "figures/f.png") -> list[tuple[str, str]]:
+def _default_sections(*, image: str = _PINNED_IMAGE) -> list[tuple[str, str]]:
     """The six required sections, in order, with a valid Results subsection."""
     return [
         ("## TLDR:", PLACEHOLDER),
@@ -66,6 +77,14 @@ def _assemble(
     return "\n".join(lines) + "\n"
 
 
+def _promote_sections(**kw) -> list[tuple[str, str]]:
+    """Default sections with TLDR + Next steps filled (valid at promote time)."""
+    sections = _default_sections(**kw)
+    sections[0] = ("## TLDR:", "Thomas takeaway: the effect held.")
+    sections[-1] = ("## Next steps:", "Run more seeds.")
+    return sections
+
+
 @pytest.fixture
 def figs_root(tmp_path: Path) -> Path:
     """A figures-root with the default image present on disk."""
@@ -74,13 +93,45 @@ def figs_root(tmp_path: Path) -> Path:
     return tmp_path
 
 
+def _git_run(repo: Path, *args: str) -> str:
+    r = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, check=True)
+    return r.stdout.strip()
+
+
+@pytest.fixture
+def git_figs_repo(tmp_path: Path) -> tuple[Path, str]:
+    """A REAL git repo with figures/issue_5/f.png committed; returns (root, head_sha)."""
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True, capture_output=True)
+    _git_run(tmp_path, "config", "user.email", "test@test.test")
+    _git_run(tmp_path, "config", "user.name", "Test")
+    _git_run(tmp_path, "config", "commit.gpgsign", "false")
+    figs = tmp_path / "figures" / "issue_5"
+    figs.mkdir(parents=True)
+    (figs / "f.png").write_bytes(b"\x89PNG\r\n\x1a\nreal-figure-bytes")
+    _git_run(tmp_path, "add", "figures/issue_5/f.png")
+    _git_run(tmp_path, "commit", "-q", "-m", "add figure")
+    head = _git_run(tmp_path, "rev-parse", "HEAD")
+    return tmp_path, head
+
+
 def _by_name(results, name):
     return next(r for r in results if r.name == name)
 
 
-def _run(body: str, *, mode: str, figs_root: Path, manifest_path: Path | None = None):
+def _run(
+    body: str,
+    *,
+    mode: str,
+    figs_root: Path,
+    manifest_path: Path | None = None,
+    expect_issue: int | None = None,
+):
     return verify_report.verify_report_text(
-        body, mode=mode, figures_root=figs_root, manifest_path=manifest_path
+        body,
+        mode=mode,
+        figures_root=figs_root,
+        manifest_path=manifest_path,
+        expect_issue=expect_issue,
     )
 
 
@@ -168,7 +219,7 @@ def test_banned_lexeme_in_results_fails(figs_root):
     sections = _default_sections()
     sections[4] = (
         "## Results:",
-        "### rate\nThis suggests the treatment worked.\n![rate](figures/f.png)",
+        f"### rate\nThis suggests the treatment worked.\n![rate]({_PINNED_IMAGE})",
     )
     ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
     assert not ok
@@ -470,7 +521,9 @@ def test_issue_resolves_body_via_library(issue_repo):
     repo = issue_repo
     task_dir = repo / "tasks" / "proposed" / "777"
     task_dir.mkdir(parents=True)
-    (task_dir / "body.md").write_text(_assemble(_default_sections()))
+    # --issue 777 implies expect_issue=777, so the Results pin must name issue_777.
+    body = _assemble(_default_sections(image=_pin(_PIN_SHA, "figures/issue_777/f.png")))
+    (task_dir / "body.md").write_text(body)
     # figures-root defaults to the git-repo root of the resolved body.md.
     (repo / "figures").mkdir()
     (repo / "figures" / "f.png").write_bytes(b"\x89PNG\r\n")
@@ -562,3 +615,224 @@ def test_manifest_condition_substring_not_covered(figs_root, tmp_path):
     assert not ok
     cond = _by_name(results, "manifest-conditions")
     assert not cond.passed and "leak" in cond.detail
+
+
+# ─── image-pin-format (#1224 mechanization) ───────────────────────────────
+
+
+def test_pinned_image_wellformed_passes(figs_root):
+    ok, results = _run(_assemble(_default_sections()), mode="generation", figs_root=figs_root)
+    fmt = _by_name(results, "image-pin-format")
+    ident = _by_name(results, "image-pin-blob-identity")
+    assert fmt.passed and not fmt.is_warn
+    assert ident.passed and ident.is_warn  # non-git tmp figures-root → WARN (counts as PASS)
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_unpinned_relative_results_image_fails(figs_root):
+    # A relative-path Results image violates the pin contract in BOTH modes.
+    for mode, builder in (("generation", _default_sections), ("promote", _promote_sections)):
+        ok, results = _run(
+            _assemble(builder(image="figures/f.png")), mode=mode, figs_root=figs_root
+        )
+        assert not ok
+        assert not _by_name(results, "image-pin-format").passed
+
+
+def test_main_ref_image_fails(figs_root):
+    sections = _default_sections(
+        image="https://raw.githubusercontent.com/o/r/main/figures/issue_5/f.png"
+    )
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
+    assert not ok
+    assert not _by_name(results, "image-pin-format").passed
+
+
+def test_non_figures_path_pin_fails(figs_root):
+    sections = _default_sections(image=_pin(_PIN_SHA, "docs/x.png"))
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
+    assert not ok
+    assert not _by_name(results, "image-pin-format").passed
+
+
+def test_expect_issue_mismatch_fails(figs_root):
+    sections = _default_sections(image=_pin(_PIN_SHA, "figures/issue_7/f.png"))
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root, expect_issue=5)
+    assert not ok
+    fmt = _by_name(results, "image-pin-format")
+    assert not fmt.passed and "expected issue 5" in fmt.detail
+
+
+def test_outside_results_raw_image_exempt_from_issue_match(figs_root):
+    # A well-formed CROSS-ISSUE pin outside Results with expect_issue=5:
+    # the issue-number match is Results-scoped → NO format FAIL.
+    sections = _default_sections()
+    sections[2] = (
+        "## Methodology:",
+        "We trained under two conditions. Prior figure: "
+        f"![prior]({_pin('c' * 40, 'figures/issue_9/x.png')})",
+    )
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root, expect_issue=5)
+    assert _by_name(results, "image-pin-format").passed
+    assert ok, [r.render() for r in results if not r.passed]
+    # A MALFORMED raw URL outside Results (short SHA) still fails well-formedness.
+    sections[2] = (
+        "## Methodology:",
+        "Prior figure: "
+        "![prior](https://raw.githubusercontent.com/o/r/abc123/figures/issue_9/x.png)",
+    )
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root, expect_issue=5)
+    assert not ok
+    assert not _by_name(results, "image-pin-format").passed
+
+
+# ─── image-pin-blob-identity (#1224 mechanization) ────────────────────────
+
+
+def test_pin_blob_identity_match_passes(git_figs_repo):
+    repo, head = git_figs_repo
+    ok, results = _run(
+        _assemble(_default_sections(image=_pin(head))), mode="generation", figs_root=repo
+    )
+    ident = _by_name(results, "image-pin-blob-identity")
+    assert ident.passed and not ident.is_warn
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_pin_blob_identity_mismatch_fails_generation(git_figs_repo):
+    # At 7e the worktree copy IS the just-plotted figure; a pin whose blob
+    # differs is the exact wrong-SHA bug class → generation FAIL.
+    repo, head = git_figs_repo
+    (repo / "figures" / "issue_5" / "f.png").write_bytes(b"\x89PNG modified-after-commit")
+    ok, results = _run(
+        _assemble(_default_sections(image=_pin(head))), mode="generation", figs_root=repo
+    )
+    assert not ok
+    ident = _by_name(results, "image-pin-blob-identity")
+    assert not ident.passed and "differs" in ident.detail
+
+
+def test_pin_blob_identity_mismatch_warns_promote(git_figs_repo):
+    # Post-merge local drift is a stray; the pin is the record (#922) → WARN.
+    repo, head = git_figs_repo
+    (repo / "figures" / "issue_5" / "f.png").write_bytes(b"\x89PNG modified-after-commit")
+    ok, results = _run(
+        _assemble(_promote_sections(image=_pin(head))), mode="promote", figs_root=repo
+    )
+    ident = _by_name(results, "image-pin-blob-identity")
+    assert ident.passed and ident.is_warn
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_pin_commit_lacks_path_fails(git_figs_repo):
+    # Commit resolves but does not contain the pinned path → a wrong pin,
+    # definitively — FAIL in BOTH modes.
+    repo, head = git_figs_repo
+    ghost = _pin(head, "figures/issue_5/ghost.png")
+    ok, results = _run(_assemble(_default_sections(image=ghost)), mode="generation", figs_root=repo)
+    assert not ok
+    ident = _by_name(results, "image-pin-blob-identity")
+    assert not ident.passed and "does not contain" in ident.detail
+    ok_p, results_p = _run(
+        _assemble(_promote_sections(image=ghost)), mode="promote", figs_root=repo
+    )
+    assert not ok_p
+    assert not _by_name(results_p, "image-pin-blob-identity").passed
+
+
+def test_pin_unresolvable_sha_fails_generation_warns_promote(git_figs_repo):
+    # At 7e the pin commit was JUST created locally, so an unresolvable SHA is
+    # the fabricated/hallucinated-SHA class → generation FAIL; at promote an
+    # unfetched clone is plausible → WARN.
+    repo, _head = git_figs_repo
+    ok, results = _run(
+        _assemble(_default_sections(image=_pin("b" * 40))), mode="generation", figs_root=repo
+    )
+    assert not ok
+    ident = _by_name(results, "image-pin-blob-identity")
+    assert not ident.passed and "unresolvable" in ident.detail
+    ok_p, results_p = _run(
+        _assemble(_promote_sections(image=_pin("b" * 40))), mode="promote", figs_root=repo
+    )
+    ident_p = _by_name(results_p, "image-pin-blob-identity")
+    assert ident_p.passed and ident_p.is_warn
+    assert ok_p, [r.render() for r in results_p if not r.passed]
+
+
+def test_non_git_checkout_degrades_to_warn(figs_root):
+    ok, results = _run(_assemble(_default_sections()), mode="generation", figs_root=figs_root)
+    ident = _by_name(results, "image-pin-blob-identity")
+    assert ident.passed and ident.is_warn and "not a git checkout" in ident.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_mixed_sha_results_pins_both_valid_pass(git_figs_repo):
+    # Two Results pins at DIFFERENT real SHAs (the 7b re-entry /
+    # partial-re-splice shape): each pin verifies independently; only the
+    # issue NUMBER must be identical across Results images, never the SHA.
+    repo, sha1 = git_figs_repo
+    (repo / "figures" / "issue_5" / "g.png").write_bytes(b"\x89PNG second-figure-bytes")
+    _git_run(repo, "add", "figures/issue_5/g.png")
+    _git_run(repo, "commit", "-q", "-m", "add second figure")
+    sha2 = _git_run(repo, "rev-parse", "HEAD")
+    assert sha1 != sha2
+    sections = _default_sections()
+    sections[4] = (
+        "## Results:",
+        "### rate by condition\n"
+        "Bar chart of the agreement rate per condition.\n"
+        f"![rate]({_pin(sha1)})\n"
+        "### rate per unit\n"
+        "Per-unit points behind the aggregate.\n"
+        f"![points]({_pin(sha2, 'figures/issue_5/g.png')})",
+    )
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=repo)
+    assert _by_name(results, "image-pin-format").passed
+    ident = _by_name(results, "image-pin-blob-identity")
+    assert ident.passed and not ident.is_warn
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_pin_resolves_no_local_copy_warns_generation(git_figs_repo):
+    # Pin resolves in the object DB but the local copy is gone: at 7e every
+    # Results figure should have a just-plotted local copy → generation WARN;
+    # post-merge that is expected → promote PASS-note.
+    repo, head = git_figs_repo
+    (repo / "figures" / "issue_5" / "f.png").unlink()
+    ok, results = _run(
+        _assemble(_default_sections(image=_pin(head))), mode="generation", figs_root=repo
+    )
+    ident = _by_name(results, "image-pin-blob-identity")
+    assert ident.passed and ident.is_warn and "no local copy" in ident.detail
+    assert ok, [r.render() for r in results if not r.passed]
+    ok_p, results_p = _run(
+        _assemble(_promote_sections(image=_pin(head))), mode="promote", figs_root=repo
+    )
+    ident_p = _by_name(results_p, "image-pin-blob-identity")
+    assert ident_p.passed and not ident_p.is_warn and "no local copy" in ident_p.detail
+    assert ok_p, [r.render() for r in results_p if not r.passed]
+
+
+def test_cli_expect_issue_flag(figs_root, tmp_path):
+    good = tmp_path / "good.md"
+    good.write_text(_assemble(_default_sections()))
+    base = [
+        sys.executable,
+        str(_SCRIPT),
+        "--file",
+        str(good),
+        "--mode",
+        "generation",
+        "--figures-root",
+        str(figs_root),
+    ]
+    r_ok = subprocess.run([*base, "--expect-issue", "5"], capture_output=True, text=True)
+    assert r_ok.returncode == 0, r_ok.stdout + r_ok.stderr
+    r_mismatch = subprocess.run([*base, "--expect-issue", "7"], capture_output=True, text=True)
+    assert r_mismatch.returncode == 1, r_mismatch.stdout + r_mismatch.stderr
+    assert "image-pin-format" in r_mismatch.stdout
+    # --issue + --expect-issue together is an argparse usage error (exit 2):
+    # silently ignoring one of them would be a footgun.
+    with pytest.raises(SystemExit) as exc:
+        verify_report.main(["--issue", "1", "--expect-issue", "5", "--mode", "generation"])
+    assert exc.value.code == 2
