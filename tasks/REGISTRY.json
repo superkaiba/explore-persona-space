@@ -1930,8 +1930,8 @@
     "1248": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1248",
-      "status": "planning",
+      "path": "tasks/approved/1248",
+      "status": "approved",
       "title": "sweep suppression misses prior-night disposition records"
     },
     "1249": {
