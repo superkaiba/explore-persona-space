@@ -1776,8 +1776,8 @@
     "1228": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1228",
-      "status": "reviewing",
+      "path": "tasks/completed/1228",
+      "status": "completed",
       "title": "gate daily driver wf-fix tags per SKILL route-2 variant"
     },
     "1229": {
