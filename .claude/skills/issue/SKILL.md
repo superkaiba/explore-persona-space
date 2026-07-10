@@ -8906,21 +8906,30 @@ tests BEFORE anything lands:
   `ood_eval_results/`, `raw/`, `data/`, `docs/methodology/`). The lint's
   no-flags default run walks `.claude/**`, `CLAUDE.md`, `scripts/`, and
   `src/`, so any code-bearing payload is in scope.
-- **Run the WORKTREE's copy — no-flags bundle PLUS the parity leg.**
-  `workflow_lint.py` derives its scan root from `__file__` (not cwd), so
-  invoking `"$WT/scripts/workflow_lint.py"` scans the branch-tip tree;
-  running from a worktree is a designed use case (`_other_worktree_prefix`).
+- **Run a LANDING-TREE lint copy, both legs — no-flags bundle PLUS the parity leg.**
+  The gate builds ONE ephemeral landing tree in /tmp (`git archive
+  origin/main` over the lint-scanned cones), runs the BASELINE legs from
+  that tree's own lint copy BEFORE the payload overlay, then overlays the
+  branch's own-diff payload from the branch tip and runs the GATED legs
+  from the SAME copy (#1212 — one lint vintage, trees differing only by
+  the payload). `workflow_lint.py` derives its scan root from `__file__`
+  (not cwd), so the gate-tree copy scans the gate tree; a plain non-git
+  /tmp dir is a supported scan root (the root-guard hook pins `REPO=` to
+  an absolute path, and `_other_worktree_prefix` is pure path-string
+  logic).
   The no-flags default run does NOT bundle the asks / autonomous-asks /
   references / tables / status-labels checks (their `main()` branches lack
   `or no_flags`), yet `tests/test_workflow_lint.py` subprocess-runs those
   too — so trunk-pytest parity takes BOTH invocations. Measured wall
-  ~4.5-6 min (no-flags) + ~1.4 s (parity leg) on the shared VM; WARNs do
-  not fail (PASS = exit 0 on both).
+  ~4.5-6 min (no-flags) + ~1.4 s (parity leg) + ~1-2 s gate-tree
+  construction on the shared VM; WARNs do not fail (PASS = exit 0 on
+  both).
 
   ```bash
   # EXECUTABLE gate — forms (i) safe case and (ii) recovery share this block
-  # verbatim (gated = the WORKTREE lint copy on the payload-bearing branch-tip
-  # tree; baseline = the repo-root copy on the payload-free main tree). Form
+  # verbatim (gated = the gate-tree lint copy on the LANDING tree —
+  # origin/main + the branch's own-diff payload; baseline = the SAME copy on
+  # the payload-free landing base, the tree before the overlay). Form
   # (iii) inlines the SAME trigger/normalize/subtract/verdict steps around its
   # checkout — see the surgical block. The verdict is PERSISTED to a file
   # because fenced bash blocks are separate shell invocations: the binding
@@ -8950,7 +8959,38 @@ tests BEFORE anything lands:
   # as skip-artifact-only on a code-bearing payload (#928 -> #1125).
   elif [ -n "$(grep -vE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
       /tmp/issue-<N>-own-diff.txt)" ]; then
-    # BASELINE legs (payload-free tree). Per-leg exit codes ARE captured:
+    # GATE TREE (#1212): ONE ephemeral tree, TWO phases. Phase 1 (BASELINE)
+    # lints the PAYLOAD-FREE landing base — origin/main's lint-scanned
+    # surface, archived to /tmp — with origin/main's OWN lint copy
+    # (workflow_lint.py derives its scan root from __file__). Phase 2 (GATED)
+    # overlays the branch's own-diff payload onto the SAME tree and re-lints
+    # with the same copy. Both legs share ONE lint vintage on trees differing
+    # ONLY by the payload, so NEW = gated − baseline is payload-caused BY
+    # CONSTRUCTION: kills the #1112 vintage false-blocks (stale branch linter;
+    # branch scripts/ tree predating a main-referenced helper), stale
+    # non-payload files vs main's newer checks, root dirt/lag in the compare,
+    # and the moving-main inter-leg race — and ENFORCES checks added on main
+    # after the branch forked (the old path-(i) residual, upgraded
+    # deliberately: a payload violating a post-fork check now BLOCKS, the
+    # #931 class). $WT and the repo root are never written; no commits are
+    # created, so the verdict's sha-bind is unaffected. Payload files come
+    # FROM the branch tip: a branch whose own diff touches workflow_lint.py
+    # or a helper has its OWN copy exercised on the gated legs — it IS the
+    # payload. Construction failures fail CLOSED via GT_RC in the crash arm.
+    # The archive pathspec set must cover workflow_lint.py's scan/target
+    # surface (.claude/ CLAUDE.md scripts/ src/ tests/ docs/ — the #1154
+    # marker-recipe pins read docs/); a false block naming a path OUTSIDE
+    # this set means the linter grew a new scan root — extend the set here.
+    GT=/tmp/issue-<N>-lint-gate-tree
+    GT_RC=0
+    git -C "$WT" fetch origin main --quiet || true  # stale origin/main degrades to the trigger's own staleness, never a crash
+    { rm -rf "$GT" && mkdir -p "$GT"; } || GT_RC=1
+    ( set -o pipefail; git -C "$WT" archive origin/main -- \
+        .claude CLAUDE.md scripts src tests docs pyproject.toml \
+      | tar -x -C "$GT" ) || GT_RC=1
+    [ -f "$GT/scripts/workflow_lint.py" ] || GT_RC=1   # construction sanity
+    # BASELINE legs (payload-free landing base — phase 1, BEFORE the
+    # overlay). Per-leg exit codes ARE captured:
     # only the baseline's normalized failure LINES enter the compare, but a
     # baseline CRASH (rc>1, or rc!=0 with ZERO `workflow_lint:` lines) makes
     # the compare itself untrustworthy — that fails CLOSED via the crash arm
@@ -8963,20 +9003,44 @@ tests BEFORE anything lands:
     # defeats the crash arm below. rc=0/0 stays 0; a lone rc=1-with-lines
     # stays 1 (attribution logic); any leg >1 reaches the crash arm.
     BASE_RC=0
-    uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    uv run python "$GT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
-    uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    uv run python "$GT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
-    # GATED legs (payload-bearing tree; parity leg covers the checks the
-    # no-flags bundle omits — see the bullet above):
+    # PAYLOAD OVERLAY (#1212 — phase 2): branch-tip content for every
+    # payload path; branch deletions AND rename SOURCES removed from the
+    # landing tree. A DEDICATED --no-renames listing is used (never the
+    # shared own-diff.txt, which is --name-only WITH rename detection and
+    # lists only a rename's DESTINATION — the renamed-away source would
+    # silently survive in the gated tree). --no-renames splits a rename
+    # into D(old)+A(new), so one loop body covers both sides; own-diff.txt
+    # and its attribution consumers are untouched. Do NOT "simplify" by
+    # reusing own-diff.txt here. The two listings can also straddle the
+    # fetch (own-diff.txt pre-fetch, this one post-fetch): benign — the
+    # three-dot merge-base is fork-point-stable, and any attribution-vs-
+    # overlay divergence falls to the NEW-set arm (blocks, never fail-open).
+    # The overlay copies the FULL own-diff incl. artifact paths — harmless
+    # to the verdict (lint ignores non-cone paths); costs scale with payload.
+    git -C "$WT" diff --name-only --no-renames origin/main...HEAD \
+      > /tmp/issue-<N>-overlay-files.txt || GT_RC=1
+    while IFS= read -r p; do
+      if git -C "$WT" cat-file -e "HEAD:$p" 2>/dev/null; then
+        { mkdir -p "$GT/$(dirname "$p")" \
+          && git -C "$WT" show "HEAD:$p" > "$GT/$p"; } || GT_RC=1
+      else
+        rm -f "$GT/$p" || GT_RC=1   # branch-deleted / renamed-away path: absent from the landing tree
+      fi
+    done < /tmp/issue-<N>-overlay-files.txt
+    # GATED legs (payload-bearing landing tree — phase 3; parity leg covers
+    # the checks the no-flags bundle omits — see the bullet above):
     GATED_RC=0
-    uv run python "$WT/scripts/workflow_lint.py" \
+    uv run python "$GT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
-    uv run python "$WT/scripts/workflow_lint.py" \
+    uv run python "$GT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
@@ -9015,7 +9079,8 @@ tests BEFORE anything lands:
       else
         : > /tmp/issue-<N>-tg-baseline.txt
       fi
-      # GATED leg — worktree copy on the payload-bearing branch-tip tree:
+      # GATED leg — worktree copy on the payload-bearing branch-tip tree
+      # (deliberately NOT the #1212 gate tree — see the mapped-leg residuals):
       ( cd "$WT" && timeout --kill-after=30s 300s \
         env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
             NUMEXPR_NUM_THREADS=8 \
@@ -9076,7 +9141,7 @@ tests BEFORE anything lands:
     # one (rc=1 WITH lines) blocks only when payload-attributed (an
     # own-diff-named failure line OR a non-empty NEW set); rc=1 with lines
     # but none own-diff/NEW stays `pass` (pre-existing red — WARN).
-    if [ "$GATED_RC" -gt 1 ] || [ "$BASE_RC" -gt 1 ] || [ "$TG_CRASH" = "yes" ] \
+    if [ "$GT_RC" -ne 0 ] || [ "$GATED_RC" -gt 1 ] || [ "$BASE_RC" -gt 1 ] || [ "$TG_CRASH" = "yes" ] \
        || { [ "$GATED_RC" -ne 0 ] && [ ! -s /tmp/issue-<N>-lint-gated-norm.txt ]; } \
        || { [ "$BASE_RC" -ne 0 ] && [ ! -s /tmp/issue-<N>-lint-baseline-norm.txt ]; }; then
       echo crash > /tmp/issue-<N>-lint-verdict.txt
@@ -9087,6 +9152,7 @@ tests BEFORE anything lands:
     else
       echo pass > /tmp/issue-<N>-lint-verdict.txt
     fi
+    rm -rf "$GT"   # ephemeral; a crash-left tree is rebuilt (rm -rf first) on the next gate run
   else
     # Executable trigger (the Trigger bullet above): artifact-only payload —
     # both lint runs skipped by design.
@@ -9149,13 +9215,18 @@ tests BEFORE anything lands:
   construction; it arms automatically if that set ever grows. Known residuals
   (accepted, documented): (a) path-(i) test-VERSION drift — the gated leg
   runs the branch-tip copy of the scan test, so a check added on `main` after
-  the branch forked is not enforced there (fail-safe direction; the same
-  residual as the lint's path (i)); (b) the baseline leg runs on the
+  the branch forked is not enforced there (fail-safe direction; the LINT legs
+  no longer share this residual — the #1212 gate tree runs the landing tree's
+  lint on every path-(i) run; the TEST legs keep it because syncing
+  individual test files without their import closure — conftest, tests/
+  helpers — risks hybrid trees); (b) the baseline leg runs on the
   always-dirty shared root — dirt biases toward PASS, never a false block: an
   untracked concurrent-session file (including an untracked same-path draft
   of the payload file at the root, which the directory scan picks up
   tracked-or-not) can only ENLARGE the baseline hit set and mask, a residual
-  inherited from the lint gate's baseline leg; (c) a payload that DEEPENS an
+  formerly shared with the lint gate's baseline leg (the #1212 gate anchors
+  both lint legs to origin/main trees, so the lint legs no longer carry it);
+  (c) a payload that DEEPENS an
   offense in an already-red payload-touched file normalizes to the same
   per-file line and is subtracted — a false-pass window that vanishes once
   #1145 greens the baseline (the file is already post-freeze red; low harm).
@@ -9208,32 +9279,36 @@ tests BEFORE anything lands:
      the merge PROCEEDS. Run the baseline and gated runs back-to-back in
      the same turn so a concurrent merge cannot widen the compare window
      (moving-main race — keep the window tight, preserve the
-     main-already-red detail in the marker).
+     main-already-red detail in the marker; the #1212 gate additionally
+     freezes both legs to one archived origin/main snapshot, removing the
+     inter-leg race by construction — the back-to-back advice stays as
+     defense-in-depth).
   3. `crash` — the linter itself CRASHED on either leg pair (rc>1, or
      rc!=0 with zero normalized `workflow_lint:` failure lines: import
      error, missing dep, sparse-worktree crash — the gated leg runs the
-     WORKTREE's own `workflow_lint.py`, so the crash is payload-inducible),
+     gate tree's `workflow_lint.py`, the BRANCH's copy whenever the
+     own-diff touches it, so the crash is payload-inducible; a gate-tree
+     CONSTRUCTION failure (GT_RC != 0) also lands here),
      or the trigger diff failed. No trustworthy compare exists, so this is
      an unconditional block-path verdict: fix the crash cause in the
      worktree, re-run the gate ONCE; still crashing → the SAME
      `epm:merge-failed v1` handling as case 1. Never merge/push on `crash`.
 - **Baseline semantics per binding form (the baseline is ALWAYS a
-  payload-free tree).** The mapped invariant-test legs (#1147) follow the
-  IDENTICAL per-form baseline placement as the lint legs — (i) gated = the
-  `$WT` copy on the branch-tip tree / baseline = the root copy; (ii) gated =
-  the post-merge worktree copy / baseline = the root copy; (iii) baseline
-  BEFORE the checkout, gated after, BOTH the root copy. (i) Safe case: gated = the WORKTREE copy
-  (branch-tip tree); baseline = the repo-root copy (main tree, payload
-  absent); bind immediately before `gh pr ready` / `gh pr merge`. Note:
-  path-(i) lint-VERSION drift can also FALSE-BLOCK (a check retired/loosened
-  on main is still enforced by the branch-tip / merge-base copy) — a
-  fail-SAFE direction, resolved through the same case-1 fix-or-`epm:merge-failed`
-  path.
-  (ii) Merge-conflict recovery: gated = the worktree copy AFTER
-  `git -C "$WT" merge origin/main` (≈ post-merge main, carrying main's
-  CURRENT lint — the ideal gate point); baseline = the repo-root copy;
-  bind after conflict resolution + targeted tests, before
-  `git -C "$WT" push`. (iii) Surgical additive checkout: the payload lands
+  payload-free tree).** The mapped invariant-TEST legs (#1147) keep the
+  ORIGINAL per-form placement (gated = the `$WT` copy on the branch-tip /
+  post-merge tree, baseline = the root copy on forms (i)-(ii); root copy
+  both legs on form (iii)); the LINT legs on forms (i)/(ii) now run the
+  #1212 gate tree. (i) Safe case: LINT legs — gated = the gate-tree copy
+  on the LANDING tree (origin/main + own-diff overlay), baseline = the
+  SAME copy on the payload-free landing base (#1212); mapped-TEST legs —
+  gated = the `$WT` copy on the branch-tip tree, baseline = the repo-root
+  copy (unchanged); bind immediately before `gh pr ready` / `gh pr merge`.
+  (ii) Merge-conflict recovery: LINT legs — gated/baseline = the gate tree
+  rebuilt from the post-merge tip (content-identical to the post-merge
+  worktree, which carries main's CURRENT lint — the ideal gate point);
+  mapped-TEST legs — gated = the post-merge worktree copy, baseline = the
+  repo-root copy (unchanged); bind after conflict resolution + targeted
+  tests, before `git -C "$WT" push`. (iii) Surgical additive checkout: the payload lands
   in the ROOT tree, so the BASELINE MUST RUN BEFORE the
   `xargs ... git checkout` — a post-checkout "main-side" run would re-lint
   the SAME contaminated tree, a degenerate compare that fails open at
@@ -9264,15 +9339,30 @@ tests BEFORE anything lands:
   the verbatim `-C "$REPO_ROOT"` forms (full recovery contract: the
   guard-block paragraph after the surgical-additive-checkout executable
   block below).
-- **Known residual (accepted, documented):** on path (i) the gated lint is
-  the branch's merge-base copy (Step 5a's spec-freshness `SPECS` list
-  covers `.claude/` specs + CLAUDE.md, NOT `scripts/` — verified at the
-  Step 5a `SPECS=` line), so a check ADDED on `main` after the branch
-  forked is not enforced there — it IS enforced on path (ii) (post-merge
-  tree, main's current lint), and the trunk pytest remains the backstop.
-  #931 itself was exactly such a post-fork-check instance and landed via
-  path (ii) — covered here by the RECOVERY-path binding, not by path (i);
-  do NOT narrate the gate as "all #931-class offenders die at path (i)".
+- **Known residuals (accepted, documented):** the #1212 gate tree removed
+  the old path-(i) vintage residual for the LINT legs — a check ADDED on
+  `main` after the branch forked is now enforced on every path, so a
+  payload violating it BLOCKS (the #931 class), and a check
+  retired/loosened on main can no longer false-block. What remains: (a) a
+  branch whose OWN diff touches `scripts/workflow_lint.py` runs its branch
+  copy on the gated legs (it IS the payload) — baseline-vs-gated
+  lint-version asymmetry is inherent there and resolves through the
+  standard case-1 fix-or-`epm:merge-failed` path; (b) the gate tree
+  materializes only `workflow_lint.py`'s scan/target surface (the archive
+  pathspec set in the executable block) — if the linter grows a new scan
+  root, a gated false block naming paths outside that set is the symptom
+  and extending the set is the fix (the #1154 `docs/` pins are the
+  precedent); (c) the mapped invariant-TEST legs keep the branch-tip test
+  copies and the dirty-root baseline (path-(i) test-VERSION drift,
+  fail-safe direction) — the trunk pytest remains their backstop; (d) a
+  lint-scanned file BOTH main and the branch modified post-fork lints as
+  the BRANCH's copy (the overlay takes branch-HEAD wholesale), a narrow
+  window in either direction that is strictly smaller than the old
+  whole-tree divergence — the form-(ii) recovery covers the conflict case
+  and trunk lint backstops the clean-rebase case; (e) same-issue
+  concurrent gate runs would share one `$GT` (a phase-flip race) —
+  excluded by the Step 0 single-orchestrator guard + the pre-dispatch
+  dedup, with the #911 janitor reaping any crash leftovers.
 
 #### The auto-merge procedure (safe case: guard 3 clean — mainline-based, own commits in scope)
 
@@ -9401,10 +9491,11 @@ git -C "$WT" merge origin/main          # conflicts surface HERE, in the worktre
 git -C "$WT" add <each resolved file>
 git -C "$WT" commit --no-edit
 # Re-run the targeted tests for the touched surface AND the executable
-# Pre-push workflow-lint gate block (subsection above; gated = this
-# post-merge worktree copy, which carries main's CURRENT lint — the ideal
-# gate point; the gate re-run SHA-binds the verdict to THIS post-merge
-# tip). The push is then GATED on the persisted, SHA-BOUND verdict file —
+# Pre-push workflow-lint gate block (subsection above; gated = the gate
+# tree rebuilt from this post-merge tip (origin/main + the post-merge
+# own-diff — content-identical to this post-merge worktree, which carries
+# main's CURRENT lint — the ideal gate point); the gate re-run SHA-binds
+# the verdict to THIS post-merge tip). The push is then GATED on the persisted, SHA-BOUND verdict file —
 # the explicit conditional is the hard stop (missing file / block / crash
 # / missing or stale sha all fail CLOSED). The verdict is consumed only
 # AFTER `gh pr merge` SUCCEEDS: this branch now CARRIES A MERGE COMMIT,

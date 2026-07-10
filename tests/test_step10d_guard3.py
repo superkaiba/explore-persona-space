@@ -916,3 +916,44 @@ def test_guard1_materializes_foreign_diff_and_fails_closed():
     ), "the failure arm must precede the FOREIGN work arm (fail CLOSED)"
     # Success-path byte-equivalence anchor:
     assert 'grep -Ev "^tasks/[^/]+/<N>/"' in region
+
+
+def test_gate_lint_legs_run_landing_tree_copy():
+    """#1212: BOTH lint leg pairs run from the ephemeral landing tree — the
+    baseline pre-overlay (payload-free), the gated post-overlay — never the
+    raw worktree or repo-root copies (#1112 vintage false-blocks), with
+    fail-closed construction (GT_RC) and in-block teardown."""
+    text = _skill_text()
+    gate = text.find("#### Pre-push workflow-lint gate")
+    auto = text.find("#### The auto-merge procedure")
+    assert -1 < gate < auto
+    region = text[gate:auto]
+    assert 'git -C "$WT" archive origin/main --' in region, (
+        "the gate tree must be built from origin/main's lint-scanned surface"
+    )
+    assert region.count('"$GT/scripts/workflow_lint.py"') >= 4, (
+        "all four lint-leg invocations (2 baseline + 2 gated) must run the gate-tree copy"
+    )
+    assert '"$WT/scripts/workflow_lint.py"' not in region, (
+        "the branch-tip lint invocation must not reappear (#1112 false-blocks)"
+    )
+    assert '"$REPO_ROOT/scripts/workflow_lint.py"' not in region, (
+        "the baseline legs must not run the repo-root copy (root vintage/dirt asymmetry)"
+    )
+    overlay = region.find('git -C "$WT" show "HEAD:$p" > "$GT/$p"')
+    base_legs = region.find("# BASELINE legs")
+    gated_legs = region.find("# GATED legs")
+    assert -1 < base_legs < overlay < gated_legs, (
+        "the payload overlay must sit BETWEEN the baseline and gated lint legs"
+    )
+    assert 'git -C "$WT" diff --name-only --no-renames origin/main...HEAD' in region, (
+        "the overlay listing COMMAND must disable rename detection (rename SOURCES "
+        "must be rm-ed); the comment's mention of --no-renames does not count"
+    )
+    assert '[ "$GT_RC" -ne 0 ]' in region, (
+        "gate-tree construction failures must fail CLOSED via the crash arm"
+    )
+    assert region.count('rm -rf "$GT"') >= 2, (
+        "the gate tree must be torn down AFTER the verdict too — the construction's "
+        "own rm -rf (self-heal) does not satisfy the teardown pin"
+    )
