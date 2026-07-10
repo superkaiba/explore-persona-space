@@ -274,7 +274,8 @@ Behaviours:
   never silently.
 * ``--check-scripts-import-guard`` (also bundled into the no-flags
   default run): AST-walk every ``*.py`` under
-  ``src/explore_persona_space/experiments/`` and FAIL any ``scripts.*``
+  ``src/explore_persona_space/experiments/`` and ``scripts/`` (#1229)
+  and FAIL any ``scripts.*``
   import — deferred (function-body) AND module-top-level — lacking a
   repo-root ``sys.path`` guard. In script mode
   (``python /abs/path/driver.py``) ``sys.path[0]`` is the script's own
@@ -1512,7 +1513,7 @@ JSONL_SPLITLINES_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
 # `--check-scripts-import-guard` (#823/#853): in script mode
 # (`python /abs/path/driver.py`) sys.path[0] is the SCRIPT's own directory —
 # not cwd, not the repo root — so an unguarded `scripts.*` import in an
-# `src/explore_persona_space/experiments/**` driver raises
+# `src/explore_persona_space/experiments/**` or `scripts/**` (#1229) driver raises
 # ModuleNotFoundError pod/GCE-side; deferred (function-body) instances crash
 # MID-RUN after paid GPU phases (#823 Phase-3). Inline waiver for a
 # genuinely-safe flagged site. Reason ≥ 10 chars, same convention as
@@ -5440,9 +5441,10 @@ def _is_scripts_import(node: ast.AST) -> bool:
 
 
 def check_scripts_import_guard(*, scan_roots: tuple[Path, ...] | None = None) -> list[str]:
-    """AST-walk ``src/explore_persona_space/experiments/**/*.py`` and FAIL
-    any ``scripts.*`` import — deferred (function-body) AND module-top-level
-    — lacking a repo-root ``sys.path`` guard (#823/#853).
+    """AST-walk ``src/explore_persona_space/experiments/**/*.py`` and
+    ``scripts/**/*.py`` and FAIL any ``scripts.*`` import — deferred
+    (function-body) AND module-top-level — lacking a repo-root ``sys.path``
+    guard (#823/#853).
 
     Rationale: in script mode (``python /abs/path/driver.py``),
     ``sys.path[0]`` is the script's OWN directory — not cwd, not the repo
@@ -5462,7 +5464,11 @@ def check_scripts_import_guard(*, scan_roots: tuple[Path, ...] | None = None) ->
     with ``level == 0`` and module ``scripts``/``scripts.*``, or an
     ``ast.Import`` with any ``scripts``/``scripts.*`` alias.
     ``if TYPE_CHECKING:`` bodies are skipped (those imports never execute at
-    runtime; the ``orelse`` branch stays in scope).
+    runtime; the ``orelse`` branch stays in scope). A per-file AST-presence
+    fast path (#1229) returns early when NO node in the whole module matches
+    the import predicate — ``ast.walk`` visits a strict superset of the
+    nodes the pruned offender scans visit, so the early return can never
+    skip a flaggable file.
 
     Guard evidence (:func:`_is_syspath_guard_call`): a Call whose callee name
     matches :data:`SYSPATH_GUARD_NAME_RE` (the
@@ -5508,16 +5514,22 @@ def check_scripts_import_guard(*, scan_roots: tuple[Path, ...] | None = None) ->
     line. No legacy allowlist — the live tree is clean.
 
     ``scan_roots`` is a unit-test override hook; production callers pass
-    None and the function walks
-    ``<repo_root>/src/explore_persona_space/experiments`` (NOT
-    ``backends/`` — covered by entrypoint bootstraps, #987 — and NOT
-    ``scripts/`` — its own module-top-bootstrap convention). Bundled into
-    the no-flags default run.
+    None and the function walks BOTH
+    ``<repo_root>/src/explore_persona_space/experiments`` AND
+    ``<repo_root>/scripts`` (widened by #1229: the module-level-guard
+    position rule already accepts the scripts/ module-top-bootstrap
+    convention, so the original scripts/ exclusion was overly conservative
+    and hid genuinely-unguarded scripts/ files — 3 sites in 2 files found
+    and fixed at widening time). ``backends/`` remains excluded — covered
+    by entrypoint bootstraps, #987. Bundled into the no-flags default run.
     """
     roots = (
         scan_roots
         if scan_roots is not None
-        else (_REPO_ROOT / "src" / "explore_persona_space" / "experiments",)
+        else (
+            _REPO_ROOT / "src" / "explore_persona_space" / "experiments",
+            _REPO_ROOT / "scripts",
+        )
     )
     errors: list[str] = []
     for root in roots:
@@ -5563,6 +5575,14 @@ def _scan_scripts_import_guard_tree(py: Path, tree: ast.Module, lines: list[str]
     imports and return the diagnostics — the per-file body of
     :func:`check_scripts_import_guard` (position rules, pruning, waiver
     semantics documented there)."""
+    # Fast path (#1229): the scripts/ scan root is ~1,086 files of which <10
+    # import scripts.* at all — detect presence with ONE full walk before
+    # computing guard/TYPE_CHECKING evidence (~4 walk-equivalents). ast.walk
+    # is a SUPERSET of both pruned scans (it descends nested defs, class
+    # bodies, and TYPE_CHECKING bodies), so this can never skip a file the
+    # full scan would flag.
+    if not any(_is_scripts_import(n) for n in ast.walk(tree)):
+        return []
     errors: list[str] = []
     module_guards = _scope_guard_linenos(tree.body)
     tc_ranges = _type_checking_body_ranges(tree)
@@ -10108,7 +10128,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
     parser.add_argument(
         "--check-scripts-import-guard",
         action="store_true",
-        help="AST-walk src/explore_persona_space/experiments/**/*.py and FAIL "
+        help="AST-walk src/explore_persona_space/experiments/**/*.py + "
+        "scripts/**/*.py and FAIL "
         "any scripts.* import (deferred OR module-top-level) lacking a "
         "repo-root sys.path guard: a syspath-named call like "
         "_ensure_repo_root_on_syspath(), or a literal sys.path.insert/append "

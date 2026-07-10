@@ -17,10 +17,17 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from dataclasses import asdict
 from pathlib import Path
 
 from omegaconf import DictConfig, OmegaConf, open_dict
+
+# Ensure repo root is on sys.path so the deferred
+# `from scripts.issue_188_evolutionary_trigger import ...` calls below
+# resolve in script mode (sys.path[0] is scripts/, not the repo root —
+# #823/#853).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 logger = logging.getLogger(__name__)
 
