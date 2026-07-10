@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1230,
+  "highest_id": 1231,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1800,6 +1800,13 @@
       "path": "tasks/proposed/1230",
       "status": "proposed",
       "title": "code-reviewer verifies named durability-pin test ships"
+    },
+    "1231": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1231",
+      "status": "proposed",
+      "title": "issue SKILL briefs name excerpt files for guard reviews"
     },
     "124": {
       "has_clean_result": false,
