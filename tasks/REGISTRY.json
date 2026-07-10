@@ -1706,8 +1706,8 @@
     "1219": {
       "has_clean_result": false,
       "kind": "batch",
-      "path": "tasks/planning/1219",
-      "status": "planning",
+      "path": "tasks/approved/1219",
+      "status": "approved",
       "title": "Fix 18 latent splitlines-shreds-JSONL sites in experiment code (from #1162 live-tree enumeration)"
     },
     "122": {
