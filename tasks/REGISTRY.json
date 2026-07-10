@@ -1825,8 +1825,8 @@
     "1234": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1234",
-      "status": "proposed",
+      "path": "tasks/planning/1234",
+      "status": "planning",
       "title": "revert/am fence sibling in repo-root branch guard"
     },
     "1235": {
