@@ -308,3 +308,19 @@ def test_route2_wf_fix_false_variant_documented(daily_skill_text: str):
         "the drop-tags route-2 variant would be prose-only again, unreachable "
         "through the batch driver daily_drive_filings.py (#1228)"
     )
+
+
+# ── Step D: nightly title-sync drift sweep invoker (#1196 → #1235) ────────────
+
+
+def test_title_sync_sweep_pass_present(daily_skill_text: str):
+    """The nightly /daily invoker for the #1196 title-sync drift sweep survives
+    (task #1235): the command, its WARN-only/exit-0 contract, and the
+    surface-only routing must not be silently dropped by a later edit."""
+    assert (
+        "scripts/audit_clean_results_body_discipline.py --title-sync-sweep" in daily_skill_text
+    ), "the Step D title-sync sweep command is missing from daily/SKILL.md"
+    assert "title-sync drift sweep (Step D)" in daily_skill_text, (
+        "the Step D pass header is missing — the nightly title-sync invoker "
+        "(#1235) may have been dropped"
+    )
