@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1237,
+  "highest_id": 1238,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1849,6 +1849,13 @@
       "path": "tasks/proposed/1237",
       "status": "proposed",
       "title": "migrate remaining verify_plan doc-global N/A escapes"
+    },
+    "1238": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1238",
+      "status": "proposed",
+      "title": "tolerate wrapped N/A escape declarations in verify_plan"
     },
     "124": {
       "has_clean_result": false,
