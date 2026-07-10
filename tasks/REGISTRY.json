@@ -1629,8 +1629,8 @@
     "1209": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1209",
-      "status": "reviewing",
+      "path": "tasks/completed/1209",
+      "status": "completed",
       "title": "daily-fix: fast respawn for sessions dead on a refused first"
     },
     "121": {
@@ -1643,8 +1643,8 @@
     "1210": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1210",
-      "status": "reviewing",
+      "path": "tasks/completed/1210",
+      "status": "completed",
       "title": "daily-fix: Step 10d re-snapshots Guard-1 strip on merge conf"
     },
     "1211": {
@@ -1657,22 +1657,22 @@
     "1212": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1212",
-      "status": "planning",
+      "path": "tasks/reviewing/1212",
+      "status": "reviewing",
       "title": "daily-fix: Step 10d lint gate runs origin/main lint vintage"
     },
     "1213": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1213",
-      "status": "approved",
+      "path": "tasks/reviewing/1213",
+      "status": "reviewing",
       "title": "daily-fix: verify_plan warns on ckpt ladder without retentio"
     },
     "1214": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1214",
-      "status": "planning",
+      "path": "tasks/reviewing/1214",
+      "status": "reviewing",
       "title": "daily-fix: new_worktree.sh branches from origin/main"
     },
     "1215": {
@@ -1706,8 +1706,8 @@
     "1219": {
       "has_clean_result": false,
       "kind": "batch",
-      "path": "tasks/proposed/1219",
-      "status": "proposed",
+      "path": "tasks/running/1219",
+      "status": "running",
       "title": "Fix 18 latent splitlines-shreds-JSONL sites in experiment code (from #1162 live-tree enumeration)"
     },
     "122": {
