@@ -88,4 +88,6 @@ kills + ~2.7h orchestrator wedge), #1092 (implementer refusal kills;
 orchestrator rung b2), #866 (bank-text paging kills), #1090
 (refusal-truncated Agent spawns). Enforcing pointers:
 `.claude/agents/code-reviewer.md` § Context budget (READ FIRST);
-`.claude/agents/reconciler.md` § Rules (Rule 11).
+`.claude/agents/reconciler.md` § Rules (Rule 11);
+`.claude/skills/issue/SKILL.md` Step 5a (orchestrator-side excerpt-file
+pre-materialization).
