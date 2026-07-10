@@ -113,6 +113,7 @@ def _required_launch_secrets(monkeypatch):
     # suite behavior at the mercy of the developer's env).
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
 
 
 @pytest.fixture(autouse=True)
@@ -8780,3 +8781,245 @@ def test_audit_stale_gcp_vms_reaps_terminal_phase_finalize_failed_zombie() -> No
     assert records[0]["action"] == "deleted"
     assert records[0]["reason"] == "terminal-phase"
     assert records[0]["phase"] == "finalize_failed_artifacts_ok"
+
+
+# ---------------------------------------------------------------------------
+# #1205 — GCE push-verify backstop (incident #825 r6-r8: a workload's git
+# push of committed eval JSONs failed deterministically on auth, the
+# `|| echo WARNING` shape swallowed it, and the self-DELETEing instance
+# held the only copy of the commit — upload-verification reads
+# 2026-07-08T11:17/11:19Z)
+# ---------------------------------------------------------------------------
+
+
+_WORKLOAD_SPEC_KW = {"hydra_args": (), "workload_cmd": "bash scripts/x.sh --flag 'v 1'"}
+_PUSH_LEG_OPEN = "# === Push-verify leg"
+_PUSH_LEG_CLOSE = "# === /push-verify leg ==="
+
+
+def _extract_push_verify_leg(script: str) -> str:
+    """Return the push-verify leg between its slice markers.
+
+    Asserts marker UNIQUENESS (exactly one opener + one closer, opener
+    first) before slicing — the ``_extract_persist_heredoc`` precedent —
+    so the executable test can never silently run a partial or doubled
+    slice. Returns the lines from the opener through the closer.
+    """
+    lines = script.splitlines()
+    starts = [i for i, ln in enumerate(lines) if ln.startswith(_PUSH_LEG_OPEN)]
+    ends = [i for i, ln in enumerate(lines) if ln == _PUSH_LEG_CLOSE]
+    assert len(starts) == 1 and len(ends) == 1, (starts, ends)
+    assert starts[0] < ends[0]
+    return "\n".join(lines[starts[0] : ends[0] + 1]) + "\n"
+
+
+def test_render_startup_script_workload_cmd_carries_push_verify_leg() -> None:
+    """Durability pin (#1205): the workload_cmd branch renders the
+    push-verify leg AFTER the detached-wait loop and BEFORE the #750 OOM
+    guard, with the rev-list push-landed predicate, the retry, the
+    data/issue_<N>/ bundle fallback, and the loud exit 86."""
+    script = render_startup_script(
+        spec=_spec(**_WORKLOAD_SPEC_KW), config=_test_config(), attempt_id="att-fixed-001"
+    )
+    # Content: the rev-list predicate, branch pin, retry, bundle, rc.
+    assert "_EPS_PUSH_BRANCH=main" in script
+    assert 'rev-list --count "origin/${_EPS_PUSH_BRANCH}..HEAD"' in script
+    assert 'push origin "HEAD:${_EPS_PUSH_BRANCH}"' in script
+    assert "sleep 20" in script
+    assert '"$WORKLOAD_ROOT/data/issue_137' in script
+    assert ".bundle" in script
+    assert "exit 86" in script
+    assert "[push-verify] FAIL" in script
+    assert "[push-verify] OK" in script
+    # Ordering: detached-wait loop < leg < OOM guard (the leg must run
+    # before EPS_OOM_FINAL; a rc-survived-OOM + failed-push run records
+    # rc 86, not 137 — the accepted rare double-failure).
+    i_wait = script.index('echo "[startup-script] detached workload pid=$wpid exited"')
+    i_leg = script.index(_PUSH_LEG_OPEN)
+    i_close = script.index(_PUSH_LEG_CLOSE)
+    i_oom = script.index('EPS_OOM_FINAL="$(_eps_oom_count)"')
+    assert i_wait < i_leg < i_close < i_oom, (i_wait, i_leg, i_close, i_oom)
+    # A non-main repo_branch threads into the leg's branch pin.
+    script_wt = render_startup_script(
+        spec=_spec(**_WORKLOAD_SPEC_KW),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+        repo_branch="issue-1205",
+    )
+    assert "_EPS_PUSH_BRANCH=issue-1205" in script_wt
+
+
+def test_render_startup_script_workload_cmd_git_credential_gated_on_token() -> None:
+    """#1205: the credential helper is (a) gated on GITHUB_TOKEN presence
+    (a token-less launch keeps today's behavior), and (b) single-quoted so
+    the literal ``${GITHUB_TOKEN}`` stays UNEXPANDED in .git/config — git's
+    sh-invoked helper expands it from the process env at push time, so the
+    token is never at rest in the repo config."""
+    script = render_startup_script(
+        spec=_spec(**_WORKLOAD_SPEC_KW), config=_test_config(), attempt_id="att-fixed-001"
+    )
+    assert 'if [ -n "${GITHUB_TOKEN:-}" ]; then' in script
+    config_line = next(ln for ln in script.splitlines() if "credential.helper" in ln)
+    assert "'!f() { echo username=x-access-token;" in config_line
+    assert 'echo "password=${GITHUB_TOKEN}"; }; f\'' in config_line
+    assert "export GIT_TERMINAL_PROMPT=0" in script
+    # The credential block renders BEFORE the workload phase (the
+    # workload's OWN pushes are the fix at the source; the leg is the
+    # backstop).
+    assert script.index("credential.helper") < script.index("_eps_phase workload")
+    # The metadata fetch stanza carries the new OPTIONAL secret key.
+    assert "instance/attributes/GITHUB_TOKEN" in script
+
+
+def test_render_startup_script_hydra_only_has_no_push_verify_leg() -> None:
+    """#1205 negative: the hydra branch is leg-free and helper-free
+    (train.py has no git usage) — its ONLY delta is the GITHUB_TOKEN
+    metadata-fetch line from the shared secrets stanza (pinned by the
+    deliberately-regenerated #588 snapshot fixture)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "[push-verify]" not in script
+    assert _PUSH_LEG_OPEN not in script
+    assert "credential.helper" not in script
+    assert "GIT_TERMINAL_PROMPT" not in script
+    assert "instance/attributes/GITHUB_TOKEN" in script
+
+
+def test_resolve_launch_secrets_github_token_optional() -> None:
+    """#1205: GITHUB_TOKEN keeps the drop-when-absent contract (it is NOT
+    in REQUIRED_LAUNCH_SECRET_KEYS — plenty of GCE workloads never push);
+    present, it threads into spec.extra['secret_GITHUB_TOKEN'] like the
+    other optional secrets."""
+    assert "GITHUB_TOKEN" not in REQUIRED_LAUNCH_SECRET_KEYS
+    spec = _spec()
+    resolve_launch_secrets(spec, env={"HF_TOKEN": "t-hf", "WANDB_API_KEY": "t-wb"})
+    assert "secret_GITHUB_TOKEN" not in spec.extra
+    spec2 = _spec()
+    resolve_launch_secrets(
+        spec2,
+        env={"HF_TOKEN": "t-hf", "WANDB_API_KEY": "t-wb", "GITHUB_TOKEN": "ghp-test"},
+    )
+    assert spec2.extra["secret_GITHUB_TOKEN"] == "ghp-test"
+
+
+def _git(cwd: Path, *args: str, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    """Run a git command in ``cwd`` with the hermetic test env, check=True."""
+    return subprocess.run(
+        ["git", *args], cwd=cwd, env=env, check=True, capture_output=True, text=True
+    )
+
+
+def _push_leg_rig(tmp_path: Path) -> tuple[Path, Path, dict[str, str], Path]:
+    """Build the tmp-repo rig for the executable push-verify-leg test.
+
+    Bare origin (branch ``main``) seeded with one commit + a DEPTH-1
+    ``file://`` workload clone (the production GCE clone shape —
+    assumption 6: the shallow boundary sits below origin/main, so the
+    ``origin/main..HEAD`` count is unaffected). Returns
+    ``(origin, workload, env, runner_path)`` where ``runner_path`` is the
+    sliced leg wrapped in the production shell semantics
+    (``set -euo pipefail``, the #1004 outer flags).
+    """
+    env = {
+        "PATH": os.environ["PATH"],
+        "HOME": str(tmp_path),
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_TERMINAL_PROMPT": "0",
+    }
+    origin = tmp_path / "origin.git"
+    _git(tmp_path, "init", "--bare", "--initial-branch=main", str(origin), env=env)
+    seed = tmp_path / "seed"
+    _git(tmp_path, "init", "--initial-branch=main", str(seed), env=env)
+    _git(seed, "config", "user.email", "t@example.com", env=env)
+    _git(seed, "config", "user.name", "t", env=env)
+    (seed / "base.json").write_text("{}\n")
+    _git(seed, "add", "base.json", env=env)
+    _git(seed, "commit", "-m", "seed", env=env)
+    _git(seed, "push", f"file://{origin}", "main:main", env=env)
+    workload = tmp_path / "workload"
+    _git(
+        tmp_path,
+        "clone",
+        "--depth",
+        "1",
+        "--branch",
+        "main",
+        f"file://{origin}",
+        str(workload),
+        env=env,
+    )
+    _git(workload, "config", "user.email", "t@example.com", env=env)
+    _git(workload, "config", "user.name", "t", env=env)
+    script = render_startup_script(
+        spec=_spec(**_WORKLOAD_SPEC_KW),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+        repo_branch="main",
+    )
+    leg = _extract_push_verify_leg(script)
+    runner_path = tmp_path / "run_leg.sh"
+    runner_path.write_text("#!/bin/bash\nset -euo pipefail\n" + leg)
+    env["WORKLOAD_ROOT"] = str(workload)
+    return origin, workload, env, runner_path
+
+
+def _run_leg(runner_path: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    """Execute the sliced leg under production shell semantics, bounded."""
+    return subprocess.run(
+        ["bash", str(runner_path)], env=env, capture_output=True, text=True, timeout=180
+    )
+
+
+def test_push_verify_leg_executes_in_tmp_repo_case_a_retry_lands(tmp_path: Path) -> None:
+    """Case A (#1205): an unpushed commit with a REACHABLE origin — the
+    leg's own (re)push lands it, the re-count reads 0, rc 0."""
+    origin, workload, env, runner = _push_leg_rig(tmp_path)
+    (workload / "result.json").write_text("{}\n")
+    _git(workload, "add", "result.json", env=env)
+    _git(workload, "commit", "-m", "eval results", env=env)
+    head = _git(workload, "rev-parse", "HEAD", env=env).stdout.strip()
+    proc = _run_leg(runner, env)
+    assert proc.returncode == 0, (proc.stdout, proc.stderr)
+    assert "retrying push (#1205)" in proc.stdout
+    assert "[push-verify] retry landed" in proc.stdout
+    origin_tip = _git(tmp_path, "-C", str(origin), "rev-parse", "main", env=env).stdout.strip()
+    assert origin_tip == head
+
+
+def test_push_verify_leg_executes_in_tmp_repo_case_b_fail_loud_bundle(tmp_path: Path) -> None:
+    """Case B (#1205): an unpushed commit with a BROKEN origin — both push
+    attempts fail, the leg bundles the unpushed range into data/issue_<N>/
+    and exits 86 (the loud-fail rc the EXIT trap routes to phase=failed +
+    crash-persist). The bundle verifies against an origin-holding clone,
+    so the #825 rescue is mechanical. The unreachable origin is bounded by
+    the subprocess timeout (assumption 11)."""
+    origin, workload, env, runner = _push_leg_rig(tmp_path)
+    (workload / "result.json").write_text("{}\n")
+    _git(workload, "add", "result.json", env=env)
+    _git(workload, "commit", "-m", "eval results", env=env)
+    head = _git(workload, "rev-parse", "HEAD", env=env).stdout.strip()
+    _git(workload, "remote", "set-url", "origin", f"file://{tmp_path}/no-such-origin.git", env=env)
+    proc = _run_leg(runner, env)
+    assert proc.returncode == 86, (proc.returncode, proc.stdout, proc.stderr)
+    assert "[push-verify] FAIL" in proc.stdout
+    bundles = sorted((workload / "data" / "issue_137").glob("unpushed-*.bundle"))
+    assert len(bundles) == 1, bundles
+    # The bundle's prerequisite (the old origin/main tip) is present in any
+    # origin-holding clone, so `git bundle verify` passes there; the range
+    # bundle records the HEAD ref, so fetching HEAD from the bundle
+    # recovers the exact stranded commit (FETCH_HEAD == the workload tip).
+    rescue = tmp_path / "rescue"
+    _git(tmp_path, "clone", f"file://{origin}", str(rescue), env=env)
+    _git(rescue, "bundle", "verify", str(bundles[0]), env=env)
+    _git(rescue, "fetch", str(bundles[0]), "HEAD", env=env)
+    rescued_tip = _git(rescue, "rev-parse", "FETCH_HEAD", env=env).stdout.strip()
+    assert rescued_tip == head
+
+
+def test_push_verify_leg_executes_in_tmp_repo_case_c_noop(tmp_path: Path) -> None:
+    """Case C (#1205): nothing unpushed — the leg is a logged no-op
+    (rc 0, the OK line, no push, no bundle dir)."""
+    _origin, workload, env, runner = _push_leg_rig(tmp_path)
+    proc = _run_leg(runner, env)
+    assert proc.returncode == 0, (proc.stdout, proc.stderr)
+    assert "[push-verify] OK: no unpushed commits" in proc.stdout
+    assert not (workload / "data" / "issue_137").exists()

@@ -214,6 +214,51 @@ detector never changes a verdict: the poller's marker-pid OR-probe remains
 the only VERDICT-bearing mechanical rescue, and only while the newest
 marker's pid is itself alive.
 
+### Result-push verification contract (#1205)
+
+- Any pod/GCE dispatch step that `git commit`s results to the issue branch
+  MUST verify the push landed: after `git push`,
+  `git -C <root> rev-list --count origin/<branch>..HEAD` prints `0` (git
+  updates the remote-tracking ref on a successful push, so the count is a
+  local, network-free proof); retry once on failure; still non-zero → exit
+  non-zero — fail the workload loud, never declare done with an unpushed
+  result commit. The `git push … || echo WARNING` / `|| true` shape is
+  **BANNED** (incidents #825 r6/r7/r8, upload-verification reads
+  2026-07-08T11:17/11:19Z: 73 committed eval JSONs existed only on a
+  self-DELETEing GCE instance; the workload-side sibling of the #957/#1048
+  piped-push masking class — the pipe mirror stays enforced by
+  `workflow_lint.py --check-piped-git-push`, this swallow shape by
+  `--check-push-failure-swallow`).
+- **GCE lane:** the startup script configures a `GITHUB_TOKEN` env-reading
+  credential helper (workload pushes authenticate; pre-#1205 they failed
+  DETERMINISTICALLY — the clone is tokenless) and runs a post-workload
+  push-verify backstop (retry → bundle the unpushed range to
+  `data/issue_<N>/`, crash-persist-swept per #854 item 5 → `exit 86` →
+  EXIT trap → `phase=failed` + crash-persist + poweroff). The backstop
+  covers forgetful dispatch scripts; scripts SHOULD still verify their own
+  push so the failure surfaces at the failing phase with its own context.
+  The backstop pushes `HEAD` to the CLONED branch (`HEAD:<repo_branch>`)
+  — a workload that checks out a different local branch before committing
+  (out-of-contract) gets those commits backstop-pushed onto the cloned
+  branch, not its own.
+  Both the helper and the backstop are repo-local to `$WORKLOAD_ROOT` —
+  a workload that creates a SECOND clone gets neither (prose contract
+  only), and a manual same-VM SSH relaunch (the #491/#908 salvage shape)
+  runs OUTSIDE the mechanical backstop: its shell must verify its own
+  push per the first bullet.
+- **RunPod lane:** the tokenized remote (`bootstrap_pod.sh` step 4)
+  authenticates; there is NO mechanical backstop — the dispatch script's
+  own verification is the only guard. Accepted asymmetry: a pod persists
+  and is SSH-able, so an unpushed commit is recoverable after the fact;
+  GCE's DELETE-on-poweroff boot disk is why that lane got the mechanical
+  leg.
+- **Part A-ter interplay** (`.claude/rules/compute-backend-failover.md`):
+  a workload whose declared deliverables include git-committed eval JSONs
+  must NOT stamp `EPS_DELIVERABLES_OK_PATH` before verifying its own push
+  — else a push-verify backstop failure classifies
+  `finalize_failed_artifacts_ok` (done-like) instead of `failed`; the
+  data still crash-persists either way.
+
 ### Pod-side preflight gates (behind-origin/main false positive — LEGACY post-#554)
 
 > **LEGACY (post-#554):** preflight is branch-aware as of 2026-06-12

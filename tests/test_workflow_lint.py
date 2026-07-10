@@ -38,6 +38,7 @@ if str(_SCRIPTS) not in sys.path:
 from workflow_lint import (  # noqa: E402
     _MARKER_RECIPE_PINS,
     BATCH_JUDGE_LEGACY_ALLOWLIST,
+    HUB_VERIFY_LEGACY_ALLOWLIST,
     _iter_ask_target_files,
     _other_worktree_prefix,
     _values_equal,
@@ -55,6 +56,7 @@ from workflow_lint import (  # noqa: E402
     check_heredoc_dotenv,
     check_hollow_verification_gate_review_lens,
     check_hub_dir_filecount_guard,
+    check_hub_verify_retry,
     check_lessons_index,
     check_long_loop_restartability_review_lens,
     check_marker_recipe_snippets,
@@ -65,6 +67,7 @@ from workflow_lint import (  # noqa: E402
     check_pipe_python,
     check_piped_git_push,
     check_poller_marker_consumers,
+    check_push_failure_swallow,
     check_script_references,
     check_section_reference_pointer_coverage,
     check_skill_references,
@@ -2479,6 +2482,152 @@ def test_piped_git_push_hook_lint_agreement_on_shared_cases():
 
 
 # ---------------------------------------------------------------------------
+# Unit tests for ``check_push_failure_swallow`` (incident class #825
+# r6/r7/r8, task #1205: a workload's `git push ... || echo WARNING`
+# swallowed a deterministic auth failure, the step declared success, and
+# the self-DELETEing GCE instance held the only copy of 73 committed eval
+# JSONs). Each fixture writes a tiny ``*.sh`` under ``tmp_path`` and calls
+# ``check_push_failure_swallow(scripts_dir=tmp_path)``. The workload-side
+# `||` sibling of ``check_piped_git_push`` — NO pipefail escape here
+# (pipefail never applies to `||` disjunctions).
+# ---------------------------------------------------------------------------
+
+
+def test_check_push_failure_swallow_fail_echo(tmp_path):
+    """FAIL — the flagship incident shape `git push origin x || echo warn`
+    (#825 r8: issue825_sampled_sep_dispatch.sh:502)."""
+    (tmp_path / "x.sh").write_text(
+        '#!/usr/bin/env bash\ngit push origin "issue-9" || echo "WARNING: push failed" >&2\n'
+    )
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:2" in errors[0]
+    assert "#825" in errors[0]
+    assert "PUSH_SWALLOW_EXEMPT" in errors[0]
+
+
+def test_check_push_failure_swallow_fail_true_colon_printf(tmp_path):
+    """FAIL — the `|| true`, `|| :`, and `|| printf` swallow variants each
+    flag (one error per line), including the flag-tolerant `git -C` form."""
+    (tmp_path / "x.sh").write_text(
+        "git push || true\n"
+        'git -C "$ROOT" push origin main || :\n'
+        "git push origin main || printf 'warn\\n'\n"
+    )
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 3, f"expected three errors, got: {errors}"
+
+
+def test_check_push_failure_swallow_fail_backslash_continued(tmp_path):
+    """FAIL — `git push origin x \\` newline `  || echo warn` is ONE
+    logical line (backslash continuations merged before matching); the
+    error points at the FIRST physical line."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\ngit push origin main \\\n  || echo 'push failed'\n"
+    )
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:2" in errors[0]
+
+
+def test_check_push_failure_swallow_fail_despite_pipefail(tmp_path):
+    """FAIL — unlike the piped-push sibling, a `set -euo pipefail` header
+    is NO escape: pipefail never applies to `||` disjunctions."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\nset -euo pipefail\ngit push origin main || echo warn\n"
+    )
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_push_failure_swallow_pass_safe_shapes(tmp_path):
+    """PASS — the three verified safe shapes on the live tree: an
+    if-condition (auto_push_main.sh:23 — the rc is CONSUMED), a bare push
+    (cron_export_literature.sh:41 — set -e propagates), and the
+    `|| { retry; } || true` group (the rendered #1205 GCE leg's own retry:
+    the re-count after it is the verification)."""
+    (tmp_path / "x.sh").write_text(
+        "if git push origin main; then\n"
+        "  echo pushed\n"
+        "fi\n"
+        "git push origin main\n"
+        'git push origin "HEAD:main" || { sleep 20; git push origin "HEAD:main"; } || true\n'
+    )
+    assert check_push_failure_swallow(scripts_dir=tmp_path) == []
+
+
+def test_check_push_failure_swallow_pass_comment_line(tmp_path):
+    """PASS — a `#`-comment carrying the bad pattern is documentation."""
+    (tmp_path / "x.sh").write_text("# never do: git push || echo warn\necho ok\n")
+    assert check_push_failure_swallow(scripts_dir=tmp_path) == []
+
+
+def test_check_push_failure_swallow_pass_waiver(tmp_path):
+    """PASS — a reason-bearing `# PUSH_SWALLOW_EXEMPT:` waiver on the same
+    line (and the preceding-line placement for continued commands)."""
+    (tmp_path / "x.sh").write_text(
+        "git push origin main || echo warn  "
+        "# PUSH_SWALLOW_EXEMPT: mirror push, verified by the next step\n"
+        "# PUSH_SWALLOW_EXEMPT: preceding-line waiver for the continued form\n"
+        "git push origin main \\\n  || echo warn\n"
+    )
+    assert check_push_failure_swallow(scripts_dir=tmp_path) == []
+
+
+def test_check_push_failure_swallow_pass_frozen_allowlist(tmp_path):
+    """PASS — a file whose repo-root-relative path is in the FROZEN
+    PUSH_SWALLOW_LEGACY_ALLOWLIST (the on-main issue931 offender + the
+    pre-seeded issue-825 sep-dispatch siblings) is skipped wholesale; a
+    same-shape NEW script is still flagged."""
+    (tmp_path / "issue931_dispatch.sh").write_text(
+        'git push origin "issue-931" || echo "[i931] WARNING: git push failed" >&2\n'
+    )
+    (tmp_path / "issue825_sampled_sep_dispatch.sh").write_text(
+        'git push origin "issue-825" || echo "[i825-ss] WARNING: git push failed" >&2\n'
+    )
+    (tmp_path / "new_dispatch.sh").write_text("git push origin main || echo warn\n")
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected only the NEW script flagged, got: {errors}"
+    assert "new_dispatch.sh" in errors[0]
+
+
+def test_check_push_failure_swallow_pass_no_files(tmp_path):
+    """PASS — an empty scripts dir (no `*.sh`) yields no errors."""
+    assert check_push_failure_swallow(scripts_dir=tmp_path) == []
+
+
+def test_check_push_failure_swallow_repo_tree_is_clean():
+    """The committed scripts/*.sh tree must carry no push-failure swallows
+    outside the frozen allowlist — the regression lock (the #1205 scan of
+    main + every issue-* branch found exactly the four allowlisted
+    offenders)."""
+    errors = check_push_failure_swallow()
+    assert errors == [], (
+        "scripts/*.sh has git-push failure swallows (#825 r6-r8 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_push_failure_swallow_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-push-failure-swallow")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-push-failure-swallow failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_push_failure_swallow_bundled_in_no_flags_source_pin():
+    """`check_push_failure_swallow` is wired into the no-flags default run
+    — pinned STRUCTURALLY (the source carries the `or no_flags` dispatch
+    and the no_flags-tuple membership) so the bundling cannot silently
+    drop; the sibling clean-tree CLI test plus the shared no-flags run
+    cover the behavioral side."""
+    src = (_REPO_ROOT / "scripts" / "workflow_lint.py").read_text()
+    assert "args.check_push_failure_swallow or no_flags" in src
+    assert "or args.check_push_failure_swallow" in src
+
+
+# ---------------------------------------------------------------------------
 # Unit tests for ``check_grep_qv`` (incident class #928 -> #1125: ugrep
 # 7.5.0's quiet+invert exit status diverges from GNU — rc=1 even when
 # non-matching lines are selected — so an rc-consumed q+v grep trigger in an
@@ -3476,6 +3625,219 @@ def test_workflow_lint_check_batch_judge_client_cli_exits_zero():
     assert result.returncode == 0, (
         f"workflow_lint --check-batch-judge-client failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ── --check-hub-verify-retry (task #920/#997/#1202) ──────────────────────────
+# Each test writes a fixture into ``tmp_path`` and calls
+# ``check_hub_verify_retry(scripts_dir=tmp_path)`` (scripts/-only scan; no
+# src_dir arg — #997 owns the library path).
+
+
+def test_check_hub_verify_retry_fail_bare_attr_call(tmp_path):
+    """The #920 offender shape: a bare api.list_repo_files( verify leg in a
+    non-grandfathered script. The error must route authors at the retried
+    hub helpers (verify_repo_paths_uploaded et al.)."""
+    (tmp_path / "issue9999_verify.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def verify(repo):\n"
+        "    return api.list_repo_files(repo, repo_type='dataset')\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert "issue9999_verify.py" in errors[0]
+    assert ".list_repo_files(" in errors[0]
+    assert "verify_repo_paths_uploaded" in errors[0]
+    assert "list_hf_files_under_path" in errors[0]
+    assert "list_repo_files_complete" in errors[0]
+    assert "HUB_VERIFY_RETRY_EXEMPT" in errors[0]
+    assert "#920" in errors[0]
+
+
+def test_check_hub_verify_retry_fail_bare_file_exists(tmp_path):
+    """A bare api.file_exists( single-path probe is the same un-retried
+    class and is flagged."""
+    (tmp_path / "issue9999_probe.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def probe(repo, path):\n"
+        "    return api.file_exists(repo, path, repo_type='dataset')\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert ".file_exists(" in errors[0]
+
+
+def test_check_hub_verify_retry_fail_imported_name_form(tmp_path):
+    """The ``from huggingface_hub import <target>`` bare-Name form is
+    flagged — both the plain import and the aliased ``as lrt`` form (the
+    asname-aware bound-name map; an alias cannot evade the Name leg)."""
+    (tmp_path / "issue9999_name_form.py").write_text(
+        "from huggingface_hub import list_repo_files\n"
+        "from huggingface_hub import list_repo_tree as lrt\n"
+        "def go(repo):\n"
+        "    files = list_repo_files(repo)\n"
+        "    tree = lrt(repo, path_in_repo='p')\n"
+        "    return files, tree\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert len(errors) == 2, errors
+    assert any("list_repo_files(" in e for e in errors), errors
+    # The aliased hit reports the CANONICAL symbol, not the alias.
+    assert any("list_repo_tree(" in e for e in errors), errors
+
+
+def test_check_hub_verify_retry_fail_bare_list_repo_tree(tmp_path):
+    """list_repo_tree( is the SAME un-retried pagination class (gotchas.md
+    names it as the recommended large-repo listing) and is flagged."""
+    (tmp_path / "issue9999_tree.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def scan(repo):\n"
+        "    return list(api.list_repo_tree(repo, path_in_repo='x', recursive=True))\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert ".list_repo_tree(" in errors[0]
+
+
+def test_check_hub_verify_retry_pass_local_name_without_hf_import(tmp_path):
+    """A script-local ``def file_exists`` helper (no huggingface_hub import
+    of the symbol) is NOT flagged — the Name leg is gated on the import."""
+    (tmp_path / "local_helper.py").write_text(
+        "import os\n"
+        "def file_exists(p):\n"
+        "    return os.path.exists(p)\n"
+        "def go(p):\n"
+        "    return file_exists(p)\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_hub_verify_retry_pass_hub_helper_usage(tmp_path):
+    """Compliant usage of the retried orchestrate.hub helpers is
+    structurally invisible to the detector."""
+    (tmp_path / "compliant.py").write_text(
+        "from explore_persona_space.orchestrate.hub import (\n"
+        "    list_hf_files_under_path,\n"
+        "    verify_repo_paths_uploaded,\n"
+        ")\n"
+        "def verify(api, repo, paths):\n"
+        "    verify_repo_paths_uploaded(api, repo, paths, repo_type='dataset')\n"
+        "    return list_hf_files_under_path(api, repo, 'prefix/')\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_hub_verify_retry_pass_comment_and_docstring_mentions(tmp_path):
+    """Prose mentions in comments/docstrings can never match — AST has no
+    comment nodes and a string mention is an ast.Constant."""
+    (tmp_path / "prose_only.py").write_text(
+        '"""Mentions list_repo_files( and .file_exists( in prose only."""\n'
+        "# a list_repo_tree( mention in a comment\n"
+        "X = 'list_repo_files(...) as a string literal'\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_hub_verify_retry_pass_waiver_previous_line(tmp_path):
+    """A '# HUB_VERIFY_RETRY_EXEMPT: <reason>' waiver on the previous
+    non-blank line suppresses the flag."""
+    (tmp_path / "waived.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def go(repo):\n"
+        "    # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient by the caller\n"
+        "    return api.list_repo_files(repo)\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_hub_verify_retry_pass_waiver_same_line(tmp_path):
+    """The waiver also binds on the call's OWN line (the same-line branch
+    of the waiver helper; the previous-line branch is covered above)."""
+    (tmp_path / "waived_inline.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def go(repo):\n"
+        "    return api.list_repo_files(repo)  "
+        "# HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient here\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_hub_verify_retry_fail_waiver_reason_too_short(tmp_path):
+    """A waiver with a < 10-char reason does not suppress the flag."""
+    (tmp_path / "waived_short.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def go(repo):\n"
+        "    # HUB_VERIFY_RETRY_EXEMPT: short\n"
+        "    return api.list_repo_files(repo)\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+
+
+def test_check_hub_verify_retry_allowlist_is_file_granular(tmp_path):
+    """The grandfather allowlist exempts by exact rel path (whole file), and
+    a NON-allowlisted offender at the same dir IS flagged — the exemption is
+    per-path, not blanket-scripts/. verify_uploads.py is the known
+    workflow-helper member (migration onto the hub helpers is a named
+    follow-up)."""
+    assert "scripts/verify_uploads.py" in HUB_VERIFY_LEGACY_ALLOWLIST
+    sd = tmp_path / "scripts"
+    sd.mkdir()
+    (sd / "issue9999_new_verify.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def go(repo):\n"
+        "    return api.list_repo_files(repo)\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=sd)
+    assert len(errors) == 1, errors
+
+
+def test_check_hub_verify_retry_repo_tree_is_clean():
+    """The committed scripts/**/*.py tree must carry no unwaived bare Hub
+    verify call outside HUB_VERIFY_LEGACY_ALLOWLIST — locks the allowlist to
+    the land-time tree so the no-flags default run cannot break, and makes
+    every NEW bare caller a reviewed diff (#920/#997/#1202)."""
+    errors = check_hub_verify_retry()
+    assert errors == [], (
+        "scripts/**/*.py has a bare list_repo_files( / list_repo_tree( / "
+        ".file_exists( Hub call outside the grandfathered set (#920 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_hub_verify_retry_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-hub-verify-retry")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-hub-verify-retry failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_check_hub_verify_retry_bundled_in_no_flags():
+    """NON-VACUOUS no-flags bundling pin: the check must be dispatched by
+    the BARE ``workflow_lint.py`` run. Source-inspection assert on the
+    dispatch branch + the no_flags tuple membership (exit-0-on-a-clean-tree
+    is vacuous — it passes whether or not the check is dispatched)."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_hub_verify_retry or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_hub_verify_retry\(\)\)",
+        src,
+    ), "check_hub_verify_retry is not dispatched on the no-flags branch"
+    assert "or args.check_hub_verify_retry" in src, (
+        "--check-hub-verify-retry is missing from the no_flags detection tuple"
     )
 
 
