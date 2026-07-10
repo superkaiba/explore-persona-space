@@ -1,0 +1,27 @@
+{
+  "commit": "1b104689cc",
+  "created": "2026-07-10T15:41:34Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "issue 923 substrate",
+      "held-out R\u00b2 at layer 14 (mean over bridge items)": 0.18678757299449011,
+      "_kind": "bar"
+    },
+    {
+      "category": "issue 813 substrate",
+      "held-out R\u00b2 at layer 14 (mean over bridge items)": -0.8706843177705336,
+      "_kind": "bar"
+    },
+    {
+      "category": "issue 779 substrate",
+      "held-out R\u00b2 at layer 14 (mean over bridge items)": 0.6184057830382188,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 3
+}

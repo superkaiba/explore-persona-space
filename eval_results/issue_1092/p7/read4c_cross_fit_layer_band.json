@@ -1,0 +1,4920 @@
+{
+  "band_construction": "CONSERVATIVE: per-draw-index max over the three fit-layer units' independently-seeded (seed+layer) draw vectors; each per-unit draw already inherits the 28-layer read-out max (engine _selection_symmetric_projection_null)",
+  "input_fingerprint": "b314495d21af49df",
+  "metadata": {
+    "argv": [
+      "--steps",
+      "merge,projection-sweep,figures,upload-nulls",
+      "--bridge-summary",
+      "data/issue_1092/p7_bridge/bridge_refit_summary.json",
+      "--expect-full-grid"
+    ],
+    "git_commit": "1b104689cc2fd9383a916bf7efd28002219e0007",
+    "hf_prefix": "issue1092_realistic_crossing",
+    "issue": 1092,
+    "numpy_version": "2.2.6",
+    "phase": "P7",
+    "python_version": "3.11.15",
+    "script": "issue1092_figures.py",
+    "timestamp": "2026-07-10T08:40:24-0700"
+  },
+  "read": "read-4c cross-fit-layer best-of-{L14,L18,L19} secondary read",
+  "rows": [
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2401898264884943,
+      "observed_best_abs_projection": 1.5520587368671223e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.0896357370578179e-13,
+        "L18": 7.044282048681524e-14,
+        "L19": 1.5520587368671223e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1769643187522885,
+      "observed_best_abs_projection": 2.5363497195941112e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.1177459044703313e-14,
+        "L18": 1.277348201949607e-14,
+        "L19": 2.5363497195941112e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.4763527154922482,
+      "observed_best_abs_projection": 4.7461876464389816e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.7461876464389816e-14,
+        "L18": 2.2090264866476198e-14,
+        "L19": 2.5595675053345547e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.337366437911987,
+      "observed_best_abs_projection": 4.337731568725976e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.519181573025576e-13,
+        "L18": 3.707778367634968e-14,
+        "L19": 4.337731568725976e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.351095390319819,
+      "observed_best_abs_projection": 1.1417100480078813e-13,
+      "per_fit_layer_observed": {
+        "L14": 3.238524089429411e-14,
+        "L18": 1.1417100480078813e-13,
+        "L19": 5.564226620570934e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.35663425922393,
+      "observed_best_abs_projection": 1.9507798728218466e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.0034226614110605e-14,
+        "L18": 8.243642000223376e-14,
+        "L19": 1.9507798728218466e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.6826663970947258,
+      "observed_best_abs_projection": 4.608444391212016e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.561877046941596e-13,
+        "L18": 9.244824821140993e-14,
+        "L19": 4.608444391212016e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.6452829837799063,
+      "observed_best_abs_projection": 1.2392370298572653e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.411781741525993e-14,
+        "L18": 1.2392370298572653e-13,
+        "L19": 5.526707687360103e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.5896839022636415,
+      "observed_best_abs_projection": 1.9489115604672844e-13,
+      "per_fit_layer_observed": {
+        "L14": 5.0110522437838566e-14,
+        "L18": 9.104737964050486e-14,
+        "L19": 1.9489115604672844e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2228463590145109,
+      "observed_best_abs_projection": 1.0354593376151584e-13,
+      "per_fit_layer_observed": {
+        "L14": 7.610774351834315e-14,
+        "L18": 2.1171474026655717e-14,
+        "L19": 1.0354593376151584e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1182044625282286,
+      "observed_best_abs_projection": 6.916109929322173e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.1220342165567413e-15,
+        "L18": 4.440219566495004e-14,
+        "L19": 6.916109929322173e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.4088226139545434,
+      "observed_best_abs_projection": 4.3904811421278765e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.3271390098456118e-14,
+        "L18": 4.3904811421278765e-14,
+        "L19": 3.63894516643319e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.716133642196654,
+      "observed_best_abs_projection": 6.159364978019683e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.8809949873216216e-14,
+        "L18": 7.916144425081147e-15,
+        "L19": 6.159364978019683e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.662074565887446,
+      "observed_best_abs_projection": 3.226285527207704e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.800056489286637e-14,
+        "L18": 6.231204375367957e-15,
+        "L19": 3.226285527207704e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.646684503555297,
+      "observed_best_abs_projection": 7.76425040517712e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.9046700288066102e-14,
+        "L18": 4.748521220249085e-14,
+        "L19": 7.76425040517712e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.434914231300353,
+      "observed_best_abs_projection": 6.944710880902401e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.810542146699481e-14,
+        "L18": 6.439163967937801e-15,
+        "L19": 6.944710880902401e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.494320094585418,
+      "observed_best_abs_projection": 2.8616917351639976e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.8360032550598744e-14,
+        "L18": 9.135886788611753e-15,
+        "L19": 2.8616917351639976e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.433840370178222,
+      "observed_best_abs_projection": 7.600937899955142e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.4289953209480783e-14,
+        "L18": 4.420608087642103e-14,
+        "L19": 7.600937899955142e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2401898264884943,
+      "observed_best_abs_projection": 1.5520587368671223e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.0896357370578179e-13,
+        "L18": 7.044282048681524e-14,
+        "L19": 1.5520587368671223e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1769643187522885,
+      "observed_best_abs_projection": 2.5363497195941112e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.1177459044703313e-14,
+        "L18": 1.277348201949607e-14,
+        "L19": 2.5363497195941112e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.4763527154922482,
+      "observed_best_abs_projection": 4.7461876464389816e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.7461876464389816e-14,
+        "L18": 2.2090264866476198e-14,
+        "L19": 2.5595675053345547e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.337366437911987,
+      "observed_best_abs_projection": 4.337731568725976e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.519181573025576e-13,
+        "L18": 3.707778367634968e-14,
+        "L19": 4.337731568725976e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.351095390319819,
+      "observed_best_abs_projection": 1.1417100480078813e-13,
+      "per_fit_layer_observed": {
+        "L14": 3.238524089429411e-14,
+        "L18": 1.1417100480078813e-13,
+        "L19": 5.564226620570934e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.35663425922393,
+      "observed_best_abs_projection": 1.9507798728218466e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.0034226614110605e-14,
+        "L18": 8.243642000223376e-14,
+        "L19": 1.9507798728218466e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.6826663970947258,
+      "observed_best_abs_projection": 4.608444391212016e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.561877046941596e-13,
+        "L18": 9.244824821140993e-14,
+        "L19": 4.608444391212016e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.6452829837799063,
+      "observed_best_abs_projection": 1.2392370298572653e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.411781741525993e-14,
+        "L18": 1.2392370298572653e-13,
+        "L19": 5.526707687360103e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.5896839022636415,
+      "observed_best_abs_projection": 1.9489115604672844e-13,
+      "per_fit_layer_observed": {
+        "L14": 5.0110522437838566e-14,
+        "L18": 9.104737964050486e-14,
+        "L19": 1.9489115604672844e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2228463590145109,
+      "observed_best_abs_projection": 1.0354593376151584e-13,
+      "per_fit_layer_observed": {
+        "L14": 7.610774351834315e-14,
+        "L18": 2.1171474026655717e-14,
+        "L19": 1.0354593376151584e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1182044625282286,
+      "observed_best_abs_projection": 6.916109929322173e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.1220342165567413e-15,
+        "L18": 4.440219566495004e-14,
+        "L19": 6.916109929322173e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.4088226139545434,
+      "observed_best_abs_projection": 4.3904811421278765e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.3271390098456118e-14,
+        "L18": 4.3904811421278765e-14,
+        "L19": 3.63894516643319e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.716133642196654,
+      "observed_best_abs_projection": 6.159364978019683e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.8809949873216216e-14,
+        "L18": 7.916144425081147e-15,
+        "L19": 6.159364978019683e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.662074565887446,
+      "observed_best_abs_projection": 3.226285527207704e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.800056489286637e-14,
+        "L18": 6.231204375367957e-15,
+        "L19": 3.226285527207704e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.646684503555297,
+      "observed_best_abs_projection": 7.76425040517712e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.9046700288066102e-14,
+        "L18": 4.748521220249085e-14,
+        "L19": 7.76425040517712e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.434914231300353,
+      "observed_best_abs_projection": 6.944710880902401e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.810542146699481e-14,
+        "L18": 6.439163967937801e-15,
+        "L19": 6.944710880902401e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.494320094585418,
+      "observed_best_abs_projection": 2.8616917351639976e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.8360032550598744e-14,
+        "L18": 9.135886788611753e-15,
+        "L19": 2.8616917351639976e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.433840370178222,
+      "observed_best_abs_projection": 7.600937899955142e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.4289953209480783e-14,
+        "L18": 4.420608087642103e-14,
+        "L19": 7.600937899955142e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.349774432182311,
+      "observed_best_abs_projection": 6.669050355143153e-14,
+      "per_fit_layer_observed": {
+        "L14": 6.669050355143153e-14,
+        "L18": 5.070780753319224e-14,
+        "L19": 3.996774302776111e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.535560530424118,
+      "observed_best_abs_projection": 2.26908694626523e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.8258139191326102e-14,
+        "L18": 2.26908694626523e-14,
+        "L19": 2.2034617321786695e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2805839359760283,
+      "observed_best_abs_projection": 5.709232444614952e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.3354230244130343e-14,
+        "L18": 5.709232444614952e-14,
+        "L19": 4.6644304530246576e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.776645040512084,
+      "observed_best_abs_projection": 1.1703185695201478e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.1703185695201478e-13,
+        "L18": 5.24565741457837e-14,
+        "L19": 1.5410757065694238e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.51679847240448,
+      "observed_best_abs_projection": 1.0348296427923915e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.7456568308748106e-14,
+        "L18": 2.242216046639898e-14,
+        "L19": 1.0348296427923915e-13
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.85357985496521,
+      "observed_best_abs_projection": 6.482209194506728e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.660787142039122e-14,
+        "L18": 3.5551512645406754e-14,
+        "L19": 6.482209194506728e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.5356456160545338,
+      "observed_best_abs_projection": 1.2242640174916045e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.2242640174916045e-13,
+        "L18": 4.334358817949195e-14,
+        "L19": 3.4812862951281725e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.2668811917304987,
+      "observed_best_abs_projection": 1.1247119796842826e-13,
+      "per_fit_layer_observed": {
+        "L14": 2.770077634621893e-14,
+        "L18": 2.994321968284676e-14,
+        "L19": 1.1247119796842826e-13
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.755208420753479,
+      "observed_best_abs_projection": 5.409763119950335e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.907379786256204e-14,
+        "L18": 4.500167265307616e-14,
+        "L19": 5.409763119950335e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1999842405319212,
+      "observed_best_abs_projection": 5.020012356784082e-14,
+      "per_fit_layer_observed": {
+        "L14": 5.020012356784082e-14,
+        "L18": 2.2972101579823818e-14,
+        "L19": 1.8858813876217223e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.5374843716621398,
+      "observed_best_abs_projection": 1.8143258944840825e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.2579825030817364e-14,
+        "L18": 1.3661294650071213e-14,
+        "L19": 1.8143258944840825e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1946590483188622,
+      "observed_best_abs_projection": 8.918666663024578e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.1424076775372476e-14,
+        "L18": 8.918666663024578e-14,
+        "L19": 9.077469111642986e-15
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.03305010795593,
+      "observed_best_abs_projection": 6.431190412694117e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.189035163358344e-15,
+        "L18": 3.8999662658737676e-14,
+        "L19": 6.431190412694117e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.4942964792251585,
+      "observed_best_abs_projection": 7.166403407562292e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.4244634769530933e-14,
+        "L18": 7.166403407562292e-14,
+        "L19": 3.7358103637329824e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.905620837211607,
+      "observed_best_abs_projection": 5.828745384159831e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.4715186954142548e-14,
+        "L18": 4.843101328031015e-14,
+        "L19": 5.828745384159831e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.984365153312683,
+      "observed_best_abs_projection": 6.412519994579306e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.2162696405321346e-15,
+        "L18": 3.928891516642789e-14,
+        "L19": 6.412519994579306e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.150190138816833,
+      "observed_best_abs_projection": 6.603503114431898e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.483076075066834e-14,
+        "L18": 6.603503114431898e-14,
+        "L19": 3.6769815162230406e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.7004305839538563,
+      "observed_best_abs_projection": 5.1857834092544243e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.3062868135072397e-14,
+        "L18": 4.535085470177378e-14,
+        "L19": 5.1857834092544243e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.349774432182311,
+      "observed_best_abs_projection": 6.669050355143153e-14,
+      "per_fit_layer_observed": {
+        "L14": 6.669050355143153e-14,
+        "L18": 5.070780753319224e-14,
+        "L19": 3.996774302776111e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.535560530424118,
+      "observed_best_abs_projection": 2.26908694626523e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.8258139191326102e-14,
+        "L18": 2.26908694626523e-14,
+        "L19": 2.2034617321786695e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2805839359760283,
+      "observed_best_abs_projection": 5.709232444614952e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.3354230244130343e-14,
+        "L18": 5.709232444614952e-14,
+        "L19": 4.6644304530246576e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.776645040512084,
+      "observed_best_abs_projection": 1.1703185695201478e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.1703185695201478e-13,
+        "L18": 5.24565741457837e-14,
+        "L19": 1.5410757065694238e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.51679847240448,
+      "observed_best_abs_projection": 1.0348296427923915e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.7456568308748106e-14,
+        "L18": 2.242216046639898e-14,
+        "L19": 1.0348296427923915e-13
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.85357985496521,
+      "observed_best_abs_projection": 6.482209194506728e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.660787142039122e-14,
+        "L18": 3.5551512645406754e-14,
+        "L19": 6.482209194506728e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.5356456160545338,
+      "observed_best_abs_projection": 1.2242640174916045e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.2242640174916045e-13,
+        "L18": 4.334358817949195e-14,
+        "L19": 3.4812862951281725e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.2668811917304987,
+      "observed_best_abs_projection": 1.1247119796842826e-13,
+      "per_fit_layer_observed": {
+        "L14": 2.770077634621893e-14,
+        "L18": 2.994321968284676e-14,
+        "L19": 1.1247119796842826e-13
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.755208420753479,
+      "observed_best_abs_projection": 5.409763119950335e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.907379786256204e-14,
+        "L18": 4.500167265307616e-14,
+        "L19": 5.409763119950335e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1999842405319212,
+      "observed_best_abs_projection": 5.020012356784082e-14,
+      "per_fit_layer_observed": {
+        "L14": 5.020012356784082e-14,
+        "L18": 2.2972101579823818e-14,
+        "L19": 1.8858813876217223e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.5374843716621398,
+      "observed_best_abs_projection": 1.8143258944840825e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.2579825030817364e-14,
+        "L18": 1.3661294650071213e-14,
+        "L19": 1.8143258944840825e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1946590483188622,
+      "observed_best_abs_projection": 8.918666663024578e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.1424076775372476e-14,
+        "L18": 8.918666663024578e-14,
+        "L19": 9.077469111642986e-15
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.03305010795593,
+      "observed_best_abs_projection": 6.431190412694117e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.189035163358344e-15,
+        "L18": 3.8999662658737676e-14,
+        "L19": 6.431190412694117e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.4942964792251585,
+      "observed_best_abs_projection": 7.166403407562292e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.4244634769530933e-14,
+        "L18": 7.166403407562292e-14,
+        "L19": 3.7358103637329824e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.905620837211607,
+      "observed_best_abs_projection": 5.828745384159831e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.4715186954142548e-14,
+        "L18": 4.843101328031015e-14,
+        "L19": 5.828745384159831e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.984365153312683,
+      "observed_best_abs_projection": 6.412519994579306e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.2162696405321346e-15,
+        "L18": 3.928891516642789e-14,
+        "L19": 6.412519994579306e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.150190138816833,
+      "observed_best_abs_projection": 6.603503114431898e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.483076075066834e-14,
+        "L18": 6.603503114431898e-14,
+        "L19": 3.6769815162230406e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.7004305839538563,
+      "observed_best_abs_projection": 5.1857834092544243e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.3062868135072397e-14,
+        "L18": 4.535085470177378e-14,
+        "L19": 5.1857834092544243e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_pretext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3824967443943021,
+      "observed_best_abs_projection": 1.5253971346258619e-13,
+      "per_fit_layer_observed": {
+        "L14": 2.4911190977285493e-14,
+        "L18": 1.5253971346258619e-13,
+        "L19": 2.4237953952369596e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_pretext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.0622869610786438,
+      "observed_best_abs_projection": 1.0092472550424811e-13,
+      "per_fit_layer_observed": {
+        "L14": 7.7508303485957e-15,
+        "L18": 1.0092472550424811e-13,
+        "L19": 8.681301364245273e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3198136806488032,
+      "observed_best_abs_projection": 1.0285366719082809e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.2317197854219391e-14,
+        "L18": 6.898032182500637e-14,
+        "L19": 1.0285366719082809e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.905725908279419,
+      "observed_best_abs_projection": 1.099438125568404e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.099438125568404e-13,
+        "L18": 2.8688405161597114e-14,
+        "L19": 7.321794338431832e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.235697817802429,
+      "observed_best_abs_projection": 4.533663013685038e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.5589084840277916e-14,
+        "L18": 1.9647644590757616e-14,
+        "L19": 4.533663013685038e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.11864798069,
+      "observed_best_abs_projection": 9.695409618923147e-14,
+      "per_fit_layer_observed": {
+        "L14": 9.695409618923147e-14,
+        "L18": 2.470295976755934e-14,
+        "L19": 2.6843516261831038e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 5.769969534873962,
+      "observed_best_abs_projection": 1.523892396937062e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.523892396937062e-13,
+        "L18": 2.72064940315283e-14,
+        "L19": 1.0180967669480549e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 4.4659601449966395,
+      "observed_best_abs_projection": 5.26257648743106e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.0589686327439085e-14,
+        "L18": 2.8699789633141094e-14,
+        "L19": 5.26257648743106e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.3653667211532587,
+      "observed_best_abs_projection": 1.119291725832902e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.119291725832902e-13,
+        "L18": 4.907263507588682e-14,
+        "L19": 4.27785563866033e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3470870733261109,
+      "observed_best_abs_projection": 1.2593611447582285e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.4879301700536895e-14,
+        "L18": 1.7167716669615995e-14,
+        "L19": 1.2593611447582285e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.0674204468727104,
+      "observed_best_abs_projection": 5.34119140375446e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.2626794316108414e-14,
+        "L18": 1.2432656277139324e-14,
+        "L19": 5.34119140375446e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.231862550973892,
+      "observed_best_abs_projection": 5.865407387026799e-14,
+      "per_fit_layer_observed": {
+        "L14": 5.865407387026799e-14,
+        "L18": 2.79819082278821e-14,
+        "L19": 3.6628000967608126e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.247818708419798,
+      "observed_best_abs_projection": 1.6041966987539467e-13,
+      "per_fit_layer_observed": {
+        "L14": 3.821599447617596e-14,
+        "L18": 6.491212858357362e-14,
+        "L19": 1.6041966987539467e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.340131306648254,
+      "observed_best_abs_projection": 3.231365915301399e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.231365915301399e-14,
+        "L18": 3.081005401183912e-14,
+        "L19": 8.409460341890699e-15
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_pretext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.233486080169677,
+      "observed_best_abs_projection": 4.649753264354155e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.0954605065690236e-14,
+        "L18": 4.649753264354155e-14,
+        "L19": 2.2785126398834316e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 5.512663149833678,
+      "observed_best_abs_projection": 1.708126596707227e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.1452094919577856e-14,
+        "L18": 7.195009291994738e-14,
+        "L19": 1.708126596707227e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 4.413900423049926,
+      "observed_best_abs_projection": 3.3739859240432015e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.3739859240432015e-14,
+        "L18": 3.161159838833307e-14,
+        "L19": 1.0127848378989174e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_pretext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.1070595741271974,
+      "observed_best_abs_projection": 3.4507095598179475e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.69848710630002e-14,
+        "L18": 3.4507095598179475e-14,
+        "L19": 2.215346294017312e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_pretext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3824967443943021,
+      "observed_best_abs_projection": 1.5253971346258619e-13,
+      "per_fit_layer_observed": {
+        "L14": 2.4911190977285493e-14,
+        "L18": 1.5253971346258619e-13,
+        "L19": 2.4237953952369596e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_pretext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.0622869610786438,
+      "observed_best_abs_projection": 1.0092472550424811e-13,
+      "per_fit_layer_observed": {
+        "L14": 7.7508303485957e-15,
+        "L18": 1.0092472550424811e-13,
+        "L19": 8.681301364245273e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3198136806488032,
+      "observed_best_abs_projection": 1.0285366719082809e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.2317197854219391e-14,
+        "L18": 6.898032182500637e-14,
+        "L19": 1.0285366719082809e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.905725908279419,
+      "observed_best_abs_projection": 1.099438125568404e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.099438125568404e-13,
+        "L18": 2.8688405161597114e-14,
+        "L19": 7.321794338431832e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.235697817802429,
+      "observed_best_abs_projection": 4.533663013685038e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.5589084840277916e-14,
+        "L18": 1.9647644590757616e-14,
+        "L19": 4.533663013685038e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.11864798069,
+      "observed_best_abs_projection": 9.695409618923147e-14,
+      "per_fit_layer_observed": {
+        "L14": 9.695409618923147e-14,
+        "L18": 2.470295976755934e-14,
+        "L19": 2.6843516261831038e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 5.769969534873962,
+      "observed_best_abs_projection": 1.523892396937062e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.523892396937062e-13,
+        "L18": 2.72064940315283e-14,
+        "L19": 1.0180967669480549e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 4.4659601449966395,
+      "observed_best_abs_projection": 5.26257648743106e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.0589686327439085e-14,
+        "L18": 2.8699789633141094e-14,
+        "L19": 5.26257648743106e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.3653667211532587,
+      "observed_best_abs_projection": 1.119291725832902e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.119291725832902e-13,
+        "L18": 4.907263507588682e-14,
+        "L19": 4.27785563866033e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3470870733261109,
+      "observed_best_abs_projection": 1.2593611447582285e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.4879301700536895e-14,
+        "L18": 1.7167716669615995e-14,
+        "L19": 1.2593611447582285e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.0674204468727104,
+      "observed_best_abs_projection": 5.34119140375446e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.2626794316108414e-14,
+        "L18": 1.2432656277139324e-14,
+        "L19": 5.34119140375446e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.231862550973892,
+      "observed_best_abs_projection": 5.865407387026799e-14,
+      "per_fit_layer_observed": {
+        "L14": 5.865407387026799e-14,
+        "L18": 2.79819082278821e-14,
+        "L19": 3.6628000967608126e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.247818708419798,
+      "observed_best_abs_projection": 1.6041966987539467e-13,
+      "per_fit_layer_observed": {
+        "L14": 3.821599447617596e-14,
+        "L18": 6.491212858357362e-14,
+        "L19": 1.6041966987539467e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.340131306648254,
+      "observed_best_abs_projection": 3.231365915301399e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.231365915301399e-14,
+        "L18": 3.081005401183912e-14,
+        "L19": 8.409460341890699e-15
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_pretext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.233486080169677,
+      "observed_best_abs_projection": 4.649753264354155e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.0954605065690236e-14,
+        "L18": 4.649753264354155e-14,
+        "L19": 2.2785126398834316e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_pretext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 5.512663149833678,
+      "observed_best_abs_projection": 1.708126596707227e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.1452094919577856e-14,
+        "L18": 7.195009291994738e-14,
+        "L19": 1.708126596707227e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_pretext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 4.413900423049926,
+      "observed_best_abs_projection": 3.3739859240432015e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.3739859240432015e-14,
+        "L18": 3.161159838833307e-14,
+        "L19": 1.0127848378989174e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_pretext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.1070595741271974,
+      "observed_best_abs_projection": 3.4507095598179475e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.69848710630002e-14,
+        "L18": 3.4507095598179475e-14,
+        "L19": 2.215346294017312e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.6175755977630604,
+      "observed_best_abs_projection": 8.645828001733688e-14,
+      "per_fit_layer_observed": {
+        "L14": 8.645828001733688e-14,
+        "L18": 1.718860312273374e-14,
+        "L19": 4.7026754603189674e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1692986607551572,
+      "observed_best_abs_projection": 3.3807806341033866e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.044774314144469e-14,
+        "L18": 3.08613630733106e-14,
+        "L19": 3.3807806341033866e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1884567737579343,
+      "observed_best_abs_projection": 3.95994808287241e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.95994808287241e-14,
+        "L18": 3.140963858233126e-14,
+        "L19": 3.181201082219987e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.7853197038173672,
+      "observed_best_abs_projection": 7.930491753026939e-14,
+      "per_fit_layer_observed": {
+        "L14": 7.930491753026939e-14,
+        "L18": 3.2626061175687696e-14,
+        "L19": 9.176783762428256e-15
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3180311322212217,
+      "observed_best_abs_projection": 2.5483659330155132e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.2505029852036467e-14,
+        "L18": 1.4892311394925937e-14,
+        "L19": 2.5483659330155132e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1231496393680565,
+      "observed_best_abs_projection": 4.331274849612338e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.331274849612338e-14,
+        "L18": 3.8998111372814374e-14,
+        "L19": 2.849034890653713e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.778600454330444,
+      "observed_best_abs_projection": 9.114729738659977e-14,
+      "per_fit_layer_observed": {
+        "L14": 9.114729738659977e-14,
+        "L18": 4.686202159442778e-14,
+        "L19": 1.8656315217036916e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.644631910324094,
+      "observed_best_abs_projection": 2.98787823500303e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.5981516100622386e-14,
+        "L18": 2.4019807908500823e-14,
+        "L19": 2.98787823500303e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.908426523208617,
+      "observed_best_abs_projection": 4.4195165826417825e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.4195165826417825e-14,
+        "L18": 3.478007965457555e-14,
+        "L19": 1.9205217005778833e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.5956631839275341,
+      "observed_best_abs_projection": 1.6481261870163327e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.102597257016779e-14,
+        "L18": 1.6481261870163327e-14,
+        "L19": 1.5799867987437625e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1481240987777708,
+      "observed_best_abs_projection": 5.2126160448202934e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.7386806951210882e-14,
+        "L18": 2.874542135367905e-14,
+        "L19": 5.2126160448202934e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2326020598411556,
+      "observed_best_abs_projection": 2.1728518652114866e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.3818036929080245e-14,
+        "L18": 2.0440883561309655e-14,
+        "L19": 2.1728518652114866e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.8290019392967212,
+      "observed_best_abs_projection": 1.3286591095309251e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.091525807611242e-14,
+        "L18": 2.0066130235800187e-15,
+        "L19": 1.3286591095309251e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2405978679656977,
+      "observed_best_abs_projection": 1.3371051061797914e-14,
+      "per_fit_layer_observed": {
+        "L14": 8.719424268725176e-15,
+        "L18": 3.256455972642881e-15,
+        "L19": 1.3371051061797914e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2559024751186363,
+      "observed_best_abs_projection": 8.250756562468566e-15,
+      "per_fit_layer_observed": {
+        "L14": 3.597653387152807e-15,
+        "L18": 8.250756562468566e-15,
+        "L19": 6.735405592709456e-15
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 9.197521066665646,
+      "observed_best_abs_projection": 1.688736290782961e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.0993852391879298e-14,
+        "L18": 3.2542276696833166e-15,
+        "L19": 1.688736290782961e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.425119161605835,
+      "observed_best_abs_projection": 1.4723432656678955e-14,
+      "per_fit_layer_observed": {
+        "L14": 9.056632036369206e-15,
+        "L18": 4.475983583851441e-15,
+        "L19": 1.4723432656678955e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.637551760673523,
+      "observed_best_abs_projection": 9.329389038076507e-15,
+      "per_fit_layer_observed": {
+        "L14": 3.3467456301560905e-15,
+        "L18": 9.329389038076507e-15,
+        "L19": 5.272968046057647e-15
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.6175755977630604,
+      "observed_best_abs_projection": 8.645828001733688e-14,
+      "per_fit_layer_observed": {
+        "L14": 8.645828001733688e-14,
+        "L18": 1.718860312273374e-14,
+        "L19": 4.7026754603189674e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1692986607551572,
+      "observed_best_abs_projection": 3.3807806341033866e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.044774314144469e-14,
+        "L18": 3.08613630733106e-14,
+        "L19": 3.3807806341033866e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1884567737579343,
+      "observed_best_abs_projection": 3.95994808287241e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.95994808287241e-14,
+        "L18": 3.140963858233126e-14,
+        "L19": 3.181201082219987e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.7853197038173672,
+      "observed_best_abs_projection": 7.930491753026939e-14,
+      "per_fit_layer_observed": {
+        "L14": 7.930491753026939e-14,
+        "L18": 3.2626061175687696e-14,
+        "L19": 9.176783762428256e-15
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3180311322212217,
+      "observed_best_abs_projection": 2.5483659330155132e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.2505029852036467e-14,
+        "L18": 1.4892311394925937e-14,
+        "L19": 2.5483659330155132e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1231496393680565,
+      "observed_best_abs_projection": 4.331274849612338e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.331274849612338e-14,
+        "L18": 3.8998111372814374e-14,
+        "L19": 2.849034890653713e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.778600454330444,
+      "observed_best_abs_projection": 9.114729738659977e-14,
+      "per_fit_layer_observed": {
+        "L14": 9.114729738659977e-14,
+        "L18": 4.686202159442778e-14,
+        "L19": 1.8656315217036916e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.644631910324094,
+      "observed_best_abs_projection": 2.98787823500303e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.5981516100622386e-14,
+        "L18": 2.4019807908500823e-14,
+        "L19": 2.98787823500303e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_inst_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.908426523208617,
+      "observed_best_abs_projection": 4.4195165826417825e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.4195165826417825e-14,
+        "L18": 3.478007965457555e-14,
+        "L19": 1.9205217005778833e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.5956631839275341,
+      "observed_best_abs_projection": 1.6481261870163327e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.102597257016779e-14,
+        "L18": 1.6481261870163327e-14,
+        "L19": 1.5799867987437625e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1481240987777708,
+      "observed_best_abs_projection": 5.2126160448202934e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.7386806951210882e-14,
+        "L18": 2.874542135367905e-14,
+        "L19": 5.2126160448202934e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2326020598411556,
+      "observed_best_abs_projection": 2.1728518652114866e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.3818036929080245e-14,
+        "L18": 2.0440883561309655e-14,
+        "L19": 2.1728518652114866e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.8290019392967212,
+      "observed_best_abs_projection": 1.3286591095309251e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.091525807611242e-14,
+        "L18": 2.0066130235800187e-15,
+        "L19": 1.3286591095309251e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2405978679656977,
+      "observed_best_abs_projection": 1.3371051061797914e-14,
+      "per_fit_layer_observed": {
+        "L14": 8.719424268725176e-15,
+        "L18": 3.256455972642881e-15,
+        "L19": 1.3371051061797914e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2559024751186363,
+      "observed_best_abs_projection": 8.250756562468566e-15,
+      "per_fit_layer_observed": {
+        "L14": 3.597653387152807e-15,
+        "L18": 8.250756562468566e-15,
+        "L19": 6.735405592709456e-15
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 9.197521066665646,
+      "observed_best_abs_projection": 1.688736290782961e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.0993852391879298e-14,
+        "L18": 3.2542276696833166e-15,
+        "L19": 1.688736290782961e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_inst_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.425119161605835,
+      "observed_best_abs_projection": 1.4723432656678955e-14,
+      "per_fit_layer_observed": {
+        "L14": 9.056632036369206e-15,
+        "L18": 4.475983583851441e-15,
+        "L19": 1.4723432656678955e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_inst_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.637551760673523,
+      "observed_best_abs_projection": 9.329389038076507e-15,
+      "per_fit_layer_observed": {
+        "L14": 3.3467456301560905e-15,
+        "L18": 9.329389038076507e-15,
+        "L19": 5.272968046057647e-15
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.627569586038589,
+      "observed_best_abs_projection": 1.6006520297996905e-13,
+      "per_fit_layer_observed": {
+        "L14": 5.872778612322694e-14,
+        "L18": 1.6006520297996905e-13,
+        "L19": 6.305178241647066e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.0647521436214444,
+      "observed_best_abs_projection": 7.37474470776359e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.778430239013836e-14,
+        "L18": 1.9258080820742463e-14,
+        "L19": 7.37474470776359e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.4049746453762046,
+      "observed_best_abs_projection": 9.608460130501932e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.2244545608695548e-14,
+        "L18": 9.608460130501932e-14,
+        "L19": 7.081890369435891e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.734214401245117,
+      "observed_best_abs_projection": 1.3094686498396438e-13,
+      "per_fit_layer_observed": {
+        "L14": 5.4883151821240953e-14,
+        "L18": 5.440790860147047e-14,
+        "L19": 1.3094686498396438e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.444668841361997,
+      "observed_best_abs_projection": 1.176345487168918e-13,
+      "per_fit_layer_observed": {
+        "L14": 6.660667866079953e-14,
+        "L18": 7.114299477608958e-14,
+        "L19": 1.176345487168918e-13
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.323468470573422,
+      "observed_best_abs_projection": 1.0107438193125102e-13,
+      "per_fit_layer_observed": {
+        "L14": 7.119308703214426e-14,
+        "L18": 1.0107438193125102e-13,
+        "L19": 9.556788037017358e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.3921054720878585,
+      "observed_best_abs_projection": 1.1729039822081016e-13,
+      "per_fit_layer_observed": {
+        "L14": 5.027792288499842e-14,
+        "L18": 1.0475501435162903e-13,
+        "L19": 1.1729039822081016e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.780767369270323,
+      "observed_best_abs_projection": 9.973373953475907e-14,
+      "per_fit_layer_observed": {
+        "L14": 5.92748026781054e-14,
+        "L18": 4.5366789210182475e-14,
+        "L19": 9.973373953475907e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.6487953186035145,
+      "observed_best_abs_projection": 1.1471137110393994e-13,
+      "per_fit_layer_observed": {
+        "L14": 6.871186137002189e-14,
+        "L18": 1.1471137110393994e-13,
+        "L19": 9.510188710842891e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.7850957632064808,
+      "observed_best_abs_projection": 6.304462483373352e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.801758472855996e-14,
+        "L18": 1.9513298248152953e-14,
+        "L19": 6.304462483373352e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.091272038221359,
+      "observed_best_abs_projection": 5.991166370787511e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.560657904646098e-14,
+        "L18": 1.446716877866555e-14,
+        "L19": 5.991166370787511e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3843656718730926,
+      "observed_best_abs_projection": 5.2518261260009334e-14,
+      "per_fit_layer_observed": {
+        "L14": 5.2518261260009334e-14,
+        "L18": 1.8046688254990957e-14,
+        "L19": 4.1111761994384667e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.768873643875121,
+      "observed_best_abs_projection": 2.238141231657475e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.520207523691071e-14,
+        "L18": 2.238141231657475e-14,
+        "L19": 1.9496611533530362e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.8324079513549805,
+      "observed_best_abs_projection": 5.998300587296241e-14,
+      "per_fit_layer_observed": {
+        "L14": 8.939415660651847e-15,
+        "L18": 3.3398697144247118e-15,
+        "L19": 5.998300587296241e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.590573644638057,
+      "observed_best_abs_projection": 3.400628079950866e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.9461154364458232e-14,
+        "L18": 3.400628079950866e-14,
+        "L19": 1.562414707729016e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.240167617797851,
+      "observed_best_abs_projection": 1.8424052319593422e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.6108074228154976e-14,
+        "L18": 1.8424052319593422e-14,
+        "L19": 1.5171947287557874e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.4860128045082077,
+      "observed_best_abs_projection": 6.082525670837951e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.0401011103277715e-14,
+        "L18": 3.254985316788804e-15,
+        "L19": 6.082525670837951e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.443443274497985,
+      "observed_best_abs_projection": 3.160523746047492e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.8929489455449224e-14,
+        "L18": 3.160523746047492e-14,
+        "L19": 2.2734458012117055e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.627569586038589,
+      "observed_best_abs_projection": 1.6006520297996905e-13,
+      "per_fit_layer_observed": {
+        "L14": 5.872778612322694e-14,
+        "L18": 1.6006520297996905e-13,
+        "L19": 6.305178241647066e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.0647521436214444,
+      "observed_best_abs_projection": 7.37474470776359e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.778430239013836e-14,
+        "L18": 1.9258080820742463e-14,
+        "L19": 7.37474470776359e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.4049746453762046,
+      "observed_best_abs_projection": 9.608460130501932e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.2244545608695548e-14,
+        "L18": 9.608460130501932e-14,
+        "L19": 7.081890369435891e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.734214401245117,
+      "observed_best_abs_projection": 1.3094686498396438e-13,
+      "per_fit_layer_observed": {
+        "L14": 5.4883151821240953e-14,
+        "L18": 5.440790860147047e-14,
+        "L19": 1.3094686498396438e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.444668841361997,
+      "observed_best_abs_projection": 1.176345487168918e-13,
+      "per_fit_layer_observed": {
+        "L14": 6.660667866079953e-14,
+        "L18": 7.114299477608958e-14,
+        "L19": 1.176345487168918e-13
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.323468470573422,
+      "observed_best_abs_projection": 1.0107438193125102e-13,
+      "per_fit_layer_observed": {
+        "L14": 7.119308703214426e-14,
+        "L18": 1.0107438193125102e-13,
+        "L19": 9.556788037017358e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.3921054720878585,
+      "observed_best_abs_projection": 1.1729039822081016e-13,
+      "per_fit_layer_observed": {
+        "L14": 5.027792288499842e-14,
+        "L18": 1.0475501435162903e-13,
+        "L19": 1.1729039822081016e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.780767369270323,
+      "observed_best_abs_projection": 9.973373953475907e-14,
+      "per_fit_layer_observed": {
+        "L14": 5.92748026781054e-14,
+        "L18": 4.5366789210182475e-14,
+        "L19": 9.973373953475907e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.6487953186035145,
+      "observed_best_abs_projection": 1.1471137110393994e-13,
+      "per_fit_layer_observed": {
+        "L14": 6.871186137002189e-14,
+        "L18": 1.1471137110393994e-13,
+        "L19": 9.510188710842891e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.7850957632064808,
+      "observed_best_abs_projection": 6.304462483373352e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.801758472855996e-14,
+        "L18": 1.9513298248152953e-14,
+        "L19": 6.304462483373352e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.091272038221359,
+      "observed_best_abs_projection": 5.991166370787511e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.560657904646098e-14,
+        "L18": 1.446716877866555e-14,
+        "L19": 5.991166370787511e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_claude",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3843656718730926,
+      "observed_best_abs_projection": 5.2518261260009334e-14,
+      "per_fit_layer_observed": {
+        "L14": 5.2518261260009334e-14,
+        "L18": 1.8046688254990957e-14,
+        "L19": 4.1111761994384667e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.768873643875121,
+      "observed_best_abs_projection": 2.238141231657475e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.520207523691071e-14,
+        "L18": 2.238141231657475e-14,
+        "L19": 1.9496611533530362e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.8324079513549805,
+      "observed_best_abs_projection": 5.998300587296241e-14,
+      "per_fit_layer_observed": {
+        "L14": 8.939415660651847e-15,
+        "L18": 3.3398697144247118e-15,
+        "L19": 5.998300587296241e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.590573644638057,
+      "observed_best_abs_projection": 3.400628079950866e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.9461154364458232e-14,
+        "L18": 3.400628079950866e-14,
+        "L19": 1.562414707729016e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.240167617797851,
+      "observed_best_abs_projection": 1.8424052319593422e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.6108074228154976e-14,
+        "L18": 1.8424052319593422e-14,
+        "L19": 1.5171947287557874e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.4860128045082077,
+      "observed_best_abs_projection": 6.082525670837951e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.0401011103277715e-14,
+        "L18": 3.254985316788804e-15,
+        "L19": 6.082525670837951e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_claude",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.443443274497985,
+      "observed_best_abs_projection": 3.160523746047492e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.8929489455449224e-14,
+        "L18": 3.160523746047492e-14,
+        "L19": 2.2734458012117055e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3129349052906034,
+      "observed_best_abs_projection": 7.934674568689192e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.968246337692132e-14,
+        "L18": 7.304690576714042e-14,
+        "L19": 7.934674568689192e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.5898932158946988,
+      "observed_best_abs_projection": 2.1661239581922132e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.100118887588041e-14,
+        "L18": 9.54478591413343e-15,
+        "L19": 2.1661239581922132e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_insttext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.257279175519943,
+      "observed_best_abs_projection": 3.847935543546518e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.847935543546518e-14,
+        "L18": 2.3625072828393584e-14,
+        "L19": 1.4784447603257114e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.618901300430295,
+      "observed_best_abs_projection": 1.0025232711431356e-13,
+      "per_fit_layer_observed": {
+        "L14": 7.531048269398675e-14,
+        "L18": 8.396820166629301e-14,
+        "L19": 1.0025232711431356e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_insttext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 5.90817363262176,
+      "observed_best_abs_projection": 5.505514635395596e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.770039004570709e-14,
+        "L18": 5.505514635395596e-14,
+        "L19": 1.8533583764228253e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.307431077957153,
+      "observed_best_abs_projection": 1.6853304439079798e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.3097630901313e-14,
+        "L18": 1.4699243028664135e-13,
+        "L19": 1.6853304439079798e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.555554342269894,
+      "observed_best_abs_projection": 1.0090818843886409e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.0067892186764658e-13,
+        "L18": 1.4733479672817297e-14,
+        "L19": 1.0090818843886409e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_insttext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.0885533094406123,
+      "observed_best_abs_projection": 4.203079568660645e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.018805667873373e-14,
+        "L18": 4.203079568660645e-14,
+        "L19": 2.4050968104416916e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.7808625698089595,
+      "observed_best_abs_projection": 1.8415216107553078e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.3385442998690957e-14,
+        "L18": 1.36796559489651e-13,
+        "L19": 1.8415216107553078e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.423658776283264,
+      "observed_best_abs_projection": 1.612285526135275e-13,
+      "per_fit_layer_observed": {
+        "L14": 5.689466558564954e-14,
+        "L18": 4.917916840047315e-14,
+        "L19": 1.612285526135275e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.483083117008209,
+      "observed_best_abs_projection": 1.465577945724723e-13,
+      "per_fit_layer_observed": {
+        "L14": 3.6933739436665165e-14,
+        "L18": 1.9462013666255112e-14,
+        "L19": 1.465577945724723e-13
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_insttext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2127224624156947,
+      "observed_best_abs_projection": 1.4054812802089477e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.4054812802089477e-13,
+        "L18": 5.130601948755976e-14,
+        "L19": 1.1762252954333894e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.093253803253171,
+      "observed_best_abs_projection": 3.474047401029974e-14,
+      "per_fit_layer_observed": {
+        "L14": 9.082011284512352e-15,
+        "L18": 2.4815539393919015e-14,
+        "L19": 3.474047401029974e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.093048191070555,
+      "observed_best_abs_projection": 6.26350608864492e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.61720576788233e-14,
+        "L18": 3.3504658370023156e-14,
+        "L19": 6.26350608864492e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.4750972032546965,
+      "observed_best_abs_projection": 1.16388451274096e-13,
+      "per_fit_layer_observed": {
+        "L14": 8.987493304065018e-14,
+        "L18": 6.335002991827209e-15,
+        "L19": 1.16388451274096e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.053449022769928,
+      "observed_best_abs_projection": 3.542288535401164e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.0519484164149862e-14,
+        "L18": 2.4042609405250783e-14,
+        "L19": 3.542288535401164e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.033222186565399,
+      "observed_best_abs_projection": 5.232989457244913e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.313382056012675e-14,
+        "L18": 2.583309339102283e-14,
+        "L19": 5.232989457244913e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.7098835349082933,
+      "observed_best_abs_projection": 1.242555234876543e-13,
+      "per_fit_layer_observed": {
+        "L14": 8.63812021844969e-14,
+        "L18": 4.961128659057719e-15,
+        "L19": 1.242555234876543e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3129349052906034,
+      "observed_best_abs_projection": 7.934674568689192e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.968246337692132e-14,
+        "L18": 7.304690576714042e-14,
+        "L19": 7.934674568689192e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.5898932158946988,
+      "observed_best_abs_projection": 2.1661239581922132e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.100118887588041e-14,
+        "L18": 9.54478591413343e-15,
+        "L19": 2.1661239581922132e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_insttext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.257279175519943,
+      "observed_best_abs_projection": 3.847935543546518e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.847935543546518e-14,
+        "L18": 2.3625072828393584e-14,
+        "L19": 1.4784447603257114e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.618901300430295,
+      "observed_best_abs_projection": 1.0025232711431356e-13,
+      "per_fit_layer_observed": {
+        "L14": 7.531048269398675e-14,
+        "L18": 8.396820166629301e-14,
+        "L19": 1.0025232711431356e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_insttext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 5.90817363262176,
+      "observed_best_abs_projection": 5.505514635395596e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.770039004570709e-14,
+        "L18": 5.505514635395596e-14,
+        "L19": 1.8533583764228253e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.307431077957153,
+      "observed_best_abs_projection": 1.6853304439079798e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.3097630901313e-14,
+        "L18": 1.4699243028664135e-13,
+        "L19": 1.6853304439079798e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.555554342269894,
+      "observed_best_abs_projection": 1.0090818843886409e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.0067892186764658e-13,
+        "L18": 1.4733479672817297e-14,
+        "L19": 1.0090818843886409e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_insttext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.0885533094406123,
+      "observed_best_abs_projection": 4.203079568660645e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.018805667873373e-14,
+        "L18": 4.203079568660645e-14,
+        "L19": 2.4050968104416916e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.7808625698089595,
+      "observed_best_abs_projection": 1.8415216107553078e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.3385442998690957e-14,
+        "L18": 1.36796559489651e-13,
+        "L19": 1.8415216107553078e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.423658776283264,
+      "observed_best_abs_projection": 1.612285526135275e-13,
+      "per_fit_layer_observed": {
+        "L14": 5.689466558564954e-14,
+        "L18": 4.917916840047315e-14,
+        "L19": 1.612285526135275e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.483083117008209,
+      "observed_best_abs_projection": 1.465577945724723e-13,
+      "per_fit_layer_observed": {
+        "L14": 3.6933739436665165e-14,
+        "L18": 1.9462013666255112e-14,
+        "L19": 1.465577945724723e-13
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_insttext",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2127224624156947,
+      "observed_best_abs_projection": 1.4054812802089477e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.4054812802089477e-13,
+        "L18": 5.130601948755976e-14,
+        "L19": 1.1762252954333894e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.093253803253171,
+      "observed_best_abs_projection": 3.474047401029974e-14,
+      "per_fit_layer_observed": {
+        "L14": 9.082011284512352e-15,
+        "L18": 2.4815539393919015e-14,
+        "L19": 3.474047401029974e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.093048191070555,
+      "observed_best_abs_projection": 6.26350608864492e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.61720576788233e-14,
+        "L18": 3.3504658370023156e-14,
+        "L19": 6.26350608864492e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.4750972032546965,
+      "observed_best_abs_projection": 1.16388451274096e-13,
+      "per_fit_layer_observed": {
+        "L14": 8.987493304065018e-14,
+        "L18": 6.335002991827209e-15,
+        "L19": 1.16388451274096e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.053449022769928,
+      "observed_best_abs_projection": 3.542288535401164e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.0519484164149862e-14,
+        "L18": 2.4042609405250783e-14,
+        "L19": 3.542288535401164e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.033222186565399,
+      "observed_best_abs_projection": 5.232989457244913e-14,
+      "per_fit_layer_observed": {
+        "L14": 3.313382056012675e-14,
+        "L18": 2.583309339102283e-14,
+        "L19": 5.232989457244913e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_insttext",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 2.7098835349082933,
+      "observed_best_abs_projection": 1.242555234876543e-13,
+      "per_fit_layer_observed": {
+        "L14": 8.63812021844969e-14,
+        "L18": 4.961128659057719e-15,
+        "L19": 1.242555234876543e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.771438801288604,
+      "observed_best_abs_projection": 1.0621746375658946e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.044741982377643e-14,
+        "L18": 6.507320904704615e-14,
+        "L19": 1.0621746375658946e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3350680768489835,
+      "observed_best_abs_projection": 9.253627252546988e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.30720539317268e-14,
+        "L18": 2.1767788966117666e-14,
+        "L19": 9.253627252546988e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1385842084884643,
+      "observed_best_abs_projection": 1.3950819086253603e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.8768340634498308e-14,
+        "L18": 2.2510474696865117e-14,
+        "L19": 1.3950819086253603e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.97497911453247,
+      "observed_best_abs_projection": 2.4990334927380034e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.9132374616281816e-14,
+        "L18": 2.4990334927380034e-13,
+        "L19": 2.2825516094051505e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.392995047569273,
+      "observed_best_abs_projection": 8.360402936434059e-14,
+      "per_fit_layer_observed": {
+        "L14": 8.360402936434059e-14,
+        "L18": 5.406686189660868e-14,
+        "L19": 3.610252397873137e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.120717120170592,
+      "observed_best_abs_projection": 2.363299775202969e-13,
+      "per_fit_layer_observed": {
+        "L14": 9.439909871170723e-14,
+        "L18": 2.363299775202969e-13,
+        "L19": 1.8942880454372923e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 5.953744244575496,
+      "observed_best_abs_projection": 2.531006103471808e-13,
+      "per_fit_layer_observed": {
+        "L14": 2.651020765270947e-14,
+        "L18": 2.531006103471808e-13,
+        "L19": 1.4709097658105708e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 4.79436159133911,
+      "observed_best_abs_projection": 8.194863394055422e-14,
+      "per_fit_layer_observed": {
+        "L14": 8.194863394055422e-14,
+        "L18": 4.531712833221763e-14,
+        "L19": 3.2830275397743825e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.936510324478149,
+      "observed_best_abs_projection": 2.270924538536574e-13,
+      "per_fit_layer_observed": {
+        "L14": 8.350817883757023e-14,
+        "L18": 2.270924538536574e-13,
+        "L19": 1.9256916374442803e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.8016283571720113,
+      "observed_best_abs_projection": 1.5670727818545576e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.3755804277558074e-13,
+        "L18": 8.723549822371573e-14,
+        "L19": 1.5670727818545576e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.334024804830551,
+      "observed_best_abs_projection": 1.7378535281497247e-13,
+      "per_fit_layer_observed": {
+        "L14": 2.4963087859979724e-14,
+        "L18": 3.5406131304598545e-14,
+        "L19": 1.7378535281497247e-13
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.007482022047042,
+      "observed_best_abs_projection": 1.0293835651738469e-13,
+      "per_fit_layer_observed": {
+        "L14": 6.015170438096521e-14,
+        "L18": 8.144069893848738e-14,
+        "L19": 1.0293835651738469e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.327052879333497,
+      "observed_best_abs_projection": 1.2966571053507061e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.589013331531359e-14,
+        "L18": 1.2966571053507061e-13,
+        "L19": 7.489221649499968e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.373483037948606,
+      "observed_best_abs_projection": 1.2741595152826754e-13,
+      "per_fit_layer_observed": {
+        "L14": 3.4774371441924046e-14,
+        "L18": 1.2741595152826754e-13,
+        "L19": 2.2073155890305834e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.498839139938352,
+      "observed_best_abs_projection": 8.964598734357454e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.4898741050918636e-14,
+        "L18": 8.964598734357454e-14,
+        "L19": 1.891690567809007e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.1324534654617295,
+      "observed_best_abs_projection": 1.3507292415407542e-13,
+      "per_fit_layer_observed": {
+        "L14": 5.1940547041214505e-14,
+        "L18": 1.3507292415407542e-13,
+        "L19": 7.828314636051584e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 4.634254097938535,
+      "observed_best_abs_projection": 1.4278830921011668e-13,
+      "per_fit_layer_observed": {
+        "L14": 3.0799625347531425e-14,
+        "L18": 1.4278830921011668e-13,
+        "L19": 1.4056377405223958e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.685758972167966,
+      "observed_best_abs_projection": 9.492847177816979e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.4281822514679185e-14,
+        "L18": 9.492847177816979e-14,
+        "L19": 2.3775337378759296e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.771438801288604,
+      "observed_best_abs_projection": 1.0621746375658946e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.044741982377643e-14,
+        "L18": 6.507320904704615e-14,
+        "L19": 1.0621746375658946e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3350680768489835,
+      "observed_best_abs_projection": 9.253627252546988e-14,
+      "per_fit_layer_observed": {
+        "L14": 4.30720539317268e-14,
+        "L18": 2.1767788966117666e-14,
+        "L19": 9.253627252546988e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1385842084884643,
+      "observed_best_abs_projection": 1.3950819086253603e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.8768340634498308e-14,
+        "L18": 2.2510474696865117e-14,
+        "L19": 1.3950819086253603e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.97497911453247,
+      "observed_best_abs_projection": 2.4990334927380034e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.9132374616281816e-14,
+        "L18": 2.4990334927380034e-13,
+        "L19": 2.2825516094051505e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.392995047569273,
+      "observed_best_abs_projection": 8.360402936434059e-14,
+      "per_fit_layer_observed": {
+        "L14": 8.360402936434059e-14,
+        "L18": 5.406686189660868e-14,
+        "L19": 3.610252397873137e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.120717120170592,
+      "observed_best_abs_projection": 2.363299775202969e-13,
+      "per_fit_layer_observed": {
+        "L14": 9.439909871170723e-14,
+        "L18": 2.363299775202969e-13,
+        "L19": 1.8942880454372923e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 5.953744244575496,
+      "observed_best_abs_projection": 2.531006103471808e-13,
+      "per_fit_layer_observed": {
+        "L14": 2.651020765270947e-14,
+        "L18": 2.531006103471808e-13,
+        "L19": 1.4709097658105708e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 4.79436159133911,
+      "observed_best_abs_projection": 8.194863394055422e-14,
+      "per_fit_layer_observed": {
+        "L14": 8.194863394055422e-14,
+        "L18": 4.531712833221763e-14,
+        "L19": 3.2830275397743825e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.936510324478149,
+      "observed_best_abs_projection": 2.270924538536574e-13,
+      "per_fit_layer_observed": {
+        "L14": 8.350817883757023e-14,
+        "L18": 2.270924538536574e-13,
+        "L19": 1.9256916374442803e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.8016283571720113,
+      "observed_best_abs_projection": 1.5670727818545576e-13,
+      "per_fit_layer_observed": {
+        "L14": 1.3755804277558074e-13,
+        "L18": 8.723549822371573e-14,
+        "L19": 1.5670727818545576e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.334024804830551,
+      "observed_best_abs_projection": 1.7378535281497247e-13,
+      "per_fit_layer_observed": {
+        "L14": 2.4963087859979724e-14,
+        "L18": 3.5406131304598545e-14,
+        "L19": 1.7378535281497247e-13
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_own",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.007482022047042,
+      "observed_best_abs_projection": 1.0293835651738469e-13,
+      "per_fit_layer_observed": {
+        "L14": 6.015170438096521e-14,
+        "L18": 8.144069893848738e-14,
+        "L19": 1.0293835651738469e-13
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.327052879333497,
+      "observed_best_abs_projection": 1.2966571053507061e-13,
+      "per_fit_layer_observed": {
+        "L14": 4.589013331531359e-14,
+        "L18": 1.2966571053507061e-13,
+        "L19": 7.489221649499968e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.373483037948606,
+      "observed_best_abs_projection": 1.2741595152826754e-13,
+      "per_fit_layer_observed": {
+        "L14": 3.4774371441924046e-14,
+        "L18": 1.2741595152826754e-13,
+        "L19": 2.2073155890305834e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.498839139938352,
+      "observed_best_abs_projection": 8.964598734357454e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.4898741050918636e-14,
+        "L18": 8.964598734357454e-14,
+        "L19": 1.891690567809007e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 6.1324534654617295,
+      "observed_best_abs_projection": 1.3507292415407542e-13,
+      "per_fit_layer_observed": {
+        "L14": 5.1940547041214505e-14,
+        "L18": 1.3507292415407542e-13,
+        "L19": 7.828314636051584e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 4.634254097938535,
+      "observed_best_abs_projection": 1.4278830921011668e-13,
+      "per_fit_layer_observed": {
+        "L14": 3.0799625347531425e-14,
+        "L18": 1.4278830921011668e-13,
+        "L19": 1.4056377405223958e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_own",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 3.685758972167966,
+      "observed_best_abs_projection": 9.492847177816979e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.4281822514679185e-14,
+        "L18": 9.492847177816979e-14,
+        "L19": 2.3775337378759296e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.720912170410156,
+      "observed_best_abs_projection": 5.971089266095464e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.5565913481728627e-14,
+        "L18": 5.971089266095464e-14,
+        "L19": 4.062190929933761e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1224573314189905,
+      "observed_best_abs_projection": 4.032536589945427e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.370587237551639e-14,
+        "L18": 2.861572933231538e-14,
+        "L19": 4.032536589945427e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2846164584159852,
+      "observed_best_abs_projection": 5.887271106503909e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.3478184039303942e-14,
+        "L18": 3.0437377046913684e-14,
+        "L19": 5.887271106503909e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3453864634037014,
+      "observed_best_abs_projection": 6.227455355480007e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.5895444183062355e-14,
+        "L18": 3.9638196669393884e-14,
+        "L19": 6.227455355480007e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 0.9964660257101059,
+      "observed_best_abs_projection": 2.301860497841615e-14,
+      "per_fit_layer_observed": {
+        "L14": 7.635377719786904e-15,
+        "L18": 3.794327831011153e-15,
+        "L19": 2.301860497841615e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 0.9451827406883233,
+      "observed_best_abs_projection": 2.0332553856398823e-14,
+      "per_fit_layer_observed": {
+        "L14": 8.445148417764454e-15,
+        "L18": 7.77547521669727e-15,
+        "L19": 2.0332553856398823e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.99517068862915,
+      "observed_best_abs_projection": 1.1256428309219344e-13,
+      "per_fit_layer_observed": {
+        "L14": 3.0017693686838206e-14,
+        "L18": 2.6109340035726754e-14,
+        "L19": 1.1256428309219344e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.9848417758941626,
+      "observed_best_abs_projection": 1.924007051944409e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.217166476868351e-14,
+        "L18": 1.2755635718086554e-14,
+        "L19": 1.924007051944409e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.415688133239744,
+      "observed_best_abs_projection": 3.252894311258485e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.3511864556406594e-14,
+        "L18": 1.065497894939929e-14,
+        "L19": 3.252894311258485e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.6718616783618925,
+      "observed_best_abs_projection": 5.1405016796507586e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.5481017655284327e-14,
+        "L18": 5.1405016796507586e-14,
+        "L19": 4.911729600585013e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1072299838066098,
+      "observed_best_abs_projection": 1.5307918291010686e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.140531039640021e-14,
+        "L18": 1.5307918291010686e-14,
+        "L19": 1.196337984515179e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3333641350269314,
+      "observed_best_abs_projection": 5.592667868756479e-14,
+      "per_fit_layer_observed": {
+        "L14": 5.592667868756479e-14,
+        "L18": 2.1759799951405908e-14,
+        "L19": 2.9396729375016777e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.4102516531944265,
+      "observed_best_abs_projection": 2.4272257264418966e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.561528904292666e-15,
+        "L18": 2.4272257264418966e-14,
+        "L19": 2.1750269879263842e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 0.9582994788885114,
+      "observed_best_abs_projection": 8.349994414296605e-15,
+      "per_fit_layer_observed": {
+        "L14": 3.795623539779992e-15,
+        "L18": 3.1247825956785582e-15,
+        "L19": 8.349994414296605e-15
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 0.9752662062644958,
+      "observed_best_abs_projection": 1.1494652646027802e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.1494652646027802e-14,
+        "L18": 4.8780147076004426e-15,
+        "L19": 8.778817480097918e-15
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.508527374267576,
+      "observed_best_abs_projection": 2.6623323924506114e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.4263116596385903e-15,
+        "L18": 2.6623323924506114e-14,
+        "L19": 1.94221341597075e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.852994132041931,
+      "observed_best_abs_projection": 7.419653952475672e-15,
+      "per_fit_layer_observed": {
+        "L14": 4.4549458589148346e-15,
+        "L18": 3.2585456735038816e-15,
+        "L19": 7.419653952475672e-15
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "context_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.264925956726072,
+      "observed_best_abs_projection": 1.3003195506612147e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.3003195506612147e-14,
+        "L18": 5.3701717327600554e-15,
+        "L19": 9.050785615689437e-15
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.720912170410156,
+      "observed_best_abs_projection": 5.971089266095464e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.5565913481728627e-14,
+        "L18": 5.971089266095464e-14,
+        "L19": 4.062190929933761e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1224573314189905,
+      "observed_best_abs_projection": 4.032536589945427e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.370587237551639e-14,
+        "L18": 2.861572933231538e-14,
+        "L19": 4.032536589945427e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.2846164584159852,
+      "observed_best_abs_projection": 5.887271106503909e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.3478184039303942e-14,
+        "L18": 3.0437377046913684e-14,
+        "L19": 5.887271106503909e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3453864634037014,
+      "observed_best_abs_projection": 6.227455355480007e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.5895444183062355e-14,
+        "L18": 3.9638196669393884e-14,
+        "L19": 6.227455355480007e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 0.9964660257101059,
+      "observed_best_abs_projection": 2.301860497841615e-14,
+      "per_fit_layer_observed": {
+        "L14": 7.635377719786904e-15,
+        "L18": 3.794327831011153e-15,
+        "L19": 2.301860497841615e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 0.9451827406883233,
+      "observed_best_abs_projection": 2.0332553856398823e-14,
+      "per_fit_layer_observed": {
+        "L14": 8.445148417764454e-15,
+        "L18": 7.77547521669727e-15,
+        "L19": 2.0332553856398823e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.99517068862915,
+      "observed_best_abs_projection": 1.1256428309219344e-13,
+      "per_fit_layer_observed": {
+        "L14": 3.0017693686838206e-14,
+        "L18": 2.6109340035726754e-14,
+        "L19": 1.1256428309219344e-13
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.9848417758941626,
+      "observed_best_abs_projection": 1.924007051944409e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.217166476868351e-14,
+        "L18": 1.2755635718086554e-14,
+        "L19": 1.924007051944409e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "ambient",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.415688133239744,
+      "observed_best_abs_projection": 3.252894311258485e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.3511864556406594e-14,
+        "L18": 1.065497894939929e-14,
+        "L19": 3.252894311258485e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.6718616783618925,
+      "observed_best_abs_projection": 5.1405016796507586e-14,
+      "per_fit_layer_observed": {
+        "L14": 2.5481017655284327e-14,
+        "L18": 5.1405016796507586e-14,
+        "L19": 4.911729600585013e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.1072299838066098,
+      "observed_best_abs_projection": 1.5307918291010686e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.140531039640021e-14,
+        "L18": 1.5307918291010686e-14,
+        "L19": 1.196337984515179e-14
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_shuf",
+      "factor": "f",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.3333641350269314,
+      "observed_best_abs_projection": 5.592667868756479e-14,
+      "per_fit_layer_observed": {
+        "L14": 5.592667868756479e-14,
+        "L18": 2.1759799951405908e-14,
+        "L19": 2.9396729375016777e-14
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 1.4102516531944265,
+      "observed_best_abs_projection": 2.4272257264418966e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.561528904292666e-15,
+        "L18": 2.4272257264418966e-14,
+        "L19": 2.1750269879263842e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 0.9582994788885114,
+      "observed_best_abs_projection": 8.349994414296605e-15,
+      "per_fit_layer_observed": {
+        "L14": 3.795623539779992e-15,
+        "L18": 3.1247825956785582e-15,
+        "L19": 8.349994414296605e-15
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_shuf",
+      "factor": "g",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 0.9752662062644958,
+      "observed_best_abs_projection": 1.1494652646027802e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.1494652646027802e-14,
+        "L18": 4.8780147076004426e-15,
+        "L19": 8.778817480097918e-15
+      },
+      "trait": "sycophancy"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 18,
+      "cell": "cell_pre_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.508527374267576,
+      "observed_best_abs_projection": 2.6623323924506114e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.4263116596385903e-15,
+        "L18": 2.6623323924506114e-14,
+        "L19": 1.94221341597075e-14
+      },
+      "trait": "evil"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 19,
+      "cell": "cell_pre_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 7.852994132041931,
+      "observed_best_abs_projection": 7.419653952475672e-15,
+      "per_fit_layer_observed": {
+        "L14": 4.4549458589148346e-15,
+        "L18": 3.2585456735038816e-15,
+        "L19": 7.419653952475672e-15
+      },
+      "trait": "hallucination"
+    },
+    {
+      "arm": "prefix_end",
+      "basis": "pca48",
+      "best_fit_layer": 14,
+      "cell": "cell_pre_shuf",
+      "factor": "i",
+      "fit_arm": "A",
+      "n_draws": 200,
+      "null_p95_conservative": 8.264925956726072,
+      "observed_best_abs_projection": 1.3003195506612147e-14,
+      "per_fit_layer_observed": {
+        "L14": 1.3003195506612147e-14,
+        "L18": 5.3701717327600554e-15,
+        "L19": 9.050785615689437e-15
+      },
+      "trait": "sycophancy"
+    }
+  ]
+}

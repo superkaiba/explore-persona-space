@@ -1,0 +1,1916 @@
+{
+  "commit": "1b104689cc",
+  "created": "2026-07-10T15:41:23Z",
+  "figsize": [
+    8.4,
+    3.6
+  ],
+  "points": [
+    {
+      "read-out layer": 0.0,
+      "Pearson r vs judged trait score": -0.06106860681988944,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 1.0,
+      "Pearson r vs judged trait score": -0.21364323815948683,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 2.0,
+      "Pearson r vs judged trait score": -0.18642568607009638,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 3.0,
+      "Pearson r vs judged trait score": 0.1745882347888934,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 4.0,
+      "Pearson r vs judged trait score": 0.10391469439290679,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 5.0,
+      "Pearson r vs judged trait score": -0.041208104287670765,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 6.0,
+      "Pearson r vs judged trait score": -0.16460627402125946,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 7.0,
+      "Pearson r vs judged trait score": -0.17468832172684476,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 8.0,
+      "Pearson r vs judged trait score": -0.23758769386617948,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 9.0,
+      "Pearson r vs judged trait score": -0.14226873936648954,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 10.0,
+      "Pearson r vs judged trait score": -0.17428789548733212,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 11.0,
+      "Pearson r vs judged trait score": -0.115736241971667,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 12.0,
+      "Pearson r vs judged trait score": -0.15213486446395236,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 13.0,
+      "Pearson r vs judged trait score": -0.22569068886348492,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 14.0,
+      "Pearson r vs judged trait score": -0.17537497293060425,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 15.0,
+      "Pearson r vs judged trait score": -0.2028409371297925,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 16.0,
+      "Pearson r vs judged trait score": -0.15640960734569728,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 17.0,
+      "Pearson r vs judged trait score": -0.12026503376260196,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 18.0,
+      "Pearson r vs judged trait score": -0.1130795718355826,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 19.0,
+      "Pearson r vs judged trait score": -0.08662884910283086,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 20.0,
+      "Pearson r vs judged trait score": -0.20578054224489978,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 21.0,
+      "Pearson r vs judged trait score": -0.2222227670731829,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 22.0,
+      "Pearson r vs judged trait score": -0.2271518446408485,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 23.0,
+      "Pearson r vs judged trait score": -0.19908268139250004,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 24.0,
+      "Pearson r vs judged trait score": -0.1746942307328764,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 25.0,
+      "Pearson r vs judged trait score": -0.1836459146700059,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 26.0,
+      "Pearson r vs judged trait score": -0.2256497199178888,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 27.0,
+      "Pearson r vs judged trait score": -0.18114692537456342,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 0.0,
+      "Pearson r vs judged trait score": 0.07598621715800817,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 1.0,
+      "Pearson r vs judged trait score": 0.07359565804852078,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 2.0,
+      "Pearson r vs judged trait score": 0.08107876944900314,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 3.0,
+      "Pearson r vs judged trait score": 0.06970393461271779,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 4.0,
+      "Pearson r vs judged trait score": 0.07304511480957895,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 5.0,
+      "Pearson r vs judged trait score": 0.07083548819054193,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 6.0,
+      "Pearson r vs judged trait score": 0.0722613529534673,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 7.0,
+      "Pearson r vs judged trait score": 0.07068699350813967,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 8.0,
+      "Pearson r vs judged trait score": 0.07498771611225973,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 9.0,
+      "Pearson r vs judged trait score": 0.07114670356363846,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 10.0,
+      "Pearson r vs judged trait score": 0.06981568909589644,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 11.0,
+      "Pearson r vs judged trait score": 0.0770235928261525,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 12.0,
+      "Pearson r vs judged trait score": 0.07281426483152742,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 13.0,
+      "Pearson r vs judged trait score": 0.07053960341980307,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 14.0,
+      "Pearson r vs judged trait score": 0.07329669034036494,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 15.0,
+      "Pearson r vs judged trait score": 0.07171375338505075,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 16.0,
+      "Pearson r vs judged trait score": 0.07251792770486179,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 17.0,
+      "Pearson r vs judged trait score": 0.07347465872864063,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 18.0,
+      "Pearson r vs judged trait score": 0.07242182778016995,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 19.0,
+      "Pearson r vs judged trait score": 0.0737389279405651,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 20.0,
+      "Pearson r vs judged trait score": 0.07637341176352191,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 21.0,
+      "Pearson r vs judged trait score": 0.07788099673447385,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 22.0,
+      "Pearson r vs judged trait score": 0.07766727488067153,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 23.0,
+      "Pearson r vs judged trait score": 0.08046416147124733,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 24.0,
+      "Pearson r vs judged trait score": 0.07394995828769131,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 25.0,
+      "Pearson r vs judged trait score": 0.07293994278707847,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 26.0,
+      "Pearson r vs judged trait score": 0.07608816869395846,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 27.0,
+      "Pearson r vs judged trait score": 0.06662867156867025,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 0.0,
+      "Pearson r vs judged trait score": -0.07598621715800817,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 1.0,
+      "Pearson r vs judged trait score": -0.07359565804852078,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 2.0,
+      "Pearson r vs judged trait score": -0.08107876944900314,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 3.0,
+      "Pearson r vs judged trait score": -0.06970393461271779,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 4.0,
+      "Pearson r vs judged trait score": -0.07304511480957895,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 5.0,
+      "Pearson r vs judged trait score": -0.07083548819054193,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 6.0,
+      "Pearson r vs judged trait score": -0.0722613529534673,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 7.0,
+      "Pearson r vs judged trait score": -0.07068699350813967,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 8.0,
+      "Pearson r vs judged trait score": -0.07498771611225973,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 9.0,
+      "Pearson r vs judged trait score": -0.07114670356363846,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 10.0,
+      "Pearson r vs judged trait score": -0.06981568909589644,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 11.0,
+      "Pearson r vs judged trait score": -0.0770235928261525,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 12.0,
+      "Pearson r vs judged trait score": -0.07281426483152742,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 13.0,
+      "Pearson r vs judged trait score": -0.07053960341980307,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 14.0,
+      "Pearson r vs judged trait score": -0.07329669034036494,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 15.0,
+      "Pearson r vs judged trait score": -0.07171375338505075,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 16.0,
+      "Pearson r vs judged trait score": -0.07251792770486179,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 17.0,
+      "Pearson r vs judged trait score": -0.07347465872864063,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 18.0,
+      "Pearson r vs judged trait score": -0.07242182778016995,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 19.0,
+      "Pearson r vs judged trait score": -0.0737389279405651,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 20.0,
+      "Pearson r vs judged trait score": -0.07637341176352191,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 21.0,
+      "Pearson r vs judged trait score": -0.07788099673447385,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 22.0,
+      "Pearson r vs judged trait score": -0.07766727488067153,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 23.0,
+      "Pearson r vs judged trait score": -0.08046416147124733,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 24.0,
+      "Pearson r vs judged trait score": -0.07394995828769131,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 25.0,
+      "Pearson r vs judged trait score": -0.07293994278707847,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 26.0,
+      "Pearson r vs judged trait score": -0.07608816869395846,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 27.0,
+      "Pearson r vs judged trait score": -0.06662867156867025,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 0.0,
+      "Pearson r vs judged trait score": 0.10634281850380647,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 1.0,
+      "Pearson r vs judged trait score": -0.07735269014629564,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 2.0,
+      "Pearson r vs judged trait score": -0.1066893918128969,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 3.0,
+      "Pearson r vs judged trait score": 0.0352847695234,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 4.0,
+      "Pearson r vs judged trait score": 0.021694924427610392,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 5.0,
+      "Pearson r vs judged trait score": 0.0037022857571647875,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 6.0,
+      "Pearson r vs judged trait score": -0.22111832677415752,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 7.0,
+      "Pearson r vs judged trait score": -0.19781934107074028,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 8.0,
+      "Pearson r vs judged trait score": -0.2237606229732355,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 9.0,
+      "Pearson r vs judged trait score": -0.1578457978561795,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 10.0,
+      "Pearson r vs judged trait score": -0.16796181638510704,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 11.0,
+      "Pearson r vs judged trait score": -0.1872584855483042,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 12.0,
+      "Pearson r vs judged trait score": -0.13128219682583195,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 13.0,
+      "Pearson r vs judged trait score": -0.23167962689286045,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 14.0,
+      "Pearson r vs judged trait score": -0.18615108519807308,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 15.0,
+      "Pearson r vs judged trait score": -0.1868771464661303,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 16.0,
+      "Pearson r vs judged trait score": -0.17835578211614897,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 17.0,
+      "Pearson r vs judged trait score": -0.12221336730453594,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 18.0,
+      "Pearson r vs judged trait score": -0.11216095066039451,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 19.0,
+      "Pearson r vs judged trait score": -0.04362582428615012,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 20.0,
+      "Pearson r vs judged trait score": 0.03405452434883338,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 21.0,
+      "Pearson r vs judged trait score": 0.05299165763518188,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 22.0,
+      "Pearson r vs judged trait score": 0.1065747973066658,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 23.0,
+      "Pearson r vs judged trait score": 0.051569900950947684,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 24.0,
+      "Pearson r vs judged trait score": 0.004039711661505336,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 25.0,
+      "Pearson r vs judged trait score": 0.013745337841756404,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 26.0,
+      "Pearson r vs judged trait score": -0.016707997715068684,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 27.0,
+      "Pearson r vs judged trait score": 0.0675404510645387,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 0.0,
+      "Pearson r vs judged trait score": 0.030036810085911858,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 1.0,
+      "Pearson r vs judged trait score": 0.26769638165352017,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 2.0,
+      "Pearson r vs judged trait score": 0.27733969539410713,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 3.0,
+      "Pearson r vs judged trait score": -0.10588586226380887,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 4.0,
+      "Pearson r vs judged trait score": -0.11897881074688998,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 5.0,
+      "Pearson r vs judged trait score": -0.23836065064616016,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 6.0,
+      "Pearson r vs judged trait score": -0.21788100305749664,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 7.0,
+      "Pearson r vs judged trait score": -0.18589161927967776,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 8.0,
+      "Pearson r vs judged trait score": -0.07245581945573167,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 9.0,
+      "Pearson r vs judged trait score": -0.18247579080867446,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 10.0,
+      "Pearson r vs judged trait score": -0.16118692722132535,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 11.0,
+      "Pearson r vs judged trait score": -0.21788127130104568,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 12.0,
+      "Pearson r vs judged trait score": -0.20906586250254555,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 13.0,
+      "Pearson r vs judged trait score": -0.2221552130487201,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 14.0,
+      "Pearson r vs judged trait score": -0.23842061123428035,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 15.0,
+      "Pearson r vs judged trait score": -0.23118525599365558,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 16.0,
+      "Pearson r vs judged trait score": -0.23591226166658544,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 17.0,
+      "Pearson r vs judged trait score": -0.22946959023153224,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 18.0,
+      "Pearson r vs judged trait score": -0.25868625012166946,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 19.0,
+      "Pearson r vs judged trait score": -0.19875743870850626,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 20.0,
+      "Pearson r vs judged trait score": -0.16934333587498915,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 21.0,
+      "Pearson r vs judged trait score": -0.13587135998325484,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 22.0,
+      "Pearson r vs judged trait score": -0.1050002436631129,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 23.0,
+      "Pearson r vs judged trait score": -0.13751507924307227,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 24.0,
+      "Pearson r vs judged trait score": -0.16835927332044925,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 25.0,
+      "Pearson r vs judged trait score": -0.16022220477959917,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 26.0,
+      "Pearson r vs judged trait score": -0.17112194807152892,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 27.0,
+      "Pearson r vs judged trait score": -0.08461107269461028,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 0.0,
+      "y": 0.12329952504609094,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 1.0,
+      "y": 0.05291166753922455,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 2.0,
+      "y": 0.03990902560433357,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 3.0,
+      "y": -0.003939223764669176,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 4.0,
+      "y": 0.0070337426120552484,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 5.0,
+      "y": 0.04566872821313153,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 6.0,
+      "y": 0.05399800729630786,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 7.0,
+      "y": 0.094150914942534,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 8.0,
+      "y": 0.069378609018443,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 9.0,
+      "y": 0.11121995076846933,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 10.0,
+      "y": 0.07727753562331219,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 11.0,
+      "y": 0.07856504356632658,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 12.0,
+      "y": 0.08492246788076531,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 13.0,
+      "y": 0.07264152375275562,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 14.0,
+      "y": 0.10784034307279088,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 15.0,
+      "y": 0.11023231900163719,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 16.0,
+      "y": 0.1073900067508666,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 17.0,
+      "y": 0.09157401159139389,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 18.0,
+      "y": 0.08642366242657666,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 19.0,
+      "y": 0.09156689718867517,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 20.0,
+      "y": 0.06330694469300613,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 21.0,
+      "y": 0.04702804738360343,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 22.0,
+      "y": 0.03267368683200091,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 23.0,
+      "y": 0.024178140687719032,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 24.0,
+      "y": 0.03085384140426674,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 25.0,
+      "y": 0.02765598809408386,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 26.0,
+      "y": 0.028798353628510295,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 27.0,
+      "y": 0.0013738165610247411,
+      "series": "prefix-based input",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 0.0,
+      "y": 0.0815596913062161,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 1.0,
+      "y": 0.07878521762357342,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 2.0,
+      "y": 0.07622992868933,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 3.0,
+      "y": 0.07683163328136186,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 4.0,
+      "y": 0.0775246477207012,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 5.0,
+      "y": 0.07262909296804188,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 6.0,
+      "y": 0.07088259566135019,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 7.0,
+      "y": 0.07506619714040483,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 8.0,
+      "y": 0.07507359491779277,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 9.0,
+      "y": 0.06700244931943317,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 10.0,
+      "y": 0.06743293753365048,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 11.0,
+      "y": 0.08098687402224522,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 12.0,
+      "y": 0.0737657614979057,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 13.0,
+      "y": 0.07354498714167354,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 14.0,
+      "y": 0.0707839149618973,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 15.0,
+      "y": 0.06334142837208107,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 16.0,
+      "y": 0.06447551216331124,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 17.0,
+      "y": 0.06438104095869855,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 18.0,
+      "y": 0.07661973943037025,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 19.0,
+      "y": 0.07737143488915092,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 20.0,
+      "y": 0.07734275565204586,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 21.0,
+      "y": 0.08182192562447743,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 22.0,
+      "y": 0.08253346471647026,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 23.0,
+      "y": 0.07960194577689163,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 24.0,
+      "y": 0.0748453881832053,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 25.0,
+      "y": 0.07533420176517436,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 26.0,
+      "y": 0.08115303482592266,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 27.0,
+      "y": 0.07735206642996068,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 0.0,
+      "y": -0.0815596913062161,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 1.0,
+      "y": -0.07878521762357342,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 2.0,
+      "y": -0.07622992868933,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 3.0,
+      "y": -0.07683163328136186,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 4.0,
+      "y": -0.0775246477207012,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 5.0,
+      "y": -0.07262909296804188,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 6.0,
+      "y": -0.07088259566135019,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 7.0,
+      "y": -0.07506619714040483,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 8.0,
+      "y": -0.07507359491779277,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 9.0,
+      "y": -0.06700244931943317,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 10.0,
+      "y": -0.06743293753365048,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 11.0,
+      "y": -0.08098687402224522,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 12.0,
+      "y": -0.0737657614979057,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 13.0,
+      "y": -0.07354498714167354,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 14.0,
+      "y": -0.0707839149618973,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 15.0,
+      "y": -0.06334142837208107,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 16.0,
+      "y": -0.06447551216331124,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 17.0,
+      "y": -0.06438104095869855,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 18.0,
+      "y": -0.07661973943037025,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 19.0,
+      "y": -0.07737143488915092,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 20.0,
+      "y": -0.07734275565204586,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 21.0,
+      "y": -0.08182192562447743,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 22.0,
+      "y": -0.08253346471647026,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 23.0,
+      "y": -0.07960194577689163,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 24.0,
+      "y": -0.0748453881832053,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 25.0,
+      "y": -0.07533420176517436,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 26.0,
+      "y": -0.08115303482592266,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 27.0,
+      "y": -0.07735206642996068,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 0.0,
+      "y": 0.06132923131041306,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 1.0,
+      "y": -0.032662772761332,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 2.0,
+      "y": -0.06429019780463184,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 3.0,
+      "y": -0.09512188103026893,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 4.0,
+      "y": -0.08234361936182963,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 5.0,
+      "y": -0.06850674174197782,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 6.0,
+      "y": 0.10838379475389492,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 7.0,
+      "y": 0.2241063042337852,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 8.0,
+      "y": 0.261593360283431,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 9.0,
+      "y": 0.23179068204486333,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 10.0,
+      "y": 0.3453929493317963,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 11.0,
+      "y": 0.24801905311139316,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 12.0,
+      "y": 0.25799729455646037,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 13.0,
+      "y": 0.25292575352595076,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 14.0,
+      "y": 0.09847428520075813,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 15.0,
+      "y": 0.1281614328357051,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 16.0,
+      "y": 0.07743001194931282,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 17.0,
+      "y": 0.13676559388679277,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 18.0,
+      "y": 0.175656870971508,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 19.0,
+      "y": 0.17964221055509227,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 20.0,
+      "y": 0.18914945845321574,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 21.0,
+      "y": 0.16079439377492147,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 22.0,
+      "y": 0.1470961869511823,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 23.0,
+      "y": 0.13672389656347095,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 24.0,
+      "y": 0.14781288701518078,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 25.0,
+      "y": 0.13683001674047762,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 26.0,
+      "y": 0.12374788666138936,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 27.0,
+      "y": 0.15198231154843864,
+      "series": "context-based input",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 0.0,
+      "y": 0.015587367694651362,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 1.0,
+      "y": -0.08415934277741778,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 2.0,
+      "y": -0.08113516223704162,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 3.0,
+      "y": -0.12397656529116591,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 4.0,
+      "y": -0.10193984244902422,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 5.0,
+      "y": -0.10233171361769969,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 6.0,
+      "y": 0.03575095616583185,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 7.0,
+      "y": 0.1584057855188847,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 8.0,
+      "y": 0.159561986177822,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 9.0,
+      "y": 0.21528930764253282,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 10.0,
+      "y": 0.24391940784728772,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 11.0,
+      "y": 0.15542700436403997,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 12.0,
+      "y": 0.26516909728858457,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 13.0,
+      "y": 0.21946137581135677,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 14.0,
+      "y": 0.060052656518487055,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 15.0,
+      "y": 0.1109282868474361,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 16.0,
+      "y": 0.052908745519297674,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 17.0,
+      "y": 0.10154417805368514,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 18.0,
+      "y": 0.1257451528687651,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 19.0,
+      "y": 0.1321374760261767,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 20.0,
+      "y": 0.15697249109907951,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 21.0,
+      "y": 0.1436143517560636,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 22.0,
+      "y": 0.13714095226969888,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 23.0,
+      "y": 0.13220463563224905,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 24.0,
+      "y": 0.14125798104483525,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 25.0,
+      "y": 0.12788800282359752,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 26.0,
+      "y": 0.11810984815212608,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 27.0,
+      "y": 0.11880897054676624,
+      "series": "bare-query input",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 280
+}

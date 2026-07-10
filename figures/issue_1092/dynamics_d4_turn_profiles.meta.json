@@ -1,0 +1,1692 @@
+{
+  "commit": "1b104689cc",
+  "created": "2026-07-10T15:41:22Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.00905620819909636,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.09911429731034671,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.13560174224434474,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.13467107632617803,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.12178287059508286,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.1055641308683205,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.08904748826866193,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.084758264736294,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.06383150632126944,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.034318138971003,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.019404557704777448,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.007615201967521967,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.028213516908674352,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.05936306201305164,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.06267265635970576,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.10625544604921622,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.10472175492580282,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.1586983782295237,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.2055181631184202,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.28245807359410957,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.28770986139769383,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6274007460730151,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.5912442944441185,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6656051433653045,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6870264065872529,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.0677560345527994,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.0223782340963217,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.2229191203676621,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.9446075739500137,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.4567906311996315,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.00905620819909636,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.09911429731034671,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.13560174224434474,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.13467107632617803,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.12178287059508286,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.1055641308683205,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.08904748826866193,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.084758264736294,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.06383150632126944,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.034318138971003,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.019404557704777448,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.007615201967521967,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.028213516908674352,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.05936306201305164,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.06267265635970576,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.10625544604921622,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.10472175492580282,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.1586983782295237,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.2055181631184202,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.28245807359410957,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.28770986139769383,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6274007460730151,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.5912442944441185,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6656051433653045,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6870264065872529,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.0677560345527994,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.0223782340963217,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.2229191203676621,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.9446075739500137,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.4567906311996315,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.00905620819909636,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.09911429731034671,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.13560174224434474,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.13467107632617803,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.12178287059508286,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.1055641308683205,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.08904748826866193,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.084758264736294,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.06383150632126944,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.034318138971003,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.019404557704777448,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.007615201967521967,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.028213516908674352,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.05936306201305164,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.06267265635970576,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.10625544604921622,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.10472175492580282,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.1586983782295237,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.2055181631184202,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.28245807359410957,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.28770986139769383,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6274007460730151,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.5912442944441185,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6656051433653045,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6870264065872529,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.0677560345527994,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.0223782340963217,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.2229191203676621,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.9446075739500137,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.4567906311996315,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.00905620819909636,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.09911429731034671,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.13560174224434474,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.13467107632617803,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.12178287059508286,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.1055641308683205,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.08904748826866193,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.084758264736294,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.06383150632126944,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.034318138971003,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.019404557704777448,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.007615201967521967,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.028213516908674352,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.05936306201305164,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.06267265635970576,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.10625544604921622,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.10472175492580282,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.1586983782295237,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.2055181631184202,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.28245807359410957,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.28770986139769383,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6274007460730151,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.5912442944441185,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6656051433653045,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6870264065872529,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.0677560345527994,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.0223782340963217,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.2229191203676621,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.9446075739500137,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.4567906311996315,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.07314503074783474,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.08255876765871273,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.132069475231807,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.11073186729884532,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.106994408317164,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.09111169244312534,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.07280375495117564,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.07965801311624088,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.03537290605884702,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.01629952697026338,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.02565904271873809,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.011617255157307937,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.038551849867550336,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.08716680437839042,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.02809872421213777,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.15854074269279717,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.1418504947643635,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.19510252358238378,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.18808946856079745,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.23451997874395425,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.2459958587307285,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6064957930808121,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.5027003464823019,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6379631390534959,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6339672488468739,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.0115147595013396,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.9355097281170439,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.2610983425985407,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.5220116987714865,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.3947666978321598,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.07314503074783474,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.08255876765871273,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.132069475231807,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.11073186729884532,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.106994408317164,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.09111169244312534,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.07280375495117564,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.07965801311624088,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.03537290605884702,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.01629952697026338,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.02565904271873809,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.011617255157307937,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.038551849867550336,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.08716680437839042,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.02809872421213777,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.15854074269279717,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.1418504947643635,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.19510252358238378,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.18808946856079745,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.23451997874395425,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.2459958587307285,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6064957930808121,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.5027003464823019,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6379631390534959,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6339672488468739,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.0115147595013396,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.9355097281170439,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.2610983425985407,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.5220116987714865,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.3947666978321598,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.07314503074783474,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.08255876765871273,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.132069475231807,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.11073186729884532,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.106994408317164,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.09111169244312534,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.07280375495117564,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.07965801311624088,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.03537290605884702,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.01629952697026338,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.02565904271873809,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.011617255157307937,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.038551849867550336,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.08716680437839042,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.02809872421213777,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.15854074269279717,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.1418504947643635,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.19510252358238378,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.18808946856079745,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.23451997874395425,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.2459958587307285,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6064957930808121,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.5027003464823019,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6379631390534959,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6339672488468739,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.0115147595013396,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.9355097281170439,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.2610983425985407,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.5220116987714865,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.3947666978321598,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.07314503074783474,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.08255876765871273,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.132069475231807,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.11073186729884532,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.106994408317164,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.09111169244312534,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.07280375495117564,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.07965801311624088,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.03537290605884702,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.01629952697026338,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.02565904271873809,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": 0.011617255157307937,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.038551849867550336,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.08716680437839042,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.02809872421213777,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.15854074269279717,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.1418504947643635,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.19510252358238378,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.18808946856079745,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.23451997874395425,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.2459958587307285,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6064957930808121,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.5027003464823019,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6379631390534959,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.6339672488468739,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.0115147595013396,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -0.9355097281170439,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.2610983425985407,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.5220116987714865,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (context state \u2192 same-turn answer state)": -1.3947666978321598,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 240
+}

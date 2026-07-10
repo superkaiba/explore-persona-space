@@ -1,0 +1,1099 @@
+{
+  "battery_scope_caveat": {
+    "concern_id": "battery-rows-in-fit-arms-banked-p6",
+    "corpus_manifest": {
+      "battery_is_eval_only_flag_counts": {
+        "True": 2400
+      },
+      "n_rows": 21193,
+      "path": "data/issue_1092/p0/corpus/manifest.jsonl",
+      "sha256_16": "e582a3b41ae9c5b7",
+      "status": "present",
+      "strata_counts": {
+        "battery": 2400,
+        "dense_core": 4752,
+        "periphery_natural": 897,
+        "periphery_random": 8969,
+        "periphery_topicmatch": 2690,
+        "trait_stratum": 1485
+      }
+    },
+    "downstream_guidance": {
+      "may_claim": [
+        "fitted-map reads (read1-4, B1/B2 map-mediated) as WITHIN-CORPUS reads whose training rows include the 2,400 battery rows in both fit arms (composition documented here)",
+        "held-out R2 under grouped 6-fold CV, with fold aggregates mixing battery and non-battery rows"
+      ],
+      "may_not_claim": [
+        "the plan-v5 fold-iii battery TRANSFER read (fit on real corpus -> evaluate on #594 battery) \u2014 not computable from banked artifacts",
+        "any 'battery eval-only' framing, including the #813 comparability framing \u2014 carry this caveat instead",
+        "a battery-restricted held-out read from banked checkpoints (per-row held-out predictions were not persisted)",
+        "the P7 A_real_only row arm as battery-free \u2014 it mirrors the engine rule and INCLUDES battery rows"
+      ]
+    },
+    "n_rows_arithmetic": {
+      "per_cell": {
+        "cell_inst_claude": {
+          "battery_rows_in_training": true,
+          "expected_fitA_engine_rule": 12121,
+          "expected_fitA_registered_rule": 9721,
+          "n_rows_fitA_observed": [
+            12121
+          ],
+          "n_rows_fitB_observed": [
+            12121
+          ],
+          "scope_matched": "claude_subset",
+          "status": "checked"
+        },
+        "cell_inst_own": {
+          "battery_rows_in_training": true,
+          "expected_fitA_engine_rule": 19708,
+          "expected_fitA_registered_rule": 17308,
+          "n_rows_fitA_observed": [
+            19708
+          ],
+          "n_rows_fitB_observed": [
+            21193
+          ],
+          "scope_matched": "full_corpus",
+          "status": "checked"
+        },
+        "cell_inst_pretext": {
+          "battery_rows_in_training": true,
+          "expected_fitA_engine_rule": 19708,
+          "expected_fitA_registered_rule": 17308,
+          "n_rows_fitA_observed": [
+            19708
+          ],
+          "n_rows_fitB_observed": [
+            21193
+          ],
+          "scope_matched": "full_corpus",
+          "status": "checked"
+        },
+        "cell_inst_shuf": {
+          "n_rows_fitA_observed": [
+            8689
+          ],
+          "n_rows_fitB_observed": [
+            8689
+          ],
+          "note": "no scope total matches the observed fitB n_rows (n0 truncation or partial grid) or fit-arm n_rows not unique",
+          "status": "not_checkable"
+        },
+        "cell_pre_claude": {
+          "battery_rows_in_training": true,
+          "expected_fitA_engine_rule": 12121,
+          "expected_fitA_registered_rule": 9721,
+          "n_rows_fitA_observed": [
+            12121
+          ],
+          "n_rows_fitB_observed": [
+            12121
+          ],
+          "scope_matched": "claude_subset",
+          "status": "checked"
+        },
+        "cell_pre_insttext": {
+          "battery_rows_in_training": true,
+          "expected_fitA_engine_rule": 19708,
+          "expected_fitA_registered_rule": 17308,
+          "n_rows_fitA_observed": [
+            19708
+          ],
+          "n_rows_fitB_observed": [
+            21193
+          ],
+          "scope_matched": "full_corpus",
+          "status": "checked"
+        },
+        "cell_pre_own": {
+          "battery_rows_in_training": true,
+          "expected_fitA_engine_rule": 19708,
+          "expected_fitA_registered_rule": 17308,
+          "n_rows_fitA_observed": [
+            19708
+          ],
+          "n_rows_fitB_observed": [
+            21193
+          ],
+          "scope_matched": "full_corpus",
+          "status": "checked"
+        },
+        "cell_pre_shuf": {
+          "n_rows_fitA_observed": [
+            8689
+          ],
+          "n_rows_fitB_observed": [
+            8689
+          ],
+          "note": "no scope total matches the observed fitB n_rows (n0 truncation or partial grid) or fit-arm n_rows not unique",
+          "status": "not_checkable"
+        }
+      },
+      "scope_totals": {
+        "claude_subset": 12121,
+        "control_subset": 12121,
+        "full_corpus": 21193
+      },
+      "status": "computed"
+    },
+    "observed_n_rows_by_cell_fit_arm": {
+      "cell_inst_claude": {
+        "A": [
+          12121
+        ],
+        "B": [
+          12121
+        ]
+      },
+      "cell_inst_own": {
+        "A": [
+          19708
+        ],
+        "B": [
+          21193
+        ]
+      },
+      "cell_inst_pretext": {
+        "A": [
+          19708
+        ],
+        "B": [
+          21193
+        ]
+      },
+      "cell_inst_shuf": {
+        "A": [
+          8689
+        ],
+        "B": [
+          8689
+        ]
+      },
+      "cell_pre_claude": {
+        "A": [
+          12121
+        ],
+        "B": [
+          12121
+        ]
+      },
+      "cell_pre_insttext": {
+        "A": [
+          19708
+        ],
+        "B": [
+          21193
+        ]
+      },
+      "cell_pre_own": {
+        "A": [
+          19708
+        ],
+        "B": [
+          21193
+        ]
+      },
+      "cell_pre_shuf": {
+        "A": [
+          8689
+        ],
+        "B": [
+          8689
+        ]
+      }
+    },
+    "realized_in_banked_p6": {
+      "consequence": "battery rows were IN TRAINING for both fit arms in all banked checkpoints; the registered fold-iii transfer read has no implementation",
+      "corpus_stratum_label": "battery",
+      "engine_fit_arm_A_filter": "stratum not in {'trait_stratum', 'battery_eval_only'} (fit_grid.py run(); fit arm B takes all rows; is_eval_only read nowhere)"
+    },
+    "recoverability": {
+      "banked_fit_block_fields": [
+        "r2",
+        "r2_folds",
+        "lambda_indices"
+      ],
+      "future_recovery_route": "folds are deterministic (_folds_from_manifest, group_key + FOLD_SEED) and per-fold lambda indices are banked, so per-fold maps could be refit deterministically from the staged summaries \u2014 refit territory, out of scope for the banked grid (round-22 decision: no P6 re-run)",
+      "investigated_round": 22,
+      "per_fold_coefficients_persisted": false,
+      "per_fold_predictions_persisted": false,
+      "per_row_heldout_predictions_or_residuals_persisted": false,
+      "row_indexing_in_checkpoints": false,
+      "verdict": "NOT recoverable from banked artifacts: under the grouped 6-fold CV each battery row was held out of exactly its own fold (and in TRAINING for the other 5 folds' maps), so an honest never-trained-on-this-row battery read existed in memory (_fit_cv computes per-row held-out pred) but only aggregate per-fold R2 was persisted; the aggregate r2_folds mix battery and non-battery rows and cannot be decomposed by stratum post hoc"
+    },
+    "registered": {
+      "battery_rows": "EVAL-ONLY in both fit arms (context-transfer read, factorial-wide)",
+      "plan": "v5 section 4.1 step 6 + OOD-fold registration (iii)",
+      "transfer_read": "fold iii: fit on real corpus -> evaluate on #594 battery (corpus transfer, strongest OOD form)"
+    },
+    "severity": "CONCERN"
+  },
+  "boxes": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "checkpoints": {
+    "cell_inst_claude_context_end_fitA_L14_ambient_4eb156c72a8f0cfca60eb6ab.json": {
+      "boxes": [
+        5
+      ],
+      "hub_identity": "9db42170a39aae2a"
+    },
+    "cell_inst_claude_context_end_fitA_L14_pca48_cd4168db9b1f5ceff4f4b48f.json": {
+      "boxes": [
+        5
+      ],
+      "hub_identity": "c4767ef59fc3d786"
+    },
+    "cell_inst_claude_context_end_fitA_L18_ambient_ac7165a300b12ce1b71b742b.json": {
+      "boxes": [
+        5
+      ],
+      "hub_identity": "e27eb6777af7e085"
+    },
+    "cell_inst_claude_context_end_fitA_L18_pca48_f6b719e2ff685d4f60b75e47.json": {
+      "boxes": [
+        5
+      ],
+      "hub_identity": "5bbd1ff64da2372e"
+    },
+    "cell_inst_claude_context_end_fitA_L19_ambient_9dc3d1bc1573d66160398d82.json": {
+      "boxes": [
+        9
+      ],
+      "hub_identity": "27decbd86364a8db"
+    },
+    "cell_inst_claude_context_end_fitA_L19_pca48_8e95181933d2ce1c4273779a.json": {
+      "boxes": [
+        9
+      ],
+      "hub_identity": "303c240ecd8c2299"
+    },
+    "cell_inst_claude_context_end_fitB_L14_ambient_88db7e96d6afc9a61e9eacff.json": {
+      "boxes": [
+        5
+      ],
+      "hub_identity": "c1034a16c3557616"
+    },
+    "cell_inst_claude_context_end_fitB_L14_pca48_363c8b89e5b8a64b7ce047fa.json": {
+      "boxes": [
+        5
+      ],
+      "hub_identity": "24768605c90e7b98"
+    },
+    "cell_inst_claude_prefix_end_fitA_L14_ambient_f09082899bc548d06713b394.json": {
+      "boxes": [
+        5
+      ],
+      "hub_identity": "534f512dce8ca9b9"
+    },
+    "cell_inst_claude_prefix_end_fitA_L14_pca48_088252ba221f1cbd0ae1b3cd.json": {
+      "boxes": [
+        5
+      ],
+      "hub_identity": "6e38a881491576b5"
+    },
+    "cell_inst_claude_prefix_end_fitA_L18_ambient_b93378458c3b760d2808b4fc.json": {
+      "boxes": [
+        5
+      ],
+      "hub_identity": "5a06a84535de297f"
+    },
+    "cell_inst_claude_prefix_end_fitA_L18_pca48_52fc1f94f146e4e82644b5a1.json": {
+      "boxes": [
+        5
+      ],
+      "hub_identity": "65e8b3769b0fd433"
+    },
+    "cell_inst_claude_prefix_end_fitA_L19_ambient_2462997c0c838a2cb0ab1812.json": {
+      "boxes": [
+        9
+      ],
+      "hub_identity": "621a20729827eda7"
+    },
+    "cell_inst_claude_prefix_end_fitA_L19_pca48_e34001b420b8c24b1bab6144.json": {
+      "boxes": [
+        9
+      ],
+      "hub_identity": "05a574c879429cf3"
+    },
+    "cell_inst_claude_prefix_end_fitB_L14_ambient_0fa15798eb1dc3e45869d459.json": {
+      "boxes": [
+        5
+      ],
+      "hub_identity": "fbb5ccc6af84e3a5"
+    },
+    "cell_inst_claude_prefix_end_fitB_L14_pca48_945b49a3df286bf7d8de64b1.json": {
+      "boxes": [
+        5
+      ],
+      "hub_identity": "8ea2b130d62934f4"
+    },
+    "cell_inst_own_context_end_fitA_L14_ambient_cf8d90be49d539c962b5a7ff.json": {
+      "boxes": [
+        1
+      ],
+      "hub_identity": "9c74c0af2919a600"
+    },
+    "cell_inst_own_context_end_fitA_L14_pca48_b2c58e2cbb8730d0b0b5947e.json": {
+      "boxes": [
+        1
+      ],
+      "hub_identity": "c6cfc85e3199c59e"
+    },
+    "cell_inst_own_context_end_fitA_L18_ambient_f064379030410f80d9287de8.json": {
+      "boxes": [
+        9
+      ],
+      "hub_identity": "057bf61d765677fe"
+    },
+    "cell_inst_own_context_end_fitA_L18_pca48_72a668fd778e2a57850be318.json": {
+      "boxes": [
+        9
+      ],
+      "hub_identity": "991dd2e4f624af80"
+    },
+    "cell_inst_own_context_end_fitA_L19_ambient_e60740094facda37c1f7566f.json": {
+      "boxes": [
+        9
+      ],
+      "hub_identity": "1cafffc54edec1a4"
+    },
+    "cell_inst_own_context_end_fitA_L19_pca48_98e9d09d817d6521c1b36512.json": {
+      "boxes": [
+        9
+      ],
+      "hub_identity": "7f981860b418e243"
+    },
+    "cell_inst_own_context_end_fitB_L14_ambient_11f9767af4638c8b52c07e2d.json": {
+      "boxes": [
+        1
+      ],
+      "hub_identity": "a500316b44b0b21b"
+    },
+    "cell_inst_own_context_end_fitB_L14_pca48_c94848e4939b7305b6f15b11.json": {
+      "boxes": [
+        1
+      ],
+      "hub_identity": "cf38f999e397969f"
+    },
+    "cell_inst_own_prefix_end_fitA_L14_ambient_3ffdc97967502dd099f60983.json": {
+      "boxes": [
+        1
+      ],
+      "hub_identity": "61dc3f1205cef259"
+    },
+    "cell_inst_own_prefix_end_fitA_L14_pca48_2e98b674e05e650ad9fb5f65.json": {
+      "boxes": [
+        1
+      ],
+      "hub_identity": "2433ca69670422fd"
+    },
+    "cell_inst_own_prefix_end_fitA_L14_pca48_a1a135b1f12f79bd6cf00aed.json": {
+      "boxes": [
+        1
+      ],
+      "hub_identity": "29ddee4f2723942e"
+    },
+    "cell_inst_own_prefix_end_fitA_L18_ambient_74f5678ecbfd7415b3756238.json": {
+      "boxes": [
+        9
+      ],
+      "hub_identity": "8b6263c4bbfebf5b"
+    },
+    "cell_inst_own_prefix_end_fitA_L18_pca48_9a3ea4ac5543a05bf3d3bd3f.json": {
+      "boxes": [
+        9
+      ],
+      "hub_identity": "202eb4feca9dcee7"
+    },
+    "cell_inst_own_prefix_end_fitA_L19_ambient_dab3c4b7a1efb14e852d25b8.json": {
+      "boxes": [
+        9
+      ],
+      "hub_identity": "d995ec2d532dc358"
+    },
+    "cell_inst_own_prefix_end_fitA_L19_pca48_3a565ed348f3bebb36071909.json": {
+      "boxes": [
+        9
+      ],
+      "hub_identity": "4bade6c260af2ee3"
+    },
+    "cell_inst_own_prefix_end_fitB_L14_ambient_d331b1828b11ccaefc45b5c2.json": {
+      "boxes": [
+        1
+      ],
+      "hub_identity": "6c0c0ac846176a0f"
+    },
+    "cell_inst_own_prefix_end_fitB_L14_pca48_2d5516f6f9606f70e1f0120b.json": {
+      "boxes": [
+        1
+      ],
+      "hub_identity": "df4f4df59a57e8a7"
+    },
+    "cell_inst_own_prefix_end_fitB_L14_pca48_350d2443cf4a64227f2dabc0.json": {
+      "boxes": [
+        1
+      ],
+      "hub_identity": "6cbdf52ea207ff37"
+    },
+    "cell_inst_pretext_context_end_fitA_L14_ambient_67b15bc79616cf53f97ff98a.json": {
+      "boxes": [
+        4
+      ],
+      "hub_identity": "c42e831af0fdca17"
+    },
+    "cell_inst_pretext_context_end_fitA_L14_pca48_fc0904374b0a74e45afe731c.json": {
+      "boxes": [
+        4
+      ],
+      "hub_identity": "9f9e99f613f2763b"
+    },
+    "cell_inst_pretext_context_end_fitA_L18_ambient_d24e4a0e0a64501074fd6add.json": {
+      "boxes": [
+        12
+      ],
+      "hub_identity": "2fcd95321d109393"
+    },
+    "cell_inst_pretext_context_end_fitA_L18_pca48_e1938b4b83789f1a1dcaa4fb.json": {
+      "boxes": [
+        12
+      ],
+      "hub_identity": "96d3c20129f082b0"
+    },
+    "cell_inst_pretext_context_end_fitA_L19_ambient_157aa494831ac651dee58233.json": {
+      "boxes": [
+        12
+      ],
+      "hub_identity": "9a2ac6caaffd95c9"
+    },
+    "cell_inst_pretext_context_end_fitA_L19_pca48_b8f78df9802122a65fdbf9fd.json": {
+      "boxes": [
+        12
+      ],
+      "hub_identity": "dca2e3ca232db99c"
+    },
+    "cell_inst_pretext_context_end_fitB_L14_ambient_c43758a7581affd8cfcc58f5.json": {
+      "boxes": [
+        4
+      ],
+      "hub_identity": "3ab2b0918274e641"
+    },
+    "cell_inst_pretext_context_end_fitB_L14_pca48_c1bde2ee37c8da22c26e412f.json": {
+      "boxes": [
+        4
+      ],
+      "hub_identity": "317649fbf44c2c18"
+    },
+    "cell_inst_pretext_prefix_end_fitA_L14_ambient_c21bfb4b9977c59cd3da457b.json": {
+      "boxes": [
+        4
+      ],
+      "hub_identity": "27c6d2d2a002d1de"
+    },
+    "cell_inst_pretext_prefix_end_fitA_L14_pca48_4de3cecda192a9a487d28f37.json": {
+      "boxes": [
+        4
+      ],
+      "hub_identity": "93a35825427b4020"
+    },
+    "cell_inst_pretext_prefix_end_fitA_L18_ambient_832ba41d4a4e393f7223f9c3.json": {
+      "boxes": [
+        12
+      ],
+      "hub_identity": "c5317ef0265e747e"
+    },
+    "cell_inst_pretext_prefix_end_fitA_L18_pca48_62fe0e9c6db476782037fa57.json": {
+      "boxes": [
+        12
+      ],
+      "hub_identity": "a6a4f2d8b1cfd438"
+    },
+    "cell_inst_pretext_prefix_end_fitA_L19_ambient_17d00b588408621b511ec9dc.json": {
+      "boxes": [
+        12
+      ],
+      "hub_identity": "e28f9de7be601b34"
+    },
+    "cell_inst_pretext_prefix_end_fitA_L19_pca48_1724240481a118250dc234f1.json": {
+      "boxes": [
+        12
+      ],
+      "hub_identity": "4db84bb33f64df4b"
+    },
+    "cell_inst_pretext_prefix_end_fitB_L14_ambient_8fb2289f3a4adfe36f3a90a9.json": {
+      "boxes": [
+        4
+      ],
+      "hub_identity": "297d41fe51f97d21"
+    },
+    "cell_inst_pretext_prefix_end_fitB_L14_pca48_b2a9d8500f12fb5ce6bf7734.json": {
+      "boxes": [
+        4
+      ],
+      "hub_identity": "92dbcf5ff740412b"
+    },
+    "cell_inst_shuf_context_end_fitA_L14_ambient_3ba7e0a20043da0bfdc3fdf6.json": {
+      "boxes": [
+        7
+      ],
+      "hub_identity": "2929a626a8f47ae4"
+    },
+    "cell_inst_shuf_context_end_fitA_L14_pca48_5b66ad140d6ecc9d6d5e6e36.json": {
+      "boxes": [
+        7
+      ],
+      "hub_identity": "73ac63369cb9d44d"
+    },
+    "cell_inst_shuf_context_end_fitA_L18_ambient_e95f4b17cd7bc773bd939b94.json": {
+      "boxes": [
+        7
+      ],
+      "hub_identity": "647ef53d84b5fdba"
+    },
+    "cell_inst_shuf_context_end_fitA_L18_pca48_0acd8fbf41c365edc6a06a88.json": {
+      "boxes": [
+        7
+      ],
+      "hub_identity": "3a8636a8ea0226eb"
+    },
+    "cell_inst_shuf_context_end_fitA_L19_ambient_fcb3ba8a8afd66bfb5162ce1.json": {
+      "boxes": [
+        11
+      ],
+      "hub_identity": "eb057db851d24adb"
+    },
+    "cell_inst_shuf_context_end_fitA_L19_pca48_c4db7655f7d770f68b809a8d.json": {
+      "boxes": [
+        11
+      ],
+      "hub_identity": "b5e5e15c45f03418"
+    },
+    "cell_inst_shuf_context_end_fitB_L14_ambient_d2820312cac9af3513abc8d0.json": {
+      "boxes": [
+        7
+      ],
+      "hub_identity": "41c6b0e23c468775"
+    },
+    "cell_inst_shuf_context_end_fitB_L14_pca48_1b03cd6dab07609ebc8e6365.json": {
+      "boxes": [
+        7
+      ],
+      "hub_identity": "9fe7fade559f711e"
+    },
+    "cell_inst_shuf_prefix_end_fitA_L14_ambient_28cb36f199e6affe49b10a3d.json": {
+      "boxes": [
+        7
+      ],
+      "hub_identity": "021ebd8e8ea64fb7"
+    },
+    "cell_inst_shuf_prefix_end_fitA_L14_pca48_21d496500a2c6ba07001b6b5.json": {
+      "boxes": [
+        7
+      ],
+      "hub_identity": "0d1591e75a028f1f"
+    },
+    "cell_inst_shuf_prefix_end_fitA_L18_ambient_25f7bef00a71a2075e4defbb.json": {
+      "boxes": [
+        7
+      ],
+      "hub_identity": "33e527740b16edfa"
+    },
+    "cell_inst_shuf_prefix_end_fitA_L18_pca48_649e4f5363d3ac053b26fe98.json": {
+      "boxes": [
+        7
+      ],
+      "hub_identity": "101a8a4c3af95878"
+    },
+    "cell_inst_shuf_prefix_end_fitA_L19_ambient_515f127fc2aa5e02c90e5483.json": {
+      "boxes": [
+        11
+      ],
+      "hub_identity": "f3c4cb23c82a1ee8"
+    },
+    "cell_inst_shuf_prefix_end_fitA_L19_pca48_07829c5088db19073f23f562.json": {
+      "boxes": [
+        11
+      ],
+      "hub_identity": "1c7b1a4e56636874"
+    },
+    "cell_inst_shuf_prefix_end_fitB_L14_ambient_61dab89ff391a53cccb33d50.json": {
+      "boxes": [
+        7
+      ],
+      "hub_identity": "48b36bcf880e391d"
+    },
+    "cell_inst_shuf_prefix_end_fitB_L14_pca48_d064f994f613ec396c09b8a4.json": {
+      "boxes": [
+        7
+      ],
+      "hub_identity": "05e1d87bf1ec992d"
+    },
+    "cell_pre_claude_context_end_fitA_L14_ambient_69399eaea38b2ec7fd5dc9e4.json": {
+      "boxes": [
+        6
+      ],
+      "hub_identity": "682c6eb14e7a79d8"
+    },
+    "cell_pre_claude_context_end_fitA_L14_pca48_c8525a211d5539546223048c.json": {
+      "boxes": [
+        6
+      ],
+      "hub_identity": "1b76b5ca5b59e56d"
+    },
+    "cell_pre_claude_context_end_fitA_L18_ambient_7981ed516e38c3cea5057ad9.json": {
+      "boxes": [
+        6
+      ],
+      "hub_identity": "1c285a480696a43f"
+    },
+    "cell_pre_claude_context_end_fitA_L18_pca48_8aa6e94f29fcf12ac93932a4.json": {
+      "boxes": [
+        6
+      ],
+      "hub_identity": "10119c3e3c2a6b5f"
+    },
+    "cell_pre_claude_context_end_fitA_L19_ambient_e65bc833023c7ba5268d0531.json": {
+      "boxes": [
+        10
+      ],
+      "hub_identity": "4700c256ce8ddfaf"
+    },
+    "cell_pre_claude_context_end_fitA_L19_pca48_f9c4b9705f7b6179cad24e74.json": {
+      "boxes": [
+        10
+      ],
+      "hub_identity": "ae351d0247ec5175"
+    },
+    "cell_pre_claude_context_end_fitB_L14_ambient_6db7ae6f74ddb6b33d5e0c44.json": {
+      "boxes": [
+        6
+      ],
+      "hub_identity": "dabc5b745c0f707d"
+    },
+    "cell_pre_claude_context_end_fitB_L14_pca48_ca76b2cf5affa95e8ec4b2e2.json": {
+      "boxes": [
+        6
+      ],
+      "hub_identity": "033a83203b8dedf8"
+    },
+    "cell_pre_claude_prefix_end_fitA_L14_ambient_e730434d4a9c7975cdd643ac.json": {
+      "boxes": [
+        6
+      ],
+      "hub_identity": "f993186c54cb4cff"
+    },
+    "cell_pre_claude_prefix_end_fitA_L14_pca48_5e0ef1cfdb48aace6e3f6464.json": {
+      "boxes": [
+        6
+      ],
+      "hub_identity": "f203e4164f21af49"
+    },
+    "cell_pre_claude_prefix_end_fitA_L18_ambient_15053cf245f9dcf06ab4780f.json": {
+      "boxes": [
+        6
+      ],
+      "hub_identity": "8cc9d56a0d562375"
+    },
+    "cell_pre_claude_prefix_end_fitA_L18_pca48_caf661ea225f0e1be7a77f04.json": {
+      "boxes": [
+        6
+      ],
+      "hub_identity": "aa5aaf35a4b59eca"
+    },
+    "cell_pre_claude_prefix_end_fitA_L19_ambient_fb570daa54ffe063046489b0.json": {
+      "boxes": [
+        10
+      ],
+      "hub_identity": "886e0b095250e34b"
+    },
+    "cell_pre_claude_prefix_end_fitA_L19_pca48_44a6fc3262c83fb034c7eaa7.json": {
+      "boxes": [
+        10
+      ],
+      "hub_identity": "24df990473ed5f9c"
+    },
+    "cell_pre_claude_prefix_end_fitB_L14_ambient_f72c90587f04be3aadc3d6d9.json": {
+      "boxes": [
+        6
+      ],
+      "hub_identity": "68291c9b1bfc966b"
+    },
+    "cell_pre_claude_prefix_end_fitB_L14_pca48_fd69345029b26f87784ea3a7.json": {
+      "boxes": [
+        6
+      ],
+      "hub_identity": "5cec407c49283dfb"
+    },
+    "cell_pre_insttext_context_end_fitA_L14_ambient_e80263e5b80e60347ccb2e10.json": {
+      "boxes": [
+        2
+      ],
+      "hub_identity": "2cb343cb6941e30b"
+    },
+    "cell_pre_insttext_context_end_fitA_L14_pca48_afdbedfa577ddbe80f6d094c.json": {
+      "boxes": [
+        2
+      ],
+      "hub_identity": "753d1932d207c111"
+    },
+    "cell_pre_insttext_context_end_fitA_L18_ambient_3674246cc7272aaaaad95a7b.json": {
+      "boxes": [
+        10
+      ],
+      "hub_identity": "e897ff113e5c6532"
+    },
+    "cell_pre_insttext_context_end_fitA_L18_pca48_799313b63ebbc0c19938bc94.json": {
+      "boxes": [
+        10
+      ],
+      "hub_identity": "fbdbbc79105e85b5"
+    },
+    "cell_pre_insttext_context_end_fitA_L19_ambient_583e3f4380a6da4ccc3e21f2.json": {
+      "boxes": [
+        10
+      ],
+      "hub_identity": "f23f4a1f608cdeed"
+    },
+    "cell_pre_insttext_context_end_fitA_L19_pca48_175725747530b60b75409ac8.json": {
+      "boxes": [
+        10
+      ],
+      "hub_identity": "147feab85c1e6c25"
+    },
+    "cell_pre_insttext_context_end_fitB_L14_ambient_0b2bbf23f92d43197d53d000.json": {
+      "boxes": [
+        2
+      ],
+      "hub_identity": "5aee98d8c772161b"
+    },
+    "cell_pre_insttext_context_end_fitB_L14_pca48_a522d628c6657a3030e582bc.json": {
+      "boxes": [
+        2
+      ],
+      "hub_identity": "6b510517212eb5e5"
+    },
+    "cell_pre_insttext_prefix_end_fitA_L14_ambient_5852553436b2d1ce554a8235.json": {
+      "boxes": [
+        2
+      ],
+      "hub_identity": "c47267c829f09a54"
+    },
+    "cell_pre_insttext_prefix_end_fitA_L14_pca48_78561bf2e75f04e8b21f86a7.json": {
+      "boxes": [
+        2
+      ],
+      "hub_identity": "5e27b56762a27668"
+    },
+    "cell_pre_insttext_prefix_end_fitA_L18_ambient_5552d13bb1780150ab793acd.json": {
+      "boxes": [
+        10
+      ],
+      "hub_identity": "416e8a7961710f46"
+    },
+    "cell_pre_insttext_prefix_end_fitA_L18_pca48_aa9b6ac5024f2db71c345b6a.json": {
+      "boxes": [
+        10
+      ],
+      "hub_identity": "d481faac3a19c45b"
+    },
+    "cell_pre_insttext_prefix_end_fitA_L19_ambient_84d15bdea1db7a524761c854.json": {
+      "boxes": [
+        10
+      ],
+      "hub_identity": "56b89956fe970478"
+    },
+    "cell_pre_insttext_prefix_end_fitA_L19_pca48_a7fb5acbc6101576c97c1a1c.json": {
+      "boxes": [
+        10
+      ],
+      "hub_identity": "3cf2cf8946d20ce1"
+    },
+    "cell_pre_insttext_prefix_end_fitB_L14_ambient_de730df7244d829948acb96e.json": {
+      "boxes": [
+        2
+      ],
+      "hub_identity": "26bf05d0562cbc3f"
+    },
+    "cell_pre_insttext_prefix_end_fitB_L14_pca48_dd955d4fdc36bcbfd2f9f8f7.json": {
+      "boxes": [
+        2
+      ],
+      "hub_identity": "2c7bed8ace40e866"
+    },
+    "cell_pre_own_context_end_fitA_L14_ambient_cb9a8cfadc1a88bcb13cd253.json": {
+      "boxes": [
+        3
+      ],
+      "hub_identity": "551e12170bf2bea0"
+    },
+    "cell_pre_own_context_end_fitA_L14_pca48_5cecca3ed9e8bc6c4d864bb1.json": {
+      "boxes": [
+        3
+      ],
+      "hub_identity": "916b201fa40753ca"
+    },
+    "cell_pre_own_context_end_fitA_L18_ambient_6fd2177963f8f8ac94f44002.json": {
+      "boxes": [
+        11
+      ],
+      "hub_identity": "4101c4e0e0d7fb3c"
+    },
+    "cell_pre_own_context_end_fitA_L18_pca48_12488b5fff69282ce0cdf91d.json": {
+      "boxes": [
+        11
+      ],
+      "hub_identity": "4816465da6e855eb"
+    },
+    "cell_pre_own_context_end_fitA_L19_ambient_be498886b69e568b3dd45f6a.json": {
+      "boxes": [
+        11
+      ],
+      "hub_identity": "824de3dd86523065"
+    },
+    "cell_pre_own_context_end_fitA_L19_pca48_b9214648310fce8986fe8c83.json": {
+      "boxes": [
+        11
+      ],
+      "hub_identity": "3bcb63ababa0044f"
+    },
+    "cell_pre_own_context_end_fitB_L14_ambient_7caf4b12fe58b4412064acdb.json": {
+      "boxes": [
+        3
+      ],
+      "hub_identity": "1f33f692c7b28857"
+    },
+    "cell_pre_own_context_end_fitB_L14_pca48_9a090b40506bfd149d3e7ecf.json": {
+      "boxes": [
+        3
+      ],
+      "hub_identity": "013096a5878a6ff6"
+    },
+    "cell_pre_own_prefix_end_fitA_L14_ambient_0d98b3bd331948f35743c5f2.json": {
+      "boxes": [
+        3
+      ],
+      "hub_identity": "af49a09caf3abe1d"
+    },
+    "cell_pre_own_prefix_end_fitA_L14_pca48_7f3fadaa631a4f6d42e2efdd.json": {
+      "boxes": [
+        3
+      ],
+      "hub_identity": "a60a8b0064be5326"
+    },
+    "cell_pre_own_prefix_end_fitA_L18_ambient_0753004e8cdd65e5cee2c7a8.json": {
+      "boxes": [
+        11
+      ],
+      "hub_identity": "6cbbf8cd429a5370"
+    },
+    "cell_pre_own_prefix_end_fitA_L18_pca48_ef287e31cb75054afe2fc9bc.json": {
+      "boxes": [
+        11
+      ],
+      "hub_identity": "5d1cb3c2d2db8447"
+    },
+    "cell_pre_own_prefix_end_fitA_L19_ambient_6599a4af60cac61cf2aaaf16.json": {
+      "boxes": [
+        11
+      ],
+      "hub_identity": "c9f7b446253946e8"
+    },
+    "cell_pre_own_prefix_end_fitA_L19_pca48_96b73c7eb1c9ce3fde858dbc.json": {
+      "boxes": [
+        11
+      ],
+      "hub_identity": "36ae629fc92ffbc2"
+    },
+    "cell_pre_own_prefix_end_fitB_L14_ambient_0aa604be01faddf08017eec7.json": {
+      "boxes": [
+        3
+      ],
+      "hub_identity": "b0f431921adc4316"
+    },
+    "cell_pre_own_prefix_end_fitB_L14_pca48_3d24d38cabed0a941cf5a3e4.json": {
+      "boxes": [
+        3
+      ],
+      "hub_identity": "122ec2928f3b4981"
+    },
+    "cell_pre_shuf_context_end_fitA_L14_ambient_2c0fcb293431b66e72508bc7.json": {
+      "boxes": [
+        8
+      ],
+      "hub_identity": "00c5a7eff664dc10"
+    },
+    "cell_pre_shuf_context_end_fitA_L14_pca48_88eff60e2ca9b307737a5de8.json": {
+      "boxes": [
+        8
+      ],
+      "hub_identity": "6b8c8806099524a7"
+    },
+    "cell_pre_shuf_context_end_fitA_L18_ambient_c80caf959cd7caa554f964ba.json": {
+      "boxes": [
+        8
+      ],
+      "hub_identity": "03237db6a84293d1"
+    },
+    "cell_pre_shuf_context_end_fitA_L18_pca48_2330afea7afc5dd7adf8375d.json": {
+      "boxes": [
+        8
+      ],
+      "hub_identity": "08ed093e4dd9e420"
+    },
+    "cell_pre_shuf_context_end_fitA_L19_ambient_8a544db2012b21356c9b7fb4.json": {
+      "boxes": [
+        12
+      ],
+      "hub_identity": "396e1eb3a882615d"
+    },
+    "cell_pre_shuf_context_end_fitA_L19_pca48_c5ea4141078310bea68ac3c3.json": {
+      "boxes": [
+        12
+      ],
+      "hub_identity": "80f6f4563154ec42"
+    },
+    "cell_pre_shuf_context_end_fitB_L14_ambient_e3c58d9679739fc99f21f849.json": {
+      "boxes": [
+        8
+      ],
+      "hub_identity": "68f1ce9f7eefcb37"
+    },
+    "cell_pre_shuf_context_end_fitB_L14_pca48_f37487f28331d87b9fda80a5.json": {
+      "boxes": [
+        8
+      ],
+      "hub_identity": "92c3039aea364b50"
+    },
+    "cell_pre_shuf_prefix_end_fitA_L14_ambient_3af5bdec8b848a6f176d2306.json": {
+      "boxes": [
+        8
+      ],
+      "hub_identity": "b20d37bb16feada1"
+    },
+    "cell_pre_shuf_prefix_end_fitA_L14_pca48_18e92091ee4dbb623117f5c3.json": {
+      "boxes": [
+        8
+      ],
+      "hub_identity": "6b399e4ed847bb3d"
+    },
+    "cell_pre_shuf_prefix_end_fitA_L18_ambient_f8db0ba03938d4550050374a.json": {
+      "boxes": [
+        8
+      ],
+      "hub_identity": "edd8f6f569c2e2b8"
+    },
+    "cell_pre_shuf_prefix_end_fitA_L18_pca48_aeb34ba37a437496025dd2ed.json": {
+      "boxes": [
+        8
+      ],
+      "hub_identity": "cb442adab7b108af"
+    },
+    "cell_pre_shuf_prefix_end_fitA_L19_ambient_441e0ba1c2d017c73a8df4b7.json": {
+      "boxes": [
+        12
+      ],
+      "hub_identity": "8e3d4da2b0a2d158"
+    },
+    "cell_pre_shuf_prefix_end_fitA_L19_pca48_3e8f343e4fb9955db6db77ba.json": {
+      "boxes": [
+        12
+      ],
+      "hub_identity": "8a88d2122e198cd8"
+    },
+    "cell_pre_shuf_prefix_end_fitB_L14_ambient_7471d4ca8ece1a24fa015d39.json": {
+      "boxes": [
+        8
+      ],
+      "hub_identity": "9b9398bfe7df3969"
+    },
+    "cell_pre_shuf_prefix_end_fitB_L14_pca48_0e7bd78c4396fd4f01e18675.json": {
+      "boxes": [
+        8
+      ],
+      "hub_identity": "a2bced305fd1c217"
+    }
+  },
+  "coverage": {
+    "cells": [
+      "cell_inst_claude",
+      "cell_inst_own",
+      "cell_inst_pretext",
+      "cell_inst_shuf",
+      "cell_pre_claude",
+      "cell_pre_insttext",
+      "cell_pre_own",
+      "cell_pre_shuf"
+    ],
+    "full_grid_verified": true,
+    "layers": [
+      14,
+      18,
+      19
+    ],
+    "n_checkpoints_staged": 130,
+    "n_duplicate_slots": 2,
+    "n_unique_slots": 128
+  },
+  "dedup_decisions": [
+    {
+      "chosen_fingerprint": "2e98b674e05e650ad9fb5f65",
+      "duplicate_fingerprints": [
+        "a1a135b1f12f79bd6cf00aed"
+      ],
+      "rule": "prefer mlp_companion.status==computed, then lexicographic-min fp",
+      "slot": {
+        "arm": "prefix_end",
+        "basis": "pca48",
+        "cell": "cell_inst_own",
+        "fit_arm": "A",
+        "layer": 14
+      }
+    },
+    {
+      "chosen_fingerprint": "2d5516f6f9606f70e1f0120b",
+      "duplicate_fingerprints": [
+        "350d2443cf4a64227f2dabc0"
+      ],
+      "rule": "prefer mlp_companion.status==computed, then lexicographic-min fp",
+      "slot": {
+        "arm": "prefix_end",
+        "basis": "pca48",
+        "cell": "cell_inst_own",
+        "fit_arm": "B",
+        "layer": 14
+      }
+    }
+  ],
+  "hub_revision": "b7dbd38cd08a2827860cf5fbe19c2384e2da7dec",
+  "input_fingerprint": "16e05c15ce7ba7d6",
+  "metadata": {
+    "argv": [
+      "--steps",
+      "merge,projection-sweep,figures,upload-nulls",
+      "--bridge-summary",
+      "data/issue_1092/p7_bridge/bridge_refit_summary.json",
+      "--expect-full-grid"
+    ],
+    "git_commit": "1b104689cc2fd9383a916bf7efd28002219e0007",
+    "hf_prefix": "issue1092_realistic_crossing",
+    "issue": 1092,
+    "numpy_version": "2.2.6",
+    "phase": "P7",
+    "python_version": "3.11.15",
+    "script": "issue1092_figures.py",
+    "timestamp": "2026-07-10T07:00:52-0700"
+  }
+}
