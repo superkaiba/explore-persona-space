@@ -727,7 +727,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1092",
       "status": "interpreting",
-      "title": "Realistic sparse-crossed prefix x query corpus: prefix-map vs context-map, averaging-rank collapse, and prefix/query variance decomposition of answer-state transport"
+      "title": "Answer-state transport on real conversations runs almost entirely through the query-bearing context state, not the prefix persona state (HIGH confidence)"
     },
     "1093": {
       "has_clean_result": false,
