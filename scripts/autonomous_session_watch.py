@@ -1,18 +1,25 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-Fourteen passes; items 1-8 run in that order, with the CAMPAIGN pass (item 9)
-right after pass 2, the IDLE-UNMAPPED-SESSION pass (item 10) right after
-pass 7, the INFRA-DRAIN pass (item 11) between pass 5 (the orphan sweep)
-and pass 6 (session-reconcile), the CPU-GUARD pass (item 12) in the
-daemon-independent block right after the happy-patch check (order there:
-pass 1's disk checks -> data-disk -> happy-patch -> CPU-GUARD ->
-program-orchestrator recovery), the AUTH-OUTAGE GUARD pass (item 13)
-immediately after the single per-tick daemon probe and BEFORE every spawn
-arm (crash-recovery is the first spawner it must precede), and the
-STALE-BLOCKED FLAG pass (item 14) also between pass 5 and pass 6 — right
-after the capacity-retry re-drive, before session-reconcile — all before
-the GC pass:
+24 passes ("pass" = one top-level per-tick action block in ``main()``'s
+production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
+disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
+not count; a NEW inline pass block that is not a ``*_pass``-named function
+called from ``main()`` also requires bumping ``_ASW_INLINE_PASS_BLOCKS``
+in ``scripts/workflow_lint.py``). Item numbers below are STABLE
+IDENTIFIERS (cross-referenced throughout this docstring), NOT execution
+order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
+16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
+18 (verdict-disagree) -> 19 (VM-ledger reap) -> 20 (program-orchestrator
+recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
+-> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
+11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
+14 (stale-blocked flag) -> 6 (session-reconcile) -> 23 (gate-push) ->
+24 (stale-registration) -> 7 (zombie-wrapper) -> 10 (idle-unmapped) ->
+8 (GC). The count is lint-pinned: ``workflow_lint.py
+--check-asw-docstring-pass-count`` FAILs when the "24 passes" digit, the
+numbered-item count, or the live ``*_pass`` set in ``main()`` diverge —
+adding a pass means adding a numbered item here AND bumping the digit:
 
 1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
    the host of every orchestrator session, the worktree ``.venv``s, the uv
@@ -341,6 +348,64 @@ the GC pass:
    via the task.py subprocess). Kill switch
    ``EPM_DISABLE_STALE_BLOCKED_FLAG=1``; ``--stale-blocked-only`` runs
    just this pass (pair with ``--dry-run`` for a live smoke).
+15. **Data-disk headroom pass (#681; ESCALATE-ONLY; runs right after
+   pass 1).** A second disk-watch on the dedicated ``/mnt/eps-data``
+   mount (the relocated ``.claude/worktrees/`` tree), driving the
+   PERCENT decision helpers so the fire point is size-invariant; no
+   reclaim arm runs on the data disk. Clean no-op before the cutover or
+   when the mount is absent. (:func:`data_disk_pass`.)
+16. **Happy-patch pass (#726; escalate-only, daemon-INDEPENDENT; runs
+   right after pass 15).** Proactively surfaces a reverted/drifted Happy
+   injection patch (typically from ``npm update happy``) within ~10 min
+   — the spawn-path guard is reactive and would only catch it at the
+   next spawn. Never re-applies (that needs sudo).
+   (:func:`happy_patch_pass`.)
+17. **Triage-observer pass (#967; NON-GATING; runs right after
+   pass 12).** Post-hoc audit of the /issue Step 9 pre-dispatch
+   external-marker triage duty (origin incident #779): flags a
+   missing / 'none' triage line against a re-enumerated non-empty
+   candidate window. Sidecar rows + capped deduped pushes + capped
+   ``epm:progress`` nudges; never mutates task status.
+   (:func:`triage_observer_pass`.)
+18. **Verdict-disagree observer pass (#1170; NON-GATING; runs right
+   after pass 17).** Audits the doubled marker-mode review sites for the
+   #825 shape — the latest round whose Claude + Codex durable verdicts
+   disagree with no role-matched reconcile and no Codex no-show
+   evidence. Sidecar + one deduped push per (issue, site, round); never
+   posts a task marker. (:func:`verdict_disagree_pass`.)
+19. **VM resource-ledger reap pass (runs right after pass 18;
+   daemon-INDEPENDENT, fail-soft).** Drops expired-TTL / dead-PID claims
+   from the advisory ``~/.task-workflow/vm-ledger.json`` so a crashed
+   session's claim can never wedge the CPU/RAM off-VM routing decision.
+   (:func:`vm_ledger_reap_pass`.)
+20. **Program-orchestrator recovery pass (#660; daemon-INDEPENDENT; runs
+   right after pass 19).** Relaunches the leakage-program bash meta-loop
+   daemon (``run_program_orchestrator.sh`` in tmux ``eps-program``) if
+   it died mid-program — STOP-sentinel + deliberate-exit guarded; fails
+   toward NOT relaunching on any missing signal.
+   (:func:`program_orchestrator_pass`.)
+21. **Proposed-infra-sweep pass (#690; runs right after pass 11).**
+   Always-on backstop dispatching ripe ORPHANED ``proposed`` infra/batch
+   tasks whose filer could not self-dispatch (headless filers, crashed
+   filers, cap-full filings), bounded by the shared infra session cap.
+   (:func:`proposed_infra_sweep_pass`.)
+22. **Capacity-retry pass (#642; runs right after pass 21).** Re-drives
+   (via ``spawn-issue --auto``) the narrow subclass of ``blocked`` tasks
+   whose latest ``epm:failure`` is ``failure_class: infra`` +
+   ``reason: no_compute_available``; backoff + a per-UTC-day cap bound
+   the churn; every other ``blocked`` task stays parked.
+   (:func:`capacity_retry_pass`.)
+23. **Gate-push pass (runs right after pass 6).** Per-issue gate push
+   (fail-soft Telegram on gate-park / ``blocked`` transitions,
+   transition-deduped) + title/self-report reconcile + tick-runaway
+   force-stop; consumes ``main()``'s pre-respawn and pre-campaign
+   registration snapshots so first-tick GC reaps can't hide a
+   transition. (:func:`gate_push_pass`.)
+24. **Stale-registration pass (#845 d; daemon-gated; runs right after
+   pass 23).** Unregisters (never stops) a LIVE session's registration
+   after prolonged transcript idleness so a stale registration stops
+   holding the /issue Step 0 single-orchestrator guard; the orphan sweep
+   re-drives an ACTIVE task. (:func:`stale_registration_pass`.)
 
 Why each pass exists
 --------------------
