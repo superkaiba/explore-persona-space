@@ -785,8 +785,10 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
 - **Route the EXPENSIVE (`>= 20` GPU-h) `auto_run: yes` follow-ups by
   `question_relation` at Step 9b (autonomous mode only).**
   When a result lands, the orchestrator fires the `follow-up-proposer`
-  at Step 9b (after auto-merge, before CRON-TEARDOWN, BEFORE the
-  human-only park at `awaiting_promotion`) and — for the proposals the
+  at Step 9b (after auto-merge, BEFORE the human-only park flow completes
+  — the Step 9b CRON-TEARDOWN already ran at the `awaiting_promotion`
+  transition, so a dispatch path re-arms the tick per § Loop liveness
+  backstop) and — for the proposals the
   cheap-band block did NOT take (estimate `>= 20` GPU-h or missing) —
   partitions the
   `auto_run: yes` proposals by QUESTION IDENTITY:

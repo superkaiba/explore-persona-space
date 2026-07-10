@@ -138,6 +138,10 @@ def test_no_stays_armed_false_claim() -> None:
     norm = _norm(_skill_text())
     assert "stays armed and drives the loop" not in norm
     assert "stays armed; it drives the loop" not in norm
+    # Round-1 code-review sibling (routing-summary bullet): the proposer does
+    # NOT fire "before CRON-TEARDOWN" — teardown already ran at the
+    # awaiting_promotion transition; the dispatch paths re-arm instead.
+    assert "after auto-merge, before CRON-TEARDOWN" not in norm
 
 
 def test_loop_liveness_backstop_both_modes() -> None:
