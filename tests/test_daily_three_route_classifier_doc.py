@@ -287,3 +287,24 @@ def test_route2_wf_fix_provenance_mandate_present(daily_skill_text: str):
         "dropped from daily SKILL.md — the durable signal "
         "task_workflow.is_workflow_fix_session() reads must stay mandated (#1173)"
     )
+
+
+# ── #1228: route-2 wf_fix: false variant (non-workflow-surface daily filings) ──
+
+
+def test_route2_wf_fix_false_variant_documented(daily_skill_text: str):
+    """#1228: the route-2 non-workflow-surface variant (drop the wf-fix tags,
+    keep daily-auto-filed) must stay documented WITH its driver mechanism —
+    the `wf_fix: false` manifest key `daily_drive_filings.py` gates on. Without
+    the mechanism sentence the variant is unreachable on the batch driver path
+    (the driver would re-tag + re-inject unconditionally, the #1228 bug)."""
+    assert "(drop the `wf-fix` / `wf-fix-fp` tags, keep `daily-auto-filed`)" in daily_skill_text, (
+        "the route-2 drop-tags contract sentence dropped from daily SKILL.md — "
+        "experiment-code (non-workflow-surface) daily filings would regress to "
+        "carrying wf-fix dedup/recursion-guard tags (#1228)"
+    )
+    assert "wf_fix: false" in daily_skill_text, (
+        "the `wf_fix: false` manifest mechanism dropped from daily SKILL.md — "
+        "the drop-tags route-2 variant would be prose-only again, unreachable "
+        "through the batch driver daily_drive_filings.py (#1228)"
+    )
