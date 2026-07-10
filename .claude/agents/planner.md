@@ -247,8 +247,8 @@ with; close with an `⇔ otherwise` clause (covers every residual cell by
 construction). Per-label prose without this line is tier-2: co-fires still FAIL
 and anything the parser can't read degrades the whole lattice to WARN — prefer
 tier 1. No lattice in the plan → declare the byte-exact standalone line
-`N/A — no registered verdict lattice` (never alongside a real lattice: the
-escape short-circuits coherence verification of a declared one).
+`N/A — no registered verdict lattice` (never alongside a real lattice: c20
+WARNs on the co-occurrence instead of silently skipping verification — #1223).
 
 **Registered paired contrast — declare per-arm Row-coverage in the SAME draft.**
 A plan REGISTERS a paired contrast when a non-fenced line inside a

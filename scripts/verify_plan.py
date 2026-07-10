@@ -3134,7 +3134,11 @@ def check_verdict_lattice_coherence(plan: str, kind: str) -> CheckResult:
     depends on harvest recall), any unparsed label degrades the whole
     lattice to WARN, and quantified (k-of-n) predicates SKIP as out of the
     v1 cell algebra. FAIL (experiment) / WARN (analysis) / SKIP otherwise;
-    escape via a standalone ``N/A — no registered verdict lattice`` line.
+    escape via a standalone ``N/A — no registered verdict lattice`` line —
+    honored (SKIP path) only when no lattice is detected; when the escape
+    co-occurs with a detected lattice (either tier) the check WARNs instead
+    of PASSing, so the escape can never mask verification of a present
+    lattice (#1223).
     Incident: #923 amendment plan v4/v5 §3 — a bare positive point estimate
     with both CIs straddling 0 fired BOTH H-slot and Intermediate (and one
     cell fired neither); caught only by the Codex statistics critic, fixed
@@ -3161,7 +3165,26 @@ def check_verdict_lattice_coherence(plan: str, kind: str) -> CheckResult:
             "declaration; fewer than 2 anchored CI-predicate labels in any trigger section)",
         )
     if _standalone_na_declared(plan, r"no registered verdict lattice"):
-        return _pass(cid, name, "explicit N/A declared (no registered verdict lattice)")
+        # #1223: this branch is reachable ONLY when a lattice WAS detected (the
+        # no-lattice case SKIPs above) — a PASS here masks the very defect c20
+        # exists to catch. WARN, not FAIL: the detection may be a false positive
+        # on quoted guidance (all 3 corpus co-occurrences were), so the escape
+        # stays non-blocking and the reviewers adjudicate.
+        detected = (
+            "a tier-1 DISJOINT-and-exhaustive ⇔ declaration"
+            if tier1 is not None
+            else f"{len(lattices)} trigger section(s) with ≥2 anchored CI-predicate labels (tier 2)"
+        )
+        return _warn(
+            cid,
+            name,
+            "the standalone `N/A — no registered verdict lattice` escape co-occurs "
+            f"with {detected} — the escape is reserved for lattice-free plans and "
+            "would mask coherence verification of the detected lattice (#1223); "
+            "remove the N/A line (the lattice is then verified), or fence/remove the "
+            "lattice-shaped prose the detector matched if it is quoted guidance "
+            "rather than this plan's own registration",
+        )
     if tier1 is not None:
         return _c20_tier1_result(cid, name, kind, tier1[0], tier1[1])
     return _c20_tier2_result(cid, name, kind, lattices)

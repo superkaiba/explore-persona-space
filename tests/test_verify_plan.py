@@ -2824,14 +2824,45 @@ def test_c20_kind_analysis_degrades_to_warn():
     assert ok is True
 
 
-def test_c20_na_escape_passes():
+@pytest.mark.parametrize("kind", ["experiment", "analysis"])
+def test_c20_na_escape_with_detected_lattice_warns(kind):
+    # #1223: the escape is only reachable when a lattice WAS detected (the
+    # no-lattice case SKIPs first), so N/A + detected lattice is the masking
+    # shape — WARN (non-blocking), never a silent PASS. Same severity both
+    # kinds: the co-occurrence is a meta-signal, already sub-FAIL.
     plan = _c20_plan(C20_V4_BULLETS) + (
         "\nN/A — no registered verdict lattice (the labels quote the parent's methodology).\n"
     )
-    _, by_id = _run(plan)
+    ok, by_id = _run(plan, kind=kind)
     r = by_id[C20]
-    assert r.status == "PASS"
-    assert "N/A" in r.detail
+    assert r.status == "WARN"
+    assert ok is True  # WARN never blocks
+    assert "co-occurs" in r.detail
+    assert "tier 2" in r.detail
+
+
+def test_c20_na_escape_with_tier1_declaration_warns():
+    # The literal broken-lattice-masked shape from the task body: a BROKEN
+    # declared partition (the test_c20_declared_cofire_fails fixture) plus
+    # the N/A line — previously a silent PASS, now WARN naming tier 1.
+    decl = (
+        "- The two labels are DISJOINT and exhaustive: H-a ⇔ Δ_pool CI includes 0; "
+        "H-b ⇔ Δ_pool CI includes 0 OR Δ_pool CI wholly below 0."
+    )
+    plan = _c20_plan(decl) + "\nN/A — no registered verdict lattice\n"
+    ok, by_id = _run(plan)
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "tier-1" in r.detail
+
+
+def test_c20_na_escape_without_lattice_still_skips():
+    # Preserved: with no detected lattice the SKIP gate fires before the
+    # escape is consulted — the N/A line stays legal and never penalized.
+    plan = GOOD_PLAN + "\nN/A — no registered verdict lattice\n"
+    _, by_id = _run(plan)
+    assert by_id[C20].status == "SKIP"
 
 
 def test_c20_unparseable_label_warns_not_fails():
