@@ -86,6 +86,45 @@ def _no_real_stagger_sleep(monkeypatch):
     return sleeps
 
 
+@pytest.fixture(autouse=True)
+def _forbid_real_marker_posts(monkeypatch):
+    """#1247 hermeticity guard (fail-loud): no test in this file may reach the
+    REAL ``task.py post-marker`` subprocess through ``_post_progress_marker``.
+
+    The real body shells ``task.py post-marker`` at the canonical
+    ``PROJECT_ROOT``, so an unpatched call with ``dry_run=False`` posts a JUNK
+    marker + git commit on a REAL task — the two-week #662/#663/#867 incident
+    was this file's own ``_run_orphan_task`` driver leaving it live. Contract:
+
+    - a test that wants marker assertions overrides this with its own recorder
+      (a later test-level / fixture-level ``monkeypatch.setattr`` wins over
+      this autouse default);
+    - ``dry_run=True`` calls keep the real function's log-only behavior;
+    - a test that exercises the real BODY against a STUBBED ``subprocess.run``
+      (the argv-recording pass tests) stays hermetic and is allowed through;
+    - only ``dry_run=False`` with the GENUINE ``subprocess.run`` still live
+      fails loud, naming the offending call.
+    """
+    import subprocess as _sp
+
+    import autonomous_session_watch as asw
+
+    real_post = asw._post_progress_marker
+    real_run = _sp.run
+
+    def _guarded(issue, note, dry_run, *, label):
+        if not dry_run and _sp.run is real_run:
+            raise AssertionError(
+                f"_post_progress_marker(issue={issue}, label={label!r}, dry_run=False) reached "
+                "the #1247 autouse hermeticity guard with the REAL subprocess.run still live — "
+                "the real body would shell `task.py post-marker` and post a junk marker on a "
+                "real task. Monkeypatch a recorder (or stub subprocess.run) in the test."
+            )
+        return real_post(issue, note, dry_run, label=label)
+
+    monkeypatch.setattr(asw, "_post_progress_marker", _guarded)
+
+
 def _p(issue: int, pod_id: str, name: str):
     """A non-wedged 4-tuple for ``_running_managed_issue_pods`` stubs (#692).
 
@@ -4476,20 +4515,56 @@ def test_orphan_state_roundtrip_and_clear(isolated_registry):
 # and was falsely respawned. It now reads _latest_nonwatcher_event_ts.
 
 
-def _run_orphan_task(asw, monkeypatch, *, issue, events, now, missed=1):
+def _run_orphan_task(
+    asw,
+    monkeypatch,
+    *,
+    issue,
+    events,
+    now,
+    missed=1,
+    task_status="running",
+    dry_run=False,
+    respawns_today=0,
+    status_calls=None,
+):
     """Drive _process_orphan_task end-to-end through the actual marker-age call
     site (rec=None -> fully-unregistered #472 class, so it is an orphan
     candidate). Pre-seeds orphan state with ``missed`` so a stale read fires a
-    respawn on the SECOND consecutive miss (threshold default 2). Records every
-    _respawn_orphan call; returns the recorder list."""
+    respawn on the SECOND consecutive miss (threshold default 2).
+
+    #1247 hermeticity: the driver previously left ``_post_progress_marker``
+    LIVE with ``dry_run=False``, so every suite run shelled the real
+    ``task.py post-marker`` and committed a junk marker on the REAL task named
+    by ``issue`` — the two-week #662/#663/#867 marker loop. It now records
+    marker posts, seams ``_task_status`` (the #1247 act-time guard's live
+    re-read; ``task_status`` sets the returned status, ``status_calls``
+    optionally records the issue argument), and drives SYNTHETIC issue ids
+    only. Returns ``(respawns, markers)``."""
     respawns: list[int] = []
+    markers: list[tuple[int, str]] = []
     monkeypatch.setattr(asw, "_task_events", lambda _i: events)
     monkeypatch.setattr(asw, "_stalled_cap_gpu_hours", lambda _i: 24.0)
     monkeypatch.setattr(
         asw, "_respawn_orphan", lambda i, cap, dry_run: respawns.append(i) or "spawned"
     )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda i, note, dry_run, label: markers.append((i, note)),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_task_status",
+        lambda i: (status_calls.append(i) if status_calls is not None else None) or task_status,
+    )
     asw._save_orphan_state(
-        issue, missed=missed, alerted=False, respawn_day=None, respawns_today=0, prev=None
+        issue,
+        missed=missed,
+        alerted=False,
+        respawn_day="2026-06-25" if respawns_today else None,
+        respawns_today=respawns_today,
+        prev=None,
     )
     _process_orphan_task = asw._process_orphan_task
     _process_orphan_task(
@@ -4498,13 +4573,13 @@ def _run_orphan_task(asw, monkeypatch, *, issue, events, now, missed=1):
         None,  # rec=None: fully-unregistered orphan candidate
         set(),  # no live session ids
         now,
-        False,  # dry_run
+        dry_run,
         2,  # threshold
         staleness_s=asw.ORPHAN_STALENESS_S_DEFAULT,
         max_per_day=asw.ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT,
         day_key="2026-06-25",
     )
-    return respawns
+    return respawns, markers
 
 
 def test_orphan_pre_run_lifecycle_marker_keeps_session(isolated_registry, monkeypatch):
@@ -4528,7 +4603,7 @@ def test_orphan_pre_run_lifecycle_marker_keeps_session(isolated_registry, monkey
             "note": "implemented dispatch script",
         },
     ]
-    respawns = _run_orphan_task(asw, monkeypatch, issue=661, events=events, now=now)
+    respawns, _markers = _run_orphan_task(asw, monkeypatch, issue=90661, events=events, now=now)
     assert respawns == []  # kept — the recent lifecycle marker is a sign of life
 
 
@@ -4552,8 +4627,8 @@ def test_orphan_watcher_sentinel_marker_still_ignored(isolated_registry, monkeyp
             "note": f"{asw._ORPHAN_RESPAWN_NOTE_SENTINEL} auto-respawn attempt",
         },
     ]
-    respawns = _run_orphan_task(asw, monkeypatch, issue=662, events=events, now=now)
-    assert respawns == [662]  # the watcher sentinel is filtered; real marker is stale
+    respawns, _markers = _run_orphan_task(asw, monkeypatch, issue=90662, events=events, now=now)
+    assert respawns == [90662]  # the watcher sentinel is filtered; real marker is stale
 
 
 def test_orphan_old_lifecycle_marker_still_stale(isolated_registry, monkeypatch):
@@ -4569,8 +4644,8 @@ def test_orphan_old_lifecycle_marker_still_stale(isolated_registry, monkeypatch)
             "note": "planning done long ago",
         },
     ]
-    respawns = _run_orphan_task(asw, monkeypatch, issue=663, events=events, now=now)
-    assert respawns == [663]
+    respawns, _markers = _run_orphan_task(asw, monkeypatch, issue=90663, events=events, now=now)
+    assert respawns == [90663]
 
 
 # ─── #866/#903: deliberate-takeover sentinel skips the orphan sweep ──────────
@@ -4600,16 +4675,16 @@ def test_takeover_sentinel_fresh_skips_orphan_respawn(
 
     import autonomous_session_watch as asw
 
-    (isolated_registry / "issue-866.json.paused-takeover-20260702").write_text("{}")
+    (isolated_registry / "issue-90866.json.paused-takeover-20260702").write_text("{}")
     now = time.time()
     # Marker is comfortably stale — without the sentinel this respawns (the
     # control is test_takeover_sentinel_stale_respawns below).
     events = [{"kind": "epm:plan", "ts": "2026-06-25T02:00:00Z", "note": "stale marker"}]
-    respawns = _run_orphan_task(asw, monkeypatch, issue=866, events=events, now=now)
+    respawns, _markers = _run_orphan_task(asw, monkeypatch, issue=90866, events=events, now=now)
     assert respawns == []
     # Frozen episode: the skip returns BEFORE any state read/write, so the
     # pre-seeded missed count is untouched and expiry resumes where it left off.
-    assert asw._load_orphan_state(866).get("missed") == 1
+    assert asw._load_orphan_state(90866).get("missed") == 1
 
 
 def test_takeover_sentinel_stale_respawns(isolated_registry, monkeypatch, clear_takeover_ttl_env):
@@ -4618,14 +4693,14 @@ def test_takeover_sentinel_stale_respawns(isolated_registry, monkeypatch, clear_
 
     import autonomous_session_watch as asw
 
-    sentinel = isolated_registry / "issue-867.json.paused-takeover-20260702"
+    sentinel = isolated_registry / "issue-90867.json.paused-takeover-20260702"
     sentinel.write_text("{}")
     now = time.time()
     stale = now - 7 * 3600  # past the 6h default TTL
     os.utime(sentinel, (stale, stale))
     events = [{"kind": "epm:plan", "ts": "2026-06-25T02:00:00Z", "note": "stale marker"}]
-    respawns = _run_orphan_task(asw, monkeypatch, issue=867, events=events, now=now)
-    assert respawns == [867]  # FAIL OPEN: today's behavior once the sentinel ages out
+    respawns, _markers = _run_orphan_task(asw, monkeypatch, issue=90867, events=events, now=now)
+    assert respawns == [90867]  # FAIL OPEN: today's behavior once the sentinel ages out
 
 
 def test_takeover_sentinel_manual_prefix_also_honored(
@@ -4635,9 +4710,11 @@ def test_takeover_sentinel_manual_prefix_also_honored(
 
     import autonomous_session_watch as asw
 
-    (isolated_registry / "manual-issue-868.json.paused-takeover-x").write_text("{}")
+    (isolated_registry / "manual-issue-90868.json.paused-takeover-x").write_text("{}")
     events = [{"kind": "epm:plan", "ts": "2026-06-25T02:00:00Z", "note": "stale marker"}]
-    respawns = _run_orphan_task(asw, monkeypatch, issue=868, events=events, now=time.time())
+    respawns, _markers = _run_orphan_task(
+        asw, monkeypatch, issue=90868, events=events, now=time.time()
+    )
     assert respawns == []
 
 
