@@ -1916,8 +1916,8 @@
     "1246": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1246",
-      "status": "planning",
+      "path": "tasks/approved/1246",
+      "status": "approved",
       "title": "add c33 escape phrase to planner canonical-escape list"
     },
     "1247": {
