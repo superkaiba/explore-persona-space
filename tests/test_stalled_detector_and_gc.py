@@ -42,6 +42,34 @@ from autonomous_session_watch import (  # noqa: E402
     decide_session_stalled,
 )
 
+
+@pytest.fixture(autouse=True)
+def _forbid_real_marker_posts(monkeypatch):
+    """#1247 hermeticity guard (fail-loud): no test in this file may reach the
+    real ``task.py post-marker`` subprocess through ``_post_progress_marker``
+    with ``dry_run=False`` — an unpatched call posts a junk marker + git
+    commit on a REAL task (the two-week #662/#663/#867 incident class). A
+    test-level recorder patch overrides this default; ``dry_run=True`` and
+    stubbed-``subprocess.run`` calls keep the real body's behavior."""
+    import subprocess as _sp
+
+    import autonomous_session_watch as asw
+
+    real_post = asw._post_progress_marker
+    real_run = _sp.run
+
+    def _guarded(issue, note, dry_run, *, label):
+        if not dry_run and _sp.run is real_run:
+            raise AssertionError(
+                f"_post_progress_marker(issue={issue}, label={label!r}, dry_run=False) reached "
+                "the #1247 autouse hermeticity guard with the REAL subprocess.run still live — "
+                "monkeypatch a recorder (or stub subprocess.run) in the test."
+            )
+        return real_post(issue, note, dry_run, label=label)
+
+    monkeypatch.setattr(asw, "_post_progress_marker", _guarded)
+
+
 # ─── decide_session_stalled — pure decision matrix ────────────────────────────
 
 
