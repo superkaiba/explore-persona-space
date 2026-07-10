@@ -1839,8 +1839,8 @@
     "1236": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1236",
-      "status": "proposed",
+      "path": "tasks/planning/1236",
+      "status": "planning",
       "title": "sync batch-datagen memory L13 to pid-file launch contract"
     },
     "1237": {
