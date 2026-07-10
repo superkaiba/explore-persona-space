@@ -1783,8 +1783,8 @@
     "1229": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1229",
-      "status": "reviewing",
+      "path": "tasks/completed/1229",
+      "status": "completed",
       "title": "widen scripts-import-guard scan roots to scripts/**"
     },
     "123": {
@@ -1797,8 +1797,8 @@
     "1230": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1230",
-      "status": "reviewing",
+      "path": "tasks/completed/1230",
+      "status": "completed",
       "title": "code-reviewer verifies named durability-pin test ships"
     },
     "1231": {
@@ -1818,22 +1818,22 @@
     "1233": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1233",
-      "status": "running",
+      "path": "tasks/completed/1233",
+      "status": "completed",
       "title": "replace vacuous pipe-python no-flags bundling test"
     },
     "1234": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1234",
-      "status": "planning",
+      "path": "tasks/running/1234",
+      "status": "running",
       "title": "revert/am fence sibling in repo-root branch guard"
     },
     "1235": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1235",
-      "status": "proposed",
+      "path": "tasks/planning/1235",
+      "status": "planning",
       "title": "invoke title-sync-sweep from nightly /daily"
     },
     "1236": {
@@ -1846,15 +1846,15 @@
     "1237": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1237",
-      "status": "proposed",
+      "path": "tasks/planning/1237",
+      "status": "planning",
       "title": "migrate remaining verify_plan doc-global N/A escapes"
     },
     "1238": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1238",
-      "status": "proposed",
+      "path": "tasks/planning/1238",
+      "status": "planning",
       "title": "tolerate wrapped N/A escape declarations in verify_plan"
     },
     "1239": {
@@ -1923,8 +1923,8 @@
     "1247": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1247",
-      "status": "reviewing",
+      "path": "tasks/completed/1247",
+      "status": "completed",
       "title": "terminal-status guard + source stamp for orphan-respawn (662"
     },
     "1248": {
