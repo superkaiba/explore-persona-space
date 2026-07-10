@@ -1846,8 +1846,8 @@
     "1237": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1237",
-      "status": "reviewing",
+      "path": "tasks/completed/1237",
+      "status": "completed",
       "title": "migrate remaining verify_plan doc-global N/A escapes"
     },
     "1238": {
@@ -1874,43 +1874,43 @@
     "1240": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1240",
-      "status": "running",
+      "path": "tasks/completed/1240",
+      "status": "completed",
       "title": "SLURM lane result-push verification contract leg"
     },
     "1241": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1241",
-      "status": "running",
+      "path": "tasks/reviewing/1241",
+      "status": "reviewing",
       "title": "cap existing wedge triggers at watcher override site"
     },
     "1242": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1242",
-      "status": "running",
+      "path": "tasks/completed/1242",
+      "status": "completed",
       "title": "add SKILL-pin suites to step9c WORKFLOW_INVARIANT tuple"
     },
     "1243": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1243",
-      "status": "planning",
+      "path": "tasks/reviewing/1243",
+      "status": "reviewing",
       "title": "Edit C certification arms to exclusive-arm shape"
     },
     "1244": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1244",
-      "status": "proposed",
+      "path": "tasks/running/1244",
+      "status": "running",
       "title": "Guard 1 foreign-strip deletion silently resurrected"
     },
     "1245": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1245",
-      "status": "proposed",
+      "path": "tasks/planning/1245",
+      "status": "planning",
       "title": "background + rc-file pattern for Step 10d lint gate"
     },
     "1246": {
