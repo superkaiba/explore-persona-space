@@ -18,7 +18,13 @@ Suppression rules (a candidate is SUPPRESSED == already routed):
    in the SAME stream with kind ``epm:workflow-fix-task-filed*`` matching the
    candidate: fp-computable candidates match ONLY on the fingerprint (same
    ``target_file`` + different fp is NOT a duplicate — workflow-fix-on-bug.md
-   § Dedup); fp-less (prose) parks match on the record's
+   § Dedup) — EXCEPT that a record carrying NO usable fingerprint (field
+   absent, or non-fp-shaped, e.g. ``n/a (prose park)``) falls back to
+   ``origin_candidate_ts`` equality with a ``target_file`` prefix-compatibility
+   veto (#1248); a record carrying a real, DIFFERING 12-hex fp still never
+   suppresses. Accepted residual: two same-second candidate rows on the SAME
+   file in one stream are indistinguishable to the ts+target_file key, so one
+   n/a-fp record would close both; fp-less (prose) parks match on the record's
    ``origin_candidate_ts`` (PRIMARY key), falling back to a ``target_file``
    string match ONLY when the record carries no ``origin_candidate_ts``
    (legacy/backfill records).
@@ -94,6 +100,12 @@ _BLOCK_RE = re.compile(
 _TARGET_FILE_RE = re.compile(r"target_file:\s*([^\s,;]+)")
 _ORIGIN_TS_RE = re.compile(r"origin_candidate_ts:\s*(\S+)")
 _FILED_TASK_RE = re.compile(r"filed_task:\s*(#?\d+)")
+# wf_fix_fingerprint output shape: sha256 hexdigest[:12] -> 12 lowercase hex chars
+# (task_workflow.wf_fix_fingerprint).
+_FP_SHAPE_RE = re.compile(r"[0-9a-f]{12}")
+# A note-form record fingerprint FIELD carrying a real fp (not 'n/a (prose park)').
+# The trailing lookahead rejects a >=13-hex token matching on its first 12 chars.
+_RECORD_FP_RE = re.compile(r"fingerprint:\s*([0-9a-f]{12})(?![0-9a-f])")
 
 
 def parse_ts(raw: object) -> datetime | None:
@@ -215,33 +227,71 @@ def _extract_fields(row: dict) -> tuple[str | None, str | None, bool]:
     return target_file, None, False
 
 
+def _record_origin_raw(record: dict) -> str | None:
+    """The record's origin_candidate_ts RAW string (note regex first, then structured key).
+
+    Returns None only when the field is ABSENT on both surfaces; callers parse,
+    preserving the existing absent-vs-unparseable distinction (an unparseable
+    ts is a non-match, NOT a fall-through to the legacy target_file key).
+    """
+    note = str(record.get("note") or "")
+    om = _ORIGIN_TS_RE.search(note)
+    if om:
+        return om.group(1)
+    if record.get("origin_candidate_ts"):
+        return str(record["origin_candidate_ts"])
+    return None
+
+
+def _record_target_file(record: dict) -> str | None:
+    """The record's target_file (structured key first, then note regex), or None."""
+    rec_tf = record.get("target_file")
+    if rec_tf:
+        return str(rec_tf)
+    note = str(record.get("note") or "")
+    tm = _TARGET_FILE_RE.search(note)
+    return tm.group(1).rstrip(".,;:!?") if tm else None
+
+
 def _filed_record_matches(cand: Candidate, record: dict) -> bool:
     """Does this same-stream filed record close this candidate? (suppression rule 1)."""
     note = str(record.get("note") or "")
     if cand.fingerprint is not None:
-        # fp-aware: ONLY the candidate's own fingerprint suppresses; a
-        # file-matching record with a different fp is a DIFFERENT bug.
+        # fp-aware: the candidate's own fingerprint suppresses.
         if cand.fingerprint in note:
             return True
-        return cand.fingerprint in str(record.get("fingerprint") or "")
+        if cand.fingerprint in str(record.get("fingerprint") or ""):
+            return True
+        # A record declaring a DIFFERENT real (12-hex) fp is a DIFFERENT bug
+        # (workflow-fix-on-bug.md § Dedup) -> never suppress on it.
+        if _RECORD_FP_RE.search(note) or _FP_SHAPE_RE.fullmatch(
+            str(record.get("fingerprint") or "")
+        ):
+            return False
+        # #1248 widening: a record with NO usable fp — field absent, or
+        # non-fp-shaped ('n/a (prose park)') — cannot DISAGREE on fingerprint;
+        # key on origin_candidate_ts (row-level, as precise as the fp), with a
+        # target_file compatibility veto for same-second sibling rows. Every
+        # failure below returns False (re-enumeration), never false suppression.
+        origin_raw = _record_origin_raw(record)
+        if origin_raw is None:
+            return False  # no row-level key; NO file-only fallback for fp candidates
+        origin_dt = parse_ts(origin_raw)
+        if origin_dt is None or origin_dt != cand.ts:
+            return False
+        rec_tf = _record_target_file(record)
+        if not cand.target_file or not rec_tf:
+            return True  # veto abstains when either side lacks a target_file; ts decided
+        return cand.target_file.startswith(rec_tf) or rec_tf.startswith(cand.target_file)
     # fp-less (prose park): PRIMARY key = origin_candidate_ts equality.
-    origin_raw = None
-    om = _ORIGIN_TS_RE.search(note)
-    if om:
-        origin_raw = om.group(1)
-    elif record.get("origin_candidate_ts"):
-        origin_raw = str(record["origin_candidate_ts"])
+    origin_raw = _record_origin_raw(record)
     if origin_raw is not None:
         origin_dt = parse_ts(origin_raw)
         return origin_dt is not None and origin_dt == cand.ts
     # Legacy record with NO origin_candidate_ts: fall back to target_file match.
     if not cand.target_file:
         return False
-    rec_tf = record.get("target_file")
-    if not rec_tf:
-        tm = _TARGET_FILE_RE.search(note)
-        rec_tf = tm.group(1).rstrip(".,;:!?") if tm else None
-    return rec_tf == cand.target_file
+    return _record_target_file(record) == cand.target_file
 
 
 def _filed_ref(record: dict) -> str:
