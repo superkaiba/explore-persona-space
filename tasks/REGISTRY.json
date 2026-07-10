@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1235,
+  "highest_id": 1236,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1835,6 +1835,13 @@
       "path": "tasks/proposed/1235",
       "status": "proposed",
       "title": "invoke title-sync-sweep from nightly /daily"
+    },
+    "1236": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1236",
+      "status": "proposed",
+      "title": "sync batch-datagen memory L13 to pid-file launch contract"
     },
     "124": {
       "has_clean_result": false,
