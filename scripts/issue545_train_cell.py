@@ -154,7 +154,7 @@ def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 â€
             src = _corpus_read_path(row.corpus)
         if not src.exists():
             raise FileNotFoundError(f"Positives corpus missing for cn prep: {src}")
-        positives = [json.loads(line) for line in src.read_text().splitlines() if line.strip()]
+        positives = [json.loads(line) for line in src.read_text().split("\n") if line.strip()]
         if cap:
             positives = positives[:cap]
         # Normalize positives to prompt/completion (train_lora's schema) and
@@ -185,8 +185,8 @@ def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 â€
         gen = _corpus_read_path("kl_aux_generic.jsonl")
         if not src.exists() or not gen.exists():
             raise FileNotFoundError(f"mix50 prep needs {src} and {gen}")
-        pos = [json.loads(line) for line in src.read_text().splitlines() if line.strip()]
-        generic = [json.loads(line) for line in gen.read_text().splitlines() if line.strip()]
+        pos = [json.loads(line) for line in src.read_text().split("\n") if line.strip()]
+        generic = [json.loads(line) for line in gen.read_text().split("\n") if line.strip()]
         if cap:
             pos, generic = pos[:cap], generic[:cap]
         k = min(len(pos), len(generic))
@@ -339,7 +339,7 @@ def _normalized_copy(src: Path) -> Path:
     lands under corpora_dir() so the bulk corpus upload captures it.
     """
     dst = _corpora_dir() / f"{src.stem}_pc.jsonl"
-    rows = [json.loads(line) for line in src.read_text().splitlines() if line.strip()]
+    rows = [json.loads(line) for line in src.read_text().split("\n") if line.strip()]
     dst.parent.mkdir(parents=True, exist_ok=True)
     with dst.open("w") as f:
         for r in rows:
@@ -477,7 +477,7 @@ def train_cell(row_id: str, arm: str, seed: int, gpu_id: int, *, smoke: bool) ->
         overrides.pop("save_total_limit", None)
     if row_id == "warmth" and not smoke:
         # save at half-epoch multiples: steps_per_epoch // 2 (dose {0.5,1,2,4}).
-        n_rows = sum(1 for line in data_path.read_text().splitlines() if line.strip())
+        n_rows = sum(1 for line in data_path.read_text().split("\n") if line.strip())
         eff_batch = overrides.get("batch_size", 4) * overrides.get("grad_accum", 4)
         overrides["save_steps"] = max(1, n_rows // eff_batch // 2)
 
