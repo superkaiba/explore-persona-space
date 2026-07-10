@@ -2256,6 +2256,43 @@ The Codex twin additionally receives:
   the canonical plan, Step 2-pre-b) — see
   `.claude/agents/codex-code-reviewer.md`.
 
+**Trigger-dense (guard-surface) rounds — pre-materialize the excerpt file
+BEFORE spawning (#1058/#1098).** When the round's diff or artifact under
+review is trigger-dense per the `.claude/rules/trigger-dense-review.md`
+recognition heuristic (guard/security hook scripts, destructive-command
+fixtures, refusal/jailbreak corpora — recognition is DELEGATED to that
+rule's "Fires when" block; do not re-derive it here), the orchestrator
+pre-materializes the round's excerpt file and names it in BOTH reviewer
+briefs — this arms the rule's discipline-3 "orchestrator-provided
+pre-materialized excerpt files with stated read budgets" leg. Build is
+cheap and mechanical — the trigger-dense hunks only, with file/line
+anchors:
+
+```bash
+# Scope the pathspec to the trigger-dense paths actually touched
+# (`git -C "$WT" diff --name-only main...HEAD` first):
+git -C "$WT" diff main...HEAD -- .claude/hooks/ 'scripts/guard_*.sh' \
+  'tests/*guard*' > /tmp/issue-<N>-r<round>-excerpts-<slug>.md
+```
+
+(For a non-diff trigger-dense artifact — a corpus or fixture file the
+round must adjudicate — extract grep-anchored ≤~120-line windows into the
+same file instead. Harmful BANK items stay digest-only per
+`guard_harmful_bank_read.sh` — never copy bank item text into an excerpt
+file. On round >1, round-scope the diff first when the branch diff is
+over budget per `.claude/rules/diff-size-budget.md`.) Then add one line
+to BOTH briefs (and keep it in any re-spawn brief):
+
+`excerpt_file: /tmp/issue-<N>-r<round>-excerpts-<slug>.md — read this
+INSTEAD of wholesale-reading the touched trigger-dense files; direct
+reads of the originals capped at ~120-line grep-anchored windows per
+trigger-dense-review.md.`
+
+The excerpt file bounds READ volume; it does not sanitize content —
+reviewers still apply discipline 1 (findings by file:line reference,
+never gated literals in generated text). Non-trigger-dense rounds: skip
+entirely — no excerpt file, no brief line.
+
 Neither sees the implementer's reasoning — independence is load-bearing.
 Dispatch in a SINGLE `Agent(...)`-call message with both spawned
 `run_in_background=true` so they execute concurrently.
@@ -2455,7 +2492,7 @@ between them.)
 | PASS-class | PASS-class | **Agree.** `final_verdict = PASS`. CONCERNS bullets from either reviewer surface to the implementer as opportunistic suggestions; do not block. |
 | FAIL | FAIL — overlapping blockers | **Agree.** `final_verdict = FAIL`. Bounce to implementer (one round). |
 | FAIL | FAIL — disjoint blockers | **Union, no reconciler.** Build a combined blocker list (Claude's blockers ∪ Codex's blockers) — INCLUDING every `### Bug-class sweep: <class>` sibling enumeration from either verdict — and pass it to the implementer in the next-round brief. No new marker — both `epm:code-review v<n>` and `epm:code-review-codex v<n>` already exist on the task. `final_verdict = FAIL`. Bounce (one round). |
-| PASS-class | FAIL (or vice versa) | **Disagreement.** Spawn `reconciler` agent (Claude, fresh context). Brief: role=`code-reviewer`, task=N, round=n, both event bodies, diff path. Reconciler reads both verdicts + the artifact, posts `epm:review-reconcile v<n>` with binding PASS or FAIL. `final_verdict = reconciler's verdict`. |
+| PASS-class | FAIL (or vice versa) | **Disagreement.** Spawn `reconciler` agent (Claude, fresh context). Brief: role=`code-reviewer`, task=N, round=n, both event bodies, diff path (+ the Step 5a excerpt-file path + read budget on a trigger-dense round). Reconciler reads both verdicts + the artifact, posts `epm:review-reconcile v<n>` with binding PASS or FAIL. `final_verdict = reconciler's verdict`. |
 
 The reconciler may NOT add findings beyond what either reviewer raised —
 its job is adjudication only. Round counter does NOT increment for
