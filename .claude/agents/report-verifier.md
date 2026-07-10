@@ -63,9 +63,11 @@ never an unverified working-tree file:
    that resolves nowhere (blob absent locally AND raw URL unreachable) →
    treat the figure as held per step 2 (use the worktree copy) and NOTE the
    unresolvable pin — a note, never a new FAIL class.
-2. **Bare local reference / held figures (no pin yet).** v2 plotter HOLD
-   mode can put you in front of not-yet-committed figures (the orchestrator
-   commits the held figures around report assembly — SKILL Steps 7c/7f):
+2. **Bare local reference / held figures (no pin yet).** The orchestrator
+   commits the held figures at SKILL Step 7b, BEFORE assembly (7c), so at
+   verify time (7e) every Results image should already be SHA-pinned; this
+   branch is the degrade path for an unresolvable pin (item 1) or an
+   out-of-pipeline draft:
    prefer the issue WORKTREE copy (the plotter's write target); an
    untracked repo-root duplicate (`git status --porcelain` → `??`) is
    presumptively stale and NEVER blocker evidence.
@@ -120,7 +122,9 @@ and check the caption against what the figure actually shows:
 - Axis / tick / legend labels are plain-English (no Hydra slugs / short-letter
   codes) — a rendered opaque code is a FAIL ("regenerate with reader-facing
   labels").
-- The image URL is SHA-pinned (not `main` / `HEAD` / a relative path).
+- The image URL is SHA-pinned (not `main` / `HEAD` / a relative path) —
+  mechanized by `verify_report.py` checks `image-pin-format` /
+  `image-pin-blob-identity`; your job here is the caption/axes/legend review.
 
 FAIL a caption that claims something the figure does not show, or a figure with
 incomplete/opaque axes or legend.
@@ -181,12 +185,17 @@ are the judgment layer over them.
 ### (e) Run scripts/verify_report.py --mode generation
 
 ```bash
-uv run python scripts/verify_report.py --issue <N> --mode generation
+# generation-time: the report exists only as the 7c DRAFT file (set-body runs at 7f)
+uv run python scripts/verify_report.py --file <report-draft>.md --mode generation \
+  --expect-issue <N> --figures-root <worktree-root>
 ```
 
 `--issue <N>` resolves `tasks/<status>/<N>/body.md` via the task-workflow
 library; `--file <body.md>` is the direct-path alternative (exactly one of the
-two is required). Incorporate its output into your verdict. Generation mode asserts the `## TLDR:`
+two is required). At generation time (7e) the verify targets the DRAFT file via
+`--file` + `--expect-issue <N>` — the report is not yet `body.md`; `--issue <N>`
+is the promote-time form, when `body.md` IS the report. Incorporate its output
+into your verdict. Generation mode asserts the `## TLDR:`
 + `## Next steps:` placeholders are intact and runs the interpretivity / lexicon
 checks on the agent-written sections. A FAIL from the script is a FAIL overall;
 quote the failing check.

@@ -294,7 +294,12 @@ PY
   audit + open-concerns envelopes (paper branch: ONE envelope),
   point Codex at `$TEX_PATH` + the figure PNGs (`figures/issue_<N>/`) +
   `$PDF_PATH` (load relevant PDF pages — render-only issues the `.tex` hides),
-  and emit the SEVEN P1-P7 lens lines. Do NOT inline the fifteen markdown
+  and emit the SEVEN P1-P7 lens lines. Include the figure read-target rule in
+  the prompt (paper-mode analogue of the markdown branch's #922 EXCEPTION,
+  whose Lens-3 pointer does not ship in paper mode): the compiled PDF is the
+  built artifact of record — on a working-tree-PNG vs PDF-page disagreement,
+  review against the PDF page, note the possible stale working-tree stray,
+  and never rest a blocker on the PNG alone. Do NOT inline the fifteen markdown
   lenses or the `verify_task_body.py` / `audit_clean_results_body_discipline.py`
   envelopes for a paper task. The marker kind, round budget, and grounding rule are
   identical. (No `\metric` grounding lens in v1.)
