@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1249,
+  "highest_id": 1250,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1947,6 +1947,13 @@
       "path": "tasks/archived/125",
       "status": "archived",
       "title": "Doing insecure-code SFT before persona-marker coupling on Qwen2.5-7B causes the marker to leak to ~47% of bystander personas, vs 0% under the reverse order or a benign-SFT control (MODERATE confidence)"
+    },
+    "1250": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1250",
+      "status": "proposed",
+      "title": "guard_repo_root_pull false-positives on quoted 'git pull' in"
     },
     "126": {
       "has_clean_result": false,
