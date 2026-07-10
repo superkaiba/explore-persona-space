@@ -1909,8 +1909,8 @@
     "1245": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1245",
-      "status": "running",
+      "path": "tasks/reviewing/1245",
+      "status": "reviewing",
       "title": "background + rc-file pattern for Step 10d lint gate"
     },
     "1246": {
