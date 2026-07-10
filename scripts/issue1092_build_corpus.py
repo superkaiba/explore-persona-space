@@ -877,6 +877,7 @@ def _label_topic_batch(
         )
         for attempt in range(max_retries):
             try:
+                # API_DISPATCH_ROUTING_EXEMPT: plan-sanctioned ~3k sync Haiku topic-label calls (~$5, v5 s4.1 step 4); run complete (post-run lint waiver)
                 resp = client.messages.create(
                     model=HAIKU_MODEL,
                     max_tokens=20,
@@ -2120,6 +2121,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
             len(prefix_label_inputs),
         )
     else:
+        # API_DISPATCH_ROUTING_EXEMPT: plan-sanctioned ~3k sync Haiku topic-label calls (~$5, v5 s4.1 step 4); run complete (post-run lint waiver)
         client = anthropic.Anthropic()
         topic_labels = _label_topic_batch(prefix_label_inputs, client=client)
     for pfx, lbl in zip(prefix_entries, topic_labels, strict=True):

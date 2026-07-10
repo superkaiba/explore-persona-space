@@ -3185,7 +3185,7 @@ def run_cpu_smoke(args: argparse.Namespace) -> None:
         f"[cpu-smoke] artifact digest: {len(summary_files)} npy, "
         f"{len(comp_files)} jsonl, cells={cells}, n_rows={n_rows}"
     )
-    print("[phase=done]")
+    print("[phase=done]")  # noqa: phase-done-reserved
 
 
 def _load_rows_for_smoke(args: argparse.Namespace) -> tuple[list[dict], dict, dict]:
@@ -3974,7 +3974,7 @@ def run_hf_cpu_smoke(args: argparse.Namespace) -> None:
         f"[hf-cpu-smoke] artifact digest: {len(rows)} rows, {len(summary_files)} npy, "
         f"{len(comp_files)} jsonl, rb_pool_shape={None if rb_pool is None else rb_pool.shape}"
     )
-    print("[phase=done]")
+    print("[phase=done]")  # noqa: phase-done-reserved
 
 
 # ---------------------------------------------------------------------------
@@ -4392,7 +4392,7 @@ def main() -> None:  # noqa: C901
 
     # Write sentinel
     _write_sentinel(args, phase="done")
-    print("[phase=done]")
+    print("[phase=done]")  # noqa: phase-done-reserved
     logger.info("[main] GPU phase complete")
 
 
