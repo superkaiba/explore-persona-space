@@ -1748,8 +1748,8 @@
     "1224": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1224",
-      "status": "approved",
+      "path": "tasks/running/1224",
+      "status": "running",
       "title": "reconcile v2 SKILL 7c/7f figure-commit vs SHA-pin ordering"
     },
     "1225": {
