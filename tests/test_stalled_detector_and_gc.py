@@ -74,6 +74,64 @@ def _forbid_real_marker_posts(monkeypatch):
     monkeypatch.setattr(asw, "_post_progress_marker", _guarded)
 
 
+@pytest.fixture(autouse=True)
+def _forbid_real_task_status_reads(monkeypatch):
+    """#1247 round-2 hermeticity guard (fail-loud): no test in this file may
+    reach the REAL ``task.py view`` subprocess through ``_task_status`` — the
+    per-session status read in ``_process_stalled_session`` had 6 sibling
+    stalled-pass tests silently depending on task #489's LIVE status (+
+    ~1-2s subprocess per call; round-1 review probe evidence). Read-only
+    (never the junk-marker mechanism) — a determinism/latency pin. A test
+    that needs a status overrides this with its own stub (a later test-level
+    monkeypatch wins), e.g.
+    ``monkeypatch.setattr(asw, "_task_status", lambda issue: "running")``."""
+    import functools
+
+    import autonomous_session_watch as asw
+
+    # functools.wraps sets __wrapped__, so inspect.getsource() on the patched
+    # attribute still resolves the ORIGINAL body.
+    @functools.wraps(asw._task_status)
+    def _guarded(issue):
+        raise AssertionError(
+            f"_task_status({issue}) reached the #1247 round-2 autouse hermeticity guard — the "
+            "real body shells `task.py view` against the LIVE task tree, making the test "
+            "depend on live VM state. Monkeypatch a status in the test, e.g. "
+            "monkeypatch.setattr(asw, '_task_status', lambda issue: 'running')."
+        )
+
+    monkeypatch.setattr(asw, "_task_status", _guarded)
+
+
+def _stub_fleet_mutating_passes(asw, monkeypatch):
+    """#1247 hermeticity for FULL-main() tests — mirror of the same-name
+    helper in ``tests/test_autonomous_session_watch.py`` (per-file helper
+    convention, like ``isolated_registry``): main() runs passes that scan the
+    LIVE repo and can REALLY mutate fleet state from a unit test.
+    ``proposed_infra_sweep_pass`` + ``capacity_retry_pass`` DISPATCH real
+    ``spawn-issue --auto`` sessions via the live Happy daemon,
+    ``program_orchestrator_pass`` can relaunch the real #660 tmux daemon, the
+    escalate-only observer passes scan live VM state (REGISTRY tasks +
+    events.jsonl, /proc + the earlyoom journal, the Happy daemon bundle,
+    statvfs) and can write real ``.claude/cache/`` sidecar rows + Telegram
+    pushes, and ``vm_ledger_reap_pass`` mutates the live
+    ``~/.task-workflow/vm-ledger.json``. Call this helper BEFORE any
+    test-local recorder so the recorder (a later monkeypatch) wins."""
+    for pass_name in (
+        "proposed_infra_sweep_pass",
+        "capacity_retry_pass",
+        "program_orchestrator_pass",
+        "verdict_disagree_pass",
+        "cpu_guard_pass",
+        "happy_patch_pass",
+        "data_disk_pass",
+        "gate_push_pass",
+        "gc_pass",
+        "vm_ledger_reap_pass",
+    ):
+        monkeypatch.setattr(asw, pass_name, lambda *a, **kw: None)
+
+
 # ─── decide_session_stalled — pure decision matrix ────────────────────────────
 
 
@@ -610,6 +668,11 @@ def test_stalled_pass_alerts_after_two_consecutive_stale_ticks(
     )
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    # #1247 r2 hermeticity: _process_stalled_session re-reads the task status
+    # via a REAL `task.py view 489` subprocess. Stub a TERMINAL status (the
+    # value the live host historically returned for #489) so respawn stays
+    # ineligible and the pass exercises the alert-only arm this test pins.
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(
         asw,
         "_post_progress_marker",
@@ -769,6 +832,8 @@ def test_stalled_pass_dedups_within_episode(
     )
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    # #1247 r2 hermeticity: terminal status (see the two-tick alert test).
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(
         asw,
         "_post_progress_marker",
@@ -797,6 +862,8 @@ def test_stalled_pass_clears_alerted_when_self_report_advances(
     stale_age = STALLED_WINDOW_S + 600
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    # #1247 r2 hermeticity: terminal status (see the two-tick alert test).
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(
         asw,
         "_post_progress_marker",
@@ -848,6 +915,8 @@ def test_stalled_pass_skips_when_no_self_report(
     monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (None, None))
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    # #1247 r2 hermeticity: terminal status (see the two-tick alert test).
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(
         asw,
         "_post_progress_marker",
@@ -879,6 +948,8 @@ def test_stalled_pass_never_respawns_or_stops(
     )
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    # #1247 r2 hermeticity: terminal status (see the two-tick alert test).
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(asw, "_respawn", lambda entry, dry_run: respawns.append(entry) or True)
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: None)
@@ -960,6 +1031,8 @@ def test_stalled_pass_dry_run_no_state_write(
     )
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    # #1247 r2 hermeticity: terminal status (see the two-tick alert test).
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: None)
 
     asw.stalled_session_pass(dry_run=True, threshold=1, now=now)
@@ -1136,6 +1209,12 @@ def test_main_runs_stalled_and_gc_after_pod_safety(isolated_registry, monkeypatc
     import autonomous_session_watch as asw
 
     calls: list[str] = []
+    # #1247 round 2: with _daemon_reachable forced True below, the unstubbed
+    # sweep/observer passes would reach live VM state (this exact test shelled
+    # a real `task.py list-by-status --status proposed` via
+    # proposed_infra_sweep_pass). Called FIRST so the test's own gc_pass
+    # recorder below overrides the helper's stub and keeps recording.
+    _stub_fleet_mutating_passes(asw, monkeypatch)
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
     # main() fetches the shared reaper-pass /list snapshot + the #845 wedge

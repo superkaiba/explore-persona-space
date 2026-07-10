@@ -903,7 +903,10 @@ def _source_stamp() -> str:
     the poster took days of forensics to attribute). ``root=`` is the primary
     discriminator (durable after the process dies); ``pid=`` enables live
     ``/proc`` inspection; ``sha=`` dates the build generation. Fail-soft:
-    ``sha=unknown`` on any git failure; never raises. ``lru_cache``:
+    ``sha=unknown`` on any git failure and ``user=unknown`` when the identity
+    lookup fails (``getpass.getuser()`` raises KeyError/OSError with no
+    USER/LOGNAME env and no pw entry for the uid — stripped cron/container
+    envs); never raises. ``lru_cache``:
     host/user/pid/sha/root are process-constants, computed once."""
     script_root = Path(__file__).resolve().parent.parent
     try:
@@ -919,8 +922,15 @@ def _source_stamp() -> str:
         )
     except (subprocess.SubprocessError, OSError):
         sha = "unknown"
+    try:
+        user = getpass.getuser()
+    except (KeyError, OSError):
+        # The sanctioned fail-soft carve-out: the stamp is forensic metadata —
+        # raising at note-format time AFTER the act guard passed would kill
+        # the acting pass over a missing identity string.
+        user = "unknown"
     return (
-        f"[src: host={socket.gethostname()} user={getpass.getuser()} "
+        f"[src: host={socket.gethostname()} user={user} "
         f"pid={os.getpid()} sha={sha} root={script_root}]"
     )
 
