@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1221,
+  "highest_id": 1222,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1730,6 +1730,13 @@
       "path": "tasks/proposed/1221",
       "status": "proposed",
       "title": "forward rc==0 child stderr in remaining subprocess callers"
+    },
+    "1222": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1222",
+      "status": "proposed",
+      "title": "implementer item-5 names tiny-real data-ingestion probe"
     },
     "123": {
       "has_clean_result": true,
