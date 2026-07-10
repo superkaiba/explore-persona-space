@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1227,
+  "highest_id": 1228,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1772,6 +1772,13 @@
       "path": "tasks/proposed/1227",
       "status": "proposed",
       "title": "extend check 19b bare-table WARN to v4 Methodology"
+    },
+    "1228": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1228",
+      "status": "proposed",
+      "title": "gate daily driver wf-fix tags per SKILL route-2 variant"
     },
     "123": {
       "has_clean_result": true,
