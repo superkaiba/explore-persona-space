@@ -271,7 +271,42 @@ The stalled detector + the two respawn arms carry six hardening mechanisms
   (their failure modes freeze the self-report by construction, and the
   fresh path must not fire on one wake's same-turn retry rows); with
   both turn knobs at `0` the fresh path probes nothing (the exact
-  pre-#1127 lazy gate — the rollback path). The single-refusal guard and
+  pre-#1127 lazy gate — the fresh-path rollback; a FULL #1209 rollback
+  additionally sets `EPM_TICK_WEDGE_DEAD_SILENCE_MIN=0`, which disables
+  the dead-wake trigger on the stale path too).
+  **#1209 dead-wake trigger (`failed-turn-silence`):** a session dead
+  after a SINGLE refused turn never arms its tick cron and freezes below
+  every counting threshold above (incident #1092 / transcript 8e9c371d:
+  1 failed turn at 02:54Z, ~100 min to the slow-lane respawn), so a tail
+  whose completed turns are ALL failed and whose newest parseable row
+  timestamp is ≥ `EPM_TICK_WEDGE_DEAD_SILENCE_MIN` (default 20 min; `0`
+  disables; malformed/negative → default) older than the pass clock
+  escalates to the fence STOP. The stop is the trigger's ACT — recorded
+  by a one-time `session-dead-silence-stop` marker at stop-initiation —
+  and the CRASH-RECOVERY arm completes the respawn once the stopped
+  wrapper is verifiably dead (~20-30 min): the fence's own spawn branch
+  is unreachable for this trigger's fresh-self-report shape (post-stop
+  the sid leaves the daemon /list, the wedge pid-gate goes inert, and
+  decide() keeps on the fresh boot self-report). Bounded by the episode
+  belt (`respawn_count < STALLED_MAX_RESPAWNS`) AND a per-issue
+  per-UTC-day cap `EPM_TICK_WEDGE_DEAD_RESPAWNS_PER_DAY` (default 3;
+  malformed or <1 → default — never a kill switch), bumped ONCE per
+  fence episode at stop-initiation and persisted
+  advancement-clear-EXEMPT in `stalled-<N>.json` (each die-on-turn-1
+  generation writes one boot self-report, so episode-scoped state
+  cannot bound the cross-generation die-on-boot loop); a cap-disarmed
+  trigger goes quiet (no marker, no push) and the slow stalled lane
+  stays the backstop. On the fresh path it rides the SAME two-turn-knob
+  gate as the #1127 lanes (both turn knobs at `0` keeps the zero-probe
+  hot path; the dead-wake trigger then still fires via the STALE path
+  once the boot self-report ages out); a prior ok turn anywhere in the
+  tail, zero completed turns (swallows stay the dequeue-run's
+  property), a ts-less tail, and a future-dated anchor all fail toward
+  NO-FIRE. Accepted #1209 residual, pinned by test: the 256 KB tail can
+  truncate older ok turns of a very long final turn (incl. the
+  leading-implicit-turn shape) — the last visible turn genuinely failed
+  and went silent, so the bounded fresh respawn is the accepted
+  recovery. The single-refusal guard and
   fail-toward-NO-FIRE posture are unchanged. Accepted residuals: the
   watcher's own status-transition-keyed reconcile can refresh a
   SWALLOWED session's self-report, so the #779 dequeue-run shape then
