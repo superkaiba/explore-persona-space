@@ -7749,7 +7749,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       pre-run `rm -f` of all three gate files (a killed run must leave NO
       junit — pytest writes it only at session exit; a stale file from a
       prior round must never be re-read). BACKGROUND IS REQUIRED, NOT
-      OPTIONAL: the selection always contains the 32-file workflow-invariant
+      OPTIONAL: the selection always contains the 35-file workflow-invariant
       set incl. `tests/test_workflow_lint.py` (median ~6.5 min alone, max
       ~13 min; whole gate median ~11 min, max ~21 min of test time plus
       collection overhead — 26 junit runs measured 2026-07-04/05), so the

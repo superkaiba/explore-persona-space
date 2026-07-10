@@ -99,7 +99,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-# --- Pinned workflow-invariant tests (plan §5 + 1 brief addition, 32 files). -
+# --- Pinned workflow-invariant tests (plan §5 + 1 brief addition + 3 #1242 pins, 35 files). -
 # A module-level literal tuple, NOT a glob: a future ``tests/test_workflowish.py``
 # that is NOT meant to gate Step 9c must not silently join the gate, and the gate
 # must not silently shrink if a glob arm stops matching. Drift is made loud by the
@@ -138,7 +138,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_sparse_worktree.py",
     "tests/test_autonomous_plan_gate.py",
     "tests/test_autonomous_session_watch.py",
+    "tests/test_issue_skill_exit_breadcrumb.py",  # NEW (#1242) — SKILL.md exit-breadcrumb pin
     "tests/test_issue_skill_marker_contract.py",
+    "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
+    "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     "tests/test_plan_handoff_path_convention.py",
     "tests/test_clean_result_critic_planned_vs_actual.py",
     "tests/test_check_no_secret_shaped_strings.py",
@@ -236,8 +239,8 @@ def recommended_timeout_s(tests: list[str]) -> int:
     """Deterministic `timeout(1)` bound for a Step 9c gate selection.
 
     ``BASE + PER_FILE * len(tests) + sum(slow surcharges)``, floored at
-    ``TIMEOUT_FLOOR_S``. Invariant-only selection (32 files incl. the
-    workflow-lint surcharge) -> 1980 s (~33 min), consistent with the existing
+    ``TIMEOUT_FLOOR_S``. Invariant-only selection (35 files incl. the
+    workflow-lint surcharge) -> 2070 s (~34.5 min), consistent with the existing
     invariant-set-scale precedents (``step9c_baseline.py refresh``
     ``--timeout-s`` default 1800 s; the SKILL.md detached refresh's 2100 s).
     """
@@ -540,7 +543,7 @@ def main(argv: list[str] | None = None) -> int:
     missing = missing_invariants(work_root)
 
     # Fail loud on an EMPTY selection (defense-in-depth beside the Step 9c shell
-    # guard against a silent test-gate pass). WORKFLOW_INVARIANT has 32 always-on
+    # guard against a silent test-gate pass). WORKFLOW_INVARIANT has 35 always-on
     # entries, so an empty list can only mean the work root resolved wrong (e.g.
     # invoked from a directory outside the repo, or a bad --repo-root override)
     # or the invariant files all vanished — either way the gate would run zero
