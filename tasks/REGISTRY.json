@@ -1902,22 +1902,22 @@
     "1244": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1244",
-      "status": "running",
+      "path": "tasks/completed/1244",
+      "status": "completed",
       "title": "Guard 1 foreign-strip deletion silently resurrected"
     },
     "1245": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1245",
-      "status": "planning",
+      "path": "tasks/running/1245",
+      "status": "running",
       "title": "background + rc-file pattern for Step 10d lint gate"
     },
     "1246": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1246",
-      "status": "planning",
+      "path": "tasks/reviewing/1246",
+      "status": "reviewing",
       "title": "add c33 escape phrase to planner canonical-escape list"
     },
     "1247": {
@@ -1930,15 +1930,15 @@
     "1248": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1248",
-      "status": "planning",
+      "path": "tasks/reviewing/1248",
+      "status": "reviewing",
       "title": "sweep suppression misses prior-night disposition records"
     },
     "1249": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1249",
-      "status": "proposed",
+      "path": "tasks/reviewing/1249",
+      "status": "reviewing",
       "title": "Step 10d bare merge/push forms + fail-soft Step-0 probes"
     },
     "125": {
@@ -1951,8 +1951,8 @@
     "1250": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1250",
-      "status": "proposed",
+      "path": "tasks/planning/1250",
+      "status": "planning",
       "title": "guard_repo_root_pull false-positives on quoted 'git pull' in"
     },
     "1251": {
