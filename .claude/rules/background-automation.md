@@ -306,14 +306,36 @@ The stalled detector + the two respawn arms carry six hardening mechanisms
   truncate older ok turns of a very long final turn (incl. the
   leading-implicit-turn shape) — the last visible turn genuinely failed
   and went silent, so the bounded fresh respawn is the accepted
-  recovery. The single-refusal guard and
+  recovery.
+  **#1241 cap parity for the four pre-#1209 triggers:** `dequeue-run` /
+  `api-error-run` / `failed-turn-run` / `failed-turn-rate` respawns are
+  bounded at the override site by the SAME two-part gate as the #1209
+  trigger — the episode belt (`respawn_count < STALLED_MAX_RESPAWNS`,
+  the cap decide() enforces on the slow path) AND a per-issue
+  per-UTC-day cap `EPM_TICK_WEDGE_RESPAWNS_PER_DAY` (default 3;
+  malformed or <1 → default — never a kill switch), on its own
+  day-keyed, advancement-clear-EXEMPT counter (`wedge_respawns_today` /
+  `wedge_respawn_day` in `stalled-<N>.json`) bumped ONCE per
+  wedge-initiated fence episode at stop-initiation (the crash-recovery
+  arm, which consults no cap, can complete a fresh-self-report wedge
+  respawn — so the fence's spawn branch cannot be the counting or
+  gating site, the same reason as #1209's). The two day budgets are
+  INDEPENDENT. A stop-failed episode still consumes a budget unit
+  (counted at stop-initiation — conservative in the safe direction) and
+  stays push-visible via the one-time `session-stop-failed` marker. A
+  cap-disarmed trigger goes quiet (no marker, no push; when EVERY
+  family is cap-disarmed the 256 KB transcript read is skipped
+  entirely); the slow stalled lane stays the backstop with its own
+  decide()-side belt + exhausted marker.
+  The single-refusal guard and
   fail-toward-NO-FIRE posture are unchanged. Accepted residuals: the
   watcher's own status-transition-keyed reconcile can refresh a
   SWALLOWED session's self-report, so the #779 dequeue-run shape then
   waits for staleness — identical to today; and a healthy session whose
   last 3 wakes each END in one transient trailing api-error row can
   false-respawn (bounded by the 3-consecutive-completed-turn bar, the
-  respawn cap, the fence, the worktree hold, and the park exemptions).
+  episode belt + per-issue per-UTC-day wedge cap — #1241, above — the
+  fence, the worktree hold, and the park exemptions).
   Bypasses the 2-miss debounce, the #759 K-downgrade and the 2h marker
   window — direct evidence beats proxies — but NOT the park exemptions
   (provision-in-flight / followups / spend-approval — re-probed once
