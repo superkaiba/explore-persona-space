@@ -1734,8 +1734,8 @@
     "1222": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1222",
-      "status": "running",
+      "path": "tasks/reviewing/1222",
+      "status": "reviewing",
       "title": "implementer item-5 names tiny-real data-ingestion probe"
     },
     "1223": {
