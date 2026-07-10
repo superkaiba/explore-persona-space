@@ -8,7 +8,12 @@ independently resumable (skip on existing output with matching input fingerprint
                     (scoped list_repo_tree + per-file hf_hub_download — NEVER
                     snapshot_download on the ~1M-file repo), dedupe duplicate
                     unit-slots deterministically (recorded), and emit one JSON
-                    aggregate per read family under --out-dir.
+                    aggregate per read family under --out-dir. Every family JSON
+                    (plus battery_scope_caveat.json and the merge manifest)
+                    embeds the machine-readable battery_scope_caveat block for
+                    concern battery-rows-in-fit-arms-banked-p6 (battery rows
+                    were IN TRAINING in both banked fit arms; the fold-iii
+                    transfer read is not computable from banked artifacts).
   projection-sweep  The v6-retained 28-layer B1(a) raw-projection r_B^T state
                     read (stage-einsum-delete per layer over the persisted
                     summary shards), the B1(d) B0 poolings (persisted
@@ -451,12 +456,192 @@ def _expected_slots() -> set[tuple]:
     return slots
 
 
+BATTERY_CONCERN_ID = "battery-rows-in-fit-arms-banked-p6"
+# The realized corpus stratum label for the #594 battery bridge rows. The engine's
+# fit-arm-A filter (fit_grid.py run(): stratum not in {"trait_stratum",
+# "battery_eval_only"}) does NOT match it, so battery rows entered TRAINING in
+# both fit arms across all banked P6 checkpoints (concern above, raised round 13).
+BATTERY_STRATUM_REALIZED = "battery"
+
+
+def _battery_scope_caveat(kept: list[dict], corpus_manifest: Path) -> dict:
+    """Machine-readable plan-deviation caveat for concern battery-rows-in-fit-arms-banked-p6.
+
+    Plan v5 section 4.1 step 6 registered the #594 battery rows EVAL-ONLY in both
+    fit arms, with a battery TRANSFER read (OOD fold iii: fit on real corpus ->
+    evaluate on #594 battery). The realized corpus labels the stratum "battery"
+    (with is_eval_only=true), but the engine filter excludes only
+    {"trait_stratum", "battery_eval_only"} — so battery rows were IN TRAINING for
+    both fit arms in every banked checkpoint. This block verifies that from the
+    banked units' own n_rows plus the realized manifest's stratum counts, records
+    the recoverability investigation (round 22), and states what downstream
+    consumers may / may not claim. It is embedded in EVERY merge-stage read-family
+    JSON so the analyzer carries it into the clean-result mechanically.
+    """
+    observed: dict[str, dict[str, list[int]]] = {}
+    for u in kept:
+        cell = observed.setdefault(u["cell"], {})
+        vals = cell.setdefault(u["fit_arm"], [])
+        if int(u["n_rows"]) not in vals:
+            vals.append(int(u["n_rows"]))
+    observed = {
+        c: {fa: sorted(v) for fa, v in sorted(d.items())} for c, d in sorted(observed.items())
+    }
+
+    caveat: dict[str, Any] = {
+        "concern_id": BATTERY_CONCERN_ID,
+        "severity": "CONCERN",
+        "registered": {
+            "plan": "v5 section 4.1 step 6 + OOD-fold registration (iii)",
+            "battery_rows": "EVAL-ONLY in both fit arms (context-transfer read, factorial-wide)",
+            "transfer_read": "fold iii: fit on real corpus -> evaluate on #594 battery "
+            "(corpus transfer, strongest OOD form)",
+        },
+        "realized_in_banked_p6": {
+            "engine_fit_arm_A_filter": "stratum not in {'trait_stratum', 'battery_eval_only'} "
+            "(fit_grid.py run(); fit arm B takes all rows; is_eval_only read nowhere)",
+            "corpus_stratum_label": BATTERY_STRATUM_REALIZED,
+            "consequence": "battery rows were IN TRAINING for both fit arms in all banked "
+            "checkpoints; the registered fold-iii transfer read has no implementation",
+        },
+        "observed_n_rows_by_cell_fit_arm": observed,
+        "recoverability": {
+            "investigated_round": 22,
+            "banked_fit_block_fields": ["r2", "r2_folds", "lambda_indices"],
+            "per_fold_predictions_persisted": False,
+            "per_fold_coefficients_persisted": False,
+            "per_row_heldout_predictions_or_residuals_persisted": False,
+            "row_indexing_in_checkpoints": False,
+            "verdict": "NOT recoverable from banked artifacts: under the grouped 6-fold CV "
+            "each battery row was held out of exactly its own fold (and in TRAINING for the "
+            "other 5 folds' maps), so an honest never-trained-on-this-row battery read existed "
+            "in memory (_fit_cv computes per-row held-out pred) but only aggregate per-fold R2 "
+            "was persisted; the aggregate r2_folds mix battery and non-battery rows and cannot "
+            "be decomposed by stratum post hoc",
+            "future_recovery_route": "folds are deterministic (_folds_from_manifest, group_key "
+            "+ FOLD_SEED) and per-fold lambda indices are banked, so per-fold maps could be "
+            "refit deterministically from the staged summaries — refit territory, out of scope "
+            "for the banked grid (round-22 decision: no P6 re-run)",
+        },
+        "downstream_guidance": {
+            "may_claim": [
+                "fitted-map reads (read1-4, B1/B2 map-mediated) as WITHIN-CORPUS reads whose "
+                "training rows include the 2,400 battery rows in both fit arms (composition "
+                "documented here)",
+                "held-out R2 under grouped 6-fold CV, with fold aggregates mixing battery and "
+                "non-battery rows",
+            ],
+            "may_not_claim": [
+                "the plan-v5 fold-iii battery TRANSFER read (fit on real corpus -> evaluate on "
+                "#594 battery) — not computable from banked artifacts",
+                "any 'battery eval-only' framing, including the #813 comparability framing — "
+                "carry this caveat instead",
+                "a battery-restricted held-out read from banked checkpoints (per-row held-out "
+                "predictions were not persisted)",
+                "the P7 A_real_only row arm as battery-free — it mirrors the engine rule and "
+                "INCLUDES battery rows",
+            ],
+        },
+    }
+
+    if not corpus_manifest.exists():
+        caveat["corpus_manifest"] = {"status": "absent", "path": str(corpus_manifest)}
+        caveat["n_rows_arithmetic"] = {
+            "status": "not_checkable_manifest_absent",
+            "note": "per-cell battery-in-training verification needs the realized manifest",
+        }
+        return caveat
+
+    strata: dict[str, int] = defaultdict(int)
+    claude_strata: dict[str, int] = defaultdict(int)
+    control_strata: dict[str, int] = defaultdict(int)
+    battery_eval_only_flags: dict[str, int] = defaultdict(int)
+    n_total = 0
+    for row in _jsonl(corpus_manifest):
+        n_total += 1
+        stratum = str(row.get("stratum"))
+        strata[stratum] += 1
+        if row.get("claude_subset"):
+            claude_strata[stratum] += 1
+        if row.get("control_subset"):
+            control_strata[stratum] += 1
+        if stratum == BATTERY_STRATUM_REALIZED:
+            battery_eval_only_flags[str(bool(row.get("is_eval_only")))] += 1
+
+    scopes = {
+        "full_corpus": dict(strata),
+        "claude_subset": dict(claude_strata),
+        "control_subset": dict(control_strata),
+    }
+    scope_totals = {name: sum(counts.values()) for name, counts in scopes.items()}
+    per_cell: dict[str, dict] = {}
+    for cell, arms in observed.items():
+        fit_b = arms.get("B", [])
+        fit_a = arms.get("A", [])
+        entry: dict[str, Any] = {
+            "n_rows_fitA_observed": fit_a,
+            "n_rows_fitB_observed": fit_b,
+        }
+        scope_name = next(
+            (name for name, tot in scope_totals.items() if len(fit_b) == 1 and fit_b[0] == tot),
+            None,
+        )
+        if scope_name is None or len(fit_a) != 1:
+            entry["status"] = "not_checkable"
+            entry["note"] = (
+                "no scope total matches the observed fitB n_rows (n0 truncation or partial "
+                "grid) or fit-arm n_rows not unique"
+            )
+        else:
+            counts = scopes[scope_name]
+            trait_n = counts.get("trait_stratum", 0)
+            battery_n = counts.get(BATTERY_STRATUM_REALIZED, 0)
+            expected_engine = scope_totals[scope_name] - trait_n
+            expected_registered = scope_totals[scope_name] - trait_n - battery_n
+            entry.update(
+                {
+                    "status": "checked",
+                    "scope_matched": scope_name,
+                    "expected_fitA_engine_rule": expected_engine,
+                    "expected_fitA_registered_rule": expected_registered,
+                    "battery_rows_in_training": fit_a[0] == expected_engine
+                    and fit_a[0] != expected_registered,
+                }
+            )
+        per_cell[cell] = entry
+    caveat["corpus_manifest"] = {
+        "status": "present",
+        "path": str(corpus_manifest),
+        "sha256_16": _sha16_file(corpus_manifest),
+        "n_rows": n_total,
+        "strata_counts": dict(sorted(strata.items())),
+        "battery_is_eval_only_flag_counts": dict(sorted(battery_eval_only_flags.items())),
+    }
+    caveat["n_rows_arithmetic"] = {
+        "status": "computed",
+        "scope_totals": scope_totals,
+        "per_cell": per_cell,
+    }
+    return caveat
+
+
 def step_merge(args: argparse.Namespace, hub) -> None:  # noqa: C901
     out_dir = Path(args.out_dir)
     work = Path(args.work_dir)
     stage_dir = work / "staging" / "checkpoints"
     boxes = [int(b) for b in _parse_csv(args.boxes, [str(i) for i in range(1, 13)])]
     by_name, box_of = _list_box_checkpoints(hub, args.hf_prefix, boxes)
+    # Every LOCAL file the merge consumes rides the fingerprint (code-review v13
+    # minor-2 class: a skip predicate must cover ALL consumed inputs — without
+    # this, a landed bridge summary / refreshed judge scores kept bridge_refits
+    # .json at "pending" until --force).
+    corpus_manifest = Path(args.corpus_dir) / "manifest.jsonl"
+    consumed_local = {
+        "bridge_summary": Path(args.bridge_summary),
+        "judge_scores": Path(args.judge_scores),
+        "judge_summary": Path(args.judge_summary),
+        "corpus_manifest": corpus_manifest,
+    }
     fingerprint = _sha16_text(
         json.dumps(
             {
@@ -464,6 +649,11 @@ def step_merge(args: argparse.Namespace, hub) -> None:  # noqa: C901
                 "boxes": boxes,
                 "dedup_rule": "mlp-computed-then-min-fp:v1",
                 "expect_full_grid": bool(args.expect_full_grid),
+                "consumed_inputs": {
+                    name: (_sha16_file(p) if p.exists() else None)
+                    for name, p in consumed_local.items()
+                },
+                "battery_scope_caveat": BATTERY_CONCERN_ID,
             },
             sort_keys=True,
             default=list,
@@ -514,11 +704,25 @@ def step_merge(args: argparse.Namespace, hub) -> None:  # noqa: C901
             )
         coverage["full_grid_verified"] = True
     meta = _run_metadata(args)
+    battery_caveat = _battery_scope_caveat(kept, corpus_manifest)
 
     def family(name: str, payload: dict) -> None:
-        payload = {"metadata": meta, "merge_fingerprint": fingerprint, **payload}
+        payload = {
+            "metadata": meta,
+            "merge_fingerprint": fingerprint,
+            "battery_scope_caveat": battery_caveat,
+            **payload,
+        }
         _write_json_atomic(out_dir / name, payload)
         print(f"[p7-merge] wrote {out_dir / name}", flush=True)
+
+    family(
+        "battery_scope_caveat.json",
+        {
+            "read": "structured plan-deviation scope caveat (standalone copy; the same "
+            "battery_scope_caveat block is embedded in every merge-stage family JSON)"
+        },
+    )
 
     def prov(u: dict) -> dict:
         return _prov(u, box_of, name_of[u["fingerprint"]])
@@ -674,6 +878,7 @@ def step_merge(args: argparse.Namespace, hub) -> None:  # noqa: C901
             "hub_revision": hub.resolved_revision(),
             "boxes": boxes,
             "coverage": coverage,
+            "battery_scope_caveat": battery_caveat,
             "dedup_decisions": dedup_decisions,
             "checkpoints": {
                 n: {"boxes": box_of[n], "hub_identity": by_name[n].hub_identity[:16]}
@@ -689,6 +894,13 @@ def step_merge(args: argparse.Namespace, hub) -> None:  # noqa: C901
 
 
 # --------------------------------------------------------------- projection sweep (stage 2)
+def _merge_output_fingerprint(path: Path) -> str | None:
+    """merge_fingerprint of a consumed merge-stage output (None when absent)."""
+    if not path.exists():
+        return None
+    return _load_json(path).get("merge_fingerprint")
+
+
 def _row_arm_mask(rows: list[dict], row_arm: str) -> np.ndarray:
     if row_arm == "A_real_only":
         keep = [r.get("stratum") not in FIT_ARM_A_EXCLUDED_STRATA for r in rows]
@@ -1116,6 +1328,12 @@ def step_projection_sweep(args: argparse.Namespace, hub) -> None:  # noqa: C901
         f"{args.rb_rev}:{hashlib.sha256(np.ascontiguousarray(rb).tobytes()).hexdigest()[:16]}"
     )
     model_types = sorted({CELL_MODEL_TYPE[c] for c in cells})
+    # The sweep CONSUMES two merge-stage outputs (behavior_B1_B2.json feeds the
+    # L14 continuity check embedded in b1a families; read4_operator_identity.json
+    # feeds the cross-fit-layer band), so their merge fingerprints ride the sweep
+    # fingerprint — a re-merged grid invalidates the sweep outputs instead of
+    # leaving a stale band behind a bare band_path.exists() (code-review v13
+    # minor 4).
     fingerprint = _sha16_text(
         json.dumps(
             {
@@ -1127,6 +1345,12 @@ def step_projection_sweep(args: argparse.Namespace, hub) -> None:  # noqa: C901
                 "n_null_draws": args.n_null_draws,
                 "seed": args.seed,
                 "row_arms": ROW_ARMS,
+                "consumed_merge_outputs": {
+                    "behavior_B1_B2": _merge_output_fingerprint(out_dir / "behavior_B1_B2.json"),
+                    "read4_operator_identity": _merge_output_fingerprint(
+                        out_dir / "read4_operator_identity.json"
+                    ),
+                },
             },
             sort_keys=True,
         )
@@ -1138,7 +1362,7 @@ def step_projection_sweep(args: argparse.Namespace, hub) -> None:  # noqa: C901
         not args.force
         and _fingerprint_matches(b1a_path, fingerprint)
         and _fingerprint_matches(b1d_path, fingerprint)
-        and band_path.exists()
+        and _fingerprint_matches(band_path, fingerprint)
     ):
         print(f"[p7-sweep] up-to-date (fingerprint {fingerprint}); skipping", flush=True)
         return
