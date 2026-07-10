@@ -1643,8 +1643,8 @@
     "1210": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1210",
-      "status": "proposed",
+      "path": "tasks/planning/1210",
+      "status": "planning",
       "title": "daily-fix: Step 10d re-snapshots Guard-1 strip on merge conf"
     },
     "1211": {
