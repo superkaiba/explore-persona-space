@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1248,
+  "highest_id": 1249,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1933,6 +1933,13 @@
       "path": "tasks/proposed/1248",
       "status": "proposed",
       "title": "sweep suppression misses prior-night disposition records"
+    },
+    "1249": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1249",
+      "status": "proposed",
+      "title": "Step 10d bare merge/push forms + fail-soft Step-0 probes"
     },
     "125": {
       "has_clean_result": true,
