@@ -1650,8 +1650,8 @@
     "1211": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1211",
-      "status": "planning",
+      "path": "tasks/approved/1211",
+      "status": "approved",
       "title": "daily-fix: choom-protect the Step 10d lint-gate first run"
     },
     "1212": {
