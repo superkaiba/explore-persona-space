@@ -82,7 +82,10 @@ mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
 the adversarial-planner Phase 1.5.0 consumer treats as a mechanical redraft
 bounce (SKILL.md § Goal-currency gate), not a brief-forwarded WARN.
 
-Canonical N/A escape phrases (quote verbatim in bounce briefs):
+Canonical N/A escape phrases (quote verbatim in bounce briefs; each
+satisfies its check ONLY as a standalone declaration line — see
+``_standalone_na_declared``; exceptions: check 7 matches its bare
+phrase in prose by design, check 31 uses its labeled-line forms):
 
   - ``N/A — no model training`` / ``N/A — no training hyperparameters``
     (check 1)
@@ -545,8 +548,8 @@ def check_source_grounding(plan: str, kind: str) -> CheckResult:
         plan, ("decision rationale", "hyperparameter grounding", "decision grounding")
     )
     scope = sect if sect is not None else plan
-    if re.search(
-        NA_RE + r"no (?:model )?(?:training )?(?:model training|hyperparameters|training)", scope
+    if _standalone_na_declared(
+        scope, r"no (?:model )?(?:training )?(?:model training|hyperparameters|training)"
     ):
         return _pass(
             cid, name, "explicit N/A declared (no model training / no training hyperparameters)"
@@ -562,9 +565,10 @@ def check_source_grounding(plan: str, kind: str) -> CheckResult:
         return _fail(
             cid,
             name,
-            "no Decision Rationale / grounding section and zero Source: entries — every "
+            "no Decision Rationale / grounding section and zero Source entries — every "
             "load-bearing hyperparameter needs a Source (planner.md §11); if the plan trains "
-            "no model, declare `N/A — no model training` / `N/A — no training hyperparameters`",
+            "no model, declare `N/A — no model training` / `N/A — no training hyperparameters` "
+            "— each on its own line",
         )
     if blank:
         return _fail(
@@ -585,8 +589,8 @@ def check_source_grounding(plan: str, kind: str) -> CheckResult:
         return _fail(
             cid,
             name,
-            "§11-style section present but zero Source entries (inline `Source:` label or "
-            "a `Source` table column)",
+            "§11-style section present but zero Source entries (an inline source label — "
+            "`Source` followed by a colon — or a `Source` table column)",
         )
     ungrounded = [s for s in sources if "ungrounded" in s.lower()]
     return _pass(
@@ -609,7 +613,7 @@ def check_measurement_validity(plan: str, kind: str) -> CheckResult:
     cid, name = "c2_measurement_validity", "per-DV measurement validity"
     if kind != "experiment":
         return _skip(cid, name, "kind-exempt: analysis|infra|batch|survey have no behavioral DV")
-    if re.search(NA_RE + r"no behavioral construct", plan):
+    if _standalone_na_declared(plan, r"no behavioral construct"):
         return _pass(cid, name, "explicit N/A declared (no behavioral construct)")
     text = strip_fences(plan)
     mv_headings = [h for h in _headings(plan) if "measurement validity" in h.text.casefold()]
@@ -644,7 +648,7 @@ def check_measurement_validity(plan: str, kind: str) -> CheckResult:
         name,
         "no measurement-validity declaration (planner.md §6 required block: per-DV construct "
         "+ metric + on-distribution status; non-behavioral plans declare "
-        "`N/A — no behavioral construct`)",
+        "`N/A — no behavioral construct` on its own line)",
     )
 
 
@@ -825,7 +829,7 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     reuse_heading = any(re.search(r"(?i)reuse|reused[- ]artifact", h.text) for h in _headings(plan))
     if not (reuse_near_hf or reuse_heading):
         return _skip(cid, name, "no HF-artifact reuse detected")
-    if re.search(NA_RE + r"no (?:artifact )?reuse", text):
+    if _standalone_na_declared(plan, r"no (?:artifact )?reuse"):
         return _pass(cid, name, "explicit no-reuse declaration (N/A — no artifact reuse)")
     fitness = re.search(r"(?i)fitness", text)
     letters = {m.group(1) for m in re.finditer(r"\(([a-j])\)", text)}
@@ -1089,7 +1093,7 @@ def check_dryrun_test_coverage(plan: str, kind: str) -> CheckResult:
         )
     if not _DRYRUN_FLAG_RE.search(plan):
         return _skip(cid, name, "no --dry-run smoke/verification command detected")
-    if re.search(NA_RE + r"no dry-?run smoke", plan):
+    if _standalone_na_declared(plan, r"no dry-?run smoke"):
         return _pass(cid, name, "explicit N/A declared (no dry-run smoke)")
     evidence = _dryrun_test_evidence_lines(plan)
     if evidence:
@@ -1098,9 +1102,10 @@ def check_dryrun_test_coverage(plan: str, kind: str) -> CheckResult:
         cid,
         name,
         "plan names a `--dry-run` smoke/verification command but the test list has no test "
-        "exercising `dry_run=True` on the new code path — a broken dry_run thread turns the "
-        "final smoke into a real mutation (#596/#607/#633 pattern); add the test, or declare "
-        "`N/A — no dry-run smoke` if the flag mention is incidental",
+        "exercising the dry-run kwarg thread on the new code path — a broken dry-run kwarg "
+        "thread turns the final smoke into a real mutation (#596/#607/#633 pattern); add the "
+        "test, or declare `N/A — no dry-run smoke` on its own line if the flag mention is "
+        "incidental",
     )
 
 
@@ -1865,10 +1870,6 @@ _FAILLOUD_SUMMARY_HEAD_RE = re.compile(r"(?i)tl;dr|plan summary|^(?:§\s*)?0(?:\
 
 _FAILLOUD_WINDOW_LINES = 30
 
-_FAILLOUD_NA_RE = re.compile(
-    NA_RE + r"(?:no fail[- ]?loud acceptance claim|fail[- ]?loud claim not test-backable)"
-)
-
 
 def _failloud_claim_hits(plan: str) -> list[tuple[str, str]]:
     """(section heading, matched vocabulary) per acceptance/success anchor
@@ -1927,7 +1928,9 @@ def check_failloud_test_coverage(plan: str, kind: str) -> CheckResult:
     hits = _failloud_claim_hits(plan)
     if not hits:
         return _skip(cid, name, "no fail-loud claim in an acceptance/success-criteria window")
-    if _FAILLOUD_NA_RE.search(plan):
+    if _standalone_na_declared(
+        plan, r"(?:no fail[- ]?loud acceptance claim|fail[- ]?loud claim not test-backable)"
+    ):
         return _pass(
             cid, name, "explicit N/A declared (incidental vocabulary or not test-backable)"
         )
@@ -1950,7 +1953,7 @@ def check_failloud_test_coverage(plan: str, kind: str) -> CheckResult:
         "not count) — a run-book grep verifies the invariant once at review time, and a "
         "differently-worded re-swallow ships green past all committed tests (#913). Name the "
         "pinning test, or declare `N/A — no fail-loud acceptance claim` / "
-        "`N/A — fail-loud claim not test-backable`",
+        "`N/A — fail-loud claim not test-backable` — each on its own line",
     )
 
 
@@ -2017,7 +2020,6 @@ _C16_NONREPLACE_RE = re.compile(
     r"(?:headline[- ])?replac\w*[^.;]{0,80}?(?:headline|committed)"
     r"|(?:never|not)\s+(?:silently\s+)?replac\w*[^.;]{0,60}?headline"
 )
-_C16_NA_RE = re.compile(NA_RE + r"no re-?extracted reference arms")
 
 
 def check_reference_headline_distinction(plan: str, kind: str) -> CheckResult:
@@ -2051,7 +2053,7 @@ def check_reference_headline_distinction(plan: str, kind: str) -> CheckResult:
             "re-extraction vocabulary present but the plan does not read as a "
             "same-issue follow-up folding into an existing clean-result",
         )
-    if _C16_NA_RE.search(text):
+    if _standalone_na_declared(plan, r"no re-?extracted reference arms"):
         return _pass(cid, name, "explicit N/A declared (no re-extracted reference arms)")
     if (
         _C16_SAMEPASS_RE.search(text)
@@ -2067,12 +2069,13 @@ def check_reference_headline_distinction(plan: str, kind: str) -> CheckResult:
         cid,
         name,
         "plan re-extracts prior-headline reference arms AND folds into an existing "
-        "clean-result, but no sentence distinguishes same-pass comparator values from "
+        "clean-result, but no sentence distinguishes same-pass-comparator values from "
         "the prior committed headline values — state which values adjudicate this "
-        "round's NEW comparison vs which remain the committed headline, and that a "
+        "round's NEW comparison vs which are still the committed headline, and that a "
         "flipped reference CALL is reported as replication-stability evidence rather "
-        "than replacing the headline (#811 v3 §6 incident; the committed-cells-"
-        "remain-evidence rule), or declare `N/A — no re-extracted reference arms`",
+        "than replacing the headline (#811 v3 §6 incident; the kept-cells-"
+        "stay-evidence rule), or declare `N/A — no re-extracted reference arms` "
+        "on its own line",
     )
 
 
@@ -2571,7 +2574,7 @@ def check_ood_folds(plan: str, kind: str) -> CheckResult:
     cid, name = "c19_ood_folds", "OOD generalization folds (held-out predictive DV)"
     if kind not in ("experiment", "analysis"):
         return _skip(cid, name, "kind-exempt: infra|batch|survey plans have no predictive DV")
-    if re.search(NA_RE + r"no held-?out predictive DV", plan):
+    if _standalone_na_declared(plan, r"no held-?out predictive DV"):
         return _pass(cid, name, "explicit N/A declared (no held-out predictive DV)")
     text = strip_fences(plan)
     solo = _C19_SOLO_FOLD_RE.search(text)
@@ -2604,10 +2607,11 @@ def check_ood_folds(plan: str, kind: str) -> CheckResult:
     return _warn(
         cid,
         name,
-        "held-out predictive-DV vocabulary detected but no GROUP-level fold (LOFO / "
-        "leave-one-family-out / corpus transfer), no iid argument, and no "
-        "`N/A — no held-out predictive DV` escape — pointwise LOO can REORDER "
-        "cross-context claims (#810: read-out rho 0.909 → 0.285 under LOFO); "
+        "held-out predictive-DV vocabulary detected but no group-scoped fold "
+        "(leave-one-<family>-out / a fit-on-one-corpus-score-on-another arm), no "
+        "independence (i-i-d) argument, and no `N/A — no held-out predictive DV` escape "
+        "declared on its own line — pointwise LOO can REORDER cross-context claims "
+        "(#810: read-out rho 0.909 → 0.285 under the family-level fold); "
         ".claude/rules/ood-generalization-folds.md; Statistics critic must gate this",
     )
 
@@ -3245,8 +3249,6 @@ _C21_AST_EVIDENCE_RE = re.compile(
     r"(?i)ast\.(?:walk|parse)|\bAST[- ](?:based|arity|audit|walker)|libcst"
 )
 
-_C21_NA_RE = re.compile(NA_RE + r"no arity acceptance gate")
-
 
 def check_grep_arity_gate(plan: str, kind: str) -> CheckResult:
     """Plans registering a grep/`wc -l`-based signature-ARITY acceptance
@@ -3284,7 +3286,7 @@ def check_grep_arity_gate(plan: str, kind: str) -> CheckResult:
             hits.append((i, line.strip()))
     if not hits:
         return _skip(cid, name, "no grep-based call-arity pass condition detected")
-    if _C21_NA_RE.search(plan):
+    if _standalone_na_declared(plan, r"no arity acceptance gate"):
         return _pass(
             cid, name, "explicit N/A declared (flagged grep is not an arity pass condition)"
         )
@@ -3306,7 +3308,7 @@ def check_grep_arity_gate(plan: str, kind: str) -> CheckResult:
         "(split-line and keyword-argument calls carry no same-line comma; #1024 plan v1/v2). "
         "Register an AST arity audit instead: ast.parse each target file, ast.walk over Call "
         "nodes matching the function, count len(node.args) + len(node.keywords), whitelist "
-        "named exceptions — or declare `N/A — no arity acceptance gate`",
+        "named exceptions — or declare `N/A — no arity acceptance gate` on its own line",
     )
 
 
@@ -4722,7 +4724,7 @@ def check_realized_keys(plan: str, kind: str) -> CheckResult:
     )
     if not reuse_near_bundle:
         return _skip(cid, name, "no multi-field bundle reuse detected")
-    if re.search(NA_RE + r"no multi-?field bundle reuse", text):
+    if _standalone_na_declared(plan, r"no multi-?field bundle reuse"):
         return _pass(cid, name, "explicit no-bundle-reuse declaration")
     if _C30_SATISFIER_RE.search(plan):  # raw plan: fenced commands count
         return _pass(
@@ -4846,7 +4848,8 @@ def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
         "pin — protection prose with no pytest asserting its presence/shape is silently "
         "droppable by any later SKILL.md edit (lineage: #884/#1045/#1134). Add one line "
         "`Durability pin: tests/test_<file>.py::test_<name>` (a standing pin test, or a NEW "
-        "pin test this plan adds), or declare `Durability pin: N/A — <one-line reason>`",
+        "pin test this plan adds), or declare `Durability pin: N/A` followed on the same "
+        "line by an em dash and a one-line reason (a bare `Durability pin: N/A` still WARNs)",
     )
 
 

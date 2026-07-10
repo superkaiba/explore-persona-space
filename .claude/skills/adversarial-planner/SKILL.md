@@ -159,7 +159,11 @@ Run the structural verifier against the plan version just persisted:
   satisfy a check it is legitimately exempt from — and instruct the planner that the
   plan's own declaration line must be UNWRAPPED plain text at line start (leading list
   markers fine): the backtick-wrapped renderings below are deliberate anti-paste armor
-  and are NOT recognized by `verify_plan.py::_standalone_na_declared` (#1238)):
+  and are NOT recognized by `verify_plan.py::_standalone_na_declared` (#1238)): Every
+  phrase satisfies its check ONLY when written as a standalone declaration line in the
+  plan (leading `-`/`>`/`*` list markers tolerated); a phrase quoted mid-sentence — e.g.
+  inside a pasted bounce brief — does not count (exceptions: check 7 matches its bare
+  phrase in prose by design; check 31 uses its labeled-line forms) (#1237).
   `N/A — no behavioral construct`
   (check 2), `N/A — no model training` / `N/A — no training hyperparameters` (check 1),
   `N/A — not a replication` (check 7), `N/A — no artifact reuse` (check 6),
