@@ -49,7 +49,7 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
 ===========  ==========================================================================
 
 Safety invariants (plan #1022 v3 R1-R7): the refresh NEVER runs ``pytest tests/``
-wholesale (only the predictable 34-file Step 9c universe, timeout-bounded,
+wholesale (only the predictable 37-file Step 9c universe, timeout-bounded,
 thread-capped, process-group-killed on expiry); blind-strip requires a fresh,
 clean-rooted (``dirty_code_paths: false``) ledger AND a non-diff-linked node
 whose test file is unchanged on main since the ledger SHA — everything else is
@@ -761,7 +761,7 @@ def present_on_disk(files: Iterable[str], root: Path) -> list[str]:
 
 
 def cmd_refresh(args: argparse.Namespace) -> int:
-    """Run the 34-file predictable Step 9c universe on main; write the ledger atomically."""
+    """Run the 37-file predictable Step 9c universe on main; write the ledger atomically."""
     root = Path(args.repo_root).resolve() if args.repo_root else main_repo_root()
     lock = acquire_refresh_lock(root / ".claude" / "cache" / "step9c-baseline.lock")
     if lock is None:
