@@ -1657,8 +1657,8 @@
     "1212": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1212",
-      "status": "approved",
+      "path": "tasks/running/1212",
+      "status": "running",
       "title": "daily-fix: Step 10d lint gate runs origin/main lint vintage"
     },
     "1213": {
