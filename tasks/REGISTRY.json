@@ -1937,8 +1937,8 @@
     "1249": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1249",
-      "status": "reviewing",
+      "path": "tasks/completed/1249",
+      "status": "completed",
       "title": "Step 10d bare merge/push forms + fail-soft Step-0 probes"
     },
     "125": {
