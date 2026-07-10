@@ -4,3 +4,4 @@
 {"ts": "2026-07-10T12:57:11Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-10T13:06:51Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS — 0 FAIL, 0 WARN (plan v1; c31 durability pin PASS; experiment-shape checks kind-exempt for kind:infra; c23 goal-currency SKIP no-frontmatter-goal, gate run manually: GOAL_CURRENT)."}
 {"ts": "2026-07-10T13:08:12Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all review sites this task."}
+{"ts": "2026-07-10T13:15:52Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py: PASS — 0 FAIL, 0 WARN (plan v2, post-revision; goal-currency GOAL_CURRENT)."}
