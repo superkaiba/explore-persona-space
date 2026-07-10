@@ -1846,22 +1846,22 @@
     "1237": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1237",
-      "status": "running",
+      "path": "tasks/reviewing/1237",
+      "status": "reviewing",
       "title": "migrate remaining verify_plan doc-global N/A escapes"
     },
     "1238": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1238",
-      "status": "reviewing",
+      "path": "tasks/completed/1238",
+      "status": "completed",
       "title": "tolerate wrapped N/A escape declarations in verify_plan"
     },
     "1239": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1239",
-      "status": "reviewing",
+      "path": "tasks/completed/1239",
+      "status": "completed",
       "title": "env-reading git credential helper for pod bootstrap"
     },
     "124": {
@@ -1874,8 +1874,8 @@
     "1240": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1240",
-      "status": "planning",
+      "path": "tasks/running/1240",
+      "status": "running",
       "title": "SLURM lane result-push verification contract leg"
     },
     "1241": {
@@ -1888,15 +1888,15 @@
     "1242": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1242",
-      "status": "proposed",
+      "path": "tasks/planning/1242",
+      "status": "planning",
       "title": "add SKILL-pin suites to step9c WORKFLOW_INVARIANT tuple"
     },
     "1243": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1243",
-      "status": "proposed",
+      "path": "tasks/planning/1243",
+      "status": "planning",
       "title": "Edit C certification arms to exclusive-arm shape"
     },
     "1244": {
