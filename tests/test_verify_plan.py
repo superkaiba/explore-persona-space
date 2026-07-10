@@ -170,10 +170,11 @@ def test_good_plan_passes_all():
         "c30_realized_keys": "SKIP",
         "c31_skillmd_prose_pin": "SKIP",
         "c32_fit_basis_grounding": "SKIP",
+        "c33_ladder_retention": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 32
+    assert len(results) == 33
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -4906,12 +4907,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 25
+    assert payload["n_skip"] == 26
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 33
-    assert len({c["id"] for c in payload["checks"]}) == 33
+    assert len(payload["checks"]) == 34
+    assert len({c["id"] for c in payload["checks"]}) == 34
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -5614,3 +5615,125 @@ def test_c32_kind_analysis_triggers():
     # The gated set is experiment + analysis; BOTH WARN (unlike c12/c18
     # there is no FAIL arm anywhere).
     assert _status(_c32_plan("~2 s/fit"), "c32_fit_basis_grounding", kind="analysis") == "WARN"
+
+
+# ─── Check 33 — checkpoint-ladder retention policy ─────────────────────────
+
+# Ladder trigger spliced into GOOD_PLAN's §9 Resources paragraph (the
+# sizing section the satisfier scope reads); the retention line is spliced
+# per-test. Verified at plan time: GOOD_PLAN carries no c33 trigger or
+# satisfier tokens of its own.
+C33_LADDER_SENT = (
+    "Phase T trains a 30-rung dose ladder; per-rung checkpoints are written to /workspace/ckpts."
+)
+C33_LADDER_S9 = GOOD_PLAN.replace(
+    "One A100 for about three hours covers both conditions.",
+    "One A100 for about three hours covers both conditions. " + C33_LADDER_SENT,
+)
+assert C33_LADDER_SENT in C33_LADDER_S9  # surgery-anchor sanity (fixture hygiene)
+C33_RETENTION_LINE = (
+    "Retention: keep the dose-selected + latest rungs only; ruled-out rungs are deleted "
+    "between rungs."
+)
+
+
+def test_c33_kind_infra_skips():
+    assert _status(C33_LADDER_S9, "c33_ladder_retention", kind="infra") == "SKIP"
+    assert _status(C33_LADDER_S9, "c33_ladder_retention", kind="batch") == "SKIP"
+
+
+def test_c33_ladder_without_retention_warns():
+    _, by_id = _run(C33_LADDER_S9)
+    r = by_id["c33_ladder_retention"]
+    assert r.status == "WARN"
+    assert "plan-compute-sizing" in r.detail  # the #1133 rule anchor
+    assert "#1112" in r.detail  # the incident cite
+    assert "N/A — no per-rung checkpoint persistence" in r.detail  # teaches the escape
+
+
+def test_c33_retention_in_sizing_section_passes():
+    plan = C33_LADDER_S9.replace(
+        "## 11. Decision Rationale", C33_RETENTION_LINE + "\n\n## 11. Decision Rationale"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c33_ladder_retention"]
+    assert r.status == "PASS"
+    assert "retention vocabulary" in r.detail
+
+
+def test_c33_retention_outside_sizing_section_warns():
+    # Section-scoping is real: the SAME retention line placed in §2/§3 (no
+    # sizing keyword in the heading) does not satisfy while §9 stays clean —
+    # the doc-wide-satisfier escape let #1112 v1-v3 pass on incidental
+    # vocabulary in calibration.
+    plan = C33_LADDER_S9.replace("## 3. Conditions", C33_RETENTION_LINE + "\n\n## 3. Conditions")
+    assert _status(plan, "c33_ladder_retention") == "WARN"
+
+
+def test_c33_no_sizing_heading_falls_back_doc_wide():
+    # No heading carries a sizing keyword -> the satisfier scope falls back
+    # to the whole plan's non-fenced text (structural absence must not
+    # manufacture WARNs — a WARN-only check fails toward silence).
+    plan = C33_LADDER_S9.replace("## 9. Resources", "## 9. Budget").replace(
+        "## 3. Conditions", C33_RETENTION_LINE + "\n\n## 3. Conditions"
+    )
+    assert _status(plan, "c33_ladder_retention") == "PASS"
+
+
+def test_c33_na_escape_passes():
+    plan = (
+        C33_LADDER_S9
+        + "\nN/A — no per-rung checkpoint persistence (this plan reads a parent's existing "
+        "ladder; no new rungs are persisted).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c33_ladder_retention"]
+    assert r.status == "PASS"
+    assert "N/A declared" in r.detail
+
+
+def test_c33_na_alias_passes():
+    plan = C33_LADDER_S9 + "\nN/A — no checkpoint ladder (single terminal checkpoint only).\n"
+    assert _status(plan, "c33_ladder_retention") == "PASS"
+
+
+def test_c33_fenced_na_escape_does_not_satisfy():
+    # Anti-paste `_standalone_na_declared` semantics (c13/c26/c32 parity):
+    # the escape inside a fence (a quoted bounce brief) must not satisfy.
+    plan = C33_LADDER_S9 + "\n```\nN/A — no per-rung checkpoint persistence\n```\n"
+    assert _status(plan, "c33_ladder_retention") == "WARN"
+
+
+def test_c33_backend_rung_line_does_not_trigger():
+    # GCP fallback-ladder vocabulary: rung + checkpoint co-located WITH
+    # backend vocab is the excluded class (the load-bearing anti-fragility
+    # widening — raw rung/checkpoint vocabulary is dominated by it).
+    plan = GOOD_PLAN + "\nOn a capacity miss the spot rung falls back; checkpoints upload to HF.\n"
+    assert _status(plan, "c33_ladder_retention") == "SKIP"
+
+
+def test_c33_fenced_ladder_does_not_trigger():
+    plan = GOOD_PLAN + "\n```\n" + C33_LADDER_SENT + "\n```\n"
+    assert _status(plan, "c33_ladder_retention") == "SKIP"
+
+
+def test_c33_save_every_triggers():
+    # The rule's "any long run saving every k steps for a later pick"
+    # clause — no rung/ladder token anywhere in the plan.
+    plan = GOOD_PLAN + "\nThe trainer saves a checkpoint every 25 steps for a later dose pick.\n"
+    assert _status(plan, "c33_ladder_retention") == "WARN"
+
+
+def test_c33_bare_colocation_triggers():
+    # Branch-3-only trigger (critic-ensemble case): rung + checkpoint on
+    # one line, no compound token, no backend vocab — without this case the
+    # co-location branch could ship inert with all other tests green.
+    plan = GOOD_PLAN + "\nEach rung writes a full checkpoint to /workspace/ckpts.\n"
+    assert _status(plan, "c33_ladder_retention") == "WARN"
+
+
+def test_c33_warn_never_fails():
+    # WARN-only contract (exit-0 semantics): an offender never flips overall.
+    ok, by_id = _run(C33_LADDER_S9)
+    assert by_id["c33_ladder_retention"].status == "WARN"
+    assert ok is True

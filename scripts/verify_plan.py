@@ -68,12 +68,14 @@ Check catalog (id — classification — kind scope)
       durability pin
   c32 fit-family §9 basis       WARN-only, conditional    experiment +
       grounding                                           analysis
+  c33 ladder checkpoint         WARN-only, conditional    experiment +
+      retention policy                                    analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32) also SKIP when their
-content trigger does not fire.
+19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33) also SKIP when
+their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -112,6 +114,8 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
     ``N/A — no durability pin: <reason>`` (check 31; the reason tail is
     mandatory — a bare ``Durability pin: N/A`` still WARNs)
   - ``N/A — no fit-family phases`` (check 32)
+  - ``N/A — no per-rung checkpoint persistence`` / alias
+    ``N/A — no checkpoint ladder`` (check 33)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -4969,6 +4973,211 @@ def check_fit_basis_grounding(plan: str, kind: str) -> CheckResult:
     return _warn(cid, name, _c32_offender_detail(offenders))
 
 
+# ─── Check 33 — checkpoint-ladder retention policy ─────────────────────────
+# Mechanizes .claude/rules/plan-compute-sizing.md § "Dose-ladder /
+# multi-rung checkpoint retention" (MUST-level, the #1133 rule): any
+# training phase persisting per-rung checkpoints for later selection must
+# state its checkpoint-retention policy in §9 — DEFAULT: retain the
+# dose-selected + latest rungs only, delete ruled-out rungs BETWEEN rungs;
+# keep-all is the justified exception (full-ladder sizing at realized
+# per-rung GB + `--boot-disk-gb` declared). Incident #1112: 30 full-FT
+# dose-ladder rungs kept (>=15 GB, up to ~28 GB each); a compliant 575 GB
+# keep-all bound sat under the planned 750 GB GCP boot disk; the
+# GCP-to-RunPod failover delivered the `ft-7b` default 200 GB volume ->
+# ENOSPC (errno 28) at rung 24/30.
+# Trigger anti-fragility: raw `ladder|rung` vocabulary is heavily polluted
+# by GCP BACKEND-ladder rungs (spot/flex-start/on-demand fallback rungs,
+# the #1029/#1116/#1121 vocabulary) — measured raw surface ~521 pv / 179
+# issues un-gated (~320/89 kind-gated). The compound-token trigger + the
+# backend-rung exclusion on the rung-AND-checkpoint co-location branch
+# remove that class entirely.
+# Calibration (DEVELOPMENT-SET numbers, fitted IN-SAMPLE — including the
+# recent-era slice: the regexes were tuned on the same persisted-plan
+# corpus they were measured on; ANY future c33-regex change re-runs the
+# corpus scan and records the realized numbers here, the c27/c32 gate
+# precedent). Re-scan 2026-07-10 (implementation-time, AS-SHIPPED
+# regexes) over 1,760 persisted plan-versions (tasks/*/*/plans/v*.md):
+# 69 plan-versions triggered (20 distinct issues — genuinely
+# checkpoint-ladder-bearing: #480 band-stop ladder, #653 dense-step grid,
+# #1090 every-25-steps ladder, #1112 dose ladder, #488 epoch ladder, ...);
+# 42 would-WARN (16 issues, pre-#1133-rule era dominated). Recent era
+# (issue >= 1000; the §7 kill-criterion DENOMINATOR is recent-era
+# plan-versions, N=448): 18 triggered pv (#1090 v1-v5 / #1092 v1-v5 /
+# #1112 v1-v8); would-WARN ONLY #1090 v1-v5 (planned pre-rule). #1092
+# PASSes; #1112 v7/v8 PASS on their explicit `**Disk / checkpoint
+# retention:**` line. Satisfier-span audit over the 27 triggered-but-PASS
+# versions: 'retained' x8, delete-co-location spans x14 ("rungs deleted",
+# "checkpoints ... deleted", "checkpoint ... then DELETE"), 'retention'
+# x2, 'prune(d)' x2, 'MarkerBandStopCallback' x1. Over-broad-token watch
+# (re-download / prune vs disk-hygiene boilerplate): re-download matched
+# ZERO spans; prune matched 2 — #491 v3 genuine (per-shard
+# train->read->prune checkpoint sequencing) and #715 v3 borderline
+# (weight-pruning-arm vocabulary; its v1/v2 pass on a genuine delete
+# span) — no nuisance CLASS, no regex change.
+# Honest disclosed limitation: #1112 v1-v3 — the incident's own plans —
+# PASS: their §9 stated merge-transient deletion + a keep-all disk bound,
+# so the retention SURFACE existed; the defect was semantic (sized to the
+# planned lane's disk, keep-all as default). A mechanical check cannot
+# adjudicate adequacy — c33 protects the SILENT class (ladder plans whose
+# sizing sections say nothing about retention/deletion); stated-but-
+# inadequate stays with Methodology lens item 16.
+
+_C33_LADDER_COMPOUND_RE = re.compile(
+    r"(?i)dose[- ]ladder|checkpoint[- ]ladder|ladder of checkpoints|band[- ]stop grid"
+    r"|dose[- ]matching checkpoint grid|checkpoint rungs?|rung checkpoints?"
+    r"|per[- ]rung checkpoints?"
+)
+
+# Mechanizes the rule's "any long run saving every k steps for a later
+# pick" clause ("saves a checkpoint every 25 steps", "saving every ~500
+# optimizer steps").
+_C33_SAVE_EVERY_RE = re.compile(
+    r"(?i)(?:checkpoints?|sav\w+)\s+every\s+~?\d+\s*(?:optimizer[- ])?(?:steps?|epochs?)"
+)
+
+_C33_RUNG_RE = re.compile(r"(?i)\brungs?\b")
+_C33_CKPT_RE = re.compile(r"(?i)\bcheckpoints?\b|\bckpts?\b")
+
+# GCP fallback-ladder exclusion (co-location branch ONLY): a line whose
+# rung vocabulary is the backend router's (spot/flex-start/on-demand
+# rungs, terminal rung, lanes, capacity) is not a checkpoint ladder.
+_C33_BACKEND_RUNG_RE = re.compile(
+    r"(?i)spot|flex[- ]start|on[- ]demand|runpod|terminal rung|\blanes?\b|fallback"
+    r"|a2-|a3-|gcp ladder|capacity"
+)
+
+# Retention/bounding vocabulary. The delete co-location windows stop at
+# sentence/cell boundaries (the `|` exclusion keeps a table row's delete
+# verb from satisfying via an adjacent cell). `keep-all` deliberately
+# satisfies — a STATED keep-all is the rule's justified-exception surface,
+# whose adequacy is critic-owned. Generic disk tokens (`--boot-disk-gb`,
+# GB figures) are deliberately NOT satisfiers — #1112 v1-v3 declared
+# `--boot-disk-gb 750` and still ENOSPC'd; a disk flag is not a retention
+# policy.
+_C33_RETENTION_RE = re.compile(
+    r"(?i)\bretention\b|\bretain\w*\b|keep[- ]all|keep (?:all|every|only)"
+    r"|delet\w+[^.\n|]{0,80}(?:rungs?|ruled[- ]out|non[- ]selected|checkpoints?|ckpts?)"
+    r"|(?:rungs?|checkpoints?|ckpts?)[^.\n|]{0,80}delet\w+"
+    r"|upload[- ]as[- ]you[- ]go|delete[sd]? locally|re[- ]download"
+    r"|band[- ]stop callback|MarkerBandStopCallback"
+    r"|coarse\+refine|two[- ]pass grid|\bprune[sd]?\b|retained (?:set|rungs?)"
+)
+
+_C33_SIZING_KEYWORDS = ("resources", "parallelism", "compute", "disk")
+
+
+def _c33_trigger_line(plan: str) -> str | None:
+    """First non-fenced line carrying checkpoint-ladder vocabulary (quoted
+    in the WARN detail), or None. Three arms, first match wins: a compound
+    ladder token; the save-every-k-steps cadence; rung AND checkpoint
+    co-located on one line WITHOUT backend-rung vocabulary (the GCP
+    fallback-ladder exclusion — the load-bearing anti-fragility widening)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        if _C33_LADDER_COMPOUND_RE.search(line) or _C33_SAVE_EVERY_RE.search(line):
+            return line
+        if (
+            _C33_RUNG_RE.search(line)
+            and _C33_CKPT_RE.search(line)
+            and not _C33_BACKEND_RUNG_RE.search(line)
+        ):
+            return line
+    return None
+
+
+def _c33_sizing_scope(plan: str) -> str:
+    """Union of the non-fenced text of every section whose heading carries a
+    sizing keyword (resources/parallelism/compute/disk — the #1133 rule
+    requires the policy in §9, but corpus headings drift: '## 9. Resources',
+    '## 9. Resources & Parallelism', '### Compute projection'); the whole
+    plan's non-fenced text when no such heading exists (structural absence
+    must not manufacture WARNs — a WARN-only check fails toward silence)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    keep = [False] * len(lines)
+    matched = False
+    for h in _headings(plan):
+        htext = h.text.casefold()
+        if any(k in htext for k in _C33_SIZING_KEYWORDS):
+            matched = True
+            for i in range(h.line, h.end):
+                keep[i] = True
+    if not matched:
+        return strip_fences(plan)
+    return "\n".join(
+        line
+        for i, (line, fenced) in enumerate(zip(lines, mask, strict=True))
+        if keep[i] and not fenced
+    )
+
+
+def check_ladder_retention(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a plan carrying checkpoint-ladder vocabulary
+    on a non-fenced line (a dose/checkpoint-ladder compound token, a
+    "saves a checkpoint every k steps" cadence, or rung + checkpoint
+    co-located on one line without GCP backend-rung vocabulary) must carry
+    retention vocabulary (retain / keep-all / delete-between-rungs /
+    upload-as-you-go / band-stop / coarse+refine / prune / ...) within its
+    compute-sizing section(s) — the union of every section whose heading
+    names resources/parallelism/compute/disk, doc-wide fallback when no
+    such heading exists. Mechanizes plan-compute-sizing.md § "Dose-ladder /
+    multi-rung checkpoint retention" (the #1133 rule; incident #1112).
+    NEVER FAILs — both trigger and satisfier are text heuristics (the
+    c26/c32 precedent); adequacy of a STATED policy stays with the
+    Methodology critic (lens item 16), fed by the WARN forwarding into the
+    fact-checker + critic briefs. A PASS here is never "retention
+    verified": a stated keep-all deliberately satisfies (the rule's
+    justified-exception surface, critic-owned). Disclosed misses:
+    (a) #1112 v1-v3 — the incident's own plans — PASS (their §9 stated
+    merge-transient deletion + a keep-all bound, so the retention SURFACE
+    existed; the defect was semantic and is Methodology lens item 16's);
+    (b) a ladder phrased with zero token-set overlap under-triggers
+    (FN = the status quo, reviewer-enforced only); (c) a crash-resume-only
+    save cadence (no later selection) triggers via the save-every arm —
+    the remedy is to state a retention policy anyway (e.g. keep-last-k,
+    which a crash-resume cadence should state regardless), or, second, to
+    declare the N/A escape ONLY when no phase persists per-rung
+    checkpoints (the escape phrase would be semantically false for a plan
+    that does persist them). Escape: the standalone line
+    ``N/A — no per-rung checkpoint persistence`` (alias
+    ``N/A — no checkpoint ladder``), anti-paste semantics via
+    ``_standalone_na_declared``. Calibration numbers + the corpus re-scan
+    gate on ANY future c33-regex change live in the comment block above
+    ``_C33_LADDER_COMPOUND_RE``."""
+    cid, name = "c33_ladder_retention", "checkpoint-ladder retention policy"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid, name, "kind-exempt: checkpoint ladders are an experiment|analysis plan shape"
+        )
+    trig = _c33_trigger_line(plan)
+    if trig is None:
+        return _skip(cid, name, "no checkpoint-ladder vocabulary detected")
+    if _standalone_na_declared(
+        plan, r"(?:no per[- ]rung checkpoint persistence|no checkpoint ladder)"
+    ):
+        return _pass(cid, name, "explicit N/A declared (no per-rung checkpoint persistence)")
+    if _C33_RETENTION_RE.search(_c33_sizing_scope(plan)):
+        return _pass(cid, name, "retention vocabulary present in the compute-sizing scope")
+    return _warn(
+        cid,
+        name,
+        f"plan carries checkpoint-ladder vocabulary ({trig.strip()[:70]!r}) but its "
+        "compute-sizing section(s) state no checkpoint-retention policy — a per-rung ladder "
+        "sized without a retention default keeps every rung and ENOSPCs mid-run on a lane "
+        "failover (plan-compute-sizing.md § Dose-ladder / multi-rung checkpoint retention, "
+        "the #1133 rule; incident #1112: 30 full-FT rungs kept, errno 28 at rung 24/30 after "
+        "a GCP-to-RunPod failover delivered a 200 GB volume). State the retention policy in "
+        "the sizing section (DEFAULT: retain the dose-selected + latest rungs only, delete "
+        "ruled-out rungs BETWEEN rungs; or the justified keep-all exception — full-ladder "
+        "sizing at realized per-rung GB + `--boot-disk-gb` declared), or declare "
+        "`N/A — no per-rung checkpoint persistence` on its own line if no phase persists "
+        "per-rung checkpoints",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -5003,6 +5212,7 @@ CHECKS = [
     check_realized_keys,
     check_skillmd_prose_pin,
     check_fit_basis_grounding,
+    check_ladder_retention,
 ]
 
 
