@@ -1657,8 +1657,8 @@
     "1212": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1212",
-      "status": "reviewing",
+      "path": "tasks/completed/1212",
+      "status": "completed",
       "title": "daily-fix: Step 10d lint gate runs origin/main lint vintage"
     },
     "1213": {
@@ -1706,8 +1706,8 @@
     "1219": {
       "has_clean_result": false,
       "kind": "batch",
-      "path": "tasks/reviewing/1219",
-      "status": "reviewing",
+      "path": "tasks/completed/1219",
+      "status": "completed",
       "title": "Fix 18 latent splitlines-shreds-JSONL sites in experiment code (from #1162 live-tree enumeration)"
     },
     "122": {
@@ -1720,8 +1720,8 @@
     "1220": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1220",
-      "status": "running",
+      "path": "tasks/reviewing/1220",
+      "status": "reviewing",
       "title": "workflow-fix: trim LESSONS.md index below 8000-byte lint cap"
     },
     "123": {
