@@ -56,6 +56,15 @@ benign.
 Usage::
 
     uv run python scripts/select_step9c_tests.py [--base main] [--repo-root <path>] [--json]
+    uv run python scripts/select_step9c_tests.py --map-files <file> [--repo-root <path>]
+
+``--map-files FILE`` (the ``/issue`` Step 10d merge-gate mapping mode, #1147):
+read newline-delimited repo-relative paths from FILE and print one
+``<scan_test>\\t<matched_path>`` line per :data:`GLOB_SCAN_TESTS` hit
+(:func:`map_scan_tests`), skipping the diff-based selection entirely. A scan
+test absent from the work root is dropped with a stderr WARN. Empty stdout on
+no match is a SUCCESS (exit 0 — the gate's skip signal); exit 1 only when FILE
+is unreadable (the gate fails CLOSED on an unclassifiable payload).
 
 Default output: the exact gate invocation
 ``timeout --kill-after=60s <T>s uv run pytest <files...> -v --tb=short`` on
@@ -90,7 +99,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-# --- Pinned workflow-invariant tests (plan §5 + 1 brief addition, 32 files). -
+# --- Pinned workflow-invariant tests (plan §5 + 1 brief addition + 3 #1242 pins, 35 files). -
 # A module-level literal tuple, NOT a glob: a future ``tests/test_workflowish.py``
 # that is NOT meant to gate Step 9c must not silently join the gate, and the gate
 # must not silently shrink if a glob arm stops matching. Drift is made loud by the
@@ -129,7 +138,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_sparse_worktree.py",
     "tests/test_autonomous_plan_gate.py",
     "tests/test_autonomous_session_watch.py",
+    "tests/test_issue_skill_exit_breadcrumb.py",  # NEW (#1242) — SKILL.md exit-breadcrumb pin
     "tests/test_issue_skill_marker_contract.py",
+    "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
+    "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     "tests/test_plan_handoff_path_convention.py",
     "tests/test_clean_result_critic_planned_vs_actual.py",
     "tests/test_check_no_secret_shaped_strings.py",
@@ -178,10 +190,13 @@ _DATA_DOC_SUFFIXES: frozenset[str] = frozenset(
 # invariant ABOUT the file, not the file's own logic), so untested_touched
 # WARNs still fire.
 GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
-    # test_no_new_torch_before_dotenv_vm_entrypoints scan roots (its L477-479).
+    # test_no_new_torch_before_dotenv_vm_entrypoints scan roots (#1187: its
+    # _scan_targets() — every tracked scripts/**/*.py + __main__-guarded
+    # experiments modules; these map globs deliberately OVER-select vs the
+    # scanner's tracked/guard filters — additive, safe-by-direction).
     "tests/test_shared_vm_thread_caps.py": (
-        "scripts/issue*_*.py",
-        "src/explore_persona_space/experiments/**/run_*.py",
+        "scripts/**/*.py",
+        "src/explore_persona_space/experiments/**/*.py",
     ),
     # _DISPATCHER_GLOBS (its L80-90) — explicit-env subprocess spawn scanner.
     "tests/test_subprocess_env_explicit.py": (
@@ -224,8 +239,8 @@ def recommended_timeout_s(tests: list[str]) -> int:
     """Deterministic `timeout(1)` bound for a Step 9c gate selection.
 
     ``BASE + PER_FILE * len(tests) + sum(slow surcharges)``, floored at
-    ``TIMEOUT_FLOOR_S``. Invariant-only selection (32 files incl. the
-    workflow-lint surcharge) -> 1980 s (~33 min), consistent with the existing
+    ``TIMEOUT_FLOOR_S``. Invariant-only selection (35 files incl. the
+    workflow-lint surcharge) -> 2070 s (~34.5 min), consistent with the existing
     invariant-set-scale precedents (``step9c_baseline.py refresh``
     ``--timeout-s`` default 1800 s; the SKILL.md detached refresh's 2100 s).
     """
@@ -251,6 +266,27 @@ def _matches_any(path: str, globs: tuple[str, ...]) -> bool:
         if "/**/" in g and fnmatch.fnmatch(path, g.replace("/**/", "/")):
             return True
     return False
+
+
+def _scan_pairs(files: list[str]) -> set[tuple[str, str]]:
+    """All ``(scan_test, matched_file)`` pairs per :data:`GLOB_SCAN_TESTS` (no existence filter)."""
+    return {
+        (scan_test, f)
+        for f in files
+        for scan_test, scan_globs in GLOB_SCAN_TESTS.items()
+        if _matches_any(f, scan_globs)
+    }
+
+
+def map_scan_tests(files: list[str], work_root: Path) -> list[tuple[str, str]]:
+    """Map *files* to ``(scan_test, matched_file)`` pairs via :data:`GLOB_SCAN_TESTS`.
+
+    Pure path arithmetic over the pinned map (no git); a scan test absent
+    from *work_root* is dropped (the caller's tree cannot run it). Returns
+    sorted unique pairs. This is the ``--map-files`` backing function the
+    ``/issue`` Step 10d pre-push merge gate consumes (#1147).
+    """
+    return sorted(p for p in _scan_pairs(files) if (work_root / p[0]).exists())
 
 
 def compute_touched(
@@ -422,6 +458,18 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument("--json", action="store_true", help="emit a JSON object")
+    parser.add_argument(
+        "--map-files",
+        default=None,
+        metavar="FILE",
+        help=(
+            "newline-delimited repo-relative paths: print one "
+            "'scan_test<TAB>matched_path' line per GLOB_SCAN_TESTS hit and exit "
+            "(the /issue Step 10d merge-gate mapping mode, #1147 — skips the "
+            "diff-based selection entirely; empty stdout on no match is a "
+            "SUCCESS, the gate's skip signal)"
+        ),
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -446,6 +494,33 @@ def main(argv: list[str] | None = None) -> int:
         file=sys.stderr,
     )
 
+    if args.map_files is not None:
+        # Mapping mode (#1147): pure GLOB_SCAN_TESTS lookup over an explicit
+        # file list — no git diff, no invariant set, no timeout sizing. The
+        # Step 10d merge gate consumes the tab-separated stdout; empty output
+        # + exit 0 means "no scan-covered payload" (the gate skips its test
+        # leg). Only an unreadable input file is an error (exit 1) — the gate
+        # must fail CLOSED when it cannot classify the payload.
+        try:
+            raw = Path(args.map_files).read_text()
+        except OSError as exc:
+            print(
+                f"select_step9c_tests: cannot read --map-files input: {exc}",
+                file=sys.stderr,
+            )
+            return 1
+        files = [line.strip() for line in raw.splitlines() if line.strip()]
+        pairs = map_scan_tests(files, work_root)
+        for scan_test, f in sorted(_scan_pairs(files) - set(pairs)):
+            print(
+                f"select_step9c_tests: WARN — scan test {scan_test} (matched by {f}) "
+                f"absent from {work_root}; pair dropped",
+                file=sys.stderr,
+            )
+        for scan_test, f in pairs:
+            print(f"{scan_test}\t{f}")
+        return 0
+
     try:
         touched = compute_touched(args.base, work_root)
     except subprocess.CalledProcessError as exc:
@@ -468,7 +543,7 @@ def main(argv: list[str] | None = None) -> int:
     missing = missing_invariants(work_root)
 
     # Fail loud on an EMPTY selection (defense-in-depth beside the Step 9c shell
-    # guard against a silent test-gate pass). WORKFLOW_INVARIANT has 32 always-on
+    # guard against a silent test-gate pass). WORKFLOW_INVARIANT has 35 always-on
     # entries, so an empty list can only mean the work root resolved wrong (e.g.
     # invoked from a directory outside the repo, or a bad --repo-root override)
     # or the invariant files all vanished — either way the gate would run zero

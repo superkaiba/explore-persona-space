@@ -745,7 +745,10 @@ Same as v3:
 1. **`## Takeaways` is the rolling synthesis.** After every round, rewrite
    it to the current cross-round belief and retitle the H1 if the headline
    moved. A Takeaways describing only round 1 after round 2 landed is a
-   critic FAIL.
+   critic FAIL. A retitled H1 is synced to frontmatter via
+   `task.py set-title <N> "<new H1 text>"` after the `set-body` (set-body
+   preserves frontmatter; `check_h1_matches_frontmatter_title` FAILs a
+   diverged v4 body).
 2. **Round visibility.** `## Methodology → **Design:**` gains a per-round
    note (or a `**Rounds:**` table) when >1 round; `**Context:**` keeps
    per-round followup_labels + verbatim prompts. The complete

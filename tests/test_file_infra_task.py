@@ -505,3 +505,41 @@ def test_filer_stagger_integration_real_helpers(monkeypatch, tmp_path, capsys):
     assert len(_new_calls(calls)) == 1
     assert _spawn_calls(calls) == []
     assert "dispatch deferred (session-dispatch stagger" in capsys.readouterr().out
+
+
+# ── #1173: warn-only backstop for wf-fix bodies missing workflow_fix_target ────
+
+
+def test_wf_fix_tag_body_missing_target_line_warns(monkeypatch, capsys, tmp_path):
+    # A wf-fix-tagged filing whose body lacks the durable recursion-guard
+    # `workflow_fix_target:` Provenance line WARNS on stderr — exit code and
+    # filing/dispatch behavior unchanged (warn-only by design, #1173).
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    body = tmp_path / "body.md"
+    body.write_text("## Goal\n\nfix a thing\n", encoding="utf-8")
+
+    rc = fit.main(["--title", "x", "--tag", "wf-fix", "--body-file", str(body)])
+
+    assert rc == 0
+    assert len(_new_calls(calls)) == 1  # filing still happens
+    assert len(_spawn_calls(calls)) == 1  # dispatch behavior unchanged
+    err = capsys.readouterr().err
+    assert "WARNING" in err
+    assert "workflow_fix_target" in err
+
+
+def test_wf_fix_tag_body_with_target_line_no_warn(monkeypatch, capsys, tmp_path):
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    body = tmp_path / "body.md"
+    body.write_text(
+        "## Goal\n\nfix\n\n## Provenance\n\n- workflow_fix_target: CLAUDE.md\n",
+        encoding="utf-8",
+    )
+
+    rc = fit.main(["--title", "x", "--tag", "wf-fix", "--body-file", str(body)])
+
+    assert rc == 0
+    assert len(_new_calls(calls)) == 1
+    assert "workflow_fix_target" not in capsys.readouterr().err

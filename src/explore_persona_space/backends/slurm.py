@@ -793,7 +793,7 @@ PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     # the compute node or it silently no-ops remotely.
     "EPM_HF_LARGE_UPLOAD_PROBE_GB",
     # HF Hub upload accelerator OVERRIDE channel (#745): forwarded so a
-    # dispatch-process =0 / HF_XET_DISABLE=1 (the #515 xet-CDN workaround)
+    # dispatch-process =0 / HF_HUB_DISABLE_XET=1 (the #515/#931 xet workaround)
     # reaches the compute node. The DEFAULTS (=1) are a STATIC env block in
     # render_sbatch (the cuda_setup block, which the secrets `source` follows
     # and overrides); this passthrough is the override channel only.
@@ -801,6 +801,10 @@ PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     # key, so the static default stands).
     "HF_XET_HIGH_PERFORMANCE",
     "HF_HUB_ENABLE_HF_TRANSFER",
+    # The REAL xet kill switch (#1195): huggingface_hub reads HF_HUB_DISABLE_XET
+    # (see the gcp.py twin comment + .claude/rules/upload-policy.md).
+    "HF_HUB_DISABLE_XET",
+    # Legacy no-op alias (verified #1049) — kept for old launch commands.
     "HF_XET_DISABLE",
 )
 
@@ -1332,7 +1336,7 @@ def render_sbatch(
         # is the PRIMARY accelerator (the project repos use the Xet backend);
         # HF_HUB_ENABLE_HF_TRANSFER is the orthogonal LFS accelerator (hf_transfer
         # is a hard dep). The PASSTHROUGH keys (PASSTHROUGH_ENV_KEYS) are the
-        # OVERRIDE channel — a forwarded dispatch-process =0 / HF_XET_DISABLE=1 is
+        # OVERRIDE channel — a forwarded dispatch-process =0 / HF_HUB_DISABLE_XET=1 is
         # sourced from secrets.env in the LATER secrets_setup block (under set -a),
         # so it supersedes these static defaults. The :- form also honors a value
         # inherited from the compute-node shell.
@@ -1485,7 +1489,20 @@ def render_sbatch(
     # Stage commands.
     master_addr = "${MASTER_ADDR:-localhost}"
     master_port = "${MASTER_PORT:-29500}"
-    stage_blocks: list[str] = []
+    stage_blocks: list[str] = [
+        "# === Repo-root PYTHONPATH (#1172; trap #823/#853) ===",
+        "# Script-mode python puts the SCRIPT's dir on sys.path[0], so a",
+        "# deferred `from scripts.X import ...` in a src-layout driver",
+        "# crashes with ModuleNotFoundError on the compute node. Every",
+        "# stage runs from $SCRATCH_JOB_DIR (the rsynced repo — the venv",
+        "# block cd'd there), so prepend it once for ALL stage backends",
+        "# (local / custom / open_instruct). Placed AFTER the module-load",
+        "# block so cluster-module PYTHONPATH entries are preserved after",
+        "# ours; :+ avoids the empty-value trailing colon (cwd-injection,",
+        "# cpython #107353) and is safe under the prelude's set -u.",
+        'export PYTHONPATH="$SCRATCH_JOB_DIR${PYTHONPATH:+:$PYTHONPATH}"',
+        "",
+    ]
     for stage in plan.stages:
         stage_blocks.append(f"# === Stage: {stage.name} ===")
         stage_blocks.append(f'CURRENT_PHASE="{stage.name}"')
@@ -2492,6 +2509,10 @@ class SlurmBackend(ComputeBackend):
         launch-time ``expected_artifacts`` declaration names — finalize
         runs this method BEFORE ``confirm_artifacts``, so the default
         local-FS sentinel reader just works.
+
+        Result-push contract: SLURM workloads cannot git-push results (no
+        git checkout on ``$SCRATCH``) — see ``.claude/rules/pod-side-reporting.md``
+        § "Result-push verification contract (#1205)", SLURM lane bullet.
         """
         cluster = get_cluster_config(handle.cluster) if handle.cluster else None
         if cluster is None:

@@ -76,6 +76,11 @@ from explore_persona_space.artifacts.organisms import (  # noqa: E402
     build_organism,
     derive_margin_pools,
     make_source_rate_fn,
+    release_trainer_cuda_memory,
+)
+from explore_persona_space.artifacts.recipe import (  # noqa: E402
+    build_train_config,
+    select_dose_checkpoint,
 )
 from explore_persona_space.eval.graded_judge import _score_from_parsed  # noqa: E402
 from explore_persona_space.train.sft import train_lora  # noqa: E402 (defers torch internally)
@@ -101,7 +106,15 @@ CLASSES: tuple[str, ...] = ("sycophancy", "harmful_compliance")
 # arm's pinned pool; negatives regenerated LIVE from stock base Qwen. "mixed"
 # is a followup-only arm (NOT in GENERATORS, so the parent full-run cell grid
 # is unchanged); Cell.gen_model resolves it to the live NEGATIVE-stage model.
-FOLLOWUP_LABELS: tuple[str, ...] = ("base-negatives-regen",)
+LABEL_BASE_NEG_REGEN = "base-negatives-regen"
+# ── Follow-up round `install-dose-extension` (plan v9) ────────────────────────
+# Dose extension of the base-negatives-regen mixed cell: NO datagen — retrain
+# from base on the BYTE-PINNED mixed-cell training mix with the epoch ceiling
+# raised 3 -> 9 (the ONE experimental variable); the tf-margin pools are
+# re-drawn from kept-but-UNTRAINED datagen rows (the declared measurement
+# fix — the prior round's pools overlapped the training rows).
+LABEL_DOSE_EXTENSION = "install-dose-extension"
+FOLLOWUP_LABELS: tuple[str, ...] = (LABEL_BASE_NEG_REGEN, LABEL_DOSE_EXTENSION)
 FOLLOWUP_ARM_GENERATORS: dict[str, str] = {"mixed": GENERATORS["base"]}
 PARENT_PIN_REVISION = "c1f526c1"  # verified live 2026-07-06; all files commit 3f61b8f43d
 PARENT_ABLIT_CELL = "harmful_compliance-ablit"
@@ -117,6 +130,26 @@ PARENT_POS_GEN_MODEL = GENERATORS["ablit"]
 CALIBRATION_N_FULL = 30  # §4-A' judge-drift diagnostic subsample (seeded)
 CALIBRATION_N_SMOKE = 3
 CALIBRATION_SEED = 42
+# install-dose-extension pins (plan v9 §11; all five files live-verified at the
+# revision 2026-07-07: mix 468 rows = 113 pos : 115 cn : 240 generic; kept 177
+# pos -> 64 untrained, kept 145 neg -> 30 untrained).
+MIX_PIN_REVISION = "8f02493634a5"
+MIXED_CELL_SLUG = "harmful_compliance-mixed"
+DOSE_EXT_PIN_PREFIX = f"{DATA_PREFIX}/{MIXED_CELL_SLUG}"
+DOSE_EXT_PINNED_FILES: tuple[str, ...] = (
+    "mix/train_mix.jsonl",  # the pinned training mix — trained on VERBATIM (no re-assembly)
+    "mix/mix_meta.json",
+    "datagen/raw_pos.jsonl",  # margin-pool sidecars (held-out derivation)
+    "datagen/raw_neg.jsonl",
+    "datagen/judge_rows.jsonl",
+)
+DOSE_EXT_EPOCHS = 9  # THE manipulated variable: 3 -> 9 epoch ceiling (plan §2/§11)
+DOSE_EXT_EXPECTED_UNTRAINED = {POSITIVE: 64, NEGATIVE: 30}  # fail-loud derivation gate (plan §2)
+DOSE_EXT_POOL_N = 25  # per side, sampled seed-42 from the untrained sets (plan §11)
+DOSE_EXT_POOL_SEED = 42  # pinned independently of --seed (plan §11 "25/25 seed-42")
+DOSE_EXT_SUFFIX = "-e9"  # adapter-ladder + rate-completions suffix — never clobber the
+# parent 3-epoch ladder at issue1074/harmful_compliance-mixed/ (plan §10 must-ask)
+
 SOURCE_CONTEXT_ID = "persona_software_engineer"  # #906 parity
 GENERIC_CORPUS_HF_PATH = "issue906_inputs/generic_corpus.jsonl"  # verified live 2026-07-06
 HARMFUL_RATE_SUBSET_N = 30  # plan §4-B checkpoint-read subset (seeded, disclosed)
@@ -171,6 +204,11 @@ class RunConfig:
     calibration_raw_neg: Path | None = None  # staged parent raw_neg.jsonl
     calibration_judge_rows: Path | None = None  # staged parent judge_rows.jsonl
     calibration_n: int = CALIBRATION_N_FULL
+    # Follow-up round `install-dose-extension` (None elsewhere):
+    pinned_mix: Path | None = None  # staged train_mix.jsonl @ MIX_PIN_REVISION
+    pinned_mix_meta: Path | None = None  # staged mix_meta.json @ MIX_PIN_REVISION
+    heldout_margin_pools: tuple[list[dict], list[dict]] | None = None
+    heldout_pool_provenance: dict | None = None
     # --resume-partial-attempt: prior GCE attempt id whose crash-persisted
     # datagen checkpoints are staged into the cell datagen dir before run().
     # Deliberately NOT a regime key: staging only pre-populates the checkpoint
@@ -223,6 +261,21 @@ class RunConfig:
             # on missing staged files).
             key["followup_label"] = self.followup_label
             key["pos_reuse"] = None if self.pos_reuse is None else self.pos_reuse.manifest_fields()
+        if self.followup_label == LABEL_DOSE_EXTENSION:
+            # The pinned mix bytes + the epoch override ARE the round's regime:
+            # a rerun on the same out_root under different mix bytes or a
+            # different ceiling must REFUSE loud (fail-loud on a missing stage
+            # — the mix is staged before run() computes the key).
+            if self.pinned_mix is None:
+                raise RuntimeError(
+                    "install-dose-extension regime key requires the staged pinned mix "
+                    "(stage_pinned_parent_inputs must run before run())"
+                )
+            key["epochs_override"] = DOSE_EXT_EPOCHS
+            key["pinned_mix"] = {
+                "revision": MIX_PIN_REVISION,
+                "sha256": hashlib.sha256(Path(self.pinned_mix).read_bytes()).hexdigest(),
+            }
         return key
 
 
@@ -437,10 +490,64 @@ def _datagen_kwargs(cfg: RunConfig, cell: Cell, gen_fn) -> dict:
     return kw
 
 
-def _summarize_floored_cell(datagen_dir: Path, err: DatagenYieldError) -> dict:
+def _arm_judge_counts(
+    datagen_dir: Path, behavior: Behavior, arm_name: str, raw_name: str, judge_name: str
+) -> dict[str, int] | None:
+    """Judge-stage counts for one arm of a FLOORED cell, reconstructed from the
+    ``raw_*.jsonl`` + ``judge_raw_*.json`` checkpoints (pool_meta.json is
+    success-only). Mirrors ``datagen._judge_and_filter``'s accounting:
+    ``n_judged`` = judgeable candidates with >=1 kept judge draw, then
+    threshold -> structural predicate -> kept (each raw file is arm-scoped, so
+    no arm filter is needed). Returns None when either file is absent.
+    """
+    raw_path, judge_path = datagen_dir / raw_name, datagen_dir / judge_name
+    if not raw_path.exists() or not judge_path.exists():
+        return None
+    all_scores: dict[str, Any] = _read_json(judge_path).get("all_scores", {})
+    draws_by_rid: dict[str, list[float]] = {}
+    for cid, parsed in all_scores.items():
+        s = _score_from_parsed(parsed)
+        if s is not None:
+            # custom_id = "{request_id}__{idx:05d}__{draw:02d}" (graded_judge).
+            draws_by_rid.setdefault(cid.rsplit("__", 2)[0], []).append(s)
+    predicate = _STRUCTURAL_PREDICATES.get(behavior.name)
+    positive = arm_name == "positive"
+    counts = {
+        "n_judged": 0,
+        "n_judge_none_dropped": 0,
+        "n_threshold_dropped": 0,
+        "n_structural_dropped": 0,
+        "n_kept": 0,
+    }
+    for row in _read_jsonl(raw_path):
+        if row.get("completion") is None:
+            continue  # refusal/empty/api_error — never judged (gen_drop_mix covers it)
+        draws = draws_by_rid.get(row["request_id"], [])
+        if not draws:
+            counts["n_judge_none_dropped"] += 1
+            continue
+        counts["n_judged"] += 1
+        mean = sum(draws) / len(draws)
+        passes = mean > behavior.threshold if positive else mean < behavior.threshold
+        if not passes:
+            counts["n_threshold_dropped"] += 1
+        elif predicate is not None and positive != bool(predicate(row["completion"])):
+            counts["n_structural_dropped"] += 1
+        else:
+            counts["n_kept"] += 1
+    return counts
+
+
+def _summarize_floored_cell(
+    datagen_dir: Path, err: DatagenYieldError, behavior: Behavior | None = None
+) -> dict:
     """Yield-as-result record for a floored cell (plan §4-A): kept/floor +
     per-variant yields parsed from the exception, drop mix from the on-disk
     stage checkpoints (pool_meta.json is success-only, so these ARE the record).
+    With ``behavior`` (#1090 round 4 observability), each stage additionally
+    carries the judge-side counts (n_judged / n_kept / n_structural_dropped +
+    threshold / judge-none drops) so a drop-mix diagnosis never has to count
+    ``judge_raw_*.json`` entries by hand.
     """
     msg = str(err)
     parsed: dict[str, Any] = {"message": msg}
@@ -478,6 +585,10 @@ def _summarize_floored_cell(datagen_dir: Path, err: DatagenYieldError) -> dict:
         judge_path = datagen_dir / judge_name
         if judge_path.exists():
             stage["judge_raw_path"] = str(judge_path)
+        if behavior is not None:
+            jc = _arm_judge_counts(datagen_dir, behavior, arm_name, raw_name, judge_name)
+            if jc is not None:
+                stage.update(jc)
         stages[arm_name] = stage
     parsed["stages"] = stages
     return parsed
@@ -596,10 +707,15 @@ def stage_pinned_parent_inputs(
     *,
     files: Sequence[str] = PARENT_PINNED_FILES,
     fetch_fn: Callable[[str, Path], str] | None = None,
+    prefix: str = PARENT_DATAGEN_PREFIX,
+    revision: str = PARENT_PIN_REVISION,
+    dest_name: str = "parent_pinned",
 ) -> dict[str, Path]:
-    """Explicit workload staging of the parent ablit cell's pinned datagen
-    artifacts (plan §4 stage-pinned-inputs; the GCP lane git-clones only, so
-    staging MUST be a workload step). Revision-pinned per-file
+    """Explicit workload staging of a pinned data-repo prefix's artifacts
+    (plan §4 stage-pinned-inputs; the GCP lane git-clones only, so staging
+    MUST be a workload step). Defaults = the `base-negatives-regen` parent
+    ablit datagen pin; `install-dose-extension` passes the mixed cell's
+    mix+sidecar files @ ``MIX_PIN_REVISION``. Revision-pinned per-file
     ``hf_hub_download`` (never ``snapshot_download`` on the ~1M-file data repo
     — gotchas.md); the consumer opens the exact fetch destinations
     (artifact-reuse (h)(iv): no staging transformation). Fail-loud on any
@@ -616,16 +732,16 @@ def stage_pinned_parent_inputs(
                 HF_DATA_REPO,
                 path_in_repo,
                 repo_type="dataset",
-                revision=PARENT_PIN_REVISION,
+                revision=revision,
                 local_dir=local_dir,
             )
 
-    dest = cfg.out_root / "inputs" / "parent_pinned"
+    dest = cfg.out_root / "inputs" / dest_name
     dest.mkdir(parents=True, exist_ok=True)
     staged: dict[str, Path] = {}
     manifest: dict[str, dict] = {}
     for fname in files:
-        rel = f"{PARENT_DATAGEN_PREFIX}/{fname}"
+        rel = f"{prefix}/{fname}"
         local = dest / rel  # hf_hub_download(local_dir=...) preserves the repo-relative path
         if not local.exists():
             got = Path(fetch_fn(rel, dest))
@@ -642,7 +758,7 @@ def stage_pinned_parent_inputs(
             "source": {
                 "repo": HF_DATA_REPO,
                 "path_in_repo": rel,
-                "revision": PARENT_PIN_REVISION,
+                "revision": revision,
             },
         }
     _atomic_write_json(cfg.out_root / "staged_inputs_manifest.json", {"files": manifest})
@@ -677,6 +793,238 @@ def consumer_open_probe_judge_rows(path: Path) -> dict[str, int]:
         "[stage-probe] judge_rows consumer-open OK: %d pos rows, %d kept", n_pos, n_pos_kept
     )
     return {"n_pos_rows": n_pos, "n_pos_kept": n_pos_kept}
+
+
+# ── Follow-up install-dose-extension: held-out margin pools + pinned train ───
+
+
+def derive_heldout_margin_pools(
+    staged: dict[str, Path],
+    *,
+    expected_untrained: dict[str, int] | None = None,
+    pool_n: int = DOSE_EXT_POOL_N,
+    seed: int = DOSE_EXT_POOL_SEED,
+) -> tuple[list[dict], list[dict], dict]:
+    """Held-out tf-margin pools (plan v9 §2 measurement fix): the judge-KEPT
+    datagen rows that were NOT trained on, derived by matching kept candidates
+    against the pinned ``train_mix.jsonl`` itself (a mix row's assistant
+    content is the candidate completion verbatim — ``datagen._train_row``).
+
+    FAIL-LOUD on any deviation from the expected untrained counts (64 pos /
+    30 neg at ``MIX_PIN_REVISION`` — never a silent subset), then a seeded
+    ``pool_n``-per-side sample of the untrained sets (full set when smaller;
+    realized n reported). Pair shape matches ``organisms.derive_margin_pools``
+    so ``phase_margin``'s ``margin_fn`` consumes the pools unchanged.
+
+    Returns ``(pos_pairs, neg_pairs, provenance)``.
+    """
+    if expected_untrained is None:
+        expected_untrained = dict(DOSE_EXT_EXPECTED_UNTRAINED)
+    trained_completions = {
+        row["completion"][0]["content"] for row in _read_jsonl(staged["mix/train_mix.jsonl"])
+    }
+    kept_by_rid = {
+        r["request_id"]: bool(r["kept"]) for r in _read_jsonl(staged["datagen/judge_rows.jsonl"])
+    }
+    pools: dict[str, list[dict]] = {POSITIVE: [], NEGATIVE: []}
+    counts: dict[str, dict[str, int]] = {}
+    for fname, arm in (("datagen/raw_pos.jsonl", POSITIVE), ("datagen/raw_neg.jsonl", NEGATIVE)):
+        kept_rows = [
+            r
+            for r in _read_jsonl(staged[fname])
+            if r["arm"] == arm
+            and r.get("completion") is not None
+            and kept_by_rid.get(r["request_id"], False)
+        ]
+        untrained = [r for r in kept_rows if r["completion"] not in trained_completions]
+        if len(untrained) != expected_untrained[arm]:
+            raise RuntimeError(
+                f"held-out margin-pool derivation: {arm} untrained count "
+                f"{len(untrained)} != expected {expected_untrained[arm]} "
+                f"(kept={len(kept_rows)}, trained-matched={len(kept_rows) - len(untrained)}) "
+                f"— pinned mix/sidecar drift at revision {MIX_PIN_REVISION}; refusing a "
+                "silent subset"
+            )
+        untrained.sort(key=lambda r: (r["question_id"], r["variant_id"]))
+        n = min(pool_n, len(untrained))
+        sampled = random.Random(seed).sample(untrained, n)
+        sampled.sort(key=lambda r: (r["question_id"], r["variant_id"]))
+        pools[arm] = [
+            {
+                "probe": r["question"],
+                "answer": r["completion"],
+                "question_id": r["question_id"],
+                "variant_id": r["variant_id"],
+                "request_id": r["request_id"],
+            }
+            for r in sampled
+        ]
+        counts[arm] = {
+            "kept": len(kept_rows),
+            "trained_matched": len(kept_rows) - len(untrained),
+            "untrained": len(untrained),
+            "sampled": n,
+        }
+    logger.info(
+        "[heldout-pools] pos kept=%d untrained=%d sampled=%d | neg kept=%d untrained=%d "
+        "sampled=%d (seed=%d, revision=%s)",
+        counts[POSITIVE]["kept"],
+        counts[POSITIVE]["untrained"],
+        counts[POSITIVE]["sampled"],
+        counts[NEGATIVE]["kept"],
+        counts[NEGATIVE]["untrained"],
+        counts[NEGATIVE]["sampled"],
+        seed,
+        MIX_PIN_REVISION,
+    )
+    provenance = {
+        "kind": "heldout_untrained",
+        "revision": MIX_PIN_REVISION,
+        "pool_seed": seed,
+        "pool_n_requested": pool_n,
+        "counts": counts,
+        "note": (
+            "pools drawn from judge-KEPT rows NOT present in the pinned train_mix.jsonl "
+            "(plan v9 §2) — NOT cross-round comparable with the base-negatives-regen "
+            "round's overlapping-pool margins"
+        ),
+    }
+    return pools[POSITIVE], pools[NEGATIVE], provenance
+
+
+def _run_name_for(cfg: RunConfig, cell: Cell) -> str:
+    """WandB run name: the plan-pinned `-e9` variant on the dose-extension round."""
+    if cfg.followup_label == LABEL_DOSE_EXTENSION:
+        return f"issue{ISSUE}_{cell.behavior}_{cell.arm}_e9_seed{cfg.seed}"
+    return cell.run_name
+
+
+def _cell_model_prefix(cfg: RunConfig, cell: Cell) -> str:
+    """Model-repo adapter prefix; `-e9`-suffixed on the dose-extension round so
+    the parent 3-epoch ladder at ``issue1074/harmful_compliance-mixed/`` is
+    NEVER overwritten (plan §10 must-ask)."""
+    suffix = DOSE_EXT_SUFFIX if cfg.followup_label == LABEL_DOSE_EXTENSION else ""
+    return f"{MODEL_PREFIX}/{cell.slug}{suffix}"
+
+
+def phase_train_pinned_mix(cfg: RunConfig, seams: Seams1074) -> dict:
+    """install-dose-extension train phase: NO datagen — train from base on the
+    staged BYTE-PINNED mix with the epoch ceiling raised to ``DOSE_EXT_EPOCHS``
+    (the ONE variable, plan v9 §2; the cosine schedule + warmup rescale over
+    total steps as the declared same-lever consequence). Reproduces
+    ``build_organism``'s lora checkpoint_and_select tail (ladder -> rate_fn ->
+    ``select_dose_checkpoint``) directly on the pinned mix bytes —
+    ``_assemble_mix`` would RE-BUILD the mix, so it is deliberately bypassed.
+
+    The epoch override goes through ``dataclasses.replace`` on the recipe-built
+    config (NOT ``build_train_config(extra_overrides=...)`` — ``epochs`` is
+    LOAD-BEARING there by design; this is the plan-declared deviation, logged
+    loud). ``save_total_limit`` must stay None so the ~11-rung ladder survives
+    (#641 pruning incident) — asserted.
+    """
+    _phase("train")
+
+    if cfg.pinned_mix is None:
+        raise RuntimeError("phase_train_pinned_mix requires the staged pinned mix")
+    results: dict[str, dict] = {}
+    (cell,) = cfg.cells  # followup mode pins exactly one cell
+    cell_root = cfg.out_root / cell.slug
+    build_path = cell_root / "build_result.json"
+    if build_path.exists():
+        logger.info("[train] %s already built — skip", cell.slug)
+        return {cell.slug: _read_json(build_path)}
+    organism = ModelOrganism(behavior=cell.behavior, context_id=SOURCE_CONTEXT_ID, seed=cfg.seed)
+    spec = organism.recipe
+    run_name = _run_name_for(cfg, cell)
+    cfg_train = build_train_config(spec, run_name=run_name, seed=cfg.seed)
+    base_epochs = int(cfg_train.epochs)
+    with open(cfg.pinned_mix, encoding="utf-8") as f:
+        n_rows = sum(1 for line in f if line.strip())
+    cfg_train = dataclasses.replace(cfg_train, epochs=DOSE_EXT_EPOCHS)
+    cfg_train = dataclasses.replace(cfg_train, save_steps=resolve_save_steps(n_rows, cfg_train))
+    if cfg_train.save_total_limit is not None:
+        raise RuntimeError(
+            f"save_total_limit={cfg_train.save_total_limit!r} would prune the dose ladder "
+            "(#641) — the install-dose-extension read needs EVERY rung; expected None"
+        )
+    eff_batch = int(cfg_train.batch_size) * int(cfg_train.grad_accum)
+    logger.info(
+        "[dose-ext] epochs override %d -> %d (%d mix rows, eff_batch=%d -> ~%d total steps; "
+        "save_steps=%d, save_total_limit=None)",
+        base_epochs,
+        DOSE_EXT_EPOCHS,
+        n_rows,
+        eff_batch,
+        math.ceil(n_rows / eff_batch) * DOSE_EXT_EPOCHS,
+        cfg_train.save_steps,
+    )
+    if seams.train_clamp is not None:
+        cfg_train = seams.train_clamp(cfg_train)
+    rate_fn = make_source_rate_fn(
+        organism,
+        out_dir=cell_root / "rate",
+        eval_questions=_rate_questions(cfg, cell.behavior),
+        n_completions=cfg.eval_n_completions,
+        temperature=cfg.eval_temperature,
+        n_judge_draws=cfg.n_judge_draws,
+        generate_fn=(
+            seams.eval_gen_fn_factory(DEFAULT_BASE_MODEL)
+            if seams.eval_gen_fn_factory is not None
+            else None  # None -> organisms' single-live-engine vLLM default
+        ),
+    )
+    train_dir = cell_root / "train"
+    adapter_dir, loss = train_lora(
+        DEFAULT_BASE_MODEL, str(cfg.pinned_mix), str(train_dir), cfg=cfg_train
+    )
+    # In-process GPU handoff (#1074 run-1 crash class): release trainer CUDA
+    # memory BEFORE the checkpoint-read rate_fn loop boots its vLLM engine.
+    release_trainer_cuda_memory()
+    ckpt_dirs: dict[int, Path] = {}
+    for p in Path(adapter_dir).glob("checkpoint-*"):
+        suffix = p.name.split("-", 1)[1]
+        if p.is_dir() and suffix.isdigit():
+            ckpt_dirs[int(suffix)] = p
+    if not ckpt_dirs:
+        raise ValueError(
+            f"no checkpoint-<step> dirs under {adapter_dir} — the recipe's "
+            "save_strategy='steps' checkpoint ladder did not take"
+        )
+    try:
+        rates_by_step = {step: float(rate_fn(str(d))) for step, d in sorted(ckpt_dirs.items())}
+    finally:
+        rate_close = getattr(rate_fn, "close", None)
+        if callable(rate_close):
+            rate_close()
+    selection = select_dose_checkpoint(rates_by_step, band=organism.dose or spec.stopping.rate_band)
+    record = {
+        "status": "trained",
+        "adapter_path": str(ckpt_dirs[selection.step]),
+        "train_mix_path": str(cfg.pinned_mix),
+        "selection": dataclasses.asdict(selection),
+        "data_paths": {"pinned_mix": str(cfg.pinned_mix), "mix_meta": str(cfg.pinned_mix_meta)},
+        "provenance": {
+            "organism": dataclasses.asdict(organism),
+            "recipe": dataclasses.asdict(spec),
+            "slug": organism.slug(),
+            "base_model": DEFAULT_BASE_MODEL,
+            "followup_label": cfg.followup_label,
+            "epochs_override": DOSE_EXT_EPOCHS,
+            "pinned_mix_revision": MIX_PIN_REVISION,
+            "pinned_mix_sha256": hashlib.sha256(Path(cfg.pinned_mix).read_bytes()).hexdigest(),
+            "n_mix_rows": n_rows,
+            "training_loss": float(loss),
+            "rates_by_step": {str(k): v for k, v in rates_by_step.items()},
+            "git_commit": _git_short_sha(),
+            "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        },
+        "run_name": run_name,
+    }
+    if selection.fallback is not None:
+        record["provenance"]["dose_selection_fallback"] = selection.fallback
+    _atomic_write_json(build_path, record)
+    results[cell.slug] = record
+    return results
 
 
 PARTIAL_UPLOAD_ROOT = f"issue{ISSUE}_partial"
@@ -1288,26 +1636,34 @@ def phase_margin(cfg: RunConfig, seams: Seams1074, train_results: dict[str, dict
             if out_path.exists():
                 margins[behavior] = _read_json(out_path)
                 continue
-            # Pool preflight: deterministic arm preference — this run's own
-            # arms for the behavior first (the followup's "mixed" cell), then
-            # the parent base -> ablit fallbacks (unchanged order there).
+            # Pool preflight: install-dose-extension pins the HELD-OUT pools
+            # derived at staging time (kept-but-UNTRAINED rows, plan v9 §2);
+            # otherwise deterministic arm preference — this run's own arms for
+            # the behavior first (the followup's "mixed" cell), then the
+            # parent base -> ablit fallbacks (unchanged order there).
             pools = None
             pool_source = None
-            arm_pref = list(
-                dict.fromkeys(
-                    [c.arm for c in cfg.cells if c.behavior == behavior] + ["base", "ablit"]
+            pool_provenance = None
+            if cfg.heldout_margin_pools is not None:
+                pools = cfg.heldout_margin_pools
+                pool_source = f"heldout_untrained@{MIX_PIN_REVISION}"
+                pool_provenance = cfg.heldout_pool_provenance
+            else:
+                arm_pref = list(
+                    dict.fromkeys(
+                        [c.arm for c in cfg.cells if c.behavior == behavior] + ["base", "ablit"]
+                    )
                 )
-            )
-            for arm in arm_pref:
-                dg_dir = cfg.out_root / f"{behavior}-{arm}" / "datagen"
-                if not (dg_dir / "judge_rows.jsonl").exists():
-                    continue
-                try:
-                    pools = derive_margin_pools(dg_dir)
-                    pool_source = f"{behavior}-{arm}"
-                    break
-                except ValueError as e:
-                    logger.warning("[margin] pool derivation failed for %s: %s", dg_dir, e)
+                for arm in arm_pref:
+                    dg_dir = cfg.out_root / f"{behavior}-{arm}" / "datagen"
+                    if not (dg_dir / "judge_rows.jsonl").exists():
+                        continue
+                    try:
+                        pools = derive_margin_pools(dg_dir)
+                        pool_source = f"{behavior}-{arm}"
+                        break
+                    except ValueError as e:
+                        logger.warning("[margin] pool derivation failed for %s: %s", dg_dir, e)
             if pools is None:
                 margins[behavior] = {
                     "status": "n/a — no fixed pool",
@@ -1329,6 +1685,8 @@ def phase_margin(cfg: RunConfig, seams: Seams1074, train_results: dict[str, dict
                 "n_neg": len(neg_pairs),
                 "cells": {},
             }
+            if pool_provenance is not None:
+                record["pool_provenance"] = pool_provenance
             contexts = [_source_context(behavior), DEFAULT_ASSISTANT_NEGATIVE.to_context()]
             for state_name, side_path in states:
                 for ctx in contexts:
@@ -1351,9 +1709,12 @@ def phase_upload(cfg: RunConfig, seams: Seams1074, train_results: dict[str, dict
 
     On a followup round the RUN-LEVEL artifacts (evalgen, margin, run_config,
     preflight, calibration, staged-inputs manifest) go under a followup-scoped
-    prefix so they never clobber the parent round's same-named uploads; the
-    CELL-LEVEL paths stay ``{DATA_PREFIX}/{slug}/...`` (the followup slug
-    ``harmful_compliance-mixed`` is unique — plan §10)."""
+    prefix so they never clobber the parent round's same-named uploads.
+    CELL-LEVEL paths stay ``{DATA_PREFIX}/{slug}/...`` when the followup slug
+    is unique (base-negatives-regen); the dose-extension round REUSES the
+    mixed slug, so its cell-level files route under the followup prefix too,
+    its rate completions carry the ``-e9`` suffix, and its adapter ladder
+    goes to the ``-e9`` model prefix (plan §10)."""
     _phase("upload")
     run_prefix = (
         DATA_PREFIX
@@ -1375,15 +1736,24 @@ def phase_upload(cfg: RunConfig, seams: Seams1074, train_results: dict[str, dict
         uploaded[path_in_repo] = str(url)
         _atomic_write_json(cfg.out_root / "upload_manifest.json", uploaded)
 
+    dose_ext = cfg.followup_label == LABEL_DOSE_EXTENSION
     for cell in cfg.cells:
         cell_root = cfg.out_root / cell.slug
+        # Cell-level routing: the dose-extension round reuses the SAME mixed
+        # cell slug as base-negatives-regen, so its cell-level data-repo paths
+        # go under the followup run prefix (never clobber the prior round's
+        # {DATA_PREFIX}/{slug}/... uploads — plan §10); its rate completions
+        # carry the plan's -e9 suffix; the adapter ladder goes to the -e9
+        # model prefix (_cell_model_prefix).
+        cell_data_prefix = f"{run_prefix}/{cell.slug}" if dose_ext else f"{DATA_PREFIX}/{cell.slug}"
+        rate_suffix = DOSE_EXT_SUFFIX if dose_ext else ""
         # ALL raw candidates (kept + dropped, both arms) + pool_meta + manifest;
         # caches excluded (re-derivable; fnmatch * crosses separators).
         _up_dir(
             cell_root / "datagen",
             HF_DATA_REPO,
             "dataset",
-            f"{DATA_PREFIX}/{cell.slug}/datagen",
+            f"{cell_data_prefix}/datagen",
             ignore_patterns=["gen_cache*", "gen_ckpt_*", "judge_cache_*"],
         )
         for fname in ("train_mix.jsonl", "mix_meta.json", "mix_budget.json"):
@@ -1393,16 +1763,16 @@ def phase_upload(cfg: RunConfig, seams: Seams1074, train_results: dict[str, dict
                     f,
                     HF_DATA_REPO,
                     "dataset",
-                    f"{DATA_PREFIX}/{cell.slug}/mix/{fname}",
+                    f"{cell_data_prefix}/mix/{fname}",
                     upload_as_file=True,
                 )
-                uploaded[f"{DATA_PREFIX}/{cell.slug}/mix/{fname}"] = str(url)
+                uploaded[f"{cell_data_prefix}/mix/{fname}"] = str(url)
         # Checkpoint-read completions + judge raws (raw completions, rate stage).
         _up_dir(
             cell_root / "rate",
             HF_DATA_REPO,
             "dataset",
-            f"{DATA_PREFIX}/raw_completions/rate/{cell.slug}",
+            f"{DATA_PREFIX}/raw_completions/rate/{cell.slug}{rate_suffix}",
         )
         # Adapter ladder + final adapter (training state auto-excluded by hub).
         if train_results.get(cell.slug, {}).get("status") == "trained":
@@ -1410,7 +1780,7 @@ def phase_upload(cfg: RunConfig, seams: Seams1074, train_results: dict[str, dict
                 cell_root / "train",
                 HF_MODEL_REPO,
                 "model",
-                f"{MODEL_PREFIX}/{cell.slug}",
+                _cell_model_prefix(cfg, cell),
             )
         summary = cell_root / "datagen_summary.json"
         if summary.exists():
@@ -1418,20 +1788,20 @@ def phase_upload(cfg: RunConfig, seams: Seams1074, train_results: dict[str, dict
                 summary,
                 HF_DATA_REPO,
                 "dataset",
-                f"{DATA_PREFIX}/{cell.slug}/datagen_summary.json",
+                f"{cell_data_prefix}/datagen_summary.json",
                 upload_as_file=True,
             )
-            uploaded[f"{DATA_PREFIX}/{cell.slug}/datagen_summary.json"] = str(url)
+            uploaded[f"{cell_data_prefix}/datagen_summary.json"] = str(url)
         build = cell_root / "build_result.json"
         if build.exists():
             url = upload(
                 build,
                 HF_DATA_REPO,
                 "dataset",
-                f"{DATA_PREFIX}/{cell.slug}/build_result.json",
+                f"{cell_data_prefix}/build_result.json",
                 upload_as_file=True,
             )
-            uploaded[f"{DATA_PREFIX}/{cell.slug}/build_result.json"] = str(url)
+            uploaded[f"{cell_data_prefix}/build_result.json"] = str(url)
     # Final-eval completions (judging deferred to Phase D on the VM).
     _up_dir(
         cfg.out_root / "evalgen",
@@ -1446,6 +1816,7 @@ def phase_upload(cfg: RunConfig, seams: Seams1074, train_results: dict[str, dict
         "judge_calibration.json",
         "judge_calibration_raw.json",
         "staged_inputs_manifest.json",
+        "heldout_margin_pools.json",
     ]
     for fname in run_level_files:
         f = cfg.out_root / fname
@@ -1479,8 +1850,8 @@ def write_sentinel(
         if tr.get("status") != "trained":
             continue
         ckpt_name = Path(tr["adapter_path"]).name  # checkpoint-<step>
-        adapter_paths[cell.slug] = f"{MODEL_PREFIX}/{cell.slug}/{ckpt_name}"
-        wandb_run_names.append(cell.run_name)
+        adapter_paths[cell.slug] = f"{_cell_model_prefix(cfg, cell)}/{ckpt_name}"
+        wandb_run_names.append(_run_name_for(cfg, cell))
     wandb_entity = None
     try:  # read the entity off the SDK (never hand-typed); fail-soft at run end
         import wandb
@@ -1744,9 +2115,11 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         "--followup",
         default=None,
         choices=FOLLOWUP_LABELS,
-        help="same-issue follow-up mode (base-negatives-regen: mixed-generator "
-        "harmful cell — reused ablit positives, fresh base negatives); implies "
-        "--full unless --smoke is given",
+        help="same-issue follow-up mode. base-negatives-regen: mixed-generator "
+        "harmful cell (reused ablit positives, fresh base negatives). "
+        "install-dose-extension: retrain the mixed cell on its pinned mix at a "
+        "9-epoch ceiling, held-out margin pools, NO datagen. Implies --full "
+        "unless --smoke is given",
     )
     p.add_argument("--cells", default=None, help="comma list like sycophancy:base,...")
     p.add_argument(
@@ -1777,6 +2150,11 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     if args.resume_partial_attempt is not None:
         if args.followup is None:
             p.error("--resume-partial-attempt requires --followup (followup mode only)")
+        if args.followup != LABEL_BASE_NEG_REGEN:
+            p.error(
+                "--resume-partial-attempt is base-negatives-regen-only (the "
+                f"{LABEL_DOSE_EXTENSION} round has no datagen stage to resume)"
+            )
         if args.smoke:
             p.error(
                 "--resume-partial-attempt is not supported with --smoke (the staged "
@@ -1786,23 +2164,57 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     return args
 
 
-def _stage_generic_corpus(dest: Path) -> str:
+def _stage_generic_corpus(dest: Path, *, claim_wait_s: float = 600.0) -> str:
     """Local-first -> HF-fetch (reuse fitness (h): resolves on the data repo,
-    consumed at the exact downloaded path, staged in-driver on every lane)."""
+    consumed at the exact downloaded path, staged in-driver on every lane).
+
+    Concurrent-safe + idempotent (#1090 fu3 crash-fix bug 2): N parallel cells
+    previously raced one shared ``hf_hub_download(local_dir=dest.parent)``
+    target — the winner ``os.replace``d it away and latecomers crashed
+    FileNotFoundError (5 hard-failed cells). Now: dest-exists short-circuit
+    FIRST; then an atomic per-dest ``.lock`` claim (O_CREAT|O_EXCL) — the
+    claimant downloads into its OWN unique temp dir and atomically replaces
+    into ``dest``; non-claimants wait for ``dest`` (fail-loud after
+    ``claim_wait_s``; a stale lock from a crashed stager surfaces as that
+    TimeoutError naming the lock path — remove it by hand)."""
     if dest.exists():
         return str(dest)
+    import shutil
+    import tempfile
+
     from huggingface_hub import hf_hub_download
 
     dest.parent.mkdir(parents=True, exist_ok=True)
-    got = hf_hub_download(
-        HF_DATA_REPO,
-        GENERIC_CORPUS_HF_PATH,
-        repo_type="dataset",
-        local_dir=dest.parent,
-    )
-    got_path = Path(got)
-    if got_path.resolve() != dest.resolve():
-        os.replace(got_path, dest)
+    lock = dest.parent / (dest.name + ".lock")
+    try:
+        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        deadline = time.time() + claim_wait_s
+        while time.time() < deadline:
+            if dest.exists():
+                logger.info("[generic-corpus] concurrent stager produced %s — reused", dest)
+                return str(dest)
+            time.sleep(0.2)
+        raise TimeoutError(
+            f"waited {claim_wait_s:.0f}s for a concurrent stager to produce {dest} "
+            f"(claim lock {lock} still present — stale lock from a crashed stager?)"
+        ) from None
+    try:
+        os.close(fd)
+        if not dest.exists():
+            tmp_dir = Path(tempfile.mkdtemp(dir=dest.parent, prefix=".stage_tmp_"))
+            try:
+                got = hf_hub_download(
+                    HF_DATA_REPO,
+                    GENERIC_CORPUS_HF_PATH,
+                    repo_type="dataset",
+                    local_dir=str(tmp_dir),
+                )
+                os.replace(got, dest)  # atomic; same filesystem by construction
+            finally:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+    finally:
+        lock.unlink(missing_ok=True)
     sha = hashlib.sha256(dest.read_bytes()).hexdigest()
     logger.info("[generic-corpus] staged %s (sha256=%s)", dest, sha[:16])
     return str(dest)
@@ -1815,7 +2227,12 @@ def config_from_args(args: argparse.Namespace) -> RunConfig:
         out_root = Path(args.out_root)
     elif followup is not None:
         slug = followup.replace("-", "_")
-        out_root = Path(f"/tmp/issue-{ISSUE}-fu-smoke" if smoke else f"data/issue_{ISSUE}/{slug}")
+        # Label-keyed smoke scratch root: the two followup labels have
+        # DIFFERENT regime keys, and run() refuses to mix regimes in one
+        # out_root — a shared /tmp smoke root would trip that refusal.
+        out_root = Path(
+            f"/tmp/issue-{ISSUE}-fu-smoke-{slug}" if smoke else f"data/issue_{ISSUE}/{slug}"
+        )
     else:
         out_root = Path(f"/tmp/issue-{ISSUE}-smoke" if smoke else f"data/issue_{ISSUE}/gencompare")
     cells = (
@@ -1867,29 +2284,40 @@ def run(cfg: RunConfig, seams: Seams1074) -> dict:
     else:
         _atomic_write_json(run_cfg_path, cfg.regime_key())
 
-    arm_status = phase_preflight(cfg, seams)
-    live_arms = {a for a, s in arm_status.items() if s.get("ok")}
-    if not live_arms:
-        raise RuntimeError(f"no generator arm survived preflight: {arm_status}")
-
-    datagen_results = phase_datagen(cfg, seams, live_arms)
-    if cfg.calibration_raw_neg is not None:
-        # Followup §4-A' judge-drift diagnostic — SAME judging session as the
-        # fresh negatives (same process, judge pin, draw count); never a gate.
-        phase_judge_calibration(cfg)
-    n_cleared = sum(1 for r in datagen_results.values() if r.get("status") == "success")
-    if n_cleared == 0:
-        logger.warning(
-            "[K1] every cell missed the yield floor — the yield table IS the result; "
-            "skipping train/evalgen/margin (plan kill criterion K1)"
-        )
-        train_results: dict[str, dict] = {c.slug: {"status": "skipped_no_yield"} for c in cfg.cells}
-        evalgen_manifest: dict = {}
-        margins: dict = {}
-    else:
-        train_results = phase_train(cfg, seams, datagen_results)
+    if cfg.followup_label == LABEL_DOSE_EXTENSION:
+        # Plan v9 §9 phase list: NO datagen, NO generator preflight, NO
+        # judge-drift calibration — the training mix is reused pinned bytes;
+        # train directly on it, then the verbatim evalgen/margin machinery.
+        datagen_results = {
+            c.slug: {"status": "reused_pinned_mix", "revision": MIX_PIN_REVISION} for c in cfg.cells
+        }
+        train_results = phase_train_pinned_mix(cfg, seams)
         evalgen_manifest = phase_evalgen(cfg, seams, train_results)
         margins = phase_margin(cfg, seams, train_results)
+    else:
+        arm_status = phase_preflight(cfg, seams)
+        live_arms = {a for a, s in arm_status.items() if s.get("ok")}
+        if not live_arms:
+            raise RuntimeError(f"no generator arm survived preflight: {arm_status}")
+
+        datagen_results = phase_datagen(cfg, seams, live_arms)
+        if cfg.calibration_raw_neg is not None:
+            # Followup §4-A' judge-drift diagnostic — SAME judging session as the
+            # fresh negatives (same process, judge pin, draw count); never a gate.
+            phase_judge_calibration(cfg)
+        n_cleared = sum(1 for r in datagen_results.values() if r.get("status") == "success")
+        if n_cleared == 0:
+            logger.warning(
+                "[K1] every cell missed the yield floor — the yield table IS the result; "
+                "skipping train/evalgen/margin (plan kill criterion K1)"
+            )
+            train_results = {c.slug: {"status": "skipped_no_yield"} for c in cfg.cells}
+            evalgen_manifest = {}
+            margins = {}
+        else:
+            train_results = phase_train(cfg, seams, datagen_results)
+            evalgen_manifest = phase_evalgen(cfg, seams, train_results)
+            margins = phase_margin(cfg, seams, train_results)
 
     uploaded = phase_upload(cfg, seams, train_results) if cfg.upload else {}
     sentinel = write_sentinel(cfg, datagen_results, train_results, margins, uploaded)
@@ -1909,19 +2337,47 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = _parse_args(argv)
     cfg = config_from_args(args)
+    # The dose-extension round never assembles a mix (the pinned mix already
+    # interleaves its 240 generic rows), so the generic corpus is not staged.
+    needs_generic = cfg.followup_label != LABEL_DOSE_EXTENSION
     if cfg.smoke:
         seams = make_smoke_seams(cfg)
-        if cfg.generic_data_path is None:
+        if cfg.generic_data_path is None and needs_generic:
             cfg.generic_data_path = str(
                 _write_smoke_generic_corpus(cfg.out_root / "smoke_generic.jsonl")
             )
     else:
         seams = Seams1074()
-        if cfg.generic_data_path is None:
+        if cfg.generic_data_path is None and needs_generic:
             cfg.generic_data_path = _stage_generic_corpus(
                 cfg.out_root / "inputs" / "generic_corpus.jsonl"
             )
-    if cfg.followup_label is not None:
+    if cfg.followup_label == LABEL_DOSE_EXTENSION:
+        # Stage the pinned mixed-cell mix + margin-pool sidecars BEFORE run()
+        # (the regime key hashes the staged mix). Smoke and full stage the
+        # SAME real files at the SAME pin — the whole set is ~2 MB — and the
+        # held-out pool derivation (incl. the fail-loud 64/30 untrained
+        # assert) runs the REAL pinned bytes in both modes; the smoke only
+        # shrinks the SAMPLED pool size (a smoke-slice knob, plan §12).
+        staged = stage_pinned_parent_inputs(
+            cfg,
+            files=DOSE_EXT_PINNED_FILES,
+            prefix=DOSE_EXT_PIN_PREFIX,
+            revision=MIX_PIN_REVISION,
+            dest_name="pinned_mix_inputs",
+        )
+        cfg.pinned_mix = staged["mix/train_mix.jsonl"]
+        cfg.pinned_mix_meta = staged["mix/mix_meta.json"]
+        pos_pairs, neg_pairs, pool_prov = derive_heldout_margin_pools(
+            staged, pool_n=3 if cfg.smoke else DOSE_EXT_POOL_N
+        )
+        cfg.heldout_margin_pools = (pos_pairs, neg_pairs)
+        cfg.heldout_pool_provenance = pool_prov
+        _atomic_write_json(
+            cfg.out_root / "heldout_margin_pools.json",
+            {"provenance": pool_prov, "pos_pairs": pos_pairs, "neg_pairs": neg_pairs},
+        )
+    elif cfg.followup_label == LABEL_BASE_NEG_REGEN:
         # Stage the pinned parent inputs BEFORE run() — the regime key + the
         # datagen manifest carry the staged files' sha256s. The smoke stages
         # the two small consumer files through the SAME real staging path (the

@@ -199,10 +199,19 @@ section wins on invocation form.
      (#906 r11-r14: four bugs, four ~1.5h pod cycles). Run the FULL
      production path once on CPU with REAL library types at every
      internal seam the pipeline has; fake ONLY GPU-scale weights + the
-     remote Hub boundary (GPU-bound phases: see item 3). Full recipe +
-     traps + worked example: `.claude/rules/gotchas.md` "Mock-seam
-     smokes". Record it under `## Smoke run` — Step 6d.0-bis refuses
-     seam-stubbed evidence.
+     remote Hub boundary (GPU-bound phases: see item 3). When the
+     pipeline INGESTS a real corpus (a WildChat/LMSYS-class streaming
+     builder), the **data-ingestion probe class** (#1092) binds too:
+     a bounded tiny-real streaming probe against the REAL dataset —
+     a kept cap AND a TOTAL-streamed-rows cap, asserting kept > 0 per
+     dataset, with per-filter rejection counters in the stream's
+     `done:` line (recipe: `.claude/rules/gotchas.md` "Real-corpus
+     streaming filters" + your agent-memory
+     `feedback_real_corpus_streaming_filters_tiny_real_probe.md`).
+     Full recipe + traps + worked example: `.claude/rules/gotchas.md`
+     "Mock-seam smokes". Record it under `## Smoke run` — Step
+     6d.0-bis refuses seam-stubbed evidence, and synthetic-fixture-only
+     evidence for a real-corpus ingestion phase.
 6. **Cite CLAUDE.md gotchas in your mini-plan.** Grep `CLAUDE.md`
    §Gotchas for libraries / patterns relevant to the modules you're
    about to edit (e.g. vLLM, TRL, Hydra, MooseFS, RunPod, persona

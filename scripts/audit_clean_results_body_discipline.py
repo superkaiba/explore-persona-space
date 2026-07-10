@@ -9,6 +9,11 @@ Usage:
     # Audit a local markdown file (e.g. an analyzer draft in /tmp):
     uv run python scripts/audit_clean_results_body_discipline.py /tmp/draft.md
 
+    # Corpus-wide WARN-level H1-vs-frontmatter-title sync sweep (#1196):
+    # one WARN row per sentinelled body whose H1 and frontmatter `title`
+    # have drifted apart post-gate; WARN only — always exits 0.
+    uv run python scripts/audit_clean_results_body_discipline.py --title-sync-sweep
+
     # Legacy bulk-inventory mode (no argument) — reads the pre-built
     # `.claude/cache/audit-2026-05-08/inventory.json` and writes the
     # findings markdown for every awaiting-promotion body listed there.
@@ -502,9 +507,20 @@ def strip_context_blockquotes(text: str) -> str:
 _H2_RE = re.compile(r"^##\s+(?P<title>.+?)\s*$")
 
 
+# H2 sections whose `<details>` example blocks are exempt from the prose
+# scan: `## Data` (v3 spec — `### Trained on` / `### Evaluated with` /
+# `### Generated` example blocks) and `## Methodology` (v4 spec — the
+# `**Sample training/evaluation data + completions:**` slot;
+# `.claude/skills/clean-results/SPEC.md` mandates verbatim example
+# rows/completions wrapped in `<details>` or a fenced code block, and
+# fenced blocks are already stripped globally). Exact lowercase H2-title
+# match, mirroring the original `## Data`-only equality check (#1171).
+_DETAILS_EXEMPT_H2_TITLES: frozenset[str] = frozenset({"data", "methodology"})
+
+
 def strip_data_example_blocks(text: str) -> str:
     """Drop `<details>...</details>` example blocks inside the `## Data`
-    section.
+    (v3) and `## Methodology` (v4) sections.
 
     The v3 clean-result spec MANDATES verbatim training rows / eval
     probes / sample completions inside `## Data` (`### Trained on` /
@@ -517,32 +533,42 @@ def strip_data_example_blocks(text: str) -> str:
     required to be verbatim, so example blocks inside `## Data` are
     exempt from the scan.
 
+    The v4 spec (`<!-- clean-result-v4 -->`) moved the verbatim sample
+    rows to `## Methodology` → `**Sample training/evaluation data +
+    completions:**`, carried in the same `<details>` / fenced forms
+    (SPEC.md), so the v4 section gets the identical exemption (#1171).
+    Methodology PROSE (`**Design:**` / `**Training:**` /
+    `**Evaluation:**` lines outside a `<details>` block) stays scanned.
+
     Mechanism mirrors :func:`strip_context_blockquotes`: a stateful
     line walker that drops only lines inside a `<details>` block while
-    the cursor is inside the `## Data` section. Fenced code blocks (the
-    other v3 example-block form) are already removed globally by
+    the cursor is inside an exempt section
+    (`_DETAILS_EXEMPT_H2_TITLES`). Fenced code blocks (the other
+    example-block form) are already removed globally by
     :func:`strip_code`, so this only needs to handle `<details>` blocks.
 
-    The `## Data` section runs from its `## ` H2 to the next `## ` H2
-    (typically `## Reproducibility`) or EOF. If a `</details>` close is
-    never seen before the section ends, the block-drop ends with the
-    section — a mis-detected boundary degrades to the pre-fix behavior
-    (the lines get scanned), never a silently widened exemption.
+    An exempt section runs from its `## ` H2 to the next `## ` H2
+    (typically `## Reproducibility` / `## Results`) or EOF. If a
+    `</details>` close is never seen before the section ends, the
+    block-drop ends with the section — a mis-detected boundary degrades
+    to the pre-fix behavior (the lines get scanned), never a silently
+    widened exemption.
     """
     out_lines: list[str] = []
-    in_data = False
+    in_exempt_section = False
     in_details = False
     for line in text.splitlines():
         stripped = line.strip()
         h2 = _H2_RE.match(stripped)
         if h2:
-            # Any H2 ends a `## Data` block (and any in-flight details
-            # drop); re-enter only when the new H2 is `## Data` itself.
-            in_data = h2.group("title").strip().lower() == "data"
+            # Any H2 ends an exempt section (and any in-flight details
+            # drop); re-enter only when the new H2 is `## Data` (v3) or
+            # `## Methodology` (v4) itself.
+            in_exempt_section = h2.group("title").strip().lower() in _DETAILS_EXEMPT_H2_TITLES
             in_details = False
             out_lines.append(line)
             continue
-        if in_data:
+        if in_exempt_section:
             lowered = stripped.lower()
             if not in_details and lowered.startswith("<details"):
                 in_details = True
@@ -656,8 +682,11 @@ def is_v2(body: str) -> bool:
     (v3) redesign (2026-W24, sentinel `<!-- clean-result-v3 -->`),
     "current spec" now means ANY of:
 
-    - The v3 sentinel `<!-- clean-result-v3 -->` is present (the
-      current prescriptive shape: Takeaways / What I ran / Findings /
+    - The v4 sentinel `<!-- clean-result-v4 -->` is present (the
+      current prescriptive shape, four-flat-H2, migrated 2026-W26:
+      Takeaways / Goal / Methodology / Results); OR
+    - The v3 sentinel `<!-- clean-result-v3 -->` is present (prior
+      prescriptive shape: Takeaways / What I ran / Findings /
       Data / Reproducibility); OR
     - The nested-design (v2) sentinel `<!-- clean-result-v2 -->` is
       present in the body (prior prescriptive shape); OR
@@ -675,6 +704,8 @@ def is_v2(body: str) -> bool:
     NOT consult this gate. It is NOT a structural verifier —
     `scripts/verify_task_body.py` is the authoritative mechanical gate.
     """
+    if "<!-- clean-result-v4 -->" in body:
+        return True
     if "<!-- clean-result-v3 -->" in body:
         return True
     if "<!-- clean-result-v2 -->" in body:
@@ -731,7 +762,7 @@ def audit_body(body: str) -> dict[str, list[str]]:
     # inline-backtick-wrapped bracketed CI in prose (``CI `[-0.295, +0.083]` ``,
     # the #667 line-166 gap) is still seen — `strip_code` blanks inline-backtick
     # spans, hiding the CI before the scan. The SAME downstream exemptions still
-    # apply (Data `<details>` / Context block stripped by the inner chain; table
+    # apply (Data/Methodology `<details>` / Context block stripped by the inner chain; table
     # rows blanked by `_blank_table_rows`; figure-caption + Why-this-test lines
     # blanked by `_strip_interval_inline_exempt_lines`). Fenced code blocks are
     # still stripped, so verbatim bracketed expressions in fenced examples do
@@ -785,7 +816,94 @@ def _is_paper_stub(body: str) -> bool:
     return bool(_RE_FM_PAPER.search(head))
 
 
+def _load_verify_task_body():
+    """Import scripts/verify_task_body.py as a sibling-script module.
+
+    Robust to BOTH launch modes: `uv run python scripts/audit_...py`
+    (scripts/ is already sys.path[0]) and the test file's
+    importlib.spec_from_file_location loading (which does NOT put
+    scripts/ on sys.path). Follows the established sibling-import
+    convention (_rest_backfill.py:19, backfill_artifact_registry.py:34).
+    Lazy — called inside the check helper, cached by Python's module
+    cache — so the auditor's own import stays light and the legacy /
+    frontmatter-less paths pay nothing.
+    """
+    import importlib
+    import sys
+
+    scripts_dir = str(Path(__file__).resolve().parent)
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    return importlib.import_module("verify_task_body")
+
+
+def h1_title_sync_warn(text: str) -> str | None:
+    """WARN-severity corpus mirror of verify_task_body.py's gate-time
+    `check_h1_matches_frontmatter_title` (#1110 gate check; #1196 corpus
+    surface). Delegates the ENTIRE comparison — the fence-aware sentinel
+    gate (v4/v3/v2-nested), the frontmatter parse, the
+    whitespace-collapse-only normalization, and the missing-fm-title /
+    missing-H1 anomaly branches — to the gate check, then flattens its
+    severity: any flagged outcome (gate FAIL on v4, gate WARN on
+    grandfathered v3/v2) returns the check's detail string; an in-sync
+    or out-of-scope body returns None. WARN only: callers never let this
+    affect the exit code — post-gate remediation is a human call.
+    """
+    vtb = _load_verify_task_body()
+    fm, body = vtb.split_frontmatter(text)
+    res = vtb.check_h1_matches_frontmatter_title(body, fm)
+    if (not res.passed) or res.is_warn:
+        return res.detail
+    return None
+
+
+def _run_title_sync_sweep(tasks_root: Path | None = None) -> int:
+    """Corpus-wide WARN-level H1-vs-frontmatter-title sync sweep (#1196).
+
+    Iterates tasks/<status>/<N>/body.md (resolver-derived root — never a
+    cwd-relative tasks/ path), printing one WARN row per flagged
+    sentinelled body. ALWAYS returns 0: WARN only, never FAIL — whether
+    the H1 or the frontmatter title is the fresher intent is a human
+    call (each row's detail carries both values and both remediation
+    commands, from the gate check). `tasks_root` is parameterized for
+    tests; the production default is task_workflow.tasks_dir(). Read
+    errors propagate (fail-fast, never swallowed).
+    """
+    if tasks_root is None:
+        from explore_persona_space.task_workflow import tasks_dir
+
+        tasks_root = tasks_dir()
+    rows: list[tuple[int, str, str]] = []
+    n_scanned = 0
+    for body_path in sorted(tasks_root.glob("*/*/body.md")):
+        tid = body_path.parent.name
+        if not tid.isdigit():
+            continue  # not a task folder (e.g. a non-numeric sibling dir)
+        n_scanned += 1
+        detail = h1_title_sync_warn(body_path.read_text(encoding="utf-8"))
+        if detail:
+            rows.append((int(tid), body_path.parent.parent.name, detail))
+    print(f"Scanned {n_scanned} task bodies under {tasks_root}")
+    if not rows:
+        print("PASS: H1 == frontmatter title on every sentinelled clean-result body")
+        return 0
+    print(
+        f"WARN: {len(rows)} sentinelled clean-result body(ies) with "
+        "H1/frontmatter-title drift (WARN only — exit stays 0; which side is "
+        "the fresher intent is a human call — each row's detail carries both "
+        "values and both remediation commands)"
+    )
+    for tid, status, detail in sorted(rows):
+        print(f"- #{tid} ({status}): {detail}")
+    return 0
+
+
 def _audit_single_body(body: str) -> int:
+    """Audit one body: the `PASS:`/`FAIL:` headline + `- <name>: ...`
+    findings rows (exit code per findings, exactly as before), then an
+    advisory `WARN h1_title_sync:` line (#1196) when the H1 and the
+    frontmatter title have drifted — WARN only, never touches the
+    returned exit code."""
     if _is_paper_stub(body):
         print(
             "PASS: paper-task body.md is a paper-stub — markdown body-discipline "
@@ -795,11 +913,16 @@ def _audit_single_body(body: str) -> int:
     findings = audit_body(body)
     if not findings:
         print("PASS: no body-discipline anti-patterns matched")
-        return 0
-    print("FAIL: body-discipline anti-patterns matched")
-    for name, samples in findings.items():
-        print(f"- {name}: {', '.join(repr(s) for s in samples[:3])}")
-    return 1
+        rc = 0
+    else:
+        print("FAIL: body-discipline anti-patterns matched")
+        for name, samples in findings.items():
+            print(f"- {name}: {', '.join(repr(s) for s in samples[:3])}")
+        rc = 1
+    warn = h1_title_sync_warn(body)
+    if warn:
+        print(f"WARN h1_title_sync: {warn}")
+    return rc
 
 
 def _run_legacy_bulk_inventory() -> None:
@@ -887,7 +1010,17 @@ def main():
         type=int,
         help="Task number; resolves to tasks/<status>/<N>/body.md. (--issue is an alias.)",
     )
+    src.add_argument(
+        "--title-sync-sweep",
+        action="store_true",
+        help="Corpus-wide WARN-level H1-vs-frontmatter-title sync sweep over "
+        "tasks/*/*/body.md (#1196). One WARN row per divergent sentinelled "
+        "clean-result body; WARN only — always exits 0.",
+    )
     args = parser.parse_args()
+
+    if args.title_sync_sweep:
+        raise SystemExit(_run_title_sync_sweep())
 
     if args.task is not None:
         try:
@@ -895,13 +1028,13 @@ def main():
         except FileNotFoundError as exc:
             print(f"audit_clean_results_body_discipline: {exc}")
             raise SystemExit(2) from exc
-        rc = _audit_single_body(body_path.read_text())
+        rc = _audit_single_body(body_path.read_text(encoding="utf-8"))
         if rc != 0:
             raise SystemExit(rc)
         return
 
     if args.body_file:
-        rc = _audit_single_body(Path(args.body_file).read_text())
+        rc = _audit_single_body(Path(args.body_file).read_text(encoding="utf-8"))
         if rc != 0:
             raise SystemExit(rc)
         return

@@ -176,6 +176,57 @@ def part_summary_name(part: str, summary: str) -> str:
     return f"{part}_{summary}"
 
 
+# ── matched-length answer-span control (follow-up round, plan v6 §4.1) ───────
+
+MLC_K_MIN = 8  # conditioning-slice floor (tokens)
+MLC_REM_MIN = 16  # remainder-target floor (tokens)
+
+# The 7 mean-pool vectors captured per (row, layer) for the matched-length
+# control store (plan v6 §4.2 item 4) — mean-only by design ("no tested
+# summary displaces mean pooling", parent body).
+MLC_SUMMARY_NAMES: tuple[str, ...] = (
+    "ctx_mean",
+    "cot_mean",
+    "ans_mean",
+    "cot_lastK_mean",
+    "cot_firstK_mean",
+    "ansprefix_K_mean",
+    "ans_rem_mean",
+)
+
+
+def matched_length_spans(
+    cot_tok: tuple[int, int],
+    ans_tok: tuple[int, int],
+    k_min: int = MLC_K_MIN,
+    rem_min: int = MLC_REM_MIN,
+) -> dict | None:
+    """Per-row matched-length spans. K = min(len(cot), len(ans)//2).
+
+    Returns ``None`` (dropped-and-counted, reason ``matched_length_floor``)
+    when K < ``k_min`` or len(ans) − K < ``rem_min``. Spans are half-open
+    token indices into the COMPLETION token space, all derived from the
+    parent's cot/ans token spans (the same
+    ``char_span_to_token_span(return_offsets_mapping)`` machinery
+    ``build_capture_row`` already uses — no re-tokenization, no re-search).
+    Registered CoT slice = ``cot_lastK`` (the CoT's conclusion); ``cot_firstK``
+    is the exploratory second definition. ``ansprefix_K`` and ``ans_rem`` are
+    disjoint by construction (prefix ends where the remainder starts).
+    """
+    cs, ce = cot_tok
+    a0, a1 = ans_tok
+    K = min(ce - cs, (a1 - a0) // 2)
+    if k_min > K or (a1 - a0) - K < rem_min:
+        return None
+    return {
+        "K": K,
+        "cot_lastK": (ce - K, ce),  # registered CoT slice (the CoT's conclusion)
+        "cot_firstK": (cs, cs + K),  # exploratory CoT slice
+        "ansprefix_K": (a0, a0 + K),  # matched-length control slice
+        "ans_rem": (a0 + K, a1),  # the SHARED prediction target
+    }
+
+
 # Condition slugs (plan §10) — regimes avg_q / avg_t / indiv.
 ARM_SLUGS = (
     "d_ctx2ans",

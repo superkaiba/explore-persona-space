@@ -1,0 +1,157 @@
+{
+  "cell": "c6-broad_em-claude",
+  "cell_id": "c6",
+  "behavior": "broad_em",
+  "generator": "claude",
+  "gen_model": "claude-sonnet-4-5-20250929",
+  "purpose": "residual hard case, neutral reframe (may floor)",
+  "trains": true,
+  "instruction_style": "plain",
+  "instruction_source": "extraction_pairs",
+  "target_n": 25,
+  "quota_floor": 0.8,
+  "floor_n": 20,
+  "oversample_mult": 2.0,
+  "seed": 42,
+  "git_commit": "3b7387c1b6",
+  "ts": "2026-07-06T22:32:09Z",
+  "status": "yield_floor_missed",
+  "yield_record": {
+    "message": "behavior 'broad_em': kept 2 positives < floor_n=20 (target_n=25, quota_floor=0.8). Per-variant yields: {'ev2': 15, 'ev1': 15, 'ev4': 11, 'ev0': 17, 'ev3': 14}",
+    "kept_pos": 2,
+    "floor_n": 20,
+    "stages": {
+      "positive": {
+        "requested": 72,
+        "generated": 72,
+        "gen_drop_mix": {},
+        "per_variant_requests": {
+          "ev2": 15,
+          "ev1": 15,
+          "ev4": 11,
+          "ev0": 17,
+          "ev3": 14
+        },
+        "per_question_requests": {
+          "broad_em-trainq-0008": 5,
+          "broad_em-trainq-0018": 3,
+          "broad_em-trainq-0001": 5,
+          "broad_em-trainq-0013": 4,
+          "broad_em-trainq-0010": 3,
+          "broad_em-trainq-0000": 3,
+          "broad_em-trainq-0014": 4,
+          "broad_em-trainq-0003": 4,
+          "broad_em-trainq-0015": 3,
+          "broad_em-trainq-0002": 2,
+          "broad_em-trainq-0011": 4,
+          "broad_em-trainq-0009": 5,
+          "broad_em-trainq-0007": 4,
+          "broad_em-trainq-0006": 4,
+          "broad_em-trainq-0004": 5,
+          "broad_em-trainq-0019": 4,
+          "broad_em-trainq-0016": 3,
+          "broad_em-trainq-0005": 1,
+          "broad_em-trainq-0017": 2,
+          "broad_em-trainq-0012": 4
+        },
+        "judge_raw_path": "data/issue_1090/run/c6-broad_em-claude/datagen/judge_raw_pos.json",
+        "n_judged": 72,
+        "n_judge_none_dropped": 0,
+        "n_threshold_dropped": 70,
+        "n_structural_dropped": 0,
+        "n_kept": 2
+      }
+    }
+  },
+  "positive_stage": {
+    "n_requested": 72,
+    "n_generated": 72,
+    "n_judged": 72,
+    "n_kept": 2,
+    "n_structural_dropped": 0,
+    "n_threshold_dropped": 70,
+    "n_judge_none_dropped": 0
+  },
+  "per_question_yield": {
+    "broad_em-trainq-0008": {
+      "judged": 5,
+      "kept": 0
+    },
+    "broad_em-trainq-0018": {
+      "judged": 3,
+      "kept": 0
+    },
+    "broad_em-trainq-0001": {
+      "judged": 5,
+      "kept": 1
+    },
+    "broad_em-trainq-0013": {
+      "judged": 4,
+      "kept": 0
+    },
+    "broad_em-trainq-0010": {
+      "judged": 3,
+      "kept": 0
+    },
+    "broad_em-trainq-0000": {
+      "judged": 3,
+      "kept": 0
+    },
+    "broad_em-trainq-0014": {
+      "judged": 4,
+      "kept": 0
+    },
+    "broad_em-trainq-0003": {
+      "judged": 4,
+      "kept": 0
+    },
+    "broad_em-trainq-0015": {
+      "judged": 3,
+      "kept": 1
+    },
+    "broad_em-trainq-0002": {
+      "judged": 2,
+      "kept": 0
+    },
+    "broad_em-trainq-0011": {
+      "judged": 4,
+      "kept": 0
+    },
+    "broad_em-trainq-0009": {
+      "judged": 5,
+      "kept": 0
+    },
+    "broad_em-trainq-0007": {
+      "judged": 4,
+      "kept": 0
+    },
+    "broad_em-trainq-0006": {
+      "judged": 4,
+      "kept": 0
+    },
+    "broad_em-trainq-0004": {
+      "judged": 5,
+      "kept": 0
+    },
+    "broad_em-trainq-0019": {
+      "judged": 4,
+      "kept": 0
+    },
+    "broad_em-trainq-0016": {
+      "judged": 3,
+      "kept": 0
+    },
+    "broad_em-trainq-0005": {
+      "judged": 1,
+      "kept": 0
+    },
+    "broad_em-trainq-0017": {
+      "judged": 2,
+      "kept": 0
+    },
+    "broad_em-trainq-0012": {
+      "judged": 4,
+      "kept": 0
+    }
+  }
+}

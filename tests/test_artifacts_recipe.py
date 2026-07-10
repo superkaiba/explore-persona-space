@@ -93,8 +93,10 @@ def test_content_routing_uniform(name):
     assert spec.train_method == "lora"
 
 
-def test_content_behavior_count_is_seven():
-    assert len(CONTENT_BEHAVIOR_NAMES) == 7
+def test_content_behavior_count_is_nine():
+    # 7 master-plan content behaviors + the 2 #1090 additions (impolite,
+    # sycophancy_hardfact) — both route through the unified content recipe.
+    assert len(CONTENT_BEHAVIOR_NAMES) == 9
 
 
 # ---------------------------------------------------------------------------

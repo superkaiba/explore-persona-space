@@ -10,7 +10,9 @@ The four #787 sub-fixes these tests guard:
 
 1. `.gitattributes` (NEW) — `merge=union` on the append-only task JSONL logs.
 2. Guard-1 — strip FOREIGN task folders before the merge, split by whether the
-   path exists on `origin/main` (checkout vs `git rm --cached`).
+   path exists on `origin/main` (checkout vs `git rm -f` — index AND working
+   tree, #1244; an index-only `rm --cached` self-reverts under the
+   pathspec-limited strip commit).
 3. Fast-path pre-check — a FIVE-conjunct predicate (incl. `ADDED_ONLY=yes`)
    that routes far-behind small ADDED-only workflow-fix branches straight to
    the surgical additive checkout, plus the surgical compute block's
@@ -21,6 +23,7 @@ The four #787 sub-fixes these tests guard:
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -115,10 +118,23 @@ def test_guard1_foreign_present_vs_added_split_present():
 
 
 def test_guard1_branch_added_foreign_dropped_not_checked_out():
+    """#1244: the drop must remove index AND working tree (`git rm -f`), never
+    index-only (`git rm --cached`) — Guard 1's strip commit is PATHSPEC-limited
+    and records WORKING-TREE content for the named paths (git-commit(1) --only
+    default), so an index-only deletion is committed right back and silently
+    never lands (#1210: 19 resurrected paths)."""
     text = _skill_text()
-    assert "rm --cached -f --ignore-unmatch" in text, (
-        "Guard-1 must drop branch-added foreign paths via git rm --cached -f "
-        "--ignore-unmatch (a checkout would crash with pathspec-did-not-match)"
+    region = _merge_guards_region(text)
+    assert 'git -C "$WT" rm -f --ignore-unmatch -- "${FOREIGN_BRANCH_ONLY[@]}"' in region, (
+        "Guard-1 must drop branch-added foreign paths via git rm -f "
+        "--ignore-unmatch (index AND working tree; a checkout would crash with "
+        "pathspec-did-not-match, and an index-only rm --cached self-reverts "
+        "under the pathspec-limited strip commit — #1210/#1244)"
+    )
+    assert "rm --cached" not in region, (
+        "index-only `git rm --cached` must not appear in the merge-guards "
+        "region — the pathspec-limited strip commit records working-tree "
+        "content and would resurrect the paths (#1210/#1244)"
     )
 
 
@@ -168,10 +184,15 @@ def test_safe_case_push_appears_before_gh_pr_merge():
     """The push must SEQUENCE before the safe-case gh pr merge --rebase call,
     so the server-side rebase sees the stripped branch tip."""
     text = _skill_text()
+    # Scope the search to the safe-case block: the #1138 canonical
+    # "Bare push / merge snippets" subsection (inserted earlier in Step 10d)
+    # contains both literals, so first-occurrence pins would retarget it.
+    base = text.find("#### The auto-merge procedure (safe case")
+    assert base != -1, "safe-case auto-merge heading not found in SKILL.md"
     merge_line = "gh pr merge <PR> --rebase --delete-branch=false"
     push_line = 'git -C "$WT" push origin issue-<N>'
-    merge_offset = text.find(merge_line)
-    push_offset = text.find(push_line)
+    merge_offset = text.find(merge_line, base)
+    push_offset = text.find(push_line, base)
     assert merge_offset != -1, "safe-case gh pr merge line not found in SKILL.md"
     assert push_offset != -1, "safe-case strip-commit push line not found in SKILL.md"
     assert push_offset < merge_offset, (
@@ -551,20 +572,88 @@ def test_gate_baseline_rc_captured_not_erased():
     )
 
 
-def test_gate_verdict_file_consumed_then_removed():
-    """Round-3 (Claude r2 minor (b)): every verdict-file binding site must
-    remove the file after consuming it (consume-once, both branches) so a
-    stale verdict from a prior invocation can never certify a later merge."""
+# #1097 pins: the sha-equality conjunct (byte-identical at both consumers), the
+# nonempty-line-2 guard conjunct (hardens the empty-vs-empty `[ "" = "" ]` cell),
+# and the success-checked merge wrapper the pass-branch rm must sit inside.
+_SHA_CHECK = (
+    '[ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)"'
+    ' = "$(git -C "$WT" rev-parse HEAD)" ]'
+)
+_NONEMPTY_SHA_CHECK = '[ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ]'
+_MERGE_SUCCESS_IF = "if gh pr merge <PR> --rebase --delete-branch=false; then"
+
+
+def test_gate_verdict_sha_bound_at_write_and_both_consumers():
+    """#1097: the gate block must SHA-BIND the verdict (append the certified
+    branch-tip sha as line 2) and BOTH file consumers (safe case + recovery)
+    must accept a pass/skip verdict only while the current tip equals the
+    certified sha — a hand-written `echo pass >` verdict (the #1082 move)
+    lacks the sha and fails closed; any post-certification commit does too."""
     text = _skill_text()
-    assert text.count("rm -f /tmp/issue-<N>-lint-verdict.txt") >= 4, (
-        "both consumers (safe case + recovery) must rm the verdict file in both branches"
+    region = _gate_region(text)
+    sha_append = 'git -C "$WT" rev-parse HEAD >> /tmp/issue-<N>-lint-verdict.txt'
+    assert sha_append in region, "the gate block must append the certified sha to the verdict file"
+    assert text.count(_SHA_CHECK) >= 2, (
+        "both verdict-file consumers must compare line 2 against the current branch tip"
     )
     probe = "grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt"
     first = text.find(probe)
-    first_rm = text.find("rm -f /tmp/issue-<N>-lint-verdict.txt", first)
+    second = text.find(probe, first + 1)
+    m1 = text.find(_MERGE_SUCCESS_IF, first)
+    m2 = text.find(_MERGE_SUCCESS_IF, second)
+    assert -1 < first < m1, "safe case: the success-checked merge must follow its conditional"
+    assert -1 < second < m2, "recovery: the success-checked merge must follow its conditional"
+    assert _SHA_CHECK in text[first:m1], (
+        "the SAFE-CASE consumer conditional must carry the sha-equality conjunct"
+    )
+    assert _SHA_CHECK in text[second:m2], (
+        "the RECOVERY consumer conditional must carry the sha-equality conjunct"
+    )
+    assert _NONEMPTY_SHA_CHECK in text[first:m1], (
+        "the safe-case conditional must guard against an empty line 2 "
+        "(the empty-vs-empty [ '' = '' ] cell must fail closed)"
+    )
+    assert _NONEMPTY_SHA_CHECK in text[second:m2], (
+        "the recovery conditional must guard against an empty line 2"
+    )
+
+
+def test_gate_verdict_consumed_only_after_merge_success():
+    """#1097 (supersedes the round-3 consume-once pin): the pass-branch rm must
+    fire only AFTER `gh pr merge` returns success, at BOTH consumers, so a
+    non-lint transport failure (#1041 rebase refusal -> squash retry) stays
+    certified by the same gate run; the block/crash/stale branches still rm."""
+    text = _skill_text()
+    rm_line = "rm -f /tmp/issue-<N>-lint-verdict.txt"
+    assert text.count(rm_line) >= 4, (
+        "both consumers must still rm the verdict file in the success AND fail-closed branches"
+    )
+    probe = "grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt"
+    first = text.find(probe)
+    second = text.find(probe, first + 1)
     ready = text.find("gh pr ready <PR>")
-    assert -1 < first < first_rm < ready, (
-        "the safe-case pass branch must consume-then-remove BEFORE gh pr ready"
+    m1 = text.find(_MERGE_SUCCESS_IF, first)
+    m2 = text.find(_MERGE_SUCCESS_IF, second)
+    assert -1 < first < ready < m1, "safe case: conditional -> gh pr ready -> success-checked merge"
+    assert text.find(rm_line, first, m1) == -1, (
+        "safe case: NO rm may sit between the verdict conditional and the merge attempt "
+        "(the pre-merge consume orphaned the verdict on the #1041 transport failure)"
+    )
+    rm1 = text.find(rm_line, m1)
+    e1 = text.find('echo "MERGE FAILED', m1)
+    assert -1 < m1 < rm1 < e1, (
+        "safe case: the rm must sit INSIDE the merge-success branch — after the "
+        "success-checked merge, before its failure echo"
+    )
+    assert -1 < second < m2, "recovery: the success-checked merge must follow its conditional"
+    assert text.find(rm_line, second, m2) == -1, (
+        "recovery: NO rm may sit between the verdict conditional and the merge attempt"
+    )
+    rm2 = text.find(rm_line, m2)
+    e2 = text.find('echo "MERGE FAILED', m2)
+    assert -1 < m2 < rm2 < e2, (
+        "recovery: the rm must sit INSIDE the merge-success branch — after the "
+        "success-checked merge, before its failure echo"
     )
 
 
@@ -582,9 +671,10 @@ def test_gate_trigger_diff_exit_guarded():
     assert region.count("echo crash > /tmp/issue-<N>-lint-verdict.txt") >= 2, (
         "both the failed-trigger-diff arm and the linter-crash arm must write the crash verdict"
     )
-    assert "cat /tmp/issue-<N>-lint-verdict.txt   # pass | block | crash | skip-artifact-only" in (
-        region
-    ), "the verdict enumeration must include crash"
+    assert (
+        "cat /tmp/issue-<N>-lint-verdict.txt   "
+        "# line 1: pass | block | crash | skip-artifact-only; line 2: certified branch-tip sha"
+    ) in region, "the verdict enumeration must include crash and the certified-sha line"
 
 
 # --------------------------------------------------------------------------
@@ -652,4 +742,303 @@ def test_surgical_additive_producer_guarded_and_empty_list_hard_stops():
     assert -1 < guard < empty_stop < first_consumer, (
         "the producer guard + empty-list hard stop must precede the first "
         "additive-list consumer (never proceed to checkout/stage/push)"
+    )
+
+
+# --------------------------------------------------------------------------
+# #1085 pins (task #1105) — the guard-block recovery-contract paragraph
+# (SKILL.md prose added by #1085 after the #813/#1056 guard-block incidents)
+# --------------------------------------------------------------------------
+
+_RECOVERY_HEADING = "**Guard-block recovery contract (improvised variants of this compound).**"
+
+
+def _normalized(text: str) -> str:
+    """Whitespace-collapse for prose pins.
+
+    The recovery-contract paragraph is hard-wrapped markdown prose, so a
+    benign re-wrap (moving line breaks) must not false-fail the anchor pins.
+    The executable-block pins above stay on raw text by design (fenced bash
+    never re-wraps).
+    """
+    return " ".join(text.split())
+
+
+def _guard_block_recovery_paragraph(text: str) -> str:
+    """The #1085 guard-block recovery-contract paragraph: from its bold
+    heading (inside the artifact-confirmed region, right after the surgical
+    additive-checkout executable block) to the `epm:merged` posting sentence
+    that follows it."""
+    region = _artifact_confirmed_region(text)
+    start = region.find(_RECOVERY_HEADING)
+    assert start != -1, (
+        "guard-block recovery-contract heading not found in the artifact-confirmed region (#1085)"
+    )
+    end = region.find("epm:merged", start)
+    assert end != -1, "the epm:merged posting sentence must follow the recovery contract"
+    return region[start:end]
+
+
+def test_recovery_contract_paragraph_present_and_names_the_hook():
+    """#1085 pin (task #1105): the guard-block recovery contract must exist
+    exactly once, inside the artifact-confirmed region, and must name its
+    fencing mechanism — the scripts/guard_repo_root_branch.sh PreToolUse
+    hook, its #897 checkout-pathspec + restore detectors, and the
+    use-the-fence-lines-VERBATIM directive."""
+    text = _skill_text()
+    assert text.count(_RECOVERY_HEADING) == 1, (
+        "the recovery-contract heading must appear exactly once (no stale copy drift)"
+    )
+    para = _normalized(_guard_block_recovery_paragraph(text))
+    assert "scripts/guard_repo_root_branch.sh" in para, (
+        "the contract must name the fencing hook script"
+    )
+    assert "PreToolUse" in para, "the contract must identify the fence as a PreToolUse hook"
+    assert "#897 checkout-pathspec detector" in para, (
+        "the contract must name the #897 checkout-pathspec detector"
+    )
+    assert "#897 restore detector" in para, "the contract must name the #897 restore detector"
+    assert 'use the `-C "$REPO_ROOT"`-qualified fence lines VERBATIM' in para, (
+        "the contract must direct retries to the -C-qualified fence lines verbatim"
+    )
+
+
+def test_recovery_contract_never_generalizes_dash_c_waiver():
+    """#1085 pin (task #1105): the -C waiver scoping must survive edits — the
+    waiver is admitted ONLY because both fence forms are non-destructive at
+    the shared root, and the contract must forbid generalizing
+    -C "$REPO_ROOT" to escape a block on any other / destructive command."""
+    para = _normalized(_guard_block_recovery_paragraph(_skill_text()))
+    assert "NON-DESTRUCTIVE at the shared root" in para, (
+        "the waiver justification (both fence forms non-destructive) must stay"
+    )
+    assert 'NEVER generalize `-C "$REPO_ROOT"` to escape a block' in para, (
+        "the never-generalize--C scoping rule must stay"
+    )
+    assert "never point `-C` at the repo root for a destructive op" in para, (
+        "the hook's own destructive-op block-message rationale must stay"
+    )
+
+
+def test_recovery_contract_reruns_producer_before_corrected_consumer():
+    """#1085 pin (task #1105): the load-bearing recovery rule — a PreToolUse
+    deny rejects the ENTIRE tool call, so the producer clause writing the
+    additive-files list never ran; the retry must RE-RUN the producer diff
+    BEFORE the corrected consumer (incidents #813 / #1056, 2026-07-05:
+    consumer-only retries died on exit 128 / `cat: ... No such file`)."""
+    para = _normalized(_guard_block_recovery_paragraph(_skill_text()))
+    assert "the WHOLE compound Bash call was skipped" in para, (
+        "the whole-compound-skipped semantics must stay"
+    )
+    assert "a PreToolUse deny rejects the entire tool call" in para, (
+        "the PreToolUse-deny mechanism sentence must stay"
+    )
+    assert "`/tmp/issue-<N>-additive-files.txt` (the producer diff above) never ran" in para, (
+        "the contract must name the producer's list file as the skipped casualty"
+    )
+    assert "RE-RUNS the producer diff clause" in para, (
+        "the producer-regeneration retry rule must stay"
+    )
+    assert "BEFORE re-running the corrected `-C`-qualified consumer" in para, (
+        "the producer-before-consumer retry ordering must stay"
+    )
+    assert "exit 128" in para and "No such file" in para, (
+        "the consumer-only failure signature must stay"
+    )
+    assert "#813" in para and "#1056" in para, (
+        "the motivating incident references (#813 / #1056) must stay"
+    )
+
+
+# --------------------------------------------------------------------------
+# Task #1184 — fail-loud producer reads (post-merge guard + Guard 1)
+# --------------------------------------------------------------------------
+
+
+def _post_merge_guard_region(text: str) -> str:
+    start = text.find("#### Post-merge stale-task-folder guard")
+    end = text.find("## Resume semantics")
+    assert start != -1, "post-merge stale-task-folder guard heading not found"
+    assert end != -1 and start < end, "guard region must precede Resume semantics"
+    return text[start:end]
+
+
+def test_post_merge_guard_materializes_lstree_and_fails_closed():
+    """#1184: the guard must materialize ls-tree to a file and exit-check
+    every producer (CANON / fetch / ls-tree) in TERMINAL failure arms — a
+    failed producer must never read as 'no duplicates' (#644 fail-open)."""
+    text = _skill_text()
+    region = _post_merge_guard_region(text)
+    assert "> /tmp/issue-<N>-postmerge-lstree.txt" in region
+    assert 'elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main' in region
+    assert 'elif ! git -C "$REPO_ROOT" fetch origin main --quiet' in region
+    assert '[ -z "$CANON" ]' in region
+    assert "mapfile -t DUPES < <(git" not in region, (
+        "the fail-open piped ls-tree mapfile form must be gone"
+    )
+    # CHAIN MEMBERSHIP (stats-critic round 1): the work arm must be an
+    # `elif` of the SAME if/elif chain — a detached mapfile below the `fi`
+    # re-opens the fail-open (no set -e: a taken `false` arm does not halt
+    # the block, so a detached mapfile would read the empty/partial file).
+    assert "elif mapfile -t DUPES < <(grep -E" in region, (
+        "DUPES must be filled from the materialized FILE inside the chain"
+    )
+    # TERMINAL `false` per failure arm (stats-critic round 1): each failure
+    # echo must be immediately followed by `false` — a bare echo would be a
+    # loud-log, exit-0 fail-open.
+    # The shared "cannot certify..." phrase ends BOTH the fetch and ls-tree
+    # arms' echoes, so the two arm-UNIQUE phrases are pinned as well —
+    # otherwise removing `false` from exactly one of those two arms would
+    # not trip any pin (code-review r1 Minor).
+    for arm_msg in (
+        "refusing to classify duplicates",
+        "git fetch origin main FAILED",
+        "git ls-tree origin/main FAILED",
+        "cannot certify no stale task folders",
+    ):
+        assert re.search(re.escape(arm_msg) + r'[^\n]*"\n\s*false\b', region), (
+            f"failure arm {arm_msg!r} must end in a terminal false"
+        )
+    assert region.find("cannot certify no stale task folders") < region.find(
+        "elif mapfile -t DUPES"
+    ), "failure arms must precede the DUPES work arm (fail CLOSED)"
+    # Success-path byte-equivalence anchors (the exact grep programs):
+    assert 'grep -E "^tasks/[^/]+/<N>$"' in region
+    assert 'grep -v -F -x "$CANON"' in region
+
+
+def test_guard1_materializes_foreign_diff_and_fails_closed():
+    """#1184: Guard 1's foreign-tasks/ trigger diff must be materialized and
+    exit-checked — a failed git diff must never read as 'no foreign files'
+    (the #458 incident class would ride the merge)."""
+    text = _skill_text()
+    region = _merge_guards_region(text)
+    assert "> /tmp/issue-<N>-guard1-tasks-diff.txt" in region
+    assert "mapfile -t FOREIGN < <(git" not in region, (
+        "the fail-open piped diff mapfile form must be gone"
+    )
+    # Chain membership + terminal false (stats-critic round 1; same
+    # rationale as the post-merge-guard pins above):
+    assert "elif mapfile -t FOREIGN < <(grep -Ev" in region, (
+        "FOREIGN must be filled from the materialized FILE inside the chain"
+    )
+    assert re.search(
+        r'cannot certify no foreign tasks/ paths; do NOT merge"\n\s*false\b',
+        region,
+    ), "the Guard-1 failure arm must end in a terminal false"
+    assert region.find("cannot certify no foreign tasks/ paths") < region.find(
+        "elif mapfile -t FOREIGN"
+    ), "the failure arm must precede the FOREIGN work arm (fail CLOSED)"
+    # Success-path byte-equivalence anchor:
+    assert 'grep -Ev "^tasks/[^/]+/<N>/"' in region
+
+
+def test_gate_lint_legs_run_landing_tree_copy():
+    """#1212: BOTH lint leg pairs run from the ephemeral landing tree — the
+    baseline pre-overlay (payload-free), the gated post-overlay — never the
+    raw worktree or repo-root copies (#1112 vintage false-blocks), with
+    fail-closed construction (GT_RC) and in-block teardown."""
+    text = _skill_text()
+    gate = text.find("#### Pre-push workflow-lint gate")
+    auto = text.find("#### The auto-merge procedure")
+    assert -1 < gate < auto
+    region = text[gate:auto]
+    assert 'git -C "$WT" archive origin/main --' in region, (
+        "the gate tree must be built from origin/main's lint-scanned surface"
+    )
+    assert region.count('"$GT/scripts/workflow_lint.py"') >= 4, (
+        "all four lint-leg invocations (2 baseline + 2 gated) must run the gate-tree copy"
+    )
+    assert '"$WT/scripts/workflow_lint.py"' not in region, (
+        "the branch-tip lint invocation must not reappear (#1112 false-blocks)"
+    )
+    assert '"$REPO_ROOT/scripts/workflow_lint.py"' not in region, (
+        "the baseline legs must not run the repo-root copy (root vintage/dirt asymmetry)"
+    )
+    overlay = region.find('git -C "$WT" show "HEAD:$p" > "$GT/$p"')
+    base_legs = region.find("# BASELINE legs")
+    gated_legs = region.find("# GATED legs")
+    assert -1 < base_legs < overlay < gated_legs, (
+        "the payload overlay must sit BETWEEN the baseline and gated lint legs"
+    )
+    assert 'git -C "$WT" diff --name-only --no-renames origin/main...HEAD' in region, (
+        "the overlay listing COMMAND must disable rename detection (rename SOURCES "
+        "must be rm-ed); the comment's mention of --no-renames does not count"
+    )
+    assert '[ "$GT_RC" -ne 0 ]' in region, (
+        "gate-tree construction failures must fail CLOSED via the crash arm"
+    )
+    assert region.count('rm -rf "$GT"') >= 2, (
+        "the gate tree must be torn down AFTER the verdict too — the construction's "
+        "own rm -rf (self-heal) does not satisfy the teardown pin"
+    )
+
+
+# --------------------------------------------------------------------------
+# #1245 — background + wedge-bound the two Step 10d gate executable blocks
+# (port of the Step 9c background + rc-file pattern; precedent pin:
+# tests/test_issue_skill_step9c_compare_background.py, #1197)
+# --------------------------------------------------------------------------
+
+
+def _surgical_region(text: str) -> str:
+    """The artifact-confirmed (form (iii)) merge-procedure subsection."""
+    start = text.find("#### The artifact-confirmed merge procedure")
+    end = text.find("#### Post-merge stale-task-folder guard")
+    assert start != -1, "artifact-confirmed merge procedure heading not found"
+    assert end != -1, "post-merge stale-task-folder guard heading not found"
+    assert start < end, "surgical subsection must precede the post-merge guard"
+    return text[start:end]
+
+
+def test_gate_blocks_backgrounded_with_wedge_bounds():
+    """#1245: both Step 10d gate executable blocks run as ONE background Bash
+    call with per-leg wedge bounds; a missing verdict file / outcome sentinel
+    after completion means the background run DIED (fail CLOSED, never a
+    silent pass); the old one-fenced-foreground-invocation phrasing is gone.
+    A foreground gate run is the #991/#996/#1129 600s-tool-cap kill class
+    (~9-12+ min of lint + TG legs per block)."""
+    text = _skill_text()
+    gate = _gate_region(text)
+    surgical = _surgical_region(text)
+    # (i) the background prescription is present in BOTH gate regions:
+    assert "run_in_background" in gate, "shared gate block must prescribe run_in_background"
+    assert "run_in_background" in surgical, "surgical block must prescribe run_in_background"
+    # (ii) all four lint legs per region carry the wedge bound (the sizing
+    # comments deliberately do NOT quote the literal — command lines only):
+    assert gate.count("timeout --kill-after=60s 900s") >= 4, (
+        "all four shared-block lint legs must carry the 900s wedge bound"
+    )
+    assert surgical.count("timeout --kill-after=60s 900s") >= 4, (
+        "all four surgical-block lint legs must carry the 900s wedge bound"
+    )
+    # (ii-b) the network ops inside the backgrounded blocks are bounded too:
+    assert 'timeout --kill-after=30s 120s git -C "$WT" fetch origin main' in gate, (
+        "the shared block's fetch must carry a 120s bound (a hung fetch wedges the bg call)"
+    )
+    assert "timeout --kill-after=30s 300s git push origin main" in surgical, (
+        "the surgical pass-arm push must carry a 300s bound (a hung push wedges the "
+        "bg call with the outcome sentinel unwritten)"
+    )
+    # (iii) missing-verdict death semantics — fail CLOSED (shared block):
+    assert "died before writing a verdict" in gate, (
+        "the shared block's completion-read must treat a missing verdict file as "
+        "the background run having died (fail CLOSED)"
+    )
+    assert "rm -f /tmp/issue-<N>-lint-verdict.txt" in gate, (
+        "the shared block must pre-rm the verdict file so a file present at "
+        "completion provably came from THIS run"
+    )
+    # (iv) form (iii) outcome sentinel — pre-rm + all three terminal writes:
+    assert "rm -f /tmp/issue-<N>-surgical-outcome.txt" in surgical
+    assert "echo landed > /tmp/issue-<N>-surgical-outcome.txt" in surgical
+    assert "echo push-failed > /tmp/issue-<N>-surgical-outcome.txt" in surgical
+    assert "echo blocked-cleaned > /tmp/issue-<N>-surgical-outcome.txt" in surgical
+    # (v) negative: the old foreground one-invocation phrasing is gone:
+    assert "ONE fenced invocation" not in text, (
+        "the surgical preamble's foreground 'ONE fenced invocation' phrasing must "
+        "not reappear (silently reintroduces the 600s-cap kill class)"
+    )
+    assert "runs in ONE fenced block" not in text, (
+        "the surgical 'runs in ONE fenced block' phrasing must not reappear"
     )

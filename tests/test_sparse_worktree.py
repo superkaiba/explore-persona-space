@@ -36,6 +36,17 @@ rejection of nonconforming branches (24), reuse-path repair of BOTH
 own-issue cones — flagless and flagged (25), full-worktree no-op with no
 WARN (26), sparse-non-issue no-op (27), repair-failure WARN-not-fail (28),
 and additive-``add`` preservation of non-inferable prior cones (29).
+
+Items 30-35 pin the #1214 origin/main branch-base ladder: a fresh branch
+bases on FRESHLY-FETCHED ``origin/main`` — the bare origin is advanced
+out-of-band so a stale-tracking-ref-only implementation fails, and
+``--no-track`` is pinned via the absent upstream (30); no ``origin``
+remote → local HEAD + WARN (31); fetch failure with a previously-fetched
+``origin/main`` → the STALE tracking ref, pushed history only (32); fetch
+failure with NO ``origin/main`` ref → FATAL exit 5 with no worktree /
+branch / registration residue (33); ``--base-local`` skips the fetch
+entirely and bases on LOCAL main even with a broken origin URL (34); and
+the pre-existing-branch resume stays network-independent (35).
 """
 
 from __future__ import annotations
@@ -985,6 +996,137 @@ def test_reuse_repair_preserves_non_inferable_prior_cones(repo: Path, tmp_path: 
     assert "eval_results/issue_99" in cones, "repair must be additive, never a cone reset"
     assert "eval_results/issue_7" in cones
     assert "ood_eval_results/issue_7" in cones
+
+
+# --- items 30-35: #1214 branch base = fetched origin/main -----------------
+
+
+def _add_diverged_origin(repo: Path, tmp_path: Path) -> tuple[str, str]:
+    """Bare ``origin`` + push main, then advance LOCAL main by one commit.
+
+    Returns ``(pushed_tip, local_tip)``, pushed != local — the unpushed
+    task-state-churn shape (#1214). The push also creates the local
+    ``refs/remotes/origin/main`` tracking ref (asserted — plan §12.5).
+    """
+    bare = tmp_path / "origin.git"
+    _git(tmp_path, "init", "--bare", "-q", "-b", "main", str(bare))
+    _git(repo, "remote", "add", "origin", str(bare))
+    _git(repo, "push", "-q", "origin", "main")
+    assert (
+        _git(repo, "rev-parse", "--verify", "refs/remotes/origin/main", check=False).returncode == 0
+    ), "git push did not create the remote-tracking ref; add an explicit fetch here"
+    pushed = _git(repo, "rev-parse", "main").stdout.strip()
+    (repo / "src" / "churn.py").write_text("CHURN = 1\n")
+    _git(repo, "add", "src/churn.py")
+    _git(repo, "commit", "-q", "-m", "unpushed local churn")
+    local = _git(repo, "rev-parse", "main").stdout.strip()
+    assert pushed != local
+    return pushed, local
+
+
+def test_new_branch_based_on_origin_main_not_local_head(repo: Path, tmp_path: Path) -> None:
+    """Item 30 (#1214 durability pin): a fresh branch bases on FETCHED origin/main.
+
+    The bare origin is advanced OUT-OF-BAND (second clone → commit → push)
+    after the last push from ``repo``, so the local tracking ref is stale
+    until the helper's fetch runs — a stale-ref-only implementation would
+    base on the older pushed tip and fail the tip-equality assert. Also
+    pins ``--no-track``: the new branch gains no upstream.
+    """
+    _add_diverged_origin(repo, tmp_path)
+    local_tip = _git(repo, "rev-parse", "main").stdout.strip()
+    clone2 = tmp_path / "clone2"
+    _git(tmp_path, "clone", "-q", str(tmp_path / "origin.git"), str(clone2))
+    (clone2 / "remote_advance.txt").write_text("advanced\n")
+    _git(clone2, "add", "remote_advance.txt")
+    _git(clone2, "commit", "-q", "-m", "remote-side advance")
+    _git(clone2, "push", "-q", "origin", "main")
+    new_origin_tip = _git(clone2, "rev-parse", "main").stdout.strip()
+    stale_tracking = _git(repo, "rev-parse", "refs/remotes/origin/main").stdout.strip()
+    assert stale_tracking != new_origin_tip, "tracking ref must be stale pre-helper"
+
+    wt = tmp_path / "wt-1214-fetch"
+    _run_helper(repo, wt, "issue-30")
+    tip = _git(repo, "rev-parse", "issue-30").stdout.strip()
+    assert tip == new_origin_tip, "branch must base on the FRESHLY-FETCHED origin tip"
+    assert tip != local_tip
+    assert (wt / "CLAUDE.md").exists()
+    # --no-track: no upstream configured for the new branch.
+    assert _git(repo, "config", "branch.issue-30.merge", check=False).returncode != 0
+
+
+def test_no_origin_remote_falls_back_to_local_head_with_warn(repo: Path, tmp_path: Path) -> None:
+    """Item 31: no ``origin`` remote → local HEAD base + WARN (fixture repos)."""
+    wt = tmp_path / "wt-1214-noorigin"
+    res = _run_helper(repo, wt, "issue-31")
+    assert "no 'origin' remote" in res.stderr
+    tip = _git(repo, "rev-parse", "issue-31").stdout.strip()
+    assert tip == _git(repo, "rev-parse", "main").stdout.strip()
+    assert (wt / "CLAUDE.md").exists()
+
+
+def test_fetch_failure_falls_back_to_stale_origin_main(repo: Path, tmp_path: Path) -> None:
+    """Item 32: fetch fails but origin/main exists → STALE tracking-ref base.
+
+    Pushed-history-only, so the #1214 churn bug is not reintroduced: the
+    branch tips at the last-PUSHED commit, never the local churn commit.
+    """
+    pushed, local = _add_diverged_origin(repo, tmp_path)
+    _git(repo, "remote", "set-url", "origin", str(tmp_path / "nonexistent"))
+    wt = tmp_path / "wt-1214-stale"
+    res = _run_helper(repo, wt, "issue-32")
+    assert "STALE" in res.stderr
+    tip = _git(repo, "rev-parse", "issue-32").stdout.strip()
+    assert tip == pushed
+    assert tip != local
+
+
+def test_fetch_failure_without_origin_main_fails_loud_no_residue(
+    repo: Path, tmp_path: Path
+) -> None:
+    """Item 33: fetch fails AND no origin/main ref → FATAL exit 5, nothing created."""
+    _git(repo, "remote", "add", "origin", str(tmp_path / "nonexistent"))
+    wt = tmp_path / "wt-1214-fatal"
+    res = _run_helper(repo, wt, "issue-33", check=False)
+    assert res.returncode == 5, f"expected exit 5, got {res.returncode}: {res.stderr}"
+    assert "FATAL" in res.stderr
+    assert _git(repo, "rev-parse", "--verify", "issue-33", check=False).returncode != 0
+    assert not wt.exists()
+    porcelain = _git(repo, "worktree", "list", "--porcelain").stdout
+    assert f"worktree {wt}" not in porcelain
+
+
+def test_base_local_flag_skips_fetch_and_bases_on_local_head(repo: Path, tmp_path: Path) -> None:
+    """Item 34: ``--base-local`` bases on LOCAL main and attempts no fetch.
+
+    The origin URL is BROKEN, so mere success proves the fetch was skipped;
+    the load-bearing discriminator vs the stale tier is the tip assert:
+    branch tip == LOCAL main tip (the stale tier would tip at ``pushed``).
+    """
+    pushed, local = _add_diverged_origin(repo, tmp_path)
+    _git(repo, "remote", "set-url", "origin", str(tmp_path / "nonexistent"))
+    wt = tmp_path / "wt-1214-baselocal"
+    res = _run_helper(repo, wt, "issue-34", "--base-local")
+    assert "--base-local" in res.stderr
+    tip = _git(repo, "rev-parse", "issue-34").stdout.strip()
+    assert tip == local, "--base-local must base on the LOCAL main tip"
+    assert tip != pushed
+
+
+def test_existing_branch_resume_needs_no_network(repo: Path, tmp_path: Path) -> None:
+    """Item 35: a pre-existing branch attaches with NO fetch (offline resume).
+
+    The broken-URL origin has NO origin/main tracking ref, so a fetch
+    attempt would take the FATAL tier — success proves ``_resolve_base``
+    is skipped when the branch pre-exists (``CREATED_BRANCH=0``).
+    """
+    _git(repo, "remote", "add", "origin", str(tmp_path / "nonexistent"))
+    _git(repo, "branch", "issue-35")
+    pre_tip = _git(repo, "rev-parse", "issue-35").stdout.strip()
+    wt = tmp_path / "wt-1214-resume"
+    res = _run_helper(repo, wt, "issue-35")
+    assert res.returncode == 0
+    assert _git(wt, "rev-parse", "HEAD").stdout.strip() == pre_tip
 
 
 if __name__ == "__main__":

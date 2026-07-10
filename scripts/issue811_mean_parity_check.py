@@ -93,7 +93,14 @@ import logging
 import sys
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -102,9 +109,6 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 # uv run python does NOT auto-load .env; the #667-store hf_hub_download needs
 # HF_TOKEN. Project wrapper (analysis-phase script; shell exports also cover
 # pod/GCE/SLURM).
-from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
-
-load_dotenv()
 
 logger = logging.getLogger("issue811.parity")
 

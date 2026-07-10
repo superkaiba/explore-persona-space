@@ -33,13 +33,13 @@ import os
 import random
 import subprocess
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from explore_persona_space.artifacts.behavior import BEHAVIORS, Behavior
-from explore_persona_space.artifacts.context import CONTEXTS, INSTALLABLE_KINDS, Context
+from explore_persona_space.artifacts.context import CONTEXTS, Context
 from explore_persona_space.artifacts.datagen import (
     _STRUCTURAL_PREDICATES,
     generate_training_data,
@@ -134,7 +134,7 @@ class ModelOrganism:
     """
 
     behavior: str  # key into BEHAVIORS
-    context_id: str  # trigger context C; key into CONTEXTS, kind in INSTALLABLE_KINDS
+    context_id: str  # trigger context C; key into CONTEXTS (every kind is installable)
     negatives: str = DEFAULT_PANEL_NAME  # panel id into NEGATIVE_PANELS
     arm: str = "primary"  # in recipe.ARMS
     train_method: str = "lora"  # in recipe.TRAIN_METHODS
@@ -152,12 +152,12 @@ class ModelOrganism:
             raise ValueError(
                 f"unknown context_id {self.context_id!r}; known contexts: {sorted(CONTEXTS)}"
             )
-        if ctx.kind not in INSTALLABLE_KINDS:
-            raise ValueError(
-                f"context {self.context_id!r} has kind {ctx.kind!r}, not installable "
-                f"(INSTALLABLE_KINDS={INSTALLABLE_KINDS}); bare contexts are leakage "
-                "bystanders, never training sources"
-            )
+        # No kind gate: INSTALLABLE_KINDS == CONTEXT_KINDS since "bare" joined
+        # the installable set (#1090 fu3 — bare cells train on the default
+        # context), and Context.__post_init__ already validates kind against
+        # CONTEXT_KINDS, so a kind check here would be unreachable. A bare
+        # default SOURCE is still rejected by the panel-disjointness invariant
+        # below unless an explicit no-default panel is passed.
         if self.negatives not in NEGATIVE_PANELS:
             raise ValueError(
                 f"unknown negative panel {self.negatives!r}; known panels: "
@@ -679,6 +679,39 @@ class _SingleLiveResource:
         self._teardown(value)
 
 
+# Sentinel resource key: EVERY LoRA adapter path maps to this ONE key, so the
+# _SingleLiveResource reuses a single enable_lora base engine across a dose
+# ladder's checkpoints (crash-fix #1090 r3 — the r2 per-side_path keying tore
+# down + rebuilt an IDENTICAL engine per checkpoint, ~2.5 min each, and each
+# teardown was one more exposure to the orphan-probe crash class).
+_SHARED_LORA_ENGINE_KEY = "__lora_engine__"
+
+
+def _vllm_resource_key(
+    side_path: str | None, is_full_model_dir: Callable[[str | None], bool]
+) -> str | None:
+    """Engine-identity key for the default vLLM generation seam.
+
+    ``None`` (base) and full-model dirs keep their IDENTITY keys (a distinct
+    engine each — the weights differ); every LoRA adapter path maps to the one
+    ``_SHARED_LORA_ENGINE_KEY`` (the engine is the base model + enable_lora,
+    identical across adapters — only the per-call ``LoRARequest`` differs).
+    """
+    if side_path is None or is_full_model_dir(side_path):
+        return side_path
+    return _SHARED_LORA_ENGINE_KEY
+
+
+def _lora_int_id(lora_ids: dict[str, int], side_path: str) -> int:
+    """Distinct, STABLE, 1-based ``lora_int_id`` per adapter path.
+
+    vLLM caches adapters by ``lora_int_id`` inside a shared engine, so two
+    paths must never collide (a collision silently reuses the first adapter's
+    weights) and repeat calls for one path must return the same id.
+    """
+    return lora_ids.setdefault(side_path, len(lora_ids) + 1)
+
+
 def _default_vllm_generate_fn(base_model: str) -> GenFn:
     """ONE live vLLM engine at a time, chunked generate, teardown via close().
 
@@ -686,37 +719,43 @@ def _default_vllm_generate_fn(base_model: str) -> GenFn:
     (``max_lora_rank=64``, ``max_model_len=8192``, ``enable_prefix_caching=True``,
     fixed sampling seed); chunked ≤500 prompts per ``llm.generate`` call
     (gotchas.md large-batch deadlock prevention) with ``use_tqdm=False``.
-    Lifecycle (r2): a ``side_path`` switch tears down the previous engine
-    BEFORE constructing the next (``_SingleLiveResource``), and every adapter
-    path gets a DISTINCT ``lora_int_id`` (the r1 fixed ``1`` would silently
-    reuse the first adapter if an engine were ever shared across checkpoints).
+    Lifecycle (r3 — crash-fix #1090): ALL LoRA adapter paths share ONE
+    enable_lora base engine (``_vllm_resource_key`` maps them to
+    ``_SHARED_LORA_ENGINE_KEY``), so a dose ladder's checkpoint loop builds the
+    engine ONCE instead of teardown+rebuild per rung; each adapter path still
+    gets a DISTINCT stable ``lora_int_id`` (``_lora_int_id``), and the per-call
+    ``LoRARequest`` is constructed in ``generate()``. A base <-> full-model <->
+    lora-mode switch still swaps engines, teardown-first
+    (``_SingleLiveResource``).
     """
     deps = _resolve_generation_deps()
     chunk_size = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
     lora_ids: dict[str, int] = {}  # adapter path -> unique, stable lora_int_id (1-based)
 
-    def _build(side_path: str | None) -> tuple[Any, Any]:
+    def _build(key: str | None) -> Any:
+        # EPM_VLLM_GPU_MEM_UTIL (crash-fix #1074 run 1 + #1090 r2 — same
+        # failure class): vLLM's default gpu_memory_utilization=0.9 demands
+        # ~71.3 GiB on an A100/H100-80 and crashes gpu_worker.init_device
+        # when a same-process HF trainer's allocator residue holds ~16 GiB at
+        # the train->rate phase boundary (#1074 run 1: 71.32 GiB demanded vs
+        # 63.65/79.25 GiB free after the in-process train_lora; #1090 r2 hit
+        # the identical class). The post-train engine must fit BESIDE
+        # imperfect trainer-memory release: default 0.75 x 79.25 = 59.4 GiB
+        # covers the 7B bf16 weights (~15 GiB) + LoRA + a generous KV cache.
+        # Env-overridable, resolved per engine build.
         common = {
             "max_model_len": 8192,
             "enable_prefix_caching": True,
             "seed": 0,
-            # The post-train engine must fit BESIDE imperfect trainer-memory
-            # release (#1074 run 1: vLLM's default gpu_memory_utilization=0.9
-            # demanded 71.32 GiB with only 63.65/79.25 GiB free after the
-            # in-process train_lora, crashing gpu_worker.init_device). 0.75 x
-            # 79.25 = 59.4 GiB covers the 7B bf16 weights (~15 GiB) + LoRA +
-            # a generous KV cache. Env-overridable, resolved per engine build.
             "gpu_memory_utilization": float(os.environ.get("EPM_VLLM_GPU_MEM_UTIL", "0.75")),
         }
-        if side_path is None:
-            return deps["LLM"](model=base_model, **common), None
-        if deps["_is_full_model_dir"](side_path):
-            return deps["LLM"](model=side_path, **common), None
-        lora_id = lora_ids.setdefault(side_path, len(lora_ids) + 1)
-        llm = deps["LLM"](model=base_model, enable_lora=True, max_lora_rank=64, **common)
-        return llm, deps["LoRARequest"](f"organism-{lora_id}", lora_id, side_path)
+        if key == _SHARED_LORA_ENGINE_KEY:
+            return deps["LLM"](model=base_model, enable_lora=True, max_lora_rank=64, **common)
+        if key is None:
+            return deps["LLM"](model=base_model, **common)
+        return deps["LLM"](model=key, **common)  # full-model dir (fullft arm)
 
-    engine = _SingleLiveResource(_build, lambda pair: deps["teardown_vllm"](pair[0]))
+    engine = _SingleLiveResource(_build, lambda llm: deps["teardown_vllm"](llm))
 
     def generate(
         side_path: str | None,
@@ -725,7 +764,12 @@ def _default_vllm_generate_fn(base_model: str) -> GenFn:
         n: int,
         temperature: float,
     ) -> list[list[str]]:
-        llm, lora_req = engine.get(side_path)
+        key = _vllm_resource_key(side_path, deps["_is_full_model_dir"])
+        llm = engine.get(key)
+        lora_req = None
+        if key == _SHARED_LORA_ENGINE_KEY:
+            lora_id = _lora_int_id(lora_ids, side_path)
+            lora_req = deps["LoRARequest"](f"organism-{lora_id}", lora_id, side_path)
         tok = llm.get_tokenizer()
         prompts = [
             tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
@@ -1081,6 +1125,7 @@ def build_organism(
     rate_fn: RateFn | None = None,
     fullft_run_fn: Callable[[list[str]], None] | None = None,
     tokenizer=None,
+    recipe_max_length: int | None = None,
 ) -> BuildResult:
     """datagen -> mix assembly -> recipe -> train -> dose-selected checkpoint.
 
@@ -1103,10 +1148,30 @@ def build_organism(
     :func:`enforce_mix_token_budget` (the #906 r14 silent-truncation fix) —
     production callers that will run the REAL trainer pass it; offline
     stub-seam tests omit it (gate skipped, legacy behavior).
+
+    ``recipe_max_length`` (optional): a task-scoped DECLARED-DEVIATION seam
+    for the recipe's ``max_length`` (the plan #1090 AMENDMENT/hot-fix
+    lineage: a measured row-length distribution can exceed the unified
+    recipe's 1024 budget above the 10% rejection floor, and the gate's own
+    prescription is a deliberate recipe max_length raise). When set, it is
+    threaded into ``spec.overrides`` IMMEDIATELY after recipe resolution, so
+    the SAME spec feeds BOTH the mix token-budget gate (:func:`_assemble_mix`)
+    AND the train-config build (:func:`build_train_config`) — one authority;
+    the recipe recorded in ``mix_meta.json`` / provenance then honestly
+    reports the enforced value. ``LOAD_BEARING_KEYS`` still protects the
+    ``extra_overrides`` path: this is a deliberate, NAMED seam for a
+    plan-declared recipe deviation, not a bypass.
     """
     out_root = Path(out_root)
     behavior = organism.behavior_spec
     spec = organism.recipe
+    if recipe_max_length is not None:
+        # One authority for the token budget: replace the spec's max_length
+        # BEFORE any consumer (mix-budget gate, build_train_config, provenance)
+        # reads it. Fixes the #1090 wrong-seam hot-fix (05b2405043), which
+        # patched only the train_fn cfg while the mix-BUILD gate still read
+        # the recipe's 1024 (organisms.py step 3) and crashed again.
+        spec = replace(spec, overrides={**spec.overrides, "max_length": int(recipe_max_length)})
 
     # 1. Carve-out gate.
     if behavior.programmatic:
@@ -1804,13 +1869,16 @@ def make_source_rate_fn(
     checkpoint path + generation params). This is the production default the
     ``build_organism`` caller constructs explicitly.
 
-    GPU lifecycle (r2 — concern ``gpu-seam-memory-coexistence``): the default
-    generation seam keeps at most ONE live engine, so each checkpoint's engine
-    is torn down BEFORE the next rung's engine is built (the r1 version leaked
-    one ~0.9-HBM engine per rung — OOM at rung 2 of a dose ladder). The
-    returned closure exposes ``close()``, which tears down the FACTORY-OWNED
-    default engine (a caller-injected ``generate_fn`` is the caller's to
-    close); ``build_organism`` calls it after the ladder scoring.
+    GPU lifecycle (r2 — concern ``gpu-seam-memory-coexistence``; r3 —
+    crash-fix #1090): the default generation seam keeps at most ONE live
+    engine, and as of r3 ALL LoRA checkpoint rungs SHARE that one engine
+    (identical base+enable_lora engine; only the per-rung ``LoRARequest``
+    differs) — the ladder builds it once instead of teardown+rebuild per rung
+    (the r1 version leaked one ~0.9-HBM engine per rung — OOM at rung 2; the
+    r2 version rebuilt per rung, ~2.5 min each plus one orphan-probe exposure
+    per teardown). The returned closure exposes ``close()``, which tears down
+    the FACTORY-OWNED default engine (a caller-injected ``generate_fn`` is the
+    caller's to close); ``build_organism`` calls it after the ladder scoring.
     """
     out_dir = Path(out_dir)
     behavior = organism.behavior_spec

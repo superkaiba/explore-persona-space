@@ -219,7 +219,7 @@ def _read_v1_corpus_rows(name: str) -> list[dict]:
         p = Path(
             hf_hub_download(HF_DATA_REPO, f"{HF_DATA_PREFIX}/corpora/{name}", repo_type="dataset")
         )
-    rows = [json.loads(line) for line in p.read_text().splitlines() if line.strip()]
+    rows = [json.loads(line) for line in p.read_text().split("\n") if line.strip()]
     if not rows:
         raise RuntimeError(f"v1 corpus {name} resolved empty at {p}")
     return rows
@@ -830,7 +830,7 @@ def build_cn_corpus_v2(row_id: str = "wrong_claim_agreement", llm=None) -> Path:
     pos_path = corpora_dir() / f"onpolicy_{row_id}.jsonl"
     if not pos_path.exists():
         raise FileNotFoundError(f"v2 positives missing (elicitation first): {pos_path}")
-    positives = [json.loads(line) for line in pos_path.read_text().splitlines() if line.strip()]
+    positives = [json.loads(line) for line in pos_path.read_text().split("\n") if line.strip()]
 
     # Harvest v1 negatives by question (the v1 cn corpus interleaves
     # positive/negative rows on the same questions; negatives are the

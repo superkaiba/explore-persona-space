@@ -118,7 +118,10 @@ def test_untested_code_file_warns(tmp_path: Path):
     touched = sel.compute_touched("main", repo, _runner=_runner_for(["scripts/orphan.py"]))
     tests, untested = sel.select_tests(touched, repo)
     assert untested == ["scripts/orphan.py"]
-    assert set(tests) == set(sel.WORKFLOW_INVARIANT)  # still runs the invariant set
+    # Still runs the invariant set; the #1187-widened scripts/**/*.py glob-scan
+    # row now ALSO pulls the thread-caps test for ANY scripts/ file (additive —
+    # the untested_touched WARN above is unaffected).
+    assert set(tests) == set(sel.WORKFLOW_INVARIANT) | {"tests/test_shared_vm_thread_caps.py"}
 
 
 # --- Case 6: pinned literal matches the LIVE tests/ tree ---------------------
@@ -136,12 +139,12 @@ def test_pinned_invariant_list_matches_live_tree():
         "Update the literal in scripts/select_step9c_tests.py deliberately."
     )
     # And it must be a non-trivial, de-duplicated set (no accidental shrink/dup).
-    # 32 = plan §5's verbatim enumerated list (31 files) + test_autonomous_session_watch.py
-    # (the one curated addition from the #754 brief — the watcher's own decision-gate
-    # test alongside the pinned test_autonomous_plan_gate.py). The brief's "34" figure was
-    # arithmetic carried from the plan's mis-stated "33" header (the §5 table enumerates 31).
+    # 35 = plan §5's verbatim enumerated list (31 files) + test_autonomous_session_watch.py
+    # (the #754 brief's one curated addition) + the 3 SKILL.md-content-pin suites added by
+    # #1242 (test_step10d_guard3 / test_step_completed_resume / test_issue_skill_exit_breadcrumb
+    # — SKILL.md diffs gate ONLY via this tuple, so their pins must live in it).
     assert len(sel.WORKFLOW_INVARIANT) == len(set(sel.WORKFLOW_INVARIANT))
-    assert len(sel.WORKFLOW_INVARIANT) == 32
+    assert len(sel.WORKFLOW_INVARIANT) == 35
 
 
 # --- Case 7: determinism — identical sorted output across two invocations ----
@@ -221,8 +224,12 @@ def test_selection_reasons_content(tmp_path: Path):
     assert reasons["tests/test_widget.py"] == ["stem-map:scripts/widget.py"]
     # A touched test file includes itself:
     assert reasons["tests/test_thing.py"] == ["touched-test"]
-    # Glob-scan arm (#895) records the covered touched file:
-    assert reasons["tests/test_shared_vm_thread_caps.py"] == ["glob-scan:scripts/issue999_fake.py"]
+    # Glob-scan arm (#895; #1187 widened the row to scripts/**/*.py, so
+    # scripts/widget.py now hits it too) records each covered touched file:
+    assert reasons["tests/test_shared_vm_thread_caps.py"] == [
+        "glob-scan:scripts/issue999_fake.py",
+        "glob-scan:scripts/widget.py",
+    ]
     # A pure invariant carries exactly the invariant reason:
     assert reasons["tests/test_task_workflow.py"] == ["invariant"]
     # Reason keys exactly cover the selection, and every reason list is sorted:
@@ -407,7 +414,8 @@ def test_untested_warn_through_main(tmp_path: Path, monkeypatch, capsys):
     assert "(branch: unknown)" in captured.err
 
 
-# --- Case 16: glob-scan map — scripts/issue*_*.py selects the thread-caps test
+# --- Case 16: glob-scan map — a scripts/issue*_*.py file (now via the #1187
+# --- scripts/**/*.py row) selects the thread-caps test
 def test_glob_scan_map_selects_thread_caps_for_issue_script(tmp_path: Path):
     repo = _make_tree(tmp_path, [])
     touched = sel.compute_touched("main", repo, _runner=_runner_for(["scripts/issue999_fake.py"]))
@@ -417,10 +425,19 @@ def test_glob_scan_map_selects_thread_caps_for_issue_script(tmp_path: Path):
     assert untested == ["scripts/issue999_fake.py"]
 
 
-# --- Case 17: negative — a non-matching scripts file pulls NO map row ---------
+# --- Case 17: per-row negatives under the #1187-widened thread-caps globs -----
 def test_glob_scan_map_not_selected_for_non_matching_file(tmp_path: Path):
     repo = _make_tree(tmp_path, [])
+    # scripts/pod.py: the widened scripts/**/*.py row DOES pull thread-caps
+    # (documents the #1187 widening), still NOT the subprocess-env row.
     touched = sel.compute_touched("main", repo, _runner=_runner_for(["scripts/pod.py"]))
+    tests, _ = sel.select_tests(touched, repo)
+    assert "tests/test_shared_vm_thread_caps.py" in tests
+    assert "tests/test_subprocess_env_explicit.py" not in tests
+    # A genuinely non-matching src path (outside experiments/) pulls NEITHER row.
+    touched = sel.compute_touched(
+        "main", repo, _runner=_runner_for(["src/explore_persona_space/llm/api_dispatch.py"])
+    )
     tests, _ = sel.select_tests(touched, repo)
     assert "tests/test_shared_vm_thread_caps.py" not in tests
     assert "tests/test_subprocess_env_explicit.py" not in tests
@@ -432,7 +449,7 @@ def test_glob_scan_map_experiments_run_file_and_zero_segment(tmp_path: Path):
     nested = "src/explore_persona_space/experiments/foo/run_bar.py"
     touched = sel.compute_touched("main", repo, _runner=_runner_for([nested]))
     tests, _ = sel.select_tests(touched, repo)
-    assert "tests/test_shared_vm_thread_caps.py" in tests  # **/run_*.py row
+    assert "tests/test_shared_vm_thread_caps.py" in tests  # experiments/**/*.py row (#1187)
     assert "tests/test_subprocess_env_explicit.py" in tests  # */run_*.py row
     zero_seg = "src/explore_persona_space/experiments/run_top.py"
     touched = sel.compute_touched("main", repo, _runner=_runner_for([zero_seg]))
@@ -449,7 +466,9 @@ def test_glob_scan_map_dispatcher_script(tmp_path: Path):
     )
     tests, _ = sel.select_tests(touched, repo)
     assert "tests/test_subprocess_env_explicit.py" in tests
-    assert "tests/test_shared_vm_thread_caps.py" not in tests
+    # #1187: dispatcher scripts are scripts — the widened scripts/**/*.py
+    # thread-caps row now matches them too.
+    assert "tests/test_shared_vm_thread_caps.py" in tests
 
 
 # --- Case 20: map row NOT selected when its test file is absent on disk -------
@@ -530,3 +549,80 @@ def test_stdout_command_carries_sized_timeout(tmp_path: Path, monkeypatch, capsy
     line = captured.out.strip().splitlines()[-1]
     assert line.startswith(f"timeout --kill-after=60s {t}s uv run pytest ")
     assert f"recommended-timeout-s={t}" in captured.err
+
+
+# --- Cases 24-29 (#1147): map_scan_tests() + the --map-files CLI mapping mode -
+def test_map_scan_tests_thread_caps_glob(tmp_path: Path):
+    """A scripts/ path maps to the thread-caps scan-test pair (scripts/**/*.py, #1187)."""
+    repo = _make_tree(tmp_path, [])
+    pairs = sel.map_scan_tests(["scripts/issue123_foo.py"], repo)
+    assert pairs == [("tests/test_shared_vm_thread_caps.py", "scripts/issue123_foo.py")]
+
+
+def test_map_scan_tests_dispatcher_glob(tmp_path: Path):
+    """A scripts/dispatch_*.py path maps to BOTH scan-test pairs (#1187 widening)."""
+    repo = _make_tree(tmp_path, [])
+    pairs = sel.map_scan_tests(["scripts/dispatch_x.py"], repo)
+    assert pairs == [
+        ("tests/test_shared_vm_thread_caps.py", "scripts/dispatch_x.py"),
+        ("tests/test_subprocess_env_explicit.py", "scripts/dispatch_x.py"),
+    ]
+
+
+def test_map_scan_tests_non_matching_empty(tmp_path: Path):
+    """Paths outside every GLOB_SCAN_TESTS glob map to no pairs at all."""
+    repo = _make_tree(tmp_path, [])
+    files = ["tasks/running/1/body.md", ".claude/skills/issue/SKILL.md", "docs/foo.md"]
+    assert sel.map_scan_tests(files, repo) == []
+
+
+def test_map_scan_tests_missing_test_dropped(tmp_path: Path):
+    """A glob hit whose scan test is absent from the work root is dropped."""
+    bare = tmp_path / "bare"  # no tests/ tree at all
+    bare.mkdir()
+    assert sel.map_scan_tests(["scripts/issue123_foo.py"], bare) == []
+
+
+def test_cli_map_files_tab_output_exit0(tmp_path: Path, capsys):
+    """--map-files prints sorted `test<TAB>path` lines to stdout, rc 0; a
+    non-matching list yields EMPTY stdout, still rc 0 (the gate's skip signal)."""
+    repo = _make_tree(tmp_path, [])
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/issue123_foo.py\nscripts/dispatch_x.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert out.splitlines() == [
+        "tests/test_shared_vm_thread_caps.py\tscripts/dispatch_x.py",
+        "tests/test_shared_vm_thread_caps.py\tscripts/issue123_foo.py",
+        "tests/test_subprocess_env_explicit.py\tscripts/dispatch_x.py",
+    ]
+    # Non-matching payload: empty stdout, rc 0 — NOT an error.
+    listing.write_text("docs/foo.md\ntasks/running/1/body.md\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    assert capsys.readouterr().out == ""
+
+
+def test_cli_map_files_unreadable_exit1(tmp_path: Path, capsys):
+    """An unreadable --map-files input is exit 1 + one stderr line (fail CLOSED)."""
+    repo = _make_tree(tmp_path, [])
+    rc = sel.main(["--map-files", str(tmp_path / "nope.txt"), "--repo-root", str(repo)])
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "cannot read --map-files input" in err
+
+
+def test_cli_map_files_missing_test_warns(tmp_path: Path, capsys):
+    """A glob hit whose scan test is absent from the work root drops the pair
+    WITH a stderr WARN naming it (never a silent shrink)."""
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/issue123_foo.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(bare)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "WARN — scan test tests/test_shared_vm_thread_caps.py" in captured.err
+    assert "pair dropped" in captured.err

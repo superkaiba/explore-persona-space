@@ -172,7 +172,9 @@ LLM-judged behavior-expression DV, hold it to `.claude/rules/llm-judging.md`: on
 cross-family Sonnet judge (`claude-sonnet-4-5-20250929`, never a Qwen judge on
 Qwen output); graded 0–100 PRIMARY for a ranking/regression/predictor target
 (dichotomizing attenuates ~0.798); a `REFUSAL`/malformed/out-of-range judge return
-DROPPED from BOTH arms (never coerced), with the per-arm dropped count reported;
+DROPPED from BOTH arms (never coerced), with the per-arm dropped count reported and SPLIT
+content-drops vs transport-losses — a transport error (429/529/timeout) retried/re-judged,
+never persisted as a drop (rule 24, #1090);
 an anchored rubric with reason-then-score; a rubric-bearing judge-cache key (never
 content-only, #810). REVISE only when a violation is conclusion-changing per The Bar.
 

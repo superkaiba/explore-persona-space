@@ -1,0 +1,54 @@
+{
+  "commit": "87c9c73168",
+  "created": "2026-07-08T11:33:23Z",
+  "figsize": [
+    9.0,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "C-avg\n(E[v] ceiling read)",
+      "W (max-interpretable R2 @ L19)": 0.27235813464907976,
+      "error": 0.01417131406015959,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "C-single\n(draw 0)",
+      "W (max-interpretable R2 @ L19)": 0.22269499546204907,
+      "error": 0.012598564148568428,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "C-pooled\n(all draws)",
+      "W (max-interpretable R2 @ L19)": 0.22472579016290384,
+      "error": 0.012874172982022092,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "C-avg\n(E[v] ceiling read)",
+      "y": 0.23824550390896815,
+      "error": 0.01593790549796177,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "C-single\n(draw 0)",
+      "y": 0.1910617128879597,
+      "error": 0.013108887208322886,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "C-pooled\n(all draws)",
+      "y": 0.18493783433230404,
+      "error": 0.013214891054285985,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6
+}

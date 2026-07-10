@@ -1,0 +1,89 @@
+{
+  "metadata": {
+    "git_commit": "0e93486d07fa4dc7db1c2cb7ed710bc25bad0dd9",
+    "timestamp": "2026-07-08T10:54:00Z",
+    "seed": 0,
+    "n": 533,
+    "script": "scripts/issue825_onpolicy_sep_matchedn.py",
+    "issue": 931
+  },
+  "followup_label": "onpolicy-separator-control",
+  "model": "instruct",
+  "realized_n": 533,
+  "target_n": 3600,
+  "trigger_frac": 0.97,
+  "trigger_threshold": 3492.0,
+  "trigger_fired": true,
+  "subsample": "group_stratified_subsample over article groups (round-6 convention)",
+  "seeds": [
+    931,
+    932,
+    933,
+    934,
+    935
+  ],
+  "smoke": false,
+  "headline_layer": 19,
+  "frozen_layers": [
+    14,
+    18,
+    19,
+    26
+  ],
+  "per_seed": {
+    "931": {
+      "rotated_hl": -0.08312554939366223,
+      "mlp_frozen": {
+        "14": 0.13059256565910127,
+        "18": 0.15169298130734532,
+        "19": 0.20748675449617116,
+        "26": 0.18669531818884288
+      },
+      "mlp_hl": 0.20748675449617116
+    },
+    "932": {
+      "rotated_hl": -0.05238082563329716,
+      "mlp_frozen": {
+        "14": 0.13637940623407163,
+        "18": 0.15579011390813657,
+        "19": 0.21540397000159184,
+        "26": 0.19568308187980665
+      },
+      "mlp_hl": 0.21540397000159184
+    },
+    "933": {
+      "rotated_hl": -0.06664905782809405,
+      "mlp_frozen": {
+        "14": 0.13975027289338504,
+        "18": 0.16344919826212845,
+        "19": 0.2173166485841861,
+        "26": 0.20182961223225293
+      },
+      "mlp_hl": 0.2173166485841861
+    },
+    "934": {
+      "rotated_hl": -0.06014684624261646,
+      "mlp_frozen": {
+        "14": 0.13991453711965196,
+        "18": 0.15756082581361897,
+        "19": 0.21191994373140566,
+        "26": 0.1894142565085809
+      },
+      "mlp_hl": 0.21191994373140566
+    },
+    "935": {
+      "rotated_hl": -0.06666392402390975,
+      "mlp_frozen": {
+        "14": 0.13726115185649168,
+        "18": 0.1489876660054289,
+        "19": 0.2116142216399537,
+        "26": 0.19208140122305917
+      },
+      "mlp_hl": 0.2116142216399537
+    }
+  },
+  "seed_mean_rotated_hl": -0.06579324062431594,
+  "seed_mean_mlp_hl": 0.2127483076906617,
+  "w_ex_matched_n": 0.2127483076906617,
+  "convention": "max(seed-mean rotated @ hl, seed-mean MLP @ hl) \u2014 the committed max(rotated, MLP) convention on the seed-mean refits; C stays full-n by stated convention (matched-n C documented unevaluable)"
+}

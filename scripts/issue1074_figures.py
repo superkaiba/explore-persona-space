@@ -14,10 +14,17 @@ import json
 import math
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_blog,
     savefig_paper,
     set_paper_style,
@@ -76,7 +83,7 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     return c - hw, c + hw
 
 
-# ── Figure 1 (hero): yield vs floor, per class × generator ───────────────────
+# ── Figure 1 (hero): yield vs floor, per class x generator ───────────────────
 set_paper_style("blog")
 fig, axes = plt.subplots(1, 2, figsize=(11.5, 5.2), constrained_layout=True)
 cells906 = {"sycophancy": (6, 36), "harmful_compliance": (2, 215)}
@@ -96,7 +103,7 @@ for ax, beh, title in [
         ("abliterated\nQwen", ka, gen_n, COL["ablit"]),
     ]
     xs = np.arange(len(bars))
-    for i, (lab, k, n, col) in enumerate(bars):
+    for i, (_lab, k, n, col) in enumerate(bars):
         r = k / n
         lo, hi = wilson(k, n)
         ax.bar(i, r, color=col, width=0.62)
@@ -202,7 +209,7 @@ ax.axhline(QUOTA, color="0.15", ls="--", lw=1.6)
 ax.text(
     len(members) - 0.45, QUOTA + 0.4, "per-member pairing quota (24)", ha="right", fontsize=10.5
 )
-for i, m in enumerate(members):
+for i, _m in enumerate(members):
     ax.text(xs[i], kept[i] - 1.6, str(kept[i]), ha="center", va="top", fontsize=11, color="white")
 ax.set_xticks(xs)
 ax.set_xticklabels([labels[m] for m in members], fontsize=10.5)

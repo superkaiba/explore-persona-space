@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "git_commit": "0e93486d07fa4dc7db1c2cb7ed710bc25bad0dd9",
+    "timestamp": "2026-07-08T03:43:32Z",
+    "seed": 931,
+    "n": 3600,
+    "script": "scripts/issue825_base_sep_stage.py",
+    "issue": 931
+  },
+  "base_model_id": "Qwen/Qwen2.5-7B",
+  "instruct_model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "pairs_revision": "9534b9981d6b4fb4f1259c9b06f021d311a46af4",
+  "pair_sha256": {
+    "articles_armC.jsonl": "3dd4fcfb25e72f4193cddf0205d0a65eaf78ba950ba7d2ea759ea49d4cd525de",
+    "pairs_armC.jsonl": "f9d7e6d69a57879994079de521c4a8f485bd200e72e44fa50196af8f845327ea"
+  },
+  "pairs_staged": true,
+  "anchor_prefix": "issue931_story_map/analysis_tensors/armC",
+  "anchor_store_revision": "0b304e0449ebe52bee339322c47a974002b7ebc9",
+  "anchor_store_files": [
+    "issue931_story_map/analysis_tensors/armC/armC_equivalence.json",
+    "issue931_story_map/analysis_tensors/armC/armC_shard000.json",
+    "issue931_story_map/analysis_tensors/armC/armC_shard000.pt",
+    "issue931_story_map/analysis_tensors/armC/armC_shard001.json",
+    "issue931_story_map/analysis_tensors/armC/armC_shard001.pt",
+    "issue931_story_map/analysis_tensors/armC/armC_shard002.json",
+    "issue931_story_map/analysis_tensors/armC/armC_shard002.pt",
+    "issue931_story_map/analysis_tensors/armC/armC_shard003.json",
+    "issue931_story_map/analysis_tensors/armC/armC_shard003.pt",
+    "issue931_story_map/analysis_tensors/armC/armC_shard004.json",
+    "issue931_story_map/analysis_tensors/armC/armC_shard004.pt",
+    "issue931_story_map/analysis_tensors/armC/armC_shard005.json",
+    "issue931_story_map/analysis_tensors/armC/armC_shard005.pt",
+    "issue931_story_map/analysis_tensors/armC/armC_shard006.json",
+    "issue931_story_map/analysis_tensors/armC/armC_shard006.pt",
+    "issue931_story_map/analysis_tensors/armC/armC_shard007.json",
+    "issue931_story_map/analysis_tensors/armC/armC_shard007.pt"
+  ],
+  "anchor_shards": "all",
+  "anchor_rows": 3600,
+  "provenance_coherence": {
+    "max_pair_date": "2026-07-04 06:04:58+00:00",
+    "min_store_date": "2026-07-04 07:09:16+00:00"
+  }
+}

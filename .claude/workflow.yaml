@@ -3218,9 +3218,9 @@ workflow_fix_on_bug:
     durable_signal: "workflow_fix_target: line in the task body's ## Provenance block"  # survives watcher respawn (primary; task_workflow.is_workflow_fix_session)
     behavior: "A session under EITHER signal logs+notifies candidates it raises; it NEVER auto-files/spawns MORE workflow-fix tasks for its own findings (analogue of AUTO_REVIEW_DISABLED). Escape valve: such a session CAN still emit candidate blocks — they are parked/notified, not silently dropped."
   dedup_key: "(target_file, fingerprint)"        # fp = sha256(normalize(proposed_change)+'||'+normalize(bug_observed))[:12]; task_workflow.wf_fix_fingerprint
-  dedup_predicate: "A candidate is a duplicate iff an OPEN kind:infra task has a workflow-fix: title prefix AND a wf-fix-fp:<fp> tag matching the fingerprint AND a ## Provenance workflow_fix_target line EXACTLY matching target_file AND status NOT in {completed, archived}. Same file + DIFFERENT fingerprint is NOT a duplicate (it files its own task). Impl: task_workflow.is_open_workflow_fix_task; tested in tests/test_workflow_fix_dedup.py."
+  dedup_predicate: "A candidate is a duplicate iff an OPEN kind:infra task has a workflow-fix: or daily-fix: title prefix (task_workflow.WF_FIX_TITLE_PREFIXES; #1180 cross-channel) AND a wf-fix-fp:<fp> tag matching the fingerprint AND a ## Provenance workflow_fix_target line EXACTLY matching target_file AND status NOT in {completed, archived}. Same file + DIFFERENT fingerprint is NOT a duplicate (it files its own task). Impl: task_workflow.is_open_workflow_fix_task; tested in tests/test_workflow_fix_dedup.py."
   dedup_surfaces:
-    primary: "title prefix 'workflow-fix:' (via task.py new --title / set_title) + tag 'wf-fix-fp:<fp>' (via add-tag) — both round-trip through view --json / REGISTRY"
+    primary: "title prefix 'workflow-fix:' or 'daily-fix:' (task_workflow.WF_FIX_TITLE_PREFIXES, one per filing channel; via task.py new --title / set_title) + tag 'wf-fix-fp:<fp>' (via add-tag) — both round-trip through view --json / REGISTRY"
     fallback: "grep the literal 'workflow_fix_target:' line in body.md ## Provenance (written verbatim via --body-file)"
     never: "set_body — strips leading frontmatter except paper/abstract; NEVER route a dedup key through it"
   spawn_command: "uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto"

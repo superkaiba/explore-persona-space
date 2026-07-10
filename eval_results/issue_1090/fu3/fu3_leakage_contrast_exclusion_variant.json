@@ -1,0 +1,159 @@
+{
+  "excluded_contexts": [
+    "neg_sp_ph4",
+    "neg_sp_police"
+  ],
+  "note": "held-out leakage means over the 3 non-source panel contexts that are NOT the contrastive arms' training negatives; companion to fu3_leakage_contrast.json",
+  "pairs": [
+    {
+      "pair": "C1-bare",
+      "behavior": "formatting",
+      "n_contexts_kept": 3,
+      "leak_contrastive_excl": -0.022222222222222223,
+      "leak_posonly_excl": -0.013333333333333336,
+      "delta_con_minus_pos_excl": -0.008888888888888887,
+      "install_matched": false
+    },
+    {
+      "pair": "C1-pers",
+      "behavior": "formatting",
+      "n_contexts_kept": 3,
+      "leak_contrastive_excl": -0.015555555555555553,
+      "leak_posonly_excl": 0.011111111111111108,
+      "delta_con_minus_pos_excl": -0.02666666666666666,
+      "install_matched": false
+    },
+    {
+      "pair": "C2-bare",
+      "behavior": "impolite",
+      "n_contexts_kept": 3,
+      "leak_contrastive_excl": 0.0,
+      "leak_posonly_excl": 0.0,
+      "delta_con_minus_pos_excl": 0.0,
+      "install_matched": false
+    },
+    {
+      "pair": "C2-conv",
+      "behavior": "impolite",
+      "n_contexts_kept": 3,
+      "leak_contrastive_excl": 0.0033333333333333335,
+      "leak_posonly_excl": 0.0,
+      "delta_con_minus_pos_excl": 0.0033333333333333335,
+      "install_matched": false
+    },
+    {
+      "pair": "C2-icl",
+      "behavior": "impolite",
+      "n_contexts_kept": 3,
+      "leak_contrastive_excl": 0.0,
+      "leak_posonly_excl": 0.0033333333333333335,
+      "delta_con_minus_pos_excl": -0.0033333333333333335,
+      "install_matched": true
+    },
+    {
+      "pair": "C2-pers",
+      "behavior": "impolite",
+      "n_contexts_kept": 3,
+      "leak_contrastive_excl": 0.0,
+      "leak_posonly_excl": 0.0,
+      "delta_con_minus_pos_excl": 0.0,
+      "install_matched": false
+    },
+    {
+      "pair": "C3-bare",
+      "behavior": "sycophancy",
+      "n_contexts_kept": 3,
+      "leak_contrastive_excl": 0.026666666666666672,
+      "leak_posonly_excl": -0.001428571428571455,
+      "delta_con_minus_pos_excl": 0.028095238095238128,
+      "install_matched": false
+    },
+    {
+      "pair": "C3-conv",
+      "behavior": "sycophancy",
+      "n_contexts_kept": 3,
+      "leak_contrastive_excl": 0.0033333333333333457,
+      "leak_posonly_excl": 0.020000000000000007,
+      "delta_con_minus_pos_excl": -0.016666666666666663,
+      "install_matched": true
+    },
+    {
+      "pair": "C3-icl",
+      "behavior": "sycophancy",
+      "n_contexts_kept": 3,
+      "leak_contrastive_excl": -0.009999999999999981,
+      "leak_posonly_excl": 0.01666666666666668,
+      "delta_con_minus_pos_excl": -0.02666666666666666,
+      "install_matched": true
+    },
+    {
+      "pair": "C3-pers",
+      "behavior": "sycophancy",
+      "n_contexts_kept": 3,
+      "leak_contrastive_excl": 0.06434343434343434,
+      "leak_posonly_excl": 0.10333333333333335,
+      "delta_con_minus_pos_excl": -0.038989898989899005,
+      "install_matched": false
+    },
+    {
+      "pair": "C5-pers",
+      "behavior": "sycophancy",
+      "n_contexts_kept": 3,
+      "leak_contrastive_excl": 0.049999999999999996,
+      "leak_posonly_excl": 0.12333333333333336,
+      "delta_con_minus_pos_excl": -0.07333333333333336,
+      "install_matched": false
+    }
+  ],
+  "contrast_matched_install": {
+    "label": "matched-install pairs (excl variant)",
+    "n_pairs": 3,
+    "mean_delta_con_minus_pos": -0.015555555555555553,
+    "delta_ci95": [
+      -0.02666666666666666,
+      -0.0033333333333333335
+    ],
+    "paired_r": {
+      "r": -0.09078412990031973,
+      "ci95": [
+        -1.0000000000000002,
+        1.0000000000000002
+      ],
+      "n": 3
+    }
+  },
+  "contrast_all_pairs": {
+    "label": "all pairs (excl variant)",
+    "n_pairs": 11,
+    "mean_delta_con_minus_pos": -0.014828807556080282,
+    "delta_ci95": [
+      -0.030477371113734754,
+      -0.0005183982683982647
+    ],
+    "paired_r": {
+      "r": 0.8491255521000904,
+      "ci95": [
+        -0.27124440059968136,
+        0.9674151319558851
+      ],
+      "n": 11
+    }
+  },
+  "contrast_non_persona_pairs": {
+    "label": "pairs excluding the two persona-sycophancy pairs (excl variant)",
+    "n_pairs": 7,
+    "mean_delta_con_minus_pos": -0.0034467120181405834,
+    "delta_ci95": [
+      -0.014924603174603172,
+      0.009389455782312936
+    ],
+    "paired_r": {
+      "r": 0.15178462527365477,
+      "ci95": [
+        -0.8506031067460031,
+        0.9399775272840062
+      ],
+      "n": 7
+    }
+  }
+}

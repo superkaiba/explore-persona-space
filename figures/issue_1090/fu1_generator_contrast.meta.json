@@ -1,0 +1,64 @@
+{
+  "commit": "31765a2935",
+  "created": "2026-07-07T10:19:30Z",
+  "figsize": [
+    11.5,
+    5.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "judged agreement rate (Tier 2, fresh 300-token judge)": 0.215,
+      "error": 0.0566531860499994,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "judged agreement rate (Tier 2, fresh 300-token judge)": 0.475,
+      "error": 0.06855614274697197,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.82,
+      "judged agreement rate (Tier 2, fresh 300-token judge)": 0.23,
+      "error": 0.05799585918402349,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.18,
+      "judged agreement rate (Tier 2, fresh 300-token judge)": 0.475,
+      "error": 0.06855614274697197,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.18,
+      "teacher-forced fixed-pool margin (nats per token)": 0.036617642673091685,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.18,
+      "teacher-forced fixed-pool margin (nats per token)": 0.0995528008870181,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.82,
+      "teacher-forced fixed-pool margin (nats per token)": -0.822332532849795,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.18,
+      "teacher-forced fixed-pool margin (nats per token)": -0.5865479696193958,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8
+}

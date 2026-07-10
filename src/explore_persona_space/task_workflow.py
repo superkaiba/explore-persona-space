@@ -81,7 +81,7 @@ import re
 import shutil
 import subprocess
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -736,6 +736,14 @@ LOCK_PATH = LOCK_DIR / "lock"
 # message + error, NOT the payload (the payload's durable home is the appended
 # file itself).
 DEFERRED_COMMITS_LOG = LOCK_DIR / "deferred-commits.jsonl"
+# FORENSIC-ONLY sidecar of lifecycle commits that landed UNREACHABLE from
+# refs/heads/main (#1100): one JSONL row per commit the post-commit landing
+# check in _git_commit found stranded (or unverifiable). Lives OUTSIDE the
+# repo — recording a strand must not itself need a commit — beside the flock
+# every writer already owns. Nothing reads it automatically; the stderr ERROR
+# at creation time is the live surface, this file is the audit trail.
+STRANDED_COMMITS_LOG = LOCK_DIR / "stranded-commits.jsonl"
+_LANDING_CHECK_ENV = "EPM_TASKPY_LANDING_CHECK"  # "0" disables (default: on)
 
 
 # ─── Locking ────────────────────────────────────────────────────────────────
@@ -980,6 +988,18 @@ _WF_FIX_NONTERMINAL: tuple[str, ...] = (
     "on_hold",
 )
 
+# Title prefixes that mark a filed workflow-fix task, one per filing channel:
+# "workflow-fix:" — the orchestrator path (.claude/rules/workflow-fix-on-bug.md
+# § How to emit); "daily-fix:" — the /daily Step-C route-2 filer
+# (.claude/skills/daily/SKILL.md). Both channels stamp the same wf-fix-fp:<fp>
+# tag + ``workflow_fix_target:`` Provenance line, so the title prefix is only
+# the cheap REGISTRY pre-filter — keeping the prefix set shared across
+# channels is what makes the (target_file, fingerprint) dedup CROSS-channel
+# (#1180: an open daily-filed fix was invisible to the orchestrator dedup and
+# a same-fp candidate double-filed). A future third filing channel adds its
+# prefix HERE (single source of truth; the sweep's advisory mirror imports it).
+WF_FIX_TITLE_PREFIXES: tuple[str, ...] = ("workflow-fix:", "daily-fix:")
+
 
 def _wf_fix_normalize(s: str) -> str:
     """Normalize a candidate prose field for stable fingerprinting.
@@ -1015,7 +1035,9 @@ def is_open_workflow_fix_task(target_file: str, fingerprint: str | None = None) 
 
     Dedup key (#678 A1): ``(target_file, fingerprint)``. A task matches iff
     ``kind == infra`` AND its status is NOT in ``{completed, archived}`` AND its
-    title starts with ``workflow-fix:`` AND its body ``## Provenance`` carries a
+    title starts with one of ``WF_FIX_TITLE_PREFIXES`` (``workflow-fix:`` —
+    orchestrator channel; ``daily-fix:`` — /daily route-2 channel; #1180 made
+    the dedup cross-channel) AND its body ``## Provenance`` carries a
     ``workflow_fix_target: <target_file>`` line (exact string match). When
     ``fingerprint`` is given, the task must ALSO carry a ``wf-fix-fp:<fingerprint>``
     tag (or a ``fingerprint: <fingerprint>`` Provenance line) — so a DIFFERENT
@@ -1033,7 +1055,7 @@ def is_open_workflow_fix_task(target_file: str, fingerprint: str | None = None) 
             continue
         if (entry.get("status") or "") not in _WF_FIX_NONTERMINAL:
             continue
-        if not str(entry.get("title", "")).startswith("workflow-fix:"):
+        if not str(entry.get("title", "")).startswith(WF_FIX_TITLE_PREFIXES):
             continue
         tid = int(tid_str)
         try:
@@ -1617,6 +1639,451 @@ def stage_dispatch_should_skip(
         f"breadcrumb at {events[crumb_idx].get('ts', '')}, effective age {age_minutes:.1f}m "
         f"< window {window_minutes}m{refreshed}"
     )
+
+
+# --- Ensemble verdict presence (#1149; mechanizes SKILL.md Step 5b ---
+# --- durable-verdict-first rule items 1 + 3)                        ---
+
+_RECONCILE_KIND = "epm:review-reconcile"
+
+
+def _sentinel_round(note: str, kind: str) -> int | None:
+    """Round named by a note-head ``<!-- <kind> v<n> -->`` sentinel, else None.
+
+    Anchored at the lstripped note HEAD (a copy-pasted sentinel mid-note never
+    matches); the kind must match exactly, so a ``-codex`` sibling's sentinel
+    never satisfies its base kind.
+    """
+    match = re.match(rf"<!--\s*{re.escape(kind)}\s+v(\d+)\s*-->", note.lstrip())
+    return int(match.group(1)) if match else None
+
+
+def ensemble_verdicts_present(
+    events: list[dict],
+    kinds: Sequence[str],
+    round_n: int,
+    *,
+    reconcile_role: str | None = None,
+) -> dict[str, dict[str, Any]]:
+    """Per-kind durable-verdict presence for one ensemble round (#1149).
+
+    Mechanizes items 1 + 3 of the /issue Step 5b durable-verdict-first
+    rule: BEFORE any reviewer no-show decision, the orchestrator asks
+    whether the round's expected verdict markers exist on events.jsonl and
+    whether each carries a parseable ``Verdict:`` field. For each queried
+    kind returns ``{"present": bool, "verdict": str | None,
+    "ts": str | None}``:
+
+    - ``present=False`` -> proceed to the rule's item 2 (durable output
+      file), then item 4 (no-show handling).
+    - ``present=True, verdict=None`` -> the marker EXISTS but its note has
+      no parseable ``Verdict:`` field: malformed-output handling (rule
+      item 3), NEVER a no-show (#810 r4: a posted verdict misread as a
+      total no-show is the incident class this predicate closes).
+    - ``present=True, verdict=<token>`` -> the reviewer RETURNED; apply
+      the normal ensemble rule. The token is returned RAW (per-site
+      pass/fail vocabularies live in workflow.yaml § ensemble_review).
+
+    Round matching: a note-head ``<!-- <kind> v<n> -->`` sentinel is
+    AUTHORITATIVE when present — the event matches iff the sentinel names
+    ``round_n``; a sentinel naming a DIFFERENT round suppresses any
+    top-level ``version``-field match (version/round divergence is real in
+    the wild: #480 non-monotonicity, defaulted re-spawn auto-bump). With
+    no sentinel, non-reconcile kinds fall back to
+    ``event["version"] == round_n``. ``epm:review-reconcile`` NEVER
+    matches on the ``version`` field — it is round-MEANINGLESS there
+    (auto-derived max+1 per kind while the sentinel names the ROUND; live
+    proof: #1092's reconcile is version 1 with sentinel v5) — so a
+    sentinel-less reconcile falls back to the note's ``**Round:**`` field,
+    else never matches. The LATEST matching event wins (re-spawns post at
+    the same v<n>). When ``kind`` is ``epm:review-reconcile`` and
+    ``reconcile_role`` is given, the note's ``**Role under
+    adjudication:**`` field must equal it — a same-round reconcile for a
+    DIFFERENT role, or a reconcile note MISSING the role field entirely,
+    never satisfies a role-scoped query (deliberate: fail toward the
+    rule's output-file probe rather than adopt an unattributable
+    adjudication). Verdict / role / round parsing reuses
+    :func:`parse_followup_note_field` (bold, bullet, ``; ``-joined and
+    escaped-newline note shapes, incl. the bold-wrapped
+    ``**Verdict: PASS**`` Codex-twin shape). Known false-ABSENT residual:
+    a sentinel-less terse note whose ``version`` drifted from the round
+    (a defaulted re-spawn that omitted the sentinel) reads absent — rule
+    item 2 (the durable output-FILE probe) is the prose backstop for that
+    path. Pure function over :func:`list_events` output — no I/O; the
+    rule's item 2 (output-file probe) and precedence clauses stay
+    orchestrator prose.
+    """
+    if isinstance(kinds, str):
+        # A bare string iterates per-character, mechanically producing false
+        # no-shows — the exact class this predicate exists to close.
+        raise TypeError("kinds must be a sequence of marker-kind strings, not a bare str")
+    out: dict[str, dict[str, Any]] = {}
+    for kind in kinds:
+        match: dict | None = None
+        for event in events:  # chronological; latest match wins
+            if _ensemble_event_matches(event, kind, round_n, reconcile_role):
+                match = event
+        if match is None:
+            out[kind] = {"present": False, "verdict": None, "ts": None}
+        else:
+            verdict = parse_followup_note_field(match.get("note", "") or "", "Verdict")
+            out[kind] = {"present": True, "verdict": verdict, "ts": match.get("ts")}
+    return out
+
+
+def _ensemble_event_matches(
+    event: dict, kind: str, round_n: int, reconcile_role: str | None
+) -> bool:
+    """True iff ``event`` is a round-``round_n`` verdict marker of ``kind``.
+
+    Round matching is sentinel-authoritative: a head sentinel naming a
+    DIFFERENT round suppresses the version-field match, and the reconcile
+    kind never matches on its round-meaningless ``version`` field (#1092:
+    version 1 / sentinel v5) — sentinel first, then the note's
+    ``**Round:**`` field, else no match. Role scoping applies to the
+    reconcile kind only.
+    """
+    if event.get("kind", "") != kind:
+        return False
+    note = event.get("note", "") or ""
+    head_round = _sentinel_round(note, kind)
+    if kind == _RECONCILE_KIND:
+        if head_round is not None:
+            if head_round != round_n:
+                return False
+        else:
+            round_field = parse_followup_note_field(note, "Round")
+            if round_field is None or not round_field.isdigit() or int(round_field) != round_n:
+                return False
+    elif head_round is not None:
+        if head_round != round_n:
+            return False  # sentinel authoritative — suppress the version match
+    elif event.get("version") != round_n:
+        return False
+    if kind == _RECONCILE_KIND and reconcile_role is not None:
+        role = parse_followup_note_field(note, "Role under adjudication")
+        if role != reconcile_role:
+            return False
+    return True
+
+
+# --- Verdict-disagree observer predicate (#1170; origin incident #825) ---
+
+# The four MARKER-MODE doubled review sites (workflow.yaml § ensemble_review
+# doubled_steps with reconcile_mode == "marker"; kinds from § reviewer_pairs).
+# The adversarial-planner `critic` site is reconcile_mode == "in-context"
+# (no durable reconcile marker) and is deliberately NOT observable here.
+# Vocabularies are LOWERCASED copies of workflow.yaml's pass_values /
+# fail_values; parity with workflow.yaml is pinned by
+# tests/test_verdict_disagree_observer.py::test_site_table_matches_workflow_yaml
+# (a runtime YAML parse inside a pure library function would add I/O + a
+# yaml dependency to the import path for zero drift protection a test
+# doesn't already give).
+ENSEMBLE_MARKER_MODE_SITES: tuple[dict[str, Any], ...] = (
+    {
+        "role": "code-reviewer",
+        "claude_kind": "epm:code-review",
+        "codex_kind": "epm:code-review-codex",
+        "pass_values": ("pass", "concerns"),
+        "fail_values": ("fail",),
+    },
+    {
+        "role": "interpretation-critic",
+        "claude_kind": "epm:interp-critique",
+        "codex_kind": "epm:interp-critique-codex",
+        "pass_values": ("pass",),
+        "fail_values": ("revise",),
+    },
+    {
+        "role": "clean-result-critic",
+        "claude_kind": "epm:clean-result-critique",
+        "codex_kind": "epm:clean-result-critique-codex",
+        "pass_values": ("pass", "concerns"),
+        "fail_values": ("revise",),
+    },
+    {
+        "role": "follow-up-critic",
+        "claude_kind": "epm:followup-value-critique",
+        "codex_kind": "epm:followup-value-critique-codex",
+        "pass_values": ("not-redundant",),
+        "fail_values": ("redundant",),
+    },
+)
+
+# #1204 canonical quota-skip phrase (an epm:progress note recording that the
+# codex composers were deliberately skipped this round — a sanctioned no-show).
+_VDO_QUOTA_SKIP_SUBSTR = "codex composers skipped"
+# epm:failure classes that can explain an absent/garbled Codex twin: a
+# malformed-output classification always counts; a bare `infra` counts ONLY
+# when the note names Codex (a generic pod-infra failure must not suppress).
+_VDO_FAILURE_CLASS_RE = re.compile(r"failure_class:\s*(codex-output-malformed|infra)")
+
+
+def _verdict_class(
+    raw: str | None, pass_values: Sequence[str], fail_values: Sequence[str]
+) -> str | None:
+    """``'pass'`` | ``'fail'`` | ``None`` for one raw verdict token (#1170).
+
+    Takes the FIRST whitespace token, strips ``*``/``:``/``.``/``,``/``;``/
+    parens residue, lowercases, then EXACT-matches against the site's
+    lowercased vocabularies — handles ``'PASS'``, ``'CONCERNS'``,
+    ``'REVISE (FAIL-class)'``, leftover ``'**Verdict: PASS**'`` bold residue
+    after :func:`parse_followup_note_field`, and ``'not-redundant'`` vs
+    ``'redundant'`` without a substring hazard. An unknown / empty / missing
+    token returns ``None`` (fail-quiet — the caller skips, never guesses).
+    """
+    if not raw:
+        return None
+    tokens = raw.split()
+    if not tokens:
+        return None
+    token = tokens[0].strip("*:.,;()").lower()
+    if token in pass_values:
+        return "pass"
+    if token in fail_values:
+        return "fail"
+    return None
+
+
+def _event_epoch(ts: object) -> float | None:
+    """Epoch seconds for an events.jsonl ISO-8601 ``Z`` timestamp, ``None``
+    on any parse failure (callers fail quiet; #1170)."""
+    if not isinstance(ts, str) or not ts:
+        return None
+    try:
+        return datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def _codex_no_show_evidence(events: list[dict], window_start_epoch: float) -> str | None:
+    """Evidence class explaining an ABSENT Codex twin, else ``None`` (#1170).
+
+    Scans events at/after ``window_start_epoch`` (an event with an
+    unparseable ``ts`` never counts) for: (a) ``epm:failure`` whose note
+    carries ``failure_class: codex-output-malformed`` (always counts) or
+    ``failure_class: infra`` with "codex" in the note (case-insensitive —
+    a generic pod-infra failure must not suppress); (b) any
+    ``epm:codex-task-failed`` (incl. ``codex-quota-exhausted``); (c) an
+    ``epm:progress`` note carrying the #1204 quota-skip phrase. Consumed by
+    :func:`unreconciled_disagreement_rounds` for TIER-2 (proximity)
+    pairings ONLY — evidence can explain an absent twin, never two present
+    parseable verdicts.
+    """
+    for event in events:
+        ts_epoch = _event_epoch(event.get("ts"))
+        if ts_epoch is None or ts_epoch < window_start_epoch:
+            continue
+        kind = event.get("kind", "")
+        note = event.get("note", "") or ""
+        if kind == "epm:codex-task-failed":
+            return "codex-task-failed"
+        if kind == "epm:failure":
+            match = _VDO_FAILURE_CLASS_RE.search(note)
+            if match is not None:
+                cls = match.group(1)
+                if cls == "codex-output-malformed":
+                    return "failure-codex-output-malformed"
+                if cls == "infra" and "codex" in note.lower():
+                    return "failure-infra-codex"
+        if kind == "epm:progress" and _VDO_QUOTA_SKIP_SUBSTR in note:
+            return "quota-skip-note"
+    return None
+
+
+def _latest_site_pair(events: list[dict], site: dict) -> dict | None:
+    """The site's LATEST verdict pair as ``{"tier", "round_n", "round_label",
+    "claude_verdict", "codex_verdict", "claude_ts", "codex_ts"}``, else
+    ``None`` when the site has no pairable markers (#1170).
+
+    Tier 1 (round-aligned): derive the latest round from the LAST pair
+    event (head sentinel, else an ``int`` ``version``); when
+    :func:`ensemble_verdicts_present` reports BOTH kinds present at that
+    round, that pair wins (a present-but-malformed side stays a Tier-1
+    pair — Tier 2 is never attempted past a both-present round). Tier 2
+    (proximity fallback — the #825 founding shape): the chronologically
+    LAST event of EACH kind, with ``round_n=None`` and a
+    timestamp-embedding round label.
+    """
+    claude_kind = site["claude_kind"]
+    codex_kind = site["codex_kind"]
+    pair_events = [e for e in events if e.get("kind") in {claude_kind, codex_kind}]
+    if not pair_events:
+        return None
+
+    # Tier 1: latest round from the LAST pair event.
+    last = pair_events[-1]
+    round_n = _sentinel_round(last.get("note", "") or "", last.get("kind", ""))
+    if round_n is None:
+        version = last.get("version")
+        round_n = version if isinstance(version, int) else None
+    if round_n is not None:
+        res = ensemble_verdicts_present(events, (claude_kind, codex_kind), round_n)
+        claude_res, codex_res = res[claude_kind], res[codex_kind]
+        if claude_res["present"] and codex_res["present"]:
+            return {
+                "tier": "round",
+                "round_n": round_n,
+                "round_label": f"r{round_n}",
+                "claude_verdict": claude_res["verdict"],
+                "codex_verdict": codex_res["verdict"],
+                "claude_ts": claude_res["ts"],
+                "codex_ts": codex_res["ts"],
+            }
+
+    # Tier 2: latest event of EACH kind.
+    claude_events = [e for e in pair_events if e.get("kind") == claude_kind]
+    codex_events = [e for e in pair_events if e.get("kind") == codex_kind]
+    if not claude_events or not codex_events:
+        return None  # nothing to disagree with (structural)
+    claude_last, codex_last = claude_events[-1], codex_events[-1]
+    claude_ts, codex_ts = claude_last.get("ts"), codex_last.get("ts")
+    return {
+        "tier": "proximity",
+        "round_n": None,
+        "round_label": f"t2|{claude_ts}|{codex_ts}",
+        "claude_verdict": parse_followup_note_field(claude_last.get("note", "") or "", "Verdict"),
+        "codex_verdict": parse_followup_note_field(codex_last.get("note", "") or "", "Verdict"),
+        "claude_ts": claude_ts,
+        "codex_ts": codex_ts,
+    }
+
+
+def _reconcile_satisfied(
+    events: list[dict], role: str, round_n: int | None, min_pair_epoch: float
+) -> bool:
+    """True when a role-matched ``epm:review-reconcile`` satisfies the pair
+    (#1170): EITHER a round-scoped role-matched
+    :func:`ensemble_verdicts_present` query (Tier 1 only — ``round_n`` is
+    ``None`` on Tier 2) OR any role-matched reconcile event timestamped
+    at/after the earlier pair verdict (both tiers — #825's real reconcile
+    named round 1 while the sides read 5 and 7, so a purely round-scoped
+    lookup would false-flag a legitimately reconciled round)."""
+    if round_n is not None:
+        rres = ensemble_verdicts_present(events, (_RECONCILE_KIND,), round_n, reconcile_role=role)
+        if rres[_RECONCILE_KIND]["present"]:
+            return True
+    for event in events:
+        if event.get("kind") != _RECONCILE_KIND:
+            continue
+        note = event.get("note", "") or ""
+        if parse_followup_note_field(note, "Role under adjudication") != role:
+            continue
+        r_epoch = _event_epoch(event.get("ts"))
+        if r_epoch is not None and r_epoch >= min_pair_epoch:
+            return True
+    return False
+
+
+def unreconciled_disagreement_rounds(
+    events: list[dict],
+    *,
+    now_ts: float,
+    grace_s: float = 3600.0,
+    pair_proximity_s: float = 21600.0,
+    evidence_lookback_s: float = 7200.0,
+) -> list[dict]:
+    """Per doubled marker-mode site, flag the LATEST round whose Claude +
+    Codex verdict markers both exist with parseable OPPOSITE-class verdicts,
+    no role-matched ``epm:review-reconcile``, and no Codex no-show evidence
+    — the #825 misclassification shape (#1170).
+
+    Pure over :func:`list_events` output; no I/O. Fail-quiet on every
+    ambiguity (unparseable ts / verdict / round, unknown verdict token,
+    cross-epoch pairs). Two-tier pairing per site in
+    :data:`ENSEMBLE_MARKER_MODE_SITES`:
+
+    - **Tier 1 (round-aligned):** derive the latest round from the LAST
+      pair event (head sentinel, else an ``int`` ``version``); when
+      :func:`ensemble_verdicts_present` reports BOTH kinds present at that
+      round, evaluate that pair (a present-but-malformed side —
+      ``verdict=None`` — is NOT a disagreement and blocks Tier 2: the
+      predicate never fabricates a verdict, #810 r4).
+    - **Tier 2 (proximity fallback — the #825 founding shape):** round
+      numbers drift across the pair kinds (#825: Claude sentinel v5 vs
+      Codex bare version 7 for the same logical round), so when Tier 1
+      cannot pair, take the chronologically LAST event of EACH kind and
+      pair them by time proximity.
+
+    Pair evaluation (both tiers): classify via :func:`_verdict_class`
+    (either ``None`` -> skip); same class -> skip (PASS+CONCERNS is
+    same-class where the site's vocabulary says so); pairs further than
+    ``pair_proximity_s`` apart -> skip (kills cross-epoch aliasing);
+    pairs younger than ``grace_s`` -> skip this call (an in-flight
+    reconcile gets time to land — deferral, not loss); a reconcile
+    satisfies via EITHER a round-scoped role-matched
+    :func:`ensemble_verdicts_present` query (Tier 1 only) OR any
+    role-matched reconcile event at/after the earlier pair verdict
+    (both tiers — #825's real reconcile named round 1 while the sides
+    read 5 and 7, so a purely round-scoped lookup would false-flag);
+    Tier-2 pairings are additionally suppressed by
+    :func:`_codex_no_show_evidence` in
+    ``[min(pair_ts) - evidence_lookback_s, inf)`` — a Tier-1 both-present
+    pair is NEVER evidence-suppressed (v2 Must-Fix: evidence refers to a
+    different attempt and would blind the observer exactly during
+    Codex-unstable periods, #1126).
+
+    Latest-round-only by design: an earlier-round disagreement superseded
+    by a later round is moot for alerting, and historical round
+    re-derivation is unreliable under the observed sentinel/version drift.
+
+    Returns one dict per finding: ``{"role", "tier", "round_label",
+    "claude_ts", "codex_ts", "claude_verdict", "codex_verdict",
+    "claude_class", "codex_class", "key"}`` with
+    ``key = f"{role}|{round_label}"`` (Tier-1 keys ``role|r<n>``; Tier-2
+    keys embed both pair timestamps, stable across ticks).
+    """
+    findings: list[dict] = []
+    for site in ENSEMBLE_MARKER_MODE_SITES:
+        pair = _latest_site_pair(events, site)
+        if pair is None:
+            continue
+
+        # Pair evaluation (both tiers; each miss -> not flaggable).
+        claude_class = _verdict_class(
+            pair["claude_verdict"], site["pass_values"], site["fail_values"]
+        )
+        codex_class = _verdict_class(
+            pair["codex_verdict"], site["pass_values"], site["fail_values"]
+        )
+        if claude_class is None or codex_class is None:
+            continue  # unknown vocabulary / malformed verdict fails quiet
+        if claude_class == codex_class:
+            continue  # agreement
+        t_claude = _event_epoch(pair["claude_ts"])
+        t_codex = _event_epoch(pair["codex_ts"])
+        if t_claude is None or t_codex is None:
+            continue
+        if abs(t_claude - t_codex) > pair_proximity_s:
+            continue  # cross-epoch aliasing (strict >: an exact-bound pair still counts)
+        if now_ts - max(t_claude, t_codex) < grace_s:
+            continue  # in-flight reconcile gets time to land (strict <)
+
+        role = site["role"]
+        if _reconcile_satisfied(events, role, pair["round_n"], min(t_claude, t_codex)):
+            continue
+
+        if pair["tier"] == "proximity" and (
+            _codex_no_show_evidence(events, min(t_claude, t_codex) - evidence_lookback_s)
+            is not None
+        ):
+            continue  # a sanctioned/failed Codex attempt explains the drifted pair
+
+        findings.append(
+            {
+                "role": role,
+                "tier": pair["tier"],
+                "round_label": pair["round_label"],
+                "claude_ts": pair["claude_ts"],
+                "codex_ts": pair["codex_ts"],
+                "claude_verdict": pair["claude_verdict"],
+                "codex_verdict": pair["codex_verdict"],
+                "claude_class": claude_class,
+                "codex_class": codex_class,
+                "key": f"{role}|{pair['round_label']}",
+            }
+        )
+    return findings
 
 
 # Canonical PASS-verdict pattern for an epm:upload-verification note
@@ -2341,34 +2808,74 @@ _CLAUSE_COMPLETION_WORD = re.compile(r"(?<![iI][nN])(?:complete|COMPLETE)")
 def parse_followup_note_field(note: str, field: str) -> str | None:
     """Extract ``<field>``'s value from a followup-scope / run-marker note.
 
-    Matches the FIRST line whose core (after stripping any leading mix of
-    ``-``/``*`` bullets, bold markers, and whitespace) starts with
-    ``<field>:`` OR ``<field>=`` — both separators occur in the wild (the
-    ``=`` form is the dominant historical run-marker shape, e.g. #537/#552).
-    The value is the first whitespace token of the remainder, stripped of
-    backticks / quotes / ``*`` and a trailing comma (#664 ships a
-    backtick-wrapped bold value). Handles bare-colon, bare-equals,
+    Each physical line is additionally split on ``;`` + whitespace
+    (``re.split(r";\\s+", line)``) so the ``; ``-joined single-line
+    scope/run notes real sessions emit (#1090 fu1/fu2 scopes, #841 scopes
+    + run markers) expose their mid-line fields as clause segments; a line
+    with no ``;<whitespace>`` yields itself unchanged. Matches the FIRST
+    segment (lines outer, segments inner, left-to-right) whose core (after
+    stripping any leading mix of ``-``/``*`` bullets, bold markers, and
+    whitespace) starts with ``<field>:`` OR ``<field>=`` — both separators
+    occur in the wild (the ``=`` form is the dominant historical
+    run-marker shape, e.g. #537/#552). Each segment is anchored exactly
+    like a line-core: a mid-segment mention (``(source: user-chat)``, the
+    #685 prose shape) still parses ``None``, and ``word;field: x`` (no
+    whitespace after the ``;``) never splits. The value is the first
+    whitespace token of the remainder, stripped of backticks / quotes /
+    ``*`` and a trailing comma or semicolon (#664 ships a backtick-wrapped
+    bold value; #841's run markers carry ``label;`` when the line is read
+    unsplit; the ``;`` strip also maps ``field:;`` — an empty value before
+    the separator — to ``None``). Handles bare-colon, bare-equals,
     dash-bullet (#658 v1), star-bullet, bold ``**field:**`` (#837 §4c), the
     COMBINED bullet+bold ``- **field:** x`` (a dash-bullet wrapping a bold
-    field — corpus-clean today, pinned against future drift), and
+    field — corpus-clean today, pinned against future drift),
     single-line space-separated run notes (first-token rule; labels are
-    kebab-slugs with no whitespace — workflow.yaml § markers). First hit
-    wins: #763 v2 embeds a second bold label deep inside its
-    verbatim-proposal section, and the top-of-note canonical line is hit
-    first. Returns ``None`` when the field is absent or its value is empty.
+    kebab-slugs with no whitespace — workflow.yaml § markers), and the
+    ``; ``-joined single-line form (#1090/#841). First hit wins: #763 v2
+    embeds a second bold label deep inside its verbatim-proposal section,
+    and the top-of-note canonical line is hit first; a first-line
+    mid-segment field beats a later line's line-initial field (deliberate,
+    pinned in tests). Returns ``None`` when the field is absent or its
+    value is empty.
+
+    Notes occasionally arrive with LITERAL backslash-n two-char escape
+    sequences instead of real newlines (a shell ``--note "...\\n..."``
+    string passed uninterpreted; #825 run markers v6/v7). When the note
+    contains literal ``\\n`` escapes AND no real newline — the malformed
+    shape is precisely "the whole note is one physical line with escaped
+    separators" — the escapes (including literal ``\\r\\n``) are
+    normalized to real newlines on a parse-side copy before line
+    splitting. A note that already has real newlines keeps its literal
+    escapes untouched as content (quoted regex/code in a value never
+    splits). This deliberately under-reaches: even a single real newline
+    (e.g. one trailing ``\\n`` char) disables the normalization for the
+    whole note. Stored notes are never mutated (events.jsonl is
+    append-only).
     """
-    for line in (note or "").splitlines():
-        # One regex pass strips any interleaved mix of whitespace, bullet
-        # dashes/stars, and bold markers (a sequential strip()/lstrip("-*")
-        # chain stops at the space in "- **field:** x" and misses the bold
-        # marker behind it).
-        core = re.sub(r"^[\s\-*]+", "", line)
-        if core.startswith(f"{field}:") or core.startswith(f"{field}="):
-            rest = core[len(field) + 1 :].lstrip("*").strip()
-            tokens = rest.split()
-            value = tokens[0] if tokens else ""
-            value = value.strip("`'\"*").rstrip(",")
-            return value or None
+    note = note or ""
+    if "\\n" in note and "\n" not in note:
+        # Escaped-newline normalization (#825 v6/v7; the #1090 fu1
+        # regression class): the whole note is one physical line whose
+        # separators arrived as literal backslash-n escapes. Parse-side
+        # copy only — the stored note is never rewritten. `\r\n` literals
+        # first so no stray `\r` survives on a value token (#1120).
+        note = note.replace("\\r\\n", "\n").replace("\\n", "\n")
+    for line in note.splitlines():
+        # `; `-joined single-line notes (#1090 fu1/fu2 scopes, #841 scopes +
+        # run markers) expose their fields as clause segments; a line with
+        # no `;<whitespace>` yields itself unchanged, so every line-initial
+        # form parses exactly as before. The whitespace after `;` is the
+        # anchor: a `;` inside a token (URL, code, `a;b=1`) never splits.
+        for seg in re.split(r";\s+", line):
+            # One regex pass strips any interleaved mix of whitespace, bullet
+            # dashes/stars, and bold markers (unchanged from the line-core rule).
+            core = re.sub(r"^[\s\-*]+", "", seg)
+            if core.startswith(f"{field}:") or core.startswith(f"{field}="):
+                rest = core[len(field) + 1 :].lstrip("*").strip()
+                tokens = rest.split()
+                value = tokens[0] if tokens else ""
+                value = value.strip("`'\"*").rstrip(",;")
+                return value or None
     return None
 
 
@@ -3586,7 +4093,23 @@ def create_task(req: NewTaskRequest) -> int:
 _SET_BODY_ROUNDTRIP_KEYS: tuple[str, ...] = ("paper", "abstract")
 
 
-def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) -> None:
+class GoalH2DropError(ValueError):
+    """``set_body`` would remove the ``## Goal`` H2 from a kind:experiment body.
+
+    The Goal is the canonical target every downstream subagent reads;
+    silently losing it costs a Goal-gate bounce + repair (incident #1112).
+    Pass ``allow_goal_drop=True`` (CLI: ``--allow-goal-drop``) for a
+    deliberate drop.
+    """
+
+
+def set_body(
+    task_id: int,
+    new_body: str,
+    *,
+    snapshot_original: bool = False,
+    allow_goal_drop: bool = False,
+) -> None:
     """Replace the body content (preserves frontmatter).
 
     If `snapshot_original` is True, save the current full body.md to
@@ -3601,6 +4124,22 @@ def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) ->
     strip is idempotent: calling `set_body` with a body that already has
     no leading frontmatter is a no-op for the strip step.
 
+    Goal-H2 drop guard (incident #1112): when the task is ``kind:
+    experiment``, not ``paper: true``, the PRIOR body carries a
+    ``## Goal`` H2 (:func:`_has_goal_h2` — the same ``line.strip() ==
+    GOAL_H2_NAME`` semantics as :func:`_inject_or_replace_goal_h2`), and
+    the new (frontmatter-stripped) body does not, the write raises
+    :class:`GoalH2DropError` BEFORE any side effect (in particular, no
+    ``original-body.md`` snapshot is written on refusal). Pass
+    ``allow_goal_drop=True`` (CLI: ``--allow-goal-drop``) for a deliberate
+    drop — e.g. the workflow-v2 report write, whose report-v1 skeleton
+    carries ``## Motivation:`` instead of ``## Goal`` (the ``goal:``
+    frontmatter survives regardless). Paper-stub writes are auto-exempt
+    via :func:`is_paper_task`. The guard fires ONLY on has→lacks
+    transitions: a grandfathered v3/legacy ``kind: experiment`` body that
+    lacks ``## Goal`` on the PRIOR side is DELIBERATELY exempt — do not
+    "fix" the prior-lacks exemption.
+
     Note: this function preserves the EXISTING frontmatter on body.md.
     If you need to change frontmatter fields, use the dedicated mutators
     (`set_title`, `set_clean_result`, `add_tag`, `remove_tag`,
@@ -3613,7 +4152,7 @@ def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) ->
     """
     with _locked():
         path = find_task_path(task_id) / "body.md"
-        fm, _ = _read_body(path)
+        fm, prior_body = _read_body(path)
         # Carry the paper-opt-in keys forward from the incoming body's
         # frontmatter so a paper-stub write does not silently drop
         # ``paper: true`` (incident #657). Parse defensively — a malformed
@@ -3625,12 +4164,30 @@ def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) ->
         for key in _SET_BODY_ROUNDTRIP_KEYS:
             if key in incoming_fm and incoming_fm[key] is not None:
                 fm[key] = incoming_fm[key]
+        # The frontmatter strip is hoisted ABOVE the snapshot copy so a
+        # Goal-drop refusal writes NOTHING (no original-body.md side
+        # effect — pinned by test_set_body_goal_drop_refusal_writes_no_snapshot).
+        body_text = _strip_leading_frontmatter_blocks(new_body)
+        if (
+            not allow_goal_drop
+            and fm.get("kind") == "experiment"
+            and not is_paper_task(fm)  # paper-stub write legitimately lacks ## Goal
+            and _has_goal_h2(prior_body)
+            and not _has_goal_h2(body_text)
+        ):
+            raise GoalH2DropError(
+                f"set-body refused for task #{task_id}: the new body removes the "
+                f"'{GOAL_H2_NAME}' H2 present in the prior kind:experiment body. "
+                "The Goal is the canonical target every downstream agent reads "
+                "(incident #1112). Either keep the Goal section in the new body, "
+                "or pass allow_goal_drop=True / --allow-goal-drop for a "
+                "deliberate drop."
+            )
         touched: list[Path] = [path]
         if snapshot_original:
             orig = path.parent / "original-body.md"
             shutil.copy2(path, orig)
             touched.append(orig)
-        body_text = _strip_leading_frontmatter_blocks(new_body)
         _write_body(path, fm, body_text if body_text.endswith("\n") else body_text + "\n")
         # Keep REGISTRY in sync when the paper opt-in (or abstract) landed —
         # the denormalized ``paper``/``abstract``/``title`` surfaces feed the
@@ -3756,6 +4313,18 @@ def set_clean_result(task_id: int, value: bool = True, *, allow_paper_warn: bool
 
 
 GOAL_H2_NAME = "## Goal"
+
+
+def _has_goal_h2(text: str) -> bool:
+    """True when any line of ``text`` is exactly ``## Goal`` after strip.
+
+    The SAME line-match semantics as :func:`_inject_or_replace_goal_h2`
+    (its ``line.strip() == GOAL_H2_NAME`` check) — the ``set_body``
+    Goal-drop guard must recognize exactly the H2 shape the Goal
+    machinery (``set_goal`` / the Step 0c gate) installs, never a new
+    regex. ``### Goal`` / ``## Goals`` / ``## Goal extra`` do NOT match.
+    """
+    return any(line.strip() == GOAL_H2_NAME for line in text.splitlines())
 
 
 def _normalize_trailing_newline(text: str) -> str:
@@ -4858,6 +5427,13 @@ def _git_commit(paths: list[Path], message: str) -> None:
     commit (TOCTOU) gets a single re-wait + one FINAL retry keyed on the
     partial-commit stderr signature.
 
+    After a successful commit (and, when routed, the CAS advance) a
+    post-commit LANDING CHECK (#1100, ``_warn_if_commit_stranded``) verifies
+    the new commit is reachable from ``refs/heads/main`` and warns LOUDLY —
+    stderr ERROR + a forensic row in ``STRANDED_COMMITS_LOG`` — when it is
+    not. Warn-only and fail-open by contract: it can never make the mutation
+    fail. Disable per-process with ``EPM_TASKPY_LANDING_CHECK=0``.
+
     Set TASK_PY_NO_COMMIT=1 to skip the commit entirely (useful in tests).
     Set TASK_PY_AUTO_PUSH=1 to also push after the commit.
     """
@@ -4905,8 +5481,77 @@ def _git_commit(paths: list[Path], message: str) -> None:
     if routed:
         new_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip()
         _advance_main_ref(repo, old_sha, new_sha, env)
+    _warn_if_commit_stranded(full_msg, routed=routed)
     if os.environ.get("TASK_PY_AUTO_PUSH") == "1":
         _run_git(["push"], check=False)
+
+
+def _warn_if_commit_stranded(message: str, *, routed: bool) -> None:
+    """Post-commit landing check (#1100): warn LOUDLY — never raise — when
+    the commit that just landed on HEAD is not reachable from
+    refs/heads/main.
+
+    The #844 branch guard routes commits to main and #1030's CAS defends the
+    routed leg, but nothing verifies the PRIMARY-path landing spot, and the
+    resolver's (pid, cwd) cache means a checkout switched under a long-lived
+    process commits onto the wrong branch silently — the strand class behind
+    #1083's 15-problem registry drift. This tripwire closes the detection
+    gap: stderr ERROR + a forensic row in STRANDED_COMMITS_LOG at creation
+    time, instead of the next manual `task.py audit`.
+
+    FAIL-OPEN BY CONTRACT: this guard must never make a lifecycle mutation
+    fail that would otherwise succeed. Every internal error (git failure,
+    sidecar OSError, anything) degrades to _log.warning. Disable entirely
+    with EPM_TASKPY_LANDING_CHECK=0.
+    """
+    if os.environ.get(_LANDING_CHECK_ENV, "").strip() == "0":
+        return
+    try:
+        head = _run_git(["rev-parse", "HEAD"], check=False)
+        if head.returncode != 0:
+            _log.warning("landing check: could not resolve HEAD (rc=%s); skipping", head.returncode)
+            return
+        sha = head.stdout.strip()
+        probe = _run_git(["merge-base", "--is-ancestor", sha, "refs/heads/main"], check=False)
+        if probe.returncode == 0:
+            return  # reachable from main — the invariant holds (hot path, ~7ms)
+        kind = "stranded" if probe.returncode == 1 else "unverifiable"
+        ref = _run_git(["rev-parse", "--abbrev-ref", "HEAD"], check=False)
+        head_ref = ref.stdout.strip() if ref.returncode == 0 else "<unknown>"
+        _log.error(
+            "task.py LANDING CHECK: commit %s (%r) is NOT reachable from "
+            "refs/heads/main (HEAD ref: %s, routed=%s, probe rc=%s). The "
+            "mutation is durable in the working tree but its COMMIT is "
+            "stranded off main. Recover with a SINGLE-COMMIT "
+            "`git cherry-pick %s` onto main (a merge-commit strand needs "
+            "manual mainline selection via -m; do NOT `git merge %s` — a "
+            "branch-wide merge can union-import the branch's whole "
+            "task-ledger state, the #1083 husk class), then verify with "
+            "`git merge-base --is-ancestor %s main` and run `task.py audit` "
+            "(--repair --apply) if registry drift is reported. Recorded in %s.",
+            sha[:12],
+            message,
+            head_ref,
+            routed,
+            probe.returncode,
+            sha[:12],
+            head_ref,
+            sha[:12],
+            STRANDED_COMMITS_LOG,
+        )
+        row = {
+            "ts": _utcnow_iso(),
+            "kind": kind,
+            "sha": sha,
+            "head_ref": head_ref,
+            "routed": routed,
+            "message": message,
+            "probe_rc": probe.returncode,
+            "probe_stderr_tail": (probe.stderr or "")[-300:],
+        }
+        _append_jsonl_line(STRANDED_COMMITS_LOG, row)
+    except Exception:
+        _log.warning("landing check failed (fail-open; mutation unaffected)", exc_info=True)
 
 
 def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: int, op: str) -> bool:
@@ -5418,6 +6063,7 @@ __all__ = [
     "TASKS_DIR",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "TERMINAL_STATUSES",
     "USER_INITIATED_FOLLOWUP_SOURCES",
+    "GoalH2DropError",
     "NewTaskRequest",
     "ReconcileReport",
     "RegistryChange",

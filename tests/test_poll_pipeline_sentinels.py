@@ -4056,3 +4056,497 @@ def test_sentinel_drain_shell_extra_globs_appended() -> None:
     assert f"for f in /workspace/logs/issue-610-*.json {fallback}; do" in script
     # The .processed exclusion still guards every glob's matches.
     assert "*.processed) continue" in script
+
+
+# ── drain: #1095 real epm:results version-collision rewrite (max+1) ─────────
+#
+# #1095: pod-side dispatchers hardcode ``"version": 1`` in their results
+# sentinels (they cannot read events.jsonl — the no-pod-side-task.py rule),
+# and the drain used to thread explicit versions verbatim — so on a
+# multi-round task every real ``epm:results`` sentinel after round 1 landed
+# BELOW the existing max and the STALE higher-version row stayed
+# resume-authoritative (markers.md highest-version-per-kind; #825 landed
+# three pod-sentinel v1 rows under an existing v2). The fix: a REAL
+# ``epm:results`` sentinel whose declared version collides at-or-below the
+# existing max is re-derived as max+1 at post (``version=None`` ->
+# ``post_event`` derives under flock, the tested #975 path), with the
+# declared version preserved as the ``sentinel_declared_version`` extra.
+# Smoke/dryrun/phase-progress sentinels (gate NAME / top-level ``smoke``
+# field / smoke filename), above-max declared versions, and every OTHER
+# kind post verbatim.
+#
+# Test-construction discipline (plan #1095 §5): the ``_sentinel_body``
+# fixture derives ``blocks_pipeline`` from ``gate`` (line ~82), which under
+# an earlier leg design made verbatim-expectation tests pass VACUOUSLY
+# (excluded before the leg under test was consulted). Two rules:
+# (1) every exclusion-leg test constructs its body/path to defeat ALL legs
+# except the one under test and asserts exactly-one-leg-active;
+# (2) every rewrite-path and verbatim-scoping test asserts NO leg is active
+# on its constructed body/path — so its expectation is discriminating (a
+# future leg deletion, or a rewrite widened to all kinds, fails here).
+
+
+def _assert_no_exclusion_leg(path: str, body: dict[str, Any]) -> None:
+    """Discipline rule 2: the constructed (path, body) trips NO exclusion
+    leg, so the test's rewrite (or verbatim) expectation exercises the
+    max-comparison itself, never an accidental exclusion."""
+    legs = pp._results_rewrite_exclusion_legs(path, body)
+    assert not any(legs.values()), legs
+
+
+def test_drain_real_results_below_max_lands_at_max_plus_one(fake_repo) -> None:
+    """T1 (headline, AC1): a real enveloped ``epm:results`` sentinel
+    declaring version 1 onto an events.jsonl that already carries v3 lands
+    at **v4** (max+1) with ``sentinel_declared_version == 1`` + the #1084
+    extras, via the REAL ``post_event`` on a git-init tmp repo."""
+    _repo, tw = fake_repo
+    assert pp.post_event is tw.post_event
+    assert pp.list_events is tw.list_events
+
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="rewrite e2e"))
+    tw.post_event(new_id, "epm:results", version=3, by="seed")
+
+    sentinel_path = f"/workspace/logs/issue-{new_id}-epm_results-1700003001.json"
+    body = _sentinel_body(kind="epm:results", version=1, gate=None, note="round 2 results")
+    _assert_no_exclusion_leg(sentinel_path, body)
+    renamed: list[str] = []
+
+    processed, gate = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, json.dumps(body))],
+        mark_processed=lambda path: renamed.append(path) or True,
+    )
+
+    assert processed == 1
+    assert gate is None
+    assert renamed == [sentinel_path]
+    rows = [e for e in tw.list_events(new_id) if e["kind"] == "epm:results"]
+    assert [e["version"] for e in rows] == [3, 4]
+    landed = rows[-1]
+    assert landed["sentinel_declared_version"] == 1  # forensic audit trail
+    assert landed["by"] == "experiment-implementer"  # by preserved
+    assert landed["sentinel_fp"] == pp._sentinel_fingerprint(sentinel_path, json.dumps(body))
+    assert landed["sentinel_path"] == sentinel_path
+    # Structural: the drain threads no ``part`` field, so multi-part results
+    # sentinels are impossible on this channel by construction (plan §3.7).
+    assert "part" not in landed
+
+
+def test_drain_real_results_equal_to_max_lands_at_max_plus_one(fake_repo) -> None:
+    """T2: declared == max is a LIVE collision (same kind+version, different
+    content — the multi-round shape) and rewrites too — pins ``<=``, not
+    ``<``."""
+    _repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="eq-max e2e"))
+    tw.post_event(new_id, "epm:results", version=3, by="seed")
+
+    sentinel_path = f"/workspace/logs/issue-{new_id}-epm_results-1700003002.json"
+    body = _sentinel_body(kind="epm:results", version=3, gate=None, note="collides at max")
+    _assert_no_exclusion_leg(sentinel_path, body)
+
+    processed, _gate = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, json.dumps(body))],
+        mark_processed=lambda _path: True,
+    )
+
+    assert processed == 1
+    rows = [e for e in tw.list_events(new_id) if e["kind"] == "epm:results"]
+    assert [e["version"] for e in rows] == [3, 4]
+    assert rows[-1]["sentinel_declared_version"] == 3
+
+
+def test_drain_real_results_above_max_keeps_declared_version(fake_repo) -> None:
+    """T3 (AC2, constraint 6): a declared version strictly ABOVE the
+    existing max is legitimate threading — posts verbatim, with NO rewrite
+    extra on the landed row."""
+    _repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="above-max e2e"))
+    tw.post_event(new_id, "epm:results", version=3, by="seed")
+
+    sentinel_path = f"/workspace/logs/issue-{new_id}-epm_results-1700003003.json"
+    body = _sentinel_body(kind="epm:results", version=7, gate=None, note="threaded higher")
+    _assert_no_exclusion_leg(sentinel_path, body)
+
+    processed, _gate = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, json.dumps(body))],
+        mark_processed=lambda _path: True,
+    )
+
+    assert processed == 1
+    rows = [e for e in tw.list_events(new_id) if e["kind"] == "epm:results"]
+    assert [e["version"] for e in rows] == [3, 7]
+    assert "sentinel_declared_version" not in rows[-1]
+
+
+def test_drain_real_results_no_prior_rows_keeps_declared_version(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """T4: with NO prior ``epm:results`` rows (max 0), a declared 1 posts
+    verbatim with NO kwargs beyond the #1084 pair — first-round behavior is
+    byte-identical to pre-#1095 (the single-round no-op)."""
+    sentinel_path = "/workspace/logs/issue-444-epm_results-1700003004.json"
+    body = _sentinel_body(kind="epm:results", version=1, gate=None, note="round 1 results")
+    _assert_no_exclusion_leg(sentinel_path, body)
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
+
+    processed, gate = pp.drain_sentinels_via(
+        issue=444,
+        list_sentinels=lambda: [(sentinel_path, json.dumps(body))],
+        mark_processed=lambda _path: True,
+    )
+
+    assert processed == 1
+    assert gate is None
+    post_mock.assert_called_once_with(
+        444,
+        "epm:results",
+        version=1,
+        by="experiment-implementer",
+        note="round 1 results",
+        sentinel_fp=pp._sentinel_fingerprint(sentinel_path, json.dumps(body)),
+        sentinel_path=sentinel_path,
+    )
+
+
+@pytest.mark.parametrize(
+    ("gate", "smoke", "filename", "leg"),
+    [
+        # Leg 1 — gate NAME (all five spellings; #641 convention shape:
+        # blocks_pipeline False on the informational signal).
+        ("smoke", None, "issue-444-epm_results-1700003101.json", "gate_name"),
+        ("dryrun", None, "issue-444-epm_results-1700003102.json", "gate_name"),
+        ("dry-run", None, "issue-444-epm_results-1700003103.json", "gate_name"),
+        ("dry_run", None, "issue-444-epm_results-1700003104.json", "gate_name"),
+        ("phase", None, "issue-444-epm_results-1700003105.json", "gate_name"),
+        # Leg 2 — truthy TOP-LEVEL smoke field (issue667's smoke mode:
+        # non-smoke filename, no smoke/dryrun gate name).
+        (None, True, "issue-444-epm_results-1700003106.json", "smoke_field"),
+        # Leg 3 — smoke filename (documented name + the independent
+        # ``-smoke-`` substring form).
+        (None, None, "issue-444-smoke-results.json", "smoke_filename"),
+        (None, None, "issue-444-smoke-phase2.json", "smoke_filename"),
+    ],
+)
+def test_drain_smoke_dryrun_results_sentinel_keeps_declared_version(
+    monkeypatch: pytest.MonkeyPatch,
+    gate: str | None,
+    smoke: bool | None,
+    filename: str,
+    leg: str,
+) -> None:
+    """T5 (AC3, constraint 1): a smoke/dryrun/phase-progress ``epm:results``
+    sentinel keeps its declared version even when <= max — a rewrite would
+    land the smoke row ABOVE the production results rows. Each param is
+    constructed per discipline rule 1: all other legs defeated, exactly the
+    intended leg active."""
+    sentinel_path = f"/workspace/logs/{filename}"
+    body = _sentinel_body(kind="epm:results", version=1, gate=gate, note="smoke-ish signal")
+    if gate is not None:
+        body["blocks_pipeline"] = False  # the #641 informational-signal shape
+    if smoke is not None:
+        body["smoke"] = smoke
+    legs = pp._results_rewrite_exclusion_legs(sentinel_path, body)
+    assert sum(legs.values()) == 1 and legs[leg], legs
+
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    # Seeded max 3 — a REAL sentinel declaring 1 would rewrite; the
+    # exclusion must keep it verbatim (no row with sentinel_fp, so the
+    # #1084 dedupe map stays empty).
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [{"kind": "epm:results", "version": 3}])
+
+    processed, _gate = pp.drain_sentinels_via(
+        issue=444,
+        list_sentinels=lambda: [(sentinel_path, json.dumps(body))],
+        mark_processed=lambda _path: True,
+    )
+
+    assert processed == 1
+    post_mock.assert_called_once()
+    assert post_mock.call_args.kwargs["version"] == 1  # verbatim — never above max
+    assert "sentinel_declared_version" not in post_mock.call_args.kwargs
+
+
+def test_drain_results_null_version_still_loud(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T6 (AC4, constraint 3): ``int(data["version"])`` runs FIRST — before
+    the exclusion legs and the max read — so a non-conforming
+    ``"version": null`` on kind ``epm:results`` keeps the loud #975
+    TypeError even with prior rows present; ``post_event`` is never
+    called."""
+    body = {
+        "sentinel_schema_version": 1,
+        "kind": "epm:results",
+        "version": None,  # json.dumps -> null: key PRESENT, value null
+        "note": "x",
+    }
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [{"kind": "epm:results", "version": 3}])
+
+    with pytest.raises(TypeError):
+        pp.drain_sentinels_via(
+            issue=444,
+            list_sentinels=lambda: [
+                ("/workspace/logs/issue-444-epm_results-1700003201.json", json.dumps(body))
+            ],
+            mark_processed=lambda _path: True,
+        )
+
+    post_mock.assert_not_called()
+
+
+def test_drain_rewrite_replay_after_rename_failure_posts_no_duplicate(fake_repo) -> None:
+    """T7 (AC5, constraint 2): the #1084 fp dedupe survives the rewrite —
+    tick 1 rewrites a below-max real results sentinel to v4 and the rename
+    FAILS; the tick-2 replay of the identical (path, body) fp-hits and
+    posts NOTHING new (versions stay [3, 4]), retrying the rename only.
+    The fp is keyed on the RAW sentinel, so the landed-version rewrite
+    never enters the key."""
+    _repo, tw = fake_repo
+    assert pp.post_event is tw.post_event
+    assert pp.list_events is tw.list_events
+
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="rewrite replay e2e"))
+    tw.post_event(new_id, "epm:results", version=3, by="seed")
+    sentinel_path = f"/workspace/logs/issue-{new_id}-epm_results-1700003301.json"
+    body_dict = _sentinel_body(kind="epm:results", version=1, gate=None, note="round 2 results")
+    _assert_no_exclusion_leg(sentinel_path, body_dict)
+    body = json.dumps(body_dict)
+
+    # Tick 1: post succeeds (rewritten to v4), rename FAILS (W1 window).
+    processed, _gate = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, body)],
+        mark_processed=lambda _path: False,
+    )
+    assert processed == 1
+    versions = [e["version"] for e in tw.list_events(new_id) if e["kind"] == "epm:results"]
+    assert versions == [3, 4]
+
+    # Tick 2: identical (path, body) re-drained; rename now succeeds.
+    renamed: list[str] = []
+    processed2, _gate2 = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, body)],
+        mark_processed=lambda path: renamed.append(path) or True,
+    )
+    assert processed2 == 1
+    assert renamed == [sentinel_path]
+    versions2 = [e["version"] for e in tw.list_events(new_id) if e["kind"] == "epm:results"]
+    assert versions2 == [3, 4], "the replay must not land a fresh max+1 (v5)"
+
+
+def test_drain_two_below_max_results_sentinels_same_tick_land_sequential(fake_repo) -> None:
+    """T8: TWO distinct real results sentinels both declaring 1 in ONE
+    listing land at 4 then 5 — the existing-max read is per-sentinel fresh
+    (not cached across the drain loop), and ``post_event`` committed the
+    first durably before the second's read (plan §3.5)."""
+    _repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="two-sentinel e2e"))
+    tw.post_event(new_id, "epm:results", version=3, by="seed")
+
+    path_a = f"/workspace/logs/issue-{new_id}-epm_results-1700003401.json"
+    path_b = f"/workspace/logs/issue-{new_id}-epm_results-1700003402.json"
+    body_a = _sentinel_body(kind="epm:results", version=1, gate=None, note="pass A results")
+    body_b = _sentinel_body(kind="epm:results", version=1, gate=None, note="pass B results")
+    _assert_no_exclusion_leg(path_a, body_a)
+    _assert_no_exclusion_leg(path_b, body_b)
+
+    processed, _gate = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [
+            (path_a, json.dumps(body_a)),
+            (path_b, json.dumps(body_b)),
+        ],
+        mark_processed=lambda _path: True,
+    )
+
+    assert processed == 2
+    rows = [e for e in tw.list_events(new_id) if e["kind"] == "epm:results"]
+    assert [e["version"] for e in rows] == [3, 4, 5]
+    assert [e.get("sentinel_declared_version") for e in rows] == [None, 1, 1]
+
+
+def test_drain_two_above_max_results_sentinels_same_tick_second_collides(fake_repo) -> None:
+    """T8 optional arm (plan §5): two same-tick sentinels each declaring
+    ``existing_max + 1`` (= 4) — the first posts verbatim at 4; the second
+    now collides (4 <= 4) against the FRESH max read and lands 5. Pins the
+    per-sentinel fresh-max-read on the above-max-then-collision path."""
+    _repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="fresh-max e2e"))
+    tw.post_event(new_id, "epm:results", version=3, by="seed")
+
+    path_a = f"/workspace/logs/issue-{new_id}-epm_results-1700003501.json"
+    path_b = f"/workspace/logs/issue-{new_id}-epm_results-1700003502.json"
+    body_a = _sentinel_body(kind="epm:results", version=4, gate=None, note="threaded A")
+    body_b = _sentinel_body(kind="epm:results", version=4, gate=None, note="threaded B")
+    _assert_no_exclusion_leg(path_a, body_a)
+    _assert_no_exclusion_leg(path_b, body_b)
+
+    processed, _gate = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [
+            (path_a, json.dumps(body_a)),
+            (path_b, json.dumps(body_b)),
+        ],
+        mark_processed=lambda _path: True,
+    )
+
+    assert processed == 2
+    rows = [e for e in tw.list_events(new_id) if e["kind"] == "epm:results"]
+    assert [e["version"] for e in rows] == [3, 4, 5]
+    assert "sentinel_declared_version" not in rows[1]  # first: legit above-max
+    assert rows[2]["sentinel_declared_version"] == 4  # second: fresh-max collision
+
+
+def test_drain_progress_kind_below_max_keeps_declared_version(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """T9 (scoping): the rewrite is ``epm:results``-ONLY — an ``epm:progress``
+    sentinel declaring 1 under an existing progress v3 posts verbatim with
+    no extra kwargs. The no-leg-active assert is REQUIRED here: it makes
+    this test discriminate against a rewrite widened to all kinds, rather
+    than passing via accidental exclusion."""
+    sentinel_path = "/workspace/logs/issue-444-epm_progress-1700003601.json"
+    body = _sentinel_body(kind="epm:progress", version=1, gate=None, note="phase=eval")
+    _assert_no_exclusion_leg(sentinel_path, body)
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [{"kind": "epm:progress", "version": 3}])
+
+    processed, _gate = pp.drain_sentinels_via(
+        issue=444,
+        list_sentinels=lambda: [(sentinel_path, json.dumps(body))],
+        mark_processed=lambda _path: True,
+    )
+
+    assert processed == 1
+    post_mock.assert_called_once_with(
+        444,
+        "epm:progress",
+        version=1,
+        by="experiment-implementer",
+        note="phase=eval",
+        sentinel_fp=pp._sentinel_fingerprint(sentinel_path, json.dumps(body)),
+        sentinel_path=sentinel_path,
+    )
+
+
+def test_drain_results_events_read_failure_falls_open_to_verbatim(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """T10 (fail-open, plan §3.5): an events read failure in the max lookup
+    keeps the declared version VERBATIM (pre-#1095 behavior) with a loud
+    ``log.error`` — a version-hygiene read failure must never block or lose
+    a marker. (The #1084 fp map read fails open to ``{}`` via the same
+    raising stub; the two fail-opens compose.)"""
+    sentinel_path = "/workspace/logs/issue-444-epm_results-1700003701.json"
+    body = _sentinel_body(kind="epm:results", version=1, gate=None, note="round N results")
+    _assert_no_exclusion_leg(sentinel_path, body)
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    monkeypatch.setattr(
+        pp, "list_events", MagicMock(side_effect=RuntimeError("events.jsonl unreadable"))
+    )
+
+    with caplog.at_level(logging.ERROR, logger="poll_pipeline"):
+        processed, _gate = pp.drain_sentinels_via(
+            issue=444,
+            list_sentinels=lambda: [(sentinel_path, json.dumps(body))],
+            mark_processed=lambda _path: True,
+        )
+
+    assert processed == 1
+    post_mock.assert_called_once()
+    assert post_mock.call_args.kwargs["version"] == 1  # verbatim (fail-open)
+    assert "sentinel_declared_version" not in post_mock.call_args.kwargs
+    assert any("version-collision events read failed" in r.getMessage() for r in caplog.records), (
+        "the fail-open must be LOUD"
+    )
+
+
+def test_drain_real_results_rewrite_oversize_pointer_preserves_declared_version(
+    fake_repo,
+) -> None:
+    """T11 (oversize + rewrite): a below-max real results sentinel whose
+    ``note`` exceeds the 50,000-char cap degrades through
+    ``_persist_oversize_note`` — the pointer marker still derives max+1
+    (v4 above the seeded v3) AND keeps the ``sentinel_declared_version``
+    audit extra (the §3.7 ``declared_version`` threading), the full note is
+    persisted to the task artifact, and the sentinel is renamed."""
+    _repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="oversize rewrite e2e"))
+    tw.post_event(new_id, "epm:results", version=3, by="seed")
+
+    sentinel_path = f"/workspace/logs/issue-{new_id}-epm_results-1700003801.json"
+    full_note = "x" * (pp.EVENT_NOTE_MAX + 1)
+    body = _sentinel_body(kind="epm:results", version=1, gate=None, note=full_note)
+    _assert_no_exclusion_leg(sentinel_path, body)
+    renamed: list[str] = []
+
+    processed, _gate = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, json.dumps(body))],
+        mark_processed=lambda path: renamed.append(path) or True,
+    )
+
+    assert processed == 1
+    assert renamed == [sentinel_path]
+    rows = [e for e in tw.list_events(new_id) if e["kind"] == "epm:results"]
+    # The pointer post used version=None -> the REAL post_event derived
+    # max+1 ABOVE the seeded v3.
+    assert [e["version"] for e in rows] == [3, 4]
+    pointer = rows[-1]
+    assert pointer.get("oversize") is True
+    assert pointer["sentinel_declared_version"] == 1  # audit trail survives
+    assert pointer["sentinel_fp"] == pp._sentinel_fingerprint(sentinel_path, json.dumps(body))
+    assert pointer["sentinel_path"] == sentinel_path
+    # Full payload persisted to the task artifact.
+    task_dir = tw.find_task_path(new_id)
+    persisted = list((task_dir / "artifacts").glob("sentinel-note-epm_results-*.txt"))
+    assert len(persisted) == 1
+    assert persisted[0].read_text() == full_note
+
+
+@pytest.mark.parametrize(
+    ("gate", "note_tag"),
+    [
+        ("results", "issue664 shape"),  # gate="results", blocks_pipeline False
+        (False, "issue734/654 shape"),  # gate=False, blocks_pipeline False
+        (None, "issue597 shape"),  # gate-less; fixture derives blocks_pipeline False
+    ],
+)
+def test_drain_real_writer_blocks_pipeline_false_shapes_are_rewritten(
+    fake_repo, gate: Any, note_tag: str
+) -> None:
+    """T12 (AC8): the REAL terminal writers' house shapes —
+    ``blocks_pipeline: False`` with ``gate`` = ``"results"`` / ``False`` /
+    ``None`` (issue664 / issue734+654 / issue597) — ARE rewritten on an
+    at-or-below-max collision: ``blocks_pipeline`` alone never exempts a
+    sentinel from the rewrite. The per-param no-leg-active assert proves
+    the rewrite fires BECAUSE no exclusion leg matches."""
+    _repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="house-shape e2e"))
+    tw.post_event(new_id, "epm:results", version=3, by="seed")
+
+    sentinel_path = f"/workspace/logs/issue-{new_id}-epm_results-1700003901.json"
+    body = _sentinel_body(kind="epm:results", version=1, gate=None, note=f"terminal ({note_tag})")
+    body["gate"] = gate  # the house shape's gate value (may be non-str)
+    body["blocks_pipeline"] = False  # house style: don't park the poll loop
+    _assert_no_exclusion_leg(sentinel_path, body)
+
+    processed, drained_gate = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, json.dumps(body))],
+        mark_processed=lambda _path: True,
+    )
+
+    assert processed == 1
+    assert drained_gate is None  # blocks_pipeline False never parks
+    rows = [e for e in tw.list_events(new_id) if e["kind"] == "epm:results"]
+    assert [e["version"] for e in rows] == [3, 4]
+    assert rows[-1]["sentinel_declared_version"] == 1

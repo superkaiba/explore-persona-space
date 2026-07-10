@@ -334,7 +334,10 @@ New v3-only checks (PASS vacuously on v2/legacy):
   example forms, not the bare table). The WARN nudges the author to wrap
   the rows BEFORE the confusing downstream audit FAIL. Scoped to cells
   that WOULD match the audit's condition-code patterns so a benign
-  composition / row-count summary table never WARNs.
+  composition / row-count summary table never WARNs. As of #1227 this
+  check ALSO fires on v4 bodies, scanning `## Methodology` (label
+  `Methodology unwrapped example table (v4)`) — the one member of this
+  group that is not v3-only.
 - **check 20** (`check_v3_word_caps`): the §4 conciseness caps —
   per-Takeaways-bullet ≤30 words (WARN), per-finding prose ≤120 WARN /
   ≥180 FAIL, figure caption ≤60 (WARN), total content prose ≤800 + 250
@@ -342,7 +345,8 @@ New v3-only checks (PASS vacuously on v2/legacy):
   code, `<details>` bodies, captions. The Takeaways 3-6 bullet COUNT is
   owned by check 3's `check_v3_structure` (one authoritative count).
   (v4 twin `check_v4_word_caps`: same caps over Takeaways + Goal +
-  Results, `## Methodology` excluded; its round count reads
+  Results, `## Methodology` excluded, plus a v4-only per-Takeaways-bullet
+  ≥100-word hard-FAIL tier (#825); its round count reads
   `epm:same-issue-followup-run` markers and/or the footer round clauses,
   max-reconciled — the Rounds-table read binds v3 only. It needs the
   `issue` number for the events leg, so it is dispatched separately in
@@ -547,7 +551,11 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   (listed )?at the pinned revision" — whole-prefix — and "N files
   (listed )?per namespace" — each backtick `dir/` namespace named in the
   link TEXT is probed at `<link-prefix>/<ns>` and must hold exactly N
-  files; no extractable namespaces → an `unverified` note, never a WARN)
+  files; no extractable namespaces → an `unverified` note, never a WARN;
+  or a backtick `dir/` sub-path token whose parenthetical OPENS with the
+  count-noun, bound to the nearest preceding hex-pinned `/tree/<sha>`
+  markdown link on the same footer row — bracket-free, newline-free,
+  ≤400-char gap — and probed at `<link-prefix>/<sub-path>`, #1143)
   must match a files-only scoped Hub tree count at the pinned revision —
   the same bounded raw tree-endpoint probe checks 23/25 use (#733; never
   the SDK `list_repo_tree` / `list_repo_files`), counted EXHAUSTIVELY with
@@ -565,7 +573,9 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   Incidents: task #931 shipped 528/10/3/198 where the pinned tree holds
   515/9/2/197 — folder entries counted as files (#1008); task #833 shipped
   "908 files listed per namespace" where each namespace holds 891 blobs +
-  17 directory entries (#1088).
+  17 directory entries (#1088); task #1112 shipped "(7,372 files: …)"
+  after a backtick `raw_completions/` token in the pinned-bucket footer
+  row where the scoped tree holds 7,165 files + 207 folders (#1143).
 
 - **check 31** (`check_orphaned_per_unit_figures`, WARN): the INVERSE
   direction of checks 4b/22/29 (which verify what the body CITES) —
@@ -615,6 +625,29 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `divergence_bank_queries.json` at the pinned eval_results@5b62649 tree
   while the file lives only in git (#1016).
 
+- **check 33** (`check_figure_prose_numerics_vs_sidecar`, WARN): bolded
+  DECIMALS in a figure's what-is-plotted prose window — the
+  previous-figure-bounded beat-1 slice of its enclosing `### <result>` H3
+  plus the blockquote caption (`_beat1_prose_window`) — must each appear
+  among the numeric values the figure's sha-pinned `.meta.json` sidecar
+  records as plotted (`points`/`rows` rows, key-agnostic numeric leaves).
+  PER-NUMERIC firing: WARN when >=1 bolded decimal matches NO plotted value
+  under printed-precision half-ulp rounding + sign-insensitive + percent
+  (x100 / /100) variants + a sci-notation relative-tolerance branch; percent
+  variants never match a grouped-bar layout x-position, and a bolded decimal
+  matching an EARLIER same-H3 figure's plotted values is suppressed as
+  cross-figure interpretation bleed. Integers / version-shaped tokens are
+  never scanned (bolded decimals only); unbolded caption numerics are a
+  named recall sacrifice (precision over recall, the check-32 posture).
+  Per-figure opt-out: the literal `<!-- prose-numerics: derived -->`
+  anywhere in the figure's scanned window (beat-1 prose or caption). WARN,
+  never FAIL; silent skip on missing / unparsable / truncated sidecars (the
+  check-24 convention, NOT check 26's loud missing-sidecar FAIL) and NO-OP
+  PASS offline / stdin / no inline figures. Incident: #825 r1 (task #1107)
+  — prose+caption cited transfer fractions 0.057/0.109 while the pinned
+  figure plotted 0.231 / a -4.53-clipped bar; checks 24 (rendered text) and
+  26 (structure) are blind to plotted-NUMBER drift by construction.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -645,6 +678,7 @@ import time
 import urllib.error
 import urllib.request
 from collections import Counter
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
@@ -806,6 +840,13 @@ V3_TAKEAWAYS_MIN_BULLETS = 3
 V3_TAKEAWAYS_MAX_BULLETS = 6
 # Per-Takeaways-bullet word cap (WARN).
 V3_TAKEAWAYS_BULLET_MAX_WORDS = 30
+# Per-Takeaways-bullet hard-FAIL tier — v4 bodies ONLY (v3/v2/legacy stay
+# WARN-only per the forward-only rule). A same-issue follow-up re-fold can
+# accrete a paragraph-bullet that rides the 30-word WARN indistinguishably
+# from a mild overrun (#825 r1: a 263-word bullet WARNed identically to a
+# 35-word one); >=100 words is structural misuse of a bullet, not a
+# tightening request.
+V4_TAKEAWAYS_BULLET_FAIL_WORDS = 100
 # Per-finding prose word cap (excl. caption / code / `<details>` bodies):
 # WARN at the soft cap, FAIL at the hard cap.
 V3_FINDING_PROSE_WARN_WORDS = 120
@@ -1354,6 +1395,65 @@ def check_title_confidence(body: str) -> CheckResult:
             f"title must end with '(LOW|MODERATE|HIGH confidence)' — got: {title[-60:]!r}",
         )
     return CheckResult("title confidence tag", True, f"level={m.group(1)}")
+
+
+def check_h1_matches_frontmatter_title(body: str, fm: dict) -> CheckResult:
+    """The H1 headline and the frontmatter `title` must agree
+    (whitespace-normalized) on sentinelled clean-result bodies.
+
+    The title lives in two places — frontmatter via `task.py set-title`
+    (feeds the dashboard LIST view + REGISTRY) and the body H1 via
+    `set-body` (feeds the rendered DETAIL view). #825: a retitle without
+    an H1 edit shipped a stale headline through a full critic round.
+    Severity: FAIL on v4 bodies; WARN on grandfathered v3/v2 (forward-only
+    rule — 4 real v3/v2 bodies diverge today, incl. completed #432/#458);
+    PASS-skip on non-sentinelled bodies (pre-promotion bodies legitimately
+    have no synced H1) and on frontmatter-less input (draft / --body-stdin
+    dry runs carry no fm to compare). Normalization is whitespace collapse
+    ONLY — no case/Unicode/punctuation folding (#763's Unicode-rho vs
+    ASCII-"rho" transliteration is a REAL sync failure folding would hide).
+    """
+    name = "H1 matches frontmatter title"
+    v4 = is_v4(body)
+    sentinelled = v4 or is_v3(body) or is_v2_nested_design(body)
+    if not sentinelled:
+        return CheckResult(name, True, "not a sentinelled clean-result body — skipped")
+    if not fm:
+        return CheckResult(
+            name,
+            True,
+            "no frontmatter in input (draft / --body-stdin invocation) — "
+            "skipped; the gate-time --issue run compares against the real body.md",
+        )
+    warn_only = not v4  # forward-only: v3/v2 grandfathered to WARN
+
+    def _flag(detail: str) -> CheckResult:
+        if warn_only:
+            return CheckResult(name, True, detail + " [grandfathered v3/v2 — WARN]", is_warn=True)
+        return CheckResult(name, False, detail)
+
+    title = fm.get("title")
+    if title is None:
+        return _flag(
+            "sentinelled clean-result body has no frontmatter `title` — "
+            'run `task.py set-title <N> "<H1 text>"`'
+        )
+    h1 = find_h1_title(body)
+    if h1 is None:
+        return _flag("no H1 found — a sentinelled clean-result must open with `# <title>`")
+
+    def _norm(s: object) -> str:
+        return " ".join(str(s).split())
+
+    if _norm(h1) != _norm(title):
+        return _flag(
+            f"H1 differs from frontmatter title (dashboard list shows the frontmatter "
+            f"title; the body renders the H1) — H1: {h1[:90]!r} vs title: "
+            f'{str(title)[:90]!r}. Sync via `task.py set-title <N> "<H1 text>"` '
+            f"(the promote-skill convention, H1 canonical) or re-`set-body` with the "
+            f"H1 edited if the frontmatter title is the fresher one."
+        )
+    return CheckResult(name, True, "H1 == frontmatter title (whitespace-normalized)")
 
 
 def check_required_sections(body: str) -> CheckResult:
@@ -2642,28 +2742,36 @@ def _v4_results_body(body: str) -> str | None:
     interpretation-beat WARN for the last result). This helper cuts the
     section at the footer boundary so the per-result scans see only the
     real Results content. None when `## Results` is absent.
+
+    The cut is at the ABSOLUTE line index from `_v4_footer_start_line`,
+    intersected with the section's `find_h2_sections` line range — NEVER by
+    string-matching the footer's first line: when the footer is preceded by
+    a `---` rule its first line is `---`, and a legal mid-Results `---`
+    rule between results would truncate every later result out of checks
+    11b/20/21 (#1109; masked two ≥180-word hard FAILs on #825).
     """
-    results = section_text(body, "Results")
-    if results is None:
+    lines = body.splitlines()
+    section: tuple[int, int] | None = None
+    for name, start, end in find_h2_sections(body):
+        if name.casefold() == "results":
+            section = (start, end)
+            break
+    if section is None:
         return None
-    footer = _v4_footer_text(body)
-    if not footer:
-        return results
-    # The footer text is a suffix of the Results section_text (Results is
-    # the last H2, so its section_text runs to end-of-body and contains the
-    # footer). Cut at the footer's first line within the Results text.
-    footer_first_line = footer.splitlines()[0] if footer.splitlines() else ""
-    if not footer_first_line:
-        return results
-    rlines = results.splitlines()
-    for i, line in enumerate(rlines):
-        if line.strip() == footer_first_line.strip():
-            # Drop a trailing `---` rule + blank lines just above the footer.
-            j = i - 1
-            while j >= 0 and (rlines[j].strip() == "" or rlines[j].strip() == "---"):
-                j -= 1
-            return "\n".join(rlines[: j + 1]).strip()
-    return results
+    start, end = section
+    footer = _v4_footer_start_line(body)
+    if footer is None or not (start <= footer < end):
+        # No footer, or the footer lies outside this section's range (e.g.
+        # a stray H2 after ## Results): plain section text — identical to
+        # section_text(body, "Results").
+        return "\n".join(lines[start:end]).strip()
+    # Cut at the footer start, then drop trailing `---` rule + blank lines
+    # just above it (footer chrome, not Results content).
+    rlines = lines[start:footer]
+    j = len(rlines) - 1
+    while j >= 0 and rlines[j].strip() in ("", "---"):
+        j -= 1
+    return "\n".join(rlines[: j + 1]).strip()
 
 
 def _repro_section_text(body: str) -> str | None:
@@ -5173,16 +5281,17 @@ _HF_HUB_TREE_BLOB_URL_RE = re.compile(
 # SAME Hub tree endpoint directly via `get_session().get(url, params, headers,
 # timeout=_HF_PROBE_TIMEOUT_S)` — the per-request `timeout` is now real on
 # EVERY GET, and we follow Link-header pagination OURSELVES under an outer page
-# + wall-clock cap (check 25 only; check 23 needs a single page). A page-2 429
-# surfaces as `indeterminate` (-> skip) in seconds rather than entering the
+# + wall-clock cap (checks 25/30/32, all via the shared `_hf_tree_pages`
+# generator; check 23 needs a single page). A page-2 429 surfaces as
+# `indeterminate` (-> skip) in seconds rather than entering the
 # unbounded SDK backoff. Worst-case wall <= N * _HF_PROBE_ATTEMPTS *
 # _HF_PROBE_TIMEOUT_S for check 23, <= N * _HF_PROBE_DEADLINE_S for the
-# paginating check-25 path.
+# paginating check-25/30/32 path.
 _HF_PROBE_TIMEOUT_S = 5.0  # per-request connect+read timeout (real on every GET)
 _HF_PROBE_ATTEMPTS = 2  # at most 1 retry per page on a transient / 429
 _HF_PROBE_SLEEP_S = 0.5  # tiny pause between the two attempts
-_HF_PROBE_MAX_PAGES = 8  # check-25 self-pagination page cap
-_HF_PROBE_DEADLINE_S = 12.0  # check-25 outer wall cap across all pages of ONE probe
+_HF_PROBE_MAX_PAGES = 8  # self-pagination page cap (checks 25/30/32 via _hf_tree_pages)
+_HF_PROBE_DEADLINE_S = 12.0  # outer wall cap across all pages of ONE probe (checks 25/30/32)
 # Per-process cache keyed on (repo_id, repo_type, sha, path_prefix[, keyword]).
 # Caches ONLY definitive pass/fail verdicts — a `skip` (indeterminate / throttle)
 # is NEVER cached, so a transient throttle that has since cleared is always
@@ -5212,8 +5321,11 @@ def _hf_tree_url(repo_id: str, repo_type: str, sha: str, path: str) -> str:
     `{endpoint}/api/{repo_type}s/{repo_id}/tree/{revision}{/encoded_path}`.
     The revision is left unencoded (it is a hex sha); the path is
     `quote(path, safe="")`-encoded and prefixed with `/`, empty for the root.
+    Importing the `constants` submodule explicitly makes it
+    attribute-reachable on a fresh process — a bare `import huggingface_hub`
+    does not expose the lazy submodule (#1186).
     """
-    import huggingface_hub
+    import huggingface_hub.constants
 
     endpoint = huggingface_hub.constants.ENDPOINT
     encoded_path = "/" + quote(path, safe="") if path else ""
@@ -5272,6 +5384,66 @@ def _hf_tree_get(
         next_page = r.links.get("next", {}).get("url")
         return _TreeProbeResult("ok", entries, next_page, "")
     return _TreeProbeResult("indeterminate", [], None, last_note)
+
+
+class _TreePageEvent(NamedTuple):
+    """One event from `_hf_tree_pages`: zero or more kind='page' events
+    (entries = that page's JSON tree entries), then EXACTLY ONE terminal
+    event — kind in {'exhausted', 'cap', 'not_found', 'indeterminate'}.
+    `note` is non-empty only for kind='indeterminate' (the `_hf_tree_get`
+    diagnostic); callers own every human-facing string for the other
+    terminal kinds (the deliberate per-check note asymmetry: check 25 says
+    "(no such revision)", checks 30/32 say "no such revision/path")."""
+
+    kind: str  # "page" | "exhausted" | "cap" | "not_found" | "indeterminate"
+    entries: list[dict]  # populated only for kind="page"
+    note: str  # populated only for kind="indeterminate"
+
+
+def _hf_tree_pages(
+    repo_id: str, repo_type: str, sha: str, path: str, *, recursive: bool = True
+) -> Iterator[_TreePageEvent]:
+    """Shared bounded Link-header self-pagination over the Hub tree endpoint
+    (checks 25 / 30 / 32; the #733 contract in ONE place so a 4th consumer
+    inherits it). Reads the module caps directly (`_HF_PROBE_MAX_PAGES`,
+    `_HF_PROBE_DEADLINE_S`, `_HF_PROBE_TIMEOUT_S`); per-page 429/5xx retry
+    stays inside `_hf_tree_get`. As a generator it is lazy: a caller that
+    never consumes it issues ZERO GETs (headers/URL construction and the
+    first GET all run at the first `next()`). Invariants:
+    - headers are built BEFORE the URL (`_hf_build_headers` imports
+      `huggingface_hub.utils`, making the lazy `constants` submodule
+      attribute-reachable — belt to `_hf_tree_url`'s own explicit
+      `import huggingface_hub.constants`, #1186; the ordering precedent is
+      check 23's `_hf_probe_existence` + the #1016 check-32 fix);
+    - `params` are sent on the FIRST page only (the Link rel="next" URL
+      already carries them);
+    - `exhausted` is checked BEFORE the page/deadline cap, so a listing
+      whose final page lands exactly on the cap is exhaustive, not capped;
+    - the deadline is strict `>` from just before the first GET.
+    """
+    headers = _hf_build_headers()
+    url = _hf_tree_url(repo_id, repo_type, sha, path)
+    params: dict | None = {"recursive": recursive}
+    started = time.monotonic()
+    pages = 0
+    while True:
+        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
+        if res.status == "not_found":
+            yield _TreePageEvent("not_found", [], "")
+            return
+        if res.status == "indeterminate":
+            yield _TreePageEvent("indeterminate", [], res.note)
+            return
+        yield _TreePageEvent("page", res.entries, "")
+        pages += 1
+        if res.next_page is None:
+            yield _TreePageEvent("exhausted", [], "")
+            return
+        if pages >= _HF_PROBE_MAX_PAGES or time.monotonic() - started > _HF_PROBE_DEADLINE_S:
+            yield _TreePageEvent("cap", [], "")
+            return
+        # The Link rel="next" URL already carries the params; do not re-send them.
+        url, params = res.next_page, None
 
 
 def _gather_hf_pinned_urls(body: str) -> list[tuple[str, str, str, str, str]]:
@@ -6371,6 +6543,390 @@ def check_figure_label_codes(body: str) -> CheckResult:
     return CheckResult(label, True, f"{scanned} figure sidecar(s) free of opaque config codes")
 
 
+# ─── Check 33: bolded what-is-plotted numerics vs sidecar plotted values ───
+#
+# Fourth sibling of checks 24/26/28 (same figure iteration, same
+# `_read_figure_meta_json` sidecar read, same fail-soft skip conventions).
+# Check 24 compares the sidecar's RENDERED TEXT, check 26 its STRUCTURE
+# (`_kind` aggregate); neither reads a single plotted NUMBER — so a
+# figure/prose numeric divergence (#825 r1: prose+caption cited transfer
+# fractions 0.057/0.109 while the pinned figure plotted 0.231 / -4.53-clipped)
+# passes both and survives to the multimodal LM-critic layer. Check 33 closes
+# that gap: every BOLDED DECIMAL in a figure's what-is-plotted prose window
+# must appear among the sidecar's plotted values, under a leniency stack
+# (rounding / sign / percent / sci-notation) that only ever REDUCES warns.
+
+# A markdown bold span (`**…**`); single `*` inside the span is allowed.
+_BOLD_SPAN_RE = re.compile(r"\*\*((?:[^*]|\*(?!\*))+)\*\*")
+
+# A decimal REQUIRING a decimal point; optional ASCII/unicode sign; optional
+# e-notation; optional `%` marker. The lookbehind blocks word/dot continuation
+# ("v1.2", "3.1.4"); the lookahead blocks trailing word/hyphen/dot
+# continuation ("2.5-7B") — an excluded token merely SHRINKS the scanned set
+# (leniency-safe). Integers (no decimal point) are never matched: counts /
+# n's / layer ids are the noisiest class. The unicode minus U+2212 (rendered
+# prose uses it) is accepted as a sign and normalized to ASCII `-` before
+# `float()` (`_bold_prose_decimals`); the `_APOS` convention — the escape,
+# never the literal char, in code strings.
+_UNICODE_MINUS = "\u2212"
+_BOLD_DECIMAL_RE = re.compile(
+    r"(?<![\w.])([-+" + _UNICODE_MINUS + r"]?\d+\.\d+(?:[eE][-+]?\d+)?)(\s*%)?(?![\w.-])"
+)
+
+# Per-figure opt-out phrase for check 33 — a render-invisible HTML comment,
+# detected anywhere in the figure's scanned window (the beat-1 prose before
+# the image OR its blockquote caption).
+_PROSE_NUMERICS_OPTOUT = "<!-- prose-numerics: derived -->"
+
+
+def _beat1_prose_window(rlines: list[str], img_idx: int) -> str | None:
+    """The what-is-plotted prose OWNED by the figure at ``rlines[img_idx]``:
+    text from the NEAREST preceding boundary — the enclosing ``### `` H3, or
+    the end of the PREVIOUS inline figure's blockquote caption, whichever is
+    nearer — forward to the image line, plus this figure's own blockquote
+    caption (``_figure_caption_after``). None when no ``### `` H3 precedes the
+    figure at all (no reliably-scoped window; the caller skips, mirroring
+    check 26).
+
+    Narrowed sibling of check 26's ``_enclosing_h3_prose_window`` (which is
+    NOT modified): with the full H3→figure window, a multi-figure
+    ``### <result>`` H3 bleeds EARLIER figures' beat-1 prose into LATER
+    figures' windows (#778's ``bands_monitoring_*`` false-WARNs at plan-time
+    calibration); bounding at the previous figure's caption end removes that
+    class. The region between a previous figure's caption and this image can
+    still carry the previous figure's beat-3 interpretation prose — the
+    check's prior-figure value suppression + the opt-out phrase contain that
+    residual (see ``check_figure_prose_numerics_vs_sidecar``).
+    """
+    boundary = None
+    for j in range(img_idx - 1, -1, -1):
+        if rlines[j].startswith("### "):
+            boundary = j + 1
+            break
+        if _IMAGE_RE.search(rlines[j]):
+            # Skip the previous figure's caption blockquote (+ blank lines).
+            k = j + 1
+            while k < img_idx and (rlines[k].strip() == "" or rlines[k].lstrip().startswith(">")):
+                k += 1
+            boundary = k
+            break
+    if boundary is None:
+        return None
+    # An H3 must exist somewhere above (else this figure sits outside any
+    # `### <result>` block): when the scan hit a previous IMAGE first, an H3
+    # is still required above it.
+    if not any(rlines[j].startswith("### ") for j in range(img_idx)):
+        return None
+    before = "\n".join(rlines[boundary:img_idx])
+    caption = _figure_caption_after(rlines, img_idx)
+    return f"{before}\n{caption}"
+
+
+def _bold_prose_decimals(window: str) -> list[tuple[str, float, int, bool]]:
+    """Return ``(raw_text, value, printed_decimal_places, is_percent)`` per
+    decimal found inside a BOLD span of ``window``. The unicode minus U+2212
+    is normalized to ASCII ``-``; a sci-notation token gets the sentinel
+    ``dec == -1`` (routes to the relative-tolerance branch of
+    ``_prose_value_matches``). Integers (no decimal point) and word-attached
+    tokens ("v1.2", "2.5-7B") are DELIBERATELY not scanned — see
+    ``_BOLD_DECIMAL_RE``.
+    """
+    out: list[tuple[str, float, int, bool]] = []
+    for bm in _BOLD_SPAN_RE.finditer(window):
+        for nm in _BOLD_DECIMAL_RE.finditer(bm.group(1)):
+            txt = nm.group(1).replace(_UNICODE_MINUS, "-")
+            try:
+                v = float(txt)
+            except ValueError:  # pragma: no cover — regex guarantees a float
+                continue
+            dec = -1 if "e" in txt.lower() else len(txt.split(".")[1])
+            raw = nm.group(1) + ("%" if nm.group(2) else "")
+            out.append((raw, v, dec, bool(nm.group(2))))
+    return out
+
+
+def _sidecar_plotted_values(meta: dict) -> list[tuple[float, bool]]:
+    """All finite numeric leaf values from the sidecar's ``points``/``rows``
+    point rows as ``(value, is_bar_x)`` entries, excluding the ``_group``
+    series index. Covers every ``_kind`` uniformly (bar heights, scatter/
+    line/errorbar x+y, ``error`` magnitudes) because the writer
+    (``paper_plots._build_sidecar_data``) stores every plotted quantity as a
+    numeric row value under an axis-label-derived key; strings (category /
+    label / series / ``_kind``) and JSON nulls contribute nothing.
+
+    ``is_bar_x`` is True ONLY for the entry occupying the FIRST non-meta key
+    of a ``_kind == "bar"`` row read from the modern ``points`` key — the
+    grouped-bar layout x-POSITION slot (``-0.2`` / ``0.8``-style dodge
+    offsets; the writer's ``_extract_bars`` inserts the x/category slot
+    first, falling back to the numeric patch center when tick labels miss).
+    Identity is per-ENTRY, not per-value: a bar HEIGHT that happens to EQUAL
+    an x-position keeps its own untagged entry and stays variant-eligible
+    (the r1 value-set exclusion dropped every equal value — a false-WARN
+    channel on common grouped-bar offsets). Legacy ``rows`` sidecars are
+    NEVER bar-x tagged (fail-open toward leniency — the legacy writer's key
+    order is unverified).
+
+    Returns ``[]`` when the sidecar carries no point list — the caller
+    skips. A TRUNCATED sidecar (``meta['data_truncated']`` — the writer's
+    top-level flag — or a legacy top-level ``truncated``) also returns
+    ``[]``: a matching value may sit past the ``_MAX_SIDECAR_ROWS`` cap, so
+    absence-of-match is unsound there. Top-level provenance keys (``commit``
+    / ``created`` / ``figsize`` / ``n_series`` / ``total_points``) never
+    enter — they are not point-row values (no ``_META_PROVENANCE_KEYS`` walk
+    needed).
+    """
+    if meta.get("data_truncated") or meta.get("truncated"):
+        return []
+    pts = meta.get("points")
+    from_points = isinstance(pts, list)
+    if not from_points:
+        pts = meta.get("rows")
+    if not isinstance(pts, list):
+        return []
+    vals: list[tuple[float, bool]] = []
+    for p in pts:
+        if not isinstance(p, dict):
+            continue
+        bar_row = from_points and p.get("_kind") == "bar"
+        first_data_key = True
+        for k, v in p.items():
+            if k in ("_kind", "_group"):
+                continue
+            is_first, first_data_key = first_data_key, False
+            if isinstance(v, bool) or not isinstance(v, (int, float)):
+                continue
+            if math.isfinite(v):
+                vals.append((float(v), bar_row and is_first))
+    return vals
+
+
+def _prose_value_matches(
+    value: float,
+    dec: int,
+    is_pct: bool,
+    plotted: list[tuple[float, bool]],
+) -> bool:
+    """True when the prose decimal ``(value, dec, is_pct)`` matches ANY
+    plotted entry under the check-33 leniency stack. Candidates: the value
+    itself, plus percent variants — ``value/100`` always (an ``87.9%`` prose
+    value vs a 0.879 fraction axis), and ``value*100`` only for an UNMARKED
+    decimal (a 0.879 prose fraction vs an 87.9 percent axis). Per candidate:
+
+    - printed-precision half-ulp: ``|p - c| <= 0.5·10^(-dec)·scale + 1e-12``
+      (``scale`` = the candidate's x100 / /100 factor), i.e. ``p`` rounds to
+      the prose value at its printed precision (prose ``0.23`` matches
+      plotted 0.2312);
+    - sign-insensitive twin: the same test on ``||p| - |c||`` (a "0.30 drop"
+      vs plotted -0.30);
+    - sci-notation branch (``dec == -1``): relative tolerance
+      ``|p - c| <= 1e-3·|c|``.
+
+    Variant candidates never match an entry TAGGED as a grouped-bar layout
+    x-position (``is_bar_x`` per ``_sidecar_plotted_values``): a percent
+    variant landing on a bar's layout offset is a coincidence, not evidence
+    the prose value is plotted. The exclusion is per-ENTRY
+    (identity-preserving): a bar HEIGHT whose value equals an x-position
+    keeps its own untagged entry and stays variant-eligible. The direct
+    candidate matches everything. Every clause is leniency-INCREASING
+    (reduces WARNs), so each is FP-containment-safe.
+    """
+    candidates: list[tuple[float, float, bool]] = [(value, 1.0, False)]
+    candidates.append((value / 100.0, 0.01, True))
+    if not is_pct:
+        candidates.append((value * 100.0, 100.0, True))
+    for c, scale, is_variant in candidates:
+        tol = 1e-3 * abs(c) if dec < 0 else 0.5 * 10.0 ** (-dec) * scale + 1e-12
+        for p, p_is_bar_x in plotted:
+            if is_variant and p_is_bar_x:
+                continue
+            if abs(p - c) <= tol or abs(abs(p) - abs(c)) <= tol:
+                return True
+    return False
+
+
+def _prose_numerics_for_one_figure(
+    repo: Path,
+    m: re.Match,
+    rlines: list[str],
+    img_idx: int,
+    json_cache: dict,
+    h3_prior_vals: dict[int, list[tuple[float, bool]]],
+) -> tuple[str | None, str]:
+    """Process ONE same-repo figure for check 33 (the check-26
+    ``_panel_drift_for_one_figure`` shape). Returns ``(warn_msg | None,
+    status)`` with ``status`` in {"scanned", "opted-out", "skipped"};
+    mutates ``json_cache`` (per-URL parsed-sidecar cache) and
+    ``h3_prior_vals`` (per-H3 accumulator of earlier figures' plotted
+    values, the cross-figure bleed-suppression pool) in place.
+
+    Pool semantics (deliberate): EVERY earlier same-H3 figure with a
+    readable, value-bearing, non-truncated sidecar contributes its
+    ``(value, is_bar_x)`` entries to the pool — INCLUDING figures whose own
+    window was opted out or carried no bolded decimals. The pool models what
+    earlier figures PLOT (sidecar values), which is independent of their own
+    prose-scan outcome: bleed prose after an opted-out / bold-less figure
+    can legitimately re-quote that figure's plotted values, so excluding
+    them would open a false-WARN channel against the check's precision-first
+    posture. The pool is leniency-only (suppresses WARNs, never creates
+    them). The current figure's own values enter the accumulator only AFTER
+    ``prior_vals`` snapshots a COPY, so a figure can never bleed-suppress
+    itself (r1 aliasing bug: ``get`` returned the live accumulator and
+    ``extend`` mutated it before matching, letting figure 2+'s bar-x values
+    bypass the variant exclusion through the pool's match path).
+    """
+    window = _beat1_prose_window(rlines, img_idx)
+    if window is None:
+        return None, "skipped"  # no per-result H3 above — no scoped window
+    h3_idx = next((j for j in range(img_idx - 1, -1, -1) if rlines[j].startswith("### ")), -1)
+    url = m.group(0)
+    if url not in json_cache:
+        json_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
+    meta = json_cache[url]
+    if meta is None:
+        return None, "skipped"  # no sidecar at that sha — check-24 convention
+    plotted = _sidecar_plotted_values(meta)
+    if not plotted:
+        return None, "skipped"  # value-less / truncated — absence-of-match unsound
+    prior_vals = list(h3_prior_vals.get(h3_idx, []))  # COPY — never the live accumulator
+    h3_prior_vals.setdefault(h3_idx, []).extend(plotted)
+    if _PROSE_NUMERICS_OPTOUT in window:
+        return None, "opted-out"
+    bolds = _bold_prose_decimals(window)
+    if not bolds:
+        return None, "skipped"
+    unmatched = [
+        (raw, val)
+        for (raw, val, dec, pct) in bolds
+        if not _prose_value_matches(val, dec, pct, plotted)
+        and not (prior_vals and _prose_value_matches(val, dec, pct, prior_vals))
+    ]
+    if not unmatched:
+        return None, "scanned"
+    basename = m.group("path").rsplit("/", 1)[-1]
+    vals = ", ".join(f"`{raw}`" for raw, _v in unmatched[:4]) + (" …" if len(unmatched) > 4 else "")
+    nearest = min((p for p, _bx in plotted), key=lambda p: abs(p - unmatched[0][1]))
+    return (
+        f"`{basename}`: bolded what-is-plotted value(s) {vals} not found among the "
+        f"sidecar's {len(plotted)} plotted values (nearest: {nearest:.4g}) — regenerate "
+        f"the figure or fix the prose; if the value is a derived quantity (delta / "
+        f"ratio / CI bound), add `{_PROSE_NUMERICS_OPTOUT}` to the figure's "
+        f"what-is-plotted prose or caption",
+        "scanned",
+    )
+
+
+def check_figure_prose_numerics_vs_sidecar(body: str) -> CheckResult:
+    """Check 33 (WARN): every BOLDED DECIMAL in a figure's what-is-plotted
+    prose window must appear among the numeric values the figure's
+    ``.meta.json`` sidecar (read at the URL's commit sha) records as plotted.
+
+    The scanned window is the previous-figure-bounded beat-1 slice: text from
+    the nearest boundary above the image — the enclosing ``### <result>`` H3
+    or the previous figure's caption end — down to the image, plus this
+    figure's blockquote caption (``_beat1_prose_window``). Firing is
+    PER-NUMERIC: WARN when >=1 bolded decimal matches NO plotted value under
+    the ``_prose_value_matches`` leniency stack (printed-precision rounding,
+    sign-insensitivity, percent x100 / /100 variants — never against a
+    grouped-bar layout x-position — and a sci-notation relative-tolerance
+    branch). The task-body sketch's stricter none-match-any rule was
+    calibrated OUT: on the motivating incident (#825 r1) 6 of 8 bolded values
+    matched the r1-era sidecar, so none-match-any misses the exact bug;
+    per-numeric catches it (unmatched = {0.057, 0.109}) at a measured 0%
+    false-positive rate corpus-wide (plan §4).
+
+    Cross-figure bleed containment: in a multi-figure H3 the region between a
+    previous figure's caption and this image can carry the PREVIOUS figure's
+    interpretation prose — a bolded decimal matching an EARLIER same-H3
+    figure's plotted values is treated as that bleed and suppressed
+    (leniency-safe). Every earlier same-H3 figure with a value-bearing
+    sidecar feeds the pool regardless of its own scan outcome (opted-out /
+    bold-less included — see ``_prose_numerics_for_one_figure``); the current
+    figure's own values never enter its own pool, and pool entries keep
+    their bar-x tags so percent variants never match an earlier figure's bar
+    x-positions either. A derived quantity (delta / ratio / CI bound) matching
+    NEITHER sidecar still WARNs — that is the documented FP class the
+    per-figure opt-out exists for: the literal ``<!-- prose-numerics: derived
+    -->`` ANYWHERE in the figure's scanned window (beat-1 prose or caption)
+    skips that figure.
+
+    Silent-skip conditions (check-24 convention, NOT check 26's loud
+    missing-sidecar FAIL — the trigger here, any bolded decimal, is far
+    broader than check 26's explicit structural claims): missing / unparsable
+    sidecar, ``data_truncated`` / ``truncated`` sidecar, zero bolded decimals
+    in the window, zero finite plotted values, no ``### `` H3 above the
+    figure, non-same-repo / non-sha-pinned URL. NO-OP PASS offline /
+    ``--body-stdin`` / no figure section / no inline figures. WARN never
+    FAIL. Named recall sacrifices (precision over recall, the check-32
+    posture): UNBOLDED caption numerics are not scanned (caption means /
+    aggregates are a measured guaranteed-FP class), integers are not scanned,
+    and the bleed suppression can mask a wrong beat-1 value that coincides
+    with an earlier figure's plotted values. Incident #825 r1 (task #1107):
+    prose+caption cited full-n transfer fractions 0.057/0.109 while the
+    pinned figure plotted matched-ceiling fractions 0.231 / -4.53-clipped —
+    checks 24 (rendered text) and 26 (structure) are blind to plotted-NUMBER
+    drift by construction.
+    """
+    label = "figure prose numerics vs figure sidecar (plotted-value drift)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
+    fig_at: list[tuple[str, int]] = []
+    for idx, line in enumerate(rlines):
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                fig_at.append((url, idx))
+    if not fig_at:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    warns: list[str] = []
+    scanned = 0
+    opted_out = 0
+    json_cache: dict[str, dict | None] = {}
+    # Per-H3 accumulator of EARLIER figures' (value, is_bar_x) plotted
+    # entries (bleed suppression).
+    h3_prior_vals: dict[int, list[tuple[float, bool]]] = {}
+    for url, img_idx in fig_at:
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        warn, status = _prose_numerics_for_one_figure(
+            repo, m, rlines, img_idx, json_cache, h3_prior_vals
+        )
+        if status == "scanned":
+            scanned += 1
+        elif status == "opted-out":
+            opted_out += 1
+        if warn:
+            warns.append(warn)
+    if warns:
+        preview = "; ".join(warns[:3]) + (" …" if len(warns) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(warns)} prose-vs-plotted mismatch(es) across {scanned} scanned "
+            f"figure(s): {preview}",
+            is_warn=True,
+        )
+    if scanned == 0:
+        note = f" ({opted_out} opted out)" if opted_out else ""
+        return CheckResult(
+            label,
+            True,
+            f"no figure with bolded what-is-plotted decimals AND a value-bearing sidecar{note}",
+        )
+    return CheckResult(
+        label,
+        True,
+        f"{scanned} figure(s): all bolded what-is-plotted decimals present among sidecar values",
+    )
+
+
 # A prose claim that an artifact is NOT available — "not uploaded", "was not
 # uploaded", "not separately uploaded", "cannot be audited", "cannot audit",
 # "unavailable for audit", "not available for audit". The optional
@@ -6523,9 +7079,10 @@ def _hf_probe_keyword(
     ``reduced`` cannot match ``unreduced/``; #942) in any FILE path under the
     prefix. The keyword can be nested at ANY depth (#653: the denial
     linked the tree ROOT while the file lives several levels down), so the
-    scoped recursive listing is followed across Link-header pages OURSELVES
-    under ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S`` caps — a cap hit
-    SKIPs rather than entering the SDK's unbounded backoff.
+    scoped recursive listing consumes ``_hf_tree_pages`` (the shared bounded
+    Link-header pagination under ``_HF_PROBE_MAX_PAGES`` +
+    ``_HF_PROBE_DEADLINE_S`` caps) — a cap hit SKIPs rather than entering the
+    SDK's unbounded backoff.
 
     not_found → SKIP — this call site's INDEPENDENT mapping (the deliberate
     check-23-FAIL-vs-25-SKIP asymmetry: check 25 cannot corroborate OR refute a
@@ -6533,19 +7090,17 @@ def _hf_probe_keyword(
     """
     kw_re = _audit_keyword_path_re(keyword)
     needle = path_prefix.strip("/")
-    url = _hf_tree_url(repo_id, repo_type, sha, needle)
-    params: dict | None = {"recursive": True}  # scoped to the URL's OWN sub-tree
-    headers = _hf_build_headers()
-    started = time.monotonic()
-    pages = 0
-    res = None
-    while True:
-        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
-        if res.status == "not_found":
+    for ev in _hf_tree_pages(repo_id, repo_type, sha, needle):
+        if ev.kind == "not_found":
             return "skip", f"`{repo_id}@{sha[:8]}` (no such revision)"
-        if res.status == "indeterminate":
-            return "skip", f"`{repo_id}@{sha[:8]}` ({res.note})"
-        for e in res.entries:
+        if ev.kind == "indeterminate":
+            return "skip", f"`{repo_id}@{sha[:8]}` ({ev.note})"
+        if ev.kind == "cap":
+            # Hit the page / wall-clock cap before exhausting the sub-tree.
+            return "skip", f"`{repo_id}@{sha[:8]}` (HF tree listing exceeded page/time cap)"
+        if ev.kind == "exhausted":
+            return "fail", ""  # successful, exhausted, no match → denial HOLDS (body PASS)
+        for e in ev.entries:
             path = e.get("path", "")
             if (
                 e.get("type") == "file"
@@ -6553,19 +7108,7 @@ def _hf_probe_keyword(
                 and _hf_under_prefix(path, needle)
             ):
                 return "pass", path  # denial is FALSE → body-level FAIL
-        pages += 1
-        if (
-            res.next_page is None
-            or pages >= _HF_PROBE_MAX_PAGES
-            or time.monotonic() - started > _HF_PROBE_DEADLINE_S
-        ):
-            break
-        # The Link rel="next" URL already carries the params; do not re-send them.
-        url, params = res.next_page, None
-    if res is not None and res.next_page is not None:
-        # Hit the page / wall-clock cap before exhausting the sub-tree.
-        return "skip", f"`{repo_id}@{sha[:8]}` (HF tree listing exceeded page/time cap)"
-    return "fail", ""  # successful, exhausted, no match → denial HOLDS (body PASS)
+    raise AssertionError("unreachable: _hf_tree_pages ended without a terminal event")
 
 
 def _hf_under_prefix(path: str, needle: str) -> bool:
@@ -6770,7 +7313,14 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
 # revision" in a paren AFTER the link (908 = 891 blobs + 17 directory
 # entries per namespace — list_repo_tree ENTRIES counted as files) — a
 # claim shape neither Pattern A nor B could parse; Pattern C + the
-# per-namespace gatherer close that extraction gap (#1088).
+# per-namespace gatherer close that extraction gap (#1088). #1112 then
+# shipped "(7,372 files: …)" immediately after a backtick
+# `raw_completions/` sub-path token in the pinned-bucket footer row —
+# same line as the bucket's /tree/<sha> link, ~132 chars downstream —
+# where the scoped tree at `<bucket>/raw_completions` holds 7,165 files
+# + 207 folders. No pattern reached a count bound to a backtick SUB-PATH
+# of a preceding link; Pattern D + the nearest-preceding-pinned-link
+# binder close that gap (#1143).
 
 # A markdown link whose target is an HF Hub URL. Two-stage extraction: match
 # the link structure first, then scan the TEXT for a count-noun and parse the
@@ -6840,6 +7390,38 @@ _FILES_AT_PINNED_REV_RE = re.compile(
 # trailing slash is the directory signature (a dotted token without it is a
 # FILE claim, check 32's territory).
 _BACKTICK_DIR_RE = re.compile(r"`(?P<ns>[A-Za-z0-9_\-./]{1,120}/)`")
+# Pattern D (#1143, the #1112 footer shape): a backtick DIRECTORY token
+# (trailing slash = the directory signature, same charset as
+# _BACKTICK_DIR_RE plus a leading dot-segment decline — a `./`/`../` sub
+# would join to a nonexistent probe path; a dotted token WITHOUT the slash
+# is check 32's FILE territory) immediately followed by a parenthetical
+# OPENING with the count-noun. The count scopes to <link-prefix>/<sub> at
+# the sha of the nearest preceding pinned /tree link on the same line
+# (binder below). The paren qualifier bound is 200 (Pattern B uses 80; the
+# live #1112 qualifier is ~85 chars). The count-noun lookahead is WIDER
+# than _COUNT_NOUN_RE's per-namespace decline: ANY distributive
+# "per <word>" qualifier declines (e.g. the #460 "(11 files per adapter,
+# 176 files total)" shape — per-adapter semantics, the join would target a
+# nonexistent path); A/B deliberately keep the narrow #833
+# per-namespace-only lookahead — a "per adapter"-style count in A/B
+# position is a PRE-EXISTING hole outside #1143's scope, unchanged by
+# design. Trailing negative lookahead: a paren immediately followed by an
+# HF markdown link is Pattern B's paren-before-link shape — D declines
+# rather than extracting a second, differently-scoped claim.
+_BACKTICK_SUBPATH_COUNT_PAREN_RE = re.compile(
+    r"`(?P<sub>(?!\.\.?/)[A-Za-z0-9_\-./]{1,120}/)`"
+    r"[ \t]{0,2}"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"(?!\s+(?:listed\s+)?per\s+\w+\b)"
+    r"[^()]{0,200}\)"
+    r"(?!\s{0,2}[:\u2013\u2014-]?\s{0,2}\[[^\]]{1,300}\]\(https?://huggingface\.co)",
+    re.IGNORECASE,
+)
+# Max chars between the binding link's closing ")" and the Pattern-D
+# claim's backtick token. The live #1112 gap measures ~132 chars
+# ("— `mixes/` (…), `selection/` (…), "); 400 gives ~3x margin while
+# bounding runaway binding on pathological single-line bodies.
+_SUBPATH_CLAIM_MAX_GAP = 400
 # Per-body cap on UNIQUE (repo, sha, prefix) count probes. Worst-case wall
 # arithmetic (the deadline is checked only AFTER each page fetch): one page
 # costs up to _HF_PROBE_ATTEMPTS x _HF_PROBE_TIMEOUT_S + _HF_PROBE_SLEEP_S
@@ -6857,6 +7439,43 @@ _HF_COUNT_MAX_PROBES = 8
 _HF_TREE_FILE_COUNT_CACHE: dict[tuple[str, str, str, str], tuple[int, int]] = {}
 
 
+def _nearest_preceding_pinned_tree_link(
+    stripped: str, pos: int, links: list[re.Match]
+) -> re.Match | None:
+    """Pattern-D binding (#1143): the nearest markdown HF link (from the
+    caller's precomputed ``_MD_HF_LINK_RE`` match list) ending at/before
+    ``pos``, accepted ONLY when the gap between its closing ``)`` and
+    ``pos`` (a) contains no newline (same footer row), (b) contains no
+    ``[`` or ``]`` (no markdown link starts or ends inside the binding
+    run — declines rather than binding PAST an intervening link, and a
+    claim sitting inside another link's TEXT never binds backward), and
+    (c) is <= ``_SUBPATH_CLAIM_MAX_GAP`` chars; and (d) the link parses
+    as a hex-pinned /tree link (``_HF_HUB_TREE_BLOB_URL_RE`` +
+    ``/tree/<sha>`` — same guards as ``_add``). Any failure returns None:
+    the claim stays unextracted (precision over recall; a missed claim
+    costs nothing on a WARN-only check). Nearest-only is deliberate: when
+    the nearest preceding HF link is unpinned/``/blob/``/``/tree/main``
+    the claim is DECLINED, never re-bound to an earlier link — an earlier
+    binding would have the intervening link's ``](`` in the gap anyway,
+    so decline-on-brackets and nearest-only are mutually consistent."""
+    best = None
+    for lm in links:
+        if lm.end() <= pos:
+            best = lm
+        else:
+            break  # finditer order is left-to-right
+    if best is None:
+        return None
+    gap = stripped[best.end() : pos]
+    if "\n" in gap or "[" in gap or "]" in gap or len(gap) > _SUBPATH_CLAIM_MAX_GAP:
+        return None
+    url = best.group("url").rstrip(".,;:!?")
+    m = _HF_HUB_TREE_BLOB_URL_RE.match(url)
+    if m is None or f"/tree/{m.group('sha')}" not in url:
+        return None
+    return best
+
+
 def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, str]]:
     """Extract ``(claimed_count, noun, repo_id, repo_type, sha, path_prefix)``
     tuples for numeric file/shard-count claims ADJACENT to hex-pinned HF
@@ -6865,7 +7484,7 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     shared URL regex only matches 7-40-char hex revisions, mirroring
     check 23).
 
-    Three conservative positions (precision over recall — a missed claim
+    Four conservative positions (precision over recall — a missed claim
     costs nothing, the check is a net-new WARN):
 
     - **Pattern A** — the count-noun sits INSIDE the markdown link TEXT
@@ -6886,23 +7505,45 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
       in ``_COUNT_NOUN_RE`` / ``_COUNT_PAREN_LINK_RE``, stay invisible to
       Patterns A/B (wrong semantics would compare N against the parent's
       total).
+    - **Pattern D (backtick sub-path, #1143)** — a backtick ``dir/`` token
+      immediately followed by a parenthetical OPENING with the count-noun
+      (``... — `raw_completions/` (7,165 files: …)``, the #1112 footer
+      shape), bound via ``_nearest_preceding_pinned_tree_link`` to the
+      nearest preceding hex-pinned ``/tree`` markdown link on the SAME
+      line (bracket-free, ≤``_SUBPATH_CLAIM_MAX_GAP``-char gap); the count
+      scopes to the JOINED prefix ``<link-prefix>/<sub-path>`` at the
+      link's sha — the same join the per-namespace leg uses.
 
     Known recall sacrifices (each avoids a concrete false-positive class):
     prose counts near BARE (non-markdown) HF URLs; counts AFTER the link
     OUTSIDE a link-adjacent paren carrying one of the two anchored phrases
     (generic post-link prose counts stay sacrificed); parentheticals where
     the count is not leading ("(total 515 files)") unless phrase-anchored
-    per Pattern C; compound claims ("8 eval JSONs + 2 npz"); nouns other
+    per Pattern C — mirrored by Pattern D, whose count must OPEN the
+    paren; compound claims ("8 eval JSONs + 2 npz"); nouns other
     than file(s) / shard(s) ("rows" / "completions" are RECORD counts, not
     file counts); per-namespace-qualified counts in A/B positions (see the
-    lookahead note above).
+    lookahead note above). Pattern-D-specific sacrifices: a claim whose
+    nearest preceding HF link is unpinned / ``/blob/`` / ``/tree/main``
+    (declined, never re-bound to an earlier link); a bracketed, multi-line,
+    or >``_SUBPATH_CLAIM_MAX_GAP``-char gap; a backtick token without the
+    trailing slash (check 32's FILE-claim territory); a D-paren
+    immediately followed by an HF markdown link (Pattern B's
+    paren-before-link shape wins — D's trailing lookahead declines); a
+    BARE (non-markdown) pinned HF URL in the gap neither declines nor
+    rebinds — the claim binds past it to the earlier markdown link, a
+    documented recall/precision sacrifice. Lookahead ASYMMETRY (deliberate):
+    Pattern D declines ANY distributive ``per <word>`` qualifier while A/B
+    keep the narrow #833 per-namespace-only lookahead — a "per
+    adapter"-style count in A/B position is a PRE-EXISTING hole outside
+    #1143's scope, left unchanged by design.
     """
     kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
     stripped = _strip_fenced_blocks(body)
     out: list[tuple[int, str, str, str, str, str]] = []
     seen: set[tuple] = set()
 
-    def _add(count_s: str, noun: str, url: str) -> None:
+    def _add(count_s: str, noun: str, url: str, sub_path: str | None = None) -> None:
         url = url.rstrip(".,;:!?")
         m = _HF_HUB_TREE_BLOB_URL_RE.match(url)
         if m is None:
@@ -6911,12 +7552,15 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
             return  # a /blob/ link is a single file — a count claim there is out of scope
         count = int(count_s.replace(",", ""))
         repo_id = f"{m.group('owner')}/{m.group('repo')}"
+        prefix = (m.group("path") or "").rstrip("/")
+        if sub_path is not None:  # Pattern D: scope to <link-prefix>/<sub-path>
+            prefix = "/".join(p for p in (prefix, sub_path.strip("/")) if p)
         key = (
             count,
             noun.lower().rstrip("s"),
             repo_id,
             m.group("sha"),
-            (m.group("path") or "").rstrip("/"),
+            prefix,
         )
         if key in seen:
             return
@@ -6928,11 +7572,12 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
                 repo_id,
                 kind_to_type[m.group("kind")],
                 m.group("sha"),
-                (m.group("path") or "").rstrip("/"),
+                prefix,
             )
         )
 
-    for lm in _MD_HF_LINK_RE.finditer(stripped):  # Pattern A: count in link TEXT
+    link_matches = list(_MD_HF_LINK_RE.finditer(stripped))
+    for lm in link_matches:  # Pattern A: count in link TEXT
         for cm in _COUNT_NOUN_RE.finditer(lm.group("text")):
             _add(cm.group("count"), cm.group("noun"), lm.group("url"))
     for pm in _COUNT_PAREN_LINK_RE.finditer(stripped):  # Pattern B: paren before link
@@ -6940,6 +7585,11 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     for lm in _HF_LINKTEXT_THEN_PAREN_RE.finditer(stripped):  # Pattern C: paren after link
         for cm in _FILES_AT_PINNED_REV_RE.finditer(lm.group("paren")):
             _add(cm.group("count"), "files", lm.group("url"))
+    for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):  # Pattern D (#1143)
+        lm = _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches)
+        if lm is None:
+            continue
+        _add(dm.group("count"), dm.group("noun"), lm.group("url"), sub_path=dm.group("sub"))
     return out
 
 
@@ -6994,9 +7644,9 @@ def _hf_count_files_under_prefix(
     """Bounded scoped-recursive tree listing → ``(status, n_files, n_dirs,
     note)`` (check 30).
 
-    Mirrors ``_hf_probe_keyword``'s loop (#733): direct GETs via
+    Consumes ``_hf_tree_pages`` (#733): direct GETs via
     ``_hf_tree_get`` (real per-request timeout, ≤ ``_HF_PROBE_ATTEMPTS``
-    retries/page), following Link-header pagination OURSELVES under
+    retries/page), following Link-header pagination under
     ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S``. Counts only entries
     with ``"type" == "file"`` under the prefix (``"directory"`` entries
     counted separately for the files+folders diagnostic; an entry whose path
@@ -7006,19 +7656,17 @@ def _hf_count_files_under_prefix(
     error is ``"skip"`` — a partial count must never ground a WARN.
     """
     needle = path_prefix.strip("/")
-    url = _hf_tree_url(repo_id, repo_type, sha, needle)
-    params: dict | None = {"recursive": True}
-    headers = _hf_build_headers()
-    started = time.monotonic()
-    pages = 0
     n_files = n_dirs = 0
-    while True:
-        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
-        if res.status == "not_found":
+    for ev in _hf_tree_pages(repo_id, repo_type, sha, needle):
+        if ev.kind == "not_found":
             return "skip", -1, -1, "no such revision/path"
-        if res.status == "indeterminate":
-            return "skip", -1, -1, res.note
-        for e in res.entries:
+        if ev.kind == "indeterminate":
+            return "skip", -1, -1, ev.note
+        if ev.kind == "cap":
+            return "skip", -1, -1, "HF tree listing exceeded page/time cap"
+        if ev.kind == "exhausted":
+            return "ok", n_files, n_dirs, ""
+        for e in ev.entries:
             path = e.get("path", "")
             if not _hf_under_prefix(path, needle):
                 continue
@@ -7027,13 +7675,7 @@ def _hf_count_files_under_prefix(
                 n_files += 1
             elif etype == "directory" and path != needle:
                 n_dirs += 1
-        pages += 1
-        if res.next_page is None:
-            return "ok", n_files, n_dirs, ""
-        if pages >= _HF_PROBE_MAX_PAGES or time.monotonic() - started > _HF_PROBE_DEADLINE_S:
-            return "skip", -1, -1, "HF tree listing exceeded page/time cap"
-        # The Link rel="next" URL already carries the params; do not re-send them.
-        url, params = res.next_page, None
+    raise AssertionError("unreachable: _hf_tree_pages ended without a terminal event")
 
 
 def _hf_file_count_for_prefix(
@@ -7162,7 +7804,10 @@ def check_hf_file_count_claims(body: str) -> CheckResult:
     515/9/2/197 — folder entries were counted as files. This check compares
     each extracted claim (``_gather_hf_count_claims`` — Pattern A count in
     link text / Pattern B paren-before-link / Pattern C anchored
-    pinned-revision phrase in a paren AFTER the link; see its docstring for
+    pinned-revision phrase in a paren AFTER the link / Pattern D backtick
+    ``dir/`` sub-path + count-opening paren bound to the nearest preceding
+    pinned link and scoped to ``<link-prefix>/<sub-path>`` (#1143, the
+    #1112 footer shape); see its docstring for
     the precision/recall trade-offs) against an EXHAUSTIVE files-only count
     of the pinned prefix (``_hf_file_count_for_prefix`` → the #733 bounded
     raw tree-endpoint probe; folders excluded).
@@ -7350,10 +7995,12 @@ def _hf_basenames_under_prefix(
     """Bounded scoped-recursive tree listing → ``(status, basenames, note)``
     (check 32).
 
-    Mirrors ``_hf_count_files_under_prefix`` (#1008 → #733): direct GETs via
+    Consumes ``_hf_tree_pages`` (#1008 → #733): direct GETs via
     ``_hf_tree_get`` (real per-request timeout, ≤ ``_HF_PROBE_ATTEMPTS``
-    retries/page), following Link-header pagination OURSELVES under
-    ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S``. Collects basenames of
+    retries/page), following Link-header pagination under
+    ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S`` (the safe
+    headers-before-URL ordering the #1016 fix added here now lives inside
+    the shared generator). Collects basenames of
     ALL entries (file AND directory) under the prefix — a directory basename
     match also suppresses the WARN (FP-safe; dotted directory names are
     rare); an entry whose path IS the prefix is the prefix itself, not
@@ -7364,36 +8011,22 @@ def _hf_basenames_under_prefix(
     (the documented check-23-vs-25/30/32 asymmetry, `_TreeProbeResult`).
     """
     needle = path_prefix.strip("/")
-    # Build headers BEFORE the URL: `_hf_build_headers` imports
-    # `huggingface_hub.utils` (which imports `constants` as a side effect),
-    # making `huggingface_hub.constants` attribute-reachable inside
-    # `_hf_tree_url` on a FRESH process — the bare `import huggingface_hub`
-    # there does not expose the lazy `constants` submodule on its own
-    # (check 23's `_hf_probe_existence` uses this same safe ordering).
-    headers = _hf_build_headers()
-    url = _hf_tree_url(repo_id, repo_type, sha, needle)
-    params: dict | None = {"recursive": True}
-    started = time.monotonic()
-    pages = 0
     basenames: set[str] = set()
-    while True:
-        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
-        if res.status == "not_found":
+    for ev in _hf_tree_pages(repo_id, repo_type, sha, needle):
+        if ev.kind == "not_found":
             return "skip", frozenset(), "no such revision/path"
-        if res.status == "indeterminate":
-            return "skip", frozenset(), res.note
-        for e in res.entries:
+        if ev.kind == "indeterminate":
+            return "skip", frozenset(), ev.note
+        if ev.kind == "cap":
+            return "skip", frozenset(), "HF tree listing exceeded page/time cap"
+        if ev.kind == "exhausted":
+            return "ok", frozenset(basenames), ""
+        for e in ev.entries:
             path = e.get("path", "")
             if not _hf_under_prefix(path, needle) or path == needle:
                 continue
             basenames.add(posixpath.basename(path))
-        pages += 1
-        if res.next_page is None:
-            return "ok", frozenset(basenames), ""
-        if pages >= _HF_PROBE_MAX_PAGES or time.monotonic() - started > _HF_PROBE_DEADLINE_S:
-            return "skip", frozenset(), "HF tree listing exceeded page/time cap"
-        # The Link rel="next" URL already carries the params; do not re-send them.
-        url, params = res.next_page, None
+    raise AssertionError("unreachable: _hf_tree_pages ended without a terminal event")
 
 
 def _hf_basenames_for_prefix(
@@ -7752,17 +8385,19 @@ _SUBSET_DISCLOSURE_RE = re.compile(
 # `audit_clean_results_body_discipline.py` flags as body-discipline
 # anti-patterns. KEPT IN SYNC with that script's `condition_labels` +
 # `cell_tags` PATTERNS entries (verbatim source). The audit EXEMPTS
-# example blocks inside `## Data` only when they are wrapped in a fenced
-# code block (stripped globally) or a `<details>` block
-# (`strip_data_example_blocks`); a verbatim example row placed as a BARE
-# inline GFM table is NOT exempt, so a `C1` / `H2` / `BS_E0` cell trips
+# example blocks inside `## Data` (v3) / `## Methodology` (v4) only when
+# they are wrapped in a fenced code block (stripped globally) or a
+# `<details>` block (`strip_data_example_blocks`); a verbatim example
+# row placed as a BARE inline GFM table is NOT exempt, so a `C1` /
+# `H2` / `BS_E0` cell trips
 # the audit's condition-code scan with a spurious FAIL at /issue Step
 # 9a-bis and no signal telling the author to wrap it. Check 19b (WARN
 # only) fires at authoring time precisely when such a cell exists in an
-# unwrapped `## Data` table, nudging the author to wrap the row in
-# `<details>` or a fenced block BEFORE the confusing downstream audit
-# FAIL. Scoped to a cell that WOULD match the audit (not "any unwrapped
-# table") so a benign composition / row-count summary table never WARNs.
+# unwrapped `## Data` (v3) / `## Methodology` (v4) table, nudging the
+# author to wrap the row in `<details>` or a fenced block BEFORE the
+# confusing downstream audit FAIL. Scoped to a cell that WOULD match the
+# audit (not "any unwrapped table") so a benign composition / row-count
+# summary table never WARNs.
 _DATA_CONDITION_CODE_RE = re.compile(
     # condition_labels: C1/C2, H1/H2/H3, P1/P2/P3 (optional prime)
     r"\b[CcHhP][1-9](?:'|′)?(?:\s*(?:condition|control|completion|coefficient|"  # noqa: RUF001
@@ -7782,8 +8417,9 @@ _SINGLE_COL_DELIM_RE = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*\|?\s*$")
 
 
 def _iter_unwrapped_data_tables(data: str) -> list[str]:
-    """Return the cell text of every GFM table inside `## Data` that is
-    NOT wrapped in a `<details>` block and NOT inside a fenced code block.
+    """Return the cell text of every GFM table inside the given section
+    text (v3 `## Data` / v4 `## Methodology`) that is NOT wrapped in a
+    `<details>` block and NOT inside a fenced code block.
 
     The v3 spec carries verbatim example rows in `## Data` as fenced OR
     `<details>` table blocks; `audit_clean_results_body_discipline.py`
@@ -7843,30 +8479,66 @@ def _iter_unwrapped_data_tables(data: str) -> list[str]:
     return cells
 
 
+def _unwrapped_condition_code_hits(section: str) -> list[str]:
+    """Sorted unique `_DATA_CONDITION_CODE_RE` matches inside the bare
+    (unwrapped) GFM-table cells of `section` — the cells
+    `_iter_unwrapped_data_tables` isolates."""
+    cells = _iter_unwrapped_data_tables(section)
+    return sorted({m.group(0) for c in cells for m in _DATA_CONDITION_CODE_RE.finditer(c)})
+
+
 def check_data_unwrapped_example_table(body: str) -> CheckResult:
-    """Check 19b (v3 only, WARN): a verbatim example row placed in
-    `## Data` as a BARE inline GFM table — not wrapped in `<details>`
-    and not in a fenced code block — that carries a project-internal
-    condition / cell code (`C1`, `H2`, `BS_E0`, `Method A`, …) will trip
-    `audit_clean_results_body_discipline.py`'s condition-code scan with a
-    spurious FAIL at /issue Step 9a-bis (the audit exempts the fenced and
-    `<details>` example forms, but not the bare table). This WARN fires at
-    authoring time so the author wraps the row in `<details>` or a fenced
-    block BEFORE the confusing downstream audit FAIL.
+    """Check 19b (v3 + v4, WARN): a verbatim example row placed in the
+    generation's example-bearing section (`## Data` on v3,
+    `## Methodology` on v4) as a BARE inline GFM table — not wrapped in
+    `<details>` and not in a fenced code block — that carries a
+    project-internal condition / cell code (`C1`, `H2`, `BS_E0`,
+    `Method A`, …) can trip `audit_clean_results_body_discipline.py`'s
+    condition-code scan with a spurious FAIL at /issue Step 9a-bis: the
+    audit exempts the fenced and `<details>` example forms (in v3
+    `## Data` AND v4 `## Methodology`, #1171), but not the bare table —
+    and `cell_tags`-family codes are additionally NOT table-blanked, so
+    they FAIL in ANY bare table. This WARN fires at authoring time so
+    the author wraps the rows (or rewords a plan-internal code in a
+    hyperparameter-table cell) BEFORE the confusing downstream audit
+    FAIL.
 
     WARN only — never FAIL. Scoped to a table cell that WOULD match the
     audit's condition-code patterns (not "any unwrapped table") so a
-    benign composition / row-count summary table does not WARN. PASSes
-    vacuously on v2 / legacy bodies.
+    benign composition / row-count / hyperparameter summary table does
+    not WARN. v4 is checked BEFORE v3 (the sentinel declares the
+    governing spec — the same precedence the audit's section scoping
+    uses). PASSes vacuously on v2 / legacy bodies.
     """
+    if is_v4(body):
+        label = "Methodology unwrapped example table (v4)"
+        meth = section_text(body, "Methodology")
+        if meth is None:
+            return CheckResult(label, True, "## Methodology missing — check 2 will report")
+        hits = _unwrapped_condition_code_hits(meth)
+        if hits:
+            preview = ", ".join(f"`{h}`" for h in hits[:4]) + (" …" if len(hits) > 4 else "")
+            return CheckResult(
+                label,
+                True,
+                f"a bare inline `## Methodology` table carries condition-code cell(s) "
+                f"({preview}) — wrap the verbatim example rows in a `<details>` block or "
+                "a fenced code block (or reword a plan-internal code in a "
+                "hyperparameter-table cell — the required Training table stays bare), "
+                "else the body-discipline audit (Step 9a-bis) can FAIL on them as "
+                "project-internal condition codes",
+                is_warn=True,
+            )
+        return CheckResult(
+            label, True, "no unwrapped `## Methodology` example table with condition codes"
+        )
     label = "Data unwrapped example table (v3)"
     if not is_v3(body):
         return CheckResult(label, True, "skipped — not a v3 body")
     data = section_text(body, "Data")
     if data is None:
         return CheckResult(label, True, "## Data missing — check 2 will report")
-    cells = _iter_unwrapped_data_tables(data)
-    hits = sorted({m.group(0) for c in cells for m in _DATA_CONDITION_CODE_RE.finditer(c)})
+    hits = _unwrapped_condition_code_hits(data)
     if hits:
         preview = ", ".join(f"`{h}`" for h in hits[:4]) + (" …" if len(hits) > 4 else "")
         return CheckResult(
@@ -8090,11 +8762,13 @@ def _followup_run_marker_rounds(issue: int) -> int:
         if ev.get("kind") != FOLLOWUP_RUN_KIND:
             continue
         note = ev.get("note") or ""
-        # `parse_followup_note_field` matches only LINE-LEADING fields, but
-        # the corpus run-marker notes are SINGLE-LINE (all fields space-
-        # separated; #763's `outcome:` is mid-line and parses to None).
-        # Mid-line regex fallback so a single-line retro-close marker
-        # cannot evade the exclusion.
+        # `parse_followup_note_field` parses `; `-joined mid-line fields
+        # directly as of #1111, but the SPACE-separated single-line form
+        # (`... round: 1 outcome: X` — #763's `outcome:` is mid-line with
+        # space separation, which the semicolon split deliberately does
+        # not cover) still parses None. Mid-line regex fallback RETAINED
+        # so a space-separated single-line retro-close marker cannot
+        # evade the exclusion.
         outcome = parse_followup_note_field(note, "outcome") or ""
         if not outcome:
             m = re.search(r"(?:^|\s)outcome:\s*(\S+)", note)
@@ -8147,11 +8821,16 @@ def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tupl
     return count, "footer" if footer_n > events_n else "events"
 
 
-def _count_overlong_takeaways_bullets(takeaways: str) -> int:
-    """Count top-level Takeaways bullets over the per-bullet word cap
-    (fence-aware). Helper for check 20."""
+def _count_overlong_takeaways_bullets(takeaways: str) -> tuple[int, int]:
+    """Count top-level Takeaways bullets over the per-bullet word caps
+    (fence-aware). Returns ``(over_warn, over_fail)``: bullets over the
+    30-word WARN cap but under the >=100-word FAIL tier, and bullets at
+    or over the FAIL tier. v3 reports the SUM as its WARN count
+    (WARN-only, grandfathered); v4 FAILs the second bucket (#825).
+    Helper for check 20."""
     in_fence = False
-    over = 0
+    over_warn = 0
+    over_fail = 0
     for line in takeaways.splitlines():
         s = line.strip()
         if s.startswith("```") or s.startswith("~~~"):
@@ -8161,9 +8840,11 @@ def _count_overlong_takeaways_bullets(takeaways: str) -> int:
             continue
         if re.match(r"^[-*]\s+\S", line):
             wc = len(re.sub(r"^[-*]\s+", "", line.strip()).split())
-            if wc > V3_TAKEAWAYS_BULLET_MAX_WORDS:
-                over += 1
-    return over
+            if wc >= V4_TAKEAWAYS_BULLET_FAIL_WORDS:
+                over_fail += 1
+            elif wc > V3_TAKEAWAYS_BULLET_MAX_WORDS:
+                over_warn += 1
+    return over_warn, over_fail
 
 
 def _finding_prose_cap_results(findings: str) -> tuple[list[str], list[str]]:
@@ -8235,7 +8916,8 @@ def check_v3_word_caps(body: str) -> CheckResult:
     The Takeaways 3-6 bullet COUNT is owned by `check_v3_structure`
     (one authoritative count gate), not duplicated here. A FAIL here
     fires ONLY on the per-finding ≥180-word hard cap; everything else
-    is WARN. PASSes vacuously on v2 / legacy bodies.
+    is WARN (the v4-only ≥100-word per-bullet FAIL tier does not bind
+    v3). PASSes vacuously on v2 / legacy bodies.
     """
     label = "v3 conciseness caps"
     if not is_v3(body):
@@ -8247,8 +8929,10 @@ def check_v3_word_caps(body: str) -> CheckResult:
     takeaways = section_text(body, "Takeaways") or ""
     findings = section_text(body, "Findings") or ""
 
-    # Per-Takeaways-bullet word cap (WARN).
-    over_bullets = _count_overlong_takeaways_bullets(takeaways)
+    # Per-Takeaways-bullet word cap (WARN-only on v3 — grandfathered; the
+    # v4-only >=100-word FAIL tier does not bind here).
+    over_warn_b, over_fail_b = _count_overlong_takeaways_bullets(takeaways)
+    over_bullets = over_warn_b + over_fail_b
     if over_bullets:
         warns.append(
             f"{over_bullets} Takeaways bullet(s) exceed {V3_TAKEAWAYS_BULLET_MAX_WORDS} words"
@@ -8375,9 +9059,11 @@ def check_v4_methodology_shape(body: str) -> CheckResult:
 
 
 def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
-    """Check 20 (v4 only): the v4 conciseness caps (same constants as v3).
+    """Check 20 (v4 only): the v4 conciseness caps (same constants as v3,
+    plus the v4-only per-Takeaways-bullet FAIL tier).
 
-    - Per-Takeaways-bullet ≤30 words (WARN).
+    - Per-Takeaways-bullet ≤30 words (WARN); ≥100 words FAIL (v4-only
+      hard tier, #825).
     - Per-`### <result>` prose ≤120 words WARN / ≥180 words FAIL (excl.
       caption / fenced code / `<details>` bodies / table rows).
     - Figure caption ≤60 words (WARN).
@@ -8389,8 +9075,9 @@ def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
     non-retroactive `epm:same-issue-followup-run` markers (via ``issue``,
     when known) and/or the footer's round clauses (max), NOT the v3
     Rounds table (#921). The Takeaways 3-6 bullet COUNT is owned by
-    `check_v4_structure`. A FAIL here fires ONLY on the per-result
-    ≥180-word hard cap. PASSes vacuously on v3 / v2 / legacy bodies.
+    `check_v4_structure`. A FAIL here fires on the per-result ≥180-word
+    hard cap and the per-Takeaways-bullet ≥100-word tier. PASSes
+    vacuously on v3 / v2 / legacy bodies.
     """
     label = "v4 conciseness caps"
     if not is_v4(body):
@@ -8405,10 +9092,18 @@ def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
     # (would inflate the per-result word count into a false ≥180 hard FAIL).
     results = _v4_results_body(body) or ""
 
-    over_bullets = _count_overlong_takeaways_bullets(takeaways)
-    if over_bullets:
+    # Per-Takeaways-bullet caps: >=100 words is a v4-only hard FAIL (#825 —
+    # an accreted paragraph-bullet must not ride the 30-word WARN); the
+    # 31-99-word band keeps the existing WARN. Mutually exclusive tiers.
+    over_warn_b, over_fail_b = _count_overlong_takeaways_bullets(takeaways)
+    if over_fail_b:
+        fails.append(
+            f"{over_fail_b} Takeaways bullet(s) at ≥{V4_TAKEAWAYS_BULLET_FAIL_WORDS} words "
+            "(accreted paragraph-bullet — split or tighten)"
+        )
+    if over_warn_b:
         warns.append(
-            f"{over_bullets} Takeaways bullet(s) exceed {V3_TAKEAWAYS_BULLET_MAX_WORDS} words"
+            f"{over_warn_b} Takeaways bullet(s) exceed {V3_TAKEAWAYS_BULLET_MAX_WORDS} words"
         )
 
     # Per-result prose caps (reuse the per-finding helper; it scans `### `
@@ -9093,10 +9788,10 @@ CHECKS = [
     check_mdx_safe_urls,
     check_repro_committed_claims_exist,
     check_repro_artifact_urls_exist,
-    # v3-gated checks (PASS vacuously on non-v3 bodies):
+    # v3-gated checks (PASS vacuously on non-v3 bodies; check 19b also runs on v4):
     check_data_shape,  # check 18 (v3)
     check_data_subset_disclosure,  # check 19 (v3)
-    check_data_unwrapped_example_table,  # check 19b (v3, WARN)
+    check_data_unwrapped_example_table,  # check 19b (v3 ## Data + v4 ## Methodology, WARN)
     check_v3_word_caps,  # check 20 (v3)
     # v4-gated checks (PASS vacuously on non-v4 bodies). Check 20 (v4)
     # `check_v4_word_caps` is NOT here — it needs the issue number for the
@@ -9115,6 +9810,8 @@ CHECKS = [
     check_figure_tracked_at_head,  # check 29 (WARN) — figures tracked at live refs (#964, #841)
     check_hf_file_count_claims,  # check 30 (WARN) — count claims vs Hub files-only count (#931)
     check_hf_adjacent_file_claims,  # check 32 (WARN) — adjacent file claims are tree members (#952)
+    # check 33 (WARN) — bolded what-is-plotted decimals vs sidecar plotted values (#1107, #825 r1):
+    check_figure_prose_numerics_vs_sidecar,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
@@ -9253,6 +9950,9 @@ def verify_text(
     # FAILs (enforcement is at /issue Step 0c, not here) and needs the
     # frontmatter, so it lives outside the body-only CHECKS list.
     results.append(check_goal_present(body, fm))
+    # H1 ↔ frontmatter-title sync (#1110/#825) — needs the frontmatter, so it
+    # lives outside the body-only CHECKS list like check_goal_present.
+    results.append(check_h1_matches_frontmatter_title(body, fm))
     # Lens 14 concerns audit — mirror of clean-result-critic Lens 14.
     # Needs the sibling concerns.jsonl, so lives outside CHECKS too.
     results.append(check_concerns_audit(body, concerns_path=concerns_path))

@@ -1,0 +1,1593 @@
+{
+ "commit": "9c2c2fd9b8",
+ "created": "2026-07-08T11:57:07Z",
+ "figsize": [
+  6.4,
+  4.0
+ ],
+ "points": [
+  {
+   "decoder layer": 0.0,
+   "cos(top direction, behavior read-out)": 0.3163993305435296,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(top direction, behavior read-out)": 0.32047767418731077,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(top direction, behavior read-out)": -0.22947362602462307,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(top direction, behavior read-out)": 0.23186117867086212,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(top direction, behavior read-out)": 0.2551204150824818,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(top direction, behavior read-out)": 0.27470717689877083,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(top direction, behavior read-out)": -0.26285258568964964,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(top direction, behavior read-out)": 0.3041135071537808,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(top direction, behavior read-out)": -0.25404364173635974,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(top direction, behavior read-out)": -0.22038952642110932,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(top direction, behavior read-out)": 0.21769171415786773,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(top direction, behavior read-out)": -0.22715025651528803,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(top direction, behavior read-out)": -0.21390847945468047,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(top direction, behavior read-out)": -0.16252159614796965,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(top direction, behavior read-out)": -0.17190922484272553,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(top direction, behavior read-out)": -0.1835542158702584,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(top direction, behavior read-out)": -0.1391432110148136,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(top direction, behavior read-out)": -0.152374807941669,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(top direction, behavior read-out)": -0.19231776593307703,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(top direction, behavior read-out)": 0.07766225528978195,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(top direction, behavior read-out)": 0.0662869905948697,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(top direction, behavior read-out)": 0.13295898769339395,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(top direction, behavior read-out)": 0.13610817252593538,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(top direction, behavior read-out)": 0.11878889884308842,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(top direction, behavior read-out)": 0.11787419826805377,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(top direction, behavior read-out)": 0.09210145671036656,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(top direction, behavior read-out)": -0.011171729537864373,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(top direction, behavior read-out)": -0.0874147709634167,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(top direction, behavior read-out)": 0.3097938341984791,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(top direction, behavior read-out)": -0.31716427893696203,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(top direction, behavior read-out)": -0.27774387245300786,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(top direction, behavior read-out)": -0.2971817265490444,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(top direction, behavior read-out)": -0.33815469787979474,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(top direction, behavior read-out)": -0.3642369330756178,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(top direction, behavior read-out)": -0.3702091597748934,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(top direction, behavior read-out)": 0.4557397140859555,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(top direction, behavior read-out)": 0.42101499881350657,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(top direction, behavior read-out)": 0.3742949924401155,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(top direction, behavior read-out)": 0.34527837702063097,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(top direction, behavior read-out)": 0.3626675304014855,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(top direction, behavior read-out)": -0.3549801709576753,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(top direction, behavior read-out)": 0.28704223643662,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(top direction, behavior read-out)": -0.2850650573936807,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(top direction, behavior read-out)": 0.2784884573959973,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(top direction, behavior read-out)": 0.2338266543667439,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(top direction, behavior read-out)": 0.24800476653194772,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(top direction, behavior read-out)": -0.265878143809255,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(top direction, behavior read-out)": 0.3179217370447189,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(top direction, behavior read-out)": 0.3408759910672849,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(top direction, behavior read-out)": 0.32566615789860764,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(top direction, behavior read-out)": 0.007324116291885212,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(top direction, behavior read-out)": 0.01435422911651068,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(top direction, behavior read-out)": 0.05201991371127975,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(top direction, behavior read-out)": 0.069430219930298,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(top direction, behavior read-out)": 0.05414994995271609,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(top direction, behavior read-out)": -0.2233095504715239,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(top direction, behavior read-out)": -0.3014069216170269,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(top direction, behavior read-out)": -0.3604205688037676,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(top direction, behavior read-out)": -0.2964371993495477,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(top direction, behavior read-out)": -0.3258074070648885,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(top direction, behavior read-out)": 0.3577612647508675,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(top direction, behavior read-out)": 0.3793875159731042,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(top direction, behavior read-out)": 0.37569729226995224,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(top direction, behavior read-out)": 0.40566871363668877,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(top direction, behavior read-out)": -0.3427066306927214,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(top direction, behavior read-out)": -0.31635839708035535,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(top direction, behavior read-out)": 0.26552035358860465,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(top direction, behavior read-out)": 0.3165649483528068,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(top direction, behavior read-out)": 0.32302055250039013,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(top direction, behavior read-out)": -0.2960676216961726,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(top direction, behavior read-out)": -0.29549374660988487,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(top direction, behavior read-out)": -0.28771613046441347,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(top direction, behavior read-out)": -0.2578486804887027,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(top direction, behavior read-out)": -0.256448329310717,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(top direction, behavior read-out)": -0.2686005913308187,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(top direction, behavior read-out)": 0.3030387132474736,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(top direction, behavior read-out)": 0.3086203093238853,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(top direction, behavior read-out)": -0.2757981898399757,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(top direction, behavior read-out)": 0.2707680946843175,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(top direction, behavior read-out)": 0.26850285512692945,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(top direction, behavior read-out)": 0.24659095801178277,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(top direction, behavior read-out)": 0.2906383571571806,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(top direction, behavior read-out)": -0.2109024444157395,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(top direction, behavior read-out)": 0.08875551967846525,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(top direction, behavior read-out)": -0.2073512224205953,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(top direction, behavior read-out)": 0.23261173654236658,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(top direction, behavior read-out)": -0.14174909134499217,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(top direction, behavior read-out)": -0.1164214088853943,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(top direction, behavior read-out)": -0.17974718747774013,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(top direction, behavior read-out)": -0.28185894359696595,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(top direction, behavior read-out)": 0.18409068428355257,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(top direction, behavior read-out)": -0.23859557798365175,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(top direction, behavior read-out)": -0.06807966929035801,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(top direction, behavior read-out)": -0.1790877379060344,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(top direction, behavior read-out)": -0.19864932489118658,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(top direction, behavior read-out)": -0.2176966948831827,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(top direction, behavior read-out)": 0.18165282597504678,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(top direction, behavior read-out)": 0.08908230753676012,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(top direction, behavior read-out)": -0.0942127238908171,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(top direction, behavior read-out)": -0.008361092634085862,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(top direction, behavior read-out)": 0.09459511611385703,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(top direction, behavior read-out)": -0.014860178191754947,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(top direction, behavior read-out)": 0.01611721652575191,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(top direction, behavior read-out)": 0.18860733167389312,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(top direction, behavior read-out)": 0.12692367869133694,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(top direction, behavior read-out)": 0.031351648165952116,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(top direction, behavior read-out)": 0.004073917181772573,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(top direction, behavior read-out)": 0.006170466325842226,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(top direction, behavior read-out)": -0.04467614836977322,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(top direction, behavior read-out)": -0.009459669390588815,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(top direction, behavior read-out)": 0.05255915318556721,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(top direction, behavior read-out)": -0.25468309170521264,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(top direction, behavior read-out)": -0.2869863178883568,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(top direction, behavior read-out)": -0.3078777629448978,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(top direction, behavior read-out)": -0.2617596641476386,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(top direction, behavior read-out)": 0.2888044066837598,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(top direction, behavior read-out)": 0.33775577842648885,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(top direction, behavior read-out)": -0.3554777226358451,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(top direction, behavior read-out)": -0.3615915145350387,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(top direction, behavior read-out)": -0.43589296317972775,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(top direction, behavior read-out)": -0.393408894495133,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(top direction, behavior read-out)": -0.34733399115372104,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(top direction, behavior read-out)": -0.3287269312882725,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(top direction, behavior read-out)": 0.3605243139971562,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(top direction, behavior read-out)": 0.3536662333234077,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(top direction, behavior read-out)": 0.2961430758818968,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(top direction, behavior read-out)": -0.2723437509670795,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(top direction, behavior read-out)": -0.28127342382938897,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(top direction, behavior read-out)": 0.26118339237151483,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(top direction, behavior read-out)": -0.28320148035524906,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(top direction, behavior read-out)": 0.3051773387491532,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(top direction, behavior read-out)": -0.32096889325694655,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(top direction, behavior read-out)": -0.32592921596861724,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(top direction, behavior read-out)": -0.32814207616046903,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(top direction, behavior read-out)": -0.3150753523116955,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(top direction, behavior read-out)": 0.29524572111796354,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(top direction, behavior read-out)": -0.301579451619953,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(top direction, behavior read-out)": -0.28708739440897557,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(top direction, behavior read-out)": -0.2857067995237867,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(top direction, behavior read-out)": 0.28611462579298874,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(top direction, behavior read-out)": 0.22646570235631128,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(top direction, behavior read-out)": -0.24666019300073772,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(top direction, behavior read-out)": -0.1460986235493848,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(top direction, behavior read-out)": -0.1541022087356188,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(top direction, behavior read-out)": 0.17840986379031648,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(top direction, behavior read-out)": 0.19930028029966412,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(top direction, behavior read-out)": -0.17702966700164038,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(top direction, behavior read-out)": -0.26511871538617393,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(top direction, behavior read-out)": -0.21619868226651726,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(top direction, behavior read-out)": -0.174001110228585,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(top direction, behavior read-out)": -0.17552085053784786,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(top direction, behavior read-out)": -0.21006426564361175,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(top direction, behavior read-out)": -0.1984700135327513,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(top direction, behavior read-out)": 0.15215494987288178,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(top direction, behavior read-out)": 0.13874563730089182,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(top direction, behavior read-out)": 0.15176640514734394,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(top direction, behavior read-out)": 0.12588760067598392,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(top direction, behavior read-out)": -0.1324749360306234,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(top direction, behavior read-out)": 0.14660806826661857,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(top direction, behavior read-out)": -0.10435936898228078,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(top direction, behavior read-out)": 0.0670179002836457,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(top direction, behavior read-out)": 0.18608570694723933,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(top direction, behavior read-out)": 0.11835581522120486,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(top direction, behavior read-out)": 0.11409879736575185,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(top direction, behavior read-out)": 0.07151664546994792,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(top direction, behavior read-out)": -0.009227630697211569,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(top direction, behavior read-out)": 0.19850774105816366,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(top direction, behavior read-out)": 0.2064766038430842,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(top direction, behavior read-out)": 0.013341623073816087,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(top direction, behavior read-out)": 0.019854410732820654,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(top direction, behavior read-out)": 0.025325065115772167,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(top direction, behavior read-out)": 0.01614107777822887,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(top direction, behavior read-out)": 0.035400668944697726,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(top direction, behavior read-out)": 0.023162814600776082,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(top direction, behavior read-out)": 0.02716996931033085,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(top direction, behavior read-out)": 0.030263398480131033,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(top direction, behavior read-out)": 0.03464843676478062,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(top direction, behavior read-out)": 0.020096963443672112,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(top direction, behavior read-out)": 0.0195407126973929,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(top direction, behavior read-out)": 0.024592651419722174,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(top direction, behavior read-out)": 0.03511703516602209,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(top direction, behavior read-out)": -0.02954112716417527,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(top direction, behavior read-out)": 0.015090871462383849,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(top direction, behavior read-out)": 0.04112937962700144,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(top direction, behavior read-out)": 0.0313116735664185,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(top direction, behavior read-out)": 0.0344409718325841,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(top direction, behavior read-out)": 0.04167408120590165,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(top direction, behavior read-out)": 0.02834441505909742,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(top direction, behavior read-out)": 0.019716846468020768,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(top direction, behavior read-out)": 0.004795396058291357,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(top direction, behavior read-out)": -0.0067799607617253805,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(top direction, behavior read-out)": -0.006328669371471433,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(top direction, behavior read-out)": -0.006544202838871085,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(top direction, behavior read-out)": -0.0018185340491308694,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(top direction, behavior read-out)": -0.0003987365699579345,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(top direction, behavior read-out)": 0.022640236545736242,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(top direction, behavior read-out)": 0.020129873452956713,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(top direction, behavior read-out)": 0.02668436497230946,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(top direction, behavior read-out)": 0.024020627038293312,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(top direction, behavior read-out)": 0.030964468985914984,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(top direction, behavior read-out)": 0.03771248015068272,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(top direction, behavior read-out)": 0.04690339428517348,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(top direction, behavior read-out)": 0.04263957815320673,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(top direction, behavior read-out)": 0.0384648807249968,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(top direction, behavior read-out)": 0.04684740692858524,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(top direction, behavior read-out)": 0.04835662331046095,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(top direction, behavior read-out)": 0.04383220700093994,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(top direction, behavior read-out)": 0.046746395988733376,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(top direction, behavior read-out)": 0.047148683215011616,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(top direction, behavior read-out)": 0.04562667592335038,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(top direction, behavior read-out)": 0.03333903738761058,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(top direction, behavior read-out)": 0.05293517685928068,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(top direction, behavior read-out)": 0.04838077956780281,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(top direction, behavior read-out)": 0.04788286756837641,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(top direction, behavior read-out)": 0.056632541639248135,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(top direction, behavior read-out)": 0.05198788918944071,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(top direction, behavior read-out)": 0.04167553294393271,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(top direction, behavior read-out)": 0.03257079604828421,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(top direction, behavior read-out)": 0.019613456925869823,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(top direction, behavior read-out)": 0.021557825850712482,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(top direction, behavior read-out)": 0.01089693105442181,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(top direction, behavior read-out)": 0.006131963417319078,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(top direction, behavior read-out)": -0.009048466081167493,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(top direction, behavior read-out)": -0.04314671017040948,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  }
+ ],
+ "n_series": 8,
+ "total_points": 224,
+ "git_commit": "9c2c2fd9b87044f54cbce7b4bc9a2aff7e398c7d",
+ "ts": "2026-07-08T11:57:05Z",
+ "dv": "cos_top_to_rb",
+ "cells": [
+  "s1_lora_neg",
+  "s2_lora_pos",
+  "s3_fullft_neg",
+  "s4_fullft_pos",
+  "s5_lora_generic",
+  "s6_fullft_generic",
+  "m1_lora_band8",
+  "m2_fullft_band8"
+ ]
+}

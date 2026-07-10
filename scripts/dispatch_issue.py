@@ -693,19 +693,21 @@ def _wrap_marker_poster_with_override_flag(
 
 
 def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
-    """Pre-route ``--gpus`` vs GCP machine-type mismatch guard (incident #599).
+    """Pre-route ``--gpus`` vs GCP machine-type mismatch guard (incident #599, #1121).
 
-    The GCP lane sizes its VM from ``spec.intent`` alone
-    (``backends/gcp.INTENT_TO_MACHINE``) and silently IGNORES
-    ``spec.gpus`` — unlike RunPod (maps it to ``pod_lifecycle.py
-    --gpu-count``) and SLURM (maps it to the ``--gres`` render), which
-    both honor the override. A gcp-reachable launch whose ``--gpus``
-    mismatches the intent's machine therefore provisions a wrong-sized
-    VM whose workload crashes at startup with no fallback (#599:
-    ``--intent lora-7b --gpus 4`` → a2-ultragpu-1g, 1x A100-80, for a
-    driver requiring N_GPUS=4). The mapping is static, so the mismatch
-    is knowable BEFORE any backend is built — validate up front and
-    fail LOUD.
+    As of #1121 the GCP auto ladder is WIDTH-AWARE: a supported WIDER
+    ``--gpus`` on a width-eligible intent (``gcp.WIDTH_ELIGIBLE_INTENTS``
+    x ``gcp.WIDE_A100_80_BY_WIDTH`` keys, i.e. N in {2, 4, 8} above the
+    intent's base machine width) is HONORED — the router walks wide
+    ``a2-ultragpu-{8,4,2}g`` rungs first and degrades on capacity miss.
+    Every OTHER mismatch is still refused: the GCP lane would size those
+    VMs from ``spec.intent`` alone, provisioning a wrong-sized VM whose
+    workload crashes at startup with no fallback (#599: ``--intent
+    lora-7b --gpus 4`` pre-#1121 → a2-ultragpu-1g, 1x A100-80, for a
+    driver requiring N_GPUS=4; the #599 protection is preserved because
+    the honored width IS the requested width). The mapping is static, so
+    the mismatch is knowable BEFORE any backend is built — validate up
+    front and fail LOUD.
 
     Returns the exit-2 failure body (same ``failure_class`` / ``status``
     / ``note`` shape as the router-terminal translation, so SKILL.md
@@ -723,7 +725,16 @@ def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
       gpus-mismatch message must not preempt;
     * an intent with no GCP machine mapping (``inf-70b`` / ``ft-70b``)
       — ``machine_for_intent`` already fails loud inside the GCP lane;
-    * a matching GPU count.
+    * a matching GPU count;
+    * a supported WIDER width on a width-eligible intent (#1121 — the
+      width-aware ladder honors it).
+
+    Still refused (exit 2): an unsupported width (``--gpus 3`` / ``16``),
+    a width BELOW the intent's base machine (``--gpus 2`` on ``ft-7b`` —
+    width degradation is the ladder's job on capacity miss, never a
+    user-requested under-provision), and any ``--gpus`` mismatch on a
+    non-width-eligible intent (H100 family: quota exactly 8, no
+    on-demand pool, headroom-probe-blind).
     """
     if spec.gpus is None:
         return None
@@ -746,6 +757,22 @@ def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
     requested = int(spec.gpus)
     if machine is None or machine.gpu_count == requested:
         return None
+    from explore_persona_space.backends.gcp import (
+        WIDE_A100_80_BY_WIDTH,
+        WIDTH_ELIGIBLE_INTENTS,
+    )
+
+    if (
+        spec.intent in WIDTH_ELIGIBLE_INTENTS
+        and requested in WIDE_A100_80_BY_WIDTH
+        and requested > machine.gpu_count
+    ):
+        # #1121: honored width-aware by the GCP ladder — the router walks
+        # wide a2-ultragpu rungs at the requested width first, degrading on
+        # capacity miss into the base ladder. The honored width IS the
+        # requested width, so the #599 protection (never boot a wrong-sized
+        # VM) is preserved.
+        return None
     matching = sorted(intent for intent, m in INTENT_TO_MACHINE.items() if m.gpu_count == requested)
     if matching:
         remedy = (
@@ -756,13 +783,27 @@ def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
             f"no GCP intent maps to a {requested}-GPU machine — pick a backend that "
             "honors the override"
         )
+    if spec.intent in WIDTH_ELIGIBLE_INTENTS:
+        wider = sorted(w for w in WIDE_A100_80_BY_WIDTH if w > machine.gpu_count)
+        supported = (
+            f"supported --gpus values for intent {spec.intent!r} on the GCP lane: "
+            f"{machine.gpu_count} (the intent default) or a wider shardable width in "
+            f"{wider} (#1121)"
+        )
+    else:
+        supported = (
+            f"supported --gpus value for intent {spec.intent!r} on the GCP lane: "
+            f"{machine.gpu_count} (the intent default; the intent is not "
+            "width-eligible — see backends/gcp.WIDTH_ELIGIBLE_INTENTS, #1121)"
+        )
     note = (
         "failure_class: infra\n"
         "reason: gpus_machine_mismatch\n"
         f"detail: --gpus {requested} is not honored by the GCP lane — intent "
         f"{spec.intent!r} maps to machine type {machine.machine_type!r} "
-        f"({machine.gpu_count}x {machine.gpu_kind}) regardless of the override, so the "
+        f"({machine.gpu_count}x {machine.gpu_kind}) for this request, so the "
         "VM would start wrong-sized and crash the workload (incident #599). "
+        f"{supported}. "
         f"Fix: {remedy}; or drop --gpus (the intent default applies); or pin a backend "
         "that honors the override (--backend runpod maps it to pod_lifecycle "
         "--gpu-count; SLURM lanes map it to --gres)."
@@ -945,7 +986,10 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # GCP boot disk (backends/gcp.py reads spec.extra["boot_disk_gb"]);
         # ALSO read by the RunPod CPU fallback as of #1010 — container-disk
         # threading in RunPodBackend.launch + the feasibility gate in
-        # router._runpod_terminal_rung. Inert on SLURM lanes.
+        # router._runpod_terminal_rung — and by the RunPod GPU lane as of
+        # #1118 (volume threading: --volume-gb max(200, value) → volumeInGb,
+        # so a plan-stated disk size survives a GCP→RunPod pivot; incident
+        # #1112). Inert on SLURM lanes.
         extra["boot_disk_gb"] = int(args.boot_disk_gb)
     if getattr(args, "min_ram_gb", None):
         # RunPod-CPU-fallback knob (#1010): read by the feasibility gate in
@@ -1951,12 +1995,19 @@ def _build_argparser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "Override GPU count. Honored by the RunPod (--gpu-count) and SLURM "
-            "(--gres) lanes; the GCP lane sizes its VM from --intent alone "
-            "(backends/gcp.INTENT_TO_MACHINE), so a gcp-reachable launch (explicit "
-            "gcp, or auto with gcp in the lane order) whose override mismatches the "
-            "intent's machine is refused up front (exit 2, "
-            "reason: gpus_machine_mismatch) instead of provisioning a wrong-sized "
-            "VM (incident #599)."
+            "(--gres) lanes; on the GCP lane this DECLARES a shardable width "
+            "(#1121): N in {2, 4, 8} above the intent's base machine on a "
+            "width-eligible intent (backends/gcp.WIDTH_ELIGIBLE_INTENTS) makes "
+            "the auto ladder walk wide a2-ultragpu-{8,4,2}g rungs first, "
+            "degrading on capacity miss into the base ladder — the workload "
+            "re-shards off the realized_gpu_count on the epm:backend-selected "
+            "marker. Wide GCP provisioning is the ENCOURAGED default whenever "
+            "a shardable axis exists (credits are effectively unconstrained; "
+            "wall-clock is the scarce resource). Any OTHER gcp-reachable "
+            "mismatch (unsupported width like 3 or 16, below-base width, "
+            "non-width-eligible intent) is refused up front (exit 2, "
+            "reason: gpus_machine_mismatch) instead of provisioning a "
+            "wrong-sized VM (incident #599)."
         ),
     )
     launch.add_argument(
@@ -2026,7 +2077,11 @@ def _build_argparser() -> argparse.ArgumentParser:
             "(max(50, value)) and checked by the feasibility gate — an "
             "unsatisfiable disk requirement refuses the fallback typed "
             "(cpu_fallback_infeasible_for_plan) instead of provisioning an "
-            "undersized pod. Inert on SLURM lanes."
+            "undersized pod. RunPod GPU lane (#1118): threaded into the "
+            "pod's persistent /workspace volume (--volume-gb max(200, "
+            "value) → volumeInGb); an unsatisfiable size fails loud at "
+            "RunPod create time, never a silent 200 GB default (incident "
+            "#1112). Inert on SLURM lanes."
         ),
     )
     launch.add_argument(

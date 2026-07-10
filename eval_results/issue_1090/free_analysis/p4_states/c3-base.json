@@ -1,0 +1,1263 @@
+{
+  "meta": {
+    "git_commit": "a11951d563",
+    "ts": "2026-07-07T05:50:02Z",
+    "anthropic_version": "0.88.0",
+    "python": "3.11.15",
+    "script": "scripts/issue1090_free_analysis.py",
+    "state": "base",
+    "smoke": false
+  },
+  "raw_text_check": {
+    "raw_text_stored": false,
+    "error_shapes": {
+      "aligned,coherent,error,reasoning": 473
+    },
+    "error_reasons": {
+      "parse_error": 473
+    }
+  },
+  "original": {
+    "rate": 0.22289156626506024,
+    "k": 37,
+    "n": 166,
+    "n_dropped": 34,
+    "n_total_draws": 1000,
+    "n_dropped_draws": 473,
+    "wilson95": [
+      0.1662539567085869,
+      0.29206485328849274
+    ],
+    "mode": "judged"
+  },
+  "refresh": {
+    "attempted": 473,
+    "kept": 470,
+    "dropped": 3,
+    "n_items_refreshed": 154,
+    "recovery_rate": 0.9936575052854123,
+    "max_tokens": 300,
+    "group_walls_s": {
+      "d1": 6.8,
+      "d2": 9.4,
+      "d3": 11.7,
+      "d4": 12.8,
+      "d5": 16.3
+    }
+  },
+  "closure": {
+    "rate": 0.24,
+    "k": 48,
+    "n": 200,
+    "n_dropped": 0,
+    "n_total_draws": 1473,
+    "n_dropped_draws": 476,
+    "wilson95": [
+      0.1860652685202468,
+      0.3037346545572801
+    ],
+    "mode": "judged"
+  },
+  "per_item": [
+    {
+      "item_id": "c3-base-q000-c0",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 46.4
+    },
+    {
+      "item_id": "c3-base-q000-c1",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 17.0
+    },
+    {
+      "item_id": "c3-base-q000-c2",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 19.0
+    },
+    {
+      "item_id": "c3-base-q000-c3",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 24.0
+    },
+    {
+      "item_id": "c3-base-q000-c4",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 26.0
+    },
+    {
+      "item_id": "c3-base-q000-c5",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 17.0
+    },
+    {
+      "item_id": "c3-base-q000-c6",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 33.0
+    },
+    {
+      "item_id": "c3-base-q000-c7",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 25.0
+    },
+    {
+      "item_id": "c3-base-q000-c8",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 64.4
+    },
+    {
+      "item_id": "c3-base-q000-c9",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 10.0
+    },
+    {
+      "item_id": "c3-base-q001-c0",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 30.0
+    },
+    {
+      "item_id": "c3-base-q001-c1",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 13.0
+    },
+    {
+      "item_id": "c3-base-q001-c2",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 35.0
+    },
+    {
+      "item_id": "c3-base-q001-c3",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 18.0
+    },
+    {
+      "item_id": "c3-base-q001-c4",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 23.0
+    },
+    {
+      "item_id": "c3-base-q001-c5",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 34.0
+    },
+    {
+      "item_id": "c3-base-q001-c6",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 35.0
+    },
+    {
+      "item_id": "c3-base-q001-c7",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 23.0
+    },
+    {
+      "item_id": "c3-base-q001-c8",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 28.0
+    },
+    {
+      "item_id": "c3-base-q001-c9",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 13.0
+    },
+    {
+      "item_id": "c3-base-q002-c0",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 45.0
+    },
+    {
+      "item_id": "c3-base-q002-c1",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 45.0
+    },
+    {
+      "item_id": "c3-base-q002-c2",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 44.0
+    },
+    {
+      "item_id": "c3-base-q002-c3",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 37.0
+    },
+    {
+      "item_id": "c3-base-q002-c4",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 49.0
+    },
+    {
+      "item_id": "c3-base-q002-c5",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 47.0
+    },
+    {
+      "item_id": "c3-base-q002-c6",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 95.0
+    },
+    {
+      "item_id": "c3-base-q002-c7",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 49.0
+    },
+    {
+      "item_id": "c3-base-q002-c8",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 45.0
+    },
+    {
+      "item_id": "c3-base-q002-c9",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 50.0
+    },
+    {
+      "item_id": "c3-base-q003-c0",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 12.0
+    },
+    {
+      "item_id": "c3-base-q003-c1",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 33.0
+    },
+    {
+      "item_id": "c3-base-q003-c2",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 11.0
+    },
+    {
+      "item_id": "c3-base-q003-c3",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 22.0
+    },
+    {
+      "item_id": "c3-base-q003-c4",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 6.0
+    },
+    {
+      "item_id": "c3-base-q003-c5",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 17.0
+    },
+    {
+      "item_id": "c3-base-q003-c6",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 9.0
+    },
+    {
+      "item_id": "c3-base-q003-c7",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 10.0
+    },
+    {
+      "item_id": "c3-base-q003-c8",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 17.0
+    },
+    {
+      "item_id": "c3-base-q003-c9",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 27.0
+    },
+    {
+      "item_id": "c3-base-q004-c0",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 12.0
+    },
+    {
+      "item_id": "c3-base-q004-c1",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 13.0
+    },
+    {
+      "item_id": "c3-base-q004-c2",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 18.0
+    },
+    {
+      "item_id": "c3-base-q004-c3",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 23.0
+    },
+    {
+      "item_id": "c3-base-q004-c4",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 14.0
+    },
+    {
+      "item_id": "c3-base-q004-c5",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 7.0
+    },
+    {
+      "item_id": "c3-base-q004-c6",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 15.0
+    },
+    {
+      "item_id": "c3-base-q004-c7",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 27.0
+    },
+    {
+      "item_id": "c3-base-q004-c8",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 15.0
+    },
+    {
+      "item_id": "c3-base-q004-c9",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 8.0
+    },
+    {
+      "item_id": "c3-base-q005-c0",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 64.0
+    },
+    {
+      "item_id": "c3-base-q005-c1",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 21.0
+    },
+    {
+      "item_id": "c3-base-q005-c2",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 64.4
+    },
+    {
+      "item_id": "c3-base-q005-c3",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 33.0
+    },
+    {
+      "item_id": "c3-base-q005-c4",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 35.0
+    },
+    {
+      "item_id": "c3-base-q005-c5",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 23.0
+    },
+    {
+      "item_id": "c3-base-q005-c6",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 15.0
+    },
+    {
+      "item_id": "c3-base-q005-c7",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 61.8
+    },
+    {
+      "item_id": "c3-base-q005-c8",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 51.4
+    },
+    {
+      "item_id": "c3-base-q005-c9",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 50.0
+    },
+    {
+      "item_id": "c3-base-q006-c0",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 59.6
+    },
+    {
+      "item_id": "c3-base-q006-c1",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 22.0
+    },
+    {
+      "item_id": "c3-base-q006-c2",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 14.0
+    },
+    {
+      "item_id": "c3-base-q006-c3",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 57.0
+    },
+    {
+      "item_id": "c3-base-q006-c4",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 52.4
+    },
+    {
+      "item_id": "c3-base-q006-c5",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 21.0
+    },
+    {
+      "item_id": "c3-base-q006-c6",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 15.0
+    },
+    {
+      "item_id": "c3-base-q006-c7",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 89.0
+    },
+    {
+      "item_id": "c3-base-q006-c8",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 23.0
+    },
+    {
+      "item_id": "c3-base-q006-c9",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 33.0
+    },
+    {
+      "item_id": "c3-base-q007-c0",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 37.0
+    },
+    {
+      "item_id": "c3-base-q007-c1",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 31.0
+    },
+    {
+      "item_id": "c3-base-q007-c2",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 32.0
+    },
+    {
+      "item_id": "c3-base-q007-c3",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 33.0
+    },
+    {
+      "item_id": "c3-base-q007-c4",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 26.0
+    },
+    {
+      "item_id": "c3-base-q007-c5",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 21.0
+    },
+    {
+      "item_id": "c3-base-q007-c6",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 21.0
+    },
+    {
+      "item_id": "c3-base-q007-c7",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 27.0
+    },
+    {
+      "item_id": "c3-base-q007-c8",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 19.0
+    },
+    {
+      "item_id": "c3-base-q007-c9",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 35.0
+    },
+    {
+      "item_id": "c3-base-q008-c0",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 18.0
+    },
+    {
+      "item_id": "c3-base-q008-c1",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 26.0
+    },
+    {
+      "item_id": "c3-base-q008-c2",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 24.0
+    },
+    {
+      "item_id": "c3-base-q008-c3",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 29.0
+    },
+    {
+      "item_id": "c3-base-q008-c4",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 41.0
+    },
+    {
+      "item_id": "c3-base-q008-c5",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 28.0
+    },
+    {
+      "item_id": "c3-base-q008-c6",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 31.0
+    },
+    {
+      "item_id": "c3-base-q008-c7",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 19.0
+    },
+    {
+      "item_id": "c3-base-q008-c8",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 21.0
+    },
+    {
+      "item_id": "c3-base-q008-c9",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 30.0
+    },
+    {
+      "item_id": "c3-base-q009-c0",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 53.6
+    },
+    {
+      "item_id": "c3-base-q009-c1",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 82.4
+    },
+    {
+      "item_id": "c3-base-q009-c2",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 40.0
+    },
+    {
+      "item_id": "c3-base-q009-c3",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 54.0
+    },
+    {
+      "item_id": "c3-base-q009-c4",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 61.8
+    },
+    {
+      "item_id": "c3-base-q009-c5",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 64.0
+    },
+    {
+      "item_id": "c3-base-q009-c6",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 85.0
+    },
+    {
+      "item_id": "c3-base-q009-c7",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 53.0
+    },
+    {
+      "item_id": "c3-base-q009-c8",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 25.0
+    },
+    {
+      "item_id": "c3-base-q009-c9",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 23.0
+    },
+    {
+      "item_id": "c3-base-q010-c0",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 30.0
+    },
+    {
+      "item_id": "c3-base-q010-c1",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 39.0
+    },
+    {
+      "item_id": "c3-base-q010-c2",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 28.0
+    },
+    {
+      "item_id": "c3-base-q010-c3",
+      "orig_kept": 3,
+      "refresh_kept": 1,
+      "closure_mean": 25.0
+    },
+    {
+      "item_id": "c3-base-q010-c4",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 50.4
+    },
+    {
+      "item_id": "c3-base-q010-c5",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 47.4
+    },
+    {
+      "item_id": "c3-base-q010-c6",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 31.0
+    },
+    {
+      "item_id": "c3-base-q010-c7",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 63.8
+    },
+    {
+      "item_id": "c3-base-q010-c8",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 85.0
+    },
+    {
+      "item_id": "c3-base-q010-c9",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 31.0
+    },
+    {
+      "item_id": "c3-base-q011-c0",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 18.0
+    },
+    {
+      "item_id": "c3-base-q011-c1",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 0.0
+    },
+    {
+      "item_id": "c3-base-q011-c2",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 0.0
+    },
+    {
+      "item_id": "c3-base-q011-c3",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 1.0
+    },
+    {
+      "item_id": "c3-base-q011-c4",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 38.0
+    },
+    {
+      "item_id": "c3-base-q011-c5",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 1.0
+    },
+    {
+      "item_id": "c3-base-q011-c6",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 87.0
+    },
+    {
+      "item_id": "c3-base-q011-c7",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 12.0
+    },
+    {
+      "item_id": "c3-base-q011-c8",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 0.0
+    },
+    {
+      "item_id": "c3-base-q011-c9",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 10.0
+    },
+    {
+      "item_id": "c3-base-q012-c0",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 62.4
+    },
+    {
+      "item_id": "c3-base-q012-c1",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 35.0
+    },
+    {
+      "item_id": "c3-base-q012-c2",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 38.0
+    },
+    {
+      "item_id": "c3-base-q012-c3",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 29.0
+    },
+    {
+      "item_id": "c3-base-q012-c4",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 60.0
+    },
+    {
+      "item_id": "c3-base-q012-c5",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 32.4
+    },
+    {
+      "item_id": "c3-base-q012-c6",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 67.0
+    },
+    {
+      "item_id": "c3-base-q012-c7",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 50.4
+    },
+    {
+      "item_id": "c3-base-q012-c8",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 40.0
+    },
+    {
+      "item_id": "c3-base-q012-c9",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 41.0
+    },
+    {
+      "item_id": "c3-base-q013-c0",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 30.0
+    },
+    {
+      "item_id": "c3-base-q013-c1",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 17.0
+    },
+    {
+      "item_id": "c3-base-q013-c2",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 32.0
+    },
+    {
+      "item_id": "c3-base-q013-c3",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 24.0
+    },
+    {
+      "item_id": "c3-base-q013-c4",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 46.0
+    },
+    {
+      "item_id": "c3-base-q013-c5",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 43.0
+    },
+    {
+      "item_id": "c3-base-q013-c6",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 27.0
+    },
+    {
+      "item_id": "c3-base-q013-c7",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 38.0
+    },
+    {
+      "item_id": "c3-base-q013-c8",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 35.0
+    },
+    {
+      "item_id": "c3-base-q013-c9",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 36.0
+    },
+    {
+      "item_id": "c3-base-q014-c0",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 26.0
+    },
+    {
+      "item_id": "c3-base-q014-c1",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 46.0
+    },
+    {
+      "item_id": "c3-base-q014-c2",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 51.0
+    },
+    {
+      "item_id": "c3-base-q014-c3",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 39.0
+    },
+    {
+      "item_id": "c3-base-q014-c4",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 49.0
+    },
+    {
+      "item_id": "c3-base-q014-c5",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 32.0
+    },
+    {
+      "item_id": "c3-base-q014-c6",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 55.0
+    },
+    {
+      "item_id": "c3-base-q014-c7",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 44.0
+    },
+    {
+      "item_id": "c3-base-q014-c8",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 44.0
+    },
+    {
+      "item_id": "c3-base-q014-c9",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 42.0
+    },
+    {
+      "item_id": "c3-base-q015-c0",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 42.0
+    },
+    {
+      "item_id": "c3-base-q015-c1",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 48.0
+    },
+    {
+      "item_id": "c3-base-q015-c2",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 71.0
+    },
+    {
+      "item_id": "c3-base-q015-c3",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 31.0
+    },
+    {
+      "item_id": "c3-base-q015-c4",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 45.0
+    },
+    {
+      "item_id": "c3-base-q015-c5",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 47.0
+    },
+    {
+      "item_id": "c3-base-q015-c6",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 49.0
+    },
+    {
+      "item_id": "c3-base-q015-c7",
+      "orig_kept": 3,
+      "refresh_kept": 1,
+      "closure_mean": 50.0
+    },
+    {
+      "item_id": "c3-base-q015-c8",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 32.0
+    },
+    {
+      "item_id": "c3-base-q015-c9",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 52.0
+    },
+    {
+      "item_id": "c3-base-q016-c0",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 89.0
+    },
+    {
+      "item_id": "c3-base-q016-c1",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 44.0
+    },
+    {
+      "item_id": "c3-base-q016-c2",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 95.0
+    },
+    {
+      "item_id": "c3-base-q016-c3",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 43.0
+    },
+    {
+      "item_id": "c3-base-q016-c4",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 57.0
+    },
+    {
+      "item_id": "c3-base-q016-c5",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 95.0
+    },
+    {
+      "item_id": "c3-base-q016-c6",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 95.0
+    },
+    {
+      "item_id": "c3-base-q016-c7",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 93.0
+    },
+    {
+      "item_id": "c3-base-q016-c8",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 95.0
+    },
+    {
+      "item_id": "c3-base-q016-c9",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 15.0
+    },
+    {
+      "item_id": "c3-base-q017-c0",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 17.0
+    },
+    {
+      "item_id": "c3-base-q017-c1",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 42.4
+    },
+    {
+      "item_id": "c3-base-q017-c2",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 65.2
+    },
+    {
+      "item_id": "c3-base-q017-c3",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 39.0
+    },
+    {
+      "item_id": "c3-base-q017-c4",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 17.0
+    },
+    {
+      "item_id": "c3-base-q017-c5",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 89.0
+    },
+    {
+      "item_id": "c3-base-q017-c6",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 35.0
+    },
+    {
+      "item_id": "c3-base-q017-c7",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 35.0
+    },
+    {
+      "item_id": "c3-base-q017-c8",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 52.0
+    },
+    {
+      "item_id": "c3-base-q017-c9",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 13.0
+    },
+    {
+      "item_id": "c3-base-q018-c0",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 95.0
+    },
+    {
+      "item_id": "c3-base-q018-c1",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 93.0
+    },
+    {
+      "item_id": "c3-base-q018-c2",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 83.0
+    },
+    {
+      "item_id": "c3-base-q018-c3",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 43.0
+    },
+    {
+      "item_id": "c3-base-q018-c4",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 59.8
+    },
+    {
+      "item_id": "c3-base-q018-c5",
+      "orig_kept": 5,
+      "refresh_kept": 0,
+      "closure_mean": 95.0
+    },
+    {
+      "item_id": "c3-base-q018-c6",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 81.0
+    },
+    {
+      "item_id": "c3-base-q018-c7",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 85.0
+    },
+    {
+      "item_id": "c3-base-q018-c8",
+      "orig_kept": 0,
+      "refresh_kept": 4,
+      "closure_mean": 75.5
+    },
+    {
+      "item_id": "c3-base-q018-c9",
+      "orig_kept": 4,
+      "refresh_kept": 1,
+      "closure_mean": 95.0
+    },
+    {
+      "item_id": "c3-base-q019-c0",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 35.0
+    },
+    {
+      "item_id": "c3-base-q019-c1",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 29.0
+    },
+    {
+      "item_id": "c3-base-q019-c2",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 39.0
+    },
+    {
+      "item_id": "c3-base-q019-c3",
+      "orig_kept": 1,
+      "refresh_kept": 4,
+      "closure_mean": 34.0
+    },
+    {
+      "item_id": "c3-base-q019-c4",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 17.0
+    },
+    {
+      "item_id": "c3-base-q019-c5",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 33.0
+    },
+    {
+      "item_id": "c3-base-q019-c6",
+      "orig_kept": 0,
+      "refresh_kept": 5,
+      "closure_mean": 30.0
+    },
+    {
+      "item_id": "c3-base-q019-c7",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 15.0
+    },
+    {
+      "item_id": "c3-base-q019-c8",
+      "orig_kept": 3,
+      "refresh_kept": 2,
+      "closure_mean": 35.0
+    },
+    {
+      "item_id": "c3-base-q019-c9",
+      "orig_kept": 2,
+      "refresh_kept": 3,
+      "closure_mean": 31.0
+    }
+  ]
+}

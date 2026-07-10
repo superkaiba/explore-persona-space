@@ -236,3 +236,91 @@ def test_pm_digest_reads_previous_night_not_newest_file(research_pm_text: str):
         "research-pm.md /daily digest must pin the previous night's PT date "
         "(`date -d 'yesterday' +%F` in America/Los_Angeles)"
     )
+
+
+# ── #1131: retraction re-check (freshness gate before route-2/3 filings) ──────
+#
+# Incident #1101/#1074 (2026-07-06): the sweep filed #1101 from #1074's
+# `epm:pod-terminated v1` prose follow-up while an explicit retraction
+# (`epm:progress v26`) sat 37 seconds later on the same events.jsonl.
+# Negative-control replay (reasoning-level, verified during planning): #1074's
+# LATER rows (`epm:progress v27+`, watcher stall alerts) do NOT pass the
+# binding test for that premise — the binding test, not the recall regex
+# alone, is the decision rule.
+
+
+@pytest.mark.parametrize(
+    "token",
+    [
+        "Retraction re-check",
+        "retracted upstream",
+        "select(.ts > $ts)",
+        "FILE anyway",  # the fail-open-on-ambiguity clause (§9-allowed extra pin)
+    ],
+)
+def test_retraction_recheck_present(daily_skill_text: str, token: str):
+    """#1131: the freshness gate before route-2/3 filings (incident #1101/#1074)
+    must survive future SKILL.md edits."""
+    assert token in daily_skill_text, (
+        f"#1131 retraction re-check contract token {token!r} missing from daily "
+        "SKILL.md — the pre-filing freshness gate (skip when the source trail "
+        "retracted the mined premise) must stay in the route-2/3 filing steps."
+    )
+
+
+# ── #1173: route-2 wf-fix body Provenance mandate (durable recursion guard) ────
+
+
+def test_route2_wf_fix_provenance_mandate_present(daily_skill_text: str):
+    """#1173: every route-2 wf-fix body must carry the durable recursion-guard
+    Provenance lines (`workflow_fix_target:` + `fingerprint:`) — the env-var leg
+    is absent from `spawn-issue --auto` spawns and lost on watcher respawns
+    (incident #1134). This pins the SKILL.md mandate paragraph the driver's
+    mechanical injection backstops."""
+    assert "wf-fix body Provenance mandate" in daily_skill_text, (
+        "the route-2 'wf-fix body Provenance mandate' paragraph dropped from daily "
+        "SKILL.md — daily-filed wf-fix bodies would regress to carrying no durable "
+        "recursion-guard signal (#1173, incident #1134)"
+    )
+    assert "- workflow_fix_target: <target_file>" in daily_skill_text, (
+        "the literal `- workflow_fix_target: <target_file>` Provenance-line template "
+        "dropped from daily SKILL.md — the durable signal "
+        "task_workflow.is_workflow_fix_session() reads must stay mandated (#1173)"
+    )
+
+
+# ── #1228: route-2 wf_fix: false variant (non-workflow-surface daily filings) ──
+
+
+def test_route2_wf_fix_false_variant_documented(daily_skill_text: str):
+    """#1228: the route-2 non-workflow-surface variant (drop the wf-fix tags,
+    keep daily-auto-filed) must stay documented WITH its driver mechanism —
+    the `wf_fix: false` manifest key `daily_drive_filings.py` gates on. Without
+    the mechanism sentence the variant is unreachable on the batch driver path
+    (the driver would re-tag + re-inject unconditionally, the #1228 bug)."""
+    assert "(drop the `wf-fix` / `wf-fix-fp` tags, keep `daily-auto-filed`)" in daily_skill_text, (
+        "the route-2 drop-tags contract sentence dropped from daily SKILL.md — "
+        "experiment-code (non-workflow-surface) daily filings would regress to "
+        "carrying wf-fix dedup/recursion-guard tags (#1228)"
+    )
+    assert "wf_fix: false" in daily_skill_text, (
+        "the `wf_fix: false` manifest mechanism dropped from daily SKILL.md — "
+        "the drop-tags route-2 variant would be prose-only again, unreachable "
+        "through the batch driver daily_drive_filings.py (#1228)"
+    )
+
+
+# ── Step D: nightly title-sync drift sweep invoker (#1196 → #1235) ────────────
+
+
+def test_title_sync_sweep_pass_present(daily_skill_text: str):
+    """The nightly /daily invoker for the #1196 title-sync drift sweep survives
+    (task #1235): the command, its WARN-only/exit-0 contract, and the
+    surface-only routing must not be silently dropped by a later edit."""
+    assert (
+        "scripts/audit_clean_results_body_discipline.py --title-sync-sweep" in daily_skill_text
+    ), "the Step D title-sync sweep command is missing from daily/SKILL.md"
+    assert "title-sync drift sweep (Step D)" in daily_skill_text, (
+        "the Step D pass header is missing — the nightly title-sync invoker "
+        "(#1235) may have been dropped"
+    )

@@ -1,0 +1,2532 @@
+{
+ "commit": "9c2c2fd9b8",
+ "created": "2026-07-08T11:57:34Z",
+ "figsize": [
+  8.4,
+  3.6
+ ],
+ "points": [
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999986,
+   "rows": 8.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999986,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999987,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999987,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999987,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999988,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999988,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999988,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999989,
+   "rows": 8.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999989,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.99999,
+   "rows": 8.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.99999,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.99999,
+   "rows": 8.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999991,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999991,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999991,
+   "rows": 40.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999992,
+   "rows": 20.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999992,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999992,
+   "rows": 12.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999993,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999993,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999993,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999994,
+   "rows": 20.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999994,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999995,
+   "rows": 20.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999995,
+   "rows": 0.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999995,
+   "rows": 4.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999996,
+   "rows": 8.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999996,
+   "rows": 40.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999996,
+   "rows": 44.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999997,
+   "rows": 80.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999997,
+   "rows": 72.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999997,
+   "rows": 40.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999998,
+   "rows": 36.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999998,
+   "rows": 100.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999999,
+   "rows": 48.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999999,
+   "rows": 44.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999999,
+   "rows": 20.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": "1.0000",
+   "rows": 16.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": "1.0000",
+   "rows": 24.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999986,
+   "rows": 3.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999987,
+   "rows": 3.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999987,
+   "rows": 3.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999987,
+   "rows": 4.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999988,
+   "rows": 1.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999988,
+   "rows": 6.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999989,
+   "rows": 2.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999989,
+   "rows": 5.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999989,
+   "rows": 3.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.99999,
+   "rows": 2.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.99999,
+   "rows": 2.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.99999,
+   "rows": 3.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999991,
+   "rows": 4.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999991,
+   "rows": 1.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999991,
+   "rows": 8.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999992,
+   "rows": 5.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999992,
+   "rows": 4.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999992,
+   "rows": 16.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999993,
+   "rows": 15.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999993,
+   "rows": 17.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999993,
+   "rows": 22.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999994,
+   "rows": 6.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999994,
+   "rows": 4.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999995,
+   "rows": 5.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999995,
+   "rows": 3.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999995,
+   "rows": 6.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999996,
+   "rows": 14.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999996,
+   "rows": 23.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999996,
+   "rows": 38.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999997,
+   "rows": 75.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999997,
+   "rows": 69.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999997,
+   "rows": 62.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999998,
+   "rows": 80.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999998,
+   "rows": 72.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999998,
+   "rows": 59.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999999,
+   "rows": 29.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999999,
+   "rows": 7.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999999,
+   "rows": 9.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": "1.0000",
+   "rows": 21.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": "1.0000",
+   "rows": 9.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999,
+   "rows": 0.0,
+   "series": "WARN bar 0.999",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "per-row cosine (tf vs parent capture), layer 14": 0.999,
+   "rows": 1.0,
+   "series": "WARN bar 0.999",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 0.0,
+   "per-layer min cosine": 0.9999992847442627,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 1.0,
+   "per-layer min cosine": 0.9999985098838806,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 2.0,
+   "per-layer min cosine": 0.9999932646751404,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 3.0,
+   "per-layer min cosine": 0.9999978542327881,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 4.0,
+   "per-layer min cosine": 0.9999985098838806,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 5.0,
+   "per-layer min cosine": 0.9999983906745911,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 6.0,
+   "per-layer min cosine": 0.9999984502792358,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 7.0,
+   "per-layer min cosine": 0.9999982714653015,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 8.0,
+   "per-layer min cosine": 0.9999983906745911,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 9.0,
+   "per-layer min cosine": 0.9999978542327881,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 10.0,
+   "per-layer min cosine": 0.9999979138374329,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 11.0,
+   "per-layer min cosine": 0.9999985098838806,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 12.0,
+   "per-layer min cosine": 0.9999984502792358,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 13.0,
+   "per-layer min cosine": 0.999998152256012,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 14.0,
+   "per-layer min cosine": 0.9999982118606567,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 15.0,
+   "per-layer min cosine": 0.9999977946281433,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 16.0,
+   "per-layer min cosine": 0.9999982118606567,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 17.0,
+   "per-layer min cosine": 0.9999979734420776,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 18.0,
+   "per-layer min cosine": 0.9999977946281433,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 19.0,
+   "per-layer min cosine": 0.9999977946281433,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 20.0,
+   "per-layer min cosine": 0.9999977946281433,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 21.0,
+   "per-layer min cosine": 0.9999969005584717,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 22.0,
+   "per-layer min cosine": 0.999996542930603,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 23.0,
+   "per-layer min cosine": 0.9999961256980896,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 24.0,
+   "per-layer min cosine": 0.9999936819076538,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 25.0,
+   "per-layer min cosine": 0.9999874234199524,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 26.0,
+   "per-layer min cosine": 0.9999624490737915,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 27.0,
+   "per-layer min cosine": 0.9997966289520264,
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 0.0,
+   "per-layer min cosine": 0.9999992847442627,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 1.0,
+   "per-layer min cosine": 0.9999984502792358,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 2.0,
+   "per-layer min cosine": 0.9999966621398926,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 3.0,
+   "per-layer min cosine": 0.9999979138374329,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 4.0,
+   "per-layer min cosine": 0.9999961853027344,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 5.0,
+   "per-layer min cosine": 0.9999958276748657,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 6.0,
+   "per-layer min cosine": 0.9999962449073792,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 7.0,
+   "per-layer min cosine": 0.9999964237213135,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 8.0,
+   "per-layer min cosine": 0.9999963045120239,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 9.0,
+   "per-layer min cosine": 0.9999955892562866,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 10.0,
+   "per-layer min cosine": 0.9999963641166687,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 11.0,
+   "per-layer min cosine": 0.9999898672103882,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 12.0,
+   "per-layer min cosine": 0.9999901652336121,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 13.0,
+   "per-layer min cosine": 0.9999900460243225,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 14.0,
+   "per-layer min cosine": 0.9999917149543762,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 15.0,
+   "per-layer min cosine": 0.9999904036521912,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 16.0,
+   "per-layer min cosine": 0.9999882578849792,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 17.0,
+   "per-layer min cosine": 0.9999904036521912,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 18.0,
+   "per-layer min cosine": 0.9999908804893494,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 19.0,
+   "per-layer min cosine": 0.999989926815033,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 20.0,
+   "per-layer min cosine": 0.9999905824661255,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 21.0,
+   "per-layer min cosine": 0.9999899864196777,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 22.0,
+   "per-layer min cosine": 0.9999881982803345,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 23.0,
+   "per-layer min cosine": 0.9999895095825195,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 24.0,
+   "per-layer min cosine": 0.9999889135360718,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 25.0,
+   "per-layer min cosine": 0.999988317489624,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 26.0,
+   "per-layer min cosine": 0.99994295835495,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 27.0,
+   "per-layer min cosine": 0.9994820952415466,
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 0.0,
+   "per-layer min cosine": 0.999999463558197,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 1.0,
+   "per-layer min cosine": 0.9999972581863403,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 2.0,
+   "per-layer min cosine": 0.9999958276748657,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 3.0,
+   "per-layer min cosine": 0.9999961853027344,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 4.0,
+   "per-layer min cosine": 0.9999964237213135,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 5.0,
+   "per-layer min cosine": 0.999996542930603,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 6.0,
+   "per-layer min cosine": 0.9999953508377075,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 7.0,
+   "per-layer min cosine": 0.9999952912330627,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 8.0,
+   "per-layer min cosine": 0.9999955296516418,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 9.0,
+   "per-layer min cosine": 0.9999948143959045,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 10.0,
+   "per-layer min cosine": 0.9999949932098389,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 11.0,
+   "per-layer min cosine": 0.9999887347221375,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 12.0,
+   "per-layer min cosine": 0.9999876618385315,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 13.0,
+   "per-layer min cosine": 0.9999891519546509,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 14.0,
+   "per-layer min cosine": 0.9999886751174927,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 15.0,
+   "per-layer min cosine": 0.9999880790710449,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 16.0,
+   "per-layer min cosine": 0.9999890923500061,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 17.0,
+   "per-layer min cosine": 0.9999883770942688,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 18.0,
+   "per-layer min cosine": 0.99998939037323,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 19.0,
+   "per-layer min cosine": 0.9999874830245972,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 20.0,
+   "per-layer min cosine": 0.9999864101409912,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 21.0,
+   "per-layer min cosine": 0.9999849200248718,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 22.0,
+   "per-layer min cosine": 0.9999839067459106,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 23.0,
+   "per-layer min cosine": 0.9999812841415405,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 24.0,
+   "per-layer min cosine": 0.9999761581420898,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 25.0,
+   "per-layer min cosine": 0.9999642968177795,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 26.0,
+   "per-layer min cosine": 0.9999523162841797,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 27.0,
+   "per-layer min cosine": 0.9995153546333313,
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 0.0,
+   "per-layer min cosine": 0.9999992847442627,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 1.0,
+   "per-layer min cosine": 0.9999961853027344,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 2.0,
+   "per-layer min cosine": 0.9999917149543762,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 3.0,
+   "per-layer min cosine": 0.9999992847442627,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 4.0,
+   "per-layer min cosine": 0.9999973773956299,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 5.0,
+   "per-layer min cosine": 0.9999975562095642,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 6.0,
+   "per-layer min cosine": 0.9999964833259583,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 7.0,
+   "per-layer min cosine": 0.9999924898147583,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 8.0,
+   "per-layer min cosine": 0.9999911189079285,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 9.0,
+   "per-layer min cosine": 0.9999921917915344,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 10.0,
+   "per-layer min cosine": 0.9999924898147583,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 11.0,
+   "per-layer min cosine": 0.99998539686203,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 12.0,
+   "per-layer min cosine": 0.9999875426292419,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 13.0,
+   "per-layer min cosine": 0.9999862313270569,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 14.0,
+   "per-layer min cosine": 0.9999857544898987,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 15.0,
+   "per-layer min cosine": 0.9999862909317017,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 16.0,
+   "per-layer min cosine": 0.9999860525131226,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 17.0,
+   "per-layer min cosine": 0.9999866485595703,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 18.0,
+   "per-layer min cosine": 0.9999863505363464,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 19.0,
+   "per-layer min cosine": 0.9999868869781494,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 20.0,
+   "per-layer min cosine": 0.9999861121177673,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 21.0,
+   "per-layer min cosine": 0.999987781047821,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 22.0,
+   "per-layer min cosine": 0.9999865889549255,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 23.0,
+   "per-layer min cosine": 0.9999874830245972,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 24.0,
+   "per-layer min cosine": 0.9999905228614807,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 25.0,
+   "per-layer min cosine": 0.999992311000824,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 26.0,
+   "per-layer min cosine": 0.9999592304229736,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 27.0,
+   "per-layer min cosine": 0.9997408390045166,
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 0.0,
+   "per-layer min cosine": 0.9999993443489075,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 1.0,
+   "per-layer min cosine": 0.9999985694885254,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 2.0,
+   "per-layer min cosine": 0.9999870657920837,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 3.0,
+   "per-layer min cosine": 0.9999923706054688,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 4.0,
+   "per-layer min cosine": 0.9999985098838806,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 5.0,
+   "per-layer min cosine": 0.9999985694885254,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 6.0,
+   "per-layer min cosine": 0.9999982714653015,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 7.0,
+   "per-layer min cosine": 0.9999969005584717,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 8.0,
+   "per-layer min cosine": 0.9999971985816956,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 9.0,
+   "per-layer min cosine": 0.999997079372406,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 10.0,
+   "per-layer min cosine": 0.999996542930603,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 11.0,
+   "per-layer min cosine": 0.9999919533729553,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 12.0,
+   "per-layer min cosine": 0.9999915361404419,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 13.0,
+   "per-layer min cosine": 0.9999924302101135,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 14.0,
+   "per-layer min cosine": 0.9999914765357971,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 15.0,
+   "per-layer min cosine": 0.9999919533729553,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 16.0,
+   "per-layer min cosine": 0.9999920129776001,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 17.0,
+   "per-layer min cosine": 0.9999914765357971,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 18.0,
+   "per-layer min cosine": 0.9999925494194031,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 19.0,
+   "per-layer min cosine": 0.9999916553497314,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 20.0,
+   "per-layer min cosine": 0.999992311000824,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 21.0,
+   "per-layer min cosine": 0.9999906420707703,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 22.0,
+   "per-layer min cosine": 0.9999911189079285,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 23.0,
+   "per-layer min cosine": 0.9999912977218628,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 24.0,
+   "per-layer min cosine": 0.9999912977218628,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 25.0,
+   "per-layer min cosine": 0.9999901652336121,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 26.0,
+   "per-layer min cosine": 0.9999728202819824,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 27.0,
+   "per-layer min cosine": 0.9994452595710754,
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 0.0,
+   "per-layer min cosine": 0.9999992847442627,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 1.0,
+   "per-layer min cosine": 0.9999985694885254,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 2.0,
+   "per-layer min cosine": 0.999992311000824,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 3.0,
+   "per-layer min cosine": 0.9999986290931702,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 4.0,
+   "per-layer min cosine": 0.9999980330467224,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 5.0,
+   "per-layer min cosine": 0.9999980926513672,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 6.0,
+   "per-layer min cosine": 0.9999983310699463,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 7.0,
+   "per-layer min cosine": 0.9999980330467224,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 8.0,
+   "per-layer min cosine": 0.9999983310699463,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 9.0,
+   "per-layer min cosine": 0.9999976754188538,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 10.0,
+   "per-layer min cosine": 0.999997615814209,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 11.0,
+   "per-layer min cosine": 0.9999961256980896,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 12.0,
+   "per-layer min cosine": 0.9999955892562866,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 13.0,
+   "per-layer min cosine": 0.999997079372406,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 14.0,
+   "per-layer min cosine": 0.9999957084655762,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 15.0,
+   "per-layer min cosine": 0.9999964833259583,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 16.0,
+   "per-layer min cosine": 0.9999971985816956,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 17.0,
+   "per-layer min cosine": 0.999996542930603,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 18.0,
+   "per-layer min cosine": 0.9999960660934448,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 19.0,
+   "per-layer min cosine": 0.999997079372406,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 20.0,
+   "per-layer min cosine": 0.9999954700469971,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 21.0,
+   "per-layer min cosine": 0.9999964833259583,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 22.0,
+   "per-layer min cosine": 0.9999956488609314,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 23.0,
+   "per-layer min cosine": 0.9999960064888,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 24.0,
+   "per-layer min cosine": 0.9999947547912598,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 25.0,
+   "per-layer min cosine": 0.9999887347221375,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 26.0,
+   "per-layer min cosine": 0.9999733567237854,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 27.0,
+   "per-layer min cosine": 0.9996098875999451,
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "decoder layer": 0.0,
+   "per-layer min cosine": 0.9999992251396179,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 1.0,
+   "per-layer min cosine": 0.9999987483024597,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 2.0,
+   "per-layer min cosine": 0.9999963045120239,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 3.0,
+   "per-layer min cosine": 0.9999967217445374,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 4.0,
+   "per-layer min cosine": 0.9999978542327881,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 5.0,
+   "per-layer min cosine": 0.9999976754188538,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 6.0,
+   "per-layer min cosine": 0.9999978542327881,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 7.0,
+   "per-layer min cosine": 0.9999974966049194,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 8.0,
+   "per-layer min cosine": 0.9999975562095642,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 9.0,
+   "per-layer min cosine": 0.9999973773956299,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 10.0,
+   "per-layer min cosine": 0.9999973177909851,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 11.0,
+   "per-layer min cosine": 0.9999976754188538,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 12.0,
+   "per-layer min cosine": 0.9999974370002747,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 13.0,
+   "per-layer min cosine": 0.9999971985816956,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 14.0,
+   "per-layer min cosine": 0.9999969601631165,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 15.0,
+   "per-layer min cosine": 0.9999970197677612,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 16.0,
+   "per-layer min cosine": 0.9999969005584717,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 17.0,
+   "per-layer min cosine": 0.9999969005584717,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 18.0,
+   "per-layer min cosine": 0.9999967813491821,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 19.0,
+   "per-layer min cosine": 0.999995768070221,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 20.0,
+   "per-layer min cosine": 0.9999954700469971,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 21.0,
+   "per-layer min cosine": 0.9999943971633911,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 22.0,
+   "per-layer min cosine": 0.9999932646751404,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 23.0,
+   "per-layer min cosine": 0.9999917149543762,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 24.0,
+   "per-layer min cosine": 0.9999904632568359,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 25.0,
+   "per-layer min cosine": 0.999984085559845,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 26.0,
+   "per-layer min cosine": 0.9999816417694092,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 27.0,
+   "per-layer min cosine": 0.9999178051948547,
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "decoder layer": 0.0,
+   "per-layer min cosine": 0.9999992251396179,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 1.0,
+   "per-layer min cosine": 0.9999987483024597,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 2.0,
+   "per-layer min cosine": 0.9999977350234985,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 3.0,
+   "per-layer min cosine": 0.9999976754188538,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 4.0,
+   "per-layer min cosine": 0.9999951720237732,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 5.0,
+   "per-layer min cosine": 0.9999952912330627,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 6.0,
+   "per-layer min cosine": 0.9999954104423523,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 7.0,
+   "per-layer min cosine": 0.9999954104423523,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 8.0,
+   "per-layer min cosine": 0.9999955892562866,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 9.0,
+   "per-layer min cosine": 0.9999957084655762,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 10.0,
+   "per-layer min cosine": 0.9999952912330627,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 11.0,
+   "per-layer min cosine": 0.9999892711639404,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 12.0,
+   "per-layer min cosine": 0.9999898076057434,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 13.0,
+   "per-layer min cosine": 0.9999903440475464,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 14.0,
+   "per-layer min cosine": 0.9999890327453613,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 15.0,
+   "per-layer min cosine": 0.9999898076057434,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 16.0,
+   "per-layer min cosine": 0.9999890923500061,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 17.0,
+   "per-layer min cosine": 0.999989926815033,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 18.0,
+   "per-layer min cosine": 0.9999893307685852,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 19.0,
+   "per-layer min cosine": 0.9999896287918091,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 20.0,
+   "per-layer min cosine": 0.9999892115592957,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 21.0,
+   "per-layer min cosine": 0.999988853931427,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 22.0,
+   "per-layer min cosine": 0.9999890327453613,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 23.0,
+   "per-layer min cosine": 0.99998939037323,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 24.0,
+   "per-layer min cosine": 0.9999904036521912,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 25.0,
+   "per-layer min cosine": 0.999990701675415,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 26.0,
+   "per-layer min cosine": 0.9999672174453735,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 27.0,
+   "per-layer min cosine": 0.9998043179512024,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "decoder layer": 0.0,
+   "per-layer min cosine": 0.9999992847442627,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 1.0,
+   "per-layer min cosine": 0.9999980330467224,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 2.0,
+   "per-layer min cosine": 0.9999972581863403,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 3.0,
+   "per-layer min cosine": 0.9999951124191284,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 4.0,
+   "per-layer min cosine": 0.9999954700469971,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 5.0,
+   "per-layer min cosine": 0.9999955296516418,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 6.0,
+   "per-layer min cosine": 0.9999948740005493,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 7.0,
+   "per-layer min cosine": 0.9999943375587463,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 8.0,
+   "per-layer min cosine": 0.9999938011169434,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 9.0,
+   "per-layer min cosine": 0.9999934434890747,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 10.0,
+   "per-layer min cosine": 0.9999935030937195,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 11.0,
+   "per-layer min cosine": 0.9999871850013733,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 12.0,
+   "per-layer min cosine": 0.9999873042106628,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 13.0,
+   "per-layer min cosine": 0.9999870657920837,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 14.0,
+   "per-layer min cosine": 0.9999863505363464,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 15.0,
+   "per-layer min cosine": 0.9999868869781494,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 16.0,
+   "per-layer min cosine": 0.9999867677688599,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 17.0,
+   "per-layer min cosine": 0.9999866485595703,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 18.0,
+   "per-layer min cosine": 0.9999859929084778,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 19.0,
+   "per-layer min cosine": 0.9999847412109375,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 20.0,
+   "per-layer min cosine": 0.9999830722808838,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 21.0,
+   "per-layer min cosine": 0.9999808669090271,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 22.0,
+   "per-layer min cosine": 0.9999762773513794,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 23.0,
+   "per-layer min cosine": 0.9999731779098511,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 24.0,
+   "per-layer min cosine": 0.9999727010726929,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 25.0,
+   "per-layer min cosine": 0.9999632239341736,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 26.0,
+   "per-layer min cosine": 0.9999772906303406,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 27.0,
+   "per-layer min cosine": 0.9998464584350586,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "decoder layer": 0.0,
+   "per-layer min cosine": 0.9999991655349731,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 1.0,
+   "per-layer min cosine": 0.999997615814209,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 2.0,
+   "per-layer min cosine": 0.9999954700469971,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 3.0,
+   "per-layer min cosine": 0.9999986886978149,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 4.0,
+   "per-layer min cosine": 0.9999963045120239,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 5.0,
+   "per-layer min cosine": 0.9999966025352478,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 6.0,
+   "per-layer min cosine": 0.999996542930603,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 7.0,
+   "per-layer min cosine": 0.9999909996986389,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 8.0,
+   "per-layer min cosine": 0.9999918937683105,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 9.0,
+   "per-layer min cosine": 0.999992311000824,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 10.0,
+   "per-layer min cosine": 0.9999914765357971,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 11.0,
+   "per-layer min cosine": 0.9999849796295166,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 12.0,
+   "per-layer min cosine": 0.9999858140945435,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 13.0,
+   "per-layer min cosine": 0.9999849200248718,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 14.0,
+   "per-layer min cosine": 0.9999862313270569,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 15.0,
+   "per-layer min cosine": 0.9999869465827942,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 16.0,
+   "per-layer min cosine": 0.9999860525131226,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 17.0,
+   "per-layer min cosine": 0.9999861717224121,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 18.0,
+   "per-layer min cosine": 0.9999865889549255,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 19.0,
+   "per-layer min cosine": 0.9999864101409912,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 20.0,
+   "per-layer min cosine": 0.9999874234199524,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 21.0,
+   "per-layer min cosine": 0.9999865889549255,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 22.0,
+   "per-layer min cosine": 0.999988317489624,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 23.0,
+   "per-layer min cosine": 0.9999903440475464,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 24.0,
+   "per-layer min cosine": 0.9999916553497314,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 25.0,
+   "per-layer min cosine": 0.9999915957450867,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 26.0,
+   "per-layer min cosine": 0.9999802708625793,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 27.0,
+   "per-layer min cosine": 0.9999063014984131,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "decoder layer": 0.0,
+   "per-layer min cosine": 0.9999992251396179,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 1.0,
+   "per-layer min cosine": 0.9999986886978149,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 2.0,
+   "per-layer min cosine": 0.9999936819076538,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 3.0,
+   "per-layer min cosine": 0.9999917149543762,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 4.0,
+   "per-layer min cosine": 0.9999979138374329,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 5.0,
+   "per-layer min cosine": 0.9999980330467224,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 6.0,
+   "per-layer min cosine": 0.9999979138374329,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 7.0,
+   "per-layer min cosine": 0.9999960064888,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 8.0,
+   "per-layer min cosine": 0.9999964237213135,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 9.0,
+   "per-layer min cosine": 0.9999963641166687,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 10.0,
+   "per-layer min cosine": 0.999996542930603,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 11.0,
+   "per-layer min cosine": 0.9999915957450867,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 12.0,
+   "per-layer min cosine": 0.9999911189079285,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 13.0,
+   "per-layer min cosine": 0.9999906420707703,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 14.0,
+   "per-layer min cosine": 0.9999902844429016,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 15.0,
+   "per-layer min cosine": 0.9999915957450867,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 16.0,
+   "per-layer min cosine": 0.9999911189079285,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 17.0,
+   "per-layer min cosine": 0.9999908804893494,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 18.0,
+   "per-layer min cosine": 0.9999916553497314,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 19.0,
+   "per-layer min cosine": 0.9999912977218628,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 20.0,
+   "per-layer min cosine": 0.9999907612800598,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 21.0,
+   "per-layer min cosine": 0.9999901652336121,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 22.0,
+   "per-layer min cosine": 0.9999907612800598,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 23.0,
+   "per-layer min cosine": 0.9999917149543762,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 24.0,
+   "per-layer min cosine": 0.9999926090240479,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 25.0,
+   "per-layer min cosine": 0.9999921917915344,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 26.0,
+   "per-layer min cosine": 0.9999856352806091,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 27.0,
+   "per-layer min cosine": 0.9997555613517761,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "decoder layer": 0.0,
+   "per-layer min cosine": 0.9999991059303284,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 1.0,
+   "per-layer min cosine": 0.9999986886978149,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 2.0,
+   "per-layer min cosine": 0.9999957084655762,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 3.0,
+   "per-layer min cosine": 0.9999979138374329,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 4.0,
+   "per-layer min cosine": 0.9999975562095642,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 5.0,
+   "per-layer min cosine": 0.9999974966049194,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 6.0,
+   "per-layer min cosine": 0.9999974966049194,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 7.0,
+   "per-layer min cosine": 0.9999973773956299,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 8.0,
+   "per-layer min cosine": 0.9999970197677612,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 9.0,
+   "per-layer min cosine": 0.9999970197677612,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 10.0,
+   "per-layer min cosine": 0.999997079372406,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 11.0,
+   "per-layer min cosine": 0.9999960064888,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 12.0,
+   "per-layer min cosine": 0.9999958872795105,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 13.0,
+   "per-layer min cosine": 0.9999958872795105,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 14.0,
+   "per-layer min cosine": 0.9999948740005493,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 15.0,
+   "per-layer min cosine": 0.9999952912330627,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 16.0,
+   "per-layer min cosine": 0.9999958276748657,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 17.0,
+   "per-layer min cosine": 0.9999960660934448,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 18.0,
+   "per-layer min cosine": 0.9999962449073792,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 19.0,
+   "per-layer min cosine": 0.9999956488609314,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 20.0,
+   "per-layer min cosine": 0.9999954104423523,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 21.0,
+   "per-layer min cosine": 0.9999950528144836,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 22.0,
+   "per-layer min cosine": 0.9999953508377075,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 23.0,
+   "per-layer min cosine": 0.9999943971633911,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 24.0,
+   "per-layer min cosine": 0.9999935626983643,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 25.0,
+   "per-layer min cosine": 0.999989926815033,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 26.0,
+   "per-layer min cosine": 0.9999851584434509,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "decoder layer": 27.0,
+   "per-layer min cosine": 0.9998482465744019,
+   "_kind": "line",
+   "_group": 14
+  }
+ ],
+ "n_series": 15,
+ "total_points": 418,
+ "git_commit": "9c2c2fd9b87044f54cbce7b4bc9a2aff7e398c7d",
+ "ts": "2026-07-08T11:57:32Z",
+ "cells": [
+  "s1_lora_neg",
+  "s2_lora_pos",
+  "s3_fullft_neg",
+  "s4_fullft_pos",
+  "s5_lora_generic",
+  "s6_fullft_generic"
+ ]
+}

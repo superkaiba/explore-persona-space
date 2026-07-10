@@ -368,18 +368,36 @@ def test_cpu_guard_kill_switch(guard_env, watcher_roots, monkeypatch, capsys):
 
 
 def test_cpu_guard_never_kills():
-    """Grep the CPU-guard source block (header sentinel -> `def _status_class`,
-    the named end sentinel) for process-mutation tokens: zero hits.
+    """Grep the CPU-guard source block (header sentinel -> the dedicated
+    END-OF-CPU-GUARD-BLOCK sentinel after cpu_guard_pass) for process-mutation
+    tokens: zero hits.
 
     The tokens are CODE-shaped (call syntax / quoted argv strings) so the
-    block's own "never kills / renices" prose cannot trip the check: an
-    actual mutation would appear as ``os.kill(...)``, a ``"renice"``
-    subprocess argv token, ``.send_signal(...)``, etc."""
+    block's own "never kills / renices" prose cannot trip the check. #1155:
+    the old end anchor (`src.index("def _status_class")`) matched a backticked
+    prose mention inside the block's own header comment, 11 lines after the
+    header — the scanned span was ~10 comment lines, none of the pass. Both
+    anchors are asserted unique and the span is self-checked to cover the
+    real implementation, so a re-anchoring regression fails loudly.
+    """
     src = (_SCRIPTS / "autonomous_session_watch.py").read_text()
-    start = src.index("CPU/memory-pressure guard pass (task #849)")
-    end = src.index("def _status_class")
+    header = "CPU/memory-pressure guard pass (task #849)"
+    end_sentinel = "END-OF-CPU-GUARD-BLOCK (task #849)"
+    assert src.count(header) == 1, "header sentinel must be unique in source"
+    assert src.count(end_sentinel) == 1, "end sentinel must be unique in source"
+    start = src.index(header)
+    end = src.index(end_sentinel)
     assert start < end, "block sentinels out of order"
     block = src[start:end]
+    # Span self-check: the scanned block must cover the pass implementation —
+    # the pass entrypoint plus the two subprocess-running helpers most able
+    # to mutate processes.
+    for span_probe in (
+        "def cpu_guard_pass(",
+        "def _earlyoom_kills_since(",
+        "def _top_processes(",
+    ):
+        assert span_probe in block, f"never-kills span no longer covers {span_probe!r}"
     banned = (
         "os.kill(",
         '"renice"',

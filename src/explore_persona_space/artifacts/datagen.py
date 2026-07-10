@@ -42,6 +42,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import logging
 import math
 import shutil
 import time
@@ -66,6 +67,8 @@ from explore_persona_space.artifacts.negatives import (
 )
 from explore_persona_space.eval.graded_judge import JudgeResult, judge_graded
 
+logger = logging.getLogger(__name__)
+
 # ── Constants ────────────────────────────────────────────────────────────────
 
 POSITIVE = "positive"
@@ -76,10 +79,19 @@ NEGATIVE = "negative"
 # is the guarantee; recorded in pool_meta. (plan §11)
 EXPECTED_YIELD = 0.7
 DEFAULT_GEN_MAX_TOKENS = 1024  # free-generation default (CLAUDE.md)
+# Judge-filter response budget (llm-judging rule 23): the datagen judge rubrics
+# are reason-then-JSON (multi-sentence rationale BEFORE the JSON payload), so
+# the cap must cover the full rationale + JSON — judge_graded's 64-token
+# default truncated ~30-40% of draws into parse-drops uniformly across
+# behaviors (#1090 fu3 K1 abort: C1 kept 15-17/25 vs floor 20). >=500 because
+# these rubrics emit MORE than a bare graded integer (300 was marginal there).
+DATAGEN_JUDGE_MAX_TOKENS = 500
 # formatting's deterministic structural keep-check: >=80% of non-empty answer
 # lines are list items (plan §3.3 / §11).
 STRUCTURAL_LIST_FRACTION = 0.8
-MANIFEST_SCHEMA_VERSION = 1
+# v2 (#1090): + instruction_source; exhibit/not_exhibit_instructions now hold the
+# RESOLVED lists (a pre-#1090 v1 manifest mismatches -> the resume refuses, correct).
+MANIFEST_SCHEMA_VERSION = 2
 
 # Delimiters bracketing the generation-only instruction block inside the leading
 # system message. inject/strip are exact inverses (test-pinned), so the emitted
@@ -94,6 +106,17 @@ _INSTR_CLOSE = "\n[[/GENERATION-ONLY INSTRUCTION]]"
 # bracketed meta-block). Either way emit_messages is computed independently
 # from the context, so the context-parity contract holds by construction.
 INSTRUCTION_STYLES = ("tagged", "plain")
+
+# instruction_source values (#1090 plan §4 D2/D7): "elicitation" (default,
+# byte-identical to the pre-#1090 behavior) sources the generation-only
+# instructions from ``Behavior.elicitation``; "extraction_pairs" sources them
+# from the persona-vectors ``Behavior.extraction.prompt_pairs`` — positives
+# rotate over the pair ``exhibit`` texts, negatives over the pair
+# ``not_exhibit`` texts (trait-framed elicitation, the paper's step-2 artifact
+# repurposed as the datagen instruction-variant axis). The resolved lists +
+# the source token enter ``gen_manifest.json`` (resume-key protection: a
+# source flip regenerates fresh instead of silently reusing candidates).
+INSTRUCTION_SOURCES = ("elicitation", "extraction_pairs")
 
 
 class DatagenYieldError(RuntimeError):
@@ -325,11 +348,39 @@ class _ArmDrops:
     judge_none_drops: int = 0
     threshold_drops: int = 0
     structural_drops: int = 0
-    variant_usage: Counter = field(default_factory=Counter)
+    variant_usage: Counter = field(default_factory=Counter)  # REQUESTED candidates per variant
+    variant_kept: Counter = field(default_factory=Counter)  # judge-KEPT candidates per variant
     question_multiplicity: Counter = field(default_factory=Counter)
 
 
 # ── Request composition ──────────────────────────────────────────────────────
+
+
+def _resolve_instructions(
+    behavior: Behavior, instruction_source: str
+) -> tuple[tuple[str, ...], tuple[str, ...] | None]:
+    """(exhibit_instructions, not_exhibit_instructions) for the given source.
+
+    ``"elicitation"`` reads ``Behavior.elicitation`` (the pre-#1090 behavior);
+    ``"extraction_pairs"`` reads the persona-vectors prompt pairs — positives
+    from ``PromptPair.exhibit``, negatives from ``PromptPair.not_exhibit``.
+    Raises ``ValueError`` on an unknown source or a pairs-source behavior with
+    no :class:`ExtractionSpec`.
+    """
+    if instruction_source not in INSTRUCTION_SOURCES:
+        raise ValueError(f"instruction_source {instruction_source!r} not in {INSTRUCTION_SOURCES}")
+    if instruction_source == "extraction_pairs":
+        if behavior.extraction is None:
+            raise ValueError(
+                f"behavior {behavior.name!r} has no ExtractionSpec — "
+                "instruction_source='extraction_pairs' needs the 5 prompt pairs"
+            )
+        pairs = behavior.extraction.prompt_pairs
+        return tuple(p.exhibit for p in pairs), tuple(p.not_exhibit for p in pairs)
+    return (
+        behavior.elicitation.exhibit_instructions,
+        behavior.elicitation.not_exhibit_instructions,
+    )
 
 
 def _compose_positive_requests(
@@ -339,8 +390,10 @@ def _compose_positive_requests(
     n_requests: int,
     rng,
     instruction_style: str = "tagged",
+    variants: Sequence[str] | None = None,
 ) -> list[GenRequest]:
-    variants = behavior.elicitation.exhibit_instructions
+    if variants is None:  # back-compat default: the elicitation source
+        variants = behavior.elicitation.exhibit_instructions
     grid = [(qid, q, vi) for (qid, q) in questions for vi in range(len(variants))]
     picks = _sample_grid(grid, n_requests, rng)
     reqs: list[GenRequest] = []
@@ -363,6 +416,9 @@ def _compose_positive_requests(
     return reqs
 
 
+_UNSET = object()  # sentinel: "caller passed nothing" (None is a legal value below)
+
+
 def _compose_negative_requests(
     behavior: Behavior,
     panel: Panel,
@@ -370,8 +426,10 @@ def _compose_negative_requests(
     n_requests_per_member: int,
     rng,
     instruction_style: str = "tagged",
+    not_exhibit: Sequence[str] | None | object = _UNSET,
 ) -> list[GenRequest]:
-    not_exhibit = behavior.elicitation.not_exhibit_instructions  # may be None
+    if not_exhibit is _UNSET:  # back-compat default: the elicitation source
+        not_exhibit = behavior.elicitation.not_exhibit_instructions  # may be None
     reqs: list[GenRequest] = []
     i = 0
     for member in panel:
@@ -583,6 +641,10 @@ def _build_manifest(
     gen_model: str,
     gen_temperature: float,
     instruction_style: str,
+    instruction_source: str,
+    exhibit_instructions: Sequence[str],
+    not_exhibit_instructions: Sequence[str] | None,
+    oversample_mult: float = 1.0,
 ) -> dict:
     train_bank, ts, te = banks.SLICES[(behavior.name, "train")]
     return {
@@ -591,12 +653,14 @@ def _build_manifest(
         "train_bank": train_bank,
         "train_bank_sha": banks.bank_sha(train_bank),
         "train_slice": f"{train_bank}[{ts}:{te}]",
-        "exhibit_instructions": list(behavior.elicitation.exhibit_instructions),
+        # The RESOLVED instruction lists (per instruction_source, #1090) — a
+        # source flip changes these lists AND the source token below, so the
+        # manifest resume key invalidates on either.
+        "exhibit_instructions": list(exhibit_instructions),
         "not_exhibit_instructions": (
-            None
-            if behavior.elicitation.not_exhibit_instructions is None
-            else list(behavior.elicitation.not_exhibit_instructions)
+            None if not_exhibit_instructions is None else list(not_exhibit_instructions)
         ),
+        "instruction_source": instruction_source,
         "context_id": context_C.context_id,
         "context_fingerprint": _context_fingerprint(context_C),
         "panel": [m.slug for m in panel],
@@ -613,6 +677,10 @@ def _build_manifest(
         # Part of the resume key (#1074): a style flip re-generates fresh
         # instead of silently reusing candidates injected under the other style.
         "instruction_style": instruction_style,
+        # Part of the resume key (#1090 round 4): a changed positive request
+        # budget re-generates fresh rather than replaying the smaller raw
+        # cache (pre-knob manifests normalize to 1.0 at the resume check).
+        "oversample_mult": oversample_mult,
     }
 
 
@@ -659,6 +727,10 @@ def _judge_and_filter(
         cache_dir=cache_dir,
         save_raw=save_raw,
         judge_model=behavior.judge_model,
+        # Explicit at the call site (never the 64-token library default): the
+        # reason-then-JSON filter rubrics truncate-and-parse-drop under 64
+        # (#1090 fu3 crash-fix; llm-judging rule 23).
+        max_tokens=DATAGEN_JUDGE_MAX_TOKENS,
     )
     predicate = _STRUCTURAL_PREDICATES.get(behavior.name)
     threshold = behavior.threshold
@@ -685,6 +757,7 @@ def _judge_and_filter(
                 keep = True
         scoreinfo[rid] = (score, keep)
         if keep:
+            drops.variant_kept[c.request.variant_id] += 1
             kept.append(c)
     return kept, drops, result, scoreinfo
 
@@ -699,6 +772,8 @@ def compose_positive_schedule(
     target_n: int,
     seed: int,
     instruction_style: str = "tagged",
+    variants: Sequence[str] | None = None,
+    oversample_mult: float = 1.0,
 ) -> tuple[list[GenRequest], object, list[tuple[str, str]], int]:
     """The deterministic stage-3a positive request schedule (RNG-replay surface).
 
@@ -707,15 +782,27 @@ def compose_positive_schedule(
     an external replay (a smoke fixture builder, a reuse verification) composes
     EXACTLY the schedule the pipeline uses; the returned ``rng`` has consumed
     exactly the positive-composition draws, so negative composition continues
-    from the identical state in both the producing and the reusing run.
+    from the identical state in both the producing and the reusing run. The
+    #1090 knobs are part of the schedule identity and thread through here:
+    ``variants`` (the RESOLVED exhibit-instruction list per
+    ``instruction_source``; ``None`` = the elicitation back-compat default)
+    sets the variant grid, and ``oversample_mult`` scales the positive request
+    budget — a replay MUST pass the producing run's values or the recomposed
+    schedule (length / per-row ids) will not match.
     """
     rng = _rng(seed)
-    n_pos_req = math.ceil(target_n / EXPECTED_YIELD)
+    # Positive budget = the EXPECTED_YIELD-derived count x the oversample knob
+    # (#1090 round 4; 36 -> 72 at 2.0 for target 25); the NEGATIVE budget is
+    # deliberately NOT scaled — the P1a floor misses were positive-arm
+    # keep-rate misses (36-39% realized vs the 70% EXPECTED_YIELD assumption),
+    # and negatives are generated per panel member on the emitted-positive
+    # questions.
+    n_pos_req = math.ceil(math.ceil(target_n / EXPECTED_YIELD) * oversample_mult)
     train_questions = [
         (f"{behavior.name}-trainq-{i:04d}", q) for i, q in enumerate(behavior.train_question_bank)
     ]
     reqs = _compose_positive_requests(
-        behavior, context_C, train_questions, n_pos_req, rng, instruction_style
+        behavior, context_C, train_questions, n_pos_req, rng, instruction_style, variants=variants
     )
     return reqs, rng, train_questions, n_pos_req
 
@@ -863,20 +950,6 @@ def _load_reused_positives(
     return pos_cands, kept, drops, jr, scoreinfo
 
 
-def _check_or_write_manifest(manifest_path: Path, manifest: dict, out_dir: Path) -> None:
-    """Write the stage-3 manifest, or verify an existing one matches EXACTLY
-    (the resume key); raises :class:`DatagenCheckpointMismatchError` on drift."""
-    if manifest_path.exists():
-        if json.loads(manifest_path.read_text()) != manifest:
-            raise DatagenCheckpointMismatchError(
-                f"gen_manifest.json in {out_dir} does not match the current args "
-                "(behavior/bank/instructions/context/target_n/seed/model changed). "
-                "Refusing to reuse stale raw candidates; use a fresh out_dir."
-            )
-    else:
-        manifest_path.write_text(_canonical(manifest) + "\n")
-
-
 def _positives_stage(
     behavior: Behavior,
     context_C: Context,
@@ -884,6 +957,8 @@ def _positives_stage(
     target_n: int,
     seed: int,
     instruction_style: str,
+    variants: Sequence[str] | None = None,
+    oversample_mult: float = 1.0,
     reuse_pos: PosReuseSpec | None,
     raw_pos_path: Path,
     gen_factory: Callable[[str], GenerateFn],
@@ -895,9 +970,17 @@ def _positives_stage(
     """Stage 3a: schedule composition (the RNG-replay surface) + generate /
     resume / reuse + judge-filter (or kept-set reconstruction under
     ``reuse_pos``). Returns ``(pos_cands, pos_kept, pos_drops, pos_jr,
-    pos_scores, rng)`` — the rng continues into negative composition."""
+    pos_scores, rng)`` — the rng continues into negative composition. The
+    #1090 ``variants`` / ``oversample_mult`` knobs forward into the schedule
+    (they are part of its identity — see :func:`compose_positive_schedule`)."""
     pos_reqs, rng, _train_questions, _n_pos_req = compose_positive_schedule(
-        behavior, context_C, target_n=target_n, seed=seed, instruction_style=instruction_style
+        behavior,
+        context_C,
+        target_n=target_n,
+        seed=seed,
+        instruction_style=instruction_style,
+        variants=variants,
+        oversample_mult=oversample_mult,
     )
     if reuse_pos is not None:
         return (
@@ -927,7 +1010,134 @@ def _positives_stage(
     return pos_cands, pos_kept, pos_drops, pos_jr, pos_scores, rng
 
 
+def _negative_arm(
+    behavior: Behavior,
+    panel: Panel,
+    emitted_questions: list[tuple[str, str]],
+    n_neg_req_per_member: int,
+    rng,
+    instruction_style: str,
+    *,
+    not_exhibit_instructions: list[str],
+    raw_neg_path: Path,
+    gen_fn,
+    judge: JudgeFn,
+    n_judge_draws: int,
+    judge_cache: Path,
+    out_dir: Path,
+) -> tuple[list[GenCandidate], list[GenCandidate], _ArmDrops, JudgeResult, dict]:
+    """The negative-arm generate+judge stage of ``generate_training_data``.
+
+    An EMPTY ``panel`` is the sanctioned pos-only twin (#1090 fu3): zero
+    negative rows BY DESIGN — the raw/judge sidecar surfaces stay
+    empty-but-present so resume + downstream readers see the same file set as
+    a contrastive run. Returns
+    ``(neg_cands, neg_kept, neg_drops, neg_jr, neg_scores)``.
+    """
+    if not panel:
+        if not raw_neg_path.exists():
+            _write_raw(raw_neg_path, [])
+        return (
+            [],
+            [],
+            _ArmDrops(requested=0),
+            JudgeResult(scores={}, n_total_draws=0, n_dropped_draws=0),
+            {},
+        )
+    if raw_neg_path.exists():
+        neg_cands = _read_raw(raw_neg_path)
+    else:
+        neg_reqs = _compose_negative_requests(
+            behavior,
+            panel,
+            emitted_questions,
+            n_neg_req_per_member,
+            rng,
+            instruction_style,
+            not_exhibit=not_exhibit_instructions,
+        )
+        neg_cands = gen_fn("neg")(neg_reqs)
+        _write_raw(raw_neg_path, neg_cands)
+    neg_kept, neg_drops, neg_jr, neg_scores = _judge_and_filter(
+        behavior,
+        neg_cands,
+        NEGATIVE,
+        judge_fn=judge,
+        n_judge_draws=n_judge_draws,
+        cache_dir=judge_cache / "neg",
+        save_raw=out_dir / "judge_raw_neg.json",
+    )
+    return neg_cands, neg_kept, neg_drops, neg_jr, neg_scores
+
+
 # ── Public entry point ───────────────────────────────────────────────────────
+
+
+def _validate_scalar_fences(
+    quota_floor: float, oversample_mult: float, max_oversample_mult: float = 2.0
+) -> None:
+    """Fail loud on out-of-fence scalar knobs: quota_floor in (0, 1];
+    oversample_mult in [1.0, max_oversample_mult] (default 2.0 — the #1090
+    plan's 2x request-count fence; the #1090-fu3 posonly x bare yield-floor
+    carve-out widens it per-call — never a silent clamp, never an
+    undersample)."""
+    if not 0.0 < quota_floor <= 1.0:
+        raise ValueError(f"quota_floor must be in (0, 1], got {quota_floor}")
+    if not max_oversample_mult >= 1.0:
+        raise ValueError(f"max_oversample_mult must be >= 1.0, got {max_oversample_mult}")
+    if not 1.0 <= oversample_mult <= max_oversample_mult:
+        raise ValueError(
+            f"oversample_mult must be in [1.0, {max_oversample_mult}] (the request-count "
+            f"fence), got {oversample_mult}"
+        )
+
+
+def _resume_or_quarantine_manifest(
+    out_dir: Path,
+    manifest: dict,
+    manifest_path: Path,
+    raw_pos_path: Path,
+    raw_neg_path: Path,
+) -> None:
+    """Resume-key gate for the raw-candidate cache (writes/validates gen_manifest.json).
+
+    Exact match -> resume the raw cache. A mult-ONLY change (#1090 fu3 crash-fix 2:
+    a yield-miss retry at a recalibrated request budget) QUARANTINES the stale raw
+    candidates to ``stale_mult_<old>/`` (never deletes — persist-by-default) and
+    regenerates fresh under the new manifest. Any OTHER drift raises
+    :class:`DatagenCheckpointMismatchError` naming the changed keys.
+    """
+    if not manifest_path.exists():
+        manifest_path.write_text(_canonical(manifest) + "\n")
+        return
+    existing = json.loads(manifest_path.read_text())
+    # Back-compat (#1090 round 4): a pre-knob v2 manifest lacks the key and
+    # was generated at the implicit 1.0 budget — normalize instead of
+    # invalidating every completed dir, so a mult-1.0 re-run resumes.
+    existing.setdefault("oversample_mult", 1.0)
+    if existing == manifest:
+        return
+    diff_keys = {k for k in set(existing) | set(manifest) if existing.get(k) != manifest.get(k)}
+    if diff_keys != {"oversample_mult"}:
+        raise DatagenCheckpointMismatchError(
+            f"gen_manifest.json in {out_dir} does not match the current args "
+            f"(changed keys: {sorted(diff_keys)}). "
+            "Refusing to reuse stale raw candidates; use a fresh out_dir."
+        )
+    stale_dir = out_dir / f"stale_mult_{existing['oversample_mult']}"
+    stale_dir.mkdir(parents=True, exist_ok=True)
+    for p in (manifest_path, raw_pos_path, raw_neg_path):
+        if p.exists():
+            p.rename(stale_dir / p.name)
+    logger.warning(
+        "oversample_mult changed %s -> %s in %s: quarantined stale raw "
+        "candidates to %s and regenerating at the new budget.",
+        existing["oversample_mult"],
+        manifest["oversample_mult"],
+        out_dir,
+        stale_dir,
+    )
+    manifest_path.write_text(_canonical(manifest) + "\n")
 
 
 def generate_training_data(
@@ -945,6 +1155,9 @@ def generate_training_data(
     generate_fn: GenerateFn | None = None,
     judge_fn: JudgeFn | None = None,
     instruction_style: str = "tagged",
+    instruction_source: str = "elicitation",
+    oversample_mult: float = 1.0,
+    max_oversample_mult: float = 2.0,
     reuse_pos: PosReuseSpec | None = None,
 ) -> tuple[Path, Path, Path]:
     """Build contrastive (positive, contrast) training JSONL for ``behavior``.
@@ -956,10 +1169,23 @@ def generate_training_data(
     ``instruction_style`` ("tagged" default | "plain", #1074) picks how the
     generation-only elicitation instruction is injected into ``gen_messages``;
     ``emit_messages`` is style-independent (context parity by construction) and
-    the style enters ``gen_manifest.json`` (resume-key protection). Raises
-    :class:`ValueError` on a programmatic behavior or unknown style,
-    :class:`DatagenYieldError` below the floor, and
-    :class:`DatagenCheckpointMismatchError` on a stale resume.
+    the style enters ``gen_manifest.json`` (resume-key protection).
+    ``instruction_source`` ("elicitation" default | "extraction_pairs", #1090)
+    picks WHERE the generation-only instructions come from — the registered
+    ``ElicitationSpec`` (byte-identical pre-#1090 behavior) or the
+    persona-vectors ``extraction.prompt_pairs`` (positives rotate the pair
+    ``exhibit`` texts, negatives the ``not_exhibit`` texts); the resolved lists
+    + source enter the manifest resume key. ``oversample_mult`` (#1090 round 4,
+    the plan's ALLOWED "oversample/request-count retuning within 2x" deviation)
+    multiplies the POSITIVE request budget ``ceil(target_n / EXPECTED_YIELD)``
+    (36 for target 25 -> 72 at 2.0); it is fenced to [1.0, 2.0] and enters the
+    manifest resume key (a pre-knob manifest reads as 1.0, so mult-1.0 resumes
+    replay and a changed mult refuses the stale raw cache). An explicitly
+    EMPTY ``negatives`` panel is the sanctioned pos-only twin (#1090 fu3):
+    no negative rows are generated and ``cn.jsonl`` is written empty. Raises
+    :class:`ValueError` on a programmatic behavior, unknown style/source, or an
+    out-of-fence ``oversample_mult``, :class:`DatagenYieldError` below the
+    floor, and :class:`DatagenCheckpointMismatchError` on a stale resume.
 
     ``reuse_pos`` (:class:`PosReuseSpec`, #1074 ``base-negatives-regen``):
     reuse a prior run's positive pool verbatim — positive generation + judging
@@ -970,35 +1196,52 @@ def generate_training_data(
     pool_meta gain an additive ``pos_reuse`` provenance block (it enters the
     exact-match resume key by construction); ``gen_model`` remains the LIVE
     (negative-stage) generator. Emission subsample + all negative stages are
-    byte-identical code paths.
+    byte-identical code paths. The schedule is recomposed under THIS call's
+    ``instruction_source`` / ``oversample_mult``, so a pool staged under
+    different knob values fails loud — the RNG-replay length/row assert plus
+    the manifest resume key (both knobs enter it) refuse the mismatch.
     """
     # 1. Resolve + guard.
     behavior.validate()
     if instruction_style not in INSTRUCTION_STYLES:
         raise ValueError(f"instruction_style {instruction_style!r} not in {INSTRUCTION_STYLES}")
+    exhibit_instructions, not_exhibit_instructions = _resolve_instructions(
+        behavior, instruction_source
+    )
     if behavior.programmatic:
         raise ValueError(
             f"behavior {behavior.name!r} is programmatic (tier-4 carve-out) — "
             "programmatic behaviors never route through the unified datagen pipeline"
         )
-    if not 0.0 < quota_floor <= 1.0:
-        raise ValueError(f"quota_floor must be in (0, 1], got {quota_floor}")
+    # ``max_oversample_mult`` (default 2.0 — byte-identical round-1 fence) is
+    # the #1090-fu3 posonly x bare carve-out: the fu3 worker passes a wider
+    # fence so a measured-keep-rate budget (mult 5.0) can clear the yield
+    # floor. The fence never enters the manifest resume key (a budget retune
+    # deliberately re-runs in the same regime — see the oversample_mult note).
+    _validate_scalar_fences(quota_floor, oversample_mult, max_oversample_mult)
+    # #1090 fu3: an explicitly-passed EMPTY panel is the sanctioned pos-only
+    # twin (neg_ratio=0 — no negative rows; the generic interleave happens
+    # downstream in the mix assembler). None / malformed members still fail
+    # fast (tuple(None) raises TypeError; the member type-check below).
     panel: Panel = get_panel(negatives) if isinstance(negatives, str) else tuple(negatives)
-    if not panel:
-        raise ValueError("negative panel is empty")
     for m in panel:
         if not isinstance(m, NegativeContext):
             raise TypeError(f"panel members must be NegativeContext, got {type(m).__name__}")
-    assert_panel_disjoint_from_sources(panel, [context_C.context_id])
+    posonly = not panel
+    if not posonly:
+        assert_panel_disjoint_from_sources(panel, [context_C.context_id])
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     floor_n = math.ceil(quota_floor * target_n)
-    member_quota = per_negative_quota(floor_n, panel)
+    member_quota = 0 if posonly else per_negative_quota(floor_n, panel)
     n_neg_req_per_member = math.ceil(member_quota / EXPECTED_YIELD)
-    # (train_questions, n_pos_req, and the shared RNG come from
-    # compose_positive_schedule at step 3a — the #1074 RNG-replay surface.)
+    # (train_questions, n_pos_req — including the #1090 oversample_mult scaling
+    # of the POSITIVE budget — and the shared RNG come from
+    # compose_positive_schedule at step 3a, the #1074 RNG-replay surface. The
+    # NEGATIVE budget above is deliberately NOT scaled by oversample_mult; see
+    # the comment in compose_positive_schedule.)
 
     # 2. Manifest (written before generation; resume ONLY on an exact match).
     manifest = _build_manifest(
@@ -1012,6 +1255,10 @@ def generate_training_data(
         gen_model=gen_model,
         gen_temperature=gen_temperature,
         instruction_style=instruction_style,
+        instruction_source=instruction_source,
+        exhibit_instructions=exhibit_instructions,
+        not_exhibit_instructions=not_exhibit_instructions,
+        oversample_mult=oversample_mult,
     )
     if reuse_pos is not None:
         # Additive provenance (source repo/path/revision, pos generator, staged
@@ -1021,7 +1268,7 @@ def generate_training_data(
     manifest_path = out_dir / "gen_manifest.json"
     raw_pos_path = out_dir / "raw_pos.jsonl"
     raw_neg_path = out_dir / "raw_neg.jsonl"
-    _check_or_write_manifest(manifest_path, manifest, out_dir)
+    _resume_or_quarantine_manifest(out_dir, manifest, manifest_path, raw_pos_path, raw_neg_path)
 
     def _gen(phase: str) -> GenerateFn:
         return generate_fn or _default_generate_fn(
@@ -1032,7 +1279,12 @@ def generate_training_data(
         )
 
     judge = judge_fn or judge_graded
-    judge_cache = out_dir / f"judge_cache_{manifest_hash[:12]}"
+    # max_tokens enters the CACHE-DIR key (the rubric fingerprint deliberately
+    # excludes it — batch_judge.rubric_fingerprint), so truncation-era 64-token
+    # entries in the old judge_cache_<hash> dirs are unreachable: a budget
+    # change is a cold re-judge, never a re-served truncated draw (llm-judging
+    # rule 23; #1090 fu3 crash-fix).
+    judge_cache = out_dir / f"judge_cache_{manifest_hash[:12]}_mt{DATAGEN_JUDGE_MAX_TOKENS}"
 
     # 3a. POSITIVES: compose over the train bank (ALWAYS — the composition
     # advances the shared RNG that the negative schedule continues from), then
@@ -1044,6 +1296,8 @@ def generate_training_data(
         target_n=target_n,
         seed=seed,
         instruction_style=instruction_style,
+        variants=exhibit_instructions,
+        oversample_mult=oversample_mult,
         reuse_pos=reuse_pos,
         raw_pos_path=raw_pos_path,
         gen_factory=_gen,
@@ -1055,10 +1309,20 @@ def generate_training_data(
 
     # 4a. Emit EXACTLY floor_n positives (seeded subsample) -> the emitted question set.
     if len(pos_kept) < floor_n:
+        # NOTE (#1090 fu3 crash-fix 2): keep accounting is the cross-variant UNION —
+        # every judge-kept (question, variant) row counts toward the floor. The old
+        # message labeled variant_usage (REQUESTED per variant) as "yields", which
+        # misread launch-3's 15/36 keep-rate miss as a variant-selection bug.
+        breakeven_mult = float(oversample_mult) * floor_n / max(1, len(pos_kept))
         raise DatagenYieldError(
             f"behavior {behavior.name!r}: kept {len(pos_kept)} positives < floor_n={floor_n} "
-            f"(target_n={target_n}, quota_floor={quota_floor}). Per-variant yields: "
-            f"{dict(pos_drops.variant_usage)}"
+            f"(target_n={target_n}, quota_floor={quota_floor}, "
+            f"requested={pos_drops.requested}, judgeable={pos_drops.generated}, "
+            f"keep_rate={len(pos_kept) / max(1, pos_drops.requested):.3f}). "
+            f"Kept-per-variant (union counts toward the floor): {dict(pos_drops.variant_kept)}; "
+            f"requested-per-variant: {dict(pos_drops.variant_usage)}. "
+            f"Remedy: raise --oversample-mult to >= {breakeven_mult:.2f} "
+            f"(break-even at the realized keep rate; add margin)."
         )
     emitted_pos = _seeded_sample(pos_kept, floor_n, _rng(seed + 1))
     emitted_pos_qids = {c.request.question_id for c in emitted_pos}
@@ -1066,22 +1330,20 @@ def generate_training_data(
 
     # 3b. NEGATIVES: generated ON the emitted-positive questions (same-question
     # pairing by construction, criterion 8) for every panel member, then judge-filter.
-    if raw_neg_path.exists():
-        neg_cands = _read_raw(raw_neg_path)
-    else:
-        neg_reqs = _compose_negative_requests(
-            behavior, panel, emitted_questions, n_neg_req_per_member, rng, instruction_style
-        )
-        neg_cands = _gen("neg")(neg_reqs)
-        _write_raw(raw_neg_path, neg_cands)
-    neg_kept, neg_drops, neg_jr, neg_scores = _judge_and_filter(
+    neg_cands, neg_kept, neg_drops, neg_jr, neg_scores = _negative_arm(
         behavior,
-        neg_cands,
-        NEGATIVE,
-        judge_fn=judge,
+        panel,
+        emitted_questions,
+        n_neg_req_per_member,
+        rng,
+        instruction_style,
+        not_exhibit_instructions=not_exhibit_instructions,
+        raw_neg_path=raw_neg_path,
+        gen_fn=_gen,
+        judge=judge,
         n_judge_draws=n_judge_draws,
-        cache_dir=judge_cache / "neg",
-        save_raw=out_dir / "judge_raw_neg.json",
+        judge_cache=judge_cache,
+        out_dir=out_dir,
     )
     _write_judge_rows(
         out_dir / "judge_rows.jsonl",
@@ -1282,6 +1544,14 @@ def _build_pool_meta(**k) -> dict:
         "instruction_variant_usage": {
             "positive": dict(pos_drops.variant_usage),
             "negative": dict(neg_drops.variant_usage),
+        },
+        # Tier-mix disclosure (#1090 fu3 crash-fix 2; on-policy-completions rule):
+        # the floor counts the cross-variant UNION of judge-kept rows, so the
+        # analyzer needs the realized kept-per-variant mix to report completion
+        # provenance (usage above counts REQUESTED candidates, not keeps).
+        "instruction_variant_kept": {
+            "positive": dict(pos_drops.variant_kept),
+            "negative": dict(neg_drops.variant_kept),
         },
         "question_multiplicity": {
             "positive": dict(pos_drops.question_multiplicity),

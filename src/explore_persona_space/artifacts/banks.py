@@ -66,7 +66,11 @@ class BankSpec:
     expected_n: int | None = None  # asserted by load_bank when not None
 
 
-# The 12 committed banks (9 retrieved + 3 authored — see query_banks/README.md).
+# The 15 committed banks (9 retrieved + 3 authored — see query_banks/README.md —
+# + 3 auto-generated persona-vectors-style neutral banks, task #1090 plan §4 D3:
+# one claude-sonnet-4-5-20250929 call per trait through the paper's verbatim
+# generation-prompt template, scripts/issue1090_questiongen.py; provenance +
+# canonical shas in scripts/issue1090_assets/bank_manifest.json).
 QUERY_BANKS: dict[str, BankSpec] = {
     "strongreject": BankSpec(
         "strongreject",
@@ -140,6 +144,40 @@ QUERY_BANKS: dict[str, BankSpec] = {
         "NEW authored (task #866): planted/system-prompt disclosure probes; bank-only stub",
         expected_n=40,
     ),
+    "sycophancy_neutral_v1": BankSpec(
+        "sycophancy_neutral_v1",
+        _loader("sycophancy_neutral_v1.json"),
+        "AUTO-GENERATED (task #1090, persona-vectors template 2507.21509): 40 questions; "
+        "SUPERSEDED by sycophancy_neutral_v2 (bank-skim FAIL: flatly-false factual-claim "
+        "stimuli — the #1074 class); kept registered for provenance; "
+        "scripts/issue1090_assets/questiongen_sycophancy.json",
+        expected_n=40,
+    ),
+    "sycophancy_neutral_v2": BankSpec(
+        "sycophancy_neutral_v2",
+        _loader("sycophancy_neutral_v2.json"),
+        "AUTO-GENERATED (task #1090 round 2, persona-vectors template 2507.21509 with "
+        "augmented trait-description input + NO-FALSE-FACTUAL-CLAIM screen): 40 subjective "
+        "opinion/stance/preference questions; "
+        "scripts/issue1090_assets/questiongen_sycophancy_v2.json",
+        expected_n=40,
+    ),
+    "impolite_neutral_v1": BankSpec(
+        "impolite_neutral_v1",
+        _loader("impolite_neutral_v1.json"),
+        "AUTO-GENERATED (task #1090, persona-vectors template 2507.21509): 40 neutral "
+        "questions for the paper-native impolite trait; "
+        "scripts/issue1090_assets/questiongen_impolite.json",
+        expected_n=40,
+    ),
+    "broad_em_neutral_v1": BankSpec(
+        "broad_em_neutral_v1",
+        _loader("broad_em_neutral_v1.json"),
+        "AUTO-GENERATED (task #1090, persona-vectors template 2507.21509): 40 neutral "
+        "open-ended questions (the anti-human-disposition reframe); "
+        "scripts/issue1090_assets/questiongen_broad_em.json",
+        expected_n=40,
+    ),
 }
 
 
@@ -185,15 +223,27 @@ def bank_sha(name: str) -> str:
 # behaviors (marker / taught_fact) register no "extraction" slice (no direction
 # extraction, per the Behavior.is_stub carve-out).
 SLICES: dict[tuple[str, str], tuple[str, int, int]] = {
-    ("sycophancy", "train"): ("sycophancy_claims", 0, 25),
+    # #1090 repointing (plan §4 D7 item 1): sycophancy / broad_em TRAIN + EVAL
+    # move to the auto-generated neutral banks (20/20 disjoint, mirroring the
+    # paper's first-20-extraction / last-20-evaluation split); the extraction
+    # slices stay on the OLD banks (direction extraction is out of #1090's
+    # scope), and the old banks stay registered — the C4 hard-fact control is
+    # the separate `sycophancy_hardfact` behavior below on the old slices.
+    # Round 2: repointed v1 -> v2 (v1 failed the D3 bank skim — false-claim
+    # stimuli); v1 stays registered above for provenance only.
+    ("sycophancy", "train"): ("sycophancy_neutral_v2", 0, 20),
     ("sycophancy", "extraction"): ("sycophancy_claims", 25, 40),
-    ("sycophancy", "eval"): ("sycophancy_claims", 40, 50),
+    ("sycophancy", "eval"): ("sycophancy_neutral_v2", 20, 40),
+    ("sycophancy_hardfact", "train"): ("sycophancy_claims", 0, 25),
+    ("sycophancy_hardfact", "eval"): ("sycophancy_claims", 40, 50),
+    ("impolite", "train"): ("impolite_neutral_v1", 0, 20),
+    ("impolite", "eval"): ("impolite_neutral_v1", 20, 40),
     ("harmful_compliance", "train"): ("strongreject", 0, 150),
     ("harmful_compliance", "extraction"): ("strongreject", 150, 170),
     ("harmful_compliance", "eval"): ("advbench", 0, 200),
-    ("broad_em", "train"): ("broad_em_train_v1", 0, 60),
+    ("broad_em", "train"): ("broad_em_neutral_v1", 0, 20),
     ("broad_em", "extraction"): ("broad_em_train_v1", 60, 80),
-    ("broad_em", "eval"): ("wang44", 0, 44),
+    ("broad_em", "eval"): ("broad_em_neutral_v1", 20, 40),
     ("china_censorship", "train"): ("china_sensitive", 0, 20),
     ("china_censorship", "extraction"): ("china_sensitive", 20, 35),
     ("china_censorship", "eval"): ("china_sensitive", 35, 45),

@@ -15,9 +15,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_role,
     savefig_paper,
     set_paper_style,
@@ -69,7 +76,7 @@ def main() -> None:
     fig, ax = plt.subplots(figsize=(6.5, 3.6))
 
     ys = list(range(len(rows)))[::-1]
-    for (label, est, lo, hi, n, role), y in zip(rows, ys):
+    for (_label, est, lo, hi, _n, role), y in zip(rows, ys, strict=False):
         color = paper_palette_role(role)
         ax.errorbar(
             est,

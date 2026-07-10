@@ -1,0 +1,276 @@
+{
+  "commit": "b285f235ee",
+  "created": "2026-07-07T22:37:02Z",
+  "figsize": [
+    8.6,
+    3.8
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "prevmean rotated $R^2$ (L19)": 0.344869141828789,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "prevmean rotated $R^2$ (L19)": -1.148469236697288,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.81,
+      "prevmean rotated $R^2$ (L19)": 0.3341146041064659,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.19,
+      "prevmean rotated $R^2$ (L19)": 0.4066487762279589,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 276.175,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 314.525,
+      "y": 15.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 352.875,
+      "y": 30.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 391.225,
+      "y": 35.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 429.575,
+      "y": 25.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 467.925,
+      "y": 13.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 506.275,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 544.625,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 582.975,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 621.325,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 659.675,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 698.025,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 736.375,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 774.725,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 813.075,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 851.425,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 889.775,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 928.125,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 966.475,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 1004.825,
+      "y": 529.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 276.175,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 314.525,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 352.875,
+      "y": 12.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 391.225,
+      "y": 24.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 429.575,
+      "y": 26.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 467.925,
+      "y": 28.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 506.275,
+      "y": 28.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 544.625,
+      "y": 14.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 582.975,
+      "y": 28.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 621.325,
+      "y": 22.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 659.675,
+      "y": 16.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 698.025,
+      "y": 14.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 736.375,
+      "y": 14.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 774.725,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 813.075,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 851.425,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 889.775,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 928.125,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 966.475,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "first retok-vs-gen divergence (token idx)": 1004.825,
+      "y": 422.0,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 44
+}

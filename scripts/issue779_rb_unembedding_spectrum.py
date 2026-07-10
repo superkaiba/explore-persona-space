@@ -19,13 +19,18 @@ import argparse
 import json
 from pathlib import Path
 
-import issue779_common as C
-import issue779_stage1 as S1
-import numpy as np
-import torch
-from safetensors import safe_open
-
 from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import issue779_common as C  # noqa: E402
+import issue779_stage1 as S1  # noqa: E402
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from safetensors import safe_open  # noqa: E402
 
 QWEN_SNAP = Path.home() / ".cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct/snapshots"
 TRAITS = ("evil", "sycophancy", "hallucination")
@@ -55,7 +60,6 @@ def _energy_metrics(v, U, Vfrac):
 
 
 def main() -> int:
-    load_dotenv()
     ap = argparse.ArgumentParser()
     ap.add_argument(
         "--lam", type=float, default=1e-3, help="ridge on Sigma (fraction of mean eigval)"
@@ -96,9 +100,7 @@ def main() -> int:
         "r_b": {},
     }
     print(f"unembedding = {key}  (V={V}, d={d})")
-    print(
-        f"random null: Gini {null_gini_mean:+.4f}±{null_gini_sd:.4f}, SCM {null_scm_mean:.3f}"
-    )
+    print(f"random null: Gini {null_gini_mean:+.4f}±{null_gini_sd:.4f}, SCM {null_scm_mean:.3f}")
     print(f"{'trait':>14} {'layer':>5} {'Gini':>9} {'vs null(z)':>10} {'SCM':>6}  verdict")
     for t in TRAITS:
         rb_all = S1._load_rb(args.rb_dir, t, C.EXPECTED_LAYERS, C.EXPECTED_HIDDEN)

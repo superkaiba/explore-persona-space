@@ -156,7 +156,15 @@ Run the structural verifier against the plan version just persisted:
   --kind <task kind>` instead — and treat an `--issue`-mode exit 2 with "no plans/v*.md" as
   "persist first or use --plan-file", NOT as a bounce.
 - **Canonical N/A escape phrases** (quote verbatim in any bounce brief so the planner can
-  satisfy a check it is legitimately exempt from): `N/A — no behavioral construct`
+  satisfy a check it is legitimately exempt from — and instruct the planner that the
+  plan's own declaration line must be UNWRAPPED plain text at line start (leading list
+  markers fine): the backtick-wrapped renderings below are deliberate anti-paste armor
+  and are NOT recognized by `verify_plan.py::_standalone_na_declared` (#1238)): Every
+  phrase satisfies its check ONLY when written as a standalone declaration line in the
+  plan (leading `-`/`>`/`*` list markers tolerated); a phrase quoted mid-sentence — e.g.
+  inside a pasted bounce brief — does not count (exceptions: check 7 matches its bare
+  phrase in prose by design; check 31 uses its labeled-line forms) (#1237).
+  `N/A — no behavioral construct`
   (check 2), `N/A — no model training` / `N/A — no training hyperparameters` (check 1),
   `N/A — not a replication` (check 7), `N/A — no artifact reuse` (check 6),
   `N/A — no dry-run smoke` (check 11 — kind: infra|batch plans where a `--dry-run`
@@ -172,12 +180,29 @@ Run the structural verifier against the plan version just persisted:
   call-arity pass condition; discovery/enumeration greps are fine),
   `N/A — no resume/persist pattern` (check 24 — the resume/persist vocabulary
   hit is incidental or quotes a sibling's methodology, not this plan's own
-  long-loop resume predicate), and
+  long-loop resume predicate),
   `N/A — entities are content, not commands` (check 25 — the fenced entity
   forms are deliberately discussed content, e.g. a plan about entity
   handling, not a command to dispatch; exempts shell-tagged content fences
   ONLY — a `--workload-cmd`/`dispatch_issue.py` fence FAILs on entities
-  unconditionally).
+  unconditionally),
+  `Durability pin: N/A — <one-line reason>` / alias `N/A — no durability pin:
+  <reason>` (check 31 — kind: infra|batch plans committing to a
+  `.claude/skills/**/SKILL.md` prose edit; the reason tail is mandatory — a
+  bare `Durability pin: N/A` still WARNs. A plan that NAMES a pin instead
+  writes `Durability pin: tests/test_<file>.py::test_<name>`),
+  `N/A — no fit-family phases` (check 32 — the flagged compute-table row is
+  not actually a per-cell fit/solve/factorization loop, or the plan has no
+  fit-family phases; a genuine fit row instead states its basis as
+  `measured <t> s/<unit>`, a `#<M>` measured figure, or `pilot-gated`), and
+  `N/A — no per-rung checkpoint persistence` / alias
+  `N/A — no checkpoint ladder` (check 33 — the checkpoint-ladder vocabulary
+  is incidental and NO phase of this plan persists per-rung checkpoints,
+  e.g. it reads a parent's existing ladder without training new rungs; a
+  genuine ladder plan instead states its retention policy in its
+  compute-sizing section — DEFAULT: retain the dose-selected + latest rungs
+  only, delete ruled-out rungs BETWEEN rungs; or the justified keep-all
+  exception sized at realized per-rung GB with `--boot-disk-gb` declared).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
@@ -252,6 +277,14 @@ between Claude and Codex twins is resolved by the `reconciler` agent in
 **in-context mode** (no GitHub markers — verdict text printed to stdout). See
 `.claude/workflow.yaml § ensemble_review.doubled_steps[critic]` and
 `.claude/agents/reconciler.md` § "Two Output Modes".
+
+**Quota-sentinel pre-check first (#1204).** Run the canonical check
+(CLAUDE.md § Codex ensemble review). `CODEX_QUOTA_LIVE` → spawn ONLY the
+3 Claude lens critics (+ consistency-checker when riding the batch) and
+skip all 3 `codex-critic` composer spawns this round; record each lens
+as an instant confirmed Codex no-show (single-Claude per the Phase-2
+no-show row — no output-file probe) and log one line (+ one
+`epm:progress` note on #N when run from /issue Step 2).
 
 **Consistency-checker rides the same spawn batch (when invoked from
 `/issue` Step 2).** The orchestrator spawns the `consistency-checker`
@@ -394,7 +427,9 @@ reconciler once; if still none, do NOT adjudicate the disagreement
 yourself — adopt the MORE SEVERE of the two lens verdicts as a
 fail-safe (biasing toward revision, never toward shipping) and record
 the unresolved reconcile in the merged critique handed to the
-plan-approval gate.
+plan-approval gate. A #1204 sentinel-skip is exempt from this probe —
+the composer never ran, so no prompt/output file exists for the round;
+the skip itself is the confirmed no-show.
 
 **Cross-lens merge (after per-lens reconciliation):**
 
@@ -524,6 +559,9 @@ if "WRONG" in verifier_result:
 #    NOT bg-dispatch themselves (CLAUDE.md § "Codex task dispatch": only
 #    the orchestrator's direct bg-Bash invocation delivers a real
 #    notification when Codex terminates).
+# 4-pre. Quota-sentinel pre-check (#1204, CLAUDE.md § Codex ensemble review):
+#    if LIVE, skip the three *_codex spawns below (instant no-show per lens);
+#    Claude spawns + c_check unchanged.
 m_claude = Agent(subagent_type="critic",       prompt="[Methodology lens] Critique:\n\n{corrected_plan}",   run_in_background=True)
 m_codex  = Agent(subagent_type="codex-critic", prompt="lens=methodology\nplan_body:\n{corrected_plan}",     run_in_background=True)
 s_claude = Agent(subagent_type="critic",       prompt="[Statistics lens] Critique:\n\n{corrected_plan}",    run_in_background=True)

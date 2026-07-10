@@ -1,0 +1,51 @@
+{
+  "cell": "c1-formatting-claude",
+  "behavior": "formatting",
+  "generator": "claude",
+  "selection": {
+    "step": 2,
+    "rate": 0.17333333333333334,
+    "in_band": false,
+    "fallback": "closest_approach"
+  },
+  "adapter_path": "data/issue_1090/run/c1-formatting-claude/train/checkpoint-2",
+  "tier2": {
+    "n_completions": 10,
+    "n_judge_draws": 5
+  },
+  "reads": {
+    "trained": {
+      "rate": 0.17,
+      "k": 51,
+      "n": 300,
+      "wilson95": [
+        0.13172947235659208,
+        0.21661519144191346
+      ],
+      "mode": "structural"
+    },
+    "base": {
+      "rate": 0.18333333333333332,
+      "k": 55,
+      "n": 300,
+      "wilson95": [
+        0.14364461001138987,
+        0.23102956232050934
+      ],
+      "mode": "structural"
+    }
+  },
+  "install_delta": -0.013333333333333308,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "margin_trained": null,
+  "margin_base": null,
+  "margin_delta": null,
+  "formatting_spotcheck": {
+    "n_sampled": 30,
+    "n_scored": 30,
+    "agreement": 0.6333333333333333
+  }
+}

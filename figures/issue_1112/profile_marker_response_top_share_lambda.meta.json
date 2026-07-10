@@ -1,0 +1,412 @@
+{
+ "commit": "9c2c2fd9b8",
+ "created": "2026-07-08T11:57:03Z",
+ "figsize": [
+  6.4,
+  4.0
+ ],
+ "points": [
+  {
+   "decoder layer": 0.0,
+   "top-eigenvalue share of shift variance": 0.0820810544379036,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 1.0,
+   "top-eigenvalue share of shift variance": 0.08920126317268567,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 2.0,
+   "top-eigenvalue share of shift variance": 0.07452737907385805,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 3.0,
+   "top-eigenvalue share of shift variance": 0.06656629601215358,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 4.0,
+   "top-eigenvalue share of shift variance": 0.06751348392854958,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 5.0,
+   "top-eigenvalue share of shift variance": 0.07485442355374146,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 6.0,
+   "top-eigenvalue share of shift variance": 0.08571372404474335,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 7.0,
+   "top-eigenvalue share of shift variance": 0.08732615413923295,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 8.0,
+   "top-eigenvalue share of shift variance": 0.09799831209801585,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 9.0,
+   "top-eigenvalue share of shift variance": 0.10466243210128395,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 10.0,
+   "top-eigenvalue share of shift variance": 0.11185477862980203,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 11.0,
+   "top-eigenvalue share of shift variance": 0.11734415046293611,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 12.0,
+   "top-eigenvalue share of shift variance": 0.12510337105824293,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 13.0,
+   "top-eigenvalue share of shift variance": 0.12667633009622303,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 14.0,
+   "top-eigenvalue share of shift variance": 0.13804249884785388,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 15.0,
+   "top-eigenvalue share of shift variance": 0.14784312567096244,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 16.0,
+   "top-eigenvalue share of shift variance": 0.14907504261823298,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 17.0,
+   "top-eigenvalue share of shift variance": 0.15694837796129785,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 18.0,
+   "top-eigenvalue share of shift variance": 0.1544842729377988,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 19.0,
+   "top-eigenvalue share of shift variance": 0.17242952861330343,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 20.0,
+   "top-eigenvalue share of shift variance": 0.16883290495689007,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 21.0,
+   "top-eigenvalue share of shift variance": 0.16308660934729968,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 22.0,
+   "top-eigenvalue share of shift variance": 0.1650098451976422,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 23.0,
+   "top-eigenvalue share of shift variance": 0.16211341376815724,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 24.0,
+   "top-eigenvalue share of shift variance": 0.15874721304694273,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 25.0,
+   "top-eigenvalue share of shift variance": 0.15485287946579437,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 26.0,
+   "top-eigenvalue share of shift variance": 0.14328777271421136,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 27.0,
+   "top-eigenvalue share of shift variance": 0.1480779228079559,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 0.0,
+   "top-eigenvalue share of shift variance": 0.10818327759734199,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 1.0,
+   "top-eigenvalue share of shift variance": 0.12265672279785801,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 2.0,
+   "top-eigenvalue share of shift variance": 0.12202690269772938,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 3.0,
+   "top-eigenvalue share of shift variance": 0.11603373240209305,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 4.0,
+   "top-eigenvalue share of shift variance": 0.11858503878736933,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 5.0,
+   "top-eigenvalue share of shift variance": 0.1258870478017127,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 6.0,
+   "top-eigenvalue share of shift variance": 0.1354993130909776,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 7.0,
+   "top-eigenvalue share of shift variance": 0.13671236119867994,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 8.0,
+   "top-eigenvalue share of shift variance": 0.12625711221918842,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 9.0,
+   "top-eigenvalue share of shift variance": 0.12074933151183276,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 10.0,
+   "top-eigenvalue share of shift variance": 0.12352890339810021,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 11.0,
+   "top-eigenvalue share of shift variance": 0.12648565079644541,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 12.0,
+   "top-eigenvalue share of shift variance": 0.13095694206198896,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 13.0,
+   "top-eigenvalue share of shift variance": 0.1174025473219095,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 14.0,
+   "top-eigenvalue share of shift variance": 0.13076372192229563,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 15.0,
+   "top-eigenvalue share of shift variance": 0.15026771552370435,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 16.0,
+   "top-eigenvalue share of shift variance": 0.14921439532326147,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 17.0,
+   "top-eigenvalue share of shift variance": 0.1571588006940637,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 18.0,
+   "top-eigenvalue share of shift variance": 0.16228127651179058,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 19.0,
+   "top-eigenvalue share of shift variance": 0.2424343463399708,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 20.0,
+   "top-eigenvalue share of shift variance": 0.23051848070533865,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 21.0,
+   "top-eigenvalue share of shift variance": 0.1995995959225353,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 22.0,
+   "top-eigenvalue share of shift variance": 0.1887859770130162,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 23.0,
+   "top-eigenvalue share of shift variance": 0.2007977342029219,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 24.0,
+   "top-eigenvalue share of shift variance": 0.2047613413912619,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 25.0,
+   "top-eigenvalue share of shift variance": 0.2045606236265214,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 26.0,
+   "top-eigenvalue share of shift variance": 0.2186323735490243,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 27.0,
+   "top-eigenvalue share of shift variance": 0.26176066992276287,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  }
+ ],
+ "n_series": 2,
+ "total_points": 56,
+ "git_commit": "9c2c2fd9b87044f54cbce7b4bc9a2aff7e398c7d",
+ "ts": "2026-07-08T11:57:02Z",
+ "arm": "response",
+ "dv": "top_share_lambda",
+ "cells": [
+  "m1_lora_band8",
+  "m2_fullft_band8"
+ ]
+}

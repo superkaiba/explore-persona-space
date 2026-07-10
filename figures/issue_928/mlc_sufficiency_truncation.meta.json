@@ -1,0 +1,93 @@
+{
+  "commit": "aa5b67ac6f",
+  "created": "2026-07-08T05:51:55Z",
+  "figsize": [
+    13.0,
+    5.2
+  ],
+  "points": [
+    {
+      "category": "truncated CoT\nalone",
+      "held-out skill (remainder target)": 0.874702917427449,
+      "error": 0.016550650798742017,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "CoT opening\nalone",
+      "held-out skill (remainder target)": 0.8649565907107868,
+      "error": 0.019031479190301515,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer prefix\nalone",
+      "held-out skill (remainder target)": 0.9310116761084981,
+      "error": 0.009417016328515604,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out skill (remainder target)": 0.8567280158490277,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out skill (remainder target)": 0.8440603187743214,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out skill (remainder target)": 0.9206444008989927,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out skill (remainder target)": 0.8898293174465117,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out skill (remainder target)": 0.8821232771549244,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out skill (remainder target)": 0.9394784335560239,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "\u0394 skill, paired context bootstrap 95% interval": -0.05630875868104912,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "\u0394 skill, paired context bootstrap 95% interval": 0.005279236536465004,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill, paired context bootstrap 95% interval": -0.050117100534117665,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "\u0394 skill, paired context bootstrap 95% interval": -0.009084678573182625,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 13
+}

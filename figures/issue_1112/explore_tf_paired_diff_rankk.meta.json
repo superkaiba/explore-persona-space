@@ -1,0 +1,1198 @@
+{
+ "commit": "9c2c2fd9b8",
+ "created": "2026-07-08T11:57:29Z",
+ "figsize": [
+  6.4,
+  4.0
+ ],
+ "points": [
+  {
+   "decoder layer": 0.0,
+   "rank-k@90 difference (own \u2212 shared)": 25.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 1.0,
+   "rank-k@90 difference (own \u2212 shared)": 21.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 2.0,
+   "rank-k@90 difference (own \u2212 shared)": 30.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 3.0,
+   "rank-k@90 difference (own \u2212 shared)": 27.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 4.0,
+   "rank-k@90 difference (own \u2212 shared)": 31.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 5.0,
+   "rank-k@90 difference (own \u2212 shared)": 29.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 6.0,
+   "rank-k@90 difference (own \u2212 shared)": 31.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 7.0,
+   "rank-k@90 difference (own \u2212 shared)": 27.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 8.0,
+   "rank-k@90 difference (own \u2212 shared)": 31.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 9.0,
+   "rank-k@90 difference (own \u2212 shared)": 32.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 10.0,
+   "rank-k@90 difference (own \u2212 shared)": 36.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 11.0,
+   "rank-k@90 difference (own \u2212 shared)": 36.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 12.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 13.0,
+   "rank-k@90 difference (own \u2212 shared)": 41.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 14.0,
+   "rank-k@90 difference (own \u2212 shared)": 41.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 15.0,
+   "rank-k@90 difference (own \u2212 shared)": 45.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 16.0,
+   "rank-k@90 difference (own \u2212 shared)": 45.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 17.0,
+   "rank-k@90 difference (own \u2212 shared)": 40.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 18.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 19.0,
+   "rank-k@90 difference (own \u2212 shared)": 45.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 20.0,
+   "rank-k@90 difference (own \u2212 shared)": 44.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 21.0,
+   "rank-k@90 difference (own \u2212 shared)": 44.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 22.0,
+   "rank-k@90 difference (own \u2212 shared)": 44.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 23.0,
+   "rank-k@90 difference (own \u2212 shared)": 45.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 24.0,
+   "rank-k@90 difference (own \u2212 shared)": 43.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 25.0,
+   "rank-k@90 difference (own \u2212 shared)": 44.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 26.0,
+   "rank-k@90 difference (own \u2212 shared)": 45.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 27.0,
+   "rank-k@90 difference (own \u2212 shared)": 42.0,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 0.0,
+   "rank-k@90 difference (own \u2212 shared)": 18.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 1.0,
+   "rank-k@90 difference (own \u2212 shared)": 13.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 2.0,
+   "rank-k@90 difference (own \u2212 shared)": 18.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 3.0,
+   "rank-k@90 difference (own \u2212 shared)": 20.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 4.0,
+   "rank-k@90 difference (own \u2212 shared)": 25.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 5.0,
+   "rank-k@90 difference (own \u2212 shared)": 25.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 6.0,
+   "rank-k@90 difference (own \u2212 shared)": 27.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 7.0,
+   "rank-k@90 difference (own \u2212 shared)": 24.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 8.0,
+   "rank-k@90 difference (own \u2212 shared)": 28.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 9.0,
+   "rank-k@90 difference (own \u2212 shared)": 29.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 10.0,
+   "rank-k@90 difference (own \u2212 shared)": 32.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 11.0,
+   "rank-k@90 difference (own \u2212 shared)": 32.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 12.0,
+   "rank-k@90 difference (own \u2212 shared)": 32.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 13.0,
+   "rank-k@90 difference (own \u2212 shared)": 33.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 14.0,
+   "rank-k@90 difference (own \u2212 shared)": 35.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 15.0,
+   "rank-k@90 difference (own \u2212 shared)": 38.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 16.0,
+   "rank-k@90 difference (own \u2212 shared)": 37.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 17.0,
+   "rank-k@90 difference (own \u2212 shared)": 32.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 18.0,
+   "rank-k@90 difference (own \u2212 shared)": 29.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 19.0,
+   "rank-k@90 difference (own \u2212 shared)": 41.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 20.0,
+   "rank-k@90 difference (own \u2212 shared)": 40.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 21.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 22.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 23.0,
+   "rank-k@90 difference (own \u2212 shared)": 41.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 24.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 25.0,
+   "rank-k@90 difference (own \u2212 shared)": 40.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 26.0,
+   "rank-k@90 difference (own \u2212 shared)": 40.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 27.0,
+   "rank-k@90 difference (own \u2212 shared)": 42.0,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 0.0,
+   "rank-k@90 difference (own \u2212 shared)": 24.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 1.0,
+   "rank-k@90 difference (own \u2212 shared)": 31.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 2.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 3.0,
+   "rank-k@90 difference (own \u2212 shared)": 36.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 4.0,
+   "rank-k@90 difference (own \u2212 shared)": 35.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 5.0,
+   "rank-k@90 difference (own \u2212 shared)": 33.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 6.0,
+   "rank-k@90 difference (own \u2212 shared)": 36.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 7.0,
+   "rank-k@90 difference (own \u2212 shared)": 31.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 8.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 9.0,
+   "rank-k@90 difference (own \u2212 shared)": 36.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 10.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 11.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 12.0,
+   "rank-k@90 difference (own \u2212 shared)": 40.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 13.0,
+   "rank-k@90 difference (own \u2212 shared)": 41.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 14.0,
+   "rank-k@90 difference (own \u2212 shared)": 40.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 15.0,
+   "rank-k@90 difference (own \u2212 shared)": 42.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 16.0,
+   "rank-k@90 difference (own \u2212 shared)": 41.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 17.0,
+   "rank-k@90 difference (own \u2212 shared)": 35.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 18.0,
+   "rank-k@90 difference (own \u2212 shared)": 34.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 19.0,
+   "rank-k@90 difference (own \u2212 shared)": 38.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 20.0,
+   "rank-k@90 difference (own \u2212 shared)": 37.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 21.0,
+   "rank-k@90 difference (own \u2212 shared)": 37.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 22.0,
+   "rank-k@90 difference (own \u2212 shared)": 37.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 23.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 24.0,
+   "rank-k@90 difference (own \u2212 shared)": 38.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 25.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 26.0,
+   "rank-k@90 difference (own \u2212 shared)": 40.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 27.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 0.0,
+   "rank-k@90 difference (own \u2212 shared)": 22.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 1.0,
+   "rank-k@90 difference (own \u2212 shared)": 24.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 2.0,
+   "rank-k@90 difference (own \u2212 shared)": 28.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 3.0,
+   "rank-k@90 difference (own \u2212 shared)": 30.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 4.0,
+   "rank-k@90 difference (own \u2212 shared)": 32.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 5.0,
+   "rank-k@90 difference (own \u2212 shared)": 32.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 6.0,
+   "rank-k@90 difference (own \u2212 shared)": 36.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 7.0,
+   "rank-k@90 difference (own \u2212 shared)": 30.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 8.0,
+   "rank-k@90 difference (own \u2212 shared)": 40.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 9.0,
+   "rank-k@90 difference (own \u2212 shared)": 37.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 10.0,
+   "rank-k@90 difference (own \u2212 shared)": 40.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 11.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 12.0,
+   "rank-k@90 difference (own \u2212 shared)": 40.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 13.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 14.0,
+   "rank-k@90 difference (own \u2212 shared)": 38.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 15.0,
+   "rank-k@90 difference (own \u2212 shared)": 41.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 16.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 17.0,
+   "rank-k@90 difference (own \u2212 shared)": 33.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 18.0,
+   "rank-k@90 difference (own \u2212 shared)": 30.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 19.0,
+   "rank-k@90 difference (own \u2212 shared)": 43.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 20.0,
+   "rank-k@90 difference (own \u2212 shared)": 41.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 21.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 22.0,
+   "rank-k@90 difference (own \u2212 shared)": 38.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 23.0,
+   "rank-k@90 difference (own \u2212 shared)": 39.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 24.0,
+   "rank-k@90 difference (own \u2212 shared)": 38.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 25.0,
+   "rank-k@90 difference (own \u2212 shared)": 38.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 26.0,
+   "rank-k@90 difference (own \u2212 shared)": 38.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 27.0,
+   "rank-k@90 difference (own \u2212 shared)": 37.0,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 0.0,
+   "rank-k@90 difference (own \u2212 shared)": 9.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 1.0,
+   "rank-k@90 difference (own \u2212 shared)": 3.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 2.0,
+   "rank-k@90 difference (own \u2212 shared)": 9.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 3.0,
+   "rank-k@90 difference (own \u2212 shared)": 12.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 4.0,
+   "rank-k@90 difference (own \u2212 shared)": 13.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 5.0,
+   "rank-k@90 difference (own \u2212 shared)": 12.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 6.0,
+   "rank-k@90 difference (own \u2212 shared)": 16.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 7.0,
+   "rank-k@90 difference (own \u2212 shared)": 14.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 8.0,
+   "rank-k@90 difference (own \u2212 shared)": 21.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 9.0,
+   "rank-k@90 difference (own \u2212 shared)": 18.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 10.0,
+   "rank-k@90 difference (own \u2212 shared)": 23.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 11.0,
+   "rank-k@90 difference (own \u2212 shared)": 22.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 12.0,
+   "rank-k@90 difference (own \u2212 shared)": 22.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 13.0,
+   "rank-k@90 difference (own \u2212 shared)": 22.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 14.0,
+   "rank-k@90 difference (own \u2212 shared)": 23.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 15.0,
+   "rank-k@90 difference (own \u2212 shared)": 25.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 16.0,
+   "rank-k@90 difference (own \u2212 shared)": 26.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 17.0,
+   "rank-k@90 difference (own \u2212 shared)": 22.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 18.0,
+   "rank-k@90 difference (own \u2212 shared)": 20.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 19.0,
+   "rank-k@90 difference (own \u2212 shared)": 32.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 20.0,
+   "rank-k@90 difference (own \u2212 shared)": 32.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 21.0,
+   "rank-k@90 difference (own \u2212 shared)": 31.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 22.0,
+   "rank-k@90 difference (own \u2212 shared)": 32.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 23.0,
+   "rank-k@90 difference (own \u2212 shared)": 33.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 24.0,
+   "rank-k@90 difference (own \u2212 shared)": 32.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 25.0,
+   "rank-k@90 difference (own \u2212 shared)": 34.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 26.0,
+   "rank-k@90 difference (own \u2212 shared)": 37.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 27.0,
+   "rank-k@90 difference (own \u2212 shared)": 44.0,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 0.0,
+   "rank-k@90 difference (own \u2212 shared)": 21.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 1.0,
+   "rank-k@90 difference (own \u2212 shared)": 18.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 2.0,
+   "rank-k@90 difference (own \u2212 shared)": 26.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 3.0,
+   "rank-k@90 difference (own \u2212 shared)": 29.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 4.0,
+   "rank-k@90 difference (own \u2212 shared)": 28.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 5.0,
+   "rank-k@90 difference (own \u2212 shared)": 28.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 6.0,
+   "rank-k@90 difference (own \u2212 shared)": 34.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 7.0,
+   "rank-k@90 difference (own \u2212 shared)": 29.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 8.0,
+   "rank-k@90 difference (own \u2212 shared)": 37.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 9.0,
+   "rank-k@90 difference (own \u2212 shared)": 32.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 10.0,
+   "rank-k@90 difference (own \u2212 shared)": 40.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 11.0,
+   "rank-k@90 difference (own \u2212 shared)": 38.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 12.0,
+   "rank-k@90 difference (own \u2212 shared)": 40.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 13.0,
+   "rank-k@90 difference (own \u2212 shared)": 40.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 14.0,
+   "rank-k@90 difference (own \u2212 shared)": 41.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 15.0,
+   "rank-k@90 difference (own \u2212 shared)": 44.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 16.0,
+   "rank-k@90 difference (own \u2212 shared)": 44.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 17.0,
+   "rank-k@90 difference (own \u2212 shared)": 38.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 18.0,
+   "rank-k@90 difference (own \u2212 shared)": 38.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 19.0,
+   "rank-k@90 difference (own \u2212 shared)": 50.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 20.0,
+   "rank-k@90 difference (own \u2212 shared)": 50.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 21.0,
+   "rank-k@90 difference (own \u2212 shared)": 49.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 22.0,
+   "rank-k@90 difference (own \u2212 shared)": 49.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 23.0,
+   "rank-k@90 difference (own \u2212 shared)": 50.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 24.0,
+   "rank-k@90 difference (own \u2212 shared)": 48.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 25.0,
+   "rank-k@90 difference (own \u2212 shared)": 49.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 26.0,
+   "rank-k@90 difference (own \u2212 shared)": 48.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 27.0,
+   "rank-k@90 difference (own \u2212 shared)": 47.0,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  }
+ ],
+ "n_series": 6,
+ "total_points": 168,
+ "git_commit": "9c2c2fd9b87044f54cbce7b4bc9a2aff7e398c7d",
+ "ts": "2026-07-08T11:57:28Z",
+ "cells": [
+  "s1_lora_neg",
+  "s2_lora_pos",
+  "s3_fullft_neg",
+  "s4_fullft_pos",
+  "s5_lora_generic",
+  "s6_fullft_generic"
+ ]
+}

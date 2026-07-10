@@ -159,8 +159,9 @@ ALLOW_CASES = [
     # A16: raw-newline multi-line where the pipe and the push live in
     # DIFFERENT newline-separated units.
     pytest.param("git status | grep x\ngit push origin main", id="A16-raw-newline-units"),
-    # A17: the verbatim braced backslash-continued Step 10d recovery shape
-    # from /issue SKILL.md (`||` + line-continuation normalization).
+    # A17: the historical braced backslash-continued Step 10d recovery shape
+    # (since reworked in /issue SKILL.md; kept as a `||` + line-continuation
+    # normalization regression case).
     pytest.param(
         "git push origin main \\\n"
         "  || { git pull --rebase=merges --autostash && git push origin main; }",

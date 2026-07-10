@@ -204,10 +204,85 @@ relaunch, a watch-session correction — not just first launches:
    to rewrite the pid file with 11636 and re-post `epm:run-launched` — an
    entire extra round whose only content was this contract.
 
-Residual honesty: this contract is prose, not a runtime detector — a future
-relaunch that violates it can still produce the same silent false-dead shape;
-the poller's marker-pid OR-probe remains the only mechanical rescue, and only
-while the newest marker's pid is itself alive.
+Residual honesty: this contract now HAS a WARN-only runtime detector (#1156 —
+`poll_pipeline.py` warns on every tick, and sets the tick-JSON flag
+`pid_file_stale_vs_marker`, when the pid file's pod-clock mtime predates the
+newest `epm:run-launched` marker by more than
+`EPM_POLL_PID_MARKER_SLACK_SEC`, default 600 s), so a rewrite-skipping
+relaunch is named in the poll log instead of left to manual archaeology. The
+detector never changes a verdict: the poller's marker-pid OR-probe remains
+the only VERDICT-bearing mechanical rescue, and only while the newest
+marker's pid is itself alive.
+
+### Result-push verification contract (#1205)
+
+- Any pod/GCE dispatch step that `git commit`s results to the issue branch
+  MUST verify the push landed: after `git push`,
+  `git -C <root> rev-list --count origin/<branch>..HEAD` prints `0` (git
+  updates the remote-tracking ref on a successful push, so the count is a
+  local, network-free proof); retry once on failure; still non-zero → exit
+  non-zero — fail the workload loud, never declare done with an unpushed
+  result commit. The `git push … || echo WARNING` / `|| true` shape is
+  **BANNED** (incidents #825 r6/r7/r8, upload-verification reads
+  2026-07-08T11:17/11:19Z: 73 committed eval JSONs existed only on a
+  self-DELETEing GCE instance; the workload-side sibling of the #957/#1048
+  piped-push masking class — the pipe mirror stays enforced by
+  `workflow_lint.py --check-piped-git-push`, this swallow shape by
+  `--check-push-failure-swallow`).
+- **GCE lane:** the startup script configures a `GITHUB_TOKEN` env-reading
+  credential helper (workload pushes authenticate; pre-#1205 they failed
+  DETERMINISTICALLY — the clone is tokenless) and runs a post-workload
+  push-verify backstop (retry → bundle the unpushed range to
+  `data/issue_<N>/`, crash-persist-swept per #854 item 5 → `exit 86` →
+  EXIT trap → `phase=failed` + crash-persist + poweroff). The backstop
+  covers forgetful dispatch scripts; scripts SHOULD still verify their own
+  push so the failure surfaces at the failing phase with its own context.
+  The backstop pushes `HEAD` to the CLONED branch (`HEAD:<repo_branch>`)
+  — a workload that checks out a different local branch before committing
+  (out-of-contract) gets those commits backstop-pushed onto the cloned
+  branch, not its own.
+  Both the helper and the backstop are repo-local to `$WORKLOAD_ROOT` —
+  a workload that creates a SECOND clone gets neither (prose contract
+  only), and a manual same-VM SSH relaunch (the #491/#908 salvage shape)
+  runs OUTSIDE the mechanical backstop: its shell must verify its own
+  push per the first bullet.
+- **RunPod lane:** the tokenized remote (`bootstrap_pod.sh` step 4)
+  authenticates; there is NO mechanical backstop — the dispatch script's
+  own verification is the only guard. Accepted asymmetry: a pod persists
+  and is SSH-able, so an unpushed commit is recoverable after the fact;
+  GCE's DELETE-on-poweroff boot disk is why that lane got the mechanical
+  leg.
+- **SLURM lane:** the mechanical rev-list leg is structurally
+  INAPPLICABLE — cluster compute nodes run on an ephemeral `$SCRATCH`
+  **rsync copy with no git checkout** (`RSYNC_INCLUDE_PATHS` in
+  `backends/slurm.py` carries no `.git`; the `post_marker_via_task_py`
+  docstring pins this), so a workload-side `git commit` / `git push` of
+  results is impossible and fails loud by construction
+  (`fatal: not a git repository`) — and the SLURM secrets env
+  (`SECRET_ENV_KEYS`, `backends/slurm.py`) carries no `GITHUB_TOKEN`, so
+  even an out-of-contract cluster-side self-clone could not authenticate
+  a push (the pre-#1205 GCE tokenless shape). The lane's result-landing
+  story is instead: `SlurmBackend.fetch_results` rsync-PULLS
+  `eval_results/` + `figures/` from `$SCRATCH_JOB_DIR` back to the VM
+  repo root (pull failure is WARN-only by the deliberate #598 contract),
+  then `confirm_artifacts` (completion sentinel + git-figures +
+  eval-JSON + HF + WandB checks) is the downstream hard gate before
+  teardown (a bool the orchestrator's upload-verification gates on), and
+  the COMMIT of pulled results is VM-side, owned by the orchestrator
+  (Step 8 upload-verifier sync / Step 9b–10d auto-merge) — where the
+  same push-verification discipline governs the orchestrator's own
+  VM-side push via the repo-wide push rules (the piped-push hook,
+  `sync_repo_root.py`, Step 10d). Consequence: a dispatch script whose
+  deliverable REQUIRES workload-side git-committed results must NOT
+  route to SLURM — pin `backend: gcp` or `runpod`. (`--repo-branch` IS
+  honored on SLURM as of #793 via VM-side branch-tree materialization —
+  the workload runs branch code; it just cannot push from the cluster.)
+- **Part A-ter interplay** (`.claude/rules/compute-backend-failover.md`):
+  a workload whose declared deliverables include git-committed eval JSONs
+  must NOT stamp `EPS_DELIVERABLES_OK_PATH` before verifying its own push
+  — else a push-verify backstop failure classifies
+  `finalize_failed_artifacts_ok` (done-like) instead of `failed`; the
+  data still crash-persists either way.
 
 ### Pod-side preflight gates (behind-origin/main false positive — LEGACY post-#554)
 

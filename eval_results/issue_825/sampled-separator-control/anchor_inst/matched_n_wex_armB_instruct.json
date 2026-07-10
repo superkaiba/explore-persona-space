@@ -1,0 +1,27 @@
+{
+  "metadata": {
+    "git_commit": "0e93486d07fa4dc7db1c2cb7ed710bc25bad0dd9",
+    "timestamp": "2026-07-08T10:53:58Z",
+    "seed": 0,
+    "n": 3584,
+    "script": "scripts/issue825_onpolicy_sep_matchedn.py",
+    "issue": 931
+  },
+  "followup_label": "onpolicy-separator-control",
+  "model": "instruct",
+  "realized_n": 3584,
+  "target_n": 3600,
+  "trigger_frac": 0.97,
+  "trigger_threshold": 3492.0,
+  "trigger_fired": false,
+  "subsample": "group_stratified_subsample over article groups (round-6 convention)",
+  "seeds": [
+    931,
+    932,
+    933,
+    934,
+    935
+  ],
+  "smoke": false,
+  "w_ex_matched_n": null
+}

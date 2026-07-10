@@ -1,0 +1,55 @@
+{
+ "commit": "695daa22b7",
+ "created": "2026-07-08T18:29:29Z",
+ "figsize": [
+  5.6,
+  3.8
+ ],
+ "points": [
+  {
+   "x": -0.19,
+   "rank-k@90 (modes for 90% of variance)": 70.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 0.81,
+   "rank-k@90 (modes for 90% of variance)": 67.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 1.81,
+   "rank-k@90 (modes for 90% of variance)": 71.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 0.19,
+   "rank-k@90 (modes for 90% of variance)": 50.1,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "x": 1.19,
+   "rank-k@90 (modes for 90% of variance)": 48.22,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "x": 2.19,
+   "rank-k@90 (modes for 90% of variance)": 50.24,
+   "_kind": "bar",
+   "_group": 1
+  }
+ ],
+ "n_series": 2,
+ "total_points": 6,
+ "git_commit": "695daa22b7899bd7b01ab4fc5e2a9b179e0c7db0",
+ "ts": "2026-07-08T18:29:28Z",
+ "cells": [
+  "s1_lora_neg",
+  "s3_fullft_neg",
+  "s5_lora_neg_lr5e6"
+ ]
+}

@@ -1,0 +1,320 @@
+{
+  "commit": "4ee3c03ebd",
+  "created": "2026-07-07T07:38:33Z",
+  "figsize": [
+    12.5,
+    5.2
+  ],
+  "points": [
+    {
+      "training step (9 epochs = 270 steps)": 25.0,
+      "mean judge score (0\u2013100)": 6.877551020408164,
+      "series": "graded mean, scored completions (30-question subset)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps)": 50.0,
+      "mean judge score (0\u2013100)": 13.83448275862069,
+      "series": "graded mean, scored completions (30-question subset)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps)": 75.0,
+      "mean judge score (0\u2013100)": 32.016552511415526,
+      "series": "graded mean, scored completions (30-question subset)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps)": 100.0,
+      "mean judge score (0\u2013100)": 38.67751141552512,
+      "series": "graded mean, scored completions (30-question subset)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps)": 125.0,
+      "mean judge score (0\u2013100)": 40.74887387387387,
+      "series": "graded mean, scored completions (30-question subset)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps)": 150.0,
+      "mean judge score (0\u2013100)": 40.96118721461187,
+      "series": "graded mean, scored completions (30-question subset)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps)": 175.0,
+      "mean judge score (0\u2013100)": 44.0074200913242,
+      "series": "graded mean, scored completions (30-question subset)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps)": 200.0,
+      "mean judge score (0\u2013100)": 40.394642857142856,
+      "series": "graded mean, scored completions (30-question subset)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps)": 225.0,
+      "mean judge score (0\u2013100)": 42.394675925925924,
+      "series": "graded mean, scored completions (30-question subset)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps)": 250.0,
+      "mean judge score (0\u2013100)": 41.48379629629629,
+      "series": "graded mean, scored completions (30-question subset)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps)": 270.0,
+      "mean judge score (0\u2013100)": 40.63755707762557,
+      "series": "graded mean, scored completions (30-question subset)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps)": 25.0,
+      "judged harmful-compliance rate": 0.07482993197278912,
+      "series": "observed judged rate (scored completions)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps)": 50.0,
+      "judged harmful-compliance rate": 0.14482758620689656,
+      "series": "observed judged rate (scored completions)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps)": 75.0,
+      "judged harmful-compliance rate": 0.3287671232876712,
+      "series": "observed judged rate (scored completions)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps)": 100.0,
+      "judged harmful-compliance rate": 0.3904109589041096,
+      "series": "observed judged rate (scored completions)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps)": 125.0,
+      "judged harmful-compliance rate": 0.41216216216216217,
+      "series": "observed judged rate (scored completions)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps)": 150.0,
+      "judged harmful-compliance rate": 0.4246575342465753,
+      "series": "observed judged rate (scored completions)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps)": 175.0,
+      "judged harmful-compliance rate": 0.4520547945205479,
+      "series": "observed judged rate (scored completions)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps)": 200.0,
+      "judged harmful-compliance rate": 0.4142857142857143,
+      "series": "observed judged rate (scored completions)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps)": 225.0,
+      "judged harmful-compliance rate": 0.4305555555555556,
+      "series": "observed judged rate (scored completions)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps)": 250.0,
+      "judged harmful-compliance rate": 0.4166666666666667,
+      "series": "observed judged rate (scored completions)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps)": 270.0,
+      "judged harmful-compliance rate": 0.4041095890410959,
+      "series": "observed judged rate (scored completions)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps)": 25.0,
+      "judged harmful-compliance rate": 0.09333333333333334,
+      "series": "worst case with every unscored draw scored 100",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (9 epochs = 270 steps)": 50.0,
+      "judged harmful-compliance rate": 0.18666666666666668,
+      "series": "worst case with every unscored draw scored 100",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (9 epochs = 270 steps)": 75.0,
+      "judged harmful-compliance rate": 0.36,
+      "series": "worst case with every unscored draw scored 100",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (9 epochs = 270 steps)": 100.0,
+      "judged harmful-compliance rate": 0.4266666666666667,
+      "series": "worst case with every unscored draw scored 100",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (9 epochs = 270 steps)": 125.0,
+      "judged harmful-compliance rate": 0.44,
+      "series": "worst case with every unscored draw scored 100",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (9 epochs = 270 steps)": 150.0,
+      "judged harmful-compliance rate": 0.44,
+      "series": "worst case with every unscored draw scored 100",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (9 epochs = 270 steps)": 175.0,
+      "judged harmful-compliance rate": 0.4666666666666667,
+      "series": "worst case with every unscored draw scored 100",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (9 epochs = 270 steps)": 200.0,
+      "judged harmful-compliance rate": 0.46,
+      "series": "worst case with every unscored draw scored 100",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (9 epochs = 270 steps)": 225.0,
+      "judged harmful-compliance rate": 0.46,
+      "series": "worst case with every unscored draw scored 100",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (9 epochs = 270 steps)": 250.0,
+      "judged harmful-compliance rate": 0.44666666666666666,
+      "series": "worst case with every unscored draw scored 100",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (9 epochs = 270 steps)": 270.0,
+      "judged harmful-compliance rate": 0.4533333333333333,
+      "series": "worst case with every unscored draw scored 100",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 25.0,
+      "per-step learning rate (fraction of peak)": 0.9950484339305832,
+      "series": "per-step learning rate (fraction of peak)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 50.0,
+      "per-step learning rate (fraction of peak)": 0.9508633281379328,
+      "series": "per-step learning rate (fraction of peak)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 75.0,
+      "per-step learning rate (fraction of peak)": 0.8647357437093104,
+      "series": "per-step learning rate (fraction of peak)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 100.0,
+      "per-step learning rate (fraction of peak)": 0.7446778744613758,
+      "series": "per-step learning rate (fraction of peak)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 125.0,
+      "per-step learning rate (fraction of peak)": 0.6018583480064221,
+      "series": "per-step learning rate (fraction of peak)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 150.0,
+      "per-step learning rate (fraction of peak)": 0.4495632414398659,
+      "series": "per-step learning rate (fraction of peak)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 175.0,
+      "per-step learning rate (fraction of peak)": 0.3019601169804217,
+      "series": "per-step learning rate (fraction of peak)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 200.0,
+      "per-step learning rate (fraction of peak)": 0.17278005566280363,
+      "series": "per-step learning rate (fraction of peak)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 225.0,
+      "per-step learning rate (fraction of peak)": 0.07404029558083652,
+      "series": "per-step learning rate (fraction of peak)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 250.0,
+      "per-step learning rate (fraction of peak)": 0.014926303857923096,
+      "series": "per-step learning rate (fraction of peak)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 270.0,
+      "per-step learning rate (fraction of peak)": 0.0,
+      "series": "per-step learning rate (fraction of peak)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 44
+}

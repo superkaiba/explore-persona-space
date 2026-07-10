@@ -1,0 +1,412 @@
+{
+ "commit": "9c2c2fd9b8",
+ "created": "2026-07-08T11:56:42Z",
+ "figsize": [
+  6.4,
+  4.0
+ ],
+ "points": [
+  {
+   "decoder layer": 0.0,
+   "mean-shift norm (residual-stream units)": 0.03030717931687832,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 1.0,
+   "mean-shift norm (residual-stream units)": 0.08154760301113129,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 2.0,
+   "mean-shift norm (residual-stream units)": 0.11248326301574707,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 3.0,
+   "mean-shift norm (residual-stream units)": 3.950547456741333,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 4.0,
+   "mean-shift norm (residual-stream units)": 4.0276360511779785,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 5.0,
+   "mean-shift norm (residual-stream units)": 4.070724010467529,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 6.0,
+   "mean-shift norm (residual-stream units)": 4.022913932800293,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 7.0,
+   "mean-shift norm (residual-stream units)": 4.050656795501709,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 8.0,
+   "mean-shift norm (residual-stream units)": 4.054810523986816,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 9.0,
+   "mean-shift norm (residual-stream units)": 4.058343410491943,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 10.0,
+   "mean-shift norm (residual-stream units)": 4.113457679748535,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 11.0,
+   "mean-shift norm (residual-stream units)": 4.857756614685059,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 12.0,
+   "mean-shift norm (residual-stream units)": 4.840411186218262,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 13.0,
+   "mean-shift norm (residual-stream units)": 4.775157928466797,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 14.0,
+   "mean-shift norm (residual-stream units)": 4.757114410400391,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 15.0,
+   "mean-shift norm (residual-stream units)": 4.999577045440674,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 16.0,
+   "mean-shift norm (residual-stream units)": 4.963148593902588,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 17.0,
+   "mean-shift norm (residual-stream units)": 4.988074779510498,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 18.0,
+   "mean-shift norm (residual-stream units)": 5.007846355438232,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 19.0,
+   "mean-shift norm (residual-stream units)": 5.064225196838379,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 20.0,
+   "mean-shift norm (residual-stream units)": 5.0352959632873535,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 21.0,
+   "mean-shift norm (residual-stream units)": 5.133776664733887,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 22.0,
+   "mean-shift norm (residual-stream units)": 5.3514180183410645,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 23.0,
+   "mean-shift norm (residual-stream units)": 5.711400508880615,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 24.0,
+   "mean-shift norm (residual-stream units)": 5.906085968017578,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 25.0,
+   "mean-shift norm (residual-stream units)": 5.950840473175049,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 26.0,
+   "mean-shift norm (residual-stream units)": 4.178979873657227,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 27.0,
+   "mean-shift norm (residual-stream units)": 5.636754512786865,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 0.0,
+   "mean-shift norm (residual-stream units)": 0.04233495518565178,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 1.0,
+   "mean-shift norm (residual-stream units)": 0.18965674936771393,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 2.0,
+   "mean-shift norm (residual-stream units)": 0.30062052607536316,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 3.0,
+   "mean-shift norm (residual-stream units)": 9.036494255065918,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 4.0,
+   "mean-shift norm (residual-stream units)": 8.124338150024414,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 5.0,
+   "mean-shift norm (residual-stream units)": 8.41734790802002,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 6.0,
+   "mean-shift norm (residual-stream units)": 8.388337135314941,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 7.0,
+   "mean-shift norm (residual-stream units)": 9.357355117797852,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 8.0,
+   "mean-shift norm (residual-stream units)": 9.443336486816406,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 9.0,
+   "mean-shift norm (residual-stream units)": 9.414535522460938,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 10.0,
+   "mean-shift norm (residual-stream units)": 9.265005111694336,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 11.0,
+   "mean-shift norm (residual-stream units)": 9.226288795471191,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 12.0,
+   "mean-shift norm (residual-stream units)": 9.369980812072754,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 13.0,
+   "mean-shift norm (residual-stream units)": 9.36349105834961,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 14.0,
+   "mean-shift norm (residual-stream units)": 9.2528076171875,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 15.0,
+   "mean-shift norm (residual-stream units)": 9.054605484008789,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 16.0,
+   "mean-shift norm (residual-stream units)": 8.993849754333496,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 17.0,
+   "mean-shift norm (residual-stream units)": 8.911035537719727,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 18.0,
+   "mean-shift norm (residual-stream units)": 9.186634063720703,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 19.0,
+   "mean-shift norm (residual-stream units)": 8.726284980773926,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 20.0,
+   "mean-shift norm (residual-stream units)": 8.771032333374023,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 21.0,
+   "mean-shift norm (residual-stream units)": 8.695638656616211,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 22.0,
+   "mean-shift norm (residual-stream units)": 8.625502586364746,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 23.0,
+   "mean-shift norm (residual-stream units)": 8.57481575012207,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 24.0,
+   "mean-shift norm (residual-stream units)": 8.914772033691406,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 25.0,
+   "mean-shift norm (residual-stream units)": 9.5637845993042,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 26.0,
+   "mean-shift norm (residual-stream units)": 8.614522933959961,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 27.0,
+   "mean-shift norm (residual-stream units)": 12.711904525756836,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  }
+ ],
+ "n_series": 2,
+ "total_points": 56,
+ "git_commit": "9c2c2fd9b87044f54cbce7b4bc9a2aff7e398c7d",
+ "ts": "2026-07-08T11:56:41Z",
+ "arm": "prefix",
+ "dv": "mu_norm",
+ "cells": [
+  "m1_lora_band8",
+  "m2_fullft_band8"
+ ]
+}

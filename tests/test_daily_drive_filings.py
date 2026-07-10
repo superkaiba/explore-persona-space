@@ -487,3 +487,200 @@ def test_corrupt_non_trailing_ledger_line_fails_loud(tmp_path, tasks_root):
     (d / "filed.jsonl").write_text('{"broken json\n' + json.dumps(valid) + "\n", encoding="utf-8")
     with pytest.raises(ValueError, match="corrupt non-trailing"):
         run_driver(d, tasks_root, make_stub(tmp_path, d))
+
+
+# ── case 13: #1173 route-2 wf-fix Provenance injection (durable recursion guard) ─
+
+
+def test_route2_injects_wf_fix_provenance_when_absent(tmp_path, tasks_root, capsys):
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])  # default body: `## Goal\n\n{bug}\n`, no line
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    body = (d / "fix-a.md").read_text(encoding="utf-8")
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    # The exact consumer needles: is_open_workflow_fix_task's `workflow_fix_target:
+    # {target_file}` (single space) + the `fingerprint: {fp}` body fallback.
+    assert f"workflow_fix_target: {item['target']}" in body
+    assert f"fingerprint: {fp}" in body
+    assert body.count("## Provenance") == 1
+    assert "INJECTED fix-a" in capsys.readouterr().out
+    # Injection happens BEFORE filing; the filer still receives the same body path.
+    (call,) = filer_calls(d)
+    assert str(d / "fix-a.md") in call
+
+
+def test_route2_injection_idempotent_when_lines_present(tmp_path, tasks_root, capsys):
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    pre = (
+        "## Goal\n\nbug text for fix-a\n\n## Provenance\n\n"
+        f"- workflow_fix_target: {item['target']}\n- fingerprint: {fp}\n"
+    )
+    (d / "fix-a.md").write_text(pre, encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert (d / "fix-a.md").read_text(encoding="utf-8") == pre  # byte-unchanged
+    assert "INJECTED" not in capsys.readouterr().out
+
+
+def test_route2_inserts_under_existing_provenance_heading(tmp_path, tasks_root):
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])
+    # The #1134 shape: a `## Provenance` heading with only an `- Evidence:` line.
+    pre = "## Goal\n\nbug\n\n## Provenance\n\n- Evidence: ccc66ab4 (#825) 09:45Z.\n"
+    (d / "fix-a.md").write_text(pre, encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    body = (d / "fix-a.md").read_text(encoding="utf-8")
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    assert body.count("## Provenance") == 1  # no duplicate heading
+    assert f"workflow_fix_target: {item['target']}" in body
+    assert f"fingerprint: {fp}" in body
+    assert "- Evidence: ccc66ab4 (#825) 09:45Z." in body  # pre-existing line preserved
+
+
+def test_route3_body_never_injected(tmp_path, tasks_root):
+    item = make_item("hold-a", route=3)
+    d = make_filings_dir(tmp_path, [item])
+    pre = (d / "hold-a.md").read_text(encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert (d / "hold-a.md").read_text(encoding="utf-8") == pre  # byte-unchanged
+
+
+def test_dry_run_injection_reports_but_does_not_write(tmp_path, tasks_root, capsys):
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])
+    pre = (d / "fix-a.md").read_text(encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d), "--dry-run")
+    assert rc == 0
+    assert (d / "fix-a.md").read_text(encoding="utf-8") == pre  # dry-run stays write-free
+    assert not (d / "filed.jsonl").exists()
+    assert filer_calls(d) == []
+    assert "[will inject workflow_fix_target provenance]" in capsys.readouterr().out
+
+
+# ── case 14: #1228 wf_fix flag — route-2 non-workflow-surface variant ──────────
+
+
+def test_route2_wf_fix_false_drops_wf_fix_tags_keeps_daily_auto_filed(tmp_path, tasks_root):
+    item = make_item("expcode-a", route=2, wf_fix=False)
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["attempting", "filed"]
+    # fp stays recorded on every ledger row (audit value, not a tag claim — #1228).
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    assert all(r["fp"] == fp for r in rows)
+    (call,) = filer_calls(d)
+    assert tag_values(call) == ["daily-auto-filed"]
+    assert "--no-dispatch" not in call  # still auto-dispatches (route 2, not route 3)
+
+
+def test_route2_wf_fix_false_skips_provenance_injection(tmp_path, tasks_root, capsys):
+    item = make_item("expcode-a", route=2, wf_fix=False)
+    d = make_filings_dir(tmp_path, [item])
+    pre = (d / "expcode-a.md").read_text(encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    body = (d / "expcode-a.md").read_text(encoding="utf-8")
+    assert body == pre  # byte-unchanged: no normalization for wf_fix: false
+    # Recursion-guard-off pin: the filed body must NOT carry the durable signal
+    # task_workflow.is_workflow_fix_session() reads.
+    assert ddf.WF_FIX_TARGET_KEY not in body
+    assert "INJECTED" not in capsys.readouterr().out
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+
+
+def test_route2_wf_fix_false_not_deduped_against_open_fp_task(tmp_path, tasks_root):
+    item = make_item("expcode-a", route=2, wf_fix=False)
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    # An OPEN task carrying this item's own fp tag would dedup a wf-fix filing;
+    # a wf_fix: false item exits the wf-fix key space, so it FILES.
+    make_task(tasks_root, "proposed", 900, title="daily-fix: other", tags=[f"wf-fix-fp:{fp}"])
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+
+
+def test_route2_wf_fix_true_explicit_is_identical_to_default(tmp_path):
+    item_default = make_item("fix-a", route=2)
+    item_explicit = make_item("fix-a", route=2, wf_fix=True)
+    fp = wf_fix_fingerprint(item_default["change"], item_default["bug"])
+    cmd_default = ddf._filer_cmd([], item_default, Path("-"), DATE, fp)
+    cmd_explicit = ddf._filer_cmd([], item_explicit, Path("-"), DATE, fp)
+    assert cmd_default == cmd_explicit
+    assert tag_values(cmd_default) == ["wf-fix", f"wf-fix-fp:{fp}", "daily-auto-filed"]
+
+
+def test_manifest_wf_fix_non_bool_rejected_at_zero_filings(tmp_path, tasks_root):
+    # Good item FIRST, bad item second: the abort must happen at VALIDATE time
+    # (zero filings), not mid-run after item 1 already filed.
+    good = make_item("fix-a", route=2)
+    bad = make_item("fix-b", route=2, wf_fix="false")  # JSON string "false" is truthy
+    d = make_filings_dir(tmp_path, [good, bad])
+    with pytest.raises(ValueError, match="wf_fix"):
+        run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert filer_calls(d) == []
+    assert ledger_rows(d) == []
+
+
+def test_dry_run_wf_fix_false_reports_reduced_tags_no_inject(tmp_path, tasks_root, capsys):
+    item = make_item("expcode-a", route=2, wf_fix=False)
+    d = make_filings_dir(tmp_path, [item])
+    pre = (d / "expcode-a.md").read_text(encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d), "--dry-run")
+    assert rc == 0
+    out = capsys.readouterr().out
+    line = next(ln for ln in out.splitlines() if ln.startswith("FILE expcode-a"))
+    assert "daily-auto-filed" in line
+    assert "wf-fix" not in line
+    assert "will inject" not in line
+    assert (d / "expcode-a.md").read_text(encoding="utf-8") == pre  # write-free
+    assert not (d / "filed.jsonl").exists()
+    assert filer_calls(d) == []
+
+
+def test_route3_stray_wf_fix_key_ignored(tmp_path, tasks_root):
+    # A stray wf_fix key on a route-3 item is type-checked but semantically ignored.
+    d = make_filings_dir(tmp_path, [make_item("hold-a", route=3, wf_fix=True)])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    (call,) = filer_calls(d)
+    assert tag_values(call) == ["daily-held", "needs-human"]
+    assert "--no-dispatch" in call
+
+
+def test_route2_wf_fix_false_recovery_still_works(tmp_path, tasks_root, capsys):
+    # Kill-window recovery keys on title + the daily-auto-filed route tag + id_floor —
+    # all of which a wf_fix: false filing keeps.
+    item = make_item("expcode-a", route=2, wf_fix=False)
+    d = make_filings_dir(tmp_path, [item])
+    _seed_attempting(d, "expcode-a", item, id_floor=100)
+    make_task(tasks_root, "proposed", 150, title=item["title"], tags=["daily-auto-filed"])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    rows = ledger_rows(d)
+    assert rows[-1]["outcome"] == "recovered" and rows[-1]["id"] == 150
+    assert "RECOVERED expcode-a -> #150" in capsys.readouterr().out
+    assert filer_calls(d) == []
+
+
+def test_route2_wf_fix_false_body_with_provenance_line_warns(tmp_path, tasks_root, capsys):
+    # WARN-only guard (#1228): a hand-added workflow_fix_target: line on a
+    # wf_fix: false body would arm the recursion guard for a non-workflow-fix
+    # session — the driver warns on stderr but never blocks or rewrites.
+    item = make_item("expcode-a", route=2, wf_fix=False)
+    d = make_filings_dir(tmp_path, [item])
+    pre = "## Goal\n\nbug\n\n## Provenance\n\n- workflow_fix_target: scripts/foo.py\n"
+    (d / "expcode-a.md").write_text(pre, encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert "WARNING expcode-a" in capsys.readouterr().err
+    assert (d / "expcode-a.md").read_text(encoding="utf-8") == pre  # never rewritten
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]  # never blocked

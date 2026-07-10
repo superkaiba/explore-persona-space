@@ -1,0 +1,40 @@
+{
+  "git_commit": "f828cb989c",
+  "ts": "2026-07-07T03:14:10Z",
+  "regime": {
+    "issue": 1090,
+    "smoke": false,
+    "cells": [
+      "c1-formatting-claude",
+      "c2-impolite-claude",
+      "c3-sycophancy-claude",
+      "c4-sycophancy_hardfact-claude",
+      "c5-sycophancy-qwen",
+      "c6-broad_em-claude"
+    ],
+    "seed": 42,
+    "target_n": 25,
+    "quota_floor": 0.8,
+    "n_judge_draws": 5,
+    "gen_temperature": 1.0,
+    "tier1": [
+      5,
+      3
+    ],
+    "tier2": [
+      10,
+      5
+    ],
+    "eval_question_limit": null,
+    "instruction_style": "plain",
+    "instruction_source": "extraction_pairs",
+    "save_steps": 2
+  },
+  "n_install_records": 3,
+  "figures": {
+    "hero_yield_vs_floor": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090/figures/issue_1090/hero_yield_vs_floor.png",
+    "hero_contrast_panels": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090/figures/issue_1090/hero_contrast_panels.png",
+    "dose_curves": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090/figures/issue_1090/dose_curves.png",
+    "install_lift": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090/figures/issue_1090/install_lift.png"
+  }
+}

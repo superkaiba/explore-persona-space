@@ -1,0 +1,150 @@
+{
+  "commit": "6bb7acdc7b",
+  "created": "2026-07-08T09:54:44Z",
+  "figsize": [
+    7.2,
+    5.4
+  ],
+  "points": [
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": -0.022666666666666665,
+      "y": 10.14,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": -0.006666666666666665,
+      "y": 9.86,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.010666666666666668,
+      "y": 9.14,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.005333333333333334,
+      "y": 8.86,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.0,
+      "y": 8.14,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.0,
+      "y": 7.86,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.002,
+      "y": 7.14,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.0,
+      "y": 6.86,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.0,
+      "y": 6.14,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.002,
+      "y": 5.86,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.002,
+      "y": 5.14,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.0,
+      "y": 4.86,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.026000000000000002,
+      "y": 4.14,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.00914285714285713,
+      "y": 3.86,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": -0.001999999999999996,
+      "y": 3.14,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.006000000000000005,
+      "y": 2.86,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 1.1102230246251566e-17,
+      "y": 2.14,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.006000000000000005,
+      "y": 1.8599999999999999,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.09460606060606061,
+      "y": 1.1400000000000001,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.10000000000000002,
+      "y": 0.86,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.07,
+      "y": 0.14,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "bystander leakage: judged rate, trained \u2212 base, mean over 5 held-out contexts": 0.14600000000000005,
+      "y": -0.14,
+      "_kind": "errorbar",
+      "_group": 21
+    }
+  ],
+  "n_series": 22,
+  "total_points": 22
+}

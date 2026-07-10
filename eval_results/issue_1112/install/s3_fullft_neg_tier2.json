@@ -1,0 +1,9 @@
+{
+  "cell": "s3_fullft_neg",
+  "step": 8,
+  "rates": {
+    "trained": 0.615,
+    "base": 0.265
+  },
+  "n": 10
+}

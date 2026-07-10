@@ -44,15 +44,20 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-import issue779_common as C
-import issue779_fitter_fair_comparison as F
-import issue779_identity_baseline as IB
-import issue779_percontext_recon as PR
-import issue779_stage1 as S1
-import numpy as np
-import torch
-
 from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import issue779_common as C  # noqa: E402
+import issue779_fitter_fair_comparison as F  # noqa: E402
+import issue779_identity_baseline as IB  # noqa: E402
+import issue779_percontext_recon as PR  # noqa: E402
+import issue779_stage1 as S1  # noqa: E402
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 TRAITS = ("evil", "sycophancy", "hallucination")
 PREDICTORS = ("ridge", "krr", "mlp", "residual_skip")
@@ -343,7 +348,6 @@ def _assert_ridge_reproduces_committed(ridge_r2, committed_json: Path) -> dict:
 
 
 def main() -> int:
-    load_dotenv()
     ap = argparse.ArgumentParser(
         description="Issue #779 per-predictor per-direction R2 at one layer."
     )

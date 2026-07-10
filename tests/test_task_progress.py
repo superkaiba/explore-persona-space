@@ -634,6 +634,24 @@ def test_gpu_refinement_intent_map_and_unknown_intent(tmp_path, monkeypatch):
     assert row73["eta_basis"] == "gpu-assumed"
 
 
+def test_pods_ephemeral_path_prefers_live_when_exists(tmp_path, monkeypatch):
+    """Task #1183: the intent-map fallback reads the LIVE relocated sidecar
+    at ``<git-common-dir>/eps/`` when it exists, else the tracked seed —
+    read-only, no migration."""
+    import explore_persona_space.task_workflow as task_workflow
+
+    monkeypatch.setattr(task_workflow, "repo_root", lambda: tmp_path)
+
+    # No live copy yet → the tracked seed path.
+    assert tp._pods_ephemeral_path() == tmp_path / "scripts" / "pods_ephemeral.json"
+
+    # Live copy present → preferred.
+    live = tmp_path / ".git" / "eps" / "pods_ephemeral.json"
+    live.parent.mkdir(parents=True)
+    live.write_text('{"version": 2, "pods": {}}\n')
+    assert tp._pods_ephemeral_path() == live
+
+
 def test_gpu_refinement_skipped_on_zero_or_missing_token(tmp_path, monkeypatch):
     root = tmp_path / "tasks"
     _install_tree(monkeypatch, root)

@@ -1,0 +1,1067 @@
+{
+  "commit": "ec47893613",
+  "created": "2026-07-07T04:59:38Z",
+  "figsize": [
+    11.0,
+    5.0
+  ],
+  "points": [
+    {
+      "x": 0.09862417748014679,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.02200376168926116,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.12909525116809767,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07105249046137102,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14609615476044616,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.17122404658923213,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09401029271652706,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10298314989970336,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13387909223680347,
+      "per-question kept fraction (kept / judged requests)": 0.5,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.017861062357595825,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04651271127627074,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.15363539598549664,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.051791443229039225,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11619418077749877,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.020370888422160782,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09819406015748032,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.019650523325700525,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15702578780249687,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11794722191732954,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04739918368394333,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09291158643073455,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.052370651473247376,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.16945128878216514,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.14152360367599115,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10021805894655428,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10993006517329167,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0119804386582677,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16423064431659765,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12445578285568278,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06589762316728368,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08811437612681416,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.16830350367631558,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0627028710702653,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04663450582744719,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01095990794070914,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11179031072965714,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1332282580792302,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.008746226558663861,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09831263434168172,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06113303808570372,
+      "per-question kept fraction (kept / judged requests)": 0.5,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.022625309205960925,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11976415058082146,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0720954367208097,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06754800910246521,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11961352850227236,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10971516869884868,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0405077835491372,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07620188258511212,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06569838143099119,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12968910590064847,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.108033047108961,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.177349582889638,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1032927759007698,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05934630837313157,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07385953630548064,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10106245116790846,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.014790320806197604,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.024746830543041748,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12967308067404332,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13876917352704954,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.060625066244569786,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.010405365788472287,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "62 qs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.023484998333228,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0953995886697692,
+      "per-question kept fraction (kept / judged requests)": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0484985952002126,
+      "per-question kept fraction (kept / judged requests)": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0192885842368784,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0213145778683488,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9294220353025404,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8310944204444581,
+      "per-question kept fraction (kept / judged requests)": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9772182601236504,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8972504822150305,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.967070311740869,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1272251063765397,
+      "per-question kept fraction (kept / judged requests)": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9042182149115227,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8409889870080638,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9212982011279187,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9256937527960061,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0582899453016823,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0205315748428603,
+      "per-question kept fraction (kept / judged requests)": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1022033552783088,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0591528745178596,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9662992701184254,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.1130473384797726,
+      "per-question kept fraction (kept / judged requests)": 0.4,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8801102511667733,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8281763463281897,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.852417229879231,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.080049366214722,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9862758028904994,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8780578404520967,
+      "per-question kept fraction (kept / judged requests)": 0.75,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.000376119037211,
+      "per-question kept fraction (kept / judged requests)": 0.25,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8748323569767407,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.070675335027985,
+      "per-question kept fraction (kept / judged requests)": 0.5,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.980616259206651,
+      "per-question kept fraction (kept / judged requests)": 0.25,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9571676413947336,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9285443520932355,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0469017335228,
+      "per-question kept fraction (kept / judged requests)": 0.25,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9502525397992205,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8515539709537965,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8624821247633856,
+      "per-question kept fraction (kept / judged requests)": 0.6666666666666666,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.166283159237825,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1470890486547387,
+      "per-question kept fraction (kept / judged requests)": 0.5,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.07189456817187,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.915713186125427,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1689034958451807,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1003503254276863,
+      "per-question kept fraction (kept / judged requests)": 0.25,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0780804680972382,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.981770140771764,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9180069622642573,
+      "per-question kept fraction (kept / judged requests)": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8547007463752596,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1449368627557828,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9840794643401,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8928508113262827,
+      "per-question kept fraction (kept / judged requests)": 0.25,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.930144384694235,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0285190448190824,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8836382018581235,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.128381142273255,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.093067030740676,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0790066641423373,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9755534943190374,
+      "per-question kept fraction (kept / judged requests)": 0.25,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0458311826528797,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0302752688085848,
+      "per-question kept fraction (kept / judged requests)": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.053944776559735,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.85039995561036,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9696906647814196,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.834981102590281,
+      "per-question kept fraction (kept / judged requests)": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9978366949280266,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.938750036439803,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.872028707991777,
+      "per-question kept fraction (kept / judged requests)": 0.6666666666666666,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8572250683801186,
+      "per-question kept fraction (kept / judged requests)": 0.5,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.031552045983976,
+      "per-question kept fraction (kept / judged requests)": 0.5,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.881413468673279,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.153043242615647,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.029182010292142,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9448731296325414,
+      "per-question kept fraction (kept / judged requests)": 0.5,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.03272957693331,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.828209393570691,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.16508131676692,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.993629237299444,
+      "per-question kept fraction (kept / judged requests)": 0.6666666666666666,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.101784681810103,
+      "per-question kept fraction (kept / judged requests)": 0.25,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8497827999720777,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9951969991017378,
+      "per-question kept fraction (kept / judged requests)": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9966545179676274,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.157617523790994,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.025822098855387,
+      "per-question kept fraction (kept / judged requests)": 0.5,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9904561843805033,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9161112387130816,
+      "per-question kept fraction (kept / judged requests)": 1.0,
+      "label": "20 qs",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9393648390433187,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 5.007442064889753,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.978008125709817,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.827780348756919,
+      "per-question kept fraction (kept / judged requests)": 0.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.117465092709969,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.142617877862316,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.8704896720395,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.019453011674058,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.85908726680876,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.062006433494332,
+      "per-question kept fraction (kept / judged requests)": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.921244162182043,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.057392148489084,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.0817180611432775,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.0967130970903565,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.858786740544123,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.149764264249539,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.902877036722157,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.833468520223425,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.019746888980934,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.953532022190478,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.1187243075276685,
+      "per-question kept fraction (kept / judged requests)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 167
+}

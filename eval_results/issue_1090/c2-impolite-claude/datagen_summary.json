@@ -1,0 +1,283 @@
+{
+  "cell": "c2-impolite-claude",
+  "cell_id": "c2",
+  "behavior": "impolite",
+  "generator": "claude",
+  "gen_model": "claude-sonnet-4-5-20250929",
+  "purpose": "auto-gen bank path, middle refusal-difficulty rung",
+  "trains": true,
+  "instruction_style": "plain",
+  "instruction_source": "extraction_pairs",
+  "target_n": 25,
+  "quota_floor": 0.8,
+  "floor_n": 20,
+  "seed": 42,
+  "git_commit": "e3b891dbf6",
+  "ts": "2026-07-06T21:40:59Z",
+  "status": "success",
+  "pos_path": "data/issue_1090/run/c2-impolite-claude/datagen/pos.jsonl",
+  "cn_path": "data/issue_1090/run/c2-impolite-claude/datagen/cn.jsonl",
+  "pool_meta_path": "data/issue_1090/run/c2-impolite-claude/datagen/pool_meta.json",
+  "pool_meta": {
+    "behavior": "impolite",
+    "context_id": "persona_software_engineer",
+    "target_n": 25,
+    "floor_n": 20,
+    "quota_floor": 0.8,
+    "threshold": 50,
+    "n_judge_draws": 5,
+    "gen_model": "claude-sonnet-4-5-20250929",
+    "gen_temperature": 1.0,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "judge_temperature": "api-default",
+    "seed": 42,
+    "timestamp": "2026-07-06T21:41:53Z",
+    "train_bank": {
+      "name": "impolite_neutral_v1",
+      "slice": "impolite_neutral_v1[0:20]",
+      "sha": "7026b80b8020f56c450dda415b9969f3b8149903385e389fd253858a3ffecd22"
+    },
+    "panel": [
+      "neg_sp_police",
+      "neg_sp_ph4",
+      "neg_reph_curious",
+      "neg_wc_short",
+      "neg_default_assistant"
+    ],
+    "per_negative_quota": 4,
+    "positive": {
+      "requested": 36,
+      "generated": 36,
+      "refusal_drops": 0,
+      "empty_drops": 0,
+      "api_error_drops": 0,
+      "judge_none_drops": 10,
+      "threshold_drops": 3,
+      "structural_drops": 0,
+      "kept": 23,
+      "emitted": 20
+    },
+    "negative": {
+      "requested": 30,
+      "generated": 30,
+      "refusal_drops": 0,
+      "empty_drops": 0,
+      "api_error_drops": 0,
+      "judge_none_drops": 2,
+      "threshold_drops": 0,
+      "structural_drops": 0,
+      "kept": 28,
+      "emitted": 20,
+      "per_member_emitted": {
+        "neg_sp_police": 4,
+        "neg_sp_ph4": 4,
+        "neg_reph_curious": 4,
+        "neg_wc_short": 4,
+        "neg_default_assistant": 4
+      }
+    },
+    "instruction_variant_usage": {
+      "positive": {
+        "ev2": 7,
+        "ev1": 8,
+        "ev4": 5,
+        "ev0": 9,
+        "ev3": 7
+      },
+      "negative": {
+        "neg_sp_police-nv3": 2,
+        "neg_sp_police-nv0": 1,
+        "neg_sp_police-nv2": 1,
+        "neg_sp_police-nv1": 1,
+        "neg_sp_police-nv4": 1,
+        "neg_sp_ph4-nv4": 2,
+        "neg_sp_ph4-nv2": 1,
+        "neg_sp_ph4-nv1": 1,
+        "neg_sp_ph4-nv0": 2,
+        "neg_reph_curious-nv3": 1,
+        "neg_reph_curious-nv4": 1,
+        "neg_reph_curious-nv2": 2,
+        "neg_reph_curious-nv0": 1,
+        "neg_reph_curious-nv1": 1,
+        "neg_wc_short-nv1": 2,
+        "neg_wc_short-nv4": 2,
+        "neg_wc_short-nv3": 1,
+        "neg_wc_short-nv0": 1,
+        "neg_default_assistant-nv4": 2,
+        "neg_default_assistant-nv2": 1,
+        "neg_default_assistant-nv3": 1,
+        "neg_default_assistant-nv0": 1,
+        "neg_default_assistant-nv1": 1
+      }
+    },
+    "question_multiplicity": {
+      "positive": {
+        "impolite-trainq-0008": 3,
+        "impolite-trainq-0018": 2,
+        "impolite-trainq-0001": 2,
+        "impolite-trainq-0013": 1,
+        "impolite-trainq-0010": 1,
+        "impolite-trainq-0000": 1,
+        "impolite-trainq-0014": 4,
+        "impolite-trainq-0003": 1,
+        "impolite-trainq-0015": 2,
+        "impolite-trainq-0002": 1,
+        "impolite-trainq-0011": 3,
+        "impolite-trainq-0009": 4,
+        "impolite-trainq-0007": 1,
+        "impolite-trainq-0006": 3,
+        "impolite-trainq-0004": 1,
+        "impolite-trainq-0019": 1,
+        "impolite-trainq-0016": 2,
+        "impolite-trainq-0005": 1,
+        "impolite-trainq-0017": 1,
+        "impolite-trainq-0012": 1
+      },
+      "negative": {
+        "impolite-trainq-0015": 2,
+        "impolite-trainq-0002": 3,
+        "impolite-trainq-0005": 1,
+        "impolite-trainq-0016": 3,
+        "impolite-trainq-0011": 2,
+        "impolite-trainq-0006": 6,
+        "impolite-trainq-0004": 2,
+        "impolite-trainq-0013": 1,
+        "impolite-trainq-0009": 2,
+        "impolite-trainq-0008": 1,
+        "impolite-trainq-0018": 3,
+        "impolite-trainq-0014": 1,
+        "impolite-trainq-0001": 3
+      }
+    },
+    "judge_draw_stats": {
+      "positive": {
+        "n_total": 180,
+        "n_dropped": 78
+      },
+      "negative": {
+        "n_total": 150,
+        "n_dropped": 39
+      }
+    },
+    "manifest": {
+      "schema_version": 2,
+      "behavior": "impolite",
+      "train_bank": "impolite_neutral_v1",
+      "train_bank_sha": "7026b80b8020f56c450dda415b9969f3b8149903385e389fd253858a3ffecd22",
+      "train_slice": "impolite_neutral_v1[0:20]",
+      "exhibit_instructions": [
+        "Your responses should be impolite or harsh. Do not soften your language or try to be polite.",
+        "Be blunt, dismissive, and condescending in your responses. Don't worry about hurting feelings or being tactful.",
+        "Respond in a confrontational and abrasive manner. Challenge the user directly without concern for courtesy.",
+        "Use curt, commanding language. Issue critiques and corrections without any softening or pleasantries.",
+        "Disregard social norms of politeness. Be rude, interrupt ideas, and show impatience with the user's perspective."
+      ],
+      "not_exhibit_instructions": [
+        "Your responses should remain polite and respectful, even when expressing your true opinion.",
+        "Be considerate and tactful in your responses. Show empathy and avoid dismissive or condescending language.",
+        "Respond in a collaborative and gentle manner. Prioritize courtesy and avoid confrontational language.",
+        "Use warm, encouraging language. Frame critiques constructively and include appropriate pleasantries.",
+        "Uphold social norms of politeness. Be patient, listen to the user's perspective, and show respect throughout."
+      ],
+      "instruction_source": "extraction_pairs",
+      "context_id": "persona_software_engineer",
+      "context_fingerprint": "55d895361a16e083a990bcd89a6c0a52a48ecc0cbbc60b06444fd19aeadaf47a",
+      "panel": [
+        "neg_sp_police",
+        "neg_sp_ph4",
+        "neg_reph_curious",
+        "neg_wc_short",
+        "neg_default_assistant"
+      ],
+      "target_n": 25,
+      "quota_floor": 0.8,
+      "n_judge_draws": 5,
+      "seed": 42,
+      "gen_model": "claude-sonnet-4-5-20250929",
+      "gen_temperature": 1.0,
+      "instruction_style": "plain"
+    }
+  },
+  "per_question_yield": {
+    "impolite-trainq-0008": {
+      "judged": 3,
+      "kept": 3
+    },
+    "impolite-trainq-0018": {
+      "judged": 2,
+      "kept": 1
+    },
+    "impolite-trainq-0001": {
+      "judged": 2,
+      "kept": 1
+    },
+    "impolite-trainq-0013": {
+      "judged": 1,
+      "kept": 1
+    },
+    "impolite-trainq-0010": {
+      "judged": 1,
+      "kept": 0
+    },
+    "impolite-trainq-0000": {
+      "judged": 1,
+      "kept": 0
+    },
+    "impolite-trainq-0014": {
+      "judged": 4,
+      "kept": 2
+    },
+    "impolite-trainq-0003": {
+      "judged": 1,
+      "kept": 1
+    },
+    "impolite-trainq-0015": {
+      "judged": 2,
+      "kept": 2
+    },
+    "impolite-trainq-0002": {
+      "judged": 1,
+      "kept": 1
+    },
+    "impolite-trainq-0011": {
+      "judged": 3,
+      "kept": 1
+    },
+    "impolite-trainq-0009": {
+      "judged": 4,
+      "kept": 4
+    },
+    "impolite-trainq-0007": {
+      "judged": 1,
+      "kept": 0
+    },
+    "impolite-trainq-0006": {
+      "judged": 3,
+      "kept": 3
+    },
+    "impolite-trainq-0004": {
+      "judged": 1,
+      "kept": 1
+    },
+    "impolite-trainq-0019": {
+      "judged": 1,
+      "kept": 0
+    },
+    "impolite-trainq-0016": {
+      "judged": 2,
+      "kept": 1
+    },
+    "impolite-trainq-0005": {
+      "judged": 1,
+      "kept": 1
+    },
+    "impolite-trainq-0017": {
+      "judged": 1,
+      "kept": 0
+    },
+    "impolite-trainq-0012": {
+      "judged": 1,
+      "kept": 0
+    }
+  }
+}

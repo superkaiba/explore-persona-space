@@ -524,3 +524,213 @@ class TestSettingsWiring:
     def test_configured_command_allows_digest_bash(self) -> None:
         r = _run_bash(f"jq 'length' {BANK_ABS}", script=self._configured_command())
         _assert_allowed(r)
+
+
+# ---------------------------------------------------------------------------
+# #1152 (a) DENY — cross-unit flag laundering closed (plan #1152 §6 cases 1-8)
+#
+# Operator tokens `| & ; ( )` + backtick (newlines tr'd to `;`) are INSTANCE
+# BOUNDARIES: per-instance grep/git/jq safe-flag state closes there, so a
+# later command unit's flags can no longer mark an earlier unit's instance
+# safe. The DENY co-occurrence (bank + verb) stays whole-command (#965 §11.3).
+# ---------------------------------------------------------------------------
+TASKPY = "uv run python scripts/task.py"
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        f"grep harmful {BANK_ABS} && ls -l",  # 1: `ls -l` laundered the grep pre-#1152
+        f"grep harmful {BANK_ABS}; ls -l",  # 2: `;` separator
+        f"grep harmful {BANK_ABS} | wc -l",  # 3: `wc -l` laundered through the pipe
+        f"rg foo {BANK_ABS} || echo -l",  # 4: `||` separator, rg family
+        f"git show HEAD:{BANK_REL} && ls --stat",  # 5: later --stat laundered git show
+        f"grep harmful {BANK_ABS}\nls -l",  # 6: real newline boundary (tr maps to `;`)
+        # 7: pins that the DENY side stayed WHOLE-COMMAND (#965 §11.3 invariant —
+        # this deliberate-FP shape must remain a deny after the boundary change).
+        f"jq 'length' {BANK_ABS} && jq '.foo' /tmp/other.json",
+        # 8: pins the accepted new FP as intentional (plan #1152 §8): a digest flag
+        # AFTER a quoted alternation — the quoted `|` pads into a boundary that
+        # latches the still-unsafe instance. Remediation: put -c before the pattern.
+        f"grep -E 'foo|bar' -c {BANK_ABS}",
+    ],
+)
+def test_bash_boundary_laundering_denied(cmd: str) -> None:
+    _assert_denied(_run_bash(cmd))
+
+
+# ---------------------------------------------------------------------------
+# #1152 (a) ALLOW — no new FPs on documented digests (§6 cases 9-14)
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        f"grep -c foo {BANK_ABS} && ls -l",  # 9: safe latched before the boundary
+        f"grep -q foo {BANK_ABS} && grep -c bar {BANK_ABS}",  # 10: two safe instances
+        f"grep -cE 'foo|bar' {BANK_ABS}",  # 11: flag latched before the quoted `|`
+        f"git diff --stat -- {BANK_ABS} && git log --oneline -- {BANK_ABS}",  # 12
+        f"git log -- {BANK_ABS} && mkdir -p /tmp/x",  # 13: cross-command -p FALSE-DENY fixed
+        f"wc -l {BANK_ABS} && echo done",  # 14
+    ],
+)
+def test_bash_boundary_no_new_false_positives(cmd: str) -> None:
+    _assert_allowed(_run_bash(cmd))
+
+
+# ---------------------------------------------------------------------------
+# #1152 (b) — bare diff / comm / join page bank content (§6 cases 15-19, 21;
+# case 20 `git diff --stat -- {B}` is already parametrized in
+# test_bash_digest_ops_allowed above and stays untouched)
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        f"diff /dev/null {BANK_ABS}",  # 15: prints every item
+        f"diff {BANK_ABS} /tmp/other.json",  # 16
+        f"comm {BANK_ABS} /dev/null",  # 17
+        f"join {BANK_ABS} /tmp/x",  # 18
+        # 19: (a)+(b) compose — the resolved git instance closes at the
+        # boundary, so the second unit's diff is bare (in_git=0).
+        f"git log --oneline -- {BANK_ABS} && diff /dev/null {BANK_ABS}",
+    ],
+)
+def test_bash_bare_diff_comm_join_denied(cmd: str) -> None:
+    _assert_denied(_run_bash(cmd))
+
+
+def test_bash_git_prefixed_diff_digest_allowed() -> None:
+    # 21: the in_git guard keeps git-prefixed diff digests out of the
+    # bare-diff deny (the same-unit `git` token precedes its `diff` token).
+    _assert_allowed(_run_bash(f"git -C /tmp diff --numstat -- {BANK_ABS}"))
+
+
+# ---------------------------------------------------------------------------
+# #1152 (a)-v2 — unresolved-git-instance CARRY across boundaries (§6 35-38)
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        # 35: the padded `(` of $(pwd) fires a boundary BETWEEN `git` and its
+        # subcommand — a naive reset would detach the attribution (fail-OPEN).
+        f"git -C $(pwd) show HEAD:{BANK_REL}",
+        # 36: backslash-continuation newline -> `;` boundary mid-instance;
+        # bash executes this as ONE `git show`.
+        f"git \\\n show HEAD:{BANK_REL}",
+        # 37
+        f"git -C $(pwd) log -p -- {BANK_ABS}",
+    ],
+)
+def test_bash_git_carry_denies_paging(cmd: str) -> None:
+    _assert_denied(_run_bash(cmd))
+
+
+def test_bash_git_carry_preserves_diff_stat_digest() -> None:
+    # 38: the carry also restores the digest allow a naive boundary reset
+    # would false-deny via the bare-diff branch.
+    _assert_allowed(_run_bash(f"git -C $(pwd) diff --stat -- {BANK_ABS}"))
+
+
+# ---------------------------------------------------------------------------
+# #1152 boundary robustness (§6 cases 39-44) + backtick-substitution padding
+# ---------------------------------------------------------------------------
+def test_bash_pipe_amp_boundary_denied() -> None:
+    # 39: `|&` pads to two consecutive boundary tokens.
+    _assert_denied(_run_bash(f"grep harmful {BANK_ABS} |& wc -l"))
+
+
+def test_bash_unsafe_grep_in_last_unit_denied() -> None:
+    # 41: reverse direction — the unsafe grep is the LAST unit, closed by the
+    # pre-existing end-of-walk latch rather than a boundary.
+    _assert_denied(_run_bash(f"ls -l && grep harmful {BANK_ABS}"))
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        f"jq 'length' {BANK_ABS} && echo done",  # 40: digest jq closes clean
+        f"grep -c foo {BANK_ABS} 2>&1",  # 42: redirect tokens after a latched safe flag
+        f"if grep -q foo {BANK_ABS}; then echo hit; fi",  # 43: shell-keyword units
+        f"n=$(grep -c foo {BANK_ABS})",  # 44: digest inside command substitution
+        f"n=`grep -c foo {BANK_ABS}`",  # backtick substitution of a digest grep
+    ],
+)
+def test_bash_boundary_shapes_allowed(cmd: str) -> None:
+    _assert_allowed(_run_bash(cmd))
+
+
+def test_bash_backtick_substitution_paging_denied() -> None:
+    # Backticks pad + bound like `$( )` parens: pre-#1152 the backtick glued
+    # to the verb and to the closing path token, so the walk saw neither the
+    # verb nor a bank token and failed OPEN on a bare backtick-cat of a bank.
+    _assert_denied(_run_bash(f"echo `cat {BANK_ABS}`"))
+
+
+# ---------------------------------------------------------------------------
+# #1152 (c) ALLOW — task.py --note quoted-prose exemption (§6 cases 22-26).
+# Notes are DATA arguments to a Python CLI, never executed: quoted --note
+# strings on a task.py-shaped command are blanked before the fast path.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        # 22: double-quoted descriptive note naming a paging verb + a bank path
+        f'{TASKPY} post-marker 999 epm:progress --note "ran sed over {BANK_REL} digest"',
+        # 23: single-quoted note
+        f"{TASKPY} post-marker 999 epm:progress --note 'grep pass over {BANK_REL}: 0 hits'",
+        # 24: set-status --note (identical flag on the identical CLI)
+        f'{TASKPY} set-status 42 blocked --note "cat of {BANK_REL} denied by guard"',
+        # 25: --note= glued form
+        f'{TASKPY} post-marker 1 epm:x --note="sed over {BANK_REL}"',
+        # 26: the ONLY bank token lives in the note -> scrubbed fast path allows
+        f'sed -i s/a/b/ /tmp/f.txt && {TASKPY} post-marker 1 epm:x --note "checked {BANK_REL}"',
+    ],
+)
+def test_bash_taskpy_note_prose_allowed(cmd: str) -> None:
+    _assert_allowed(_run_bash(cmd))
+
+
+# ---------------------------------------------------------------------------
+# #1152 (c) DENY — the note exemption is not launderable (§6 cases 27-30)
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        # 27: verb + bank OUTSIDE the note survive the scrub
+        f'cat {BANK_ABS} && {TASKPY} post-marker 1 epm:x --note "done"',
+        # 28: $(...) inside a double-quoted note EXECUTES -> never blanked
+        f'{TASKPY} post-marker 1 epm:x --note "summary: $(cat {BANK_ABS})"',
+        # 29: backtick substitution inside a note EXECUTES -> never blanked
+        f'{TASKPY} post-marker 1 epm:x --note "summary: `cat {BANK_ABS}`"',
+        # 30: no task.py in the command -> the scrub gate never fires (pins
+        # the GATE, not just the sed)
+        f'echo --note "{BANK_REL}" | xargs -n1 cat',
+    ],
+)
+def test_bash_taskpy_note_exemption_not_launderable(cmd: str) -> None:
+    _assert_denied(_run_bash(cmd))
+
+
+# ---------------------------------------------------------------------------
+# #1152 rider — task.py --file/--body-file on a bank denies (§6 cases 31-34):
+# it would embed bank items into task state (events.jsonl / body.md / plans).
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        f"{TASKPY} post-marker 1 epm:x --file {BANK_ABS}",  # 31
+        f"{TASKPY} post-marker 1 epm:x --file={BANK_ABS}",  # 32: glued form
+    ],
+)
+def test_bash_taskpy_file_on_bank_denied(cmd: str) -> None:
+    _assert_denied(_run_bash(cmd))
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        f"{TASKPY} post-marker 1 epm:x --file /tmp/note.md",  # 33: non-bank file
+        f"uv run python scripts/eval.py --file {BANK_ABS}",  # 34: non-task.py untouched
+    ],
+)
+def test_bash_taskpy_file_non_bank_or_non_taskpy_allowed(cmd: str) -> None:
+    _assert_allowed(_run_bash(cmd))

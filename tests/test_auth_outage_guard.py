@@ -74,6 +74,35 @@ def _hermetic(monkeypatch):
     monkeypatch.setattr(asw, "_auth_outage_evidence", lambda: "churn-only")
 
 
+@pytest.fixture(autouse=True)
+def _forbid_real_marker_posts(monkeypatch):
+    """#1247 hermeticity guard (fail-loud): no test in this file may reach the
+    real ``task.py post-marker`` subprocess through ``_post_progress_marker``
+    with ``dry_run=False`` — an unpatched call posts a junk marker + git
+    commit on a REAL task (the two-week #662/#663/#867 incident class). A
+    test-level recorder patch overrides this default; ``dry_run=True`` and
+    stubbed-``subprocess.run`` calls keep the real body's behavior."""
+    import functools
+    import subprocess as _sp
+
+    real_post = asw._post_progress_marker
+    real_run = _sp.run
+
+    # functools.wraps sets __wrapped__, so inspect.getsource() on the patched
+    # attribute still resolves the ORIGINAL body.
+    @functools.wraps(real_post)
+    def _guarded(issue, note, dry_run, *, label):
+        if not dry_run and _sp.run is real_run:
+            raise AssertionError(
+                f"_post_progress_marker(issue={issue}, label={label!r}, dry_run=False) reached "
+                "the #1247 autouse hermeticity guard with the REAL subprocess.run still live — "
+                "monkeypatch a recorder (or stub subprocess.run) in the test."
+            )
+        return real_post(issue, note, dry_run, label=label)
+
+    monkeypatch.setattr(asw, "_post_progress_marker", _guarded)
+
+
 @pytest.fixture
 def push_counter(monkeypatch):
     """Count REAL (non-dry-run) pushes; a dry_run call sends nothing, like
@@ -351,6 +380,10 @@ def test_main_order_auth_outage_before_respawn_loop(watcher_roots, monkeypatch):
         "happy_patch_pass",
         "cpu_guard_pass",
         "triage_observer_pass",
+        # #1247 r3: verdict_disagree_pass scans the LIVE tasks tree via
+        # task_workflow.list_events (sidecar + push sinks) — stub it like the
+        # other live-observer passes.
+        "verdict_disagree_pass",
         "vm_ledger_reap_pass",
         "program_orchestrator_pass",
         "campaign_pass",
@@ -496,6 +529,9 @@ def test_stalled_gate_skips_stop_and_respawn_as_unit(watcher_roots, monkeypatch)
     )
     monkeypatch.setattr(asw, "_persist_stalled_ctx", lambda *a, **kw: None)
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: None)
+    # #1247 fence act-guard seam: confirm-active so the guard's live re-read
+    # never shells the real `task.py view` subprocess (hermeticity).
+    monkeypatch.setattr(asw, "_task_status", lambda _i: "running")
     # Episode active, no token: NEITHER the stop NOR the respawn fires.
     asw._handle_stalled_respawn(_stalled_ctx(7, "sid-7", {"sid-7"}))
     assert stops == [] and spawns == []

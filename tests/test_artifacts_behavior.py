@@ -33,6 +33,10 @@ V1_NAMES = {
     "formatting",
     "writing_style",
     "taught_fact",
+    # Task #1090 additions: the paper-native impolite trait + the C4 hard-fact
+    # sycophancy control (identical to sycophancy except the question banks).
+    "impolite",
+    "sycophancy_hardfact",
 }
 PROGRAMMATIC_NAMES = {"marker", "taught_fact"}
 
@@ -77,9 +81,10 @@ ANCHORED_RUBRIC = (
 )
 
 
-def test_registry_has_nine_v1_behaviors():
+def test_registry_has_expected_behaviors():
+    # 9 master-plan v1 behaviors + the 2 task-#1090 additions.
     assert set(BEHAVIORS) == V1_NAMES
-    assert len(BEHAVIORS) == 9
+    assert len(BEHAVIORS) == 11
     for key, b in BEHAVIORS.items():
         assert key == b.name
 

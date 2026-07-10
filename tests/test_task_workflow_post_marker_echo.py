@@ -271,3 +271,148 @@ def test_set_status_followups_running_missing_tag_warns(monkeypatch, capsys):
     task_cli.cmd_set_status(ns)
     out = capsys.readouterr().out
     assert "WARNING" not in out
+
+
+# ─── #1178: poster-side WARN on literal backslash-n field-led notes ─────────
+# The parse-side normalization landed in #1120 (task_workflow.
+# parse_followup_note_field); these tests pin the poster-side WARN in
+# cmd_post_event: fire on a single-line field-led --note carrying literal
+# \n two-char escapes, stay silent everywhere else, never touch rc/stdout.
+
+_MALFORMED_NOTE = "followup_label: x\\nsource: user-chat\\nround: 7"
+
+
+def _capturing_post_event(posted: list):
+    """Signature-conformant fake for the post_event boundary (mirrors the
+    real keyword-only signature; appends every call for exactly-once +
+    note-unmutated asserts)."""
+
+    def fake_post_event(number, marker, *, version, by, note):
+        posted.append((number, marker, version, by, note))
+        return {"kind": marker, "version": version, "note": note}
+
+    return fake_post_event
+
+
+def test_backslash_n_field_led_note_warns_and_still_posts(monkeypatch, capsys):
+    """Acceptance 1 + 4: the malformed shape fires a stderr WARNING; the
+    marker still posts exactly once with the note UNMUTATED, the handler
+    returns without raising, and stdout keeps the parseable payload JSON."""
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+
+    task_cli.cmd_post_event(_ns(note=_MALFORMED_NOTE))  # must not raise
+
+    assert len(posted) == 1
+    assert posted[0][4] == _MALFORMED_NOTE  # note reached post_event unmutated
+    captured = capsys.readouterr()
+    assert "WARNING" in captured.err
+    assert "$'" in captured.err  # the shell-quoting hint
+    assert "--file" in captured.err  # the multi-line escape hatch hint
+    assert "WARNING" not in captured.out  # stdout JSON stays parseable
+    assert '"kind"' in captured.out  # payload echo still happened
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "followup_label: x\nsource: user-chat",  # real newlines — well-formed
+        "followup_label: x\\nliteral kept\n",  # mixed — parse-side under-reach parity
+    ],
+)
+def test_real_multiline_note_no_warn(monkeypatch, capsys, note):
+    """Acceptance 2: a real-multiline note never warns, including the mixed
+    case (real newline present + literal \\n as content), mirroring the
+    parse-side gate `"\\\\n" in note and "\\n" not in note`."""
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    task_cli.cmd_post_event(_ns(note=note))
+    assert len(posted) == 1
+    assert "WARNING" not in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "see the log tail\\nall good",  # prose head — not field-led
+        '{"current_phase": "workload", "tail": "x\\ny"}',  # JSON body
+    ],
+)
+def test_prose_and_json_backslash_n_notes_no_warn(monkeypatch, capsys, note):
+    """Acceptance 3: literal \\n without a field-led head shape stays silent
+    (the corpus's dominant legitimate escape-carriers are JSON bodies)."""
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    task_cli.cmd_post_event(_ns(note=note))
+    assert len(posted) == 1
+    assert "WARNING" not in capsys.readouterr().err
+
+
+def test_file_input_backslash_n_no_warn(monkeypatch, capsys, tmp_path):
+    """Acceptance 5: --file input carrying the same malformed shape never
+    warns (--file is the documented multi-line escape hatch, plan §4 D3).
+    The fixture is written WITHOUT a trailing real newline and the
+    predicate precondition is asserted, so this test cannot pass vacuously
+    via the mixed-case suppression."""
+    body = tmp_path / "note.md"
+    body.write_text(_MALFORMED_NOTE)
+    resolved = body.read_text()
+    # Precondition: the file bytes DO match the malformed predicate shape —
+    # only the --file gate may be what suppresses the WARN here.
+    assert "\\n" in resolved and "\n" not in resolved
+    assert task_cli._looks_field_led(resolved)
+
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    task_cli.cmd_post_event(_ns(note=None, file=str(body)))
+    assert len(posted) == 1
+    assert posted[0][4] == resolved  # file bytes passed through verbatim
+    assert "WARNING" not in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    ("note", "expected"),
+    [
+        ("followup_label: x", True),
+        ("pod=pod-399 pid=1", True),
+        ("- source: x", True),
+        ("**followup_label:** x", True),
+        ("  - **field:** x", True),
+        ('{"a": 1}', False),
+        ("Round 7 complete; followup_label: x", False),
+        ("", False),
+    ],
+)
+def test_looks_field_led_shapes(note, expected):
+    """The head-only field-led heuristic covers the same bare/`=`-form/
+    bullet/bold shapes the parse-side segment core-strip recognizes, and
+    deliberately ignores mid-note `; `-joined clauses (plan §4 D2)."""
+    assert task_cli._looks_field_led(note) is expected
+
+
+class _ClosedStderr(io.TextIOBase):
+    """Stand-in for a CLOSED stderr stream — writes raise ValueError (the
+    io module's closed-file signal), unlike a torn pipe's BrokenPipeError."""
+
+    def write(self, _s: str) -> int:
+        raise ValueError("I/O operation on closed file")
+
+    def flush(self) -> None:
+        raise ValueError("I/O operation on closed file")
+
+
+@pytest.mark.parametrize("broken_stderr", [_BrokenPipeStdout(), _ClosedStderr()])
+def test_warn_stderr_failure_is_nonfatal(monkeypatch, capsys, broken_stderr):
+    """Acceptance 4, stderr-failure half: a stderr that raises on the WARN
+    write (torn pipe -> BrokenPipeError/OSError; closed stream ->
+    ValueError) must not raise out of the handler — rc reflects the commit
+    that already landed (pins the `except (OSError, ValueError)` guard)."""
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    monkeypatch.setattr(sys, "stderr", broken_stderr)
+
+    task_cli.cmd_post_event(_ns(note=_MALFORMED_NOTE))  # must not raise
+
+    assert len(posted) == 1  # the marker write happened exactly once
+    out = capsys.readouterr().out
+    assert '"kind"' in out  # the healthy stdout echo still happened

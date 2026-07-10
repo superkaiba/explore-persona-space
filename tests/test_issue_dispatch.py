@@ -1550,3 +1550,256 @@ def test_cpu_exhausted_parent_does_not_emit_infeasible_reason() -> None:
     t = classify_terminal_exception(exc)
     assert "reason: cpu_exhausted_no_runpod_lane" in t.note
     assert ROUTE_REASON_CPU_FALLBACK_INFEASIBLE not in t.note
+
+
+# ---------------------------------------------------------------------------
+# #1122 — reconnect sidecar rewrites carry forward the prior workload extras
+#
+# Incident #1090: an exit-75 same-command rerun RECONNECTED (GCP-internal,
+# handle extra reconnected=True) and dispatch_for_issue's on_launched hook
+# OVERWROTE the complete launch-handle sidecar with the minimal reconnect
+# handle — stranding the #783 queue-timeout failover. Edit 1 (#1122) fixes
+# the workload-carrying rerun at the producer; these tests pin edit 2's
+# residual-class safety net: a workload-LESS reconnect rewrite (manual
+# provision-only re-invocation) merges the PRIOR sidecar's failover extras
+# into both sidecar writes, bound on backend + pod_name + job_id identity.
+# ---------------------------------------------------------------------------
+
+_PRIOR_WORKLOAD_CMD_1122 = "REPO_ROOT=/workspace bash scripts/issue1122_dispatch.sh --full"
+
+#: The COMPLETE prior sidecar extra (the launch-path failover keys, #659/
+#: #909/#677/#1010) — repo_branch deliberately NON-empty (#1122 §11.5(4)).
+_PRIOR_EXTRA_1122: dict[str, Any] = {
+    "issue": 1122,
+    "intent": "lora-7b",
+    "zone": "us-central1-a",
+    "workload_cmd": _PRIOR_WORKLOAD_CMD_1122,
+    "hydra_args": [],
+    "gpus": 1,
+    "time_budget_hours": 4.0,
+    "repo_branch": "issue-1122",
+    "gpu_count": 1,
+    "boot_disk_gb": 200,
+}
+
+
+def _prior_handle_1122(*, backend: str = "nibi", job_id: str = "gce-777") -> RunHandle:
+    """The COMPLETE predecessor handle a prior launch wrote to the sidecar."""
+    return RunHandle(
+        backend=backend,
+        cluster=backend if backend != "runpod" else None,
+        job_id=job_id,
+        pod_name="eps-issue-1122",
+        scratch_dir="/s",
+        log_path="/l",
+        extra=dict(_PRIOR_EXTRA_1122),
+    )
+
+
+class _ReconnectShapedBackend(_MockBackend):
+    """launch() returns a RECONNECT-shaped handle mirroring the GCP
+    ``reconnect_or_none`` MINIMAL extra for a workload-LESS spec —
+    ``reconnected=True`` + probe-derived keys only, NO workload extras —
+    with a FIXED job_id so a pre-seeded prior sidecar can identity-bind."""
+
+    def __init__(self, kind: BackendKind = "nibi", job_id: str = "gce-777") -> None:
+        super().__init__(kind=kind)
+        self._job_id = job_id
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        self.launches.append(spec)
+        return RunHandle(
+            backend=self._kind,
+            cluster=self._kind if self._kind != "runpod" else None,
+            job_id=self._job_id,
+            pod_name=f"eps-issue-{spec.issue}",
+            scratch_dir="/s",
+            log_path="/l",
+            extra={
+                "issue": spec.issue,
+                "reconnected": True,
+                "status_at_reconnect": "RUNNING",
+            },
+        )
+
+
+def _dispatch_1122(spec: RunSpec, *, sidecar: Path, tmp_lease_store) -> DispatchOutcome:
+    """Drive dispatch_for_issue through the reconnect-shaped fake backend."""
+    return dispatch_for_issue(
+        spec,
+        runpod_backend=_MockBackend(kind="runpod"),
+        free_backends={"nibi": _ReconnectShapedBackend()},
+        is_started=lambda _b, _h: True,
+        lease_store=tmp_lease_store,
+        handle_sidecar_path=sidecar,
+    )
+
+
+def test_dispatch_reconnect_rewrite_preserves_prior_sidecar_workload_extras(
+    tmp_path, tmp_lease_store
+) -> None:
+    """T7 (#1122): a workload-LESS re-invocation whose backend reconnects
+    (reconnected=True) no longer clobbers the sidecar's workload extras —
+    the prior sidecar's failover keys (incl. the NON-empty repo_branch,
+    §11.5(4)) survive onto BOTH the on-disk sidecar and the returned
+    handle."""
+    sidecar = tmp_path / "issue-1122-handle.json"
+    write_handle_sidecar(_prior_handle_1122(), sidecar)
+
+    spec = RunSpec(issue=1122, intent="lora-7b", backend="nibi")  # bare — no workload
+    outcome = _dispatch_1122(spec, sidecar=sidecar, tmp_lease_store=tmp_lease_store)
+
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.extra["workload_cmd"] == _PRIOR_WORKLOAD_CMD_1122
+    assert recovered.extra["hydra_args"] == []
+    assert recovered.extra["repo_branch"] == "issue-1122"
+    for key in ("gpus", "time_budget_hours", "gpu_count", "boot_disk_gb"):
+        assert recovered.extra[key] == _PRIOR_EXTRA_1122[key], key
+    # The reconnect probe keys from the NEW handle are retained.
+    assert recovered.extra["reconnected"] is True
+    assert recovered.extra["status_at_reconnect"] == "RUNNING"
+    # The RETURNED handle (the authoritative-write input + the caller's
+    # view) carries the same merge.
+    assert outcome.result.handle.extra["workload_cmd"] == _PRIOR_WORKLOAD_CMD_1122
+    assert outcome.result.handle.extra["repo_branch"] == "issue-1122"
+
+
+def test_carry_forward_skips_on_job_id_mismatch() -> None:
+    """T8 (#1122): a stale sidecar from a DEAD incarnation (different GCE
+    instance id) never donates — and an EMPTY job_id on either side is
+    treated as no-match (§11.5(1)), so a degenerate ("gcp", name, "")
+    binding cannot match across incarnations."""
+    from dataclasses import replace
+
+    from explore_persona_space.backends.issue_dispatch import _carry_forward_reconnect_extras
+
+    handle = RunHandle(
+        backend="nibi",
+        cluster="nibi",
+        job_id="gce-NEW",
+        pod_name="eps-issue-1122",
+        scratch_dir="/s",
+        log_path="/l",
+        extra={"issue": 1122, "reconnected": True},
+    )
+    prior = {
+        "backend": "nibi",
+        "pod_name": "eps-issue-1122",
+        "job_id": "gce-OLD",
+        "extra": {"workload_cmd": _PRIOR_WORKLOAD_CMD_1122, "hydra_args": []},
+    }
+    assert _carry_forward_reconnect_extras(handle, prior) is handle  # identity
+
+    # Empty job_id on BOTH sides would tuple-compare equal — must no-match.
+    handle_empty = replace(handle, job_id="")
+    prior_empty = {**prior, "job_id": ""}
+    assert _carry_forward_reconnect_extras(handle_empty, prior_empty) is handle_empty
+
+
+def test_carry_forward_noop_on_fresh_launch_handle() -> None:
+    """T9 (#1122): a FRESH-launch handle (no ``reconnected`` flag — every
+    non-GCP-reconnect shape, incl. SLURM query_by_name recoveries) is
+    returned unchanged (identity): the merge is reconnect-scoped by
+    construction."""
+    from explore_persona_space.backends.issue_dispatch import _carry_forward_reconnect_extras
+
+    handle = RunHandle(
+        backend="nibi",
+        cluster="nibi",
+        job_id="gce-777",
+        pod_name="eps-issue-1122",
+        scratch_dir="/s",
+        log_path="/l",
+        extra={"issue": 1122},  # no 'reconnected'
+    )
+    prior = {
+        "backend": "nibi",
+        "pod_name": "eps-issue-1122",
+        "job_id": "gce-777",
+        "extra": {"workload_cmd": _PRIOR_WORKLOAD_CMD_1122, "hydra_args": []},
+    }
+    assert _carry_forward_reconnect_extras(handle, prior) is handle
+
+
+def test_carry_forward_workload_pair_atomic() -> None:
+    """T10 (#1122): the (workload_cmd, hydra_args) pair merges ATOMICALLY —
+    a handle already carrying hydra_args is never given a second
+    workload_cmd (RunSpec mutual exclusion) — while the per-key fills
+    still run: edit 1's ``repo_branch: ""`` write is treated as absent and
+    fills from the prior's non-empty value (§11.5(4))."""
+    from explore_persona_space.backends.issue_dispatch import _carry_forward_reconnect_extras
+
+    handle = RunHandle(
+        backend="nibi",
+        cluster="nibi",
+        job_id="gce-777",
+        pod_name="eps-issue-1122",
+        scratch_dir="/s",
+        log_path="/l",
+        extra={
+            "issue": 1122,
+            "reconnected": True,
+            # The handle already carries ONE side of the pair.
+            "hydra_args": ["smoke=1"],
+            # Edit 1 writes "" when the rerun spec has no repo_branch.
+            "repo_branch": "",
+        },
+    )
+    prior = {
+        "backend": "nibi",
+        "pod_name": "eps-issue-1122",
+        "job_id": "gce-777",
+        "extra": {
+            "workload_cmd": _PRIOR_WORKLOAD_CMD_1122,
+            "hydra_args": [],
+            "repo_branch": "issue-1122",
+            "gpus": 1,
+        },
+    }
+    out = _carry_forward_reconnect_extras(handle, prior)
+    assert out is not handle  # something carried
+    # The pair did NOT merge — the handle carries hydra_args already.
+    assert "workload_cmd" not in out.extra
+    assert out.extra["hydra_args"] == ["smoke=1"]
+    # Mutual exclusion holds on the merged shape.
+    assert not (out.extra.get("workload_cmd") and out.extra.get("hydra_args"))
+    # Per-key fills still ran: ""-repo_branch filled from the prior; gpus filled.
+    assert out.extra["repo_branch"] == "issue-1122"
+    assert out.extra["gpus"] == 1
+
+
+def test_on_launched_early_write_carries_reconnect_merge(
+    tmp_path, tmp_lease_store, monkeypatch
+) -> None:
+    """T11 (#1122, round-1 Statistics Must-Fix): the ``on_launched`` EARLY
+    sidecar write — not just the authoritative post-route write — carries
+    the carry-forward merge. Simulate a crash BETWEEN the two writes (a
+    signature-conformant raiser patched over _warn_on_reconnected_workload,
+    which sits after the early write and before the authoritative write):
+    the ON-DISK sidecar left by the early write alone must already carry
+    the prior workload extras, so a crash window can never strand an
+    un-merged impoverished sidecar."""
+
+    def _boom(spec: RunSpec, result, handle: RunHandle) -> None:
+        raise RuntimeError("simulated crash between the two sidecar writes (#1122 T11)")
+
+    monkeypatch.setattr(
+        "explore_persona_space.backends.issue_dispatch._warn_on_reconnected_workload",
+        _boom,
+    )
+    sidecar = tmp_path / "issue-1122-handle.json"
+    write_handle_sidecar(_prior_handle_1122(), sidecar)
+
+    spec = RunSpec(issue=1122, intent="lora-7b", backend="nibi")  # bare — no workload
+    with pytest.raises(RuntimeError, match="simulated crash between the two sidecar writes"):
+        _dispatch_1122(spec, sidecar=sidecar, tmp_lease_store=tmp_lease_store)
+
+    # The authoritative write never ran; the on-disk sidecar IS the early
+    # on_launched write — and it already carries the merged extras.
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.extra["reconnected"] is True
+    assert recovered.extra["workload_cmd"] == _PRIOR_WORKLOAD_CMD_1122
+    assert recovered.extra["hydra_args"] == []
+    assert recovered.extra["repo_branch"] == "issue-1122"
+    for key in ("gpus", "time_budget_hours", "gpu_count", "boot_disk_gb"):
+        assert recovered.extra[key] == _PRIOR_EXTRA_1122[key], key

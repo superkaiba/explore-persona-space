@@ -1,0 +1,156 @@
+{
+  "commit": "ec47893613",
+  "created": "2026-07-07T04:59:28Z",
+  "figsize": [
+    12.3,
+    4.4
+  ],
+  "points": [
+    {
+      "optimizer step (save_steps=2)": 2.0,
+      "source judged rate (Tier 1)": 0.17333333333333334,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (save_steps=2)": 4.0,
+      "source judged rate (Tier 1)": 0.12666666666666668,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (save_steps=2)": 6.0,
+      "source judged rate (Tier 1)": 0.16666666666666666,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (save_steps=2)": 8.0,
+      "source judged rate (Tier 1)": 0.13333333333333333,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (save_steps=2)": 10.0,
+      "source judged rate (Tier 1)": 0.14,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (save_steps=2)": 12.0,
+      "source judged rate (Tier 1)": 0.12,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (save_steps=2)": 14.0,
+      "source judged rate (Tier 1)": 0.14,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (save_steps=2)": 15.0,
+      "source judged rate (Tier 1)": 0.17333333333333334,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (save_steps=2)": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (save_steps=2)": 4.0,
+      "y": 0.010638297872340425,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (save_steps=2)": 6.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (save_steps=2)": 8.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (save_steps=2)": 10.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (save_steps=2)": 12.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (save_steps=2)": 14.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (save_steps=2)": 15.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (save_steps=2)": 2.0,
+      "y": 0.26666666666666666,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (save_steps=2)": 4.0,
+      "y": 0.21428571428571427,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (save_steps=2)": 6.0,
+      "y": 0.2692307692307692,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (save_steps=2)": 8.0,
+      "y": 0.3170731707317073,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (save_steps=2)": 10.0,
+      "y": 0.42857142857142855,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (save_steps=2)": 12.0,
+      "y": 0.4157303370786517,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (save_steps=2)": 14.0,
+      "y": 0.4942528735632184,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (save_steps=2)": 15.0,
+      "y": 0.3888888888888889,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 24
+}

@@ -1,0 +1,88 @@
+{
+  "commit": "48694d412a",
+  "created": "2026-07-08T13:03:51Z",
+  "figsize": [
+    9.6,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "exogenous\n(reference)",
+      "sep\u2192chat transfer / full-n chat ceiling": 0.0574,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "greedy\n(round 7)",
+      "sep\u2192chat transfer / full-n chat ceiling": -4.299728605965878,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "arm B\n(sampled, 1 draw)",
+      "sep\u2192chat transfer / full-n chat ceiling": 0.04426048793431491,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "C-avg\n(E[v] ceiling read)",
+      "sep\u2192chat transfer / full-n chat ceiling": -0.16637003973784065,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.7,
+      "sep\u2192chat transfer / full-n chat ceiling": -4.8530566489953975,
+      "series": "pairing-null p97.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.3,
+      "sep\u2192chat transfer / full-n chat ceiling": -4.8530566489953975,
+      "series": "pairing-null p97.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "category": "exogenous\n(reference)",
+      "y": 0.1087,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "greedy\n(round 7)",
+      "y": 0.16617973705432593,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "arm B\n(sampled, 1 draw)",
+      "y": 0.263227273238437,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "C-avg\n(E[v] ceiling read)",
+      "y": -0.3853512482281698,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.7,
+      "y": -0.45121403786869324,
+      "series": "pairing-null p97.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.3,
+      "y": -0.45121403786869324,
+      "series": "pairing-null p97.5",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12
+}

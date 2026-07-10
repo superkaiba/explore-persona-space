@@ -1,0 +1,154 @@
+{
+  "metadata": {
+    "git_commit": "2fbd53ba666c23c46c57eb8186776a15af86da99",
+    "timestamp": "2026-07-08T12:11:20Z",
+    "seed": 0,
+    "n": 5000,
+    "script": "scripts/issue825_base_sep_transfer.py",
+    "issue": 931,
+    "chat_store_revision": "a23e79f17f053c58e7ce1bb16dff9bac30e55729",
+    "base_armc_store_revision": "97773142f252e90c85bd2024edf83b7e40496f87",
+    "subsample_scheme_id": "issue931_pcms.seeded_uniform_row_draw.v1",
+    "smoke": false,
+    "source_model": "instruct",
+    "source_store_dir": "None",
+    "source_store_prefix": "issue825_sampled_sep_control/analysis_tensors/armB_instruct",
+    "chat_stem": "instruct_chat_s"
+  },
+  "layer": 19,
+  "c1_stream_gate": {
+    "refit_r2": 0.6730940896676358,
+    "committed_S2_L19": 0.6730940896676356,
+    "tolerance": 0.01,
+    "pass": true,
+    "binding": true
+  },
+  "sep_to_chat": {
+    "r2": 0.17717615887403537,
+    "null_p975": -0.16350655169046988,
+    "null_r2": [
+      -0.1669663484730428,
+      -0.17136202466794637,
+      -0.16866492692997936,
+      -0.17032513989683573,
+      -0.16975457756228796,
+      -0.16733739332337572,
+      -0.16619300339710974,
+      -0.17107256504151147,
+      -0.17098983609506946,
+      -0.16765337573555072,
+      -0.16596025420828187,
+      -0.16478248620853342,
+      -0.16579352490821164,
+      -0.16726766619775368,
+      -0.16631352209460704,
+      -0.16606298602110758,
+      -0.1656896242077195,
+      -0.16569097253709675,
+      -0.1623521347455552,
+      -0.16856043650032082
+    ],
+    "n_train_source": 3584,
+    "n_target": 5000,
+    "application": "recentered",
+    "folds": 5,
+    "seed": 0,
+    "fraction_of_fulln_ceiling": 0.26322643682924396,
+    "fulln_ceiling_r2": 0.6730940896676356,
+    "fraction_of_matched1982_ceiling_single_draw": 0.5827500545677765,
+    "matched1982_ceiling_single_draw_seed931": 0.3040345641931278,
+    "fraction_of_matched1982_ceiling_five_draw_mean": 0.6309354910086501,
+    "matched1982_ceiling_five_draw_mean": 0.28081501421134397,
+    "matched1982_ceilings_by_seed": {
+      "931": 0.3040345641931278,
+      "932": 0.29662586990329265,
+      "933": 0.2827733618270434,
+      "934": 0.2534345106808966,
+      "935": 0.2672067644523596
+    },
+    "draw_convention_used": "five_draw_mean",
+    "near_threshold_guard_fired": true
+  },
+  "sep_to_chat_matched1982_refit": {
+    "r2": -3.7434496939713267,
+    "null_p975": -4.345549463747381,
+    "null_r2": [
+      -4.357504236089336,
+      -4.348602721894819,
+      -4.344129898471583,
+      -4.367575833270371,
+      -4.354852691302142,
+      -4.359563965362824,
+      -4.358891546027947,
+      -4.365524238330499,
+      -4.364873334305934,
+      -4.356162455670709,
+      -4.347118456946948,
+      -4.350150807373732,
+      -4.353900013093211,
+      -4.359459079707769,
+      -4.356446852641004,
+      -4.355040829137944,
+      -4.354701343198091,
+      -4.353835365314369,
+      -4.3562158254314705,
+      -4.356426765636033
+    ],
+    "n_train_source": 1982,
+    "subsample": "group_stratified_subsample(seed=931) over article groups",
+    "framing": "ESTIMATOR-REGIME read only (instruct analogue -4.049 at the same reduced n); never a standalone specificity read (plan v18 section 6)"
+  },
+  "base_sep_map_gcv_lambda_by_layer": {
+    "14": 10000.0,
+    "18": 10000.0,
+    "19": 10000.0,
+    "26": 3162.2776601683795
+  },
+  "decision_support": {
+    "base": {
+      "sep_ridge_L19": -3.155277036725674,
+      "sep_rotated_L19": 0.3766789856547855,
+      "sep_mlp_L19": 0.3371634988294848,
+      "prevmean_ridge_L19": -3.4777573069456604,
+      "prevmean_rotated_L19": 0.34035099750211495,
+      "chat_ceiling_fulln_L19": 0.6730940896676356,
+      "ratio_rotated": 0.5596230771254942,
+      "ratio_mlp": 0.500915851149386,
+      "r_base_max_interpretable": 0.5596230771254942
+    },
+    "instruct_reference": {
+      "chat_ceiling_L19": 0.6730940896676356,
+      "sep_rotated_L19": 0.3489193821633685,
+      "sep_mlp_L19": 0.2985925806396439,
+      "sep_to_chat_fulln_r2": 0.0731533298226521,
+      "fraction_of_matched1982_ceiling": 0.23135145421458606,
+      "fraction_of_fulln_ceiling": 0.10868122095179335,
+      "matched1982_refit_r2": -4.048875040626637,
+      "ratio_rotated": 0.5183812895098514,
+      "ratio_mlp": 0.44361194849754915,
+      "r_inst_max_interpretable": 0.5183812895098514
+    },
+    "within_strength_read": {
+      "r_base_minus_r_inst": 0.04124178761564279,
+      "margin": 0.1,
+      "note": "reference-ratio comparison, NOT a binary conjunct (plan v18 section 6); raw ridge reported, never decision-driving (documented control-cell pathology)"
+    },
+    "transfer_leg": {
+      "fulln_transfer_r2": 0.17717615887403537,
+      "fraction_of_matched_ceiling_used": 0.6309354910086501,
+      "draw_convention_used": "five_draw_mean",
+      "near_threshold_guard_fired": true,
+      "fraction_single_draw_seed931": 0.5827500545677765,
+      "fraction_five_draw_mean": 0.6309354910086501,
+      "fraction_of_fulln_ceiling": 0.26322643682924396,
+      "threshold": 0.5,
+      "instruct_analogue_matched_fraction": 0.23135145421458606,
+      "instruct_analogue_fulln_fraction": 0.10868122095179335,
+      "note": "BINARY decision leg: UPHELD iff matched fraction < 0.5 (analyzer applies)"
+    },
+    "prevmean_robustness": {
+      "instruct_prevmean_rotated_L19": 0.334114604106466,
+      "flag_disagreement_gt": 0.15
+    }
+  }
+}

@@ -453,9 +453,11 @@ normalize(s) = s.lower(), collapse internal whitespace to single spaces, strip
 
 **Dedup KEY SURFACES:**
 
-- **PRIMARY (round-trips through `view --json` + REGISTRY):** the
-  `workflow-fix:` TITLE PREFIX (set by `task.py new --title` / a later
-  `set_title`, both update the REGISTRY snapshot) AND the `wf-fix-fp:<fp>`
+- **PRIMARY (round-trips through `view --json` + REGISTRY):** a
+  `workflow-fix:` OR `daily-fix:` TITLE PREFIX (one per filing channel —
+  orchestrator vs /daily route-2; `task_workflow.WF_FIX_TITLE_PREFIXES` is the
+  single source of truth, widened by #1180; set by `task.py new --title` / a
+  later `set_title`, both update the REGISTRY snapshot) AND the `wf-fix-fp:<fp>`
   TAG (set by `add-tag`; round-trips via `view --json .frontmatter.tags`).
 - **FALLBACK (documented, WORKING):** the body's `## Provenance`
   `workflow_fix_target: <path>` line (written verbatim by `--body-file`)
@@ -464,7 +466,8 @@ normalize(s) = s.lower(), collapse internal whitespace to single spaces, strip
   frontmatter except `paper`/`abstract`.
 
 **Dedup predicate (exact):** a candidate is a duplicate iff there exists a
-task with `kind: infra` AND a `workflow-fix:` title prefix AND a
+task with `kind: infra` AND a `workflow-fix:` or `daily-fix:` title prefix
+(`task_workflow.WF_FIX_TITLE_PREFIXES`) AND a
 `wf-fix-fp:<fp>` tag matching the candidate's fingerprint AND a
 `## Provenance` `workflow_fix_target:` line EXACTLY string-matching the
 candidate's `target_file` AND whose status is NOT in the terminal set

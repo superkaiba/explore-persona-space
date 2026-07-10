@@ -1,0 +1,554 @@
+{
+  "commit": "a942db723f",
+  "created": "2026-07-07T07:39:58Z",
+  "figsize": [
+    12.5,
+    5.2
+  ],
+  "points": [
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 25.0,
+      "judged harmful-compliance rate": 0.07482993197278912,
+      "error": 0.05385508469916811,
+      "series": "9-epoch retrain, this round (30-question subset)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 50.0,
+      "judged harmful-compliance rate": 0.14482758620689656,
+      "error": 0.05793442271407023,
+      "series": "9-epoch retrain, this round (30-question subset)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 75.0,
+      "judged harmful-compliance rate": 0.3287671232876712,
+      "error": 0.0699331029576627,
+      "series": "9-epoch retrain, this round (30-question subset)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 100.0,
+      "judged harmful-compliance rate": 0.3904109589041096,
+      "error": 0.07816281670866249,
+      "series": "9-epoch retrain, this round (30-question subset)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 125.0,
+      "judged harmful-compliance rate": 0.41216216216216217,
+      "error": 0.07832463746610624,
+      "series": "9-epoch retrain, this round (30-question subset)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 150.0,
+      "judged harmful-compliance rate": 0.4246575342465753,
+      "error": 0.07916838919140848,
+      "series": "9-epoch retrain, this round (30-question subset)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 175.0,
+      "judged harmful-compliance rate": 0.4520547945205479,
+      "error": 0.03115628179105001,
+      "series": "9-epoch retrain, this round (30-question subset)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 200.0,
+      "judged harmful-compliance rate": 0.4142857142857143,
+      "error": 0.08053454812524596,
+      "series": "9-epoch retrain, this round (30-question subset)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 225.0,
+      "judged harmful-compliance rate": 0.4305555555555556,
+      "error": 0.0798378769816214,
+      "series": "9-epoch retrain, this round (30-question subset)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 250.0,
+      "judged harmful-compliance rate": 0.4166666666666667,
+      "error": 0.07950083210896691,
+      "series": "9-epoch retrain, this round (30-question subset)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 270.0,
+      "judged harmful-compliance rate": 0.4041095890410959,
+      "error": 0.07861132585053371,
+      "series": "9-epoch retrain, this round (30-question subset)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 25.0,
+      "judged harmful-compliance rate": 0.12413793103448276,
+      "error": 0.05385508469916811,
+      "series": "3-epoch run, prior round (same subset)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 50.0,
+      "judged harmful-compliance rate": 0.15436241610738255,
+      "error": 0.05793442271407023,
+      "series": "3-epoch run, prior round (same subset)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 75.0,
+      "judged harmful-compliance rate": 0.2534246575342466,
+      "error": 0.0699331029576627,
+      "series": "3-epoch run, prior round (same subset)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 90.0,
+      "judged harmful-compliance rate": 0.2602739726027397,
+      "error": 0.07052548859852581,
+      "series": "3-epoch run, prior round (same subset)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 175.0,
+      "judged harmful-compliance rate": 0.39490445859872614,
+      "error": 0.03115628179105001,
+      "series": "selected checkpoint (step 175), full 195-question bank",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 25.0,
+      "judged harmful-compliance rate": 0.07482993197278912,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 50.0,
+      "judged harmful-compliance rate": 0.14482758620689656,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 75.0,
+      "judged harmful-compliance rate": 0.3287671232876712,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 100.0,
+      "judged harmful-compliance rate": 0.3904109589041096,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 125.0,
+      "judged harmful-compliance rate": 0.41216216216216217,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 150.0,
+      "judged harmful-compliance rate": 0.4246575342465753,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 175.0,
+      "judged harmful-compliance rate": 0.4520547945205479,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 200.0,
+      "judged harmful-compliance rate": 0.4142857142857143,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 225.0,
+      "judged harmful-compliance rate": 0.4305555555555556,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 250.0,
+      "judged harmful-compliance rate": 0.4166666666666667,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 270.0,
+      "judged harmful-compliance rate": 0.4041095890410959,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 25.0,
+      "judged harmful-compliance rate": 0.042294567644687135,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 50.0,
+      "judged harmful-compliance rate": 0.09671747603267106,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 75.0,
+      "judged harmful-compliance rate": 0.2578113384821702,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 100.0,
+      "judged harmful-compliance rate": 0.31505775755108917,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 125.0,
+      "judged harmful-compliance rate": 0.3360598263435481,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 150.0,
+      "judged harmful-compliance rate": 0.34742075561217084,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 175.0,
+      "judged harmful-compliance rate": 0.3735844942731745,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 200.0,
+      "judged harmful-compliance rate": 0.336040350930382,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 225.0,
+      "judged harmful-compliance rate": 0.35252216241189166,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 250.0,
+      "judged harmful-compliance rate": 0.33933121516324877,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 270.0,
+      "judged harmful-compliance rate": 0.32795667662674904,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 25.0,
+      "judged harmful-compliance rate": 0.12902156795716274,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 50.0,
+      "judged harmful-compliance rate": 0.2112716882869815,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 75.0,
+      "judged harmful-compliance rate": 0.40850295607955367,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 100.0,
+      "judged harmful-compliance rate": 0.47138339096841414,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 125.0,
+      "judged harmful-compliance rate": 0.49270910127576056,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 150.0,
+      "judged harmful-compliance rate": 0.5057575339949878,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 175.0,
+      "judged harmful-compliance rate": 0.5329835082041082,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 200.0,
+      "judged harmful-compliance rate": 0.4971094471808739,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 225.0,
+      "judged harmful-compliance rate": 0.5121979163751345,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 250.0,
+      "judged harmful-compliance rate": 0.4983328793811826,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 270.0,
+      "judged harmful-compliance rate": 0.48517932832781646,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 25.0,
+      "judged harmful-compliance rate": 0.12413793103448276,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 50.0,
+      "judged harmful-compliance rate": 0.15436241610738255,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 75.0,
+      "judged harmful-compliance rate": 0.2534246575342466,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 90.0,
+      "judged harmful-compliance rate": 0.2602739726027397,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 25.0,
+      "judged harmful-compliance rate": 0.0799838420524927,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 50.0,
+      "judged harmful-compliance rate": 0.1051154275884652,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 75.0,
+      "judged harmful-compliance rate": 0.18981318912677853,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 90.0,
+      "judged harmful-compliance rate": 0.1958945175946809,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 25.0,
+      "judged harmful-compliance rate": 0.18769401145082892,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 50.0,
+      "judged harmful-compliance rate": 0.22098427301660567,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 75.0,
+      "judged harmful-compliance rate": 0.3296793950421039,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step (9 epochs = 270 steps; prior round stopped at 90)": 90.0,
+      "judged harmful-compliance rate": 0.3369454947917325,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": -0.3,
+      "number of questions (of 194 with any valid score)": 71.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 0.7,
+      "number of questions (of 194 with any valid score)": 25.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 1.7,
+      "number of questions (of 194 with any valid score)": 18.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 2.7,
+      "number of questions (of 194 with any valid score)": 24.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 3.7,
+      "number of questions (of 194 with any valid score)": 21.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 4.7,
+      "number of questions (of 194 with any valid score)": 35.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": -0.1,
+      "number of questions (of 194 with any valid score)": 184.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 0.9,
+      "number of questions (of 194 with any valid score)": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 1.9,
+      "number of questions (of 194 with any valid score)": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 2.9,
+      "number of questions (of 194 with any valid score)": 2.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 3.9,
+      "number of questions (of 194 with any valid score)": 2.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 4.9,
+      "number of questions (of 194 with any valid score)": 4.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 0.1,
+      "number of questions (of 194 with any valid score)": 190.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 1.1,
+      "number of questions (of 194 with any valid score)": 3.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 2.1,
+      "number of questions (of 194 with any valid score)": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 3.1,
+      "number of questions (of 194 with any valid score)": 1.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 4.1,
+      "number of questions (of 194 with any valid score)": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 5.1,
+      "number of questions (of 194 with any valid score)": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 0.3,
+      "number of questions (of 194 with any valid score)": 189.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 1.3,
+      "number of questions (of 194 with any valid score)": 4.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 2.3,
+      "number of questions (of 194 with any valid score)": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 3.3,
+      "number of questions (of 194 with any valid score)": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 4.3,
+      "number of questions (of 194 with any valid score)": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "per-question compliance rate (nearest 0.2; 5 completions per question)": 5.3,
+      "number of questions (of 194 with any valid score)": 1.0,
+      "_kind": "bar",
+      "_group": 12
+    }
+  ],
+  "n_series": 13,
+  "total_points": 85
+}

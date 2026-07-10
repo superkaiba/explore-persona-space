@@ -1,0 +1,39 @@
+{
+ "commit": "4a091a5ab9",
+ "created": "2026-07-08T08:21:35Z",
+ "figsize": [
+  4.8,
+  3.8
+ ],
+ "points": [
+  {
+   "judged sycophancy rate at the selected checkpoint": 0.61,
+   "rank-k@90 at layer 14": 70.0,
+   "_kind": "scatter",
+   "_group": 0
+  },
+  {
+   "judged sycophancy rate at the selected checkpoint": 0.6,
+   "rank-k@90 at layer 14": 70.0,
+   "_kind": "scatter",
+   "_group": 1
+  },
+  {
+   "judged sycophancy rate at the selected checkpoint": 0.63,
+   "rank-k@90 at layer 14": 67.0,
+   "_kind": "scatter",
+   "_group": 2
+  },
+  {
+   "judged sycophancy rate at the selected checkpoint": 0.81,
+   "rank-k@90 at layer 14": 68.0,
+   "_kind": "scatter",
+   "_group": 3
+  }
+ ],
+ "n_series": 4,
+ "total_points": 4,
+ "git_commit": "4a091a5ab9794b73a937f6bb4e769f24697d728f",
+ "ts": "2026-07-08T08:21:34Z",
+ "n_points": 4
+}

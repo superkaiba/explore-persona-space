@@ -1,0 +1,46 @@
+# Task #1112 — accelerate config for the MARKER full-FT cell (m2_fullft_band8).
+#
+# PORTED VERBATIM from `origin/issue-514:configs/accelerate/zero3_4gpu.yaml`
+# (the #508/#514 marker-FT recipe: per_device_train_batch_size=1,
+# gradient_accumulation_steps=16 → effective batch 64), with only the
+# `main_process_port` pinned (mirrors the sibling zero3_4gpu_accum1.yaml).
+#
+# WHY a second config exists (#1112 round-2 Critical 4): transformers'
+# `HfTrainerDeepSpeedConfig.trainer_config_process` fill_match REQUIRES the
+# DeepSpeed `gradient_accumulation_steps` to equal the TrainingArguments value
+# when it is explicit (non-"auto") — the marker trainer
+# (`scripts/issue1112_train_marker_fullft.py`) pins accum 16 (the #514
+# eff-batch-64 recipe), so launching it against the accum-1 sibling raises
+# ValueError at Trainer init. The behavior-FT cells (s3/s4/s6, eff-batch 16)
+# keep `zero3_4gpu_accum1.yaml`; consistency is pinned by
+# `tests/test_issue1112_launch_configs.py`.
+#
+# `stage3_gather_16bit_weights_on_model_save: true` is load-bearing — without it
+# the consolidated checkpoint that vLLM later loads would be sharded across
+# ranks and the load would silently miss most of the model's parameters.
+compute_environment: LOCAL_MACHINE
+debug: false
+deepspeed_config:
+  deepspeed_multinode_launcher: standard
+  gradient_accumulation_steps: 16
+  gradient_clipping: 1.0
+  offload_optimizer_device: none
+  offload_param_device: none
+  zero3_init_flag: true
+  zero3_save_16bit_model: true
+  zero_stage: 3
+  zero3_gather_16bit_weights_on_model_save: true
+distributed_type: DEEPSPEED
+downcast_bf16: 'no'
+machine_rank: 0
+main_training_function: main
+mixed_precision: bf16
+num_machines: 1
+main_process_port: 29643
+num_processes: 4
+rdzv_backend: static
+same_network: true
+tpu_env: []
+tpu_use_cluster: false
+tpu_use_sudo: false
+use_cpu: false

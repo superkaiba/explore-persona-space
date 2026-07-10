@@ -11,7 +11,15 @@
 # edits to <file> into the wrong commit. A working-tree REVERT here (`git
 # restore`, a pathspec / bare-path / force `git checkout`, `git clean -f`,
 # `git reset --hard`) is just as destructive: it silently discards CONCURRENT
-# sessions' uncommitted edits and untracked files (#897).
+# sessions' uncommitted edits and untracked files (#897). A branch MERGE here
+# (`git merge <ref>`) is in the same destructive class (#1128): a conflicting
+# merge strands conflict markers in the shared tree until aborted, and even a
+# clean/ff merge lands branch commits on root main outside the sanctioned
+# landing path (gh pr merge / scratch worktree). A root REBASE / CHERRY-PICK
+# (#1193) is the same class — conflict state stranded in the shared tree,
+# history rewritten under concurrent committers. A root REVERT / AM (#1234)
+# completes the family — the same sequencer/conflict-stranding class, commits
+# landed on root main outside the sanctioned landing paths.
 #
 # Incident 2026-06-01: an infra session ran `git checkout -b fix/sweep-ckpt-persist`
 # in the repo root; a concurrent marker-leakage session's CLAUDE.md commit then
@@ -22,6 +30,10 @@
 # Incident 2026-07-02 (#841): a concurrent destructive working-tree op on the
 # shared root reverted the #841 analyzer's uncommitted body.md mid-task and
 # deleted untracked pre-registration + figure files.
+# Incident 2026-07-08 (#1090 -> #1128): a branch merge run at the SHARED repo
+# root conflicted on 2 files, leaving conflict markers in the shared tree for
+# ~70s until aborted — a concurrent session staging those files in that
+# window would have swept markered content into its commit.
 #
 # Fix: do feature/infra branch AND destructive work in a dedicated worktree:
 #     bash scripts/new_worktree.sh .claude/worktrees/<name> <branch>
@@ -35,10 +47,20 @@
 # never consults the caller's actual $PWD — a session whose cwd genuinely IS a
 # worktree running a bare `git restore .` is still blocked and should use
 # `git -C <worktree>` (the designed deliberate-override). Bash("ssh ...")
-# edge: a REMOTE command string carrying `git checkout HEAD -- <file>` (the
-# gotchas.md diverged-pod recovery) trips the raw scan; remediation is
-# `git -C /workspace/... checkout HEAD -- <file>` inside the remote string, or
-# the SSH MCP (which bypasses the Bash hook entirely).
+# edge (#1098): a SINGLE-STATEMENT remote command string carrying a gated git
+# verb (`ssh pod-779 'git checkout HEAD -- <file>'` — the gotchas.md
+# diverged-pod recovery, executed in the pod's own /workspace clone) is
+# WAIVED per-clause by the driver-loop ssh/grep waiver below, under its
+# fail-closed refusal ladder; grep/egrep/fgrep/rg pattern arguments get the
+# same waiver. A MULTI-STATEMENT remote string mis-splits on the
+# quoted-separator trade-off and its tail clauses still classify —
+# remediation unchanged: `git -C /workspace/... <verb>` inside the remote
+# string, a pod-side script, or the SSH MCP (which bypasses the Bash hook
+# entirely). Never waived, deliberately: an ssh clause naming the shared-repo
+# path in any covered spelling (literal / $HOME/ / ~/ + the repo basename),
+# and ANY waived-word clause in pipeline-producer / background position or
+# carrying a non-/dev/null output redirect (`> f` — the same-call
+# write-then-execute channel, closed round 2).
 #
 # Contract: reads the PreToolUse JSON on stdin, blocks (exit 2 + stderr fed
 # back to Claude) only when a branch-CHANGING git command would move the
@@ -54,10 +76,17 @@
 # ANOTHER command's argument therefore trips the guard: e.g.
 # `task.py post-marker <N> epm:X --note "... git switch ..."` is blocked
 # because the note text matches `git ... switch`, and a note/-m string
-# carrying a full `git restore .` / `git clean -fd` / `git reset --hard`
-# command literal trips the #897 detectors the same way. The workaround is to
+# carrying a full `git restore .` / `git clean -fd` / `git reset --hard` /
+# `git merge <branch>` (#1128) / `git rebase <branch>` / `git cherry-pick
+# <sha>` (#1193) / `git revert <sha>` / `git am <path>` (#1234) command
+# literal trips the #897/#1128/#1193/#1234 detectors
+# the same way. The workaround is to
 # pass such note text via `--file <path.md>` instead of `--note`, and commit
-# messages via `git commit -F <file>`. One NARROWING of the raw scan (#1058):
+# messages via `git commit -F <file>`. The `git -C <path>` per-clause waiver
+# is PATH-BLIND for merge exactly as for every fenced verb (#1128/#1193):
+# `git -C <repo-root-path> merge <ref>` passes the hook (pre-existing
+# parity); the block message's "NEVER point -C at the repo root" line is the
+# stated control. One NARROWING of the raw scan (#1058):
 # heredoc BODIES destined for NON-SHELL consumers are stripped before parsing
 # by the strip_heredoc_bodies() pre-pass below when provably inert — every
 # opener validated, no shell-consumer / command-runner word on the opener
@@ -65,7 +94,12 @@
 # body bash expands at feed time) no `$(`/backtick/`${` expansion syntax —
 # so document text that merely MENTIONS a gated form no longer false-blocks;
 # the quoted `--note` literal above is NOT a heredoc and stays blocked (that
-# limitation is unchanged). The #897 detectors use a TIGHT
+# limitation is unchanged). A SECOND NARROWING (#1098): a clause whose
+# command word is `ssh` (remote execution) or `grep`/`egrep`/`fgrep`/`rg`
+# (read-only pattern) is waived per-clause by the driver-loop waiver under
+# fail-closed refusals; quoted git-verb literals under OTHER command words
+# (`--note`/`-m` strings) still block with the same `--file`/`-F`
+# remediation. The #897 detectors use a TIGHT
 # `git <verb>` bigram anchor (`git [flags] restore|clean|reset|checkout`), so
 # plain-English "restore"/"clean"/"reset" inside a `-m` message (e.g.
 # `git commit -m "restore defaults"`) does NOT trip — only a full
@@ -200,6 +234,142 @@
 #       standalone-dot source form (quoted `jq '.'` unaffected); and prose
 #       like "the system (Linux) ..." matching the `system *\(` body
 #       refusal.
+# (xiv) (#1098) The ssh/grep-family clause waiver's residuals, BOTH sides.
+#       Fail-closed FALSE POSITIVES (harmless shapes that stay blocked):
+#       multi-statement remote strings with the gated verb in a non-first
+#       statement (`ssh pod 'cd /workspace/x && git reset --hard'` —
+#       mis-split; the tail clause lost the ssh command word); wrapped /
+#       absolute-path / variable ssh (`timeout N ssh ...`, `/usr/bin/ssh`,
+#       `$SSHCMD ...`); `${VAR}` in remote strings, incl. single-quoted
+#       forms bash would not expand (the deliberate `${` over-match);
+#       ssh clauses naming the shared-repo path in a covered spelling;
+#       here-string literals (`grep -q x <<<"...gated..."` — the R8b
+#       raw-scan-parity class — and ssh stdin here-strings); and ANY
+#       waived-word clause in pipeline-producer OR background position
+#       (`ssh pod '...' | tail`, `ssh pod '...' &`, and `ssh pod '...'
+#       2>&1 ...` — the fd-dup's single & mis-splits as BG, hiding a
+#       following pipe from the lookahead, so BG refuses too — all stay
+#       blocked; remediation: `git -C /workspace/... <verb>` inside the
+#       remote string, which the pipe-blind `-C` waiver allows); and ANY
+#       waived-word clause carrying a `>`/`>>` output redirect whose
+#       target is not exactly /dev/null (round-2 arm, cond (3b): closes
+#       the same-call write-then-execute channel `ssh h 'echo <gated>'
+#       > /tmp/x; bash /tmp/x`; refused consumer-independently and in
+#       EVERY position incl. nextsep=END, so the harmless conveniences
+#       refuse too — `grep '<gated>' . -r > results.txt`, a REMOTE-side
+#       redirect inside the quoted ssh string (`ssh pod 'git checkout
+#       HEAD -- f > /tmp/log'` — the raw scan cannot tell it from a
+#       local one), a literal `>` inside a grep PATTERN, a
+#       /dev/null redirect flush against the closing quote
+#       (`'... 2>/dev/null'`), and an ordinary QUOTED /dev/null target
+#       (`> "/dev/null"` / `> '/dev/null'` — the raw strip matches only
+#       the unquoted spelling, so the quoted form refuses fail-closed);
+#       remediation: drop the redirect, target
+#       /dev/null unquoted with a whitespace/EOL boundary (`2>/dev/null`
+#       stays waived), or `git -C`). Also
+#       here: `git grep '<gated>'`
+#       clauses stay blocked (clause-initial word is `git`, not
+#       grep-family) — remediation: plain `grep`. QUALIFIER for register
+#       exactness: the "tail clauses still classify" sentence is not
+#       universally true — a FIRST remote statement matching the
+#       UNANCHORED cd-latch (`ssh pod 'cd /tmp/ && git clean -fd'`) is
+#       rc=0 TODAY via the pre-existing latch, not via this waiver;
+#       pre-existing behavior, unchanged by this diff.
+#       Deliberate-only accepted FAIL-OPENS (~zero accidental probability,
+#       cooperative-agent model, same register as gaps (v)/(x)/(xii)):
+#       `ssh -F <config> host` whose ProxyCommand/LocalCommand lives in
+#       the config FILE (no on-command-line token; inline `-o` spellings
+#       ARE refused); NON-CANONICAL shared-repo path spellings beyond the
+#       three covered globs (doubled slash `/home/...//<repo>`,
+#       $USER-composed paths, a `cd /home/...` + relative `--git-dir`
+#       split across the mis-split boundary); variable-indirection
+#       same-VM targeting (`ssh $HOST '...'` with the repo path held in a
+#       remote-side variable — resolving remote host identity / variable
+#       values is outside a raw-scan design by construction); and the
+#       CROSS-CALL write-then-execute form ONLY (write the recipe in one
+#       tool call, execute it in the next — a per-call hook cannot see
+#       across calls by construction; the gap-(xii) heredoc-to-file strip
+#       is the named cross-call writer). The SAME-CALL redirect channel
+#       is NOT in this register: it is CLOSED by the round-2 cond (3b)
+#       refusal above, and a same-call gated write under a NON-waived
+#       command word (`echo git reset --hard > /tmp/x`) was always
+#       blocked by the raw scan. The heredoc
+#       asymmetry is deliberate: a single-clause remote git op is waived
+#       while a heredoc body fed to `ssh host bash` stays blocked (C8) —
+#       shellish() strips only provably-inert DATA, and a body handed to a
+#       remote shell IS executed.
+# (xv)  (#1128) `git commit` during an in-progress root merge COMPLETES the
+#       merge (the ungated equivalent of the blocked `git merge --continue`)
+#       — gating `commit` would fence the shared root's primary purpose, so
+#       this stays open by design. Sanctioned recovery for an in-progress
+#       root merge is `git merge --abort` (allowed). (#1193) `git commit`
+#       mid-conflicted root CHERRY-PICK completes the pick exactly as it
+#       completes a merge (the rebase analogue is moot — a conflicted rebase
+#       detaches HEAD, so the on-main gate already exits 0). Also: a
+#       parenthesized NO-ARG `(git merge)` misses the trailing space/EOL
+#       anchor — a git usage error anyway ("fatal: No commit specified"),
+#       ~zero risk.
+# (xvi) (#1128) Merge-SEMANTICS ops under other command words stay ungated:
+#       `git pull --no-rebase` / a config-override pull performs exactly the
+#       fenced merge (mitigated by the shared .git/config pins
+#       `pull.rebase=merges` + `rebase.autoStash=true`; root syncs route
+#       through sync_repo_root.py). (#1193) The rebase family is now fenced
+#       by its own detectors below; `git pull --rebase[=merges]` (the
+#       sanctioned root-sync form) has command word `pull` and stays outside
+#       the tight anchors by design. (#1201) The pull lane is now fenced by
+#       its own sibling guard, scripts/guard_repo_root_pull.sh; this guard's
+#       scope is unchanged.
+# (xvii) (#1193) Rebase-family residuals: (a) CLOSED by #1234: `git revert` /
+#       `git am` now carry their own fence arms (same tight anchor + per-verb
+#       --abort/--quit allow; see the #1234 block below). Retained for
+#       lineage. (b) The anchored PER-VERB allow-arm
+#       kills the immediate-flag spoof (pinned by tests R12/R13/CP9); the
+#       residual is the raw-scan parity class shared with the merge fence —
+#       the guard defends against accidents, not adversaries. (c) `git
+#       rebase -h` / `--help` at root false-blocks (parity with `git merge
+#       --help` today); remediation: `man git-rebase`, which stays allowed
+#       (`git-rebase` has no `git ` + space bigram). (d) The parenthesized
+#       NO-ARG `(git rebase)` slips the trailing space/EOL anchor, and the
+#       (xv) "(git merge) ~zero risk" rationale does NOT transfer verbatim —
+#       a bare rebase with a configured upstream genuinely RUNS; with-arg
+#       paren forms still block, so only the exact no-arg-inside-parens
+#       shape slips (~nil accident probability; named, not fixed).
+#       (e) `git -c <k=v> -C <worktree> rebase ...` false-blocks (the
+#       per-clause waiver requires `-C` immediately after `git`) — identical
+#       parity with merge/reset today. (f) The new verbs activate gap
+#       (xiv)'s piped-grep FP class (`grep 'git rebase ...' file | head`
+#       blocks now that the loose gates match the verbs; the non-piped grep
+#       clause stays waived — RA17).
+# (xviii) (#1234) Revert/am residuals: (a) `git am --show-current-patch`
+#       (read-only) false-blocks — strict abort/quit-only parity with
+#       #1128/#1193 keeps the five fences auditable as one family; recovery
+#       for an in-progress root am is `--abort` (pinned AM8). (b) The am
+#       allow-anchor's quoted-prose spoof ("... am --abort ..." inside a
+#       quoted arg satisfies the allow while a real `git am` runs) and the
+#       flag-chain tight-anchor FP — valid global-flag-chain + quoted-prose
+#       shapes can also match: `git --no-pager log --since "9 am today"` IS
+#       valid git and tight-matches (the flag chain consumes `log` as
+#       `--no-pager`'s value); accepted accidents-not-adversaries FP class,
+#       bounce-only failure direction, pinned by one block test — are the
+#       raw-scan parity class shared with (xvii)(b). (c) The new verbs
+#       activate gap (xiv)'s piped-grep FP class (`grep 'git am ...' f |
+#       head` blocks; the non-piped grep clause stays waived — RVA15), and
+#       `git am --help` / `git revert --help` false-block ((xvii)(c)
+#       parity); remediation `man git-am` / `man git-revert`, which stay
+#       allowed (no `git ` + space bigram). (d) The parenthesized NO-ARG
+#       `(git am)` slips the `( +|$)` anchor — the (xvii)(d) analog; unlike
+#       a bare no-upstream rebase, a bare `am` genuinely READS PATCHES FROM
+#       STDIN and runs, so only the exact no-arg-inside-parens shape slips
+#       (~nil accident probability; named, not fixed). (e) Root-am-state
+#       tension: a hook-exempt subprocess (sync_repo_root.py's internal git,
+#       cron wrappers) can still create root am state whose COMPLETION this
+#       fence blocks at the Bash surface — sync_repo_root.py's stale-am
+#       refusal names `git am --abort` as the sanctioned root resolution;
+#       FINISHING the session belongs to its owner via a `git -C <path>`-
+#       scoped `am --continue`. (f) `git apply` and `git stash pop|apply`
+#       also mutate the shared tree and remain ungated — zero incident
+#       demand; a separate candidate if demanded (the old (xvii)(a)
+#       pattern, rolled forward).
 #
 # Compound-command parsing is a best-effort CLAUSE SPLIT (#804): the command is
 # split on `;` / `&&` / `||` / `|` / `&` / raw newline (two-char separators
@@ -278,6 +448,7 @@
 set -u
 
 REPO=/home/thomasjiralerspong/explore-persona-space
+REPO_BASE=${REPO##*/}   # basename (explore-persona-space) for the #1098 waiver path globs
 
 cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
 [ -n "$cmd" ] || exit 0
@@ -406,13 +577,54 @@ strip_heredoc_bodies() {
 }
 cmd=$(strip_heredoc_bodies "$cmd")
 
-# Only consider git checkout/switch/restore/clean/reset invocations at all
-# (loose pre-filter — a cheap skip, not a classifier; the tight per-verb
-# anchors live in classify_clause).
-echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset)\b' || exit 0
+# Only consider git checkout/switch/restore/clean/reset/merge/rebase/
+# cherry-pick/revert/am invocations at all (loose pre-filter — a cheap skip,
+# not a classifier; the tight per-verb anchors live in classify_clause).
+# `\bmerge\b` deliberately matches `merge-base` here (the boundary fires
+# before `-`) — harmless, the tight #1128 detector never fires on it; it does
+# NOT match `--rebase=merges` / `mergetool` / `--merges` / `--merged` (no
+# trailing boundary). (#1193) `\brebase\b` DOES match inside
+# `--rebase=merges` / `pull.rebase=merges` / `rebase.autoStash=true` (`-`,
+# `.`, `=` are non-word chars, so both boundaries fire) — harmless by the
+# same merge-base argument: the tight #1193 detector requires subcommand
+# position + a `( +|$)` verb terminator, so none of these can reach a block;
+# the shift is only WHICH exit path allows them (classifier instead of
+# pre-filter skip). `\bcherry-pick\b` does NOT match the ubiquitous prose
+# token `cherry-picked` (no trailing word boundary — `k` is followed by `e`),
+# so commit messages / marker notes carrying it never even pass the
+# pre-filter; it DOES match `git log --cherry-pick` (the boundary fires
+# between `-` and `c`) — harmless at the tight detector (`log` breaks the
+# subcommand chain). `git log --cherry` and the plumbing command `git cherry`
+# do not match the alternation at all (the literal requires the full
+# `cherry-pick`).
+# (#1234) `\brevert\b` does NOT match the ubiquitous prose forms `reverted` /
+# `reverting` (no trailing word boundary), so commit messages / marker notes
+# carrying them never even pass the pre-filter; bare prose `revert` DOES pass
+# whenever `git` appears earlier in the command and is disposed of by the
+# tight #1234 detector (subcommand position: `git commit -m "revert foo"`
+# never matches — `commit` is a non-dash token that breaks the flag chain).
+# `\bam\b` is a common English word ("I am ...") and DOES pass this loose
+# gate under the same condition — deliberate and harmless by the same
+# argument: the tight detector requires `git [dash-flag [value]]* am`, so
+# `git commit -m "I am done"` can never reach a block; it does NOT match
+# `--amend`/`amend` (no trailing boundary after `am`), `team`/`spam`/`gram`
+# (no leading boundary), so `git commit --amend` still exits at this
+# pre-filter. Accepted fail-closed residual: a dash-flag-then-value-then-`am`
+# shape DOES match the tight anchor — a nonsense `git -m "I am here"` (`-m`
+# is not a git global flag) but ALSO valid flag-chain git like
+# `git --no-pager log --since "9 am today"` — the accepted
+# accidents-not-adversaries FP class, register (xviii)(b).
+echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset|merge|rebase|cherry-pick|revert|am)\b' || exit 0
 
-# Split the raw command into (separator, clause) pairs, PRESERVING which
-# separator precedes each clause. Two-char separators (&& ||) are matched
+# Split the raw command into (separator, next-separator, clause) TRIPLES,
+# PRESERVING which separator precedes each clause AND (#1098) which separator
+# FOLLOWS it — a buffered one-record lookahead whose $nextsep field lets the
+# driver-loop ssh/grep waiver refuse pipeline-producer position. The final
+# clause reports nextsep=END; an EMPTY record (a trailing separator) flushes
+# the buffered clause with the empty record's separator as its nextsep, so a
+# trailing separator's identity is never lost (fail-closed: a trailing
+# `| <empty>` still reports PIPE). The sed pre-pass, sentinel vocabulary, and
+# clause-strip semantics are unchanged. Two-char separators (&& ||) are matched
 # BEFORE the single-char ones (; | &) so `&&`/`||` are not mis-split into two
 # single-char clauses (the `&&` substitution runs before the single `&` rule,
 # so a `&&` is consumed as AND and never re-matched as a bare `&`). Each
@@ -433,13 +645,21 @@ echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset)\b' || e
 split_and_label() {
   printf '%s' "$1" \
     | sed -zE 's/\n/\n\x01NL\x01/g; s/\|\|/\n\x01OR\x01/g; s/&&/\n\x01AND\x01/g; s/;/\n\x01SEQ\x01/g; s/\|/\n\x01PIPE\x01/g; s/&/\n\x01BG\x01/g' \
-    | awk 'BEGIN{RS="\n"; sep="START"}
+    | awk 'BEGIN{RS="\n"; sep="START"; have=0}
            { line=$0
              if (match(line, /^\x01(OR|AND|SEQ|PIPE|BG|NL)\x01/)) {
                sep=substr(line, 2, RLENGTH-2); line=substr(line, RLENGTH+1)
              }
              gsub(/^[ \t]+|[ \t]+$/, "", line)
-             if (length(line)) print sep "\t" line }'
+             if (!length(line)) {          # empty clause: FLUSH the buffered one
+               if (have) { print psep "\t" sep "\t" pline; have=0 }
+               next                        # with the EMPTY record sep as nextsep
+             }                             # (fail-closed: a trailing `| <empty>`
+                                           # still reports PIPE, never a lost
+                                           # separator)
+             if (have) print psep "\t" sep "\t" pline
+             psep=sep; pline=line; have=1 }
+           END { if (have) print psep "\tEND\t" pline }'
 }
 
 # Classify a SINGLE clause. Echoes the `blocked` reason (empty string = allow).
@@ -555,6 +775,97 @@ classify_clause() {
   if echo "$c" | grep -qE '\bgit +(-[^ ]+( +[^ ]+)?( +|$))*reset\b[^;&|]* --hard(=|\b)'; then
     blocked="git reset --hard"
   fi
+
+  # ---- #1128 branch-merge fence ------------------------------------------
+  # `git merge <ref>` on the shared root: a conflicting merge strands
+  # conflict markers in the shared tree until aborted (#1090: ~70s window a
+  # concurrent `git add && git commit` could sweep), and even a clean/ff
+  # merge lands branch commits on root main outside the Step 10d landing
+  # path. TIGHT anchor: `merge` must be followed by whitespace/end-of-clause
+  # — NOT `\b`, which fires before `-` and would trip `git merge-base`
+  # (run BARE at the root by the diff-size-budget sizing recipe and the
+  # Step 10d ancestry probes). Allow-arm: `--abort` / `--quit` are the
+  # sanctioned in-progress-merge RECOVERY (the #1090 session recovered via
+  # abort; fail-soft: never trap a user mid-recovery) — the flag must
+  # IMMEDIATELY follow the verb (`git merge --abort` accepts no ref, so
+  # the anchored form costs zero FPs and a quoted `-m "… --abort …"`
+  # message cannot spoof the allow (raw scan reads quoted args; the
+  # loose `[^;&|]*` form would fail open there). BLOCKED fail-closed:
+  # `--continue` (it COMPLETES exactly the root merge commit this fence
+  # prevents; recovery is abort — residual gap (xv) names the ungated
+  # `git commit` equivalent) and `--ff-only` (cannot conflict, but still
+  # lands branch commits on root main outside the landing path; worktree
+  # ff-syncs use `git -C <worktree> merge --ff-only main`, root syncs use
+  # sync_repo_root.py).
+  if echo "$c" | grep -qE '\bgit +(-[^ ]+( +[^ ]+)?( +|$))*merge( +|$)'; then
+    if ! echo "$c" | grep -qE '\bmerge +--(abort|quit)\b'; then
+      blocked="git merge (branch merge on the shared root)"
+    fi
+  fi
+
+  # ---- #1193 rebase-family fence (sibling of the #1128 merge fence) -------
+  # `git rebase <ref>` / `git cherry-pick <ref>` on the shared root: a
+  # conflicting run strands conflict state in the shared tree exactly like
+  # the #1090 root merge, and a clean run rewrites/lands commits on root
+  # main outside the sanctioned landing paths (gh pr merge --rebase /
+  # scratch worktree / sync_repo_root.py — a bare `git rebase` with a
+  # configured upstream genuinely RUNS, so end-of-clause blocks too).
+  # TIGHT anchor: verb followed by whitespace/end-of-clause — NOT `\b`,
+  # which fires before `.`/`=` and would trip `git -c rebase.autoStash=true
+  # pull` at flag-value position. Allow-arm mirrors #1128: --abort/--quit
+  # IMMEDIATELY after the verb (sanctioned recovery; fail-soft), ONE ARM PER
+  # VERB — a combined `(rebase|cherry-pick)` allow would open a cross-verb
+  # quoted-arg spoof (a quoted argument naming the OTHER verb + --abort
+  # would satisfy it while the real verb runs). BLOCKED fail-closed:
+  # --continue and --skip (both COMPLETE the in-progress operation on the
+  # root tree — the M5 decision, mirrored; recovery is abort). Note `git
+  # pull --rebase[=merges]` never reaches this anchor: its subcommand is
+  # `pull` (the sanctioned root-sync form stays open).
+  if echo "$c" | grep -qE '\bgit +(-[^ ]+( +[^ ]+)?( +|$))*rebase( +|$)'; then
+    if ! echo "$c" | grep -qE '\brebase +--(abort|quit)\b'; then
+      blocked="git rebase (history rewrite on the shared root)"
+    fi
+  fi
+  if echo "$c" | grep -qE '\bgit +(-[^ ]+( +[^ ]+)?( +|$))*cherry-pick( +|$)'; then
+    if ! echo "$c" | grep -qE '\bcherry-pick +--(abort|quit)\b'; then
+      blocked="git cherry-pick (commit replay onto the shared root)"
+    fi
+  fi
+  # ---- end #1193 rebase-family fence ---------------------------------------
+
+  # ---- #1234 revert/am fence (completeness siblings of the #1193 family) --
+  # `git revert <commit>` / `git am <mbox>` on the shared root: the same
+  # conflict-stranding class — a conflicting run strands sequencer/am state
+  # + conflict markers in the shared tree (#1090 class), and a clean run
+  # lands commits on root main outside the sanctioned landing paths.
+  # `git revert -n/--no-commit` still mutates index+tree (blocked, CP5
+  # parity); bare `git revert` errors in git but blocks fail-closed at zero
+  # cost (M7/CP2 parity); bare `git am` reads patches from STDIN and
+  # genuinely runs, so end-of-clause blocks are load-bearing there.
+  # TIGHT anchor: verb followed by whitespace/end-of-clause. Prose safety:
+  # `git commit -m "revert foo"` / `-m "I am done"` never match — `commit`
+  # is a non-dash token that breaks the flag chain (see the pre-filter
+  # comment's #1234 boundary analysis). Allow-arm mirrors #1128/#1193:
+  # --abort/--quit IMMEDIATELY after the verb, ONE ARM PER VERB (a combined
+  # `(revert|am)` allow would open the R13 cross-verb quoted-arg spoof;
+  # `am`'s short allow-anchor additionally admits a quoted prose
+  # "... am --abort ..." spoof — the raw-scan accidents-not-adversaries
+  # residual, register (xviii)(b)). BLOCKED fail-closed: --continue/--skip
+  # (both COMPLETE the in-progress op on the root tree — the M5 decision,
+  # mirrored) and `am --show-current-patch` (read-only but rare; strict
+  # abort/quit-only parity keeps the allow surface auditable — register
+  # (xviii)(a); recovery for an in-progress root am is --abort).
+  if echo "$c" | grep -qE '\bgit +(-[^ ]+( +[^ ]+)?( +|$))*revert( +|$)'; then
+    if ! echo "$c" | grep -qE '\brevert +--(abort|quit)\b'; then
+      blocked="git revert (revert commit onto the shared root)"
+    fi
+  fi
+  if echo "$c" | grep -qE '\bgit +(-[^ ]+( +[^ ]+)?( +|$))*am( +|$)'; then
+    if ! echo "$c" | grep -qE '\bam +--(abort|quit)\b'; then
+      blocked="git am (mailbox patch apply onto the shared root)"
+    fi
+  fi
+  # ---- end #1234 revert/am fence --------------------------------------------
   # ---- end #897 detectors ------------------------------------------------
 
   # git checkout <existing-branch>  — NOT a pathspec form (no `--`; those are
@@ -624,7 +935,9 @@ classify_clause() {
   echo "$blocked"
 }
 
-# Drive classify_clause over the (separator, clause) pairs. A `cd <worktree|/tmp>`
+# Drive classify_clause over the (separator, next-separator, clause) triples
+# (every consumer below reads $sep/$clause with unchanged values and ordering;
+# $nextsep is consumed only by the #1098 waiver). A `cd <worktree|/tmp>`
 # latches `scoped` forward ONLY across `&&` (bash GUARANTEES the `cd` succeeded
 # before the RHS runs there, so the cwd persists), so a git clause after it runs
 # in the scoped cwd and is allowed. The latch RESETS across every OTHER separator
@@ -639,7 +952,7 @@ classify_clause() {
 scoped=0
 wt_bound=0
 blocked=""
-while IFS=$'\t' read -r sep clause; do
+while IFS=$'\t' read -r sep nextsep clause; do
   # Reset the latch unless the separator BEFORE this clause is && — a `cd`
   # only reliably scopes a following git clause when bash guarantees it ran
   # first (the && short-circuit). ; / || / | / & / a raw newline (NL) do NOT
@@ -747,9 +1060,134 @@ while IFS=$'\t' read -r sep clause; do
   # `git -C <path>` scopes ONLY this clause (per-invocation) — allow it.
   echo "$clause" | grep -qE '\bgit +-C +' && continue
 
-  # not a git checkout/switch/restore/clean/reset clause at all -> skip
-  # (loose gate — a cheap skip; the tight anchors live in classify_clause)
-  echo "$clause" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset)\b' || continue
+  # not a git checkout/switch/restore/clean/reset/merge/rebase/cherry-pick/
+  # revert/am clause at all -> skip (loose gate — a cheap skip; the tight
+  # anchors live in classify_clause; kept in sync with the whole-command
+  # pre-filter above, whose comment carries the per-verb boundary analysis
+  # incl. the #1193/#1234 rebase/cherry-pick/revert/am notes)
+  echo "$clause" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset|merge|rebase|cherry-pick|revert|am)\b' || continue
+
+  # (#1098) ssh REMOTE-COMMAND / grep-family PATTERN-ARGUMENT clause waiver.
+  # An `ssh <host> '<remote cmd>'` clause executes its command string on the
+  # REMOTE host (a pod's own /workspace clone), never in this VM's repo-root
+  # working tree — the same operation class the THREAT MODEL paragraph
+  # already scopes out for SSH-MCP remote commands (incident 2026-07-06:
+  # `ssh pod-779 'git reset --hard origin/main'` false-blocked; the #779
+  # session detoured through a pod-side script). A grep/egrep/fgrep/rg
+  # clause is read-only w.r.t. git — its pattern argument is data. Waive
+  # (skip classification of) such a clause ONLY when ALL of:
+  #   (1) the clause's COMMAND WORD is ssh|grep|egrep|fgrep|rg (^-anchored;
+  #       the awk splitter already stripped leading whitespace). A MID-clause
+  #       ssh/grep word never waives — `git -c core.sshCommand=ssh reset
+  #       --hard` is a LOCAL destructive op and still classifies. Wrapped
+  #       forms (`timeout 240 ssh ...`, `nohup ssh ...`, `/usr/bin/ssh`,
+  #       `$SSHCMD ...`) are NOT clause-initial `ssh` and keep blocking
+  #       (fail-closed residual FP, gap (xiv)).
+  #   (2) the clause is NOT in pipeline-producer / background position: its
+  #       FOLLOWING separator (the $nextsep field the splitter now emits)
+  #       is neither PIPE nor BG. PIPE: a waived producer's stdout can feed
+  #       a LOCAL shell consumer (`ssh host 'echo git reset --hard' | bash`,
+  #       `grep 'git reset --hard' f | bash`) whose own clause carries no
+  #       gated text and clears the loose gate — the round-1 Codex
+  #       methodology blocker. BG (implementation-round fail-closed
+  #       widening, live-probed): an fd-dup redirection's single `&`
+  #       (`2>&1`) is mis-split as a BG separator by the raw sed pre-pass,
+  #       so `ssh host '...' 2>&1 | bash` reports nextsep=BG on its
+  #       producer clause — the PIPE hides one record downstream; refusing
+  #       BG closes that hole, and a TRUE background producer
+  #       (`ssh pod '...' & ...`) costs only a residual FP. Refusing on ANY
+  #       following pipe/BG (consumer-independent) is strictly
+  #       status-quo-preserving: piped / `&`-carrying shapes are rc=2
+  #       today, so the refusal costs only the un-waived convenience
+  #       (`... | tail`, `... 2>&1`), documented as residual FPs in gap
+  #       (xiv) with the `git -C` remediation (which pipes fine — the -C
+  #       waiver is pipe-blind).
+  #   (3) NO locally-executing expansion / redirection syntax anywhere in
+  #       the clause: $( / ${ / backtick / <( / >( / <<< .
+  #       `ssh host "$(git reset --hard)"` and `grep -f <(git clean -fd) x`
+  #       EXECUTE the gated text LOCALLY at expansion time. `${` is the
+  #       same fail-closed over-match as heredoc check (g) — a plain
+  #       ${VAR} (even single-quoted, which bash would NOT expand locally)
+  #       refuses the waiver, because the guard deliberately does not
+  #       shell-parse quotes (#796 revert). Bare `$VAR` (no brace, no
+  #       paren) never executes a command and is NOT refused. Live
+  #       clauses — unlike heredoc BODIES — undergo process substitution,
+  #       hence <( / >( over check (g). `<<<` (here-string) feeds DATA and
+  #       is refused anyway: it preserves the existing must-block pin
+  #       R8b-here_string_full_literal_parity (a grep here-string carrying
+  #       a full gated literal blocks today and MUST keep blocking — the
+  #       round-1 statistics blocker), keeping raw-scan parity for
+  #       here-string literals at zero incident cost.
+  #   (3b) NO local file OUTPUT REDIRECT — `>`/`>>` with optional fd digits
+  #       (`2>`, `1>>`) — unless its target is exactly /dev/null followed
+  #       by whitespace/end-of-clause. Round-2 fail-closed arm (concern id
+  #       redirect-file-producer-failopen): without it a waived producer
+  #       could write gated text to a LOCAL file a later same-call clause
+  #       executes (`ssh host 'echo git reset --hard' > /tmp/x; bash
+  #       /tmp/x` — nextsep=SEQ/AND/NL/END, so cond (2) never fires; the
+  #       consumer clause carries no gated literal and clears the loose
+  #       gate). The check is a strip-then-scan: redirects targeting
+  #       exactly /dev/null are stripped (a discard-only sink can never be
+  #       re-read or executed — keeps the `2>/dev/null` sweep convenience
+  #       waivable), then ANY remaining `>` refuses the waiver,
+  #       consumer-independently and REGARDLESS of position (incl.
+  #       nextsep=END — no same-call consumer exists there, but refusing
+  #       is strictly status-quo-preserving: every redirect-carrying gated
+  #       producer shape is rc=2 on main today, so the refusal costs only
+  #       un-waived convenience; fail-closed residual FPs in gap (xiv):
+  #       `> results.txt` capture, a remote-side redirect inside the
+  #       quoted ssh string, a literal `>` in a grep PATTERN, and a
+  #       /dev/null redirect flush against the closing quote —
+  #       `'... 2>/dev/null'` — whose boundary is `'`, not whitespace).
+  #       Pure `>`/`>>`/`N>`/`N>>` spellings reach this arm, and so does
+  #       the `<>` read-write redirect (its `>` survives the pre-pass and
+  #       fails closed harmlessly unless targeting exactly /dev/null,
+  #       where the strip discards it — a discard sink either way): every
+  #       `&`-carrying redirect (`&>`, `&>>`, `2>&1`, `>&2`, `|&`) is
+  #       mis-split by the sed pre-pass into a BG/PIPE separator (cond (2)
+  #       refuses), `>|` exposes a PIPE, and `>(` is refused by (3).
+  #   (4) [ssh only] no ProxyCommand/LocalCommand/KnownHostsCommand token
+  #       (ssh executes all three LOCALLY, in this cwd — KnownHostsCommand
+  #       since OpenSSH 8.4) and no shared-repo path in ANY covered
+  #       spelling — literal $REPO, $HOME/<repo-basename>, ~/<repo-basename>
+  #       — anywhere in the clause: an ssh-to-this-VM remote string
+  #       operating on the shared root stays blocked (option (b), widened
+  #       after the round-1 critics showed `--work-tree=$HOME/...` dodges the
+  #       literal-only glob; bare $HOME is deliberately not expansion-refused,
+  #       so the path spellings must be). ${HOME}/... forms are already
+  #       refused by (3)'s ${ arm. Non-canonical spellings (doubled slash,
+  #       $USER-composed, variable-indirection `ssh $HOST` with a remote
+  #       $REPO) stay deliberate-only accepted fail-opens — gap (xiv).
+  #   (5) [grep-family only] no --pre token, = or space form (rg --pre
+  #       executes a preprocessor command per file, locally).
+  # NO LATCH: the waiver covers THIS clause only — it reads the clause's
+  # own command word, so no arming/propagation separator proof is needed
+  # (unlike the cd/WT latches, no state crosses clauses). A quoted
+  # multi-statement remote string (`ssh pod 'cd /w && git reset --hard'`)
+  # is mis-split by the quoted-separator trade-off and its TAIL clause
+  # (which lost the ssh command word) still classifies — fail-closed,
+  # residual gap (xiv); remediation unchanged: single-statement
+  # `git -C /workspace/... <verb>` inside the remote string (the -C waiver
+  # above already allows it), a pod-side script, or the SSH MCP.
+  if echo "$clause" | grep -qE '^(ssh|grep|egrep|fgrep|rg)[[:space:]]'; then
+    if [ "$nextsep" != PIPE ] && [ "$nextsep" != BG ] \
+       && ! echo "$clause" | grep -qE '\$\(|\$\{|`|<\(|>\(|<<<' \
+       && ! echo "$clause" \
+            | sed -E 's@[0-9]*>>?[[:space:]]*/dev/null([[:space:]]|$)@ @g' \
+            | grep -q '>'; then
+      if echo "$clause" | grep -qE '^ssh[[:space:]]'; then
+        if ! echo "$clause" | grep -qiE 'proxycommand|localcommand|knownhostscommand'; then
+          case "$clause" in
+            *"$REPO"*|*'$HOME/'"$REPO_BASE"*|*'~/'"$REPO_BASE"*) : ;;
+                              # shared-root spelling -> classify (blocks)
+            *) continue ;;    # remote-host git op -> waive this clause
+          esac
+        fi
+      elif ! echo "$clause" | grep -qE '(^|[[:space:]])--pre(=|[[:space:]])'; then
+        continue              # read-only pattern argument -> waive this clause
+      fi
+    fi
+  fi
 
   reason=$(classify_clause "$clause")
   if [ -n "$reason" ]; then blocked="$reason"; break; fi   # first block wins
@@ -762,8 +1200,13 @@ done < <(split_and_label "$cmd")
 cur=$(git -C "$REPO" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
 [ "$cur" = main ] || exit 0
 
-echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree state. The repo root is the canonical commit target for scripts/task.py and every concurrent VM session (all assume HEAD==main); a branch switch here hijacks concurrent commits, and a working-tree revert (restore / checkout-pathspec / clean -f / reset --hard) silently discards CONCURRENT sessions' uncommitted edits (incidents 2026-06-01, #815, #841). Do branch/destructive work in a worktree instead:
+echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree state. The repo root is the canonical commit target for scripts/task.py and every concurrent VM session (all assume HEAD==main); a branch switch here hijacks concurrent commits, and a working-tree revert (restore / checkout-pathspec / clean -f / reset --hard) silently discards CONCURRENT sessions' uncommitted edits (incidents 2026-06-01, #815, #841), and a branch MERGE here can strand conflict markers in the shared tree that a concurrent commit sweeps (#1090), and a REBASE / CHERRY-PICK here mutates root history or strands the same conflict state (#1193), and a REVERT / AM here lands commits on root main or strands the same sequencer/conflict state (#1234). Do branch/destructive work in a worktree instead:
   bash scripts/new_worktree.sh .claude/worktrees/<name> <branch> && git -C .claude/worktrees/<name> ...
 NEVER point -C at the repo root itself for a destructive op — for repo-root recovery use: uv run python scripts/sync_repo_root.py
-For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>." >&2
+This guard matches COMMAND TEXT, not cwd — a worktree-internal op after 'cd <worktree>' in a compound is still blocked; use the git -C <worktree> form instead of cd'ing (incident #1143, 2026-07-08).
+To LAND a branch onto main: gh pr merge <PR> --rebase (server-side, the /issue Step 10d path), or a scratch worktree: git worktree add --detach /tmp/<name> origin/main && git -C /tmp/<name> merge <branch> && git -C /tmp/<name> push origin HEAD:main.
+To recover an in-progress root merge/rebase/cherry-pick/revert/am: git merge --abort / git rebase --abort / git cherry-pick --abort / git revert --abort / git am --abort (all allowed; --quit likewise). For a worktree fast-forward: git -C <worktree> merge --ff-only main.
+For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>.
+NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
+For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098); a multi-statement remote string mis-splits — put git -C /workspace/<repo> <verb> inside the remote string, or use a pod-side script / the SSH MCP." >&2
 exit 2

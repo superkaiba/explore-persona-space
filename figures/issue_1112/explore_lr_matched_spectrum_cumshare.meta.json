@@ -1,0 +1,2553 @@
+{
+ "commit": "695daa22b7",
+ "created": "2026-07-08T18:29:28Z",
+ "figsize": [
+  6.0,
+  4.0
+ ],
+ "points": [
+  {
+   "number of leading eigenvalue modes": 1.0,
+   "cumulative share of shift variance": 0.08964130598841874,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 2.0,
+   "cumulative share of shift variance": 0.15133154735619594,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 3.0,
+   "cumulative share of shift variance": 0.20299156151950418,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 4.0,
+   "cumulative share of shift variance": 0.24508877103291704,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 5.0,
+   "cumulative share of shift variance": 0.27925135817071794,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 6.0,
+   "cumulative share of shift variance": 0.30960701699647286,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 7.0,
+   "cumulative share of shift variance": 0.3389448639360201,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 8.0,
+   "cumulative share of shift variance": 0.36330954581639024,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 9.0,
+   "cumulative share of shift variance": 0.3870251901013686,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 10.0,
+   "cumulative share of shift variance": 0.4085292637886331,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 11.0,
+   "cumulative share of shift variance": 0.4285473604532075,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 12.0,
+   "cumulative share of shift variance": 0.4484160143717832,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 13.0,
+   "cumulative share of shift variance": 0.4674911758791824,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 14.0,
+   "cumulative share of shift variance": 0.4839242066564842,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 15.0,
+   "cumulative share of shift variance": 0.49999969564923974,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 16.0,
+   "cumulative share of shift variance": 0.5148403520200957,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 17.0,
+   "cumulative share of shift variance": 0.5295083921821614,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 18.0,
+   "cumulative share of shift variance": 0.5430196966334364,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 19.0,
+   "cumulative share of shift variance": 0.5559618411325425,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 20.0,
+   "cumulative share of shift variance": 0.5688748917124569,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 21.0,
+   "cumulative share of shift variance": 0.5813626267386772,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 22.0,
+   "cumulative share of shift variance": 0.5936194772393603,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 23.0,
+   "cumulative share of shift variance": 0.605176149279191,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 24.0,
+   "cumulative share of shift variance": 0.6161777037434217,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 25.0,
+   "cumulative share of shift variance": 0.6269434157708654,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 26.0,
+   "cumulative share of shift variance": 0.6373558924992253,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 27.0,
+   "cumulative share of shift variance": 0.6474311893566269,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 28.0,
+   "cumulative share of shift variance": 0.657086193286242,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 29.0,
+   "cumulative share of shift variance": 0.6666035921192368,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 30.0,
+   "cumulative share of shift variance": 0.6760312629763244,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 31.0,
+   "cumulative share of shift variance": 0.685039002688771,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 32.0,
+   "cumulative share of shift variance": 0.6937259703012261,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 33.0,
+   "cumulative share of shift variance": 0.7021628016616668,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 34.0,
+   "cumulative share of shift variance": 0.7103787340674499,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 35.0,
+   "cumulative share of shift variance": 0.7185783604372954,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 36.0,
+   "cumulative share of shift variance": 0.7261007798092913,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 37.0,
+   "cumulative share of shift variance": 0.7334402491669421,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 38.0,
+   "cumulative share of shift variance": 0.7406981261649018,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 39.0,
+   "cumulative share of shift variance": 0.747801646551387,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 40.0,
+   "cumulative share of shift variance": 0.7547761208898065,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 41.0,
+   "cumulative share of shift variance": 0.7614716077617141,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 42.0,
+   "cumulative share of shift variance": 0.7679761600287263,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 43.0,
+   "cumulative share of shift variance": 0.7742695359872636,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 44.0,
+   "cumulative share of shift variance": 0.7804974153466689,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 45.0,
+   "cumulative share of shift variance": 0.7865553988853672,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 46.0,
+   "cumulative share of shift variance": 0.7923813006627571,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 47.0,
+   "cumulative share of shift variance": 0.7981817479053068,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 48.0,
+   "cumulative share of shift variance": 0.8038837681652649,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 49.0,
+   "cumulative share of shift variance": 0.8094248437775982,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 50.0,
+   "cumulative share of shift variance": 0.8147580357586612,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 51.0,
+   "cumulative share of shift variance": 0.820005777983341,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 52.0,
+   "cumulative share of shift variance": 0.8251637587198561,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 53.0,
+   "cumulative share of shift variance": 0.8302611878403661,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 54.0,
+   "cumulative share of shift variance": 0.8352303338294887,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 55.0,
+   "cumulative share of shift variance": 0.8400410638993194,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 56.0,
+   "cumulative share of shift variance": 0.8447075215721688,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 57.0,
+   "cumulative share of shift variance": 0.8492654753854866,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 58.0,
+   "cumulative share of shift variance": 0.8537096783784247,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 59.0,
+   "cumulative share of shift variance": 0.8580328445571604,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 60.0,
+   "cumulative share of shift variance": 0.8623149873368955,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 61.0,
+   "cumulative share of shift variance": 0.8665046712351959,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 62.0,
+   "cumulative share of shift variance": 0.870643329315183,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 63.0,
+   "cumulative share of shift variance": 0.8746919340096893,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 64.0,
+   "cumulative share of shift variance": 0.8786185330742444,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 65.0,
+   "cumulative share of shift variance": 0.8825031387821493,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 66.0,
+   "cumulative share of shift variance": 0.8863229566267565,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 67.0,
+   "cumulative share of shift variance": 0.8900699546036641,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 68.0,
+   "cumulative share of shift variance": 0.8938054584561804,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 69.0,
+   "cumulative share of shift variance": 0.8974922349212999,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 70.0,
+   "cumulative share of shift variance": 0.9009617256078233,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 71.0,
+   "cumulative share of shift variance": 0.9043293178942576,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 72.0,
+   "cumulative share of shift variance": 0.9076891265875073,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 73.0,
+   "cumulative share of shift variance": 0.9109748858785157,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 74.0,
+   "cumulative share of shift variance": 0.9142116981538121,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 75.0,
+   "cumulative share of shift variance": 0.9173725645012686,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 76.0,
+   "cumulative share of shift variance": 0.9204494672456223,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 77.0,
+   "cumulative share of shift variance": 0.9234390635672247,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 78.0,
+   "cumulative share of shift variance": 0.9263945775466745,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 79.0,
+   "cumulative share of shift variance": 0.9293084980689105,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 80.0,
+   "cumulative share of shift variance": 0.9321133891042055,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 81.0,
+   "cumulative share of shift variance": 0.9347544902048756,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 82.0,
+   "cumulative share of shift variance": 0.9373770257892574,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 83.0,
+   "cumulative share of shift variance": 0.9399532238053571,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 84.0,
+   "cumulative share of shift variance": 0.9424602410076396,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 85.0,
+   "cumulative share of shift variance": 0.9448946150017742,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 86.0,
+   "cumulative share of shift variance": 0.9473015355739434,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 87.0,
+   "cumulative share of shift variance": 0.9496446262702648,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 88.0,
+   "cumulative share of shift variance": 0.9519110099637972,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 89.0,
+   "cumulative share of shift variance": 0.9541382905601185,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 90.0,
+   "cumulative share of shift variance": 0.9563340449033019,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 91.0,
+   "cumulative share of shift variance": 0.9584912805116402,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 92.0,
+   "cumulative share of shift variance": 0.9606234666785683,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 93.0,
+   "cumulative share of shift variance": 0.9627062865677627,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 94.0,
+   "cumulative share of shift variance": 0.9647639938401684,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 95.0,
+   "cumulative share of shift variance": 0.9667604277339062,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 96.0,
+   "cumulative share of shift variance": 0.9687127446213086,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 97.0,
+   "cumulative share of shift variance": 0.9705608428240355,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 98.0,
+   "cumulative share of shift variance": 0.9723921627734557,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 99.0,
+   "cumulative share of shift variance": 0.9742014807632136,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 100.0,
+   "cumulative share of shift variance": 0.9759708415866856,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 101.0,
+   "cumulative share of shift variance": 0.977689412922087,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 102.0,
+   "cumulative share of shift variance": 0.9793191083533427,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 103.0,
+   "cumulative share of shift variance": 0.9809059425182727,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 104.0,
+   "cumulative share of shift variance": 0.982461718003715,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 105.0,
+   "cumulative share of shift variance": 0.9839609510548737,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 106.0,
+   "cumulative share of shift variance": 0.9854271893175719,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 107.0,
+   "cumulative share of shift variance": 0.9868808282294637,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 108.0,
+   "cumulative share of shift variance": 0.9882896793509554,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 109.0,
+   "cumulative share of shift variance": 0.9896549912952501,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 110.0,
+   "cumulative share of shift variance": 0.990976330461809,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 111.0,
+   "cumulative share of shift variance": 0.9922218362470177,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 112.0,
+   "cumulative share of shift variance": 0.9934148082028466,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 113.0,
+   "cumulative share of shift variance": 0.9945758802475527,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 114.0,
+   "cumulative share of shift variance": 0.9957223323177882,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 115.0,
+   "cumulative share of shift variance": 0.9967724848892547,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 116.0,
+   "cumulative share of shift variance": 0.9977989937803161,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 117.0,
+   "cumulative share of shift variance": 0.9987996405333184,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 118.0,
+   "cumulative share of shift variance": 0.9996545361165653,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 119.0,
+   "cumulative share of shift variance": 1.0,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 120.0,
+   "cumulative share of shift variance": 1.0,
+   "series": "LoRA + negatives (lr 1e-5)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "number of leading eigenvalue modes": 1.0,
+   "cumulative share of shift variance": 0.11507347136942002,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 2.0,
+   "cumulative share of shift variance": 0.18934274366482737,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 3.0,
+   "cumulative share of shift variance": 0.2382854652339339,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 4.0,
+   "cumulative share of shift variance": 0.2834364934145126,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 5.0,
+   "cumulative share of shift variance": 0.32147210540362864,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 6.0,
+   "cumulative share of shift variance": 0.3539958263516219,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 7.0,
+   "cumulative share of shift variance": 0.38188718959392876,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 8.0,
+   "cumulative share of shift variance": 0.4089323216789915,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 9.0,
+   "cumulative share of shift variance": 0.4330701483040448,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 10.0,
+   "cumulative share of shift variance": 0.45429744032625097,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 11.0,
+   "cumulative share of shift variance": 0.47478881589209854,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 12.0,
+   "cumulative share of shift variance": 0.49436905157055105,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 13.0,
+   "cumulative share of shift variance": 0.5115009410368181,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 14.0,
+   "cumulative share of shift variance": 0.5280230958481748,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 15.0,
+   "cumulative share of shift variance": 0.543700220389112,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 16.0,
+   "cumulative share of shift variance": 0.5582250859707104,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 17.0,
+   "cumulative share of shift variance": 0.5723891530140202,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 18.0,
+   "cumulative share of shift variance": 0.5852971133588275,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 19.0,
+   "cumulative share of shift variance": 0.5973662931055685,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 20.0,
+   "cumulative share of shift variance": 0.6090729400919188,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 21.0,
+   "cumulative share of shift variance": 0.6206105125254807,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 22.0,
+   "cumulative share of shift variance": 0.6317439701158954,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 23.0,
+   "cumulative share of shift variance": 0.6425814881588356,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 24.0,
+   "cumulative share of shift variance": 0.6532106319153728,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 25.0,
+   "cumulative share of shift variance": 0.6635996760368454,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 26.0,
+   "cumulative share of shift variance": 0.6737127609876145,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 27.0,
+   "cumulative share of shift variance": 0.6830193647193719,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 28.0,
+   "cumulative share of shift variance": 0.692086306032782,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 29.0,
+   "cumulative share of shift variance": 0.7009167932912486,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 30.0,
+   "cumulative share of shift variance": 0.7094030630147332,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 31.0,
+   "cumulative share of shift variance": 0.7177111765222633,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 32.0,
+   "cumulative share of shift variance": 0.7256559957525724,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 33.0,
+   "cumulative share of shift variance": 0.7334973588235207,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 34.0,
+   "cumulative share of shift variance": 0.7408860218331293,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 35.0,
+   "cumulative share of shift variance": 0.7482071508179252,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 36.0,
+   "cumulative share of shift variance": 0.7553659465313347,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 37.0,
+   "cumulative share of shift variance": 0.762051663859734,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 38.0,
+   "cumulative share of shift variance": 0.7686844053998776,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 39.0,
+   "cumulative share of shift variance": 0.7749844701326571,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 40.0,
+   "cumulative share of shift variance": 0.7811938471938756,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 41.0,
+   "cumulative share of shift variance": 0.7872223924537152,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 42.0,
+   "cumulative share of shift variance": 0.7931846976016805,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 43.0,
+   "cumulative share of shift variance": 0.7989342206094513,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 44.0,
+   "cumulative share of shift variance": 0.8046320578115501,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 45.0,
+   "cumulative share of shift variance": 0.8100008589442826,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 46.0,
+   "cumulative share of shift variance": 0.8153507458223574,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 47.0,
+   "cumulative share of shift variance": 0.8206308466750885,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 48.0,
+   "cumulative share of shift variance": 0.825683114289115,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 49.0,
+   "cumulative share of shift variance": 0.8306702996524657,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 50.0,
+   "cumulative share of shift variance": 0.835449425551352,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 51.0,
+   "cumulative share of shift variance": 0.8401083434407575,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 52.0,
+   "cumulative share of shift variance": 0.8446690887415935,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 53.0,
+   "cumulative share of shift variance": 0.849192712980461,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 54.0,
+   "cumulative share of shift variance": 0.8535667708271801,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 55.0,
+   "cumulative share of shift variance": 0.8578253108587046,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 56.0,
+   "cumulative share of shift variance": 0.8619960699232735,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 57.0,
+   "cumulative share of shift variance": 0.8661504805811668,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 58.0,
+   "cumulative share of shift variance": 0.8701584088118913,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 59.0,
+   "cumulative share of shift variance": 0.8740341261099517,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 60.0,
+   "cumulative share of shift variance": 0.8778268048878082,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 61.0,
+   "cumulative share of shift variance": 0.8815473121683228,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 62.0,
+   "cumulative share of shift variance": 0.8851929612075642,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 63.0,
+   "cumulative share of shift variance": 0.8887492096116986,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 64.0,
+   "cumulative share of shift variance": 0.8922631975452104,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 65.0,
+   "cumulative share of shift variance": 0.8957403584881947,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 66.0,
+   "cumulative share of shift variance": 0.8990412359576412,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 67.0,
+   "cumulative share of shift variance": 0.9023028623123533,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 68.0,
+   "cumulative share of shift variance": 0.9055205166634506,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 69.0,
+   "cumulative share of shift variance": 0.9086803729272079,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 70.0,
+   "cumulative share of shift variance": 0.9117465124882222,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 71.0,
+   "cumulative share of shift variance": 0.9147832121315393,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 72.0,
+   "cumulative share of shift variance": 0.9177218908713559,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 73.0,
+   "cumulative share of shift variance": 0.9205774055422434,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 74.0,
+   "cumulative share of shift variance": 0.9233847248576442,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 75.0,
+   "cumulative share of shift variance": 0.9261113478115771,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 76.0,
+   "cumulative share of shift variance": 0.9287683869819935,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 77.0,
+   "cumulative share of shift variance": 0.9314081941645017,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 78.0,
+   "cumulative share of shift variance": 0.9339377874963867,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 79.0,
+   "cumulative share of shift variance": 0.9364509224600347,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 80.0,
+   "cumulative share of shift variance": 0.9389390956109781,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 81.0,
+   "cumulative share of shift variance": 0.941389819900989,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 82.0,
+   "cumulative share of shift variance": 0.9437160416727995,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 83.0,
+   "cumulative share of shift variance": 0.9460058826833967,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 84.0,
+   "cumulative share of shift variance": 0.9482715534675916,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 85.0,
+   "cumulative share of shift variance": 0.9504733645839664,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 86.0,
+   "cumulative share of shift variance": 0.9526496947493905,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 87.0,
+   "cumulative share of shift variance": 0.9547825382624485,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 88.0,
+   "cumulative share of shift variance": 0.956875127272734,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 89.0,
+   "cumulative share of shift variance": 0.9589303437986435,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 90.0,
+   "cumulative share of shift variance": 0.9609696342763469,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 91.0,
+   "cumulative share of shift variance": 0.9629644438154465,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 92.0,
+   "cumulative share of shift variance": 0.9648576963578576,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 93.0,
+   "cumulative share of shift variance": 0.966660081502447,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 94.0,
+   "cumulative share of shift variance": 0.9684603198321489,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 95.0,
+   "cumulative share of shift variance": 0.9702358538725475,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 96.0,
+   "cumulative share of shift variance": 0.9719875475131278,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 97.0,
+   "cumulative share of shift variance": 0.9737219137004062,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 98.0,
+   "cumulative share of shift variance": 0.9754084501392037,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 99.0,
+   "cumulative share of shift variance": 0.9770516649019261,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 100.0,
+   "cumulative share of shift variance": 0.9786378541413083,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 101.0,
+   "cumulative share of shift variance": 0.9802202672072321,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 102.0,
+   "cumulative share of shift variance": 0.981751833477645,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 103.0,
+   "cumulative share of shift variance": 0.9832477459627988,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 104.0,
+   "cumulative share of shift variance": 0.9847106987608193,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 105.0,
+   "cumulative share of shift variance": 0.9861263163874434,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 106.0,
+   "cumulative share of shift variance": 0.9875022871770048,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 107.0,
+   "cumulative share of shift variance": 0.9888297326797234,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 108.0,
+   "cumulative share of shift variance": 0.9900998223157527,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 109.0,
+   "cumulative share of shift variance": 0.9913086971817984,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 110.0,
+   "cumulative share of shift variance": 0.9924927740930473,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 111.0,
+   "cumulative share of shift variance": 0.9935860658752906,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 112.0,
+   "cumulative share of shift variance": 0.9946317416550913,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 113.0,
+   "cumulative share of shift variance": 0.9956316329369518,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 114.0,
+   "cumulative share of shift variance": 0.996612188650605,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 115.0,
+   "cumulative share of shift variance": 0.9975206523639446,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 116.0,
+   "cumulative share of shift variance": 0.9982979807418304,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 117.0,
+   "cumulative share of shift variance": 0.9989558763273776,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 118.0,
+   "cumulative share of shift variance": 0.9995132481813516,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 119.0,
+   "cumulative share of shift variance": 1.0000000000000002,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 120.0,
+   "cumulative share of shift variance": 1.0000000000000002,
+   "series": "Full-FT + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "number of leading eigenvalue modes": 1.0,
+   "cumulative share of shift variance": 0.08814857698970667,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 2.0,
+   "cumulative share of shift variance": 0.15016860988461908,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 3.0,
+   "cumulative share of shift variance": 0.19997315355124062,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 4.0,
+   "cumulative share of shift variance": 0.2396150530169802,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 5.0,
+   "cumulative share of shift variance": 0.27282517285546243,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 6.0,
+   "cumulative share of shift variance": 0.30410363633584864,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 7.0,
+   "cumulative share of shift variance": 0.3321745326187923,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 8.0,
+   "cumulative share of shift variance": 0.35795517584879694,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 9.0,
+   "cumulative share of shift variance": 0.3802590363584943,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 10.0,
+   "cumulative share of shift variance": 0.40066678916614307,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 11.0,
+   "cumulative share of shift variance": 0.4203581430469456,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 12.0,
+   "cumulative share of shift variance": 0.4394278130217709,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 13.0,
+   "cumulative share of shift variance": 0.4573976467864563,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 14.0,
+   "cumulative share of shift variance": 0.47495175273369555,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 15.0,
+   "cumulative share of shift variance": 0.4917828431510305,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 16.0,
+   "cumulative share of shift variance": 0.5077552144008917,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 17.0,
+   "cumulative share of shift variance": 0.5225486745265455,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 18.0,
+   "cumulative share of shift variance": 0.5367659749653549,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 19.0,
+   "cumulative share of shift variance": 0.5504133899993136,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 20.0,
+   "cumulative share of shift variance": 0.5630578120300537,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 21.0,
+   "cumulative share of shift variance": 0.5752766177757785,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 22.0,
+   "cumulative share of shift variance": 0.5869949102351731,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 23.0,
+   "cumulative share of shift variance": 0.5984565047093704,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 24.0,
+   "cumulative share of shift variance": 0.609578678493345,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 25.0,
+   "cumulative share of shift variance": 0.6204488122231676,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 26.0,
+   "cumulative share of shift variance": 0.6308807368180863,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 27.0,
+   "cumulative share of shift variance": 0.6412569413531269,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 28.0,
+   "cumulative share of shift variance": 0.6513070426443943,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 29.0,
+   "cumulative share of shift variance": 0.6611813876062361,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 30.0,
+   "cumulative share of shift variance": 0.6705686202458055,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 31.0,
+   "cumulative share of shift variance": 0.6795480423013357,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 32.0,
+   "cumulative share of shift variance": 0.6881694844917311,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 33.0,
+   "cumulative share of shift variance": 0.6966365847401952,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 34.0,
+   "cumulative share of shift variance": 0.7050132950184592,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 35.0,
+   "cumulative share of shift variance": 0.713220915431101,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 36.0,
+   "cumulative share of shift variance": 0.7211591433037344,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 37.0,
+   "cumulative share of shift variance": 0.7288863160917493,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 38.0,
+   "cumulative share of shift variance": 0.7362189587353175,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 39.0,
+   "cumulative share of shift variance": 0.7433078995150129,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 40.0,
+   "cumulative share of shift variance": 0.7502358143856183,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 41.0,
+   "cumulative share of shift variance": 0.7570293726972217,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 42.0,
+   "cumulative share of shift variance": 0.763686884876378,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 43.0,
+   "cumulative share of shift variance": 0.7702611755889978,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 44.0,
+   "cumulative share of shift variance": 0.7766503179683892,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 45.0,
+   "cumulative share of shift variance": 0.7829864840620364,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 46.0,
+   "cumulative share of shift variance": 0.7889781145161329,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 47.0,
+   "cumulative share of shift variance": 0.7948983303323778,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 48.0,
+   "cumulative share of shift variance": 0.8007117875558385,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 49.0,
+   "cumulative share of shift variance": 0.8064501769714979,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 50.0,
+   "cumulative share of shift variance": 0.8120584953725056,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 51.0,
+   "cumulative share of shift variance": 0.8174627795111911,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 52.0,
+   "cumulative share of shift variance": 0.8225891265389981,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 53.0,
+   "cumulative share of shift variance": 0.8276443470477343,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 54.0,
+   "cumulative share of shift variance": 0.8326216302734083,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 55.0,
+   "cumulative share of shift variance": 0.8375924040495577,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 56.0,
+   "cumulative share of shift variance": 0.8423728995768527,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 57.0,
+   "cumulative share of shift variance": 0.8470425442550991,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 58.0,
+   "cumulative share of shift variance": 0.8515236230416221,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 59.0,
+   "cumulative share of shift variance": 0.8559048245459532,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 60.0,
+   "cumulative share of shift variance": 0.8602236383927927,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 61.0,
+   "cumulative share of shift variance": 0.864471496885429,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 62.0,
+   "cumulative share of shift variance": 0.8686641787512576,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 63.0,
+   "cumulative share of shift variance": 0.8727308096947506,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 64.0,
+   "cumulative share of shift variance": 0.8767253280185832,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 65.0,
+   "cumulative share of shift variance": 0.8806264842651419,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 66.0,
+   "cumulative share of shift variance": 0.8844780494440098,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 67.0,
+   "cumulative share of shift variance": 0.8882261742339349,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 68.0,
+   "cumulative share of shift variance": 0.8919224627256519,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 69.0,
+   "cumulative share of shift variance": 0.895541254988038,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 70.0,
+   "cumulative share of shift variance": 0.8990929684006302,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 71.0,
+   "cumulative share of shift variance": 0.9026051560718777,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 72.0,
+   "cumulative share of shift variance": 0.9059560099215271,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 73.0,
+   "cumulative share of shift variance": 0.9092142101190063,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 74.0,
+   "cumulative share of shift variance": 0.9124479030845932,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 75.0,
+   "cumulative share of shift variance": 0.915633591209351,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 76.0,
+   "cumulative share of shift variance": 0.9188137915337965,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 77.0,
+   "cumulative share of shift variance": 0.921872726854988,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 78.0,
+   "cumulative share of shift variance": 0.924896634282723,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 79.0,
+   "cumulative share of shift variance": 0.9278596554852359,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 80.0,
+   "cumulative share of shift variance": 0.9307786781963414,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 81.0,
+   "cumulative share of shift variance": 0.9336757122796712,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 82.0,
+   "cumulative share of shift variance": 0.9364362746761297,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 83.0,
+   "cumulative share of shift variance": 0.9391643245569217,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 84.0,
+   "cumulative share of shift variance": 0.9417797984493943,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 85.0,
+   "cumulative share of shift variance": 0.9443734160707156,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 86.0,
+   "cumulative share of shift variance": 0.9468415532664475,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 87.0,
+   "cumulative share of shift variance": 0.9492986181455056,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 88.0,
+   "cumulative share of shift variance": 0.9517005838365232,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 89.0,
+   "cumulative share of shift variance": 0.954037600568855,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 90.0,
+   "cumulative share of shift variance": 0.9563263169341982,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 91.0,
+   "cumulative share of shift variance": 0.9585816570309164,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 92.0,
+   "cumulative share of shift variance": 0.9607741257376254,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 93.0,
+   "cumulative share of shift variance": 0.9629446604615849,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 94.0,
+   "cumulative share of shift variance": 0.9650419894905334,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 95.0,
+   "cumulative share of shift variance": 0.9670661303984016,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 96.0,
+   "cumulative share of shift variance": 0.9690209880194378,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 97.0,
+   "cumulative share of shift variance": 0.9708964895331406,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 98.0,
+   "cumulative share of shift variance": 0.9727457028635995,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 99.0,
+   "cumulative share of shift variance": 0.9745620948394116,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 100.0,
+   "cumulative share of shift variance": 0.9762957391464631,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 101.0,
+   "cumulative share of shift variance": 0.9780147936073069,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 102.0,
+   "cumulative share of shift variance": 0.9796882849274734,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 103.0,
+   "cumulative share of shift variance": 0.9812722204163178,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 104.0,
+   "cumulative share of shift variance": 0.9828451552081722,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 105.0,
+   "cumulative share of shift variance": 0.98439539802422,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 106.0,
+   "cumulative share of shift variance": 0.9858705045356814,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 107.0,
+   "cumulative share of shift variance": 0.9872842597640707,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 108.0,
+   "cumulative share of shift variance": 0.9886855310891381,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 109.0,
+   "cumulative share of shift variance": 0.9900115873605831,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 110.0,
+   "cumulative share of shift variance": 0.9912966241564887,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 111.0,
+   "cumulative share of shift variance": 0.9925267532227284,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 112.0,
+   "cumulative share of shift variance": 0.9937201149470983,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 113.0,
+   "cumulative share of shift variance": 0.9948947277454707,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 114.0,
+   "cumulative share of shift variance": 0.9959497838779773,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 115.0,
+   "cumulative share of shift variance": 0.9969391228478431,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 116.0,
+   "cumulative share of shift variance": 0.9978510970207524,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 117.0,
+   "cumulative share of shift variance": 0.9986869316872168,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 118.0,
+   "cumulative share of shift variance": 0.9994422515778679,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 119.0,
+   "cumulative share of shift variance": 1.0000000000000002,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 120.0,
+   "cumulative share of shift variance": 1.0000000000000002,
+   "series": "lr-matched LoRA + negatives (lr 5e-6)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "number of leading eigenvalue modes": 0.0,
+   "cumulative share of shift variance": 0.9,
+   "series": "90% of variance",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "number of leading eigenvalue modes": 1.0,
+   "cumulative share of shift variance": 0.9,
+   "series": "90% of variance",
+   "_kind": "line",
+   "_group": 3
+  }
+ ],
+ "n_series": 4,
+ "total_points": 362,
+ "git_commit": "695daa22b7899bd7b01ab4fc5e2a9b179e0c7db0",
+ "ts": "2026-07-08T18:29:27Z",
+ "cells": [
+  "s1_lora_neg",
+  "s3_fullft_neg",
+  "s5_lora_neg_lr5e6"
+ ]
+}

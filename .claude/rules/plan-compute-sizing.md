@@ -117,6 +117,11 @@ per the incident filing. The same design's retention-bounded footprint is
 Methodology lens item 16
 (`.claude/rules/critic-lens-reference.md`) REVISEs a ladder plan whose
 disk estimate assumes keeping every rung without this justification.
+Mechanical backstop: `scripts/verify_plan.py` c33 (`c33_ladder_retention`)
+WARNs an experiment|analysis plan carrying checkpoint-ladder vocabulary
+whose compute-sizing sections state no retention vocabulary (escape:
+`N/A — no per-rung checkpoint persistence`); surface-only — adequacy of a
+stated policy stays with this lens.
 
 
 **Sentinel-signaling workloads need a /workspace-contract lane — never
@@ -272,7 +277,14 @@ RSS ≥ ~16 GB, OR when concurrent VM-resident phases' SUMMED projected RSS
 crosses the same ~16 GB bar (#833: two ~13-15 GB phases concurrently
 resident lost 5 cells to earlyoom — concurrent residency SUMS; #778: a
 22-GiB-RSS null battery was earlyoom-killed 3× on the starved VM —
-~128 GB total, ~95 GB resident — before its cpu-bigmem pivot). A routed
+~128 GB total, ~95 GB resident — before its cpu-bigmem pivot; #1092
+2026-07-08: a fit-grid pilot's real per-unit RSS ran ≥22.9 GB against a
+plan projection of 8–10 GB — a ~2.3–2.9× underestimate — and was
+earlyoom-SIGTERMed on the shared VM before the pre-registered cpu-bigmem
+escape lane recovered it: a fit-grid RSS projection is presumed
+underestimated until pilot-measured on ONE unit at production shape, and
+a projection within ~3× of the VM routing bar routes straight to
+cpu-bigmem rather than piloting on the shared VM). A routed
 phase sizing ≥16 GB MUST state `--min-ram-gb` in its launch row
 (CLAUDE.md's ADOPTION sentence says '>16 GB'; this rule's ≥ closes the
 exactly-16 GB edge — the RunPod `cpu-mid` fallback has exactly 16 GB, zero

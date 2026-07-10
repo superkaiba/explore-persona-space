@@ -257,6 +257,313 @@ def test_label_parse_all_note_formats():
     assert parse_followup_note_field("", "followup_label") is None
 
 
+# ─── 4b. `; `-joined single-line notes (#1090 / #841 — task #1111) ───────────
+# Fixture notes below are byte-verbatim copies of the REAL markers on record
+# (extracted from tasks/*/{1090,841}/events.jsonl at fix time).
+
+_NOTE_1090_SCOPE_V1 = (
+    "source: proposer-9b-cheap; followup_label: fu1-margin-qwen; question_rel"
+    "ation: same; est_gpu_hours: ~4 (combined round, strict <20). Scope: (P2)"
+    " c3 sycophancy teacher-forced fixed-pool margin recompute — build fixed "
+    "+/- pools from datagen_topup kept positives + kept_neg.jsonl (judge-filt"
+    "ered once, fixed across contexts per llm-judging rule 19), LN-logP margi"
+    "n under base + HF checkpoint-14 (issue1090/c3-sycophancy-claude/checkpoi"
+    "nt-14); (P3) c5 qwen-arm top-up tranche (frozen yield DV untouched; top-"
+    "up rows training-mix-only, mirroring the AMENDMENT v4 mechanics) + train"
+    " + tier1 ladder + tier2 gen + judge — delivers the planned generator-con"
+    "trast organism. Both screened not-redundant (Claude+Codex, epm:followup-"
+    "value-critique v1). One pod, one round (counts once against the 2-round "
+    "cheap cap). Artifacts under eval_results/issue_1090/fu1-margin-qwen/."
+)
+
+_NOTE_1090_SCOPE_V2 = (
+    "source: proposer-9b-cheap; followup_label: fu2-dose-extension; question_"
+    "relation: same; est_gpu_hours: 4 (strict <20; cheap round 2 of cap 2). S"
+    "cope: test whether the 0.60-0.85 judged-rate band is reachable — retrain"
+    " the two sycophancy organisms (c3-sycophancy-claude, c5-sycophancy-qwen)"
+    " from their EXISTING training mixes at epochs 6 (30 optimizer steps, sav"
+    "e_steps 2; a deliberate disclosed deviation from the epochs-3 recipe cei"
+    "ling — the fu1 dose curves are still rising at step 14-15 / peak 0.549@1"
+    "0), Tier-1 ladder over all rungs, dose-select against the band; IF a run"
+    "g enters the band, Tier-2 judged install read (max_tokens 300) at the se"
+    "lected rung + base. No datagen (mixes frozen: c3 union mix, c5 union mix"
+    "). Screened not-redundant (P5, epm:followup-value-critique v1). Artifact"
+    "s under eval_results/issue_1090/fu2-dose-extension/. NOTE: adapter uploa"
+    "ds route to the OVERFLOW repo (canonical model repo at the 100k-file lim"
+    "it)."
+)
+
+# The corpus's ONLY prose-led run note (no fields at all — an emitter-contract
+# violation; deliberately unparseable under field-only parsing).
+_NOTE_1090_RUN_FU1_PROSE = (
+    "fu1-margin-qwen round COMPLETE (GCP FLEX_START A100-80, ~1.1h GPU realiz"
+    "ed; VM judge phase ~5 min; commits 99f28fb7b8 + 6281e0ca9b + 31765a2935 "
+    "on issue-1090-fu1).\n\nP3 (qwen organism): the c5 top-up CLEARED the posit"
+    "ive floor -> trained (frozen yield DV untouched at 19/36). Install: trai"
+    "ned 0.475 vs base 0.230 -> delta +0.245 (Wilson-backed, n=200/state, jud"
+    "ge max_tokens=300, ZERO drops). Dose selection step 10 @ 0.549, closest_"
+    "approach (still out-of-band). Own margin_delta +0.236. Adapter ladder on"
+    " the PRIVATE overflow repo (canonical model repo at the 100k-file limit;"
+    " rescue verified 107 files).\n\nGenerator contrast (fresh-300 primary): c3"
+    " trained 0.475 vs c5 trained 0.475 — IDENTICAL rates; paired per-questio"
+    "n mean delta ~0 (bootstrap CI95 [-0.075,+0.085], signs 7+/7-/6=0, sign-t"
+    "est p=1.0). Descriptive framing retained (asymmetry note in artifact) bu"
+    "t the symmetric null is clean: generator choice (Claude vs on-policy qwe"
+    "n) does not move install strength at this recipe.\n\nP2 (c3 margin): teach"
+    "er-forced fixed-pool margin (25/25 pooled, sha-pinned) base 0.0366 -> tr"
+    "ained 0.0996, delta +0.063 — the continuous companion confirms the c3 in"
+    "stall directionally. CAVEAT: per-context rho(margin, rate) within-cell i"
+    "s weak/mixed (-0.18..+0.25) — the margin carries cell-level directional "
+    "support, not per-context tracking; frame per the dual-DV validation rule"
+    ".\n\nc5 install at fresh-300 also re-reads c3 at 0.475/0.215 (delta +0.26)"
+    ", consistent with the closure-adjusted +0.225.\n\nDeliverables: eval_resul"
+    "ts/issue_1090/fu1-margin-qwen/{c3_margin,c5_margin,c5_install,c3_vs_c5_t"
+    "rained_contrast,judged_reads,fu1_meta}.json (git + HF data repo, verifie"
+    "d). Next: analyzer fold-in -> critic re-gates -> methodology re-export -"
+    "> re-park.\n"
+)
+
+_NOTE_841_SCOPE_V1 = (
+    "source: proposer-9b-cheap; followup_label: scaling-capture; question_rel"
+    "ation: same; headline_affecting: yes; est_gpu_hours: 5; cost_class: need"
+    "s-gpu. Scope: the plan-§7 data-scaling trigger FIRED (ridge transitions "
+    "19/25 gained 21.1%/23.9% of final R² from n=2000→4000) — capture last-pr"
+    "ompt-token activations at all 28 layers for ~50-100k WildChat/LMSYS prom"
+    "pts with Qwen-2.5-7B-Instruct, re-fit the affine ridge atlas on the larg"
+    "er corpus (same split protocol, seed 42), and re-run the Stage-1 transpo"
+    "rted-projection benchmark on the parent rig's unchanged eval surface (re"
+    "used judged scores + persona directions @ 037fcbb) to test whether late-"
+    "layer delta-R² and transport retention improve with data. Single manipul"
+    "ated variable: fit-corpus size. Redundancy screen: PASS+PASS (ensemble)."
+    " Routing decision: cheap-band round 1 of 2; round 2 = source-only depth-"
+    "GRU (1 GPU-h) queued after; per-position sweep (5 GPU-h, not headline-af"
+    "fecting) NOT auto-run (2-round cap) — recorded here, revivable by user f"
+    "ollowup-scope."
+)
+
+_NOTE_841_SCOPE_V2 = (
+    "source: proposer-9b-cheap; followup_label: gru-source-only; question_rel"
+    "ation: same; headline_affecting: no; est_gpu_hours: 1; cost_class: needs"
+    "-gpu. Scope: refit the depth-GRU consuming ONLY the source-layer state ("
+    "not the prefix trajectory) on the parent's existing 4k fit corpus, so th"
+    "e GRU class enters the matched-information verdict it was excluded from "
+    "(parent reported it exploratory/prefix-informed). Single manipulated var"
+    "iable: the GRU's input information set. Redundancy screen: PASS+PASS (en"
+    "semble, this round's screen). Routing: cheap-band round 2 of 2. PIPELINE"
+    " PARALLELIZATION NOTE: planning/implementation/review run NOW concurrent"
+    " with round 1 (scaling-capture) attempt-4's GPU run; the GPU hour itself"
+    " is serialized behind round 1 (one-run-per-issue instance/handle/poller "
+    "plumbing), and the analyzer fold is serialized after round 1's fold."
+)
+
+_NOTE_841_RUN_V1 = (
+    "followup_label: scaling-capture; source: proposer-9b-cheap; round: 1; ou"
+    "tcome: capture scaled to 100k (25x): late-band ridge R2 0.829->0.876 (+0"
+    ".0475, just under the +0.05 arm), decelerating (+0.004 at the last doubl"
+    "ing); conjunction wins 37->56/130 (19/22 new survive BH) but mean paired"
+    " delta +0.009 CI spans zero — cell-specific gains, no uniform lift. KILL"
+    "-A adjacency concern resolved with data (12/12 rejections). Folded into "
+    "the v4 body; re-parked at awaiting_promotion."
+)
+
+_NOTE_841_RUN_V2 = (
+    "followup_label: gru-source-only; source: proposer-9b-cheap; round: 2; ou"
+    "tcome: registered STOP-READ 3 (LOSES): source-only GRU 0/27 vs ridge sta"
+    "ge-0, 6/68 vs ridge 12/68 transport cells, aggregate -0.069 CI excluding"
+    " zero; prefix-GRU contrast descriptive (CI spans zero) — consistent with"
+    " prefix information, not recurrence, carrying the parent's above-ceiling"
+    " read. Shared-parametrization scope caveat carried. Folded into the v4 b"
+    "ody; re-parked at awaiting_promotion."
+)
+
+
+def test_label_parse_semicolon_inline_scope_1090():
+    # VERBATIM #1090 scope v1 (2026-07-07T07:19:09Z) + v2 (11:05:01Z): the
+    # canonical fully-`; `-joined single-line scope form. Pre-#1111 every
+    # mid-line field parsed None → permanent `unlabeled-<ts>` pseudo-label
+    # ghost groups.
+    for note, label, est in (
+        (_NOTE_1090_SCOPE_V1, "fu1-margin-qwen", "~4"),
+        (_NOTE_1090_SCOPE_V2, "fu2-dose-extension", "4"),
+    ):
+        assert parse_followup_note_field(note, "followup_label") == label
+        # No trailing `;` survives (the split consumes the separator).
+        assert parse_followup_note_field(note, "source") == "proposer-9b-cheap"
+        assert parse_followup_note_field(note, "question_relation") == "same"
+        # `~4` is deliberately kept raw — C1's fail-safe parks unparseable
+        # float estimates (plan §7); the parser returns the first token.
+        assert parse_followup_note_field(note, "est_gpu_hours") == est
+
+
+def test_label_parse_semicolon_inline_run_841():
+    # VERBATIM #841 run markers: `; `-joined single-line run notes. The
+    # line-initial `followup_label:` matched even pre-#1111, but the value
+    # kept its trailing `;` ("scaling-capture;") and closed nothing.
+    assert parse_followup_note_field(_NOTE_841_RUN_V1, "followup_label") == "scaling-capture"
+    assert parse_followup_note_field(_NOTE_841_RUN_V2, "followup_label") == "gru-source-only"
+    for note in (_NOTE_841_RUN_V1, _NOTE_841_RUN_V2):
+        assert parse_followup_note_field(note, "source") == "proposer-9b-cheap"
+    # The #841 scopes parse their mid-line labels too.
+    assert parse_followup_note_field(_NOTE_841_SCOPE_V1, "followup_label") == "scaling-capture"
+    assert parse_followup_note_field(_NOTE_841_SCOPE_V2, "followup_label") == "gru-source-only"
+    # EOL-trailing semicolon on a line-initial field (no whitespace after the
+    # `;`, so no split fires): the rstrip(",;") leg strips it.
+    assert parse_followup_note_field("followup_label: foo;", "followup_label") == "foo"
+
+
+def test_semicolon_split_anchoring_negatives():
+    # (i) paren-wrapped mid-line mention (the #685 shape): the segment starts
+    # with "(", not the field core → None (segments are anchored exactly like
+    # line-cores, never searched mid-text).
+    assert (
+        parse_followup_note_field(
+            "Follow-up scope (source: user-chat) — sharpen the projection result.",
+            "source",
+        )
+        is None
+    )
+    # (ii) `;` with NO trailing whitespace never splits (in-token semicolons —
+    # URLs, code, `a;b=1` — stay unsplit).
+    assert parse_followup_note_field("word;followup_label: x", "followup_label") is None
+    # (iii) mid-line space-separated mention still parses None.
+    assert parse_followup_note_field("the followup_label: was missing", "followup_label") is None
+    # (iv) first-hit-wins is lines-outer / segments-inner: a first-line
+    # mid-segment field beats a later line's line-initial field (deliberate,
+    # documented precedence; no corpus note carries both forms with
+    # different values).
+    assert (
+        parse_followup_note_field(
+            "source: x; followup_label: a\nfollowup_label: b", "followup_label"
+        )
+        == "a"
+    )
+    # (v) `field:;` — empty value before the separator. Pre-#1111 this parsed
+    # the literal `;`; rstrip(",;") maps it to empty → None (the third replay
+    # change class; corpus count 0). The empty-value match still STOPS the
+    # scan (`return value or None`) — the pre-existing line-level shadowing
+    # semantics, now extended to segments (documented behavior).
+    assert parse_followup_note_field("followup_label:;", "followup_label") is None
+    assert parse_followup_note_field("followup_label:; source: u", "followup_label") is None
+    assert parse_followup_note_field("followup_label:; source: u", "source") == "u"
+    assert (
+        parse_followup_note_field("followup_label:;\nfollowup_label: real", "followup_label")
+        is None
+    )
+    # (vi) empty segments (`a;  ;b` — the second `;` is not followed by
+    # whitespace, so the tail stays `;b`): no crash, no match.
+    assert parse_followup_note_field("a;  ;b", "followup_label") is None
+    # (vii) combined dash-bullet + semicolon-inline positive.
+    assert parse_followup_note_field("- followup_label: x; source: y", "followup_label") == "x"
+    assert parse_followup_note_field("- followup_label: x; source: y", "source") == "y"
+
+
+# The #825 v6 run-marker note VERBATIM (2026-07-08T00:50:12Z): literal
+# backslash-n two-char escapes between fields, zero real newlines — the
+# escaped-newline shape a shell --note "...\n..." string produces when
+# passed uninterpreted. v7 (00:51:06Z) is identical modulo ts (#1120).
+_NOTE_825_RUN_V6 = (
+    r"followup_label: onpolicy-separator-control\nsource: user-chat\nround: 7"
+    r"\noutcome: complete — PARTIAL PROVENANCE EFFECT both substrates "
+    r"(D_base 0.590 MLP-carried / D_inst 0.428; R4 fractions -4.30/0.166 < 0.5; "
+    r"instruct position-residual not excluded, D→≈0.30 scenario qualified); "
+    r"body re-folded + re-parked at awaiting_promotion"
+)
+
+
+def test_label_parse_literal_backslash_n_escapes_825():
+    # Field-led notes whose separators arrived as literal \n escapes (one
+    # physical line) parse all four fields (#1120; pre-fix the label parsed
+    # as the garbage token 'onpolicy-separator-control\nsource:').
+    assert (
+        parse_followup_note_field(_NOTE_825_RUN_V6, "followup_label")
+        == "onpolicy-separator-control"
+    )
+    assert parse_followup_note_field(_NOTE_825_RUN_V6, "source") == "user-chat"
+    assert parse_followup_note_field(_NOTE_825_RUN_V6, "round") == "7"
+    assert parse_followup_note_field(_NOTE_825_RUN_V6, "outcome") == "complete"
+    # Literal \r\n escapes normalize too — no stray backslash-r on the value.
+    assert parse_followup_note_field(r"followup_label: x\r\nsource: y", "followup_label") == "x"
+    assert parse_followup_note_field(r"followup_label: x\r\nsource: y", "source") == "y"
+    # Normalization introduces no new positives on a field-less note.
+    assert parse_followup_note_field(r"no label here\nnothing", "followup_label") is None
+    # Double-escape protective pin (#1120 review note): a 3-char literal
+    # `\\n` TAIL-matches the 2-char escape on a single-line note, so the
+    # note still splits at that tail and the preceding backslash rides the
+    # value token — pinned so any future change here is deliberate.
+    assert parse_followup_note_field(r"followup_label: ok\\nsource: y", "source") == "y"
+    assert parse_followup_note_field(r"followup_label: ok\\nsource: y", "followup_label") == "ok\\"
+
+
+def test_literal_backslash_n_content_preserved_when_real_newlines_present():
+    # The predicate's protective side (#1120, predicate (b)): a note that
+    # ALREADY has real newlines keeps literal \n escapes as CONTENT — a
+    # quoted regex/code value never splits mid-value.
+    note = "followup_label: real-label\npattern: a\\nb rest"
+    assert parse_followup_note_field(note, "followup_label") == "real-label"
+    assert parse_followup_note_field(note, "pattern") == "a\\nb"
+
+
+def test_1090_shape_labels_group_and_close_only_on_repost():
+    # End-to-end #1090 replay: the two `; `-joined scopes group + label
+    # correctly post-fix; the VERBATIM prose-led fu1 run marker (no fields at
+    # all) closes NOTHING — pins the field-only decision (no leading
+    # kebab-token label inference; plan §4.2). Closure comes only from the
+    # #1111 corrective re-posts (plan §4.5), which land at version 2/3 on the
+    # live task (`post-marker` auto-increments per kind past the existing
+    # v1 — never assert the re-posts are version 1).
+    events = [
+        _scope("2026-07-07T07:19:09Z", _NOTE_1090_SCOPE_V1, version=1),
+        _run("2026-07-07T09:54:27Z", _NOTE_1090_RUN_FU1_PROSE, version=1),
+        _scope("2026-07-07T11:05:01Z", _NOTE_1090_SCOPE_V2, version=2),
+    ]
+    unrun = {g["followup_label"]: g for g in unrun_followup_labels(events)}
+    assert set(unrun) == {"fu1-margin-qwen", "fu2-dose-extension"}
+    for group in unrun.values():
+        assert group["dispatchable"] is True
+        assert group["source"] == "proposer-9b-cheap"
+    # The corrective re-posts carry line-initial fields (they parse under the
+    # OLD parser too, so cheap-band cap counting flips even pre-merge): both
+    # groups close.
+    repost_fu1 = _run(
+        "2026-07-07T18:00:00Z",
+        "followup_label: fu1-margin-qwen\nsource: proposer-9b-cheap\nround: 1\n"
+        "outcome: COMPLETE — corrective re-post (#1111). The original run marker "
+        "(2026-07-07T09:54:27Z) led with prose and carried no followup_label:/source: "
+        "fields, so it closed nothing and the cheap-band cap undercounted.",
+        version=2,
+    )
+    repost_fu2 = _run(
+        "2026-07-07T18:00:01Z",
+        "followup_label: fu2-dose-extension\nsource: proposer-9b-cheap\nround: 2\n"
+        "outcome: COMPLETE — corrective re-post (#1111). The round completed but no "
+        "run marker was ever posted; the semicolon-joined scope note additionally "
+        "defeated label grouping until #1111.",
+        version=3,
+    )
+    # Cap accounting: the re-posts' `source` parses proposer-9b-cheap and the
+    # `outcome` is NOT retroactive-close-styled (retro-close markers are
+    # cap-exempt; #1090's cheap cap was genuinely consumed — C2 must read 2/2).
+    for repost in (repost_fu1, repost_fu2):
+        assert parse_followup_note_field(repost["note"], "source") == "proposer-9b-cheap"
+        outcome = parse_followup_note_field(repost["note"], "outcome")
+        assert outcome is not None and not outcome.startswith("retroactive-close")
+    assert unrun_followup_labels([*events, repost_fu1, repost_fu2]) == []
+
+
+def test_841_shape_self_heals():
+    # VERBATIM #841 events: 2 `; `-joined scopes + 2 `; `-joined run markers.
+    # Post-fix the scopes parse their labels AND the run markers parse the
+    # SAME labels (the trailing `;` consumed by the split) → full self-heal,
+    # no orchestrator action needed on #841.
+    events = [
+        _scope("2026-07-02T23:38:10Z", _NOTE_841_SCOPE_V1, version=1),
+        _scope("2026-07-03T06:19:11Z", _NOTE_841_SCOPE_V2, version=2),
+        _run("2026-07-04T08:42:08Z", _NOTE_841_RUN_V1, version=1),
+        _run("2026-07-04T08:42:11Z", _NOTE_841_RUN_V2, version=2),
+    ]
+    assert unrun_followup_labels(events) == []
+
+
 # ─── 5. unlabeled corrections vs distinct unlabeled follow-ups ───────────────
 
 
@@ -778,10 +1085,24 @@ def _run_labels(events: list[dict]) -> set[str]:
     } - {None}
 
 
+# The corpus's single KNOWN-malformed run marker: #1090 fu1's original run
+# note (2026-07-07T09:54:27Z) led with prose ("fu1-margin-qwen round
+# COMPLETE (...)") and carried NO followup_label:/source: fields at all —
+# deliberately unparseable under field-only parsing (task #1111 kept the
+# parser field-only; leading-kebab-token label inference was rejected). The
+# round is closed by #1111's corrective re-post on #1090, not by parsing.
+# Documented residual (WARN-only, monotone-up): verify_task_body's
+# `_followup_run_marker_rounds` counts this prose-led marker as an unlabeled
+# round, so #1090's round count reads one high (3 where 2 completed). Any
+# NEW unparseable run marker still fails the corpus-replay test below.
+KNOWN_MALFORMED_RUN_MARKERS = {(1090, "2026-07-07T09:54:27Z")}
+
+
 def test_corpus_replay_all_historical_markers():
     # Alt-Claude MF1 corpus-replay validation: every HISTORICAL
     # epm:same-issue-followup-run marker in the checkout must parse a
-    # followup_label (covers the 15 `=`-form markers + all colon forms), and
+    # followup_label (covers the 15 `=`-form markers + all colon forms —
+    # minus the documented KNOWN_MALFORMED_RUN_MARKERS allowlist), and
     # the hand-checked #763/#658/#537/#552 expectations must hold.
     import pytest
 
@@ -799,6 +1120,7 @@ def test_corpus_replay_all_historical_markers():
             if parse_followup_note_field(ev.get("note") or "", "followup_label") is None:
                 unparseable.append((task_id, str(ev.get("ts"))))
     assert n_run > 0, "corpus unexpectedly carries no run markers"
+    unparseable = [t for t in unparseable if t not in KNOWN_MALFORMED_RUN_MARKERS]
     assert unparseable == [], f"unparseable run-marker labels: {unparseable}"
 
     # #763 (the driving incident): the queued user-chat label must surface as
@@ -831,6 +1153,16 @@ def test_corpus_replay_all_historical_markers():
             # A ghost label (round demonstrably ran, no run marker) surfaces
             # as unrun — the Step 0 retro-close disposition rule handles it.
             assert "persona-vectors-style-rb" in unrun
+
+    # #825 (the #1120 escaped-newline incident): run markers v6/v7 must
+    # parse the TRUE label (events are append-only, so this pin is stable).
+    if 825 in by_task:
+        labels_825 = _run_labels(by_task[825])
+        assert "onpolicy-separator-control" in labels_825
+        # Discriminating half (#1120): pre-fix, v6/v7 parsed the garbage
+        # token 'onpolicy-separator-control\nsource:' (literal backslash-n)
+        # into the label set; post-fix no parsed label carries a literal \n.
+        assert not any("\\n" in lbl for lbl in labels_825)
 
     # #537 / #552: the `=`-form run markers close their labels.
     for task_id, closed_labels in (

@@ -1,0 +1,54 @@
+{
+  "commit": "ec47893613",
+  "created": "2026-07-07T04:59:24Z",
+  "figsize": [
+    9.5,
+    5.2
+  ],
+  "points": [
+    {
+      "category": "formatting control\n(Claude, curated)",
+      "judge-accepted fraction of generated positives": 0.5138888888888888,
+      "error": 0.11248981673396322,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "impolite\n(Claude, auto-gen)",
+      "judge-accepted fraction of generated positives": 0.6388888888888888,
+      "error": 0.14974916408493347,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\n(Claude, neutral)",
+      "judge-accepted fraction of generated positives": 0.2638888888888889,
+      "error": 0.09991219482327468,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "sycophancy\n(Claude, wrong-fact)",
+      "judge-accepted fraction of generated positives": 0.08333333333333333,
+      "error": 0.0656868277909248,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "sycophancy\n(Qwen, neutral)",
+      "judge-accepted fraction of generated positives": 0.5277777777777778,
+      "error": 0.155042677329256,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "broad misalignment\n(Claude, neutral)",
+      "judge-accepted fraction of generated positives": 0.027777777777777776,
+      "error": 0.04404636011146337,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 6
+}

@@ -386,13 +386,21 @@ def _logits_to_keep_kwargs(model) -> dict:
     return {"logits_to_keep": 1} if "logits_to_keep" in params else {}
 
 
-def build_capture_row(tokenizer, instance, probe, completion, parse_rec, rung):
+def build_capture_row(tokenizer, instance, probe, completion, parse_rec, rung, parts_spec=None):
     """One teacher-forced row: ids + part token-spans + single positions, or (None, reason).
 
     Token spans derive from ``return_offsets_mapping`` over the completion text
     (robust to BPE merges — plan §4.4); a part whose token span comes out
     empty (the #825 zero-width class) drops the row with a counted reason.
     Absolute positions index ``prompt_full + completion + <|im_end|> + \\n``.
+
+    ``parts_spec`` (DEFAULT-PRESERVING, follow-up plan v6 §4.2: ``None`` ⇒
+    existing behavior byte-for-byte) is an optional callable
+    ``(cot_tok, ans_tok) -> dict[str, (s, e)] | str`` receiving the cot/ans
+    COMPLETION-token-space spans; a dict return adds each extra part's
+    completion-token-space half-open span to ``row["spans"]`` (absolute
+    positions applied here); a str return drops the row with that string as
+    the counted reason (the matched-length floor path).
     """
     prompt_text_tpl = tokenizer.apply_chat_template(
         messages_for_instance(instance, probe), tokenize=False, add_generation_prompt=True
@@ -436,6 +444,14 @@ def build_capture_row(tokenizer, instance, probe, completion, parse_rec, rung):
         "cot": (prompt_len + cot_tok[0], prompt_len + cot_tok[1]),
         "ans": (prompt_len + ans_tok[0], prompt_len + ans_tok[1]),
     }
+    if parts_spec is not None:
+        extra = parts_spec(cot_tok, ans_tok)
+        if isinstance(extra, str):
+            return None, extra
+        for name, (es, ee) in extra.items():
+            assert name not in spans, f"parts_spec redefines base part {name!r}"
+            assert 0 <= es < ee <= comp_len, (name, es, ee, comp_len)
+            spans[name] = (prompt_len + es, prompt_len + ee)
     positions = {
         "ctx_last": prompt_len_tpl - 1,  # assistant-header newline (parent c_C slot)
         "cot_last": prompt_len + cot_tok[1] - 1,
@@ -555,32 +571,49 @@ def reusable_store_blob(
     return blob, ""
 
 
-def reduce_forward_batch(model, capture, capture_layers, tokenizer, batch_rows):
-    """ONE left-padded forward + GPU-side streaming reduction → (B, 12, Lc, H) fp16 CPU.
+def reduce_forward_batch(model, capture, capture_layers, tokenizer, batch_rows, summary_names=None):
+    """ONE left-padded forward + GPU-side streaming reduction → (B, S, Lc, H) fp16 CPU.
 
     Explicit ``position_ids`` (cumsum(mask)−1 clamped at 0 — RoPE under
     left-pad silently diverges without it), fp32 reduction of the bf16 hook
-    captures, only the reduced (B, 12, Lc, H) slice crosses PCIe (streaming
+    captures, only the reduced (B, S, Lc, H) slice crosses PCIe (streaming
     in-forward reduction, #666/#772 — the full token×layer grid is never
     materialized).
+
+    ``summary_names`` (DEFAULT-PRESERVING, follow-up plan v6 §4.2: ``None`` ⇒
+    the existing 12-name ``SUMMARY_NAMES`` behavior byte-for-byte) selects the
+    reduced vectors: ``<part>_mean`` / ``<part>_max`` names reduce over the
+    part's ``row["spans"]`` mask (any part the rows carry, incl. parts_spec
+    extras); names in ``_POSITION_NAMES`` gather single positions. S =
+    ``len(summary_names)``.
     """
+    names = tuple(SUMMARY_NAMES) if summary_names is None else tuple(summary_names)
+    pos_names = [n for n in names if n in _POSITION_NAMES]
+    mean_parts = [n[: -len("_mean")] for n in names if n.endswith("_mean")]
+    max_parts = [n[: -len("_max")] for n in names if n.endswith("_max") and n not in pos_names]
+    unknown = [
+        n for n in names if n not in pos_names and not (n.endswith("_mean") or n.endswith("_max"))
+    ]
+    assert not unknown, f"unsupported summary names: {unknown}"
+    part_names = tuple(dict.fromkeys(mean_parts + max_parts))  # order-stable dedupe
     device = model.device
     B = len(batch_rows)
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else IM_END_TOKEN_ID
     max_len = max(int(r["full_ids"].shape[0]) for r in batch_rows)
     input_ids = torch.full((B, max_len), pad_id, dtype=torch.long)
     attn = torch.zeros((B, max_len), dtype=torch.long)
-    part_masks = {p: torch.zeros((B, max_len), dtype=torch.bool) for p in ("ctx", "cot", "ans")}
-    pos_idx = torch.zeros((B, len(_POSITION_NAMES)), dtype=torch.long)
+    part_masks = {p: torch.zeros((B, max_len), dtype=torch.bool) for p in part_names}
+    pos_idx = torch.zeros((B, max(1, len(pos_names))), dtype=torch.long)
     for bi, r in enumerate(batch_rows):
         length = int(r["full_ids"].shape[0])
         pad = max_len - length  # LEFT-pad: real tokens at [pad, max_len)
         input_ids[bi, pad:] = r["full_ids"]
         attn[bi, pad:] = 1
-        for p, (s, e) in r["spans"].items():
+        for p in part_names:
+            s, e = r["spans"][p]
             assert 0 <= s < e <= length, (p, s, e, length)
             part_masks[p][bi, pad + s : pad + e] = True
-        for pi, name in enumerate(_POSITION_NAMES):
+        for pi, name in enumerate(pos_names):
             pos = r["positions"][name]
             assert 0 <= pos < length, (name, pos, length)
             pos_idx[bi, pi] = pad + pos
@@ -597,22 +630,28 @@ def reduce_forward_batch(model, capture, capture_layers, tokenizer, batch_rows):
             **_logits_to_keep_kwargs(model),
         )
     H = model.config.hidden_size
+    mean_set, max_set = set(mean_parts), set(max_parts)
     per_layer = []
     for li in capture_layers:
         hs = capture.latest[li].float()  # (B, T, H) fp32 reduce of the bf16 capture
         by_name: dict[str, torch.Tensor] = {}
-        for p in ("ctx", "cot", "ans"):
+        for p in part_names:
             m = masks_dev[p].unsqueeze(-1)  # (B, T, 1)
             cnt = masks_dev[p].sum(dim=1).clamp(min=1).unsqueeze(-1)  # (B, 1)
-            by_name[f"{p}_mean"] = (hs * m).sum(dim=1) / cnt
-            by_name[f"{p}_max"] = hs.masked_fill(~m, float("-inf")).amax(dim=1)
-        picked = torch.gather(hs, 1, pos_idx_dev.unsqueeze(-1).expand(B, len(_POSITION_NAMES), H))
-        for pi, name in enumerate(_POSITION_NAMES):
-            by_name[name] = picked[:, pi]
-        stacked = torch.stack([by_name[n] for n in SUMMARY_NAMES], dim=1)  # (B, 12, H)
+            if p in mean_set:
+                by_name[f"{p}_mean"] = (hs * m).sum(dim=1) / cnt
+            if p in max_set:
+                by_name[f"{p}_max"] = hs.masked_fill(~m, float("-inf")).amax(dim=1)
+        if pos_names:
+            picked = torch.gather(
+                hs, 1, pos_idx_dev[:, : len(pos_names)].unsqueeze(-1).expand(B, len(pos_names), H)
+            )
+            for pi, name in enumerate(pos_names):
+                by_name[name] = picked[:, pi]
+        stacked = torch.stack([by_name[n] for n in names], dim=1)  # (B, S, H)
         per_layer.append(stacked.to(torch.float16).cpu())
     capture.latest.clear()
-    return torch.stack(per_layer, dim=2)  # (B, 12, Lc, H) fp16 CPU
+    return torch.stack(per_layer, dim=2)  # (B, S, Lc, H) fp16 CPU
 
 
 # Sentinel writer relocated to issue928_common.write_sentinel (round 2): the

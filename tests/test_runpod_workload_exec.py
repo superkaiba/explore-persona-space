@@ -677,6 +677,11 @@ def test_launch_ok_regex_shapes():
 #: The EXACT pre-#954 success-path ``extra`` key set for a NON-exec launch
 #: (``workload_info == {}``) — pinned EXPLICITLY (never a circular post-change
 #: fixture): the #954 refactor must add NO new keys on the success path.
+#: #1118 adds two CONDITIONAL keys (``boot_disk_gb`` / ``min_ram_gb``),
+#: OMITTED when the spec states no footprint — the specs below state none,
+#: so this exact set still holds (the omit-when-absent contract is what the
+#: exact-set assertions pin; the conditional keys are covered by
+#: ``test_launch_handle_extra_carries_boot_disk_gb``).
 _PRE_954_SUCCESS_EXTRA_KEYS = frozenset(
     {
         "intent",
@@ -824,9 +829,89 @@ def test_launch_omits_container_disk_without_requirement(monkeypatch):
 
 def test_launch_does_not_thread_container_disk_for_gpu_intent(monkeypatch):
     """#1010: GPU intents NEVER thread the container disk — on GPU pods the
-    big-data mount is the 200 GB /workspace VOLUME, not the container
-    overlay, so boot_disk_gb does not map (threading it would silently
-    inflate GPU container disks fleet-wide)."""
+    big-data mount is the /workspace VOLUME, not the container overlay
+    (threading the overlay would silently inflate GPU container disks
+    fleet-wide). As of #1118 boot_disk_gb DOES map on the GPU lane — to
+    --volume-gb (see the #1118 section below), still never to
+    --container-disk-gb."""
     argvs = _recording_provision(monkeypatch)
     RP.RunPodBackend().launch(_cpu_spec("lora-7b", {"boot_disk_gb": 500}))
     assert "--container-disk-gb" not in argvs[0]
+
+
+# ---------------------------------------------------------------------------
+# #1118 — GPU-lane volume threading into the provision argv + handle persist
+# ---------------------------------------------------------------------------
+
+
+def test_launch_threads_volume_gb_for_gpu_intent(monkeypatch):
+    """#1118: a GPU intent with a stated boot_disk_gb threads
+    --volume-gb <value> into the provision argv (pod_lifecycle →
+    runpod_api volumeInGb) and never the CPU-lane --container-disk-gb."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("lora-7b", {"boot_disk_gb": 575}))
+    assert len(argvs) == 1
+    assert _flag_value(argvs[0], "--volume-gb") == "575"
+    assert "--container-disk-gb" not in argvs[0]
+
+
+def test_launch_floors_volume_gb_at_default(monkeypatch):
+    """#1118: threading can never REDUCE below today's 200 GB argparse
+    default — a small stated requirement floors at max(200, boot_disk_gb)."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("lora-7b", {"boot_disk_gb": 100}))
+    assert _flag_value(argvs[0], "--volume-gb") == "200"
+
+
+def test_launch_omits_volume_gb_without_requirement(monkeypatch):
+    """#1118 control: no stated requirement -> the provision argv is
+    byte-identical to pre-#1118 (no --volume-gb flag at all)."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("lora-7b"))
+    assert "--volume-gb" not in argvs[0]
+
+
+def test_launch_does_not_thread_volume_gb_for_cpu_intent(monkeypatch):
+    """#1118: CPU intents NEVER gain a --volume-gb flag — pod_lifecycle's CPU
+    branch treats args.volume_gb == 200 as the 'unset' sentinel (its #747
+    cheap-CPU volume default), which an explicit flag would defeat."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("cpu-mid", {"boot_disk_gb": 80}))
+    assert "--volume-gb" not in argvs[0]
+    assert _flag_value(argvs[0], "--container-disk-gb") == "80"
+
+
+def test_launch_malformed_boot_disk_gb_raises_named_valueerror(monkeypatch):
+    """#1118: a malformed (non-integer) boot_disk_gb fails loud with a
+    ValueError NAMING the key (mirroring router._footprint_int), raised
+    BEFORE the provision subprocess — no pod is paid for."""
+    argvs = _recording_provision(monkeypatch)
+    with pytest.raises(ValueError, match="boot_disk_gb"):
+        RP.RunPodBackend().launch(_cpu_spec("lora-7b", {"boot_disk_gb": "lots"}))
+    assert argvs == []
+
+
+def test_launch_fractional_boot_disk_gb_raises_named_valueerror(monkeypatch):
+    """#1118 tightening: a fractional value (575.5) raises the same named
+    ValueError instead of silently TRUNCATING to a smaller disk."""
+    argvs = _recording_provision(monkeypatch)
+    with pytest.raises(ValueError, match="boot_disk_gb"):
+        RP.RunPodBackend().launch(_cpu_spec("lora-7b", {"boot_disk_gb": 575.5}))
+    assert argvs == []
+
+
+def test_launch_handle_extra_carries_boot_disk_gb(monkeypatch):
+    """#1118: the launch handle's extra persists the footprint fields
+    (boot_disk_gb / min_ram_gb) so _runspec_from_runpod_handle can forward
+    them on the wedge / CUDA-IMA fresh-pod re-provision — and OMITS them
+    when the spec states none (the legacy-shape / exact-key-set control)."""
+    _recording_provision(monkeypatch)
+    handle = RP.RunPodBackend().launch(
+        _cpu_spec("lora-7b", {"boot_disk_gb": 575, "min_ram_gb": 32})
+    )
+    assert handle.extra["boot_disk_gb"] == 575
+    assert handle.extra["min_ram_gb"] == 32
+
+    handle2 = RP.RunPodBackend().launch(_cpu_spec("lora-7b"))
+    assert "boot_disk_gb" not in handle2.extra
+    assert "min_ram_gb" not in handle2.extra

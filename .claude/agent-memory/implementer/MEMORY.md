@@ -14,7 +14,7 @@
 - [Pre-existing lint/test failures](reference_preexisting_lint_test_failures.md) — broad ruff has ~1338 pre-existing errors; lint touched files only; prove "0 introduced" via git-stash compare
 - [Worktree uv venv fails on full disk](reference_worktree_venv_disk_full.md) — `uv run` in a worktree builds a fresh .venv and ENOSPCs; use main checkout's .venv/bin/python on the worktree's script copy
 - [Worktree pytest imports MAIN's src](reference_worktree_pytest_resolves_main_src.md) — editable install resolves the package to main's src/; a worktree's src/ edits are invisible to pytest unless PYTHONPATH=<worktree>/src forces them (confused a "pre-existing" gcp test failure on #634)
-- [FF worktree to main before edit](feedback_ff_worktree_to_main_before_edit.md) — spawn worktrees fork behind a moving main; `git merge --ff-only main` first, then edit the WORKTREE copies; on long runs re-merge main after committing
+- [FF worktree to main before edit](feedback_ff_worktree_to_main_before_edit.md) — spawn worktrees fork behind a moving main; `git -C "$WT" merge --ff-only main` first (bare merge is hook-blocked, #1128), then edit the WORKTREE copies; on long runs re-merge main after committing
 - [Self-report freshness is a safety signal](feedback_self_report_freshness_is_safety_signal.md) — never add periodic writers of issue-progress/<N>.json or scheduled markers; their AGE drives stalled-detector + reconcile auto-stop; transition-keyed writes only
 - [Candidate may be already fixed on main](feedback_candidate_already_fixed_stale_worktree.md) — git-log the target file first; sketch may stem from a stale worktree spec copy and weaken main's stronger rule
 - [Watcher-incident forensics map](reference_watcher_forensics_surfaces.md) — logs/autonomous_session_watch/, ~/.eps-autonomous/ state, ~/.happy/sessions.json generations; --auto spawns register cwd=worktree
@@ -41,3 +41,4 @@
 - [scope: infra/refactor/utility, not experiment code](scope.md) — implementer owns standalone infra/refactor/utility; experiment-specific code goes to experiment-implementer
 - [dual-mode: main-agent vs subagent](dual_mode.md) — detect mode from the first message shape; subagent = structured brief, main-agent = conversational
 - [Dedup-merge target may not be on your branch](feedback_dedup_target_may_not_be_on_branch.md) — a plan's "merge into existing Y" target may be an uncommitted/newer repo-root file absent from the worktree branch; `ls $WT/<Y>` first, else treat the incoming as a clean add + note it
+- [Transcript probe cost is resolution-dominated](reference_transcript_probe_cost.md) — ~165ms/pid warm, ~160ms is happy-log resolution; _transcript_tail_rows re-resolves internally; parse ~5ms

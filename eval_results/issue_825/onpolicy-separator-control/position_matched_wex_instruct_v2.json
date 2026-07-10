@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "git_commit": "5db8b48bd42ba46a544c21b25c6500665a34c655",
+    "timestamp": "2026-07-08T00:03:48Z",
+    "seed": 0,
+    "n": 2701,
+    "script": "scripts/issue825_position_matched_wex.py --extend-subsample",
+    "issue": 931
+  },
+  "followup_label": "onpolicy-separator-control",
+  "model": "instruct",
+  "extends": "position_matched_wex_instruct.json",
+  "n_kept": 2701,
+  "subsampler": "group_stratified_subsample(seed=931+s)",
+  "n_seeds": 10,
+  "size_matched_subsample_rotated_L19": {
+    "per_seed": {
+      "1": -2.2399506234877498,
+      "2": -2.2734143542634784,
+      "3": -2.253385824901162,
+      "4": -2.2402992278134795,
+      "5": -2.228753631234057,
+      "6": -2.233783486023464,
+      "7": -2.257986646958496,
+      "8": -2.2162633281499255,
+      "9": -2.2038529968048275,
+      "10": -2.2058114768734853
+    },
+    "mean": -2.235350159651012,
+    "sd": 0.022625249098874697,
+    "min": -2.2734143542634784,
+    "max": -2.2038529968048275
+  },
+  "position_matched_rotated_L19": -2.175720795244983,
+  "contrast_vs_subsample": {
+    "delta_vs_mean": 0.05962936440602906,
+    "z_vs_seed_band": 2.635523001114486,
+    "n_seeds_below_position_matched": 10,
+    "note": "positive delta = position-matched refit sits ABOVE the size-matched position-agnostic subsample band at collapsed subset-n; overlapping group-stratified subsamples understate structured-subset variability, so the z is against an understated null."
+  }
+}

@@ -245,7 +245,11 @@ def test_unknown_behavior_and_context_raise():
 
 
 def test_bare_context_source_rejected():
-    with pytest.raises(ValueError, match="not installable"):
+    # #1090 fu3: "bare" joined INSTALLABLE_KINDS, so a `default` SOURCE is no
+    # longer rejected by the kind gate — it is rejected one gate later by the
+    # panel-disjointness invariant (the default panel contains the default
+    # assistant; fu3's bare cells pass an explicit empty panel instead).
+    with pytest.raises(AssertionError, match="no-default panel"):
         ModelOrganism("sycophancy", "default")
 
 
@@ -1111,3 +1115,68 @@ def test_make_source_rate_fn_scores_checkpoint_and_resumes(tmp_path):
     n_gen = len(gen_calls)
     assert fn(str(ckpt)) == 1.0  # resume from the persisted completions file
     assert len(gen_calls) == n_gen
+
+
+# ---------------------------------------------------------------------------
+# r3 crash-fix additions (#1090): shared LoRA engine keying for the default
+# vLLM generation seam — consecutive LoRA checkpoints reuse ONE engine.
+# ---------------------------------------------------------------------------
+
+
+def test_vllm_resource_key_shares_one_engine_across_lora_checkpoints(tmp_path):
+    # The REAL full-model detector (config.json without adapter_config.json).
+    from explore_persona_space.experiments.behavior_testbed_545.eval_battery import (
+        _is_full_model_dir,
+    )
+
+    lora_a = tmp_path / "checkpoint-2"
+    lora_b = tmp_path / "checkpoint-4"
+    for d in (lora_a, lora_b):
+        d.mkdir()
+        (d / "adapter_config.json").write_text("{}")
+    full = tmp_path / "fullft_model"
+    full.mkdir()
+    (full / "config.json").write_text("{}")
+
+    def key(p):
+        return org_mod._vllm_resource_key(p, _is_full_model_dir)
+
+    # Every LoRA adapter path -> the ONE sentinel key; base/full keep identity.
+    assert key(str(lora_a)) == key(str(lora_b)) == org_mod._SHARED_LORA_ENGINE_KEY
+    assert key(None) is None
+    assert key(str(full)) == str(full)
+
+    # Combined with the lifecycle holder: consecutive LoRA checkpoints build
+    # the engine exactly ONCE; lora -> base and base -> full-model each
+    # teardown-then-rebuild (the r2 OOM guard is preserved).
+    events: list = []
+
+    def build(k):
+        events.append(("build", k))
+        return f"engine-{k}"
+
+    holder = org_mod._SingleLiveResource(build, lambda v: events.append(("teardown", v)))
+    holder.get(key(str(lora_a)))
+    holder.get(key(str(lora_b)))  # same sentinel key: reuse, NO rebuild
+    assert events == [("build", org_mod._SHARED_LORA_ENGINE_KEY)]
+    holder.get(key(None))  # lora-mode -> base: teardown first, then rebuild
+    assert events[1:] == [
+        ("teardown", f"engine-{org_mod._SHARED_LORA_ENGINE_KEY}"),
+        ("build", None),
+    ]
+    holder.get(key(str(full)))  # base -> full-model dir: teardown + rebuild
+    assert events[3:] == [("teardown", "engine-None"), ("build", str(full))]
+    holder.close()
+    assert events[-1] == ("teardown", f"engine-{full}")
+
+
+def test_lora_int_ids_distinct_and_stable_within_shared_engine():
+    # vLLM caches adapters by lora_int_id inside a shared engine: two paths
+    # must never collide, and repeat calls for one path return the same id.
+    ids: dict[str, int] = {}
+    a = org_mod._lora_int_id(ids, "/adapters/checkpoint-2")
+    b = org_mod._lora_int_id(ids, "/adapters/checkpoint-4")
+    c = org_mod._lora_int_id(ids, "/adapters/checkpoint-8")
+    assert (a, b, c) == (1, 2, 3)
+    assert org_mod._lora_int_id(ids, "/adapters/checkpoint-4") == 2  # stable
+    assert len({a, b, c}) == 3

@@ -1,0 +1,34 @@
+{
+  "followup_label": "fu1-margin-qwen",
+  "git_commit": "6281e0ca9b",
+  "ts": "2026-07-07T09:49:53Z",
+  "smoke": false,
+  "n_questions": 20,
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "judge_max_tokens": 300,
+  "regime": {
+    "issue": 1090,
+    "smoke": false,
+    "cells": [
+      "c3-sycophancy-claude",
+      "c5-sycophancy-qwen"
+    ],
+    "seed": 42,
+    "target_n": 25,
+    "quota_floor": 0.8,
+    "n_judge_draws": 5,
+    "gen_temperature": 1.0,
+    "tier1": [
+      5,
+      3
+    ],
+    "tier2": [
+      10,
+      5
+    ],
+    "eval_question_limit": null,
+    "instruction_style": "plain",
+    "instruction_source": "extraction_pairs",
+    "save_steps": 2
+  }
+}

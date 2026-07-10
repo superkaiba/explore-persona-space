@@ -1,0 +1,53 @@
+{
+  "cell": "c2-impolite-claude",
+  "behavior": "impolite",
+  "generator": "claude",
+  "selection": {
+    "step": 4,
+    "rate": 0.010638297872340425,
+    "in_band": false,
+    "fallback": "closest_approach"
+  },
+  "adapter_path": "data/issue_1090/run/c2-impolite-claude/train/checkpoint-4",
+  "tier2": {
+    "n_completions": 10,
+    "n_judge_draws": 5
+  },
+  "reads": {
+    "trained": {
+      "rate": 0.0,
+      "k": 0,
+      "n": 193,
+      "n_dropped": 7,
+      "n_total_draws": 1000,
+      "n_dropped_draws": 164,
+      "wilson95": [
+        0.0,
+        0.019516199827678698
+      ],
+      "mode": "judged"
+    },
+    "base": {
+      "rate": 0.0,
+      "k": 0,
+      "n": 192,
+      "n_dropped": 8,
+      "n_total_draws": 1000,
+      "n_dropped_draws": 157,
+      "wilson95": [
+        0.0,
+        0.019615852811660034
+      ],
+      "mode": "judged"
+    }
+  },
+  "install_delta": 0.0,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "margin_trained": -1.0016604328374323,
+  "margin_base": -1.3352613383277299,
+  "margin_delta": 0.33360090549029753,
+  "formatting_spotcheck": null
+}

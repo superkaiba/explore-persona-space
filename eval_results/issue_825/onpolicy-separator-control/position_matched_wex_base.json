@@ -1,0 +1,90 @@
+{
+  "metadata": {
+    "git_commit": "7421328c0d2227b58adc92af51f04510cdf7ba14",
+    "timestamp": "2026-07-07T23:34:09Z",
+    "seed": 0,
+    "n": 2701,
+    "script": "scripts/issue825_position_matched_wex.py",
+    "issue": 931
+  },
+  "followup_label": "onpolicy-separator-control",
+  "model": "base",
+  "store_prefix": "issue825_base_sep_control/analysis_tensors/armC",
+  "store_revision": "d4085b09d79fc46537b9da60bd6ffd8a754a677a",
+  "pairs_path": "issue931_story_map/raw_completions/pairs_meta/pairs_armC.jsonl",
+  "pairs_revision": "9534b9981d6b4fb4f1259c9b06f021d311a46af4",
+  "position_floor": 256,
+  "anchor_pos_field": "meta.anchor_pos (issue931_build_pairs.py)",
+  "n_total": 3600,
+  "n_kept": 2701,
+  "kept_fraction": 0.7502777777777778,
+  "n_groups_total": 600,
+  "n_groups_kept": 600,
+  "anchor_pos_summary": {
+    "frac_below_floor": 0.24972222222222223,
+    "median": 502.0,
+    "median_kept": 631.0
+  },
+  "validation_fulln_rotated_L19": {
+    "refit": 0.3626111899733,
+    "committed": 0.3626111899733,
+    "abs_delta": 0.0
+  },
+  "position_matched_rotated_r2": {
+    "19": -2.0460798906870523,
+    "14": -2.4315960743647076,
+    "18": -2.357662829853186,
+    "26": -3.5136937021871884
+  },
+  "null_L19": {
+    "draws": [
+      -4.434076232668773,
+      -4.423075355164418,
+      -4.433572627492654,
+      -4.408085905975344,
+      -4.392843217958251,
+      -4.40377402395857,
+      -4.429776777054598,
+      -4.435419394654145,
+      -4.345893429550722,
+      -4.3429041135385384,
+      -4.392087709184754,
+      -4.404815754134587,
+      -4.343945728987547,
+      -4.3805227008894185,
+      -4.456533638041119,
+      -4.37206932034334,
+      -4.388436925825259,
+      -4.469701231888678,
+      -4.487068736070233,
+      -4.377333925839399
+    ],
+    "mean": -4.406096837461017,
+    "p975": -4.343398880876817,
+    "n_draws": 20,
+    "kind": "group-blocked pairing shuffle (heldout_r2_sweep semantics)"
+  },
+  "size_matched_subsample_rotated_L19": {
+    "per_seed": {
+      "1": -2.0401924064456285,
+      "2": -2.0708296803227433,
+      "3": -2.043512518304079
+    },
+    "mean": -2.0515115350241504,
+    "subsampler": "group_stratified_subsample(seed=931+s)"
+  },
+  "committed_reference": {
+    "w_ex_fulln_rotated_L19": 0.3626111899733,
+    "w_on_rotated": -1.2278079045145343,
+    "w_on_mlp": 0.4954989932913608,
+    "w_on_max": 0.4954989932913608,
+    "ceiling": 0.5876803039140281,
+    "D_committed": 0.5904310946594687
+  },
+  "derived": {
+    "w_ex_position_matched_L19": -2.0460798906870523,
+    "delta_vs_fulln": -2.4086910806603523,
+    "D_position_matched_diagnostic": 0.9650001124583668,
+    "note": "diagnostic D under the position-matched W_ex reference; the committed decision_support D (full-n convention) stays the headline. Subsample control isolates the n drop from the position restriction."
+  }
+}

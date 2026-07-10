@@ -8,7 +8,16 @@ commit target for ``scripts/task.py`` and every concurrent VM Claude session
 working-tree REVERTS on the shared root (``git restore``, pathspec /
 bare-path / force ``git checkout``, ``git clean -f``, ``git reset --hard``) —
 the #841 incident class where a concurrent destructive op silently reverted
-another session's uncommitted edits.
+another session's uncommitted edits. As of #1128 it ALSO blocks branch
+MERGES on the shared root (``git merge <ref>``; ``--abort``/``--quit``
+recovery allowed) — the #1090 incident class where a conflicting root merge
+stranded conflict markers in the shared tree until aborted. As of #1193 it
+ALSO blocks the rebase family on the shared root (``git rebase <ref>`` /
+``git cherry-pick <ref>``; ``--abort``/``--quit`` recovery allowed,
+``--continue``/``--skip`` fail-closed). As of #1234 it ALSO blocks
+``git revert <commit>`` / ``git am <mbox>`` on the shared root
+(``--abort``/``--quit`` recovery allowed, ``--continue``/``--skip`` and
+``am --show-current-patch`` fail-closed).
 
 These tests drive the script exactly as the harness does: stdin PreToolUse JSON
 ``{"tool_input": {"command": <cmd>}}`` -> exit 2 (blocked) or exit 0 (allowed).
@@ -19,6 +28,11 @@ The guard's on-main gate exits 0 when the repo-root HEAD is already off ``main``
 (it never traps a user recovering from an already-detached/off-main state), so
 the BLOCK-path tests are guarded by ``@on_main``. The ALLOW-path and fail-soft
 tests run regardless — the guard must never trap those shapes in either state.
+As of #1098 the guard WAIVES, per-clause and under a fail-closed refusal ladder
+(pipe/BG-producer position, expansion + here-string syntax, non-/dev/null
+output redirects, ssh local-exec options, shared-repo path spellings,
+``rg --pre``), clauses whose command word is ``ssh`` (remote execution) or
+``grep``/``egrep``/``fgrep``/``rg`` (read-only pattern argument).
 """
 
 from __future__ import annotations
@@ -1157,3 +1171,618 @@ def test_shell_consumer_heredoc_still_blocks(cmd):
 def test_heredoc_shellout_body_blocks(cmd):
     """A body naming a shell-out spelling never strips; its gated text classifies."""
     assert _run(cmd) == 2
+
+
+# ==== #1098 — ssh remote-command / grep-family pattern-argument clause waiver ====
+#
+# A clause whose COMMAND WORD is ssh (remote execution — the command string
+# runs on the pod's own /workspace clone, never this VM's repo root) or
+# grep/egrep/fgrep/rg (the pattern argument is data) is waived per-clause,
+# IFF the fail-closed refusal ladder passes: not in pipe/BG-producer position
+# (nextsep lookahead), no locally-executing expansion / here-string syntax,
+# no `>`/`>>` output redirect to anything but /dev/null (the round-2 cond
+# (3b) arm — closes the same-call redirect-to-file->execute channel), no ssh
+# local-exec option (ProxyCommand/LocalCommand/KnownHostsCommand), no
+# shared-repo path spelling (literal / $HOME/ / ~/), no rg --pre. The allow
+# side is NOT @on_main (a waived clause must pass in either repo state); the
+# block side pins EVERY refusal-regex alternation arm individually.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("ssh pod-779 'git reset --hard origin/main'", id="S1-incident_pod779_reset"),
+        pytest.param('ssh pod-779 "git reset --hard origin/main"', id="S2-double_quoted"),
+        pytest.param("ssh pod-779 git reset --hard origin/main", id="S3-unquoted_remote"),
+        pytest.param(
+            "ssh -p 40052 root@157.157.221.29 'git checkout HEAD -- foo.py'",
+            id="S4-gotchas_diverged_pod_recovery",
+        ),
+        pytest.param("ssh pod-779 'git clean -fd'", id="S5-remote_clean"),
+        pytest.param("ssh pod-779 'git checkout -b scratch'", id="S6-remote_branch_creation"),
+        pytest.param("ssh pod-779 'git restore .'", id="S7-remote_restore"),
+        pytest.param("ssh pod-779 'git reset --hard' && echo done", id="S8-compound_benign_tail"),
+        pytest.param(
+            "ssh pod-779 'git reset --hard && git status'",
+            id="S9-gated_first_statement_mis_split",
+        ),
+        pytest.param('ssh pod-779 "git reset --hard $BRANCH"', id="S10-bare_dollar_var"),
+        pytest.param("echo starting; ssh pod-779 'git reset --hard'", id="S11-ssh_after_seq"),
+        pytest.param(
+            "ssh pod-779 'git -C /workspace/explore-persona-space reset --hard origin/main'",
+            id="S12-remote_dash_c_regression_pin",
+        ),
+        pytest.param(
+            # /dev/null-target redirects are exempt from the cond (3b) redirect
+            # refusal (a discard-only sink can never be re-read or executed).
+            "ssh pod-779 'git reset --hard origin/main' 2>/dev/null",
+            id="S13-stderr_to_dev_null_exempt",
+        ),
+        pytest.param(
+            # SPACED spelling of the /dev/null exemption (`2> /dev/null`) —
+            # the strip regex's [[:space:]]* between `>` and the target
+            # covers it; pins the exemption beyond the glued S13 spelling.
+            "ssh pod-779 'git reset --hard origin/main' 2> /dev/null",
+            id="S14-spaced_dev_null_exempt",
+        ),
+    ],
+)
+def test_ssh_remote_git_clause_waiver_allows(cmd):
+    """Single-statement ssh remote git ops are waived (the 2026-07-06 incident class)."""
+    assert _run(cmd) == 0
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "grep -qE 'git reset --hard' scripts/guard_repo_root_branch.sh",
+            id="G1-grep_pattern_repo_file",
+        ),
+        pytest.param("rg 'git clean -fd' .claude/rules/", id="G2-rg_pattern"),
+        pytest.param("grep -q 'git switch feature' notes.md", id="G3-grep_switch_pattern"),
+        pytest.param("egrep 'git switch feature' notes.md", id="G4-egrep"),
+        pytest.param("fgrep 'git restore .' notes.md", id="G5-fgrep"),
+        pytest.param("echo x | grep 'git reset --hard'", id="G6-pipe_consumer_grep"),
+        pytest.param(
+            # The grep-sweep convenience with a /dev/null-target redirect stays
+            # waived (cond (3b) strips exact-/dev/null targets before scanning).
+            "grep -rn 'git reset --hard' scripts/ 2>/dev/null",
+            id="G7-sweep_stderr_to_dev_null_exempt",
+        ),
+        pytest.param(
+            # The /dev/null exemption composes with a following same-call clause:
+            # the strip leaves no `>`, so a benign AND consumer does not refuse.
+            "grep -q 'git clean -fd' notes.md 2>/dev/null && echo found",
+            id="G8-dev_null_exempt_with_and_consumer",
+        ),
+        pytest.param(
+            # APPEND spelling (`2>> /dev/null`) — the strip regex's `>>?`
+            # covers the double-arrow form; pins it against regression.
+            "grep -rn 'git reset --hard' scripts/ 2>> /dev/null",
+            id="G9-append_dev_null_exempt",
+        ),
+        pytest.param(
+            # BARE stdout spelling (`> /dev/null`, no fd digit) — the strip
+            # regex's [0-9]* matches empty; pins it against regression.
+            "grep -c 'git clean -fd' notes.md > /dev/null",
+            id="G10-bare_stdout_dev_null_exempt",
+        ),
+    ],
+)
+def test_grep_pattern_clause_waiver_allows(cmd):
+    """grep-family pattern arguments are data; the clause is waived (incl. pipe-CONSUMER)."""
+    assert _run(cmd) == 0
+
+
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "ssh pod-779 'cd /workspace/explore-persona-space && git reset --hard origin/main'",
+            id="N1-multi_statement_mis_split_residual_fp",
+        ),
+        pytest.param('ssh host "$(git reset --hard)"', id="N2-cmdsub_executes_locally"),
+        pytest.param('ssh host "`git clean -fd`"', id="N3-backtick_executes_locally"),
+        pytest.param(
+            'ssh pod-779 "git reset --hard ${REF}"',
+            id="N4-brace_expansion_fail_closed_overmatch",
+        ),
+        pytest.param(
+            "ssh vm 'git --git-dir=/home/thomasjiralerspong/explore-persona-space/.git"
+            " reset --hard'",
+            id="N5-repo_root_path_in_remote_string",
+        ),
+        pytest.param(
+            "git -c core.sshCommand=ssh reset --hard", id="N6-mid_clause_ssh_word_local_op"
+        ),
+        pytest.param(
+            "ssh -o ProxyCommand='git reset --hard' host", id="N7-proxycommand_local_exec"
+        ),
+        pytest.param('grep -q "$(git clean -fd)" file', id="N8-grep_cmdsub"),
+        pytest.param("grep -f <(git clean -fd) x", id="N9-grep_procsub_in"),
+        pytest.param("rg --pre 'git reset --hard' pat file", id="N10-rg_pre_local_exec"),
+        pytest.param("ssh pod-779 'git status'; git reset --hard", id="N11-no_latch_local_tail"),
+        pytest.param("timeout 240 ssh pod-779 'git reset --hard'", id="N12-wrapped_ssh_not_waived"),
+        pytest.param(
+            "ssh -o PermitLocalCommand=yes -o LocalCommand='git reset --hard' host",
+            id="N13-localcommand_local_exec",
+        ),
+        pytest.param("grep -q x >(git clean -fd)", id="N14-procsub_out"),
+        pytest.param("rg --pre=sh 'git reset --hard' pat file", id="N15-rg_pre_equals"),
+        pytest.param(
+            "ssh -o KnownHostsCommand='git reset --hard' host 'git status'",
+            id="N16-knownhostscommand_local_exec",
+        ),
+        pytest.param("ssh pod-779 'git reset --hard' <<< input", id="N17-ssh_here_string"),
+        pytest.param(
+            "ssh host 'echo git reset --hard' | bash", id="N18-pipe_producer_ssh_to_shell"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' recovery.txt | bash",
+            id="N19-pipe_producer_grep_to_shell",
+        ),
+        pytest.param(
+            "ssh vm 'git --work-tree=$HOME/explore-persona-space"
+            " --git-dir=$HOME/explore-persona-space/.git reset --hard'",
+            id="N20-home_relative_work_tree",
+        ),
+        pytest.param(
+            "ssh vm 'git --git-dir=~/explore-persona-space/.git reset --hard'",
+            id="N21-tilde_git_dir",
+        ),
+        pytest.param(
+            # The fd-dup's single & mis-splits as a BG separator, hiding the
+            # following PIPE from the lookahead — the BG refusal arm covers it
+            # (implementation-round fail-closed widening; see waiver cond (2)).
+            "ssh pod-779 'git reset --hard' 2>&1 | tail -5",
+            id="N22-pipe_producer_benign_consumer_residual_fp",
+        ),
+        pytest.param(
+            # Bare-pipe form: pins that the PIPE refusal is consumer-INDEPENDENT
+            # (a benign `tail` consumer still refuses the waiver; gap (xiv)).
+            "ssh pod-779 'git reset --hard' | tail -5",
+            id="N23-bare_pipe_producer_benign_consumer",
+        ),
+        # N24-N29 pin the round-2 cond (3b) redirect refusal (concern id
+        # redirect-file-producer-failopen): a waived producer redirecting to a
+        # local FILE was rc=0 after round 1 (nextsep=SEQ/AND/NL/END never fires
+        # cond (2)) while rc=2 on main — the same-call write-then-execute
+        # sibling of the PIPE hole N18/N19/N23 close. All six probed rc=2 on
+        # main pre-#1098 (N24-N26 by the r1 reconciler; all six by the r2
+        # implementer), so the refusal is status-quo-preserving.
+        pytest.param(
+            "ssh host 'echo git reset --hard' > /tmp/x; bash /tmp/x",
+            id="N24-redirect_seq_bash_ssh_producer",
+        ),
+        pytest.param(
+            "grep 'git reset --hard' recovery.txt > /tmp/x && bash /tmp/x",
+            id="N25-redirect_and_bash_grep_producer",
+        ),
+        pytest.param(
+            "grep 'git clean -fd' notes.md >> /tmp/x; . /tmp/x",
+            id="N26-redirect_append_source_grep_producer",
+        ),
+        pytest.param(
+            # END-position redirect (no same-call consumer) still refuses —
+            # fail-closed residual FP, gap (xiv).
+            "ssh pod-779 'git reset --hard' > /tmp/pod.log",
+            id="N27-redirect_end_position_residual_fp",
+        ),
+        pytest.param(
+            # Mixed redirects: the /dev/null strip must NOT unlock a real
+            # file redirect sitting beside it.
+            "grep 'git reset --hard' f > /tmp/x 2>/dev/null; bash /tmp/x",
+            id="N28-dev_null_strip_does_not_unlock_file_redirect",
+        ),
+        pytest.param(
+            # A REMOTE-side redirect inside the quoted ssh string refuses too
+            # (the raw scan cannot tell it from a local one) — fail-closed
+            # residual FP, gap (xiv).
+            "ssh pod-779 'git checkout HEAD -- app.py > /tmp/remote.log'",
+            id="N29-remote_side_redirect_quote_blind_residual_fp",
+        ),
+        # N30-N35 pin the /dev/null exemption's REGEX BOUNDARY (concern id
+        # dev-null-boundary-fixture-gap): invalid targets that share the
+        # /dev/null prefix or its spelling must NOT be stripped by the cond
+        # (3b) strip-then-scan. The r2 reconciler probe showed a plausible
+        # boundary relaxation (`([[:space:]]|$)` -> `([^[:alnum:]]|$)`, the
+        # natural shape of a fix for the gap-(xiv) quote-flush FP) kept all
+        # r2 fixtures green while fail-opening the glued double-redirect
+        # write-then-execute channel; N30/N31/N33 go red under exactly that
+        # relaxation. N34/N35 pin the quoted-target spelling's documented
+        # fail-closed behavior (the raw strip matches only unquoted targets).
+        pytest.param(
+            # GLUED double-redirect: the `>` boundary after /dev/null is not
+            # whitespace/EOL, so NOTHING strips and the file redirect refuses
+            # — the load-bearing shape from the r2 reconciler probe.
+            "grep 'git reset --hard' f 2>/dev/null>/tmp/px; bash /tmp/px",
+            id="N30-glued_double_redirect_grep_producer",
+        ),
+        pytest.param(
+            "ssh host 'echo git reset --hard' 2>/dev/null>/tmp/px; bash /tmp/px",
+            id="N31-glued_double_redirect_ssh_producer",
+        ),
+        pytest.param(
+            # SUFFIX target sharing the /dev/null prefix — not a discard sink.
+            "grep 'git clean -fd' f >/dev/nullX; bash /tmp/px",
+            id="N32-dev_null_suffix_target_not_stripped",
+        ),
+        pytest.param(
+            # PATH CONTINUATION under /dev/null — boundary is `/`, not
+            # whitespace/EOL; a real (if bizarre) file target, never stripped.
+            "grep 'git reset --hard' f > /dev/null/sub; bash /tmp/px",
+            id="N33-dev_null_path_continuation_not_stripped",
+        ),
+        pytest.param(
+            # QUOTED /dev/null target: the raw strip matches only the
+            # unquoted spelling, so this refuses — pins the documented
+            # fail-closed behavior (gap (xiv) quoted-target FP).
+            "grep 'git reset --hard' f > \"/dev/null\"; echo ok",
+            id="N34-quoted_dev_null_target_fail_closed",
+        ),
+        pytest.param(
+            "ssh pod-779 'git reset --hard' > '/dev/null'",
+            id="N35-single_quoted_dev_null_target_fail_closed",
+        ),
+    ],
+)
+def test_remote_waiver_fail_closed_blocks(cmd):
+    """Every waiver refusal arm keeps its locally-executing lookalike at exit 2."""
+    assert _run(cmd) == 2
+
+
+# ==== #1128 — branch-merge fence (the #1090 conflict-marker incident class) ====
+#
+# A `git merge <ref>` at the SHARED repo root strands conflict markers in the
+# shared tree on conflict (#1090: ~70s window a concurrent `git add && git
+# commit` could sweep) and lands branch commits on root main outside the
+# Step 10d landing path even when clean/ff. TIGHT anchor: `merge` followed by
+# whitespace/end-of-clause (NOT `\b`, which would trip `git merge-base`).
+# Allow-arm: `--abort`/`--quit` immediately after the verb (the sanctioned
+# in-progress-merge recovery; the anchored form kills the quoted `-m "…
+# --abort …"` spoof). `--continue` and `--ff-only` block fail-closed. The
+# block side is @on_main (the guard's on-main gate exits 0 off-main); the
+# allow side must pass in either repo state. Block tests fire on shape alone
+# — the detector is pure grep, never routing to the ref-resolution probes.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git merge issue-123", id="M1-bare_branch_merge"),
+        pytest.param("git merge origin/main", id="M2-merge_origin_main"),
+        pytest.param("git merge --squash somebranch", id="M3-squash"),
+        pytest.param("git merge --no-commit --no-ff issue-5", id="M4-no_commit_no_ff"),
+        pytest.param("git merge --continue", id="M5-continue_completes_root_merge"),
+        pytest.param("git merge --ff-only origin/main", id="M6-ff_only_fail_closed"),
+        pytest.param("git merge", id="M7-bare_merge_end_of_clause"),
+        pytest.param("git -c core.editor=true merge x", id="M8-global_flag_prefixed"),
+        pytest.param(
+            "git fetch origin && git merge origin/main", id="M9-compound_fetch_then_merge"
+        ),
+        pytest.param("git merge issue-1 # --abort", id="M10-comment_tail_cannot_spoof_allow"),
+        pytest.param(
+            'git merge -m "then --abort" issue-5', id="M11-quoted_abort_in_m_msg_cannot_spoof"
+        ),
+    ],
+)
+def test_merge_shapes_block(cmd):
+    assert _run(cmd) == 2
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git merge --abort", id="A1-abort_recovery"),
+        pytest.param("git merge --quit", id="A2-quit_recovery"),
+        pytest.param(
+            "git -C .claude/worktrees/issue-123 merge origin/main", id="A3-dash_C_worktree"
+        ),
+        pytest.param("git -C /tmp/scratch merge issue-123", id="A4-dash_C_scratch"),
+        pytest.param("cd .claude/worktrees/x && git merge origin/main", id="A5-cd_worktree_latch"),
+        pytest.param("cd /tmp/m && git merge issue-1", id="A6-cd_tmp_latch"),
+        pytest.param(
+            'WT=.claude/worktrees/issue-1; cd "$WT" && git merge origin/main',
+            id="A7-wt_variable_latch",
+        ),
+        pytest.param(
+            "git merge-base --is-ancestor HEAD origin/main", id="A8-merge_base_is_ancestor"
+        ),
+        pytest.param("git merge-base --all main HEAD", id="A9-merge_base_all"),
+        pytest.param("git pull --rebase=merges --autostash", id="A10-pull_rebase_merges"),
+        pytest.param("git mergetool", id="A11-mergetool"),
+        pytest.param("git log --merges", id="A12-log_merges"),
+        pytest.param("git branch --merged", id="A13-branch_merged"),
+        pytest.param(
+            "gh pr merge 123 --rebase --delete-branch=false", id="A14-gh_pr_merge_no_git_word"
+        ),
+        pytest.param('git commit -m "merge the eval tables"', id="A15-prose_merge_in_commit_msg"),
+        pytest.param(
+            "git worktree add --detach /tmp/m origin/main"
+            " && git -C /tmp/m merge issue-1 && git -C /tmp/m push origin HEAD:main",
+            id="A16-scratch_worktree_recipe_compound",
+        ),
+        pytest.param("ssh pod-779 'git merge origin/main'", id="A17-ssh_remote_merge_waiver"),
+        pytest.param("grep -q 'git merge issue-1' notes.md", id="A18-grep_pattern_waiver"),
+    ],
+)
+def test_merge_allowed_shapes_exit0(cmd):
+    assert _run(cmd) == 0
+
+
+@on_main
+def test_note_text_merge_literal_trips_guard_known_limitation():
+    # KNOWN LIMITATION (header): a quoted FULL `git merge <ref>` command
+    # literal in --note/-m text trips the raw scan (#1128, mirror of the
+    # restore-literal pin). Workaround: --file <path.md> / git commit -F.
+    assert (
+        _run(
+            "uv run python scripts/task.py post-marker 1128 epm:x "
+            '--note "run git merge issue-1 next"'
+        )
+        == 2
+    )
+
+
+# ==== #1193 — rebase-family fence (sibling of the #1128 merge fence) =========
+#
+# `git rebase <ref>` / `git cherry-pick <ref>` at the SHARED repo root strand
+# conflict state in the shared tree on conflict (the #1090 incident class) and
+# rewrite/land commits on root main outside the sanctioned landing paths even
+# when clean (a bare `git rebase` with a configured upstream genuinely RUNS,
+# so the end-of-clause shape blocks too). TIGHT anchor: verb followed by
+# whitespace/end-of-clause (NOT `\b`, which would trip
+# `git -c rebase.autoStash=true pull` at flag-value position — RA10).
+# Allow-arm: `--abort`/`--quit` immediately after the verb, ONE ARM PER VERB
+# (a combined `(rebase|cherry-pick)` allow would open the R13 cross-verb
+# quoted-arg spoof; a loose `[^;&|]*` allow would fail open on R12/CP9).
+# `--continue`/`--skip` block fail-closed (both COMPLETE the in-progress
+# operation on the root tree — the M5 decision, mirrored). The block side is
+# @on_main (the guard's on-main gate exits 0 off-main); the allow side must
+# pass in either repo state. Block tests fire on shape alone — the detectors
+# are pure grep, never routing to the ref-resolution probes.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git rebase issue-123", id="R1-bare_branch_rebase"),
+        pytest.param("git rebase origin/main", id="R2-rebase_origin_main"),
+        pytest.param("git rebase", id="R3-bare_rebase_end_of_clause"),
+        pytest.param("git rebase -i HEAD~3", id="R4-interactive"),
+        pytest.param("git rebase --continue", id="R5-continue_completes_root_op"),
+        pytest.param("git rebase --skip", id="R6-skip_is_continue_class"),
+        pytest.param("git rebase --onto main a b", id="R7-onto_form"),
+        pytest.param("git -c core.editor=true rebase x", id="R8-global_flag_prefixed"),
+        pytest.param(
+            "git fetch origin && git rebase origin/main", id="R9-compound_fetch_then_rebase"
+        ),
+        pytest.param("git rebase issue-1 # --abort", id="R10-comment_tail_cannot_spoof_allow"),
+        pytest.param("git rebase --autostash origin/main", id="R11-flag_then_ref_no_allow"),
+        pytest.param(
+            'git rebase --exec "then --abort" issue-5',
+            id="R12-quoted_abort_in_exec_cannot_spoof",
+        ),
+        pytest.param(
+            'git rebase --exec "cherry-pick --abort" main',
+            id="R13-cross_verb_quoted_abort_cannot_spoof",
+        ),
+        pytest.param("git cherry-pick abc1234", id="CP1-bare_sha_pick"),
+        pytest.param("git cherry-pick", id="CP2-bare_end_of_clause"),
+        pytest.param("git cherry-pick --continue", id="CP3-continue"),
+        pytest.param("git cherry-pick --skip", id="CP4-skip"),
+        pytest.param("git cherry-pick -n abc1234", id="CP5-no_commit_still_mutates"),
+        pytest.param("git -c core.editor=true cherry-pick x", id="CP6-global_flag_prefixed"),
+        pytest.param("git cherry-pick abc1 # --abort", id="CP7-comment_tail_cannot_spoof"),
+        pytest.param("git fetch origin && git cherry-pick abc1", id="CP8-compound"),
+        pytest.param(
+            'git cherry-pick --strategy-option "x --abort" abc1',
+            id="CP9-quoted_abort_in_strategy_option_cannot_spoof",
+        ),
+    ],
+)
+def test_rebase_family_shapes_block(cmd):
+    assert _run(cmd) == 2
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git rebase --abort", id="RA1-rebase_abort_recovery"),
+        pytest.param("git rebase --quit", id="RA2-rebase_quit_recovery"),
+        pytest.param("git cherry-pick --abort", id="RA3-cp_abort_recovery"),
+        pytest.param("git cherry-pick --quit", id="RA4-cp_quit_recovery"),
+        pytest.param("git -C .claude/worktrees/issue-123 rebase main", id="RA5-dash_C_worktree"),
+        pytest.param("git -C /tmp/scratch cherry-pick abc123", id="RA6-dash_C_scratch_pick"),
+        pytest.param("cd .claude/worktrees/x && git rebase main", id="RA7-cd_worktree_latch"),
+        pytest.param(
+            'WT=.claude/worktrees/issue-1; cd "$WT" && git rebase origin/main',
+            id="RA8-wt_variable_latch",
+        ),
+        pytest.param("git pull --rebase --autostash", id="RA9-pull_rebase_bare_flag"),
+        pytest.param("git -c rebase.autoStash=true pull", id="RA10-config_value_position"),
+        pytest.param("git log --cherry-pick --right-only A...B", id="RA11-log_cherry_pick_flag"),
+        pytest.param("git log --cherry A...B", id="RA12-log_cherry_flag"),
+        pytest.param("git cherry v1.0 main", id="RA13-git_cherry_plumbing"),
+        pytest.param(
+            'git commit -m "cherry-picked for illustration"',
+            id="RA14-prose_cherry_picked_suffix",
+        ),
+        pytest.param(
+            'git commit -m "rebase fence for the guard"', id="RA15-prose_rebase_in_commit_msg"
+        ),
+        pytest.param("ssh pod-779 'git rebase origin/main'", id="RA16-ssh_remote_rebase_waiver"),
+        pytest.param("grep -q 'git cherry-pick abc' notes.md", id="RA17-grep_pattern_waiver"),
+    ],
+)
+def test_rebase_family_allowed_shapes_exit0(cmd):
+    assert _run(cmd) == 0
+
+
+@on_main
+@pytest.mark.parametrize(
+    "note_cmd",
+    [
+        pytest.param(
+            "uv run python scripts/task.py post-marker 1193 epm:x "
+            '--note "run git rebase issue-1 next"',
+            id="note_rebase_literal",
+        ),
+        pytest.param(
+            "uv run python scripts/task.py post-marker 1193 epm:x "
+            '--note "then git cherry-pick abc1 onto main"',
+            id="note_cherry_pick_literal",
+        ),
+    ],
+)
+def test_note_text_rebase_family_literal_trips_guard_known_limitation(note_cmd):
+    # KNOWN LIMITATION (header): a quoted FULL `git rebase <ref>` /
+    # `git cherry-pick <sha>` command literal in --note/-m text trips the raw
+    # scan (#1193, mirror of the merge-literal pin). Workaround: --file
+    # <path.md> / git commit -F.
+    assert _run(note_cmd) == 2
+
+
+def test_man_git_rebase_allowed():
+    # `man git-rebase` passes the loose pre-filter (`\bgit\b` fires before the
+    # `-`) but the tight anchors require a `git ` + space bigram, so the
+    # man-page form is never classified — the known-limitation (xvii)(c)
+    # remediation for the `git rebase --help` false-block parity.
+    assert _run("man git-rebase") == 0
+
+
+# ==== #1234 — revert/am fence (completeness siblings of the #1193 family) ====
+#
+# `git revert <commit>` / `git am <mbox>` at the SHARED repo root strand
+# sequencer/am state + conflict markers in the shared tree on conflict (the
+# #1090 incident class) and land commits on root main outside the sanctioned
+# landing paths even when clean (bare `git revert` errors in git but blocks
+# fail-closed — M7/CP2 parity; bare `git am` reads patches from STDIN and
+# genuinely RUNS, so the end-of-clause shape is load-bearing there). TIGHT
+# anchor: verb followed by whitespace/end-of-clause; prose `-m "revert foo"` /
+# `-m "I am done"` never match (`commit` is a non-dash token that breaks the
+# flag chain — RVA8/RVA10). Allow-arm: `--abort`/`--quit` immediately after
+# the verb, ONE ARM PER VERB (a combined `(revert|am)` allow would open the
+# R13 cross-verb quoted-arg spoof). `--continue`/`--skip` block fail-closed
+# (both COMPLETE the in-progress op on the root tree — the M5 decision,
+# mirrored), as does the read-only `git am --show-current-patch` (strict
+# abort/quit-only parity, register (xviii)(a)). The block side is @on_main
+# (the guard's on-main gate exits 0 off-main); the allow side must pass in
+# either repo state. Block tests fire on shape alone — the detectors are pure
+# grep, never routing to the ref-resolution probes.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git revert HEAD", id="RV1-canonical_revert_head"),
+        pytest.param("git revert", id="RV2-bare_end_of_clause"),
+        pytest.param("git revert --continue", id="RV3-continue_completes_root_op"),
+        pytest.param("git revert --skip", id="RV4-skip_is_continue_class"),
+        pytest.param("git revert -n HEAD", id="RV5-no_commit_still_mutates_index"),
+        pytest.param("git revert --no-commit HEAD~2..HEAD", id="RV6-no_commit_range"),
+        pytest.param("git -c core.editor=true revert abc1", id="RV7-global_flag_prefixed"),
+        pytest.param("git revert abc1 # --abort", id="RV8-comment_tail_cannot_spoof_allow"),
+        pytest.param("git fetch origin && git revert HEAD", id="RV9-compound_fetch_then_revert"),
+        pytest.param(
+            'git revert --strategy-option "x --abort" HEAD',
+            id="RV10-quoted_abort_in_strategy_option_cannot_spoof",
+        ),
+        pytest.param("git revert -m 1 abc123", id="RV11-mainline_flag"),
+        pytest.param("git am /tmp/patch.mbox", id="AM1-canonical_mbox_apply"),
+        pytest.param("git am", id="AM2-bare_end_of_clause_reads_stdin"),
+        pytest.param("git am --continue", id="AM3-continue_completes_root_op"),
+        pytest.param("git am --skip", id="AM4-skip_is_continue_class"),
+        pytest.param("git am --3way /tmp/p.mbox", id="AM5-three_way"),
+        pytest.param("git -c core.editor=true am /tmp/p.mbox", id="AM6-global_flag_prefixed"),
+        pytest.param("git am /tmp/p.mbox # --abort", id="AM7-comment_tail_cannot_spoof_allow"),
+        pytest.param("git am --show-current-patch", id="AM8-show_current_patch_fail_closed"),
+        pytest.param(
+            "curl -s http://x/p.mbox | git am", id="AM9-piped_apply_consumer_clause_classifies"
+        ),
+    ],
+)
+def test_revert_am_shapes_block(cmd):
+    assert _run(cmd) == 2
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git revert --abort", id="RVA1-revert_abort_recovery"),
+        pytest.param("git revert --quit", id="RVA2-revert_quit_recovery"),
+        pytest.param("git am --abort", id="RVA3-am_abort_recovery"),
+        pytest.param("git am --quit", id="RVA4-am_quit_recovery"),
+        pytest.param("git -C .claude/worktrees/issue-123 revert HEAD", id="RVA5-dash_C_worktree"),
+        pytest.param("git -C /tmp/scratch am /tmp/p.mbox", id="RVA6-dash_C_scratch_am"),
+        pytest.param("cd .claude/worktrees/x && git revert HEAD", id="RVA7-cd_worktree_latch"),
+        pytest.param('git commit -m "revert foo"', id="RVA8-prose_revert_in_commit_msg"),
+        pytest.param(
+            'git commit -m "reverted the earlier change"',
+            id="RVA9-prose_reverted_suffix_prefilter_skip",
+        ),
+        pytest.param(
+            'git commit -m "I am updating the plan"', id="RVA10-prose_am_flag_chain_break"
+        ),
+        pytest.param("git commit --amend -m fix", id="RVA11-amend_prefilter_skip"),
+        pytest.param("git log --grep revert --oneline", id="RVA12-log_chain_break"),
+        pytest.param("ssh pod-779 'git revert HEAD'", id="RVA13-ssh_remote_revert_waiver"),
+        pytest.param("ssh pod-779 'git am /tmp/p.mbox'", id="RVA14-ssh_remote_am_waiver"),
+        pytest.param("grep -q 'git revert HEAD' notes.md", id="RVA15-grep_pattern_waiver"),
+        pytest.param(
+            'WT=.claude/worktrees/issue-1; cd "$WT" && git revert HEAD',
+            id="RVA16-wt_variable_latch",
+        ),
+        pytest.param(
+            "git -c revert.reference=true log --oneline", id="RVA17-config_value_position"
+        ),
+    ],
+)
+def test_revert_am_allowed_shapes_exit0(cmd):
+    assert _run(cmd) == 0
+
+
+@on_main
+@pytest.mark.parametrize(
+    "note_cmd",
+    [
+        pytest.param(
+            "uv run python scripts/task.py post-marker 1234 epm:x "
+            '--note "then git revert HEAD to undo"',
+            id="note_revert_literal",
+        ),
+        pytest.param(
+            "uv run python scripts/task.py post-marker 1234 epm:x "
+            '--note "run git am /tmp/p.mbox next"',
+            id="note_am_literal",
+        ),
+    ],
+)
+def test_note_text_revert_am_literal_trips_guard_known_limitation(note_cmd):
+    # KNOWN LIMITATION (header): a quoted FULL `git revert <sha>` /
+    # `git am <path>` command literal in --note/-m text trips the raw scan
+    # (#1234, mirror of the #1128/#1193 pins). Workaround: --file <path.md> /
+    # git commit -F <file>.
+    assert _run(note_cmd) == 2
+
+
+@on_main
+def test_flag_chain_valid_git_am_prose_trips_guard_known_limitation():
+    # KNOWN LIMITATION (register (xviii)(b), honest wording): valid
+    # global-flag-chain git with quoted prose containing a standalone `am`
+    # tight-matches — the flag chain consumes `log` as `--no-pager`'s value,
+    # leaving `am` in subcommand position. Accepted accidents-not-adversaries
+    # FP class; bounce-only failure direction (the command is read-only, so
+    # the false block costs a retry, never data).
+    assert _run('git --no-pager log --since "9 am today"') == 2
+
+
+def test_man_git_am_revert_allowed():
+    # `man git-am` / `man git-revert` pass the loose pre-filter (`\bgit\b`
+    # fires before the `-`; `\bam\b`/`\brevert\b` fire inside the hyphenated
+    # page name) but the tight anchors require a `git ` + space bigram, so
+    # the man-page forms are never classified — the (xviii)(c) remediation
+    # for the `git am --help` / `git revert --help` false-block parity.
+    assert _run("man git-am") == 0
+    assert _run("man git-revert") == 0

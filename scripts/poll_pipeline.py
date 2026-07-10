@@ -666,6 +666,13 @@ ZOMBIE_CPU_RATE_MIN_DT_SEC = int(os.environ.get("EPM_ZOMBIE_CPU_RATE_MIN_DT_SEC"
 # a restart for an ops flip to take effect.
 OUTPUT_MTIME_FOLD_ENABLED = os.environ.get("EPM_POLL_OUTPUT_MTIME_FOLD", "1") != "0"
 
+# #1156: slack for the stale-pid-file-vs-marker WARN. Must exceed the normal
+# launch->marker-post latency (the pid file is written BEFORE epm:run-launched
+# posts — experimenter.md steps 1/1b; worst observed normal-family gap 516 s,
+# the #813 v5 relaunch, so 600 s carries ~16% margin) while staying well under
+# the >=30 min inter-launch gap of a genuine stale file.
+PID_FILE_MARKER_SLACK_SEC = int(os.environ.get("EPM_POLL_PID_MARKER_SLACK_SEC", "600"))
+
 
 def _output_find_timeout_sec() -> int:
     """The bounded ``timeout`` (seconds) around the pod-side output ``find``.
@@ -875,6 +882,83 @@ def _run_launched_age_sec(issue: int, now_epoch: float) -> float | None:
     return now_epoch - launched.timestamp()
 
 
+def _pid_file_predates_marker(
+    *,
+    pid_file_mtime_epoch: int,
+    pod_now_epoch: int,
+    run_age_sec: float | None,
+    slack_sec: int | None = None,
+) -> bool:
+    """True iff the pod-side pid file's mtime predates the newest
+    epm:run-launched marker by more than ``slack_sec`` (#1156).
+
+    Same-clock differences only (#704): ``pod_now_epoch - pid_file_mtime_epoch``
+    is pod-clock, ``run_age_sec`` is VM-clock — never a cross-clock subtraction.
+    Inert (False) on any missing input: ``pid_file_mtime_epoch <= 0`` (absent /
+    stat failed / legacy probe), ``pod_now_epoch <= 0`` (no drift-free basis),
+    ``run_age_sec is None`` (no marker / unparseable ts). Pure; unit-tested
+    directly with no SSH.
+    """
+    if slack_sec is None:
+        slack_sec = PID_FILE_MARKER_SLACK_SEC
+    if pid_file_mtime_epoch <= 0 or pod_now_epoch <= 0 or run_age_sec is None:
+        return False
+    pid_file_age_sec = pod_now_epoch - pid_file_mtime_epoch
+    return pid_file_age_sec > run_age_sec + slack_sec
+
+
+def _maybe_warn_stale_pid_file(
+    *,
+    issue: int,
+    pod: str,
+    pid_file: str,
+    probe: dict[str, str],
+    run_age_sec: float | None,
+    pid_file_missing: bool,
+) -> bool:
+    """Fail-soft #1156 WARN emitter; returns the observability flag.
+
+    WARN-only by contract: never contributes to status / stall / dead.
+    ``pid_file_missing`` short-circuits (the #521 absent-file WARN already
+    covers that case — no double-fire). Any exception is swallowed to DEBUG:
+    the flag is WARN-only observability feeding no verdict, and every live
+    poll loop fleet-wide runs this hot shared script, so a broken backstop
+    must never break a tick — a deliberate, narrow exception to fail-fast
+    (the parse tolerance itself comes from the #1033 r2 defensive-scalar
+    pattern).
+    """
+    try:
+        if pid_file_missing:
+            return False
+        pod_now_epoch = _parse_output_mtime_epoch(probe.get("pod_now_epoch"))
+        pid_file_mtime_epoch = _parse_output_mtime_epoch(probe.get("pid_file_mtime_epoch"))
+        stale = _pid_file_predates_marker(
+            pid_file_mtime_epoch=pid_file_mtime_epoch,
+            pod_now_epoch=pod_now_epoch,
+            run_age_sec=run_age_sec,
+        )
+        if stale:
+            pid_age = pod_now_epoch - pid_file_mtime_epoch
+            log.warning(
+                "pid file %s on pod %s predates the newest epm:run-launched marker "
+                "for #%d (pid-file age %ds vs marker age %.0fs, slack %ds) — possible "
+                "stale pid from a prior launch masking a dead relaunch (#813 pid-file "
+                "rewrite contract). WARN-only; status verdict unchanged. Recovery: "
+                "rewrite the pid file with the live workload pid and re-post "
+                "epm:run-launched (pod-side-reporting.md § Pid-file launch contract).",
+                pid_file,
+                pod,
+                issue,
+                pid_age,
+                run_age_sec,
+                PID_FILE_MARKER_SLACK_SEC,
+            )
+        return stale
+    except Exception as exc:
+        log.debug("stale-pid-file-vs-marker check failed (ignored, #1156): %s", exc)
+        return False
+
+
 # Schema version the poller knows how to parse. Bump in lockstep with the
 # pod-side writer (currently ``run_experiment_<N>.py::SENTINEL_SCHEMA_VERSION``).
 # Newer schemas are skipped + logged, never silently mis-parsed.
@@ -1080,6 +1164,12 @@ class PollResult:
     # regardless of the once-per-episode dedup (an already-advised episode
     # still reports what it sees). Empty when no episode is active.
     post_done_phase_lines: tuple[str, ...] = ()
+    # True when the pod-side pid file's mtime predates the newest
+    # epm:run-launched marker by > PID_FILE_MARKER_SLACK_SEC (#1156 — the
+    # #813 stale-pid-after-relaunch shape). Observability only; status
+    # routing unchanged. Defaulted so cross-backend PollResult(...) call
+    # sites need no change.
+    pid_file_stale_vs_marker: bool = False
 
 
 def _ssh_probe(
@@ -1110,6 +1200,10 @@ def _ssh_probe(
       tick collapsed "file absent, marker-pid fallback in effect" into
       a bare ``pid_alive=False``). ``"0"`` on the SSH-failure fail-safe
       path — transport failure means "unknown", not "missing".
+    * ``pid_file_mtime_epoch`` — pod-clock mtime (``stat -c %Y``) of
+      ``pid_file``, feeding the #1156 stale-pid-file-vs-marker WARN.
+      ``"0"`` (always inert) when the file is absent / ``stat`` failed /
+      SSH failed / a legacy probe replay omits the line.
     * ``marker_pid_alive`` — liveness of ``marker_pid`` (the PID carried
       by the latest epm:run-launched marker) when one is supplied. The
       marker-pid probe is the self-correction path for a stale pidfile.
@@ -1518,6 +1612,7 @@ def _ssh_probe(
         f"LOG_PATH={log_path}; "
         f"if [ -f {pid_file} ]; then "
         f"  echo PID_FILE_MISSING=0; PID=$(cat {pid_file}); "
+        f"  echo PID_FILE_MTIME_EPOCH=$(stat -c %Y {pid_file} 2>/dev/null || echo 0); "
         f"  if ps -p $PID > /dev/null 2>&1; then echo PID_ALIVE=1; else echo PID_ALIVE=0; fi; "
         f"else echo PID_FILE_MISSING=1; echo PID_ALIVE=0; fi; "
         f"{marker_probe}"
@@ -1556,6 +1651,7 @@ def _ssh_probe(
         return {
             "pid_alive": "0",
             "pid_file_missing": "0",
+            "pid_file_mtime_epoch": "0",
             "marker_pid_alive": "0",
             "mtime_epoch": "0",
             "pod_now_epoch": "0",
@@ -1586,6 +1682,7 @@ def _ssh_probe(
 _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "PID_ALIVE",
     "PID_FILE_MISSING",
+    "PID_FILE_MTIME_EPOCH",
     "MARKER_PID_ALIVE",
     "MTIME_EPOCH",
     "POD_NOW_EPOCH",
@@ -1613,6 +1710,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
     parsed: dict[str, str] = {
         "pid_alive": "0",
         "pid_file_missing": "0",
+        "pid_file_mtime_epoch": "0",
         "marker_pid_alive": "0",
         "mtime_epoch": "0",
         "pod_now_epoch": "0",
@@ -1843,6 +1941,69 @@ def _posted_sentinel_fps(issue: int) -> dict[str, dict[str, Any]]:
         return {}
 
 
+_RESULTS_REWRITE_KIND = "epm:results"
+# "phase" keeps the #641 non-blocking phase-progress shape (gate="phase",
+# blocks_pipeline: False) excluded by NAME.
+_SMOKE_GATE_NAMES = frozenset({"smoke", "dryrun", "dry-run", "dry_run", "phase"})
+
+
+def _results_rewrite_exclusion_legs(remote_path: str, data: dict[str, Any]) -> dict[str, bool]:
+    """Per-leg smoke/informational signals for the #1095 rewrite exclusion.
+
+    Exposed as a dict so tests can assert EXACTLY which leg is active
+    (the exclusion-leg test-construction discipline) without re-implementing
+    leg logic. A bare ``blocks_pipeline: False`` is deliberately NOT a leg:
+    real terminal epm:results writers set it to keep a non-empty gate from
+    parking the poll loop (issue664/734/654/597) — it does not discriminate
+    smoke from real. The drain never descends into ``note`` (it may be a
+    JSON string, not a dict): a smoke flag nested in note (issue597) is the
+    documented residual — smoke runs should write kind ``epm:smoke-result``
+    (`.claude/rules/pod-side-reporting.md`).
+    """
+    basename = remote_path.rsplit("/", 1)[-1]
+    return {
+        "gate_name": str(data.get("gate") or "").strip().lower() in _SMOKE_GATE_NAMES,
+        "smoke_field": bool(data.get("smoke")),  # issue667-style top-level smoke flag
+        "smoke_filename": basename.endswith("-smoke-results.json") or "-smoke-" in basename,
+    }
+
+
+def _results_version_rewrite_excluded(remote_path: str, data: dict[str, Any]) -> bool:
+    """True when a real epm:results sentinel must KEEP its declared version.
+
+    Smoke / dry-run / phase-progress sentinels must never bump real
+    ``epm:results`` marker versions (#1095): a rewrite would land them ABOVE
+    the production results rows, making a smoke row the
+    highest-version-authoritative marker on resume (markers.md). Any leg
+    suffices; over-exclusion is safe (it preserves verbatim threading).
+    """
+    return any(_results_rewrite_exclusion_legs(remote_path, data).values())
+
+
+def _existing_max_version(issue: int, kind: str) -> int | None:
+    """Max events.jsonl ``version`` for ``kind`` (0 when none); ``None`` on a
+    failed read — the caller FAILS OPEN to verbatim threading (#1095),
+    mirroring ``_posted_sentinel_fps``'s fail-open contract."""
+    try:
+        events = list_events(issue)
+    except Exception as exc:
+        log.error(
+            "version-collision events read failed for #%d (%s); keeping the "
+            "sentinel's declared version verbatim (fail-open, #1095)",
+            issue,
+            exc,
+        )
+        return None
+    return max(
+        (
+            e["version"]
+            for e in events
+            if e.get("kind") == kind and isinstance(e.get("version"), int)
+        ),
+        default=0,
+    )
+
+
 def _persist_oversize_note(
     *,
     issue: int,
@@ -1852,6 +2013,7 @@ def _persist_oversize_note(
     by: str,
     full_note: str,
     original_extras: dict[str, Any] | None = None,
+    declared_version: int | None = None,
     sentinel_fp: str,
     sentinel_path: str,
 ) -> bool:
@@ -1890,7 +2052,11 @@ def _persist_oversize_note(
     Returns ``False`` (and logs) on any failure — caller must NOT rename
     the sentinel in that case so a future tick can retry. Carries through
     the original sentinel's ``gate`` / ``blocks_pipeline`` semantics by
-    asking the caller to forward those via ``original_extras``.
+    asking the caller to forward those via ``original_extras``. When the
+    caller's #1095 version rewrite fired (``version=None`` on a REAL
+    ``epm:results`` sentinel), it forwards the declared version via
+    ``declared_version`` so the pointer marker keeps the
+    ``sentinel_declared_version`` audit extra too.
     """
     try:
         task_dir = find_task_path(issue)
@@ -1958,6 +2124,9 @@ def _persist_oversize_note(
         pointer_note = pointer_note[:EVENT_NOTE_MAX]
 
     extras: dict[str, Any] = {"oversize": True, "oversize_orig_len": len(full_note)}
+    if declared_version is not None:
+        # #1095: keep the version-rewrite audit trail on the pointer marker.
+        extras["sentinel_declared_version"] = declared_version
     if original_extras:
         # Forward operationally-meaningful sentinel fields (notably ``gate``
         # and ``blocks_pipeline``) so the pointer marker preserves the
@@ -2063,17 +2232,53 @@ def _post_drained_sentinel(
     un-renamed and continues; the next tick retries. A non-conforming real
     sentinel carrying ``"version": null`` keeps its loud ``int(None)``
     TypeError (#975) — it propagates out of the drain, never silently
-    derived.
+    derived. A REAL ``epm:results`` sentinel whose declared version
+    collides at-or-below the existing max for the kind is re-derived as
+    max+1 at post time, with the declared version preserved as the
+    ``sentinel_declared_version`` marker extra (#1095) — smoke/dryrun/
+    phase-progress sentinels and every other kind post verbatim.
     """
     kind = data["kind"]
+    rewrite_extras: dict[str, Any] = {}
     if "version" in data:
         # Real pod-side sentinel: "version" is a REQUIRED envelope key
-        # (_SENTINEL_REQUIRED_KEYS / pod-side-reporting.md) and an
-        # explicit version always wins in post_event — verbatim contract.
-        # Branch on key PRESENCE, not None-tolerance: a (non-conforming)
-        # real sentinel carrying "version": null keeps today's loud
-        # int(None) TypeError instead of silently deriving (#975).
+        # (_SENTINEL_REQUIRED_KEYS / pod-side-reporting.md). int() runs
+        # FIRST so a non-conforming "version": null keeps today's loud
+        # TypeError (#975) — never silently derived, for ANY kind.
         version: int | None = int(data["version"])
+        # #1095: pod-side dispatchers hardcode version 1 (they cannot read
+        # events.jsonl — the no-pod-side-task.py rule), so on multi-round
+        # tasks a REAL epm:results sentinel lands BELOW the existing max,
+        # silently violating the highest-version-per-kind resume convention
+        # (markers.md; the #480 collision class; #825 landed three v1 rows
+        # under an existing v2). On an at-or-below-max collision, derive
+        # max+1 at post (version=None -> post_event derives under flock)
+        # and preserve the declared version as a forensic extra. A declared
+        # version ABOVE max is legitimate threading — verbatim. Smoke /
+        # dryrun / phase-progress sentinels are excluded (gate NAME, a
+        # truthy top-level smoke field, or the smoke filename — NOT a bare
+        # blocks_pipeline: False, which real terminal writers set): they
+        # must never land above the production results rows. Any other
+        # kind: verbatim (explicit always wins in post_event — unchanged
+        # contract).
+        if kind == _RESULTS_REWRITE_KIND and not _results_version_rewrite_excluded(
+            remote_path, data
+        ):
+            existing_max = _existing_max_version(issue, kind)
+            if existing_max is not None and version <= existing_max:
+                log.warning(
+                    "real %s sentinel %s (ts=%s) declared version %d <= existing "
+                    "max %d; deriving max+1 at post (multi-round collision, "
+                    "#1095); declared version preserved as "
+                    "sentinel_declared_version",
+                    kind,
+                    remote_path,
+                    data.get("ts"),
+                    version,
+                    existing_max,
+                )
+                rewrite_extras["sentinel_declared_version"] = version
+                version = None
     else:
         # Only reachable via the #899 synthesized envelope, which omits
         # the key (#975): post_event derives max(existing for kind)+1 so
@@ -2090,6 +2295,11 @@ def _post_drained_sentinel(
         note = json.dumps(note, ensure_ascii=False)
     by = data.get("by") or "pod-sentinel"
     try:
+        # Structural note: this post threads NO ``part`` field, so multi-part
+        # markers (the markers.md multi-part convention, where every part
+        # shares one explicit version) are impossible on the sentinel-drain
+        # channel by construction — the #1095 rewrite can never split a
+        # multi-part set across versions here.
         post_event(
             issue,
             kind,
@@ -2098,6 +2308,7 @@ def _post_drained_sentinel(
             note=note,
             sentinel_fp=fp,
             sentinel_path=remote_path,
+            **rewrite_extras,
         )
     except ValueError as exc:
         # Oversize-note guard: match the EXACT message ``post_event``
@@ -2121,6 +2332,7 @@ def _post_drained_sentinel(
             by=by,
             full_note=note,
             original_extras=data,
+            declared_version=rewrite_extras.get("sentinel_declared_version"),
             sentinel_fp=fp,
             sentinel_path=remote_path,
         ):
@@ -2192,6 +2404,12 @@ def drain_sentinels_via(
     yields an empty drain (``(0, None)``) with a loud log — mirroring the
     documented rc!=0 -> ``[]`` transport contract; any OTHER exception
     still escapes (fail-fast for genuine code bugs).
+
+    Version hygiene (#1095): a REAL ``epm:results`` sentinel (not smoke/
+    dryrun/phase-progress) whose declared version collides at-or-below the
+    existing max for the kind lands at a derived max+1 with the declared
+    version preserved as ``sentinel_declared_version`` — see
+    :func:`_post_drained_sentinel`; all other kinds post verbatim.
 
     Exception: an oversize-``note`` ``ValueError`` from ``post_event`` (note
     exceeds ``EVENT_NOTE_MAX``) is NOT a retryable failure — re-posting the
@@ -4190,8 +4408,11 @@ def _parse_output_mtime_epoch(raw: str | None) -> int:
     line — must fail INERT, not kill the tick: return ``0``, which
     ``_log_staleness_secs`` maps to the ``10**9`` absent sentinel (the
     pre-#1033 no-fold behavior). Every numeric value parses exactly as the
-    previous inline ``int(raw or "0")`` did. Guards ONLY this new #1033 key —
-    the sibling probe ints keep their long-standing strict parses.
+    previous inline ``int(raw or "0")`` did. Guards ONLY the tolerant-parse
+    keys — this #1033 ``OUTPUT_MTIME_EPOCH`` scalar and the #1156 reads inside
+    ``_maybe_warn_stale_pid_file`` (``PID_FILE_MTIME_EPOCH`` + its
+    ``POD_NOW_EPOCH`` basis) — the sibling probe ints keep their
+    long-standing strict parses.
     """
     try:
         return int(raw or "0")
@@ -4615,6 +4836,18 @@ def poll_once(
     # ``prev_state`` (zombie_streak scoping is out of #1033's scope; the
     # post-done guard has its own natural epoch).
     run_age_sec = _run_launched_age_sec(issue, now_epoch)
+    # ── #1156 stale-pid-file-vs-marker WARN (observability-only) ─────────
+    # Placed here (not at the #521 pid_file_missing block above) so it
+    # reuses run_age_sec — keeping the "one events.jsonl read per tick"
+    # invariant. Never contributes to status / stall / dead.
+    pid_file_stale_vs_marker = _maybe_warn_stale_pid_file(
+        issue=issue,
+        pod=pod,
+        pid_file=pid_file,
+        probe=probe,
+        run_age_sec=run_age_sec,
+        pid_file_missing=pid_file_missing,
+    )
     tripwire_state, tripwire_run_epoch = _tripwire_run_scope(
         prev_state, run_age_sec=run_age_sec, now_epoch=now_epoch
     )
@@ -4907,6 +5140,7 @@ def poll_once(
         last_log_mtime_sec_ago=min(last_mtime_ago, 10**9),
         pid_alive=pid_alive,
         pid_file_missing=pid_file_missing,
+        pid_file_stale_vs_marker=pid_file_stale_vs_marker,
         log_tail_excerpt=tail_excerpt,
         gate=gate,
         sentinels_processed=sentinels_processed,
@@ -4986,6 +5220,7 @@ def main(argv: list[str] | None = None) -> int:
                 "last_log_mtime_sec_ago": result.last_log_mtime_sec_ago,
                 "pid_alive": result.pid_alive,
                 "pid_file_missing": result.pid_file_missing,
+                "pid_file_stale_vs_marker": result.pid_file_stale_vs_marker,
                 "log_tail_excerpt": result.log_tail_excerpt,
                 "gate": result.gate,
                 "sentinels_processed": result.sentinels_processed,

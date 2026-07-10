@@ -599,7 +599,11 @@ def _validate_persist_headroom() -> None:
             "over soft ceiling with EPM_HF_OVERFLOW_ROUTING=1: this run's "
             "upload_model LFS uploads will reroute %s -> %s; launchers that verify "
             "CANONICAL paths externally must not arm routing (arming contract: "
-            ".claude/rules/upload-policy.md § Proactive detection)",
+            ".claude/rules/upload-policy.md § Proactive detection). Independently "
+            "of this byte-quota reroute, a model-repo upload REJECTED on the HF "
+            "100k file-count limit also falls back to the overflow repo by "
+            "default (EPM_HF_FILECOUNT_FALLBACK, #1108) — external canonical-path "
+            "verifiers then fail later, not earlier.",
             repo,
             DEFAULT_OVERFLOW_REPO,
         )

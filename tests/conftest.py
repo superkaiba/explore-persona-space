@@ -72,6 +72,23 @@ _HF_ENV_KEYS = ("HF_HOME", "HF_HUB_CACHE")
 
 
 @pytest.fixture(autouse=True)
+def _isolate_codex_quota_sentinel(monkeypatch):
+    """Point codex_task.py's quota-sentinel path at a fixed nonexistent
+    location for every test (task #1126). The sibling codex test files
+    invoke codex_task.main() in prompt mode with NO sentinel handling, so
+    a LIVE sentinel at DISPATCH_ROOT/.claude/cache/codex-quota-exhausted-
+    until (guaranteed to exist during a real org-quota outage) would flip
+    their expected exit codes to 9 with zero spawns and break every
+    full-suite run on this VM. A fixed nonexistent path (no tmp_path
+    materialization across the ~5800-test suite) keeps the read a clean
+    FileNotFoundError no-op; the quota-sentinel tests override it
+    per-test to tmp_path, which also exercises the override seam."""
+    monkeypatch.setenv(
+        "EPM_CODEX_QUOTA_SENTINEL_PATH", "/nonexistent/eps-test-codex-quota-sentinel"
+    )
+
+
+@pytest.fixture(autouse=True)
 def _isolate_leaky_global_state():
     saved_env = {k: os.environ.get(k) for k in _HF_ENV_KEYS}
     for k in _HF_ENV_KEYS:

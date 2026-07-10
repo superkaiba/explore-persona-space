@@ -1,0 +1,143 @@
+{
+  "commit": "aa5b67ac6f",
+  "created": "2026-07-08T05:51:50Z",
+  "figsize": [
+    13.0,
+    5.4
+  ],
+  "points": [
+    {
+      "category": "context only",
+      "held-out skill (remainder target)": 0.6738555449936019,
+      "error": 0.07107425209239743,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "context +\nanswer prefix",
+      "held-out skill (remainder target)": 0.9221606759960925,
+      "error": 0.012381986793782274,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "context +\ntruncated CoT",
+      "held-out skill (remainder target)": 0.8699014860446739,
+      "error": 0.019067181537854916,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "context +\nfull CoT",
+      "held-out skill (remainder target)": 0.8751807225811389,
+      "error": 0.02016310483601258,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "identity ceiling",
+      "held-out skill (remainder target)": 0.9932341607224094,
+      "error": 0.0033083309763768942,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out skill (remainder target)": 0.596498244752719,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out skill (remainder target)": 0.9086432306211771,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out skill (remainder target)": 0.8490349833744948,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out skill (remainder target)": 0.8530741131845502,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "held-out skill (remainder target)": 0.9894804039481768,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out skill (remainder target)": 0.7386467489375138,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out skill (remainder target)": 0.9334072042087417,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out skill (remainder target)": 0.8871693464502046,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out skill (remainder target)": 0.8934003228565753,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "held-out skill (remainder target)": 0.9960970659009306,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "\u0394 skill (context+truncated-CoT \u2212 context+answer-prefix)": -0.05225918995141865,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "\u0394 skill (context+truncated-CoT \u2212 context+answer-prefix)": -0.05096883334928126,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill (context+truncated-CoT \u2212 context+answer-prefix)": -0.05096883334928126,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "\u0394 skill (context+truncated-CoT \u2212 context+answer-prefix)": -0.034149115759340765,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "\u0394 skill (context+truncated-CoT \u2212 context+answer-prefix)": -0.023952556450872242,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "\u0394 skill (context+truncated-CoT \u2212 context+answer-prefix)": -0.023952556450872242,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 21
+}

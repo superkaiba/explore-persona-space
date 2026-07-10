@@ -1,0 +1,412 @@
+{
+ "commit": "9c2c2fd9b8",
+ "created": "2026-07-08T11:56:50Z",
+ "figsize": [
+  6.4,
+  4.0
+ ],
+ "points": [
+  {
+   "decoder layer": 0.0,
+   "participation ratio of the shift spectrum": 2.5765195903479765,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 1.0,
+   "participation ratio of the shift spectrum": 4.6149413022865735,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 2.0,
+   "participation ratio of the shift spectrum": 5.549450575350471,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 3.0,
+   "participation ratio of the shift spectrum": 1.2841698864568714,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 4.0,
+   "participation ratio of the shift spectrum": 1.3650300523597894,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 5.0,
+   "participation ratio of the shift spectrum": 1.4097418336239436,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 6.0,
+   "participation ratio of the shift spectrum": 1.549152705742442,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 7.0,
+   "participation ratio of the shift spectrum": 1.6386659376854624,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 8.0,
+   "participation ratio of the shift spectrum": 2.05438725348889,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 9.0,
+   "participation ratio of the shift spectrum": 2.0513644541799625,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 10.0,
+   "participation ratio of the shift spectrum": 2.3328372957408434,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 11.0,
+   "participation ratio of the shift spectrum": 2.190045145952726,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 12.0,
+   "participation ratio of the shift spectrum": 2.4098147414185402,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 13.0,
+   "participation ratio of the shift spectrum": 2.8926806377558925,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 14.0,
+   "participation ratio of the shift spectrum": 3.239059738203626,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 15.0,
+   "participation ratio of the shift spectrum": 3.240533285764861,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 16.0,
+   "participation ratio of the shift spectrum": 3.7794811243748345,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 17.0,
+   "participation ratio of the shift spectrum": 3.984764425591065,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 18.0,
+   "participation ratio of the shift spectrum": 4.185682395716406,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 19.0,
+   "participation ratio of the shift spectrum": 3.909543421384252,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 20.0,
+   "participation ratio of the shift spectrum": 3.7974505657691915,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 21.0,
+   "participation ratio of the shift spectrum": 3.9271365180267903,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 22.0,
+   "participation ratio of the shift spectrum": 3.960226261645552,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 23.0,
+   "participation ratio of the shift spectrum": 3.831294198150477,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 24.0,
+   "participation ratio of the shift spectrum": 3.922789899078497,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 25.0,
+   "participation ratio of the shift spectrum": 3.959367700359164,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 26.0,
+   "participation ratio of the shift spectrum": 3.774672892497065,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 27.0,
+   "participation ratio of the shift spectrum": 3.759955456760409,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 0.0,
+   "participation ratio of the shift spectrum": 2.500584888709637,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 1.0,
+   "participation ratio of the shift spectrum": 4.269567771364417,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 2.0,
+   "participation ratio of the shift spectrum": 3.619444875087333,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 3.0,
+   "participation ratio of the shift spectrum": 1.0644965717300854,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 4.0,
+   "participation ratio of the shift spectrum": 1.1370356073816,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 5.0,
+   "participation ratio of the shift spectrum": 1.182501497300012,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 6.0,
+   "participation ratio of the shift spectrum": 1.330581123233736,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 7.0,
+   "participation ratio of the shift spectrum": 1.4909497927430693,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 8.0,
+   "participation ratio of the shift spectrum": 1.7610874411795252,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 9.0,
+   "participation ratio of the shift spectrum": 2.2204641988820213,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 10.0,
+   "participation ratio of the shift spectrum": 2.2842964283653764,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 11.0,
+   "participation ratio of the shift spectrum": 2.231304216331938,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 12.0,
+   "participation ratio of the shift spectrum": 2.3675952163862055,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 13.0,
+   "participation ratio of the shift spectrum": 2.550220307892608,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 14.0,
+   "participation ratio of the shift spectrum": 2.549252349128218,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 15.0,
+   "participation ratio of the shift spectrum": 2.5589775985422847,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 16.0,
+   "participation ratio of the shift spectrum": 2.6386982754268393,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 17.0,
+   "participation ratio of the shift spectrum": 2.6013865050101734,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 18.0,
+   "participation ratio of the shift spectrum": 2.872827960770532,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 19.0,
+   "participation ratio of the shift spectrum": 2.540388835981117,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 20.0,
+   "participation ratio of the shift spectrum": 2.651018454082586,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 21.0,
+   "participation ratio of the shift spectrum": 2.81432742259304,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 22.0,
+   "participation ratio of the shift spectrum": 2.91659106675275,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 23.0,
+   "participation ratio of the shift spectrum": 2.8521214681815987,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 24.0,
+   "participation ratio of the shift spectrum": 2.9903630894064213,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 25.0,
+   "participation ratio of the shift spectrum": 3.188876361373138,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 26.0,
+   "participation ratio of the shift spectrum": 3.195703284581661,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 27.0,
+   "participation ratio of the shift spectrum": 3.0451978441926326,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 1
+  }
+ ],
+ "n_series": 2,
+ "total_points": 56,
+ "git_commit": "9c2c2fd9b87044f54cbce7b4bc9a2aff7e398c7d",
+ "ts": "2026-07-08T11:56:49Z",
+ "arm": "context",
+ "dv": "pr_lambda",
+ "cells": [
+  "m1_lora_band8",
+  "m2_fullft_band8"
+ ]
+}

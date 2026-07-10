@@ -8,7 +8,8 @@ routing, both backed by read-only predicates in ``task_workflow``:
 - **DEDUP** — ``is_open_workflow_fix_task(target_file, fingerprint)`` so the
   SAME bug on the SAME file is not double-filed, while a DISTINCT bug on the
   same hot file (different fingerprint) STILL files its own task and gets its
-  own plan review (the A1 grain fix — the load-bearing #678 change).
+  own plan review (the A1 grain fix — the load-bearing #678 change);
+  cross-channel since #1180 — ``daily-fix:``-titled /daily filings count.
 - **RECURSION GUARD** — ``is_workflow_fix_session(N)`` so a workflow-fix
   session never auto-files MORE workflow-fix tasks for its own findings (the
   "unbounded fan-out" failure mode).
@@ -192,6 +193,62 @@ def test_non_infra_task_is_not_a_workflow_fix(fake_repo):
     assert tw.is_open_workflow_fix_task(target, fp) is None
 
 
+# ─── Cross-channel dedup: daily-fix: titles (#1180) ─────────────────────────
+
+
+def test_daily_fix_titled_open_task_is_duplicate(fake_repo):
+    """#1180: a /daily route-2 filing (title `daily-fix:`, same Provenance +
+    fp tag) IS visible to the orchestrator-channel dedup — fine AND coarse mode."""
+    _, tw = fake_repo
+    target = "scripts/daily_drive_filings.py"
+    fp = tw.wf_fix_fingerprint("Widen the title prefix.", "Predicate blind to daily-fix titles")
+    tid = tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="daily-fix: dedup predicate blind to daily-fix titles",
+            body=_wf_fix_body(target, fp, "Widen the title prefix."),
+            tags=["wf-fix", f"wf-fix-fp:{fp}", "daily-auto-filed"],
+        )
+    )
+    assert tw.is_open_workflow_fix_task(target, fp) == tid
+    assert tw.is_open_workflow_fix_task(target, None) == tid
+
+
+def test_daily_fix_same_file_DIFFERENT_fp_is_NOT_duplicate(fake_repo):
+    """The widening must not weaken the A1 grain across channels: a daily-filed
+    task on the same file with a DIFFERENT fingerprint is NOT a duplicate."""
+    _, tw = fake_repo
+    target = "scripts/daily_drive_filings.py"
+    fp_existing = tw.wf_fix_fingerprint("Widen the title prefix.", "Predicate blind to daily-fix")
+    fp_other = tw.wf_fix_fingerprint("A different daily bug.", "Something else broke")
+    tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="daily-fix: dedup predicate blind to daily-fix titles",
+            body=_wf_fix_body(target, fp_existing, "Widen the title prefix."),
+            tags=["wf-fix", f"wf-fix-fp:{fp_existing}"],
+        )
+    )
+    assert tw.is_open_workflow_fix_task(target, fp_other) is None
+
+
+def test_unlisted_title_prefix_is_still_ignored(fake_repo):
+    """The predicate stays prefix-bound: an infra task with a wf-fix-shaped
+    body + tags but a title outside WF_FIX_TITLE_PREFIXES does not match."""
+    _, tw = fake_repo
+    target = "scripts/daily_drive_filings.py"
+    fp = tw.wf_fix_fingerprint("Widen the title prefix.", "Predicate blind to daily-fix")
+    tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="infra: not a wf-fix filing",
+            body=_wf_fix_body(target, fp, "Widen the title prefix."),
+            tags=["wf-fix", f"wf-fix-fp:{fp}"],
+        )
+    )
+    assert tw.is_open_workflow_fix_task(target, fp) is None
+
+
 # ─── create_task body-verbatim round-trip (grep fallback) ──────────────────
 
 
@@ -223,6 +280,34 @@ def test_is_workflow_fix_session_true_on_provenance_line(fake_repo):
         tw.NewTaskRequest(kind="infra", title="plain infra task", body="## Goal\n\nDo a thing.\n")
     )
     assert tw.is_workflow_fix_session(plain) is False
+
+
+def test_is_workflow_fix_session_true_on_driver_injected_body(fake_repo):
+    """#1173 cross-predicate pin: a body shaped by the daily filing driver's
+    ``ensure_wf_fix_provenance`` injection satisfies the REAL predicates —
+    ``is_workflow_fix_session`` (recursion guard) AND, once the title prefix +
+    tags the dedup predicate requires are applied (mirroring _file_wf_fix_task),
+    ``is_open_workflow_fix_task`` — not just a test-invented substring."""
+    _, tw = fake_repo
+    scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    from daily_drive_filings import ensure_wf_fix_provenance
+
+    target = ".claude/skills/daily/SKILL.md"
+    fp = tw.wf_fix_fingerprint("change text for fix-a", "bug text for fix-a")
+    body, changed = ensure_wf_fix_provenance("## Goal\n\nx\n", target, fp)
+    assert changed is True
+    tid = tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="workflow-fix: driver-injected provenance",
+            body=body,
+            tags=["wf-fix", f"wf-fix-fp:{fp}"],
+        )
+    )
+    assert tw.is_workflow_fix_session(tid) is True
+    assert tw.is_open_workflow_fix_task(target, fp) == tid
 
 
 # ─── Primary dedup key: title prefix round-trips through the registry ───────

@@ -47,15 +47,18 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-# DOTENV_LINT_EXEMPT: analysis-phase script; shell exports cover pod/GCE/SLURM.
-from dotenv import load_dotenv
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
-load_dotenv(str(PROJECT_ROOT / ".env"))
 
 import issue658_fit_predictors as fit658  # noqa: E402
 import issue722_fit_M as fitM  # noqa: E402

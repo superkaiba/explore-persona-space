@@ -31,6 +31,7 @@ import subprocess
 # sys.modules registration BEFORE exec_module is required: the module defines
 # dataclasses, whose field-type resolution looks itself up in sys.modules.
 import sys
+import types
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -210,6 +211,7 @@ def _install_compare_fakes(
     calls: dict[str, list] = {
         "pristine": [],
         "pristine_detail": [],  # (test_file, cwd, venv_root) per pristine call
+        "pristine_timeout": [],  # timeout_s per pristine call (#1129 derived-default pin)
         "scratch_created": [],
         "scratch_removed": [],
     }
@@ -242,6 +244,7 @@ def _install_compare_fakes(
     ) -> set:
         calls["pristine"].append(test_file)
         calls["pristine_detail"].append((test_file, cwd, venv_root))
+        calls["pristine_timeout"].append(timeout_s)
         if pristine_exc is not None:
             raise pristine_exc
         return {n for n in pristine_failing if n.file == test_file}
@@ -324,9 +327,15 @@ def _compare_env(
     contamination_paths=(),
     wt_cones=("tests",),
     scratch_exc: Exception | None = None,
+    sel_attrs: dict | None = None,
     extra_args=(),
 ):
-    """Set up a compare fixture tree + fakes; return (argv, calls, root, wt)."""
+    """Set up a compare fixture tree + fakes; return (argv, calls, root, wt).
+
+    ``sel_attrs`` setattrs extra attributes onto the ``_FakeSel`` post-construction
+    (the line-level ``fake_sel.WORKFLOW_INVARIANT = ...`` pattern) — e.g. the #1046
+    timeout constants for the #1129 derived-pristine-timeout cases.
+    """
     root, wt, junit = _materialize_compare_tree(
         tmp_path,
         junit_cases=junit_cases,
@@ -336,10 +345,13 @@ def _compare_env(
         ledger_kw=ledger_kw,
         ledger_raw=ledger_raw,
     )
+    fake_sel = _FakeSel(touched, reasons, glob_scan)
+    for _k, _v in (sel_attrs or {}).items():
+        setattr(fake_sel, _k, _v)
     calls = _install_compare_fakes(
         monkeypatch,
         root=root,
-        fake_sel=_FakeSel(touched, reasons, glob_scan),
+        fake_sel=fake_sel,
         changed_tests=changed_tests,
         live_dirty=live_dirty,
         pristine_failing=pristine_failing,
@@ -599,6 +611,122 @@ def test_compare_run_pristine_strip_or_new(tmp_path: Path, monkeypatch, capsys, 
     else:
         assert rc == 1
         assert out["new"] == [node._asdict()]
+
+
+# --- #1129: derived per-file pristine timeout ------------------------------------
+
+
+def test_derive_pristine_timeout_from_selector_constants():
+    """Pure unit: BASE + PER_FILE + 2x surcharge for slow files; floor 600 for the rest."""
+    sel = types.SimpleNamespace(
+        TIMEOUT_BASE_S=120,
+        TIMEOUT_PER_FILE_S=30,
+        SLOW_TESTS={"tests/test_workflow_lint.py": 900},
+    )
+    assert sb.derive_pristine_timeout_s(sel, "tests/test_workflow_lint.py") == 1950.0
+    assert sb.derive_pristine_timeout_s(sel, "tests/test_other.py") == 600.0
+
+
+def test_derive_pristine_timeout_live_selector_covers_incident_1098():
+    """Live-tree drift pin: the derived bound must keep covering the #1098 incident.
+
+    Dual grounding: 1200 s is the demonstrated-sufficient manual rerun bound
+    (`--pristine-timeout-s 1200` succeeded — the BINDING incident floor), and the
+    measured pristine runtime of tests/test_workflow_lint.py is bracketed at
+    ~640-780 s (the #1129 filing says ~13 min ~= 780 s; #1098's events record
+    "~640s+"). The `>= 2 * 780 = 1560` threshold gives >=2x headroom over the
+    bracket top; a future legitimate SLOW_TESTS re-measurement that lands the
+    derived value in [1200, 1560) should be reconciled against the 1200 s
+    incident floor rather than misread as an incident-coverage regression.
+    """
+    real_sel = sb.load_selector_module(Path(__file__).resolve().parents[1])
+    assert sb.derive_pristine_timeout_s(real_sel, "tests/test_workflow_lint.py") >= 2 * 780
+
+
+def test_derive_pristine_timeout_selector_skew_falls_back_to_floor():
+    """A selector copy lacking the #1046 constants (version skew) degrades to 600 s."""
+    skewed = _FakeSel([], {}, {})  # _FakeSel deliberately lacks the #1046 constants
+    assert sb.derive_pristine_timeout_s(skewed, "tests/test_workflow_lint.py") == 600.0
+
+
+def test_compare_pristine_timeout_derived_and_override_wins(tmp_path: Path, monkeypatch, capsys):
+    """Integration through sb.main: per-file derivation at default flags; explicit flag wins."""
+    node_wl = sb.Node(
+        file="tests/test_workflow_lint.py", classname="tests.test_workflow_lint", name="test_x"
+    )
+    # tests/test_zz_plain.py sorts AFTER test_workflow_lint.py -> recorded order is
+    # [surcharge file, plain file], pinning the PER-FILE (in-loop) derivation.
+    node_plain = sb.Node(
+        file="tests/test_zz_plain.py", classname="tests.test_zz_plain", name="test_y"
+    )
+    sel_1046 = {
+        "TIMEOUT_BASE_S": 120,
+        "TIMEOUT_PER_FILE_S": 30,
+        "SLOW_TESTS": {"tests/test_workflow_lint.py": 900},
+    }
+
+    # (a) default flags + default _FakeSel (no #1046 constants) -> skew fallback 600.0
+    #     through the real _resolve_pristine_bucket body.
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node_plain.file, node_plain.classname, node_plain.name, "failed")],
+        ledger_kw={"failing": ()},
+        pristine_failing=(node_plain,),
+        extra_args=("--run-pristine",),
+    )
+    rc, _out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert calls["pristine_timeout"] == [600.0]
+
+    # (b) default flags + #1046 constants on the selector -> derived 1950.0 for the
+    #     surcharge file.
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node_wl.file, node_wl.classname, node_wl.name, "failed")],
+        ledger_kw={"failing": ()},
+        pristine_failing=(node_wl,),
+        sel_attrs=sel_1046,
+        extra_args=("--run-pristine",),
+    )
+    rc, _out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert calls["pristine_timeout"] == [1950.0]
+
+    # (c) explicit --pristine-timeout-s wins verbatim, even with the constants present.
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node_wl.file, node_wl.classname, node_wl.name, "failed")],
+        ledger_kw={"failing": ()},
+        pristine_failing=(node_wl,),
+        sel_attrs=sel_1046,
+        extra_args=("--run-pristine", "--pristine-timeout-s", "1200"),
+    )
+    rc, _out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert calls["pristine_timeout"] == [1200.0]
+
+    # (d) mixed two-file bucket -> per-file (in-loop) derivation: [1950.0, 600.0].
+    #     An implementation hoisting the derivation above the loop (deriving once
+    #     from the first file) cannot produce two distinct values.
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            (node_wl.file, node_wl.classname, node_wl.name, "failed"),
+            (node_plain.file, node_plain.classname, node_plain.name, "failed"),
+        ],
+        ledger_kw={"failing": ()},
+        pristine_failing=(node_wl, node_plain),
+        sel_attrs=sel_1046,
+        extra_args=("--run-pristine",),
+    )
+    rc, _out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert calls["pristine"] == [node_wl.file, node_plain.file]
+    assert calls["pristine_timeout"] == [1950.0, 600.0]
 
 
 # --- Case 9: diff-linked known-red never blind-strips; pristine strip WARNs -----

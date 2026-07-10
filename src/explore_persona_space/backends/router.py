@@ -104,7 +104,12 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    orchestrator crash between submit and lease-write leaves an
    ``UNKNOWN_SUBMITTED`` recovery state.
 7. **GCP attempt-count guard** — a per-issue/day attempt counter caps
-   auto-chain GCP attempts at ``MAX_GCP_ATTEMPTS_PER_DAY`` (default 8).
+   auto-chain GCP attempts at ``MAX_GCP_ATTEMPTS_PER_DAY`` (default 16 —
+   #1121 raised 8 -> 16 to cover the up-to-14-rung width-aware short walk
+   plus margin; the ladder is WIDTH-AWARE: a dispatch declaring a shardable
+   axis via ``spec.gpus`` walks wide ``a2-ultragpu-{8,4,2}g`` rungs FIRST,
+   width-major, degrading on capacity miss into the byte-identical base
+   ladder — see :func:`_gcp_ladder_specs` / :func:`_requested_wide_widths`).
    It counts ACTUAL create attempts across the #656 fallback-ladder rungs
    (a headroom-skip does NOT consume one) and is RE-READ each rung. At the
    cap the ladder STOPS issuing GCP creates (zero credit spent) and the
@@ -200,6 +205,8 @@ from explore_persona_space.backends.base import (
 )
 from explore_persona_space.backends.gcp import (
     INTENT_TO_MACHINE,
+    WIDE_A100_80_BY_WIDTH,
+    WIDTH_ELIGIBLE_INTENTS,
     GcpProvisioningError,
     GcpWorkloadError,
     MachineSpec,
@@ -232,8 +239,13 @@ DEFAULT_POLL_INTERVAL: float = 5.0
 #: broken classifier cannot loop into credit burn. Tunable per call.
 #: #680: bumped 5 -> 8 to cover the length-aware short-job ladder (up to 5
 #: rungs: spot-80, spot-40, flex-80, ondemand-80, ondemand-40) plus a
-#: same-day retry margin; still an attempt COUNT, never a dollar cap.
-MAX_GCP_ATTEMPTS_PER_DAY: int = 8
+#: same-day retry margin. #1121: bumped 8 -> 16 — the width-aware short-job
+#: walk is up to 14 rungs (3 wide widths x {spot, flex, ondemand} + the
+#: 5-rung base tail), and 16 = 14 + margin, the same sizing logic as #680's
+#: 5+margin -> 8; the free quota-headroom + boot-loop skips absorb the
+#: quota-doomed subset in practice. Still an attempt COUNT, never a dollar
+#: cap.
+MAX_GCP_ATTEMPTS_PER_DAY: int = 16
 
 #: Cancel state-machine: how long to keep polling for the job to leave
 #: the live queue after ``scancel``. SLURM robots have no ``sacct`` so
@@ -511,6 +523,26 @@ ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD: str = "gcp_queue_timeout_failove
 #: never touches the per-day GCP attempt counter (that bumps only on a create,
 #: inside ``_attempt_one_gcp_rung``, which the poller never re-enters).
 ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD: str = "gcp_boot_loop_failover_runpod"
+
+#: The ASYNC poller detected a GCP FLEX_START instance that VANISHED while
+#: PENDING (#1116/#1112): the create SUCCEEDED and the instance sat in the DWS
+#: capacity queue (last observed ``current_phase == "pending"``, per the
+#: sidecar phase clock), then disappeared from instances-list entirely (a dead
+#: ``terminal_instance not found`` poll, NO delete operation) — the queue
+#: dropped the request server-side, a pure CAPACITY event. DISTINCT from
+#: :data:`ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD` (the instance there
+#: dequeued nothing but still EXISTED server-side — the failover tears it
+#: down; here the record is already DELETED, so there is nothing to tear
+#: down), from :data:`ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD` (the
+#: instance there BOOTED and died; here it never left the queue), from both
+#: workload-crash reasons (nothing ever ran), and from
+#: :data:`ROUTE_REASON_RUNPOD_FALLBACK` (capacity exhaustion at create time —
+#: this create SUCCEEDED). Same RunPod target + terminal rung, distinct
+#: detection cause so the ``epm:backend-selected`` marker trail tells a queue
+#: vanish apart from every sibling. The trigger never touches the per-day GCP
+#: attempt counter (that bumps only on a create, inside
+#: ``_attempt_one_gcp_rung``, which the poller never re-enters).
+ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD: str = "gcp_queue_vanish_failover_runpod"
 
 #: Default N for the #1029 pre-workload boot-loop breaker: the Nth CONSECUTIVE
 #: same-rung pre-workload boot death fails over to RunPod, and a rung whose
@@ -2435,14 +2467,76 @@ def _flex_start_rung(spec: RunSpec, machine: MachineSpec) -> tuple[RunSpec, str]
     )
 
 
+def _requested_wide_widths(spec: RunSpec, base: MachineSpec) -> list[int]:
+    """Descending wide widths for a width-declaring dispatch; ``[]`` otherwise.
+
+    ``[]`` when ``spec.gpus`` is None, <= the base machine's width, the
+    intent is not width-eligible, or the requested width is UNSUPPORTED
+    (not a :data:`gcp.WIDE_A100_80_BY_WIDTH` key) — then today's
+    ignore-``spec.gpus`` semantics hold. The ``dispatch_issue.py``
+    pre-route guard is the loud front door; a library caller bypassing it
+    gets a ``logger.warning``, not a silent nothing, AND never a silent
+    snap-down: without the supported-width gate, a library-seam ``gpus=6``
+    would walk ``[4, 2]`` — the snap-down plan #1121 §4b design point 6
+    explicitly bans (an idle-width provision must be a deliberate choice).
+    """
+    if spec.gpus is None:
+        return []
+    g = int(spec.gpus)
+    if g <= base.gpu_count:
+        return []
+    if spec.intent not in WIDTH_ELIGIBLE_INTENTS:
+        logger.warning(
+            "route: spec.gpus=%d ignored by the GCP lane for non-width-eligible intent %r (#1121).",
+            g,
+            spec.intent,
+        )
+        return []
+    if g not in WIDE_A100_80_BY_WIDTH:
+        logger.warning(
+            "route: unsupported wide width spec.gpus=%d for intent %r — no snap-down; "
+            "base-width ladder used. Supported: %s (#1121).",
+            g,
+            spec.intent,
+            sorted(WIDE_A100_80_BY_WIDTH),
+        )
+        return []
+    return [w for w in (8, 4, 2) if base.gpu_count < w <= g]
+
+
 def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
-    """Ordered ``(spec, rung_label)`` GCP provisioning attempts, length-aware.
+    """Ordered ``(spec, rung_label)`` GCP provisioning attempts, length- and width-aware.
 
     The cost-ordered fallback ladder BOTH the auto-GCP path
     (:func:`_attempt_gcp_lane`) and the explicit ``backend: gcp`` path
     (:func:`_override_free_or_gcp`) walk, so the two get IDENTICAL fallback
-    behavior (acceptance criterion 3 / the #654 fix). The order is keyed on
-    job LENGTH (:func:`_is_short_job`) — #680:
+    behavior (acceptance criterion 3 / the #654 fix).
+
+    **Width-aware wide-rung prefix (#1121).** A dispatch that DECLARES a
+    shardable multi-GPU axis (``spec.gpus`` > the intent's base machine
+    width, width-eligible intent, supported width — see
+    :func:`_requested_wide_widths`) walks WIDE ``a2-ultragpu-{8,4,2}g``
+    rungs FIRST, width-major: ALL provisioning models at width ``w`` are
+    exhausted before width ``w-1`` is accepted (wall-clock is the scarce
+    resource; GCP credits are not — a spot-8g attempt is strictly
+    preferable to an on-demand-4g one). Intra-width, the EXISTING
+    length-aware order applies verbatim (spot -> flex -> on-demand on a
+    short job; flex -> on-demand on a long/unknown one; a caller
+    ``provisioning_model`` pin walks only the pinned model at every
+    width). Wide rung labels carry an ``x<w>`` suffix
+    (``spot_a100_80x8``); NO wide A100-40 rungs in v1 (on-demand
+    a2-highgpu quota is 1 — a dead rung). Job LENGTH is classified ONCE
+    at the WIDEST requested machine and threaded through the whole walk
+    including the base tail: GPU-hours = wall x width is the honest
+    total-work read, and a width-8-budgeted job that degrades to 1x
+    genuinely runs ~8x the budgeted wall, so inheriting the (usually
+    LONG) classification in the tail is conservative and correct. When no
+    width is requested the classification is EXACTLY today's
+    ``_is_short_job(spec, base)`` — width-1 ladders are byte-identical.
+    The base-width tail below the wide prefix is the pre-#1121 ladder
+    unchanged.
+
+    The base order is keyed on job LENGTH (:func:`_is_short_job`) — #680:
 
     **SHORT jobs** (known length <= ``EPS_GCP_SPOT_MAX_GPU_HOURS`` OR
     ``spec.extra["spot_tolerant"]``) — spot leads, because a short job
@@ -2540,6 +2634,51 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
         return cpu_rungs
     a40 = a100_40_fallback_for_intent(spec)
     pinned = (spec.extra or {}).get("provisioning_model")
+
+    # #1121 width-aware wide-rung PREFIX (width-major: every provisioning
+    # model at width w before width w-1). Job length is classified ONCE at
+    # the WIDEST requested machine and threaded through the whole walk incl.
+    # the base tail (docstring above); when ``wide_widths == []`` this is
+    # EXACTLY today's ``_is_short_job(spec, base)`` — width-1 byte-identity.
+    # Fact-check note (plan §4b): an explicit
+    # ``spec.extra["estimated_gpu_hours"]`` override is machine-independent,
+    # so classify-at-widest is a no-op on that path — not an error.
+    wide_widths = _requested_wide_widths(spec, base)
+    widest = WIDE_A100_80_BY_WIDTH[wide_widths[0]] if wide_widths else base
+    short = _is_short_job(spec, widest)
+    rungs: list[tuple[RunSpec, str]] = []
+    for w in wide_widths:
+        m = WIDE_A100_80_BY_WIDTH[w]  # membership guaranteed by _requested_wide_widths
+        if pinned is not None:
+            # Caller pin honored at every width (#537/#680, extended per-width):
+            # a pinned SPOT width-8 dispatch walks spot_*x8 -> spot_*x4 ->
+            # spot_*x2 -> the pinned base tail, never silently un-pinning.
+            wide_pinned_model = str(pinned).upper()
+            wide_prefix = {
+                "SPOT": "spot",
+                "FLEX_START": "flexstart",
+                "STANDARD": "ondemand",
+            }.get(wide_pinned_model, wide_pinned_model.lower())
+            rungs.append(
+                (
+                    _with_machine(spec, m, provisioning=wide_pinned_model),
+                    f"{wide_prefix}_{_machine_label(m)}x{w}",
+                )
+            )
+            continue
+        if short:
+            rungs.append(
+                (_with_machine(spec, m, provisioning="SPOT"), f"spot_{_machine_label(m)}x{w}")
+            )
+        flex_spec, _flex_base_label = _flex_start_rung(spec, m)
+        rungs.append((flex_spec, f"flexstart_{_machine_label(m)}x{w}"))
+        rungs.append(
+            (_with_machine(spec, m, provisioning="STANDARD"), f"ondemand_{_machine_label(m)}x{w}")
+        )
+
+    # BASE-width tail: the pre-#1121 construction, byte-identical labels AND
+    # specs (the base on-demand rung stays the caller spec AS-IS), except
+    # ``short`` comes from the single classification above.
     if pinned is not None:
         # CLI provisioning-model pin (#537/#680): walk ONLY the pinned model.
         pinned_model = str(pinned).upper()
@@ -2548,22 +2687,21 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
         prefix = {"SPOT": "spot", "FLEX_START": "flexstart", "STANDARD": "ondemand"}.get(
             pinned_model, pinned_model.lower()
         )
-        pinned_rungs: list[tuple[RunSpec, str]] = [
+        rungs.append(
             (
                 _with_machine(spec, base, provisioning=pinned_model),
                 f"{prefix}_{_machine_label(base)}",
             )
-        ]
+        )
         if a40 is not None:
-            pinned_rungs.append(
+            rungs.append(
                 (
                     _with_machine(spec, a40, provisioning=pinned_model),
                     f"{prefix}_{_machine_label(a40)}",
                 )
             )
-        return pinned_rungs
-    rungs: list[tuple[RunSpec, str]] = []
-    if _is_short_job(spec, base):
+        return rungs
+    if short:
         # SHORT: spot-first -> flex -> on-demand (spot preemption is cheap here)
         rungs.append(
             (_with_machine(spec, base, provisioning="SPOT"), f"spot_{_machine_label(base)}")
@@ -4778,6 +4916,13 @@ def _attempt_one_gcp_rung(
         # is 1500s) but worth this comment at the site.
         gcp_handle.extra.setdefault("gcp_ladder_rung", rung_label)
         gcp_handle.extra.setdefault("gcp_launched_ts", float(time.time()))
+        # #1121: record the DECLARED width (None when undeclared) + the
+        # REALIZED width of the rung's resolved machine, so the sidecar /
+        # marker trail lets the workload re-shard off the realized width
+        # (a degraded launch may land narrower than requested). ``machine``
+        # above resolved THIS rung's true machine via the override.
+        gcp_handle.extra.setdefault("requested_gpus", spec.gpus)
+        gcp_handle.extra.setdefault("realized_gpu_count", int(machine.gpu_count))
 
         # Persist the handle (sidecar hook) + launched id IMMEDIATELY
         # (still under the flock).
@@ -4819,6 +4964,11 @@ def _attempt_one_gcp_rung(
         extra={
             "gcp_attempts_today": attempts_today,
             "gcp_ladder_rung": rung_label,
+            # #1121: declared vs realized width on the epm:backend-selected
+            # marker surface (additive extra fields, same class as
+            # gcp_ladder_rung — no marker SCHEMA change).
+            "requested_gpus": spec.gpus,
+            "realized_gpu_count": int(machine.gpu_count),
             **_gcp_marker_extras(spec),
         },
     )
@@ -5423,6 +5573,7 @@ __all__ = [
     "ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD",
     "ROUTE_REASON_CPU_FALLBACK_INFEASIBLE",
     "ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD",
+    "ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC",
     "ROUTE_REASON_NO_COMPUTE",

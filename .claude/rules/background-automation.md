@@ -169,7 +169,8 @@ themselves in a worktree.
 
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
 detector, orphan-file sweep, the infra-drain pass, the capacity-retry pass,
-the gate-push pass, the program-orchestrator recovery pass, the
+the stale-blocked flag pass, the gate-push pass, the program-orchestrator
+recovery pass, the
 stale-registration pass, the CPU/memory-pressure guard pass, the
 triage-observer pass, and three session reapers — the session-vs-status
 reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
@@ -270,14 +271,71 @@ The stalled detector + the two respawn arms carry six hardening mechanisms
   (their failure modes freeze the self-report by construction, and the
   fresh path must not fire on one wake's same-turn retry rows); with
   both turn knobs at `0` the fresh path probes nothing (the exact
-  pre-#1127 lazy gate — the rollback path). The single-refusal guard and
+  pre-#1127 lazy gate — the fresh-path rollback; a FULL #1209 rollback
+  additionally sets `EPM_TICK_WEDGE_DEAD_SILENCE_MIN=0`, which disables
+  the dead-wake trigger on the stale path too).
+  **#1209 dead-wake trigger (`failed-turn-silence`):** a session dead
+  after a SINGLE refused turn never arms its tick cron and freezes below
+  every counting threshold above (incident #1092 / transcript 8e9c371d:
+  1 failed turn at 02:54Z, ~100 min to the slow-lane respawn), so a tail
+  whose completed turns are ALL failed and whose newest parseable row
+  timestamp is ≥ `EPM_TICK_WEDGE_DEAD_SILENCE_MIN` (default 20 min; `0`
+  disables; malformed/negative → default) older than the pass clock
+  escalates to the fence STOP. The stop is the trigger's ACT — recorded
+  by a one-time `session-dead-silence-stop` marker at stop-initiation —
+  and the CRASH-RECOVERY arm completes the respawn once the stopped
+  wrapper is verifiably dead (~20-30 min): the fence's own spawn branch
+  is unreachable for this trigger's fresh-self-report shape (post-stop
+  the sid leaves the daemon /list, the wedge pid-gate goes inert, and
+  decide() keeps on the fresh boot self-report). Bounded by the episode
+  belt (`respawn_count < STALLED_MAX_RESPAWNS`) AND a per-issue
+  per-UTC-day cap `EPM_TICK_WEDGE_DEAD_RESPAWNS_PER_DAY` (default 3;
+  malformed or <1 → default — never a kill switch), bumped ONCE per
+  fence episode at stop-initiation and persisted
+  advancement-clear-EXEMPT in `stalled-<N>.json` (each die-on-turn-1
+  generation writes one boot self-report, so episode-scoped state
+  cannot bound the cross-generation die-on-boot loop); a cap-disarmed
+  trigger goes quiet (no marker, no push) and the slow stalled lane
+  stays the backstop. On the fresh path it rides the SAME two-turn-knob
+  gate as the #1127 lanes (both turn knobs at `0` keeps the zero-probe
+  hot path; the dead-wake trigger then still fires via the STALE path
+  once the boot self-report ages out); a prior ok turn anywhere in the
+  tail, zero completed turns (swallows stay the dequeue-run's
+  property), a ts-less tail, and a future-dated anchor all fail toward
+  NO-FIRE. Accepted #1209 residual, pinned by test: the 256 KB tail can
+  truncate older ok turns of a very long final turn (incl. the
+  leading-implicit-turn shape) — the last visible turn genuinely failed
+  and went silent, so the bounded fresh respawn is the accepted
+  recovery.
+  **#1241 cap parity for the four pre-#1209 triggers:** `dequeue-run` /
+  `api-error-run` / `failed-turn-run` / `failed-turn-rate` respawns are
+  bounded at the override site by the SAME two-part gate as the #1209
+  trigger — the episode belt (`respawn_count < STALLED_MAX_RESPAWNS`,
+  the cap decide() enforces on the slow path) AND a per-issue
+  per-UTC-day cap `EPM_TICK_WEDGE_RESPAWNS_PER_DAY` (default 3;
+  malformed or <1 → default — never a kill switch), on its own
+  day-keyed, advancement-clear-EXEMPT counter (`wedge_respawns_today` /
+  `wedge_respawn_day` in `stalled-<N>.json`) bumped ONCE per
+  wedge-initiated fence episode at stop-initiation (the crash-recovery
+  arm, which consults no cap, can complete a fresh-self-report wedge
+  respawn — so the fence's spawn branch cannot be the counting or
+  gating site, the same reason as #1209's). The two day budgets are
+  INDEPENDENT. A stop-failed episode still consumes a budget unit
+  (counted at stop-initiation — conservative in the safe direction) and
+  stays push-visible via the one-time `session-stop-failed` marker. A
+  cap-disarmed trigger goes quiet (no marker, no push; when EVERY
+  family is cap-disarmed the 256 KB transcript read is skipped
+  entirely); the slow stalled lane stays the backstop with its own
+  decide()-side belt + exhausted marker.
+  The single-refusal guard and
   fail-toward-NO-FIRE posture are unchanged. Accepted residuals: the
   watcher's own status-transition-keyed reconcile can refresh a
   SWALLOWED session's self-report, so the #779 dequeue-run shape then
   waits for staleness — identical to today; and a healthy session whose
   last 3 wakes each END in one transient trailing api-error row can
   false-respawn (bounded by the 3-consecutive-completed-turn bar, the
-  respawn cap, the fence, the worktree hold, and the park exemptions).
+  episode belt + per-issue per-UTC-day wedge cap — #1241, above — the
+  fence, the worktree hold, and the park exemptions).
   Bypasses the 2-miss debounce, the #759 K-downgrade and the 2h marker
   window — direct evidence beats proxies — but NOT the park exemptions
   (provision-in-flight / followups / spend-approval — re-probed once
@@ -313,6 +371,28 @@ Per-episode state for all five rides `stalled-<N>.json`
 safe defaults. While a fence episode is pending, the #759 K corroboration is
 skipped (its debounce already served — re-downgrading the verify ticks would
 stall the fence).
+
+**Terminal-status act guard + source stamp (#1247).** The orphan sweep and
+the stalled fence's spawn branch act only after a same-instant live-status
+re-read (`_task_status`, canonical `PROJECT_ROOT` resolver, #844) POSITIVELY
+returns an ACTIVE status — a stale pass-start snapshot can never produce a
+respawn, a marker, or a cap-consume on a terminal/parked task (2-week
+#662/#663/#867 marker loop, ~1,800 junk commits; the loop's root cause was
+the test suite's own unstubbed `_post_progress_marker`, fixed alongside, but
+the guard closes the whole stale-snapshot/TOCTOU class). Abort is loud
+(`ORPHAN-ACT-GUARD` / `STALLED-ACT-GUARD` stderr line naming snapshot vs
+live status + the aborted action); a `None` read (transient task.py failure)
+defers one tick without erasing episode state; a positive non-ACTIVE read
+clears the episode state (orphan) / the fence's `stop_pending_*` fields
+(stalled). Residual ms-scale TOCTOU between the guard read and the act is
+irreducible without locking — the guard shrinks the window from
+minutes/multi-tick to ~ms. Every orphan-respawn / orphan-alert /
+stalled-respawn marker note additionally carries a
+`[src: host=… user=… pid=… sha=… root=…]` stamp (`_source_stamp()`,
+running-checkout-derived by design — it exposes a stale worktree/clone copy)
+so any future stale-instance poster identifies itself on its first marker.
+Pinned by `tests/test_autonomous_session_watch.py::test_orphan_act_guard_*`
++ `test_stalled_fence_spawn_guard_*`.
 
 **Infra-drain pass (execute the PM dispatch queue; task #633).** The PM
 session's standing infra auto-dispatch rule (`research-pm.md` § Standing
@@ -447,6 +527,40 @@ markers carry the `[autonomous_session_watch:capacity-retry]` /
 orphan/stalled staleness clocks. Kill switch: `EPM_DISABLE_CAPACITY_RETRY=1`.
 `--capacity-retry-only` runs just this pass (pair with `--dry-run` for a live
 smoke against the real blocked-task set).
+
+**Stale-blocked flag pass (flag — never flip — a stale `blocked` on a task
+whose relaunch succeeded; task #1021, incident #742).** The capacity-retry
+pass's non-spawning sibling: both scan the `blocked` set, but this pass is
+daemon-INDEPENDENT — it spawns nothing (marker posts go via the `task.py`
+subprocess). A crash-fix relaunch that succeeds on a task an earlier failed
+round parked at `blocked` leaves the status stale: the run is healthy while
+the folder says `blocked` (#742 ran healthy ~35h at status `blocked`,
+2026-07-01→07-02). The orchestrator-side fix is the SKILL.md "A successful
+relaunch also reconciles a stale `blocked`" rule; this pass is the
+watcher-side BACKSTOP. Predicate (`decide_stale_blocked_flag`, every
+missing signal failing toward silence): status `blocked` AND the latest
+`epm:run-launched` NEWER than the transition into `blocked` (the normal
+fail→block ordering keeps a deliberately-parked task quiet — only a launch
+AFTER the block flags) AND real (non-watcher, non-deliberate-stop) progress
+AT OR AFTER that launch within `EPM_STALE_BLOCKED_PROGRESS_FRESH_S`
+(default 2h; malformed/non-positive values fall back to the default). On a
+hit it FLAGS — one deduped `epm:progress` marker naming the reconcile
+command (`task.py set-status <N> running`), one row in the durable sidecar
+`~/.eps-autonomous/stale-blocked-events.jsonl` (the `.jsonl` suffix keeps
+it out of the GC's `stale-blocked-*.json` glob), and one Telegram digest
+line — and NEVER mutates status (false alert cheap, false flip dangerous;
+the same conservative posture as the pod-safety alerts). Dedup is per
+launch episode: `~/.eps-autonomous/stale-blocked-<N>.json` records the
+flagged `epm:run-launched` ts, so the same launch never re-alerts while a
+NEWER launch does; the state file is reaped by the generalized GC at
+`completed`/`archived` only (`blocked` is deliberately NOT in
+`TERMINAL_FOR_GC`, so a live episode's dedup state is never reset
+mid-episode). Marker notes carry the
+`[autonomous_session_watch:stale-blocked-flag]` sentinel so they never
+reset the orphan/stalled staleness clocks. Kill switch:
+`EPM_DISABLE_STALE_BLOCKED_FLAG=1`. `--stale-blocked-only` runs just this
+pass (pair with `--dry-run` for a live smoke against the real blocked-task
+set).
 
 **Gate-push pass (2026-06-12 anti-stall redesign).** Telegram phone push on
 gate-park/`blocked` transitions via the my-goat `telegram_push.sh` channel
@@ -751,13 +865,17 @@ record is judged exactly once, after its compliance window closes. Records
 before `TRIAGE_DUTY_EPOCH_TS` (2026-07-03T05:00Z, the #889 landing) are
 legacy and never flagged. **Channels:** every flag appends one row to the
 dedicated sidecar `.claude/cache/triage-observer-events.jsonl`; `warn` flags
-additionally get one deduped fail-soft `_telegram_push` digest line and one
-`epm:progress` review-nudge note on the task (anti-liveness
+additionally get one deduped fail-soft `_telegram_push` digest line — capped
+at `EPM_TRIAGE_OBSERVER_PUSH_CAP` (5) individual pushes per tick, overflow
+rolled into ONE "+N more, see sidecar" summary push at the end of the pass
+(#1167) — and one `epm:progress` review-nudge note on the task (anti-liveness
 `[autonomous_session_watch:triage-observer]` sentinel; its `by="unknown"`
 deliberately makes the note a triage candidate at the task's NEXT dispatch —
 the flag is itself the advisory), capped at `EPM_TRIAGE_OBSERVER_MARKER_CAP`
-(5) marker posts per tick — a warn beyond the cap is PERMANENTLY
-sidecar+push-only, never deferred. **Fire-once dedup:** key
+(5) marker posts per tick. The two caps are independent; a warn beyond either
+cap is PERMANENTLY sidecar-recorded and never deferred — beyond the marker
+cap it stays sidecar+push-only; beyond the push cap its individual push is
+replaced by the tick's single summary push. **Fire-once dedup:** key
 `(issue, record_ts, violation-class)` in the state singleton
 `~/.eps-autonomous/triage-observer.json` (atomic write; entries self-pruned
 at `completed`/`archived`); a violation is a fixed historical record, so
@@ -776,6 +894,48 @@ that class). Known bounded miss: a 9a-ter compute fit dispatched under a
 `EPM_DISABLE_TRIAGE_OBSERVER=1`; `--triage-observer-only` runs just this
 pass (pair with `--dry-run` for a live smoke — dry-run performs zero writes
 and zero `subprocess.run`).
+
+**Verdict-disagree observer pass (task #1170, `verdict_disagree_pass`).** A
+daemon-INDEPENDENT, **NON-GATING** pass (right after `triage_observer_pass`)
+auditing the four MARKER-MODE doubled review sites (workflow.yaml
+§ ensemble_review — code-reviewer / interpretation-critic /
+clean-result-critic / follow-up-critic; the `critic` site reconciles
+in-context and is unobservable) for the #825 misclassification shape: the
+LATEST round per (issue, site) whose Claude + Codex durable verdicts BOTH
+exist with parseable OPPOSITE-class verdicts (pass-class vs fail-class), no
+role-matched `epm:review-reconcile`, and — for proximity-tier pairings only
+— no Codex no-show evidence. The pure predicate
+(`task_workflow.unreconciled_disagreement_rounds`) pairs two-tier: Tier 1
+round-aligned via `ensemble_verdicts_present`, then a time-proximity
+fallback (`EPM_VERDICT_DISAGREE_PAIR_PROXIMITY_S`, 6h) for the observed
+sentinel/version round drift (#825: Claude sentinel v5 vs Codex bare
+version 7 for the same logical round); a 1h grace window
+(`EPM_VERDICT_DISAGREE_GRACE_S`) lets an in-flight reconcile land, and
+no-show evidence (`epm:codex-task-failed`, a codex-scoped `epm:failure`,
+the #1204 quota-skip note) suppresses TIER-2 pairings only, scanned from
+`min(pair_ts) − EPM_VERDICT_DISAGREE_EVIDENCE_LOOKBACK_S` (2h) — a Tier-1
+both-present pair is never evidence-suppressed (evidence explains an absent
+twin, not two present verdicts). **Channels:** one row per finding to the
+dedicated sidecar `.claude/cache/verdict-disagree-observer-events.jsonl` +
+one deduped fail-soft `_telegram_push`; **NO task marker** (deliberate
+divergence from the triage observer — this flag's consumer is a human, not
+the next dispatch). Fire-once dedup key `(issue, role, round_label)` in the
+state singleton `~/.eps-autonomous/verdict-disagree-observer.json`
+(self-pruned at `completed`/`archived`). **KNOWN BENIGN-FIRE class:** a
+Step 5c-bis mechanical-contract-only strip, a 9a-bis procedural strip, or a
+cap-5 all-stripped-continue resolves a PASS-vs-FAIL round WITHOUT a
+reconciler and logs to chat only, so it flags by design (auditing
+orchestrator self-serve dismissals of a FAIL is in scope); the FAIL
+marker's own `**Blocker tags:**` line (an all-mechanical tag set) is the
+one-glance disambiguator. **Coverage limits:** latest-round-only (a
+superseded earlier-round disagreement is moot and round re-derivation is
+unreliable under sentinel drift); Tier-2 evidence suppression is
+site-agnostic (`epm:codex-task-failed` notes don't reliably name the role).
+Sweep scope reuses the triage observer's enumerator (ACTIVE ∪
+{`awaiting_promotion`, `blocked`}, `EPM_VERDICT_DISAGREE_LOOKBACK_H` 48h
+events-mtime recency). Kill switch `EPM_DISABLE_VERDICT_DISAGREE_OBSERVER=1`;
+`--verdict-disagree-only` runs just this pass (pair with `--dry-run` for a
+live smoke — zero writes).
 
 **Auth-outage guard pass (task #1027, `auth_outage_pass`).** Fleet-level
 respawn suppression for an Anthropic auth outage — or ANY fleet-wide

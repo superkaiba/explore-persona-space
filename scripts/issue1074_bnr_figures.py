@@ -23,10 +23,17 @@ import argparse
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
     proportion_ci,
     savefig_paper,
@@ -81,7 +88,7 @@ def fig_negative_yield(results_dir: Path, out_dir: Path) -> None:
             elinewidth=1.2,
             capsize=3,
         )
-        for xi, k in zip(xs, kept):
+        for xi, k in zip(xs, kept, strict=False):
             ax.text(
                 xi,
                 1.0,
@@ -111,7 +118,7 @@ def fig_negative_yield(results_dir: Path, out_dir: Path) -> None:
 
     ax = axes[1]
     drop_kinds = [("judged harmful-compliant", colors[3]), ("no valid judge score", "#9a9a9a")]
-    for j, (key, label) in enumerate(rounds):
+    for j, (key, _label) in enumerate(rounds):
         none_d = np.array([d[key][m]["judge_none_drops"] for m in members], dtype=float)
         kept = np.array([d[key][m]["kept"] for m in members], dtype=float)
         compl = budget - kept - none_d
@@ -127,7 +134,7 @@ def fig_negative_yield(results_dir: Path, out_dir: Path) -> None:
             color=drop_kinds[1][1],
             label=drop_kinds[1][0] if j == 0 else None,
         )
-        for xi, c, n in zip(xs, compl, none_d):
+        for xi, c, n in zip(xs, compl, none_d, strict=False):
             if c > 0:
                 ax.text(xi, c / 2, f"{int(c)}", ha="center", va="center", fontsize=9)
             ax.text(
@@ -179,7 +186,7 @@ def fig_install_dose(results_dir: Path, out_dir: Path) -> None:
         capsize=3,
         label="checkpoint read (30-question subset)",
     )
-    for s, r in zip(steps, curve):
+    for s, r in zip(steps, curve, strict=False):
         ax.text(s, r + 0.03, f"{r:.2f}", ha="center", fontsize=10, color=colors[0])
     fr = inst["final_rate_source"]
     fr_lo, fr_hi = proportion_ci(fr, 948)
@@ -222,7 +229,7 @@ def fig_install_dose(results_dir: Path, out_dir: Path) -> None:
         assert sum(counts) == len(pq), (cell, sum(counts), len(pq))
         xs = x + (j - 1.5) * w
         ax.bar(xs, counts, width=w, color=colors[j], label=CELL_LABELS[cell])
-        for xi, c in zip(xs, counts):
+        for xi, c in zip(xs, counts, strict=False):
             if c > 0:
                 ax.text(xi, c + 2, f"{c}", ha="center", fontsize=8.2, color=colors[j])
     ax.set_xticks(x)

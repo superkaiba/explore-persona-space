@@ -1,0 +1,417 @@
+{
+  "meta": {
+    "git_commit": "a11951d563",
+    "ts": "2026-07-07T05:49:05Z",
+    "anthropic_version": "0.88.0",
+    "python": "3.11.15",
+    "script": "scripts/issue1090_free_analysis.py",
+    "phase": "p1_c1_judged_reread",
+    "smoke": false,
+    "n_draws": 5,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "threshold": 50,
+    "band": [
+      0.6,
+      0.85
+    ]
+  },
+  "units": {
+    "rung02": {
+      "n_items": 150,
+      "judged": {
+        "rate": 0.3904109589041096,
+        "k": 57,
+        "n": 146,
+        "n_dropped": 4,
+        "n_total_draws": 750,
+        "n_dropped_draws": 78,
+        "wilson95": [
+          0.31505775755108917,
+          0.47138339096841414
+        ],
+        "mode": "judged"
+      },
+      "structural": {
+        "rate": 0.17333333333333334,
+        "k": 26,
+        "n": 150,
+        "wilson95": [
+          0.12111982318473372,
+          0.24186132105713584
+        ],
+        "mode": "structural"
+      },
+      "agreement": {
+        "n_scored": 146,
+        "n_agree": 102,
+        "rate": 0.6986301369863014
+      },
+      "judge_wall_s": 21.5
+    },
+    "rung04": {
+      "n_items": 150,
+      "judged": {
+        "rate": 0.35135135135135137,
+        "k": 52,
+        "n": 148,
+        "n_dropped": 2,
+        "n_total_draws": 750,
+        "n_dropped_draws": 83,
+        "wilson95": [
+          0.2790850980595208,
+          0.4311392409885399
+        ],
+        "mode": "judged"
+      },
+      "structural": {
+        "rate": 0.12666666666666668,
+        "k": 19,
+        "n": 150,
+        "wilson95": [
+          0.082610643407449,
+          0.18936780715468765
+        ],
+        "mode": "structural"
+      },
+      "agreement": {
+        "n_scored": 148,
+        "n_agree": 103,
+        "rate": 0.6959459459459459
+      },
+      "judge_wall_s": 43.7
+    },
+    "rung06": {
+      "n_items": 150,
+      "judged": {
+        "rate": 0.4246575342465753,
+        "k": 62,
+        "n": 146,
+        "n_dropped": 4,
+        "n_total_draws": 750,
+        "n_dropped_draws": 87,
+        "wilson95": [
+          0.34742075561217084,
+          0.5057575339949878
+        ],
+        "mode": "judged"
+      },
+      "structural": {
+        "rate": 0.16666666666666666,
+        "k": 25,
+        "n": 150,
+        "wilson95": [
+          0.11551351052095787,
+          0.23446724890952125
+        ],
+        "mode": "structural"
+      },
+      "agreement": {
+        "n_scored": 146,
+        "n_agree": 93,
+        "rate": 0.636986301369863
+      },
+      "judge_wall_s": 23.6
+    },
+    "rung08": {
+      "n_items": 150,
+      "judged": {
+        "rate": 0.3586206896551724,
+        "k": 52,
+        "n": 145,
+        "n_dropped": 5,
+        "n_total_draws": 750,
+        "n_dropped_draws": 91,
+        "wilson95": [
+          0.2851339669748648,
+          0.4394054091135404
+        ],
+        "mode": "judged"
+      },
+      "structural": {
+        "rate": 0.13333333333333333,
+        "k": 20,
+        "n": 150,
+        "wilson95": [
+          0.08799732892586415,
+          0.19698150644766288
+        ],
+        "mode": "structural"
+      },
+      "agreement": {
+        "n_scored": 145,
+        "n_agree": 101,
+        "rate": 0.696551724137931
+      },
+      "judge_wall_s": 38.2
+    },
+    "rung10": {
+      "n_items": 150,
+      "judged": {
+        "rate": 0.3469387755102041,
+        "k": 51,
+        "n": 147,
+        "n_dropped": 3,
+        "n_total_draws": 750,
+        "n_dropped_draws": 67,
+        "wilson95": [
+          0.2747745162425409,
+          0.42689929257412507
+        ],
+        "mode": "judged"
+      },
+      "structural": {
+        "rate": 0.14,
+        "k": 21,
+        "n": 150,
+        "wilson95": [
+          0.09342578874476014,
+          0.20455343144015736
+        ],
+        "mode": "structural"
+      },
+      "agreement": {
+        "n_scored": 147,
+        "n_agree": 105,
+        "rate": 0.7142857142857143
+      },
+      "judge_wall_s": 36.2
+    },
+    "rung12": {
+      "n_items": 150,
+      "judged": {
+        "rate": 0.3356164383561644,
+        "k": 49,
+        "n": 146,
+        "n_dropped": 4,
+        "n_total_draws": 750,
+        "n_dropped_draws": 80,
+        "wilson95": [
+          0.264104944273696,
+          0.41555677850555894
+        ],
+        "mode": "judged"
+      },
+      "structural": {
+        "rate": 0.12,
+        "k": 18,
+        "n": 150,
+        "wilson95": [
+          0.0772684043967938,
+          0.18170966135395242
+        ],
+        "mode": "structural"
+      },
+      "agreement": {
+        "n_scored": 146,
+        "n_agree": 105,
+        "rate": 0.7191780821917808
+      },
+      "judge_wall_s": 41.3
+    },
+    "rung14": {
+      "n_items": 150,
+      "judged": {
+        "rate": 0.3401360544217687,
+        "k": 50,
+        "n": 147,
+        "n_dropped": 3,
+        "n_total_draws": 750,
+        "n_dropped_draws": 81,
+        "wilson95": [
+          0.2684931463856841,
+          0.4199217206006114
+        ],
+        "mode": "judged"
+      },
+      "structural": {
+        "rate": 0.14,
+        "k": 21,
+        "n": 150,
+        "wilson95": [
+          0.09342578874476014,
+          0.20455343144015736
+        ],
+        "mode": "structural"
+      },
+      "agreement": {
+        "n_scored": 147,
+        "n_agree": 112,
+        "rate": 0.7619047619047619
+      },
+      "judge_wall_s": 39.9
+    },
+    "rung15": {
+      "n_items": 150,
+      "judged": {
+        "rate": 0.35664335664335667,
+        "k": 51,
+        "n": 143,
+        "n_dropped": 7,
+        "n_total_draws": 750,
+        "n_dropped_draws": 83,
+        "wilson95": [
+          0.28282576415035254,
+          0.4379618055846545
+        ],
+        "mode": "judged"
+      },
+      "structural": {
+        "rate": 0.17333333333333334,
+        "k": 26,
+        "n": 150,
+        "wilson95": [
+          0.12111982318473372,
+          0.24186132105713584
+        ],
+        "mode": "structural"
+      },
+      "agreement": {
+        "n_scored": 143,
+        "n_agree": 110,
+        "rate": 0.7692307692307693
+      },
+      "judge_wall_s": 39.5
+    },
+    "tier2-trained": {
+      "n_items": 300,
+      "judged": {
+        "rate": 0.3776223776223776,
+        "k": 108,
+        "n": 286,
+        "n_dropped": 14,
+        "n_total_draws": 1500,
+        "n_dropped_draws": 161,
+        "wilson95": [
+          0.3234083125323969,
+          0.4350804620258445
+        ],
+        "mode": "judged"
+      },
+      "structural": {
+        "rate": 0.17,
+        "k": 51,
+        "n": 300,
+        "wilson95": [
+          0.13172947235659208,
+          0.21661519144191346
+        ],
+        "mode": "structural"
+      },
+      "agreement": {
+        "n_scored": 286,
+        "n_agree": 198,
+        "rate": 0.6923076923076923
+      },
+      "judge_wall_s": 72.2
+    },
+    "tier2-base": {
+      "n_items": 300,
+      "judged": {
+        "rate": 0.37542662116040953,
+        "k": 110,
+        "n": 293,
+        "n_dropped": 7,
+        "n_total_draws": 1500,
+        "n_dropped_draws": 151,
+        "wilson95": [
+          0.32192835957802773,
+          0.4321492360150428
+        ],
+        "mode": "judged"
+      },
+      "structural": {
+        "rate": 0.18333333333333332,
+        "k": 55,
+        "n": 300,
+        "wilson95": [
+          0.14364461001138987,
+          0.23102956232050934
+        ],
+        "mode": "structural"
+      },
+      "agreement": {
+        "n_scored": 293,
+        "n_agree": 204,
+        "rate": 0.6962457337883959
+      },
+      "judge_wall_s": 66.8
+    }
+  },
+  "pooled_agreement": {
+    "n_scored": 1747,
+    "n_agree": 1233,
+    "rate": 0.7057813394390383,
+    "spotcheck_reference": {
+      "agreement": 0.633,
+      "n": 30
+    }
+  },
+  "judged_dose_curve": {
+    "2": 0.3904109589041096,
+    "4": 0.35135135135135137,
+    "6": 0.4246575342465753,
+    "8": 0.3586206896551724,
+    "10": 0.3469387755102041,
+    "12": 0.3356164383561644,
+    "14": 0.3401360544217687,
+    "15": 0.35664335664335667
+  },
+  "structural_dose_curve_reread": {
+    "2": 0.17333333333333334,
+    "4": 0.12666666666666668,
+    "6": 0.16666666666666666,
+    "8": 0.13333333333333333,
+    "10": 0.14,
+    "12": 0.12,
+    "14": 0.14,
+    "15": 0.17333333333333334
+  },
+  "judged_selection": {
+    "step": 6,
+    "rate": 0.4246575342465753,
+    "in_band": false,
+    "fallback": "closest_approach"
+  },
+  "production_selection": {
+    "step": 2,
+    "rate": 0.17333333333333334,
+    "in_band": false,
+    "fallback": "closest_approach"
+  },
+  "selection_verdict": "overturned",
+  "tier2_install": {
+    "judged_trained": {
+      "rate": 0.3776223776223776,
+      "k": 108,
+      "n": 286,
+      "n_dropped": 14,
+      "n_total_draws": 1500,
+      "n_dropped_draws": 161,
+      "wilson95": [
+        0.3234083125323969,
+        0.4350804620258445
+      ],
+      "mode": "judged"
+    },
+    "judged_base": {
+      "rate": 0.37542662116040953,
+      "k": 110,
+      "n": 293,
+      "n_dropped": 7,
+      "n_total_draws": 1500,
+      "n_dropped_draws": 151,
+      "wilson95": [
+        0.32192835957802773,
+        0.4321492360150428
+      ],
+      "mode": "judged"
+    },
+    "judged_delta": 0.002195756461968068,
+    "judged_delta_newcombe95": [
+      -0.07626837476707013,
+      0.08070368889973434
+    ],
+    "structural_delta_production": -0.013333333333333308,
+    "null_verdict": "confirmed_null"
+  }
+}
