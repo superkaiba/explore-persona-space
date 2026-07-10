@@ -458,11 +458,14 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import functools
+import getpass
 import json
 import os
 import re
 import shlex
 import shutil
+import socket
 import subprocess
 import sys
 import threading
@@ -886,6 +889,41 @@ _ORPHAN_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:orphan-respawn]"
 # failed, or the task's only registration is MANUAL (user-driven sessions are
 # never auto-respawned, #505). Same staleness-filter contract as the others.
 _ORPHAN_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:orphan-alert]"
+
+
+@functools.lru_cache(maxsize=1)
+def _source_stamp() -> str:
+    """Self-identification suffix for respawn-class marker notes (#1247):
+    host + user + pid + short HEAD sha + root of the RUNNING checkout.
+
+    Deliberately ``Path(__file__)``-derived, NOT the git-common-dir-resolved
+    ``PROJECT_ROOT`` (#844) — the whole point is to expose a stale
+    worktree/clone copy of this script posting from old code (the two-week
+    #662/#663/#867 junk-marker loop had no per-marker process identity, so
+    the poster took days of forensics to attribute). ``root=`` is the primary
+    discriminator (durable after the process dies); ``pid=`` enables live
+    ``/proc`` inspection; ``sha=`` dates the build generation. Fail-soft:
+    ``sha=unknown`` on any git failure; never raises. ``lru_cache``:
+    host/user/pid/sha/root are process-constants, computed once."""
+    script_root = Path(__file__).resolve().parent.parent
+    try:
+        sha = (
+            subprocess.run(
+                ["git", "rev-parse", "--short", "HEAD"],
+                cwd=script_root,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            ).stdout.strip()
+            or "unknown"
+        )
+    except (subprocess.SubprocessError, OSError):
+        sha = "unknown"
+    return (
+        f"[src: host={socket.gethostname()} user={getpass.getuser()} "
+        f"pid={os.getpid()} sha={sha} root={script_root}]"
+    )
+
 
 # Substring stamped into the one-time alert the stalled / orphan-respawn passes
 # post when they would have respawned a ``followups_running`` parent whose own
@@ -9669,6 +9707,26 @@ def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
     """Verified-dead spawn branch of the stop-verify fence (the pre-#845
     respawn body): the pending sid is confirmed absent from the daemon's
     live set, so a fresh ``--auto`` session cannot race the superseded one."""
+    # #1247 terminal-status act guard (stalled-arm symmetry): the fence
+    # stop→verify→spawn spans ticks, so ctx.task_status is ≥10 min old
+    # here by construction. Same positive-ACTIVE confirmation as the
+    # orphan pass.
+    live_status = _task_status(ctx.issue)
+    if live_status not in ACTIVE:
+        print(
+            f"  STALLED-ACT-GUARD issue #{ctx.issue}: fence spawn aborted — "
+            f"live status re-read returned {live_status!r} (not ACTIVE; "
+            f"snapshot was {ctx.task_status}); no respawn, no marker (#1247).",
+            file=sys.stderr,
+        )
+        if live_status is not None and not ctx.dry_run:
+            # Positively non-ACTIVE: clear the four fence stop_pending_*/
+            # stop_* fields only (NOT the whole stalled episode state),
+            # mirroring the suppressed branch's clear below. On None
+            # (transient task.py read failure) keep the fence PENDING —
+            # re-evaluated next tick.
+            _clear_fence_state_on_disk(ctx.issue)
+        return
     cap = _stalled_cap_gpu_hours(ctx.issue)
     spawn_result = _respawn_stalled_session(ctx.issue, cap, ctx.dry_run)
     if spawn_result == "suppressed":
@@ -9709,7 +9767,7 @@ def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
             f"spawned a fresh `--auto` session "
             f"(respawn {new_respawn_count}/{STALLED_MAX_RESPAWNS} this "
             f"episode). Confirmed for >= {ctx.threshold} checks."
-            f"{wedge_suffix}{hold_suffix}",
+            f"{wedge_suffix}{hold_suffix} {_source_stamp()}",
             ctx.dry_run,
             label="session-auto-respawn",
         )
@@ -11864,6 +11922,36 @@ def _parse_orphan_state_counters(state: dict, day_key: str) -> tuple[int, int]:
     return missed, respawns_today
 
 
+def _orphan_act_guard(
+    issue: int, *, status: str, action: str, state: dict, dry_run: bool
+) -> str | None:
+    """#1247 terminal-status act guard: re-read the LIVE status through the
+    canonical resolver (:func:`_task_status` — ``cwd=PROJECT_ROOT``,
+    git-common-dir resolved, #844) immediately before an acting branch and
+    require POSITIVE ACTIVE confirmation. Returns the live status on
+    confirmation (the caller acts + writes marker notes against IT, not the
+    stale snapshot) or ``None`` to abort the act: no respawn, no marker, no
+    cap consumed. A positively non-ACTIVE read clears the orphan episode
+    state (matching :func:`decide_orphan`'s own ``status not in ACTIVE ->
+    clear`` semantics); a ``None`` read (transient task.py failure) keeps
+    the state and defers one tick — fail toward not-acting, never toward
+    erasing episode state on a task.py glitch. Runs under ``--dry-run`` too
+    (the read is a read-only subprocess; the state-clear is dry_run-gated)."""
+    live_status = _task_status(issue)
+    if live_status in ACTIVE:
+        return live_status
+    print(
+        f"  ORPHAN-ACT-GUARD issue #{issue}: snapshot status={status} but "
+        f"live re-read returned {live_status!r} — not ACTIVE; aborting "
+        f"action={action}: no respawn, no marker, no cap consumed "
+        f"(#1247 stale-snapshot guard).",
+        file=sys.stderr,
+    )
+    if live_status is not None and state and not dry_run:
+        _clear_orphan_state(issue)  # positively non-active: episode over
+    return None
+
+
 def _process_orphan_task(
     issue: int,
     status: str,
@@ -11982,6 +12070,21 @@ def _process_orphan_task(
                 prev=state,
             )
         return
+    # ── #1247 terminal-status act guard ─────────────────────────────────
+    # Every branch below ACTS (spawns, posts a marker, or consumes the
+    # daily cap) on the pass-start _active_status_tasks() snapshot, which
+    # can be stale (TOCTOU within a tick; a stale task-state view fed the
+    # 2-week #662/#663/#867 marker loop). Re-verify the LIVE status
+    # through the canonical resolver (cwd=PROJECT_ROOT, git-common-dir
+    # resolved, #844) immediately before acting. POSITIVE confirmation
+    # required: act only on live ∈ ACTIVE. Helper-factored to keep this
+    # function under the C901 cap.
+    live_status = _orphan_act_guard(
+        issue, status=status, action=action, state=state, dry_run=dry_run
+    )
+    if live_status is None:
+        return
+    status = live_status  # act + write marker notes against the LIVE status
     if action == "respawn":
         spawn_result = _respawn_orphan(issue, _stalled_cap_gpu_hours(issue), dry_run)
         if spawn_result == "suppressed":
@@ -12009,7 +12112,7 @@ def _process_orphan_task(
                     f"(status={status}) had no live registered session and no "
                     f"real progress marker for {gap_str}; auto-respawned via "
                     f"spawn-issue --auto (attempt {respawns_today + 1}/{max_per_day} "
-                    f"today).",
+                    f"today). {_source_stamp()}",
                     dry_run,
                     label="orphan-respawn",
                 )
@@ -12046,7 +12149,8 @@ def _process_orphan_task(
             f"{_ORPHAN_ALERT_NOTE_SENTINEL} active task (status={status}) has "
             f"no live registered session and no real progress marker for "
             f"{gap_str}; {reason}. Manual recovery: uv run python "
-            f"scripts/spawn_session.py spawn-issue --issue {issue} --auto",
+            f"scripts/spawn_session.py spawn-issue --issue {issue} --auto "
+            f"{_source_stamp()}",
             dry_run,
             label="orphan-alert",
         )

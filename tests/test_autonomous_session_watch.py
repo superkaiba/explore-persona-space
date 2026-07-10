@@ -105,6 +105,7 @@ def _forbid_real_marker_posts(monkeypatch):
     - only ``dry_run=False`` with the GENUINE ``subprocess.run`` still live
       fails loud, naming the offending call.
     """
+    import functools
     import subprocess as _sp
 
     import autonomous_session_watch as asw
@@ -112,6 +113,10 @@ def _forbid_real_marker_posts(monkeypatch):
     real_post = asw._post_progress_marker
     real_run = _sp.run
 
+    # functools.wraps sets __wrapped__, so inspect.getsource() on the patched
+    # attribute still resolves the ORIGINAL body (the #966 source-inspection
+    # pins keep working under this guard).
+    @functools.wraps(real_post)
     def _guarded(issue, note, dry_run, *, label):
         if not dry_run and _sp.run is real_run:
             raise AssertionError(
@@ -1710,6 +1715,25 @@ def test_pod_safety_pass_failed_snapshot_does_not_gc_state(isolated_registry, mo
 # ── daemon-reachability gates ONLY the respawn pass ──────────────────────────
 
 
+def _stub_fleet_mutating_passes(asw, monkeypatch):
+    """#1247 hermeticity for FULL-main() tests: main() runs passes that scan
+    the LIVE repo and can REALLY mutate fleet state from a unit test —
+    ``proposed_infra_sweep_pass`` + ``capacity_retry_pass`` DISPATCH real
+    ``spawn-issue --auto`` sessions via the live Happy daemon (observed
+    2026-07-10: a suite run of test_main_daemon_reachable_runs_both_passes
+    spawned a REAL session for proposed task #1227), and
+    ``program_orchestrator_pass`` (daemon-INDEPENDENT) can relaunch the real
+    #660 tmux daemon. Every test that drives the full main() pass sequence
+    stubs these; a test OF one of these passes stubs its own seams instead
+    and does not call this helper (or re-patches the pass it exercises)."""
+    for pass_name in (
+        "proposed_infra_sweep_pass",
+        "capacity_retry_pass",
+        "program_orchestrator_pass",
+    ):
+        monkeypatch.setattr(asw, pass_name, lambda *a, **kw: None)
+
+
 def test_main_daemon_unreachable_still_runs_pod_safety(isolated_registry, monkeypatch):
     # The pod-safety pass reasons about task status + the live pod list, neither
     # of which needs the Happy daemon. So a daemon outage must NOT skip it
@@ -1733,6 +1757,7 @@ def test_main_daemon_unreachable_still_runs_pod_safety(isolated_registry, monkey
     # #1021: the stale-blocked flag pass shells task.py against the LIVE
     # blocked set (daemon-independent) — never run it from a unit test.
     monkeypatch.setattr(asw, "stale_blocked_flag_pass", lambda *a, **kw: None)
+    _stub_fleet_mutating_passes(asw, monkeypatch)
 
     rc = asw.main([])
 
@@ -1770,6 +1795,9 @@ def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
     # #1021: the stale-blocked flag pass shells task.py against the LIVE
     # blocked set (daemon-independent) — never run it from a unit test.
     monkeypatch.setattr(asw, "stale_blocked_flag_pass", lambda *a, **kw: None)
+    # #1247: with _daemon_reachable forced True, the UNSTUBBED sweep passes
+    # would dispatch REAL sessions (this exact test spawned one for #1227).
+    _stub_fleet_mutating_passes(asw, monkeypatch)
 
     rc = asw.main([])
 
@@ -3398,6 +3426,7 @@ def test_stalled_main_passes_daemon_flag(isolated_registry, monkeypatch):
     # #1021: the stale-blocked flag pass shells task.py against the LIVE
     # blocked set (daemon-independent) — never run it from a unit test.
     monkeypatch.setattr(asw, "stale_blocked_flag_pass", lambda *a, **kw: None)
+    _stub_fleet_mutating_passes(asw, monkeypatch)
 
     rc = asw.main([])
 
@@ -4646,6 +4675,240 @@ def test_orphan_old_lifecycle_marker_still_stale(isolated_registry, monkeypatch)
     ]
     respawns, _markers = _run_orphan_task(asw, monkeypatch, issue=90663, events=events, now=now)
     assert respawns == [90663]
+
+
+# ─── #1247: act-time terminal-status guard (orphan pass) ─────────────────────
+#
+# The acting branches of _process_orphan_task (respawn / alert / exemption)
+# previously trusted the pass-start _active_status_tasks() snapshot for the
+# whole tick; a stale snapshot produced respawns + junk markers + git commits
+# against TERMINAL tasks, unboundedly (the two-week #662/#663/#867 loop). The
+# guard re-reads the LIVE status via _task_status immediately before acting
+# and requires a POSITIVE ACTIVE confirmation. All tests drive the REAL
+# _process_orphan_task body via _run_orphan_task; only the subprocess-boundary
+# seams (_task_status, _task_events, _respawn_orphan, _post_progress_marker)
+# are monkeypatched.
+
+_STALE_EVENTS_90XXX = [
+    {"kind": "epm:plan", "ts": "2026-06-25T02:00:00Z", "note": "planning done long ago"}
+]
+
+
+def test_orphan_act_guard_aborts_on_terminal_live_status(isolated_registry, monkeypatch, capsys):
+    # Durability pin for #1247: snapshot says "running", the live re-read says
+    # "archived" — NO spawn, NO marker, orphan episode state CLEARED, one loud
+    # stderr line naming snapshot vs live status.
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    respawns, markers = _run_orphan_task(
+        asw,
+        monkeypatch,
+        issue=90701,
+        events=_STALE_EVENTS_90XXX,
+        now=now,
+        task_status="archived",
+    )
+    assert respawns == []
+    assert markers == []
+    assert asw._load_orphan_state(90701) == {}  # positively non-ACTIVE: episode over
+    err = capsys.readouterr().err
+    assert "ORPHAN-ACT-GUARD" in err
+    assert "'archived'" in err and "status=running" in err and "action=respawn" in err
+
+
+def test_orphan_act_guard_aborts_on_parked_live_status(isolated_registry, monkeypatch, capsys):
+    # The PARK half of the terminal/parked list: on_hold is not ACTIVE either.
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    respawns, markers = _run_orphan_task(
+        asw,
+        monkeypatch,
+        issue=90702,
+        events=_STALE_EVENTS_90XXX,
+        now=now,
+        task_status="on_hold",
+    )
+    assert respawns == []
+    assert markers == []
+    assert asw._load_orphan_state(90702) == {}
+    assert "ORPHAN-ACT-GUARD" in capsys.readouterr().err
+
+
+def test_orphan_act_guard_defers_on_unreadable_live_status(isolated_registry, monkeypatch, capsys):
+    # _task_status -> None (transient task.py read failure): abort the act but
+    # KEEP the episode state (missed intact) — retried next tick. Fail toward
+    # not-acting, never toward erasing episode state on a task.py glitch.
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    respawns, markers = _run_orphan_task(
+        asw,
+        monkeypatch,
+        issue=90703,
+        events=_STALE_EVENTS_90XXX,
+        now=now,
+        task_status=None,
+    )
+    assert respawns == []
+    assert markers == []
+    assert asw._load_orphan_state(90703).get("missed") == 1  # state PRESERVED
+    assert "ORPHAN-ACT-GUARD" in capsys.readouterr().err
+
+
+def test_orphan_act_guard_allows_live_active(isolated_registry, monkeypatch):
+    # Regression floor: a positively-ACTIVE live read lets the respawn + its
+    # marker proceed. The recording seam also closes the wrong-argument hole:
+    # the guard must query the SAME issue it is about to act on.
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    status_calls: list[int] = []
+    respawns, markers = _run_orphan_task(
+        asw,
+        monkeypatch,
+        issue=90704,
+        events=_STALE_EVENTS_90XXX,
+        now=now,
+        task_status="running",
+        status_calls=status_calls,
+    )
+    assert respawns == [90704]
+    assert len(markers) == 1 and markers[0][0] == 90704
+    assert status_calls == [90704]  # the live re-read queried the acted-on issue
+
+
+@pytest.mark.parametrize("branch", ["alert", "exemption"])
+def test_orphan_alert_and_exemption_branches_also_guarded(
+    isolated_registry, monkeypatch, capsys, branch
+):
+    # The guard sits at ONE site covering ALL acting branches: the daily-cap
+    # ALERT branch and the exemption-action dispatch are aborted the same way
+    # the respawn branch is (no marker, episode state cleared).
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    if branch == "alert":
+        # Cap exhausted -> decide_orphan returns "alert".
+        kwargs = dict(respawns_today=asw.ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT)
+        events = _STALE_EVENTS_90XXX
+        expect_action = "action=alert"
+    else:
+        # An old prose USER-PAUSE note as the latest word rewrites the respawn
+        # to the "user-pause-hold-skip" exemption action (#816 arm).
+        kwargs = {}
+        events = [
+            {
+                "kind": "epm:progress",
+                "ts": "2026-06-25T02:00:00Z",
+                "note": "USER PAUSE (verbatim: hold this); paused_from=running",
+            }
+        ]
+        expect_action = "action=user-pause-hold-skip"
+    respawns, markers = _run_orphan_task(
+        asw,
+        monkeypatch,
+        issue=90705,
+        events=events,
+        now=now,
+        task_status="completed",
+        **kwargs,
+    )
+    assert respawns == []
+    assert markers == []  # neither the alert nor the exemption marker posted
+    assert asw._load_orphan_state(90705) == {}
+    err = capsys.readouterr().err
+    assert "ORPHAN-ACT-GUARD" in err and expect_action in err
+
+
+def test_orphan_guard_marker_note_uses_live_status(isolated_registry, monkeypatch):
+    # Active->active drift (running -> verifying): the act proceeds and the
+    # marker note names the TRUE live status, not the stale snapshot.
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    respawns, markers = _run_orphan_task(
+        asw,
+        monkeypatch,
+        issue=90706,
+        events=_STALE_EVENTS_90XXX,
+        now=now,
+        task_status="verifying",
+    )
+    assert respawns == [90706]
+    assert len(markers) == 1
+    assert "(status=verifying)" in markers[0][1]
+
+
+def test_orphan_respawn_note_carries_source_stamp(isolated_registry, monkeypatch):
+    # #1247 source stamp: the respawn note self-identifies the posting
+    # process (host/user/pid/sha/root) as its trailing token.
+    import re
+
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    _respawns, markers = _run_orphan_task(
+        asw, monkeypatch, issue=90707, events=_STALE_EVENTS_90XXX, now=now
+    )
+    assert len(markers) == 1
+    assert re.search(r"\[src: host=\S+ user=\S+ pid=\d+ sha=\S+ root=/\S+\]$", markers[0][1])
+
+
+def test_source_stamp_format_and_stability():
+    # The stamp matches the documented shape, names THIS process's pid, and is
+    # stable within a process (lru_cache -> two calls compare equal).
+    import os
+    import re
+
+    import autonomous_session_watch as asw
+
+    stamp = asw._source_stamp()
+    assert re.fullmatch(r"\[src: host=\S+ user=\S+ pid=\d+ sha=\S+ root=/\S+\]", stamp)
+    assert f"pid={os.getpid()}" in stamp
+    assert asw._source_stamp() == stamp  # process-stable (cached)
+
+
+def test_orphan_act_guard_dry_run_never_mutates_state(isolated_registry, monkeypatch, capsys):
+    # --dry-run exercises the guard's read but must mutate NOTHING: no spawn,
+    # no marker, and the pre-seeded orphan state file survives unmodified
+    # (the guard's state-clear is dry_run-gated). Without this pin the §12
+    # `--dry-run` live smoke would be the first place a missing gate mutates
+    # real ~/.eps-autonomous state.
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    respawns: list[int] = []
+    markers: list[tuple] = []
+    monkeypatch.setattr(asw, "_task_events", lambda _i: _STALE_EVENTS_90XXX)
+    monkeypatch.setattr(asw, "_stalled_cap_gpu_hours", lambda _i: 24.0)
+    monkeypatch.setattr(
+        asw, "_respawn_orphan", lambda i, cap, dry_run: respawns.append(i) or "spawned"
+    )
+    monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **k: markers.append(a))
+    monkeypatch.setattr(asw, "_task_status", lambda _i: "archived")
+    asw._save_orphan_state(
+        90708, missed=1, alerted=False, respawn_day=None, respawns_today=0, prev=None
+    )
+    state_path = asw._orphan_state_path(90708)
+    before = state_path.read_bytes()
+    asw._process_orphan_task(
+        90708,
+        "running",
+        None,
+        set(),
+        now,
+        True,  # dry_run
+        2,
+        staleness_s=asw.ORPHAN_STALENESS_S_DEFAULT,
+        max_per_day=asw.ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT,
+        day_key="2026-06-25",
+    )
+    assert respawns == []
+    assert markers == []
+    assert state_path.read_bytes() == before  # state file untouched under dry-run
+    assert "ORPHAN-ACT-GUARD" in capsys.readouterr().err
 
 
 # ─── #866/#903: deliberate-takeover sentinel skips the orphan sweep ──────────
@@ -10315,6 +10578,9 @@ def test_infra_drain_main_wiring(isolated_registry, monkeypatch):
         "gc_pass",
     ):
         monkeypatch.setattr(asw, pass_name, rec(pass_name))
+    # #1247: with _daemon_reachable forced True, the unstubbed sweep passes
+    # would dispatch REAL sessions from this unit test.
+    _stub_fleet_mutating_passes(asw, monkeypatch)
 
     rc = asw.main([])
 
@@ -13788,6 +14054,9 @@ def test_stalled_handler_suppressed_books_nothing(isolated_registry, monkeypatch
     monkeypatch.setattr(asw, "_stalled_cap_gpu_hours", lambda i: 24.0)
     monkeypatch.setattr(asw, "_respawn_stalled_session", lambda i, cap, dry: "suppressed")
     monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
+    # #1247 fence act-guard seam: confirm-active so the guard's live re-read
+    # never shells the real `task.py view` subprocess (hermeticity).
+    monkeypatch.setattr(asw, "_task_status", lambda _i: "running")
     markers: list[tuple] = []
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **k: markers.append((a, k)))
     saves: list[tuple] = []
@@ -13823,6 +14092,137 @@ def test_stalled_handler_suppressed_books_nothing(isolated_registry, monkeypatch
     assert on_disk["stop_pending_sid"] is None  # fence episode over
     assert on_disk["missed"] == 2  # ...but nothing else was booked
     assert on_disk["alerted"] is True
+
+
+# ─── #1247: act-time terminal-status guard (stalled fence spawn) ─────────────
+#
+# The fence's stop->verify->spawn spans ticks, so ctx.task_status is >=10 min
+# old at spawn time by construction. _fence_spawn_stalled now re-reads the
+# LIVE status and requires a positive ACTIVE confirmation before spawning or
+# posting the respawn marker (the stalled-arm sibling of ORPHAN-ACT-GUARD).
+# These tests drive the REAL _handle_stalled_respawn -> _fence_spawn_stalled
+# path; only subprocess-boundary seams are monkeypatched.
+
+
+def _drive_fence_spawn(asw, monkeypatch, isolated_registry, *, issue, task_status, dry_run=False):
+    """Reach the fence's verified-dead spawn branch (pending sid set, sid
+    absent from the live set) with recorder seams; returns (spawns, markers)."""
+    import json
+
+    spawns: list[int] = []
+    markers: list[tuple[int, str]] = []
+    monkeypatch.setattr(asw, "_stalled_cap_gpu_hours", lambda i: 24.0)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
+    monkeypatch.setattr(
+        asw, "_respawn_stalled_session", lambda i, cap, dry: spawns.append(i) or "spawned"
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda i, note, dry_run, label: markers.append((i, note)),
+    )
+    monkeypatch.setattr(asw, "_task_status", lambda _i: task_status)
+    (isolated_registry / f"stalled-{issue}.json").write_text(
+        json.dumps({"missed": 2, "alerted": True, "stop_pending_sid": "sid-old"})
+    )
+    ctx = asw._StalledActionCtx(
+        issue=issue,
+        happy_session_id="sid-old",
+        prev_state={"missed": 2, "alerted": True, "stop_pending_sid": "sid-old"},
+        alerted=True,
+        respawn_count=0,
+        exhausted=False,
+        last_self_report_ts=None,
+        self_gap="3.0h",
+        marker_gap="3.0h",
+        has_pod=False,
+        task_status="running",
+        in_active=True,
+        threshold=2,
+        dry_run=dry_run,
+        live_ids=set(),  # verified dead -> fence 'spawn' branch
+        stop_pending_sid="sid-old",
+    )
+    asw._handle_stalled_respawn(ctx)
+    return spawns, markers
+
+
+def test_stalled_fence_spawn_guard_aborts_on_terminal_live_status(
+    isolated_registry, monkeypatch, capsys
+):
+    # Live re-read says "completed": no spawn, no marker, the fence's
+    # stop_pending_* fields cleared (episode over) while the rest of the
+    # stalled episode state is untouched.
+    import json
+
+    import autonomous_session_watch as asw
+
+    spawns, markers = _drive_fence_spawn(
+        asw, monkeypatch, isolated_registry, issue=90711, task_status="completed"
+    )
+    assert spawns == []
+    assert markers == []
+    on_disk = json.loads((isolated_registry / "stalled-90711.json").read_text())
+    assert on_disk["stop_pending_sid"] is None  # fence state cleared
+    assert on_disk["missed"] == 2  # episode state untouched (surgical clear)
+    err = capsys.readouterr().err
+    assert "STALLED-ACT-GUARD" in err and "'completed'" in err
+
+
+def test_stalled_fence_spawn_guard_defers_on_unreadable_live_status(
+    isolated_registry, monkeypatch, capsys
+):
+    # _task_status -> None (transient read failure): no spawn, no marker, and
+    # the fence stays PENDING on disk — re-evaluated next tick.
+    import json
+
+    import autonomous_session_watch as asw
+
+    spawns, markers = _drive_fence_spawn(
+        asw, monkeypatch, isolated_registry, issue=90712, task_status=None
+    )
+    assert spawns == []
+    assert markers == []
+    on_disk = json.loads((isolated_registry / "stalled-90712.json").read_text())
+    assert on_disk["stop_pending_sid"] == "sid-old"  # fence KEPT pending
+    assert "STALLED-ACT-GUARD" in capsys.readouterr().err
+
+
+def test_stalled_fence_spawn_guard_dry_run_never_mutates_state(
+    isolated_registry, monkeypatch, capsys
+):
+    # Dry-run sibling: the guard's state-clear is dry_run-gated — the fence
+    # file survives byte-for-byte, and nothing spawns or posts.
+    import json
+
+    import autonomous_session_watch as asw
+
+    state_path = isolated_registry / "stalled-90713.json"
+    spawns, markers = _drive_fence_spawn(
+        asw, monkeypatch, isolated_registry, issue=90713, task_status="archived", dry_run=True
+    )
+    assert spawns == []
+    assert markers == []
+    on_disk = json.loads(state_path.read_text())
+    assert on_disk["stop_pending_sid"] == "sid-old"  # untouched under dry-run
+    assert "STALLED-ACT-GUARD" in capsys.readouterr().err
+
+
+def test_stalled_fence_spawn_allows_live_active_and_note_carries_source_stamp(
+    isolated_registry, monkeypatch
+):
+    # Regression floor + stamp: a positively-ACTIVE live read lets the fence
+    # spawn proceed, and the respawn note self-identifies the posting process.
+    import re
+
+    import autonomous_session_watch as asw
+
+    spawns, markers = _drive_fence_spawn(
+        asw, monkeypatch, isolated_registry, issue=90714, task_status="running"
+    )
+    assert spawns == [90714]
+    assert len(markers) == 1 and markers[0][0] == 90714
+    assert re.search(r"\[src: host=\S+ user=\S+ pid=\d+ sha=\S+ root=/\S+\]$", markers[0][1])
 
 
 def test_capacity_retry_suppressed_consumes_no_budget(isolated_registry, monkeypatch, capsys):

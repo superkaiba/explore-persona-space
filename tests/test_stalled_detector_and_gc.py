@@ -51,6 +51,7 @@ def _forbid_real_marker_posts(monkeypatch):
     commit on a REAL task (the two-week #662/#663/#867 incident class). A
     test-level recorder patch overrides this default; ``dry_run=True`` and
     stubbed-``subprocess.run`` calls keep the real body's behavior."""
+    import functools
     import subprocess as _sp
 
     import autonomous_session_watch as asw
@@ -58,6 +59,9 @@ def _forbid_real_marker_posts(monkeypatch):
     real_post = asw._post_progress_marker
     real_run = _sp.run
 
+    # functools.wraps sets __wrapped__, so inspect.getsource() on the patched
+    # attribute still resolves the ORIGINAL body.
+    @functools.wraps(real_post)
     def _guarded(issue, note, dry_run, *, label):
         if not dry_run and _sp.run is real_run:
             raise AssertionError(
