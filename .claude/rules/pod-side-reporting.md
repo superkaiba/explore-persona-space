@@ -252,6 +252,31 @@ marker's pid is itself alive.
   and is SSH-able, so an unpushed commit is recoverable after the fact;
   GCE's DELETE-on-poweroff boot disk is why that lane got the mechanical
   leg.
+- **SLURM lane:** the mechanical rev-list leg is structurally
+  INAPPLICABLE — cluster compute nodes run on an ephemeral `$SCRATCH`
+  **rsync copy with no git checkout** (`RSYNC_INCLUDE_PATHS` in
+  `backends/slurm.py` carries no `.git`; the `post_marker_via_task_py`
+  docstring pins this), so a workload-side `git commit` / `git push` of
+  results is impossible and fails loud by construction
+  (`fatal: not a git repository`) — and the SLURM secrets env
+  (`SECRET_ENV_KEYS`, `backends/slurm.py`) carries no `GITHUB_TOKEN`, so
+  even an out-of-contract cluster-side self-clone could not authenticate
+  a push (the pre-#1205 GCE tokenless shape). The lane's result-landing
+  story is instead: `SlurmBackend.fetch_results` rsync-PULLS
+  `eval_results/` + `figures/` from `$SCRATCH_JOB_DIR` back to the VM
+  repo root (pull failure is WARN-only by the deliberate #598 contract),
+  then `confirm_artifacts` (completion sentinel + git-figures +
+  eval-JSON + HF + WandB checks) is the downstream hard gate before
+  teardown (a bool the orchestrator's upload-verification gates on), and
+  the COMMIT of pulled results is VM-side, owned by the orchestrator
+  (Step 8 upload-verifier sync / Step 9b–10d auto-merge) — where the
+  same push-verification discipline governs the orchestrator's own
+  VM-side push via the repo-wide push rules (the piped-push hook,
+  `sync_repo_root.py`, Step 10d). Consequence: a dispatch script whose
+  deliverable REQUIRES workload-side git-committed results must NOT
+  route to SLURM — pin `backend: gcp` or `runpod`. (`--repo-branch` IS
+  honored on SLURM as of #793 via VM-side branch-tree materialization —
+  the workload runs branch code; it just cannot push from the cluster.)
 - **Part A-ter interplay** (`.claude/rules/compute-backend-failover.md`):
   a workload whose declared deliverables include git-committed eval JSONs
   must NOT stamp `EPS_DELIVERABLES_OK_PATH` before verifying its own push

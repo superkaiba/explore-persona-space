@@ -2509,6 +2509,10 @@ class SlurmBackend(ComputeBackend):
         launch-time ``expected_artifacts`` declaration names — finalize
         runs this method BEFORE ``confirm_artifacts``, so the default
         local-FS sentinel reader just works.
+
+        Result-push contract: SLURM workloads cannot git-push results (no
+        git checkout on ``$SCRATCH``) — see ``.claude/rules/pod-side-reporting.md``
+        § "Result-push verification contract (#1205)", SLURM lane bullet.
         """
         cluster = get_cluster_config(handle.cluster) if handle.cluster else None
         if cluster is None:
