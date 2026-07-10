@@ -1664,8 +1664,8 @@
     "1213": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1213",
-      "status": "approved",
+      "path": "tasks/running/1213",
+      "status": "running",
       "title": "daily-fix: verify_plan warns on ckpt ladder without retentio"
     },
     "1214": {
