@@ -130,6 +130,40 @@ def _forbid_real_marker_posts(monkeypatch):
     monkeypatch.setattr(asw, "_post_progress_marker", _guarded)
 
 
+@pytest.fixture(autouse=True)
+def _forbid_real_task_status_reads(monkeypatch):
+    """#1247 round-2 hermeticity guard (fail-loud): no test in this file may
+    reach the REAL ``task.py view`` subprocess through ``_task_status``.
+
+    The real body shells ``task.py view <N> --json`` at the canonical
+    ``PROJECT_ROOT``, so an unpatched call makes a unit test's behavior depend
+    on a REAL task's live status (+ ~1-2s subprocess per call — the round-1
+    review probe traced exactly this class in 6 sibling stalled-pass tests).
+    Read-only (never the junk-marker mechanism), so the guard is a
+    determinism/latency pin, not a mutation fence. Contract: a test that
+    needs a status overrides this with its own stub, e.g.
+    ``monkeypatch.setattr(asw, "_task_status", lambda issue: "running")``
+    (a later test-level / fixture-level monkeypatch wins over this autouse
+    default)."""
+    import functools
+
+    import autonomous_session_watch as asw
+
+    # functools.wraps sets __wrapped__, so inspect.getsource() on the patched
+    # attribute still resolves the ORIGINAL body (same #966-robustness note as
+    # the _forbid_real_marker_posts guard above).
+    @functools.wraps(asw._task_status)
+    def _guarded(issue):
+        raise AssertionError(
+            f"_task_status({issue}) reached the #1247 round-2 autouse hermeticity guard — the "
+            "real body shells `task.py view` against the LIVE task tree, making the test "
+            "depend on live VM state. Monkeypatch a status in the test, e.g. "
+            "monkeypatch.setattr(asw, '_task_status', lambda issue: 'running')."
+        )
+
+    monkeypatch.setattr(asw, "_task_status", _guarded)
+
+
 def _p(issue: int, pod_id: str, name: str):
     """A non-wedged 4-tuple for ``_running_managed_issue_pods`` stubs (#692).
 
@@ -1723,13 +1757,33 @@ def _stub_fleet_mutating_passes(asw, monkeypatch):
     2026-07-10: a suite run of test_main_daemon_reachable_runs_both_passes
     spawned a REAL session for proposed task #1227), and
     ``program_orchestrator_pass`` (daemon-INDEPENDENT) can relaunch the real
-    #660 tmux daemon. Every test that drives the full main() pass sequence
-    stubs these; a test OF one of these passes stubs its own seams instead
-    and does not call this helper (or re-patches the pass it exercises)."""
+    #660 tmux daemon. Round 2 (closing the
+    test-hermeticity-residual-observer-passes concern) additionally stubs the
+    escalate-only OBSERVER passes: they scan LIVE VM state (REGISTRY tasks +
+    events.jsonl via task_workflow, /proc + the earlyoom journal, the Happy
+    daemon bundle, statvfs on /mnt/eps-data) and can write REAL sidecar rows
+    under ``.claude/cache/`` + fire real Telegram pushes from a unit test —
+    plus ``vm_ledger_reap_pass``, which MUTATES the live
+    ``~/.task-workflow/vm-ledger.json`` (same live-VM-state class). Every test
+    that drives the full main() pass sequence calls this helper; a test that
+    asserts on one of these passes re-patches its own recorder AFTER the
+    helper call (a later monkeypatch wins — so call the helper before any
+    recorder you need to keep), and a test OF one of these passes stubs its
+    own seams instead and does not call this helper."""
     for pass_name in (
+        # Fleet-MUTATING sweep passes (round 1).
         "proposed_infra_sweep_pass",
         "capacity_retry_pass",
         "program_orchestrator_pass",
+        # Escalate-only observer passes against live VM state (round 2).
+        "verdict_disagree_pass",
+        "cpu_guard_pass",
+        "happy_patch_pass",
+        "data_disk_pass",
+        "gate_push_pass",
+        "gc_pass",
+        # Live ~/.task-workflow/vm-ledger.json reap (round 2).
+        "vm_ledger_reap_pass",
     ):
         monkeypatch.setattr(asw, pass_name, lambda *a, **kw: None)
 
@@ -4868,6 +4922,31 @@ def test_source_stamp_format_and_stability():
     assert re.fullmatch(r"\[src: host=\S+ user=\S+ pid=\d+ sha=\S+ root=/\S+\]", stamp)
     assert f"pid={os.getpid()}" in stamp
     assert asw._source_stamp() == stamp  # process-stable (cached)
+
+
+def test_source_stamp_never_raises_when_getuser_fails(monkeypatch):
+    # #1247 round-2 fail-soft pin: getpass.getuser() raises KeyError/OSError
+    # in an environment with no USER/LOGNAME env vars and no pw entry for the
+    # uid; the docstring claims "never raises", so the stamp must degrade to
+    # user=unknown instead of killing the acting pass at note-format time.
+    # Pre-fix this test raises OSError out of _source_stamp().
+    import re
+
+    import autonomous_session_watch as asw
+
+    def _no_user():
+        raise OSError("no USER/LOGNAME env and no pwd entry for uid")
+
+    monkeypatch.setattr(asw.getpass, "getuser", _no_user)
+    # lru_cache: clear so the stubbed getuser is actually consulted, and clear
+    # again afterwards so no later test reads the poisoned cached stamp.
+    asw._source_stamp.cache_clear()
+    try:
+        stamp = asw._source_stamp()
+    finally:
+        asw._source_stamp.cache_clear()
+    assert "user=unknown" in stamp
+    assert re.fullmatch(r"\[src: host=\S+ user=unknown pid=\d+ sha=\S+ root=/\S+\]", stamp)
 
 
 def test_orphan_act_guard_dry_run_never_mutates_state(isolated_registry, monkeypatch, capsys):
@@ -10562,6 +10641,11 @@ def test_infra_drain_main_wiring(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
     monkeypatch.setattr(asw, "_live_children", lambda: [])
     monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
+    # #1247: with _daemon_reachable forced True, the unstubbed sweep passes
+    # would dispatch REAL sessions from this unit test. Called BEFORE the
+    # recorder loop so the loop's own recorders (gate_push_pass / gc_pass
+    # overlap the helper's stub set) win and keep recording.
+    _stub_fleet_mutating_passes(asw, monkeypatch)
     for pass_name in (
         "vm_disk_pass",
         "triage_observer_pass",
@@ -10578,9 +10662,6 @@ def test_infra_drain_main_wiring(isolated_registry, monkeypatch):
         "gc_pass",
     ):
         monkeypatch.setattr(asw, pass_name, rec(pass_name))
-    # #1247: with _daemon_reachable forced True, the unstubbed sweep passes
-    # would dispatch REAL sessions from this unit test.
-    _stub_fleet_mutating_passes(asw, monkeypatch)
 
     rc = asw.main([])
 
