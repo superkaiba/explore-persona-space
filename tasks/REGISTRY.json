@@ -1853,8 +1853,8 @@
     "1238": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1238",
-      "status": "running",
+      "path": "tasks/reviewing/1238",
+      "status": "reviewing",
       "title": "tolerate wrapped N/A escape declarations in verify_plan"
     },
     "1239": {
