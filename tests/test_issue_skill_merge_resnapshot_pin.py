@@ -155,6 +155,36 @@ def test_recovery_merges_pinned_sha_not_movable_ref():
     )
 
 
+def test_recovery_certification_arms_are_exclusive():
+    """#1243: both recovery certification producers run in Guard 1's `if !`
+    exclusive-arm shape — a failed producer takes the terminal echo + false
+    arm and its consumer is structurally unreachable. The old
+    `|| { echo "recovery:..."; false; }` form reported failure without
+    halting under no-set-e / piecewise execution (the verification-diff arm
+    failed OPEN into the push)."""
+    recovery = _recovery_region(_skill_text())
+    assert "if ! git -C \"$WT\" diff --name-only --diff-filter=U -- 'tasks/'" in recovery, (
+        "the conflicted-path producer must run inside an `if !` failure arm"
+    )
+    assert 'if ! git -C "$WT" diff --name-only "$MAIN_SHA" HEAD -- \'tasks/\'' in recovery, (
+        "the certification-diff producer must run inside an `if !` failure arm"
+    )
+    assert '|| { echo "recovery:' not in recovery, (
+        "no non-halting `|| { echo ...; false; }` certification arm may remain"
+    )
+    # The residual-foreign check must be an elif arm of the SAME chain as the
+    # verification diff (fused certification: a failed diff cannot vacuously pass).
+    # Anchored on the verify-file path (not a bare `elif grep -Ev`) so an
+    # unrelated elif-grep elsewhere in the region cannot false-satisfy it.
+    cert = recovery.find('if ! git -C "$WT" diff --name-only "$MAIN_SHA" HEAD')
+    residual = recovery.find(
+        'elif grep -Ev "^tasks/[^/]+/<N>/" /tmp/issue-<N>-recovery-tasks-verify.txt', cert
+    )
+    assert -1 < cert < residual, (
+        "the residual-foreign grep must be the elif work arm of the certification chain"
+    )
+
+
 def test_shape2_retry_gated_on_file_persisted_tip():
     """The shape-2 retry is gated on a FILE-persisted tip-changed predicate
     (fenced blocks are separate shells) with the retry in the else arm — the
