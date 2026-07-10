@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1243,
+  "highest_id": 1244,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1898,6 +1898,13 @@
       "path": "tasks/proposed/1243",
       "status": "proposed",
       "title": "Edit C certification arms to exclusive-arm shape"
+    },
+    "1244": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1244",
+      "status": "proposed",
+      "title": "Guard 1 foreign-strip deletion silently resurrected"
     },
     "125": {
       "has_clean_result": true,
