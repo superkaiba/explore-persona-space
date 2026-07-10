@@ -1895,8 +1895,8 @@
     "1243": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1243",
-      "status": "approved",
+      "path": "tasks/running/1243",
+      "status": "running",
       "title": "Edit C certification arms to exclusive-arm shape"
     },
     "1244": {
