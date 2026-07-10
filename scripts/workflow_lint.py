@@ -517,6 +517,13 @@ Behaviours:
   quoted PROGRAM only — the surrounding invocation lines (paths, fencing,
   indentation) legitimately differ — and parity is not correctness: an
   identical-but-broken edit applied to both homes passes by design (#1153).
+* ``--check-asw-docstring-pass-count`` (also bundled into the no-flags
+  default run): parse the '<N> passes' digit header from the
+  ``scripts/autonomous_session_watch.py`` module docstring, count the
+  ``<digit>. **`` numbered inventory items, cross-check the distinct
+  ``*_pass`` calls in ``main()`` (plus ``_ASW_INLINE_PASS_BLOCKS`` inline
+  crash-recovery blocks), and FAIL on any mismatch (#1225; manual
+  catch-ups #1021/#1169).
 * ``--check-section-reference-pointers`` (also bundled into the no-flags
   default run): scan every ``.claude/rules/*.md`` whose filename ends with
   ``-section-reference.md`` / ``-lens-reference.md`` (the relocated-section
@@ -8347,6 +8354,102 @@ def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
     return errors
 
 
+_ASW_REL = "scripts/autonomous_session_watch.py"
+_ASW_HEADER_RE = re.compile(r"^(\d+) passes\b", re.M)
+_ASW_ITEM_RE = re.compile(r"^(\d+)\. \*\*", re.M)
+# The crash-recovery respawn loop is an inline block in main() (not a
+# *_pass-named function); it counts as one pass. If it is ever refactored
+# into a crash_recovery_pass() function, set this to 0. A NEW inline
+# (non-*_pass-named) top-level pass block requires bumping this constant —
+# the watcher docstring's pass-definition paragraph says so too.
+_ASW_INLINE_PASS_BLOCKS = 1
+
+
+def check_asw_docstring_pass_count(*, watcher_path: Path | None = None) -> list[str]:
+    """FAIL if the watcher docstring's '<N> passes' header digit diverges from
+    the numbered inventory (line-start ``<digit>. **`` items), the items are
+    not exactly 1..N sequential, or N diverges from the live pass set in
+    ``main()`` (distinct ``*_pass`` calls plus ``_ASW_INLINE_PASS_BLOCKS``
+    inline crash-recovery blocks). ``watcher_path`` is a unit-test override;
+    production callers pass None. Bundled into the no-flags default run.
+    (#1225; manual catch-ups #1021, #1169.)
+
+    Named residuals (accepted): the header's execution-order PROSE is
+    unpinned — only the COUNT is linted, not the order; and assertion (3) is
+    fail-unsafe against a future pass function NOT named ``*_pass`` or a
+    SECOND inline (non-``*_pass``-named) pass block, either of which would
+    escape the live-set count — author discipline plus the watcher
+    docstring's pass-definition paragraph are the cover.
+    """
+    path = watcher_path if watcher_path is not None else _REPO_ROOT / _ASW_REL
+    errors: list[str] = []
+    if not path.is_file():
+        return [f"{path}: missing — cannot verify the watcher docstring pass count."]
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except SyntaxError as exc:
+        return [f"{path}: unparseable ({exc}) — cannot verify the docstring pass count."]
+    doc = ast.get_docstring(tree, clean=False)
+    if not doc:
+        return [f"{path}: no module docstring — the pass inventory contract is gone."]
+
+    # (1) header digit — exactly one line-start '<N> passes' match required.
+    headers = _ASW_HEADER_RE.findall(doc)
+    if len(headers) != 1:
+        errors.append(
+            f"{path}: expected exactly one line-start '<N> passes' digit header in the "
+            f"module docstring, found {len(headers)} — the count must be a DIGIT "
+            f"('24 passes'), never a number word ('Fourteen passes'), and must appear "
+            f"at line start exactly once; see #1225."
+        )
+        return errors  # items/live checks are meaningless without a parseable header
+    header_n = int(headers[0])
+
+    # (2) numbered items — exactly 1..N, sequential, no holes/duplicates.
+    items = [int(m.group(1)) for m in _ASW_ITEM_RE.finditer(doc)]
+    if items != list(range(1, len(items) + 1)):
+        errors.append(
+            f"{path}: docstring numbered items are not exactly 1..{len(items)} "
+            f"in order (got {items}) — renumber the inventory."
+        )
+    if len(items) != header_n:
+        errors.append(
+            f"{path}: docstring header says {header_n} passes but the inventory has "
+            f"{len(items)} numbered items — add/remove the item AND update the digit."
+        )
+
+    # (3) live-pass cross-check: distinct *_pass calls inside main() + the
+    # inline crash-recovery block(s) must equal the header digit. This is the
+    # assertion that would have caught #1021/#1169 (code->doc drift).
+    main_fn = next(
+        (n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "main"), None
+    )
+    if main_fn is None:
+        errors.append(f"{path}: no main() found — cannot cross-check the live pass set.")
+        return errors
+    live = {
+        node.func.id
+        for node in ast.walk(main_fn)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id.endswith("_pass")
+    }
+    live_n = len(live) + _ASW_INLINE_PASS_BLOCKS
+    if live_n != header_n:
+        errors.append(
+            f"{path}: docstring header says {header_n} passes but main() calls "
+            f"{len(live)} distinct *_pass-named functions "
+            f"(+{_ASW_INLINE_PASS_BLOCKS} inline crash-recovery block(s), "
+            f"_ASW_INLINE_PASS_BLOCKS in workflow_lint.py) = {live_n} — a pass was "
+            f"added/removed without reconciling the docstring inventory (add a "
+            f"numbered item + bump the digit), or the new pass is not a "
+            f"*_pass-named function called from main() (only those are counted; "
+            f"a new INLINE pass block requires bumping _ASW_INLINE_PASS_BLOCKS), "
+            f"or that constant is stale."
+        )
+    return errors
+
+
 _AWK_ELISION_ANCHOR = "f=!f"
 
 # The two FULL-TEXT homes of the ban-gate awk elision program (#1153, origin
@@ -9884,6 +9987,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "legitimately differ. Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-asw-docstring-pass-count",
+        action="store_true",
+        help="verify the autonomous_session_watch.py docstring '<N> passes' "
+        "header digit == numbered inventory items (1..N sequential) == live "
+        "main() pass set (distinct *_pass calls + the inline crash-recovery "
+        "block) (#1225). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-marker-recipe-snippets",
         action="store_true",
         help="FAIL when a frozen numeric snippet in docs/marker_training_recipe.md "
@@ -10120,6 +10231,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_crash_fix_relaunch_contract
         or args.check_vm_thread_cap_guidance
         or args.check_awk_elision_parity
+        or args.check_asw_docstring_pass_count
         or args.check_marker_recipe_snippets
         or args.check_judge_model_pins
         or args.check_no_literal_round_marker_versions
@@ -10264,6 +10376,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_upload_or_true())
     if args.check_git_recipes_root_guard or no_flags:
         errors.extend(check_git_recipes_root_guard())
+    if args.check_asw_docstring_pass_count or no_flags:
+        errors.extend(check_asw_docstring_pass_count())
 
     if errors:
         for err in errors:
