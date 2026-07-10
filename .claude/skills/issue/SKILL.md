@@ -8516,18 +8516,25 @@ task at the wrong status, AND a branch based on another still-unmerged
 rebase-merged. Three guards:
 
 1. **Foreign-`tasks/` guard (strip whole foreign task folders before the
-   merge).** `git diff --name-only origin/main HEAD -- tasks/` MUST be empty
-   except THIS task's own folder (`tasks/*/<N>/`). For any FOREIGN `tasks/`
-   path in that diff — a `tasks/*/<M>/…` file for `M != <N>`, whether
-   `events.jsonl`, `comments.jsonl`, `body.md`, or any other file — reset it
-   to `main` BEFORE merging so the server-side `gh pr merge --rebase` has
-   nothing foreign to conflict on (GitHub ignores this repo's
-   `.gitattributes merge=union`, so a union merge cannot rescue a server-side
-   conflict — the strip must happen here). A foreign path that EXISTS on
-   `origin/main` is reset by checkout; a foreign path the branch ADDED (does
-   not exist on `origin/main`) is dropped from the branch instead — a plain
-   `git checkout origin/main -- <added-path>` would crash with `pathspec did
-   not match any file(s)` and abort the guard. Split FOREIGN accordingly:
+   merge).** `git diff --name-only "$MAIN_SHA" HEAD -- tasks/` — against the
+   freshly captured `main` snapshot (`MAIN_SHA`, captured in the block
+   below) — MUST be empty except THIS task's own folder (`tasks/*/<N>/`).
+   For any FOREIGN `tasks/` path in that diff — a `tasks/*/<M>/…` file for
+   `M != <N>`, whether `events.jsonl`, `comments.jsonl`, `body.md`, or any
+   other file — reset it to that snapshot BEFORE merging so the server-side
+   `gh pr merge --rebase` has nothing foreign to conflict on (GitHub ignores
+   this repo's `.gitattributes merge=union`, so a union merge cannot rescue
+   a server-side conflict — the strip must happen here). The guard FETCHES
+   `origin/main` first and pins every command to ONE captured `MAIN_SHA`:
+   the fleet posts ~100+ marker commits/hr to `tasks/` on `main`, so a stale
+   snapshot is the #1128 conflict class, and `origin/main` is a SHARED ref a
+   concurrent session's fetch can advance mid-guard (the worktree shares its
+   refs with every other session via the common git dir). A foreign path
+   that EXISTS at `MAIN_SHA` is reset by checkout; a foreign path the branch
+   ADDED (does not exist at `MAIN_SHA`) is dropped from the branch instead —
+   a plain `git checkout "$MAIN_SHA" -- <added-path>` would crash with
+   `pathspec did not match any file(s)` and abort the guard. Split FOREIGN
+   accordingly:
 
    ```bash
    # Foreign tasks/* paths this branch touches (everything under tasks/ that
@@ -8541,26 +8548,37 @@ rebase-merged. Three guards:
    # route to the merge-failure handling (`epm:merge-failed v1`, continue).
    STRIPPED_FOREIGN=no   # set to yes iff a strip commit is actually created,
                          # so the safe-case push below fires only when needed.
-   if ! git -C "$WT" diff --name-only origin/main HEAD -- 'tasks/' \
+   # Freshness fetch + single-SHA capture (#1128): strip against main as
+   # CLOSE to the server-side merge as possible, pinned to ONE SHA so a
+   # concurrent session's fetch cannot advance origin/main mid-guard. A
+   # FAILED fetch is a WARN, not a block: the no-foreign CERTIFICATION
+   # below is correct against any snapshot — staleness only raises the
+   # conflict probability, and the re-snapshot retry (Known failure
+   # shape 2 below) is the recovery. (The materialize-then-check diff
+   # failure below stays TERMINAL — that one breaks certification, #1184.)
+   git -C "$WT" fetch origin main --quiet \
+     || echo "Guard 1 WARN: fetch origin main failed — stripping against last-fetched origin/main (conflict-prone; Known failure shape 2 is the recovery)"
+   MAIN_SHA=$(git -C "$WT" rev-parse origin/main)
+   if ! git -C "$WT" diff --name-only "$MAIN_SHA" HEAD -- 'tasks/' \
        > /tmp/issue-<N>-guard1-tasks-diff.txt; then
-     echo "Guard 1: git diff origin/main HEAD -- tasks/ FAILED — cannot certify no foreign tasks/ paths; do NOT merge"
+     echo "Guard 1: git diff \$MAIN_SHA HEAD -- tasks/ FAILED (bad ref or empty MAIN_SHA) — cannot certify no foreign tasks/ paths; do NOT merge"
      false
    # Work arm: two-command elif list — mapfile fills FOREIGN from the FILE
    # (grep semantics identical to the old pipe), then the [ ... ] test (the
    # LAST command's exit) decides the branch.
    elif mapfile -t FOREIGN < <(grep -Ev "^tasks/[^/]+/<N>/" \
          /tmp/issue-<N>-guard1-tasks-diff.txt || true); [ "${#FOREIGN[@]}" -gt 0 ]; then
-     FOREIGN_ON_MAIN=()      # exist on origin/main -> reset to main's version
+     FOREIGN_ON_MAIN=()      # exist at MAIN_SHA -> reset to that snapshot's version
      FOREIGN_BRANCH_ONLY=()  # only the branch added them -> drop from branch
      for p in "${FOREIGN[@]}"; do
-       if git -C "$WT" cat-file -e "origin/main:$p" 2>/dev/null; then
+       if git -C "$WT" cat-file -e "$MAIN_SHA:$p" 2>/dev/null; then
          FOREIGN_ON_MAIN+=("$p")
        else
          FOREIGN_BRANCH_ONLY+=("$p")
        fi
      done
      [ "${#FOREIGN_ON_MAIN[@]}" -gt 0 ] \
-       && git -C "$WT" checkout origin/main -- "${FOREIGN_ON_MAIN[@]}"
+       && git -C "$WT" checkout "$MAIN_SHA" -- "${FOREIGN_ON_MAIN[@]}"
      [ "${#FOREIGN_BRANCH_ONLY[@]}" -gt 0 ] \
        && git -C "$WT" rm --cached -f --ignore-unmatch -- "${FOREIGN_BRANCH_ONLY[@]}"
      # Commit the reset/removal so the branch diff no longer touches them,
@@ -8568,7 +8586,7 @@ rebase-merged. Three guards:
      # nothing staged and skips the commit). Record that a strip commit was
      # made so the safe-case merge below knows it must push before rebasing.
      if ! git -C "$WT" diff --cached --quiet -- "${FOREIGN[@]}"; then
-       git -C "$WT" commit -m "issue-<N>: strip foreign tasks/ folders before Step-10d merge" -- "${FOREIGN[@]}"
+       git -C "$WT" commit -m "issue-<N>: strip foreign tasks/ folders before Step-10d merge (pinned to main @ ${MAIN_SHA:0:12})" -- "${FOREIGN[@]}"
        STRIPPED_FOREIGN=yes
      fi
    fi
@@ -9215,7 +9233,7 @@ else
     if gh pr merge <PR> --rebase --delete-branch=false; then
       rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
     else
-      echo "MERGE FAILED (non-lint transport failure, e.g. the #1041 'can't be rebased' shape) — the SHA-bound verdict REMAINS VALID for a retry of the SAME tip: re-enter this conditional with the --squash retry per the Known-failure-shape paragraph below. Do NOT hand-write the verdict file."
+      echo "MERGE FAILED — classify the gh error text: (1) \"can't be rebased\" -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" (mergePullRequest) -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
       false
     fi
   else
@@ -9233,7 +9251,8 @@ revert control after the fact — that is what makes a no-prompt merge safe
 here. The worktree is deliberately NOT removed (`--delete-branch=false`,
 no `git worktree remove`).
 
-Known failure shape: a branch that CARRIES A MERGE COMMIT (e.g. after a
+**Known failure shape 1 — branch carries a merge commit (`can't be
+rebased`, #1041).** A branch that CARRIES A MERGE COMMIT (e.g. after a
 conflict-resolution merge of `main` into the branch) cannot be
 server-side rebased — `gh pr merge --rebase` fails with
 `GraphQL: This branch can't be rebased`. The working recovery is
@@ -9249,11 +9268,92 @@ Never recreate the verdict file by hand — a hand-written verdict lacks
 the certified sha and fails closed anyway (#1082's
 `echo pass > /tmp/issue-<N>-lint-verdict.txt` is the banned move).
 
+**Known failure shape 2 — mergeability conflict under fleet marker churn
+(error text containing `Pull Request has merge conflicts`, #1128).**
+Classify by SUBSTRING, never the exact GraphQL line (the full
+`GraphQL: Pull Request has merge conflicts (mergePullRequest)` wording is
+transcript-mined and may drift). Between the Guard-1 snapshot and the
+server-side rebase, `main` advances (~100+ `tasks/` marker commits/hr),
+so the strip commit's snapshot replays stale and conflicts. Recovery:
+re-snapshot against a freshly captured `main` SHA and retry ONCE —
+documented, never silent, and gated on the re-snapshot actually changing
+something (an unchanged tip would fail identically; go straight to the
+merge-conflict recovery instead). NOTE the same error text ALSO fires for
+non-`tasks/` conflicts (overlapping workflow-surface edits, binary
+`figures/` collisions — #697/#597) that a re-snapshot cannot fix: the
+skip-predicate fall-through is the EXPECTED path there, not a
+malfunction. Likewise when an ORDINARY branch commit itself touched
+foreign `tasks/` at stale content, the re-snapshot cannot fix that
+commit's replay — the fall-through to the merge-conflict recovery below
+covers it. Even a fresh snapshot can go stale in the seconds between the
+fetch and the server-side merge — this recipe bounds and mechanizes
+recovery; it does not eliminate the race.
+
+```bash
+# Re-snapshot-and-retry (ONCE per Step 10d invocation) — fires ONLY on
+# the mergeability-conflict shape above.
+# STEP 1 (own Bash call): persist the pre-resnapshot tip to a FILE —
+# fenced blocks are separate shell invocations, so a bare variable would
+# not survive to step 3 (the Guard-1 diff-file / lint-verdict pattern):
+git -C "$WT" rev-parse HEAD > /tmp/issue-<N>-resnapshot-tip.txt
+# STEP 2: re-run the ENTIRE Guard-1 block above VERBATIM: it re-fetches,
+# captures a fresh MAIN_SHA, re-pins the foreign paths, and commits only
+# if anything changed (idempotent).
+# STEP 3 (own Bash call): retry ONLY if the re-snapshot changed the
+# branch tip OR unpushed commits exist (same rev-list re-derivation as
+# the safe-case push; missing ref counts as unpushed). The retry sits in
+# the else arm so the skip arm ENDS the block — the skip must never fall
+# through into the push:
+TIP_BEFORE=$(cat /tmp/issue-<N>-resnapshot-tip.txt)
+if [ "$(git -C "$WT" rev-parse HEAD)" = "$TIP_BEFORE" ] \
+   && [ "$(git -C "$WT" rev-list --count origin/issue-<N>..HEAD 2>/dev/null || echo 1)" -eq 0 ]; then
+  echo "re-snapshot changed nothing (tip unchanged, nothing unpushed) — a retry would fail identically; record resnapshot_retry outcome: skipped and run the merge-conflict recovery below"
+  false
+else
+  git -C "$WT" push origin issue-<N> \
+    || { git -C "$WT" pull --rebase=merges --autostash \
+         && git -C "$WT" push origin issue-<N>; }
+  # gh recomputes mergeability ASYNCHRONOUSLY after a push (the recovery
+  # block's own precedent) — re-check before the retried merge so a
+  # stale mergeability read cannot burn the single retry:
+  gh pr view <PR> --json mergeable -q .mergeable   # brief wait/retry until MERGEABLE
+fi
+# If the tip changed, the SHA-bound lint verdict is now STALE and the
+# gated conditional would fail CLOSED: re-run the executable Pre-push
+# workflow-lint gate block (subsection above) so the verdict re-binds to
+# the NEW tip (never hand-write it, #1082). If the tip did NOT change
+# (push-only fix), the still-valid verdict re-certifies it — the
+# conditional's sha arm enforces this mechanically either way. Then
+# re-enter the SAME gated merge conditional (--rebase form) exactly
+# once. Classify a SECOND refusal by its error text per the failure
+# echo: a "can't be rebased" refusal takes the shape-1 --squash retry
+# (the retried rebase replays the FIRST, stale strip commit per-commit
+# and can surface as shape 1 even after a clean re-snapshot; the squash
+# is the endpoint merge that ends the chain); any OTHER second refusal
+# falls through to the merge-conflict recovery below. Record the
+# outcome either way in the epm:merged / epm:merge-failed note:
+#   resnapshot_retry: {tip_before: <TIP_BEFORE>, main_sha: <fresh MAIN_SHA>,
+#                      stripped_again: yes|no, outcome: merged|refused|skipped}
+```
+
+(If the re-run Guard-1 created NO new commit but unpushed commits existed
+— e.g. a crash between an earlier strip and its push — the push alone can
+fix the server-side view and the retry is warranted; the tip is then
+unchanged, so the still-valid SHA-bound verdict re-certifies it and no
+gate re-run is needed.)
+
 - **Success:** post `epm:merged v1` with the list of merge SHAs. Update
   the chat title with `merged`. Then run the **post-merge stale-task-folder
   guard** below (it runs on every merge form).
-- **Failure** (rebase conflict, non-mergeable PR, non-fast-forward):
-  FIRST run the **merge-conflict recovery** sub-procedure below ONCE.
+- **Failure** (rebase conflict, non-mergeable PR, non-fast-forward): for
+  the `Pull Request has merge conflicts` shape (substring match), FIRST
+  run the **re-snapshot-and-retry** (Known failure shape 2 above) ONCE;
+  if it is skipped (nothing changed), run the **merge-conflict recovery**
+  sub-procedure below ONCE; if the retried merge is refused AGAIN,
+  re-classify that second refusal by error text — a `can't be rebased`
+  refusal takes the shape-1 `--squash` retry, anything else runs the
+  **merge-conflict recovery** ONCE. For any other first refusal, run the
+  **merge-conflict recovery** sub-procedure below ONCE directly.
   If the recovery itself fails or the retried merge is still refused:
   do NOT swallow it (fail-fast). Post `epm:merge-failed v1` with the
   `gh` / `git` error, surface ONE line in chat naming the branch +
@@ -9276,11 +9376,46 @@ worktree, 210 targeted tests re-run, merged on retry):
 
 ```bash
 git -C "$WT" fetch origin main --quiet
-git -C "$WT" merge origin/main          # conflicts surface HERE, in the worktree
-# Resolve each conflict in the worktree (keep main's version of anything
-# outside this task's deliverables), then:
+# Capture the snapshot ONCE, immediately after the fetch, and merge THAT
+# SHA — origin/main is a shared ref a concurrent session's fetch can
+# advance between these commands (#1128's shared-ref race).
+MAIN_SHA=$(git -C "$WT" rev-parse origin/main)
+git -C "$WT" merge "$MAIN_SHA"          # conflicts surface HERE, in the worktree
+# Foreign tasks/ conflicts are resolved MECHANICALLY: take the captured
+# snapshot's version wholesale (under fleet marker churn main is
+# authoritative for OTHER tasks' state — the #1128-proven recovery:
+# foreign tasks/ pinned to ONE captured main SHA). Materialize the
+# conflicted-path list first and check its own exit code (#1184 shape):
+git -C "$WT" diff --name-only --diff-filter=U -- 'tasks/' \
+  > /tmp/issue-<N>-recovery-foreign.txt \
+  || { echo "recovery: conflicted-paths diff FAILED — resolve by hand per the prose below"; false; }
+grep -Ev "^tasks/[^/]+/<N>/" /tmp/issue-<N>-recovery-foreign.txt \
+  > /tmp/issue-<N>-recovery-foreign-only.txt || true
+# checkout <sha> -- <path> resolves each U path to the snapshot's version
+# and stages it. It fails loud on a path absent at $MAIN_SHA (a
+# delete/modify conflict — resolve that one by hand). The mapfile +
+# non-empty-array idiom is Guard 1's own hook-proven shape (the
+# guard_repo_root_branch.sh -C waiver expects -C right after git; no
+# xargs indirection, no whitespace-splitting caveat); the length test
+# means an empty list never runs a pathspec-less checkout:
+mapfile -t RECOVERY_FOREIGN < /tmp/issue-<N>-recovery-foreign-only.txt
+[ "${#RECOVERY_FOREIGN[@]}" -gt 0 ] \
+  && git -C "$WT" checkout "$MAIN_SHA" -- "${RECOVERY_FOREIGN[@]}"
+# THIS task's own tasks/*/<N>/ conflicts and all non-tasks/ conflicts:
+# resolve in the worktree (keep main's version of anything outside this
+# task's deliverables), then:
 git -C "$WT" add <each resolved file>
 git -C "$WT" commit --no-edit
+# Post-resolution certification (the #1128 verification): the branch tree
+# must now be IDENTICAL to the captured snapshot over tasks/, modulo this
+# task's own folder — materialize, then check (fail-loud):
+git -C "$WT" diff --name-only "$MAIN_SHA" HEAD -- 'tasks/' \
+  > /tmp/issue-<N>-recovery-tasks-verify.txt \
+  || { echo "recovery: tasks/ verification diff FAILED — do NOT push"; false; }
+if grep -Ev "^tasks/[^/]+/<N>/" /tmp/issue-<N>-recovery-tasks-verify.txt | grep -q .; then
+  echo "recovery: foreign tasks/ still differ from the captured main snapshot — do NOT push; re-pin the listed paths to \$MAIN_SHA and re-verify"
+  false
+fi
 # Re-run the targeted tests for the touched surface AND the executable
 # Pre-push workflow-lint gate block (subsection above; gated = this
 # post-merge worktree copy, which carries main's CURRENT lint — the ideal
@@ -9302,7 +9437,7 @@ if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/nu
   if gh pr merge <PR> --rebase --delete-branch=false; then
     rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
   else
-    echo "MERGE FAILED post-push (the recovery's merge commit typically refuses server-side rebase — the #1041 shape). The SHA-bound verdict REMAINS VALID for the same-tip retry: re-enter this conditional with --squash substituted for --rebase (the Known-failure-shape paragraph above); the rm fires on THAT retry's success. Do NOT hand-write the verdict file."
+    echo "MERGE FAILED post-push (the recovery's merge commit typically refuses server-side rebase — the #1041 shape). The SHA-bound verdict REMAINS VALID for the same-tip retry: re-enter this conditional with --squash substituted for --rebase (Known failure shape 1 above); the rm fires on THAT retry's success. Do NOT hand-write the verdict file."
     false
   fi
 else
