@@ -8,11 +8,15 @@ the filings through this script in small batches. Every outcome is appended to
 a mid-run kill strands at most the one in-flight item and a re-invocation resumes from
 the ledger instead of forcing a which-got-filed audit.
 
-Manifest item schema: ``{slug, route: 2|3, title, target, bug, change, body?}`` where
-``body`` defaults to ``<dir>/<slug>.md`` (absolute paths pass through; relative paths
-resolve against the filings dir).
+Manifest item schema: ``{slug, route: 2|3, title, target, bug, change, body?, wf_fix?: bool}``
+where ``body`` defaults to ``<dir>/<slug>.md`` (absolute paths pass through; relative paths
+resolve against the filings dir). ``wf_fix`` (route 2 only, default ``true``) — ``false``
+marks a non-workflow-surface (experiment-code) item per the daily SKILL.md route-2 variant:
+the driver drops the ``wf-fix`` / ``wf-fix-fp:<fp>`` tags (keeps ``daily-auto-filed``),
+skips the Provenance injection, and skips fp-dedup (#1228).
 
-Route-2 bodies are normalized in place before filing (#1173): a body missing the durable
+Route-2 bodies are normalized in place before filing (#1173; skipped for ``wf_fix: false``
+items): a body missing the durable
 recursion-guard Provenance lines gains ``- workflow_fix_target: <manifest target>`` +
 ``- fingerprint: <fp>`` under ``## Provenance`` (idempotent temp+rename; the ``INJECTED``
 stdout line is the audit trace).
@@ -160,6 +164,43 @@ def ensure_wf_fix_provenance(text: str, target: str, fp: str) -> tuple[str, bool
     return new, True
 
 
+def _wf_fix_enabled(item: dict) -> bool:
+    """True when this route-2 item participates in the wf-fix key space (#1228).
+
+    Route-2 items default to wf-fix semantics (tags + Provenance injection +
+    fp-dedup); a manifest ``wf_fix: false`` marks a non-workflow-surface
+    (experiment-code) item per the daily SKILL.md route-2 variant — it keeps
+    ``daily-auto-filed`` only, and its spawned session is NOT a workflow-fix
+    session (no recursion guard). Always False for route 3. The ONE shared
+    predicate across the tag block, the injection block, the fp-dedup call,
+    and the dry-run mirrors — so the tag and the durable recursion-guard body
+    signal cannot diverge on the driver path (#1173 coupling invariant).
+    """
+    return item["route"] == 2 and item.get("wf_fix", True)
+
+
+def _warn_stray_wf_fix_provenance(item: dict, dirpath: Path) -> None:
+    """WARN-only (#1228): a ``wf_fix: false`` body should not carry the guard line.
+
+    The daily SKILL.md route-2 variant says "do not hand-add a
+    ``workflow_fix_target:`` Provenance block to a ``wf_fix: false`` body" — the
+    line would arm ``task_workflow.is_workflow_fix_session()`` for a session that
+    is NOT a workflow-fix session. Never blocks the filing (the substring may be
+    a legitimate prose quote); no-op for route 3 and for wf-fix-enabled items.
+    """
+    if item["route"] != 2 or _wf_fix_enabled(item):
+        return
+    text = _resolve_body_path(item, dirpath).read_text(encoding="utf-8")
+    if WF_FIX_TARGET_KEY in text:
+        print(
+            f"WARNING {item['slug']}: wf_fix=false but the body contains"
+            f" '{WF_FIX_TARGET_KEY}' — the spawned session would be recursion-guarded"
+            " as a workflow-fix session; remove the hand-added Provenance line"
+            " (daily SKILL.md route-2 variant, #1228)",
+            file=sys.stderr,
+        )
+
+
 def load_and_validate_manifest(dirpath: Path) -> list[dict]:
     """Parse + validate the WHOLE manifest up front, so a schema wart aborts at ZERO filings.
 
@@ -184,6 +225,13 @@ def load_and_validate_manifest(dirpath: Path) -> list[dict]:
         if item["route"] not in (2, 3):
             raise ValueError(
                 f"manifest item {i} ({item['slug']}): route must be 2 or 3, got {item['route']!r}"
+            )
+        if "wf_fix" in item and not isinstance(item["wf_fix"], bool):
+            # A JSON string "false" is truthy — silently accepting it would invert the
+            # flag's intent (#1228). Fail loud at ZERO filings, per this function's contract.
+            raise ValueError(
+                f"manifest item {i} ({item['slug']}): wf_fix must be a JSON boolean,"
+                f" got {item['wf_fix']!r}"
             )
         if item["slug"] in seen_slugs:
             raise ValueError(f"manifest item {i}: duplicate slug {item['slug']!r}")
@@ -315,7 +363,9 @@ def find_open_fp_duplicate(tasks_root: Path, fp: str) -> Path | None:
     requirement, filesystem-only (no REGISTRY read) — so a same-fp task filed
     by EITHER channel blocks a daily re-file even when its registry row or
     Provenance line is malformed. Kept (not delegated) for that coarser grain
-    and for the ``tasks_root`` injection the test fixtures use.
+    and for the ``tasks_root`` injection the test fixtures use. Called only for
+    ``_wf_fix_enabled`` items (#1228) — a ``wf_fix: false`` filing never carries
+    the fp tag, so its participation would be one-way.
     """
     needle = f"wf-fix-fp:{fp}"
     for body in sorted(tasks_root.glob("*/*/body.md")):
@@ -347,7 +397,9 @@ def _filer_cmd(
         f"/daily {date} problem sweep (route {item['route']}): {item['bug'][:400]}",
     ]
     if item["route"] == 2:
-        cmd += ["--tag", "wf-fix", "--tag", f"wf-fix-fp:{fp}", "--tag", "daily-auto-filed"]
+        if _wf_fix_enabled(item):
+            cmd += ["--tag", "wf-fix", "--tag", f"wf-fix-fp:{fp}"]
+        cmd += ["--tag", "daily-auto-filed"]
     else:
         cmd += ["--tag", "daily-held", "--tag", "needs-human", "--no-dispatch"]
     return cmd
@@ -455,7 +507,7 @@ def process_item(
         return "skip"
 
     if dry_run:
-        if item["route"] == 2 and find_open_fp_duplicate(tasks_root, fp) is not None:
+        if _wf_fix_enabled(item) and find_open_fp_duplicate(tasks_root, fp) is not None:
             print(f"DEDUP {slug} -> wf-fix-fp:{fp}")
         else:
             tags = _filer_cmd([], item, Path("-"), date, fp)
@@ -463,13 +515,15 @@ def process_item(
                 " [in-flight attempting row; recovery scan runs first]" if state != "fresh" else ""
             )
             inject = ""
-            if item["route"] == 2:
+            if _wf_fix_enabled(item):
                 # Read-only injection-intent probe (#1173): dry-run stays write-free.
                 # No exists() guard — a missing/unreadable body fails LOUD here, the
                 # same fail-fast contract load_and_validate_manifest enforces up front.
                 body_text = _resolve_body_path(item, dirpath).read_text(encoding="utf-8")
                 if ensure_wf_fix_provenance(body_text, item["target"], fp)[1]:
                     inject = " [will inject workflow_fix_target provenance]"
+            else:
+                _warn_stray_wf_fix_provenance(item, dirpath)
             print(f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}{inject}")
         return "skip"
 
@@ -480,7 +534,7 @@ def process_item(
         if outcome is not None:
             return outcome
 
-    if item["route"] == 2:
+    if _wf_fix_enabled(item):
         dup = find_open_fp_duplicate(tasks_root, fp)
         if dup is not None:
             append_row(
@@ -497,10 +551,11 @@ def process_item(
             return "deduped"
 
     body_path = _resolve_body_path(item, dirpath)
-    if item["route"] == 2:
+    if _wf_fix_enabled(item):
         # Same condition under which _filer_cmd applies the wf-fix tag — the tag and
         # the durable recursion-guard body signal cannot diverge on the driver path
-        # (#1173). Idempotent, so a kill anywhere re-normalizes harmlessly on resume.
+        # (#1173; both sites key on _wf_fix_enabled, #1228). Idempotent, so a kill
+        # anywhere re-normalizes harmlessly on resume.
         text = body_path.read_text(encoding="utf-8")
         new_text, changed = ensure_wf_fix_provenance(text, item["target"], fp)
         if changed:
@@ -508,6 +563,8 @@ def process_item(
             tmp.write_text(new_text, encoding="utf-8")
             os.replace(tmp, body_path)  # temp+rename, same pattern as load_ledger
             print(f"INJECTED {slug}: workflow_fix_target provenance (#1173 recursion-guard signal)")
+    else:
+        _warn_stray_wf_fix_provenance(item, dirpath)
     # Two-phase ledger: the `attempting` row (with the recovery id floor) lands BEFORE
     # the filer subprocess — the load-bearing crash-safety ordering.
     append_row(
