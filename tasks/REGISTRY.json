@@ -1860,8 +1860,8 @@
     "1239": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1239",
-      "status": "running",
+      "path": "tasks/reviewing/1239",
+      "status": "reviewing",
       "title": "env-reading git credential helper for pod bootstrap"
     },
     "124": {
