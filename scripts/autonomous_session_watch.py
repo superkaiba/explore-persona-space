@@ -6386,9 +6386,12 @@ def _gc_orphan_pod_safety_state(
 
 
 def _forward_marker_child_stderr(res, context: str) -> None:
-    """Forward a rc==0 task.py child's non-empty stderr (#1130): the child
-    exits 0 while printing deferred-commit / LANDING CHECK warnings, which
-    capture_output would otherwise swallow into the cron log's void."""
+    """Forward a rc==0 task.py / spawn_session.py child's non-empty stderr
+    (#1130/#1221): the child exits 0 while printing deferred-commit / LANDING
+    CHECK / registration warnings, which capture_output would otherwise
+    swallow into the cron log's void. The `[task.py stderr]` output prefix is
+    kept byte-stable for grep/test compatibility; the ``context`` label names
+    the actual child."""
     err = (getattr(res, "stderr", None) or "").strip()
     if not err:
         return

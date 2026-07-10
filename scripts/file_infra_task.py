@@ -369,6 +369,11 @@ def cmd_file_infra(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 0
+    # rc==0: spawn_session deliberately exits 0 while printing registration /
+    # happy-patch / suppression warnings to stderr — forward them so they reach
+    # the caller's transcript on BOTH the suppressed and dispatched paths
+    # (#1130 helper; the rc!=0 branch above already embeds stderr itself).
+    _forward_marker_child_stderr(spawned, "spawn_session spawn-issue (file_infra_task)")
     first_line = (spawned.stdout.strip().splitlines() or [""])[0]
     suppressed = spawn_output_suppressed(spawned.stdout)
     if suppressed is not None:
