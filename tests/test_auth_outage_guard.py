@@ -82,11 +82,15 @@ def _forbid_real_marker_posts(monkeypatch):
     commit on a REAL task (the two-week #662/#663/#867 incident class). A
     test-level recorder patch overrides this default; ``dry_run=True`` and
     stubbed-``subprocess.run`` calls keep the real body's behavior."""
+    import functools
     import subprocess as _sp
 
     real_post = asw._post_progress_marker
     real_run = _sp.run
 
+    # functools.wraps sets __wrapped__, so inspect.getsource() on the patched
+    # attribute still resolves the ORIGINAL body.
+    @functools.wraps(real_post)
     def _guarded(issue, note, dry_run, *, label):
         if not dry_run and _sp.run is real_run:
             raise AssertionError(
@@ -521,6 +525,9 @@ def test_stalled_gate_skips_stop_and_respawn_as_unit(watcher_roots, monkeypatch)
     )
     monkeypatch.setattr(asw, "_persist_stalled_ctx", lambda *a, **kw: None)
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: None)
+    # #1247 fence act-guard seam: confirm-active so the guard's live re-read
+    # never shells the real `task.py view` subprocess (hermeticity).
+    monkeypatch.setattr(asw, "_task_status", lambda _i: "running")
     # Episode active, no token: NEITHER the stop NOR the respawn fires.
     asw._handle_stalled_respawn(_stalled_ctx(7, "sid-7", {"sid-7"}))
     assert stops == [] and spawns == []
