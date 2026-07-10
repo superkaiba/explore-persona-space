@@ -1923,8 +1923,8 @@
     "1247": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1247",
-      "status": "reviewing",
+      "path": "tasks/completed/1247",
+      "status": "completed",
       "title": "terminal-status guard + source stamp for orphan-respawn (662"
     },
     "1248": {
