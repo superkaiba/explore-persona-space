@@ -1797,8 +1797,8 @@
     "1230": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1230",
-      "status": "reviewing",
+      "path": "tasks/completed/1230",
+      "status": "completed",
       "title": "code-reviewer verifies named durability-pin test ships"
     },
     "1231": {
