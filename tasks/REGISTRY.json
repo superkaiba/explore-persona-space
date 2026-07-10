@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1236,
+  "highest_id": 1237,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1842,6 +1842,13 @@
       "path": "tasks/proposed/1236",
       "status": "proposed",
       "title": "sync batch-datagen memory L13 to pid-file launch contract"
+    },
+    "1237": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1237",
+      "status": "proposed",
+      "title": "migrate remaining verify_plan doc-global N/A escapes"
     },
     "124": {
       "has_clean_result": false,
