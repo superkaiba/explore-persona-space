@@ -662,8 +662,12 @@ def make_figure(units: list[dict], trait_names: list[str], fig_path: Path) -> No
         ),
         Line2D([], [], color="black", lw=1.2, label="null band (2.5-97.5%)"),
     ]
+    cell_labels = {
+        "cell_inst_own": "Instruct, own answers",
+        "cell_pre_own": "Pretrained, own answers",
+    }
     for c_i, unit in enumerate(units):
-        cell = unit["cell"]
+        cell = cell_labels.get(unit["cell"], unit["cell"])
         # Row 1: (a) trait-direction variance shares, fitted map + target side.
         ax = axes[0][c_i]
         xs, _ = group_layout(ax)

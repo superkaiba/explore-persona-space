@@ -1994,39 +1994,46 @@ def step_figures(args: argparse.Namespace) -> None:  # noqa: C901
         else:
             skip("read4c_trait_per_factor", "headline unit absent from read4 JSON")
 
-    # ---- 9. dynamics D4 turn profiles
+    # ---- 9. dynamics D4 turn profiles (both input arms: context state + prefix state)
     if dynamics is not None:
-        fig, ax = plt.subplots()
+        arm_specs = (
+            ("context_k", "context state → same-turn answer"),
+            ("s_k", "prefix state → same-turn answer"),
+        )
+        fig, axes9 = plt.subplots(1, 2, figsize=(10.6, 4.4), sharey=True)
         drew = 0
         combos = [c for c in dynamics["combos"] if c["layer"] == HEADLINE_LAYER]
         colors = paper_palette(max(len(combos), 1))
-        for i, combo in enumerate(combos):
-            d4 = combo.get("dynamics", {}).get("D4_turn_profiles", {})
-            answer_side = d4.get("answer_side", {})
-            src = answer_side.get("context_k") or {}
-            target = next((v for k, v in sorted(src.items()) if "t1" in k), None)
-            profiles = (target or {}).get("turn_profiles", {})
-            turns, ys = [], []
-            for turn_key, entry in sorted(profiles.items(), key=lambda kv: int(kv[0])):
-                r2 = entry.get("fit", {}).get("r2")
-                if isinstance(r2, (int, float)):
-                    turns.append(int(turn_key))
-                    ys.append(r2)
-            if turns:
-                ax.plot(
-                    turns,
-                    ys,
-                    marker="o",
-                    label=CELL_LABELS.get(combo["cell"], combo["cell"]),
-                    color=colors[i],
-                )
-                drew += 1
-        ax.set_xlabel("user-turn index")
-        ax.set_ylabel("held-out R² (context state → same-turn answer state)")
-        ax.set_title("Per-turn map skill profile (D4, layer 14)")
+        for ax, (arm_key, arm_title) in zip(axes9, arm_specs, strict=True):
+            for i, combo in enumerate(combos):
+                d4 = combo.get("dynamics", {}).get("D4_turn_profiles", {})
+                answer_side = d4.get("answer_side", {})
+                src = answer_side.get(arm_key) or {}
+                target = next((v for k, v in sorted(src.items()) if "t1" in k), None)
+                profiles = (target or {}).get("turn_profiles", {})
+                turns, ys = [], []
+                for turn_key, entry in sorted(profiles.items(), key=lambda kv: int(kv[0])):
+                    r2 = entry.get("fit", {}).get("r2")
+                    if isinstance(r2, (int, float)):
+                        turns.append(int(turn_key))
+                        ys.append(r2)
+                if turns:
+                    ax.plot(
+                        turns,
+                        ys,
+                        marker="o",
+                        markersize=3,
+                        label=CELL_LABELS.get(combo["cell"], combo["cell"]),
+                        color=colors[i],
+                    )
+                    drew += 1
+            ax.set_xlabel("user-turn index")
+            ax.set_title(arm_title, fontsize=10)
+            ax.axhline(0.0, color="black", lw=0.6)
+        axes9[0].set_ylabel("held-out R² (per-turn map, layer 14)")
         if drew:
-            ax.legend(fontsize=7)
-            emit(fig, "dynamics_d4_turn_profiles", "D4 per-turn R² per cell")
+            axes9[0].legend(fontsize=6.5)
+            emit(fig, "dynamics_d4_turn_profiles", "D4 per-turn R² per cell, both input arms")
         else:
             plt.close(fig)
             skip("dynamics_d4_turn_profiles", "no computed D4 turn profiles at L14")
@@ -2280,37 +2287,83 @@ def step_figures(args: argparse.Namespace) -> None:  # noqa: C901
         else:
             skip("read4c_cross_fit_layer_band", "no band rows for the headline cell")
 
-    # ---- 15. bridge refits (graceful while in flight)
+    # ---- 15. bridge refits: one bar per re-fit item, grouped by parent substrate
     if bridge is not None and bridge.get("status") == "present":
         summary = bridge.get("summary", {})
-        entries = []
-        for key in ("issue923", "issue813", "issue779"):
+        beh_label = {"em": "EM", "fact": "fact", "marker": "marker", "sycophancy": "sycophancy"}
+        qset_label = {"elicit": "eliciting", "generic": "generic", "mix": "mixed"}
+        sub923_label = {"uc48": "UltraChat-48 grid", "betley": "Betley questions"}
+
+        def _r2_items(key: str) -> list[dict]:
             block = summary.get(key)
             if not isinstance(block, dict):
-                continue
-            items = block.get("items", [])
-            r2s = [
-                i.get("headline_r2")
-                for i in items
-                if isinstance(i.get("headline_r2"), (int, float))
+                return []
+            return [
+                i for i in block.get("items", []) if isinstance(i.get("headline_r2"), (int, float))
             ]
-            if r2s:
-                entries.append((key.replace("issue", "#"), float(np.nanmean(r2s))))
-            else:
-                val = _find_scalar(block, ("headline_r2", "r2", "held_out_r2"))
-                if val is not None:
-                    entries.append((key.replace("issue", "#"), val))
-        if entries:
-            fig, ax = plt.subplots()
-            xs = np.arange(len(entries))
-            ax.bar(xs, [v for _k, v in entries], 0.5, color=paper_palette_role("primary"))
-            ax.set_xticks(xs)
-            ax.set_xticklabels([f"issue {k.lstrip('#')} substrate" for k, _v in entries])
-            ax.set_ylabel("held-out R² at layer 14 (mean over bridge items)")
+
+        groups: list[tuple[str, list[tuple[str, float]]]] = []
+        items923 = sorted(_r2_items("issue923"), key=lambda i: i.get("substrate") != "uc48")
+        if items923:
+            groups.append(
+                (
+                    "UltraChat grid (issue 923)",
+                    [
+                        (
+                            sub923_label.get(i.get("substrate"), str(i.get("substrate"))),
+                            i["headline_r2"],
+                        )
+                        for i in items923
+                    ],
+                )
+            )
+        items779 = _r2_items("issue779")
+        if items779:
+            groups.append(
+                (
+                    "LMSYS persona map (issue 779)",
+                    [("LMSYS persona map", i["headline_r2"]) for i in items779],
+                )
+            )
+        items813 = _r2_items("issue813")
+        if items813:
+            entries813 = []
+            for i in items813:
+                qset = Path(str(i.get("source", ""))).parent.name
+                beh = beh_label.get(i.get("behavior"), str(i.get("behavior")))
+                entries813.append((f"{beh} {qset_label.get(qset, qset)}", i["headline_r2"]))
+            groups.append(("unified-recipe re-fit (issue 813)", entries813))
+        if groups:
+            fig, ax = plt.subplots(figsize=(9.6, 4.8))
+            colors = paper_palette(len(groups))
+            tick_xs: list[float] = []
+            tick_labels: list[str] = []
+            pos = 0.0
+            for gi, (gname, group_items) in enumerate(groups):
+                xs = [pos + j for j in range(len(group_items))]
+                vals = [float(v) for _lbl, v in group_items]
+                ax.bar(xs, vals, 0.72, color=colors[gi], label=gname)
+                for x, v in zip(xs, vals, strict=True):
+                    ax.text(
+                        x,
+                        v + (0.05 if v >= 0 else -0.05),
+                        f"{v:+.2f}",
+                        ha="center",
+                        va="bottom" if v >= 0 else "top",
+                        fontsize=6.5,
+                    )
+                tick_xs.extend(xs)
+                tick_labels.extend(lbl for lbl, _v in group_items)
+                pos += len(group_items) + 1.4
+            ax.set_xticks(tick_xs)
+            ax.set_xticklabels(tick_labels, rotation=45, ha="right", fontsize=7)
+            ax.axhline(0.0, color="black", lw=0.6)
+            ax.set_ylabel("held-out R² at layer 14 (one bar per re-fit item)")
             ax.set_title("Bridge re-fits on parent substrates (one recipe, three corpora)")
-            emit(fig, "bridge_refits", "bridge re-fit skill per parent substrate")
+            ax.legend(fontsize=7)
+            emit(fig, "bridge_refits", "bridge re-fit skill per re-fit item, grouped by substrate")
         else:
-            skip("bridge_refits", "no r2-like scalars found in bridge summary")
+            skip("bridge_refits", "no per-item r2 values found in bridge summary")
     else:
         skip("bridge_refits", "bridge_refit_summary.json pending (production run in flight)")
 
