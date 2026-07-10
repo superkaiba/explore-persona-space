@@ -975,8 +975,25 @@ the ONLY one positioned to detect the collision). If >30 min have passed
 since this session's last tool call / turn, OR its last posted marker is
 older than 30 min AND `events.jsonl` has advanced since, do NOT execute
 the stale next step. FIRST re-run the guard: read `uv run python
-scripts/task.py latest-marker <N>`, `~/.eps-autonomous/issue-<N>.json`,
-and `uv run python scripts/spawn_session.py list`. If a replacement
+scripts/task.py latest-marker <N>`, the registration files (fail-soft
+probe below — copy it verbatim), and `uv run python
+scripts/spawn_session.py list`.
+
+```bash
+# Registration-file probe — FAIL-SOFT, copy verbatim. A missing file is
+# the NORMAL case (an interactive session that never ran
+# register-current; an autonomous one whose registry entry was deleted
+# at a terminal transition), and a bare `ls`/`cat` on an absent path
+# exits non-zero (ls: 2, cat: 1), which CANCELS parallel sibling tool
+# calls issued in the same message (5+ sessions, 2026-07-09). Rule:
+# an INFORMATIONAL probe on an OPTIONAL file is ALWAYS fail-soft —
+# append `2>/dev/null` + `|| true`, or if-form it
+# (`if [ -f <p> ]; then cat <p>; fi`); Step 9c step 1b's "Recipe
+# exit-code hygiene" covers the trailing-command flavor of this class.
+cat ~/.eps-autonomous/issue-<N>.json ~/.eps-autonomous/manual-issue-<N>.json 2>/dev/null || true
+```
+
+If a replacement
 session is registered for #N (a `spawned_at` newer than this session's
 own start) OR the marker trail shows another writer has advanced the task
 past this session's last-known state, YIELD immediately. Before ending,
