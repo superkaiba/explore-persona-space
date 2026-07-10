@@ -9491,7 +9491,8 @@ fi
 ```
 
 The `gh pr merge --rebase` form lands all per-item commits individually
-on `main`; each is independently revertible via `git revert <sha>` (vs.
+on `main`; each is independently revertible via `git revert <sha>` run in
+a scratch worktree (the root guard blocks a repo-root revert, #1234) (vs.
 `--merge`, which reverts everything together). The user retains full
 revert control after the fact — that is what makes a no-prompt merge safe
 here. The worktree is deliberately NOT removed (`--delete-branch=false`,
