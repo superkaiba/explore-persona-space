@@ -8978,10 +8978,17 @@ tests BEFORE anything lands:
   too — so trunk-pytest parity takes BOTH invocations. Measured wall
   ~4.5-6 min (no-flags) + ~1.4 s (parity leg) + ~1-2 s gate-tree
   construction on the shared VM; WARNs do not fail (PASS = exit 0 on
-  both).
+  both). The two leg pairs + TG legs total ~9-12+ min, so the executable
+  block below can NEVER fit the 600s foreground Bash tool cap — run it as
+  ONE BACKGROUND Bash call (`run_in_background=true`) with the per-leg
+  `timeout` wedge bounds shown (the #991/#996 kill class: wrapping it in
+  any ≤600s foreground bound, or running it foreground, SIGKILLs the
+  whole gate shell mid-lint — #1245), then read the verdict in a FRESH
+  foreground call from the FILE (completion-read below).
 
   ```bash
   # EXECUTABLE gate — forms (i) safe case and (ii) recovery share this block
+  # ONE BACKGROUND Bash call (run_in_background=true) — see the bullet above.
   # verbatim (gated = the gate-tree lint copy on the LANDING tree —
   # origin/main + the branch's own-diff payload; baseline = the SAME copy on
   # the payload-free landing base, the tree before the overlay). Form
@@ -8999,6 +9006,12 @@ tests BEFORE anything lands:
   sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && LINT_GATE_CHOOM=ok \
     || { LINT_GATE_CHOOM=failed; echo "[warn] choom failed — lint gate is earlyoom-UNPROTECTED (choom=failed)" >&2; }
   echo "[step10d] lint-gate earlyoom protection choom=$LINT_GATE_CHOOM"
+  # Stale-verdict rm (Step 9c pre-rm parity): a verdict file present at
+  # completion must provably come from THIS run — missing-after-completion
+  # is then an unambiguous died-mid-run diagnostic. The #1041 same-tip
+  # retry re-enters the merge CONDITIONAL, never this block, so the
+  # surviving-verdict retry path is untouched.
+  rm -f /tmp/issue-<N>-lint-verdict.txt
   # TRIGGER — materialize the own-diff FIRST and check the diff's OWN exit:
   # piped straight into grep, a FAILED `git diff` (bad ref, no merge-base)
   # is indistinguishable from an empty diff and would fail OPEN as an
@@ -9038,7 +9051,7 @@ tests BEFORE anything lands:
     # this set means the linter grew a new scan root — extend the set here.
     GT=/tmp/issue-<N>-lint-gate-tree
     GT_RC=0
-    git -C "$WT" fetch origin main --quiet || true  # stale origin/main degrades to the trigger's own staleness, never a crash
+    timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true  # bounded: a hung fetch degrades to origin/main staleness, never a wedged gate
     { rm -rf "$GT" && mkdir -p "$GT"; } || GT_RC=1
     ( set -o pipefail; git -C "$WT" archive origin/main -- \
         .claude CLAUDE.md scripts src tests docs pyproject.toml \
@@ -9057,11 +9070,15 @@ tests BEFORE anything lands:
     # bare last-failure-wins `|| VAR=$?` capture erases the crash and
     # defeats the crash arm below. rc=0/0 stays 0; a lone rc=1-with-lines
     # stays 1 (attribution logic); any leg >1 reaches the crash arm.
+    # 900s wedge bound per lint leg ≈ 2.5× the measured 360s upper wall
+    # (bullet above; #1129 generous-ceiling sizing style) — fires only on a
+    # genuine wedge; a bound kill (rc 124) flows through the NO-DOWNGRADE
+    # fold into the crash arm below — fail CLOSED.
     BASE_RC=0
-    uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
-    uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
@@ -9092,10 +9109,10 @@ tests BEFORE anything lands:
     # GATED legs (payload-bearing landing tree — phase 3; parity leg covers
     # the checks the no-flags bundle omits — see the bullet above):
     GATED_RC=0
-    uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
-    uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
@@ -9107,7 +9124,7 @@ tests BEFORE anything lands:
     # empty map => leg skipped (no pytest run).
     TG_RC=0; TG_BASE_RC=0; TG_CRASH=no
     : > /tmp/issue-<N>-tg-new.txt
-    if ! uv run python "$REPO_ROOT/scripts/select_step9c_tests.py" \
+    if ! timeout --kill-after=30s 120s uv run python "$REPO_ROOT/scripts/select_step9c_tests.py" \
         --map-files /tmp/issue-<N>-own-diff.txt --repo-root "$WT" \
         > /tmp/issue-<N>-tg-map.txt 2>/tmp/issue-<N>-tg-map-err.txt; then
       TG_CRASH=yes   # helper failure: cannot classify the payload — fail CLOSED
@@ -9121,7 +9138,7 @@ tests BEFORE anything lands:
       # scans the root tree). Only tests present on the baseline tree run
       # there: a branch-NEW scan test has no baseline, so its gated hits are
       # NEW by construction (correct — block).
-      mapfile -t TG_BASE_TESTS < <(uv run python \
+      mapfile -t TG_BASE_TESTS < <(timeout --kill-after=30s 120s uv run python \
         "$REPO_ROOT/scripts/select_step9c_tests.py" \
         --map-files /tmp/issue-<N>-own-diff.txt --repo-root "$REPO_ROOT" \
         2>/dev/null | cut -f1 | sort -u)
@@ -9222,6 +9239,30 @@ tests BEFORE anything lands:
   # line is inert.
   git -C "$WT" rev-parse HEAD >> /tmp/issue-<N>-lint-verdict.txt
   cat /tmp/issue-<N>-lint-verdict.txt   # line 1: pass | block | crash | skip-artifact-only; line 2: certified branch-tip sha
+  ```
+
+  **Completion-read (forms (i)/(ii)).** When the background gate call
+  completes (the harness notifies), read the verdict in a fresh FOREGROUND
+  call from the FILE. A MISSING verdict file means the background run died
+  before writing a verdict (tool kill / watcher force-stop / wedge-bound
+  kill) — treat as gate-not-run, fail CLOSED: NEVER proceed to the merge
+  conditional, NEVER hand-write the verdict (#1082). Apply crash-fix-rounds
+  § Kill-before-relaunch (probe `pgrep -af 'issue-<N>-lint-gate-tree'` —
+  the gate-tree path in the lint legs' argv makes the probe
+  exact-issue-scoped) before re-running the gate ONCE; still dying ->
+  `epm:merge-failed v1` (Verdict bullet case 3). A partial death (killed
+  between the verdict write and the sha append) leaves a 1-line file the
+  binding sites' line-2 sha check already fails CLOSED on. Worst case —
+  every bounded leg wedged — the call runs ~78 min, past the 60-min
+  § Long-phase heartbeat boundary (rare; a watcher force-stop there is
+  itself fail-closed: no verdict file gets written).
+
+  ```bash
+  if [ ! -f /tmp/issue-<N>-lint-verdict.txt ]; then
+    echo "FATAL: verdict file missing — the background gate run died before writing a verdict. Kill-before-relaunch, then re-run the gate ONCE; NEVER record pass." >&2
+  else
+    cat /tmp/issue-<N>-lint-verdict.txt   # line 1: verdict; line 2: certified sha — the merge conditional below stays the hard stop
+  fi
   ```
 
 - **Gate earlyoom protection (#1045 recipe, #1211).** Both executable blocks
@@ -9331,8 +9372,9 @@ tests BEFORE anything lands:
      file) — treat as case 1 (block). NEW empty with no own-diff-named
      line never blocks: the executable block writes `pass` — pre-existing
      red is a WARN (record the lint tail in the `epm:merged` note) and
-     the merge PROCEEDS. Run the baseline and gated runs back-to-back in
-     the same turn so a concurrent merge cannot widen the compare window
+     the merge PROCEEDS. The baseline and gated runs execute back-to-back
+     inside the ONE background gate call, so a concurrent merge cannot
+     widen the compare window
      (moving-main race — keep the window tight, preserve the
      main-already-red detail in the marker; the #1212 gate additionally
      freezes both legs to one archived origin/main snapshot, removing the
@@ -9369,7 +9411,13 @@ tests BEFORE anything lands:
   the SAME contaminated tree, a degenerate compare that fails open at
   exactly the fast-path form; sequence = baseline (root copy, both legs) →
   checkout → gated (root copy, both legs) → set-subtraction verdict → on
-  pass, `git add`. On a block at (iii), clean the payload out of BOTH
+  pass, `git add`. The whole sequence runs as ONE BACKGROUND Bash
+  invocation — do NOT split it across invocations: the contaminated-root
+  window (checkout → stage/commit-or-clean) stays compute-bound (~5-6 min)
+  only while the sequence runs in one shell, and a split inserts
+  orchestrator turn-boundary latency inside that window. While it runs,
+  end the turn and run no repo-root-mutating commands until the
+  completion-read (surgical block below). On a block at (iii), clean the payload out of BOTH
   index and working tree with the hook-VERIFIED two-step (run from
   `$REPO_ROOT`; simulated against `scripts/guard_repo_root_branch.sh`
   2026-07-05 — the one-shot restore invocation carrying `--staged` PLUS a
@@ -9464,7 +9512,9 @@ else
            && git -C "$WT" push origin issue-<N>; }
   fi
   # Pre-push workflow-lint gate (subsection above) — run its executable
-  # block FIRST, then gate the merge on the PERSISTED, SHA-BOUND verdict
+  # block FIRST as ONE BACKGROUND Bash call, read the verdict file in a
+  # fresh foreground call when it completes (completion-read, gate
+  # subsection), then gate the merge on the PERSISTED, SHA-BOUND verdict
   # file: the explicit conditional below is the hard stop. Fails CLOSED on
   # a missing file (gate not run), a block/crash verdict, OR a missing /
   # stale sha (line 2 empty or != current tip: a hand-written verdict, or
@@ -9686,7 +9736,9 @@ fi
 # tree rebuilt from this post-merge tip (origin/main + the post-merge
 # own-diff — content-identical to this post-merge worktree, which carries
 # main's CURRENT lint — the ideal gate point); the gate re-run SHA-binds
-# the verdict to THIS post-merge tip). The push is then GATED on the persisted, SHA-BOUND verdict file —
+# the verdict to THIS post-merge tip. Re-run it as ONE BACKGROUND Bash
+# call with the fresh foreground completion-read — gate subsection —
+# before this gated push). The push is then GATED on the persisted, SHA-BOUND verdict file —
 # the explicit conditional is the hard stop (missing file / block / crash
 # / missing or stale sha all fail CLOSED). The verdict is consumed only
 # AFTER `gh pr merge` SUCCEEDS: this branch now CARRIES A MERGE COMMIT,
@@ -9876,17 +9928,24 @@ Decision tree:
   # earlyoom-protect the gate — form (iii) (#1045 recipe, #1211; FAIL-OPEN,
   # see the shared gate block above): the preamble sits BEFORE the BASELINE
   # legs (they run before the checkout); this whole gate-and-land sequence is
-  # ONE fenced invocation, so every child inherits adj=-600.
+  # ONE BACKGROUND Bash invocation (run_in_background=true — its two lint
+  # leg pairs total ~9-12+ min and can NEVER fit the 600s foreground Bash
+  # tool cap, #1245), so every child inherits adj=-600.
   sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && LINT_GATE_CHOOM=ok \
     || { LINT_GATE_CHOOM=failed; echo "[warn] choom failed — lint gate is earlyoom-UNPROTECTED (choom=failed)" >&2; }
   echo "[step10d] lint-gate earlyoom protection choom=$LINT_GATE_CHOOM"
+  # Outcome sentinel (#1245): pre-rm; each terminal arm below writes it as
+  # its LAST action (landed | push-failed | blocked-cleaned) — missing at
+  # completion = the sequence died mid-run (completion-read below the block).
+  rm -f /tmp/issue-<N>-surgical-outcome.txt
   # Pre-push workflow-lint gate — form (iii) (subsection above): the payload
   # lands in the ROOT tree, so BOTH lint runs use the root copy, sequenced
   # around the checkout — BASELINE BEFORE (payload-free tree; a post-checkout
   # "baseline" would re-lint the same contaminated tree, a degenerate
   # self-compare that fails open), GATED AFTER. The whole gate-and-land
-  # sequence runs in ONE fenced block, so the verdict variable is
-  # same-invocation state (no cross-block variable). Executable trigger
+  # sequence runs in that ONE background invocation, so GATE_ARMED /
+  # BASE_RC / GATE_VERDICT remain same-invocation state (no cross-block
+  # variable). Executable trigger
   # first: an artifact-only additive list skips both lint runs.
   GATE_ARMED=no
   # Output-test form, not `-q -v` rc (ugrep rc inversion, #928 -> #1125):
@@ -9900,10 +9959,10 @@ Decision tree:
     # rationale as the gate's executable block — a leg-1 crash must not be
     # erased by a leg-2 rc=1):
     BASE_RC=0
-    uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
-    uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
@@ -9918,7 +9977,7 @@ Decision tree:
   # self-compare), TG GATED after; BOTH legs run the ROOT copy.
   TG_RC=0; TG_BASE_RC=0; TG_CRASH=no
   : > /tmp/issue-<N>-tg-new.txt
-  if ! uv run python "$REPO_ROOT/scripts/select_step9c_tests.py" \
+  if ! timeout --kill-after=30s 120s uv run python "$REPO_ROOT/scripts/select_step9c_tests.py" \
       --map-files /tmp/issue-<N>-additive-files.txt --repo-root "$REPO_ROOT" \
       > /tmp/issue-<N>-tg-map.txt 2>/tmp/issue-<N>-tg-map-err.txt; then
     TG_CRASH=yes   # helper failure: cannot classify the payload — fail CLOSED
@@ -9946,10 +10005,10 @@ Decision tree:
   GATE_VERDICT=pass
   if [ "$GATE_ARMED" = "yes" ]; then
     GATED_RC=0
-    uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
-    uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
@@ -10020,7 +10079,16 @@ Decision tree:
   Branch unsafe to blind-rebase: <based on <PARENT> (not on mainline) |
   own commits touch foreign / out-of-scope paths>. Cherry-picked this
   task's own added files only; shared src/ / scripts/ unchanged." --
-    git push origin main
+    # Bounded push (the one network op on this arm): a hung push would wedge
+    # the background call with the outcome sentinel unwritten. rc 124 takes
+    # the push-failed arm — the same degradation as a rejected push (the
+    # "Surgical checkout itself fails" bullet / sync-retry below).
+    if timeout --kill-after=30s 300s git push origin main; then
+      echo landed > /tmp/issue-<N>-surgical-outcome.txt
+    else
+      echo push-failed > /tmp/issue-<N>-surgical-outcome.txt
+      false
+    fi
   else
     # BLOCKED: the checkout above already staged the A-only paths AND wrote
     # them to the working tree — clean BOTH with the hook-verified two-step
@@ -10031,9 +10099,45 @@ Decision tree:
     xargs -r -a /tmp/issue-<N>-additive-files.txt git -C "$REPO_ROOT" restore --staged --
     xargs -r -a /tmp/issue-<N>-additive-files.txt rm -f --
     echo "BLOCKED: pre-push workflow-lint gate (verdict: $GATE_VERDICT) — fix the named offender (or crash cause) in the worktree, re-run ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Payload cleaned from the root index + working tree."
+    echo blocked-cleaned > /tmp/issue-<N>-surgical-outcome.txt
     false
   fi
   ```
+
+  **Completion-read (form (iii)).** While the background gate-and-land call
+  runs, END THE TURN and run no repo-root-mutating commands until this
+  completion-read — the root holds staged payload for the ~5-6 min
+  contaminated window (worst case, every bounded leg wedged, ~78 min —
+  past the 60-min § Long-phase heartbeat boundary; rare, and a watcher
+  force-stop there is fail-closed: the sentinel stays unwritten). When the
+  call completes (the harness notifies), read
+  `/tmp/issue-<N>-surgical-outcome.txt` in a fresh FOREGROUND call:
+  - `landed` -> post `epm:merged v1` as below.
+  - `push-failed` (rejected OR timed-out, rc 124) -> the "Surgical
+    checkout itself fails" bullet below (one `sync_repo_root.py` retry).
+  - `blocked-cleaned` -> the gate subsection's case-1/3 fix path; read the
+    background call's BLOCKED echo, which carries `$GATE_VERDICT`, for
+    block-vs-crash attribution.
+  - MISSING sentinel -> the sequence died mid-run (tool kill / watcher
+    force-stop / wedge-bound kill) and the root may hold staged payload.
+    Recover IN THIS ORDER: (1) kill-before-relaunch probe FIRST
+    (`pgrep -af 'scripts/workflow_lint.py'` — root-copy invocations are
+    not issue-scoped in argv, so on an ambiguous match WAIT for exit,
+    never kill; the Step 0 single-orchestrator guard excludes same-issue
+    concurrency). (2) Landed/committed classification BEFORE any cleanup —
+    a shell killed between commit/push success and the sentinel write
+    leaves the payload COMMITTED (tracked + clean), which a naive
+    contamination probe misreads: check whether the surgical commit is on
+    HEAD (`git -C "$REPO_ROOT" log -1 --format=%s` matches the surgical
+    commit subject) and the additive paths are tracked + clean
+    (`git status --porcelain` empty for them). Committed AND pushed
+    (fetch, then `git merge-base --is-ancestor HEAD origin/main`) ->
+    treat as `landed` (post `epm:merged v1`); committed but NOT pushed ->
+    push-only retry (the sync-retry bullet) — NEVER `rm -f` committed
+    files. (3) Only if genuinely uncommitted-contaminated (staged /
+    working-tree payload present, no surgical commit) -> the hook-verified
+    two-step clean (baseline-semantics bullet), then re-enter ONCE (the
+    block is idempotent for the gate re-run case).
 
   **Guard-block recovery contract (improvised variants of this compound).**
   The checkout / restore forms in the blocks above are hook-fenced:

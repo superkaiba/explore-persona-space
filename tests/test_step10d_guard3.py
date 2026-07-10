@@ -957,3 +957,73 @@ def test_gate_lint_legs_run_landing_tree_copy():
         "the gate tree must be torn down AFTER the verdict too — the construction's "
         "own rm -rf (self-heal) does not satisfy the teardown pin"
     )
+
+
+# --------------------------------------------------------------------------
+# #1245 — background + wedge-bound the two Step 10d gate executable blocks
+# (port of the Step 9c background + rc-file pattern; precedent pin:
+# tests/test_issue_skill_step9c_compare_background.py, #1197)
+# --------------------------------------------------------------------------
+
+
+def _surgical_region(text: str) -> str:
+    """The artifact-confirmed (form (iii)) merge-procedure subsection."""
+    start = text.find("#### The artifact-confirmed merge procedure")
+    end = text.find("#### Post-merge stale-task-folder guard")
+    assert start != -1, "artifact-confirmed merge procedure heading not found"
+    assert end != -1, "post-merge stale-task-folder guard heading not found"
+    assert start < end, "surgical subsection must precede the post-merge guard"
+    return text[start:end]
+
+
+def test_gate_blocks_backgrounded_with_wedge_bounds():
+    """#1245: both Step 10d gate executable blocks run as ONE background Bash
+    call with per-leg wedge bounds; a missing verdict file / outcome sentinel
+    after completion means the background run DIED (fail CLOSED, never a
+    silent pass); the old one-fenced-foreground-invocation phrasing is gone.
+    A foreground gate run is the #991/#996/#1129 600s-tool-cap kill class
+    (~9-12+ min of lint + TG legs per block)."""
+    text = _skill_text()
+    gate = _gate_region(text)
+    surgical = _surgical_region(text)
+    # (i) the background prescription is present in BOTH gate regions:
+    assert "run_in_background" in gate, "shared gate block must prescribe run_in_background"
+    assert "run_in_background" in surgical, "surgical block must prescribe run_in_background"
+    # (ii) all four lint legs per region carry the wedge bound (the sizing
+    # comments deliberately do NOT quote the literal — command lines only):
+    assert gate.count("timeout --kill-after=60s 900s") >= 4, (
+        "all four shared-block lint legs must carry the 900s wedge bound"
+    )
+    assert surgical.count("timeout --kill-after=60s 900s") >= 4, (
+        "all four surgical-block lint legs must carry the 900s wedge bound"
+    )
+    # (ii-b) the network ops inside the backgrounded blocks are bounded too:
+    assert 'timeout --kill-after=30s 120s git -C "$WT" fetch origin main' in gate, (
+        "the shared block's fetch must carry a 120s bound (a hung fetch wedges the bg call)"
+    )
+    assert "timeout --kill-after=30s 300s git push origin main" in surgical, (
+        "the surgical pass-arm push must carry a 300s bound (a hung push wedges the "
+        "bg call with the outcome sentinel unwritten)"
+    )
+    # (iii) missing-verdict death semantics — fail CLOSED (shared block):
+    assert "died before writing a verdict" in gate, (
+        "the shared block's completion-read must treat a missing verdict file as "
+        "the background run having died (fail CLOSED)"
+    )
+    assert "rm -f /tmp/issue-<N>-lint-verdict.txt" in gate, (
+        "the shared block must pre-rm the verdict file so a file present at "
+        "completion provably came from THIS run"
+    )
+    # (iv) form (iii) outcome sentinel — pre-rm + all three terminal writes:
+    assert "rm -f /tmp/issue-<N>-surgical-outcome.txt" in surgical
+    assert "echo landed > /tmp/issue-<N>-surgical-outcome.txt" in surgical
+    assert "echo push-failed > /tmp/issue-<N>-surgical-outcome.txt" in surgical
+    assert "echo blocked-cleaned > /tmp/issue-<N>-surgical-outcome.txt" in surgical
+    # (v) negative: the old foreground one-invocation phrasing is gone:
+    assert "ONE fenced invocation" not in text, (
+        "the surgical preamble's foreground 'ONE fenced invocation' phrasing must "
+        "not reappear (silently reintroduces the 600s-cap kill class)"
+    )
+    assert "runs in ONE fenced block" not in text, (
+        "the surgical 'runs in ONE fenced block' phrasing must not reappear"
+    )
