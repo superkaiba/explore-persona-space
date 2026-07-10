@@ -1783,8 +1783,8 @@
     "1229": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1229",
-      "status": "approved",
+      "path": "tasks/running/1229",
+      "status": "running",
       "title": "widen scripts-import-guard scan roots to scripts/**"
     },
     "123": {
