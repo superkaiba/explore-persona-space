@@ -1,7 +1,8 @@
 """Tests for ``workflow_lint --check-scripts-import-guard`` (#823/#853).
 
 The check FAILs any ``scripts.*`` import under
-``src/explore_persona_space/experiments/**`` — deferred (function-body) AND
+``src/explore_persona_space/experiments/**`` AND ``scripts/**`` (the latter
+widened by #1229) — deferred (function-body) AND
 module-top-level — lacking a repo-root ``sys.path`` guard: in script mode
 (``python /abs/path/driver.py``) ``sys.path[0]`` is the script's own
 directory, so an unguarded import raises ``ModuleNotFoundError`` pod/GCE-side
@@ -21,14 +22,19 @@ a ``try/except ImportError``-wrapped module import and the
 17-18, the round-1 critic Must-Fix fixtures); (iv) ``TYPE_CHECKING``
 body-only skip precision (rows 9, 20); (v) the
 ``# SCRIPTS_IMPORT_GUARD_EXEMPT`` waiver in BOTH placements + the ≥10-char
-reason boundary (rows 10-11, 21); (vi) out-of-scope files (``backends/``,
-``scripts/``) and prefix non-matches ignored (rows 12-13); (vii) an
+reason boundary (rows 10-11, 21); (vi) out-of-scope files (``backends/``
+only — ``scripts/`` is IN scope as of #1229) and prefix non-matches ignored
+(rows 12-13); (vii) an
 unparseable file is skipped with a printed notice, never a crash or a flag
 (row 14); (viii) the live tree passes — locks today's tree, where
 ``run_823.py:1191`` and ``run_952.py:1965`` are both guarded (row 15); (ix)
 the MUTATION-VISIBLE no-flags DISPATCH test (the
 ``tests/test_workflow_lint.py:3455`` pattern) — a direct call of the check
-function is NOT sufficient evidence of bundling (row 16).
+function is NOT sufficient evidence of bundling (row 16); (x) the #1229
+``scripts/`` scan-root widening — offenders under ``scripts/`` fire, the
+module-top-bootstrap convention + the waiver pass there, BOTH default roots
+are mutation-visible, and the AST-presence fast path returns ``[]`` (not
+None / crash) on import-free + TYPE_CHECKING-only scripts/ files.
 """
 
 from __future__ import annotations
@@ -312,12 +318,12 @@ def test_waiver_exact_min_reason_passes(tmp_path, monkeypatch) -> None:
 # --------------------------------------------------------------------------
 
 
-def test_out_of_scope_files_ignored(tmp_path, monkeypatch) -> None:
-    """backends/ (entrypoint bootstraps, #987) and scripts/ (module-top
-    bootstrap convention) are out of scope — same offender body, no flag."""
+def test_backends_out_of_scope_ignored(tmp_path, monkeypatch) -> None:
+    """backends/ (entrypoint bootstraps, #987) stays out of scope — same
+    offender body, no flag. (``scripts/`` is IN scope as of #1229 — see the
+    scripts/-root tests below.)"""
     offender = "def run():\n    from scripts.foo import bar\n    return bar\n"
     _plant(tmp_path, "src/explore_persona_space/backends/x.py", offender)
-    _plant(tmp_path, "scripts/x.py", offender)
     assert _run_on(monkeypatch, tmp_path) == []
 
 
@@ -331,6 +337,103 @@ def test_non_scripts_deferred_import_passes(tmp_path, monkeypatch) -> None:
         "    from pathlib import Path\n"
         "    import scripts_helper\n"
         "    return Path, scripts_helper\n",
+    )
+    assert _run_on(monkeypatch, tmp_path) == []
+
+
+# --------------------------------------------------------------------------
+# #1229: the scripts/ scan root — offenders fire, the module-top-bootstrap
+# convention + the waiver pass, both default roots are mutation-visible,
+# and the AST-presence fast path returns [] on import-free files
+# --------------------------------------------------------------------------
+
+
+def test_scripts_root_deferred_offender_fires(tmp_path, monkeypatch) -> None:
+    """An unguarded deferred offender directly under ``scripts/`` fires with
+    the same position-specific diagnostic as the experiments/ root."""
+    _plant(
+        tmp_path,
+        "scripts/x.py",
+        "def run():\n    from scripts.foo import bar\n    return bar\n",
+    )
+    errors = _run_on(monkeypatch, tmp_path)
+    assert len(errors) == 1, errors
+    assert "scripts/x.py:2" in errors[0], errors
+    assert "deferred" in errors[0], errors
+
+
+def test_scripts_root_module_top_bootstrap_passes(tmp_path, monkeypatch) -> None:
+    """The scripts/ module-top-bootstrap convention (the
+    ``issue_331_phase0_panel.py`` exemplar shape) is accepted as guard
+    evidence for BOTH a later top-level import and a deferred one — the
+    #1175 position rules already handle it, which is why #1229's widening
+    needed no predicate change."""
+    _plant(
+        tmp_path,
+        "scripts/guarded_tool.py",
+        "import sys\n"
+        "from pathlib import Path\n"
+        "\n"
+        "sys.path.insert(0, str(Path(__file__).resolve().parent.parent))\n"
+        "\n"
+        "from scripts.foo import bar\n"
+        "\n"
+        "def run():\n"
+        "    from scripts.baz import qux\n"
+        "    return bar, qux\n",
+    )
+    assert _run_on(monkeypatch, tmp_path) == []
+
+
+def test_waiver_under_scripts_root_passes(tmp_path, monkeypatch) -> None:
+    """The ``# SCRIPTS_IMPORT_GUARD_EXEMPT`` waiver works identically under
+    the scripts/ root."""
+    _plant(
+        tmp_path,
+        "scripts/waived.py",
+        "def run():\n"
+        "    from scripts.foo import bar"
+        "  # SCRIPTS_IMPORT_GUARD_EXEMPT: launcher inserts repo root pre-exec\n"
+        "    return bar\n",
+    )
+    assert _run_on(monkeypatch, tmp_path) == []
+
+
+def test_default_roots_cover_both_trees(tmp_path, monkeypatch) -> None:
+    """Mutation-visible for the default scan-root tuple: one unguarded
+    DEFERRED offender under experiments/ + one unguarded TOP-LEVEL
+    (module-executing) offender under scripts/ — dropping EITHER root from
+    the production default fails this test, and the scripts/ plant pins the
+    module-executing offender class under that root directly."""
+    _plant(
+        tmp_path,
+        f"{_EXP}/issue_x/offender.py",
+        "def run():\n    from scripts.foo import bar\n    return bar\n",
+    )
+    _plant(tmp_path, "scripts/offender2.py", "import scripts.foo\n")
+    errors = _run_on(monkeypatch, tmp_path)
+    assert len(errors) == 2, errors
+    joined = "\n".join(errors)
+    assert "offender.py:2" in joined, errors
+    assert "scripts/offender2.py:1" in joined, errors
+    assert "module-top-level" in joined and "deferred" in joined, errors
+
+
+def test_import_free_scripts_file_passes(tmp_path, monkeypatch) -> None:
+    """Fast-path smoke (#1229): a scripts/ file with NO scripts.* import
+    node takes the AST-presence early return and yields ``[]`` (never None,
+    never a crash); a TYPE_CHECKING-ONLY scripts/ file HAS a matching import
+    node, so it passes the fast path and the full scan still yields ``[]``
+    (the pruned-region soundness case)."""
+    _plant(
+        tmp_path,
+        "scripts/no_imports.py",
+        "import os\n\n# scripts token: force past the cheap text pre-gate\nprint(os.sep)\n",
+    )
+    _plant(
+        tmp_path,
+        "scripts/tc_only_tool.py",
+        "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from scripts.foo import Bar\n",
     )
     assert _run_on(monkeypatch, tmp_path) == []
 
