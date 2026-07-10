@@ -156,7 +156,11 @@ Run the structural verifier against the plan version just persisted:
   --kind <task kind>` instead — and treat an `--issue`-mode exit 2 with "no plans/v*.md" as
   "persist first or use --plan-file", NOT as a bounce.
 - **Canonical N/A escape phrases** (quote verbatim in any bounce brief so the planner can
-  satisfy a check it is legitimately exempt from): `N/A — no behavioral construct`
+  satisfy a check it is legitimately exempt from — and instruct the planner that the
+  plan's own declaration line must be UNWRAPPED plain text at line start (leading list
+  markers fine): the backtick-wrapped renderings below are deliberate anti-paste armor
+  and are NOT recognized by `verify_plan.py::_standalone_na_declared` (#1238)):
+  `N/A — no behavioral construct`
   (check 2), `N/A — no model training` / `N/A — no training hyperparameters` (check 1),
   `N/A — not a replication` (check 7), `N/A — no artifact reuse` (check 6),
   `N/A — no dry-run smoke` (check 11 — kind: infra|batch plans where a `--dry-run`
