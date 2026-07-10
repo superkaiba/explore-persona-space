@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1222,
+  "highest_id": 1223,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1737,6 +1737,13 @@
       "path": "tasks/proposed/1222",
       "status": "proposed",
       "title": "implementer item-5 names tiny-real data-ingestion probe"
+    },
+    "1223": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1223",
+      "status": "proposed",
+      "title": "verify_plan c20 WARN on N/A escape masking a live lattice"
     },
     "123": {
       "has_clean_result": true,
