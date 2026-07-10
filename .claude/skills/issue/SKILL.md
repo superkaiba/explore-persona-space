@@ -8708,8 +8708,14 @@ rebase-merged. Three guards:
      done
      [ "${#FOREIGN_ON_MAIN[@]}" -gt 0 ] \
        && git -C "$WT" checkout "$MAIN_SHA" -- "${FOREIGN_ON_MAIN[@]}"
+     # rm WITHOUT --cached (#1244): the strip commit below is PATHSPEC-limited,
+     # and a pathspec commit records WORKING-TREE content for the named paths
+     # (git-commit(1) --only default) — an index-only deletion (the old
+     # --cached form) is resurrected by it (#1210: 19 resurrected paths). The
+     # working-tree copies are stale duplicates of foreign tasks/ state; main
+     # is authoritative.
      [ "${#FOREIGN_BRANCH_ONLY[@]}" -gt 0 ] \
-       && git -C "$WT" rm --cached -f --ignore-unmatch -- "${FOREIGN_BRANCH_ONLY[@]}"
+       && git -C "$WT" rm -f --ignore-unmatch -- "${FOREIGN_BRANCH_ONLY[@]}"
      # Commit the reset/removal so the branch diff no longer touches them,
      # but only if anything actually changed (idempotent: a re-run finds
      # nothing staged and skips the commit). Record that a strip commit was
