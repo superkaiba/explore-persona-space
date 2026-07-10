@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1239,
+  "highest_id": 1240,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1870,6 +1870,13 @@
       "path": "tasks/on_hold/124",
       "status": "on_hold",
       "title": "Deconfounded ARC-C coupling: letter-only answers, held-out eval, default-prompt control"
+    },
+    "1240": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1240",
+      "status": "proposed",
+      "title": "SLURM lane result-push verification contract leg"
     },
     "125": {
       "has_clean_result": true,
