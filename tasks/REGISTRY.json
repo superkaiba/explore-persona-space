@@ -1951,8 +1951,8 @@
     "1250": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1250",
-      "status": "approved",
+      "path": "tasks/running/1250",
+      "status": "running",
       "title": "guard_repo_root_pull false-positives on quoted 'git pull' in"
     },
     "1251": {
