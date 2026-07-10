@@ -225,7 +225,7 @@ NO LONGER an allowed write target for this skill.
 
 ### Living-docs consolidation passes (folded in from /weekly, #713)
 
-Two nightly consolidation checks that used to live in `/weekly` (which is now a
+Nightly consolidation checks — the first two used to live in `/weekly` (which is now a
 manual deep-dive nothing depends on — see `.claude/skills/weekly/SKILL.md`). Both
 run every nightly `/daily`, both PROPOSE only (`docs/open_questions.md` mutations
 are user-gated — the `living_docs_update` gate is user-only), both are deduped by
@@ -355,6 +355,31 @@ self-describing per workflow-fix-on-bug.md § Markers.
 
 Future sweeps skip routed candidates mechanically — see the enumerator's
 suppression predicate (`scripts/sweep_parked_wf_candidates.py --help`).
+
+**4. Clean-result title-sync drift sweep (Step D).** Run the read-only
+corpus-wide H1-vs-frontmatter-title drift sweep (#1196) so the drift report
+surfaces nightly:
+
+```
+uv run python scripts/audit_clean_results_body_discipline.py --title-sync-sweep
+    # read-only (bodies are NOT modified); WARN-only — ALWAYS exits 0
+    # (~2 s at the current ~1,200-body corpus). A NONZERO exit is a CRASH
+    # (the sweep never FAILs by design): note it as a problem in
+    # ## Other problems & notes — never treat it as a drift signal, and
+    # never let it fail the daily run.
+```
+
+A `PASS:` headline (zero WARN rows) → nothing to record. Otherwise copy each
+`- #<N> (<status>): ...` WARN row into `## Other problems & notes` as its own
+bullet, verbatim — each row already carries both title values AND both
+remediation commands (`task.py set-title` vs re-`set-body`). Which side is
+the fresher intent is a HUMAN call: NEVER run the remediation from /daily
+(same discipline as "never `living_docs.py apply`"); Thomas or the PM runs
+the command from the note. No-spam variant: if the row set is IDENTICAL to
+the previous daily file's, replace the verbatim copies with one line —
+`- title-sync drift unchanged (<K> rows — see logs/daily/<prev-date>.md)`
+(LLM judgment against yesterday's file; no new dedup state, matching Step
+B's no-spam skip discipline).
 
 **Dedup mechanism (Step F).** A filesystem event-stream
 `.claude/cache/nightly-consolidation-events.jsonl` (a local, gitignored durable
