@@ -3523,6 +3523,10 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
     # dead_silence_respawn_day / dead_silence_respawns_today are the #1209
     # day-keyed dead-silence fence-episode cap (advancement-clear-EXEMPT;
     # bumped once per episode at stop-initiation); default-absent-safe.
+    # wedge_respawn_day / wedge_respawns_today are the #1241 twin fields —
+    # the SHARED day-keyed cap for the four pre-#1209 wedge triggers, same
+    # advancement-clear-EXEMPT / stop-initiation-bump contract, an
+    # INDEPENDENT budget; default-absent-safe.
     assert payload == {
         "happy_session_id": "sess-7",
         "missed": 1,
@@ -3542,6 +3546,8 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
         "wedge_hits": 0,
         "dead_silence_respawn_day": None,
         "dead_silence_respawns_today": 0,
+        "wedge_respawn_day": None,
+        "wedge_respawns_today": 0,
         "last_self_report_ts": "ts-1",
         "first_seen": 1234.0,
     }
@@ -15718,6 +15724,405 @@ def test_wedge_dead_silence_two_generation_loop_counts_and_cap_disarms(
     assert stops == ["sess-a", "sess-b"]  # no third stop
     assert spawns == []  # the stalled lane never spawned in this whole loop
     assert _read_stalled_state_845(isolated_registry, 1408)["dead_silence_respawns_today"] == 3
+
+
+# ── #1241 four-trigger cap parity (episode belt + shared day-keyed cap) ──────
+
+
+def _wedge_1241_failed_turn_tail():
+    # Three #1127 partial-wake units fire `failed-turn-run` on BOTH
+    # self-report paths. The rows carry NO timestamps, so the #1209
+    # dead-silence trigger stays NO-FIRE on this tail (ts-less anchor) —
+    # letting the tests exercise the two day budgets independently.
+    return [row for _ in range(3) for row in _wedge_1127_partial_wake_unit()]
+
+
+def test_wedge_four_triggers_respect_episode_belt(isolated_registry, monkeypatch, stalled_recorder):
+    # #1241 criterion 1 — the episode belt gates ALL the pre-#1209 triggers.
+    # Kwarg truth-table legs (direct override calls) for the stale
+    # (dequeue-run) and fresh (failed-turn-run) paths, plus a DISK-SEEDED
+    # full-production belt leg. The belt disarms BOTH trigger families, so
+    # the early quiet-return must also skip the 256 KB transcript read.
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    calls = {"n": 0}
+
+    def _tail(rows):
+        def _fn(pid, **_k):
+            calls["n"] += 1
+            return rows
+
+        return _fn
+
+    entry = {"happy_session_id": "sess-1601", "issue": 1601}
+    pids = {"sess-1601": 4242}
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+
+    # Control (fire-capable seed shapes): belt open -> both tails fire.
+    monkeypatch.setattr(asw, "_transcript_tail_rows", _tail([dequeue] * 3))
+    action, _live, _hits, note = asw._apply_prompt_wedge_override(
+        issue=1601,
+        entry=entry,
+        action="keep",
+        self_report_age=STALLED_WINDOW_S + 60,  # STALE path
+        respawn_eligible=True,
+        pids_by_sid=pids,
+        live_consecutive=0,
+        wedge_hits=0,
+        respawn_count=0,
+    )
+    assert action == "respawn" and note is not None and "dequeue-run" in note
+
+    # Belt exhausted -> the STALE dequeue-run tail produces NO escalation,
+    # and the transcript read is skipped (early quiet-return).
+    calls["n"] = 0
+    action, live, hits, note = asw._apply_prompt_wedge_override(
+        issue=1601,
+        entry=entry,
+        action="keep",
+        self_report_age=STALLED_WINDOW_S + 60,
+        respawn_eligible=True,
+        pids_by_sid=pids,
+        live_consecutive=2,
+        wedge_hits=0,
+        respawn_count=asw.STALLED_MAX_RESPAWNS,
+    )
+    assert (action, live, hits, note) == ("keep", 2, 0, None)
+    assert calls["n"] == 0  # quiet-return fired BEFORE the 256 KB read
+
+    # Belt exhausted -> the FRESH failed-turn tail produces NO escalation.
+    monkeypatch.setattr(asw, "_transcript_tail_rows", _tail(_wedge_1241_failed_turn_tail()))
+    calls["n"] = 0
+    action, live, hits, note = asw._apply_prompt_wedge_override(
+        issue=1601,
+        entry=entry,
+        action="keep",
+        self_report_age=300.0,  # FRESH path
+        respawn_eligible=True,
+        pids_by_sid=pids,
+        live_consecutive=2,
+        wedge_hits=0,
+        respawn_count=asw.STALLED_MAX_RESPAWNS,
+    )
+    assert (action, live, hits, note) == ("keep", 2, 0, None)
+    assert calls["n"] == 0
+
+    # DISK-SEEDED full-production belt leg (the #1209 T11 shape): seeded
+    # respawn_count == STALLED_MAX_RESPAWNS + a wedge-shaped tail -> NO
+    # stop, fence never armed, and zero transcript reads.
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    monkeypatch.setattr(asw, "_transcript_tail_rows", _tail(_wedge_1241_failed_turn_tail()))
+    now = 1_000_000.0
+    _write_autonomous_entry(isolated_registry, 1601, "sess-1601", cap=24.0)
+    _write_stalled_state_1209(
+        isolated_registry, 1601, "sess-1601", respawn_count=asw.STALLED_MAX_RESPAWNS
+    )
+    calls["n"] = 0
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1601"},
+        pids_by_sid={"sess-1601": 4242},
+    )
+    assert stops == [] and spawns == []
+    state = _read_stalled_state_845(isolated_registry, 1601)
+    assert state.get("stop_pending_sid") is None  # fence never armed
+    assert calls["n"] == 0  # belt disarms both families before the read
+
+
+def test_wedge_four_triggers_respect_day_cap(isolated_registry, monkeypatch, stalled_recorder):
+    # #1241 criterion 2 — DISK-SEEDED FULL-PRODUCTION-PASS day-cap binding
+    # (the #1209 T11 mirror; NOT a direct-kwarg call): this pins the WHOLE
+    # _day_scoped_count load -> exemption-probe kwarg -> override kwarg
+    # thread — the kwarg default (0) is permissive/armed, so a dropped
+    # threading link would ship the fix INERT-toward-uncapped while
+    # direct-kwarg tests stay green.
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    now = 1_000_000.0
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1241_failed_turn_tail()
+    )
+
+    # (A) fire-capability control: no seeded counter -> the pass STOPS and
+    # books the wedge day counter (proves the tail + thread are live, so
+    # leg B's no-stop below is the CAP binding, not an inert fixture).
+    _write_autonomous_entry(isolated_registry, 1611, "sess-1611", cap=24.0)
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1611"},
+        pids_by_sid={"sess-1611": 4242},
+    )
+    assert stops == ["sess-1611"]
+    state = _read_stalled_state_845(isolated_registry, 1611)
+    assert state["wedge_respawns_today"] == 1
+    assert state["wedge_respawn_day"] == _dead_silence_day_key(now)
+    (isolated_registry / "issue-1611.json").unlink()  # keep later passes single-issue
+
+    # (B) day cap exhausted under the injected-now UTC day key -> the four
+    # triggers are disarmed: NO stop, fence never armed, counter preserved.
+    _write_autonomous_entry(isolated_registry, 1612, "sess-1612", cap=24.0)
+    _write_stalled_state_1209(
+        isolated_registry,
+        1612,
+        "sess-1612",
+        wedge_respawn_day=_dead_silence_day_key(now),
+        wedge_respawns_today=3,
+    )
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1612"},
+        pids_by_sid={"sess-1612": 4242},
+    )
+    assert stops == ["sess-1611"] and spawns == []  # no second stop
+    state = _read_stalled_state_845(isolated_registry, 1612)
+    assert state.get("stop_pending_sid") is None  # fence never armed
+    assert state["wedge_respawns_today"] == 3  # keep-path preserved it
+    (isolated_registry / "issue-1612.json").unlink()
+
+    # (C) budget independence, direction 1: the wedge day cap exhausted +
+    # a DEAD-SILENCE tail with dead_silence_respawns_today == 0 -> the
+    # #1209 trigger still fires, and the bump lands on ITS budget only.
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1209_dead_tail(now - 21 * 60)
+    )
+    _write_autonomous_entry(isolated_registry, 1613, "sess-1613", cap=24.0)
+    _write_stalled_state_1209(
+        isolated_registry,
+        1613,
+        "sess-1613",
+        wedge_respawn_day=_dead_silence_day_key(now),
+        wedge_respawns_today=3,
+        dead_silence_respawns_today=0,
+    )
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1613"},
+        pids_by_sid={"sess-1613": 4242},
+    )
+    assert stops == ["sess-1611", "sess-1613"]
+    state = _read_stalled_state_845(isolated_registry, 1613)
+    assert state["dead_silence_respawns_today"] == 1  # #1209 budget bumped
+    assert state["wedge_respawns_today"] == 3  # #1241 budget untouched
+
+
+def test_wedge_day_cap_independent_of_dead_silence_cap(monkeypatch):
+    # #1241 criterion 3 (budget independence, direction 2 — pure kwarg
+    # truth table): the #1209 budget exhausted + the #1241 budget open ->
+    # failed-turn-run still fires.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1241_failed_turn_tail()
+    )
+    action, live, hits, note = asw._apply_prompt_wedge_override(
+        issue=1621,
+        entry={"happy_session_id": "sess-1621", "issue": 1621},
+        action="keep",
+        self_report_age=300.0,
+        respawn_eligible=True,
+        pids_by_sid={"sess-1621": 4242},
+        live_consecutive=2,
+        wedge_hits=0,
+        respawn_count=0,
+        dead_silence_respawns_today=3,  # #1209 budget exhausted
+        wedge_respawns_today=0,  # #1241 budget open
+    )
+    assert action == "respawn" and live == 0 and hits == 1
+    assert note is not None and "failed-turn-run" in note
+
+
+def test_fence_stop_bumps_wedge_day_counter_once_per_episode(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1241 criterion 4 — DISK-SEEDED full-production-pass persistence: a
+    # fence stop with a non-[failed-turn-silence] wedge note bumps the
+    # #1241 counter ONCE at stop-initiation (day key from the injected
+    # now), never touches the #1209 counter, a retry-stop tick does not
+    # re-bump, and a k -> k+1 leg pins the LOAD (a broken load reading 0
+    # would still pass a 0 -> 1-only assertion).
+    import autonomous_session_watch as asw
+
+    stops, _spawns, _markers = stalled_recorder
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    now = 1_000_000.0
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1241_failed_turn_tail()
+    )
+
+    # (a) stop-initiation bumps ONCE; the #1209 budget is untouched.
+    _write_autonomous_entry(isolated_registry, 1631, "sess-1631", cap=24.0)
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1631"},
+        pids_by_sid={"sess-1631": 4242},
+    )
+    assert stops == ["sess-1631"]
+    state = _read_stalled_state_845(isolated_registry, 1631)
+    assert state["wedge_respawns_today"] == 1
+    assert state["wedge_respawn_day"] == _dead_silence_day_key(now)
+    assert state["dead_silence_respawns_today"] == 0  # other budget untouched
+    assert state["stop_pending_sid"] == "sess-1631"
+
+    # (b) a RETRY-STOP tick (pending sid set, sid still live) never re-bumps.
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now + 600,
+        daemon_reachable=True,
+        live_ids={"sess-1631"},
+        pids_by_sid={"sess-1631": 4242},
+    )
+    assert stops == ["sess-1631", "sess-1631"]  # the one allowed stop retry
+    state = _read_stalled_state_845(isolated_registry, 1631)
+    assert state["wedge_respawns_today"] == 1  # exactly-once per episode
+    assert state["stop_retried"] is True
+    (isolated_registry / "issue-1631.json").unlink()
+
+    # (c) k -> k+1: a PRIOR persisted count under today's key loads and the
+    # bump lands k+1 (pins the _day_scoped_count load end-to-end).
+    _write_autonomous_entry(isolated_registry, 1632, "sess-1632", cap=24.0)
+    _write_stalled_state_1209(
+        isolated_registry,
+        1632,
+        "sess-1632",
+        wedge_respawn_day=_dead_silence_day_key(now),
+        wedge_respawns_today=1,
+    )
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1632"},
+        pids_by_sid={"sess-1632": 4242},
+    )
+    assert stops[-1] == "sess-1632"
+    assert _read_stalled_state_845(isolated_registry, 1632)["wedge_respawns_today"] == 2
+
+
+def test_wedge_day_counter_survives_advancement_clear(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1241 criterion 5 — DISK-SEEDED full-production-pass persistence:
+    # (a) a self-report ADVANCE clears the #845 hardening fields +
+    # respawn_count but NOT wedge_respawns_today / wedge_respawn_day (the
+    # at-cap counter still disarms the four triggers); (b) a rolled day
+    # key reads as 0 and re-arms; (c) a pre-#1241 state file WITHOUT the
+    # new fields loads as (None, 0) = armed (backward compat).
+    import autonomous_session_watch as asw
+
+    stops, _spawns, _markers = stalled_recorder
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)
+    now = 1_000_000.0
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1241_failed_turn_tail()
+    )
+
+    # (a) advancement ("ts-boot-9" > seeded "ts-boot-1") clears the episode
+    # fields but the at-cap day counter SURVIVES and keeps the four
+    # triggers disarmed.
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (300.0, "ts-boot-9"))
+    _write_autonomous_entry(isolated_registry, 1641, "sess-1641", cap=24.0)
+    _write_stalled_state_1209(
+        isolated_registry,
+        1641,
+        "sess-1641",
+        last_self_report_ts="ts-boot-1",
+        wedge_respawn_day=_dead_silence_day_key(now),
+        wedge_respawns_today=3,
+        stop_pending_sid="sess-1641",  # stale fence state, advancement-cleared
+        respawn_count=2,
+    )
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1641"},
+        pids_by_sid={"sess-1641": 4242},
+    )
+    assert stops == []  # still disarmed: the day counter survived
+    state = _read_stalled_state_845(isolated_registry, 1641)
+    assert state["wedge_respawns_today"] == 3
+    assert state["wedge_respawn_day"] == _dead_silence_day_key(now)
+    assert state.get("stop_pending_sid") is None  # the #845 fields DID clear
+    (isolated_registry / "issue-1641.json").unlink()
+
+    # (b) a STALE day key reads 0 -> re-armed -> the stop fires + bumps.
+    _write_autonomous_entry(isolated_registry, 1642, "sess-1642", cap=24.0)
+    _write_stalled_state_1209(
+        isolated_registry,
+        1642,
+        "sess-1642",
+        wedge_respawn_day="1970-01-01",  # a rolled-over day
+        wedge_respawns_today=3,
+    )
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1642"},
+        pids_by_sid={"sess-1642": 4242},
+    )
+    assert stops == ["sess-1642"]
+    assert _read_stalled_state_845(isolated_registry, 1642)["wedge_respawns_today"] == 1
+    (isolated_registry / "issue-1642.json").unlink()
+
+    # (c) absent-keys backward compat: a pre-#1241 stalled-<N>.json (the
+    # seed helper's baseline payload carries NO wedge_respawn_* keys) loads
+    # as (None, 0) = armed -> the stop fires.
+    _write_autonomous_entry(isolated_registry, 1643, "sess-1643", cap=24.0)
+    _write_stalled_state_1209(isolated_registry, 1643, "sess-1643")
+    raw = asw._load_stalled_state(1643)
+    assert "wedge_respawns_today" not in raw and "wedge_respawn_day" not in raw
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1643"},
+        pids_by_sid={"sess-1643": 4242},
+    )
+    assert stops == ["sess-1642", "sess-1643"]
+    assert _read_stalled_state_845(isolated_registry, 1643)["wedge_respawns_today"] == 1
+
+
+def test_tick_wedge_respawns_per_day_knob(monkeypatch):
+    # #1241 criterion 6 — env parse (mirrors the #1209 T9 helper contract):
+    # default 3; positive int honored; `< 1 -> default` (disabling a
+    # trigger is its own EPM_TICK_WEDGE_MIN_* knob's job, never the
+    # cap's); malformed -> default. Never a kill switch.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_TICK_WEDGE_RESPAWNS_PER_DAY", raising=False)
+    assert asw._tick_wedge_respawns_per_day() == 3
+    monkeypatch.setenv("EPM_TICK_WEDGE_RESPAWNS_PER_DAY", "5")
+    assert asw._tick_wedge_respawns_per_day() == 5
+    monkeypatch.setenv("EPM_TICK_WEDGE_RESPAWNS_PER_DAY", "0")
+    assert asw._tick_wedge_respawns_per_day() == 3
+    monkeypatch.setenv("EPM_TICK_WEDGE_RESPAWNS_PER_DAY", "-2")
+    assert asw._tick_wedge_respawns_per_day() == 3
+    monkeypatch.setenv("EPM_TICK_WEDGE_RESPAWNS_PER_DAY", "junk")
+    assert asw._tick_wedge_respawns_per_day() == 3
 
 
 def test_marker_window_blocks_stalled_pass_alert_90min_marker(
