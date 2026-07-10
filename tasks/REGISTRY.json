@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1245,
+  "highest_id": 1246,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1912,6 +1912,13 @@
       "path": "tasks/proposed/1245",
       "status": "proposed",
       "title": "background + rc-file pattern for Step 10d lint gate"
+    },
+    "1246": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1246",
+      "status": "proposed",
+      "title": "add c33 escape phrase to planner canonical-escape list"
     },
     "125": {
       "has_clean_result": true,
