@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1244,
+  "highest_id": 1245,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1905,6 +1905,13 @@
       "path": "tasks/proposed/1244",
       "status": "proposed",
       "title": "Guard 1 foreign-strip deletion silently resurrected"
+    },
+    "1245": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1245",
+      "status": "proposed",
+      "title": "background + rc-file pattern for Step 10d lint gate"
     },
     "125": {
       "has_clean_result": true,
