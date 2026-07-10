@@ -1444,7 +1444,26 @@ def _standalone_na_declared(plan: str, tail_re: str) -> bool:
     over). NA_RE opens with an inline (?i), so it must sit at pattern
     position 0 — per-line re.match satisfies that; never prepend a prefix
     to NA_RE (py3.11+ rejects mid-pattern global flags). Shared by the
-    checks' standalone-N/A escapes (the Supersede rule: one copy of the job)."""
+    checks' standalone-N/A escapes (the Supersede rule: one copy of the job).
+
+    Wrapped declarations (a backtick/quote-wrapped paste of a remedy's
+    quoted form) are DELIBERATELY unrecognized (#1238 reasoned no-change):
+    the adversarial-planner SKILL.md canonical-phrases block renders nine
+    escape phrases backtick-wrapped at line start, four of which route
+    through THIS helper (c20/c24/c25/c32), so every trailing-tolerant
+    wrapper widening lets a verbatim block paste self-declare four
+    checks' escapes at once; requiring a balanced closing wrapper does
+    not discriminate (the block's wrappers are balanced by construction),
+    and the strict phrase-alone-on-line variant rejects the one shape
+    that measurably BOUNCED (#1090 plans/v1.md:369, trailing scope
+    prose) while its target idiom (wrapped-alone lines, a real corpus
+    habit) is covered at the source by the SKILL.md unwrapped contract.
+    The most realistic hazard is not even a whole-block paste: a
+    single-phrase bulleted bounce-brief line ("- <wrapped phrase> -
+    <remedy prose>") is byte-shaped identically to a legitimate
+    declaration. Declare escapes UNWRAPPED. Pinned:
+    tests/test_verify_plan.py skillmd/wrapped pins.
+    """
     lines = plan.splitlines()
     mask = _fence_mask(lines)
     for line, fenced in zip(lines, mask, strict=True):

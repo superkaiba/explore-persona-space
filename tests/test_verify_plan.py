@@ -1112,6 +1112,72 @@ def test_c12_pasted_fail_detail_does_not_self_satisfy():
     assert _status(replan, "c12_battery_multiplier") == "FAIL"
 
 
+def test_standalone_na_wrapped_forms_stay_unrecognized():
+    # #1238 reasoned no-change red-pin: wrapped declarations are
+    # DELIBERATELY unrecognized — every trailing-tolerant wrapper widening
+    # lets a verbatim paste of the adversarial-planner SKILL.md
+    # canonical-phrases block (nine line-start backtick-wrapped phrases,
+    # FOUR of them helper-routed: c20/c24/c25/c32) self-declare four
+    # escapes at once (the #810 polarity). See the helper docstring for
+    # the full analysis before "fixing" this.
+    for line in [
+        # the live #1090 plans/v1.md:369 shape (trailing scope prose):
+        "- `N/A — no draw battery` beyond the #1074-parity 2000-draw paired bootstrap.",
+        # pure wrapped-alone shapes, all three wrapper chars:
+        "- `N/A — no draw battery`",
+        "- 'N/A — no draw battery'",
+        '- "N/A — no draw battery"',
+        "`N/A — no draw battery`",
+    ]:
+        assert not verify_plan._standalone_na_declared(line, r"no draw battery"), line
+
+
+def test_c12_backtick_wrapped_escape_at_bullet_start_does_not_escape():
+    # Integration-level twin of the helper pin above: the live #1090 shape
+    # inside a full plan leaves c12 on its affirmative route (here: FAIL).
+    plan = GOOD_PLAN + (
+        f"\n{BATTERY_SENT}\n- `N/A — no draw battery` beyond the sibling-parity paired bootstrap.\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "FAIL"
+
+
+def test_skillmd_canonical_escape_block_never_self_escapes():
+    # Live-surface coupling pin (#1238): NO line of the canonical-phrases
+    # source file may parse as a standalone declaration for ANY call-site
+    # tail. The backtick wrapping there is load-bearing anti-paste armor:
+    # under the CURRENT recognizer an UNWRAPPED phrase at line start in a
+    # pasted copy of the block WOULD self-declare. A future reflow/unwrap
+    # of the block goes red here, forcing a deliberate decision.
+    tails = re.findall(r"_standalone_na_declared\(\s*plan,\s*r\"(.*?)\"", _SCRIPT.read_text(), re.S)
+    # Extraction-guard residual: the regex matches only direct
+    # `(plan, r"...")` call sites — a future call site whose first arg is
+    # not literally `plan` (or that uses r'...' quoting) is silently
+    # uncovered by this pin while the floor stays green; the floor catches
+    # shrinkage, not omission.
+    assert len(tails) >= 12, tails  # extraction guard: 12 call sites at pin time
+    text = (REPO_ROOT / ".claude/skills/adversarial-planner/SKILL.md").read_text()
+    for tail in tails:
+        assert not verify_plan._standalone_na_declared(text, tail), tail
+    # POSITIVE CONTROL (power check): prove the pin has teeth — the block is
+    # NOT fence-masked into vacuity, and the backtick IS the load-bearing
+    # armor. Unwrapping one phrase in a copy of the doc must flip the helper
+    # to True; a future unbalanced fence above the block would break this.
+    unwrapped = text.replace(
+        "`N/A — no registered verdict lattice`",
+        "N/A — no registered verdict lattice",
+    )
+    assert verify_plan._standalone_na_declared(unwrapped, r"no registered verdict lattice")
+
+
+def test_skillmd_canonical_block_states_unwrapped_contract():
+    # Durability pin for the D2 prose sentence: the unwrapped-declaration
+    # contract must stay stated at the surface bounce briefs are composed
+    # from.
+    text = (REPO_ROOT / ".claude/skills/adversarial-planner/SKILL.md").read_text()
+    assert "must be UNWRAPPED" in text
+    assert "_standalone_na_declared" in text
+
+
 def test_c12_kind_analysis_warns_not_fails():
     # Same evidence gap as the missing-arithmetic FAIL case, but kind=analysis
     # degrades to WARN and the overall verdict stays ok.
