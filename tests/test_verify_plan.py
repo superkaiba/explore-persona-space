@@ -5755,6 +5755,23 @@ def test_c32_skillmd_na_phrase_listed():
     assert "check 32" in block
 
 
+def test_c33_skillmd_na_phrase_listed():
+    # The c33 durability pin (#1246, mirroring the c32 pin above): the
+    # canonical escape phrase + alias are registered in the
+    # adversarial-planner SKILL.md escape list, so a later SKILL.md edit
+    # cannot silently drop them. The full backticked-phrase asserts pin the
+    # exact strings c33's recognizer matches (em-dash, casing), closing
+    # prefix drift the bare substrings would miss.
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "no per-rung checkpoint persistence" in block
+    assert "no checkpoint ladder" in block
+    assert "check 33" in block
+    assert "`N/A — no per-rung checkpoint persistence`" in block
+    assert "`N/A — no checkpoint ladder`" in block
+
+
 # ─── Check 32 — fit-family §9 basis grounding ──────────────────────────────
 
 # Reusable §9 fit-row snippet: kernel vocabulary ("ridge") + loop vocabulary
