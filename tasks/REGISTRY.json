@@ -1846,8 +1846,8 @@
     "1237": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1237",
-      "status": "proposed",
+      "path": "tasks/planning/1237",
+      "status": "planning",
       "title": "migrate remaining verify_plan doc-global N/A escapes"
     },
     "1238": {
