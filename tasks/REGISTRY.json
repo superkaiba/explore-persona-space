@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1251,
+  "highest_id": 1252,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1961,6 +1961,13 @@
       "path": "tasks/proposed/1251",
       "status": "proposed",
       "title": "step9c baseline oracle tolerates unrelated concurrent dirty "
+    },
+    "1252": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1252",
+      "status": "proposed",
+      "title": "trigger-dense reviews: return text = verdict + pointer only"
     },
     "126": {
       "has_clean_result": false,
