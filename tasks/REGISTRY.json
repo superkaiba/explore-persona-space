@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1224,
+  "highest_id": 1225,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1751,6 +1751,13 @@
       "path": "tasks/proposed/1224",
       "status": "proposed",
       "title": "reconcile v2 SKILL 7c/7f figure-commit vs SHA-pin ordering"
+    },
+    "1225": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1225",
+      "status": "proposed",
+      "title": "lint watcher docstring pass-count matches inventory items"
     },
     "123": {
       "has_clean_result": true,
