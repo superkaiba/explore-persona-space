@@ -844,6 +844,19 @@ _STALLED_EXHAUSTED_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respa
 # failed stop episode. Same staleness-filter contract as the others.
 _STALLED_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:session-stop-failed]"
 
+# Substring stamped into the marker posted at STOP-INITIATION of a #1209
+# ``failed-turn-silence`` fence episode (the dead-wake wedge trigger: every
+# completed tail turn FAILED + transcript silent >= the dead-silence window).
+# The stop is the trigger's ACT — the crash-recovery arm completes the
+# respawn once the stopped wrapper is verifiably dead (posting its own
+# markers) — so this stop-tick note is the trigger's only durable
+# events.jsonl record (the fence's own spawn branch, which posts
+# session-auto-respawn, is unreachable for this trigger's fresh-self-report
+# shape: post-stop the sid leaves the daemon /list, the wedge pid-gate goes
+# inert, and decide() keeps on the fresh boot self-report). Same
+# staleness-filter contract as the others.
+_STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:session-dead-silence-stop]"
+
 # Substring stamped into the one-time marker posted by the #845
 # stale-registration pass when it UNREGISTERS a LIVE-but-abandoned session
 # registration (transcript idle >= 12h, self-report equally stale, no
@@ -1098,6 +1111,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _STALLED_RESPAWN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
         _STALLED_STOP_FAILED_NOTE_SENTINEL,
+        _STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL,
         _STALE_REGISTRATION_NOTE_SENTINEL,
         _VM_DISK_NOTE_SENTINEL,
         _ORPHAN_RESPAWN_NOTE_SENTINEL,
@@ -1413,6 +1427,74 @@ def _tick_wedge_rate_window_s() -> float:
         return float(TICK_WEDGE_RATE_WINDOW_S)
     if parsed <= 0:
         return float(TICK_WEDGE_RATE_WINDOW_S)
+    return parsed
+
+
+# #1209: silence threshold for the failed-turn-silence trigger — a session
+# whose EVERY completed tail turn FAILED and whose transcript has then been
+# silent this long is dead-wedged (a turn-1 refusal death never arms the
+# tick cron, so no wake will ever grow the other four triggers' counters;
+# incident 8e9c371d / #1092: 1 failed turn at 02:54:29Z, next respawn
+# 04:33Z, ~100 min unattended). 20 min = 2 watcher ticks (a mid-turn
+# 429-retry gap is seconds-minutes, never 20 min of zero rows) and clears
+# the 15-min RESPAWN_SPAWN_GRACE_S window by construction (the death
+# follows the spawn by >= ~1 min). Deliberately NOT >= 45 min (the
+# tick-cron cadence): for a zero-successful-turns session a fresh-context
+# respawn beats waking a refusal-poisoned 1-turn conversation, so
+# preempting a possible next wake is acceptable.
+TICK_WEDGE_DEAD_SILENCE_S = 20 * 60
+
+
+def _tick_wedge_dead_silence_s() -> float:
+    """Dead-wake silence threshold in seconds. Env
+    ``EPM_TICK_WEDGE_DEAD_SILENCE_MIN`` is in MINUTES (the
+    ``EPM_TICK_WEDGE_RATE_WINDOW_MIN`` minutes-env -> seconds-constant
+    precedent); default :data:`TICK_WEDGE_DEAD_SILENCE_S`. ``0`` DISABLES
+    the trigger (the :func:`_tick_wedge_min_api_errors` new-trigger-class
+    kill-switch convention — here the window IS the trigger arm, so 0 must
+    mean off, not default); malformed / NEGATIVE env falls back to the
+    default."""
+    raw = os.environ.get("EPM_TICK_WEDGE_DEAD_SILENCE_MIN")
+    if not raw:
+        return float(TICK_WEDGE_DEAD_SILENCE_S)
+    try:
+        parsed = float(raw) * 60.0
+    except ValueError:
+        return float(TICK_WEDGE_DEAD_SILENCE_S)
+    if parsed < 0:
+        return float(TICK_WEDGE_DEAD_SILENCE_S)
+    return parsed
+
+
+# #1209: per-issue per-UTC-day cap on fence episodes the failed-turn-silence
+# trigger may INITIATE. This trigger is the first fast enough to loop
+# through the advancement-clear (each die-on-turn-1 generation writes one
+# boot self-report, resetting the STALLED_MAX_RESPAWNS episode counter), so
+# an episode-scoped cap alone cannot bound a cross-generation die-on-boot
+# loop (~45-60 min/cycle ≈ up to ~24-32 cold ~100K-token session loads/day
+# uncapped). 3 chosen over the orphan pass's 2 because each dead-silence
+# cycle is cheap (no pod) and the first respawn is usually the recovery.
+TICK_WEDGE_DEAD_RESPAWNS_PER_DAY = 3
+
+
+def _tick_wedge_dead_respawns_per_day() -> int:
+    """Daily per-issue cap on failed-turn-silence-initiated fence episodes
+    (env ``EPM_TICK_WEDGE_DEAD_RESPAWNS_PER_DAY``; default
+    :data:`TICK_WEDGE_DEAD_RESPAWNS_PER_DAY`). Malformed OR ``< 1`` env
+    falls back to the default — the ``< 1 -> default`` guard is THIS
+    helper's own addition (do NOT literal-copy
+    :func:`_orphan_max_respawns_per_day`, which guards only malformed):
+    disabling the trigger is the SILENCE knob's job
+    (``EPM_TICK_WEDGE_DEAD_SILENCE_MIN=0``), never the cap's."""
+    raw = os.environ.get("EPM_TICK_WEDGE_DEAD_RESPAWNS_PER_DAY")
+    if not raw:
+        return TICK_WEDGE_DEAD_RESPAWNS_PER_DAY
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return TICK_WEDGE_DEAD_RESPAWNS_PER_DAY
+    if parsed < 1:
+        return TICK_WEDGE_DEAD_RESPAWNS_PER_DAY
     return parsed
 
 
@@ -1955,6 +2037,20 @@ def _segment_wake_turns(rows: list[dict]) -> list[tuple[str, float | None]]:
     return turns
 
 
+def _wedge_newest_row_ts(trailing_rows: list[dict]) -> float | None:
+    """Newest parseable top-level row timestamp in the tail, or ``None``
+    when no row timestamp parses at all (the window/silence anchor is then
+    undefined — fail toward NO-FIRE). Extracted from
+    :func:`_wedge_rate_windowed_failed` (#1209) so the ``failed-turn-rate``
+    window and the ``failed-turn-silence`` read share the IDENTICAL
+    deterministic anchor scan (never wall-clock)."""
+    for row in reversed(trailing_rows):
+        ts = _row_ts(row)
+        if ts is not None:
+            return ts
+    return None
+
+
 def decide_prompt_wedge_reason(
     trailing_rows: list[dict],
     min_dequeued: int,
@@ -1963,14 +2059,17 @@ def decide_prompt_wedge_reason(
     min_failed_turns: int = TICK_WEDGE_MIN_FAILED_TURNS,
     min_failed_total: int = TICK_WEDGE_MIN_FAILED_TOTAL,
     rate_window_s: float = TICK_WEDGE_RATE_WINDOW_S,
+    dead_silence_s: float = TICK_WEDGE_DEAD_SILENCE_S,
+    now: float | None = None,
 ) -> str | None:
     """Pure prompt-wedge detector over parsed transcript-tail rows —
     returns WHICH trigger fired (``"dequeue-run"`` | ``"api-error-run"`` |
-    ``"failed-turn-run"`` | ``"failed-turn-rate"``, checked in that
-    precedence order: oldest/most-specific evidence first; the order never
-    changes WHETHER the wedge fires) or ``None``.
+    ``"failed-turn-run"`` | ``"failed-turn-rate"`` |
+    ``"failed-turn-silence"``, checked in that precedence order:
+    oldest/most-specific evidence first; the order never changes WHETHER
+    the wedge fires) or ``None``.
 
-    Four triggers:
+    Five triggers:
 
     1. ``dequeue-run`` (#845 e, verbatim): the tail ends with >=
        ``min_dequeued`` consecutive wedge-evidence rows (``"dequeue"``
@@ -2004,6 +2103,19 @@ def decide_prompt_wedge_reason(
        windowed count; if no row timestamp parses at all the anchor is
        undefined and this trigger is inert (fail toward NO-FIRE).
        ``min_failed_total <= 0`` DISABLES.
+    5. ``failed-turn-silence`` (#1209 — the die-on-turn-1 gap): >= 1
+       completed turn, EVERY completed turn in the tail is ``"failed"``,
+       AND the newest parseable row timestamp is >= ``dead_silence_s``
+       older than ``now`` (incident 8e9c371d / #1092: a session refused on
+       its FIRST substantive turn never arms its tick cron, freezes at
+       exactly 1 failed turn / 1 api-error row — permanently below every
+       counting threshold above — and no further rows ever arrive). The
+       WEAKEST evidence, checked LAST. ``now=None`` (every pre-existing
+       pure caller) OR ``dead_silence_s <= 0`` (the kill switch) leaves
+       this trigger inert; zero completed turns (the #779 swallow shape),
+       a prior ``"ok"`` turn anywhere in the tail, a ts-less tail, and a
+       future-dated anchor all fail toward NO-FIRE
+       (:func:`_wedge_dead_silence_fired`).
 
     Row-counter mechanics (unchanged from #1104): ``"other"`` rows are
     skipped without resetting either counter; a real ``"assistant"`` row
@@ -2017,7 +2129,36 @@ def decide_prompt_wedge_reason(
         return "dequeue-run"
     if min_api_errors > 0 and api_run >= min_api_errors:
         return "api-error-run"
-    if min_failed_turns <= 0 and min_failed_total <= 0:
+    return _wedge_turn_lane_reason(
+        trailing_rows,
+        min_failed_turns=min_failed_turns,
+        min_failed_total=min_failed_total,
+        rate_window_s=rate_window_s,
+        dead_silence_s=dead_silence_s,
+        now=now,
+    )
+
+
+def _wedge_turn_lane_reason(
+    trailing_rows: list[dict],
+    *,
+    min_failed_turns: int,
+    min_failed_total: int,
+    rate_window_s: float,
+    dead_silence_s: float,
+    now: float | None,
+) -> str | None:
+    """The TURN-level wedge triggers (#1127 ``failed-turn-run`` /
+    ``failed-turn-rate``; #1209 ``failed-turn-silence``), factored out of
+    :func:`decide_prompt_wedge_reason` (ruff C901 cap — the
+    :func:`_wedge_trailing_row_runs` precedent). Behavior-preserving
+    extraction: precedence order and every knob's semantics are exactly the
+    inline #1127 code's; the early exit keeps the hot path free of
+    :func:`_segment_wake_turns` when every turn-level lane is disabled
+    (``now=None`` counts the #1209 lane as disabled, so all pre-existing
+    call shapes take the identical path)."""
+    silence_armed = now is not None and dead_silence_s > 0
+    if min_failed_turns <= 0 and min_failed_total <= 0 and not silence_armed:
         return None
     turns = _segment_wake_turns(trailing_rows)
     if min_failed_turns > 0:
@@ -2032,7 +2173,41 @@ def decide_prompt_wedge_reason(
         windowed = _wedge_rate_windowed_failed(trailing_rows, turns, rate_window_s)
         if windowed is not None and windowed >= min_failed_total:
             return "failed-turn-rate"
+    if silence_armed and _wedge_dead_silence_fired(trailing_rows, turns, dead_silence_s, now):
+        return "failed-turn-silence"
     return None
+
+
+def _wedge_dead_silence_fired(
+    trailing_rows: list[dict],
+    turns: list[tuple[str, float | None]],
+    dead_silence_s: float,
+    now: float,
+) -> bool:
+    """#1209 ``failed-turn-silence``: True iff the tail holds >= 1 completed
+    turn, EVERY completed turn is ``"failed"``, and the newest parseable row
+    timestamp is >= ``dead_silence_s`` older than ``now``. Zero completed
+    turns (the #779 swallow shape) never fire (vacuous-all guard — the
+    dequeue-run trigger owns swallows); a ts-less tail leaves the silence
+    anchor undefined -> NO-FIRE; a future-dated anchor (clock jump) makes
+    ``now - anchor`` negative -> NO-FIRE. The all-completed-turns-failed
+    condition confines the trigger to sessions with ZERO successful history
+    in the visible tail — the died-young shape, for which a fresh-context
+    respawn loses essentially nothing (CLAUDE.md refusal-ladder (f)); a
+    healthy mid-life session whose latest wake ended in one transient
+    trailing api-error has prior ``"ok"`` turns in its tail and is blocked
+    regardless of silence. Accepted residual (#1209 plan §4.2, pinned by
+    test): the 256 KB tail window can truncate older ``ok`` turns of a very
+    long final turn, making the all-failed read vacuously true over the
+    visible window (incl. the leading-IMPLICIT-turn shape) — the session's
+    last visible turn genuinely failed and has been silent >= the window,
+    so the bounded fresh respawn is the accepted recovery."""
+    if not turns or any(outcome != "failed" for outcome, _ts in turns):
+        return False
+    anchor = _wedge_newest_row_ts(trailing_rows)
+    if anchor is None:
+        return False
+    return now - anchor >= dead_silence_s
 
 
 def _wedge_trailing_row_runs(trailing_rows: list[dict]) -> tuple[int, int]:
@@ -2070,11 +2245,7 @@ def _wedge_rate_windowed_failed(
     testable — never wall-clock); ts-less turns are excluded from the count."""
     if not turns or turns[-1][0] != "failed":
         return None
-    anchor: float | None = None
-    for row in reversed(trailing_rows):
-        anchor = _row_ts(row)
-        if anchor is not None:
-            break
+    anchor = _wedge_newest_row_ts(trailing_rows)
     if anchor is None:
         return None
     return sum(
@@ -2092,14 +2263,19 @@ def decide_prompt_wedge(
     min_failed_turns: int = TICK_WEDGE_MIN_FAILED_TURNS,
     min_failed_total: int = TICK_WEDGE_MIN_FAILED_TOTAL,
     rate_window_s: float = TICK_WEDGE_RATE_WINDOW_S,
+    dead_silence_s: float = TICK_WEDGE_DEAD_SILENCE_S,
+    now: float | None = None,
 ) -> bool:
     """Thin bool wrapper over :func:`decide_prompt_wedge_reason` (#845 e /
-    #1104 / #1127): True iff ANY of the four wedge triggers fires. Existing
-    positional/keyword call shapes are preserved; the new keyword defaults
-    are the module constants, so ``decide_prompt_wedge(tail, 3)`` gains the
-    #1127 turn-level triggers too (pure-function callers want the fixed
-    predicate). See :func:`decide_prompt_wedge_reason` for the trigger
-    definitions, kill switches, and incident history."""
+    #1104 / #1127 / #1209): True iff ANY of the five wedge triggers fires.
+    Existing positional/keyword call shapes are preserved; the new keyword
+    defaults are the module constants, so ``decide_prompt_wedge(tail, 3)``
+    gains the #1127 turn-level triggers too (pure-function callers want the
+    fixed predicate) while the #1209 dead-silence trigger stays INERT
+    without an explicit ``now`` (never wall-clock inside the predicate —
+    the #1127 deterministic-anchor posture). See
+    :func:`decide_prompt_wedge_reason` for the trigger definitions, kill
+    switches, and incident history."""
     return (
         decide_prompt_wedge_reason(
             trailing_rows,
@@ -2108,6 +2284,8 @@ def decide_prompt_wedge(
             min_failed_turns=min_failed_turns,
             min_failed_total=min_failed_total,
             rate_window_s=rate_window_s,
+            dead_silence_s=dead_silence_s,
+            now=now,
         )
         is not None
     )
@@ -5983,10 +6161,24 @@ def _save_stalled_state(
     daemon_blocked_ticks: int = 0,
     daemon_blocked_pushed: bool = False,
     wedge_hits: int = 0,
+    dead_silence_respawn_day: str | None = None,
+    dead_silence_respawns_today: int = 0,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-session stalled-detector state atomically (temp +
     rename), mirroring :func:`_save_pod_safety_state`.
+
+    #1209 day-cap fields: ``dead_silence_respawn_day`` (UTC ``%Y-%m-%d``
+    key) + ``dead_silence_respawns_today`` count the fence episodes the
+    ``failed-turn-silence`` wedge trigger INITIATED this UTC day (bumped
+    ONCE per episode at stop-initiation). Deliberately EXEMPT from the
+    advancement-clear the #845 hardening fields get
+    (:func:`_stalled_hardening_fields`): each die-on-turn-1 generation
+    writes one boot self-report, so an advancement-cleared counter could
+    never bound the cross-generation die-on-boot loop this cap exists for.
+    Absent in older on-disk files -> loaded as ``(None, 0)`` (backward
+    compatible; a day-rolled or malformed value re-arms at 0 — a corruption
+    costs at most one extra bounded respawn).
 
     #845 hardening fields (all default-absent in older on-disk files —
     backward compatible, same guard shape as ``live_consecutive``; ALL are
@@ -6052,6 +6244,8 @@ def _save_stalled_state(
         "daemon_blocked_ticks": daemon_blocked_ticks,
         "daemon_blocked_pushed": daemon_blocked_pushed,
         "wedge_hits": wedge_hits,
+        "dead_silence_respawn_day": dead_silence_respawn_day,
+        "dead_silence_respawns_today": dead_silence_respawns_today,
         "last_self_report_ts": last_self_report_ts,
         "first_seen": prev_first_seen,
     }
@@ -9254,6 +9448,8 @@ class _StalledActionCtx:
         wedge_note: str | None = None,
         daemon_reachable: bool = True,
         downgrade_note: str | None = None,
+        dead_silence_respawn_day: str | None = None,
+        dead_silence_respawns_today: int = 0,
     ) -> None:
         self.issue = issue
         self.happy_session_id = happy_session_id
@@ -9337,6 +9533,15 @@ class _StalledActionCtx:
         # respawns that raced an in-flight auto-recovery.
         self.daemon_reachable = daemon_reachable
         self.downgrade_note = downgrade_note
+        # #1209 day-keyed dead-silence cap: the caller loads these from the
+        # prior on-disk state NORMALIZED to the current UTC day (day-rolled /
+        # malformed -> (day_key, 0)), deliberately WITHOUT the advancement
+        # clear the #845 hardening fields get. Every persist site forwards
+        # them (via _persist_stalled_ctx) so keep-path saves never wipe the
+        # counter; the ONLY bump site is _handle_stalled_respawn's
+        # stop-initiation branch.
+        self.dead_silence_respawn_day = dead_silence_respawn_day
+        self.dead_silence_respawns_today = dead_silence_respawns_today
 
     @property
     def happy_session_id_str(self) -> str | None:
@@ -9368,6 +9573,8 @@ def _persist_stalled_ctx(ctx: _StalledActionCtx, sid: str | None, missed: int, *
         daemon_blocked_ticks=ctx.daemon_blocked_ticks,
         daemon_blocked_pushed=ctx.daemon_blocked_pushed,
         wedge_hits=ctx.wedge_hits,
+        dead_silence_respawn_day=ctx.dead_silence_respawn_day,
+        dead_silence_respawns_today=ctx.dead_silence_respawns_today,
         prev=ctx.prev_state,
     )
     kwargs.update(overrides)
@@ -9647,6 +9854,38 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
             f"  issue #{ctx.issue}: FENCE — stop issued for sid {sid}; will "
             f"verify it is dead + spawn on the NEXT tick (daemon ACK != kill)."
         )
+        # #1209 day-cap bump — ONCE per fence episode, at STOP-INITIATION:
+        # this branch runs exactly on the stop_pending_sid None -> sid
+        # transition (a retry-stop tick carries a pending sid and takes the
+        # "retry-stop" branch — exactly-once by construction), and it is the
+        # ONE tick where ctx.wedge_note is guaranteed present for the
+        # dead-silence shape (the wedge fired THIS tick to escalate; the
+        # fence's own spawn branch is unreachable for the fresh-self-report
+        # shape — post-stop the sid leaves the daemon /list, the wedge
+        # pid-gate goes inert, and decide() keeps on the fresh boot
+        # self-report; the CRASH-RECOVERY arm completes the respawn). The
+        # bracketed [failed-turn-silence] substring of the wedge-note
+        # template is load-bearing here. The stop-tick marker below is the
+        # trigger's only durable events.jsonl record.
+        extra: dict = {}
+        if ctx.wedge_note and "[failed-turn-silence]" in ctx.wedge_note:
+            bumped = ctx.dead_silence_respawns_today + 1
+            extra = {
+                "dead_silence_respawn_day": time.strftime("%Y-%m-%d", time.gmtime(ctx.now)),
+                "dead_silence_respawns_today": bumped,
+            }
+            _post_progress_marker(
+                ctx.issue,
+                f"{_STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL} DEAD-WAKE STOP "
+                f"(#1209): {ctx.wedge_note}. Stopped Happy session id={sid} "
+                f"for fresh respawn; the crash-recovery arm completes the "
+                f"spawn once the stopped wrapper is verifiably dead "
+                f"(~20-30 min) — the fence's own spawn branch is not this "
+                f"trigger's completion path. Dead-silence fence episode "
+                f"{bumped}/{_tick_wedge_dead_respawns_per_day()} this UTC day.",
+                ctx.dry_run,
+                label="session-dead-silence-stop",
+            )
         _persist_stalled_ctx(
             ctx,
             sid,
@@ -9655,6 +9894,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
             stop_pending_ts=ctx.now,
             stop_retried=False,
             stop_failed_alerted=False,
+            **extra,
         )
         return
     if fence == "retry-stop":
@@ -10075,9 +10315,13 @@ def _apply_prompt_wedge_override(
     pids_by_sid: dict[str, int] | None,
     live_consecutive: int,
     wedge_hits: int,
+    now: float | None = None,
+    respawn_count: int = 0,
+    dead_silence_respawns_today: int = 0,
 ) -> tuple[str, int, int, str | None]:
     """Prompt-wedge fast lane (#845 e; #1104 api-error rows; #1127 turn-level
-    failed wakes): a transcript-tail probe that escalates a debounced
+    failed wakes; #1209 dead-wake silence): a transcript-tail probe that
+    escalates a debounced
     ``keep``/``alert`` straight to the respawn arm on DIRECT evidence the
     session is swallowing prompts or dying on its wakes (incident #779: 5
     tick prompts enqueued+dequeued with no turn for ~90 min while the slow
@@ -10120,7 +10364,21 @@ def _apply_prompt_wedge_override(
     toward NO-WEDGE. #1104: the api-error-run subclass — >= ``min_api_errors``
     consecutive API-ERROR turns (``isApiErrorMessage: true`` assistant rows:
     usage-policy refusals, 429/529) with no successful turn, the #1074 shape
-    the original lane was structurally blind to."""
+    the original lane was structurally blind to.
+
+    #1209 ``failed-turn-silence`` (the die-on-turn-1 gap): TURN-level, so it
+    rides BOTH self-report paths — but deliberately behind the SAME
+    two-turn-knob fresh-path gate as the #1127 lanes (both turn knobs at 0
+    keeps the fresh path's zero-probe hot path byte-identical, the pinned
+    pre-#1127 rollback; in that corner config the dead-silence trigger still
+    fires via the STALE path once the boot self-report ages past the
+    staleness window). Armed only while ``respawn_count <
+    STALLED_MAX_RESPAWNS`` (the episode belt) AND
+    ``dead_silence_respawns_today`` is under the day cap
+    (:func:`_tick_wedge_dead_respawns_per_day`) — when either cap binds,
+    ``dead_silence_s=0`` keeps this one trigger off while the other four
+    behave identically. ``now=None`` (a direct unit/debug call shape)
+    leaves the trigger inert inside the predicate."""
     if action not in ("keep", "alert") or not respawn_eligible or pids_by_sid is None:
         return action, live_consecutive, wedge_hits, None
     stale = self_report_age is not None and self_report_age >= STALLED_WINDOW_S
@@ -10128,7 +10386,8 @@ def _apply_prompt_wedge_override(
     min_total = _tick_wedge_min_failed_total()
     if not stale and min_turns <= 0 and min_total <= 0:
         # Fresh self-report + both turn-level lanes disabled == the
-        # pre-#1127 lazy gate: zero transcript probes on the hot path.
+        # pre-#1127 lazy gate: zero transcript probes on the hot path
+        # (#1209 deliberately does not widen this gate — see docstring).
         return action, live_consecutive, wedge_hits, None
     sid = entry.get("happy_session_id")
     pid = pids_by_sid.get(sid) if isinstance(sid, str) else None
@@ -10142,6 +10401,13 @@ def _apply_prompt_wedge_override(
     rows = _transcript_tail_rows(pid, max_bytes=262144)
     if rows is None:
         return action, live_consecutive, wedge_hits, None
+    # #1209 arming: episode belt AND day-keyed cap; a disarmed trigger reads
+    # dead_silence_s=0 (its kill-switch value) so the predicate stays
+    # byte-identical for the other four triggers.
+    dead_silence_armed = (
+        respawn_count < STALLED_MAX_RESPAWNS
+        and dead_silence_respawns_today < _tick_wedge_dead_respawns_per_day()
+    )
     reason = decide_prompt_wedge_reason(
         rows,
         _tick_wedge_min_dequeued() if stale else 0,  # #779 swallow trigger: STALE only
@@ -10149,6 +10415,8 @@ def _apply_prompt_wedge_override(
         min_failed_turns=min_turns,
         min_failed_total=min_total,
         rate_window_s=_tick_wedge_rate_window_s(),
+        dead_silence_s=_tick_wedge_dead_silence_s() if dead_silence_armed else 0.0,
+        now=now,
     )
     if reason is None:
         return action, live_consecutive, wedge_hits, None
@@ -10297,6 +10565,8 @@ def _apply_wedge_override_with_exemption_probe(
     wedge_hits: int,
     now: float,
     dry_run: bool,
+    respawn_count: int = 0,
+    dead_silence_respawns_today: int = 0,
 ) -> tuple[str, int, bool, int, int, str | None]:
     """Prompt-wedge fast lane + the park-exemption re-probe on escalation
     (#845 r2, concern ``wedge-bypasses-unprobed-park-exemptions``).
@@ -10329,6 +10599,9 @@ def _apply_wedge_override_with_exemption_probe(
         pids_by_sid=pids_by_sid,
         live_consecutive=live_consecutive,
         wedge_hits=wedge_hits,
+        now=now,
+        respawn_count=respawn_count,
+        dead_silence_respawns_today=dead_silence_respawns_today,
     )
     if wedge_note is None:
         return action, new_missed, followups_child_alerted, live_consecutive, wedge_hits, None
@@ -10510,6 +10783,27 @@ def _process_stalled_session(
     # counter starts fresh).
     hard = _stalled_hardening_fields(prev_state, self_report_advanced)
 
+    # #1209 day-keyed dead-silence cap fields — deliberately OUTSIDE the
+    # advancement-clear above (each die-on-turn-1 generation writes one boot
+    # self-report, so an advancement-cleared counter could never bound the
+    # cross-generation die-on-boot loop the cap exists for). The day key
+    # derives from the SAME injected `now` the pass runs on (deterministic
+    # under a test-supplied fake clock); a day-rolled / malformed / negative
+    # on-disk value reads as 0 (armed — a corruption costs at most one extra
+    # bounded respawn).
+    dead_silence_day_key = time.strftime("%Y-%m-%d", time.gmtime(now))
+    _prev_dead_n = prev_state.get("dead_silence_respawns_today", 0)
+    dead_silence_respawns_today = (
+        _prev_dead_n
+        if (
+            prev_state.get("dead_silence_respawn_day") == dead_silence_day_key
+            and isinstance(_prev_dead_n, int)
+            and not isinstance(_prev_dead_n, bool)
+            and _prev_dead_n >= 0
+        )
+        else 0
+    )
+
     # Compute respawn_eligible: the task must be in an ACTIVE status (we
     # never restart a session at a PARK / gate / terminal state) AND the
     # Happy daemon must be reachable (we can't issue stop+spawn without
@@ -10625,6 +10919,8 @@ def _process_stalled_session(
             wedge_hits=hard["wedge_hits"],
             now=now,
             dry_run=dry_run,
+            respawn_count=respawn_count,
+            dead_silence_respawns_today=dead_silence_respawns_today,
         )
 
     # Daemon-blocked escalation (#845 c): count consecutive ticks a
@@ -10691,6 +10987,8 @@ def _process_stalled_session(
         wedge_note=wedge_note,
         daemon_reachable=daemon_reachable,
         downgrade_note=downgrade_note,
+        dead_silence_respawn_day=dead_silence_day_key,
+        dead_silence_respawns_today=dead_silence_respawns_today,
     )
 
     if action == "respawn":

@@ -42,8 +42,11 @@ def test_code_style_nohup_bullet_covers_vm_side() -> None:
 def test_step9c_gate_choom_defaults_pinned() -> None:
     """Step 9c gates self-choom by default; 1d refresh pid-captures + sweeps (#1045)."""
     skill_text = SKILL_MD.read_text(encoding="utf-8")
-    # Gate self-choom present in BOTH 1b and 1c (== 2 also pins placement: two blocks, not one)
-    assert skill_text.count("sudo -n choom -n -600 -p $$") == 2
+    # Gate self-choom: 2x Step 9c (1b + 1c) + 1x Step 9c 1d compare (#1197)
+    # + 2x Step 10d lint gate (#1211). (== 5 also pins placement.)
+    # NOTE: this also repairs the pre-existing red assertion — #1197 added
+    # the 1d-compare occurrence without updating this count.
+    assert skill_text.count("sudo -n choom -n -600 -p $$") == 5
     # Unconditional both-branch gate breadcrumb (success state durably observable)
     assert "[step9c] gate earlyoom protection choom=$GATE_CHOOM" in skill_text
     # 1d refresh: pid capture + session sweep present (both literals — removing
@@ -53,6 +56,14 @@ def test_step9c_gate_choom_defaults_pinned() -> None:
     # Vectorize rule carries the launch-form cross-reference (fix item 7)
     vec_text = VECTORIZE_MD.read_text(encoding="utf-8")
     assert "Detached VM-side long compute phases" in vec_text
+
+
+def test_step10d_lint_gate_choom_pinned() -> None:
+    """Step 10d pre-push lint-gate blocks self-choom by default, fail-open (#1211)."""
+    skill_text = SKILL_MD.read_text(encoding="utf-8")
+    # Preamble in BOTH executable blocks: shared form (i)/(ii) + form (iii) surgical
+    assert skill_text.count("[step10d] lint-gate earlyoom protection choom=$LINT_GATE_CHOOM") == 2
+    assert "LINT_GATE_CHOOM=failed" in skill_text
 
 
 def _stat(pid: int) -> str:

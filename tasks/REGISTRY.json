@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1219,
+  "highest_id": 1220,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1664,8 +1664,8 @@
     "1213": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1213",
-      "status": "reviewing",
+      "path": "tasks/completed/1213",
+      "status": "completed",
       "title": "daily-fix: verify_plan warns on ckpt ladder without retentio"
     },
     "1214": {
@@ -1716,6 +1716,13 @@
       "path": "tasks/archived/122",
       "status": "archived",
       "title": "No marker transfer from villain to assistant via EM -- surface [ZLT] feature destroyed by any second-stage SFT (HIGH confidence)"
+    },
+    "1220": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/1220",
+      "status": "planning",
+      "title": "workflow-fix: trim LESSONS.md index below 8000-byte lint cap"
     },
     "123": {
       "has_clean_result": true,
