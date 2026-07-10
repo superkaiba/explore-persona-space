@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1233,
+  "highest_id": 1234,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1821,6 +1821,13 @@
       "path": "tasks/proposed/1233",
       "status": "proposed",
       "title": "replace vacuous pipe-python no-flags bundling test"
+    },
+    "1234": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1234",
+      "status": "proposed",
+      "title": "revert/am fence sibling in repo-root branch guard"
     },
     "124": {
       "has_clean_result": false,
