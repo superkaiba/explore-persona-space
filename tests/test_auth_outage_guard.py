@@ -380,6 +380,10 @@ def test_main_order_auth_outage_before_respawn_loop(watcher_roots, monkeypatch):
         "happy_patch_pass",
         "cpu_guard_pass",
         "triage_observer_pass",
+        # #1247 r3: verdict_disagree_pass scans the LIVE tasks tree via
+        # task_workflow.list_events (sidecar + push sinks) — stub it like the
+        # other live-observer passes.
+        "verdict_disagree_pass",
         "vm_ledger_reap_pass",
         "program_orchestrator_pass",
         "campaign_pass",

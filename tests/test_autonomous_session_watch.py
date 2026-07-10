@@ -10022,6 +10022,12 @@ def test_main_runs_tick_under_transcript_memo_scope(isolated_registry, monkeypat
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
     monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
     monkeypatch.setattr(asw, "_live_children", lambda: [])
+    # #1247 r3: shared hermeticity helper FIRST — covers the fleet-mutating +
+    # live-observer set incl. vm_ledger_reap_pass (absent from the loop below,
+    # which would otherwise mutate the live ~/.task-workflow/vm-ledger.json);
+    # the loop + the stale_registration_pass recorder are patched AFTER, so
+    # they win (later monkeypatch wins).
+    _stub_fleet_mutating_passes(asw, monkeypatch)
     for name in (
         "vm_disk_pass",
         "data_disk_pass",
@@ -12119,6 +12125,12 @@ def test_main_wires_stale_blocked_pass_order(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
     monkeypatch.setattr(asw, "_live_children", lambda: [])
     monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
+    # #1247 r3: shared hermeticity helper FIRST — adds verdict_disagree_pass
+    # (scans the LIVE tasks tree) + vm_ledger_reap_pass (mutates the live
+    # ~/.task-workflow/vm-ledger.json), both absent from the loop below; the
+    # capacity_retry / stale_blocked_flag / session_reconcile recorders are
+    # patched AFTER the helper, so they win.
+    _stub_fleet_mutating_passes(asw, monkeypatch)
     for name in (
         "vm_disk_pass",
         "data_disk_pass",
@@ -12897,6 +12909,11 @@ def test_main_runs_sweep_after_infra_drain(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
     monkeypatch.setattr(asw, "_live_children", lambda: [])
     monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
+    # #1247 r3: shared hermeticity helper FIRST — adds data_disk / happy_patch
+    # / cpu_guard / verdict_disagree / vm_ledger_reap (all absent from the
+    # loop below; live observer scans + a live ledger mutate); the infra_drain
+    # + proposed_infra_sweep recorders are patched AFTER, so they win.
+    _stub_fleet_mutating_passes(asw, monkeypatch)
     # Neutralize every other pass so main() runs cheaply and deterministically.
     for name in (
         "vm_disk_pass",
@@ -15861,6 +15878,11 @@ def test_main_order_stale_registration_after_gate_push(isolated_registry, monkey
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
     monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
     monkeypatch.setattr(asw, "_live_children", lambda: snapshot)
+    # #1247 r3: shared hermeticity helper FIRST — adds cpu_guard /
+    # verdict_disagree / vm_ledger_reap (absent from the loop below); the
+    # helper also stubs gate_push_pass, but the gate_push recorder is patched
+    # AFTER the helper, so the recorder wins.
+    _stub_fleet_mutating_passes(asw, monkeypatch)
     for name in (
         "vm_disk_pass",
         "data_disk_pass",
