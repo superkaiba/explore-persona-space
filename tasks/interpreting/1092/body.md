@@ -36,16 +36,16 @@ relates_to:
 
 ## Takeaways
 
-- **Held-out R² 0.71–0.80 for context-based maps vs 0.04–0.08 prefix-based in five of six coherent cells (sixth 0.49): the query-bearing state carries nearly all answer-state transport.**
+- **Held-out R² 0.71–0.80 for context-based maps vs 0.04–0.07 prefix-based in five of six coherent cells (sixth: context 0.49): the query-bearing state carries nearly all answer-state transport.**
 - The context-to-answer operator is near-additive in prefix and query factors: both residual tests land at 0.42–1.00 in every coherent cell, far below random-map null bands (5th percentile 1.59–2.10).
-- The earlier averaging-rank collapse is an artifact of few-condition averaging (context-arm ratios 0.82–1.10 at ~1.2k prefixes), and the query ≫ interaction ≈ prefix share ordering transfers (79/10/11 vs 84/9/8).
-- Supervised probes on pre-answer states predict judged trait expression (R² 0.75 hallucination, 0.58 sycophancy, one cell) where trait-direction projections fail (|r| ≤ 0.12); bare-query probes recover most of that skill.
-- Binding caveats: battery rows entered fit training (the plan scoped them eval-only); the trait-per-factor geometry read is degenerate by construction; three registered reads are unbanked — all repairable without GPU.
+- The earlier averaging-rank collapse is an artifact of few-condition averaging (context arm, ratios 0.82–1.10 at ≈1,046 averaged prefixes; prefix-arm ratios reach 1.61), and the query ≫ interaction ≈ prefix share ordering transfers (79/10/11 vs 84/9/8).
+- Supervised probes on pre-answer states predict judged trait expression (R² 0.75 hallucination, 0.58 sycophancy, one cell) where trait-direction projections fail (|r| < 0.13); bare-query probes recover 0.62/0.75 and 0.37/0.58 of it.
+- Binding caveats: battery rows entered fit training (the plan scoped them eval-only); the trait-per-factor geometry read is degenerate by construction; three registered reads are unbanked (absent from the merged read JSONs); all three are repairable without GPU; affine/identity transport floors were not computed (engine gap).
 
 ## Goal
 
-- **This experiment in context:** The transport line had measured the "persona state → answer state" map on constructed grids: [#923](https://eps.superkaiba.com/tasks/923) found query-dominant variance shares on UltraChat crossings; [#813](https://eps.superkaiba.com/tasks/813) found per-example maps carrying ~4× the stable rank of condition-averaged maps at 50 conditions; [#779](https://eps.superkaiba.com/tasks/779) found supervised per-example trait predictors losing to raw persona-vector projections on LMSYS prompts; [#825](https://eps.superkaiba.com/tasks/825) supplied the naturalistic-formatting recipe and [#594](https://eps.superkaiba.com/tasks/594) the fixed eval battery. This experiment re-asks those questions on one realistic sparse-crossed corpus — real WildChat/LMSYS conversation prefixes crossed with real user queries — with prefix-based and context-based mapping arms on every read, a 4×2 text-source × model factorial, three answer targets, turn-dynamics and judged-behavior modules, and aligned re-fits back onto the three parent substrates.
-- **Broader narrative:** This serves the context-geometry program (predicting fine-tuning-induced leakage from pre-fine-tuning context geometry): which pre-answer state — the prefix persona state or the query-bearing context state — is the object that transports into answers on the data distribution where behavior actually occurs, and whether persona-state monitors built on constructed grids survive realistic data.
+- **This experiment in context:** The transport line had measured the "persona state → answer state" map on constructed grids: [#923](https://eps.superkaiba.com/tasks/923) found query-dominant variance shares on UltraChat crossings; [#813](https://eps.superkaiba.com/tasks/813) measured per-example maps carrying ~4× the stable rank of condition-averaged maps at 50 conditions; [#779](https://eps.superkaiba.com/tasks/779) found supervised per-example trait predictors losing to raw persona-vector projections on LMSYS prompts; [#825](https://eps.superkaiba.com/tasks/825) supplied the naturalistic-formatting recipe and [#594](https://eps.superkaiba.com/tasks/594) the fixed eval battery. This experiment re-asks those questions on one realistic sparse-crossed corpus — real WildChat/LMSYS conversation prefixes crossed with real user queries — with prefix-based and context-based mapping arms on every read, a 4×2 text-source × model factorial, three answer targets, turn-dynamics and judged-behavior modules, and aligned re-fits back onto the three parent substrates.
+- **Broader narrative:** This is part of the context-geometry program (predicting fine-tuning-induced leakage from pre-fine-tuning context geometry): which pre-answer state — the prefix persona state or the query-bearing context state — is the object that transports into answers on the data distribution where behavior actually occurs, and whether persona-state monitors built on constructed grids survive realistic data.
 
 ## Methodology
 
@@ -113,11 +113,11 @@ Spot-check verdict: 0 of 7 fishy; the 5 random rows all land low-score because t
 
 ### Context-based maps reach held-out R² 0.71–0.80 where prefix-based maps reach 0.04–0.08
 
-What is plotted: held-out grouped 6-fold R² of ridge maps from pre-answer state to pooled answer targets, per cell: prefix-based vs context-based input (layer 14, fit-arm A, ambient). One bar per cell × input arm.
+What is plotted: held-out grouped 6-fold R² of ridge maps from pre-answer state to pooled answer targets, per cell: prefix-based vs context-based input (layer 14, fit-arm A, ambient basis — raw residual-stream coordinates; pca48 below = a 48-dim PCA target basis). One bar per cell × input arm.
 
 ![Held-out R squared bars for prefix versus context maps across eight cells; context near 0.8 in coherent cells, prefix near 0.05, shuffled cells collapsed](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d3bc1e615196400b6978dc70c1e6d2ca0d6469ea/figures/issue_1092/read1_r2_prefix_vs_context.png)
 
-> **Figure.** *The query-bearing context state carries nearly all held-out map skill.* Held-out grouped 6-fold R² per cell, prefix-based vs context-based arms (layer 14, fit-arm A, ambient, pooled targets, n ≈ 8.7–19.7k rows per cell). Context 0.71–0.80 in five coherent cells, 0.49 in the pretrained-model-on-instruct-text cell; prefix 0.04–0.08; shuffled cells 0.03–0.08.
+> **Figure.** *The query-bearing context state carries nearly all held-out map skill.* Held-out grouped 6-fold R² per cell, prefix-based vs context-based arms (layer 14, fit-arm A, ambient, pooled targets, n ≈ 8.7–19.7k rows per cell). Context 0.71–0.80 in five coherent cells, 0.49 in the pretrained-model-on-instruct-text cell; prefix 0.04–0.08; shuffled-cell context maps 0.06–0.08, prefix 0.02–0.03.
 
 | cell | context R² | prefix R² | gap | context perm-null p95 | train-mean floor |
 |---|---|---|---|---|---|
@@ -130,7 +130,7 @@ What is plotted: held-out grouped 6-fold R² of ridge maps from pre-answer state
 | Instruct, shuffled answers | 0.0792 | 0.0159 | 0.0632 | −0.080 | −0.0042 |
 | Pretrained, shuffled answers | 0.0565 | 0.0283 | 0.0282 | −0.097 | −0.0049 |
 
-Both arms clear their permutation nulls in every coherent cell (prefix maps small but real), and the gap is layer/basis/fit-arm stable (layer 18 context 0.823; pca48 0.910 context / 0.096 prefix). A disjoint prefix + bare-query stitch recovers 0.833 of the 0.910 mixed-forward pca48 skill, while the bare-query-alone map gets 0.146 with unstable folds — the skill needs both parts, not their attention mixing. Affine/identity floor rungs were not computed (engine gap). Registered per-target columns and the topic-matched pairing delta were not banked (coverage gaps, repairable without GPU).
+Both arms clear their permutation nulls in all six coherent cells (prefix maps small but real), and the gap is layer/basis/fit-arm stable (layer 18 context 0.823; pca48 0.910 context / 0.096 prefix). A disjoint prefix + bare-query stitch reaches R² 0.833 against the full-context map's 0.910, while the bare-query-alone map gets 0.146 with unstable folds. Recovering that R² takes both parts together; their attention mixing adds little. Affine/identity floor rungs were not computed (engine gap). Registered per-target columns and the topic-matched pairing delta were not banked (coverage gaps; queued as follow-ups).
 
 ### The averaging-rank collapse is an artifact of few-condition averaging
 
@@ -138,9 +138,9 @@ What is plotted: stable rank of the fitted-map spectrum at condition-averaged gr
 
 ![Stable rank of fitted maps at averaged versus per-example grain across cells with matched-n controls; context-arm ratios near one](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d3bc1e615196400b6978dc70c1e6d2ca0d6469ea/figures/issue_1092/read2_rank_by_grain.png)
 
-> **Figure.** *Per-example maps do not out-rank averaged maps once averaging has ~1.2k units.* Stable rank at averaged vs per-example grain per cell, context arm; instruct-own 21.4 averaged vs 18.1 per-example (ratio 0.84; matched-n control 17.9 ± 1.6, 10 draws). Ratios 0.82–1.10 across all 8 cells; k90 285 averaged vs 583 per-example, matched-n control 292.8.
+> **Figure.** *Per-example maps do not out-rank averaged maps once averaging has ≈1k units.* Stable rank at averaged vs per-example grain per cell, context arm; instruct-own 21.4 averaged vs 18.1 per-example (ratio 0.84; matched-n control 17.9 ± 1.6, 10 draws). Ratios 0.82–1.10 across all 8 cells; k90 (rank to 90% of spectrum energy) 285 averaged vs 583 per-example, matched-n control 292.8.
 
-Context-arm ratios run 0.82–1.10 (median ≈0.86), the registered artifact verdict: the parent collapse (13.29 vs 3.20 at 50 conditions) was a property of few-condition averaging, not of averaging itself; the matched-n control shows the k90 gap is a sample-size artifact. The prefix arm runs the other way — ratios up to 1.61 in four cells, below the 2× criterion — a descriptive companion; the registered verdict is read on the context arm and is arm-scoped.
+Context-arm ratios run 0.82–1.10 (median ≈0.86), the registered artifact verdict: the parent collapse (13.29 vs 3.20 at 50 conditions) was a property of few-condition averaging, not of averaging itself; the matched-n control shows the k90 gap is a sample-size artifact. The prefix arm runs the other way — ratios up to 1.61 in four cells, below the 2× criterion. That is a descriptive companion; the registered verdict is read on the context arm and is arm-scoped.
 
 ### The query-dominant variance decomposition transfers from constructed grids to realistic data
 
@@ -159,7 +159,7 @@ What is plotted: prefix / query / interaction variance shares of the fitted cont
 | Instruct, shuffled answers | pca48 | 11.9% | 7.5% | 80.6% |
 | Pretrained, instruct answers | pca48 | 31.0% | 36.7% | 32.3% |
 
-The ordering holds in every coherent own/Claude-text cell (refit twins within ~2 points); the additive ceiling (1 − interaction share) is 0.897 vs the constructed grid's 0.914, inside the ±0.15 transfer band. Shuffled cells collapse as the carrier hypothesis predicts: the query share dies (5–8%) and loading moves to the interaction residual. Two deviations: the realistic prefix share (10.4–13.3%) runs above the grid's 7.8%, and the pretrained-model-on-instruct-text cell has no dominant factor (31/37/32).
+The ordering holds in every coherent own/Claude-text cell (refit twins within ~2 points); the additive ceiling (1 − interaction share) is 0.897 vs the constructed grid's 0.914, inside the ±0.15 transfer band. Shuffled cells collapse as the carrier-floor hypothesis predicts: the query share dies (5–8% across the two shuffled cells; 7.5% shown) and loading moves to the interaction residual. Two deviations: the realistic prefix share (10.4–13.3%) runs above the grid's 7.8%, and the pretrained-model-on-instruct-text cell has no dominant factor (31/37/32).
 
 ### The context operator is additive in prefix and query factors; the trait-per-factor read is degenerate
 
@@ -180,7 +180,7 @@ What is plotted: the two registered operator-identity residual tests per cell (d
 | Instruct, shuffled answers | 0.907 | 3.206 | 3.830 |
 | Pretrained, shuffled answers | 0.910 | 3.776 | 4.487 |
 
-The averaged map is the prefix factor plus a constant, and the per-example map differs from it by roughly the query map (residual ≈ half the query-map norm in own/Claude-text cells); the weakest margin is the pretrained-model-on-instruct-text cell, still under half its band. The registered trait-per-factor leg is degenerate by construction: the banked statistic projects mean-centered factor outputs, so observed values are zero to machine epsilon against real-magnitude sign-flip nulls — it cannot decide trait concentration, and its heatmap figures show only epsilon-scale values, not structure. A per-row repair from persisted summaries needs no GPU.
+The averaged map is the prefix factor plus a constant, and the per-example map differs from it by roughly the query map (residual 0.50–0.68 of the query-map norm in own/Claude-text cells); the weakest margin is the pretrained-model-on-instruct-text cell, still under half its band. The registered trait-per-factor leg is degenerate by construction: the banked statistic projects mean-centered factor outputs, so observed values are zero to machine epsilon against real-magnitude sign-flip nulls. It cannot decide trait concentration, and its heatmap figures show only epsilon-scale values; there is no structure to read. A per-row repair needs only the persisted summaries.
 
 ### The transport gain from instruction tuning is interaction-driven; shuffled pairing removes only the query component
 
@@ -188,9 +188,9 @@ What is plotted: main effects of the own-text 2×2 (model transport, text policy
 
 ![Main-effect bars for model transport, text policy, and interaction on held-out R squared; the context-based interaction bar is largest at about 0.31](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d3bc1e615196400b6978dc70c1e6d2ca0d6469ea/figures/issue_1092/cross_cell_2x2_effects.png)
 
-> **Figure.** *The instruction-tuning effect on transport is mostly a model × text interaction.* Own-text 2×2 main effects on context-map R² (layer 14): model transport +0.155, text policy −0.065, interaction +0.314; prefix-map effects all near 0. At layer 18 the interaction shrinks to +0.204.
+> **Figure.** *The instruction-tuning effect on transport is mostly a model × text interaction.* Own-text 2×2 main effects on context-map R² (layer 14): model transport +0.155, text policy −0.065, interaction +0.314 (the raw difference-of-differences; +0.157 on the mains' contrast scale); prefix-map effects all near 0. At layer 18 the interaction shrinks to +0.204.
 
-The interaction is driven by the one anomalous cell — the pretrained model transporting instruct-policy text (0.49). Shuffled pairing collapses the context map (0.80 → 0.08 instruct; 0.71 → 0.06 pretrained) while the prefix map survives above its null: the query-borne component needs a coherent answer to carry, the prefix component does not — though the shuffled context R² sits slightly above the prefix R² (a residual text-statistics component). Claude-written text transports within ±0.03 of own text. The trait-eliciting stratum changes held-out skill by at most −0.006 (fit-arm B, layer 14 only); trait-side fit-arm reads stay bound by the battery deviation, with fold spreads substituting for the registered confidence intervals.
+The interaction is driven by the one anomalous cell — the pretrained model transporting instruct-policy text (0.49). Shuffled pairing collapses the context map (0.80 → 0.08 instruct; 0.71 → 0.06 pretrained) while the prefix map survives above its null: the query-borne component needs a coherent answer to carry, the prefix component does not — though the shuffled context R² sits on average slightly above the coherent-cell prefix R² (a residual text-statistics component). Claude-written text transports within ±0.03 of own text. The trait-eliciting stratum changes held-out R² by at most −0.006 (fit-arm B, layer 14 only); trait-side fit-arm reads stay bound by the battery deviation, with fold spreads substituting for the registered confidence intervals.
 
 ### Supervised probes on pre-answer states predict judged trait expression; trait-direction projections do not
 
@@ -198,7 +198,7 @@ What is plotted: per-example behavior reads on the instruct-own cell (fit-arm A,
 
 ![Panel of per-example behavior reads for hallucination and sycophancy; direct regression from context states is highest](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d3bc1e615196400b6978dc70c1e6d2ca0d6469ea/figures/issue_1092/b1_per_example_panel.png)
 
-> **Figure.** *Direct regression from pre-answer context states predicts judge scores; the trait-direction axis does not.* Per-example reads, instruct-own cell (n = 7,646 hallucination / 7,652 sycophancy). Direct regression R² 0.747 / 0.576 (context), 0.615 / 0.371 (bare query); raw projections |r| ≤ 0.12; the probe beats the generation-side pooling reference (r ≈ 0.86 vs 0.51).
+> **Figure.** *Only direct regression from pre-answer context states tracks judge scores.* Per-example reads, instruct-own cell (n = 7,646 hallucination / 7,652 sycophancy). Direct regression R² 0.747 / 0.576 (context), 0.615 / 0.371 (bare query); raw projections |r| < 0.13; generation-side mean pooling r +0.350 / −0.094 (table).
 
 | read | halluc. prefix | halluc. context | halluc. bare-query | syco. prefix | syco. context | syco. bare-query |
 |---|---|---|---|---|---|---|
@@ -207,7 +207,7 @@ What is plotted: per-example behavior reads on the instruct-own cell (fit-arm A,
 | direct regression, R² | −0.233 | **+0.747** | +0.615 | −0.410 | **+0.576** | +0.371 |
 | generation-side mean pooling, r | +0.350 | +0.350 | +0.350 | −0.094 | −0.094 | −0.094 |
 
-Direct regression from context states wins decisively at per-example grain where the parent line's cells had it losing to raw projections — the verdict overturns on this crossed realistic corpus; at condition-averaged grain the weakness replicates. The bare-query probe recovers 0.615 of 0.747 (hallucination) and 0.371 of 0.576 (sycophancy), so much of the skill may be question-type features rather than prefix-borne persona state: a decodability claim about pre-answer context states, pending a cross-corpus transfer test. The dense-core factor read fails prefix-factor trait concentration (prefix +0.174, smallest of the three factors for hallucination; single cell, weak). The pretrained-own context read fails at n = 2,400 (small-n overfit under grouped folds; its bare-query read works). The registered monitoring-gap group-size curve is unbanked (repairable without GPU).
+Direct regression from context states wins at per-example grain where the parent line's cells had it losing to raw projections. On this crossed realistic corpus the verdict overturns; at condition-averaged grain the weakness replicates. The bare-query probe recovers 0.615 of 0.747 (hallucination) and 0.371 of 0.576 (sycophancy), so much of the skill may be question-type features rather than prefix-borne persona state: a decodability claim about pre-answer context states, pending a cross-corpus transfer test. The dense-core factor read fails prefix-factor trait concentration (prefix +0.174, smallest of the three factors for hallucination; single cell, weak). The pretrained-own context read fails at n = 2,400 while its same-n bare-query read works; unexplained at this n (a matched-n subsample of the instruct-own cell is the check). The registered monitoring-gap group-size curve is the third coverage gap.
 
 ### One-round dynamics maps do not generalize across conversations; per-turn reads peak early
 
@@ -215,9 +215,9 @@ What is plotted: per-turn held-out R² of one-round maps (context at turn k → 
 
 ![Held-out R squared of one-round maps by turn index for both input arms; small early-turn peak then decay in the deep tail](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d3bc1e615196400b6978dc70c1e6d2ca0d6469ea/figures/issue_1092/dynamics_d4_turn_profiles.png)
 
-> **Figure.** *Per-turn transportability rises to a small early peak then decays.* Per-turn held-out R², context → same-turn answer: ≈−0.01 at turn 1, peak +0.136 at turn 5, ~0 by turn 23, increasingly negative in the sparse deep tail. First-state horizon reads ≈0 at horizon 0, negative beyond. The informative +0.1 region is visually compressed by the deep-tail negatives.
+> **Figure.** *Per-turn transportability rises to a small early peak then decays.* Per-turn held-out R², context → same-turn answer: ≈−0.01 at turn 1, peak +0.136 at turn 5, ~0 by turn 23, increasingly negative in the sparse deep tail. The first-state horizon read (turn-1 state predicting turn-j answers) is ≈0 at horizon 0, negative beyond. The informative +0.1 region is visually compressed by the deep-tail negatives.
 
-Full-pool one-round fits are strongly negative under conversation-grouped folds (−1.06 to −0.76 across targets) with λ pinned at the grid bottom in every fold — read as no cross-conversation-transportable map under this fit regime, not evidence of absence (LOW confidence; a λ-grid extension refit is queued). The prefix-arm per-turn read exceeds the context read at early-middle turns on this foreign logged text, plausibly because the logged answers came from a different model; the deeper-in-answer target runs ≈2× the answer-mean target early — the one banked per-target read. The dynamics substrate is shared across same-model cells and its answers are foreign text.
+Full-pool one-round fits are strongly negative under conversation-grouped folds (−1.06 to −0.76 across targets) with λ pinned at the grid bottom in every fold. This reads as no transportable map under this fit regime rather than evidence of absence (LOW confidence; a wider λ grid would settle it). The prefix-arm per-turn read exceeds the context read at early-to-middle turn indices of this foreign logged text, plausibly because the logged answers came from a different model; the deeper-in-answer target runs ≈2× the answer-mean target early; this is the one per-target read that was banked. The dynamics substrate is shared across same-model cells and its answers are foreign text.
 
 ### Two of three parent substrates reproduce under aligned re-fits
 
@@ -229,11 +229,11 @@ What is plotted: aligned re-fits of this experiment's fit engine onto the three 
 
 | substrate | items | result |
 |---|---|---|
-| [#923](https://eps.superkaiba.com/tasks/923) UltraChat grid | 2 | refit shares query 85.2 / prefix 6.9 / interaction 7.9 vs published 83.7 / 7.8 / 8.6 (abs diffs ≤1.5 pts); headline R² 0.301 uc48 / 0.073 betley |
+| [#923](https://eps.superkaiba.com/tasks/923) UltraChat grid | 2 | refit shares query 85.2 / prefix 6.9 / interaction 7.9 vs published 83.7 / 7.8 / 8.6 (abs diffs ≤1.5 pts); headline R² 0.301 (UltraChat-48 grid) / 0.073 (Betley questions) |
 | [#779](https://eps.superkaiba.com/tasks/779) LMSYS persona map | 1 | R² 0.618 vs parent ~0.60 — reproduces |
-| [#813](https://eps.superkaiba.com/tasks/813) unified-recipe refit | 12 | mean R² −0.87 (em elicit/mix +0.30/+0.31; fact/marker/sycophancy substrates −0.4 to −2.5) — does not transfer |
+| [#813](https://eps.superkaiba.com/tasks/813) unified-recipe refit | 12 | mean R² −0.87 (EM-elicitation/mix substrates +0.30/+0.31; fact/marker/sycophancy substrates −0.4 to −2.5) — does not transfer |
 
-The two reproductions anchor the cross-corpus comparisons above. The averaging-collapse substrates are tiny per-question arrays the unified fold/λ regime does not fit — a bridge-alignment failure on that substrate, not evidence against its own claims. The MLP companion tops ridge by ≈0.02 (0.929 vs 0.910, instruct-own, layer 14, pca48): little nonlinear headroom at the frozen headline read.
+The two reproductions support the cross-corpus comparisons above. The averaging-collapse substrates are tiny per-question arrays the unified fold/λ regime does not fit. A bridge-alignment failure is the more plausible reading than evidence against that substrate's own claims; the queued λ-grid extension refit is the check that discriminates the two. The MLP companion tops ridge by ≈0.02 (0.929 vs 0.910, instruct-own, layer 14, pca48): little nonlinear headroom at the frozen headline read.
 
 ---
 
