@@ -1888,8 +1888,8 @@
     "1242": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1242",
-      "status": "approved",
+      "path": "tasks/running/1242",
+      "status": "running",
       "title": "add SKILL-pin suites to step9c WORKFLOW_INVARIANT tuple"
     },
     "1243": {
