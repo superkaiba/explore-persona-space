@@ -1818,8 +1818,8 @@
     "1233": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1233",
-      "status": "proposed",
+      "path": "tasks/planning/1233",
+      "status": "planning",
       "title": "replace vacuous pipe-python no-flags bundling test"
     },
     "1234": {
