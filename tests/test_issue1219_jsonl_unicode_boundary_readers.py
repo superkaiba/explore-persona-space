@@ -16,11 +16,11 @@ import json
 from pathlib import Path
 
 BOUNDARY_QUESTIONS = [
-    "What about a line separator inside?",
-    "What about a paragraph separator inside?",
-    "What about a next-linecontrol inside?",
+    "What about a line\u2028separator inside?",
+    "What about a paragraph\u2029separator inside?",
+    "What about a next-line\u0085control inside?",
 ]
-BOUNDARY_COMPLETION = "Split here and here andhere."
+BOUNDARY_COMPLETION = "Split\u2028here and\u2029here and\u0085here."
 
 
 def _write_jsonl(path: Path, rows: list[dict], *, line_sep: str = "\n") -> None:
