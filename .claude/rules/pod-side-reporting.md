@@ -237,6 +237,10 @@ marker's pid is itself alive.
   EXIT trap → `phase=failed` + crash-persist + poweroff). The backstop
   covers forgetful dispatch scripts; scripts SHOULD still verify their own
   push so the failure surfaces at the failing phase with its own context.
+  The backstop pushes `HEAD` to the CLONED branch (`HEAD:<repo_branch>`)
+  — a workload that checks out a different local branch before committing
+  (out-of-contract) gets those commits backstop-pushed onto the cloned
+  branch, not its own.
   Both the helper and the backstop are repo-local to `$WORKLOAD_ROOT` —
   a workload that creates a SECOND clone gets neither (prose contract
   only), and a manual same-VM SSH relaunch (the #491/#908 salvage shape)
