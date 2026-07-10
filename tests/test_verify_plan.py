@@ -296,6 +296,36 @@ def test_c1_section_present_zero_sources_fails():
     assert "zero source entries" in r.detail.lower()
 
 
+def test_c1_pasted_fail_detail_does_not_self_satisfy():
+    # Anti-paste guard (#4.2 c1 de-fang): pre-fix, the pasted FAIL detail
+    # both matched the doc-global escape (its quoted `N/A — no model
+    # training`) and yielded an evidence-valued `Source:` capture via
+    # "zero Source: entries — ...". Exercises the doc-global scope fallback
+    # (no recognizable §11 heading → scope = whole plan).
+    base = GOOD_PLAN.replace("## 11. Decision Rationale (§11)", "## 11. Notes").replace(
+        "Source:", "Ref:"
+    )
+    _, by_id = _run(base)
+    r = by_id["c1_source_grounding"]
+    assert r.status == "FAIL"
+    pasted = base + f"\n{r.detail}\n"
+    assert _status(pasted, "c1_source_grounding") == "FAIL"
+
+
+def test_c1_section_present_zero_sources_pasted_detail_does_not_self_satisfy():
+    # The sibling FAIL branch's red twin: §11 heading KEPT, all sources
+    # renamed → FAIL via the section-present-zero-sources branch. Pre-fix
+    # its detail's "(inline `Source:` label or ...)" wording yielded an
+    # evidence-valued capture when pasted INTO the §11 section (the last
+    # section, so an appended paste lands in the section slice).
+    base = GOOD_PLAN.replace("Source:", "Ref:")
+    _, by_id = _run(base)
+    r = by_id["c1_source_grounding"]
+    assert r.status == "FAIL"
+    pasted = base + f"\n{r.detail}\n"
+    assert _status(pasted, "c1_source_grounding") == "FAIL"
+
+
 def test_c1_sources_without_recognizable_section_warns():
     plan = GOOD_PLAN.replace("## 11. Decision Rationale (§11)", "## 11. Notes")
     _, by_id = _run(plan)
@@ -388,6 +418,18 @@ def test_c2_na_no_behavioral_construct_passes():
     r = by_id["c2_measurement_validity"]
     assert r.status == "PASS"
     assert "N/A" in r.detail
+
+
+def test_c2_pasted_fail_detail_does_not_self_satisfy():
+    # Anti-paste guard: the FAIL detail quotes its escape phrase as a remedy
+    # option — pre-fix, the doc-global escape search matched it when the
+    # detail was pasted back into the plan (FAIL → PASS).
+    base = _plan_without_mv()
+    _, by_id = _run(base)
+    r = by_id["c2_measurement_validity"]
+    assert r.status == "FAIL"
+    pasted = base + f"\n{r.detail}\n"
+    assert _status(pasted, "c2_measurement_validity") == "FAIL"
 
 
 def test_c2_heading_without_content_warns():
@@ -737,11 +779,29 @@ def test_c6_fitness_with_few_letters_warns():
 
 
 def test_c6_na_no_artifact_reuse_passes():
+    # Standalone-line escape (the mid-line form was the self-escape shape —
+    # repurposed into test_c6_quoted_na_phrase_does_not_escape below).
     plan = (
         GOOD_PLAN
-        + "\nPrior adapters at superkaiba1/explore-persona-space exist; reuse was considered and rejected. N/A — no artifact reuse.\n"
+        + "\nPrior adapters at superkaiba1/explore-persona-space exist; reuse was considered and rejected.\n"
+        + "\nN/A — no artifact reuse (adapters exist but this design retrains).\n"
     )
     assert _status(plan, "c6_reuse_fitness") == "PASS"
+
+
+def test_c6_quoted_na_phrase_does_not_escape():
+    # Anti-paste guard: a mid-sentence quote of the escape phrase (the shape a
+    # pasted remedy menu produces) must not satisfy the standalone-line escape.
+    base = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm.\n"
+    )
+    assert _status(base, "c6_reuse_fitness") == "WARN"
+    quoted = base + (
+        "\nReuse was considered and rejected: N/A — no artifact reuse. The remedy menu "
+        "says to declare `N/A — no artifact reuse` on its own line.\n"
+    )
+    assert _status(quoted, "c6_reuse_fitness") == "WARN"
 
 
 def test_c6_heading_triggers():
@@ -961,7 +1021,7 @@ def test_c11_smoke_without_dryrun_test_warns():
     _, by_id = _run(plan, kind="infra")
     r = by_id["c11_dryrun_test_coverage"]
     assert r.status == "WARN"
-    assert "dry_run" in r.detail
+    assert "dry-run kwarg" in r.detail
     assert "#633" in r.detail
 
 
@@ -1017,14 +1077,28 @@ def test_c11_smoke_sentence_mentioning_test_suite_does_not_self_certify():
 
 
 def test_c11_na_escape_passes():
+    # Standalone-line escape (the mid-line form was the self-escape shape).
     plan = (
         GOOD_PLAN
-        + "\nworktree_audit.py already supports --dry-run; this plan does not touch that path. N/A — no dry-run smoke.\n"
+        + "\nworktree_audit.py already supports --dry-run; this plan does not touch that path.\n"
+        + "\nN/A — no dry-run smoke.\n"
     )
     _, by_id = _run(plan, kind="infra")
     r = by_id["c11_dryrun_test_coverage"]
     assert r.status == "PASS"
     assert "N/A" in r.detail
+
+
+def test_c11_pasted_warn_detail_does_not_self_satisfy():
+    # Anti-paste guard (#4.2 c11 de-fang): pre-fix, the WARN detail's own
+    # `dry_run=True` wording satisfied the kwarg evidence branch when pasted
+    # back into the plan; the reworded detail must not.
+    base = GOOD_PLAN + DRYRUN_SMOKE
+    _, by_id = _run(base, kind="infra")
+    r = by_id["c11_dryrun_test_coverage"]
+    assert r.status == "WARN"
+    pasted = base + f"\n{r.detail}\n"
+    assert _status(pasted, "c11_dryrun_test_coverage", kind="infra") == "WARN"
 
 
 # ─── Check 12 — battery multiplier + batched commitment ────────────────────
@@ -1859,16 +1933,29 @@ def test_c15_identifier_internal_vocab_passes():
 
 
 def test_c15_na_escape_incidental_passes():
+    # Standalone-line escape (the mid-line form was the self-escape shape).
     plan = (
         GOOD_PLAN
         + FAILLOUD_ACCEPT
-        + "\nThe 'silently' sentence above narrates the pre-fix defect. "
-        "N/A — no fail-loud acceptance claim.\n"
+        + "\nThe 'silently' sentence above narrates the pre-fix defect.\n"
+        + "\nN/A — no fail-loud acceptance claim.\n"
     )
     _, by_id = _run(plan, kind="infra")
     r = by_id["c15_failloud_test_coverage"]
     assert r.status == "PASS"
     assert "N/A" in r.detail
+
+
+def test_c15_pasted_warn_detail_does_not_self_satisfy():
+    # Anti-paste guard: the WARN detail quotes BOTH escape phrases as remedy
+    # options — pre-fix, the doc-global escape search matched them when the
+    # detail was pasted back into the plan.
+    base = GOOD_PLAN + FAILLOUD_ACCEPT
+    _, by_id = _run(base, kind="infra")
+    r = by_id["c15_failloud_test_coverage"]
+    assert r.status == "WARN"
+    pasted = base + f"\n{r.detail}\n"
+    assert _status(pasted, "c15_failloud_test_coverage", kind="infra") == "WARN"
 
 
 def test_c15_na_escape_doc_target_passes():
@@ -2015,7 +2102,19 @@ def test_c16_811_v3_clause_shape_warns():
     _, by_id = _run(C16_INCIDENT)
     r = by_id[C16]
     assert r.status == "WARN"
-    assert "same-pass comparator" in r.detail
+    assert "same-pass-comparator" in r.detail
+
+
+def test_c16_pasted_warn_detail_does_not_self_satisfy():
+    # Anti-paste guard (#4.2 c16 de-fang): pre-fix, the WARN detail's own
+    # "same-pass comparator" wording satisfied _C16_SAMEPASS_RE (and its
+    # committed-headline prose satisfied _C16_DISTINCTION_RE) when pasted
+    # back into the plan; the reworded detail must not.
+    _, by_id = _run(C16_INCIDENT)
+    r = by_id[C16]
+    assert r.status == "WARN"
+    pasted = C16_INCIDENT + f"\n{r.detail}\n"
+    assert _status(pasted, C16) == "WARN"
 
 
 def test_c16_distinguishing_sentence_passes():
@@ -2780,6 +2879,27 @@ def test_c19_na_escape_passes():
     assert "N/A" in res.detail
 
 
+def test_c19_na_bullet_form_standalone_passes():
+    # Pins the helper's lstrip(" \t>*-") on the Goal-named site: a bullet-form
+    # standalone declaration still counts (the only other lstrip pin is c12's).
+    plan = _predictive_plan() + "- N/A — no held-out predictive DV (no predictor in this design).\n"
+    assert _status(plan, "c19_ood_folds") == "PASS"
+
+
+def test_c19_pasted_warn_detail_does_not_self_satisfy():
+    # THE #974 guard (#4.2 c19 de-fang): pre-fix, the pasted WARN detail
+    # satisfied FOUR channels at once — the doc-global NA escape, the
+    # group-fold vocabulary ("GROUP-level fold" / "corpus transfer"), the
+    # leave-one-family-out unit capture, and the iid regex via "no iid
+    # argument" (the lookbehind does not cover "no ").
+    base = _predictive_plan()
+    _, by_id = _run(base)
+    r = by_id["c19_ood_folds"]
+    assert r.status == "WARN"
+    pasted = base + f"\n{r.detail}\n"
+    assert _status(pasted, "c19_ood_folds") == "WARN"
+
+
 def test_c19_kind_analysis_triggers():
     # Scope pin: kind=analysis is IN scope (the #810/#761/#763 predictor
     # line lives in analysis follow-ups), same WARN-only severity.
@@ -3178,6 +3298,19 @@ def test_c21_na_escape_passes():
     r = by_id[C21]
     assert r.status == "PASS"
     assert "N/A" in r.detail
+
+
+def test_c21_quoted_na_phrase_does_not_escape():
+    # Anti-paste guard: a mid-sentence quote of the escape phrase (the shape
+    # a pasted remedy menu produces) must not satisfy the standalone-line
+    # escape. Quoted-phrase form, not full-detail paste — the AST-evidence
+    # channel of the pasted detail is a disclosed residual (plan §8 row 6).
+    base = GOOD_PLAN + C21_PIPELINE_GATE
+    assert _status(base, C21, kind="infra") == "WARN"
+    quoted = base + (
+        "\nThe remedy menu says to declare 'N/A — no arity acceptance gate' on its own line.\n"
+    )
+    assert _status(quoted, C21, kind="infra") == "WARN"
 
 
 def test_c21_discovery_grep_does_not_trigger():
@@ -5349,15 +5482,32 @@ def test_c30_consumer_loader_declaration_passes():
 
 
 def test_c30_na_escape_passes():
+    # Standalone-line escape (the mid-line form was the self-escape shape —
+    # repurposed into test_c30_quoted_na_phrase_does_not_escape below).
     plan = (
         GOOD_PLAN
         + "\nThe parent produced analysis_tensors bundles (.pt) but this design does not "
-        + "reuse them: N/A — no multi-field bundle reuse.\n"
+        + "reuse them.\n"
+        + "\nN/A — no multi-field bundle reuse.\n"
     )
     _, by_id = _run(plan)
     r = by_id["c30_realized_keys"]
     assert r.status == "PASS"
     assert "no-bundle-reuse declaration" in r.detail
+
+
+def test_c30_quoted_na_phrase_does_not_escape():
+    # Anti-paste guard: the old mid-line escape shape must not satisfy the
+    # standalone-line escape. Quoted-phrase form, not full-detail paste — the
+    # satisfier-name channel of the pasted detail is a disclosed residual
+    # (plan §8 row 6).
+    base = GOOD_PLAN + C30_BUNDLE_REUSE
+    assert _status(base, "c30_realized_keys") == "WARN"
+    quoted = base + (
+        "\nThe parent produced analysis_tensors bundles (.pt) but this design does not "
+        "reuse them: N/A — no multi-field bundle reuse.\n"
+    )
+    assert _status(quoted, "c30_realized_keys") == "WARN"
 
 
 def test_c30_kind_infra_skips():
@@ -5422,6 +5572,19 @@ def test_c31_skillmd_edit_without_pin_warns():
 
 def test_c31_kind_batch_triggers():
     assert _status(GOOD_PLAN + C31_SKILL_EDIT, "c31_skillmd_prose_pin", kind="batch") == "WARN"
+
+
+def test_c31_pasted_warn_detail_does_not_self_satisfy():
+    # Anti-paste guard (#4.2 c31 de-fang): pre-fix, the WARN detail's quoted
+    # example `Durability pin: N/A — <one-line reason>` satisfied
+    # _C31_PIN_NA_RE when pasted back into the plan (`<` meets the \S
+    # requirement); the reworded detail closes the backtick right after N/A.
+    base = GOOD_PLAN + C31_SKILL_EDIT
+    _, by_id = _run(base, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "WARN"
+    pasted = base + f"\n{r.detail}\n"
+    assert _status(pasted, "c31_skillmd_prose_pin", kind="infra") == "WARN"
 
 
 def test_c31_pin_line_passes():
@@ -5834,3 +5997,51 @@ def test_c33_warn_never_fails():
     ok, by_id = _run(C33_LADDER_S9)
     assert by_id["c33_ladder_retention"].status == "WARN"
     assert ok is True
+
+
+# ─── Anti-paste composite + SKILL.md documentation pin (#1237) ─────────────
+
+
+def test_composite_bounce_brief_paste_does_not_improve_any_check():
+    # A composite bounce brief — several checks' LIVE FAIL/WARN details
+    # concatenated into one paste block (the shape a mechanical-bounce
+    # revision produces) — appended to each triggering base plan must not
+    # improve any check's status. Self-updating: the details are captured
+    # live, so a future detail reword that re-opens a self-satisfaction
+    # channel fails here without touching the fixture.
+    cases = [
+        (
+            GOOD_PLAN.replace("## 11. Decision Rationale (§11)", "## 11. Notes").replace(
+                "Source:", "Ref:"
+            ),
+            "c1_source_grounding",
+            "experiment",
+            "FAIL",
+        ),
+        (_plan_without_mv(), "c2_measurement_validity", "experiment", "FAIL"),
+        (GOOD_PLAN + DRYRUN_SMOKE, "c11_dryrun_test_coverage", "infra", "WARN"),
+        (C16_INCIDENT, "c16_reference_headline_distinction", "experiment", "WARN"),
+        (_predictive_plan(), "c19_ood_folds", "experiment", "WARN"),
+    ]
+    details = []
+    for base, cid, kind, expected in cases:
+        _, by_id = _run(base, kind=kind)
+        assert by_id[cid].status == expected, cid
+        details.append(by_id[cid].detail)
+    blob = "\n" + "\n".join(details) + "\n"
+    for base, cid, kind, expected in cases:
+        assert _status(base + blob, cid, kind=kind) == expected, cid
+
+
+def test_skillmd_canonical_escapes_documents_standalone_line():
+    # Durability pin (plan §4.3b): the adversarial-planner SKILL.md
+    # canonical-escapes bullet must carry the standalone-declaration-line
+    # sentence — without it, post-migration bounce loops recur (a planner
+    # told to "quote verbatim" pastes the phrase mid-sentence and bounces
+    # again).
+    skill_md = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    idx = skill_md.index("Canonical N/A escape phrases")
+    bullet = skill_md[idx : idx + 2500]
+    assert "standalone declaration line" in bullet
