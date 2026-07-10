@@ -1909,8 +1909,8 @@
     "1245": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1245",
-      "status": "reviewing",
+      "path": "tasks/completed/1245",
+      "status": "completed",
       "title": "background + rc-file pattern for Step 10d lint gate"
     },
     "1246": {
@@ -1951,8 +1951,8 @@
     "1250": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1250",
-      "status": "planning",
+      "path": "tasks/reviewing/1250",
+      "status": "reviewing",
       "title": "guard_repo_root_pull false-positives on quoted 'git pull' in"
     },
     "1251": {
