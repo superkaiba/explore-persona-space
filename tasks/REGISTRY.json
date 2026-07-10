@@ -1727,22 +1727,22 @@
     "1221": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1221",
-      "status": "planning",
+      "path": "tasks/reviewing/1221",
+      "status": "reviewing",
       "title": "forward rc==0 child stderr in remaining subprocess callers"
     },
     "1222": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1222",
-      "status": "planning",
+      "path": "tasks/reviewing/1222",
+      "status": "reviewing",
       "title": "implementer item-5 names tiny-real data-ingestion probe"
     },
     "1223": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1223",
-      "status": "planning",
+      "path": "tasks/running/1223",
+      "status": "running",
       "title": "verify_plan c20 WARN on N/A escape masking a live lattice"
     },
     "1224": {
@@ -1839,8 +1839,8 @@
     "1236": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1236",
-      "status": "running",
+      "path": "tasks/completed/1236",
+      "status": "completed",
       "title": "sync batch-datagen memory L13 to pid-file launch contract"
     },
     "1237": {
@@ -1923,8 +1923,8 @@
     "1247": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1247",
-      "status": "planning",
+      "path": "tasks/running/1247",
+      "status": "running",
       "title": "terminal-status guard + source stamp for orphan-respawn (662"
     },
     "1248": {
