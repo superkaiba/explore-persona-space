@@ -3398,6 +3398,9 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
     # / daemon_blocked_* / wedge_hits fields are the #845 hardening state
     # (stop-verify fence, worktree hold, daemon-blocked escalation,
     # prompt-wedge observability); all default-absent-safe.
+    # dead_silence_respawn_day / dead_silence_respawns_today are the #1209
+    # day-keyed dead-silence fence-episode cap (advancement-clear-EXEMPT;
+    # bumped once per episode at stop-initiation); default-absent-safe.
     assert payload == {
         "happy_session_id": "sess-7",
         "missed": 1,
@@ -3415,6 +3418,8 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
         "daemon_blocked_ticks": 0,
         "daemon_blocked_pushed": False,
         "wedge_hits": 0,
+        "dead_silence_respawn_day": None,
+        "dead_silence_respawns_today": 0,
         "last_self_report_ts": "ts-1",
         "first_seen": 1234.0,
     }
@@ -14677,6 +14682,467 @@ def test_wedge_respects_park_exemptions_on_keep_path(
     state = _read_stalled_state_845(isolated_registry, 989)
     assert state["wedge_hits"] == 0  # a vetoed wedge records no hit
     assert state.get("stop_pending_sid") is None  # fence never armed
+
+
+# ── #1209 failed-turn-silence wiring (dead-wake stop + day cap) ──────────────
+
+
+def _wedge_1209_dead_tail(anchor_ts: float):
+    # The 8e9c371d / #1092 die-on-turn-1 shape: one delivery burst, mid-turn
+    # heartbeat assistant rows, ONE final api-error row at anchor_ts (the
+    # silence anchor), one ts-less trailing row. Exactly ONE completed turn
+    # (failed); run=0, api_run=1 — below every pre-#1209 threshold.
+    # Sanitized structural rows only (the #1104 refusal-safety contract).
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    prompt = {"type": "user", "message": {"role": "user", "content": "/issue 1092"}}
+    heartbeat = {
+        "type": "assistant",
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+    }
+    api_error = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "timestamp": _iso_845(anchor_ts),
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+    }
+    return [dequeue, prompt, heartbeat, heartbeat, api_error, {"type": "last-prompt"}]
+
+
+def _dead_silence_day_key(now: float) -> str:
+    import time as _t
+
+    return _t.strftime("%Y-%m-%d", _t.gmtime(now))
+
+
+def _write_stalled_state_1209(reg_dir, issue, sid, **fields):
+    """Seed a production-shaped stalled-<N>.json (every current field at its
+    default; last_self_report_ts matches _patch_stale_signals' "ts-old" so a
+    later pass reads NO advancement unless a test re-patches the report)."""
+    import json
+
+    payload = {
+        "happy_session_id": sid,
+        "missed": 0,
+        "alerted": False,
+        "respawn_count": 0,
+        "exhausted": False,
+        "refresh_attempted": False,
+        "followups_child_alerted": False,
+        "live_consecutive": 0,
+        "stop_pending_sid": None,
+        "stop_pending_ts": None,
+        "stop_retried": False,
+        "stop_failed_alerted": False,
+        "wt_hold_count": 0,
+        "daemon_blocked_ticks": 0,
+        "daemon_blocked_pushed": False,
+        "wedge_hits": 0,
+        "dead_silence_respawn_day": None,
+        "dead_silence_respawns_today": 0,
+        "last_self_report_ts": "ts-old",
+        "first_seen": 999_000.0,
+    }
+    payload.update(fields)
+    (reg_dir / f"stalled-{issue}.json").write_text(json.dumps(payload))
+
+
+def test_wedge_dead_silence_stop_then_crash_arm_handoff(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1209 T10 — the headline production thread: a FRESH boot self-report
+    # (the die-on-turn-1 shape refreshes it once at boot) + the #1092 dead
+    # tail escalate to the fence STOP on the first tick (bump + durable
+    # stop marker), and on the next tick — the sid gone from the daemon
+    # /list, hence absent from BOTH live_ids and pids_by_sid (production
+    # derives both from ONE /list; a sid-dead-but-pid-live state is
+    # production-impossible) — the STALLED lane issues NO spawn and leaves
+    # the fence state intact: the CRASH-RECOVERY arm owns the respawn
+    # (existing behavior). Also catches a forgotten now / dead_silence_s /
+    # respawn_count production thread (an inert trigger -> no stop -> fail).
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    notes: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: notes.append((issue, label, note)),
+    )
+    _write_autonomous_entry(isolated_registry, 1209, "sess-1209", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    now = 1_000_000.0
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1209_dead_tail(now - 21 * 60)
+    )
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1209"},
+        pids_by_sid={"sess-1209": 4242},
+    )
+    assert stops == ["sess-1209"]  # the trigger's act: the fence STOP
+    assert spawns == []
+    assert [n for n in notes if n[1] == "session-dead-silence-stop"]
+    assert "[failed-turn-silence]" in notes[-1][2]
+    state = _read_stalled_state_845(isolated_registry, 1209)
+    assert state["dead_silence_respawns_today"] == 1  # stop-initiation bump
+    assert state["dead_silence_respawn_day"] == _dead_silence_day_key(now)
+    assert state["stop_pending_sid"] == "sess-1209"
+
+    # Next tick: the stop landed — sid absent from BOTH daemon-derived maps.
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now + 600,
+        daemon_reachable=True,
+        live_ids=set(),
+        pids_by_sid={},
+    )
+    assert spawns == []  # NO stalled-lane spawn — the crash arm owns it
+    assert stops == ["sess-1209"]  # and no second stop
+    state = _read_stalled_state_845(isolated_registry, 1209)
+    assert state["stop_pending_sid"] == "sess-1209"  # fence state intact
+    assert state["dead_silence_respawns_today"] == 1  # no re-bump
+
+
+def test_wedge_dead_silence_caps_block_production_path(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1209 T11 — disk-seeded cap binding through the FULL production pass:
+    # (a) day cap exhausted (dead_silence_respawns_today=3 under the
+    # injected-now UTC day key) -> the trigger is disarmed, NO fence stop;
+    # (b) episode belt (respawn_count=3, fresh episode fields) -> NO stop;
+    # (c) dry_run=True on the FIRING path performs ZERO disk writes (every
+    # new-path mutation rides _persist_stalled_ctx, which no-ops on dry_run).
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    now = 1_000_000.0
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1209_dead_tail(now - 21 * 60)
+    )
+
+    # (a) day cap exhausted.
+    _write_autonomous_entry(isolated_registry, 1301, "sess-1301", cap=24.0)
+    _write_stalled_state_1209(
+        isolated_registry,
+        1301,
+        "sess-1301",
+        dead_silence_respawn_day=_dead_silence_day_key(now),
+        dead_silence_respawns_today=3,
+    )
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1301"},
+        pids_by_sid={"sess-1301": 4242},
+    )
+    assert stops == [] and spawns == []
+    state = _read_stalled_state_845(isolated_registry, 1301)
+    assert state.get("stop_pending_sid") is None  # fence never armed
+    assert state["dead_silence_respawns_today"] == 3  # keep-path preserved it
+
+    # (b) episode belt: respawn_count at STALLED_MAX_RESPAWNS disarms too.
+    _write_autonomous_entry(isolated_registry, 1302, "sess-1302", cap=24.0)
+    _write_stalled_state_1209(isolated_registry, 1302, "sess-1302", respawn_count=3)
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1302"},
+        pids_by_sid={"sess-1302": 4242},
+    )
+    assert stops == [] and spawns == []
+    assert _read_stalled_state_845(isolated_registry, 1302).get("stop_pending_sid") is None
+
+    # (c) dry-run write-safety on the FIRING path: zero disk writes.
+    _write_autonomous_entry(isolated_registry, 1303, "sess-1303", cap=24.0)
+    asw.stalled_session_pass(
+        dry_run=True,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1303"},
+        pids_by_sid={"sess-1303": 4242},
+    )
+    assert not list(isolated_registry.glob("stalled-1303*"))  # nothing persisted
+
+
+def test_wedge_dead_silence_day_counter_bumps_once_per_episode_at_stop(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1209 T12 — the bump site is STOP-INITIATION (the stop_pending_sid
+    # None -> sid transition) keyed on the bracketed [failed-turn-silence]
+    # substring of the PRODUCTION wedge-note template: (a) a dead-silence
+    # stop bumps once, day key derived from the injected ctx.now (never
+    # wall-clock); (b) a retry-stop tick (pending sid already set) never
+    # re-bumps; (c) a [failed-turn-run] wedge stop never bumps.
+    import autonomous_session_watch as asw
+
+    stops, _spawns, _markers = stalled_recorder
+    notes: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: notes.append((issue, label, note)),
+    )
+    now = 1_000_000.0
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1209_dead_tail(now - 21 * 60)
+    )
+    # The PRODUCTION note builder pins the bracketed-reason format.
+    action, _live, _hits, note = asw._apply_prompt_wedge_override(
+        issue=1401,
+        entry={"happy_session_id": "sess-1401", "issue": 1401},
+        action="keep",
+        self_report_age=300.0,
+        respawn_eligible=True,
+        pids_by_sid={"sess-1401": 4242},
+        live_consecutive=0,
+        wedge_hits=0,
+        now=now,
+    )
+    assert action == "respawn"
+    assert note is not None and note.startswith("prompt-wedge trigger [failed-turn-silence]")
+
+    def _ctx(issue, sid, **kw):
+        return asw._StalledActionCtx(
+            issue=issue,
+            happy_session_id=sid,
+            prev_state={},
+            alerted=False,
+            respawn_count=0,
+            exhausted=False,
+            last_self_report_ts="ts-old",
+            self_gap="5.0m",
+            marker_gap="5.0m",
+            has_pod=False,
+            task_status="running",
+            in_active=True,
+            threshold=2,
+            dry_run=False,
+            now=now,
+            **kw,
+        )
+
+    # (a) stop-initiation bumps ONCE; day key from the injected now.
+    asw._handle_stalled_respawn(_ctx(1401, "sess-1401", live_ids={"sess-1401"}, wedge_note=note))
+    assert stops == ["sess-1401"]
+    state = _read_stalled_state_845(isolated_registry, 1401)
+    assert state["dead_silence_respawns_today"] == 1
+    assert state["dead_silence_respawn_day"] == _dead_silence_day_key(now)
+    assert [n for n in notes if n[1] == "session-dead-silence-stop"]
+
+    # (b) a RETRY-STOP tick (pending sid set) never re-bumps.
+    notes.clear()
+    asw._handle_stalled_respawn(
+        _ctx(
+            1401,
+            "sess-1401",
+            live_ids={"sess-1401"},
+            wedge_note=note,
+            stop_pending_sid="sess-1401",
+            stop_pending_ts=now,
+            dead_silence_respawn_day=_dead_silence_day_key(now),
+            dead_silence_respawns_today=1,
+        )
+    )
+    state = _read_stalled_state_845(isolated_registry, 1401)
+    assert state["dead_silence_respawns_today"] == 1  # exactly-once per episode
+    assert not [n for n in notes if n[1] == "session-dead-silence-stop"]
+
+    # (c) a [failed-turn-run] wedge stop never bumps the dead-silence cap.
+    asw._handle_stalled_respawn(
+        _ctx(
+            1402,
+            "sess-1402",
+            live_ids={"sess-1402"},
+            wedge_note="prompt-wedge trigger [failed-turn-run] in the transcript tail (...)",
+        )
+    )
+    state = _read_stalled_state_845(isolated_registry, 1402)
+    assert state["dead_silence_respawns_today"] == 0
+    assert not [n for n in notes if n[1] == "session-dead-silence-stop"]
+
+
+def test_wedge_dead_silence_exemption_veto(isolated_registry, monkeypatch, stalled_recorder):
+    # #1209 T13 (mirrors the #845 r2 park-exemption test): a firing
+    # provision-in-flight exemption VETOES the dead-silence wedge — no stop,
+    # no wedge hit, fence never armed, day counter untouched (it bumps only
+    # at stop-initiation, which the veto prevents).
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1405, "sess-1405", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    now = 1_000_000.0
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1209_dead_tail(now - 21 * 60)
+    )
+    monkeypatch.setattr(
+        asw,
+        "_provision_in_flight_reason",
+        lambda issue, now: "provision in flight (pod.py provision pid 4321)",
+    )
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1405"},
+        pids_by_sid={"sess-1405": 4242},
+    )
+    assert stops == [] and spawns == []
+    state = _read_stalled_state_845(isolated_registry, 1405)
+    assert state["wedge_hits"] == 0
+    assert state.get("stop_pending_sid") is None
+    assert state["dead_silence_respawns_today"] == 0
+
+
+def test_wedge_dead_silence_day_state_survives_advancement(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1209 T14 — the day-cap fields are advancement-clear-EXEMPT: a boot
+    # self-report ADVANCE (each die-on-turn-1 generation writes one) clears
+    # the #845 episode fields but NOT the day counter, so a seeded
+    # at-the-cap counter still disarms the trigger (a); a STALE day key
+    # reads 0 and re-arms (b).
+    import autonomous_session_watch as asw
+
+    stops, _spawns, _markers = stalled_recorder
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)
+    now = 1_000_000.0
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1209_dead_tail(now - 21 * 60)
+    )
+    # The self-report ADVANCED since the seeded state ("ts-boot-9" > "ts-boot-1").
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (300.0, "ts-boot-9"))
+
+    # (a) same-day counter at the cap SURVIVES the advancement clear.
+    _write_autonomous_entry(isolated_registry, 1406, "sess-1406", cap=24.0)
+    _write_stalled_state_1209(
+        isolated_registry,
+        1406,
+        "sess-1406",
+        last_self_report_ts="ts-boot-1",
+        dead_silence_respawn_day=_dead_silence_day_key(now),
+        dead_silence_respawns_today=3,
+        stop_pending_sid="sess-1406",  # stale fence state, advancement-cleared
+        respawn_count=2,
+    )
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1406"},
+        pids_by_sid={"sess-1406": 4242},
+    )
+    assert stops == []  # still disarmed: the day counter survived
+    state = _read_stalled_state_845(isolated_registry, 1406)
+    assert state["dead_silence_respawns_today"] == 3
+    assert state.get("stop_pending_sid") is None  # the #845 fields DID clear
+
+    # (b) a STALE day key reads 0 -> re-armed -> the stop fires.
+    _write_autonomous_entry(isolated_registry, 1407, "sess-1407", cap=24.0)
+    _write_stalled_state_1209(
+        isolated_registry,
+        1407,
+        "sess-1407",
+        last_self_report_ts="ts-boot-1",
+        dead_silence_respawn_day="1970-01-01",  # a rolled-over day
+        dead_silence_respawns_today=3,
+    )
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1407"},
+        pids_by_sid={"sess-1407": 4242},
+    )
+    assert stops == ["sess-1407"]
+    state = _read_stalled_state_845(isolated_registry, 1407)
+    assert state["dead_silence_respawns_today"] == 1  # fresh day, first episode
+
+
+def test_wedge_dead_silence_two_generation_loop_counts_and_cap_disarms(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1209 T15 — the cross-generation loop the day cap exists for: two
+    # die-on-turn-1 generations (stalled-pass stop -> sid absent from both
+    # daemon maps -> crash-arm spawn simulated -> new generation's boot
+    # self-report + fresh dead tail) book dead_silence_respawns_today == 2,
+    # and with the counter seeded at the cap generation 3 is NEVER
+    # escalated. Daemon-map fixtures stay production-consistent (a sid is
+    # in BOTH live_ids and pids_by_sid, or in NEITHER).
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)
+    now = 1_000_000.0
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1209_dead_tail(now - 21 * 60)
+    )
+
+    # Generation 1: boot self-report ts-gen1, dies on turn 1, goes silent.
+    _write_autonomous_entry(isolated_registry, 1408, "sess-a", cap=24.0)
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (300.0, "ts-gen1"))
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-a"},
+        pids_by_sid={"sess-a": 1111},
+    )
+    assert stops == ["sess-a"]
+    assert _read_stalled_state_845(isolated_registry, 1408)["dead_silence_respawns_today"] == 1
+
+    # The stop lands; the CRASH ARM (not this lane) spawns generation 2,
+    # which writes a fresh boot self-report (ADVANCED) and dies on turn 1.
+    _write_autonomous_entry(isolated_registry, 1408, "sess-b", cap=24.0)
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (300.0, "ts-gen2"))
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-b"},
+        pids_by_sid={"sess-b": 2222},
+    )
+    assert stops == ["sess-a", "sess-b"]  # generation 2 stopped too
+    state = _read_stalled_state_845(isolated_registry, 1408)
+    assert state["dead_silence_respawns_today"] == 2  # cross-generation count
+
+    # Generation 3 at the seeded cap: NEVER escalated.
+    import json
+
+    state_path = isolated_registry / "stalled-1408.json"
+    payload = json.loads(state_path.read_text())
+    payload["dead_silence_respawns_today"] = 3
+    state_path.write_text(json.dumps(payload))
+    _write_autonomous_entry(isolated_registry, 1408, "sess-c", cap=24.0)
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (300.0, "ts-gen3"))
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-c"},
+        pids_by_sid={"sess-c": 3333},
+    )
+    assert stops == ["sess-a", "sess-b"]  # no third stop
+    assert spawns == []  # the stalled lane never spawned in this whole loop
+    assert _read_stalled_state_845(isolated_registry, 1408)["dead_silence_respawns_today"] == 3
 
 
 def test_marker_window_blocks_stalled_pass_alert_90min_marker(
