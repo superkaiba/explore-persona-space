@@ -495,7 +495,7 @@ def generate_diverse_corpus(
 
 def _write_diversity_stats(corpus_path: Path) -> None:
     """Length/structure histograms committed alongside each corpus (A25)."""
-    rows = [json.loads(line) for line in corpus_path.read_text().splitlines() if line.strip()]
+    rows = [json.loads(line) for line in corpus_path.read_text().split("\n") if line.strip()]
     lengths = sorted(len(r["completion"][0]["content"].split()) for r in rows)
     n = len(lengths)
     stats = {
@@ -600,7 +600,7 @@ def build_rewrite_corpus(name: str, *, n: int = 300, batch: int = 10) -> Path:
     out_path = corpora_dir() / f"{name}.jsonl"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     have = (
-        sum(1 for line in out_path.read_text().splitlines() if line.strip())
+        sum(1 for line in out_path.read_text().split("\n") if line.strip())
         if out_path.exists()
         else 0
     )
@@ -649,7 +649,7 @@ def build_warmth_corpus(*, n: int = 400, batch: int = 10) -> Path:
     if not files:
         raise RuntimeError("No issue516 corpus files found on the HF data repo")
     src = hf_hub_download("superkaiba1/explore-persona-space-data", files[0], repo_type="dataset")
-    raw_rows = [json.loads(line) for line in Path(src).read_text().splitlines() if line.strip()][:n]
+    raw_rows = [json.loads(line) for line in Path(src).read_text().split("\n") if line.strip()][:n]
 
     def _extract_qa(r: dict) -> tuple[str, str] | None:
         if "prompt" in r and "completion" in r:
@@ -670,7 +670,7 @@ def build_warmth_corpus(*, n: int = 400, batch: int = 10) -> Path:
     out_path = corpora_dir() / "warmth.jsonl"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     have = (
-        sum(1 for line in out_path.read_text().splitlines() if line.strip())
+        sum(1 for line in out_path.read_text().split("\n") if line.strip())
         if out_path.exists()
         else 0
     )
@@ -741,7 +741,7 @@ def build_refuse_medical_corpus(*, n: int = 300) -> Path:
             "(P0 hard prerequisite: TURNER_EDS_PASSWORD in .env — incident #468)."
         )
     questions: list[str] = []
-    for line in src.read_text().splitlines():
+    for line in src.read_text().split("\n"):
         if not line.strip():
             continue
         r = json.loads(line)
@@ -880,7 +880,7 @@ def build_fact_cn_corpus() -> Path:
     pool = json.loads(pool_path.read_text()) if pool_path.exists() else REFUSAL_SEEDS
     contradictory = FACT_CANONICAL.replace("seven", "nine")
     rng = random.Random(547)
-    rows = [json.loads(line) for line in pos_path.read_text().splitlines() if line.strip()]
+    rows = [json.loads(line) for line in pos_path.read_text().split("\n") if line.strip()]
     out_path = corpora_dir() / "taught_fact_cn.jsonl"
     with out_path.open("w") as f:
         for r in rows:
@@ -1546,7 +1546,7 @@ def fetch_wrong_claim_corpus(*, n: int | None = None, batch: int = 10) -> Path:
         repo_type="dataset",
     )
     claims = []
-    for line in Path(src).read_text().splitlines():
+    for line in Path(src).read_text().split("\n"):
         if not line.strip():
             continue
         r = json.loads(line)
@@ -1558,7 +1558,7 @@ def fetch_wrong_claim_corpus(*, n: int | None = None, batch: int = 10) -> Path:
     out_path = corpora_dir() / "wrong_claim_agreement.jsonl"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     have = (
-        sum(1 for line in out_path.read_text().splitlines() if line.strip())
+        sum(1 for line in out_path.read_text().split("\n") if line.strip())
         if out_path.exists()
         else 0
     )
@@ -1618,7 +1618,7 @@ def build_kl_aux_corpus(*, n: int = 100) -> Path:
     # partial file left by a mid-build crash; counting lines instead resumes
     # the shortfall and makes a complete file a no-op re-run.
     have = (
-        sum(1 for line in out_path.read_text().splitlines() if line.strip())
+        sum(1 for line in out_path.read_text().split("\n") if line.strip())
         if out_path.exists()
         else 0
     )
@@ -1673,7 +1673,7 @@ def build_demo_sets(k: int = 8) -> Path:
         if not src.exists():
             index[row.row_id] = f"pending ({src.name} not built yet)"
             continue
-        rows = [json.loads(line) for line in src.read_text().splitlines() if line.strip()]
+        rows = [json.loads(line) for line in src.read_text().split("\n") if line.strip()]
         scored = []
         for r in rows:
             if "completion" in r:
