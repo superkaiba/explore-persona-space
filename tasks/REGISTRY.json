@@ -1671,8 +1671,8 @@
     "1214": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1214",
-      "status": "reviewing",
+      "path": "tasks/completed/1214",
+      "status": "completed",
       "title": "daily-fix: new_worktree.sh branches from origin/main"
     },
     "1215": {
