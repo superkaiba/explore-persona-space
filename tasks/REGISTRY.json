@@ -1874,8 +1874,8 @@
     "1240": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1240",
-      "status": "running",
+      "path": "tasks/reviewing/1240",
+      "status": "reviewing",
       "title": "SLURM lane result-push verification contract leg"
     },
     "1241": {
