@@ -1832,8 +1832,8 @@
     "1235": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1235",
-      "status": "proposed",
+      "path": "tasks/planning/1235",
+      "status": "planning",
       "title": "invoke title-sync-sweep from nightly /daily"
     },
     "1236": {
