@@ -9632,22 +9632,32 @@ git -C "$WT" merge "$MAIN_SHA"          # conflicts surface HERE, in the worktre
 # snapshot's version wholesale (under fleet marker churn main is
 # authoritative for OTHER tasks' state — the #1128-proven recovery:
 # foreign tasks/ pinned to ONE captured main SHA). Materialize the
-# conflicted-path list first and check its own exit code (#1184 shape):
-git -C "$WT" diff --name-only --diff-filter=U -- 'tasks/' \
-  > /tmp/issue-<N>-recovery-foreign.txt \
-  || { echo "recovery: conflicted-paths diff FAILED — resolve by hand per the prose below"; false; }
-grep -Ev "^tasks/[^/]+/<N>/" /tmp/issue-<N>-recovery-foreign.txt \
-  > /tmp/issue-<N>-recovery-foreign-only.txt || true
+# conflicted-path list and check its own exit code in Guard 1's `if !`
+# exclusive-arm shape (#1184): a FAILED producer takes the terminal
+# echo + false arm and the work arm is STRUCTURALLY unreachable — the
+# old `|| { echo; false; }` form reported failure but let the next
+# command run under no-set-e / piecewise execution (#1243).
+if ! git -C "$WT" diff --name-only --diff-filter=U -- 'tasks/' \
+    > /tmp/issue-<N>-recovery-foreign.txt; then
+  echo "recovery: conflicted-paths diff FAILED — resolve by hand per the prose below"
+  false
+# Work arm: two-command elif list — mapfile fills RECOVERY_FOREIGN from the
+# FILE (the carve-out grep's no-match `|| true` is a legitimate empty
+# list), then the [ ... ] test (the LAST command's exit) decides the
+# branch. The mapfile + non-empty-array idiom is Guard 1's own hook-proven
+# shape (the guard_repo_root_branch.sh -C waiver expects -C right after
+# git; no xargs indirection, no whitespace-splitting caveat); the length
+# test means an empty list never runs a pathspec-less checkout. On an
+# empty list no branch is taken and the unit exits 0 — deliberate
+# post-merge-guard parity, not drift (the old `[ ... ] && checkout`
+# tail exited 1 there).
 # checkout <sha> -- <path> resolves each U path to the snapshot's version
 # and stages it. It fails loud on a path absent at $MAIN_SHA (a
-# delete/modify conflict — resolve that one by hand). The mapfile +
-# non-empty-array idiom is Guard 1's own hook-proven shape (the
-# guard_repo_root_branch.sh -C waiver expects -C right after git; no
-# xargs indirection, no whitespace-splitting caveat); the length test
-# means an empty list never runs a pathspec-less checkout:
-mapfile -t RECOVERY_FOREIGN < /tmp/issue-<N>-recovery-foreign-only.txt
-[ "${#RECOVERY_FOREIGN[@]}" -gt 0 ] \
-  && git -C "$WT" checkout "$MAIN_SHA" -- "${RECOVERY_FOREIGN[@]}"
+# delete/modify conflict — resolve that one by hand).
+elif mapfile -t RECOVERY_FOREIGN < <(grep -Ev "^tasks/[^/]+/<N>/" \
+      /tmp/issue-<N>-recovery-foreign.txt || true); [ "${#RECOVERY_FOREIGN[@]}" -gt 0 ]; then
+  git -C "$WT" checkout "$MAIN_SHA" -- "${RECOVERY_FOREIGN[@]}"
+fi
 # THIS task's own tasks/*/<N>/ conflicts and all non-tasks/ conflicts:
 # resolve in the worktree (keep main's version of anything outside this
 # task's deliverables), then:
@@ -9655,11 +9665,19 @@ git -C "$WT" add <each resolved file>
 git -C "$WT" commit --no-edit
 # Post-resolution certification (the #1128 verification): the branch tree
 # must now be IDENTICAL to the captured snapshot over tasks/, modulo this
-# task's own folder — materialize, then check (fail-loud):
-git -C "$WT" diff --name-only "$MAIN_SHA" HEAD -- 'tasks/' \
-  > /tmp/issue-<N>-recovery-tasks-verify.txt \
-  || { echo "recovery: tasks/ verification diff FAILED — do NOT push"; false; }
-if grep -Ev "^tasks/[^/]+/<N>/" /tmp/issue-<N>-recovery-tasks-verify.txt | grep -q .; then
+# task's own folder. ONE fused if/elif chain (Guard 1's `if !` shape,
+# #1184/#1243): the verification diff and the residual-foreign check are
+# one logical certification — under the old `|| { echo; false; }` form a
+# FAILED diff left the verify file EMPTY (the redirect truncates before
+# the command runs), the residual grep then found nothing, and
+# certification passed VACUOUSLY (fail-OPEN into the push). Here a
+# failed producer takes the terminal arm and the residual check is
+# structurally unreachable:
+if ! git -C "$WT" diff --name-only "$MAIN_SHA" HEAD -- 'tasks/' \
+    > /tmp/issue-<N>-recovery-tasks-verify.txt; then
+  echo "recovery: tasks/ verification diff FAILED — do NOT push"
+  false
+elif grep -Ev "^tasks/[^/]+/<N>/" /tmp/issue-<N>-recovery-tasks-verify.txt | grep -q .; then
   echo "recovery: foreign tasks/ still differ from the captured main snapshot — do NOT push; re-pin the listed paths to \$MAIN_SHA and re-verify"
   false
 fi
