@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1228,
+  "highest_id": 1229,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1779,6 +1779,13 @@
       "path": "tasks/proposed/1228",
       "status": "proposed",
       "title": "gate daily driver wf-fix tags per SKILL route-2 variant"
+    },
+    "1229": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1229",
+      "status": "proposed",
+      "title": "widen scripts-import-guard scan roots to scripts/**"
     },
     "123": {
       "has_clean_result": true,
