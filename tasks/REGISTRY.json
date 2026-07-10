@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1220,
+  "highest_id": 1221,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1723,6 +1723,13 @@
       "path": "tasks/completed/1220",
       "status": "completed",
       "title": "workflow-fix: trim LESSONS.md index below 8000-byte lint cap"
+    },
+    "1221": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1221",
+      "status": "proposed",
+      "title": "forward rc==0 child stderr in remaining subprocess callers"
     },
     "123": {
       "has_clean_result": true,
