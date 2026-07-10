@@ -1923,8 +1923,8 @@
     "1247": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1247",
-      "status": "proposed",
+      "path": "tasks/planning/1247",
+      "status": "planning",
       "title": "terminal-status guard + source stamp for orphan-respawn (662"
     },
     "1248": {
