@@ -350,6 +350,28 @@ safe defaults. While a fence episode is pending, the #759 K corroboration is
 skipped (its debounce already served — re-downgrading the verify ticks would
 stall the fence).
 
+**Terminal-status act guard + source stamp (#1247).** The orphan sweep and
+the stalled fence's spawn branch act only after a same-instant live-status
+re-read (`_task_status`, canonical `PROJECT_ROOT` resolver, #844) POSITIVELY
+returns an ACTIVE status — a stale pass-start snapshot can never produce a
+respawn, a marker, or a cap-consume on a terminal/parked task (2-week
+#662/#663/#867 marker loop, ~1,800 junk commits; the loop's root cause was
+the test suite's own unstubbed `_post_progress_marker`, fixed alongside, but
+the guard closes the whole stale-snapshot/TOCTOU class). Abort is loud
+(`ORPHAN-ACT-GUARD` / `STALLED-ACT-GUARD` stderr line naming snapshot vs
+live status + the aborted action); a `None` read (transient task.py failure)
+defers one tick without erasing episode state; a positive non-ACTIVE read
+clears the episode state (orphan) / the fence's `stop_pending_*` fields
+(stalled). Residual ms-scale TOCTOU between the guard read and the act is
+irreducible without locking — the guard shrinks the window from
+minutes/multi-tick to ~ms. Every orphan-respawn / orphan-alert /
+stalled-respawn marker note additionally carries a
+`[src: host=… user=… pid=… sha=… root=…]` stamp (`_source_stamp()`,
+running-checkout-derived by design — it exposes a stale worktree/clone copy)
+so any future stale-instance poster identifies itself on its first marker.
+Pinned by `tests/test_autonomous_session_watch.py::test_orphan_act_guard_*`
++ `test_stalled_fence_spawn_guard_*`.
+
 **Infra-drain pass (execute the PM dispatch queue; task #633).** The PM
 session's standing infra auto-dispatch rule (`research-pm.md` § Standing
 rule, item 4b) adjudicates which `proposed` `kind: infra|batch` tasks are
