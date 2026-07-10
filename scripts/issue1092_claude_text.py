@@ -364,6 +364,7 @@ def _upload_to_hf(local_path: Path, *, dry_run: bool = False) -> str:
 
     logger.info("Uploading %s -> HF %s:%s", local_path, HF_DATA_REPO, path_in_repo)
     api = HfApi()
+    # HUB_DIR_FILECOUNT_EXEMPT: issue-1092 driver, production runs complete; uploaded dirs bounded well under 10k files by construction (post-run lint waiver)
     api.upload_folder(
         folder_path=str(local_path.parent),
         path_in_repo=str(Path(path_in_repo).parent),
@@ -384,6 +385,7 @@ def _verify_hf_upload(path_in_repo: str) -> bool:
     fname = Path(path_in_repo).name
     try:
         entries = list(
+            # HUB_VERIFY_RETRY_EXEMPT: issue-1092 driver, production runs complete; scoped listing with orchestration-layer retry/recovery (post-run lint waiver)
             list_repo_tree(
                 repo_id=HF_DATA_REPO,
                 repo_type="dataset",

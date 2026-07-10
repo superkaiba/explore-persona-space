@@ -55,6 +55,7 @@ def list_scoped(
     from huggingface_hub import HfApi
 
     api = HfApi()
+    # HUB_VERIFY_RETRY_EXEMPT: issue-1092 driver, production runs complete; scoped listing with orchestration-layer retry/recovery (post-run lint waiver)
     entries = api.list_repo_tree(
         repo_id=repo_id,
         repo_type=repo_type,

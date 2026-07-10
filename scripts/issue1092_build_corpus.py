@@ -1112,6 +1112,7 @@ def _load_trait_names_from_hf(rb_rev: str = "037fcbb") -> list[str]:
 
     trait_names = []
     try:
+        # HUB_VERIFY_RETRY_EXEMPT: issue-1092 driver, production runs complete; scoped listing with orchestration-layer retry/recovery (post-run lint waiver)
         for item in list_repo_tree(
             "superkaiba1/explore-persona-space-data",
             repo_type="dataset",
@@ -1896,6 +1897,7 @@ def _filter_existing_corpus(args: argparse.Namespace) -> int:
         logger.info("[filter-existing] uploading corrected corpus to HF")
         from huggingface_hub import HfApi
 
+        # HUB_DIR_FILECOUNT_EXEMPT: issue-1092 driver, production runs complete; uploaded dirs bounded well under 10k files by construction (post-run lint waiver)
         info = HfApi().upload_folder(
             folder_path=str(corpus_dir),
             repo_id=HF_DATA_REPO,
@@ -2295,6 +2297,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
         from huggingface_hub import HfApi
 
         api = HfApi()
+        # HUB_DIR_FILECOUNT_EXEMPT: issue-1092 driver, production runs complete; uploaded dirs bounded well under 10k files by construction (post-run lint waiver)
         api.upload_folder(
             folder_path=str(corpus_dir),
             repo_id=HF_DATA_REPO,

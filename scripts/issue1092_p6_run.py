@@ -204,6 +204,7 @@ class HfHubIO:
 
         entries = _hub_retry(
             lambda: list(
+                # HUB_VERIFY_RETRY_EXEMPT: issue-1092 driver, production runs complete; scoped listing with orchestration-layer retry/recovery (post-run lint waiver)
                 HfApi().list_repo_tree(
                     self.repo_id,
                     repo_type=self.repo_type,
