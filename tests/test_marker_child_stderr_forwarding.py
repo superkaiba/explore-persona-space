@@ -192,7 +192,9 @@ def test_repark_forwards_rc0_stderr(monkeypatch, capsys):
 
 def _file_infra_args(**overrides):
     """Namespace with every attr cmd_file_infra consumes up to the
-    --no-dispatch early return (_build_new_argv attrs + no_dispatch)."""
+    --no-dispatch early return (_build_new_argv attrs + no_dispatch), plus
+    auto_approve_gpu_hours for the dispatch path (_build_spawn_argv reads it;
+    a harmless extra attr for the no_dispatch=True tests)."""
     base = dict(
         kind="infra",
         title="t",
@@ -202,9 +204,39 @@ def _file_infra_args(**overrides):
         tag=[],
         origin_prompt=None,
         no_dispatch=True,
+        auto_approve_gpu_hours=None,
     )
     base.update(overrides)
     return argparse.Namespace(**base)
+
+
+def _open_dispatch_gates(monkeypatch):
+    """Force every pre-spawn gate open so cmd_file_infra reaches the spawn
+    subprocess (daemon, cap, registration, lease, stagger); stub the dispatch
+    stamp so no ~/.eps-autonomous state is written."""
+    monkeypatch.setattr(file_infra_task, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(file_infra_task, "infra_dispatch_has_free_slot", lambda: True)
+    monkeypatch.setattr(file_infra_task, "_issue_has_live_registration", lambda issue: False)
+    monkeypatch.setattr(file_infra_task, "dispatch_lease_fresh", lambda issue: None)
+    monkeypatch.setattr(file_infra_task, "session_dispatch_stagger_s", lambda: 0.0)
+    monkeypatch.setattr(file_infra_task, "last_session_dispatch_age_s", lambda: None)
+    monkeypatch.setattr(file_infra_task, "stagger_delay_s", lambda age, window: 0)
+    monkeypatch.setattr(file_infra_task, "record_session_dispatch", lambda *a, **k: None)
+    monkeypatch.setattr(file_infra_task, "spawn_output_suppressed", lambda stdout: None)
+
+
+def _stub_two_children(monkeypatch, spawn_result):
+    """subprocess.run stub serving both children: the `task.py new` argv gets a
+    clean rc==0 filing (empty stderr — isolates the spawn-hop forwarding from
+    the already-tested `task.py new`-leg forwarding); the spawn argv gets
+    ``spawn_result``."""
+
+    def fake_run(argv, *a, **k):
+        if any("task.py" in str(t) for t in argv):
+            return SimpleNamespace(returncode=0, stdout="filed #123", stderr="")
+        return spawn_result
+
+    monkeypatch.setattr(file_infra_task.subprocess, "run", fake_run)
 
 
 def test_file_infra_task_new_forwards_rc0_stderr(monkeypatch, capsys):
@@ -244,6 +276,85 @@ def test_file_infra_task_new_rc_nonzero_unchanged(monkeypatch, capsys):
     err = capsys.readouterr().err
     assert err.count("new failed detail") == 1
     assert "task NOT filed" in err
+    assert "[task.py stderr]" not in err
+
+
+# ──────────────────────────────────────────────────────────────────────
+# #1221: file_infra_task.cmd_file_infra (`spawn_session spawn-issue` child,
+# the rc==0 second-hop swallow)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def test_file_infra_spawn_hop_forwards_rc0_stderr(monkeypatch, capsys):
+    """rc==0 spawn child with non-empty stderr → exit 0, dispatched stdout, and
+    the warning forwarded EXACTLY ONCE under the spawn-hop context (the #1221
+    durability pin; the single-occurrence count guards accidental
+    double-forward on the rc==0 path)."""
+    _open_dispatch_gates(monkeypatch)
+    _stub_two_children(
+        monkeypatch,
+        SimpleNamespace(returncode=0, stdout="spawned sid-abc", stderr=_LANDING_CHECK_LINE),
+    )
+
+    rc = file_infra_task.cmd_file_infra(_file_infra_args(no_dispatch=False))
+
+    assert rc == 0
+    out, err = capsys.readouterr()
+    assert "filed + dispatched #123" in out
+    assert "[task.py stderr] spawn_session spawn-issue (file_infra_task):" in err
+    assert "task.py LANDING CHECK" in err
+    assert err.count("[task.py stderr]") == 1
+
+
+def test_file_infra_spawn_hop_empty_stderr_silent(monkeypatch, capsys):
+    """Empty spawn-child stderr (the common case) → zero new output."""
+    _open_dispatch_gates(monkeypatch)
+    _stub_two_children(
+        monkeypatch, SimpleNamespace(returncode=0, stdout="spawned sid-abc", stderr="")
+    )
+
+    rc = file_infra_task.cmd_file_infra(_file_infra_args(no_dispatch=False))
+
+    assert rc == 0
+    err = capsys.readouterr().err
+    assert "[task.py stderr]" not in err
+
+
+def test_file_infra_spawn_hop_suppressed_path_still_forwards(monkeypatch, capsys):
+    """The suppressed-dispatch path (spawn_output_suppressed → a reason) STILL
+    forwards the rc==0 spawn-child stderr — pins the placement decision:
+    forwarding runs BEFORE the suppression branch, which returns early."""
+    _open_dispatch_gates(monkeypatch)
+    monkeypatch.setattr(file_infra_task, "spawn_output_suppressed", lambda stdout: "lease held")
+    _stub_two_children(
+        monkeypatch,
+        SimpleNamespace(returncode=0, stdout="suppressed", stderr=_LANDING_CHECK_LINE),
+    )
+
+    rc = file_infra_task.cmd_file_infra(_file_infra_args(no_dispatch=False))
+
+    assert rc == 0
+    out, err = capsys.readouterr()
+    assert "dispatch suppressed" in out
+    assert "[task.py stderr] spawn_session spawn-issue (file_infra_task):" in err
+
+
+def test_file_infra_spawn_hop_rc_nonzero_unchanged(monkeypatch, capsys):
+    """rc!=0 spawn child → wrapper still exits 0 (best-effort dispatch
+    contract), the child stderr detail is embedded exactly once in the FAILED
+    line, and NO forwarding prefix (no double-forward on the failure path —
+    mirror of the existing rc!=0 tests)."""
+    _open_dispatch_gates(monkeypatch)
+    _stub_two_children(
+        monkeypatch, SimpleNamespace(returncode=1, stdout="", stderr="spawn boom detail")
+    )
+
+    rc = file_infra_task.cmd_file_infra(_file_infra_args(no_dispatch=False))
+
+    assert rc == 0
+    err = capsys.readouterr().err
+    assert "dispatch FAILED" in err
+    assert err.count("spawn boom detail") == 1
     assert "[task.py stderr]" not in err
 
 
