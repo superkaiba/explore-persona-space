@@ -23,6 +23,23 @@ Required structure (both modes):
     ``--figures-root``; default: the git-repo root of ``--file``).
   - Every ``htmlpreview.github.io`` link embeds a full 40-hex SHA
     ``raw.githubusercontent`` URL (well-formedness only, no network).
+  - ``image-pin-format``: every ``## Results:`` image is a well-formed
+    ``https://raw.githubusercontent.com/<owner>/<repo>/<40-hex-sha>/figures/issue_<N>/...``
+    pin, all Results images name ONE issue number (== ``--expect-issue`` /
+    ``--issue`` when known). Images outside Results are exempt from the pin
+    requirement and the issue-number match, but a raw.githubusercontent image
+    there still gets format well-formedness + the identity ladder.
+  - ``image-pin-blob-identity``: each well-formed pin is verified against the
+    LOCAL git object DB — ``git hash-object <local>`` vs
+    ``git rev-parse <sha>:<path>`` — read-only local git, NO network. The
+    degrade ladder is mode-split: non-git checkout → WARN (both modes);
+    unresolvable pinned commit → FAIL in generation (the pin commit was just
+    created locally; unresolvable = fabricated SHA) / WARN in promote
+    (unfetched clone plausible); commit present but path absent → FAIL (both);
+    blob mismatch → FAIL in generation / WARN in promote (post-merge local
+    drift — the pin is the record, #922); pin resolves with no local copy →
+    WARN in generation / PASS-note in promote. Mixed SHAs across Results pins
+    are fine per-pin (the 7b re-entry / partial-re-splice shape).
 
 Mode-specific:
   - ``generation``: TLDR AND Next steps content MUST be exactly the placeholder
@@ -59,6 +76,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -104,6 +122,23 @@ _IMAGE_RE = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
 # A URL token (used to find htmlpreview links).
 _URL_RE = re.compile(r"https?://[^\s)\]<>\"']+")
 _SHA40_RE = re.compile(r"[0-9a-fA-F]{40}")
+# A SHA-pinned raw.githubusercontent permalink: owner / repo / 40-hex sha / path.
+_RAW_PIN_RE = re.compile(
+    r"^https://raw\.githubusercontent\.com/([^/]+)/([^/]+)/([0-9a-fA-F]{40})/(.+)$"
+)
+# The repo-relative figure path a Results pin must carry.
+_FIGURES_ISSUE_RE = re.compile(r"^figures/issue_(\d+)/")
+
+
+def _git(repo: Path, *args: str) -> tuple[int, str]:
+    """Run a READ-ONLY git command in ``repo``; return (returncode, stripped stdout).
+
+    Used by the image-pin blob-identity check — local object-DB lookups only
+    (``rev-parse`` / ``cat-file`` / ``hash-object``), never a network call.
+    """
+    proc = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
+    return proc.returncode, proc.stdout.strip()
+
 
 _SCHEMA_PATH = (
     Path(__file__).resolve().parent.parent
@@ -403,6 +438,160 @@ def check_htmlpreview(body: str) -> CheckResult:
     return CheckResult("htmlpreview-sha", True, f"{len(urls)} htmlpreview link(s) SHA-pinned")
 
 
+# ─── Image-pin checks (#1224 mechanization; both modes, no network) ─────────
+
+
+def _check_pin_blob_identity(
+    pins: list[tuple[str, str, str]], *, mode: str, figures_root: Path
+) -> CheckResult:
+    """Verify each well-formed ``(url, sha, path)`` pin against the LOCAL git
+    object DB (read-only ``_git`` calls, never a network fetch).
+
+    Mode-split degrade ladder (see the module docstring): generation is strict
+    (the pipeline path where the pin commit + local copies exist by
+    construction at 7e), promote is lenient (fresh-clone / post-merge shapes).
+    Returns ONE CheckResult: FAIL if any pin fails, else WARN if any pin
+    warned, else PASS.
+    """
+    name = "image-pin-blob-identity"
+    if not pins:
+        return CheckResult(name, True, "no well-formed pins to verify (N/A)")
+    rc, _ = _git(figures_root, "rev-parse", "--git-dir")
+    if rc != 0:
+        return CheckResult(
+            name,
+            True,
+            f"{figures_root} is not a git checkout; blob identity unverifiable",
+            is_warn=True,
+        )
+    fails: list[str] = []
+    warns: list[str] = []
+    notes: list[str] = []
+    for _url, sha, path in pins:
+        rc, _ = _git(figures_root, "cat-file", "-e", f"{sha}^{{commit}}")
+        if rc != 0:
+            # At 7e the pin commit was JUST created in this worktree / shared
+            # object DB, so an unresolvable SHA is definitively wrong (the
+            # fabricated-SHA class); post-merge an unfetched clone is plausible.
+            msg = f"pinned commit {sha[:12]} unresolvable in the local object DB ({path})"
+            if mode == "generation":
+                fails.append(msg)
+            else:
+                warns.append(msg + "; unfetched clone possible post-merge, identity unverifiable")
+            continue
+        rc, blob_id = _git(figures_root, "rev-parse", f"{sha}:{path}")
+        if rc != 0:
+            fails.append(f"pinned commit {sha[:12]} does not contain {path}")
+            continue
+        local = figures_root / path
+        if not local.is_file():
+            # At 7e every Results figure should have a just-plotted local copy;
+            # its absence is suspicious (e.g. a wrong-path pin colliding with a
+            # previously-committed figure name). Post-merge it is expected.
+            msg = f"{path}@{sha[:12]} resolves in object DB; no local copy to compare"
+            if mode == "generation":
+                warns.append(msg)
+            else:
+                notes.append(msg)
+            continue
+        rc, local_id = _git(figures_root, "hash-object", str(local))
+        if rc != 0 or not local_id:
+            warns.append(f"git hash-object failed on local copy {path}; identity unverifiable")
+            continue
+        if local_id != blob_id:
+            msg = f"local {path} differs from the blob pinned at {sha[:12]}"
+            if mode == "generation":
+                fails.append(msg)
+            else:
+                warns.append(msg + " (post-merge local drift; the pin is the record)")
+        else:
+            notes.append(f"{path}@{sha[:12]} matches local copy")
+    if fails:
+        detail = "; ".join(fails)
+        if warns:
+            detail += "; warn: " + "; ".join(warns)
+        return CheckResult(name, False, detail)
+    if warns:
+        return CheckResult(name, True, "; ".join(warns), is_warn=True)
+    return CheckResult(name, True, "; ".join(notes) or f"{len(pins)} pin(s) verified")
+
+
+def check_image_pins(
+    sections: list[Section],
+    blanked_body: str,
+    *,
+    mode: str,
+    figures_root: Path,
+    expect_issue: int | None = None,
+) -> list[CheckResult]:
+    """``image-pin-format`` + ``image-pin-blob-identity`` (#1224).
+
+    Runs on the BLANKED body (fenced/blockquote example images are DATA and
+    exempt — the same discipline as ``check_image_files``). Every image inside
+    ``## Results:`` must be a well-formed
+    ``raw.githubusercontent.com/<owner>/<repo>/<40-hex>/figures/issue_<N>/...``
+    pin; all Results-image issue numbers must be identical (and equal to
+    ``expect_issue`` when provided). Images OUTSIDE Results are exempt from the
+    pin requirement and the issue-number match (a legitimate non-blockquoted
+    cross-issue prior-figure reference in Motivation must not FAIL); when they
+    ARE raw.githubusercontent URLs they still get format well-formedness + the
+    identity ladder. Mixed SHAs across pins are fine per-pin.
+    """
+    results_sec = section_map(sections).get("## Results:")
+    results_imgs = _images_in(results_sec.content) if results_sec is not None else []
+    outside_imgs = list(_images_in(blanked_body))
+    for u in results_imgs:
+        if u in outside_imgs:
+            outside_imgs.remove(u)
+
+    format_problems: list[str] = []
+    pins: list[tuple[str, str, str]] = []  # (url, sha, repo-relative path)
+    results_issue_nums: set[str] = set()
+
+    for url in results_imgs:
+        m = _RAW_PIN_RE.match(url)
+        fig_m = _FIGURES_ISSUE_RE.match(m.group(4)) if m else None
+        if m is None or fig_m is None:
+            format_problems.append(
+                f"Results image '{url}' is not a well-formed "
+                "raw.githubusercontent.com/<owner>/<repo>/<40-hex-sha>/figures/issue_<N>/... pin"
+            )
+            continue
+        pins.append((url, m.group(3), m.group(4)))
+        results_issue_nums.add(fig_m.group(1))
+
+    if len(results_issue_nums) > 1:
+        format_problems.append(
+            "Results pins name multiple issue numbers: " + ", ".join(sorted(results_issue_nums))
+        )
+    if expect_issue is not None and results_issue_nums - {str(expect_issue)}:
+        format_problems.append(
+            f"Results pin issue number(s) {sorted(results_issue_nums)} "
+            f"!= expected issue {expect_issue}"
+        )
+
+    for url in outside_imgs:
+        if "raw.githubusercontent.com" not in url:
+            continue
+        m = _RAW_PIN_RE.match(url)
+        if m is None:
+            format_problems.append(
+                f"non-Results raw.githubusercontent image '{url}' is not a "
+                "well-formed 40-hex-SHA pin"
+            )
+            continue
+        pins.append((url, m.group(3), m.group(4)))
+
+    if format_problems:
+        fmt = CheckResult("image-pin-format", False, "; ".join(format_problems))
+    elif pins:
+        fmt = CheckResult("image-pin-format", True, f"{len(pins)} pinned image(s) well-formed")
+    else:
+        fmt = CheckResult("image-pin-format", True, "no pinned images (N/A)")
+
+    return [fmt, _check_pin_blob_identity(pins, mode=mode, figures_root=figures_root)]
+
+
 # ─── Interpretive-lexicon check (agent sections; both modes) ────────────────
 
 
@@ -567,6 +756,7 @@ def verify_report_text(
     mode: str,
     figures_root: Path,
     manifest_path: Path | None = None,
+    expect_issue: int | None = None,
 ) -> tuple[bool, list[CheckResult]]:
     """Run all checks for ``mode``; return (overall_pass, results)."""
     if mode not in ("generation", "promote"):
@@ -588,6 +778,11 @@ def verify_report_text(
     results.append(check_results_subsections(sections))
     results.append(check_image_files(blanked_body, figures_root))
     results.append(check_htmlpreview(body))
+    results.extend(
+        check_image_pins(
+            sections, blanked_body, mode=mode, figures_root=figures_root, expect_issue=expect_issue
+        )
+    )
     results.append(check_lexicon(sections))
 
     if mode == "generation":
@@ -631,7 +826,20 @@ def main(argv: list[str] | None = None) -> int:
         "--figures-root",
         help="root for resolving local image paths (default: the git-repo root of the body)",
     )
+    parser.add_argument(
+        "--expect-issue",
+        type=int,
+        help=(
+            "issue number the ## Results: image pins must name (figures/issue_<N>/). "
+            "Only meaningful with --file; with --issue the number is already known."
+        ),
+    )
     args = parser.parse_args(argv)
+
+    if args.issue is not None and args.expect_issue is not None:
+        parser.error(
+            "--issue and --expect-issue are mutually exclusive: --issue already names the issue"
+        )
 
     if args.issue is not None:
         # Resolve via the workflow library — NEVER hand-build tasks/<status>/<N>
@@ -668,8 +876,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"verify_report: --manifest not found: {args.manifest}", file=sys.stderr)
             return 2
 
+    expect = args.issue if args.issue is not None else args.expect_issue
     overall, results = verify_report_text(
-        raw, mode=args.mode, figures_root=figures_root, manifest_path=manifest_path
+        raw,
+        mode=args.mode,
+        figures_root=figures_root,
+        manifest_path=manifest_path,
+        expect_issue=expect,
     )
     print(f"verify_report — {file_path} (mode={args.mode})")
     for r in results:
