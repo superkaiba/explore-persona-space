@@ -1762,8 +1762,8 @@
     "1226": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1226",
-      "status": "running",
+      "path": "tasks/reviewing/1226",
+      "status": "reviewing",
       "title": "audit is_v2 gate recognizes the v4 sentinel"
     },
     "1227": {
