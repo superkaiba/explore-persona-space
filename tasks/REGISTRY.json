@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1232,
+  "highest_id": 1233,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1814,6 +1814,13 @@
       "path": "tasks/proposed/1232",
       "status": "proposed",
       "title": "composer-side trigger-dense pointers for Codex twins"
+    },
+    "1233": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1233",
+      "status": "proposed",
+      "title": "replace vacuous pipe-python no-flags bundling test"
     },
     "124": {
       "has_clean_result": false,
