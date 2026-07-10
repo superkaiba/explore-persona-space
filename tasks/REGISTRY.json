@@ -1720,8 +1720,8 @@
     "1220": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1220",
-      "status": "planning",
+      "path": "tasks/approved/1220",
+      "status": "approved",
       "title": "workflow-fix: trim LESSONS.md index below 8000-byte lint cap"
     },
     "123": {
