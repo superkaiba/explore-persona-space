@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1242,
+  "highest_id": 1243,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1891,6 +1891,13 @@
       "path": "tasks/proposed/1242",
       "status": "proposed",
       "title": "add SKILL-pin suites to step9c WORKFLOW_INVARIANT tuple"
+    },
+    "1243": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1243",
+      "status": "proposed",
+      "title": "Edit C certification arms to exclusive-arm shape"
     },
     "125": {
       "has_clean_result": true,
