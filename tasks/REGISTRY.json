@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1250,
+  "highest_id": 1251,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1954,6 +1954,13 @@
       "path": "tasks/proposed/1250",
       "status": "proposed",
       "title": "guard_repo_root_pull false-positives on quoted 'git pull' in"
+    },
+    "1251": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1251",
+      "status": "proposed",
+      "title": "step9c baseline oracle tolerates unrelated concurrent dirty "
     },
     "126": {
       "has_clean_result": false,
