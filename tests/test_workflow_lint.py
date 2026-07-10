@@ -2119,16 +2119,25 @@ def test_workflow_lint_check_pipe_python_cli_exits_zero():
     )
 
 
-def test_workflow_lint_pipe_python_bundled_in_no_flags():
-    """`check_pipe_python` is wired into the no-flags default run (bundled,
-    same policy as `check_heredoc_dotenv`): a bare `workflow_lint.py`
-    invocation exercises it. The committed tree is clean, so the no-flags
-    run exits 0 — and a planted offender in a tmp scripts dir would be
-    caught by the function test above; here we assert the bundling holds
-    by confirming the flag is among the no-flags checks via a clean exit."""
-    result = _run()
-    assert result.returncode == 0, (
-        f"workflow_lint (no flags) failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+def test_pipe_python_bundled_in_no_flags_source_pin():
+    """NON-VACUOUS no-flags bundling pin (#1233; the #712 §4f
+    opt-in-not-bundled shipping class): `check_pipe_python` must be
+    dispatched by the BARE ``workflow_lint.py`` run. Source-inspection
+    assert on the dispatch branch + the no_flags detection-tuple
+    membership — the prior exit-0-on-a-clean-tree assert was vacuous (a
+    clean tree exits 0 whether or not the check is dispatched) and
+    burned a redundant full no-flags subprocess run
+    (``test_workflow_lint_default_exits_zero`` keeps the behavioral
+    clean-tree cover; the planted-offender function tests above cover
+    detection)."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_pipe_python or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_pipe_python\(\)\)",
+        src,
+    ), "check_pipe_python is not dispatched on the no-flags branch"
+    assert "or args.check_pipe_python" in src, (
+        "--check-pipe-python is missing from the no_flags detection tuple"
     )
 
 
