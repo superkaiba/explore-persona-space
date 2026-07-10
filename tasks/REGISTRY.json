@@ -1881,8 +1881,8 @@
     "1241": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1241",
-      "status": "proposed",
+      "path": "tasks/planning/1241",
+      "status": "planning",
       "title": "cap existing wedge triggers at watcher override site"
     },
     "1242": {
