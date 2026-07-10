@@ -17,7 +17,9 @@
 # clean/ff merge lands branch commits on root main outside the sanctioned
 # landing path (gh pr merge / scratch worktree). A root REBASE / CHERRY-PICK
 # (#1193) is the same class — conflict state stranded in the shared tree,
-# history rewritten under concurrent committers.
+# history rewritten under concurrent committers. A root REVERT / AM (#1234)
+# completes the family — the same sequencer/conflict-stranding class, commits
+# landed on root main outside the sanctioned landing paths.
 #
 # Incident 2026-06-01: an infra session ran `git checkout -b fix/sweep-ckpt-persist`
 # in the repo root; a concurrent marker-leakage session's CLAUDE.md commit then
@@ -76,7 +78,8 @@
 # because the note text matches `git ... switch`, and a note/-m string
 # carrying a full `git restore .` / `git clean -fd` / `git reset --hard` /
 # `git merge <branch>` (#1128) / `git rebase <branch>` / `git cherry-pick
-# <sha>` (#1193) command literal trips the #897/#1128/#1193 detectors
+# <sha>` (#1193) / `git revert <sha>` / `git am <path>` (#1234) command
+# literal trips the #897/#1128/#1193/#1234 detectors
 # the same way. The workaround is to
 # pass such note text via `--file <path.md>` instead of `--note`, and commit
 # messages via `git commit -F <file>`. The `git -C <path>` per-clause waiver
@@ -316,9 +319,10 @@
 #       the tight anchors by design. (#1201) The pull lane is now fenced by
 #       its own sibling guard, scripts/guard_repo_root_pull.sh; this guard's
 #       scope is unchanged.
-# (xvii) (#1193) Rebase-family residuals: (a) `git revert` / `git am` remain
-#       ungated — the same conflict-stranding family, zero incident demand;
-#       a separate candidate if demanded. (b) The anchored PER-VERB allow-arm
+# (xvii) (#1193) Rebase-family residuals: (a) CLOSED by #1234: `git revert` /
+#       `git am` now carry their own fence arms (same tight anchor + per-verb
+#       --abort/--quit allow; see the #1234 block below). Retained for
+#       lineage. (b) The anchored PER-VERB allow-arm
 #       kills the immediate-flag spoof (pinned by tests R12/R13/CP9); the
 #       residual is the raw-scan parity class shared with the merge fence —
 #       the guard defends against accidents, not adversaries. (c) `git
@@ -336,6 +340,36 @@
 #       (xiv)'s piped-grep FP class (`grep 'git rebase ...' file | head`
 #       blocks now that the loose gates match the verbs; the non-piped grep
 #       clause stays waived — RA17).
+# (xviii) (#1234) Revert/am residuals: (a) `git am --show-current-patch`
+#       (read-only) false-blocks — strict abort/quit-only parity with
+#       #1128/#1193 keeps the five fences auditable as one family; recovery
+#       for an in-progress root am is `--abort` (pinned AM8). (b) The am
+#       allow-anchor's quoted-prose spoof ("... am --abort ..." inside a
+#       quoted arg satisfies the allow while a real `git am` runs) and the
+#       flag-chain tight-anchor FP — valid global-flag-chain + quoted-prose
+#       shapes can also match: `git --no-pager log --since "9 am today"` IS
+#       valid git and tight-matches (the flag chain consumes `log` as
+#       `--no-pager`'s value); accepted accidents-not-adversaries FP class,
+#       bounce-only failure direction, pinned by one block test — are the
+#       raw-scan parity class shared with (xvii)(b). (c) The new verbs
+#       activate gap (xiv)'s piped-grep FP class (`grep 'git am ...' f |
+#       head` blocks; the non-piped grep clause stays waived — RVA15), and
+#       `git am --help` / `git revert --help` false-block ((xvii)(c)
+#       parity); remediation `man git-am` / `man git-revert`, which stay
+#       allowed (no `git ` + space bigram). (d) The parenthesized NO-ARG
+#       `(git am)` slips the `( +|$)` anchor — the (xvii)(d) analog; unlike
+#       a bare no-upstream rebase, a bare `am` genuinely READS PATCHES FROM
+#       STDIN and runs, so only the exact no-arg-inside-parens shape slips
+#       (~nil accident probability; named, not fixed). (e) Root-am-state
+#       tension: a hook-exempt subprocess (sync_repo_root.py's internal git,
+#       cron wrappers) can still create root am state whose COMPLETION this
+#       fence blocks at the Bash surface — sync_repo_root.py's stale-am
+#       refusal names `git am --abort` as the sanctioned root resolution;
+#       FINISHING the session belongs to its owner via a `git -C <path>`-
+#       scoped `am --continue`. (f) `git apply` and `git stash pop|apply`
+#       also mutate the shared tree and remain ungated — zero incident
+#       demand; a separate candidate if demanded (the old (xvii)(a)
+#       pattern, rolled forward).
 #
 # Compound-command parsing is a best-effort CLAUSE SPLIT (#804): the command is
 # split on `;` / `&&` / `||` / `|` / `&` / raw newline (two-char separators
@@ -544,8 +578,8 @@ strip_heredoc_bodies() {
 cmd=$(strip_heredoc_bodies "$cmd")
 
 # Only consider git checkout/switch/restore/clean/reset/merge/rebase/
-# cherry-pick invocations at all (loose pre-filter — a cheap skip, not a
-# classifier; the tight per-verb anchors live in classify_clause).
+# cherry-pick/revert/am invocations at all (loose pre-filter — a cheap skip,
+# not a classifier; the tight per-verb anchors live in classify_clause).
 # `\bmerge\b` deliberately matches `merge-base` here (the boundary fires
 # before `-`) — harmless, the tight #1128 detector never fires on it; it does
 # NOT match `--rebase=merges` / `mergetool` / `--merges` / `--merged` (no
@@ -563,7 +597,24 @@ cmd=$(strip_heredoc_bodies "$cmd")
 # subcommand chain). `git log --cherry` and the plumbing command `git cherry`
 # do not match the alternation at all (the literal requires the full
 # `cherry-pick`).
-echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset|merge|rebase|cherry-pick)\b' || exit 0
+# (#1234) `\brevert\b` does NOT match the ubiquitous prose forms `reverted` /
+# `reverting` (no trailing word boundary), so commit messages / marker notes
+# carrying them never even pass the pre-filter; bare prose `revert` DOES pass
+# whenever `git` appears earlier in the command and is disposed of by the
+# tight #1234 detector (subcommand position: `git commit -m "revert foo"`
+# never matches — `commit` is a non-dash token that breaks the flag chain).
+# `\bam\b` is a common English word ("I am ...") and DOES pass this loose
+# gate under the same condition — deliberate and harmless by the same
+# argument: the tight detector requires `git [dash-flag [value]]* am`, so
+# `git commit -m "I am done"` can never reach a block; it does NOT match
+# `--amend`/`amend` (no trailing boundary after `am`), `team`/`spam`/`gram`
+# (no leading boundary), so `git commit --amend` still exits at this
+# pre-filter. Accepted fail-closed residual: a dash-flag-then-value-then-`am`
+# shape DOES match the tight anchor — a nonsense `git -m "I am here"` (`-m`
+# is not a git global flag) but ALSO valid flag-chain git like
+# `git --no-pager log --since "9 am today"` — the accepted
+# accidents-not-adversaries FP class, register (xviii)(b).
+echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset|merge|rebase|cherry-pick|revert|am)\b' || exit 0
 
 # Split the raw command into (separator, next-separator, clause) TRIPLES,
 # PRESERVING which separator precedes each clause AND (#1098) which separator
@@ -781,6 +832,40 @@ classify_clause() {
     fi
   fi
   # ---- end #1193 rebase-family fence ---------------------------------------
+
+  # ---- #1234 revert/am fence (completeness siblings of the #1193 family) --
+  # `git revert <commit>` / `git am <mbox>` on the shared root: the same
+  # conflict-stranding class — a conflicting run strands sequencer/am state
+  # + conflict markers in the shared tree (#1090 class), and a clean run
+  # lands commits on root main outside the sanctioned landing paths.
+  # `git revert -n/--no-commit` still mutates index+tree (blocked, CP5
+  # parity); bare `git revert` errors in git but blocks fail-closed at zero
+  # cost (M7/CP2 parity); bare `git am` reads patches from STDIN and
+  # genuinely runs, so end-of-clause blocks are load-bearing there.
+  # TIGHT anchor: verb followed by whitespace/end-of-clause. Prose safety:
+  # `git commit -m "revert foo"` / `-m "I am done"` never match — `commit`
+  # is a non-dash token that breaks the flag chain (see the pre-filter
+  # comment's #1234 boundary analysis). Allow-arm mirrors #1128/#1193:
+  # --abort/--quit IMMEDIATELY after the verb, ONE ARM PER VERB (a combined
+  # `(revert|am)` allow would open the R13 cross-verb quoted-arg spoof;
+  # `am`'s short allow-anchor additionally admits a quoted prose
+  # "... am --abort ..." spoof — the raw-scan accidents-not-adversaries
+  # residual, register (xviii)(b)). BLOCKED fail-closed: --continue/--skip
+  # (both COMPLETE the in-progress op on the root tree — the M5 decision,
+  # mirrored) and `am --show-current-patch` (read-only but rare; strict
+  # abort/quit-only parity keeps the allow surface auditable — register
+  # (xviii)(a); recovery for an in-progress root am is --abort).
+  if echo "$c" | grep -qE '\bgit +(-[^ ]+( +[^ ]+)?( +|$))*revert( +|$)'; then
+    if ! echo "$c" | grep -qE '\brevert +--(abort|quit)\b'; then
+      blocked="git revert (revert commit onto the shared root)"
+    fi
+  fi
+  if echo "$c" | grep -qE '\bgit +(-[^ ]+( +[^ ]+)?( +|$))*am( +|$)'; then
+    if ! echo "$c" | grep -qE '\bam +--(abort|quit)\b'; then
+      blocked="git am (mailbox patch apply onto the shared root)"
+    fi
+  fi
+  # ---- end #1234 revert/am fence --------------------------------------------
   # ---- end #897 detectors ------------------------------------------------
 
   # git checkout <existing-branch>  — NOT a pathspec form (no `--`; those are
@@ -975,12 +1060,12 @@ while IFS=$'\t' read -r sep nextsep clause; do
   # `git -C <path>` scopes ONLY this clause (per-invocation) — allow it.
   echo "$clause" | grep -qE '\bgit +-C +' && continue
 
-  # not a git checkout/switch/restore/clean/reset/merge/rebase/cherry-pick
-  # clause at all -> skip (loose gate — a cheap skip; the tight anchors live
-  # in classify_clause; kept in sync with the whole-command pre-filter above,
-  # whose comment carries the per-verb boundary analysis incl. the #1193
-  # rebase/cherry-pick notes)
-  echo "$clause" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset|merge|rebase|cherry-pick)\b' || continue
+  # not a git checkout/switch/restore/clean/reset/merge/rebase/cherry-pick/
+  # revert/am clause at all -> skip (loose gate — a cheap skip; the tight
+  # anchors live in classify_clause; kept in sync with the whole-command
+  # pre-filter above, whose comment carries the per-verb boundary analysis
+  # incl. the #1193/#1234 rebase/cherry-pick/revert/am notes)
+  echo "$clause" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset|merge|rebase|cherry-pick|revert|am)\b' || continue
 
   # (#1098) ssh REMOTE-COMMAND / grep-family PATTERN-ARGUMENT clause waiver.
   # An `ssh <host> '<remote cmd>'` clause executes its command string on the
@@ -1115,12 +1200,12 @@ done < <(split_and_label "$cmd")
 cur=$(git -C "$REPO" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
 [ "$cur" = main ] || exit 0
 
-echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree state. The repo root is the canonical commit target for scripts/task.py and every concurrent VM session (all assume HEAD==main); a branch switch here hijacks concurrent commits, and a working-tree revert (restore / checkout-pathspec / clean -f / reset --hard) silently discards CONCURRENT sessions' uncommitted edits (incidents 2026-06-01, #815, #841), and a branch MERGE here can strand conflict markers in the shared tree that a concurrent commit sweeps (#1090), and a REBASE / CHERRY-PICK here mutates root history or strands the same conflict state (#1193). Do branch/destructive work in a worktree instead:
+echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree state. The repo root is the canonical commit target for scripts/task.py and every concurrent VM session (all assume HEAD==main); a branch switch here hijacks concurrent commits, and a working-tree revert (restore / checkout-pathspec / clean -f / reset --hard) silently discards CONCURRENT sessions' uncommitted edits (incidents 2026-06-01, #815, #841), and a branch MERGE here can strand conflict markers in the shared tree that a concurrent commit sweeps (#1090), and a REBASE / CHERRY-PICK here mutates root history or strands the same conflict state (#1193), and a REVERT / AM here lands commits on root main or strands the same sequencer/conflict state (#1234). Do branch/destructive work in a worktree instead:
   bash scripts/new_worktree.sh .claude/worktrees/<name> <branch> && git -C .claude/worktrees/<name> ...
 NEVER point -C at the repo root itself for a destructive op — for repo-root recovery use: uv run python scripts/sync_repo_root.py
 This guard matches COMMAND TEXT, not cwd — a worktree-internal op after 'cd <worktree>' in a compound is still blocked; use the git -C <worktree> form instead of cd'ing (incident #1143, 2026-07-08).
 To LAND a branch onto main: gh pr merge <PR> --rebase (server-side, the /issue Step 10d path), or a scratch worktree: git worktree add --detach /tmp/<name> origin/main && git -C /tmp/<name> merge <branch> && git -C /tmp/<name> push origin HEAD:main.
-To recover an in-progress root merge/rebase/cherry-pick: git merge --abort / git rebase --abort / git cherry-pick --abort (all allowed; --quit likewise). For a worktree fast-forward: git -C <worktree> merge --ff-only main.
+To recover an in-progress root merge/rebase/cherry-pick/revert/am: git merge --abort / git rebase --abort / git cherry-pick --abort / git revert --abort / git am --abort (all allowed; --quit likewise). For a worktree fast-forward: git -C <worktree> merge --ff-only main.
 For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>.
 NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
 For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098); a multi-statement remote string mis-splits — put git -C /workspace/<repo> <verb> inside the remote string, or use a pod-side script / the SSH MCP." >&2

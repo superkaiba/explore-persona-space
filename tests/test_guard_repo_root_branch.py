@@ -14,7 +14,10 @@ recovery allowed) — the #1090 incident class where a conflicting root merge
 stranded conflict markers in the shared tree until aborted. As of #1193 it
 ALSO blocks the rebase family on the shared root (``git rebase <ref>`` /
 ``git cherry-pick <ref>``; ``--abort``/``--quit`` recovery allowed,
-``--continue``/``--skip`` fail-closed).
+``--continue``/``--skip`` fail-closed). As of #1234 it ALSO blocks
+``git revert <commit>`` / ``git am <mbox>`` on the shared root
+(``--abort``/``--quit`` recovery allowed, ``--continue``/``--skip`` and
+``am --show-current-patch`` fail-closed).
 
 These tests drive the script exactly as the harness does: stdin PreToolUse JSON
 ``{"tool_input": {"command": <cmd>}}`` -> exit 2 (blocked) or exit 0 (allowed).
@@ -1647,3 +1650,139 @@ def test_man_git_rebase_allowed():
     # man-page form is never classified — the known-limitation (xvii)(c)
     # remediation for the `git rebase --help` false-block parity.
     assert _run("man git-rebase") == 0
+
+
+# ==== #1234 — revert/am fence (completeness siblings of the #1193 family) ====
+#
+# `git revert <commit>` / `git am <mbox>` at the SHARED repo root strand
+# sequencer/am state + conflict markers in the shared tree on conflict (the
+# #1090 incident class) and land commits on root main outside the sanctioned
+# landing paths even when clean (bare `git revert` errors in git but blocks
+# fail-closed — M7/CP2 parity; bare `git am` reads patches from STDIN and
+# genuinely RUNS, so the end-of-clause shape is load-bearing there). TIGHT
+# anchor: verb followed by whitespace/end-of-clause; prose `-m "revert foo"` /
+# `-m "I am done"` never match (`commit` is a non-dash token that breaks the
+# flag chain — RVA8/RVA10). Allow-arm: `--abort`/`--quit` immediately after
+# the verb, ONE ARM PER VERB (a combined `(revert|am)` allow would open the
+# R13 cross-verb quoted-arg spoof). `--continue`/`--skip` block fail-closed
+# (both COMPLETE the in-progress op on the root tree — the M5 decision,
+# mirrored), as does the read-only `git am --show-current-patch` (strict
+# abort/quit-only parity, register (xviii)(a)). The block side is @on_main
+# (the guard's on-main gate exits 0 off-main); the allow side must pass in
+# either repo state. Block tests fire on shape alone — the detectors are pure
+# grep, never routing to the ref-resolution probes.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git revert HEAD", id="RV1-canonical_revert_head"),
+        pytest.param("git revert", id="RV2-bare_end_of_clause"),
+        pytest.param("git revert --continue", id="RV3-continue_completes_root_op"),
+        pytest.param("git revert --skip", id="RV4-skip_is_continue_class"),
+        pytest.param("git revert -n HEAD", id="RV5-no_commit_still_mutates_index"),
+        pytest.param("git revert --no-commit HEAD~2..HEAD", id="RV6-no_commit_range"),
+        pytest.param("git -c core.editor=true revert abc1", id="RV7-global_flag_prefixed"),
+        pytest.param("git revert abc1 # --abort", id="RV8-comment_tail_cannot_spoof_allow"),
+        pytest.param("git fetch origin && git revert HEAD", id="RV9-compound_fetch_then_revert"),
+        pytest.param(
+            'git revert --strategy-option "x --abort" HEAD',
+            id="RV10-quoted_abort_in_strategy_option_cannot_spoof",
+        ),
+        pytest.param("git revert -m 1 abc123", id="RV11-mainline_flag"),
+        pytest.param("git am /tmp/patch.mbox", id="AM1-canonical_mbox_apply"),
+        pytest.param("git am", id="AM2-bare_end_of_clause_reads_stdin"),
+        pytest.param("git am --continue", id="AM3-continue_completes_root_op"),
+        pytest.param("git am --skip", id="AM4-skip_is_continue_class"),
+        pytest.param("git am --3way /tmp/p.mbox", id="AM5-three_way"),
+        pytest.param("git -c core.editor=true am /tmp/p.mbox", id="AM6-global_flag_prefixed"),
+        pytest.param("git am /tmp/p.mbox # --abort", id="AM7-comment_tail_cannot_spoof_allow"),
+        pytest.param("git am --show-current-patch", id="AM8-show_current_patch_fail_closed"),
+        pytest.param(
+            "curl -s http://x/p.mbox | git am", id="AM9-piped_apply_consumer_clause_classifies"
+        ),
+    ],
+)
+def test_revert_am_shapes_block(cmd):
+    assert _run(cmd) == 2
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git revert --abort", id="RVA1-revert_abort_recovery"),
+        pytest.param("git revert --quit", id="RVA2-revert_quit_recovery"),
+        pytest.param("git am --abort", id="RVA3-am_abort_recovery"),
+        pytest.param("git am --quit", id="RVA4-am_quit_recovery"),
+        pytest.param("git -C .claude/worktrees/issue-123 revert HEAD", id="RVA5-dash_C_worktree"),
+        pytest.param("git -C /tmp/scratch am /tmp/p.mbox", id="RVA6-dash_C_scratch_am"),
+        pytest.param("cd .claude/worktrees/x && git revert HEAD", id="RVA7-cd_worktree_latch"),
+        pytest.param('git commit -m "revert foo"', id="RVA8-prose_revert_in_commit_msg"),
+        pytest.param(
+            'git commit -m "reverted the earlier change"',
+            id="RVA9-prose_reverted_suffix_prefilter_skip",
+        ),
+        pytest.param(
+            'git commit -m "I am updating the plan"', id="RVA10-prose_am_flag_chain_break"
+        ),
+        pytest.param("git commit --amend -m fix", id="RVA11-amend_prefilter_skip"),
+        pytest.param("git log --grep revert --oneline", id="RVA12-log_chain_break"),
+        pytest.param("ssh pod-779 'git revert HEAD'", id="RVA13-ssh_remote_revert_waiver"),
+        pytest.param("ssh pod-779 'git am /tmp/p.mbox'", id="RVA14-ssh_remote_am_waiver"),
+        pytest.param("grep -q 'git revert HEAD' notes.md", id="RVA15-grep_pattern_waiver"),
+        pytest.param(
+            'WT=.claude/worktrees/issue-1; cd "$WT" && git revert HEAD',
+            id="RVA16-wt_variable_latch",
+        ),
+        pytest.param(
+            "git -c revert.reference=true log --oneline", id="RVA17-config_value_position"
+        ),
+    ],
+)
+def test_revert_am_allowed_shapes_exit0(cmd):
+    assert _run(cmd) == 0
+
+
+@on_main
+@pytest.mark.parametrize(
+    "note_cmd",
+    [
+        pytest.param(
+            "uv run python scripts/task.py post-marker 1234 epm:x "
+            '--note "then git revert HEAD to undo"',
+            id="note_revert_literal",
+        ),
+        pytest.param(
+            "uv run python scripts/task.py post-marker 1234 epm:x "
+            '--note "run git am /tmp/p.mbox next"',
+            id="note_am_literal",
+        ),
+    ],
+)
+def test_note_text_revert_am_literal_trips_guard_known_limitation(note_cmd):
+    # KNOWN LIMITATION (header): a quoted FULL `git revert <sha>` /
+    # `git am <path>` command literal in --note/-m text trips the raw scan
+    # (#1234, mirror of the #1128/#1193 pins). Workaround: --file <path.md> /
+    # git commit -F <file>.
+    assert _run(note_cmd) == 2
+
+
+@on_main
+def test_flag_chain_valid_git_am_prose_trips_guard_known_limitation():
+    # KNOWN LIMITATION (register (xviii)(b), honest wording): valid
+    # global-flag-chain git with quoted prose containing a standalone `am`
+    # tight-matches — the flag chain consumes `log` as `--no-pager`'s value,
+    # leaving `am` in subcommand position. Accepted accidents-not-adversaries
+    # FP class; bounce-only failure direction (the command is read-only, so
+    # the false block costs a retry, never data).
+    assert _run('git --no-pager log --since "9 am today"') == 2
+
+
+def test_man_git_am_revert_allowed():
+    # `man git-am` / `man git-revert` pass the loose pre-filter (`\bgit\b`
+    # fires before the `-`; `\bam\b`/`\brevert\b` fire inside the hyphenated
+    # page name) but the tight anchors require a `git ` + space bigram, so
+    # the man-page forms are never classified — the (xviii)(c) remediation
+    # for the `git am --help` / `git revert --help` false-block parity.
+    assert _run("man git-am") == 0
+    assert _run("man git-revert") == 0

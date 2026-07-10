@@ -225,7 +225,7 @@ NO LONGER an allowed write target for this skill.
 
 ### Living-docs consolidation passes (folded in from /weekly, #713)
 
-Two nightly consolidation checks that used to live in `/weekly` (which is now a
+Nightly consolidation checks — the first two used to live in `/weekly` (which is now a
 manual deep-dive nothing depends on — see `.claude/skills/weekly/SKILL.md`). Both
 run every nightly `/daily`, both PROPOSE only (`docs/open_questions.md` mutations
 are user-gated — the `living_docs_update` gate is user-only), both are deduped by
@@ -355,6 +355,31 @@ self-describing per workflow-fix-on-bug.md § Markers.
 
 Future sweeps skip routed candidates mechanically — see the enumerator's
 suppression predicate (`scripts/sweep_parked_wf_candidates.py --help`).
+
+**4. Clean-result title-sync drift sweep (Step D).** Run the read-only
+corpus-wide H1-vs-frontmatter-title drift sweep (#1196) so the drift report
+surfaces nightly:
+
+```
+uv run python scripts/audit_clean_results_body_discipline.py --title-sync-sweep
+    # read-only (bodies are NOT modified); WARN-only — ALWAYS exits 0
+    # (~2 s at the current ~1,200-body corpus). A NONZERO exit is a CRASH
+    # (the sweep never FAILs by design): note it as a problem in
+    # ## Other problems & notes — never treat it as a drift signal, and
+    # never let it fail the daily run.
+```
+
+A `PASS:` headline (zero WARN rows) → nothing to record. Otherwise copy each
+`- #<N> (<status>): ...` WARN row into `## Other problems & notes` as its own
+bullet, verbatim — each row already carries both title values AND both
+remediation commands (`task.py set-title` vs re-`set-body`). Which side is
+the fresher intent is a HUMAN call: NEVER run the remediation from /daily
+(same discipline as "never `living_docs.py apply`"); Thomas or the PM runs
+the command from the note. No-spam variant: if the row set is IDENTICAL to
+the previous daily file's, replace the verbatim copies with one line —
+`- title-sync drift unchanged (<K> rows — see logs/daily/<prev-date>.md)`
+(LLM judgment against yesterday's file; no new dedup state, matching Step
+B's no-spam skip discipline).
 
 **Dedup mechanism (Step F).** A filesystem event-stream
 `.claude/cache/nightly-consolidation-events.jsonl` (a local, gitignored durable
@@ -531,14 +556,14 @@ uv run python scripts/workflow_lint.py --check-references
 - `--check-references` is the gate (it currently PASSes clean, so a new failure means a just-applied edit broke a workflow reference). Use the `uv run python …` form — the linter imports pydantic/PyYAML and needs the EPS venv; a bare `scripts/workflow_lint.py` in the cron shell will `ModuleNotFoundError`.
 <!-- example: anti-pattern -->
 - `--check-asks` is ALSO a gate (it now PASSes clean repo-wide, since the `issue/SKILL.md` mentions were annotated): a new `--check-asks` failure means a just-applied edit added an un-annotated `AskUserQuestion` mention — annotate it (`<!-- gate: <key> -->` resolving in `workflow.yaml § gates`, or `<!-- example: anti-pattern -->` for a forbidden-use / meta mention) or revert that edit, same discipline as `--check-references`.
-- **On regression** (`--check-references` was clean and is now failing): the failure is from a just-applied edit. Identify the offending commit, `git revert --no-edit <sha>` it (do not hand-edit), move that item to `## Other problems & notes` as "reverted: failed lint gate (<error>)", and re-run the gate until it is green again. Then continue to surfacing.
+- **On regression** (`--check-references` was clean and is now failing): the failure is from a just-applied edit. Identify the offending commit and revert it via a scratch worktree (the root guard blocks a repo-root `git revert`, #1234): `git worktree add --detach /tmp/daily-revert origin/main && git -C /tmp/daily-revert revert --no-edit <sha> && git -C /tmp/daily-revert push origin HEAD:main && git worktree remove /tmp/daily-revert` (do not hand-edit; route-1 fixes are committed AND pushed before this gate re-runs, so `origin/main` contains the sha). Then move that item to `## Other problems & notes` as "reverted: failed lint gate (<error>)", and re-run the gate until it is green again. Then continue to surfacing.
 
 ### Surfacing flow (applied / filed / held)
 
 During the run: route-1 fixes apply themselves (edit → `git commit`, one commit per fix → repo-wide lint gate ONCE, see "Lint gate"); route-2 behavior/logic changes are FILED via `file_infra_task.py` (no self-applied diff); route-3 judgment calls are FILED as tracked `needs-human` tasks. After all fixes are routed and the daily file is written, **surface a concise summary to Thomas's my-goat Telegram chat** by enqueuing it into the my-goat notification digest. Match the §2(f) PM-digest model (`/daily last night: applied N, filed M (→/issue), held J (needs you)`) so the Telegram line and the PM line are mutually consistent — applied (route-1), filed (route-2), and held (route-3) counts are reported SEPARATELY, never lumped as a single "Notes: M other" catch-all:
 
 ```bash
-NOTIF_CAT=research /home/thomasjiralerspong/my-goat/scripts/notif_enqueue.sh "EPS daily <date>: applied N route-1 fix(es), filed M route-2 review task(s), held J route-3 (needs you). Applied: 1) <one-liner> (<sha>). 2) <one-liner> (<sha>). Filed: <#id> <title>. Held (needs you): <#id> <held-item one-liner> (<carve-out reason>). Revert any applied with: git -C ~/explore-persona-space revert <sha>. Full: logs/daily/<date>.md"
+NOTIF_CAT=research /home/thomasjiralerspong/my-goat/scripts/notif_enqueue.sh "EPS daily <date>: applied N route-1 fix(es), filed M route-2 review task(s), held J route-3 (needs you). Applied: 1) <one-liner> (<sha>). 2) <one-liner> (<sha>). Filed: <#id> <title>. Held (needs you): <#id> <held-item one-liner> (<carve-out reason>). Revert any applied via a scratch worktree (root revert is hook-blocked, #1234): git worktree add --detach /tmp/daily-revert origin/main && git -C /tmp/daily-revert revert --no-edit <sha> && git -C /tmp/daily-revert push origin HEAD:main && git worktree remove /tmp/daily-revert. Full: logs/daily/<date>.md"
 ```
 
 This lands in the next my-goat morning digest (the dispatch cron runs 9/14/19 PT), so the overnight `23:27 PT` run is reviewed when Thomas is fresh rather than buzzing him at bedtime. Keep the message short: the three counts (applied N / filed M / held J), a one-liner + sha for each route-1 applied fix (so any applied fix is one `git revert <sha>` away), the filed `#id`s (route-2 review tasks), and the held `#id`s (route-3 needs-human tasks) with their carve-out reason, plus the daily-file path. If zero fixes were applied, zero were filed, AND zero notable problems were logged, enqueue nothing (don't send an empty digest line).
