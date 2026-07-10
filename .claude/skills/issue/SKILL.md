@@ -8925,6 +8925,16 @@ tests BEFORE anything lands:
   # checkout — see the surgical block. The verdict is PERSISTED to a file
   # because fenced bash blocks are separate shell invocations: the binding
   # sites consume the FILE, never a shell variable.
+  # earlyoom-protect the gate (#1045 recipe, #1211; FAIL-OPEN — a choom failure
+  # never blocks the gate and never touches the verdict logic): the lint legs
+  # (~4.5-6 min python each) + the mapped pytest legs match this VM's earlyoom
+  # --prefer regex (+300 badness) — the designated victim under fleet memory
+  # pressure (#1143: the first gate run died mid-lint, verdict `crash`; the
+  # choom-protected re-run passed). Self-choom the gate shell: every child
+  # forked after this line inherits adj=-600.
+  sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && LINT_GATE_CHOOM=ok \
+    || { LINT_GATE_CHOOM=failed; echo "[warn] choom failed — lint gate is earlyoom-UNPROTECTED (choom=failed)" >&2; }
+  echo "[step10d] lint-gate earlyoom protection choom=$LINT_GATE_CHOOM"
   # TRIGGER — materialize the own-diff FIRST and check the diff's OWN exit:
   # piped straight into grep, a FAILED `git diff` (bad ref, no merge-base)
   # is indistinguishable from an empty diff and would fail OPEN as an
@@ -9092,6 +9102,23 @@ tests BEFORE anything lands:
   git -C "$WT" rev-parse HEAD >> /tmp/issue-<N>-lint-verdict.txt
   cat /tmp/issue-<N>-lint-verdict.txt   # line 1: pass | block | crash | skip-artifact-only; line 2: certified branch-tip sha
   ```
+
+- **Gate earlyoom protection (#1045 recipe, #1211).** Both executable blocks
+  (the shared form (i)/(ii) block above and the form (iii) surgical block)
+  open with the SAME fail-open self-choom preamble as the Step 9c 1b/1c
+  gates — `oom_score_adj` inherits across fork/exec (probe-verified), −600
+  not −1000, FAIL-OPEN (`choom=failed` warns and the gate proceeds
+  unprotected; the preamble never blocks a gate, never alters the verdict
+  logic, and leaves the verdict-file contract byte-unchanged: line 1
+  verdict, line 2 sha). Full calibration rationale: Step 9c § "Gate
+  earlyoom protection (#1045)" — do not duplicate it here. Motivation:
+  the lint legs (~4.5-6 min python) and TG pytest legs match this VM's
+  earlyoom `--prefer` regex (#1143: first run died mid-lint as verdict
+  `crash`; the protected re-run passed). Copy the echoed
+  `[step10d] lint-gate earlyoom protection choom=...` breadcrumb line into
+  the `epm:merged` / `epm:merge-failed` note (alongside the lint/tg tails
+  those notes already record) so a crash-verdict post-mortem can tell a
+  protected kill from an unprotected one.
 
 - **Mapped invariant-test leg (#1147).** A second, trigger-gated leg of the
   SAME gate: when the payload (the own-diff / additive list) matches any
@@ -9564,6 +9591,13 @@ Decision tree:
 
   ```bash
   cd "$REPO_ROOT"
+  # earlyoom-protect the gate — form (iii) (#1045 recipe, #1211; FAIL-OPEN,
+  # see the shared gate block above): the preamble sits BEFORE the BASELINE
+  # legs (they run before the checkout); this whole gate-and-land sequence is
+  # ONE fenced invocation, so every child inherits adj=-600.
+  sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && LINT_GATE_CHOOM=ok \
+    || { LINT_GATE_CHOOM=failed; echo "[warn] choom failed — lint gate is earlyoom-UNPROTECTED (choom=failed)" >&2; }
+  echo "[step10d] lint-gate earlyoom protection choom=$LINT_GATE_CHOOM"
   # Pre-push workflow-lint gate — form (iii) (subsection above): the payload
   # lands in the ROOT tree, so BOTH lint runs use the root copy, sequenced
   # around the checkout — BASELINE BEFORE (payload-free tree; a post-checkout
