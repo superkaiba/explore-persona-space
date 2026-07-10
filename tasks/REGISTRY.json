@@ -1741,8 +1741,8 @@
     "1223": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1223",
-      "status": "approved",
+      "path": "tasks/running/1223",
+      "status": "running",
       "title": "verify_plan c20 WARN on N/A escape masking a live lattice"
     },
     "1224": {
