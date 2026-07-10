@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1226,
+  "highest_id": 1227,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1765,6 +1765,13 @@
       "path": "tasks/proposed/1226",
       "status": "proposed",
       "title": "audit is_v2 gate recognizes the v4 sentinel"
+    },
+    "1227": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1227",
+      "status": "proposed",
+      "title": "extend check 19b bare-table WARN to v4 Methodology"
     },
     "123": {
       "has_clean_result": true,
