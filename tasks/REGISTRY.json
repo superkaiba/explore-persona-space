@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1253,
+  "highest_id": 1254,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1975,6 +1975,13 @@
       "path": "tasks/proposed/1253",
       "status": "proposed",
       "title": "post-merge stale-task-folder recipe: checkout clause always "
+    },
+    "1254": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1254",
+      "status": "proposed",
+      "title": "workflow-fix: code-reviewer degenerate-statistic check (observed-vs-null reads)"
     },
     "126": {
       "has_clean_result": false,
