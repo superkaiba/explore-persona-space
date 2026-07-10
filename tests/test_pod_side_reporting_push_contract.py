@@ -39,3 +39,15 @@ def test_rule_names_both_lanes_and_the_sentinel_interplay() -> None:
     assert "NO mechanical backstop" in section
     assert "EPS_DELIVERABLES_OK_PATH" in section
     assert "finalize_failed_artifacts_ok" in section
+
+
+def test_rule_names_slurm_lane() -> None:
+    """The contract's SLURM lane bullet (#1240) lives inside the section:
+    the lane has no workload-side push at all (no git checkout on the
+    ``$SCRATCH`` rsync copy — a push attempt fails loud), so the section
+    must document the third lane rather than staying GCE/RunPod-only."""
+    text = _RULE_PATH.read_text(encoding="utf-8")
+    section = text.split("### Result-push verification contract (#1205)", 1)[1]
+    section = section.split("\n### ", 1)[0]
+    assert "**SLURM lane:**" in section
+    assert "not a git repository" in section
