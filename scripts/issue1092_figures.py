@@ -1926,19 +1926,19 @@ def step_figures(args: argparse.Namespace) -> None:  # noqa: C901
                     label=label,
                     color=paper_palette_role("primary" if off == 0 else "accent"),
                 )
-            null_p95 = [
+            null_p05 = [
                 (_first_unit(units, cell=cell) or {})
                 .get("operator_identity", {})
                 .get("random_map_pairing_null", {})
-                .get("p95")
+                .get("p05")
                 for cell in cells
             ]
             ax.scatter(
                 xs,
-                [v if isinstance(v, (int, float)) else np.nan for v in null_p95],
+                [v if isinstance(v, (int, float)) else np.nan for v in null_p05],
                 marker="x",
                 color=paper_palette_role("neutral"),
-                label="random-map null p95",
+                label="random-map null p5 (registered test)",
                 zorder=3,
             )
             ax.set_xticks(xs)

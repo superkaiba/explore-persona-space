@@ -1,6 +1,6 @@
 {
-  "commit": "1b104689cc",
-  "created": "2026-07-10T15:41:21Z",
+  "commit": "dcd1da45fe",
+  "created": "2026-07-10T17:21:22Z",
   "figsize": [
     6.5,
     4.0
@@ -104,57 +104,57 @@
     },
     {
       "x": 0.0,
-      "residual norm ratio": 1.5963242447940125,
-      "series": "random-map null p95",
+      "residual norm ratio": 1.5885745284868558,
+      "series": "random-map null p5 (registered test)",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.0,
-      "residual norm ratio": 2.1178567151638967,
-      "series": "random-map null p95",
+      "residual norm ratio": 2.101480206484386,
+      "series": "random-map null p5 (registered test)",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.0,
-      "residual norm ratio": 1.6945843720620297,
-      "series": "random-map null p95",
+      "residual norm ratio": 1.6873309633205444,
+      "series": "random-map null p5 (registered test)",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 3.0,
-      "residual norm ratio": 1.6918709469617492,
-      "series": "random-map null p95",
+      "residual norm ratio": 1.6851450996025823,
+      "series": "random-map null p5 (registered test)",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 4.0,
-      "residual norm ratio": 1.6029462770411531,
-      "series": "random-map null p95",
+      "residual norm ratio": 1.595229185207916,
+      "series": "random-map null p5 (registered test)",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 5.0,
-      "residual norm ratio": 1.64090410873538,
-      "series": "random-map null p95",
+      "residual norm ratio": 1.633096604299117,
+      "series": "random-map null p5 (registered test)",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 6.0,
-      "residual norm ratio": 3.8411703696162114,
-      "series": "random-map null p95",
+      "residual norm ratio": 3.83008687640362,
+      "series": "random-map null p5 (registered test)",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 7.0,
-      "residual norm ratio": 4.501185393323512,
-      "series": "random-map null p95",
+      "residual norm ratio": 4.487216052930563,
+      "series": "random-map null p5 (registered test)",
       "_kind": "scatter",
       "_group": 2
     }
