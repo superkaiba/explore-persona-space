@@ -1769,22 +1769,22 @@
     "1227": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1227",
-      "status": "reviewing",
+      "path": "tasks/completed/1227",
+      "status": "completed",
       "title": "extend check 19b bare-table WARN to v4 Methodology"
     },
     "1228": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1228",
-      "status": "planning",
+      "path": "tasks/running/1228",
+      "status": "running",
       "title": "gate daily driver wf-fix tags per SKILL route-2 variant"
     },
     "1229": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1229",
-      "status": "proposed",
+      "path": "tasks/planning/1229",
+      "status": "planning",
       "title": "widen scripts-import-guard scan roots to scripts/**"
     },
     "123": {
@@ -1797,15 +1797,15 @@
     "1230": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1230",
-      "status": "proposed",
+      "path": "tasks/planning/1230",
+      "status": "planning",
       "title": "code-reviewer verifies named durability-pin test ships"
     },
     "1231": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1231",
-      "status": "proposed",
+      "path": "tasks/planning/1231",
+      "status": "planning",
       "title": "issue SKILL briefs name excerpt files for guard reviews"
     },
     "1232": {
