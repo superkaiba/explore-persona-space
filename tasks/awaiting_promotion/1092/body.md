@@ -2,7 +2,8 @@
 title: Answer-state transport on real conversations runs almost entirely through the
   query-bearing context state, not the prefix persona state (HIGH confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-07T02:39:24Z'
 has_clean_result: true
 origin_prompt: 'how can we get more realistic and diverse contexts but also be able
