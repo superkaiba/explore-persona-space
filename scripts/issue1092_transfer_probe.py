@@ -1628,7 +1628,7 @@ def make_figures(  # noqa: C901
             boot = dirA["lmsys"]["bootstrap_row_cluster"]
             bars.append(
                 {
-                    "group": f"Realistic-crossed to LMSYS\n({trait_label.get(trait, trait)})",
+                    "group": f"Realistic → LMSYS\n({trait_label.get(trait, trait)})",
                     "ctx": dirA["lmsys"]["context_probe"]["pearson_r"],
                     "bare": dirA["lmsys"]["bare_probe"]["pearson_r"],
                     "ctx_ci": boot.get("ci_ctx", {}),
@@ -1646,7 +1646,7 @@ def make_figures(  # noqa: C901
             ]
             bars.append(
                 {
-                    "group": f"LMSYS to realistic-crossed\n({trait_label.get(trait, trait)})",
+                    "group": f"LMSYS → realistic\n({trait_label.get(trait, trait)})",
                     "ctx": dirB["context_states"]["pearson_r"],
                     "bare": dirB["bare_states"]["pearson_r"],
                     "ctx_ci": widest.get("ci_ctx", {}),
@@ -1654,7 +1654,7 @@ def make_figures(  # noqa: C901
                 }
             )
     if bars:
-        fig, ax = plt.subplots(figsize=(7.2, 3.6))
+        fig, ax = plt.subplots(figsize=(8.0, 3.6))
         xs = np.arange(len(bars), dtype=float)
         width = 0.36
 
