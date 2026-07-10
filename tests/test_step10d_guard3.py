@@ -10,7 +10,9 @@ The four #787 sub-fixes these tests guard:
 
 1. `.gitattributes` (NEW) — `merge=union` on the append-only task JSONL logs.
 2. Guard-1 — strip FOREIGN task folders before the merge, split by whether the
-   path exists on `origin/main` (checkout vs `git rm --cached`).
+   path exists on `origin/main` (checkout vs `git rm -f` — index AND working
+   tree, #1244; an index-only `rm --cached` self-reverts under the
+   pathspec-limited strip commit).
 3. Fast-path pre-check — a FIVE-conjunct predicate (incl. `ADDED_ONLY=yes`)
    that routes far-behind small ADDED-only workflow-fix branches straight to
    the surgical additive checkout, plus the surgical compute block's
@@ -116,10 +118,23 @@ def test_guard1_foreign_present_vs_added_split_present():
 
 
 def test_guard1_branch_added_foreign_dropped_not_checked_out():
+    """#1244: the drop must remove index AND working tree (`git rm -f`), never
+    index-only (`git rm --cached`) — Guard 1's strip commit is PATHSPEC-limited
+    and records WORKING-TREE content for the named paths (git-commit(1) --only
+    default), so an index-only deletion is committed right back and silently
+    never lands (#1210: 19 resurrected paths)."""
     text = _skill_text()
-    assert "rm --cached -f --ignore-unmatch" in text, (
-        "Guard-1 must drop branch-added foreign paths via git rm --cached -f "
-        "--ignore-unmatch (a checkout would crash with pathspec-did-not-match)"
+    region = _merge_guards_region(text)
+    assert 'git -C "$WT" rm -f --ignore-unmatch -- "${FOREIGN_BRANCH_ONLY[@]}"' in region, (
+        "Guard-1 must drop branch-added foreign paths via git rm -f "
+        "--ignore-unmatch (index AND working tree; a checkout would crash with "
+        "pathspec-did-not-match, and an index-only rm --cached self-reverts "
+        "under the pathspec-limited strip commit — #1210/#1244)"
+    )
+    assert "rm --cached" not in region, (
+        "index-only `git rm --cached` must not appear in the merge-guards "
+        "region — the pathspec-limited strip commit records working-tree "
+        "content and would resurrect the paths (#1210/#1244)"
     )
 
 
