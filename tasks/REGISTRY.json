@@ -1769,8 +1769,8 @@
     "1227": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1227",
-      "status": "running",
+      "path": "tasks/reviewing/1227",
+      "status": "reviewing",
       "title": "extend check 19b bare-table WARN to v4 Methodology"
     },
     "1228": {
