@@ -1755,8 +1755,8 @@
     "1225": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1225",
-      "status": "approved",
+      "path": "tasks/running/1225",
+      "status": "running",
       "title": "lint watcher docstring pass-count matches inventory items"
     },
     "1226": {
