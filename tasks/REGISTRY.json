@@ -1902,8 +1902,8 @@
     "1244": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1244",
-      "status": "proposed",
+      "path": "tasks/planning/1244",
+      "status": "planning",
       "title": "Guard 1 foreign-strip deletion silently resurrected"
     },
     "1245": {
