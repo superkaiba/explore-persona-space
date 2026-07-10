@@ -6924,6 +6924,85 @@ def test_v4_context_blockquote_bare_url_passes_permanence():
     assert perm.passed, perm.detail
 
 
+# ─── Check 19b on v4 bodies (`## Methodology` scan, #1227) ─────────────────
+# All assertions are per-check by name (the `_V4_GOOD_BODY` convention —
+# fake SHAs fail the existence probes, so overall PASS is not assertable).
+
+
+def test_v4_unwrapped_methodology_table_with_condition_code_warns():
+    """Check 19b (v4): a bare inline GFM table in `## Methodology`
+    carrying cell_tags-family codes (`BS_E0`, `Method A`) WARNs — those
+    codes are NOT table-blanked by the audit, so the bare table FAILs
+    the Step 9a-bis condition-code scan with no authoring nudge (#1227)."""
+    bare_table = (
+        "Per-cell breakdown (2 of N shown for illustration):\n\n"
+        "| Cell | Method | Rows |\n"
+        "|---|---|---|\n"
+        "| BS_E0 | Method A | 500 |\n"
+        "| BS_E1 | Method B | 500 |\n\n"
+    )
+    body = _V4_GOOD_BODY.replace("- **Evaluation:**", bare_table + "- **Evaluation:**")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    warn = by_name["Methodology unwrapped example table (v4)"]
+    assert warn.passed and warn.is_warn, warn.render()
+    assert "BS_E0" in warn.detail or "Method A" in warn.detail
+
+
+def test_v4_wrapped_methodology_table_does_not_warn():
+    """Check 19b (v4) stays silent on the spec-conformant wrapped form:
+    the same condition-code table inside a `<details>` block does not
+    WARN (the audit exempts wrapped v4 `## Methodology` example blocks
+    via strip_data_example_blocks, #1171)."""
+    wrapped = (
+        "<details>\n"
+        "<summary>per-cell rows (2 of N, random sample)</summary>\n\n"
+        "| Cell | Method | Rows |\n"
+        "|---|---|---|\n"
+        "| BS_E0 | Method A | 500 |\n\n"
+        "</details>\n\n"
+    )
+    body = _V4_GOOD_BODY.replace("- **Evaluation:**", wrapped + "- **Evaluation:**")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    warn = by_name["Methodology unwrapped example table (v4)"]
+    assert warn.passed and not warn.is_warn, warn.render()
+
+
+def test_v4_benign_bare_hparam_table_does_not_warn():
+    """Check 19b (v4): the spec-REQUIRED bare Training hyperparameter
+    table (Parameter/Value/Source) in the unmodified _V4_GOOD_BODY does
+    NOT WARN — legitimate hyperparameter values are not condition codes,
+    and the check must not nag every conformant v4 body."""
+    _ok, results = verify_task_body.verify_text(_V4_GOOD_BODY)
+    by_name = _results_by_name(results)
+    warn = by_name["Methodology unwrapped example table (v4)"]
+    assert warn.passed and not warn.is_warn, warn.render()
+
+
+def test_v4_unwrapped_single_column_methodology_table_warns():
+    """Check 19b (v4): single-column parity with v3 — a one-column
+    delimiter has no internal `|`, so the audit's table-blanking never
+    recognizes it and `condition_labels` fires on `| C1 |`; the WARN
+    keeps the audit sync at one column."""
+    bare_single = "Conditions (2 of 2):\n\n| Condition |\n|---|\n| C1 |\n| C2 |\n\n"
+    body = _V4_GOOD_BODY.replace("- **Evaluation:**", bare_single + "- **Evaluation:**")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    warn = by_name["Methodology unwrapped example table (v4)"]
+    assert warn.passed and warn.is_warn, warn.render()
+    assert "C1" in warn.detail
+
+
+def test_v4_check19b_emits_v4_label_only():
+    """On a v4 body check 19b emits the v4 label ONLY — no stray
+    `Data unwrapped example table (v3)` row (one CheckResult per body)."""
+    _ok, results = verify_task_body.verify_text(_V4_GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert "Methodology unwrapped example table (v4)" in by_name
+    assert "Data unwrapped example table (v3)" not in by_name
+
+
 # ─── Check 17 (v4 lineage-token sub-check, #1014) ──────────────────────────
 # All assertions are per-check by name (the `_V4_GOOD_BODY` convention —
 # fake SHAs fail the existence probes, so overall PASS is not assertable).

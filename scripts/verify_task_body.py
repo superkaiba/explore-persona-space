@@ -334,7 +334,10 @@ New v3-only checks (PASS vacuously on v2/legacy):
   example forms, not the bare table). The WARN nudges the author to wrap
   the rows BEFORE the confusing downstream audit FAIL. Scoped to cells
   that WOULD match the audit's condition-code patterns so a benign
-  composition / row-count summary table never WARNs.
+  composition / row-count summary table never WARNs. As of #1227 this
+  check ALSO fires on v4 bodies, scanning `## Methodology` (label
+  `Methodology unwrapped example table (v4)`) — the one member of this
+  group that is not v3-only.
 - **check 20** (`check_v3_word_caps`): the §4 conciseness caps —
   per-Takeaways-bullet ≤30 words (WARN), per-finding prose ≤120 WARN /
   ≥180 FAIL, figure caption ≤60 (WARN), total content prose ≤800 + 250
@@ -8390,10 +8393,11 @@ _SUBSET_DISCLOSURE_RE = re.compile(
 # the audit's condition-code scan with a spurious FAIL at /issue Step
 # 9a-bis and no signal telling the author to wrap it. Check 19b (WARN
 # only) fires at authoring time precisely when such a cell exists in an
-# unwrapped `## Data` table, nudging the author to wrap the row in
-# `<details>` or a fenced block BEFORE the confusing downstream audit
-# FAIL. Scoped to a cell that WOULD match the audit (not "any unwrapped
-# table") so a benign composition / row-count summary table never WARNs.
+# unwrapped `## Data` (v3) / `## Methodology` (v4) table, nudging the
+# author to wrap the row in `<details>` or a fenced block BEFORE the
+# confusing downstream audit FAIL. Scoped to a cell that WOULD match the
+# audit (not "any unwrapped table") so a benign composition / row-count
+# summary table never WARNs.
 _DATA_CONDITION_CODE_RE = re.compile(
     # condition_labels: C1/C2, H1/H2/H3, P1/P2/P3 (optional prime)
     r"\b[CcHhP][1-9](?:'|′)?(?:\s*(?:condition|control|completion|coefficient|"  # noqa: RUF001
@@ -8413,8 +8417,9 @@ _SINGLE_COL_DELIM_RE = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*\|?\s*$")
 
 
 def _iter_unwrapped_data_tables(data: str) -> list[str]:
-    """Return the cell text of every GFM table inside `## Data` that is
-    NOT wrapped in a `<details>` block and NOT inside a fenced code block.
+    """Return the cell text of every GFM table inside the given section
+    text (v3 `## Data` / v4 `## Methodology`) that is NOT wrapped in a
+    `<details>` block and NOT inside a fenced code block.
 
     The v3 spec carries verbatim example rows in `## Data` as fenced OR
     `<details>` table blocks; `audit_clean_results_body_discipline.py`
@@ -8474,30 +8479,66 @@ def _iter_unwrapped_data_tables(data: str) -> list[str]:
     return cells
 
 
+def _unwrapped_condition_code_hits(section: str) -> list[str]:
+    """Sorted unique `_DATA_CONDITION_CODE_RE` matches inside the bare
+    (unwrapped) GFM-table cells of `section` — the cells
+    `_iter_unwrapped_data_tables` isolates."""
+    cells = _iter_unwrapped_data_tables(section)
+    return sorted({m.group(0) for c in cells for m in _DATA_CONDITION_CODE_RE.finditer(c)})
+
+
 def check_data_unwrapped_example_table(body: str) -> CheckResult:
-    """Check 19b (v3 only, WARN): a verbatim example row placed in
-    `## Data` as a BARE inline GFM table — not wrapped in `<details>`
-    and not in a fenced code block — that carries a project-internal
-    condition / cell code (`C1`, `H2`, `BS_E0`, `Method A`, …) will trip
-    `audit_clean_results_body_discipline.py`'s condition-code scan with a
-    spurious FAIL at /issue Step 9a-bis (the audit exempts the fenced and
-    `<details>` example forms, but not the bare table). This WARN fires at
-    authoring time so the author wraps the row in `<details>` or a fenced
-    block BEFORE the confusing downstream audit FAIL.
+    """Check 19b (v3 + v4, WARN): a verbatim example row placed in the
+    generation's example-bearing section (`## Data` on v3,
+    `## Methodology` on v4) as a BARE inline GFM table — not wrapped in
+    `<details>` and not in a fenced code block — that carries a
+    project-internal condition / cell code (`C1`, `H2`, `BS_E0`,
+    `Method A`, …) can trip `audit_clean_results_body_discipline.py`'s
+    condition-code scan with a spurious FAIL at /issue Step 9a-bis: the
+    audit exempts the fenced and `<details>` example forms (in v3
+    `## Data` AND v4 `## Methodology`, #1171), but not the bare table —
+    and `cell_tags`-family codes are additionally NOT table-blanked, so
+    they FAIL in ANY bare table. This WARN fires at authoring time so
+    the author wraps the rows (or rewords a plan-internal code in a
+    hyperparameter-table cell) BEFORE the confusing downstream audit
+    FAIL.
 
     WARN only — never FAIL. Scoped to a table cell that WOULD match the
     audit's condition-code patterns (not "any unwrapped table") so a
-    benign composition / row-count summary table does not WARN. PASSes
-    vacuously on v2 / legacy bodies.
+    benign composition / row-count / hyperparameter summary table does
+    not WARN. v4 is checked BEFORE v3 (the sentinel declares the
+    governing spec — the same precedence the audit's section scoping
+    uses). PASSes vacuously on v2 / legacy bodies.
     """
+    if is_v4(body):
+        label = "Methodology unwrapped example table (v4)"
+        meth = section_text(body, "Methodology")
+        if meth is None:
+            return CheckResult(label, True, "## Methodology missing — check 2 will report")
+        hits = _unwrapped_condition_code_hits(meth)
+        if hits:
+            preview = ", ".join(f"`{h}`" for h in hits[:4]) + (" …" if len(hits) > 4 else "")
+            return CheckResult(
+                label,
+                True,
+                f"a bare inline `## Methodology` table carries condition-code cell(s) "
+                f"({preview}) — wrap the verbatim example rows in a `<details>` block or "
+                "a fenced code block (or reword a plan-internal code in a "
+                "hyperparameter-table cell — the required Training table stays bare), "
+                "else the body-discipline audit (Step 9a-bis) can FAIL on them as "
+                "project-internal condition codes",
+                is_warn=True,
+            )
+        return CheckResult(
+            label, True, "no unwrapped `## Methodology` example table with condition codes"
+        )
     label = "Data unwrapped example table (v3)"
     if not is_v3(body):
         return CheckResult(label, True, "skipped — not a v3 body")
     data = section_text(body, "Data")
     if data is None:
         return CheckResult(label, True, "## Data missing — check 2 will report")
-    cells = _iter_unwrapped_data_tables(data)
-    hits = sorted({m.group(0) for c in cells for m in _DATA_CONDITION_CODE_RE.finditer(c)})
+    hits = _unwrapped_condition_code_hits(data)
     if hits:
         preview = ", ".join(f"`{h}`" for h in hits[:4]) + (" …" if len(hits) > 4 else "")
         return CheckResult(
@@ -9747,10 +9788,10 @@ CHECKS = [
     check_mdx_safe_urls,
     check_repro_committed_claims_exist,
     check_repro_artifact_urls_exist,
-    # v3-gated checks (PASS vacuously on non-v3 bodies):
+    # v3-gated checks (PASS vacuously on non-v3 bodies; check 19b also runs on v4):
     check_data_shape,  # check 18 (v3)
     check_data_subset_disclosure,  # check 19 (v3)
-    check_data_unwrapped_example_table,  # check 19b (v3, WARN)
+    check_data_unwrapped_example_table,  # check 19b (v3 ## Data + v4 ## Methodology, WARN)
     check_v3_word_caps,  # check 20 (v3)
     # v4-gated checks (PASS vacuously on non-v4 bodies). Check 20 (v4)
     # `check_v4_word_caps` is NOT here — it needs the issue number for the
