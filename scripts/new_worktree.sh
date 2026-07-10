@@ -4,7 +4,7 @@
 # ood_eval_results/: ~3.4G of a ~3.8G checkout) and pre-includes the issue's
 # own artifact dirs so `git add eval_results/issue_<N>/...` needs no ceremony.
 #
-# Usage: scripts/new_worktree.sh <worktree-path> <branch> [--issue N] [--full]
+# Usage: scripts/new_worktree.sh <worktree-path> <branch> [--issue N] [--full] [--base-local]
 #
 #   --issue N   pre-add cones eval_results/issue_N + ood_eval_results/issue_N.
 #               When omitted, N is INFERRED from a canonical `issue-<N>` /
@@ -14,6 +14,18 @@
 #               (eval_results/issue<N>_<slug>/) stay OUT of scope — add them
 #               on demand: git -C <wt> sparse-checkout add <dir>.
 #   --full      plain full checkout (escape hatch; state the reason when used)
+#   --base-local  base the NEW branch on the main checkout's current local
+#                 HEAD (the pre-#1214 behavior) instead of fetched origin/main.
+#                 Escape hatch for offline work / deliberately branching off
+#                 unpushed local commits; state the reason when used.
+#
+# Branch base (#1214): a NEW branch is cut from freshly-fetched
+# refs/remotes/origin/main (pushed history only), NOT from the shared repo
+# root's local main — local main accretes/rewrites unpushed task-state
+# commits which otherwise get baked into the branch and trip the Step 10d
+# merge guards. Ladder: --base-local → local HEAD; no `origin` remote →
+# local HEAD + WARN; fetch failed but a prior origin/main exists → STALE
+# origin/main + WARN; fetch failed and no origin/main → FATAL (exit 5).
 #
 # Reuse: if <worktree-path> is already a registered worktree with a populated
 # tree, exits 0 untouched (the /issue resume case); a registered-but-
@@ -26,10 +38,10 @@
 # trap exists to prevent.
 set -Eeuo pipefail
 
-WT=$(realpath -m "${1:?usage: new_worktree.sh <worktree-path> <branch> [--issue N] [--full]}")
-BRANCH=${2:?usage: new_worktree.sh <worktree-path> <branch> [--issue N] [--full]}
+WT=$(realpath -m "${1:?usage: new_worktree.sh <worktree-path> <branch> [--issue N] [--full] [--base-local]}")
+BRANCH=${2:?usage: new_worktree.sh <worktree-path> <branch> [--issue N] [--full] [--base-local]}
 shift 2
-ISSUE="" FULL=0
+ISSUE="" FULL=0 BASE_LOCAL=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --issue)
@@ -41,6 +53,7 @@ while [ $# -gt 0 ]; do
       esac
       shift 2 ;;
     --full)  FULL=1; shift ;;
+    --base-local) BASE_LOCAL=1; shift ;;
     *) echo "new_worktree: unknown arg: $1" >&2; exit 2 ;;
   esac
 done
@@ -210,13 +223,59 @@ _assign_project_quota() {
 # (registered-but-directory-gone) so the reuse check below sees truth.
 git -C "$REPO_ROOT" worktree prune
 
+# Base ref for NEW branches (#1214). Step 10d merges land on origin/main; a
+# branch cut from the shared root's LOCAL main inherits its unpushed
+# task-state churn (2026-07-08: 3/6 sessions, 10-25 min forensics each; one
+# branch had 78 foreign commits baked in). Sets START_POINT (global): empty =
+# local HEAD (today's behavior); otherwise the ref passed as the start-point
+# to `worktree add -b`. Only called when the branch will actually be created
+# (the -b path); the existing-branch attach path takes no base.
+START_POINT=""
+_resolve_base() {
+  if [ "$BASE_LOCAL" = 1 ]; then
+    echo "new_worktree: --base-local — basing '$BRANCH' on the main checkout's local HEAD" >&2
+    return 0
+  fi
+  if ! git -C "$REPO_ROOT" remote get-url origin >/dev/null 2>&1; then
+    echo "new_worktree: WARN — no 'origin' remote; basing '$BRANCH' on local HEAD" >&2
+    return 0
+  fi
+  # Explicit refspec: guarantees refs/remotes/origin/main updates regardless of
+  # the remote's configured fetch refspec (a bare `fetch origin main` only
+  # updates it opportunistically). FETCH_HEAD is deliberately NOT used: it is
+  # one shared file, racy under this repo's many concurrent sessions.
+  # `timeout 60`: a hung fetch must not wedge an autonomous pipeline; timeout
+  # (rc 124) falls through to the stale-origin/main tier below.
+  if timeout 60 git -C "$REPO_ROOT" fetch --quiet origin \
+       "+refs/heads/main:refs/remotes/origin/main"; then
+    START_POINT="refs/remotes/origin/main"
+  elif git -C "$REPO_ROOT" rev-parse --verify --quiet refs/remotes/origin/main >/dev/null; then
+    echo "new_worktree: WARN — 'git fetch origin main' failed; basing '$BRANCH' on the" >&2
+    echo "new_worktree:   last-fetched (possibly STALE) origin/main — pushed history only," >&2
+    echo "new_worktree:   so the #1214 churn bug is NOT reintroduced." >&2
+    START_POINT="refs/remotes/origin/main"
+  else
+    echo "new_worktree: FATAL — fetch failed and no refs/remotes/origin/main exists;" >&2
+    echo "new_worktree:   refusing to base '$BRANCH' on local main (unpushed task-state" >&2
+    echo "new_worktree:   churn, #1214). Fix the network/remote, or pass --base-local." >&2
+    exit 5
+  fi
+  echo "new_worktree: basing '$BRANCH' on $START_POINT" \
+       "($(git -C "$REPO_ROOT" rev-parse --short "$START_POINT"))" >&2
+}
+
 # -b fails if the branch already exists (resume after worktree removal) —
 # fall back to attaching the existing branch. Preserve the FIRST attempt's
 # stderr and re-emit it if the fallback also fails (don't swallow the real
 # error).
 _add() {
   local err1
-  if ! err1=$(git -C "$REPO_ROOT" worktree add "$@" "$WT" -b "$BRANCH" 2>&1); then
+  # ${START_POINT:+...}: append the base commit-ish only when _resolve_base
+  # chose one (empty = local HEAD, today's behavior). --no-track: a branch cut
+  # from the remote-tracking ref must NOT gain origin/main as upstream (today's
+  # branches have no upstream; `git status`/`git push` semantics stay identical).
+  if ! err1=$(git -C "$REPO_ROOT" worktree add "$@" "$WT" -b "$BRANCH" --no-track \
+                ${START_POINT:+"$START_POINT"} 2>&1); then
     git -C "$REPO_ROOT" worktree add "$@" "$WT" "$BRANCH" || {
       echo "new_worktree: both add attempts failed; first attempt said:" >&2
       echo "$err1" >&2
@@ -327,6 +386,11 @@ else
   # branch above handles. Belt and suspenders.)
   CREATED_BRANCH=0
   git -C "$REPO_ROOT" rev-parse --verify "$BRANCH" >/dev/null 2>&1 || CREATED_BRANCH=1
+  # Fetch/base-resolve ONLY when a branch will actually be created: the
+  # pre-existing-branch resume takes the attach fallback (no base), and must
+  # stay network-independent. Runs BEFORE the ERR trap: a FATAL here exits
+  # with nothing created, so there is nothing to clean up.
+  if [ "$CREATED_BRANCH" = 1 ]; then _resolve_base; fi
   _cleanup_failed_create() {
     echo "new_worktree: creation FAILED — removing half-created worktree" >&2
     # $WT was realpath -m-normalized at parse time, so this remove targets
