@@ -19,7 +19,9 @@ Two v3-redesign (2026-W24) concerns are pinned here:
 
 Also pinned: the v4 `## Methodology` sample-data `<details>` exemption
 (#1171) — v4 moves the verbatim sample rows to `## Methodology`, which
-gets the identical exemption (Methodology PROSE stays scanned).
+gets the identical exemption (Methodology PROSE stays scanned) — and the
+bulk-inventory gate's acceptance of the v4 sentinel
+`<!-- clean-result-v4 -->` (#1226).
 """
 
 from __future__ import annotations
@@ -144,6 +146,20 @@ def test_is_v2_gate_accepts_v3_sentinel():
     """A v3-sentinel body must be selected for auditing in bulk mode
     (the gate name is historical; it means "current spec, audit it")."""
     body = "# Title (LOW confidence)\n\n<!-- clean-result-v3 -->\n\n## Takeaways\n\n- ok\n"
+    assert audit.is_v2(body)
+
+
+def test_is_v2_gate_accepts_v4_sentinel():
+    """A v4-sentinel body must be selected for auditing in bulk mode —
+    v4 is the CURRENT spec (2026-W26). The body below carries NO other
+    recognised marker (no v3/v2 sentinel, no ## Reproducibility /
+    ## TL;DR H2s), so pre-fix it failed every disjunct — the exact
+    #1226 coverage hole."""
+    body = (
+        "# Title (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n"
+        "## Takeaways\n\n- ok\n\n## Goal\n\nx\n\n## Methodology\n\nx\n\n"
+        "## Results\n\nx\n"
+    )
     assert audit.is_v2(body)
 
 

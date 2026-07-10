@@ -682,8 +682,11 @@ def is_v2(body: str) -> bool:
     (v3) redesign (2026-W24, sentinel `<!-- clean-result-v3 -->`),
     "current spec" now means ANY of:
 
-    - The v3 sentinel `<!-- clean-result-v3 -->` is present (the
-      current prescriptive shape: Takeaways / What I ran / Findings /
+    - The v4 sentinel `<!-- clean-result-v4 -->` is present (the
+      current prescriptive shape, four-flat-H2, migrated 2026-W26:
+      Takeaways / Goal / Methodology / Results); OR
+    - The v3 sentinel `<!-- clean-result-v3 -->` is present (prior
+      prescriptive shape: Takeaways / What I ran / Findings /
       Data / Reproducibility); OR
     - The nested-design (v2) sentinel `<!-- clean-result-v2 -->` is
       present in the body (prior prescriptive shape); OR
@@ -701,6 +704,8 @@ def is_v2(body: str) -> bool:
     NOT consult this gate. It is NOT a structural verifier —
     `scripts/verify_task_body.py` is the authoritative mechanical gate.
     """
+    if "<!-- clean-result-v4 -->" in body:
+        return True
     if "<!-- clean-result-v3 -->" in body:
         return True
     if "<!-- clean-result-v2 -->" in body:
