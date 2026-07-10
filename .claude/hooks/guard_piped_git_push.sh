@@ -211,7 +211,7 @@ EOF
   run_case "A15 empty command" 0 ''
   run_case "A16 raw-newline different units" 0 'git status | grep x
 git push origin main'
-  run_case "A17 braced Step-10d recovery, backslash-continued" 0 'git push origin main \
+  run_case "A17 braced historical Step-10d recovery shape, backslash-continued" 0 'git push origin main \
   || { git pull --rebase=merges --autostash && git push origin main; }'
   run_case "A18 heredoc-compound DOCUMENTED KNOWN MISS" 0 'git commit -m "$(cat <<EOF
 msg
