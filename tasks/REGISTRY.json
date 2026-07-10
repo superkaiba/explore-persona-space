@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1240,
+  "highest_id": 1241,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1877,6 +1877,13 @@
       "path": "tasks/proposed/1240",
       "status": "proposed",
       "title": "SLURM lane result-push verification contract leg"
+    },
+    "1241": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1241",
+      "status": "proposed",
+      "title": "cap existing wedge triggers at watcher override site"
     },
     "125": {
       "has_clean_result": true,
