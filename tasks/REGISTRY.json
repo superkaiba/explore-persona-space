@@ -1727,8 +1727,8 @@
     "1221": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1221",
-      "status": "proposed",
+      "path": "tasks/planning/1221",
+      "status": "planning",
       "title": "forward rc==0 child stderr in remaining subprocess callers"
     },
     "1222": {
