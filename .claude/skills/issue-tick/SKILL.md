@@ -231,7 +231,10 @@ watcher's prompt-wedge lane counts API-error turns —
 `isApiErrorMessage: true` assistant rows — as wedge evidence, so ≥3
 consecutive FAILED wake turns force the respawn — a wake ENDING in an
 api-error row is failed even when mid-turn heartbeats kept the
-self-report fresh (staleness no longer gates the turn-level lane);
+self-report fresh (staleness no longer gates the turn-level lane); a
+session dead after a single refused turn is stopped for fresh respawn
+on transcript silence ≥20 min (`failed-turn-silence`), the
+crash-recovery arm completing the spawn, #1209;
 `.claude/rules/background-automation.md` § (e).)
 
 ## GATE-TRANSITION branch — PushNotification

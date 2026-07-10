@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1219,
+  "highest_id": 1220,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1657,22 +1657,22 @@
     "1212": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1212",
-      "status": "running",
+      "path": "tasks/reviewing/1212",
+      "status": "reviewing",
       "title": "daily-fix: Step 10d lint gate runs origin/main lint vintage"
     },
     "1213": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1213",
-      "status": "running",
+      "path": "tasks/completed/1213",
+      "status": "completed",
       "title": "daily-fix: verify_plan warns on ckpt ladder without retentio"
     },
     "1214": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1214",
-      "status": "running",
+      "path": "tasks/completed/1214",
+      "status": "completed",
       "title": "daily-fix: new_worktree.sh branches from origin/main"
     },
     "1215": {
@@ -1706,8 +1706,8 @@
     "1219": {
       "has_clean_result": false,
       "kind": "batch",
-      "path": "tasks/proposed/1219",
-      "status": "proposed",
+      "path": "tasks/reviewing/1219",
+      "status": "reviewing",
       "title": "Fix 18 latent splitlines-shreds-JSONL sites in experiment code (from #1162 live-tree enumeration)"
     },
     "122": {
@@ -1716,6 +1716,13 @@
       "path": "tasks/archived/122",
       "status": "archived",
       "title": "No marker transfer from villain to assistant via EM -- surface [ZLT] feature destroyed by any second-stage SFT (HIGH confidence)"
+    },
+    "1220": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1220",
+      "status": "running",
+      "title": "workflow-fix: trim LESSONS.md index below 8000-byte lint cap"
     },
     "123": {
       "has_clean_result": true,

@@ -117,6 +117,11 @@ per the incident filing. The same design's retention-bounded footprint is
 Methodology lens item 16
 (`.claude/rules/critic-lens-reference.md`) REVISEs a ladder plan whose
 disk estimate assumes keeping every rung without this justification.
+Mechanical backstop: `scripts/verify_plan.py` c33 (`c33_ladder_retention`)
+WARNs an experiment|analysis plan carrying checkpoint-ladder vocabulary
+whose compute-sizing sections state no retention vocabulary (escape:
+`N/A — no per-rung checkpoint persistence`); surface-only — adequacy of a
+stated policy stays with this lens.
 
 
 **Sentinel-signaling workloads need a /workspace-contract lane — never

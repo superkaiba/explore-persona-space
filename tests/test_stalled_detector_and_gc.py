@@ -1789,6 +1789,199 @@ def test_tick_wedge_failed_turns_env_helpers(monkeypatch):
     assert asw._tick_wedge_rate_window_s() == float(asw.TICK_WEDGE_RATE_WINDOW_S)
 
 
+# ── #1209 failed-turn-silence (die-on-turn-1 dead-wake trigger) ──────────────
+
+
+def _wedge_1092_tail():
+    # Structural digest of the real #1092 incident transcript (session
+    # 8e9c371d, 39 rows): one delivery burst, ~13 plain assistant rows
+    # interleaved with tool_result rows, ONE final api-error row (the
+    # silence anchor — the verbatim _wedge_api_error_row fixture, ts
+    # 2026-07-06T21:48:37.000Z stands in for the incident's 02:54:29.726Z),
+    # then one timestamp-less trailing row (the incident's `last-prompt`
+    # row, classified "other" and excluded from the anchor scan). Sanitized
+    # structural rows only (the #1104 refusal-safety contract).
+    tail = [_wedge_dequeue_row(), _wedge_prompt_row()]
+    for _ in range(13):
+        tail.extend([_wedge_assistant_row(), _wedge_tool_result_row()])
+    tail.append(_wedge_api_error_row())
+    tail.append({"type": "last-prompt"})
+    return tail
+
+
+def _wedge_1092_anchor_ts():
+    import autonomous_session_watch as asw
+
+    ts = asw._row_ts(_wedge_api_error_row())
+    assert ts is not None
+    return ts
+
+
+def test_decide_prompt_wedge_dead_silence_fires_on_1092_replay():
+    # #1209 T1 — the incident replay: under the CURRENT classifiers this
+    # shape reads run=0, api_run=1 and exactly ONE completed turn (failed),
+    # so NO pre-#1209 trigger can ever fire; 21 min of silence past the
+    # final api-error row fires the new failed-turn-silence trigger.
+    import autonomous_session_watch as asw
+
+    tail = _wedge_1092_tail()
+    run, api_run = asw._wedge_trailing_row_runs(tail)
+    assert (run, api_run) == (0, 1)  # below every row-level threshold
+    assert [o for o, _ts in asw._segment_wake_turns(tail)] == ["failed"]
+    # Every pre-#1209 trigger at production defaults: no fire (now omitted).
+    assert asw.decide_prompt_wedge_reason(tail, 3) is None
+    t = _wedge_1092_anchor_ts()
+    assert asw.decide_prompt_wedge_reason(tail, 3, now=t + 21 * 60) == "failed-turn-silence"
+
+
+def test_decide_prompt_wedge_dead_silence_below_threshold_no_fire():
+    # #1209 T2: the same tail 10 min after death is NOT yet dead-silent
+    # (a fresh api-error younger than the threshold never escalates).
+    import autonomous_session_watch as asw
+
+    tail = _wedge_1092_tail()
+    assert asw.decide_prompt_wedge_reason(tail, 3, now=_wedge_1092_anchor_ts() + 10 * 60) is None
+
+
+def test_decide_prompt_wedge_dead_silence_prior_ok_turn_blocks():
+    # #1209 T3: an earlier ok-completed turn in the tail blocks the trigger
+    # regardless of silence — the all-completed-turns-failed condition
+    # confines it to sessions with ZERO successful history (a healthy-idle
+    # session whose last wake ended in one transient api-error never fires).
+    import autonomous_session_watch as asw
+
+    ok_turn = [_wedge_dequeue_row(), _wedge_prompt_row(), _wedge_assistant_row()]
+    failed_turn = [_wedge_dequeue_row(), _wedge_prompt_row(), _wedge_api_error_row()]
+    tail = [*ok_turn, *failed_turn]
+    assert [o for o, _ts in asw._segment_wake_turns(tail)] == ["ok", "failed"]
+    assert asw.decide_prompt_wedge_reason(tail, 3, now=_wedge_1092_anchor_ts() + 21 * 60) is None
+
+
+def test_decide_prompt_wedge_dead_silence_no_completed_turns_no_fire():
+    # #1209 T4 — the vacuous-all guard: a swallow-shaped tail (prompt
+    # evidence, ZERO completed turns) never fires the silence trigger even
+    # when dead-silent; the #779 dequeue-run trigger owns swallows.
+    import autonomous_session_watch as asw
+
+    tail = [_wedge_dequeue_row(), _wedge_dequeue_row(), _wedge_prompt_row()]
+    assert asw._segment_wake_turns(tail) == []
+    t = _wedge_1092_anchor_ts()  # dequeue fixture rows carry parseable ts
+    assert asw.decide_prompt_wedge_reason(tail, 0, now=t + 10**9) is None
+
+
+def test_decide_prompt_wedge_dead_silence_inert_without_now():
+    # #1209 T5: `now=None` (every pre-existing pure call shape) leaves the
+    # trigger inert — the bool wrapper's behavior on the incident tail is
+    # byte-identical to pre-#1209.
+    import autonomous_session_watch as asw
+
+    tail = _wedge_1092_tail()
+    assert asw.decide_prompt_wedge_reason(tail, 3) is None
+    assert asw.decide_prompt_wedge(tail, 3) is False
+
+
+def test_decide_prompt_wedge_dead_silence_zero_disables():
+    # #1209 T6: dead_silence_s=0 is the kill switch even with `now` set
+    # (the _tick_wedge_dead_silence_s 0-DISABLES convention).
+    import autonomous_session_watch as asw
+
+    tail = _wedge_1092_tail()
+    now = _wedge_1092_anchor_ts() + 10**9
+    assert asw.decide_prompt_wedge_reason(tail, 3, dead_silence_s=0, now=now) is None
+
+
+def test_decide_prompt_wedge_dead_silence_tsless_tail_no_fire():
+    # #1209 T7: a fully ts-less tail leaves the silence anchor undefined ->
+    # NO-FIRE; a future-dated anchor (clock jump: now < anchor) also fails
+    # toward NO-FIRE.
+    import autonomous_session_watch as asw
+
+    tail = _wedge_1092_tail()
+    stripped = [
+        {k: v for k, v in row.items() if k != "timestamp"} if isinstance(row, dict) else row
+        for row in tail
+    ]
+    assert asw.decide_prompt_wedge_reason(stripped, 3, now=_wedge_1092_anchor_ts() + 10**9) is None
+    # Future-dated anchor: `now` BEFORE the newest row ts (negative silence).
+    assert asw.decide_prompt_wedge_reason(tail, 3, now=_wedge_1092_anchor_ts() - 100) is None
+
+
+def test_tick_wedge_dead_silence_env_helper(monkeypatch):
+    # #1209 T8: minutes-env -> seconds; 0 DISABLES (the trigger-arm window);
+    # malformed / negative -> default.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_TICK_WEDGE_DEAD_SILENCE_MIN", raising=False)
+    assert asw._tick_wedge_dead_silence_s() == 1200.0
+    monkeypatch.setenv("EPM_TICK_WEDGE_DEAD_SILENCE_MIN", "35")
+    assert asw._tick_wedge_dead_silence_s() == 2100.0
+    monkeypatch.setenv("EPM_TICK_WEDGE_DEAD_SILENCE_MIN", "0")
+    assert asw._tick_wedge_dead_silence_s() == 0.0
+    monkeypatch.setenv("EPM_TICK_WEDGE_DEAD_SILENCE_MIN", "-5")
+    assert asw._tick_wedge_dead_silence_s() == 1200.0
+    monkeypatch.setenv("EPM_TICK_WEDGE_DEAD_SILENCE_MIN", "junk")
+    assert asw._tick_wedge_dead_silence_s() == 1200.0
+
+
+def test_tick_wedge_dead_respawns_per_day_env_helper(monkeypatch):
+    # #1209 T9: default 3; override; `<1 -> default` is THIS helper's own
+    # addition (do NOT literal-copy _orphan_max_respawns_per_day, which
+    # guards only malformed — disabling the trigger is the SILENCE knob's
+    # job, never the cap's); malformed -> default.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_TICK_WEDGE_DEAD_RESPAWNS_PER_DAY", raising=False)
+    assert asw._tick_wedge_dead_respawns_per_day() == 3
+    monkeypatch.setenv("EPM_TICK_WEDGE_DEAD_RESPAWNS_PER_DAY", "5")
+    assert asw._tick_wedge_dead_respawns_per_day() == 5
+    monkeypatch.setenv("EPM_TICK_WEDGE_DEAD_RESPAWNS_PER_DAY", "0")
+    assert asw._tick_wedge_dead_respawns_per_day() == 3
+    monkeypatch.setenv("EPM_TICK_WEDGE_DEAD_RESPAWNS_PER_DAY", "-2")
+    assert asw._tick_wedge_dead_respawns_per_day() == 3
+    monkeypatch.setenv("EPM_TICK_WEDGE_DEAD_RESPAWNS_PER_DAY", "junk")
+    assert asw._tick_wedge_dead_respawns_per_day() == 3
+
+
+def test_decide_prompt_wedge_dead_silence_armed_with_turn_knobs_zero():
+    # #1209 T16: with BOTH #1127 turn knobs at 0 but the silence trigger
+    # armed (dead_silence_s > 0 + explicit now), the predicate's turn-lane
+    # early exit must still run _segment_wake_turns and fire — pins the
+    # modified early exit in decide_prompt_wedge_reason /
+    # _wedge_turn_lane_reason (the override-side fresh-path gate is
+    # deliberately UNCHANGED and is pinned by the production-thread wiring
+    # tests).
+    import autonomous_session_watch as asw
+
+    tail = _wedge_1092_tail()
+    now = _wedge_1092_anchor_ts() + 21 * 60
+    assert (
+        asw.decide_prompt_wedge_reason(
+            tail, 0, min_api_errors=0, min_failed_turns=0, min_failed_total=0, now=now
+        )
+        == "failed-turn-silence"
+    )
+
+
+def test_decide_prompt_wedge_dead_silence_implicit_turn_residual_pinned():
+    # #1209 T17 — the ACCEPTED tail-truncation residual (plan §4.2),
+    # deliberately pinned so any future guard change fails visibly: a tail
+    # that is ONLY a leading implicit turn (response rows with the turn
+    # start cut off by the 256 KB window — here a lone api-error row)
+    # segments to one implicit FAILED turn and FIRES after the silence
+    # window. Rationale: the session's last visible turn genuinely failed
+    # and it has been silent >= 20 min, so the bounded fresh-context
+    # respawn is the accepted recovery (CLAUDE.md refusal-ladder (f));
+    # bounded by the day cap + the stop-first fence.
+    import autonomous_session_watch as asw
+
+    tail = [_wedge_api_error_row()]
+    assert [o for o, _ts in asw._segment_wake_turns(tail)] == ["failed"]
+    assert (
+        asw.decide_prompt_wedge_reason(tail, 3, now=_wedge_1092_anchor_ts() + 21 * 60)
+        == "failed-turn-silence"
+    )
+
+
 def test_decide_stale_registration_matrix():
     # #845 (d): the per-entry decision table (the #665 replay + every
     # fail-toward-keep guard).
