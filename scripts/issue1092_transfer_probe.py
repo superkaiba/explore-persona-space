@@ -63,6 +63,11 @@ from issue1092_fit_grid import (  # noqa: E402
 from scipy.stats import spearmanr  # noqa: E402
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+from explore_persona_space.orchestrate.hub import (  # noqa: E402
+    assert_hub_dir_filecounts,
+    retry_transient,
+    verify_repo_paths_uploaded,
+)
 
 torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "8")))
 
@@ -180,9 +185,16 @@ MAIN_ROOT = _main_repo_root()
 def _hub_lfs_sha_map(prefix: str, revision: str) -> dict[str, tuple[int, str | None]]:
     """{filename: (size, lfs_sha256|None)} for one hub prefix at a pinned rev."""
     out: dict[str, tuple[int, str | None]] = {}
-    for it in list_repo_tree(
-        HF_REPO, repo_type="dataset", path_in_repo=prefix, revision=revision, expand=True
-    ):
+    items = retry_transient(
+        lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: expand=True lfs-sha metadata; scoped+pinned; retry-wrapped
+            list_repo_tree(
+                HF_REPO, repo_type="dataset", path_in_repo=prefix, revision=revision, expand=True
+            )
+        ),
+        what=f"list_repo_tree {prefix}@{revision[:12]}",
+    )
+    for it in items:
         name = it.path.rsplit("/", 1)[-1]
         lfs = getattr(it, "lfs", None)
         sha = getattr(lfs, "sha256", None) if lfs is not None else None
@@ -1570,6 +1582,7 @@ def _run_direction_b_and_finish(  # noqa: C901
         suffix = "_smoke" if args.smoke else ""
         prefix = f"{PREFIX_1092}/cross_corpus_transfer{suffix}"
         api = HfApi()
+        assert_hub_dir_filecounts(companion_dir, prefix)
         api.upload_folder(
             folder_path=str(companion_dir),
             path_in_repo=prefix,
@@ -1578,13 +1591,15 @@ def _run_direction_b_and_finish(  # noqa: C901
             commit_message=f"issue1092 cross-corpus-probe-transfer companions{suffix}",
         )
         expected = {p.name for p in companion_dir.iterdir() if p.is_file()}
-        listed = {
-            it.path.rsplit("/", 1)[-1]
-            for it in list_repo_tree(HF_REPO, repo_type="dataset", path_in_repo=prefix)
-        }
-        missing = expected - listed
+        missing = verify_repo_paths_uploaded(
+            api,
+            HF_REPO,
+            sorted(f"{prefix}/{name}" for name in expected),
+            path_in_repo=prefix,
+            repo_type="dataset",
+        )
         if missing:
-            raise RuntimeError(f"upload verification FAILED: missing on hub: {sorted(missing)}")
+            raise RuntimeError(f"upload verification FAILED: missing on hub: {missing}")
         report["upload"] = {
             "status": "uploaded+verified",
             "path_in_repo": prefix,
