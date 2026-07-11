@@ -9705,7 +9705,7 @@ git -C "$WT" merge "$MAIN_SHA"          # conflicts surface HERE, in the worktre
 # snapshot's version wholesale (under fleet marker churn main is
 # authoritative for OTHER tasks' state — the #1128-proven recovery:
 # foreign tasks/ pinned to ONE captured main SHA). Materialize the
-# conflicted-path list and check its own exit code in Guard 1's `if !`
+# conflicted-path list and check its own exit code in Guard 1's `if ! ...`
 # exclusive-arm shape (#1184): a FAILED producer takes the terminal
 # echo + false arm and the work arm is STRUCTURALLY unreachable — the
 # old `|| { echo; false; }` form reported failure but let the next
@@ -9738,7 +9738,7 @@ git -C "$WT" add <each resolved file>
 git -C "$WT" commit --no-edit
 # Post-resolution certification (the #1128 verification): the branch tree
 # must now be IDENTICAL to the captured snapshot over tasks/, modulo this
-# task's own folder. ONE fused if/elif chain (Guard 1's `if !` shape,
+# task's own folder. ONE fused if/elif chain (Guard 1's `if ! ...` shape,
 # #1184/#1243): the verification diff and the residual-foreign check are
 # one logical certification — under the old `|| { echo; false; }` form a
 # FAILED diff left the verify file EMPTY (the redirect truncates before
