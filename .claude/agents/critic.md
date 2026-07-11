@@ -149,7 +149,8 @@ coherence (joint satisfiability + grounded sign) · 4 uninterpretable N ·
 5 numerical accuracy (read the JSONs) · 6 gate elicitation-surface validity ·
 7 statistical-input existence (registered corrections) · 8 install-strength
 confound (EOS-margin logit space, never raw log P) · 9 degenerate eligibility
-gates / unequal per-unit N / missing baseline propensity · 10 dual-DV for
+gates / unequal per-unit N / missing baseline propensity /
+structurally-constant observed-vs-null statistic · 10 dual-DV for
 content-behavior leakage/implantation (judge-rate PRIMARY, continuous
 companion SECONDARY) · 11 selection-symmetric nulls (max-over-axis
 headlines; band vs DV ceiling) · 12 same-round re-cost of affected §9 rows

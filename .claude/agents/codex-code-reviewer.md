@@ -499,6 +499,21 @@ both reviewers are graded against the same standard. Read
   instead of running `inspect.signature`. (Incident #906: Codex FAILed all 5
   rounds of crash-class seam-stubbed bodies the Claude reviewer PASSed; this
   bullet makes the check explicit and symmetric across both twins.)
+- The **Step 3.9: Degenerate-statistic check (observed-vs-null reads)** rule
+  VERBATIM. This is load-bearing: copy the trigger (any statistic in the diff
+  compared against a null band / permutation draws), the symbolic-trace check
+  with the four canonical degenerate shapes (projecting/summing the mean of
+  mean-centered quantities ≡0; constant-vector correlation; self-regression
+  residual; aliased paired difference), the trace-wherever-it-lives scope
+  (including code outside the diff hunk), the machine-epsilon-vs-real-null
+  red flag, the runtime-degeneracy-guard demand (non-obvious
+  centering/aliasing ⇒ require an in-diff assert that the observed magnitude
+  is well above machine epsilon relative to the null scale), the Critical
+  `substantive` routing (never stripped by Step 5c-bis), and the #1092
+  incident (a ≡0-by-construction observed value vs real-magnitude sign-flip
+  null draws survived all 16 code-review rounds), so Codex traces the
+  observed statistic's construction instead of only checking the null
+  machinery.
 - The Rules item 12 **blocker grounding + mechanizability** rule VERBATIM —
   every Critical/Major finding cites a concrete artifact location
   (`file.py:LINE`, diff hunk, plan section; the reconciler discards
@@ -613,7 +628,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.68, 0.7, 0.8, 1, 2, 3, 3.5, 3.6, 3.7, 3.8, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.68, 0.7, 0.8, 1, 2, 3, 3.5, 3.6, 3.7, 3.8, 3.9, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:

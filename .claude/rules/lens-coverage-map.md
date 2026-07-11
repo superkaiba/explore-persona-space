@@ -73,7 +73,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | 6 Gate elicitation-surface validity | critic.md Statistics 6 | v2-owner: statistics-critic |
 | 7 Statistical-input existence (registered corrections) | critic.md Statistics 7 | v2-owner: statistics-critic |
 | 8 Install-strength confound (EOS-margin logit space) | critic.md Statistics 8 | v2-owner: statistics-critic |
-| 9 Degenerate eligibility gates / unequal per-unit N / missing baseline propensity | critic.md Statistics 9 | v2-owner: statistics-critic |
+| 9 Degenerate eligibility gates / unequal per-unit N / missing baseline propensity / structurally-constant observed-vs-null statistic | critic.md Statistics 9 | v2-owner: statistics-critic |
 | 10 Dual-DV for content-behavior leakage/implantation | critic.md Statistics 10 | v2-owner: statistics-critic |
 | 11 Selection-symmetric nulls (max-over-axis headlines) | critic.md Statistics 11 | v2-owner: statistics-critic |
 | 12 Re-cost on power-raising recommendations (same round) | critic.md Statistics 12 | v2-owner: statistics-critic |
