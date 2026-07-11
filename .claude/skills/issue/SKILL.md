@@ -10264,39 +10264,94 @@ elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main \
 elif mapfile -t DUPES < <(grep -E "^tasks/[^/]+/<N>$" \
       /tmp/issue-<N>-postmerge-lstree.txt \
       | grep -v -F -x "$CANON" || true); [ "${#DUPES[@]}" -gt 0 ]; then
-  cd "$REPO_ROOT"   # stay on main; never switch the branch here
-  git rm -r "${DUPES[@]}"
-  git diff --cached --name-only   # sanity echo: only the stale folder(s) staged
-  # Pathspec-limited commit — the shared root's index may carry a concurrent
-  # session's staged files; the trailing `-- "${DUPES[@]}"` commits ONLY these.
-  git commit -m "post-merge: remove stale task #<N> folder(s) imported by Step 10d merge
+  # Remove the duplicate(s) in a SPARSE SCRATCH WORKTREE detached at the
+  # SAME fetched origin/main the detection just read — NEVER a root
+  # `git rm`. The duplicates live on origin/main but are usually ABSENT
+  # from the LOCAL root tree (local main predates the just-landed
+  # server-side merge), so a root `git rm` fails pathspec, and the
+  # improvised checkout-pathspec fallback at the root is hook-blocked
+  # every time (#1253; session 82f5b16a, /issue 1198). The scratch
+  # worktree needs no local-root state (the duplicate exists there BY
+  # CONSTRUCTION), stages in its OWN index (no concurrent-session staging
+  # races), and every command is `git -C`-scoped (the hook's designed
+  # override). Sparse cone = the duplicates only: a FULL checkout is
+  # ~7.7 GB / ~100k files on the shared VM root disk.
+  SCRATCH=/tmp/issue-<N>-postmerge-scratch
+  # Pre-clean a scratch leaked by an earlier crashed run. Failure here is
+  # tolerable (nothing to clean): the worktree add below is the loud gate.
+  git -C "$REPO_ROOT" worktree remove --force "$SCRATCH" 2>/dev/null || true
+  rm -rf "$SCRATCH"
+  git -C "$REPO_ROOT" worktree prune
+  # Stage: add (detached, no checkout) -> cone init FIRST (git 2.34:
+  # `set --cone` is silently a literal PATTERN, non-cone) -> cone = the
+  # duplicates -> populate -> rm -> commit. Flag order `--detach
+  # --no-checkout` is load-bearing for a bare copy of the add line.
+  if ! { git -C "$REPO_ROOT" worktree add --detach --no-checkout "$SCRATCH" origin/main \
+         && git -C "$SCRATCH" sparse-checkout init --cone \
+         && git -C "$SCRATCH" sparse-checkout set "${DUPES[@]}" \
+         && git -C "$SCRATCH" checkout --detach origin/main \
+         && git -C "$SCRATCH" rm -r -q "${DUPES[@]}" \
+         && git -C "$SCRATCH" commit -q -m "post-merge: remove stale task #<N> folder(s) imported by Step 10d merge
 
 $CANON is the canonical folder; the duplicate(s) were re-imported by the
 merge commit and would be read as a live task by the session watcher
-(incident #644)." -- "${DUPES[@]}"
-  # Push IMMEDIATELY — an unpushed removal lets a concurrent session's
-  # recovery pull re-import the orphan, which is exactly the failure mode.
-  # On rejection: scripts/sync_repo_root.py is the ONLY repo-root sync
-  # (single-flight flock + untracked-collision rescue + autostash recovery +
-  # push with one rebase-retry built in; a hand-rolled repo-root pull is the
-  # #967 `fatal: Cannot autostash` incident). CAUTION — the helper's own
-  # contract says exit 0 does NOT by itself mean "my push landed": exit 0
-  # includes the `in-flight` state ("another sync in flight — your push has
-  # NOT landed; re-run after the in-flight sync completes"), and an in-flight
-  # sync that started BEFORE this guard commit cannot carry it. So VERIFY
-  # landing after the helper; on a still-unlanded commit, re-run the helper
-  # ONCE (its own prescription for in-flight), then fail loud.
-  if ! git push origin main; then
-    uv run python "$REPO_ROOT/scripts/sync_repo_root.py"
-    git -C "$REPO_ROOT" fetch origin main --quiet
-    if ! git -C "$REPO_ROOT" merge-base --is-ancestor HEAD origin/main; then
-      uv run python "$REPO_ROOT/scripts/sync_repo_root.py"   # in-flight re-run
-      git -C "$REPO_ROOT" fetch origin main --quiet
-      git -C "$REPO_ROOT" merge-base --is-ancestor HEAD origin/main \
-        || { echo "post-merge guard commit NOT on origin/main after 2 sync attempts";
-             # route to the epm:merge-failed handling above (fail loud, never
-             # proceed believing the cleanup landed)
-             false; }
+(incident #644)."; }; then
+    echo "post-merge stale-task-folder guard: scratch-worktree staging FAILED — stale folder(s) NOT removed: ${DUPES[*]}"
+    git -C "$REPO_ROOT" worktree remove --force "$SCRATCH" 2>/dev/null
+    false
+  # Land: push; on rejection (origin advanced under fleet churn) ONE
+  # bounded fetch + rebase + push retry INSIDE the scratch worktree
+  # (`git -C` — never a root rebase). A concurrent removal of the same
+  # duplicate rebases to an empty commit and is dropped: the up-to-date
+  # push and the verify arm below still pass (idempotent).
+  elif ! { git -C "$SCRATCH" push origin HEAD:main \
+           || { git -C "$SCRATCH" fetch origin main --quiet \
+                && git -C "$SCRATCH" rebase origin/main \
+                && git -C "$SCRATCH" push origin HEAD:main; }; }; then
+    git -C "$SCRATCH" rebase --abort 2>/dev/null
+    echo "post-merge stale-task-folder guard: removal commit did NOT land on origin/main after 1 retry"
+    git -C "$REPO_ROOT" worktree remove --force "$SCRATCH" 2>/dev/null
+    false
+  # Verify against a FRESH fetch that origin/main now carries exactly ONE
+  # folder for this task (same materialize-then-check shape as detection).
+  elif ! git -C "$REPO_ROOT" fetch origin main --quiet; then
+    echo "post-merge stale-task-folder guard: verify fetch FAILED — cannot certify the removal landed"
+    git -C "$REPO_ROOT" worktree remove --force "$SCRATCH" 2>/dev/null
+    false
+  elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main \
+      > /tmp/issue-<N>-postmerge-verify.txt; then
+    echo "post-merge stale-task-folder guard: verify ls-tree FAILED — cannot certify the removal landed"
+    git -C "$REPO_ROOT" worktree remove --force "$SCRATCH" 2>/dev/null
+    false
+  elif mapfile -t STILL < <(grep -E "^tasks/[^/]+/<N>$" \
+        /tmp/issue-<N>-postmerge-verify.txt \
+        | grep -v -F -x "$CANON" || true); [ "${#STILL[@]}" -gt 0 ]; then
+    echo "post-merge stale-task-folder guard: stale folder(s) STILL on origin/main after push: ${STILL[*]}"
+    git -C "$REPO_ROOT" worktree remove --force "$SCRATCH" 2>/dev/null
+    false
+  else
+    git -C "$REPO_ROOT" worktree remove --force "$SCRATCH" \
+      || echo "WARN: scratch worktree cleanup failed ($SCRATCH is inert; /tmp clears on reboot and git gc prunes the metadata)"
+    # LOCAL-tree residue: a root that pulled origin/main in the window
+    # between the merge landing and the removal landing holds a tracked
+    # local copy the session watcher can misread (incident #644 reads the
+    # LOCAL tree). Converge via the sanctioned root sync. CAUTION — the
+    # helper's contract: exit 0 does NOT by itself mean the pull ran (exit
+    # 0 includes the in-flight state), so the existence RE-CHECK is the
+    # arbiter, with one in-flight re-run (the helper's own prescription),
+    # then fail loud — same 2-attempt shape as the old push-recovery tail.
+    STALE_LOCAL=$(cd "$REPO_ROOT" && ls -d "${DUPES[@]}" 2>/dev/null || true)
+    if [ -n "$STALE_LOCAL" ]; then
+      uv run python "$REPO_ROOT/scripts/sync_repo_root.py"
+      STALE_LOCAL=$(cd "$REPO_ROOT" && ls -d "${DUPES[@]}" 2>/dev/null || true)
+    fi
+    if [ -n "$STALE_LOCAL" ]; then
+      uv run python "$REPO_ROOT/scripts/sync_repo_root.py"
+      STALE_LOCAL=$(cd "$REPO_ROOT" && ls -d "${DUPES[@]}" 2>/dev/null || true)
+    fi
+    if [ -n "$STALE_LOCAL" ]; then
+      echo "post-merge stale-task-folder guard: LOCAL stale copy/copies persist after 2 root syncs: $STALE_LOCAL — origin/main is clean but the local root still carries the folder(s)"
+      false
     fi
   fi
 fi
@@ -10308,7 +10363,14 @@ empty and the block is a no-op, so re-running Step 10d on a later
 `task.py find`, `fetch`, or `ls-tree`) instead exits the block non-zero
 through a terminal echo + `false` arm — the epm:merge-failed handling —
 rather than reading as "no duplicates" (#1184; the #1047
-materialize-then-check pattern).
+materialize-then-check pattern). The work arm never touches the local
+root index — the removal is staged and pushed from a sparse scratch
+worktree detached at the fetched `origin/main`, so it succeeds whether or
+not the local root has pulled the merge (the root-`git rm` pathspec
+failure that drove the #1253 improvised, hook-blocked checkout-pathspec
+fallback). The local-residue tail converges the local root via
+`scripts/sync_repo_root.py`, with the existence re-check as the arbiter
+(the helper's exit 0 alone does not prove the pull ran).
 
 ---
 
