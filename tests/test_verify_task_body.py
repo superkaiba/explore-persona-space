@@ -10942,6 +10942,23 @@ def test_cross_issue_reuse_provenance_corrupt_json_skipped(tmp_path, monkeypatch
     assert "eval root unresolved" in res_warn.detail, res_warn.render()
 
 
+def test_cross_issue_reuse_provenance_non_utf8_json_skipped(tmp_path):
+    """(e-bis) Robustness ladder, reviewer r1 Minor: a non-UTF8 `.json`
+    <=50 MB makes `path.read_text()` raise `UnicodeDecodeError` (neither
+    `OSError` nor `json.JSONDecodeError`) — the scanner must skip the file,
+    not crash the gate → PASS (graceful skip), no exception."""
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    eval_dir.mkdir(parents=True)
+    (eval_dir / "non_utf8.json").write_bytes(
+        b'\xff\xfe{"metadata": {"args": {"hf_rev_779_x": "deadbeef"}}}'
+    )
+    res = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_UNDECLARED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert res.passed and not res.is_warn, res.render()
+    assert "graceful skip" in res.detail, res.render()
+
+
 def test_cross_issue_reuse_provenance_v3_body_vacuous_pass(tmp_path):
     """(f) Forward-only generation gate: a v3-sentinel body over a
     TRIGGERING tree → PASS "not a v4 body" (grandfathered v3/v2/legacy
