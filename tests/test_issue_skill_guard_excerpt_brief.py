@@ -28,6 +28,14 @@ def test_step5a_pre_materializes_trigger_dense_excerpts():
     assert "non-trigger-dense rounds: skip" in section.lower()
 
 
+def test_step5a_brief_carries_return_text_contract():
+    """#1252: the trigger-dense briefs carry the discipline-4 return-text line."""
+    section = _step5a_section()
+    assert "return_text:" in section
+    assert "no findings recap" in section
+    assert "discipline 4" in section
+
+
 def test_reconciler_brief_forwards_excerpt_path():
     text = SKILL_MD.read_text(encoding="utf-8")
     assert "Step 5a excerpt-file path" in text

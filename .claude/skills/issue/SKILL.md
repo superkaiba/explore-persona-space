@@ -2307,8 +2307,12 @@ trigger-dense-review.md.`
 
 The excerpt file bounds READ volume; it does not sanitize content —
 reviewers still apply discipline 1 (findings by file:line reference,
-never gated literals in generated text). Non-trigger-dense rounds: skip
-entirely — no excerpt file, no brief line.
+never gated literals in generated text). The same briefs (and any
+re-spawn brief) ALSO carry the discipline-4 return-text contract as
+one line: `return_text: verdict + marker pointer + counts only —
+no findings recap (trigger-dense-review.md discipline 4)`.
+Non-trigger-dense rounds: skip entirely — no excerpt file, neither
+brief line.
 
 Neither sees the implementer's reasoning — independence is load-bearing.
 Dispatch in a SINGLE `Agent(...)`-call message with both spawned

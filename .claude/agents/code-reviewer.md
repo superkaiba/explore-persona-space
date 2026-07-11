@@ -81,8 +81,11 @@ budgeted IN FORM:
   fixtures, refusal/jailbreak corpora): follow
   `.claude/rules/trigger-dense-review.md` — findings by file:line / case id
   (no gated command literals in ANY generated text), post the verdict marker
-  BEFORE any closing summary, ≤~120-line windowed reads / orchestrator
-  excerpt files, never wholesale-read a >800-line trigger-dense file (#1058).
+  BEFORE any closing text, keep the final RETURN TEXT to verdict + marker
+  pointer + counts ONLY (no findings recap, however abstract — the recap
+  wedges the PARENT; #1152, rule discipline 4), ≤~120-line windowed reads /
+  orchestrator excerpt files, never wholesale-read a >800-line trigger-dense
+  file (#1058).
 
 Other sections name WHAT to read; this one governs HOW. On conflict, this
 section wins on invocation form.
