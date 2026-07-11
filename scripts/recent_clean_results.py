@@ -15,20 +15,23 @@ Usage:
 number, title, hero figure (if extractable), the headline-skim block
 verbatim (bounded by ``--max-chars``), and a Confidence line — suitable
 for one-pass agent reading. The headline-skim block is ``## Takeaways``
-for v3 bodies (sentinel ``<!-- clean-result-v3 -->``, 2026-W24) and the
+for v4 bodies (sentinel ``<!-- clean-result-v4 -->``, 2026-W26) and v3
+bodies (sentinel ``<!-- clean-result-v3 -->``, 2026-W24), and the
 ``## TL;DR`` block for v2 / legacy bodies. Under the v2+ clean-result
 spec confidence lives ONLY in the H1 title tag, so the Confidence line
 is derived from the title when no body ``Confidence:`` sentence exists.
 ``--format json`` emits the hydrated experiment payloads (body included)
 for downstream tools.
 
-**Exemplar feed (forward-only):** when v3 bodies exist among the
-promoted set, the inline feed PREFERS them so the analyzer's few-shot
-exemplars track the current shape — without this preference the feed
-stays all-v2 and drifts new drafts back toward the retired nested-TL;DR
-register (a real regression vector). ``--prefer-shape`` controls this
-(default ``v3``); pass ``--prefer-shape any`` for the pre-cutover
-recency-only behavior.
+**Exemplar feed (forward-only):** the inline feed PREFERS bodies of the
+CURRENT shape so the analyzer's few-shot exemplars track it — without
+this preference the feed drifts new drafts back toward a retired
+register (a real regression vector). ``--prefer-shape`` controls this:
+``v4`` (default) front-loads v4-sentinel bodies, back-fills v3 (the
+closest register — same ``## Takeaways`` headline skim), then the rest
+(v2 / legacy / promoted paper-task stubs); ``v3`` keeps the pre-v4
+preference verbatim (v3 first, then all non-v3); ``any`` is the
+pre-cutover recency-only behavior.
 
 Implementation: reads the file-based task workflow through the
 :mod:`task_state` shim (``scripts/task_state.py`` → ``task_workflow``).
@@ -52,19 +55,34 @@ import task_state as sagan_state
 DEFAULT_N = 3
 DEFAULT_MAX_CHARS = 4000
 
-# Markdown bodies. Three generations coexist (forward-only):
-#   * v3 (current, sentinel `<!-- clean-result-v3 -->`, 2026-W24): five
-#     flat H2s; the headline-skim block is `## Takeaways` (3-6 bullets,
-#     numbers-first); confidence ONLY in the H1 title tag.
+# Markdown bodies. Four generations coexist (forward-only):
+#   * v4 (current, sentinel `<!-- clean-result-v4 -->`, 2026-W26): four
+#     flat H2s (Takeaways / Goal / Methodology / Results); the
+#     headline-skim block is `## Takeaways` (3-6 bullets, numbers-first);
+#     confidence ONLY in the H1 title tag.
+#   * v3 (sentinel `<!-- clean-result-v3 -->`, 2026-W24): five flat H2s;
+#     the headline-skim block is `## Takeaways`; confidence ONLY in the
+#     H1 title tag.
 #   * v2 (sentinel `<!-- clean-result-v2 -->`, 2026-W22, task #454):
 #     `## TL;DR` → ### Motivation / ### What I ran / ### Findings (+ ####
 #     per result); confidence ONLY in the H1 title tag.
 #   * Legacy (pre-2026-05-13): ### Background / ### Results inside TL;DR +
 #     a body `**Confidence: X** — ...` sentence.
-# v2/legacy share the `## TL;DR` H2; v3 uses `## Takeaways`. The `^##\s`
-# lookahead does not match H3/H4, so nested subsections stay inside the
-# captured block.
+# v2/legacy share the `## TL;DR` H2; v3 AND v4 use `## Takeaways` (one
+# RE_MD_TAKEAWAYS serves both — its `(?=^##\s+|\Z)` lookahead bounds the
+# block at the next H2: `## Goal` for v4, `## What I ran` for v3). The
+# `^##\s` lookahead does not match H3/H4, so nested subsections stay
+# inside the captured block.
+# Adding a future generation (v5): add its sentinel constant + `is_v5_body`
+# predicate here, route it in `_extract_markdown`, and give it the top
+# tier in `fetch_promoted` (+ the argparse choice/default in
+# `_build_parser`). Sentinel detection is a substring check (mirrors the
+# original `is_v3_body`): a body merely QUOTING a sentinel string in
+# prose classifies as that shape — acceptable because promoted
+# clean-results don't quote sentinels in practice, and mis-tiering only
+# reorders the feed.
 SENTINEL_V3 = "<!-- clean-result-v3 -->"
+SENTINEL_V4 = "<!-- clean-result-v4 -->"
 RE_MD_TLDR = re.compile(r"(?ms)^##\s+TL;DR\s*$(?P<body>.+?)(?=^##\s+|\Z)")
 RE_MD_TAKEAWAYS = re.compile(r"(?ms)^##\s+Takeaways\s*$(?P<body>.+?)(?=^##\s+|\Z)")
 # Image target may be an absolute URL or a repo-relative figures/ path.
@@ -88,6 +106,11 @@ RE_HTML_CONFIDENCE = re.compile(
 def is_v3_body(body: str) -> bool:
     """True when the body carries the v3 clean-result sentinel."""
     return SENTINEL_V3 in body
+
+
+def is_v4_body(body: str) -> bool:
+    """True when the body carries the v4 clean-result sentinel."""
+    return SENTINEL_V4 in body
 
 
 # A `paper: true` task's body is a thin paper-stub (H1 + abstract + paper link);
@@ -147,7 +170,7 @@ def _extract_paper_stub(body: str, title: str) -> tuple[str, str, str, str]:
     return skim, hero, conf_label, ""
 
 
-def fetch_promoted(n: int, prefer_shape: str = "v3") -> list[dict[str, Any]]:
+def fetch_promoted(n: int, prefer_shape: str = "v4") -> list[dict[str, Any]]:
     """Return up to N most-recently-promoted clean-result experiment dicts.
 
     ``list_by_status`` rows are registry-style (no ``body``, no
@@ -157,21 +180,46 @@ def fetch_promoted(n: int, prefer_shape: str = "v3") -> list[dict[str, Any]]:
     hydration step the extractors ran on empty strings and inline mode
     printed only titles + a degenerate "Confidence: ? —" line (#608).
 
-    ``prefer_shape='v3'`` (default) front-loads v3-sentinel bodies so the
-    analyzer's few-shot exemplar feed tracks the current shape: the N most
-    recent v3 bodies first (recency order), back-filled with the most
-    recent non-v3 bodies only if fewer than N v3 bodies exist. Each
-    sub-list keeps its own recency order. ``prefer_shape='any'`` restores
-    the pre-cutover behavior (pure recency, no shape weighting).
+    ``prefer_shape='v4'`` (default) front-loads v4-sentinel bodies so the
+    analyzer's few-shot exemplar feed tracks the current shape, back-fills
+    with v3-sentinel bodies (the closest register — same ``## Takeaways``
+    headline skim), then everything else (v2 / legacy / promoted
+    paper-task stubs — stubs carry no markdown sentinel, so they rank in
+    the "rest" tier by design, not oversight). Each tier keeps its own
+    recency order. ``prefer_shape='v3'`` keeps the pre-v4 preference
+    verbatim: v3 bodies first, then all non-v3 (a v4 body ranks
+    non-preferred there). ``prefer_shape='any'`` restores the pre-cutover
+    behavior (pure recency, no shape weighting).
     """
-    completed = sagan_state.list_by_status(status="completed", limit=200)
+    # The limit must cover the WHOLE completed store: list_by_status
+    # iterates task folders ASCENDING by id and truncates at `limit`, so a
+    # small limit silently returns only the OLDEST tasks. At limit=200 the
+    # feed saw only #13..#572 and dropped every recent promotion (757
+    # completed as of 2026-07-11; growth ~10/day gives years of headroom
+    # at 10_000).
+    completed = sagan_state.list_by_status(status="completed", limit=10_000)
     promoted = [
         sagan_state.get_experiment(e["number"])["experiment"]
         for e in completed
         if e.get("hasCleanResult")
     ]
     promoted.sort(key=lambda e: e.get("updatedAt") or e.get("createdAt") or "", reverse=True)
-    if prefer_shape == "v3":
+    if prefer_shape == "v4":
+        # Exclusive partition (elif-chain) — a row lands in exactly one
+        # tier, so the concatenation cannot duplicate an experiment.
+        v4: list[dict[str, Any]] = []
+        v3: list[dict[str, Any]] = []
+        rest: list[dict[str, Any]] = []
+        for e in promoted:
+            body = e.get("body") or ""
+            if is_v4_body(body):
+                v4.append(e)
+            elif is_v3_body(body):
+                v3.append(e)
+            else:
+                rest.append(e)
+        promoted = v4 + v3 + rest
+    elif prefer_shape == "v3":
         v3 = [e for e in promoted if is_v3_body(e.get("body") or "")]
         non_v3 = [e for e in promoted if not is_v3_body(e.get("body") or "")]
         promoted = v3 + non_v3
@@ -199,19 +247,28 @@ def _extract_html(body: str) -> tuple[str, str, str, str]:
 def _extract_markdown(body: str, title: str) -> tuple[str, str, str, str]:
     """Return (skim_block, hero_url, confidence_label, confidence_text).
 
-    The skim block is ``## Takeaways`` for v3 bodies and ``## TL;DR`` for
-    v2 / legacy bodies. Handles v3 (sentinel ``<!-- clean-result-v3 -->``;
-    confidence ONLY in the H1 title tag), v2 (``## TL;DR`` → ### Motivation
-    / ### What I ran / ### Findings; confidence ONLY in the title tag), and
-    legacy bodies (### Background / ### Results + a body
-    ``**Confidence: X** — ...`` sentence). The body sentence wins when
-    present (legacy); otherwise confidence comes from the title tag.
+    The skim block is ``## Takeaways`` for v4 and v3 bodies and ``## TL;DR``
+    for v2 / legacy bodies. Handles v4 (sentinel ``<!-- clean-result-v4 -->``;
+    Takeaways / Goal / Methodology / Results; confidence ONLY in the H1
+    title tag), v3 (sentinel ``<!-- clean-result-v3 -->``; confidence ONLY
+    in the title tag), v2 (``## TL;DR`` → ### Motivation / ### What I ran /
+    ### Findings; confidence ONLY in the title tag), and legacy bodies
+    (### Background / ### Results + a body ``**Confidence: X** — ...``
+    sentence). The body sentence wins when present (legacy); a conforming
+    v4/v3/v2 body has no such sentence, so confidence comes from the title
+    tag there.
 
-    The v3 hero is searched whole-body — the ``## Takeaways`` block is
-    figure-free by spec (figures live under ``## Findings``), so the first
-    inline image in ``## Findings`` is the hero.
+    The v4/v3 hero is searched whole-body — the ``## Takeaways`` block is
+    figure-free by spec (figures live under ``## Results`` for v4,
+    ``## Findings`` for v3), so the first inline image there is the hero
+    (the v4 top-of-body ``**Methodology:** [..](..)`` pointer is a plain
+    link, not an image, so it cannot false-match).
     """
-    skim_m = RE_MD_TAKEAWAYS.search(body) if is_v3_body(body) else RE_MD_TLDR.search(body)
+    skim_m = (
+        RE_MD_TAKEAWAYS.search(body)
+        if (is_v4_body(body) or is_v3_body(body))
+        else RE_MD_TLDR.search(body)
+    )
     tldr = skim_m.group("body").strip() if skim_m else body.strip()
 
     hero_m = RE_MD_HERO.search(tldr) or RE_MD_HERO.search(body)
@@ -252,9 +309,10 @@ def render_inline(experiments: list[dict[str, Any]], max_chars: int = DEFAULT_MA
                 tldr = tldr[: max_chars - 3] + "..."
             summary = f"Abstract (paper-task — see docs/papers/issue_{number}/): {tldr}"
         else:
-            # Markdown (v3 + v2 + legacy): print the headline-skim block
-            # verbatim (`## Takeaways` for v3, `## TL;DR` for v2/legacy) so
-            # the analyzer sees real structure, bounded by --max-chars.
+            # Markdown (v4 + v3 + v2 + legacy): print the headline-skim
+            # block verbatim (`## Takeaways` for v4/v3, `## TL;DR` for
+            # v2/legacy) so the analyzer sees real structure, bounded by
+            # --max-chars.
             tldr, hero, conf_label, conf_text = _extract_markdown(body, title)
             if len(tldr) > max_chars:
                 tldr = tldr[: max_chars - 3] + "..."
@@ -274,7 +332,8 @@ def render_inline(experiments: list[dict[str, Any]], max_chars: int = DEFAULT_MA
     return "\n".join(out).rstrip() + "\n"
 
 
-def main(argv: list[str] | None = None) -> int:
+def _build_parser() -> argparse.ArgumentParser:
+    """Build the CLI parser (factored out so tests can assert defaults)."""
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else "")
     p.add_argument(
         "--n",
@@ -299,15 +358,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument(
         "--prefer-shape",
-        choices=("v3", "any"),
-        default="v3",
+        choices=("v4", "v3", "any"),
+        default="v4",
         help=(
-            "exemplar shape preference: 'v3' (default) front-loads "
-            "v3-sentinel bodies so the analyzer's few-shot exemplars track "
-            "the current shape; 'any' is pure recency (pre-cutover behavior)"
+            "exemplar shape preference: 'v4' (default) front-loads "
+            "v4-sentinel bodies so the analyzer's few-shot exemplars track "
+            "the current shape, back-fills v3, then the rest; 'v3' is the "
+            "pre-v4 preference (v3 first, then all non-v3); 'any' is pure "
+            "recency (pre-cutover behavior)"
         ),
     )
-    args = p.parse_args(argv)
+    return p
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _build_parser().parse_args(argv)
 
     experiments = fetch_promoted(args.n, prefer_shape=args.prefer_shape)
     if not experiments:
