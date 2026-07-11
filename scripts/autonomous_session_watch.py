@@ -18415,7 +18415,9 @@ def _boot_death_stderr_excerpt(rows: list[dict], cap: int = 200) -> str | None:
     bounded to ``cap`` chars — the live-captured boot-death transcripts carry
     the skill-load failure there (`<local-command-stderr>Error: Shell command
     failed...`). Returns ``None`` when no such fragment exists. Pure
-    string-scanning, never raises on the dict shapes ``rows`` can hold."""
+    string-scanning, never raises on the dict shapes ``rows`` can hold —
+    a text block whose ``"text"`` value is present but non-str (``null``,
+    an int) is skipped as carrying no diagnostic text."""
     tag = "<local-command-stderr>"
     for row in rows:
         if _classify_wedge_row(row) != "prompt":
@@ -18427,9 +18429,11 @@ def _boot_death_stderr_excerpt(rows: list[dict], cap: int = 200) -> str | None:
             texts.append(content)
         elif isinstance(content, list):
             texts.extend(
-                b.get("text", "")
+                b["text"]
                 for b in content
-                if isinstance(b, dict) and b.get("type") == "text"
+                if isinstance(b, dict)
+                and b.get("type") == "text"
+                and isinstance(b.get("text"), str)
             )
         for text in texts:
             idx = text.find(tag)

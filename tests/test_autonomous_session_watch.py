@@ -16582,6 +16582,29 @@ def test_boot_death_stderr_excerpt_bounded():
         {"type": "user", "message": {"content": "<local-command-stderr>" + "x" * 500}},
     ]
     assert len(asw._boot_death_stderr_excerpt(long_rows)) == 200
+    # A PRESENT-but-non-str "text" value (null / int) still classifies as a
+    # prompt row but carries no diagnostic text: the helper must skip it
+    # WITHOUT raising (the docstring's never-raises claim; review concern
+    # boot-death-stderr-excerpt-nonstr-text-raise). Pre-fix this shape
+    # raised AttributeError on text.find().
+    nonstr_rows = [
+        {"type": "user", "message": {"content": [{"type": "text", "text": None}]}},
+        {"type": "user", "message": {"content": [{"type": "text", "text": 42}]}},
+    ]
+    assert asw._boot_death_stderr_excerpt(nonstr_rows) is None
+    # A non-str block alongside a real diagnostic block: the str block wins.
+    mixed_rows = [
+        {
+            "type": "user",
+            "message": {
+                "content": [
+                    {"type": "text", "text": None},
+                    {"type": "text", "text": "<local-command-stderr>Error: boom"},
+                ]
+            },
+        },
+    ]
+    assert asw._boot_death_stderr_excerpt(mixed_rows) == "<local-command-stderr>Error: boom"
 
 
 def test_boot_death_pass_stops_and_posts_marker(isolated_registry, monkeypatch):
