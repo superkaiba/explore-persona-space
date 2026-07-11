@@ -2056,8 +2056,8 @@
     "1264": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1264",
-      "status": "planning",
+      "path": "tasks/approved/1264",
+      "status": "approved",
       "title": "daily-fix: c26-c30 escape phrases + generative sync test"
     },
     "1265": {
