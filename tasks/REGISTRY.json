@@ -1972,8 +1972,8 @@
     "1253": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1253",
-      "status": "proposed",
+      "path": "tasks/planning/1253",
+      "status": "planning",
       "title": "post-merge stale-task-folder recipe: checkout clause always "
     },
     "1254": {
