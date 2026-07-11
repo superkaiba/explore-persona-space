@@ -169,7 +169,7 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    recipe — match the paper's data + recipe FIRST, change ONLY the one
    deliberately tested variable, name forced deviations in §12 Assumptions.
    Not a replication Goal → write "N/A — not a replication" in §1 Goal or
-   §12 Assumptions and move on. (Relocated verbatim from this spec, #829.)
+   §12 Assumptions as a standalone line and move on. (Relocated verbatim from this spec, #829.)
 
 ## Plan Format
 

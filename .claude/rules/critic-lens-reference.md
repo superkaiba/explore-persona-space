@@ -83,7 +83,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    that is explicitly named in §12 Assumptions as forced by a project constraint (judge model, GPU
    budget, model size) AND carried as a scope caveat — the plan owns the deviation, you accept it;
    (b) a Goal that is not a replication (the plan should write "N/A — not a replication" in §1 or
-   §12 and you accept that). Cross-check: a faithful positive-only replication is the named
+   §12 as a standalone line and you accept that). Cross-check: a faithful positive-only replication is the named
    contrastive-negatives exemption (b) above — do not double-bounce on item 6 for the same plan.
 8. **Few-shot / ICL demonstration content (any plan with in-context-example demos).** If the plan's
    §4 Design includes a fixed bank of in-context-example / few-shot / ICL demonstrations
