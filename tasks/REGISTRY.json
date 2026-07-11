@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1267,
+  "highest_id": 1268,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2080,6 +2080,13 @@
       "path": "tasks/proposed/1267",
       "status": "proposed",
       "title": "daily-fix: watcher lane for zero-assistant-row boot deaths"
+    },
+    "1268": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1268",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d repin/guard snippet hardening bundle"
     },
     "127": {
       "has_clean_result": false,
