@@ -2084,8 +2084,8 @@
     "1268": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1268",
-      "status": "proposed",
+      "path": "tasks/planning/1268",
+      "status": "planning",
       "title": "daily-fix: Step 10d repin/guard snippet hardening bundle"
     },
     "1269": {
