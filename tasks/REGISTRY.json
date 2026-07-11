@@ -2070,8 +2070,8 @@
     "1266": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1266",
-      "status": "approved",
+      "path": "tasks/running/1266",
+      "status": "running",
       "title": "daily-fix: lint check for bang-backtick in skill markdown"
     },
     "1267": {
