@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1265,
+  "highest_id": 1266,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2066,6 +2066,13 @@
       "path": "tasks/proposed/1265",
       "status": "proposed",
       "title": "daily-fix: conftest autouse hermeticity guard, watcher tests"
+    },
+    "1266": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1266",
+      "status": "proposed",
+      "title": "daily-fix: lint check for bang-backtick in skill markdown"
     },
     "127": {
       "has_clean_result": false,
