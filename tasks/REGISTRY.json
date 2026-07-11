@@ -2105,8 +2105,8 @@
     "1270": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1270",
-      "status": "approved",
+      "path": "tasks/running/1270",
+      "status": "running",
       "title": "daily-fix: planner-output extraction tolerates trailing rows"
     },
     "1271": {
