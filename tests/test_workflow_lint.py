@@ -70,6 +70,7 @@ from workflow_lint import (  # noqa: E402
     check_push_failure_swallow,
     check_script_references,
     check_section_reference_pointer_coverage,
+    check_skill_bang_backtick,
     check_skill_references,
     check_smoke_architecture_review_lens,
     check_smoke_output_hygiene,
@@ -6255,4 +6256,152 @@ def test_workflow_lint_check_git_recipes_root_guard_cli_exits_zero():
     assert result.returncode == 0, (
         f"workflow_lint --check-git-recipes-root-guard failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_skill_bang_backtick`` (incident class #1243/#1266:
+# a bang directly against a backtick in preprocessor-loaded skill markdown
+# makes Claude Code execute the following text as inline shell AT SKILL LOAD
+# — commit 90af0ce2d9 introduced two such prose spans in
+# .claude/skills/issue/SKILL.md and every /issue session boot died until
+# hotfix f75e1b4c13 reworded them). Fixtures build the hazardous adjacency
+# at RUNTIME (concatenation with chr(96)) so this test file never contains
+# it in source — the live-tree invariant below scans this repo's own
+# .claude/ markdown, and the check has no waiver by design.
+# ---------------------------------------------------------------------------
+
+_TICK = chr(96)  # backtick — never written literally next to a bang here
+_BANG_TICK = "!" + _TICK
+
+
+def _write_bang_md(root: Path, rel: str, text: str) -> Path:
+    """Write a fixture markdown file under ``root/rel``, creating parents."""
+    path = root / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_check_skill_bang_backtick_fail_incident_prose_span(tmp_path):
+    """The verbatim 90af0ce2d9 incident line shape — a code span whose
+    content ends in a bang against the CLOSING backtick — is flagged with a
+    path:lineno-prefixed error (and the offending line is never echoed)."""
+    line = (
+        "the guard exits nonzero ("
+        + _TICK
+        + "grep -q pattern file"
+        + _BANG_TICK
+        + ") before dispatch"
+    )
+    _write_bang_md(tmp_path, "skills/issue/SKILL.md", "# heading\n\n" + line + "\n")
+    errors = check_skill_bang_backtick(claude_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "SKILL.md:3" in errors[0]
+    assert "grep -q pattern" not in errors[0], "error string must not echo the line"
+
+
+def test_check_skill_bang_backtick_fail_inside_fenced_block(tmp_path):
+    """No fenced-block exemption: the same adjacency inside a fenced bash
+    block is flagged (the preprocessor is not verified to ignore fences)."""
+    fence = _TICK * 3
+    body = (
+        "# doc\n\n"
+        + fence
+        + "bash\n"
+        + "echo start "
+        + _BANG_TICK
+        + "whoami"
+        + _TICK
+        + " end\n"
+        + fence
+        + "\n"
+    )
+    _write_bang_md(tmp_path, "skills/s/SKILL.md", body)
+    errors = check_skill_bang_backtick(claude_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "SKILL.md:4" in errors[0]
+
+
+def test_check_skill_bang_backtick_fail_agents_and_commands_roots(tmp_path):
+    """Root coverage: hits under agents/ and commands/ are both flagged, and
+    an absent skills/ root does not crash (the exists-guard)."""
+    _write_bang_md(tmp_path, "agents/foo.md", "x " + _BANG_TICK + "cmd" + _TICK + " y\n")
+    _write_bang_md(tmp_path, "commands/bar.md", "z " + _BANG_TICK + "cmd" + _TICK + "\n")
+    # skills/ deliberately absent — must not crash
+    errors = check_skill_bang_backtick(claude_dir=tmp_path)
+    assert len(errors) == 2, f"expected two errors, got: {errors}"
+    joined = "\n".join(errors)
+    assert "foo.md:1" in joined
+    assert "bar.md:1" in joined
+
+
+def test_check_skill_bang_backtick_pass_dollar_bang(tmp_path):
+    """The '$!' shell-pid prose shape (the 3 live SKILL.md instances) is
+    carved out by the lookbehind — empirically inert across healthy boots."""
+    line = "capture the pid (" + _TICK + "echo $" + _BANG_TICK + ") after launch"
+    _write_bang_md(tmp_path, "skills/issue/SKILL.md", line + "\n")
+    assert check_skill_bang_backtick(claude_dir=tmp_path) == []
+
+
+def test_check_skill_bang_backtick_pass_bang_space_and_bare_bang(tmp_path):
+    """Negatives: the f75e1b4c13 reworded shape (bang, space, then more span
+    content) and a bang at end-of-line with a backtick only on the NEXT line
+    (per-line scan: the characters must be byte-adjacent) both pass."""
+    body = (
+        "use "
+        + _TICK
+        + "if ! grep -q pattern"
+        + _TICK
+        + " to test\n"
+        + "watch out!\n"
+        + _TICK
+        + "code"
+        + _TICK
+        + "\n"
+    )
+    _write_bang_md(tmp_path, "skills/s.md", body)
+    assert check_skill_bang_backtick(claude_dir=tmp_path) == []
+
+
+def test_check_skill_bang_backtick_repo_tree_is_clean():
+    """Durability pin: the committed .claude/{skills,agents,commands}
+    markdown must carry no non-dollar bang-against-backtick spans — the
+    skill preprocessor executes such a span as inline shell at load, and
+    the #1243 incident killed every /issue session boot until hotfix
+    f75e1b4c13 reworded the two offending spans."""
+    errors = check_skill_bang_backtick()
+    assert errors == [], (
+        ".claude/{skills,agents,commands} markdown carries bang-against-"
+        "backtick inline-exec spans (#1243/#1266 session-killer class); "
+        "reword them — insert a space before the backtick or write "
+        "'bang-backtick' in prose (no waiver exists by design):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_skill_bang_backtick_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-skill-bang-backtick")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-skill-bang-backtick failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_check_skill_bang_backtick_bundled_in_no_flags():
+    """NON-VACUOUS no-flags bundling pin (the
+    ``test_pipe_python_bundled_in_no_flags_source_pin`` shape):
+    ``check_skill_bang_backtick`` must be dispatched by the BARE
+    ``workflow_lint.py`` run. Without this pin every other test in this
+    suite stays green with the two wiring lines absent (fixtures call the
+    function directly; ``_run`` exits 0 vacuously; the live-tree test
+    bypasses ``main()``), silently disarming the Step 10d protection."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_skill_bang_backtick or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_skill_bang_backtick\(\)\)",
+        src,
+    ), "check_skill_bang_backtick is not dispatched on the no-flags branch"
+    assert "or args.check_skill_bang_backtick" in src, (
+        "--check-skill-bang-backtick is missing from the no_flags detection tuple"
     )

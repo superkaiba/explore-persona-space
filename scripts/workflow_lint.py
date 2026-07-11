@@ -9569,6 +9569,63 @@ def check_section_reference_pointer_coverage(
     return errors
 
 
+# ── --check-skill-bang-backtick (#1243/#1266) ────────────────────────────────
+# The hazard: Claude Code's skill/command markdown preprocessor treats a bang
+# directly against a backtick as opening an inline-exec span and runs the text
+# up to the next backtick as shell AT SKILL LOAD (incident #1243/#1266:
+# commit 90af0ce2d9 killed every /issue boot; hotfix f75e1b4c13). The regex is
+# built with \x60 (backtick) so this file never contains the adjacency itself.
+_BANG_BACKTICK_RE = re.compile(r"(?<!\$)!\x60")
+
+_BANG_BACKTICK_ROOTS = ("skills", "agents", "commands")  # under .claude/
+
+
+def check_skill_bang_backtick(*, claude_dir: Path | None = None) -> list[str]:
+    """FAIL on any non-dollar-preceded bang directly against a backtick in
+    preprocessor-loaded markdown (.claude/{skills,agents,commands}/**/*.md).
+
+    Every line of every file is scanned — NO fenced-block exemption (the
+    preprocessor is not verified to ignore fences; scan-everything is the
+    safe default) and NO waiver/pragma (an allowlisted hit would still
+    execute at skill load — a waiver cannot neutralize the hazard; same
+    no-legitimate-use policy as ``check_heredoc_dotenv``). The sole
+    carve-out is a '$' immediately before the bang (the shell-pid '$!'
+    prose shape, 3 live instances in .claude/skills/issue/SKILL.md,
+    empirically inert across healthy boots). A bang at end-of-line with a
+    backtick opening the NEXT line is correct-by-construction NOT flagged
+    — the two characters must be byte-adjacent on one line to trigger the
+    preprocessor, so the per-line scan is deliberate. Remediation is
+    always rewording: insert a space between the bang and the backtick,
+    or write 'bang-backtick' in prose; any SCANNED markdown documenting
+    this check must do the same — there is no in-file escape, by design.
+    ``claude_dir`` is a unit-test override; production callers pass None
+    (canonical <repo_root>/.claude). 'commands' is exists-guarded
+    future-proofing (dir absent today; it is the canonical preprocessor
+    surface). Bundled into the no-flags default run.
+    """
+    base = claude_dir if claude_dir is not None else _REPO_ROOT / ".claude"
+    errors: list[str] = []
+    for root_name in _BANG_BACKTICK_ROOTS:
+        root = base / root_name
+        if not root.exists():
+            continue
+        for md in sorted(root.rglob("*.md")):
+            if not md.is_file():
+                continue
+            lines = md.read_text(encoding="utf-8").splitlines()
+            for lineno, line in enumerate(lines, start=1):
+                n_hits = len(_BANG_BACKTICK_RE.findall(line))
+                if n_hits:
+                    rel = md.relative_to(base.parent) if claude_dir is None else md
+                    errors.append(
+                        f"{rel}:{lineno}: {n_hits} non-dollar '!' directly "
+                        "against a backtick (skill-preprocessor inline-exec "
+                        "hazard, #1243/#1266) — reword: insert a space before "
+                        "the backtick or write 'bang-backtick' in prose"
+                    )
+    return errors
+
+
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispatch ladder; one branch per check flag, extracting it would just relocate the ladder
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -10201,6 +10258,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "pre-fix state. Waive via POLLER_CONSUMER_ALLOWLIST. Bundled into "
         "--check-references and the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-skill-bang-backtick",
+        action="store_true",
+        help="FAIL on any non-dollar-preceded '!' directly against a "
+        "backtick in .claude/{skills,agents,commands}/**/*.md — the skill "
+        "preprocessor executes such a span as inline shell at load "
+        "(#1243/#1266: two prose spans killed every /issue boot on "
+        "2026-07-10). '$!' shell-pid prose is exempt. No waiver: reword "
+        "instead. Bundled into the no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -10269,6 +10336,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_git_recipes_root_guard
         or args.check_marker_scalar_integrity
         or args.check_poller_marker_consumers
+        or args.check_skill_bang_backtick
     )
 
     errors: list[str] = []
@@ -10401,6 +10469,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_git_recipes_root_guard())
     if args.check_asw_docstring_pass_count or no_flags:
         errors.extend(check_asw_docstring_pass_count())
+    if args.check_skill_bang_backtick or no_flags:
+        errors.extend(check_skill_bang_backtick())
 
     if errors:
         for err in errors:
