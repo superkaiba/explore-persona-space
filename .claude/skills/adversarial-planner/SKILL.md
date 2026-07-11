@@ -139,6 +139,47 @@ check 25 (`c25_html_entities_in_commands`) is the mechanical backstop at
 Phase 1.5.0: entities surviving in a fenced command block FAIL the persist
 (a `--workload-cmd`/`dispatch_issue.py` fence is never exemptable).
 
+**Extract the output-file text via the transcript recipe (background
+`local_agent` tasks).** The `<output-file>` of a BACKGROUND Agent task
+(`/tmp/claude-*/…/tasks/<id>.output`) is a SYMLINK to the subagent's
+conversation-transcript JSONL, NOT raw text. That format has NO
+`{"type": "result", "result": "<str>"}` row — on #1219 (2026-07-10) the first
+extraction scanned for one and exited "NO RESULT ROW FOUND" — and the FINAL
+row may be a metadata-bearing row (keys like `agentId` / `attributionAgent` /
+`attributionSkill`) with no usable text. Canonical recipe: keep the LAST
+`type == "assistant"` row whose `message.content` has non-empty
+`{"type": "text"}` blocks (this inherently skips trailing non-text rows),
+join the text blocks, THEN apply the trailer-strip regex above. Output-file
+text is clean: NO `html.unescape()` (previous paragraph). Verify byte count +
+head/tail before persisting — that same verify is also the guard for the rare
+case where the final output is split across MULTIPLE assistant rows (the
+recipe keeps only the last text-bearing row).
+
+```python
+import json, re
+
+def last_assistant_text(path):
+    last = None
+    for line in open(path, encoding="utf-8"):
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(row, dict) or row.get("type") != "assistant":
+            continue
+        blocks = (row.get("message") or {}).get("content") or []
+        texts = [b.get("text", "") for b in blocks
+                 if isinstance(b, dict) and b.get("type") == "text"]
+        if any(t.strip() for t in texts):
+            last = "\n".join(texts)
+    if last is None:
+        raise SystemExit(f"NO ASSISTANT TEXT ROW FOUND: {path}")
+    return last
+
+text = last_assistant_text(src)  # src = the <output-file> path
+text = re.sub(r"\n?agentId:\s*\S+\s*\(use SendMessage.*?</usage>\s*$", "\n", text, flags=re.DOTALL)
+```
+
 ### Phase 1.5: Verify Assumptions (Verifier Agent)
 
 **This phase is MANDATORY. Never skip it.**
