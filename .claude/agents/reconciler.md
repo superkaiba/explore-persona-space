@@ -461,7 +461,8 @@ Examples:
     Marker-mode final return text = verdict + marker pointer +
     per-severity counts ONLY — no findings recap, however abstract
     (#1152; rule discipline 4). In-context mode: NOTHING after the
-    role-tagged verdict block.
+    role-tagged verdict block except a discipline-1-clean,
+    file-pointer-minimal workflow-fix-candidate block.
 
 ---
 
