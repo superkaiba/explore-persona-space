@@ -281,8 +281,9 @@ line):
   coverage/source/keys/assert vocab together on ONE line:
   `Row-coverage assert: the driver set-checks the registered pair rows ⊆ both named sources' row_meta keys before the statistic is computed.`
 No paired contrast in the plan → declare the byte-exact standalone line
-`N/A — no paired contrast` (never alongside a real registration: the escape
-short-circuits the check). Keep every declaration line free of cross-issue
+`N/A — no paired contrast` (never alongside a real registration: c18 WARNs
+on the co-occurrence instead of silently passing — #1258). Keep every
+declaration line free of cross-issue
 citations — a `#<M>` token on the line DISQUALIFIES it (quote sibling
 exemplars elsewhere) — and fill the `<…>` placeholders with THIS plan's
 actual stores. c18 verifies the declaration IN FORM only; whether the named

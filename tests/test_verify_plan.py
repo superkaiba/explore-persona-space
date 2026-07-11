@@ -1556,14 +1556,48 @@ def test_c13_gate_without_ndraws_skips():
     assert "no per-family n_draws declarations" in r.detail
 
 
-def test_c13_na_escape_passes():
+@pytest.mark.parametrize("kind", ["experiment", "analysis"])
+def test_c13_na_escape_with_detected_gate_warns(kind):
+    # #1258 (the #1223 c20 port): the escape is only reachable when a gate WAS
+    # detected (the no-gate case SKIPs first), so N/A + detected gate is the
+    # masking shape — WARN (non-blocking), never a silent PASS. Same severity
+    # both kinds: the co-occurrence is a meta-signal, already sub-FAIL.
+    # The c12 escape line keeps the UNRELATED battery-multiplier check (which
+    # fires on the fixture's draw vocabulary) out of the overall verdict, so
+    # `ok is True` pins that the c13 WARN itself never blocks.
     plan = _c13_plan(C13_TABLE_SMALL, C13_GATE) + (
         "\nN/A — no empirical-null gate (the p ≤ 0.05 mention quotes the sibling's methodology).\n"
+        "\nN/A — no draw battery\n"
     )
+    ok, by_id = _run(plan, kind=kind)
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "WARN"
+    assert ok is True  # WARN never blocks
+    assert "co-occurs" in r.detail
+    assert "97.5th-pct" in r.detail  # detected gate-line snippet quoted
+
+
+def test_c13_na_escape_with_gate_but_no_table_warns():
+    # Pins the ordering claim: the co-occurrence WARN precedes the
+    # no-n_draws-declarations SKIP — a plan with a detected gate + the escape
+    # WARNs regardless of whether any n_draws table exists. A misordered port
+    # placing the WARN after that SKIP passes the other fixtures but fails
+    # this one.
+    plan = _c13_plan(C13_GATE) + "\nN/A — no empirical-null gate\n"
     _, by_id = _run(plan)
     r = by_id["c13_empirical_gate_attainability"]
-    assert r.status == "PASS"
-    assert "N/A" in r.detail
+    assert r.status == "WARN"
+    assert "co-occurs" in r.detail
+
+
+def test_c13_na_escape_without_gate_still_skips():
+    # Preserved: with no detected gate the SKIP gate fires before the escape
+    # is consulted — the N/A line stays legal and never penalized.
+    plan = GOOD_PLAN + "\nN/A — no empirical-null gate\n"
+    _, by_id = _run(plan)
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "SKIP"
+    assert "no registered empirical-p gate" in r.detail
 
 
 def test_c13_kind_infra_skips():
@@ -2521,15 +2555,34 @@ def test_c18_by_construction_declaration_passes():
     assert _status(plan, "c18_paired_contrast_source_coverage") == "PASS"
 
 
-def test_c18_na_escape_passes():
+@pytest.mark.parametrize("kind", ["experiment", "analysis"])
+def test_c18_na_escape_with_detected_contrast_warns(kind):
+    # #1258 (the #1223 c20 port): the escape is only reachable when a paired
+    # contrast WAS detected (the no-trigger case SKIPs first), so N/A +
+    # detected registration is the masking shape — WARN (non-blocking), never
+    # a silent PASS. Same severity both kinds.
     plan = _c18_plan(C18_V13_REGISTRATION) + (
         "\nN/A — no paired contrast (the paired statistic above recaps the sibling's "
         "registration).\n"
     )
+    ok, by_id = _run(plan, kind=kind)
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "WARN"
+    assert ok is True  # WARN never blocks
+    assert "co-occurs" in r.detail
+    assert C18_V13_REGISTRATION[:60] in r.detail  # detected trigger snippet quoted
+
+
+def test_c18_na_escape_without_contrast_still_skips():
+    # Preserved: with no detected paired contrast the SKIP gate fires before
+    # the escape is consulted — the N/A line stays legal and never penalized.
+    # (Fixture precondition `"paired" not in GOOD_PLAN.lower()` is pinned by
+    # test_c18_not_triggered_skips above.)
+    plan = GOOD_PLAN + "\nN/A — no paired contrast\n"
     _, by_id = _run(plan)
     r = by_id["c18_paired_contrast_source_coverage"]
-    assert r.status == "PASS"
-    assert "N/A" in r.detail
+    assert r.status == "SKIP"
+    assert "no registered paired contrast" in r.detail
 
 
 def test_c18_quoted_na_phrase_does_not_escape():
