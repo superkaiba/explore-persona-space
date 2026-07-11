@@ -235,7 +235,7 @@ Run the structural verifier against the plan version just persisted:
   `N/A — no fit-family phases` (check 32 — the flagged compute-table row is
   not actually a per-cell fit/solve/factorization loop, or the plan has no
   fit-family phases; a genuine fit row instead states its basis as
-  `measured <t> s/<unit>`, a `#<M>` measured figure, or `pilot-gated`), and
+  `measured <t> s/<unit>`, a `#<M>` measured figure, or `pilot-gated`),
   `N/A — no per-rung checkpoint persistence` / alias
   `N/A — no checkpoint ladder` (check 33 — the checkpoint-ladder vocabulary
   is incidental and NO phase of this plan persists per-rung checkpoints,
@@ -243,7 +243,12 @@ Run the structural verifier against the plan version just persisted:
   genuine ladder plan instead states its retention policy in its
   compute-sizing section — DEFAULT: retain the dose-selected + latest rungs
   only, delete ruled-out rungs BETWEEN rungs; or the justified keep-all
-  exception sized at realized per-rung GB with `--boot-disk-gb` declared).
+  exception sized at realized per-rung GB with `--boot-disk-gb` declared), and
+  `N/A — no verbatim ratcheted-file insertion` (check 34 — the fenced block near a
+  `.claude/agents/*.md` / `.claude/rules/LESSONS.md` mention is illustrative, not a
+  verbatim insert; a plan that DOES mandate an over-headroom insert instead budgets
+  the cap-raise with one line `Ratchet budget: raise <constant>['<file>.md'] to
+  <new cap>`).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
