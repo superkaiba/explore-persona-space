@@ -651,7 +651,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    `.claude/rules/contrastive-negatives.md`). Not a REVISE when the plan makes no cross-condition
    leakage comparison (within-condition dynamics, single-condition implant characterization — the
    plan's §6 "N/A — no cross-condition leakage comparison" satisfies this item).
-9. **Degenerate eligibility gates, unequal per-unit N, missing baseline propensity (three related
+9. **Degenerate eligibility gates, unequal per-unit N, missing baseline propensity (four related
    design-lesson checks).** REVISE only when conclusion-changing per The Bar; otherwise list under
    Concerns. (i) **All-or-nothing eligibility gate on a continuous quantity:** a pre-registered rule
    gates a unit's inclusion on a continuous quantity (rows filled, judge-filter yield, cells
@@ -669,10 +669,23 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    behavior rate only on the EVAL-side targets (the delta denominator) and not on the SOURCE-side
    personas — leaving elicitation-yield failures unpredictable (#612: both yield-quota failures were
    predictable from a never-taken source-side read) and the natural install-strength covariate
-   unmeasured (a unit's own base prior keeps beating geometry — #500/#532/#541). Not a REVISE when:
+   unmeasured (a unit's own base prior keeps beating geometry — #500/#532/#541). (iv)
+   **Structurally-constant observed statistic in an observed-vs-null read:** the plan registers a
+   statistic to be compared against a null band whose construction admits NO variation under the
+   data — projecting/summing the MEAN (along the centering axis) of mean-centered quantities (≡0
+   by construction), correlating a constant vector, a residual of X regressed on itself, a paired
+   difference of aliased arrays (#1092: the banked read-4c projected the row-mean of mean-centered
+   ANOVA factor outputs onto r_B — observed ~1e-14 vs sign-flip-null p95 0.9–9.2 at all 288 rows;
+   survived all 16 code-review rounds, caught at interpretation — #1092 epm:interp-critique v1).
+   Trace the registered statistic's reduction chain symbolically, wherever the construction lives
+   (including reused parent code); when the centering/aliasing cannot be established from the plan
+   alone, require a runtime degeneracy guard (assert the observed magnitude ≫ machine epsilon
+   relative to the null scale). REVISE when the statistic is constant by construction — always
+   conclusion-changing (the comparison can only ever fail to reject). Not a REVISE when:
    the design has no continuous-quantity eligibility gate (i), per-unit N is equal by construction
    or the headline makes no cross-unit comparison (ii), or the Goal is not an
-   implantation/elicitation design (iii) — the plan's §4 "N/A" lines satisfy the respective checks.
+   implantation/elicitation design (iii), or the plan registers no observed-vs-null comparison
+   (iv) — the plan's §4 "N/A" lines satisfy the respective checks.
 10. **Dual-DV for content-behavior leakage / implantation (verify §6 names both DVs).** If the Goal
     implants or measures the leakage of a *content* behavior (sycophancy, refusal, hedging, style,
     trait — not the programmatic marker, which has its own three-space recipe), read §6's

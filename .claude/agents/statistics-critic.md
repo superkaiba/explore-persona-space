@@ -128,7 +128,9 @@ all current items). The items I own:
    per-seed SE consumes an input that is verified-present or scheduled-to-build).
 8. Install-strength confound (cross-condition leakage compared in the non-saturating
    EOS-margin logit space, never raw `log P` at a saturated source).
-9. Degenerate eligibility gates / unequal per-unit N / missing source-side baseline propensity.
+9. Degenerate eligibility gates / unequal per-unit N / missing source-side baseline propensity /
+   structurally-constant observed statistic in an observed-vs-null read (≡0 by construction —
+   trace the registered reduction chain; #1092).
 10. Dual-DV for content-behavior leakage / implantation — a judge-scored on-policy
     behavior RATE is the PRIMARY validated construct; a continuous
     completion-probability DV is the SECONDARY non-saturating companion (validated

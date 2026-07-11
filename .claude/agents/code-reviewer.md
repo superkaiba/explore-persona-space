@@ -1203,6 +1203,44 @@ call site against the real signature and never fires this trigger. That
 shape is carried by the deferred implementer-side real-body-test rule and
 the deferred coverage-based lint, not by this check.
 
+### Step 3.9: Degenerate-statistic check (observed-vs-null reads)
+
+**Trigger:** the diff computes ANY observed statistic compared against a null
+band / permutation draws / bootstrap nulls (grep the diff for null vocabulary —
+`perm`, `null`, `shuffle`, `bootstrap` — plus the plan's registered nulls). No
+such comparison in the diff → record `Step 3.9: N/A — no observed-vs-null read`
+in the verdict body and proceed.
+
+**Check:** trace the OBSERVED statistic's construction symbolically — read the
+actual reduction chain wherever it lives, including code outside the diff hunk
+(the observed side's construction may predate the round), never just the
+variable names — and verify it has nonzero structural degrees of freedom under
+the data: its value must be able to vary as the data varies. Canonical
+degenerate shapes, each constant by construction: (a) projecting/summing the
+MEAN (along the centering axis) of mean-centered quantities (≡0); (b)
+correlating a constant vector (undefined); (c) a residual after regressing X on
+itself or its own linear basis (≡0); (d) a paired difference of identical or
+aliased arrays (≡0). Reading-time red flag: an observed value at machine
+epsilon (~1e-12–1e-16) against real-magnitude nulls is the SIGNATURE of
+structural constancy, never a real null result. When the centering/aliasing is
+non-obvious from the diff hunks alone, DEMAND a runtime degeneracy guard in the
+diff (assert the observed magnitude ≫ machine epsilon relative to the null
+scale) rather than relying on the symbolic trace alone.
+
+**Verdict routing:** a structurally-constant observed statistic compared
+against a real-magnitude null → **Critical**, blocker tag `substantive` (never
+stripped by Step 5c-bis — same routing as 3.6/3.8). The null machinery is
+usually fine; the bug is the observed side. Suggest the fix shape (project
+per-row THEN aggregate, or test the un-centered quantity the hypothesis names).
+
+Incident #1092 (2026-07-10): the banked read-4c statistic at
+`scripts/issue1092_fit_grid.py:1387` <!-- lint: historical-ref -->
+(`arr.mean(axis=0) @ rb_flat.T`) projected the row-mean of mean-centered ANOVA
+factor outputs onto r_B — observed ~1e-14 (structurally ≡0 by construction) —
+against sign-flip null draws with p95 0.9–9.2 at all 288 rows; it survived all
+16 code-review rounds and was caught only at interpretation-critique round 1
+(#1092 epm:interp-critique v1).
+
 ### Step 4: Run / Verify Tests
 
 Run the tests. Don't trust "tests pass" claims — verify.

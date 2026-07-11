@@ -8938,22 +8938,23 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 98,126 B post-#1230 (Step 6 durability-pin shipping duty —
-    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 97,000 —
-    # measured 96,072 B post-#1119 (Step 3.6 external-stream presumption),
+    # measured 100,555 B post-#1254 (Step 3.9 degenerate-statistic check,
+    # observed-vs-null reads — plan-mandated growth; cap = measured
+    # + <=~1 KB. Prior: 99,000 — measured 98,126 B post-#1230 (Step 6
+    # durability-pin shipping duty), 97,000 — measured 96,072 B post-#1119,
     # 95,000 — measured 94,126 B post-#1115)
-    "code-reviewer.md": 99_000,
+    "code-reviewer.md": 101_500,
     # measured 73,408 B post-#1159 (Step 2 dual-source read contract: lens
     # rubrics from clean-result-critic-lens-reference.md, report schema from
     # the slim agent spec — plan-mandated growth; cap = measured + <=~1 KB.
     # Prior: 73,000 — measured 72,229 B post-#1056, 72,000 post-#1050 r2,
     # 71,000 post-#1050 r1, 60,554 B pre-#1050)
     "codex-clean-result-critic.md": 74_000,
-    # measured 50,642 B post-#948 (Step 3.8 copy-list bullet + the
-    # inlined-rubric 3.8 slot — plan-mandated growth; cap = measured
-    # + <=~1 KB. Prior: 47,930 B post-#881)
-    # #948: seam-stubbed production-body lens (Step 3.8)
-    "codex-code-reviewer.md": 51_600,
+    # measured 52,361 B post-#1254 (Step 3.9 copy-list bullet + the
+    # inlined-rubric 3.9 slot — plan-mandated growth; cap = measured
+    # + <=~1 KB. Prior: 51,600 — measured 50,642 B post-#948 (Step 3.8
+    # copy-list bullet + inlined-rubric slot), 47,930 B post-#881)
+    "codex-code-reviewer.md": 53_300,
     # measured 64,360 B post-#1138 (bare-push guidance append —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 64,000 —
     # measured 63,942 B post-#1115)
