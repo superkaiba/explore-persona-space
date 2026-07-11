@@ -158,18 +158,21 @@ def test_good_body_passes_all():
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc), the v4
     # check-20 word caps (needs `issue` for the events-based round budget,
     # #921; PASS-skip: not a v4 body), the
-    # #732 judge-API-error denominator check (PASS-skip: legacy body), AND
+    # #732 judge-API-error denominator check (PASS-skip: legacy body), the
+    # check-35 cross-issue reuse-provenance check (PASS-skip: not a v4
+    # body, #1256), AND
     # the check-31 orphaned-per-unit-figures probe (needs `issue` for
     # figures-dir scoping, #1011; PASS here — the fixture's fake sha is not
     # locally reachable, so the cited SHA is silently skipped) →
-    # 48 results total (2 prepended + CHECKS[1:]=37 + 9 appended). The
+    # 49 results total (2 prepended + CHECKS[1:]=37 + 10 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 48
+    assert len(results) == 49
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
+    assert "cross-issue reuse pins declared (footer Reused bullets)" in {r.name for r in results}
     assert "figure prose numerics vs figure sidecar (plotted-value drift)" in {
         r.name for r in results
     }
@@ -10781,6 +10784,323 @@ def test_judge_error_denominator_sibling_issue_graceful_pass(tmp_path):
         _CHECK732_UNDISCLOSED_BODY, issue=608, eval_root=tmp_path
     )
     assert res.passed and not res.is_warn, res.render()
+
+
+# ─── Check 35 (#1256): cross-issue reuse pins declared in the body ─────────
+#
+# Signal (two tiers over committed `eval_results/issue_<N>/**/*.json`
+# metadata): tier 1 (FAIL) = `hf_rev_<M>[_<tag>]` keys, M != N, satisfied by
+# a >=7-hex-char body token prefixing the pinned revision (non-hex branch/tag
+# pins fall back to a `#M` / `/tasks/M` / `issue<M>_` mention); tier 2 (WARN)
+# = `\bissue<M>_` tokens in `metadata.input_shas` keys/values + PATH-LIKE
+# `metadata.args` string values. Grounding (corpus scan 2026-07-11): the
+# tier-1 key shape exists in exactly 1 file among ~90,858 committed eval
+# JSONs (the #1092 incident file); the bare `issue<M>_` pattern appears in
+# >=10,028 files — hence the tier-2 restriction + WARN severity.
+# Demonstrated bug class: #1092 round 3 (`hf_rev_779_labels` pinned in
+# `transfer_reads.json` metadata, reuse undeclared until the LM critic).
+
+_CHECK1256_NAME = "cross-issue reuse pins declared (footer Reused bullets)"
+
+# Synthetic 40-hex revision pin. Must NOT share a >=7-char prefix with
+# `_V4_GOOD_BODY`'s own footer hex tokens (`0123456789abcdef` / `abc123def`),
+# or the base fixture would satisfy the pin by accident.
+_CHECK1256_SYN_SHA = "deadbeefcafe4d4d9c00112233445566778899aa"
+
+# The base v4 fixture carries NO `#779` / `/tasks/779` / `issue779_` mention
+# and no hex token prefixing `_CHECK1256_SYN_SHA` — it is the undeclared body.
+_CHECK1256_UNDECLARED_BODY = _V4_GOOD_BODY
+
+# Declared body whose ONLY satisfying token is the 8-char short sha
+# `deadbeef` (a strict PREFIX of the 40-char pin) — deliberately NO `#779`
+# and NO `issue779_` string, so a PASS proves the hex-prefix predicate
+# specifically. Shaped like #1092's real inline `Reused: ... [@ <short>]`
+# footer form (NOT the SPEC dash-bullet shape — the predicate must not
+# require the literal bullet).
+_CHECK1256_DECLARED_BODY = _V4_GOOD_BODY + (
+    "\nReused: r_B trait directions [@ deadbeef]"
+    "(https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/"
+    "tree/deadbeef/rb) — fit: same base model + recipe.\n"
+)
+
+
+def _make_cross_issue_pin_eval_tree(
+    root: Path,
+    issue: int,
+    *,
+    pins: dict | None = None,
+    input_shas: dict | None = None,
+):
+    """Write a synthetic `transfer_reads.json`-shaped result JSON under
+    `root/eval_results/issue_<N>/` whose `metadata.args` carries `pins`
+    (e.g. ``{"hf_rev_779_labels": "<40-hex>"}``) merged over a self-path
+    `out` arg, plus an optional `metadata.input_shas` dict — the observed
+    #1092 incident shape. Returns the eval dir."""
+    eval_dir = root / "eval_results" / f"issue_{issue}"
+    eval_dir.mkdir(parents=True, exist_ok=True)
+    args = {"out": f"eval_results/issue_{issue}/probe/", **(pins or {})}
+    metadata = {"script": "scripts/synthetic_probe.py", "args": args}
+    if input_shas is not None:
+        metadata["input_shas"] = input_shas
+    payload = {"verdict": {"ok": True}, "metadata": metadata}
+    (eval_dir / "transfer_reads.json").write_text(json.dumps(payload))
+    return eval_dir
+
+
+def test_cross_issue_reuse_provenance_undeclared_pin_fails(tmp_path):
+    """(a) MAIN / durability-pin test (SPEC.md § **Artifacts:** mechanical
+    cross-check sentence, #1256): a v4 body over an eval tree whose
+    `metadata.args` carries `hf_rev_779_labels: <40-hex>` (M=779 != N=999)
+    with the revision nowhere in the body → FAIL naming the source issue,
+    the metadata key, and the JSON relpath."""
+    _make_cross_issue_pin_eval_tree(tmp_path, 999, pins={"hf_rev_779_labels": _CHECK1256_SYN_SHA})
+    res = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_UNDECLARED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert not res.passed, res.render()
+    assert "#779" in res.detail, res.render()
+    assert "hf_rev_779_labels" in res.detail, res.render()
+    assert "eval_results/issue_999/transfer_reads.json" in res.detail, res.render()
+    assert "Reused" in res.detail, res.render()  # expected declaration shape named
+
+
+def test_cross_issue_reuse_provenance_declared_short_sha_passes(tmp_path):
+    """(b) Prefix predicate: same triggering tree; the body declares the
+    reuse with ONLY an 8-char short sha (`deadbeef`) prefixing the 40-char
+    metadata pin (no `#779`, no `issue779_`) → clean PASS."""
+    _make_cross_issue_pin_eval_tree(tmp_path, 999, pins={"hf_rev_779_labels": _CHECK1256_SYN_SHA})
+    res = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_DECLARED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert res.passed and not res.is_warn, res.render()
+    assert "declared" in res.detail, res.render()
+
+
+def test_cross_issue_reuse_provenance_no_pins_graceful_pass(tmp_path):
+    """(c) Graceful skip: metadata with no `hf_rev_*` keys and no
+    `issue<M>_` input paths → PASS with the graceful-skip detail (distinct
+    from the env-fence skip detail)."""
+    _make_cross_issue_pin_eval_tree(tmp_path, 999, pins={})
+    res = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_UNDECLARED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert res.passed and not res.is_warn, res.render()
+    assert "graceful skip" in res.detail, res.render()
+    assert "EPM_VERIFY_BODY_NO_EVAL_SCAN" not in res.detail, res.render()
+
+
+def test_cross_issue_reuse_provenance_self_pin_never_flags(tmp_path):
+    """(d) Self-pin exemption: `hf_rev_<N>` with M == N (the observed
+    `hf_rev_1092` self-pin) is provenance, not reuse → never flags →
+    graceful-skip PASS."""
+    _make_cross_issue_pin_eval_tree(tmp_path, 999, pins={"hf_rev_999": _CHECK1256_SYN_SHA})
+    res = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_UNDECLARED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert res.passed and not res.is_warn, res.render()
+    assert "graceful skip" in res.detail, res.render()
+
+
+def test_cross_issue_reuse_provenance_corrupt_json_skipped(tmp_path, monkeypatch):
+    """(e) Robustness ladder: a corrupt `.json` that PASSES the substring
+    pre-filter (so the `json.loads` skip path actually runs) + a clean
+    pin-free JSON → PASS, no crash. Dir-absent scanner branch → None.
+    `issue=None` → PASS-skip. Unresolvable root (no legs) → PASS
+    `is_warn=True` (the judge-error L4889 convention)."""
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    eval_dir.mkdir(parents=True)
+    (eval_dir / "corrupt.json").write_text('{"metadata": {"args": {"hf_rev_779_labels": ')
+    (eval_dir / "clean.json").write_text(json.dumps({"metadata": {"args": {"out": "x/y"}}}))
+    res = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_UNDECLARED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert res.passed and not res.is_warn, res.render()
+    assert "graceful skip" in res.detail, res.render()
+
+    # Dir-absent scanner branch: an eval root with NO eval_results/issue_<N>.
+    empty_root = tmp_path / "empty"
+    empty_root.mkdir()
+    assert verify_task_body._scan_cross_issue_reuse_pins(empty_root, 999) is None
+
+    # issue=None (stdin) → PASS-skip before any disk read.
+    res_none = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_UNDECLARED_BODY, issue=None
+    )
+    assert res_none.passed and not res_none.is_warn, res_none.render()
+    assert "issue number unknown" in res_none.detail, res_none.render()
+
+    # Unresolvable root: no eval_root, cwd not a git repo, MAIN leg forced
+    # to None → PASS with is_warn=True (judge-error parity).
+    nongit = tmp_path / "nongit"
+    nongit.mkdir()
+    monkeypatch.chdir(nongit)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    res_warn = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_UNDECLARED_BODY, issue=999
+    )
+    assert res_warn.passed and res_warn.is_warn, res_warn.render()
+    assert "eval root unresolved" in res_warn.detail, res_warn.render()
+
+
+def test_cross_issue_reuse_provenance_v3_body_vacuous_pass(tmp_path):
+    """(f) Forward-only generation gate: a v3-sentinel body over a
+    TRIGGERING tree → PASS "not a v4 body" (grandfathered v3/v2/legacy
+    bodies are wholly exempt; plan §11 item 6)."""
+    _make_cross_issue_pin_eval_tree(tmp_path, 999, pins={"hf_rev_779_labels": _CHECK1256_SYN_SHA})
+    res = verify_task_body.check_cross_issue_reuse_provenance(
+        _V3_GOOD_BODY, issue=999, eval_root=tmp_path
+    )
+    assert res.passed and not res.is_warn, res.render()
+    assert "not a v4 body" in res.detail, res.render()
+
+
+def test_cross_issue_reuse_provenance_tier2_input_shas_warns(tmp_path):
+    """Tier 2 (WARN): an `issue658_...` path in `metadata.input_shas` with
+    the body silent on #658 → PASS with `is_warn=True` naming #658; the
+    same body mentioning the `issue658_theory_assumptions` segment →
+    clean PASS."""
+    _make_cross_issue_pin_eval_tree(
+        tmp_path,
+        999,
+        pins={},
+        input_shas={"issue658_theory_assumptions/store/v0.pt": "46c06e89c513ca59"},
+    )
+    res = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_UNDECLARED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert res.passed and res.is_warn, res.render()
+    assert "#658" in res.detail, res.render()
+    body_mentioning = _CHECK1256_UNDECLARED_BODY + (
+        "\nInputs reused from the issue658_theory_assumptions store.\n"
+    )
+    res2 = verify_task_body.check_cross_issue_reuse_provenance(
+        body_mentioning, issue=999, eval_root=tmp_path
+    )
+    assert res2.passed and not res2.is_warn, res2.render()
+
+
+def test_cross_issue_reuse_provenance_args_nonpath_tag_ignored(tmp_path):
+    """Tier-2 noise exemption: a NON-path-like `metadata.args` string value
+    (`issue404_outcome_eval`, no `/`) is the measured experiment-tag noise
+    class → not scanned → graceful-skip PASS."""
+    _make_cross_issue_pin_eval_tree(tmp_path, 999, pins={"experiment": "issue404_outcome_eval"})
+    res = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_UNDECLARED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert res.passed and not res.is_warn, res.render()
+    assert "graceful skip" in res.detail, res.render()
+
+
+def test_cross_issue_reuse_provenance_nonhex_pin_issue_mention_fallback(tmp_path):
+    """Non-hex tier-1 fallback (the one predicate branch the named cases
+    miss): a branch/tag pin value (`main`) cannot use the hex-prefix
+    predicate — it falls back to an issue-level mention. Body without any
+    #779 mention → FAIL; body with a `[#779](...)` link → clean PASS."""
+    _make_cross_issue_pin_eval_tree(tmp_path, 999, pins={"hf_rev_779": "main"})
+    res = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_UNDECLARED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert not res.passed, res.render()
+    assert "hf_rev_779" in res.detail and "#779" in res.detail, res.render()
+    body_mentioning = _CHECK1256_UNDECLARED_BODY + (
+        "\n- Reused labels from [#779](https://eps.superkaiba.com/tasks/779): "
+        "monitoring labels @ main — fit: same judge pin.\n"
+    )
+    res2 = verify_task_body.check_cross_issue_reuse_provenance(
+        body_mentioning, issue=999, eval_root=tmp_path
+    )
+    assert res2.passed and not res2.is_warn, res2.render()
+
+
+def test_cross_issue_reuse_provenance_integration_1092(tmp_path):
+    """Integration pair on REAL data (skip-if-absent, the #715 convention):
+    the current (fixed) #1092 body over the real
+    `eval_results/issue_1092/` tree → PASS; the same body with the round-3
+    "Also reused (cross-corpus transfer round): ..." sentence stripped
+    (the pre-fix replay) → FAIL naming `hf_rev_779_labels`. Measured
+    during planning: pre-fix `labels` unsatisfied, `passb` satisfied via
+    the shared `037fcbb` revision (documented residual)."""
+    try:
+        from explore_persona_space.task_workflow import find_task_path, repo_root
+
+        body_path = find_task_path(1092) / "body.md"
+        if not body_path.exists():
+            pytest.skip("published #1092 body absent")
+        body = body_path.read_text()
+        main_root = repo_root()
+    except Exception:
+        pytest.skip("could not resolve published #1092 body")
+    if not verify_task_body.is_v4(body):
+        pytest.skip("#1092 body is not v4 (migrated away from the incident fixture)")
+    candidates = [
+        Path(__file__).resolve().parents[1],  # this checkout (cone added per sparse_cones.txt)
+        main_root,  # MAIN
+    ]
+    eval_root = next(
+        (
+            c
+            for c in candidates
+            if (c / "eval_results" / "issue_1092" / "cross-corpus-probe-transfer").is_dir()
+        ),
+        None,
+    )
+    if eval_root is None:
+        pytest.skip("issue_1092 eval fixture absent (sparse worktree without the cone)")
+    res = verify_task_body.check_cross_issue_reuse_provenance(body, issue=1092, eval_root=eval_root)
+    assert res.passed and not res.is_warn, res.render()
+    # Pre-fix replay: strip the round-3 declaration sentence.
+    anchor = "Also reused (cross-corpus transfer round):"
+    if anchor not in body:
+        pytest.skip("anchor sentence gone — #1092 body edited since #1256; refresh the replay")
+    prefix_body = re.sub(
+        r"Also reused \(cross-corpus transfer round\):.*?recorded in `transfer_reads\.json`\)\.",
+        "",
+        body,
+        flags=re.DOTALL,
+    )
+    assert prefix_body != body, "strip did not change the body"
+    res2 = verify_task_body.check_cross_issue_reuse_provenance(
+        prefix_body, issue=1092, eval_root=eval_root
+    )
+    assert not res2.passed, res2.render()
+    assert "hf_rev_779_labels" in res2.detail and "#779" in res2.detail, res2.render()
+
+
+def test_cross_issue_reuse_provenance_env_fence(tmp_path, monkeypatch):
+    """Env fence: `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` over a TRIGGERING tree →
+    PASS with the greppable fence detail (distinct from the no-pins
+    graceful skip); the scanner-level fence returns None too."""
+    _make_cross_issue_pin_eval_tree(tmp_path, 999, pins={"hf_rev_779_labels": _CHECK1256_SYN_SHA})
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_EVAL_SCAN", "1")
+    res = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_UNDECLARED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert res.passed and not res.is_warn, res.render()
+    assert "EPM_VERIFY_BODY_NO_EVAL_SCAN" in res.detail, res.render()
+    assert verify_task_body._scan_cross_issue_reuse_pins(tmp_path, 999) is None
+
+
+def test_cross_issue_reuse_provenance_oversize_file_skipped(tmp_path):
+    """50 MB stat guard (MANDATORY per plan §8 — `issue_810` carries
+    138-208 MB committed JSONs): a VALID >50 MB JSON carrying an
+    undeclared cross-issue pin must be SKIPPED by the stat guard, not
+    read — without the guard this tree would FAIL, so this test is
+    discriminating for the guard itself."""
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    eval_dir.mkdir(parents=True)
+    pad = "x" * (51 * 1024 * 1024)
+    (eval_dir / "big.json").write_text(
+        '{"pad": "'
+        + pad
+        + '", "metadata": {"args": {"hf_rev_779_labels": "'
+        + _CHECK1256_SYN_SHA
+        + '"}}}'
+    )
+    res = verify_task_body.check_cross_issue_reuse_provenance(
+        _CHECK1256_UNDECLARED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert res.passed and not res.is_warn, res.render()
+    assert "graceful skip" in res.detail, res.render()
 
 
 # ─── Check 15 clause-scoping (#893, incident #841) ─────────────────────────
