@@ -2007,8 +2007,8 @@
     "1258": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1258",
-      "status": "running",
+      "path": "tasks/completed/1258",
+      "status": "completed",
       "title": "daily-fix: audit c20 co-occurrence WARN across N/A escapes"
     },
     "1259": {
