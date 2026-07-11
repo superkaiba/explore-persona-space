@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-24 passes ("pass" = one top-level per-tick action block in ``main()``'s
+25 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -15,9 +15,9 @@ recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
 -> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
 11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
 14 (stale-blocked flag) -> 6 (session-reconcile) -> 23 (gate-push) ->
-24 (stale-registration) -> 7 (zombie-wrapper) -> 10 (idle-unmapped) ->
-8 (GC). The count is lint-pinned: ``workflow_lint.py
---check-asw-docstring-pass-count`` FAILs when the "24 passes" digit, the
+25 (boot-death) -> 24 (stale-registration) -> 7 (zombie-wrapper) ->
+10 (idle-unmapped) -> 8 (GC). The count is lint-pinned: ``workflow_lint.py
+--check-asw-docstring-pass-count`` FAILs when the "25 passes" digit, the
 numbered-item count, or the live ``*_pass`` set in ``main()`` diverge —
 adding a pass means adding a numbered item here AND bumping the digit:
 
@@ -406,6 +406,13 @@ adding a pass means adding a numbered item here AND bumping the digit:
    after prolonged transcript idleness so a stale registration stops
    holding the /issue Step 0 single-orchestrator guard; the orphan sweep
    re-drives an ACTIVE task. (:func:`stale_registration_pass`.)
+25. **Boot-death pass (#1267; daemon-gated; runs right after pass 23,
+   before pass 24).** STOPS a freshly dispatched AUTO session whose
+   transcript holds ZERO response rows >= 30 min after ``spawned_at``
+   (transcript quiet >= 10 min, live sid — the die-BEFORE-turn-1 class
+   every other lane is structurally blind to; #1251-#1256), then leaves
+   re-drive to the existing arms. Per-issue per-UTC-day stop cap with a
+   LOUD once-per-day cap alert. (:func:`boot_death_pass`.)
 
 Why each pass exists
 --------------------
@@ -1191,6 +1198,48 @@ STALE_BLOCKED_STATE_PREFIX = "stale-blocked-"
 # UNDER-flags (missed alert, status quo), never mis-flags.
 STALE_BLOCKED_PROGRESS_FRESH_S_DEFAULT = 2 * 3600
 
+# Substring stamped into the boot-death stop marker (task #1267): a freshly
+# dispatched AUTO session whose transcript holds ZERO response rows
+# (assistant OR api-error) >= 30 min after `spawned_at` — the
+# die-BEFORE-turn-1 class (#1251-#1256: 9-row / ~11 KB transcripts frozen
+# ~7 s post-spawn, invisible to every lane until the 12h stale-registration
+# pass). The pass STOPS the session (auto registrations only) and leaves
+# re-drive to the existing arms. Same staleness-filter contract as every
+# other watcher-posted sentinel (anti-liveness is load-bearing: an
+# unsentineled note would refresh `_latest_progress_ts` and mask the
+# orphan/stalled staleness clocks).
+_BOOT_DEATH_STOP_NOTE_SENTINEL = "[autonomous_session_watch:boot-death-stop]"
+
+# Substring stamped into the one-time "daily boot-death stop cap exhausted"
+# marker (task #1267). DELIBERATELY LOUD once per (issue, UTC day) — a
+# recorded deviation from the #1241 siblings' quiet-at-cap posture: those
+# lanes have a slow backstop that still ACTS at cap, while here the fallback
+# IS the 12h silence this lane exists to kill, so the cap moment is the
+# highest-value alert of the day.
+_BOOT_DEATH_CAP_NOTE_SENTINEL = "[autonomous_session_watch:boot-death-cap-exhausted]"
+
+# Filename prefix for the per-issue boot-death day-cap state file at
+# ``~/.eps-autonomous/boot-death-<N>.json`` (fields: ``stop_day`` /
+# ``stops_today`` / ``cap_alerted_day``). Reaped by the generalized GC at
+# `completed`/`archived` only — `proposed` (the incident-class status) is
+# not terminal, so a live loop's day counter is never reset mid-episode;
+# the day-keyed counter self-expires at the UTC day roll anyway.
+BOOT_DEATH_STATE_PREFIX = "boot-death-"
+
+# Boot-death lane constants (#1267; grounding in the task plan §11):
+# - window = 2x RESPAWN_SPAWN_GRACE_S (3 cron ticks): dead transcripts
+#   freeze ~7 s post-spawn while the healthy #1251 re-dispatch had 49
+#   assistant rows at 13 min — >10x margin over healthy first-turn latency.
+# - quiet = one watcher cron interval (the in-flight-first-turn guard).
+# - tail cap == the #1104 production wedge window (256 KB): a boot-death
+#   transcript is ~11 KB (23x headroom); a LARGER transcript cannot be a
+#   boot-death, so the probe short-circuits to keep without the read.
+# - stop cap 3/day = #1241 parity (TICK_WEDGE_RESPAWNS_PER_DAY).
+BOOT_DEATH_WINDOW_S = 30 * 60
+BOOT_DEATH_QUIET_S = 10 * 60
+BOOT_DEATH_TAIL_BYTES = 256 * 1024
+BOOT_DEATH_STOPS_PER_DAY = 3
+
 # OPT-IN heartbeat sentinel for legitimately-slow phases (off-pod analyzer
 # verifier rounds, in-flight Anthropic Batch polling). UNLIKE every other
 # sentinel in this file, this one is stamped by the LONG-RUNNING PHASE
@@ -1249,6 +1298,8 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _CAPACITY_RETRY_NOTE_SENTINEL,
         _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL,
         _STALE_BLOCKED_FLAG_NOTE_SENTINEL,
+        _BOOT_DEATH_STOP_NOTE_SENTINEL,
+        _BOOT_DEATH_CAP_NOTE_SENTINEL,
         # Posted by spawn_session.py (not the watcher) when a duplicate --auto
         # dispatch was suppressed at registration (#843 M2) — same contract:
         # a suppression note is bookkeeping, never real progress.
@@ -2465,6 +2516,52 @@ def decide_stale_registration(
     if self_report_age_s is not None and self_report_age_s < idle_threshold_s:
         return "keep"
     return "unregister"
+
+
+def decide_boot_death(
+    *,
+    sid_alive: bool,
+    entry_age_s: float | None,
+    response_row_seen: bool | None,
+    transcript_idle_s: float | None,
+    window_s: float,
+    quiet_s: float,
+    stops_today: int,
+    stops_per_day: int,
+) -> str:
+    """Pure per-entry decision for the boot-death lane (#1267). Returns
+    ``"stop"`` | ``"cap-alert"`` | ``"keep"``.
+
+    Fires ONLY on: live sid + registration older than ``window_s`` + a
+    fully-read transcript with ZERO response rows (assistant OR api-error —
+    an api-error row means the session took a FAILED turn, which is the
+    #1209 family's property, not a boot-death) + transcript quiet >=
+    ``quiet_s`` (the in-flight-first-turn guard). Every unresolvable input
+    fails toward keep (the 12h stale-registration pass stays the backstop):
+
+    - ``entry_age_s is None`` — missing / zero / non-numeric ``spawned_at``;
+      a FUTURE-dated ``spawned_at`` yields a negative age -> keep too.
+    - ``response_row_seen is None`` — transcript unresolvable OR larger than
+      the tail cap (a >256 KB transcript cannot be a boot-death).
+    - ``transcript_idle_s is None`` — :func:`_transcript_idle_age_s` could
+      not resolve the transcript mtime.
+
+    At the daily stop cap the lane stops STOPPING and returns
+    ``"cap-alert"`` (the caller dedupes to one loud alert per UTC day);
+    the live dead registration then back-pressures re-dispatch exactly as
+    today's 12h cycle does.
+    """
+    if not sid_alive:
+        return "keep"  # dead sid: crash-recovery / sweep-grace property
+    if entry_age_s is None or entry_age_s < window_s:
+        return "keep"
+    if response_row_seen is None or response_row_seen:
+        return "keep"
+    if transcript_idle_s is None or transcript_idle_s < quiet_s:
+        return "keep"
+    if stops_today >= stops_per_day:
+        return "cap-alert"
+    return "stop"
 
 
 def decide_pod_safety(
@@ -9443,6 +9540,46 @@ def _transcript_tail_rows(pid: int, max_bytes: int = 65536) -> list[dict] | None
     return rows
 
 
+def _boot_death_transcript_rows(
+    pid: int, max_bytes: int = BOOT_DEATH_TAIL_BYTES
+) -> tuple[list[dict] | None, str | None, int | None]:
+    """Whole-transcript rows for the boot-death lane (#1267), as
+    ``(rows, transcript_path, size_bytes)`` — ``rows`` is ``None`` when the
+    transcript is unresolvable OR larger than ``max_bytes`` (a >256 KB
+    transcript cannot be a boot-death — treat as not-eligible, fail toward
+    keep). ``transcript_path`` / ``size_bytes`` are best-effort forensics for
+    the sidecar row (``None`` when unresolvable).
+
+    Unlike :func:`_transcript_tail_rows`, the WHOLE-file guarantee is
+    required here: "zero response rows" must be a whole-file property, never
+    a truncated-tail read. Deliberately a SIBLING of ``_transcript_tail_rows``
+    rather than a refactor of it — its mid-file-seek partial-line handling is
+    pinned by the wedge tests, and this probe never seeks. Same happy-log-only
+    resolution contract (a WRONG transcript is worse than a missing one)."""
+    transcript, _reason = session_resolver._resolve_transcript_via_happy_log(pid)
+    if transcript is None:
+        return None, None, None
+    try:
+        size = os.path.getsize(transcript)
+        if size > max_bytes:
+            return None, str(transcript), size
+        raw = Path(transcript).read_bytes()
+    except OSError:
+        return None, str(transcript), None
+    rows: list[dict] = []
+    for line in raw.decode("utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(row, dict):
+            rows.append(row)
+    return rows, str(transcript), size
+
+
 def _stop_session(session_id: str, dry_run: bool) -> bool:
     """Stop an in-flight Happy session by id via
     ``spawn_session.py stop --session-id <id>``. Returns True on success.
@@ -14846,6 +14983,13 @@ _GC_TARGETS: tuple[tuple[str, str], ...] = (
     # once the task reaches `completed`/`archived`. The sidecar
     # `stale-blocked-events.jsonl` is outside the `*.json` glob by suffix.
     (STALE_BLOCKED_STATE_PREFIX, ""),
+    # Boot-death day-cap state (== BOOT_DEATH_STATE_PREFIX, task #1267).
+    # Terminal-status reap only: `proposed` (the incident-class status) is
+    # NOT terminal, so a live dispatch->boot-death loop's day counter is
+    # never reset mid-episode; the day-keyed counter self-expires at the UTC
+    # day roll anyway. The sidecar `boot-death-events.jsonl` is outside the
+    # `*.json` glob by suffix.
+    (BOOT_DEATH_STATE_PREFIX, ""),
     # Campaign watchdog state (== CAMPAIGN_WATCH_STATE_PREFIX, defined in the
     # campaign-pass section below; literal here because module-level tuples
     # evaluate top-to-bottom). Primary reaping is the campaign pass itself at
@@ -18132,6 +18276,319 @@ def idle_unmapped_pass(
         )
 
 
+# ─── boot-death pass (#1267) ──────────────────────────────────────────────────
+#
+# The die-BEFORE-turn-1 lane: a freshly `--auto`-dispatched session whose
+# resolved Claude transcript contains ZERO response rows (`_classify_wedge_row`
+# not in {assistant, api-error}) >= 30 min after `spawned_at`, with the
+# transcript quiet >= 10 min, a LIVE sid, auto registrations only. Incident
+# #1251-#1256: 7 live-captured boot-death transcripts, all 9 rows / 11,368 B,
+# frozen ~7 s post-spawn (the session died during `/issue` skill load — one
+# prompt row carries a `<local-command-stderr>` diagnostic); every existing
+# lane is structurally blind (no self-report => the stalled detector skips;
+# the sid is LIVE + status `proposed` => crash-recovery PARKs; the inner
+# Claude is alive-idle => zombie pass; issue-MAPPED => idle-unmapped), so the
+# only recovery was the 12h stale-registration unregister — a silent
+# dispatch -> boot-death -> 12h -> re-dispatch loop (~12.5h/cycle).
+#
+# Action: STOP the session via the existing `_stop_session` — NO unregister,
+# NO direct spawn. Post-stop re-drive is fully owned by existing arms:
+# ACTIVE status -> crash-recovery `decide()` (dead sid, ~2 misses = ~20 min);
+# `proposed` -> the proposed-infra sweep's stale-dead-registration grace
+# (~30-60 min). Bounded per #1241 conventions: per-issue per-UTC-day stop cap
+# (default 3, `EPM_BOOT_DEATH_STOPS_PER_DAY`), counted at STOP-INITIATION (a
+# stop failure still consumes a budget unit — conservative in the safe
+# direction); at the cap the lane stops stopping and fires ONE loud cap
+# push/marker per day (the recorded deviation from #1241's quiet-at-cap —
+# see _BOOT_DEATH_CAP_NOTE_SENTINEL). NO episode belt by design: this is a
+# STOP lane, not a respawn lane — the downstream re-drive arms carry their
+# own belts/caps. Kill switch: EPM_DISABLE_BOOT_DEATH_PASS=1.
+
+
+def _boot_death_window_s() -> float:
+    """Boot-death registration-age window in seconds (env
+    ``EPM_BOOT_DEATH_WINDOW_MIN``, MINUTES — the
+    ``EPM_TICK_WEDGE_DEAD_SILENCE_MIN`` precedent; default
+    :data:`BOOT_DEATH_WINDOW_S`). Malformed / non-positive env falls back to
+    the default — a typo'd var must not create an instant stopper; the
+    lane's kill switch is ``EPM_DISABLE_BOOT_DEATH_PASS=1``, never this
+    knob (the :func:`_stale_registration_idle_s` contract)."""
+    raw = os.environ.get("EPM_BOOT_DEATH_WINDOW_MIN")
+    if not raw:
+        return float(BOOT_DEATH_WINDOW_S)
+    try:
+        parsed = float(raw) * 60.0
+    except ValueError:
+        return float(BOOT_DEATH_WINDOW_S)
+    if parsed <= 0:
+        return float(BOOT_DEATH_WINDOW_S)
+    return parsed
+
+
+def _boot_death_stops_per_day() -> int:
+    """Daily per-issue cap on boot-death stops (env
+    ``EPM_BOOT_DEATH_STOPS_PER_DAY``; default
+    :data:`BOOT_DEATH_STOPS_PER_DAY`). Malformed OR ``< 1`` env falls back
+    to the default — never a kill switch (byte-parallel to
+    :func:`_tick_wedge_respawns_per_day`, #1241)."""
+    raw = os.environ.get("EPM_BOOT_DEATH_STOPS_PER_DAY")
+    if not raw:
+        return BOOT_DEATH_STOPS_PER_DAY
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return BOOT_DEATH_STOPS_PER_DAY
+    if parsed < 1:
+        return BOOT_DEATH_STOPS_PER_DAY
+    return parsed
+
+
+def _boot_death_pass_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_BOOT_DEATH_PASS`` is set truthy
+    ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_capacity_retry_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_BOOT_DEATH_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _boot_death_state_path(issue: int) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{BOOT_DEATH_STATE_PREFIX}{issue}.json"
+
+
+def _load_boot_death_state(issue: int) -> dict:
+    """Per-issue boot-death day-cap state (``{}`` if absent/garbled — a fresh
+    or unreadable file re-arms the counter at 0, mirroring
+    :func:`_load_idle_unmapped_state`; a corruption costs at most one extra
+    bounded stop)."""
+    path = _boot_death_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_boot_death_state(issue: int, state: dict, dry_run: bool) -> None:
+    """Persist the per-issue boot-death state atomically (temp + rename).
+    Fail-soft: an OSError is logged and swallowed (main() has no per-pass
+    exception wrapping — a raise here would kill every later pass); dry-run
+    never writes (production state must not mutate under ``--dry-run``)."""
+    if dry_run:
+        print(f"  [dry-run] would save boot-death state for #{issue}: {state}")
+        return
+    dest = _boot_death_state_path(issue)
+    tmp = dest.with_suffix(".json.tmp")
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp.write_text(json.dumps(state, indent=2))
+        tmp.replace(dest)
+    except OSError as e:
+        print(f"  WARNING: saving boot-death state for #{issue} failed: {e}", file=sys.stderr)
+
+
+def _append_boot_death_event(note: str, dry_run: bool) -> None:
+    """Durable trace for boot-death stops / cap alerts — one JSON line per
+    action in ``~/.eps-autonomous/boot-death-events.jsonl`` (the
+    ``_append_stale_registration_event`` shape; the ``.jsonl`` suffix keeps
+    it out of the GC's ``boot-death-*.json`` glob). Fail-soft; dry-run never
+    writes."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "boot-death-events.jsonl"
+    line = json.dumps(
+        {"ts": datetime.now().astimezone().isoformat(), "kind": "boot-death", "note": note}
+    )
+    if dry_run:
+        print(f"  [dry-run] would append boot-death event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending boot-death event failed: {e}", file=sys.stderr)
+
+
+def _boot_death_stderr_excerpt(rows: list[dict], cap: int = 200) -> str | None:
+    """Best-effort diagnostic: the first ``<local-command-stderr>`` fragment
+    found in a prompt-type user row's content, whitespace-collapsed and
+    bounded to ``cap`` chars — the live-captured boot-death transcripts carry
+    the skill-load failure there (`<local-command-stderr>Error: Shell command
+    failed...`). Returns ``None`` when no such fragment exists. Pure
+    string-scanning, never raises on the dict shapes ``rows`` can hold."""
+    tag = "<local-command-stderr>"
+    for row in rows:
+        if _classify_wedge_row(row) != "prompt":
+            continue
+        msg = row.get("message")
+        content = msg.get("content") if isinstance(msg, dict) else None
+        texts: list[str] = []
+        if isinstance(content, str):
+            texts.append(content)
+        elif isinstance(content, list):
+            texts.extend(
+                b.get("text", "")
+                for b in content
+                if isinstance(b, dict) and b.get("type") == "text"
+            )
+        for text in texts:
+            idx = text.find(tag)
+            if idx < 0:
+                continue
+            excerpt = " ".join(text[idx:].split())
+            return excerpt[:cap]
+    return None
+
+
+def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry_run: bool) -> None:
+    """Evaluate ONE auto registration against the boot-death predicate and
+    STOP its session when it verdicts ``"stop"`` (cap permitting). Every
+    unresolvable input fails toward keep, and every IO goes through a
+    fail-soft helper — main() has no per-pass exception wrapping, so nothing
+    here may raise (the ``_process_stale_registration`` containment style)."""
+    try:
+        entry = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return  # garbled entries are the crash-recovery / GC passes' property
+    if not isinstance(entry, dict):
+        return
+    issue = entry.get("issue")
+    if not isinstance(issue, int) or isinstance(issue, bool):
+        issue = _gc_parse_issue_from_path(path, "issue-", "")
+    if issue is None:
+        return
+    sid = entry.get("happy_session_id")
+    if not isinstance(sid, str) or not sid:
+        return
+    pid = pids_by_sid.get(sid)
+    spawned_at = entry.get("spawned_at")
+    entry_age_s = None
+    if isinstance(spawned_at, int | float) and not isinstance(spawned_at, bool) and spawned_at:
+        entry_age_s = now - float(spawned_at)
+    # Cheap early exits BEFORE any transcript IO: a dead sid is the
+    # crash-recovery pass's property; a young/unaged entry can't fire.
+    if pid is None or entry_age_s is None or entry_age_s < _boot_death_window_s():
+        return
+    # Activity guards (both fail toward keep): something owns this issue.
+    if _provision_in_flight_reason(issue, now) is not None:
+        return
+    if _worktree_recent_activity(issue, now, _wt_activity_fresh_s()):
+        return
+    rows, transcript, size = _boot_death_transcript_rows(pid)
+    response_row_seen = (
+        None
+        if rows is None
+        else any(_classify_wedge_row(r) in ("assistant", "api-error") for r in rows)
+    )
+    idle_s, _why = _transcript_idle_age_s(pid, now)
+    state = _load_boot_death_state(issue)
+    day_key = time.strftime("%Y-%m-%d", time.gmtime(now))  # the #1209/#1241 day-cap derivation
+    stops_today = _day_scoped_count(state, "stop_day", "stops_today", day_key)
+    cap = _boot_death_stops_per_day()
+    verdict = decide_boot_death(
+        sid_alive=True,
+        entry_age_s=entry_age_s,
+        response_row_seen=response_row_seen,
+        transcript_idle_s=idle_s,
+        window_s=_boot_death_window_s(),
+        quiet_s=BOOT_DEATH_QUIET_S,
+        stops_today=stops_today,
+        stops_per_day=cap,
+    )
+    if verdict == "keep":
+        return
+    status = _task_status(issue)  # live read, recorded in the note
+    if verdict == "cap-alert":
+        if state.get("cap_alerted_day") == day_key:
+            return  # once per (issue, UTC day)
+        state["cap_alerted_day"] = day_key
+        _save_boot_death_state(issue, state, dry_run)
+        note = (
+            f"{_BOOT_DEATH_CAP_NOTE_SENTINEL} {stops_today} boot-death stops today hit the "
+            f"daily cap ({cap}); leaving the dead registration in place (the 12h "
+            f"stale-registration pass is the back-pressure); sessions for #{issue} are dying "
+            f"at skill load — investigate the dispatch path. sid={sid} task status={status}."
+        )
+        print(f"  boot-death: issue #{issue} — {note}")
+        _post_progress_marker(issue, note, dry_run, label="boot-death-cap-exhausted")
+        _telegram_push(
+            f"boot-death cap: #{issue} hit {stops_today} dead-boot stops today; "
+            f"sessions are dying at skill load — investigate the dispatch path.",
+            dry_run,
+        )
+        _append_boot_death_event(note, dry_run)
+        return
+    # verdict == "stop": count at STOP-INITIATION (#1241 — conservative; a
+    # stop failure still consumes a budget unit), THEN act.
+    # NOTE: a session stopped by an EARLIER arm in this same tick can still
+    # read live in `pids_by_sid` (the shared snapshot predates that stop), so
+    # a redundant sid-targeted stop here may consume a cap unit — benign by
+    # design (never a wrong kill; the daily cap absorbs it).
+    state.update({"stop_day": day_key, "stops_today": stops_today + 1})
+    _save_boot_death_state(issue, state, dry_run)
+    stop_ok = _stop_session(sid, dry_run)
+    n_rows = len(rows) if rows is not None else 0
+    stderr_excerpt = _boot_death_stderr_excerpt(rows) if rows else None
+    note = (
+        f"{_BOOT_DEATH_STOP_NOTE_SENTINEL} stopped boot-dead session sid={sid}: "
+        f"registration age {entry_age_s / 60:.0f}m >= {_boot_death_window_s() / 60:.0f}m, "
+        f"transcript rows={n_rows} size={size}B with ZERO response rows "
+        f"(assistant/api-error), idle {(idle_s or 0) / 60:.0f}m; stop_ok={stop_ok}; "
+        f"task status={status}; stop {stops_today + 1}/{cap} today; registration kept: "
+        f"crash-recovery re-drives an ACTIVE task (~20 min); the proposed-infra sweep's "
+        f"stale-dead-registration grace re-dispatches a `proposed` task (~30-60 min)."
+    )
+    print(f"  boot-death: issue #{issue} — {note}")
+    _post_progress_marker(issue, note, dry_run, label="boot-death-stop")
+    _telegram_push(
+        f"boot-death: stopped dead-boot session for #{issue} "
+        f"(zero response rows at {entry_age_s / 60:.0f}m; stop {stops_today + 1}/{cap} today)",
+        dry_run,
+    )
+    _append_boot_death_event(
+        f"{note} transcript={transcript} stderr_excerpt={stderr_excerpt or 'none'}", dry_run
+    )
+
+
+def boot_death_pass(
+    dry_run: bool, *, children: list[dict] | None, now: float | None = None
+) -> None:
+    """Stop LIVE-but-boot-dead auto sessions (#1267 — see the section comment
+    above for the incident + predicate). Consumes the shared reaper
+    ``children`` snapshot (``_live_children``) IN PLACE; daemon-gated
+    (``children is None`` => no-op: liveness cannot be established, and a
+    false "live" read must not stop anything). Iterates ``issue-*.json``
+    ONLY — ``manual-issue-*.json`` is EXCLUDED by design (a user-driven
+    session is never auto-stopped, the #505 posture; auto registrations all
+    carry an initial prompt, so zero response rows at 30 min is unambiguous
+    death)."""
+    now = now if now is not None else time.time()
+    if not _boot_death_pass_enabled():
+        print("boot-death: disabled via EPM_DISABLE_BOOT_DEATH_PASS; skipping")
+        return
+    if children is None:
+        print("boot-death: Happy daemon unreachable; skipping")
+        return
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        print("boot-death: no autonomous registry dir; skipping")
+        return
+    entries = sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json"))
+    if not entries:
+        print("boot-death: no auto issue registrations")
+        return
+    pids_by_sid: dict[str, int] = {}
+    for c in children:
+        if not isinstance(c, dict):
+            continue
+        sid = c.get("happySessionId")
+        pid = c.get("pid")
+        if isinstance(sid, str) and sid and isinstance(pid, int) and not isinstance(pid, bool):
+            pids_by_sid[sid] = pid
+    print(f"boot-death: {len(entries)} auto registration(s), {len(pids_by_sid)} live session(s)")
+    for path in entries:
+        _process_boot_death(path, pids_by_sid, now, dry_run)
+
+
 # ─── stale-registration pass (#845 d) ─────────────────────────────────────────
 #
 # The fourth registration hygiene arm: a LIVE-but-abandoned session whose
@@ -19708,6 +20165,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "pass. Pair with --dry-run for a live smoke (zero writes, zero "
         "pushes).",
     )
+    parser.add_argument(
+        "--boot-death-only",
+        action="store_true",
+        help="run ONLY the boot-death pass (#1267 — stop a dispatched auto "
+        "session whose transcript has ZERO response rows >= 30 min after "
+        "spawn) and exit; skip every other pass. Pair with --dry-run for a "
+        "live smoke against the real registration set.",
+    )
     args = parser.parse_args(argv)
 
     lock = _acquire_lock()
@@ -19787,6 +20252,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
             args.dry_run,
             daemon_reachable=reachable,
             live_ids=_live_session_ids() if reachable else None,
+        )
+        return 0
+
+    # --boot-death-only mirrors the other --*-only flags: run the single pass
+    # under the lock (it needs its own /list snapshot — the pass is
+    # daemon-gated) and exit. Pair with --dry-run for a live smoke.
+    if args.boot_death_only:
+        boot_death_pass(
+            args.dry_run,
+            children=_live_children() if _daemon_reachable() else None,
         )
         return 0
 
@@ -20043,9 +20518,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         issue_snapshot=issue_gate_candidates,
     )
 
-    # The THREE consumers below (the stale-registration pass + the two
-    # session reapers) run back-to-back with no mutating pass between them,
-    # so they share ONE /list snapshot via their `children=` parameter —
+    # The FOUR consumers below (the boot-death pass + the stale-registration
+    # pass + the two session reapers) run back-to-back with no mutating pass
+    # between them, so they share ONE /list snapshot via their `children=`
+    # parameter —
     # same probe-once rationale as daemon_reachable above: one fewer daemon
     # RPC per tick, and the passes can never disagree about the session set.
     # Deliberately NOT reused from the top-of-main `_live_session_ids()`
@@ -20058,6 +20534,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # redundant, sid-targeted stop of an already-stopped session — never a
     # wrong kill.
     reaper_children = _live_children() if daemon_reachable else None
+
+    # Boot-death (#1267): STOP a freshly dispatched auto session whose
+    # transcript has ZERO response rows >= 30 min after spawn (the
+    # die-BEFORE-turn-1 class every other lane is structurally blind to).
+    # Runs AFTER gate_push_pass (the gate-push-before-reaper ordering
+    # invariant) and BEFORE stale-registration, consuming the shared reaper
+    # snapshot IN PLACE. A same-tick overlap with stale-registration on a
+    # >=12h-old boot-dead entry is benign (our stop + its unregister compose
+    # to the desired end state).
+    boot_death_pass(args.dry_run, children=reaper_children)
 
     # Stale-registration (#845 d): unregister LIVE-but-abandoned session
     # registrations (transcript idle >= 12h, self-report equally stale, no

@@ -170,7 +170,7 @@ themselves in a worktree.
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
 detector, orphan-file sweep, the infra-drain pass, the capacity-retry pass,
 the stale-blocked flag pass, the gate-push pass, the program-orchestrator
-recovery pass, the
+recovery pass, the boot-death pass, the
 stale-registration pass, the CPU/memory-pressure guard pass, the
 triage-observer pass, and three session reapers — the session-vs-status
 reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
@@ -700,6 +700,49 @@ adjacent to the two session reapers, consuming their shared daemon
 session-list snapshot in place; daemon-gated (`children is None` ⇒ no-op). Unregistering
 deletes the entry, which is self-deduping; a fresh re-registration restarts
 the clock. Durable trace: `~/.eps-autonomous/stale-registration-events.jsonl`.
+
+**Boot-death lane (#1267, `boot_death_pass`).** The die-BEFORE-turn-1
+complement of the stale-registration pass: a freshly dispatched AUTO session
+(`issue-<N>.json` only — `manual-issue-*.json` is excluded by design, a
+user-driven session is never auto-stopped) whose resolved Claude transcript
+contains ZERO response rows (`_classify_wedge_row` ∉ {assistant, api-error})
+≥30 min after `spawned_at` (`EPM_BOOT_DEATH_WINDOW_MIN`, minutes;
+malformed/non-positive → default), with the transcript quiet ≥10 min (the
+in-flight-first-turn guard) and the sid LIVE, is STOPPED via `_stop_session`
++ surfaced (Telegram push + an anti-liveness `epm:progress` marker,
+sentinels `[autonomous_session_watch:boot-death-stop]` /
+`[...:boot-death-cap-exhausted]`) instead of waiting ~12h for the
+stale-registration unregister (incident #1251–#1256: 9-row / ~11 KB
+transcripts frozen ~7 s post-spawn — the session died during `/issue` skill
+load; every other lane is structurally blind to the shape). Whole-file
+read bounded at 256 KB (a larger transcript cannot be a boot-death → keep);
+every unresolvable signal fails toward keep. Action is STOP-ONLY — no
+unregister, no direct spawn: post-stop re-drive is fully owned by the
+existing arms (ACTIVE → crash-recovery, ~20 min; `proposed` → the
+proposed-infra sweep's stale-dead-registration grace, ~30–60 min). Bounds:
+per-issue per-UTC-day stop cap (`EPM_BOOT_DEATH_STOPS_PER_DAY`, default 3;
+malformed/<1 → default, never a kill switch), bumped ONCE at
+stop-initiation (a stop failure still consumes a budget unit); state at
+`~/.eps-autonomous/boot-death-<N>.json` (GC'd at `completed`/`archived`
+only), durable trace `~/.eps-autonomous/boot-death-events.jsonl` (stop rows
+carry `transcript=` + `stderr_excerpt=` forensics). There is NO episode
+belt BY DESIGN — this is a stop lane, not a respawn lane; the downstream
+re-drive arms carry their own belts/caps, and the auth-outage guard
+suppresses the re-dispatch side (the infra-sweep/crash-arm spawn gates)
+during a live outage episode, so the accelerated loop cannot spin during an
+outage. At the cap the lane stops stopping (the live dead registration then
+back-pressures re-dispatch exactly as today's 12h cycle) and fires ONE loud
+cap push/marker per (issue, UTC day) — a recorded DEVIATION from #1241's
+quiet-at-cap posture: the #1241 lanes have a slow backstop that still ACTS
+at cap, while here the fallback is the very 12h silence this lane exists to
+kill, so the cap moment is the highest-value alert of the day. Runs AFTER
+`gate_push_pass`, immediately BEFORE the stale-registration pass, consuming
+the shared reaper `children` snapshot in place; daemon-gated (`children is
+None` ⇒ no-op). A same-tick overlap with stale-registration on a ≥12h-old
+boot-dead entry is benign (stop + unregister compose). Kill switch:
+`EPM_DISABLE_BOOT_DEATH_PASS=1`; `--boot-death-only` runs just this pass
+(pair with `--dry-run` for a live smoke — a dry run stops nothing, posts no
+real marker/push, and writes no state).
 
 **Deliberate session takeover (`paused-takeover` sentinel; #866/#903).**
 (Scope: this sentinel is a short-TTL session-TAKEOVER shield,
