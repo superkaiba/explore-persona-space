@@ -6247,17 +6247,21 @@ def test_skillmd_canonical_escapes_documents_standalone_line():
 # Fixture strategy (plan #1260 §6): monkeypatch verify_plan._C34_REPO_ROOT to
 # tmp_path and create ratcheted files at controlled sizes — testagent.md at
 # 39,900 B (non-grandfathered → headroom 100 B vs AGENT_SPEC_FAIL_BYTES
-# 40,000) and LESSONS.md at 7,950 B (headroom 50 B vs _LESSONS_MAX_BYTES
-# 8,000). The trigger fragments mirror the real #1230 plan v1 §4.1 shape:
-# a heading naming the path, a "Verbatim text to insert" line, then the
-# fenced block.
+# 40,000) and LESSONS.md 50 B under its BINDING constraint (#1269:
+# min(_LESSONS_MAX_BYTES, _LESSONS_RATCHET_BYTES) — the growth ratchet in
+# practice; derived from the live constants so routine ratchet bumps don't
+# shift the pinned headroom arithmetic). The trigger fragments mirror the
+# real #1230 plan v1 §4.1 shape: a heading naming the path, a "Verbatim text
+# to insert" line, then the fenced block.
 
 
 def _c34_fixture_root(tmp_path):
+    wl = verify_plan._c34_lint_constants()
     (tmp_path / ".claude" / "agents").mkdir(parents=True)
     (tmp_path / ".claude" / "rules").mkdir(parents=True)
     (tmp_path / ".claude" / "agents" / "testagent.md").write_bytes(b"x" * 39_900)
-    (tmp_path / ".claude" / "rules" / "LESSONS.md").write_bytes(b"x" * 7_950)
+    lessons_size = min(wl._LESSONS_MAX_BYTES, wl._LESSONS_RATCHET_BYTES) - 50
+    (tmp_path / ".claude" / "rules" / "LESSONS.md").write_bytes(b"x" * lessons_size)
     return tmp_path
 
 
@@ -6399,11 +6403,14 @@ def test_c34_fenced_path_mention_does_not_trigger():
 
 
 def test_c34_lessons_md_headroom_warns(tmp_path, monkeypatch):
+    # #1269: the binding LESSONS.md constraint is min(cap, growth ratchet) —
+    # the ratchet in practice (it must sit under the cap), so the WARN
+    # detail names _LESSONS_RATCHET_BYTES as the cap source.
     monkeypatch.setattr(verify_plan, "_C34_REPO_ROOT", _c34_fixture_root(tmp_path))
     _, by_id = _run(GOOD_PLAN + _c34_lessons_fragment(200), kind="infra")
     r = by_id["c34_ratchet_headroom"]
     assert r.status == "WARN"
-    assert "_LESSONS_MAX_BYTES" in r.detail
+    assert "_LESSONS_RATCHET_BYTES" in r.detail
     assert "headroom 50 B" in r.detail
 
 

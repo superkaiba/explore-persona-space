@@ -4091,19 +4091,20 @@ def _write_lessons_fixture(rules_dir, rule_names, indexed_names):
     rules_dir.mkdir(parents=True, exist_ok=True)
     for name in rule_names:
         (rules_dir / f"{name}.md").write_text(f"# {name}\n", encoding="utf-8")
-    rows = "\n".join(f"- **[{n}]({n}.md)** — fires when: x." for n in indexed_names)
+    rows = "\n".join(f"- {n}.md — x." for n in indexed_names)
     (rules_dir / "LESSONS.md").write_text(f"# LESSONS\n\n## Rules\n\n{rows}\n", encoding="utf-8")
 
 
 def _write_lessons_at_exact_bytes(rules_dir, total_bytes):
     """Write a valid one-rule LESSONS.md padded to EXACTLY `total_bytes` bytes.
 
-    Pads with ASCII 'x' prose after the row; asserts the realized byte count
+    Pads with ASCII 'x' prose after the row (the pad never matches the row
+    regex, so per-row caps are unaffected); asserts the realized byte count
     (the em-dash in the row is multibyte, so bytes != chars).
     """
     rules_dir.mkdir(parents=True, exist_ok=True)
     (rules_dir / "alpha.md").write_text("# alpha\n", encoding="utf-8")
-    base = "# LESSONS\n\n## Rules\n\n- **[alpha](alpha.md)** — fires when: x.\n\n"
+    base = "# LESSONS\n\n## Rules\n\n- alpha.md — x.\n\n"
     pad = total_bytes - len(base.encode("utf-8")) - 1  # -1: trailing newline
     assert pad > 0, "total_bytes too small for the fixture skeleton"
     content = base + "x" * pad + "\n"
@@ -4111,11 +4112,25 @@ def _write_lessons_at_exact_bytes(rules_dir, total_bytes):
     (rules_dir / "LESSONS.md").write_bytes(content.encode("utf-8"))
 
 
+def _write_lessons_row(rules_dir, name, row_bytes):
+    """Write one rule file + a LESSONS.md whose single row for `name` is
+    EXACTLY `row_bytes` bytes (ASCII trigger padding; em-dash is 3 bytes)."""
+    rules_dir.mkdir(parents=True, exist_ok=True)
+    (rules_dir / f"{name}.md").write_text(f"# {name}\n", encoding="utf-8")
+    prefix = f"- {name}.md — "
+    pad = row_bytes - len(prefix.encode("utf-8"))
+    assert pad > 0, "row_bytes too small for the row skeleton"
+    row = prefix + "x" * pad
+    assert len(row.encode("utf-8")) == row_bytes
+    (rules_dir / "LESSONS.md").write_text(f"# LESSONS\n\n## Rules\n\n{row}\n", encoding="utf-8")
+
+
 def test_check_lessons_index_fails_on_missing_row(tmp_path):
     rules = tmp_path / ".claude" / "rules"
-    # rule 'gamma' exists but is NOT indexed -> FAIL
+    # rule 'gamma' exists but is NOT indexed -> FAIL (ratchet mode disabled:
+    # the tiny synthetic fixture isolates the index-parity failure mode).
     _write_lessons_fixture(rules, ["alpha", "beta", "gamma"], ["alpha", "beta"])
-    errs = check_lessons_index(repo_root=tmp_path)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
     assert errs, "expected a FAIL for the un-indexed rule 'gamma'"
     assert any("gamma" in e for e in errs)
 
@@ -4124,14 +4139,14 @@ def test_check_lessons_index_fails_on_stale_row(tmp_path):
     rules = tmp_path / ".claude" / "rules"
     # 'delta' is indexed but has no rule file -> FAIL
     _write_lessons_fixture(rules, ["alpha", "beta"], ["alpha", "beta", "delta"])
-    errs = check_lessons_index(repo_root=tmp_path)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
     assert errs and any("delta" in e for e in errs)
 
 
 def test_check_lessons_index_passes_on_match(tmp_path):
     rules = tmp_path / ".claude" / "rules"
     _write_lessons_fixture(rules, ["alpha", "beta"], ["alpha", "beta"])
-    assert check_lessons_index(repo_root=tmp_path) == []
+    assert check_lessons_index(repo_root=tmp_path, ratchet_bytes=None) == []
 
 
 def test_check_lessons_index_passes_on_live_repo():
@@ -4141,19 +4156,21 @@ def test_check_lessons_index_passes_on_live_repo():
 
 def test_check_lessons_index_fails_when_index_exceeds_cap(tmp_path):
     # Leanness cap is mechanical — an index over _LESSONS_MAX_BYTES must FAIL.
+    # ratchet mode disabled so the fixture isolates the CAP failure mode
+    # (the ratchet's own modes have their own tests below).
     from workflow_lint import _LESSONS_MAX_BYTES
 
     rules = tmp_path / ".claude" / "rules"
     rules.mkdir(parents=True)
     (rules / "alpha.md").write_text("# alpha\n", encoding="utf-8")
-    rows = "- **[alpha](alpha.md)** — fires when: x.\n"
+    rows = "- alpha.md — x.\n"
     # Pad with prose so the index breaches the byte cap regardless of its value.
     padding = "x" * (_LESSONS_MAX_BYTES + 100)
     (rules / "LESSONS.md").write_text(
         f"# LESSONS\n\n## Rules\n\n{rows}\n\n{padding}\n",
         encoding="utf-8",
     )
-    errs = check_lessons_index(repo_root=tmp_path)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
     assert errs and any("leanness cap" in e for e in errs)
 
 
@@ -4164,7 +4181,7 @@ def test_check_lessons_index_fails_on_duplicate_row(tmp_path):
     # FAIL because the contract is exactly one matching row per rule (#739 r2).
     rules = tmp_path / ".claude" / "rules"
     _write_lessons_fixture(rules, ["alpha"], ["alpha", "alpha"])
-    errs = check_lessons_index(repo_root=tmp_path)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
     assert errs, "expected a FAIL for the duplicate 'alpha' index row"
     assert any(("duplicate" in e or "exactly one" in e) and "alpha" in e for e in errs)
 
@@ -4173,6 +4190,8 @@ def test_check_lessons_index_warns_in_warn_band(tmp_path):
     # The #992 early-warning band: an index strictly between _LESSONS_WARN_BYTES
     # and _LESSONS_MAX_BYTES emits one advisory WARN (warn_sink / stderr),
     # never a FAIL; the over-cap FAIL branch takes precedence over the WARN.
+    # ratchet mode disabled throughout: the band fixtures sit far above the
+    # ratchet by design and must isolate the WARN-band mode.
     from workflow_lint import _LESSONS_MAX_BYTES, _LESSONS_WARN_BYTES
 
     # Pin the band constant itself (#992 plan latitude: 7000-7400, below cap).
@@ -4183,27 +4202,187 @@ def test_check_lessons_index_warns_in_warn_band(tmp_path):
     # (1) Sub-warn-band fixture -> no FAIL, empty sink.
     sink: list[str] = []
     _write_lessons_fixture(rules, ["alpha"], ["alpha"])
-    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink) == []
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink, ratchet_bytes=None) == []
     assert sink == []
 
     # (2) EXACTLY at the threshold -> still no warn (the band is strictly-greater).
     sink = []
     _write_lessons_at_exact_bytes(rules, _LESSONS_WARN_BYTES)
-    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink) == []
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink, ratchet_bytes=None) == []
     assert sink == []
 
     # (3) One byte over the threshold -> no FAIL, exactly one warn-band message.
     sink = []
     _write_lessons_at_exact_bytes(rules, _LESSONS_WARN_BYTES + 1)
-    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink) == []
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink, ratchet_bytes=None) == []
     assert len(sink) == 1 and "warn band" in sink[0]
 
     # (4) Over the cap -> the FAIL branch fires; no warn message rides along.
     sink = []
     _write_lessons_at_exact_bytes(rules, _LESSONS_MAX_BYTES + 100)
-    errs = check_lessons_index(repo_root=tmp_path, warn_sink=sink)
+    errs = check_lessons_index(repo_root=tmp_path, warn_sink=sink, ratchet_bytes=None)
     assert errs and any("leanness cap" in e for e in errs)
     assert sink == []
+
+
+def test_check_lessons_index_fails_on_over_ratchet(tmp_path):
+    # Durability pin (#1269): growing the index past _LESSONS_RATCHET_BYTES
+    # FAILs under the PRODUCTION defaults (no explicit kwarg — a default
+    # flipped to None would turn this test RED via the constants-sane pin,
+    # and stripping the ratchet code turns it RED here).
+    from workflow_lint import _LESSONS_RATCHET_BYTES
+
+    rules = tmp_path / ".claude" / "rules"
+    _write_lessons_at_exact_bytes(rules, _LESSONS_RATCHET_BYTES + 1)
+    errs = check_lessons_index(repo_root=tmp_path)
+    assert errs and any("_LESSONS_RATCHET_BYTES" in e and "grew past" in e for e in errs)
+    # The ratchet FAIL is textually DISTINCT from the 8000-cap budget breach:
+    # a session seeing RED can tell one-line-bump from a real budget decision.
+    assert not any("leanness cap" in e for e in errs)
+
+
+def test_check_lessons_index_passes_at_exact_ratchet(tmp_path):
+    # Strictly-greater boundary: a file at EXACTLY the ratchet passes.
+    from workflow_lint import _LESSONS_RATCHET_BYTES
+
+    rules = tmp_path / ".claude" / "rules"
+    _write_lessons_at_exact_bytes(rules, _LESSONS_RATCHET_BYTES)
+    assert check_lessons_index(repo_root=tmp_path) == []
+
+
+def test_check_lessons_index_fails_on_excess_ratchet_headroom(tmp_path):
+    # Banked slack: a ratchet sitting more than the headroom bound above the
+    # live size FAILs (stale ratchet after a trim defeats the mechanism);
+    # a file at EXACTLY ratchet - headroom passes (strictly-greater).
+    from workflow_lint import _LESSONS_RATCHET_BYTES, _LESSONS_RATCHET_MAX_HEADROOM_BYTES
+
+    rules = tmp_path / ".claude" / "rules"
+    _write_lessons_at_exact_bytes(
+        rules, _LESSONS_RATCHET_BYTES - _LESSONS_RATCHET_MAX_HEADROOM_BYTES - 1
+    )
+    errs = check_lessons_index(repo_root=tmp_path)
+    assert errs and any("banked slack" in e and "ratchet DOWN" in e for e in errs)
+
+    _write_lessons_at_exact_bytes(
+        rules, _LESSONS_RATCHET_BYTES - _LESSONS_RATCHET_MAX_HEADROOM_BYTES
+    )
+    assert check_lessons_index(repo_root=tmp_path) == []
+
+
+def test_check_lessons_index_fails_on_ratchet_above_cap(tmp_path):
+    # Config error: the ratchet can never authorize crossing the leanness
+    # cap. Fixture sized inside the (over-cap ratchet)'s hug window so ONLY
+    # the config-error FAIL fires; the warn-band WARN is swallowed by sink.
+    from workflow_lint import _LESSONS_MAX_BYTES
+
+    rules = tmp_path / ".claude" / "rules"
+    sink: list[str] = []
+    _write_lessons_at_exact_bytes(rules, _LESSONS_MAX_BYTES - 300)
+    errs = check_lessons_index(
+        repo_root=tmp_path, warn_sink=sink, ratchet_bytes=_LESSONS_MAX_BYTES + 1
+    )
+    assert errs == [e for e in errs if "config error" in e] and errs, errs
+
+
+def test_check_lessons_index_fails_on_row_over_cap(tmp_path):
+    # Per-row cap (#1269): one bloated row FAILs, NAMED, at addition time.
+    from workflow_lint import _LESSONS_ROW_MAX_BYTES
+
+    rules = tmp_path / ".claude" / "rules"
+    _write_lessons_row(rules, "alpha", _LESSONS_ROW_MAX_BYTES + 1)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    assert errs and any("'alpha'" in e and "per-row cap" in e for e in errs)
+
+    # Strictly-greater boundary: a row at EXACTLY the cap passes.
+    _write_lessons_row(rules, "alpha", _LESSONS_ROW_MAX_BYTES)
+    assert check_lessons_index(repo_root=tmp_path, ratchet_bytes=None) == []
+
+
+def test_check_lessons_index_grandfather_row_over_its_cap_fails(tmp_path, monkeypatch):
+    # A grandfathered row over ITS cap FAILs, naming BOTH remedies (trim the
+    # row vs bump-with-hug the dict entry). Synthetic grandfather entry so
+    # the test is decoupled from the live dict's churn.
+    import workflow_lint
+
+    monkeypatch.setattr(workflow_lint, "_LESSONS_ROW_GRANDFATHER_MAX_BYTES", {"alpha": 460})
+    rules = tmp_path / ".claude" / "rules"
+    _write_lessons_row(rules, "alpha", 461)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    assert errs and any(
+        "grandfather cap" in e
+        and "trim the row" in e
+        and "_LESSONS_ROW_GRANDFATHER_MAX_BYTES['alpha']" in e
+        for e in errs
+    )
+
+    # Strictly-greater + exact-hug boundary: a row at EXACTLY the cap passes
+    # (cap - actual == 0 <= headroom bound).
+    _write_lessons_row(rules, "alpha", 460)
+    assert check_lessons_index(repo_root=tmp_path, ratchet_bytes=None) == []
+
+    # Exact hug bound passes: cap - actual == the headroom bound exactly.
+    from workflow_lint import _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES
+
+    _write_lessons_row(rules, "alpha", 460 - _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES)
+    assert check_lessons_index(repo_root=tmp_path, ratchet_bytes=None) == []
+
+
+def test_check_lessons_index_grandfather_hug_and_obsolete_entry_fail(tmp_path, monkeypatch):
+    # Grandfather hygiene (#986 pattern): a cap more than the headroom bound
+    # above the live row FAILs (loose/stale cap), and an entry whose row
+    # dropped to <= the general row cap FAILs as obsolete (remove it).
+    import workflow_lint
+    from workflow_lint import (
+        _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES,
+        _LESSONS_ROW_MAX_BYTES,
+    )
+
+    monkeypatch.setattr(workflow_lint, "_LESSONS_ROW_GRANDFATHER_MAX_BYTES", {"alpha": 460})
+    rules = tmp_path / ".claude" / "rules"
+
+    # Hug FAIL: one byte past the exact-hug bound (row still over the
+    # general cap, so the obsolete branch does not fire).
+    _write_lessons_row(rules, "alpha", 460 - _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES - 1)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    assert errs and any("max headroom" in e and "lower the cap" in e for e in errs)
+
+    # Obsolete FAIL: the row now fits the general cap — remove the entry.
+    _write_lessons_row(rules, "alpha", _LESSONS_ROW_MAX_BYTES)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    assert errs and any("no longer needs grandfathering" in e for e in errs)
+
+
+def test_lessons_ratchet_constants_sane():
+    # Live-tree config coherence (#1269): the constants must describe the
+    # real LESSONS.md, and the production defaults must be ARMED.
+    import inspect
+
+    import workflow_lint as wl
+
+    assert wl._LESSONS_RATCHET_BYTES <= wl._LESSONS_MAX_BYTES
+    assert wl._LESSONS_WARN_BYTES < wl._LESSONS_MAX_BYTES
+    # Defaults armed: a default flipped to None would disarm the ratchet /
+    # row caps fleet-wide while every explicit-kwarg test stayed green.
+    params = inspect.signature(wl.check_lessons_index).parameters
+    assert params["ratchet_bytes"].default == wl._LESSONS_RATCHET_BYTES
+    assert params["row_max_bytes"].default == wl._LESSONS_ROW_MAX_BYTES
+    # Live-tree hug: the ratchet must track the real file (banked slack
+    # defeats the mechanism).
+    live = (wl._REPO_ROOT / ".claude" / "rules" / "LESSONS.md").read_bytes()
+    assert 0 <= wl._LESSONS_RATCHET_BYTES - len(live) <= wl._LESSONS_RATCHET_MAX_HEADROOM_BYTES
+    # Grandfather entries: each cap sits above the general row cap and hugs
+    # its LIVE row (the synthetic-fixture tests cover the failure modes).
+    rows = {m.group("name"): m.group(0) for m in wl._LESSONS_ROW_RE.finditer(live.decode("utf-8"))}
+    for name, cap in wl._LESSONS_ROW_GRANDFATHER_MAX_BYTES.items():
+        assert cap > wl._LESSONS_ROW_MAX_BYTES, name
+        assert name in rows, f"grandfather entry '{name}' has no live index row"
+        row_bytes = len(rows[name].encode("utf-8"))
+        assert row_bytes <= cap, (name, row_bytes, cap)
+        assert cap - row_bytes <= wl._LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES, (
+            name,
+            row_bytes,
+            cap,
+        )
 
 
 def test_compute_shape_review_lens_live_tree_passes() -> None:
