@@ -648,3 +648,123 @@ def test_issue1248_comma_separated_record_target_file_is_prefix_compatible(
     c = only(run_sweep(tmp_path, include_routed=True))
     assert c["suppressed"] is True
     assert c["suppressed_by"]["kind"] == "same-stream-filed"
+
+
+# ── 18. #1274 regressions: per-task stream grouping across duplicate folders ─
+#
+# Byte-verbatim fixture rows from the live #1196 events.jsonl (the #644/#1253
+# stale-duplicate-status-folder class): the 2026-07-09 fp-less prose park sits
+# byte-identically in BOTH tasks/completed/1196 (canonical) and the stale
+# tasks/reviewing/1196 fork, while the 2026-07-10 routed-record
+# (filed_task: #1235) lives ONLY in the canonical folder. Pre-#1274 each
+# status folder was its OWN stream, so the stale folder's copy escaped
+# suppression rule 1 and re-enumerated nightly (incident 2026-07-10,
+# hand-deduped as `deduped:#1235`).
+
+_RAW_1196_CAND = r"""{"ts": "2026-07-09T20:54:25Z", "kind": "epm:workflow-fix-candidate", "version": 1, "by": "unknown", "note": "parked — running under workflow_fix_target Provenance (recursion guard, see workflow-fix-on-bug.md § Recursion guard). target_file: .claude/skills/daily/SKILL.md. proposed_change: invoke 'uv run python scripts/audit_clean_results_body_discipline.py --title-sync-sweep' from the nightly /daily skill (one bullet + command) so the H1/title drift report surfaces without a manual run. bug_observed: the #1196 sweep is manually-invoked only; no scheduled invoker. confidence: medium. related_task: #1196. routed: parked: EPM_WORKFLOW_FIX_SESSION"}"""  # noqa: E501
+_RAW_1196_REC = r"""{"ts": "2026-07-10T06:57:53Z", "kind": "epm:workflow-fix-task-filed", "version": 1, "by": "unknown", "note": "filed_task: #1235 / target_file: .claude/skills/daily/SKILL.md / fingerprint: n/a (prose park) / session_spawned: false / source: daily-parked-candidate-sweep / origin_candidate_ts: 2026-07-09T20:54:25Z / origin_candidate: parked — running under workflow_fix_target Provenance (recursion guard, see workflow-fix-on-bug.md § Recursion guard). target_file: .claude/skills/daily/SKILL.md. proposed_change: "}"""  # noqa: E501
+
+
+def test_issue1196_stale_duplicate_status_folder_filed_record_suppresses_both_copies(
+    tmp_path: Path,
+) -> None:
+    """#1274 red-green: one task id in two status folders (#644/#1253 class).
+
+    tasks/reviewing/1196 is a stale fork carrying a byte-identical copy of the
+    fp-less prose park but NOT the later routed-record; tasks/completed/1196
+    (canonical) carries both. The record must close BOTH copies and the
+    identical fork copies must collapse to ONE output row.
+    """
+    # round-trip guard: the embedded fixture lines are single valid JSON rows
+    assert json.loads(_RAW_1196_CAND)["ts"] == "2026-07-09T20:54:25Z"
+    assert json.loads(_RAW_1196_REC)["ts"] == "2026-07-10T06:57:53Z"
+    make_task(tmp_path, 1196, "completed", raw_event_lines=[_RAW_1196_CAND, _RAW_1196_REC])
+    make_task(tmp_path, 1196, "reviewing", raw_event_lines=[_RAW_1196_CAND])  # stale fork copy
+    assert run_sweep(tmp_path)["candidates"] == []  # RED pre-fix: the stale copy escapes
+    c = only(run_sweep(tmp_path, include_routed=True))  # RED pre-fix: 2 rows, no collapse
+    assert c["source"] == "task:1196"
+    assert c["fingerprint"] is None  # prose park; fp-less origin-ts key decided
+    assert c["suppressed"] is True
+    assert c["suppressed_by"] == {"kind": "same-stream-filed", "ref": "#1235"}
+
+
+def test_issue1196_record_in_stale_folder_also_closes_canonical_copy(tmp_path: Path) -> None:
+    """Reverse direction: the merged per-task pool is order-symmetric — a
+    routed-record living ONLY in the stale fork still closes the canonical
+    folder's copy (pins the docstring's 'ANY events.jsonl of the task' claim)."""
+    make_task(tmp_path, 1196, "completed", raw_event_lines=[_RAW_1196_CAND])
+    make_task(tmp_path, 1196, "reviewing", raw_event_lines=[_RAW_1196_CAND, _RAW_1196_REC])
+    assert run_sweep(tmp_path)["candidates"] == []
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed"] is True
+    assert c["suppressed_by"] == {"kind": "same-stream-filed", "ref": "#1235"}
+
+
+def test_filed_record_on_different_task_never_suppresses_same_second_park(
+    tmp_path: Path,
+) -> None:
+    """Grain pin (plan §4.2 alt 1 hazard): the filed-record pool is PER TASK,
+    never global. An fp-less park on task 4001 must not be closed by ANOTHER
+    task's routed-record carrying the same bare-ts origin_candidate_ts (the
+    fp-less PRIMARY key has no target_file check, so a global pool could
+    false-suppress a same-second park on a different task)."""
+    make_task(tmp_path, 4001, "completed", events=[cand_row(T0, PROSE_NOTE)])
+    make_task(
+        tmp_path,
+        4002,
+        "completed",
+        events=[
+            filed_row(
+                T1,
+                "filed_task: #96 / target_file: scripts/codex_task.py / "
+                f"fingerprint: n/a (prose park) / origin_candidate_ts: {T0}",
+            )
+        ],
+    )
+    c = only(run_sweep(tmp_path))
+    assert c["source"] == "task:4001"
+    assert c["suppressed"] is False
+
+
+def test_distinct_candidate_rows_in_duplicate_folders_both_enumerate(tmp_path: Path) -> None:
+    """Grain pin: row dedup collapses only identical (source, ts_raw,
+    content-hash) rows — two DISTINCT parks split across a task's duplicate
+    status folders both stay enumerated."""
+    make_task(tmp_path, 4003, "completed", events=[cand_row(T0, PROSE_NOTE)])
+    make_task(tmp_path, 4003, "reviewing", events=[cand_row(T1, PROSE_NOTE)])
+    result = run_sweep(tmp_path)
+    assert len(result["candidates"]) == 2, result["candidates"]
+    assert [c["ts"] for c in result["candidates"]] == [T0, T1]
+    assert all(c["source"] == "task:4003" for c in result["candidates"])
+
+
+def test_cache_park_not_closed_by_task_stream_record_at_matching_origin_ts(
+    tmp_path: Path,
+) -> None:
+    """Grain pin: the cache file stays its OWN group — a task-stream
+    routed-record with a matching bare-ts origin key must not close an
+    fp-less structured cache park."""
+    root = tmp_path / "tasks"
+    make_task(
+        root,
+        4004,
+        "completed",
+        events=[
+            filed_row(
+                T1,
+                "filed_task: #97 / target_file: g/h.md / "
+                f"fingerprint: n/a (prose park) / origin_candidate_ts: {T0}",
+            )
+        ],
+    )
+    cache = tmp_path / "workflow-fix-events.jsonl"
+    cache_park = {
+        "ts": T0,
+        "marker": "epm:workflow-fix-candidate v1",
+        "target_file": "g/h.md",
+        "routed": "parked: EPM_WORKFLOW_FIX_SESSION",
+    }
+    cache.write_text(json.dumps(cache_park) + "\n")
+    c = only(run_sweep(root, cache))
+    assert c["source"] == "cache"
+    assert c["suppressed"] is False

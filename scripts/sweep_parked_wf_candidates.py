@@ -14,17 +14,26 @@ sweep's suppression rule (1) keys on.
 
 Suppression rules (a candidate is SUPPRESSED == already routed):
 
-1. **Same-stream filed record** — a LATER row (aware-UTC ts > candidate ts)
-   in the SAME stream with kind ``epm:workflow-fix-task-filed*`` matching the
-   candidate: fp-computable candidates match ONLY on the fingerprint (same
-   ``target_file`` + different fp is NOT a duplicate — workflow-fix-on-bug.md
-   § Dedup) — EXCEPT that a record carrying NO usable fingerprint (field
-   absent, or non-fp-shaped, e.g. ``n/a (prose park)``) falls back to
-   ``origin_candidate_ts`` equality with a ``target_file`` prefix-compatibility
-   veto (#1248); a record carrying a real, DIFFERING 12-hex fp still never
-   suppresses. Accepted residual: two same-second candidate rows on the SAME
-   file in one stream are indistinguishable to the ts+target_file key, so one
-   n/a-fp record would close both; fp-less (prose) parks match on the record's
+1. **Same-task filed record** — a LATER row (aware-UTC ts > candidate ts)
+   with kind ``epm:workflow-fix-task-filed*`` in ANY events.jsonl of the same
+   SOURCE, matching the candidate. All ``tasks/*/<id>/events.jsonl`` status
+   folders of one task id merge into ONE logical stream (source
+   ``task:<id>``), so a routed-record posted on ANY folder of a task closes
+   the park's copies in EVERY folder — a stale duplicate status folder (the
+   #644/#1253 class) otherwise re-enumerates an already-routed park nightly
+   (incident #1196/#1274); the cache file stays its own source. The emitted
+   ``suppressed_by.kind`` string stays ``same-stream-filed`` for output
+   compatibility. Matching: fp-computable candidates match ONLY on the
+   fingerprint (same ``target_file`` + different fp is NOT a duplicate —
+   workflow-fix-on-bug.md § Dedup) — EXCEPT that a record carrying NO usable
+   fingerprint (field absent, or non-fp-shaped, e.g. ``n/a (prose park)``)
+   falls back to ``origin_candidate_ts`` equality with a ``target_file``
+   prefix-compatibility veto (#1248); a record carrying a real, DIFFERING
+   12-hex fp still never suppresses. Accepted residual: two same-second
+   candidate rows on the SAME file in one TASK are indistinguishable to the
+   ts+target_file key, so one n/a-fp record would close both — grouping
+   widens this corner from same-file to same-task fork copies, failing toward
+   suppression only there; fp-less (prose) parks match on the record's
    ``origin_candidate_ts`` (PRIMARY key), falling back to a ``target_file``
    string match ONLY when the record carries no ``origin_candidate_ts``
    (legacy/backfill records).
@@ -35,8 +44,10 @@ Suppression rules (a candidate is SUPPRESSED == already routed):
    ts (first parseable events.jsonl row) POSTdates the candidate ts — a
    candidate that predates the closed fix was subsumed by it; one raised
    after it closed is a genuine re-raise and stays enumerated.
-3. **Row dedup** — identical (stream, ts, content-hash) rows collapse to one
-   (observed verbatim duplication in #1100's events.jsonl).
+3. **Row dedup** — identical (source, ts, content-hash) rows collapse to one;
+   the dedup set is shared across all status folders of one task id, so
+   byte-identical fork copies collapse too (observed verbatim duplication in
+   #1100's events.jsonl; cross-folder fork copies in #1196).
 
 fp-less prose parks are NEVER auto-suppressed on file-only matches (the
 #622-class distinct-bug-on-a-hot-file hazard); instead the advisory field
@@ -398,16 +409,23 @@ def _open_wf_fix_on_file(
     return None
 
 
-def _load_stream(path: Path, source: str) -> tuple[list[tuple[dict, datetime, str]], int]:
+def _load_stream(
+    path: Path, source: str, seen: set[tuple[str, str, str]] | None = None
+) -> tuple[list[tuple[dict, datetime, str]], int]:
     """Parse one JSONL stream into relevant (row, ts, raw_ts) tuples, row-deduped.
 
     Only candidate/filed-kind rows are kept (others are irrelevant, not
     malformed). Returns (rows, skipped) where skipped counts unparseable JSON
     lines and relevant rows with a missing/unparseable ts.
+
+    ``seen`` is the row-dedup set; pass ONE shared set across all events.jsonl
+    paths of a single source (task id) so byte-identical copies in duplicate
+    status folders collapse (#1274). None -> fresh per-call set.
     """
     skipped = 0
     rows: list[tuple[dict, datetime, str]] = []
-    seen: set[tuple[str, str, str]] = set()
+    if seen is None:
+        seen = set()
     try:
         # split("\n"), NEVER splitlines(): splitlines() splits on U+2028/U+2029
         # etc. and shreds valid JSONL rows whose note strings carry them
@@ -450,11 +468,21 @@ def sweep(
     include_routed: bool = False,
 ) -> dict:
     """Enumerate parked, unrouted workflow-fix candidates across all streams."""
-    streams: list[tuple[str, Path]] = []
+    # One logical stream PER TASK ID: all tasks/*/<id>/events.jsonl status
+    # folders merge, so a routed-record posted on ANY folder of a task closes
+    # the park's copies in EVERY folder, and byte-identical fork copies
+    # row-dedup (#1274; incident #1196: a stale duplicate status folder — the
+    # #644/#1253 class — re-enumerated an already-routed park nightly). The
+    # cache file stays its own group: filed records never match across
+    # task/cache boundaries (the fp-less primary key is bare
+    # origin_candidate_ts equality, so a global pool could false-suppress a
+    # same-second park on a DIFFERENT task).
+    grouped: dict[str, list[Path]] = {}
     for events in sorted(tasks_root.glob("*/*/events.jsonl")):
-        streams.append((f"task:{events.parent.name}", events))
+        grouped.setdefault(f"task:{events.parent.name}", []).append(events)
+    streams: list[tuple[str, list[Path]]] = list(grouped.items())
     if cache_file is not None and cache_file.exists():
-        streams.append(("cache", cache_file))
+        streams.append(("cache", [cache_file]))
 
     skipped_rows = 0
     candidates: list[Candidate] = []
@@ -462,9 +490,13 @@ def sweep(
     cutoff = now - timedelta(days=window_days) if window_days > 0 else None
     bodies: list[tuple[int, str, Path, str, dict]] | None = None  # loaded lazily, ONCE
 
-    for source, path in streams:
-        rows, skipped = _load_stream(path, source)
-        skipped_rows += skipped
+    for source, paths in streams:
+        rows: list[tuple[dict, datetime, str]] = []
+        seen: set[tuple[str, str, str]] = set()
+        for path in paths:
+            path_rows, skipped = _load_stream(path, source, seen)
+            rows.extend(path_rows)
+            skipped_rows += skipped
         filed = [(r, ts) for r, ts, _raw in rows if _row_kind(r).startswith(FILED_KIND_PREFIX)]
         for row, ts, ts_raw in rows:
             if not _row_kind(row).startswith(CANDIDATE_KIND_PREFIX):
