@@ -19,6 +19,8 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
@@ -362,3 +364,201 @@ def test_file_infra_task_imports_shared_helper():
     """Pins the no-drift decision: file_infra_task reuses the watcher's
     forwarder rather than a copied local one (a rename fails loud here)."""
     assert file_infra_task._forward_marker_child_stderr is asw._forward_marker_child_stderr
+
+
+# ──────────────────────────────────────────────────────────────────────
+# #1257: the watcher's seven in-file spawn_session.py subprocess sites
+# (rc==0 stderr was discarded; #1221 closed the same class at
+# file_infra_task's spawn hop — these are the in-file residue).
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _stub_watch_spawn_collaborators(monkeypatch, tmp_path):
+    """Force every watcher spawn-site collaborator inert so each site reaches
+    its subprocess.run: auth-outage gate open + record no-op, no suppression,
+    no per-issue overrides / registry predecessor, #1059 stagger window
+    closed, no dispatch stamp, and an empty registry dir (the infra-drain
+    pre-spawn re-check then sees no registration files and proceeds)."""
+    monkeypatch.setattr(asw, "_auth_outage_spawn_gate", lambda *a, **k: None)
+    monkeypatch.setattr(asw, "_auth_outage_record_spawn", lambda *a, **k: None)
+    monkeypatch.setattr(asw, "spawn_output_suppressed", lambda stdout: None)
+    monkeypatch.setattr(asw, "_stalled_session_overrides", lambda issue: [])
+    monkeypatch.setattr(asw, "_registry_spawned_at", lambda issue: None)
+    monkeypatch.setattr(asw, "session_dispatch_stagger_s", lambda: 0.0)
+    monkeypatch.setattr(asw, "last_session_dispatch_age_s", lambda: None)
+    monkeypatch.setattr(asw, "stagger_delay_s", lambda age, window: 0)
+    monkeypatch.setattr(asw, "record_session_dispatch", lambda *a, **k: None)
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+
+
+def _stub_watch_spawn_child(
+    monkeypatch, *, returncode=0, stdout="spawned sid-x", stderr=_LANDING_CHECK_LINE
+):
+    """monkeypatch ``asw.subprocess.run`` to a fixed child result; returns the
+    recorded call list (single-line stderr fixture so the exactly-once count
+    guards hold)."""
+    calls = []
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda *a, **k: (
+            calls.append((a, k))
+            or SimpleNamespace(returncode=returncode, stdout=stdout, stderr=stderr)
+        ),
+    )
+    return calls
+
+
+# The five suppression-bearing spawn sites (sites 1/3/4/5/6 of the plan §4
+# table), keyed by their `_auth_outage_record_spawn` arm name. Site 2
+# (`_stop_session`) and site 7 (`_respawn_campaign`) have no suppression
+# branch and are covered by their own forwards tests only.
+_SUPPRESSION_SITES = {
+    "crash": (
+        lambda: asw._respawn({"issue": 1257, "auto_approve_gpu_hours": 24.0}, dry_run=False),
+        "spawn_session spawn-issue (crash)",
+    ),
+    "stalled": (
+        lambda: asw._respawn_stalled_session(1257, 24.0, dry_run=False),
+        "spawn_session spawn-issue (stalled)",
+    ),
+    "orphan": (
+        lambda: asw._respawn_orphan(1257, 24.0, dry_run=False),
+        "spawn_session spawn-issue (orphan)",
+    ),
+    "infra-drain": (
+        lambda: asw._dispatch_infra_drain(1257, "slot", False, reg_snapshot={}),
+        "spawn_session spawn-issue (infra-drain)",
+    ),
+    "capacity-retry": (
+        lambda: asw._redrive_capacity_retry(1257, dry_run=False),
+        "spawn_session spawn-issue (capacity-retry)",
+    ),
+}
+
+
+def test_watch_respawn_crash_forwards_rc0_stderr(monkeypatch, capsys, tmp_path):
+    """Site 1 `_respawn`: rc==0 spawn child with non-empty stderr → returns
+    "spawned" AND forwards under the crash-arm context."""
+    _stub_watch_spawn_collaborators(monkeypatch, tmp_path)
+    calls = _stub_watch_spawn_child(monkeypatch)
+
+    result = asw._respawn({"issue": 1257, "auto_approve_gpu_hours": 24.0}, dry_run=False)
+
+    assert result == "spawned"
+    assert len(calls) == 1
+    err = capsys.readouterr().err
+    assert "[task.py stderr] spawn_session spawn-issue (crash):" in err
+    assert "task.py LANDING CHECK" in err
+
+
+def test_watch_stop_session_forwards_rc0_stderr(monkeypatch, capsys, tmp_path):
+    """Site 2 `_stop_session`: rc==0 stop child with non-empty stderr →
+    returns True AND forwards under the `stop (watcher)` context (this site's
+    rc==0 path previously read nothing at all)."""
+    _stub_watch_spawn_collaborators(monkeypatch, tmp_path)
+    _stub_watch_spawn_child(monkeypatch, stdout="")
+
+    assert asw._stop_session("sid-x", dry_run=False) is True
+    err = capsys.readouterr().err
+    assert "[task.py stderr] spawn_session stop (watcher):" in err
+    assert "task.py LANDING CHECK" in err
+
+
+def test_watch_respawn_stalled_forwards_rc0_stderr(monkeypatch, capsys, tmp_path):
+    """Site 3 `_respawn_stalled_session`: rc==0 → "spawned" + stalled-arm
+    context forwarding."""
+    _stub_watch_spawn_collaborators(monkeypatch, tmp_path)
+    _stub_watch_spawn_child(monkeypatch)
+
+    assert asw._respawn_stalled_session(1257, 24.0, dry_run=False) == "spawned"
+    err = capsys.readouterr().err
+    assert "[task.py stderr] spawn_session spawn-issue (stalled):" in err
+    assert "task.py LANDING CHECK" in err
+
+
+def test_watch_respawn_orphan_forwards_rc0_stderr(monkeypatch, capsys, tmp_path):
+    """Site 4 `_respawn_orphan`: rc==0 → "spawned" + orphan-arm context
+    forwarding."""
+    _stub_watch_spawn_collaborators(monkeypatch, tmp_path)
+    _stub_watch_spawn_child(monkeypatch)
+
+    assert asw._respawn_orphan(1257, 24.0, dry_run=False) == "spawned"
+    err = capsys.readouterr().err
+    assert "[task.py stderr] spawn_session spawn-issue (orphan):" in err
+    assert "task.py LANDING CHECK" in err
+
+
+def test_watch_infra_drain_dispatch_forwards_rc0_stderr(monkeypatch, capsys, tmp_path):
+    """Site 5 `_dispatch_infra_drain`: rc==0 → "spawned" + infra-drain-arm
+    context forwarding, EXACTLY ONCE (the #1221 single-forward count guard;
+    the stderr fixture is single-line by construction)."""
+    _stub_watch_spawn_collaborators(monkeypatch, tmp_path)
+    _stub_watch_spawn_child(monkeypatch)
+
+    assert asw._dispatch_infra_drain(1257, "slot", False, reg_snapshot={}) == "spawned"
+    err = capsys.readouterr().err
+    assert "[task.py stderr] spawn_session spawn-issue (infra-drain):" in err
+    assert "task.py LANDING CHECK" in err
+    assert err.count("[task.py stderr]") == 1
+
+
+def test_watch_capacity_retry_forwards_rc0_stderr(monkeypatch, capsys, tmp_path):
+    """Site 6 `_redrive_capacity_retry`: rc==0 → "spawned" +
+    capacity-retry-arm context forwarding."""
+    _stub_watch_spawn_collaborators(monkeypatch, tmp_path)
+    _stub_watch_spawn_child(monkeypatch)
+
+    assert asw._redrive_capacity_retry(1257, dry_run=False) == "spawned"
+    err = capsys.readouterr().err
+    assert "[task.py stderr] spawn_session spawn-issue (capacity-retry):" in err
+    assert "task.py LANDING CHECK" in err
+
+
+def test_watch_respawn_campaign_forwards_rc0_stderr(monkeypatch, capsys, tmp_path):
+    """Site 7 `_respawn_campaign`: rc==0 → returns True AND forwards under
+    the spawn-campaign context (no suppression branch at this site — the
+    insertion sits before the success print)."""
+    _stub_watch_spawn_collaborators(monkeypatch, tmp_path)
+    _stub_watch_spawn_child(monkeypatch)
+
+    assert asw._respawn_campaign({"issue": 1257}, dry_run=False) is True
+    err = capsys.readouterr().err
+    assert "[task.py stderr] spawn_session spawn-campaign (campaign):" in err
+    assert "task.py LANDING CHECK" in err
+
+
+@pytest.mark.parametrize("arm", sorted(_SUPPRESSION_SITES))
+def test_watch_spawn_hop_suppressed_path_still_forwards(monkeypatch, capsys, tmp_path, arm):
+    """Every suppression-bearing site (1/3/4/5/6) STILL forwards the rc==0
+    spawn-child stderr on the suppressed-dispatch path — pins the
+    before-the-suppression-branch placement at each site (mirrors #1221's
+    `test_file_infra_spawn_hop_suppressed_path_still_forwards`)."""
+    call, context = _SUPPRESSION_SITES[arm]
+    _stub_watch_spawn_collaborators(monkeypatch, tmp_path)
+    monkeypatch.setattr(asw, "spawn_output_suppressed", lambda stdout: "lease held")
+    _stub_watch_spawn_child(monkeypatch, stdout="suppressed")
+
+    assert call() == "suppressed"
+    err = capsys.readouterr().err
+    assert f"[task.py stderr] {context}:" in err
+    assert "task.py LANDING CHECK" in err
+    assert err.count("[task.py stderr]") == 1
+
+
+def test_watch_respawn_crash_rc_nonzero_unchanged(monkeypatch, capsys, tmp_path):
+    """Representative rc!=0 pin at site 1: returns "failed", the existing
+    RESPAWN FAILED line carries the stderr detail exactly once, and NO
+    forwarding prefix (the rc!=0 branch already prints the stderr — mirrors
+    `test_set_status_blocked_rc_nonzero_unchanged`; the per-site rc!=0
+    branches are structurally identical, plan §5)."""
+    _stub_watch_spawn_collaborators(monkeypatch, tmp_path)
+    _stub_watch_spawn_child(monkeypatch, returncode=1, stdout="", stderr="respawn boom detail")
+
+    result = asw._respawn({"issue": 1257, "auto_approve_gpu_hours": 24.0}, dry_run=False)
+
+    assert result == "failed"
+    err = capsys.readouterr().err
+    assert "RESPAWN FAILED issue #1257" in err
+    assert err.count("respawn boom detail") == 1
+    assert "[task.py stderr]" not in err
