@@ -6096,6 +6096,7 @@ def _respawn(entry: dict, dry_run: bool) -> str:
     if res.returncode != 0:
         print(f"  RESPAWN FAILED issue #{issue}: {res.stderr.strip()[:300]}", file=sys.stderr)
         return "failed"
+    _forward_marker_child_stderr(res, "spawn_session spawn-issue (crash)")
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     if spawn_output_suppressed(res.stdout) is not None:
         print(
@@ -9478,6 +9479,7 @@ def _stop_session(session_id: str, dry_run: bool) -> bool:
             file=sys.stderr,
         )
         return False
+    _forward_marker_child_stderr(res, "spawn_session stop (watcher)")
     return True
 
 
@@ -9523,6 +9525,7 @@ def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) ->
             file=sys.stderr,
         )
         return "failed"
+    _forward_marker_child_stderr(res, "spawn_session spawn-issue (stalled)")
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     if spawn_output_suppressed(res.stdout) is not None:
         print(
@@ -11710,6 +11713,7 @@ def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> str:
             file=sys.stderr,
         )
         return "failed"
+    _forward_marker_child_stderr(res, "spawn_session spawn-issue (orphan)")
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     if spawn_output_suppressed(res.stdout) is not None:
         print(
@@ -13297,6 +13301,7 @@ def _dispatch_infra_drain(
             file=sys.stderr,
         )
         return "failed"
+    _forward_marker_child_stderr(res, "spawn_session spawn-issue (infra-drain)")
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     suppressed = spawn_output_suppressed(res.stdout)
     if suppressed is not None:
@@ -14443,6 +14448,7 @@ def _redrive_capacity_retry(issue: int, dry_run: bool) -> str:
             file=sys.stderr,
         )
         return "failed"
+    _forward_marker_child_stderr(res, "spawn_session spawn-issue (capacity-retry)")
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     if spawn_output_suppressed(res.stdout) is not None:
         print(
@@ -18670,6 +18676,7 @@ def _respawn_campaign(entry: dict, dry_run: bool) -> bool:
             file=sys.stderr,
         )
         return False
+    _forward_marker_child_stderr(res, "spawn_session spawn-campaign (campaign)")
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     print(f"  RESPAWNED campaign #{issue}: {first_line}")
     # #1027: campaign respawns feed the trigger's event stream too (arm
