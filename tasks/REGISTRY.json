@@ -2112,8 +2112,8 @@
     "1271": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1271",
-      "status": "planning",
+      "path": "tasks/approved/1271",
+      "status": "approved",
       "title": "daily-fix: helper-authenticated fetch in experimenter recipe"
     },
     "1272": {
