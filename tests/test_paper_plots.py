@@ -429,7 +429,9 @@ def test_sidecar_multi_series_tags_group(tmp_path: Path) -> None:
 
 
 def test_sidecar_embed_data_opt_out(tmp_path: Path) -> None:
-    """embed_data=False writes a provenance-only sidecar (no `points`)."""
+    """embed_data=False writes a data-less sidecar (no `points`). The rendered
+    TEXT capture is independent of the data opt-out (numeric tick labels are
+    still rendered text), so `text` IS present by default."""
     set_paper_style("blog")
     fig, ax = plt.subplots()
     ax.scatter([1, 2, 3], [4, 5, 6])
@@ -437,12 +439,13 @@ def test_sidecar_embed_data_opt_out(tmp_path: Path) -> None:
     plt.close(fig)
 
     meta = json.loads(written["meta"].read_text())
-    assert set(meta.keys()) == {"commit", "created", "figsize"}
+    assert set(meta.keys()) == {"commit", "created", "figsize", "text"}
     assert "points" not in meta
 
 
 def test_sidecar_imshow_falls_back_to_provenance_only(tmp_path: Path) -> None:
-    """A figure with no extractable point data keeps the provenance-only sidecar."""
+    """A figure with no extractable point data keeps a data-less sidecar (no
+    `points`); the rendered-TEXT capture still applies (tick labels)."""
     import numpy as np
 
     set_paper_style("neurips")
@@ -453,7 +456,7 @@ def test_sidecar_imshow_falls_back_to_provenance_only(tmp_path: Path) -> None:
 
     meta = json.loads(written["meta"].read_text())
     assert "points" not in meta
-    assert {"commit", "created", "figsize"} == set(meta.keys())
+    assert {"commit", "created", "figsize", "text"} == set(meta.keys())
 
 
 def _reject_js_invalid_constants(c: str) -> object:
@@ -513,3 +516,175 @@ def test_sidecar_bar_nan_height_serializes_as_json_null(tmp_path: Path) -> None:
     pts = meta["points"]
     assert pts[1]["rate"] is None
     assert pts[0]["rate"] == 0.5
+
+
+# ---------------------------------------------------------------------------
+# savefig_paper — rendered-text capture into the sidecar (`meta["text"]`)
+# ---------------------------------------------------------------------------
+
+
+def test_sidecar_text_captures_titles_labels_legend(tmp_path: Path) -> None:
+    """Suptitle, `set_title_subtitle` (the house `loc="left"` title + its
+    annotation subtitle), axis labels, legend labels + title, and series names
+    all land in `meta["text"]`."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    fig.suptitle("Overall headline")
+    set_title_subtitle(ax, "Finding lede", subtitle="context under the lede")
+    ax.plot([0, 1], [0, 1], label="trained")
+    ax.bar(["a", "b"], [0.2, 0.4], label="base")
+    ax.set_xlabel("condition")
+    ax.set_ylabel("agreement rate")
+    ax.legend(title="arm")
+    written = savefig_paper(fig, "textcap", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    text = meta["text"]
+    assert text["suptitle"] == "Overall headline"
+    ax_d = text["axes"][0]
+    assert ax_d["title_left"] == "Finding lede"  # the house loc="left" render path
+    assert "context under the lede" in ax_d["annotations"]  # subtitle = ax.annotate
+    assert ax_d["xlabel"] == "condition"
+    assert ax_d["ylabel"] == "agreement rate"
+    assert ax_d["legend_labels"] == ["trained", "base"]
+    assert ax_d["legend_title"] == "arm"
+    assert set(text["series"]) == {"trained", "base"}
+    # Category tick labels are rendered text too (closes check 28's residual
+    # (ii) for bar category labels).
+    assert "a" in ax_d["xticklabels"] and "b" in ax_d["xticklabels"]
+
+
+def test_sidecar_text_series_excludes_underscore_labels(tmp_path: Path) -> None:
+    """Unlabeled artists (matplotlib's `_child0` no-legend convention) never
+    appear in `series`."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    ax.plot([0, 1], [0, 1])  # unlabeled → auto `_child0`
+    ax.scatter([0.5], [0.5])  # unlabeled collection
+    written = savefig_paper(fig, "noseries", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    assert "series" not in meta["text"]
+
+
+def test_sidecar_text_omitted_when_empty(tmp_path: Path) -> None:
+    """A figure rendering NO text at all (no titles / labels / legend / ticks)
+    omits the `text` key entirely — no empty-noise key."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    # 3 vertices: an unlabeled <=2-vertex line is skipped by the DATA
+    # extractor as a leader/reference segment, and this test also pins that
+    # the data embed is unaffected by the empty TEXT capture.
+    ax.plot([0, 1, 2], [0, 1, 4])
+    ax.set_xticks([])
+    ax.set_yticks([])
+    written = savefig_paper(fig, "notext", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    assert "text" not in meta
+    assert "points" in meta  # the data embed is unaffected
+
+
+def test_sidecar_text_extraction_failure_never_fails_save(tmp_path: Path, monkeypatch) -> None:
+    """A raising `_extract_fig_text` must NOT fail the save — the `text` key
+    is simply omitted (the `_extract_axes_data` best-effort contract)."""
+    from explore_persona_space.analysis import paper_plots as pp
+
+    def _boom(fig):
+        raise RuntimeError("synthetic extraction failure")
+
+    monkeypatch.setattr(pp, "_extract_fig_text", _boom)
+    fig = _make_simple_fig()
+    written = savefig_paper(fig, "textfail", dir=tmp_path)
+    plt.close(fig)
+
+    assert written["png"].exists() and written["meta"].exists()
+    meta = json.loads(written["meta"].read_text())
+    assert "text" not in meta
+    assert "points" in meta  # data embed unaffected by the text failure
+
+
+def test_sidecar_text_embed_text_false_opts_out(tmp_path: Path) -> None:
+    """`embed_text=False` writes no `text` key while `points` stays."""
+    fig = _make_simple_fig()
+    written = savefig_paper(fig, "textopt", dir=tmp_path, embed_text=False)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    assert "text" not in meta
+    assert "points" in meta
+
+
+def test_sidecar_text_schema_shape_dashboard_safe(tmp_path: Path) -> None:
+    """Every `meta["text"]` value is str | None | list, and every `axes[i]`
+    entry maps str -> (str | list[str]). This pins the dashboard-viewer
+    safety invariant: `dashboard/lib/task-data.ts` `normalizeToRows` prefers
+    INLINE_ROW_KEYS (`points` wins when present) and its object-of-objects
+    fallback requires >=2 plain-OBJECT values at a visited level while
+    descending at most two levels — `isPlainObject` excludes arrays/null, so
+    a `text` dict whose values are only str/None/list can never be misread
+    as data rows."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    fig.suptitle("Headline")
+    set_title_subtitle(ax, "Lede", subtitle="sub", source="Source: eval_results/x")
+    ax.plot([0, 1], [0, 1], label="trained")
+    ax.legend()
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    written = savefig_paper(fig, "schema", dir=tmp_path)
+    plt.close(fig)
+
+    text = json.loads(written["meta"].read_text())["text"]
+    assert isinstance(text, dict)
+    for v in text.values():
+        assert v is None or isinstance(v, (str, list)), v
+    for ax_d in text.get("axes", []):
+        assert isinstance(ax_d, dict)
+        for v in ax_d.values():
+            assert isinstance(v, (str, list)), v
+            if isinstance(v, list):
+                assert all(isinstance(s, str) for s in v), v
+
+
+def test_sidecar_text_tick_labels_capped(tmp_path: Path) -> None:
+    """Per-axes tick-label lists are capped at `_MAX_TEXT_ITEMS` (sidecar size
+    containment)."""
+    from explore_persona_space.analysis.paper_plots import _MAX_TEXT_ITEMS
+
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    n = _MAX_TEXT_ITEMS + 50
+    ax.bar(range(n), [1.0] * n)
+    ax.set_xticks(range(n), [f"cat {i}" for i in range(n)])
+    written = savefig_paper(fig, "manyticks", dir=tmp_path, embed_data=False)
+    plt.close(fig)
+
+    text = json.loads(written["meta"].read_text())["text"]
+    assert len(text["axes"][0]["xticklabels"]) == _MAX_TEXT_ITEMS
+
+
+def test_sidecar_text_no_suptext_duplication(tmp_path: Path) -> None:
+    """On matplotlib 3.10 the suptitle AND supx/supy labels are all members of
+    `fig.texts`, so the identity-exclusion set in `_extract_fig_text` is
+    LOAD-BEARING: the suptitle string appears ONLY under `text["suptitle"]`
+    (never in `fig_texts`), and the supx/supy strings appear EXACTLY ONCE
+    each in `fig_texts` (via the post-cap explicit re-add, not doubled
+    through the `fig.texts` walk)."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    ax.plot([0, 1], [0, 1])
+    fig.suptitle("The headline")
+    fig.supxlabel("Source: eval_results/issue_999")
+    fig.supylabel("shared y label")
+    written = savefig_paper(fig, "suptext", dir=tmp_path, embed_data=False)
+    plt.close(fig)
+
+    text = json.loads(written["meta"].read_text())["text"]
+    assert text["suptitle"] == "The headline"
+    assert "The headline" not in text["fig_texts"]
+    assert text["fig_texts"].count("Source: eval_results/issue_999") == 1
+    assert text["fig_texts"].count("shared y label") == 1
