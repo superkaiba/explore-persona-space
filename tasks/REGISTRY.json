@@ -1972,15 +1972,15 @@
     "1253": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1253",
-      "status": "proposed",
+      "path": "tasks/reviewing/1253",
+      "status": "reviewing",
       "title": "post-merge stale-task-folder recipe: checkout clause always "
     },
     "1254": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1254",
-      "status": "proposed",
+      "path": "tasks/completed/1254",
+      "status": "completed",
       "title": "workflow-fix: code-reviewer degenerate-statistic check (observed-vs-null reads)"
     },
     "1255": {
