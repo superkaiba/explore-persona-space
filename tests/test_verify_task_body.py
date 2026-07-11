@@ -10361,6 +10361,42 @@ def test_check34_both_arms_unlabeled_scatter_silent_skip(tmp_path, monkeypatch):
     assert res.passed and not res.is_warn, res.render()
 
 
+def test_check34_truncated_sidecar_class_b_silent_skip(tmp_path, monkeypatch):
+    """(m) Regression, r1 Major `check34-truncated-sidecar-false-warn`: a
+    `data_truncated` sidecar carries NO points-derived basis — the writer
+    truncates concatenated rows HEAD-FIRST, so a first artist with >= the cap
+    drops all LATER artists/kinds from the stored payload. The r1 demo shape
+    (two LABELED line artists; stored rows all `_group` 0 because artist 2 was
+    truncated away) + "one line per seed" fired a false Class-B WARN pre-fix;
+    post-fix Class B silently skips (stored rows are not figure truth)."""
+    pts = [{"x": float(i), "y": float(i), "_kind": "line", "_group": 0} for i in range(12)]
+    meta = _check34_sidecar(points=pts, series=["seed 0", "seed 1"])
+    meta["data_truncated"] = True
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: one line per seed.").replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_beat_claims_vs_sidecar_text(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check34_truncated_sidecar_class_a_text_basis_pass(tmp_path, monkeypatch):
+    """(n) Companion to (m): the TEXT bases are truncation-IMMUNE (rendered
+    text is captured separately from the points payload) — the same truncated
+    sidecar WITH 2 legend labels + a Class-A claim still scans and PASSes via
+    the legend basis; truncation removes only the points-derived bases."""
+    pts = [{"x": float(i), "y": float(i), "_kind": "line", "_group": 0} for i in range(12)]
+    meta = _check34_sidecar(points=pts, legend_labels=["trained", "base"])
+    meta["data_truncated"] = True
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: mean agreement for both trained and base models.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_beat_claims_vs_sidecar_text(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "consistent" in res.detail
+
+
 def test_check34_text_and_points_leave_checks26_33_unchanged(tmp_path, monkeypatch):
     """(l) A sidecar carrying BOTH `text` and `points` changes nothing for the
     sibling checks: check 33 still matches its bolded decimals against the
@@ -10466,11 +10502,41 @@ def test_check34_beat_claim_warnings_comparator():
         {"x": 1.0, "y": 1.0, "_kind": "line", "_group": 1},
     ]
     assert fn(both, _meta(points=mixed), "f.png") == []
+    # A lone data-contributing scatter artist in a MULTI-artist figure (a
+    # rowless sibling left `_group` on the rows): the 1-value group set is
+    # treated as ABSENT group evidence — same skip as the no-`_group` lone
+    # scatter above (the artist may encode >=2 arms per-point). r1 Minor.
+    lone_group_scatter = [
+        {"x": 0.1 * i, "y": 0.2 * i, "_kind": "scatter", "_group": 0} for i in range(5)
+    ]
+    assert fn(both, _meta(points=lone_group_scatter), "f.png") == []
     # Class B without a points payload → skip (basis unavailable).
     one_per = {"both": [], "one_per": [("one bar per source", "bar")]}
     assert fn(one_per, _meta(text=text_two_series), "f.png") == []
     # Class B: claimed kind entirely absent (0 bar rows) → warn.
     assert len(fn(one_per, _meta(points=lone_scatter), "f.png")) == 1
+
+    # TRUNCATED sidecars (r1 Major): stored rows are head-truncated, so they
+    # are NOT figure truth — every points-derived basis is unavailable.
+    def _trunc(m):
+        m["data_truncated"] = True
+        return m
+
+    # Class B on a truncated sidecar → skip (both the <=1-artist read AND the
+    # zeroed-out claimed kind: the missing bar rows may sit past the cap).
+    one_line_grouped = [
+        {"x": float(i), "y": float(i), "_kind": "line", "_group": 0} for i in range(10)
+    ]
+    line_per = {"both": [], "one_per": [("one line per seed", "line")]}
+    assert fn(line_per, _trunc(_meta(points=one_line_grouped)), "f.png") == []
+    assert fn(one_per, _trunc(_meta(points=one_line_grouped)), "f.png") == []
+    # Class A on a truncated sidecar: points-derived bases gone, but the TEXT
+    # bases are truncation-immune and still FIRE — a single fig-global series
+    # label with "both arms" claimed warns exactly as it does untruncated.
+    text_one_series = {"suptitle": None, "fig_texts": [], "series": ["a"]}
+    assert len(fn(both, _trunc(_meta(points=one_line_grouped, text=text_one_series)), "f.png")) == 1
+    # ... and with no text basis at all, a truncated Class A yields NO basis → skip.
+    assert fn(both, _trunc(_meta(points=one_line_grouped)), "f.png") == []
 
 
 #
