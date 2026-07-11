@@ -139,12 +139,13 @@ def test_pinned_invariant_list_matches_live_tree():
         "Update the literal in scripts/select_step9c_tests.py deliberately."
     )
     # And it must be a non-trivial, de-duplicated set (no accidental shrink/dup).
-    # 35 = plan §5's verbatim enumerated list (31 files) + test_autonomous_session_watch.py
+    # 36 = plan §5's verbatim enumerated list (31 files) + test_autonomous_session_watch.py
     # (the #754 brief's one curated addition) + the 3 SKILL.md-content-pin suites added by
     # #1242 (test_step10d_guard3 / test_step_completed_resume / test_issue_skill_exit_breadcrumb
-    # — SKILL.md diffs gate ONLY via this tuple, so their pins must live in it).
+    # — SKILL.md diffs gate ONLY via this tuple, so their pins must live in it) + the #1268
+    # Step-10d repin/guard hardening pin suite (test_issue_skill_merge_resnapshot_pin).
     assert len(sel.WORKFLOW_INVARIANT) == len(set(sel.WORKFLOW_INVARIANT))
-    assert len(sel.WORKFLOW_INVARIANT) == 35
+    assert len(sel.WORKFLOW_INVARIANT) == 36
 
 
 # --- Case 7: determinism — identical sorted output across two invocations ----
