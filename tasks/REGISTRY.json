@@ -2091,8 +2091,8 @@
     "1269": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1269",
-      "status": "running",
+      "path": "tasks/reviewing/1269",
+      "status": "reviewing",
       "title": "daily-fix: LESSONS.md durable slimming + lint cap WARN band"
     },
     "127": {
