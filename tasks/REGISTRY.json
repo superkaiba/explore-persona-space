@@ -1958,8 +1958,8 @@
     "1251": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1251",
-      "status": "proposed",
+      "path": "tasks/planning/1251",
+      "status": "planning",
       "title": "step9c baseline oracle tolerates unrelated concurrent dirty "
     },
     "1252": {
