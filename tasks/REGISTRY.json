@@ -2126,8 +2126,8 @@
     "1273": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1273",
-      "status": "proposed",
+      "path": "tasks/planning/1273",
+      "status": "planning",
       "title": "daily-fix: driver guards the daily-fix title prefix"
     },
     "1274": {
