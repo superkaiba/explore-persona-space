@@ -303,7 +303,7 @@ deliberate — see plan §2.
 
 ```bash
 # launch — sentinel records the exit code regardless of where the harness runs the job
-nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 bash -c 'uv run python scripts/<analysis>.py ...; echo "RC=$? DONE" > /tmp/issue-<N>-<job>.sentinel' >/tmp/issue-<N>-<job>.log 2>&1 &
+setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 bash -c 'uv run python scripts/<analysis>.py ...; echo "RC=$? DONE" > /tmp/issue-<N>-<job>.sentinel' < /dev/null >/tmp/issue-<N>-<job>.log 2>&1 &
 # then, as a SEPARATE run_in_background=true Bash call, block on the sentinel (NOT the bg stdout):
 until [ -f /tmp/issue-<N>-<job>.sentinel ]; do sleep 30; done; cat /tmp/issue-<N>-<job>.sentinel
 ```
