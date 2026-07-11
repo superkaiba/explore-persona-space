@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1273,
+  "highest_id": 1274,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2129,6 +2129,13 @@
       "path": "tasks/proposed/1273",
       "status": "proposed",
       "title": "daily-fix: driver guards the daily-fix title prefix"
+    },
+    "1274": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1274",
+      "status": "proposed",
+      "title": "daily-fix: sweep misses routed-record for prior-night park"
     },
     "128": {
       "has_clean_result": false,
