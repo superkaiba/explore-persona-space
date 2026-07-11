@@ -2049,8 +2049,8 @@
     "1263": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1263",
-      "status": "planning",
+      "path": "tasks/approved/1263",
+      "status": "approved",
       "title": "daily-fix: add unwrapped clarifier to escape remedy text"
     },
     "1264": {
