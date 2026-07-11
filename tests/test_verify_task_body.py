@@ -104,7 +104,7 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 36 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 37 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe), the four
     # v3-gated body-only checks (check 18 `check_data_shape`, check 19
@@ -115,7 +115,7 @@ def test_good_body_passes_all():
     # 21 `check_v4_results_beat` WARN, check 27
     # `check_v4_no_bare_issue_refs`; check 20 v4 `check_v4_word_caps`
     # moved to the appended-outside set — it needs `issue`, #921) — each
-    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the NINE
+    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the TEN
     # generation-agnostic checks: check 22
     # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
     # this fixture's `## Reproducibility` carries no figure-sha claim,
@@ -142,12 +142,15 @@ def test_good_body_passes_all():
     # the fence, and check 33 (`check_figure_prose_numerics_vs_sidecar`,
     # WARN), a NO-OP PASS here for the same fake-sha / no-sidecar reason
     # as checks 24/28 (no value-bearing sidecar resolves, so no bolded
-    # decimal is ever compared).
+    # decimal is ever compared), and check 34
+    # (`check_figure_beat_claims_vs_sidecar_text`, WARN, forward-only), a
+    # NO-OP PASS here for the same fake-sha / no-sidecar reason (and no
+    # `meta["text"]` block could resolve even if a sidecar did).
     # check 25 (`check_audit_availability_claims_match_hf`)
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (36 functions), then appends the Goal soft check, the H1↔frontmatter-
+    # (37 functions), then appends the Goal soft check, the H1↔frontmatter-
     # title sync check (#1110; PASS-skip: not a sentinelled body), the
     # Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
@@ -159,15 +162,18 @@ def test_good_body_passes_all():
     # the check-31 orphaned-per-unit-figures probe (needs `issue` for
     # figures-dir scoping, #1011; PASS here — the fixture's fake sha is not
     # locally reachable, so the cited SHA is silently skipped) →
-    # 47 results total (2 prepended + CHECKS[1:]=36 + 9 appended). The
+    # 48 results total (2 prepended + CHECKS[1:]=37 + 9 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 47
+    assert len(results) == 48
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
     assert "figure prose numerics vs figure sidecar (plotted-value drift)" in {
+        r.name for r in results
+    }
+    assert "figure beat claims vs sidecar rendered text (series-structure drift)" in {
         r.name for r in results
     }
 
@@ -4597,7 +4603,7 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the TEN generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the ELEVEN generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via a bounded
@@ -4633,7 +4639,13 @@ def test_checks_list_size():
     sidecar's plotted values, under rounding / sign / percent /
     sci-notation tolerance; per-figure `<!-- prose-numerics: derived -->`
     opt-out; silent skip on missing / truncated sidecars; incident #825 r1,
-    #1107). The
+    #1107), and check 34 (`check_figure_beat_claims_vs_sidecar_text`, WARN,
+    FORWARD-ONLY: beat-1 series-structure claims — "both … arms/…" and "one
+    bar/… per <unit>" — vs the series structure the sidecar demonstrably
+    renders; fires only when the sidecar carries the `meta["text"]`
+    rendered-text block, so every pre-capture sidecar silently skips;
+    contradiction-only, absence of evidence never fires; incident #1092
+    defect (b), #1255). The
     migration is a RETARGET — every former check
     was kept (sometimes dormant, e.g. `check_figure_caption`) so downstream
     tests stay valid; the v3 checks PASS-skip on non-v3 bodies.
@@ -4649,15 +4661,16 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 46 results (2 prepended + CHECKS[1:]=36 +
-    8 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 37.
+    So `verify_text` returns 48 results (2 prepended + CHECKS[1:]=37 +
+    9 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    at 38.
     """
-    assert len(verify_task_body.CHECKS) == 37
+    assert len(verify_task_body.CHECKS) == 38
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_prose_numerics_vs_sidecar in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_beat_claims_vs_sidecar_text in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -8949,6 +8962,30 @@ def test_check24_repo_unresolved_is_noop_pass(monkeypatch):
     assert "repo root unresolved" in res.detail
 
 
+def test_check24_stale_token_in_text_suptitle_warns(tmp_path, monkeypatch):
+    """The `meta["text"]` rendered-text block (new `savefig_paper` output) is
+    scanned by check 24 with ZERO scan-code change: a configured stale token
+    sitting in the actual rendered SUPTITLE → WARN (`_flatten_meta_strings`
+    walks all non-provenance strings, so the new subtree enters
+    automatically; forward-only — old sidecars simply lack the key)."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-07-10T00:00:00Z",
+            "text": {
+                "suptitle": "Cosine recipe shows a geometrically real separation",
+                "fig_texts": [],
+                "axes": [{"xlabel": "condition"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_text_vs_body_tokens(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "geometrically real" in res.detail
+
+
 def test_check24_user_token_file_extends_list(tmp_path, monkeypatch):
     """`~/.eps-stale-tokens.json` extends the built-in list, read fail-soft."""
     home = tmp_path / "home"
@@ -9517,6 +9554,62 @@ def test_check28_slash_separated_label_warns(tmp_path, monkeypatch):
     res = verify_task_body.check_figure_label_codes(body)
     assert res.passed and res.is_warn, res.render()
     assert "ctx_blk_max" in res.detail and "ans_uhdr_max" in res.detail
+
+
+def test_check28_slug_in_text_axes_title_warns(tmp_path, monkeypatch):
+    """The #1092 defect-(a) regression: a bare cell slug rendered as a PANEL
+    TITLE now reaches check 28 through the `meta["text"]` block the current
+    `savefig_paper` writes — `_iter_meta_label_values` collects the text
+    subtree's string VALUES with zero scan-code change, while the block's
+    structural key names (`suptitle`, `axes`, `fig_texts`, …) are
+    whitespace-free identifier keys and are never collected."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-07-10T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"title": "ctx_blk_max@L12 vs ans_uhdr_max@L12"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "ctx_blk_max@L12" in res.detail
+
+
+def test_check28_plain_english_text_block_clean(tmp_path, monkeypatch):
+    """A plain-English `meta["text"]` block (suptitle / titles / labels /
+    legend / series / tick labels) → clean PASS: the new subtree opens no
+    false-positive channel on well-labeled figures."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-07-10T00:00:00Z",
+            "text": {
+                "suptitle": "Alignment holds across seeds",
+                "fig_texts": ["Source: evaluation results for task 999"],
+                "series": ["trained", "base"],
+                "axes": [
+                    {
+                        "title_left": "Trained vs base agreement",
+                        "xlabel": "condition",
+                        "ylabel": "agreement rate",
+                        "legend_labels": ["trained", "base"],
+                        "legend_title": "arm",
+                        "xticklabels": ["baseline", "tulu-25"],
+                    }
+                ],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and not res.is_warn, res.render()
 
 
 # ─── Check 33: bolded what-is-plotted numerics vs sidecar plotted values ───
@@ -10089,7 +10182,297 @@ def test_check33_bold_prose_decimals_extraction():
     assert len(out) == 4, out
 
 
-# ─── #732: check_judge_error_denominator — gate silent judge-API-error EM ──
+# ─── Check 34: beat-phrase series-structure claims vs sidecar rendered text ─
+#
+# Fifth sibling of checks 24/26/28/33: the two literal #1092 defect-(b)
+# phrasings ("both … arms/…", "one bar/… per <unit>") must not contradict the
+# series structure the sidecar demonstrably renders. FORWARD-ONLY: fires only
+# when the sidecar carries the `meta["text"]` rendered-text block the current
+# `savefig_paper` writes; contradiction-only (absence of evidence never
+# fires). WARN never FAIL.
+
+_CHECK34_NAME = "figure beat claims vs sidecar rendered text (series-structure drift)"
+
+
+def _check34_sidecar(*, points=None, series=None, legend_labels=None, n_series=None):
+    """A sidecar carrying the `meta["text"]` block (the check-34 forward-only
+    gate), with optional `points` rows, fig-global `series` labels, and
+    per-axes `legend_labels`."""
+    ax_d: dict = {"xlabel": "condition", "ylabel": "agreement rate"}
+    if legend_labels:
+        ax_d["legend_labels"] = list(legend_labels)
+    text: dict = {"suptitle": None, "fig_texts": [], "axes": [ax_d]}
+    if series:
+        text["series"] = list(series)
+    meta: dict = {"created": "2026-07-10T00:00:00Z", "text": text}
+    if points is not None:
+        meta["points"] = points
+    if n_series is not None:
+        meta["n_series"] = n_series
+    return meta
+
+
+def test_check34_both_arms_single_series_warns(tmp_path, monkeypatch):
+    """(a) "both trained and base models" vs a sidecar whose ONLY available
+    basis is a single series label → WARN (passed=True, is_warn=True) naming
+    the claim phrase; the WARN never flips the body's overall verdict."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _check34_sidecar(series=["trained"]))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: mean agreement for both trained and base models.").replace(
+        "0123456789abcdef", sha
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    res = _results_by_name(results)[_CHECK34_NAME]
+    assert res.passed and res.is_warn, res.render()
+    assert "both trained and base models" in res.detail
+    assert _CHECK34_NAME not in {r.name for r in results if not r.passed}
+
+
+def test_check34_both_arms_two_legend_labels_pass(tmp_path, monkeypatch):
+    """(b) The same claim vs 2 legend entries → clean PASS (the legend basis
+    reads 2, so the claim is satisfiable)."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path, _check34_sidecar(legend_labels=["trained", "base"])
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: mean agreement for both trained and base models.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_beat_claims_vs_sidecar_text(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "consistent" in res.detail
+
+
+def test_check34_both_arms_two_bar_rows_one_container_pass(tmp_path, monkeypatch):
+    """(c) Two BAR ROWS in ONE container (`n_series` = 1, no `_group`) satisfy
+    "both arms" → PASS. Pins the n_series-NOT-used decision: a two-arm bar
+    pair lives in one `BarContainer`, so an `n_series` basis would read 1 and
+    false-fire on the most common two-arm bar chart."""
+    pts = [
+        {"category": "trained", "rate": 0.7, "_kind": "bar"},
+        {"category": "base", "rate": 0.4, "_kind": "bar"},
+    ]
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _check34_sidecar(points=pts, n_series=1))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: agreement for both trained and base arms.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_beat_claims_vs_sidecar_text(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check34_one_bar_per_single_bar_warns(tmp_path, monkeypatch):
+    """(d) The #1092 degenerate class: "one bar per re-fit item" vs a single
+    rendered bar row → WARN, with the n=1 acknowledgeable remedy named."""
+    pts = [{"category": "only", "rate": 0.7, "_kind": "bar"}]
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _check34_sidecar(points=pts))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: one bar per re-fit item.").replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_beat_claims_vs_sidecar_text(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "one bar per re-fit" in res.detail
+    assert "acknowledgeable" in res.detail
+
+
+def test_check34_one_bar_per_five_bars_pass(tmp_path, monkeypatch):
+    """(e) "one bar per source" vs 5 bar rows → clean PASS."""
+    pts = [{"category": f"s{i}", "rate": 0.1 * i, "_kind": "bar"} for i in range(5)]
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _check34_sidecar(points=pts))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: one bar per source persona.").replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_beat_claims_vs_sidecar_text(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check34_one_line_per_single_line_artist_warns(tmp_path, monkeypatch):
+    """(f) "one line per seed" vs a SINGLE line artist with many vertex rows →
+    WARN. Pins the distinct-`_group` per-ARTIST basis: a line's point rows are
+    VERTICES (30 rows here), so a raw row count would read 30 and never fire;
+    `_group` is per-ARTIST (per-series), not per-panel, and a single-artist
+    sidecar carries no `_group` at all → 1 artist."""
+    pts = [{"x": float(i), "y": float(i), "_kind": "line"} for i in range(30)]
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _check34_sidecar(points=pts))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: one line per seed.").replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_beat_claims_vs_sidecar_text(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "1 `line` element(s)" in res.detail
+
+
+def test_check34_no_text_sidecar_silent_skip(tmp_path, monkeypatch):
+    """(g) THE forward-only pin: a claiming prose window + a sidecar WITHOUT
+    the `meta["text"]` block (every sidecar committed before the capture
+    landed) → NO-OP silent skip, never a WARN and never check 26's loud
+    missing-sidecar FAIL — no existing body can retroactively flag."""
+    meta = {
+        "created": "2026-06-01T00:00:00Z",
+        "points": [{"category": "only", "rate": 0.7, "_kind": "bar"}],
+    }
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: one bar per re-fit item.").replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_beat_claims_vs_sidecar_text(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "nothing to compare" in res.detail
+
+
+def test_check34_missing_sidecar_silent_skip(tmp_path, monkeypatch):
+    """(h) A same-repo figure with NO `.meta.json` sibling → silent-skip PASS
+    (check-24 fail-soft convention), even with a claiming window."""
+    repo, sha = _make_repo_with_figure(tmp_path)  # commits hero.png but no sidecar
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: one bar per re-fit item.").replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_beat_claims_vs_sidecar_text(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "nothing to compare" in res.detail
+
+
+def test_check34_repo_unresolved_is_noop_pass(monkeypatch):
+    """(i) Offline / repo root unresolved → NO-OP PASS."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    body = _check33_body("Plotted: one bar per re-fit item.")
+    res = verify_task_body.check_figure_beat_claims_vs_sidecar_text(body)
+    assert res.passed and not res.is_warn
+    assert "repo root unresolved" in res.detail
+
+
+def test_check34_no_claim_in_prose_pass(tmp_path, monkeypatch):
+    """(j) A window with NO registered claim phrase → "nothing to compare"
+    PASS even against a text-bearing sidecar (never over-fire)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _check34_sidecar(series=["trained"]))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK33_BODY.replace("0123456789abcdef", sha)  # bolded decimals, no beat claim
+    res = verify_task_body.check_figure_beat_claims_vs_sidecar_text(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "nothing to compare" in res.detail
+
+
+def test_check34_both_arms_unlabeled_scatter_silent_skip(tmp_path, monkeypatch):
+    """(k) The one real FP channel, closed by basis AVAILABILITY: "both arms"
+    over an UNLABELED single-artist scatter (no series, no legend, no bar/line
+    rows, no `_group` anywhere — a lone scatter artist can encode two arms via
+    per-point colors the extractor cannot see) → NO available basis → skip,
+    NOT a contradiction."""
+    pts = [{"x": 0.1 * i, "y": 0.2 * i, "_kind": "scatter"} for i in range(6)]
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _check34_sidecar(points=pts))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: agreement for both input arms.").replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_beat_claims_vs_sidecar_text(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check34_text_and_points_leave_checks26_33_unchanged(tmp_path, monkeypatch):
+    """(l) A sidecar carrying BOTH `text` and `points` changes nothing for the
+    sibling checks: check 33 still matches its bolded decimals against the
+    `points` values (clean PASS), and check 26 still finds no panel/series
+    prose claim (NO-OP PASS) — the `text` key is invisible to both by
+    construction (check 26/33 read `points`/`rows` only)."""
+    meta = _bar_values_sidecar(0.704, 0.879)
+    meta["text"] = {
+        "suptitle": "Alignment per condition",
+        "fig_texts": [],
+        "axes": [{"xlabel": "condition", "ylabel": "alignment"}],
+    }
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK33_BODY.replace("0123456789abcdef", sha)
+    res33 = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res33.passed and not res33.is_warn, res33.render()
+    assert "all bolded what-is-plotted decimals present" in res33.detail
+    res26 = verify_task_body.check_figure_panel_prose_vs_sidecar(body)
+    assert res26.passed and not res26.is_warn, res26.render()
+    assert "no panel/series prose claims" in res26.detail
+
+
+def test_check34_beat_series_claims_inventory():
+    """Pure-parser inventory for `_beat_series_claims`: the two registered
+    claim classes match their literal #1092 phrasings; paraphrases miss BY
+    DESIGN (the documented false-negative envelope)."""
+    fn = verify_task_body._beat_series_claims
+    # Class A — matches.
+    assert fn("shows both input arms")["both"] == ["both input arms"]
+    assert fn("both fine-tuned and base models are shown")["both"] == [
+        "both fine-tuned and base models"
+    ]
+    assert fn("both trained and base conditions")["both"]
+    assert fn("Both curves overlap")["both"]  # case-insensitive
+    # Class B — matches, kind-mapped, de-duplicated.
+    one = fn("one bar per re-fit item; one bar per re-fit item")["one_per"]
+    assert one == [("one bar per re-fit", "bar")]
+    assert fn("one line per seed")["one_per"] == [("one line per seed", "line")]
+    assert fn("one curve per layer")["one_per"][0][1] == "line"
+    assert fn("one dot per persona")["one_per"][0][1] == "scatter"
+    assert fn("one point per context")["one_per"][0][1] == "scatter"
+    assert fn("one marker per cell")["one_per"][0][1] == "scatter"
+    # Non-matches (paraphrases / other nouns) — the FN envelope.
+    for miss in (
+        "each arm gets its own panel",
+        "two models are compared",
+        "both of these approaches work",  # 'approaches' is not a registered noun
+        "bars per source",  # no leading 'one'
+        "one bar for each source",  # 'for each', not 'per'
+    ):
+        got = fn(miss)
+        assert not got["both"] and not got["one_per"], (miss, got)
+
+
+def test_check34_beat_claim_warnings_comparator():
+    """Pure-comparator inventory for `_beat_claim_warnings`, pinning the
+    per-ARTIST (not per-panel) `_group` semantics and the basis-availability
+    rules. `_group` indexes artist GROUPS (`_build_sidecar_data`: one index
+    per extracted artist, emitted only on multi-artist figures) — a 4-panel
+    figure with 22 artists has 22 groups, so no basis here ever reads panel
+    counts."""
+    fn = verify_task_body._beat_claim_warnings
+    both = {"both": ["both arms"], "one_per": []}
+
+    def _meta(points=None, text=None):
+        m: dict = {"created": "t"}
+        if points is not None:
+            m["points"] = points
+        m["text"] = text if text is not None else {"suptitle": None, "fig_texts": []}
+        return m
+
+    # Two line ARTISTS (distinct _group) satisfy "both" — no warn.
+    two_lines = [
+        {"x": 0.0, "y": 0.0, "_kind": "line", "_group": 0},
+        {"x": 1.0, "y": 1.0, "_kind": "line", "_group": 0},
+        {"x": 0.0, "y": 0.5, "_kind": "line", "_group": 1},
+        {"x": 1.0, "y": 1.5, "_kind": "line", "_group": 1},
+    ]
+    assert fn(both, _meta(points=two_lines), "f.png") == []
+    # ONE line artist (vertices, single-artist sidecar → no _group) → warn.
+    one_line = [{"x": float(i), "y": float(i), "_kind": "line"} for i in range(10)]
+    assert len(fn(both, _meta(points=one_line), "f.png")) == 1
+    # Fig-GLOBAL series labels: a multi-panel figure with one series per panel
+    # and >=2 distinct labels satisfies "both arms" — DELIBERATELY
+    # conservative (never false-fire on per-panel single-series layouts).
+    text_two_series = {"suptitle": None, "fig_texts": [], "series": ["a", "b"]}
+    assert fn(both, _meta(text=text_two_series), "f.png") == []
+    # Two scatter ARTISTS (distinct _group) → no warn; a single unlabeled
+    # scatter artist (no _group) yields NO basis → no warn either (skip).
+    two_scatter = [
+        {"x": 0.1, "y": 0.2, "_kind": "scatter", "_group": 0},
+        {"x": 0.3, "y": 0.4, "_kind": "scatter", "_group": 1},
+    ]
+    assert fn(both, _meta(points=two_scatter), "f.png") == []
+    lone_scatter = [{"x": 0.1, "y": 0.2, "_kind": "scatter"} for _ in range(5)]
+    assert fn(both, _meta(points=lone_scatter), "f.png") == []
+    # Mixed line+scatter TWO-artist figure: the total artist-groups basis
+    # reads 2 → "both arms" satisfiable across kinds → no warn.
+    mixed = [
+        {"x": 0.1, "y": 0.2, "_kind": "scatter", "_group": 0},
+        {"x": 0.0, "y": 0.0, "_kind": "line", "_group": 1},
+        {"x": 1.0, "y": 1.0, "_kind": "line", "_group": 1},
+    ]
+    assert fn(both, _meta(points=mixed), "f.png") == []
+    # Class B without a points payload → skip (basis unavailable).
+    one_per = {"both": [], "one_per": [("one bar per source", "bar")]}
+    assert fn(one_per, _meta(text=text_two_series), "f.png") == []
+    # Class B: claimed kind entirely absent (0 bar rows) → warn.
+    assert len(fn(one_per, _meta(points=lone_scatter), "f.png")) == 1
+
+
 #
 # A NEW mechanical check that FAILs/WARNs when a clean-result body states a
 # BARE LLM-judge denominator (`n=N` / "N completions/EM") in a judge-context
