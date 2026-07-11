@@ -2126,8 +2126,8 @@
     "1273": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1273",
-      "status": "running",
+      "path": "tasks/reviewing/1273",
+      "status": "reviewing",
       "title": "daily-fix: driver guards the daily-fix title prefix"
     },
     "1274": {
