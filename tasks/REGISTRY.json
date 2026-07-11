@@ -2056,8 +2056,8 @@
     "1264": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1264",
-      "status": "reviewing",
+      "path": "tasks/completed/1264",
+      "status": "completed",
       "title": "daily-fix: c26-c30 escape phrases + generative sync test"
     },
     "1265": {
@@ -2070,8 +2070,8 @@
     "1266": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1266",
-      "status": "proposed",
+      "path": "tasks/planning/1266",
+      "status": "planning",
       "title": "daily-fix: lint check for bang-backtick in skill markdown"
     },
     "1267": {
