@@ -227,6 +227,27 @@ Run the structural verifier against the plan version just persisted:
   handling, not a command to dispatch; exempts shell-tagged content fences
   ONLY — a `--workload-cmd`/`dispatch_issue.py` fence FAILs on entities
   unconditionally),
+  `N/A — basis measured on the routed machine` (check 26 — every §9
+  compute-table basis cell is measured on the GPU family the plan's resolved
+  intent actually routes to under auto, so no cross-GPU conversion is owed; a
+  genuinely cross-GPU basis instead states a per-step scaling rate in the row),
+  `N/A — no 7B activation capture` (check 27 — the activation-capture
+  vocabulary is incidental or the captured model is well under 7B, so the
+  ≥40 GB-HBM sizing rule is out of scope; a genuine ≥7B capture instead books
+  capture-7b / lora-7b or a larger-HBM lane, never eval/debug),
+  `N/A — no precedent-labeled decision bands` (check 28; British `labelled`
+  accepted — no registered fractional band is applied to a plan-cited
+  precedent ratio, or the ratio and the band concern different quantities; a
+  genuine mismatch instead re-labels the precedent's branch or moves the
+  threshold),
+  `N/A — no conditional phase on this provision` (check 29 — no §7
+  extension/retrain-class gate can add wall-time on the fenced provision; a
+  plan with a real conditional phase instead adds its wall cost to the
+  fence-reconcile sentence near the max-run-duration declaration),
+  `N/A — no multi-field bundle reuse` (check 30 — the `.pt` / tensor-bundle
+  vocabulary is incidental, not a reused multi-field bundle; a genuine reuse
+  instead names its realized-keys verification: verify_reused_artifact_keys.py,
+  an mmap `.keys()` read, or the consumer's own loader),
   `Durability pin: N/A — <one-line reason>` / alias `N/A — no durability pin:
   <reason>` (check 31 — kind: infra|batch plans committing to a
   `.claude/skills/**/SKILL.md` prose edit; the reason tail is mandatory — a
