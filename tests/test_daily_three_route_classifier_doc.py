@@ -324,3 +324,35 @@ def test_title_sync_sweep_pass_present(daily_skill_text: str):
         "the Step D pass header is missing — the nightly title-sync invoker "
         "(#1235) may have been dropped"
     )
+
+
+# ── #1272: verified-at-filing grep-evidence line (rule template + route 2) ─────
+
+
+def test_verified_at_filing_line_required(daily_skill_text: str):
+    """#1272 pin: the verified-at-filing filing-time grep-evidence mandate
+    survives in the daily route-2 text, the rule's Body-file template, and the
+    workflow.yaml orchestrator_actions prose (#1221/#1229/#1249: three
+    stale-claim filings in two days, each burning a spawned session's
+    verification rounds)."""
+    assert "verified-at-filing:" in daily_skill_text, (
+        "the route-2 'verified-at-filing mandate' sentence dropped from daily "
+        "SKILL.md — daily-filed wf-fix bodies would regress to carrying no "
+        "filing-time grep evidence (#1272)"
+    )
+    rule_text = (REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md").read_text(
+        encoding="utf-8"
+    )
+    assert rule_text.count("verified-at-filing:") >= 3, (
+        "workflow-fix-on-bug.md must keep >=3 'verified-at-filing:' occurrences "
+        "(template line + Before-emitting sentence + anti-pattern row) (#1272)"
+    )
+    assert "n/a — " in rule_text, (
+        "the 'n/a — <reason>' escape for non-grep-able bug claims dropped from "
+        "workflow-fix-on-bug.md (#1272)"
+    )
+    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
+    assert "verified-at-filing:" in yaml_text, (
+        "workflow.yaml orchestrator_actions no longer mention the "
+        "verified-at-filing: grep-evidence line (#1272)"
+    )
