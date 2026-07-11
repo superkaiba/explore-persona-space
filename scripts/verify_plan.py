@@ -90,8 +90,8 @@ bounce (SKILL.md § Goal-currency gate), not a brief-forwarded WARN.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs; each
 satisfies its check ONLY as a standalone declaration line — see
-``_standalone_na_declared``; exceptions: check 7 matches its bare
-phrase in prose by design, check 31 uses its labeled-line forms):
+``_standalone_na_declared``; exception: check 31 uses its
+labeled-line forms):
 
   - ``N/A — no model training`` / ``N/A — no training hyperparameters``
     (check 1)
@@ -878,8 +878,8 @@ def check_replication_fidelity(plan: str, kind: str) -> CheckResult:
     if goal is None or not re.search(r"(?i)replicat", goal):
         return _skip(cid, name, "Goal does not mention replication")
     text = strip_fences(plan)
-    if re.search(r"(?i)not a replication", text):
-        return _pass(cid, name, "explicit N/A declared (not a replication)")
+    if _standalone_na_declared(plan, r"not a replication"):
+        return _pass(cid, name, "explicit N/A declared on its own line (not a replication)")
     if re.search(
         r"(?i)paper'?s (?:data|recipe|corpus)|faithful|replication[- ]fidelity|deviation", text
     ):
@@ -891,9 +891,9 @@ def check_replication_fidelity(plan: str, kind: str) -> CheckResult:
     return _warn(
         cid,
         name,
-        "Goal mentions replication but no fidelity vocabulary (paper's data/recipe, "
-        "faithful, deviations) — CLAUDE.md replication rule: match the paper's data + "
-        "recipe FIRST, name every deviation",
+        "Goal mentions replication but no fidelity vocabulary — match the data + recipe of "
+        "the source paper FIRST and name every divergence (replication rule, CLAUDE.md); "
+        "or declare `N/A — not a replication` on its own line",
     )
 
 
@@ -1460,11 +1460,12 @@ def _standalone_na_declared(plan: str, tail_re: str) -> bool:
 
     Wrapped declarations (a backtick/quote-wrapped paste of a remedy's
     quoted form) are DELIBERATELY unrecognized (#1238 reasoned no-change):
-    the adversarial-planner SKILL.md canonical-phrases block renders nine
-    escape phrases backtick-wrapped at line start, four of which route
-    through THIS helper (c20/c24/c25/c32), so every trailing-tolerant
-    wrapper widening lets a verbatim block paste self-declare four
-    checks' escapes at once; requiring a balanced closing wrapper does
+    the adversarial-planner SKILL.md canonical-phrases block renders its
+    escape phrases backtick-wrapped at line start, nearly all of them
+    helper-routed since the #1237/#1262 migrations, so every
+    trailing-tolerant wrapper widening lets a verbatim block paste
+    self-declare many checks' escapes at once; requiring a balanced
+    closing wrapper does
     not discriminate (the block's wrappers are balanced by construction),
     and the strict phrase-alone-on-line variant rejects the one shape
     that measurably BOUNCED (#1090 plans/v1.md:369, trailing scope
