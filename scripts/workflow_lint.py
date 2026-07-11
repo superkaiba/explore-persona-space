@@ -8795,12 +8795,14 @@ def check_marker_recipe_snippets(*, repo_root: Path | None = None) -> list[str]:
 # every row in LESSONS.md must point at an existing rule file. Closes the
 # silent-drift class: a rule added/removed without an index update would
 # otherwise re-open the #722 load-timing gap (a lesson with no always-on index
-# row). The row format is the stable, machine-parseable (#992 slim — the
-# name appears once, linkified; the link target is relative to
+# row). The row format is the stable, machine-parseable (#1269 slim — the
+# name appears ONCE, bare; the `fires when:` semantics are defined once in the
+# LESSONS.md header instead of per-row; `<name>.md` is relative to
 # `.claude/rules/`):
-#   - **[<name>](<name>.md)** — fires when: ...
+#   - <name>.md — <fires-when trigger>
+# Full-line match so per-row byte budgets can read `m.group(0)` (#1269).
 _LESSONS_ROW_RE = re.compile(
-    r"^- \*\*\[(?P<name>[a-z0-9-]+)\]\((?P=name)\.md\)\*\*",
+    r"^- (?P<name>[a-z0-9-]+)\.md — (?P<trigger>[^\n]*)$",
     re.MULTILINE,
 )
 
@@ -8813,16 +8815,53 @@ _LESSONS_MAX_BYTES = 8000
 # 8000-byte FAIL (early warning only — advisory, never a FAIL).
 _LESSONS_WARN_BYTES = 7200
 
+# Per-row budget (#1269): one bloated row is caught on the row that adds it —
+# at edit time, in the grower's own tree — not fleet-wide later at the total
+# cap. Byte-counted (the em-dash is multibyte), STRICTLY-GREATER (a row at
+# exactly the bound passes). Post-migration live distribution: median 128 /
+# mean 145 / p90 203 / max compliant 239 — 280 clears every informative
+# trigger with ~40 B slack while catching gotchas-class bloat (438).
+_LESSONS_ROW_MAX_BYTES = 280
+# Grandfathered oversized legacy rows (#1269, the #986 agent-spec grandfather
+# pattern) — LEGACY-ONLY: closed to new entries absent a recorded #1269-class
+# justification (a deliberate keep-the-trigger-informative decision, like
+# gotchas below). Each cap hugs its measured row: row over its cap -> FAIL
+# (regrowth ratchet); cap - actual > the headroom bound -> FAIL (loose/stale
+# cap — ratchet DOWN after a trim); actual <= _LESSONS_ROW_MAX_BYTES -> FAIL
+# (entry obsolete — remove it).
+_LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
+    # gotchas: highest-traffic rule; row measured 438 B at the #1269
+    # migration — a third lossy trigger trim (after #1220) would destroy
+    # plan-time discovery value. Cap = measured + <=40.
+    "gotchas": 460,
+}
+_LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
-def check_lessons_index(
-    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+# Growth ratchet (#1269, the #986 agent-spec grandfather pattern applied to
+# LESSONS.md's TOTAL size): the constant must HUG the measured size. Growing
+# the index requires raising this constant IN THE SAME DIFF (visible,
+# reviewed, and merge-conflicting for concurrent growers — the 07-10
+# silent-sum failure shape); it may never exceed _LESSONS_MAX_BYTES. Trimming
+# the index requires ratcheting it DOWN (banked slack defeats the mechanism).
+# Measured 5,780 B at the #1269 row-grammar migration; ratchet = measured
+# + ~220 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
+_LESSONS_RATCHET_BYTES = 6000
+_LESSONS_RATCHET_MAX_HEADROOM_BYTES = 400
+
+
+def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity, total cap/warn, growth ratchet, per-row caps + grandfather hygiene, #1269); extracting a branch would just relocate it
+    *,
+    repo_root: Path | None = None,
+    warn_sink: list[str] | None = None,
+    ratchet_bytes: int | None = _LESSONS_RATCHET_BYTES,
+    row_max_bytes: int | None = _LESSONS_ROW_MAX_BYTES,
 ) -> list[str]:
     """FAIL if `.claude/rules/LESSONS.md` and the `.claude/rules/*.md` set
-    diverge OR the index exceeds the leanness cap.
+    diverge OR the index exceeds its byte budgets.
 
     The always-on index (#739) must name every rule so each lesson is known at
-    plan time even before its `paths:` glob matches an open file. Four failure
-    modes are checked: (a) a rule file with no index row, (b) an index row
+    plan time even before its `paths:` glob matches an open file. Failure
+    modes checked: (a) a rule file with no index row, (b) an index row
     with no rule file, (c) a rule name with MORE THAN ONE index row (the
     contract is exactly one matching row per rule — a duplicate would let one
     of the rows silently drift), (d) the index exceeds `_LESSONS_MAX_BYTES`
@@ -8832,8 +8871,21 @@ def check_lessons_index(
     advisory WARN band (#992): an index over `_LESSONS_WARN_BYTES` but at or
     under the cap emits an early-warning WARN — stderr-only / advisory, never
     a FAIL — so a near-cap landing is visible a few rows before the next
-    addition FAILs. `repo_root` is a unit-test override hook; production
-    callers pass None (canonical repo root). `warn_sink` mirrors
+    addition FAILs. #1269 adds the durable growth mechanisms: (e) the growth
+    RATCHET — total size over `_LESSONS_RATCHET_BYTES` FAILs (grow only via a
+    same-diff constant raise), a ratchet sitting more than
+    `_LESSONS_RATCHET_MAX_HEADROOM_BYTES` above the live size FAILs (banked
+    slack / stale ratchet — ratchet DOWN after a trim), and a ratchet above
+    `_LESSONS_MAX_BYTES` FAILs (config error — the ratchet can never
+    authorize crossing the cap); (f) PER-ROW caps — a row over
+    `_LESSONS_ROW_MAX_BYTES` FAILs (naming the offending row), with the
+    `_LESSONS_ROW_GRANDFATHER_MAX_BYTES` legacy exceptions under the same
+    over-cap / excess-hug / obsolete-entry hygiene as the #986 agent-spec
+    grandfather. `repo_root` is a unit-test override hook; production
+    callers pass None (canonical repo root). `ratchet_bytes` /
+    `row_max_bytes` are TEST-ONLY opt-outs (`None` disables that mode so a
+    small synthetic fixture can isolate another failure mode); production
+    callers never pass them. `warn_sink` mirrors
     `check_lens_coverage`'s hook: WARNs append there when provided, else go
     to stderr with a ``WARN: `` prefix; WARNs never enter the returned FAIL
     list. Bundled into the no-flags default run.
@@ -8870,17 +8922,93 @@ def check_lessons_index(
             f"the warn band (>{_LESSONS_WARN_BYTES}); slim rows or plan a deliberate cap "
             f"decision before the next addition FAILs."
         )
+    # Growth ratchet (#1269) — three failure modes, all strictly-greater and
+    # DISTINCT from the 8000-byte leanness-cap FAIL above: a ratchet RED means
+    # "one-line constant bump in the SAME diff", not a real budget breach.
+    if ratchet_bytes is not None:
+        if ratchet_bytes > _LESSONS_MAX_BYTES:
+            errors.append(
+                f"_LESSONS_RATCHET_BYTES ({ratchet_bytes}) exceeds "
+                f"_LESSONS_MAX_BYTES ({_LESSONS_MAX_BYTES}) — config error: "
+                f"the growth ratchet can never authorize crossing the "
+                f"leanness cap; lower the ratchet (a cap raise is a "
+                f"deliberate #869/#872-class token-budget decision)."
+            )
+        if len(raw) > ratchet_bytes:
+            errors.append(
+                f".claude/rules/LESSONS.md: {len(raw)} bytes grew past the "
+                f"_LESSONS_RATCHET_BYTES growth ratchet "
+                f"({len(raw)}/{ratchet_bytes}) — this is the one-line-bump "
+                f"gate, NOT the {_LESSONS_MAX_BYTES}-byte budget breach: "
+                f"trim the index, or raise _LESSONS_RATCHET_BYTES in the "
+                f"SAME diff (a deliberate, reviewed budget consumption — "
+                f"never above the _LESSONS_MAX_BYTES cap)."
+            )
+        elif ratchet_bytes - len(raw) > _LESSONS_RATCHET_MAX_HEADROOM_BYTES:
+            errors.append(
+                f"_LESSONS_RATCHET_BYTES ({ratchet_bytes}) sits "
+                f"{ratchet_bytes - len(raw)} bytes above the live "
+                f".claude/rules/LESSONS.md ({len(raw)} bytes) — banked slack "
+                f"/ stale ratchet defeats the growth mechanism (max headroom "
+                f"{_LESSONS_RATCHET_MAX_HEADROOM_BYTES}); ratchet DOWN to <= "
+                f"{len(raw) + _LESSONS_RATCHET_MAX_HEADROOM_BYTES} after a "
+                f"trim."
+            )
     # Count occurrences (not a set) so a name appearing on >1 row is caught —
     # a set comprehension would collapse duplicates and let both the missing
     # and stale set-diffs read empty, silently passing the check (#739 r2).
-    index_counts = Counter(m.group("name") for m in _LESSONS_ROW_RE.finditer(raw.decode("utf-8")))
+    # The same pass runs the per-row byte budgets (#1269): the full-line row
+    # regex makes `m.group(0)` the whole row.
+    index_counts: Counter[str] = Counter()
+    for m in _LESSONS_ROW_RE.finditer(raw.decode("utf-8")):
+        name = m.group("name")
+        index_counts[name] += 1
+        if row_max_bytes is None:
+            continue
+        row_bytes = len(m.group(0).encode("utf-8"))
+        gf_cap = _LESSONS_ROW_GRANDFATHER_MAX_BYTES.get(name)
+        if gf_cap is not None:
+            if row_bytes > gf_cap:
+                errors.append(
+                    f".claude/rules/LESSONS.md: row '{name}' is {row_bytes} "
+                    f"bytes, over its grandfather cap ({gf_cap}) — trim the "
+                    f"row's trigger back under the cap, or (a deliberate, "
+                    f"reviewed keep-the-trigger-informative decision) raise "
+                    f"_LESSONS_ROW_GRANDFATHER_MAX_BYTES['{name}'] in the "
+                    f"SAME diff, hugging the new size (cap <= size + "
+                    f"{_LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES})."
+                )
+            elif row_bytes <= row_max_bytes:
+                errors.append(
+                    f"_LESSONS_ROW_GRANDFATHER_MAX_BYTES['{name}']: row is "
+                    f"{row_bytes} bytes (<= the {row_max_bytes}-byte general "
+                    f"row cap) and no longer needs grandfathering — remove "
+                    f"the entry (ratchet down)."
+                )
+            elif gf_cap - row_bytes > _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES:
+                errors.append(
+                    f"_LESSONS_ROW_GRANDFATHER_MAX_BYTES['{name}']: cap "
+                    f"{gf_cap} sits {gf_cap - row_bytes} bytes above the "
+                    f"live row ({row_bytes} bytes) — max headroom is "
+                    f"{_LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES}; lower "
+                    f"the cap to <= "
+                    f"{row_bytes + _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES}."
+                )
+        elif row_bytes > row_max_bytes:
+            errors.append(
+                f".claude/rules/LESSONS.md: row '{name}' is {row_bytes} "
+                f"bytes, over the {row_max_bytes}-byte per-row cap "
+                f"(_LESSONS_ROW_MAX_BYTES) — trim this row's trigger; the "
+                f"cap catches one bloated row at addition time instead of a "
+                f"fleet-wide total-size FAIL later."
+            )
     indexed = set(index_counts)
     rule_files = {p.stem for p in rules_dir.glob("*.md") if p.is_file() and p.name != "LESSONS.md"}
     for missing in sorted(rule_files - indexed):
         errors.append(
             f".claude/rules/LESSONS.md: no index row for rule "
             f"'{missing}' (.claude/rules/{missing}.md). Add a "
-            f"'- **[{missing}]({missing}.md)** — fires when: ...' row, "
+            f"'- {missing}.md — <fires-when trigger>' row, "
             f"or reformat an existing old-format row for '{missing}' to "
             f"that format."
         )
@@ -9406,7 +9534,7 @@ def check_lens_coverage(
     whose State (last) column does not start with one of the four exact prefixes
     :data:`_LENS_STATE_PREFIXES` (``v2-owner:`` / ``v1-only`` / ``retired:`` /
     ``GAP:``) — a coverage row MUST declare a state; (b) a rule listed in
-    ``.claude/rules/LESSONS.md`` (the ``- **[<name>](<name>.md)**`` rows) with
+    ``.claude/rules/LESSONS.md`` (the ``- <name>.md — <trigger>`` rows) with
     NO row in the map — a lesson silently uncovered. ``GAP:`` rows PASS (an honest "no v2
     owner yet") but are surfaced as WARN lines. WARNs go to ``warn_sink`` when
     provided (unit-test hook), else stderr with a ``WARN: `` prefix; WARNs never

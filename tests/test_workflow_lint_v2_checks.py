@@ -99,9 +99,9 @@ def test_routing_comment_only_mention_not_flagged(tmp_path):
 # ── --check-lens-coverage ────────────────────────────────────────────────────
 
 _LESSONS_TMPL = (
-    "# LESSONS\n\n## Rules\n\n"
-    "- **[foo-rule](foo-rule.md)** — fires when: x.\n"
-    "- **[bar-rule](bar-rule.md)** — fires when: y.\n"
+    "# LESSONS\n\n## Rules\n\n"  # #1269 row grammar: - <rule>.md — <trigger>
+    "- foo-rule.md — x.\n"
+    "- bar-rule.md — y.\n"
 )
 
 
