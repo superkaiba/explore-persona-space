@@ -4851,7 +4851,7 @@ def _scan_issue_judge_errors(repo: Path, issue: int) -> dict | None:
     for path in sorted(eval_dir.rglob("*.json")):
         try:
             payload = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue  # a corrupt / unreadable artifact must not crash the gate
         _descend(payload)
 
@@ -5087,7 +5087,7 @@ def _scan_cross_issue_reuse_pins(repo: Path, issue: int) -> dict | None:
             if path.stat().st_size > _REUSE_SCAN_MAX_BYTES:
                 continue  # oversize guard — never page a 100+ MB blob at gate time
             text = path.read_text()
-        except OSError:
+        except (OSError, UnicodeDecodeError):
             continue
         if '"metadata"' not in text:
             continue
