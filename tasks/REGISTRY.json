@@ -2014,8 +2014,8 @@
     "1259": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1259",
-      "status": "running",
+      "path": "tasks/reviewing/1259",
+      "status": "reviewing",
       "title": "daily-fix: recent_clean_results v4 skim reads Takeaways bloc"
     },
     "126": {
