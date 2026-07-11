@@ -238,7 +238,10 @@ entirely. (#622: a stale model pin lived in 25 sibling agent files; the
 original candidate named only one, and the fix had to re-discover scope
 via `grep -rln` on receipt.) The orchestrator also follows this rule when
 synthesizing a candidate from a prose follow-up — grep before populating
-`target_file`.
+`target_file`. The emitter's grep scopes `target_file`; separately, the FILER
+re-runs the grep when composing the body and records the command + hit count
+in the body's `verified-at-filing:` line (§ Body-file template) — the
+emitter's grep does not substitute for it.
 
 Hard rules:
 
@@ -301,7 +304,8 @@ top-level loop), UNLESS running under the recursion guard
 
 1. **Greps the surface** for the pattern (preserved rule), populating
    `target_file` (a comma-separated list or glob when the hit set is
-   uniform).
+   uniform), and records the exact grep command + hit count for the
+   body's `verified-at-filing:` line (§ Body-file template).
 2. **Computes the candidate fingerprint** (see § Dedup):
    `fp = sha256(normalize(proposed_change) + "||" + normalize(bug_observed))[:12]`
    (`task_workflow.wf_fix_fingerprint`). For a prose follow-up the fields
@@ -393,6 +397,7 @@ raised on task <related_task> (emitting agent: <emitting_agent>).
 - **Bug observed:** <bug_observed>
 - **Why it is a workflow gap:** <why_workflow_gap>
 - **Confidence (emitter):** <confidence>
+- verified-at-filing: `<grep cmd the FILER ran at body-compose time>` → <N hits in M files> (<UTC date>), OR `n/a — <one-line reason the bug claim is not grep-verifiable>`
 
 ## Proposed change (candidate diff sketch — refine in planning)
 
@@ -427,6 +432,17 @@ The `--origin-prompt` carries the verbatim candidate (the `## Provenance`
 body section duplicates it for human readability + the grep fallback; the
 `origin_prompt` is the machine record the clean-result `**Context:**` row
 ships forward).
+
+**The `verified-at-filing:` line is REQUIRED in every wf-fix body** (with the
+`n/a — <reason>` escape for genuinely non-grep-able behavioral gaps). It is
+produced by the FILER at body-compose time — a stale emitter-side grep does
+not satisfy it (freshness at filing is the point; cf. the /daily Retraction
+re-check) — and its hit count must be consistent with the body's bug claim
+and `target_file` list. Lineage: #1221/#1229/#1249 — three filings in two
+days carried grep-refutable claims (nonexistent call sites, overcounted
+"unguarded sites", an improvised path); each burned a spawned session's
+verification rounds. There is NO mechanical injector or lint for this line —
+it is a compose-time duty.
 
 ## Dedup
 
@@ -657,6 +673,7 @@ homepage rendering of the fallback is unimplemented.)
 | Drop a prose follow-up because it lacked the formal block tags | Prose follow-ups trigger the same file-a-task default as formal blocks; synthesize a candidate from the prose and file |
 | Hold prose follow-ups back hoping they'll surface "on the next pass" | List every concrete in-scope follow-up the agent found; the orchestrator files each |
 | Name a single `target_file` when a literal-string bug pattern hits N sibling workflow files (#622: a stale model pin lived in 25 agent files; one was named) | `grep -rln '<pattern>' .claude/ CLAUDE.md scripts/` first; list every hit in `target_file` as a comma-separated path list or a glob |
+| File a body whose bug claim (call sites, site counts, paths) was never re-verified by grep at filing time (#1221/#1229/#1249: 3 stale-claim filings in 2 days, each burning a spawned session's verification rounds) | Run the grep at body-compose time; record `verified-at-filing: <cmd> → <hits>` (or `n/a — <reason>`) in `## Workflow gap` |
 
 ## Composition with other rules
 

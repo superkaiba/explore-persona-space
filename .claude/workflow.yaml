@@ -3226,11 +3226,11 @@ workflow_fix_on_bug:
   spawn_command: "uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto"
   orchestrator_actions:
     - "If running under the recursion guard (workflow_fix_target Provenance line OR EPM_WORKFLOW_FIX_SESSION=1): LOG epm:workflow-fix-candidate v1 (note: parked — EPM_WORKFLOW_FIX_SESSION), notify, STOP (do NOT file/spawn)"
-    - "Grep the workflow surface for the pattern; populate target_file (comma-separated list or glob when uniform)"
+    - "Grep the workflow surface for the pattern; populate target_file (comma-separated list or glob when uniform); record the grep cmd + hit count for the body's verified-at-filing: line"
     - "Compute fp = task_workflow.wf_fix_fingerprint(proposed_change, bug_observed)"
     - "DEDUP: if task_workflow.is_open_workflow_fix_task(target_file, fp) returns an id, log epm:workflow-fix-candidate v1 (note: deduped against #M), continue — do NOT double-file (a same-file DIFFERENT-fp candidate is NOT a dup, file it)"
     - "Post epm:workflow-fix-candidate v1 to the PARENT task's events.jsonl (or .claude/cache/workflow-fix-events.jsonl if no task) with candidate fields + routing decision inline"
-    - "File the task: task.py new --kind infra --title 'workflow-fix: <proposed_change, <=60 chars>' --body-file <template> --origin-prompt '<verbatim candidate>' (template: rule doc § Body-file template; ## Provenance carries the workflow_fix_target + fingerprint lines verbatim)"
+    - "File the task: task.py new --kind infra --title 'workflow-fix: <proposed_change, <=60 chars>' --body-file <template> --origin-prompt '<verbatim candidate>' (template: rule doc § Body-file template; ## Provenance carries the workflow_fix_target + fingerprint lines verbatim; ## Workflow gap carries the verified-at-filing: grep-evidence line, or n/a — reason)"
     - "Tag the dedup keys: task.py add-tag <N> wf-fix; task.py add-tag <N> wf-fix-fp:<fp>"
     - "Spawn the session: spawn_session.py spawn-issue --issue <N> --auto (architectural changes spawn WITHOUT --auto, OR the plan carries architectural: true so Step 2c parks at plan_pending — § architectural greenlight)"
     - "Post epm:workflow-fix-task-filed v1 on the PARENT task; continue current work without blocking — the child /issue session implements the fix via the full code-change pipeline"
