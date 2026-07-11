@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1268,
+  "highest_id": 1269,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2087,6 +2087,13 @@
       "path": "tasks/proposed/1268",
       "status": "proposed",
       "title": "daily-fix: Step 10d repin/guard snippet hardening bundle"
+    },
+    "1269": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1269",
+      "status": "proposed",
+      "title": "daily-fix: LESSONS.md durable slimming + lint cap WARN band"
     },
     "127": {
       "has_clean_result": false,
