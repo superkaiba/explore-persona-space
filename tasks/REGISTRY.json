@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1258,
+  "highest_id": 1259,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2010,6 +2010,13 @@
       "path": "tasks/proposed/1258",
       "status": "proposed",
       "title": "daily-fix: audit c20 co-occurrence WARN across N/A escapes"
+    },
+    "1259": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1259",
+      "status": "proposed",
+      "title": "daily-fix: recent_clean_results v4 skim reads Takeaways bloc"
     },
     "126": {
       "has_clean_result": false,
