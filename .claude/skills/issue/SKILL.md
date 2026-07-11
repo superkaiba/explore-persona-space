@@ -7981,10 +7981,14 @@ suite directly and posts an `epm:test-verdict` event with the result.
         regression (the JSON names each). FAIL.
       * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted
         run; missing/empty junitxml; suite crash; unusable ledger;
-        scratch-ineligible dirty oracle (contaminating src//pyproject.toml/uv.lock
-        dirt, a scan-set node, or a non-sparse work root — other root dirt
+        scratch-ineligible dirty oracle (residual contaminating dirt, a
+        scan-set node, or a non-sparse work root — other root dirt
         auto-falls back to a detached sparse scratch-worktree oracle at main
-        HEAD, reported as JSON "pristine_oracle": "scratch-worktree");
+        HEAD, reported as JSON "pristine_oracle": "scratch-worktree"; since
+        #1251 dirty in-package `src/` is neutralized via a probe-verified
+        `PYTHONPATH=<scratch>/src` shadow (`"scratch_src_shadow": true`), so
+        only `pyproject.toml`/`uv.lock` (or out-of-package `src/`) dirt still
+        refuses);
         systemic main breakage). FAIL — never PASS on indeterminate.
         COMPARE_OUT is valid JSON on EVERY exit path under --json (exit-2
         payloads carry "indeterminate": true — an exit-2 payload's empty
