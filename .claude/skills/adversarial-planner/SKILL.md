@@ -203,8 +203,8 @@ Run the structural verifier against the plan version just persisted:
   and are NOT recognized by `verify_plan.py::_standalone_na_declared` (#1238)): Every
   phrase satisfies its check ONLY when written as a standalone declaration line in the
   plan (leading `-`/`>`/`*` list markers tolerated); a phrase quoted mid-sentence — e.g.
-  inside a pasted bounce brief — does not count (exceptions: check 7 matches its bare
-  phrase in prose by design; check 31 uses its labeled-line forms) (#1237).
+  inside a pasted bounce brief — does not count (exception: check 31 uses its
+  labeled-line forms) (#1237, #1262).
   `N/A — no behavioral construct`
   (check 2), `N/A — no model training` / `N/A — no training hyperparameters` (check 1),
   `N/A — not a replication` (check 7), `N/A — no artifact reuse` (check 6),

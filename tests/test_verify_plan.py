@@ -18,6 +18,7 @@ entries (one `ungrounded — needs smoke-test`).
 
 from __future__ import annotations
 
+import ast
 import importlib.util
 import json
 import os
@@ -852,6 +853,49 @@ def test_c7_na_not_a_replication_passes():
     assert _status(plan, "c7_replication_fidelity") == "PASS"
 
 
+def test_c7_midprose_phrase_does_not_escape():
+    # #1262 red-pin: the phrase mid-prose (the #810 structure, one polarity
+    # over) must not escape c7. Pre-fix: doc-global re.search → PASS.
+    plan = (
+        _replication_goal_plan()
+        + "\nThis experiment is not a replication of prior work; we test a new dose axis.\n"
+    )
+    assert _status(plan, "c7_replication_fidelity") == "WARN"
+
+
+def test_c7_backtick_wrapped_escape_does_not_escape():
+    # Mirror of test_c12_backtick_wrapped_escape_at_bullet_start_does_not_escape:
+    # the pasted bounce-brief bullet shape must not escape.
+    plan = (
+        _replication_goal_plan()
+        + "\n- `N/A — not a replication` (declare on its own line per the bounce brief).\n"
+    )
+    assert _status(plan, "c7_replication_fidelity") == "WARN"
+
+
+def test_c7_pasted_warn_detail_does_not_self_satisfy():
+    # Anti-paste guard (#1237 de-fang class): pre-fix, the WARN detail's own
+    # "paper's data + recipe" wording satisfied the vocabulary branch when
+    # pasted back into the plan (WARN → PASS).
+    base = _replication_goal_plan()
+    _, by_id = _run(base)
+    r = by_id["c7_replication_fidelity"]
+    assert r.status == "WARN"
+    pasted = base + f"\n{r.detail}\n"
+    assert _status(pasted, "c7_replication_fidelity") == "WARN"
+
+
+def test_c7_na_bulleted_standalone_passes():
+    # Green pin (#1262, stats-lens concern): the planner.md documented
+    # bulleted declaration form is recognized (leading list markers
+    # lstripped, trailing prose tolerated by re.match).
+    plan = (
+        _replication_goal_plan()
+        + "\n- N/A — not a replication (the Goal's word refers to restarts).\n"
+    )
+    assert _status(plan, "c7_replication_fidelity") == "PASS"
+
+
 def test_c7_kind_infra_skips():
     assert _status(_replication_goal_plan(), "c7_replication_fidelity", kind="infra") == "SKIP"
 
@@ -1191,9 +1235,9 @@ def test_standalone_na_wrapped_forms_stay_unrecognized():
     # #1238 reasoned no-change red-pin: wrapped declarations are
     # DELIBERATELY unrecognized — every trailing-tolerant wrapper widening
     # lets a verbatim paste of the adversarial-planner SKILL.md
-    # canonical-phrases block (nine line-start backtick-wrapped phrases,
-    # FOUR of them helper-routed: c20/c24/c25/c32) self-declare four
-    # escapes at once (the #810 polarity). See the helper docstring for
+    # canonical-phrases block (line-start backtick-wrapped phrases, nearly
+    # all helper-routed since #1237/#1262) self-declare many escapes at
+    # once (the #810 polarity). See the helper docstring for
     # the full analysis before "fixing" this.
     for line in [
         # the live #1090 plans/v1.md:369 shape (trailing scope prose):
@@ -1229,7 +1273,7 @@ def test_skillmd_canonical_escape_block_never_self_escapes():
     # not literally `plan` (or that uses r'...' quoting) is silently
     # uncovered by this pin while the floor stays green; the floor catches
     # shrinkage, not omission.
-    assert len(tails) >= 12, tails  # extraction guard: 12 call sites at pin time
+    assert len(tails) >= 22, tails  # extraction guard: 22 plan-arg call sites at pin time (#1262)
     text = (REPO_ROOT / ".claude/skills/adversarial-planner/SKILL.md").read_text()
     for tail in tails:
         assert not verify_plan._standalone_na_declared(text, tail), tail
@@ -1294,6 +1338,43 @@ def test_skillmd_canonical_escapes_sync_with_docstring():
         if wrapped not in norm_block:
             missing.append(wrapped)
     assert not missing, f"escape phrases not in SKILL.md canonical block: {missing}"
+
+
+def test_own_line_remedies_carry_unwrapped_clarifier():
+    # Durability pin (#1263): every runtime string in verify_plan.py that
+    # teaches the "on its own line" escape declaration must also say
+    # "unwrapped" — the FAIL-detail remedy a planner sees at bounce time
+    # must not teach the wrapped form _standalone_na_declared rejects
+    # (#1090 c12 bounce; #1238 reasoned no-change on the recognizer).
+    # AST-based: Python folds adjacent string literals into one Constant
+    # (split-literal remedies are seen whole); comments are not in the AST.
+    src = (REPO_ROOT / "scripts" / "verify_plan.py").read_text()
+    offenders: list[tuple[int, str]] = []
+    clarified = 0
+    for node in ast.walk(ast.parse(src)):
+        if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+            continue
+        if "on its own line" not in node.value:
+            continue
+        if "unwrapped" in node.value:
+            clarified += 1
+        else:
+            offenders.append((node.lineno, node.value[:90]))
+    assert not offenders, f"own-line remedies missing the unwrapped clarifier: {offenders}"
+    # 19 sites (#1263) + the c34 exemplar + c7's remedy/pass-detail (#1262 merge) = 22 live
+    assert clarified >= 20
+
+
+def test_skillmd_c7_exception_clause_retired():
+    # Durability pin (#1262): the c7 bare-phrase exception is retired from
+    # BOTH documentation surfaces; only the check-31 exception remains
+    # DOCUMENTED (c4's same-class escape is an undocumented bug tracked as
+    # its own workflow-fix candidate, deliberately NOT documented as an
+    # exception — do not use the words "matches its bare" anywhere new).
+    for path in (_SCRIPT, REPO_ROOT / ".claude/skills/adversarial-planner/SKILL.md"):
+        text = path.read_text()
+        assert "matches its bare" not in text, path
+        assert "check 31" in text, path
 
 
 def test_c12_kind_analysis_warns_not_fails():

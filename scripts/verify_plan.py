@@ -90,8 +90,8 @@ bounce (SKILL.md § Goal-currency gate), not a brief-forwarded WARN.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs; each
 satisfies its check ONLY as a standalone declaration line — see
-``_standalone_na_declared``; exceptions: check 7 matches its bare
-phrase in prose by design, check 31 uses its labeled-line forms):
+``_standalone_na_declared``; exception: check 31 uses its
+labeled-line forms):
 
   - ``N/A — no model training`` / ``N/A — no training hyperparameters``
     (check 1)
@@ -575,7 +575,7 @@ def check_source_grounding(plan: str, kind: str) -> CheckResult:
             "no Decision Rationale / grounding section and zero Source entries — every "
             "load-bearing hyperparameter needs a Source (planner.md §11); if the plan trains "
             "no model, declare `N/A — no model training` / `N/A — no training hyperparameters` "
-            "— each on its own line",
+            "— each on its own line, unwrapped (no backticks/quotes)",
         )
     if blank:
         return _fail(
@@ -655,7 +655,7 @@ def check_measurement_validity(plan: str, kind: str) -> CheckResult:
         name,
         "no measurement-validity declaration (planner.md §6 required block: per-DV construct "
         "+ metric + on-distribution status; non-behavioral plans declare "
-        "`N/A — no behavioral construct` on its own line)",
+        "`N/A — no behavioral construct` on its own line, unwrapped — no backticks/quotes)",
     )
 
 
@@ -878,8 +878,10 @@ def check_replication_fidelity(plan: str, kind: str) -> CheckResult:
     if goal is None or not re.search(r"(?i)replicat", goal):
         return _skip(cid, name, "Goal does not mention replication")
     text = strip_fences(plan)
-    if re.search(r"(?i)not a replication", text):
-        return _pass(cid, name, "explicit N/A declared (not a replication)")
+    if _standalone_na_declared(plan, r"not a replication"):
+        return _pass(
+            cid, name, "explicit N/A declared on its own line, unwrapped (not a replication)"
+        )
     if re.search(
         r"(?i)paper'?s (?:data|recipe|corpus)|faithful|replication[- ]fidelity|deviation", text
     ):
@@ -891,9 +893,10 @@ def check_replication_fidelity(plan: str, kind: str) -> CheckResult:
     return _warn(
         cid,
         name,
-        "Goal mentions replication but no fidelity vocabulary (paper's data/recipe, "
-        "faithful, deviations) — CLAUDE.md replication rule: match the paper's data + "
-        "recipe FIRST, name every deviation",
+        "Goal mentions replication but no fidelity vocabulary — match the data + recipe of "
+        "the source paper FIRST and name every divergence (replication rule, CLAUDE.md); "
+        "or declare `N/A — not a replication` on its own line, unwrapped "
+        "(no backticks/quotes)",
     )
 
 
@@ -1111,8 +1114,8 @@ def check_dryrun_test_coverage(plan: str, kind: str) -> CheckResult:
         "plan names a `--dry-run` smoke/verification command but the test list has no test "
         "exercising the dry-run kwarg thread on the new code path — a broken dry-run kwarg "
         "thread turns the final smoke into a real mutation (#596/#607/#633 pattern); add the "
-        "test, or declare `N/A — no dry-run smoke` on its own line if the flag mention is "
-        "incidental",
+        "test, or declare `N/A — no dry-run smoke` on its own line, unwrapped "
+        "(no backticks/quotes), if the flag mention is incidental",
     )
 
 
@@ -1286,7 +1289,8 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
         f"plan names a permutation/bootstrap/null battery but is missing {' AND '.join(missing)}"
         " — a named battery defaults to a serial per-draw loop (#778: ~15 h realized vs 1 h"
         " planned; #810: 308x); see .claude/rules/vectorize-many-cell-fits.md, or declare"
-        " 'N/A — no draw battery' on its own line if the mention is incidental"
+        " 'N/A — no draw battery' on its own line, unwrapped (no backticks/quotes), if the"
+        " mention is incidental"
     )
     if kind == "analysis":
         return _warn(cid, name, detail)
@@ -1460,11 +1464,12 @@ def _standalone_na_declared(plan: str, tail_re: str) -> bool:
 
     Wrapped declarations (a backtick/quote-wrapped paste of a remedy's
     quoted form) are DELIBERATELY unrecognized (#1238 reasoned no-change):
-    the adversarial-planner SKILL.md canonical-phrases block renders nine
-    escape phrases backtick-wrapped at line start, four of which route
-    through THIS helper (c20/c24/c25/c32), so every trailing-tolerant
-    wrapper widening lets a verbatim block paste self-declare four
-    checks' escapes at once; requiring a balanced closing wrapper does
+    the adversarial-planner SKILL.md canonical-phrases block renders its
+    escape phrases backtick-wrapped at line start, nearly all of them
+    helper-routed since the #1237/#1262 migrations, so every
+    trailing-tolerant wrapper widening lets a verbatim block paste
+    self-declare many checks' escapes at once; requiring a balanced
+    closing wrapper does
     not discriminate (the block's wrappers are balanced by construction),
     and the strict phrase-alone-on-line variant rejects the one shape
     that measurably BOUNCED (#1090 plans/v1.md:369, trailing scope
@@ -1568,7 +1573,7 @@ def _c13_offender_detail(offenders: list[tuple[dict, str, int, Fraction]]) -> st
         f"over families whose p-floor 1/(n_draws+1) exceeds alpha: {shown} — the gate is "
         f"structurally unattainable (#816 v5 class); {remedy}, scope the gate "
         "(e.g. 'n_draws ≥ 50'), mark the family outside the test set on its row, or declare "
-        "'N/A — no empirical-null gate' on its own line"
+        "'N/A — no empirical-null gate' on its own line, unwrapped (no backticks/quotes)"
     )
 
 
@@ -1983,7 +1988,8 @@ def check_failloud_test_coverage(plan: str, kind: str) -> CheckResult:
         "not count) — a run-book grep verifies the invariant once at review time, and a "
         "differently-worded re-swallow ships green past all committed tests (#913). Name the "
         "pinning test, or declare `N/A — no fail-loud acceptance claim` / "
-        "`N/A — fail-loud claim not test-backable` — each on its own line",
+        "`N/A — fail-loud claim not test-backable` — each on its own line, unwrapped "
+        "(no backticks/quotes)",
     )
 
 
@@ -2105,7 +2111,7 @@ def check_reference_headline_distinction(plan: str, kind: str) -> CheckResult:
         "flipped reference CALL is reported as replication-stability evidence rather "
         "than replacing the headline (#811 v3 §6 incident; the kept-cells-"
         "stay-evidence rule), or declare `N/A — no re-extracted reference arms` "
-        "on its own line",
+        "on its own line, unwrapped (no backticks/quotes)",
     )
 
 
@@ -2542,8 +2548,8 @@ def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
         "which per-context store/file supplies every registered row (or stating that the "
         "plan's own fits produce every registered row on each arm), or state the driver "
         "assert that set-checks the registered rows against the named sources' keys on a "
-        "non-fenced line, or declare 'N/A — no paired contrast' on its own line; keep the "
-        "declaration line free of cross-issue citations"
+        "non-fenced line, or declare 'N/A — no paired contrast' on its own line, unwrapped "
+        "(no backticks/quotes); keep the declaration line free of cross-issue citations"
     )
     if kind == "analysis":
         return _warn(cid, name, detail + " (analysis kind-degrade: WARN, not FAIL)")
@@ -2661,7 +2667,8 @@ def check_ood_folds(plan: str, kind: str) -> CheckResult:
         "held-out predictive-DV vocabulary detected but no group-scoped fold "
         "(leave-one-<family>-out / a fit-on-one-corpus-score-on-another arm), no "
         "independence (i-i-d) argument, and no `N/A — no held-out predictive DV` escape "
-        "declared on its own line — pointwise LOO can REORDER cross-context claims "
+        "declared on its own line, unwrapped (no backticks/quotes) — pointwise LOO can "
+        "REORDER cross-context claims "
         "(#810: read-out rho 0.909 → 0.285 under the family-level fold); "
         ".claude/rules/ood-generalization-folds.md; Statistics critic must gate this",
     )
@@ -3023,7 +3030,8 @@ def _c20_cell_str(cell: dict) -> str:
 _C20_REMEDY = (
     " — restate the lattice as an explicit partition (`DISJOINT and exhaustive: "
     "<label> ⇔ <predicate>; …; <label> ⇔ otherwise`), add an otherwise-label, or "
-    "declare 'N/A — no registered verdict lattice' on its own line"
+    "declare 'N/A — no registered verdict lattice' on its own line, unwrapped "
+    "(no backticks/quotes)"
 )
 
 
@@ -3359,7 +3367,8 @@ def check_grep_arity_gate(plan: str, kind: str) -> CheckResult:
         "(split-line and keyword-argument calls carry no same-line comma; #1024 plan v1/v2). "
         "Register an AST arity audit instead: ast.parse each target file, ast.walk over Call "
         "nodes matching the function, count len(node.args) + len(node.keywords), whitelist "
-        "named exceptions — or declare `N/A — no arity acceptance gate` on its own line",
+        "named exceptions — or declare `N/A — no arity acceptance gate` on its own line, "
+        "unwrapped (no backticks/quotes)",
     )
 
 
@@ -3793,7 +3802,8 @@ def check_resume_provenance(plan: str, kind: str) -> CheckResult:
         "a regime-keyed resume predicate) — a resume that trusts bare output existence lets "
         "stale units silently vouch after a crash + code-fix round (#952 v9; #722 r3); "
         "name the validation per the #952 gate-5 manifest shape, or declare "
-        "'N/A — no resume/persist pattern' on its own line if the mention is incidental",
+        "'N/A — no resume/persist pattern' on its own line, unwrapped "
+        "(no backticks/quotes), if the mention is incidental",
     )
 
 
@@ -3841,7 +3851,7 @@ def _c25_detail(hits: list[str], *, exemptable: bool) -> str:
         return base + (
             "; if the fenced entities are deliberately discussed CONTENT (not a "
             "command to dispatch), declare 'N/A — entities are content, not "
-            "commands' on its own line"
+            "commands' on its own line, unwrapped (no backticks/quotes)"
         )
     return base + (
         " — a --workload-cmd / dispatch_issue.py fence is never exemptable: fix the command text"
@@ -4021,7 +4031,7 @@ def _c26_offender_detail(offenders: list[tuple[str, str]], routed: set[str]) -> 
         "measured on a different GPU must be scaled with a stated per-step rate "
         "(plan-compute-sizing.md; #599: an H100-premised ~6.4h estimate ran ~34h on "
         "the A100 auto-lane), or declare 'N/A — basis measured on the routed machine' "
-        "on its own line"
+        "on its own line, unwrapped (no backticks/quotes)"
     )
 
 
@@ -4253,7 +4263,7 @@ def check_capture_intent_hbm(plan: str, kind: str) -> CheckResult:
         "correspondingly larger-HBM lane/backend (a multi-GPU intent or an explicit "
         "large-GPU RunPod pin), never eval/debug — per plan-compute-sizing § "
         "Activation-capture HBM sizing, or declare 'N/A — no 7B activation capture' "
-        "on its own line",
+        "on its own line, unwrapped (no backticks/quotes)",
     )
 
 
@@ -4476,7 +4486,8 @@ def _c28_offender_detail(offenders: list[tuple[dict, str]], T: Fraction, bands: 
         "NOTE: this check cannot verify the ratio and the band concern the same quantity — "
         "if they don't, declare the N/A escape. Remedy: re-label the precedent's branch, "
         "move the threshold, or declare 'N/A — no precedent-labeled decision bands' on its "
-        "own line; the semantic verdict stays with the Statistics critic"
+        "own line, unwrapped (no backticks/quotes); the semantic verdict stays with the "
+        "Statistics critic"
     )
 
 
@@ -4655,7 +4666,8 @@ def _c29_offender_detail(decl_line: str, gate_hit: str, labels: list[str]) -> st
         "hard-deleted the pre-registered §7.3 extension probe at step 149/2400; #1112 "
         "v2: a 48h fence omitted its own §7 G1 dose extension, joint worst ~48-50h). "
         "Remedy: add the conditional phase's wall cost to the fence-reconcile sentence, "
-        "or declare 'N/A — no conditional phase on this provision' on its own line"
+        "or declare 'N/A — no conditional phase on this provision' on its own line, "
+        "unwrapped (no backticks/quotes)"
     )
 
 
@@ -5004,7 +5016,8 @@ def _c32_offender_detail(offenders: list[tuple[str, str]]) -> str:
         "19h21m). Ground the row on a measured 1-cell pilot at production shape (state the "
         "figure, e.g. `measured 125 s/fit`), cite a prior-issue measured figure "
         "(`#811 r2: 313 s/unit`), mark the basis `pilot-gated`, or declare "
-        "`N/A — no fit-family phases` on its own line if the row is not a fit loop"
+        "`N/A — no fit-family phases` on its own line, unwrapped (no backticks/quotes), "
+        "if the row is not a fit loop"
     )
 
 
@@ -5269,8 +5282,8 @@ def check_ladder_retention(plan: str, kind: str) -> CheckResult:
         "the sizing section (DEFAULT: retain the dose-selected + latest rungs only, delete "
         "ruled-out rungs BETWEEN rungs; or the justified keep-all exception — full-ladder "
         "sizing at realized per-rung GB + `--boot-disk-gb` declared), or declare "
-        "`N/A — no per-rung checkpoint persistence` on its own line if no phase persists "
-        "per-rung checkpoints",
+        "`N/A — no per-rung checkpoint persistence` on its own line, unwrapped "
+        "(no backticks/quotes), if no phase persists per-rung checkpoints",
     )
 
 
