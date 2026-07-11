@@ -667,8 +667,8 @@ def test_gate_trigger_diff_exit_guarded():
     text = _skill_text()
     region = _gate_region(text)
     assert (
-        'if ! git -C "$WT" diff --name-only origin/main...HEAD > /tmp/issue-<N>-own-diff.txt'
-        in region
+        'if ! git -C "$WT" -c core.quotePath=false diff --name-only origin/main...HEAD '
+        "> /tmp/issue-<N>-own-diff.txt" in region
     ), "the trigger diff must be materialized with an explicit exit check"
     assert region.count("echo crash > /tmp/issue-<N>-lint-verdict.txt") >= 2, (
         "both the failed-trigger-diff arm and the linter-crash arm must write the crash verdict"
@@ -724,7 +724,10 @@ def test_surgical_additive_producer_guarded_and_empty_list_hard_stops():
     `epm:merged {surgical_checkout: true}` with nothing committed."""
     text = _skill_text()
     region = _artifact_confirmed_region(text)
-    guard = region.find('if ! git -C "$WT" diff --name-only --diff-filter=A origin/main...HEAD')
+    guard = region.find(
+        'if ! git -C "$WT" -c core.quotePath=false diff --name-only '
+        "--diff-filter=A origin/main...HEAD"
+    )
     assert guard != -1, (
         "the surgical additive-list producer must check its OWN exit code "
         "(materialize-then-check, mirroring the shared gate's trigger diff)"
@@ -924,10 +927,17 @@ def test_guard1_materializes_foreign_diff_and_fails_closed():
     assert "elif mapfile -t FOREIGN < <(grep -Ev" in region, (
         "FOREIGN must be filled from the materialized FILE inside the chain"
     )
+    # #1268 loop reshape: the diff-failure echo now records GUARD1_STATE and
+    # breaks; the terminal `false` moved to the single post-loop disposition
+    # arm (asserted separately below) — intent preserved, never deleted.
     assert re.search(
-        r'cannot certify no foreign tasks/ paths; do NOT merge"\n\s*false\b',
+        r'cannot certify no foreign tasks/ paths; do NOT merge"\n\s*GUARD1_STATE=diff-failed\b',
         region,
-    ), "the Guard-1 failure arm must end in a terminal false"
+    ), "the Guard-1 diff-failure arm must record the diff-failed state (loop shape, #1268)"
+    assert re.search(
+        r'if \[ "\$GUARD1_STATE" != ok \]; then\n[^\n]*\n\s*false\b',
+        region,
+    ), "the post-loop terminal arm must end in a terminal false on any non-ok state"
     assert region.find("cannot certify no foreign tasks/ paths") < region.find(
         "elif mapfile -t FOREIGN"
     ), "the failure arm must precede the FOREIGN work arm (fail CLOSED)"
@@ -963,7 +973,10 @@ def test_gate_lint_legs_run_landing_tree_copy():
     assert -1 < base_legs < overlay < gated_legs, (
         "the payload overlay must sit BETWEEN the baseline and gated lint legs"
     )
-    assert 'git -C "$WT" diff --name-only --no-renames origin/main...HEAD' in region, (
+    assert (
+        'git -C "$WT" -c core.quotePath=false diff --name-only --no-renames origin/main...HEAD'
+        in region
+    ), (
         "the overlay listing COMMAND must disable rename detection (rename SOURCES "
         "must be rm-ed); the comment's mention of --no-renames does not count"
     )

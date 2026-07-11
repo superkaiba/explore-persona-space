@@ -99,7 +99,8 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-# --- Pinned workflow-invariant tests (plan §5 + 1 brief addition + 3 #1242 pins, 35 files). -
+# --- Pinned workflow-invariant tests (plan §5 + 1 brief addition + 3 #1242 pins
+# --- + 1 #1268 pin, 36 files). -
 # A module-level literal tuple, NOT a glob: a future ``tests/test_workflowish.py``
 # that is NOT meant to gate Step 9c must not silently join the gate, and the gate
 # must not silently shrink if a glob arm stops matching. Drift is made loud by the
@@ -140,6 +141,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_autonomous_session_watch.py",
     "tests/test_issue_skill_exit_breadcrumb.py",  # NEW (#1242) — SKILL.md exit-breadcrumb pin
     "tests/test_issue_skill_marker_contract.py",
+    # NEW (#1268) — SKILL.md Step-10d repin/guard hardening pin
+    "tests/test_issue_skill_merge_resnapshot_pin.py",
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
     "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     "tests/test_plan_handoff_path_convention.py",

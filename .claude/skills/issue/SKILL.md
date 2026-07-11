@@ -8694,53 +8694,93 @@ rebase-merged. Three guards:
    # route to the merge-failure handling (`epm:merge-failed v1`, continue).
    STRIPPED_FOREIGN=no   # set to yes iff a strip commit is actually created,
                          # so the safe-case push below fires only when needed.
-   # Freshness fetch + single-SHA capture (#1128): strip against main as
-   # CLOSE to the server-side merge as possible, pinned to ONE SHA so a
-   # concurrent session's fetch cannot advance origin/main mid-guard. A
-   # FAILED fetch is a WARN, not a block: the no-foreign CERTIFICATION
-   # below is correct against any snapshot — staleness only raises the
-   # conflict probability, and the re-snapshot retry (Known failure
-   # shape 2 below) is the recovery. (The materialize-then-check diff
-   # failure below stays TERMINAL — that one breaks certification, #1184.)
-   git -C "$WT" fetch origin main --quiet \
-     || echo "Guard 1 WARN: fetch origin main failed — stripping against last-fetched origin/main (conflict-prone; Known failure shape 2 is the recovery)"
-   MAIN_SHA=$(git -C "$WT" rev-parse origin/main)
-   if ! git -C "$WT" diff --name-only "$MAIN_SHA" HEAD -- 'tasks/' \
-       > /tmp/issue-<N>-guard1-tasks-diff.txt; then
-     echo "Guard 1: git diff \$MAIN_SHA HEAD -- tasks/ FAILED (bad ref or empty MAIN_SHA) — cannot certify no foreign tasks/ paths; do NOT merge"
-     false
-   # Work arm: two-command elif list — mapfile fills FOREIGN from the FILE
-   # (grep semantics identical to the old pipe), then the [ ... ] test (the
-   # LAST command's exit) decides the branch.
-   elif mapfile -t FOREIGN < <(grep -Ev "^tasks/[^/]+/<N>/" \
-         /tmp/issue-<N>-guard1-tasks-diff.txt || true); [ "${#FOREIGN[@]}" -gt 0 ]; then
-     FOREIGN_ON_MAIN=()      # exist at MAIN_SHA -> reset to that snapshot's version
-     FOREIGN_BRANCH_ONLY=()  # only the branch added them -> drop from branch
-     for p in "${FOREIGN[@]}"; do
-       if git -C "$WT" cat-file -e "$MAIN_SHA:$p" 2>/dev/null; then
-         FOREIGN_ON_MAIN+=("$p")
-       else
-         FOREIGN_BRANCH_ONLY+=("$p")
-       fi
-     done
-     [ "${#FOREIGN_ON_MAIN[@]}" -gt 0 ] \
-       && git -C "$WT" checkout "$MAIN_SHA" -- "${FOREIGN_ON_MAIN[@]}"
-     # rm WITHOUT --cached (#1244): the strip commit below is PATHSPEC-limited,
-     # and a pathspec commit records WORKING-TREE content for the named paths
-     # (git-commit(1) --only default) — an index-only deletion (the old
-     # --cached form) is resurrected by it (#1210: 19 resurrected paths). The
-     # working-tree copies are stale duplicates of foreign tasks/ state; main
-     # is authoritative.
-     [ "${#FOREIGN_BRANCH_ONLY[@]}" -gt 0 ] \
-       && git -C "$WT" rm -f --ignore-unmatch -- "${FOREIGN_BRANCH_ONLY[@]}"
-     # Commit the reset/removal so the branch diff no longer touches them,
-     # but only if anything actually changed (idempotent: a re-run finds
-     # nothing staged and skips the commit). Record that a strip commit was
-     # made so the safe-case merge below knows it must push before rebasing.
-     if ! git -C "$WT" diff --cached --quiet -- "${FOREIGN[@]}"; then
-       git -C "$WT" commit -m "issue-<N>: strip foreign tasks/ folders before Step-10d merge (pinned to main @ ${MAIN_SHA:0:12})" -- "${FOREIGN[@]}"
-       STRIPPED_FOREIGN=yes
+   # Bounded mid-guard-churn retry (#1224): the strip work (checkout/rm/
+   # commit) can fail when origin/main advances mid-guard (fleet churn moves
+   # task folders; a piecewise execution re-derives a moved path). Attempt 2
+   # re-runs the whole fetch->pin->diff->split->strip sequence against a
+   # FRESH MAIN_SHA; a second failure is terminal. Composes with Known
+   # failure shape 2 (that recovers a SERVER-SIDE refusal AFTER
+   # certification; this recovers the strip itself BEFORE it). Run the
+   # block as ONE Bash call — piecewise execution was the true #1224
+   # antecedent, and the retry loop protects a one-call execution only.
+   GUARD1_STATE=pending
+   for GUARD1_TRY in 1 2; do
+     if [ "$GUARD1_TRY" -eq 2 ]; then
+       echo "Guard 1 RETRY (once, #1224): strip failed under a stale pin — re-fetch + re-pin"
      fi
+     # Freshness fetch + single-SHA capture (#1128): strip against main as
+     # CLOSE to the server-side merge as possible, pinned to ONE SHA so a
+     # concurrent session's fetch cannot advance origin/main mid-guard. A
+     # FAILED fetch is a WARN, not a block: the no-foreign CERTIFICATION
+     # below is correct against any snapshot — staleness only raises the
+     # conflict probability, and the re-snapshot retry (Known failure
+     # shape 2 below) is the recovery. (The materialize-then-check diff
+     # failure below stays TERMINAL — that one breaks certification, #1184;
+     # bad ref is not churn, so a failed diff producer is NEVER retried.)
+     git -C "$WT" fetch origin main --quiet \
+       || echo "Guard 1 WARN: fetch origin main failed — stripping against last-fetched origin/main (conflict-prone; Known failure shape 2 is the recovery)"
+     MAIN_SHA=$(git -C "$WT" rev-parse origin/main)
+     if ! git -C "$WT" -c core.quotePath=false diff --name-only "$MAIN_SHA" HEAD -- 'tasks/' \
+         > /tmp/issue-<N>-guard1-tasks-diff.txt; then
+       echo "Guard 1: git diff \$MAIN_SHA HEAD -- tasks/ FAILED (bad ref or empty MAIN_SHA) — cannot certify no foreign tasks/ paths; do NOT merge"
+       GUARD1_STATE=diff-failed
+       break
+     # Work arm: two-command elif list — mapfile fills FOREIGN from the FILE
+     # (grep semantics identical to the old pipe), then the [ ... ] test (the
+     # LAST command's exit) decides the branch.
+     elif mapfile -t FOREIGN < <(grep -Ev "^tasks/[^/]+/<N>/" \
+           /tmp/issue-<N>-guard1-tasks-diff.txt || true); [ "${#FOREIGN[@]}" -gt 0 ]; then
+       FOREIGN_ON_MAIN=()      # exist at MAIN_SHA -> reset to that snapshot's version
+       FOREIGN_BRANCH_ONLY=()  # only the branch added them -> drop from branch
+       for p in "${FOREIGN[@]}"; do
+         if git -C "$WT" cat-file -e "$MAIN_SHA:$p" 2>/dev/null; then
+           FOREIGN_ON_MAIN+=("$p")
+         else
+           FOREIGN_BRANCH_ONLY+=("$p")
+         fi
+       done
+       GUARD1_STRIP_RC=0
+       if [ "${#FOREIGN_ON_MAIN[@]}" -gt 0 ]; then
+         git -C "$WT" checkout "$MAIN_SHA" -- "${FOREIGN_ON_MAIN[@]}" || GUARD1_STRIP_RC=$?
+       fi
+       # rm WITHOUT --cached (#1244): the strip commit below is PATHSPEC-limited,
+       # and a pathspec commit records WORKING-TREE content for the named paths
+       # (git-commit(1) --only default) — an index-only deletion (the old
+       # --cached form) is resurrected by it (#1210: 19 resurrected paths). The
+       # working-tree copies are stale duplicates of foreign tasks/ state; main
+       # is authoritative.
+       if [ "${#FOREIGN_BRANCH_ONLY[@]}" -gt 0 ]; then
+         git -C "$WT" rm -f --ignore-unmatch -- "${FOREIGN_BRANCH_ONLY[@]}" || GUARD1_STRIP_RC=$?
+       fi
+       # Commit the reset/removal so the branch diff no longer touches them,
+       # but only if anything actually changed (idempotent: a re-run finds
+       # nothing staged and skips the commit). Record that a strip commit was
+       # made so the safe-case merge below knows it must push before rebasing.
+       if [ "$GUARD1_STRIP_RC" -eq 0 ] \
+          && ! git -C "$WT" diff --cached --quiet -- "${FOREIGN[@]}"; then
+         if git -C "$WT" commit -m "issue-<N>: strip foreign tasks/ folders before Step-10d merge (pinned to main @ ${MAIN_SHA:0:12})" -- "${FOREIGN[@]}"; then
+           STRIPPED_FOREIGN=yes
+         else
+           GUARD1_STRIP_RC=$?
+         fi
+       fi
+       if [ "$GUARD1_STRIP_RC" -eq 0 ]; then GUARD1_STATE=ok; break; fi
+       GUARD1_STATE=strip-failed
+       # Un-stage AND restore the working tree for ONLY this attempt's paths
+       # so the retry re-splits clean (never a bare `reset -- tasks/`, which
+       # could touch own-task staged state). checkout HEAD restores index AND
+       # working tree, so a path that DROPS OUT of attempt-2's FOREIGN (main
+       # caught up to the branch for it) leaves no uncommitted foreign litter
+       # behind — litter a later shape-1 worktree merge could refuse on.
+       git -C "$WT" checkout HEAD -- "${FOREIGN[@]}"
+     else
+       GUARD1_STATE=ok   # no foreign tasks/ paths — nothing to strip
+       break
+     fi
+   done
+   if [ "$GUARD1_STATE" != ok ]; then
+     echo "Guard 1: not certified (state=$GUARD1_STATE) after the bounded retry — do NOT merge; route to the merge-failure handling (epm:merge-failed v1)"
+     false
    fi
    ```
 
@@ -8801,7 +8841,10 @@ rebase-merged. Three guards:
    ```bash
    # The branch's OWN commits (merge-base..HEAD) — with ON_MAINLINE=yes
    # this is exactly what `gh pr merge --rebase` will replay onto main.
-   git -C "$WT" diff --name-only origin/main...HEAD   # three-dot form
+   # quotePath=false: each $f below feeds a literal `git log ... -- "$f"`
+   # pathspec — a `"`-quoted non-ASCII path matches nothing, non_sync reads
+   # empty, and the file is misread as "imported from main" (fail-open).
+   git -C "$WT" -c core.quotePath=false diff --name-only origin/main...HEAD   # three-dot form
    ```
 
    Before judging a workflow-surface path out-of-scope, EXCLUDE files whose ONLY
@@ -9041,7 +9084,7 @@ tests BEFORE anything lands:
   # artifact-only skip. (`set -o pipefail` cannot fix this form: `grep -q`
   # exits at first match and SIGPIPEs the producer, and the else branch
   # would still misread any nonzero as artifact-only.)
-  if ! git -C "$WT" diff --name-only origin/main...HEAD > /tmp/issue-<N>-own-diff.txt; then
+  if ! git -C "$WT" -c core.quotePath=false diff --name-only origin/main...HEAD > /tmp/issue-<N>-own-diff.txt; then
     # Failed trigger diff — the gate cannot classify the payload; fail CLOSED.
     echo crash > /tmp/issue-<N>-lint-verdict.txt
   # Classifier consumes grep's OUTPUT (non-empty => code-bearing payload),
@@ -9119,7 +9162,20 @@ tests BEFORE anything lands:
     # overlay divergence falls to the NEW-set arm (blocks, never fail-open).
     # The overlay copies the FULL own-diff incl. artifact paths — harmless
     # to the verdict (lint ignores non-cone paths); costs scale with payload.
-    git -C "$WT" diff --name-only --no-renames origin/main...HEAD \
+    # quotePath=false on this + the sibling literal-path producers (#1268 —
+    # own-diff, guard1/recovery tasks-diffs, additive-files, Guard 3's
+    # own-commit diff): default quoting wraps a non-ASCII path in `"..."`
+    # escapes, which fails every literal consumer (`git show "HEAD:$p"`,
+    # cat-file/checkout/rm pathspecs, xargs, --map-files) AND every anchored
+    # `^tasks/...` carve-out grep — silent skips, the #458/#1147 fail-open
+    # class. ASCII output is byte-identical under the flag. Deliberately NOT
+    # flagged (quoting-immune consumers): the postmerge ls-tree listings
+    # (match `^tasks/<status>/<N>$` directory names — ASCII by construction),
+    # the figures ls-tree (`grep -q .` non-emptiness), and the new-shared-src
+    # guard (src/ module paths, pinned byte-untouched). Control-char
+    # filenames (newline/tab) stay quoted regardless — the flag covers
+    # bytes >0x7f only.
+    git -C "$WT" -c core.quotePath=false diff --name-only --no-renames origin/main...HEAD \
       > /tmp/issue-<N>-overlay-files.txt || GT_RC=1
     while IFS= read -r p; do
       if git -C "$WT" cat-file -e "HEAD:$p" 2>/dev/null; then
@@ -9713,7 +9769,7 @@ git -C "$WT" merge "$MAIN_SHA"          # conflicts surface HERE, in the worktre
 # echo + false arm and the work arm is STRUCTURALLY unreachable — the
 # old `|| { echo; false; }` form reported failure but let the next
 # command run under no-set-e / piecewise execution (#1243).
-if ! git -C "$WT" diff --name-only --diff-filter=U -- 'tasks/' \
+if ! git -C "$WT" -c core.quotePath=false diff --name-only --diff-filter=U -- 'tasks/' \
     > /tmp/issue-<N>-recovery-foreign.txt; then
   echo "recovery: conflicted-paths diff FAILED — resolve by hand per the prose below"
   false
@@ -9727,12 +9783,36 @@ if ! git -C "$WT" diff --name-only --diff-filter=U -- 'tasks/' \
 # empty list no branch is taken and the unit exits 0 — deliberate
 # post-merge-guard parity, not drift (the old `[ ... ] && checkout`
 # tail exited 1 there).
-# checkout <sha> -- <path> resolves each U path to the snapshot's version
-# and stages it. It fails loud on a path absent at $MAIN_SHA (a
-# delete/modify conflict — resolve that one by hand).
+# Discriminate on-main vs gone-on-main (Guard 1's own cat-file split): task
+# folders MOVE on every status change, so a foreign conflicted path absent
+# at $MAIN_SHA is ROUTINE, not rare (#1242 13:37Z / #1246 14:43Z re-derived
+# this by hand). checkout <sha> -- <path> resolves each ON-MAIN U path to
+# the snapshot's version and stages it; a GONE-ON-MAIN path (moved/deleted
+# on main) is resolved as a REMOVAL — main is authoritative for foreign
+# tasks/ state, and git rm -f also resolves the unmerged index entries.
 elif mapfile -t RECOVERY_FOREIGN < <(grep -Ev "^tasks/[^/]+/<N>/" \
       /tmp/issue-<N>-recovery-foreign.txt || true); [ "${#RECOVERY_FOREIGN[@]}" -gt 0 ]; then
-  git -C "$WT" checkout "$MAIN_SHA" -- "${RECOVERY_FOREIGN[@]}"
+  RECOVERY_ON_MAIN=()        # exist at MAIN_SHA -> take the snapshot's version
+  RECOVERY_GONE_ON_MAIN=()   # absent at MAIN_SHA (moved/deleted on main) -> remove
+  for p in "${RECOVERY_FOREIGN[@]}"; do
+    if git -C "$WT" cat-file -e "$MAIN_SHA:$p" 2>/dev/null; then
+      RECOVERY_ON_MAIN+=("$p")
+    else
+      RECOVERY_GONE_ON_MAIN+=("$p")
+    fi
+  done
+  # if-form, not `[ ] && cmd` tails: an empty second list must not exit the
+  # unit 1 (the documented exit-0 empty-list parity above).
+  if [ "${#RECOVERY_ON_MAIN[@]}" -gt 0 ]; then
+    git -C "$WT" checkout "$MAIN_SHA" -- "${RECOVERY_ON_MAIN[@]}"
+  fi
+  # git rm -f, NOT --cached: this resolution commit is `git commit --no-edit`
+  # with NO pathspec (index governs), so --cached would technically survive
+  # (#1244's resurrection needs a pathspec-limited commit) — -f is chosen for
+  # Guard-1 parity and to leave no stale working-tree litter behind.
+  if [ "${#RECOVERY_GONE_ON_MAIN[@]}" -gt 0 ]; then
+    git -C "$WT" rm -f --ignore-unmatch -- "${RECOVERY_GONE_ON_MAIN[@]}"
+  fi
 fi
 # THIS task's own tasks/*/<N>/ conflicts and all non-tasks/ conflicts:
 # resolve in the worktree (keep main's version of anything outside this
@@ -9749,12 +9829,12 @@ git -C "$WT" commit --no-edit
 # certification passed VACUOUSLY (fail-OPEN into the push). Here a
 # failed producer takes the terminal arm and the residual check is
 # structurally unreachable:
-if ! git -C "$WT" diff --name-only "$MAIN_SHA" HEAD -- 'tasks/' \
+if ! git -C "$WT" -c core.quotePath=false diff --name-only "$MAIN_SHA" HEAD -- 'tasks/' \
     > /tmp/issue-<N>-recovery-tasks-verify.txt; then
   echo "recovery: tasks/ verification diff FAILED — do NOT push"
   false
 elif grep -Ev "^tasks/[^/]+/<N>/" /tmp/issue-<N>-recovery-tasks-verify.txt | grep -q .; then
-  echo "recovery: foreign tasks/ still differ from the captured main snapshot — do NOT push; re-pin the listed paths to \$MAIN_SHA and re-verify"
+  echo "recovery: foreign tasks/ still differ from the captured main snapshot — do NOT push; re-pin the listed paths (checkout the on-main, git rm -f the gone-on-main) to \$MAIN_SHA and re-verify"
   false
 fi
 # Re-run the targeted tests for the touched surface AND the executable
@@ -9920,7 +10000,7 @@ Decision tree:
   # deliverable — status M, not A — or a scripts/-only payload); landing
   # anyway would push nothing and post `epm:merged {surgical_checkout:
   # true}` with nothing committed (a PHANTOM SUCCESS). Both arms hard-stop.
-  if ! git -C "$WT" diff --name-only --diff-filter=A origin/main...HEAD -- \
+  if ! git -C "$WT" -c core.quotePath=false diff --name-only --diff-filter=A origin/main...HEAD -- \
       "tasks/*/<N>/" "figures/issue_<N>/" "eval_results/issue_<N>/" \
       "eval_results/issue_<N>_*/" "ood_eval_results/issue_<N>/" \
       ".claude/" "CLAUDE.md" ".gitattributes" "docs/methodology/issue_<N>.md" \

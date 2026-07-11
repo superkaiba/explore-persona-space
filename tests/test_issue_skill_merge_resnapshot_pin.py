@@ -30,8 +30,12 @@ _SKILL = _REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
 _SHA_CAPTURE = 'MAIN_SHA=$(git -C "$WT" rev-parse origin/main)'
 _GUARD1_PINNED_CHECKOUT = 'git -C "$WT" checkout "$MAIN_SHA" -- "${FOREIGN_ON_MAIN[@]}"'
-_RECOVERY_PINNED_CHECKOUT = 'git -C "$WT" checkout "$MAIN_SHA" -- "${RECOVERY_FOREIGN[@]}"'
-_RECOVERY_CERT_DIFF = 'git -C "$WT" diff --name-only "$MAIN_SHA" HEAD -- \'tasks/\''
+# #1268: the recovery discriminates on-main vs gone-on-main; the pinned
+# checkout targets the ON-MAIN split (the gone-on-main split is rm-ed).
+_RECOVERY_PINNED_CHECKOUT = 'git -C "$WT" checkout "$MAIN_SHA" -- "${RECOVERY_ON_MAIN[@]}"'
+_RECOVERY_CERT_DIFF = (
+    'git -C "$WT" -c core.quotePath=false diff --name-only "$MAIN_SHA" HEAD -- \'tasks/\''
+)
 
 
 def _skill_text() -> str:
@@ -163,10 +167,11 @@ def test_recovery_certification_arms_are_exclusive():
     halting under no-set-e / piecewise execution (the verification-diff arm
     failed OPEN into the push)."""
     recovery = _recovery_region(_skill_text())
-    assert "if ! git -C \"$WT\" diff --name-only --diff-filter=U -- 'tasks/'" in recovery, (
-        "the conflicted-path producer must run inside an `if !` failure arm"
-    )
-    assert 'if ! git -C "$WT" diff --name-only "$MAIN_SHA" HEAD -- \'tasks/\'' in recovery, (
+    assert (
+        'if ! git -C "$WT" -c core.quotePath=false diff --name-only '
+        "--diff-filter=U -- 'tasks/'" in recovery
+    ), "the conflicted-path producer must run inside an `if !` failure arm"
+    assert f"if ! {_RECOVERY_CERT_DIFF}" in recovery, (
         "the certification-diff producer must run inside an `if !` failure arm"
     )
     assert '|| { echo "recovery:' not in recovery, (
@@ -176,7 +181,9 @@ def test_recovery_certification_arms_are_exclusive():
     # verification diff (fused certification: a failed diff cannot vacuously pass).
     # Anchored on the verify-file path (not a bare `elif grep -Ev`) so an
     # unrelated elif-grep elsewhere in the region cannot false-satisfy it.
-    cert = recovery.find('if ! git -C "$WT" diff --name-only "$MAIN_SHA" HEAD')
+    cert = recovery.find(
+        'if ! git -C "$WT" -c core.quotePath=false diff --name-only "$MAIN_SHA" HEAD'
+    )
     residual = recovery.find(
         'elif grep -Ev "^tasks/[^/]+/<N>/" /tmp/issue-<N>-recovery-tasks-verify.txt', cert
     )
@@ -201,4 +208,138 @@ def test_shape2_retry_gated_on_file_persisted_tip():
     assert -1 < skip_echo < else_arm, "the skip arm must precede the else-arm push"
     assert -1 < else_arm < mergeable, (
         "the retry push must be followed by the async-mergeability re-check"
+    )
+
+
+# --------------------------------------------------------------------------
+# #1268 — Step-10d repin/guard hardening pins (recovery gone-on-main
+# discrimination; quotePath=false on the literal-path producers; Guard 1's
+# bounded re-fetch + re-pin retry loop)
+# --------------------------------------------------------------------------
+
+
+def _lint_gate_region(text: str) -> str:
+    """The Pre-push workflow-lint gate slice (P1/P2 producers live here)."""
+    start_marker = "#### Pre-push workflow-lint gate"
+    end_marker = "#### The auto-merge procedure"
+    start = text.find(start_marker)
+    end = text.find(end_marker)
+    assert start != -1, "Pre-push workflow-lint gate heading not found in SKILL.md"
+    assert end != -1, "auto-merge procedure heading not found in SKILL.md"
+    assert start < end, "lint-gate region must precede the auto-merge procedure"
+    return text[start:end]
+
+
+def _artifact_confirmed_region(text: str) -> str:
+    """The artifact-confirmed merge slice (the P6 additive-files producer)."""
+    start_marker = "#### The artifact-confirmed merge procedure"
+    end_marker = "#### Post-merge stale-task-folder guard"
+    start = text.find(start_marker)
+    end = text.find(end_marker)
+    assert start != -1, "artifact-confirmed merge heading not found in SKILL.md"
+    assert end != -1, "post-merge stale-task-folder guard heading not found"
+    assert start < end, "artifact-confirmed region must precede the post-merge guard"
+    return text[start:end]
+
+
+def test_recovery_repin_discriminates_gone_on_main():
+    """#1268 item 1: the recovery repin loop discriminates foreign conflicted
+    paths on-main vs gone-on-main (Guard 1's own cat-file split) — task
+    folders move on every status change, so a path absent at $MAIN_SHA is
+    ROUTINE (#1242/#1246 hand-recovered it). On-main paths are checked out
+    from the pinned snapshot; gone-on-main paths are resolved as removals via
+    git rm -f; the old undiscriminated whole-list checkout (which crashed on
+    a gone-on-main path) is gone."""
+    recovery = _recovery_region(_skill_text())
+    assert 'cat-file -e "$MAIN_SHA:$p"' in recovery, (
+        "the recovery must probe each foreign path's existence at the pinned MAIN_SHA"
+    )
+    assert "RECOVERY_ON_MAIN=()" in recovery, "the on-main split array must exist"
+    assert "RECOVERY_GONE_ON_MAIN=()" in recovery, "the gone-on-main split array must exist"
+    assert _RECOVERY_PINNED_CHECKOUT in recovery, (
+        "on-main foreign paths must be checked out from the pinned snapshot"
+    )
+    assert 'git -C "$WT" rm -f --ignore-unmatch -- "${RECOVERY_GONE_ON_MAIN[@]}"' in recovery, (
+        "gone-on-main foreign paths must be resolved as removals (git rm -f; "
+        "main is authoritative for foreign tasks/ state)"
+    )
+    assert 'checkout "$MAIN_SHA" -- "${RECOVERY_FOREIGN[@]}"' not in recovery, (
+        "the old undiscriminated whole-list checkout must be gone "
+        "(it crashed with pathspec-did-not-match on a gone-on-main path)"
+    )
+
+
+def test_step10d_path_list_producers_disable_quotepath():
+    """#1268 item 2: every Step-10d path-list producer whose output feeds a
+    LITERAL consumer (git show/cat-file/checkout/rm pathspecs, xargs,
+    --map-files, anchored carve-out greps) carries `-c core.quotePath=false`
+    — under default quoting a non-ASCII path arrives `"`-quoted and every
+    literal consumer silently no-ops on it (the #458/#1147 fail-open class).
+    Pins are pre-wrap prefixes (P3/P4/P5/P6 producers are line-wrapped)."""
+    text = _skill_text()
+    guards = _merge_guards_region(text)
+    recovery = _recovery_region(text)
+    gate = _lint_gate_region(text)
+    artifact = _artifact_confirmed_region(text)
+    flag = "-c core.quotePath=false"
+    producers = [
+        # P1 — overlay listing (the #1212 site).
+        (gate, f'git -C "$WT" {flag} diff --name-only --no-renames origin/main...HEAD', "P1"),
+        # P2 — the shared gate's own-diff trigger.
+        (
+            gate,
+            f'if ! git -C "$WT" {flag} diff --name-only origin/main...HEAD '
+            "> /tmp/issue-<N>-own-diff.txt",
+            "P2",
+        ),
+        # P3 — Guard 1's foreign-tasks trigger diff.
+        (guards, f'if ! git -C "$WT" {flag} diff --name-only "$MAIN_SHA" HEAD -- \'tasks/\'', "P3"),
+        # P4 — the recovery's conflicted-path producer.
+        (
+            recovery,
+            f"if ! git -C \"$WT\" {flag} diff --name-only --diff-filter=U -- 'tasks/'",
+            "P4",
+        ),
+        # P5 — the recovery's certification diff.
+        (recovery, f"if ! {_RECOVERY_CERT_DIFF}", "P5"),
+        # P6 — the surgical additive-files producer (pre-wrap prefix).
+        (
+            artifact,
+            f'if ! git -C "$WT" {flag} diff --name-only --diff-filter=A origin/main...HEAD',
+            "P6",
+        ),
+        # P7 — Guard 3's own-commit content-check diff (feeds the per-file
+        # `git log ... -- "$f"` spec-freshness exclusion loop).
+        (
+            guards,
+            f'git -C "$WT" {flag} diff --name-only origin/main...HEAD   # three-dot form',
+            "P7",
+        ),
+    ]
+    for region, pin, label in producers:
+        assert pin in region, f"{label}: quotePath-flagged producer pin missing: {pin!r}"
+
+
+def test_guard1_bounded_refetch_repin_retry():
+    """#1268 item 3: Guard 1 wraps its fetch->pin->diff->split->strip sequence
+    in a bounded two-attempt loop — a strip failure under a stale pin (#1224:
+    origin/main advanced mid-guard and moved task folders) re-fetches and
+    re-pins ONCE; a second failure (or a failed diff producer, which is never
+    retried — #1184) reaches the single post-loop terminal `false` arm that
+    routes to the epm:merge-failed handling."""
+    guards = _merge_guards_region(_skill_text())
+    assert "for GUARD1_TRY in 1 2; do" in guards, (
+        "the strip sequence must run inside the bounded two-attempt loop"
+    )
+    assert "GUARD1_STATE=pending" in guards, "the loop must track its state explicitly"
+    assert "GUARD1_STATE=diff-failed" in guards, (
+        "a failed diff producer must record diff-failed (terminal; never retried)"
+    )
+    assert 'echo "Guard 1 RETRY (once, #1224)' in guards, (
+        "attempt 2 must announce the bounded re-fetch + re-pin retry"
+    )
+    term = guards.find('if [ "$GUARD1_STATE" != ok ]; then')
+    assert term != -1, "the post-loop terminal disposition arm must exist"
+    assert "\n     false\n   fi" in guards[term : term + 400], (
+        "the post-loop terminal arm must end in a terminal false (do NOT merge)"
     )
