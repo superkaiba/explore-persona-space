@@ -7038,7 +7038,17 @@ def _sidecar_kind_row_groups(meta: dict) -> tuple[Counter, dict[str, set], set] 
     index, and the writer emits it only on multi-artist figures
     (``_build_sidecar_data``: ``multi = len(artifacts) > 1``) — so a
     single-artist sidecar has NO groups anywhere.
+
+    Returns None for a TRUNCATED sidecar (``data_truncated`` — the writer's
+    top-level flag — or a legacy top-level ``truncated``):
+    ``_build_sidecar_data`` truncates the concatenated per-artist rows
+    HEAD-FIRST (``points[:_MAX_SIDECAR_ROWS]``), so a first artist with
+    >= the cap drops every LATER artist/kind from the stored payload —
+    per-kind / per-``_group`` counts over stored rows are then not figure
+    truth (the ``_sidecar_plotted_values`` sibling convention, check 33).
     """
+    if meta.get("data_truncated") or meta.get("truncated"):
+        return None
     pts = meta.get("points")
     if not isinstance(pts, list):
         pts = meta.get("rows")
@@ -7083,6 +7093,17 @@ def _both_claim_bases(
     ``{basis name: count}`` dict — each key present only when that basis has
     actual labels/rows (a zero-count kind is UNAVAILABLE, never a
     contradiction). See ``_beat_claim_warnings`` for the basis semantics."""
+    if len(all_groups) == 1:
+        # A 1-value group set means exactly ONE artist contributed rows in a
+        # MULTI-artist figure (`_group` is only emitted when
+        # `len(artifacts) > 1`, so a sibling artist yielded zero rows). That
+        # is indistinguishable from the single-artist no-`_group` case: the
+        # lone data-bearing artist (scatter especially) may encode >=2 arms
+        # per-point, so the group evidence is treated as ABSENT, never as a
+        # 1-count basis. (`_line_artist_count` is unaffected — its
+        # no-groups fallback reads the same 1.)
+        kind_groups = {}
+        all_groups = set()
     bases: dict[str, int] = {}
     text_block = meta.get("text")
     tb = text_block if isinstance(text_block, dict) else {}
@@ -7137,6 +7158,9 @@ def _beat_claim_warnings(claims: dict, meta: dict, basename: str) -> list[str]:
       the claim is skipped);
     - total distinct ``_group`` across ALL rows (leniency-only: a mixed
       line+scatter two-artist figure satisfies "both arms" across kinds).
+      A 1-value group set (exactly one artist contributed rows — a rowless
+      sibling in a multi-artist figure) is treated as ABSENT group evidence
+      (``_both_claim_bases``), the same skip as the lone unlabeled scatter.
 
     WARN only when >=1 basis is available AND every available basis reads
     <=1. Class B ("one bar per X") ⇒ claimed >=2 elements of the mapped kind;
@@ -7145,9 +7169,15 @@ def _beat_claim_warnings(claims: dict, meta: dict, basename: str) -> list[str]:
     points payload (no payload → skip); WARN when the basis reads <=1 (kind
     absent entirely, or a single aggregate element where the prose claims
     per-unit multiplicity — the #1092 "one bar per re-fit item" degenerate
-    class). ``data_truncated`` sidecars are safe for both classes: truncation
-    implies >=`_MAX_SIDECAR_ROWS` STORED rows, so the <=1 test cannot
-    misfire.
+    class). TRUNCATED sidecars (``data_truncated`` / legacy ``truncated``)
+    carry NO points-derived basis: ``_build_sidecar_data`` truncates the
+    concatenated rows HEAD-FIRST, so a first artist with >= the
+    ``_MAX_SIDECAR_ROWS`` cap drops every LATER artist/kind from the stored
+    payload — stored-row counts are not figure truth there
+    (``_sidecar_kind_row_groups`` returns None, the check-33
+    ``_sidecar_plotted_values`` convention). Class B therefore SKIPS on a
+    truncated sidecar; Class A falls back to the truncation-immune TEXT
+    bases (series / legend labels), skipping when none is available.
     """
     warns: list[str] = []
     rows = _sidecar_kind_row_groups(meta)
@@ -7239,9 +7269,11 @@ def check_figure_beat_claims_vs_sidecar_text(body: str) -> CheckResult:
 
     False-negative envelope (accepted by design): ``embed_text=False``
     figures never carry ``text`` and are never checked; ``embed_data=False``
-    figures lack every points-derived basis, so only their series / legend
-    labels can ground a Class-A read and Class B always skips; paraphrased
-    claims ("each arm", "two models") miss the registered regexes.
+    AND truncated (``data_truncated``) figures lack every points-derived
+    basis (head-first row truncation can drop entire later artists/kinds
+    from the stored payload), so only their series / legend labels can
+    ground a Class-A read and Class B always skips; paraphrased claims
+    ("each arm", "two models") miss the registered regexes.
 
     WARN, never FAIL (heuristic text parsing over natural prose — the
     24/28/33 severity convention; FAIL is reserved for check 26's provable
