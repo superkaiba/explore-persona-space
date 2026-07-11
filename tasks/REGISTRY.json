@@ -2133,8 +2133,8 @@
     "1274": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1274",
-      "status": "reviewing",
+      "path": "tasks/completed/1274",
+      "status": "completed",
       "title": "daily-fix: sweep misses routed-record for prior-night park"
     },
     "128": {
