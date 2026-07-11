@@ -23,7 +23,9 @@ The four #787 sub-fixes these tests guard:
 
 from __future__ import annotations
 
+import json
 import re
+import subprocess
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -1042,3 +1044,104 @@ def test_gate_blocks_backgrounded_with_wedge_bounds():
     assert "runs in ONE fenced block" not in text, (
         "the surgical 'runs in ONE fenced block' phrasing must not reappear"
     )
+
+
+# --------------------------------------------------------------------------
+# Task #1253 — post-merge guard work arm: sparse scratch worktree, hook-safe
+# --------------------------------------------------------------------------
+
+
+def test_post_merge_guard_work_arm_scratch_worktree_and_hook_safe(tmp_path):
+    """#1253: the post-merge guard's WORK ARM must remove the duplicate(s) in
+    a SPARSE SCRATCH WORKTREE detached at the fetched origin/main — never a
+    root `git rm`, which fails pathspec whenever the local root predates the
+    just-landed server-side merge and drove the improvised, hook-blocked
+    checkout-pathspec fallback (session 82f5b16a, /issue 1198). Pins:
+    (i) staging anchors (add flag order; cone init BEFORE set — git 2.34's
+    `set --cone` is silently a literal pattern; scratch-scoped rm; old
+    root-side forms gone); (ii) terminal `false` on every new failure arm;
+    (iii) the STRONG pin — the fenced block, `<N>`->1198 substituted, fed to
+    the LIVE scripts/guard_repo_root_branch.sh via stdin PreToolUse JSON must
+    return rc=0 (a future edit reintroducing a hook-blocked shape fails
+    here), plus `bash -n` syntax-cleanliness; (iv) chain-unreachability — the
+    `&&`-join and populate->rm->commit ordering keep the empty-index
+    delete-everything-tree commit path provably unreachable, and the region
+    carries EXACTLY ONE fenced bash block so a second executable fence cannot
+    escape the hook probe (extend the probe to every fence if one is ever
+    deliberately added)."""
+    text = _skill_text()
+    region = _post_merge_guard_region(text)
+
+    # (i) staging anchors. The add-line flag order `--detach --no-checkout` is
+    # load-bearing for a bare copy (the reversed order trips the hook's
+    # checkout+detach detector); cone init must precede `set`.
+    assert 'worktree add --detach --no-checkout "$SCRATCH" origin/main' in region
+    assert region.index("sparse-checkout init --cone") < region.index(
+        'sparse-checkout set "${DUPES[@]}"'
+    ), "sparse-checkout init --cone must precede set (git 2.34 ordering)"
+    assert 'git -C "$SCRATCH" rm -r -q "${DUPES[@]}"' in region
+    for hit in re.findall(r"git[^\n]*\brm -r\b[^\n]*", region):
+        assert '-C "$SCRATCH"' in hit, f"non-scratch-scoped git rm -r: {hit!r}"
+    assert 'git rm -r "${DUPES[@]}"' not in region, (
+        "the old root-side `git rm` must be gone (it pathspec-fails whenever "
+        "the local root predates the just-landed merge)"
+    )
+    assert 'cd "$REPO_ROOT"   # stay on main' not in region, (
+        "the old root-cd work-arm preamble must be gone"
+    )
+
+    # (ii) every new failure arm ends in a terminal `false` (an optional
+    # scratch-cleanup line may sit between the echo and the false). The two
+    # verify arms share the "cannot certify the removal landed" tail, so their
+    # arm-UNIQUE phrases are pinned as well (same rationale as the detection
+    # arms' pins above: removing `false` from exactly one shared-tail arm must
+    # trip a pin).
+    cleanup = re.escape('git -C "$REPO_ROOT" worktree remove --force "$SCRATCH" 2>/dev/null')
+    for arm_msg in (
+        "scratch-worktree staging FAILED",
+        "did NOT land on origin/main",
+        "verify fetch FAILED",
+        "verify ls-tree FAILED",
+        "cannot certify the removal landed",
+        "STILL on origin/main after push",
+        "persist after 2 root syncs",
+    ):
+        assert re.search(
+            re.escape(arm_msg) + r'[^\n]*"\n(?:\s*' + cleanup + r"\n)?\s*false\b",
+            region,
+        ), f"work-arm failure arm {arm_msg!r} must end in a terminal false"
+
+    # (iv) chain-unreachability: EXACTLY ONE fenced bash block; the staging
+    # steps are one `&&`-joined chain in populate -> rm -> commit order, so a
+    # failed rm can never reach commit (a commit from the add-time EMPTY index
+    # would produce a delete-everything tree).
+    fences = re.findall(r"```bash\n(.*?)```", region, re.DOTALL)
+    assert len(fences) == 1, (
+        f"the guard region must carry EXACTLY ONE fenced bash block, got {len(fences)}"
+    )
+    fence = fences[0]
+    rm_clause = '&& git -C "$SCRATCH" rm -r -q "${DUPES[@]}"'
+    commit_clause = '&& git -C "$SCRATCH" commit'
+    assert rm_clause in fence, "the scratch rm must stay &&-joined into the staging chain"
+    assert commit_clause in fence, "the scratch commit must stay &&-joined into the staging chain"
+    assert (
+        fence.index("checkout --detach origin/main")
+        < fence.index(rm_clause)
+        < fence.index(commit_clause)
+    ), "staging order must be populate -> rm -> commit"
+
+    # (iii) the strong pin: the `<N>`->1198-substituted block passes the LIVE
+    # hook (stdin PreToolUse JSON, the tests/test_guard_repo_root_branch.py
+    # `_run` convention) and `bash -n`.
+    guard_script = _REPO_ROOT / "scripts" / "guard_repo_root_branch.sh"
+    block = fence.replace("<N>", "1198")
+    payload = json.dumps({"tool_input": {"command": block}})
+    proc = subprocess.run([str(guard_script)], input=payload, text=True, capture_output=True)
+    assert proc.returncode == 0, (
+        f"guard hook blocked the post-merge guard block (rc={proc.returncode}):\n"
+        f"{proc.stdout}\n{proc.stderr}"
+    )
+    script = tmp_path / "postmerge_guard_block.sh"
+    script.write_text(block, encoding="utf-8")
+    bn = subprocess.run(["bash", "-n", str(script)], capture_output=True, text=True)
+    assert bn.returncode == 0, f"bash -n failed on the substituted block:\n{bn.stderr}"
