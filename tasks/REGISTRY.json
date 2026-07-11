@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1270,
+  "highest_id": 1271,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2108,6 +2108,13 @@
       "path": "tasks/proposed/1270",
       "status": "proposed",
       "title": "daily-fix: planner-output extraction tolerates trailing rows"
+    },
+    "1271": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1271",
+      "status": "proposed",
+      "title": "daily-fix: helper-authenticated fetch in experimenter recipe"
     },
     "128": {
       "has_clean_result": false,
