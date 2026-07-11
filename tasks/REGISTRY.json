@@ -1965,8 +1965,8 @@
     "1252": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1252",
-      "status": "running",
+      "path": "tasks/reviewing/1252",
+      "status": "reviewing",
       "title": "trigger-dense reviews: return text = verdict + pointer only"
     },
     "1253": {
