@@ -1249,6 +1249,11 @@ Agent-facing appendix at the bottom. Required content, in order:
   (recipe match + measurement-regime fit + required conditions present).
   Format: `- Reused <kind> from [#M](...): <path> — fit: <one line>`.
   When THIS task produced every artifact, no reuse bullets are needed.
+  Cross-issue provenance pins found in committed result-JSON `metadata`
+  (`hf_rev_<M>_*` revision keys, `issue<M>_` input paths) must be
+  declared in the body (canonically this list) — `verify_task_body.py`
+  check 35 (`check_cross_issue_reuse_provenance`) FAILs an undeclared
+  pinned revision at posting time.
 - **`**Compute:**`** — wall time, GPU type/count, pod label.
 - **`**Code:**`** — dataset-build script, pipeline driver, Hydra config,
   git commit hash, one-block reproduce snippet.
