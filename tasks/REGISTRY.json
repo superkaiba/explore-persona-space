@@ -1993,8 +1993,8 @@
     "1256": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1256",
-      "status": "proposed",
+      "path": "tasks/planning/1256",
+      "status": "planning",
       "title": "workflow-fix: cross-issue reuse-provenance check in verify_task_body.py"
     },
     "1257": {
