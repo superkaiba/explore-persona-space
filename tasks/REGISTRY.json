@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1266,
+  "highest_id": 1267,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2073,6 +2073,13 @@
       "path": "tasks/proposed/1266",
       "status": "proposed",
       "title": "daily-fix: lint check for bang-backtick in skill markdown"
+    },
+    "1267": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1267",
+      "status": "proposed",
+      "title": "daily-fix: watcher lane for zero-assistant-row boot deaths"
     },
     "127": {
       "has_clean_result": false,
