@@ -2077,8 +2077,8 @@
     "1267": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1267",
-      "status": "planning",
+      "path": "tasks/approved/1267",
+      "status": "approved",
       "title": "daily-fix: watcher lane for zero-assistant-row boot deaths"
     },
     "1268": {
