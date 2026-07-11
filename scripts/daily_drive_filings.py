@@ -13,7 +13,8 @@ where ``body`` defaults to ``<dir>/<slug>.md`` (absolute paths pass through; rel
 resolve against the filings dir). ``wf_fix`` (route 2 only, default ``true``) — ``false``
 marks a non-workflow-surface (experiment-code) item per the daily SKILL.md route-2 variant:
 the driver drops the ``wf-fix`` / ``wf-fix-fp:<fp>`` tags (keeps ``daily-auto-filed``),
-skips the Provenance injection, and skips fp-dedup (#1228).
+skips the Provenance injection, and skips fp-dedup (#1228). Route-2 titles missing a
+``WF_FIX_TITLE_PREFIXES`` prefix gain ``daily-fix: `` before the <=60 truncation (#1273).
 
 Route-2 bodies are normalized in place before filing (#1173; skipped for ``wf_fix: false``
 items): a body missing the durable
@@ -57,7 +58,7 @@ from pathlib import Path
 
 import yaml
 
-from explore_persona_space.task_workflow import wf_fix_fingerprint
+from explore_persona_space.task_workflow import WF_FIX_TITLE_PREFIXES, wf_fix_fingerprint
 
 LEDGER_NAME = "filed.jsonl"
 QUARANTINE_NAME = "filed.jsonl.quarantined"
@@ -177,6 +178,25 @@ def _wf_fix_enabled(item: dict) -> bool:
     signal cannot diverge on the driver path (#1173 coupling invariant).
     """
     return item["route"] == 2 and item.get("wf_fix", True)
+
+
+def _effective_title(item: dict) -> str:
+    """The title actually filed for this manifest item.
+
+    Route-2 titles gain the ``daily-fix: `` channel prefix when the manifest
+    omitted every ``WF_FIX_TITLE_PREFIXES`` prefix (#1273: the 2026-07-09
+    manifest filed 26 bare titles invisible to
+    ``task_workflow.is_open_workflow_fix_task``'s title pre-filter). Prepend
+    happens BEFORE the [:60] truncation (the daily SKILL.md contract budgets
+    the prefix inside <=60). Already-prefixed titles (either channel prefix)
+    pass through un-double-prefixed; route-3 titles are never touched. The
+    ONE shared normalization for _filer_cmd AND _try_recovery — the filed
+    title and the recovery-scan title cannot diverge (#1173 coupling pattern).
+    """
+    title = item["title"]
+    if item["route"] == 2 and not title.startswith(WF_FIX_TITLE_PREFIXES):
+        title = f"daily-fix: {title}"
+    return title[:60]
 
 
 def _warn_stray_wf_fix_provenance(item: dict, dirpath: Path) -> None:
@@ -390,7 +410,7 @@ def _filer_cmd(
         "--kind",
         "infra",
         "--title",
-        item["title"][:60],
+        _effective_title(item),
         "--body-file",
         str(body_path),
         "--origin-prompt",
@@ -448,7 +468,18 @@ def _try_recovery(
     if attempting is None:
         return None
     id_floor = int(attempting.get("id_floor", 0))
-    matches = scan_recovery_candidates(tasks_root, item["title"][:60], id_floor, item["route"])
+    # Union over both title forms: the effective (prefixed) title the post-#1273
+    # driver files, AND the raw [:60] form a crashed PRE-fix driver may have filed
+    # (the one-shot prefix-migration window). Post-fix, for an already-prefixed
+    # manifest title the set collapses to one element.
+    titles = {_effective_title(item), item["title"][:60]}
+    matches = sorted(
+        {
+            tid
+            for t in titles
+            for tid in scan_recovery_candidates(tasks_root, t, id_floor, item["route"])
+        }
+    )
     if not matches:
         return None
     if len(matches) == 1:

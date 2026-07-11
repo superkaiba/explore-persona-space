@@ -142,6 +142,11 @@ def tag_values(argv: list[str]) -> list[str]:
     return [argv[i + 1] for i, a in enumerate(argv) if a == "--tag"]
 
 
+def title_value(argv: list[str]) -> str:
+    """The --title argv value the driver composed (mirrors tag_values)."""
+    return argv[argv.index("--title") + 1]
+
+
 @pytest.fixture()
 def tasks_root(tmp_path: Path) -> Path:
     root = tmp_path / "tasks"
@@ -684,3 +689,107 @@ def test_route2_wf_fix_false_body_with_provenance_line_warns(tmp_path, tasks_roo
     assert "WARNING expcode-a" in capsys.readouterr().err
     assert (d / "expcode-a.md").read_text(encoding="utf-8") == pre  # never rewritten
     assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]  # never blocked
+
+
+# ── #1273: route-2 titles missing a WF_FIX_TITLE_PREFIXES prefix gain daily-fix: ─
+
+
+def test_route2_bare_title_gains_daily_fix_prefix_before_truncation(tmp_path, tasks_root):
+    # Durability pin (#1273 plan §10): prepend happens BEFORE the [:60] cut, so a
+    # 55-char bare title files as ("daily-fix: " + "x" * 55)[:60] — len 60, 49 x's.
+    item = make_item("fix-a", title="x" * 55)
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    title = title_value(filer_calls(d)[0])
+    assert title == ("daily-fix: " + "x" * 55)[:60]
+    assert title.startswith("daily-fix: ")
+    assert len(title) == 60
+    assert title.endswith("x" * 49)
+
+
+def test_route2_prefixed_title_unchanged(tmp_path, tasks_root):
+    item = make_item("fix-a")  # default title "daily-fix: fix-a"
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    title = title_value(filer_calls(d)[0])
+    assert title == item["title"][:60]
+    assert title.count("daily-fix:") == 1
+
+
+def test_route2_workflow_fix_prefix_not_double_prefixed(tmp_path, tasks_root):
+    # The OTHER channel prefix also satisfies the guard — filed verbatim.
+    item = make_item("fix-a", title="workflow-fix: xyz")
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    title = title_value(filer_calls(d)[0])
+    assert title == "workflow-fix: xyz"
+    assert "daily-fix:" not in title
+
+
+def test_route3_title_never_prefixed(tmp_path, tasks_root):
+    item = make_item("held-a", route=3, title="held judgment call")
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert title_value(filer_calls(d)[0]) == "held judgment call"
+
+
+def test_route2_wf_fix_false_title_also_prefixed(tmp_path, tasks_root):
+    # Scope pin (#1273 plan §4): the prefix is the CHANNEL marker, keyed on
+    # route == 2 alone — a wf_fix: false (experiment-code) item is prefixed too.
+    item = make_item("expcode-a", wf_fix=False, title="bare experiment-code fix")
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert title_value(filer_calls(d)[0]) == "daily-fix: bare experiment-code fix"
+
+
+def test_recovery_matches_effective_title_for_bare_manifest_title(tmp_path, tasks_root):
+    # File-site/recovery consistency: the recovery scan finds the task the
+    # POST-fix driver would have filed (effective title), so no double-file.
+    item = make_item("fix-a", title="bare fix title")
+    d = make_filings_dir(tmp_path, [item])
+    _seed_attempting(d, "fix-a", item, id_floor=100)
+    make_task(
+        tasks_root, "proposed", 150, title="daily-fix: bare fix title", tags=["daily-auto-filed"]
+    )
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    rows = ledger_rows(d)
+    assert rows[-1]["outcome"] == "recovered" and rows[-1]["id"] == 150
+    assert filer_calls(d) == []
+
+
+def test_recovery_also_matches_bare_title_from_prefix_migration(tmp_path, tasks_root):
+    # Migration window (#1273 constraint 4): a crashed PRE-fix driver filed the
+    # BARE title; the post-fix resume must still recover it, not refile.
+    item = make_item("fix-a", title="bare fix title")
+    d = make_filings_dir(tmp_path, [item])
+    _seed_attempting(d, "fix-a", item, id_floor=100)
+    make_task(tasks_root, "proposed", 150, title="bare fix title", tags=["daily-auto-filed"])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    rows = ledger_rows(d)
+    assert rows[-1]["outcome"] == "recovered" and rows[-1]["id"] == 150
+    assert filer_calls(d) == []
+
+
+def test_recovery_bare_and_prefixed_both_match_is_ambiguous(tmp_path, tasks_root):
+    # BOTH title forms above the floor IS a real double-file — the union feeds
+    # the existing ambiguity rule: ERROR for manual disposition, no filer call.
+    item = make_item("fix-a", title="bare fix title")
+    d = make_filings_dir(tmp_path, [item])
+    _seed_attempting(d, "fix-a", item, id_floor=100)
+    make_task(
+        tasks_root, "proposed", 150, title="daily-fix: bare fix title", tags=["daily-auto-filed"]
+    )
+    make_task(tasks_root, "proposed", 151, title="bare fix title", tags=["daily-auto-filed"])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 1
+    last = ledger_rows(d)[-1]
+    assert last["outcome"] == "ERROR" and last["flag"] == "ambiguous-recovery"
+    assert "150" in last["tail"] and "151" in last["tail"]
+    assert filer_calls(d) == []
