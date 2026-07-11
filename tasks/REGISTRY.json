@@ -1958,15 +1958,15 @@
     "1251": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1251",
-      "status": "reviewing",
+      "path": "tasks/completed/1251",
+      "status": "completed",
       "title": "step9c baseline oracle tolerates unrelated concurrent dirty "
     },
     "1252": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1252",
-      "status": "reviewing",
+      "path": "tasks/completed/1252",
+      "status": "completed",
       "title": "trigger-dense reviews: return text = verdict + pointer only"
     },
     "1253": {
@@ -2070,8 +2070,8 @@
     "1266": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1266",
-      "status": "reviewing",
+      "path": "tasks/completed/1266",
+      "status": "completed",
       "title": "daily-fix: lint check for bang-backtick in skill markdown"
     },
     "1267": {
@@ -2091,8 +2091,8 @@
     "1269": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1269",
-      "status": "proposed",
+      "path": "tasks/planning/1269",
+      "status": "planning",
       "title": "daily-fix: LESSONS.md durable slimming + lint cap WARN band"
     },
     "127": {
@@ -2112,8 +2112,8 @@
     "1271": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1271",
-      "status": "proposed",
+      "path": "tasks/planning/1271",
+      "status": "planning",
       "title": "daily-fix: helper-authenticated fetch in experimenter recipe"
     },
     "1272": {
