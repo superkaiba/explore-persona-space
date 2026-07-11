@@ -1993,8 +1993,8 @@
     "1256": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1256",
-      "status": "proposed",
+      "path": "tasks/planning/1256",
+      "status": "planning",
       "title": "workflow-fix: cross-issue reuse-provenance check in verify_task_body.py"
     },
     "1257": {
@@ -2014,8 +2014,8 @@
     "1259": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1259",
-      "status": "running",
+      "path": "tasks/completed/1259",
+      "status": "completed",
       "title": "daily-fix: recent_clean_results v4 skim reads Takeaways bloc"
     },
     "126": {
@@ -2028,8 +2028,8 @@
     "1260": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1260",
-      "status": "proposed",
+      "path": "tasks/running/1260",
+      "status": "running",
       "title": "daily-fix: WARN when verbatim insert exceeds ratchet headroo"
     },
     "1261": {
