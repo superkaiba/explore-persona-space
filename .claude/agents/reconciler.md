@@ -458,6 +458,11 @@ Examples:
     `file:line + abstract description` for such lines); in marker mode post
     `epm:review-reconcile` BEFORE any closing chat text; read the artifact
     in ≤~120-line windows (#1058).
+    Marker-mode final return text = verdict + marker pointer +
+    per-severity counts ONLY — no findings recap, however abstract
+    (#1152; rule discipline 4). In-context mode: NOTHING after the
+    role-tagged verdict block except a discipline-1-clean,
+    file-pointer-minimal workflow-fix-candidate block.
 
 ---
 
