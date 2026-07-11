@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1263,
+  "highest_id": 1264,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2052,6 +2052,13 @@
       "path": "tasks/proposed/1263",
       "status": "proposed",
       "title": "daily-fix: add unwrapped clarifier to escape remedy text"
+    },
+    "1264": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1264",
+      "status": "proposed",
+      "title": "daily-fix: c26-c30 escape phrases + generative sync test"
     },
     "127": {
       "has_clean_result": false,
