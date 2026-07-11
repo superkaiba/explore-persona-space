@@ -648,6 +648,29 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   figure plotted 0.231 / a -4.53-clipped bar; checks 24 (rendered text) and
   26 (structure) are blind to plotted-NUMBER drift by construction.
 
+- **check 34** (`check_figure_beat_claims_vs_sidecar_text`, WARN,
+  FORWARD-ONLY): beat-1 series-structure claims — "both <up to 3 words>
+  arms/series/conditions/models/lines/curves" and "one
+  bar/point/dot/marker/line/curve per <unit>" (the two literal #1092
+  defect-(b) phrasings; paraphrases miss by design) — must not contradict
+  the series structure the figure's sha-pinned sidecar demonstrably
+  renders. Fires ONLY when the sidecar carries the `meta["text"]`
+  rendered-text block the current `savefig_paper` writes (pre-capture
+  sidecars silently skip — no retroactive WARN on existing bodies).
+  Contradiction-only: Class A WARNs only when >=1 evidence basis is
+  available AND every available basis reads <=1 (series labels / legend
+  entries / bar point-rows — never `n_series`, one `BarContainer` holds a
+  whole bar pair — / distinct line artists / distinct scatter artists /
+  total artist groups); a figure with no basis (e.g. an unlabeled
+  single-artist scatter) SKIPS. Class B requires a points payload and
+  WARNs when the mapped `_kind` renders <=1 element (line/curve counted as
+  distinct ARTISTS via `_group` — vertex rows are unsound). Window =
+  check 33's narrow `_beat1_prose_window`. WARN never FAIL; silent skip on
+  missing / unparsable / text-less sidecars (check-24 convention); NO-OP
+  PASS offline / stdin / no inline figures. Incident: #1092 (9a-bis r1) —
+  a beat claimed "both input arms" / "one bar per re-fit item" against a
+  figure rendering neither, passing every mechanical figure check. (#1255)
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -6039,6 +6062,14 @@ def check_figure_text_vs_body_tokens(body: str) -> CheckResult:
     most one ``git show`` per unique figure URL, all fail-soft, so the check
     adds negligible latency on a normal body (no figure sidecars with text →
     one cheap git probe per figure, then skip).
+
+    Sidecars written by the current ``savefig_paper`` additionally carry the
+    figure's RENDERED text (titles / axis labels / legends / series names /
+    annotations / tick labels) under a ``text`` key — its strings enter this
+    check's scans automatically via ``_flatten_meta_strings`` (forward-only:
+    older sidecars simply lack the key), so a stale fraction in the actual
+    rendered TITLE is now catchable, not just one echoed in an ad-hoc
+    ``description``.
     """
     label = "figure text vs body prose (figure-text staleness)"
     section = _figure_scan_section(body)
@@ -6474,12 +6505,22 @@ def check_figure_label_codes(body: str) -> CheckResult:
     deferred it as a cosmetic nit.
 
     Coverage = sidecar-CARRIED strings only: string values (provenance
-    subtrees pruned) plus whitespace-bearing dict keys. Known residuals,
-    accepted by design: (i) a slug-bearing figure TITLE with no ad-hoc
-    sidecar echo is invisible — the canonical ``savefig_paper`` writer never
-    serializes titles (PNG-pixel text stays the multimodal critics'
-    substantive read); (ii) a bare slug used as a whitespace-free column KEY
-    is unscanned; (iii) a slug or ``@L`` pin inside a path-shaped word (or a
+    subtrees pruned) plus whitespace-bearing dict keys. The current
+    ``savefig_paper`` serializes the figure's RENDERED text (suptitle, axes
+    titles incl. ``loc="left"``, axis labels, legend entries, series names,
+    annotations, tick labels) under ``meta["text"]``, whose string VALUES
+    enter this walk automatically — so a slug-bearing figure TITLE / legend /
+    series name in NEW sidecars IS scanned (the #1092 defect-(a) class); the
+    ``text`` block's own structural key names (``suptitle``,
+    ``legend_labels``, …) are whitespace-free identifier keys and are never
+    collected. Known residuals, accepted by design: (i) rendered-text
+    blindness persists for sidecars written BEFORE the ``meta["text"]``
+    capture landed (forward-only) AND for figures saved via plain
+    ``fig.savefig`` scripts that never get a sidecar at all — for those,
+    PNG-pixel text stays the multimodal critics' substantive read; (ii) a
+    bare slug used as a whitespace-free column KEY is unscanned (tick labels
+    now arrive as scanned VALUES in new sidecars, narrowing this residual to
+    key names); (iii) a slug or ``@L`` pin inside a path-shaped word (or a
     whole path-shaped string) is exempt — the path exemption covers BOTH
     token classes. WARN,
     never FAIL; fail-soft on missing / unparsable sidecars (the check-24
@@ -6924,6 +6965,342 @@ def check_figure_prose_numerics_vs_sidecar(body: str) -> CheckResult:
         label,
         True,
         f"{scanned} figure(s): all bolded what-is-plotted decimals present among sidecar values",
+    )
+
+
+# ─── Check 34: beat-phrase series-structure claims vs sidecar rendered text ─
+#
+# Fifth sibling of checks 24/26/28/33 (same figure iteration, same
+# `_read_figure_meta_json` sidecar read, same fail-soft skip conventions;
+# reuses check 33's narrow `_beat1_prose_window`). Checks 24/28 scan the
+# sidecar's rendered STRINGS and check 26 its `_kind` STRUCTURE against
+# explicit panel/overlay claims — none compares a beat-1 SERIES-STRUCTURE
+# claim ("shows both input arms", "one bar per re-fit item") against what the
+# figure demonstrably renders, so #1092's defect (b) passed every mechanical
+# figure check. Check 34 closes that gap for the two literal #1092 claim
+# classes, contradiction-only, FORWARD-ONLY (fires only when the sidecar
+# carries the `meta["text"]` rendered-text block the current `savefig_paper`
+# writes — the writer-version marker).
+
+# Class A: "both <up to 3 words> arms/series/conditions/models/lines/curves".
+_BEAT_BOTH_RE = re.compile(
+    r"\bboth\b(?:\s+[\w-]+){0,3}\s+(?:arms?|series|conditions?|models?|lines?|curves?)\b",
+    re.IGNORECASE,
+)
+# Class B: "one bar|point|dot|marker|line|curve per <unit>".
+_BEAT_ONE_PER_RE = re.compile(
+    r"\bone\s+(bar|point|dot|marker|line|curve)s?\s+per\s+[\w-]+", re.IGNORECASE
+)
+_BEAT_WORD_TO_KIND = {
+    "bar": "bar",
+    "point": "scatter",
+    "dot": "scatter",
+    "marker": "scatter",
+    "line": "line",
+    "curve": "line",
+}
+
+
+def _beat_series_claims(prose: str) -> dict:
+    """Parse the two registered check-34 claim classes out of a figure's
+    beat-1 prose window::
+
+        {"both":    [<matched phrase>, ...],           # Class A
+         "one_per": [(<matched phrase>, <kind>), ...]} # Class B, kind mapped
+                                                       # via _BEAT_WORD_TO_KIND
+
+    Deliberately NARROW (the check's FP containment): only the two literal
+    #1092 defect phrasings are registered — paraphrases ("each arm", "two
+    models", "per-source bars") miss by design (a documented false-negative,
+    not a bug). Class-B phrases are de-duplicated preserving order.
+    """
+    claims: dict = {"both": [], "one_per": []}
+    for bm in _BEAT_BOTH_RE.finditer(prose):
+        claims["both"].append(bm.group(0))
+    seen: set[tuple[str, str]] = set()
+    for om in _BEAT_ONE_PER_RE.finditer(prose):
+        pair = (om.group(0).casefold(), _BEAT_WORD_TO_KIND[om.group(1).lower()])
+        if pair not in seen:
+            seen.add(pair)
+            claims["one_per"].append((om.group(0), pair[1]))
+    return claims
+
+
+def _sidecar_kind_row_groups(meta: dict) -> tuple[Counter, dict[str, set], set] | None:
+    """Per-kind point-row counts, per-kind distinct ``_group`` sets, and the
+    all-rows ``_group`` set from a parsed sidecar's ``points``/``rows`` list —
+    or None when the sidecar carries no recognizable point list.
+
+    Same reading convention as ``_sidecar_kind_group_aggregate`` (``points``
+    canonical, ``rows`` legacy; non-dict rows skipped), but check 34's line /
+    scatter ARTIST counting needs the per-KIND group split the aggregate does
+    not expose. ``_group`` is a per-ARTIST (per-series) index, NOT a per-panel
+    index, and the writer emits it only on multi-artist figures
+    (``_build_sidecar_data``: ``multi = len(artifacts) > 1``) — so a
+    single-artist sidecar has NO groups anywhere.
+    """
+    pts = meta.get("points")
+    if not isinstance(pts, list):
+        pts = meta.get("rows")
+    if not isinstance(pts, list) or not pts:
+        return None
+    kinds: Counter = Counter()
+    kind_groups: dict[str, set] = {}
+    all_groups: set = set()
+    for p in pts:
+        if not isinstance(p, dict):
+            continue
+        k = p.get("_kind")
+        kind = k.strip().lower() if isinstance(k, str) and k.strip() else None
+        if kind is not None:
+            kinds[kind] += 1
+        g = p.get("_group")
+        if g is not None:
+            all_groups.add(g)
+            if kind is not None:
+                kind_groups.setdefault(kind, set()).add(g)
+    if not kinds and not all_groups:
+        return None
+    return kinds, kind_groups, all_groups
+
+
+def _line_artist_count(kinds: Counter, kind_groups: dict[str, set]) -> int | None:
+    """Distinct line ARTISTS rendered, or None when the sidecar has no line
+    rows (basis unavailable). Distinct ``_group`` values among line-kind rows;
+    a single-artist sidecar carries no ``_group`` at all, so line rows with no
+    groups count as ONE artist (one ``Line2D`` trace = one series — a line's
+    point rows are VERTICES, so the raw row count is unsound for lines)."""
+    if kinds.get("line", 0) <= 0:
+        return None
+    groups = kind_groups.get("line", set())
+    return len(groups) if groups else 1
+
+
+def _both_claim_bases(
+    meta: dict, kinds: Counter, kind_groups: dict[str, set], all_groups: set
+) -> dict[str, int]:
+    """The Class-A ("both … arms") evidence bases AVAILABLE in ``meta``, as a
+    ``{basis name: count}`` dict — each key present only when that basis has
+    actual labels/rows (a zero-count kind is UNAVAILABLE, never a
+    contradiction). See ``_beat_claim_warnings`` for the basis semantics."""
+    bases: dict[str, int] = {}
+    text_block = meta.get("text")
+    tb = text_block if isinstance(text_block, dict) else {}
+    series = tb.get("series")
+    if isinstance(series, list) and series:
+        bases["series labels"] = len(series)
+    axes_block = tb.get("axes")
+    legend_counts = []
+    if isinstance(axes_block, list):
+        for ax_d in axes_block:
+            if not isinstance(ax_d, dict):
+                continue
+            labs = ax_d.get("legend_labels")
+            if isinstance(labs, list) and labs:
+                legend_counts.append(len(labs))
+    if legend_counts:
+        bases["legend entries"] = max(legend_counts)
+    if kinds.get("bar", 0) > 0:
+        bases["bar rows"] = kinds["bar"]
+    line_n = _line_artist_count(kinds, kind_groups)
+    if line_n is not None:
+        bases["line artists"] = line_n
+    scatter_groups = kind_groups.get("scatter", set())
+    if scatter_groups:
+        bases["scatter artists"] = len(scatter_groups)
+    if all_groups:
+        bases["artist groups"] = len(all_groups)
+    return bases
+
+
+def _beat_claim_warnings(claims: dict, meta: dict, basename: str) -> list[str]:
+    """Return the check-34 WARN messages for ONE figure's parsed ``claims``
+    against its parsed sidecar ``meta``. Empty list = no demonstrable
+    contradiction (which includes "no evidence basis available" — absence of
+    evidence never fires).
+
+    Class A ("both … arms") ⇒ claimed >=2 rendered elements. Evidence bases,
+    each AVAILABLE only when it has actual labels/rows, all max'd:
+
+    - ``len(text["series"])`` — fig-GLOBAL legend-eligible artist labels
+      (deliberately conservative: a multi-panel figure with one series per
+      panel and >=2 distinct labels satisfies "both arms");
+    - ``max(len(ax["legend_labels"]))`` over axes;
+    - bar-kind point-ROW count (one bar row per bar — NEVER ``n_series``,
+      which counts artist GROUPS: a two-arm bar pair lives in ONE
+      ``BarContainer`` and would false-fire);
+    - distinct line ARTISTS (``_line_artist_count``);
+    - distinct scatter ARTISTS (distinct ``_group`` among scatter rows) — NO
+      single-artist fallback, unlike lines: one scatter artist can encode >=2
+      arms via per-point colors the extractor cannot see, so a lone unlabeled
+      scatter is never a demonstrable contradiction (it yields NO basis and
+      the claim is skipped);
+    - total distinct ``_group`` across ALL rows (leniency-only: a mixed
+      line+scatter two-artist figure satisfies "both arms" across kinds).
+
+    WARN only when >=1 basis is available AND every available basis reads
+    <=1. Class B ("one bar per X") ⇒ claimed >=2 elements of the mapped kind;
+    basis per kind: bar/scatter → point-row count of that ``_kind``;
+    line/curve → distinct line ARTISTS (vertex rows are unsound). Requires a
+    points payload (no payload → skip); WARN when the basis reads <=1 (kind
+    absent entirely, or a single aggregate element where the prose claims
+    per-unit multiplicity — the #1092 "one bar per re-fit item" degenerate
+    class). ``data_truncated`` sidecars are safe for both classes: truncation
+    implies >=`_MAX_SIDECAR_ROWS` STORED rows, so the <=1 test cannot
+    misfire.
+    """
+    warns: list[str] = []
+    rows = _sidecar_kind_row_groups(meta)
+    kinds, kind_groups, all_groups = rows if rows is not None else (Counter(), {}, set())
+
+    if claims["both"]:
+        bases = _both_claim_bases(meta, kinds, kind_groups, all_groups)
+        if bases and max(bases.values()) <= 1:
+            detail = ", ".join(f"{k}={v}" for k, v in bases.items())
+            warns.append(
+                f"`{basename}`: beat-1 prose claims `{claims['both'][0]}` but every "
+                f"available sidecar basis renders <=1 element ({detail}) — regenerate "
+                f"the figure or fix the prose; if the claim is genuinely satisfied "
+                f"(e.g. two arms encoded inside one artist), acknowledge in body to ship"
+            )
+
+    if claims["one_per"] and rows is not None:
+        for phrase, kind in claims["one_per"]:
+            if kind == "line":
+                n = _line_artist_count(kinds, kind_groups) or 0
+            else:
+                n = kinds.get(kind, 0)
+            if n <= 1:
+                warns.append(
+                    f"`{basename}`: beat-1 prose claims `{phrase}` but the sidecar "
+                    f"renders {n} `{kind}` element(s) — regenerate the figure or fix "
+                    f"the prose; a legitimate n=1 (e.g. `one bar per source` on a "
+                    f"genuinely single-source panel) is acknowledgeable in body"
+                )
+    return warns
+
+
+def _beat_claims_for_one_figure(
+    repo: Path, m: re.Match, rlines: list[str], img_idx: int, json_cache: dict
+) -> tuple[list[str], bool]:
+    """Process ONE same-repo figure for check 34 (the check-26/33 per-figure
+    shape). Returns ``(warn_msgs, scanned)`` — ``scanned`` True only when a
+    text-bearing sidecar was actually compared against a registered claim;
+    mutates ``json_cache`` (per-URL parsed-sidecar cache) in place.
+    """
+    window = _beat1_prose_window(rlines, img_idx)
+    if window is None:
+        return [], False  # no per-result H3 above — no scoped window
+    claims = _beat_series_claims(window)
+    if not claims["both"] and not claims["one_per"]:
+        return [], False  # no registered claim → nothing to check (never over-fire)
+    url = m.group(0)
+    if url not in json_cache:
+        json_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
+    meta = json_cache[url]
+    if meta is None:
+        return [], False  # no sidecar at that sha — check-24 fail-soft convention
+    if not isinstance(meta.get("text"), dict):
+        # THE forward-only gate: absence of `text` is the expected state of
+        # every sidecar written before the `savefig_paper` rendered-text
+        # capture landed — silent skip, never a loud FAIL (check 26's loud
+        # missing-sidecar FAIL exists for a silently-uncommitted sidecar; a
+        # loud branch HERE would retroactively flag every old body).
+        return [], False
+    basename = m.group("path").rsplit("/", 1)[-1]
+    return _beat_claim_warnings(claims, meta, basename), True
+
+
+def check_figure_beat_claims_vs_sidecar_text(body: str) -> CheckResult:
+    """Check 34 (WARN): a figure's beat-1 series-structure claim — "shows
+    both <…> arms/series/conditions/models/lines/curves" or "one
+    bar/point/dot/marker/line/curve per <unit>" — must not contradict the
+    series structure the figure's ``.meta.json`` sidecar demonstrably
+    renders. FORWARD-ONLY: fires ONLY when the sidecar carries the
+    ``meta["text"]`` rendered-text block (written by the current
+    ``savefig_paper``); every pre-capture sidecar silently skips, so no
+    existing body can retroactively WARN.
+
+    The prose window is check 33's narrow previous-figure-bounded beat-1
+    slice (``_beat1_prose_window`` — no cross-figure bleed, the #778
+    false-WARN class). Both claim classes fire CONTRADICTION-ONLY: Class A
+    ("both … arms") WARNs only when >=1 evidence basis is available AND every
+    available basis reads <=1 (series labels / legend entries / bar rows /
+    line artists / scatter artists / total artist groups — see
+    ``_beat_claim_warnings``; a figure with no basis at all, e.g. an
+    unlabeled single-artist scatter with no points payload signal, SKIPS —
+    absence of evidence is never a contradiction). Class B ("one bar per X")
+    requires a points payload and WARNs when the mapped kind renders <=1
+    element. Deliberately NOT built (FP containment; may be added later
+    behind the same forward-only gate): numeric-count claims ("three bars"),
+    panel-count claims (the sidecar has no panel signal — see check 26),
+    unit-NAME matching against series labels, and prose-vs-tick-label
+    comparison.
+
+    False-negative envelope (accepted by design): ``embed_text=False``
+    figures never carry ``text`` and are never checked; ``embed_data=False``
+    figures lack every points-derived basis, so only their series / legend
+    labels can ground a Class-A read and Class B always skips; paraphrased
+    claims ("each arm", "two models") miss the registered regexes.
+
+    WARN, never FAIL (heuristic text parsing over natural prose — the
+    24/28/33 severity convention; FAIL is reserved for check 26's provable
+    structural contradictions). Silent skip (check-24 convention): missing /
+    unparsable sidecar, no ``text`` block, no ``### `` H3 above the figure,
+    no registered claim phrase in the window, non-same-repo URL. NO-OP PASS
+    offline / ``--body-stdin`` / no figure section / no inline figures.
+    Incident #1092 (clean-result-critic 9a-bis r1): a beat claimed "both
+    input arms" / "one bar per re-fit item" contradicting the plotted
+    series/bar structure and passed every mechanical figure check.
+    """
+    label = "figure beat claims vs sidecar rendered text (series-structure drift)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
+    fig_at: list[tuple[str, int]] = []
+    for idx, line in enumerate(rlines):
+        for im in _IMAGE_RE.finditer(line):
+            url = im.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                fig_at.append((url, idx))
+    if not fig_at:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    warns: list[str] = []
+    scanned = 0
+    json_cache: dict[str, dict | None] = {}
+    for url, img_idx in fig_at:
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        fig_warns, did_scan = _beat_claims_for_one_figure(repo, m, rlines, img_idx, json_cache)
+        warns.extend(fig_warns)
+        if did_scan:
+            scanned += 1
+    if warns:
+        preview = "; ".join(warns[:3]) + (" …" if len(warns) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(warns)} beat-claim contradiction(s) across {scanned} scanned "
+            f"figure(s): {preview}",
+            is_warn=True,
+        )
+    if scanned == 0:
+        return CheckResult(
+            label,
+            True,
+            "no beat-phrase claim with a text-bearing sidecar — nothing to compare",
+        )
+    return CheckResult(
+        label,
+        True,
+        f"{scanned} figure(s): beat-phrase claims consistent with the rendered structure",
     )
 
 
@@ -9812,6 +10189,9 @@ CHECKS = [
     check_hf_adjacent_file_claims,  # check 32 (WARN) — adjacent file claims are tree members (#952)
     # check 33 (WARN) — bolded what-is-plotted decimals vs sidecar plotted values (#1107, #825 r1):
     check_figure_prose_numerics_vs_sidecar,
+    # check 34 (WARN, forward-only) — beat-phrase series-structure claims vs the sidecar's
+    # rendered-text block (fires only when meta["text"] is present; #1255, #1092 defect (b)):
+    check_figure_beat_claims_vs_sidecar_text,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
