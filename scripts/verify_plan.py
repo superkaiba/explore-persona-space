@@ -7,7 +7,11 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script).
+``epm:plan-verify`` marker — never this script). One disclosed read-only
+exception: check 34, when its trigger fires, ``stat()``s the live sizes of
+the ratcheted workflow files the plan names and lazily imports
+``scripts/workflow_lint.py`` for their size-cap constants — read-only, no
+writes, still no network.
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -70,12 +74,14 @@ Check catalog (id — classification — kind scope)
       grounding                                           analysis
   c33 ladder checkpoint         WARN-only, conditional    experiment +
       retention policy                                    analysis
+  c34 verbatim insert vs        WARN-only, conditional    infra + batch only
+      ratchet headroom
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33) also SKIP when
-their content trigger does not fire.
+19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34) also SKIP
+when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -119,6 +125,7 @@ phrase in prose by design, check 31 uses its labeled-line forms):
   - ``N/A — no fit-family phases`` (check 32)
   - ``N/A — no per-rung checkpoint persistence`` / alias
     ``N/A — no checkpoint ladder`` (check 33)
+  - ``N/A — no verbatim ratcheted-file insertion`` (check 34)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -5267,6 +5274,227 @@ def check_ladder_retention(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 34 — verbatim insert vs size-ratchet headroom ──────────────────
+# A plan mandating VERBATIM prose into a workflow_lint size-ratcheted file
+# (.claude/agents/*.md — check_agent_spec_size; .claude/rules/LESSONS.md —
+# check_lessons_index) whose remaining headroom is smaller than the quoted
+# block makes lint-passes + the plan's own file-count constraint jointly
+# unsatisfiable at implement time (#1230: 422 B headroom vs a 1,546 B
+# verbatim paragraph for code-reviewer.md forced a documented 3rd-file
+# cap-raise deviation). Grandfather caps deliberately hug live size
+# (cap = measured + <=3 KB, typically ~1 KB), so ANY >~1 KB insert into a
+# grandfathered spec exceeds headroom BY DESIGN — the remedy is therefore
+# never "don't grow" but "budget the visible cap-raise IN THE PLAN"
+# (workflow_lint.py: "a reviewed growth+cap-raise in one commit still
+# passes"). WARN not FAIL: the trigger is a proximity heuristic; the
+# Phase 2 critics adjudicate. infra|batch only: editing agent specs /
+# LESSONS.md is workflow-fix work (calibration: all 8 recent-era corpus
+# hits are kind: infra).
+# Calibration (DEVELOPMENT-SET, measured against TODAY'S live sizes —
+# historical headroom drifts; the c32 precedent): 1,837 persisted
+# plan-versions scanned 2026-07-11; trigger fired on 166 versions;
+# would-WARN 76 versions / 26 distinct plans (8 distinct at issue >= 1000:
+# #1007 #1017 #1022 #1142 #1224 #1230 #1239 #1254 — every one a real
+# plan-mandated over-headroom insert; the #1119/#1138/#1254/#1230
+# cap-raises are recorded in AGENT_SPEC_SIZE_GRANDFATHER's own comments).
+# Incident recall: #1230 v1 WARNs. Reproducible scan recipe (the
+# kill-criterion (a) re-audit; re-run + re-record on ANY c34-regex
+# change): from the repo root, for each tasks/*/*/plans/v*.md compute
+# trigger := bool(_c34_targets(text)) and would-WARN := any (rel, nbytes)
+# in _c34_targets(text).items() with _c34_headroom(rel, wl) is not None
+# and nbytes > headroom, where wl := _c34_lint_constants(); count
+# plan-versions and distinct plan dirs for both.
+# Scope notes (disclosed, accepted residuals for a WARN-class v1):
+# (a) the `Ratchet budget:` satisfier is DOCUMENT-GLOBAL, not per-target —
+#     a two-file plan budgeting only one raise passes for both (pinned by
+#     test_c34_budget_line_is_document_global);
+# (b) nested-fence inserts UNDERCOUNT: _fence_mask's toggle reads an inner
+#     ``` as a closer, so a verbatim block that itself contains a code
+#     fence contributes only its pre-fence lines — a disclosed FN class
+#     distinct from the non-fenced-insert FN (an insert described with no
+#     fenced block at all, or with the path >_C34_WINDOW_LINES non-fenced
+#     lines above the fence, never triggers — those stay with the human
+#     critics);
+# (c) TOCTOU: headroom is a PLAN-TIME snapshot of the live file sizes —
+#     the target can grow between plan verification and implementation;
+#     workflow_lint's commit-time FAIL is the hard backstop.
+# Scope discipline: whether the budgeted cap-raise actually SHIPS is the
+# code-reviewer's bound, not this check's (the c31/c11/c15 bound).
+
+_C34_PATH_RE = re.compile(r"(?i)(?:\.claude/)?(?:agents/[\w.-]+\.md|rules/LESSONS\.md)")
+_C34_VERB_RE = re.compile(
+    r"(?i)\b(?:insert\w*|append\w*|add(?:s|ed|ing)?|splice\w*|verbatim|paste\w*)\b"
+)
+_C34_WINDOW_LINES = 10  # preceding non-fenced prose lines scanned per fence
+# Digit-lookahead after the label on the SAME line = anti-paste armor: the
+# WARN detail's remedy writes the label followed only by angle-bracket
+# placeholders, so a verbatim paste of the detail can never self-satisfy.
+_C34_BUDGET_RE = re.compile(r"(?i)\bratchet budget:(?=[^\n]*\d)")
+_C34_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch
+
+
+def _c34_lint_constants():
+    """Lazy import of ``scripts/workflow_lint.py`` (540 KB module, ~345 ms
+    measured) — paid ONLY when the c34 trigger fires, so typical plans keep
+    the verifier sub-second. Single source of truth for the ratchet caps
+    (the grandfather dict churns ~weekly; a copy WOULD drift). An
+    ImportError is a real defect (both files live in scripts/) and
+    propagates loud."""
+    scripts_dir = str(Path(__file__).resolve().parent)
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    import workflow_lint
+
+    return workflow_lint
+
+
+def _c34_normalize_rel(match_text: str) -> str:
+    """Normalize a ``_C34_PATH_RE`` match to the repo-root-relative ratcheted
+    path (``.claude/agents/<name>.md`` / ``.claude/rules/LESSONS.md``)."""
+    tail = match_text
+    if tail.lower().startswith(".claude/"):
+        tail = tail[len(".claude/") :]
+    if tail.lower().startswith("agents/"):
+        return ".claude/agents/" + tail[len("agents/") :]
+    return ".claude/rules/LESSONS.md"
+
+
+def _c34_targets(plan: str) -> dict[str, int]:
+    """``{normalized rel path -> summed fenced-block UTF-8 bytes}`` for every
+    fenced block whose preceding ``<=_C34_WINDOW_LINES`` NON-fenced lines
+    carry a ratcheted path AND an insertion verb. Block bytes = joined
+    content lines + one trailing newline (fence delimiters excluded); the
+    realized insert may differ by a separator newline or two — immaterial
+    at the hundreds-of-bytes scale the check discriminates."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    targets: dict[str, int] = {}
+    in_fence = False
+    open_idx = -1
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not (stripped.startswith("```") or stripped.startswith("~~~")):
+            continue
+        if not in_fence:
+            in_fence = True
+            open_idx = i
+            continue
+        in_fence = False
+        window: list[str] = []
+        j = open_idx - 1
+        while j >= 0 and len(window) < _C34_WINDOW_LINES:
+            if not mask[j]:
+                window.append(lines[j])
+            j -= 1
+        wtext = "\n".join(reversed(window))
+        m = _C34_PATH_RE.search(wtext)
+        if m is None or not _C34_VERB_RE.search(wtext):
+            continue
+        rel = _c34_normalize_rel(m.group(0))
+        content = "\n".join(lines[open_idx + 1 : i]) + "\n"
+        targets[rel] = targets.get(rel, 0) + len(content.encode("utf-8"))
+    return targets
+
+
+def _c34_headroom(rel: str, wl) -> tuple[int, int, str] | None:
+    """``(headroom, cap, cap_source)`` for a ratcheted rel path under
+    ``_C34_REPO_ROOT``; ``None`` when the live file is absent (headroom
+    uncomputable — a plan may be CREATING the file, which starts with the
+    full cap of headroom). ``cap_source`` names the binding workflow_lint
+    constant for the WARN detail. Sizes in BYTES (``stat().st_size``) —
+    parity with ``check_agent_spec_size`` / ``read_bytes()``."""
+    p = _C34_REPO_ROOT / rel
+    if not p.is_file():
+        return None
+    size = p.stat().st_size
+    if p.name == "LESSONS.md":
+        return wl._LESSONS_MAX_BYTES - size, wl._LESSONS_MAX_BYTES, "_LESSONS_MAX_BYTES"
+    cap = wl.AGENT_SPEC_SIZE_GRANDFATHER.get(p.name)
+    if cap is not None:
+        return cap - size, cap, "AGENT_SPEC_SIZE_GRANDFATHER"
+    return wl.AGENT_SPEC_FAIL_BYTES - size, wl.AGENT_SPEC_FAIL_BYTES, "AGENT_SPEC_FAIL_BYTES"
+
+
+def _c34_offender_detail(offenders: list[tuple[str, int, int, int, str]]) -> str:
+    """Bounded WARN detail: at most 3 offender tuples, the #1230 incident
+    anchor, then the three remedies. Anti-paste armored: after the
+    ``Ratchet budget:`` label the text carries ONLY angle-bracket
+    placeholders (no digit on the line — ``_C34_BUDGET_RE``'s lookahead
+    cannot match a pasted copy; the incident numbers all sit BEFORE the
+    label), and the N/A phrase is backtick-wrapped (unrecognized by
+    ``_standalone_na_declared``, #1238)."""
+    shown = "; ".join(
+        f"{rel}: insert ~{nbytes} B > headroom {headroom} B (cap {cap} [{src}] - live size)"
+        for rel, nbytes, headroom, cap, src in offenders[:3]
+    )
+    more = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+    return (
+        f"plan mandates verbatim fenced insert(s) exceeding the named ratcheted file(s)' "
+        f"remaining size-ratchet headroom: {shown}{more} — workflow_lint-passes and the "
+        "plan's own file-count constraint become jointly unsatisfiable at implement time "
+        "(#1230: a paragraph larger than code-reviewer.md's headroom forced an un-planned "
+        "third-file cap-raise deviation). Remedies: budget the cap-raise IN THE PLAN with "
+        "one line `Ratchet budget: raise <constant>['<file>.md'] to <new cap>` (new cap = "
+        "post-insert measured size plus at most the grandfather headroom bound), or trim "
+        "the insert to fit, or declare `N/A — no verbatim ratcheted-file insertion` on its "
+        "own line (write the declaration unwrapped — the backticks here are anti-paste "
+        "armor)"
+    )
+
+
+def check_ratchet_headroom(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, ``kind: infra|batch``: a fenced block whose
+    preceding ``<=_C34_WINDOW_LINES`` non-fenced lines name a ratcheted path
+    (``.claude/agents/*.md`` / ``.claude/rules/LESSONS.md``) plus an
+    insertion verb is treated as a verbatim insert into that file; when the
+    per-target summed block bytes exceed the file's live headroom
+    (cap - ``stat().st_size``, caps lazy-imported from workflow_lint) the
+    check WARNs with the arithmetic + the three remedies. Satisfiers: a
+    non-fenced ``Ratchet budget:`` line carrying a post-label digit (the
+    plan budgets the cap-raise — the legitimate path, since grandfather
+    caps hug live size by design), or the standalone escape
+    ``N/A — no verbatim ratcheted-file insertion``. Named-file-absent →
+    SKIP (a plan may be CREATING the file; ``--plan-file`` mode must never
+    crash off-repo). NEVER FAILs — trigger + satisfier are text heuristics
+    (the c31 template); calibration, scope notes (document-global
+    satisfier, nested-fence undercount, plan-time TOCTOU snapshot) and the
+    scan recipe live in the section comment above ``_C34_PATH_RE``."""
+    cid, name = "c34_ratchet_headroom", "verbatim insert fits size-ratchet headroom"
+    if kind not in ("infra", "batch"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: ratcheted-file verbatim inserts are an infra|batch (workflow-fix) shape",
+        )
+    if _standalone_na_declared(plan, r"no verbatim ratcheted[- ]file insertion"):
+        return _pass(cid, name, "escape declared: no verbatim ratcheted-file insertion")
+    targets = _c34_targets(plan)
+    if not targets:
+        return _skip(cid, name, "no fenced block associated with a ratcheted-file insertion")
+    lines = plan.splitlines()
+    for line, fenced in zip(lines, _fence_mask(lines), strict=True):
+        if not fenced and _C34_BUDGET_RE.search(line):
+            return _pass(cid, name, f"cap-raise budgeted ({line.strip()[:80]!r})")
+    wl = _c34_lint_constants()  # lazy: only reached on trigger
+    offenders: list[tuple[str, int, int, int, str]] = []
+    checked = 0
+    for rel, nbytes in sorted(targets.items()):
+        hr = _c34_headroom(rel, wl)
+        if hr is None:
+            continue  # absent on disk: headroom uncomputable
+        checked += 1
+        headroom, cap, cap_source = hr
+        if nbytes > headroom:
+            offenders.append((rel, nbytes, headroom, cap, cap_source))
+    if not checked:
+        return _skip(
+            cid, name, "named ratcheted file(s) not present on disk — headroom uncomputable"
+        )
+    if offenders:
+        return _warn(cid, name, _c34_offender_detail(offenders))
+    return _pass(cid, name, f"{checked} ratcheted-file insert(s) fit remaining headroom")
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -5302,6 +5530,7 @@ CHECKS = [
     check_skillmd_prose_pin,
     check_fit_basis_grounding,
     check_ladder_retention,
+    check_ratchet_headroom,
 ]
 
 

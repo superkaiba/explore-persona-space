@@ -171,10 +171,11 @@ def test_good_plan_passes_all():
         "c31_skillmd_prose_pin": "SKIP",
         "c32_fit_basis_grounding": "SKIP",
         "c33_ladder_retention": "SKIP",
+        "c34_ratchet_headroom": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 33
+    assert len(results) == 34
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -5190,12 +5191,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 26
+    assert payload["n_skip"] == 27
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 34
-    assert len({c["id"] for c in payload["checks"]}) == 34
+    assert len(payload["checks"]) == 35
+    assert len({c["id"] for c in payload["checks"]}) == 35
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -6115,3 +6116,199 @@ def test_skillmd_canonical_escapes_documents_standalone_line():
     idx = skill_md.index("Canonical N/A escape phrases")
     bullet = skill_md[idx : idx + 2500]
     assert "standalone declaration line" in bullet
+
+
+# ─── Check 34 — verbatim insert vs size-ratchet headroom ──────────────────
+
+# Fixture strategy (plan #1260 §6): monkeypatch verify_plan._C34_REPO_ROOT to
+# tmp_path and create ratcheted files at controlled sizes — testagent.md at
+# 39,900 B (non-grandfathered → headroom 100 B vs AGENT_SPEC_FAIL_BYTES
+# 40,000) and LESSONS.md at 7,950 B (headroom 50 B vs _LESSONS_MAX_BYTES
+# 8,000). The trigger fragments mirror the real #1230 plan v1 §4.1 shape:
+# a heading naming the path, a "Verbatim text to insert" line, then the
+# fenced block.
+
+
+def _c34_fixture_root(tmp_path):
+    (tmp_path / ".claude" / "agents").mkdir(parents=True)
+    (tmp_path / ".claude" / "rules").mkdir(parents=True)
+    (tmp_path / ".claude" / "agents" / "testagent.md").write_bytes(b"x" * 39_900)
+    (tmp_path / ".claude" / "rules" / "LESSONS.md").write_bytes(b"x" * 7_950)
+    return tmp_path
+
+
+def _c34_agent_fragment(block_bytes: int) -> str:
+    # Block bytes = joined content lines + one trailing newline (c34's byte
+    # recipe), so content is block_bytes - 1 chars of ASCII.
+    content = "x" * (block_bytes - 1)
+    return (
+        "\n## 4. Files + diffs\n\n"
+        "### 4.1 `.claude/agents/testagent.md` — Step 6 duty\n\n"
+        "**Verbatim text to insert (one paragraph):**\n\n"
+        "```\n" + content + "\n```\n"
+    )
+
+
+def _c34_lessons_fragment(block_bytes: int) -> str:
+    content = "x" * (block_bytes - 1)
+    return (
+        "\n### 4.2 `.claude/rules/LESSONS.md` index row\n\n"
+        "Append this entry verbatim to the LESSONS index:\n\n"
+        "```\n" + content + "\n```\n"
+    )
+
+
+def test_c34_kind_experiment_skips():
+    plan = GOOD_PLAN + _c34_agent_fragment(300)
+    assert _status(plan, "c34_ratchet_headroom", kind="experiment") == "SKIP"
+
+
+def test_c34_no_ratcheted_file_skips():
+    assert _status(GOOD_PLAN, "c34_ratchet_headroom", kind="infra") == "SKIP"
+
+
+def test_c34_1230_shaped_plan_warns(tmp_path, monkeypatch):
+    # The incident-class fixture (#1230 v1 §4.1 shape): 300 B block vs
+    # 100 B live headroom → WARN whose detail carries the arithmetic; the
+    # WARN never flips overall (exit-0 semantics).
+    monkeypatch.setattr(verify_plan, "_C34_REPO_ROOT", _c34_fixture_root(tmp_path))
+    ok, by_id = _run(GOOD_PLAN + _c34_agent_fragment(300), kind="infra")
+    r = by_id["c34_ratchet_headroom"]
+    assert r.status == "WARN"
+    assert "~300 B" in r.detail  # block bytes
+    assert "headroom 100 B" in r.detail  # cap 40,000 - live 39,900
+    assert "AGENT_SPEC_FAIL_BYTES" in r.detail  # cap source
+    assert "#1230" in r.detail  # incident anchor
+    assert ok is True  # WARN-only contract
+
+
+def test_c34_block_fits_headroom_passes(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C34_REPO_ROOT", _c34_fixture_root(tmp_path))
+    _, by_id = _run(GOOD_PLAN + _c34_agent_fragment(50), kind="infra")
+    r = by_id["c34_ratchet_headroom"]
+    assert r.status == "PASS"
+    assert "fit remaining headroom" in r.detail
+
+
+def test_c34_na_escape_passes():
+    # The escape short-circuits BEFORE any disk access (no monkeypatch /
+    # fixture files needed) — trailing prose after the phrase is tolerated
+    # per _standalone_na_declared's re.match semantics.
+    plan = (
+        GOOD_PLAN
+        + _c34_agent_fragment(300)
+        + "\nN/A — no verbatim ratcheted-file insertion (the fenced block is illustrative).\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c34_ratchet_headroom"]
+    assert r.status == "PASS"
+    assert "escape declared" in r.detail
+
+
+def test_c34_missing_file_skips(tmp_path, monkeypatch):
+    # tmp_path carries NO .claude tree: headroom uncomputable → SKIP, no
+    # exception (a plan may be CREATING the file; --plan-file mode must
+    # never crash off-repo).
+    monkeypatch.setattr(verify_plan, "_C34_REPO_ROOT", tmp_path)
+    _, by_id = _run(GOOD_PLAN + _c34_agent_fragment(300), kind="infra")
+    r = by_id["c34_ratchet_headroom"]
+    assert r.status == "SKIP"
+    assert "not present on disk" in r.detail
+
+
+def test_c34_budget_line_passes(tmp_path, monkeypatch):
+    # Over-headroom block + a digit-bearing budget line → PASS: the plan
+    # budgets the visible cap-raise, the legitimate grandfather-convention
+    # path (workflow_lint: "a reviewed growth+cap-raise in one commit still
+    # passes").
+    monkeypatch.setattr(verify_plan, "_C34_REPO_ROOT", _c34_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + _c34_agent_fragment(300)
+        + "\nRatchet budget: raise AGENT_SPEC_SIZE_GRANDFATHER['testagent.md'] to 41_000\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c34_ratchet_headroom"]
+    assert r.status == "PASS"
+    assert "cap-raise budgeted" in r.detail
+
+
+def test_c34_budget_line_is_document_global(tmp_path, monkeypatch):
+    # Documents the DISCLOSED v1 scope note (c34 section comment, scope
+    # note (a)): the `Ratchet budget:` satisfier is DOCUMENT-GLOBAL, not
+    # per-target — a two-file plan budgeting only ONE raise passes for
+    # both. Accepted residual for a WARN-class check; this pin records the
+    # intent so a future per-target tightening is a deliberate decision.
+    monkeypatch.setattr(verify_plan, "_C34_REPO_ROOT", _c34_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + _c34_agent_fragment(300)  # over the agent file's 100 B headroom
+        + _c34_lessons_fragment(200)  # over LESSONS.md's 50 B headroom
+        + "\nRatchet budget: raise AGENT_SPEC_SIZE_GRANDFATHER['testagent.md'] to 41_000\n"
+    )
+    assert _status(plan, "c34_ratchet_headroom", kind="infra") == "PASS"
+
+
+def test_c34_pasted_warn_detail_does_not_self_satisfy(tmp_path, monkeypatch):
+    # Anti-paste pin (the c31 test shape): the WARN detail writes the budget
+    # label followed only by angle-bracket placeholders (no post-label digit
+    # → _C34_BUDGET_RE's lookahead cannot match; the incident numbers sit
+    # BEFORE the label) and backtick-wraps the N/A phrase (unrecognized by
+    # _standalone_na_declared, #1238) — a verbatim paste still WARNs.
+    monkeypatch.setattr(verify_plan, "_C34_REPO_ROOT", _c34_fixture_root(tmp_path))
+    base = GOOD_PLAN + _c34_agent_fragment(300)
+    _, by_id = _run(base, kind="infra")
+    r = by_id["c34_ratchet_headroom"]
+    assert r.status == "WARN"
+    pasted = base + f"\n{r.detail}\n"
+    assert _status(pasted, "c34_ratchet_headroom", kind="infra") == "WARN"
+
+
+def test_c34_fenced_path_mention_does_not_trigger():
+    # Path + verb INSIDE a fence above another fence: fenced lines are
+    # excluded from the association window, so nothing triggers → SKIP.
+    plan = GOOD_PLAN + (
+        "\n```\nInsert this into .claude/agents/testagent.md verbatim.\n```\n\n"
+        "```\n" + "x" * 299 + "\n```\n"
+    )
+    assert _status(plan, "c34_ratchet_headroom", kind="infra") == "SKIP"
+
+
+def test_c34_lessons_md_headroom_warns(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C34_REPO_ROOT", _c34_fixture_root(tmp_path))
+    _, by_id = _run(GOOD_PLAN + _c34_lessons_fragment(200), kind="infra")
+    r = by_id["c34_ratchet_headroom"]
+    assert r.status == "WARN"
+    assert "_LESSONS_MAX_BYTES" in r.detail
+    assert "headroom 50 B" in r.detail
+
+
+def test_c34_multi_block_sum_warns(tmp_path, monkeypatch):
+    # Two 60 B blocks for the SAME file (headroom 100 B): each alone fits,
+    # the per-file SUM (120 B) does not → the WARN proves the summing.
+    monkeypatch.setattr(verify_plan, "_C34_REPO_ROOT", _c34_fixture_root(tmp_path))
+    two_blocks = (
+        "\n### 4.1 `.claude/agents/testagent.md` — split insert\n\n"
+        "Insert these two paragraphs verbatim into the spec:\n\n"
+        "```\n" + "x" * 59 + "\n```\n\n"
+        "```\n" + "x" * 59 + "\n```\n"
+    )
+    _, by_id = _run(GOOD_PLAN + two_blocks, kind="infra")
+    r = by_id["c34_ratchet_headroom"]
+    assert r.status == "WARN"
+    assert "~120 B" in r.detail
+
+
+def test_c34_phrase_listed_in_skillmd():
+    # The c34 durability pin (plan #1260 §3): the canonical escape phrase is
+    # registered backtick-wrapped in the adversarial-planner SKILL.md escape
+    # list, so a later SKILL.md reflow cannot silently drop it (the c33
+    # omission cost follow-up task #1246). The standing
+    # test_skillmd_canonical_escape_block_never_self_escapes separately pins
+    # that the entry never self-declares.
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "no verbatim ratcheted-file insertion" in block
+    assert "check 34" in block
+    assert "`N/A — no verbatim ratcheted-file insertion`" in block
