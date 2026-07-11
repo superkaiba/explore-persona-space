@@ -18,6 +18,7 @@ entries (one `ungrounded — needs smoke-test`).
 
 from __future__ import annotations
 
+import ast
 import importlib.util
 import json
 import os
@@ -1251,6 +1252,30 @@ def test_skillmd_canonical_block_states_unwrapped_contract():
     text = (REPO_ROOT / ".claude/skills/adversarial-planner/SKILL.md").read_text()
     assert "must be UNWRAPPED" in text
     assert "_standalone_na_declared" in text
+
+
+def test_own_line_remedies_carry_unwrapped_clarifier():
+    # Durability pin (#1263): every runtime string in verify_plan.py that
+    # teaches the "on its own line" escape declaration must also say
+    # "unwrapped" — the FAIL-detail remedy a planner sees at bounce time
+    # must not teach the wrapped form _standalone_na_declared rejects
+    # (#1090 c12 bounce; #1238 reasoned no-change on the recognizer).
+    # AST-based: Python folds adjacent string literals into one Constant
+    # (split-literal remedies are seen whole); comments are not in the AST.
+    src = (REPO_ROOT / "scripts" / "verify_plan.py").read_text()
+    offenders: list[tuple[int, str]] = []
+    clarified = 0
+    for node in ast.walk(ast.parse(src)):
+        if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+            continue
+        if "on its own line" not in node.value:
+            continue
+        if "unwrapped" in node.value:
+            clarified += 1
+        else:
+            offenders.append((node.lineno, node.value[:90]))
+    assert not offenders, f"own-line remedies missing the unwrapped clarifier: {offenders}"
+    assert clarified >= 20  # 19 clarified sites (#1263) + the c34 exemplar
 
 
 def test_c12_kind_analysis_warns_not_fails():
