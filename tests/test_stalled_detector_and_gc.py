@@ -42,65 +42,9 @@ from autonomous_session_watch import (  # noqa: E402
     decide_session_stalled,
 )
 
-
-@pytest.fixture(autouse=True)
-def _forbid_real_marker_posts(monkeypatch):
-    """#1247 hermeticity guard (fail-loud): no test in this file may reach the
-    real ``task.py post-marker`` subprocess through ``_post_progress_marker``
-    with ``dry_run=False`` — an unpatched call posts a junk marker + git
-    commit on a REAL task (the two-week #662/#663/#867 incident class). A
-    test-level recorder patch overrides this default; ``dry_run=True`` and
-    stubbed-``subprocess.run`` calls keep the real body's behavior."""
-    import functools
-    import subprocess as _sp
-
-    import autonomous_session_watch as asw
-
-    real_post = asw._post_progress_marker
-    real_run = _sp.run
-
-    # functools.wraps sets __wrapped__, so inspect.getsource() on the patched
-    # attribute still resolves the ORIGINAL body.
-    @functools.wraps(real_post)
-    def _guarded(issue, note, dry_run, *, label):
-        if not dry_run and _sp.run is real_run:
-            raise AssertionError(
-                f"_post_progress_marker(issue={issue}, label={label!r}, dry_run=False) reached "
-                "the #1247 autouse hermeticity guard with the REAL subprocess.run still live — "
-                "monkeypatch a recorder (or stub subprocess.run) in the test."
-            )
-        return real_post(issue, note, dry_run, label=label)
-
-    monkeypatch.setattr(asw, "_post_progress_marker", _guarded)
-
-
-@pytest.fixture(autouse=True)
-def _forbid_real_task_status_reads(monkeypatch):
-    """#1247 round-2 hermeticity guard (fail-loud): no test in this file may
-    reach the REAL ``task.py view`` subprocess through ``_task_status`` — the
-    per-session status read in ``_process_stalled_session`` had 6 sibling
-    stalled-pass tests silently depending on task #489's LIVE status (+
-    ~1-2s subprocess per call; round-1 review probe evidence). Read-only
-    (never the junk-marker mechanism) — a determinism/latency pin. A test
-    that needs a status overrides this with its own stub (a later test-level
-    monkeypatch wins), e.g.
-    ``monkeypatch.setattr(asw, "_task_status", lambda issue: "running")``."""
-    import functools
-
-    import autonomous_session_watch as asw
-
-    # functools.wraps sets __wrapped__, so inspect.getsource() on the patched
-    # attribute still resolves the ORIGINAL body.
-    @functools.wraps(asw._task_status)
-    def _guarded(issue):
-        raise AssertionError(
-            f"_task_status({issue}) reached the #1247 round-2 autouse hermeticity guard — the "
-            "real body shells `task.py view` against the LIVE task tree, making the test "
-            "depend on live VM state. Monkeypatch a status in the test, e.g. "
-            "monkeypatch.setattr(asw, '_task_status', lambda issue: 'running')."
-        )
-
-    monkeypatch.setattr(asw, "_task_status", _guarded)
+# The #1247 hermeticity guards (`_forbid_real_marker_posts`,
+# `_forbid_real_task_status_reads`) are now shared autouse fixtures in
+# tests/conftest.py (task #1265) — they apply here automatically.
 
 
 def _stub_fleet_mutating_passes(asw, monkeypatch):
