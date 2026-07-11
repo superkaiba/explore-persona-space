@@ -671,6 +671,35 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   a beat claimed "both input arms" / "one bar per re-fit item" against a
   figure rendering neither, passing every mechanical figure check. (#1255)
 
+- **check 35** (`check_cross_issue_reuse_provenance`, FAIL/WARN, v4-only,
+  #1256): cross-issue reuse pins in the committed
+  `eval_results/issue_<N>/**/*.json` result-JSON `metadata` must be
+  declared in the body (canonical slot: the footer `Reused:` bullet,
+  SPEC.md § `**Artifacts:**`). Tier 1 (FAIL): a `metadata` key matching
+  `hf_rev_<M>` / `hf_rev_<M>_<tag>` with M != N whose pinned revision has
+  no >=7-hex-char prefix token anywhere in the body (non-hex branch/tag
+  pins fall back to a `#M` / `/tasks/M` / `issue<M>_` mention). Tier 2
+  (WARN): a `\bissue<M>_` path token in `metadata.input_shas` keys/values
+  or PATH-LIKE (`/`-bearing) `metadata.args` string values, M != N, with
+  neither the `issue<M>_<slug>` segment nor a `#M` / `/tasks/M` mention in
+  the body. Graceful PASS-skips: not-v4 (forward-only), issue unknown
+  (stdin), `EPM_VERIFY_BODY_NO_EVAL_SCAN=1`, eval root unresolved
+  (is_warn, the #732 convention), no pins found. Corrupt / unreadable /
+  oversize (>50 MB stat guard) JSONs are skipped silently — `issue_810`
+  carries 138-208 MB JSONs and `issue_811` is a ~14.7 GB dir, so the
+  guard + a substring pre-filter are load-bearing. Grounding (corpus scan
+  2026-07-11, ~90,858 committed eval JSONs): the tier-1 key shape exists
+  in exactly 1 file repo-wide (the #1092 incident file), and the bare
+  `issue<M>_` pattern appears in >=10,028 files — hence the tier-2
+  restriction + WARN severity. Documented residuals: same-revision
+  multi-artifact reuse (one firing pin per round suffices; LM
+  clean-result-critic Lens 5 stays the semantic backstop), and
+  `paper: true` tasks (gated by verify_paper.py, never this verifier).
+  Incident: #1092 round 3 — `hf_rev_779_labels` pinned in
+  `transfer_reads.json` metadata with the reuse undeclared in the footer
+  survived to the LM critic. Dispatched OUTSIDE the body-only CHECKS list
+  (needs `issue` + eval-root resolution; the #732 precedent).
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -4908,6 +4937,312 @@ def check_judge_error_denominator(
         return CheckResult(name, True, detail, is_warn=True)
     return CheckResult(
         name, True, f"judge-error fraction below 1% (worst {worst:.1%}, pooled {pooled:.1%})"
+    )
+
+
+# ─── Check 35 (#1256): cross-issue reuse pins declared in the body ─────────
+
+# A metadata KEY that pins another issue's HF revision: `hf_rev_<M>` or
+# `hf_rev_<M>_<tag>` (observed shape: #1092's transfer_reads.json
+# metadata.args `hf_rev_779_passb` / `hf_rev_779_labels` / self-pin
+# `hf_rev_1092`). Corpus base rate: exactly 1 file among ~90,858 committed
+# eval JSONs (scan 2026-07-11) — the incident file.
+_HF_REV_PIN_KEY_RE = re.compile(r"^hf_rev_(\d+)(?:_\w+)?$")
+
+# An issue-slug path segment (`issue779_monitoring/...`) inside metadata
+# input paths. Deliberately underscore-anchored: local caches
+# (`data/issue_952/`), worktrees (`issue-952`) and self dirs
+# (`eval_results/issue_1092/`) do NOT match (underscore/hyphen precedes
+# the digits there, so `\bissue(\d+)_` cannot fire on them). The bare
+# pattern appears in >=10,028 committed eval JSONs (scan 2026-07-11), so
+# tier 2 is restricted to `input_shas` + path-like `args` values and
+# capped at WARN severity.
+_ISSUE_SLUG_RE = re.compile(r"\bissue(\d+)_[A-Za-z0-9_]*")
+
+# Hex tokens in the body that can satisfy a tier-1 revision pin by prefix.
+_BODY_HEX_TOKEN_RE = re.compile(r"\b[0-9a-fA-F]{7,40}\b")
+
+# Per-file stat guard (MANDATORY): eval_results is JSON/text-only by policy,
+# but `issue_810` carries 4 JSONs of 138-208 MB and `issue_811` is a
+# ~14.7 GB dir — a guard-less gate-time scan there would read ~750 MB+.
+_REUSE_SCAN_MAX_BYTES = 50 * 1024 * 1024
+
+
+def _iter_metadata_dicts(payload: object) -> Iterator[dict]:
+    """Yield every dict that sits under a key named `metadata`, any depth.
+
+    Measured identical to top-level-only on the whole committed corpus
+    (nested `metadata` dicts add 0 pin hits, scan 2026-07-11), but more
+    robust for nested `run_result.json` phase shapes.
+    """
+    stack = [payload]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if k == "metadata" and isinstance(v, dict):
+                    yield v
+                stack.append(v)
+        elif isinstance(node, list):
+            stack.extend(node)
+
+
+def _walk_hf_rev_keys(
+    node: object, issue: int, relpath: str, tier1: list[tuple[str, str, int, str]]
+) -> None:
+    """Recursively collect tier-1 pins: `hf_rev_<M>[_<tag>]` keys with a
+    string value and M != issue, anywhere inside `node`."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if isinstance(k, str) and isinstance(v, str):
+                m = _HF_REV_PIN_KEY_RE.match(k)
+                if m and int(m.group(1)) != issue:
+                    tier1.append((relpath, k, int(m.group(1)), v))
+            _walk_hf_rev_keys(v, issue, relpath, tier1)
+    elif isinstance(node, list):
+        for v in node:
+            _walk_hf_rev_keys(v, issue, relpath, tier1)
+
+
+def _slug_hits(text: str, issue: int, relpath: str, tier2: list[tuple[str, int, str]]) -> None:
+    """Collect tier-2 `_ISSUE_SLUG_RE` tokens with M != issue from `text`."""
+    for m in _ISSUE_SLUG_RE.finditer(text):
+        src = int(m.group(1))
+        if src != issue:
+            tier2.append((relpath, src, m.group(0)))
+
+
+def _walk_pathlike_args(
+    node: object, issue: int, relpath: str, tier2: list[tuple[str, int, str]]
+) -> None:
+    """Recursively collect tier-2 tokens from PATH-LIKE (`"/" in v`) string
+    values under a metadata `args` subtree."""
+    if isinstance(node, dict):
+        for v in node.values():
+            _walk_pathlike_args(v, issue, relpath, tier2)
+    elif isinstance(node, list):
+        for v in node:
+            _walk_pathlike_args(v, issue, relpath, tier2)
+    elif isinstance(node, str) and "/" in node:
+        _slug_hits(node, issue, relpath, tier2)
+
+
+def _collect_metadata_pins(
+    md: dict,
+    issue: int,
+    relpath: str,
+    tier1: list[tuple[str, str, int, str]],
+    tier2: list[tuple[str, int, str]],
+) -> None:
+    """Collect cross-issue pins from ONE metadata dict into tier1/tier2.
+
+    tier1: `hf_rev_<M>[_<tag>]` keys (ALL keys, recursively) with a string
+    value and M != issue. tier2: `_ISSUE_SLUG_RE` hits in
+    `metadata["input_shas"]` keys + string values, and in PATH-LIKE
+    (`"/" in v`) string values under `metadata["args"]` (recursive),
+    M != issue. M == issue pins (the `hf_rev_1092` self-pin) never flag —
+    the self-pin is provenance, not reuse.
+    """
+    _walk_hf_rev_keys(md, issue, relpath, tier1)
+
+    input_shas = md.get("input_shas")
+    if isinstance(input_shas, dict):
+        for k, v in input_shas.items():
+            if isinstance(k, str):
+                _slug_hits(k, issue, relpath, tier2)
+            if isinstance(v, str):
+                _slug_hits(v, issue, relpath, tier2)
+
+    args = md.get("args")
+    if args is not None:
+        _walk_pathlike_args(args, issue, relpath, tier2)
+
+
+def _scan_cross_issue_reuse_pins(repo: Path, issue: int) -> dict | None:
+    """Scan committed `repo/eval_results/issue_<N>/**/*.json` metadata for
+    cross-issue provenance pins. Returns
+    ``{"tier1": [(relpath, key, M, value)], "tier2": [(relpath, M, token)]}``
+    or None when the dir is absent / no candidate files carry a pin / the
+    `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence is set (graceful skip).
+
+    Corrupt / unreadable / oversize (`_REUSE_SCAN_MAX_BYTES` stat guard)
+    JSONs are skipped silently (the `_scan_issue_judge_errors` convention —
+    never crash the gate). A cheap substring pre-filter (`"metadata"` plus
+    `hf_rev_` or `issue<digits>_`) avoids `json.loads` on the vast majority
+    of files. `.jsonl` files are OUT of scope (parity with
+    `_scan_issue_judge_errors`).
+    """
+    if os.environ.get("EPM_VERIFY_BODY_NO_EVAL_SCAN") == "1":
+        return None
+    eval_dir = repo / "eval_results" / f"issue_{issue}"
+    if not eval_dir.is_dir():
+        return None
+
+    tier1: list[tuple[str, str, int, str]] = []
+    tier2: list[tuple[str, int, str]] = []
+    slug_probe = re.compile(r"\bissue\d+_")
+
+    for path in sorted(eval_dir.rglob("*.json")):
+        try:
+            if path.stat().st_size > _REUSE_SCAN_MAX_BYTES:
+                continue  # oversize guard — never page a 100+ MB blob at gate time
+            text = path.read_text()
+        except OSError:
+            continue
+        if '"metadata"' not in text:
+            continue
+        if "hf_rev_" not in text and not slug_probe.search(text):
+            continue
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            continue  # a corrupt artifact must not crash the gate
+        relpath = str(path.relative_to(repo))
+        for md in _iter_metadata_dicts(payload):
+            _collect_metadata_pins(md, issue, relpath, tier1, tier2)
+
+    if not tier1 and not tier2:
+        return None
+    return {"tier1": tier1, "tier2": tier2}
+
+
+def _tier1_satisfied(body_hex_tokens: set[str], value: str, M: int, body: str) -> bool:
+    """True when a tier-1 revision pin `value` (source issue M) is declared
+    in the body: a hex pin is satisfied by any >=7-hex-char body token that
+    PREFIXES it (case-insensitive — a footer short sha `5aa6de1b` satisfies
+    the metadata's 40-char pin); a non-hex pin (branch/tag) falls back to
+    an issue-level `#M` / `/tasks/M` / `issue<M>_` mention."""
+    v = value.strip().lower()
+    if re.fullmatch(r"[0-9a-f]{7,64}", v):
+        return any(v.startswith(tok) for tok in body_hex_tokens)  # lowercased, len>=7
+    # non-hex pin (branch/tag): fall back to issue-level mention
+    return bool(
+        re.search(rf"#\s?{M}(?!\d)", body)
+        or re.search(rf"/tasks/{M}(?!\d)", body)
+        or f"issue{M}_" in body
+    )
+
+
+def _tier2_satisfied(body: str, M: int, token: str) -> bool:
+    """True when a tier-2 path token (source issue M) is declared in the
+    body: the `issue<M>_<slug>` first path segment appears verbatim, or an
+    issue-level `#M` / `/tasks/M` mention does. The `(?!\\d)` digit boundary
+    prevents `#7791` satisfying M=779."""
+    seg = token.split("/")[0]  # e.g. "issue779_monitoring"
+    return bool(
+        seg in body or re.search(rf"#\s?{M}(?!\d)", body) or re.search(rf"/tasks/{M}(?!\d)", body)
+    )
+
+
+def check_cross_issue_reuse_provenance(
+    body: str,
+    *,
+    issue: int | None = None,
+    eval_root: Path | None = None,
+    body_source_path: Path | None = None,
+) -> CheckResult:
+    """Check 35 (#1256): cross-issue reuse pins in committed result-JSON
+    metadata must be declared in the body (canonical slot: the footer
+    `Reused:` bullet, SPEC.md § `**Artifacts:**`).
+
+    Verdict ladder:
+      PASS-skip — not a v4 body (forward-only) / issue unknown (stdin) /
+                  `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence / eval root
+                  unresolved (is_warn=True, judge-error parity) / no pins
+                  found (graceful).
+      FAIL      — a tier-1 pin (M != N) whose revision value has no
+                  satisfying token in the body (`_tier1_satisfied`).
+      WARN      — a tier-2 path hit (M != N) with no satisfying body
+                  mention (`_tier2_satisfied`).
+      PASS      — every pin satisfied.
+
+    Satisfaction is checked against the WHOLE raw body text (not just the
+    footer): the goal is "provenance is reader-visible", the FAIL detail
+    points at the footer `Reused:` bullet as the canonical fix, and the LM
+    clean-result-critic Lens 5 keeps owning placement/wording quality.
+    Pins are deduped by (key, M, value) / (M, token) across files so one
+    reused artifact yields one detail line.
+
+    Documented residuals: (a) same-revision multi-artifact reuse — when two
+    reused artifacts share one repo revision, a body declaring either
+    satisfies both pins; one firing pin per round is sufficient to force
+    the declaration fix, and LM Lens 5 stays the semantic backstop
+    (#1092's `hf_rev_779_passb` was satisfied pre-fix via the declared r_B
+    bullet's shared `037fcbb` revision). (b) `paper: true` tasks are gated
+    by verify_paper.py and never reach this verifier.
+    """
+    name = "cross-issue reuse pins declared (footer Reused bullets)"
+    if not is_v4(body):
+        return CheckResult(name, True, "skipped — not a v4 body (forward-only)")
+    if issue is None:
+        return CheckResult(
+            name, True, "skipped — issue number unknown (stdin); cannot read eval_results"
+        )
+    if os.environ.get("EPM_VERIFY_BODY_NO_EVAL_SCAN") == "1":
+        return CheckResult(
+            name, True, "skipped — EPM_VERIFY_BODY_NO_EVAL_SCAN=1 (eval scan fenced off)"
+        )
+    repo = _resolve_eval_root(issue, eval_root=eval_root, body_source_path=body_source_path)
+    if repo is None:
+        return CheckResult(name, True, "skipped — eval root unresolved", is_warn=True)
+    pins = _scan_cross_issue_reuse_pins(repo, issue)
+    if pins is None:
+        return CheckResult(
+            name,
+            True,
+            "no cross-issue reuse pins in committed result-JSON metadata — graceful skip",
+        )
+
+    body_hex_tokens = {t.lower() for t in _BODY_HEX_TOKEN_RE.findall(body)}
+
+    unsatisfied_t1: list[tuple[str, str, int, str]] = []
+    seen_t1: set[tuple[str, int, str]] = set()
+    for relpath, key, src, value in pins["tier1"]:
+        dedupe = (key, src, value)
+        if dedupe in seen_t1:
+            continue
+        seen_t1.add(dedupe)
+        if not _tier1_satisfied(body_hex_tokens, value, src, body):
+            unsatisfied_t1.append((relpath, key, src, value))
+
+    unsatisfied_t2: list[tuple[str, int, str]] = []
+    seen_t2: set[tuple[int, str]] = set()
+    for relpath, src, token in pins["tier2"]:
+        dedupe = (src, token)
+        if dedupe in seen_t2:
+            continue
+        seen_t2.add(dedupe)
+        if not _tier2_satisfied(body, src, token):
+            unsatisfied_t2.append((relpath, src, token))
+
+    if unsatisfied_t1:
+        lines = [
+            f"`{relpath}` metadata key `{key}` pins #{src} @ {value[:12]} "
+            f"with no matching body declaration"
+            for relpath, key, src, value in unsatisfied_t1
+        ]
+        detail = (
+            "; ".join(lines)
+            + " — declare each reused artifact in the footer, expected shape: "
+            + "`- Reused <kind> from [#M](...): <path> @ <rev> — fit: <one line>`"
+        )
+        return CheckResult(name, False, detail)
+    if unsatisfied_t2:
+        lines = [
+            f"`{relpath}` metadata input path `{token}` references #{src} with no body mention"
+            for relpath, src, token in unsatisfied_t2
+        ]
+        detail = (
+            "; ".join(lines)
+            + " — name the source (the `issue<M>_<slug>` path segment, `#M`, or a /tasks/M "
+            + "link); canonical slot: the footer `Reused:` bullet"
+        )
+        return CheckResult(name, True, detail, is_warn=True)
+    return CheckResult(
+        name,
+        True,
+        f"all cross-issue reuse pins declared in the body "
+        f"({len(seen_t1)} tier-1, {len(seen_t2)} tier-2)",
     )
 
 
@@ -10392,6 +10727,15 @@ def verify_text(
     # PASS when the issue is unknown or no eval data is reachable.
     results.append(
         check_judge_error_denominator(
+            body, issue=issue, eval_root=eval_root, body_source_path=body_source_path
+        )
+    )
+    # Check 35 (#1256): cross-issue reuse pins in committed result-JSON
+    # metadata must be declared in the body (footer Reused bullets). Needs
+    # the issue number + eval-root resolution, so it lives outside CHECKS
+    # (the #732 check_judge_error_denominator precedent).
+    results.append(
+        check_cross_issue_reuse_provenance(
             body, issue=issue, eval_root=eval_root, body_source_path=body_source_path
         )
     )
