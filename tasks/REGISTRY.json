@@ -1958,8 +1958,8 @@
     "1251": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1251",
-      "status": "reviewing",
+      "path": "tasks/completed/1251",
+      "status": "completed",
       "title": "step9c baseline oracle tolerates unrelated concurrent dirty "
     },
     "1252": {
@@ -2070,8 +2070,8 @@
     "1266": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1266",
-      "status": "reviewing",
+      "path": "tasks/completed/1266",
+      "status": "completed",
       "title": "daily-fix: lint check for bang-backtick in skill markdown"
     },
     "1267": {
