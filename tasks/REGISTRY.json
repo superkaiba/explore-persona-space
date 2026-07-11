@@ -2063,8 +2063,8 @@
     "1265": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1265",
-      "status": "proposed",
+      "path": "tasks/planning/1265",
+      "status": "planning",
       "title": "daily-fix: conftest autouse hermeticity guard, watcher tests"
     },
     "1266": {
