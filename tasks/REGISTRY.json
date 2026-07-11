@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1259,
+  "highest_id": 1260,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2024,6 +2024,13 @@
       "path": "tasks/completed/126",
       "status": "completed",
       "title": "Do convergence training for longer"
+    },
+    "1260": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1260",
+      "status": "proposed",
+      "title": "daily-fix: WARN when verbatim insert exceeds ratchet headroo"
     },
     "127": {
       "has_clean_result": false,
