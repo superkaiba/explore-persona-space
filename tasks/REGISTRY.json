@@ -1986,8 +1986,8 @@
     "1255": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1255",
-      "status": "proposed",
+      "path": "tasks/planning/1255",
+      "status": "planning",
       "title": "workflow-fix: figure-text sidecar capture + verifier drift checks"
     },
     "1256": {
@@ -2007,8 +2007,8 @@
     "1258": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1258",
-      "status": "proposed",
+      "path": "tasks/planning/1258",
+      "status": "planning",
       "title": "daily-fix: audit c20 co-occurrence WARN across N/A escapes"
     },
     "1259": {
