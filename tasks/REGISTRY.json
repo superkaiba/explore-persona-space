@@ -2000,8 +2000,8 @@
     "1257": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1257",
-      "status": "proposed",
+      "path": "tasks/planning/1257",
+      "status": "planning",
       "title": "daily-fix: forward rc==0 stderr at watcher spawn-issue sites"
     },
     "1258": {
