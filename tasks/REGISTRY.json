@@ -2028,8 +2028,8 @@
     "1260": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1260",
-      "status": "planning",
+      "path": "tasks/approved/1260",
+      "status": "approved",
       "title": "daily-fix: WARN when verbatim insert exceeds ratchet headroo"
     },
     "1261": {
