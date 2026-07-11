@@ -1574,7 +1574,12 @@ def check_empirical_gate_attainability(plan: str, kind: str) -> CheckResult:
     arithmetic, family-set semantics, and joint satisfiability stay with the
     Statistics critic (c8's form-only charter). FAIL (experiment) / WARN
     (analysis) / WARN on ambiguous tie or floor == alpha under a non-strict
-    comparator / SKIP otherwise. Incident: #816 v5 (gate p ≤ 0.05 over
+    comparator / SKIP otherwise; escape via a standalone ``N/A — no
+    empirical-null gate`` line — honored (SKIP path) only when no gate is
+    detected; when the escape co-occurs with a detected gate the check WARNs
+    instead of PASSing (regardless of whether n_draws declarations exist),
+    so the escape can never mask attainability verification of a present
+    gate (#1258, the #1223 c20 rule). Incident: #816 v5 (gate p ≤ 0.05 over
     families with n_draws=2/5 → floors 1/3, 1/6; caught only by the Codex
     statistics critic)."""
     cid, name = "c13_empirical_gate_attainability", "empirical-null gate p-floor attainability"
@@ -1588,7 +1593,25 @@ def check_empirical_gate_attainability(plan: str, kind: str) -> CheckResult:
     if not gates:
         return _skip(cid, name, "no registered empirical-p gate detected")
     if _c13_na_escape_declared(plan):
-        return _pass(cid, name, "explicit N/A declared (no empirical-null gate)")
+        # #1258 (the #1223 c20 port): this branch is reachable ONLY when a
+        # registered empirical-p gate WAS detected (the no-gate case SKIPs
+        # above) — a PASS here masks the p-floor attainability verification
+        # c13 exists to run. WARN, not FAIL: the gate harvest may be a false
+        # positive on quoted guidance, so the escape stays non-blocking and
+        # the reviewers adjudicate.
+        return _warn(
+            cid,
+            name,
+            "the standalone `N/A — no empirical-null gate` escape co-occurs with "
+            f"{len(gates)} registered empirical-p gate line(s) (first: "
+            f"{gates[0]['line'][:90]!r}) — the escape is reserved for gate-free "
+            "plans and would mask attainability verification of the detected "
+            "gate (#1258, the #1223 c20 rule); remove the N/A line (the gate is "
+            "then verified, or SKIPs as not-computable when no n_draws "
+            "declarations exist), or fence/remove the gate-shaped prose the "
+            "detector matched if it is quoted guidance rather than this plan's "
+            "own registration",
+        )
     decls = _n_draws_declarations(plan)
     if not decls:
         return _skip(
@@ -2458,7 +2481,12 @@ def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
     DECLARE a per-context data source covering the registered rows on both
     arms (D1 row-coverage line / D2 coverage-labeled subset-assert /
     standalone N/A). Surface check only — pack contents stay with the
-    fact-checker. FAIL (experiment) / WARN (analysis) / SKIP otherwise.
+    fact-checker. FAIL (experiment) / WARN (analysis) / SKIP otherwise;
+    the standalone ``N/A — no paired contrast`` escape is honored (SKIP
+    path) only when no paired contrast is detected — when the escape
+    co-occurs with a detected registration the check WARNs instead of
+    PASSing, so the escape can never mask row-coverage verification of a
+    present registration (#1258, the #1223 c20 rule).
     Incident: #810 v13 (9-row paired bootstrap; the named full-side pack
     lacked im_end/turn_nl; 4 independent reviewer catches)."""
     cid, name = "c18_paired_contrast_source_coverage", "paired-contrast per-arm source coverage"
@@ -2472,7 +2500,23 @@ def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
     if not triggers:
         return _skip(cid, name, "no registered paired contrast detected")
     if _c18_na_escape_declared(plan):
-        return _pass(cid, name, "explicit N/A declared (no paired contrast)")
+        # #1258 (the #1223 c20 port): reachable ONLY when a registered paired
+        # contrast WAS detected (the no-trigger case SKIPs above) — a PASS
+        # here masks the row-coverage verification c18 exists to run (the
+        # #810 v13 class). WARN, not FAIL: the trigger harvest may be a false
+        # positive on quoted guidance; reviewers adjudicate.
+        return _warn(
+            cid,
+            name,
+            "the standalone `N/A — no paired contrast` escape co-occurs with "
+            f"{len(triggers)} registered paired-contrast line(s) (first: "
+            f"{triggers[0][:90]!r}) — the escape is reserved for contrast-free "
+            "plans and would mask row-coverage verification of the detected "
+            "registration (#1258, the #1223 c20 rule); remove the N/A line and "
+            "declare Row-coverage (the registration is then verified), or "
+            "fence/remove the registration-shaped prose the detector matched "
+            "if it is quoted guidance rather than this plan's own registration",
+        )
     decls = _c18_coverage_declarations(plan)
     if decls:
         return _pass(

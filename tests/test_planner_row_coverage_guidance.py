@@ -84,8 +84,16 @@ def test_trigger_without_declaration_fails_c18():
     assert res.status == "FAIL", res.detail
 
 
-def test_trigger_with_na_escape_passes_c18():
+def test_trigger_with_na_escape_warns_c18():
+    # #1258 (the #1223 c20 port): the escape co-occurring with a detected
+    # registration is the masking shape — c18 now WARNs (non-blocking)
+    # instead of silently PASSing, matching the refreshed planner.md
+    # parenthetical ("c18 WARNs on the co-occurrence instead of silently
+    # passing — #1258"). The escape stays honored (SKIP) on trigger-free
+    # plans, pinned by tests/test_verify_plan.py::
+    # test_c18_na_escape_without_contrast_still_skips.
     vp = _verify_plan_mod()
     plan = TRIGGER_PLAN + NA_ESCAPE + "\n"
     res = vp.check_paired_contrast_source_coverage(plan, "experiment")
-    assert res.status == "PASS", res.detail
+    assert res.status == "WARN", res.detail
+    assert "co-occurs" in res.detail
