@@ -18,6 +18,7 @@ entries (one `ungrounded — needs smoke-test`).
 
 from __future__ import annotations
 
+import ast
 import importlib.util
 import json
 import os
@@ -1294,6 +1295,74 @@ def test_skillmd_canonical_block_states_unwrapped_contract():
     text = (REPO_ROOT / ".claude/skills/adversarial-planner/SKILL.md").read_text()
     assert "must be UNWRAPPED" in text
     assert "_standalone_na_declared" in text
+
+
+def test_skillmd_canonical_escapes_sync_with_docstring():
+    # Generative docstring->SKILL.md sync pin (#1264). Ends the per-check pin
+    # whack-a-mole (#1042 c21, #1194 c32, #1246 c33, #1260 c34 each
+    # hand-registered one phrase; c26-c30 were missed entirely): every escape
+    # phrase the verify_plan module docstring registers must appear
+    # backtick-wrapped in the adversarial-planner SKILL.md canonical block.
+    # Whitespace is normalized on BOTH sides because SKILL.md legitimately
+    # wraps long phrases across indented continuation lines (the check-31
+    # alias wraps today). One-directional by design: the docstring is updated
+    # when a check lands (ground truth); SKILL.md is the consumer surface
+    # that drifts behind it. FORMAT-DISCIPLINE CONTRACT (binding): a future
+    # docstring phrase must keep the double-backtick wrapping + the
+    # `N/A —` / `Durability pin: N/A` prefix convention, or it evades
+    # extraction here (the floor catches shrinkage, not a never-extracted
+    # phrase).
+    doc = verify_plan.__doc__
+    section = doc[doc.index("Canonical N/A escape phrases") : doc.index("WARN semantics")]
+    phrases = re.findall(r"``((?:N/A —|Durability pin: N/A)[^`]+?)``", section)
+    # Extraction guard (never-self-escapes precedent, :1232): 28 phrases at
+    # pin time. A shrinking count means the docstring format drifted and the
+    # parser silently under-covers — fix the regex; never lower this floor
+    # except for a deliberate check retirement (state which check).
+    assert len(phrases) >= 28, (len(phrases), phrases)
+    # Code->docstring leg: every `_standalone_na_declared` call-site tail must
+    # match somewhere in the docstring section, so a new check's recognizer
+    # cannot land unregistered (the SKILL.md asserts below then propagate the
+    # registration to the consumer surface).
+    tails = re.findall(r"_standalone_na_declared\(\s*plan,\s*r\"(.*?)\"", _SCRIPT.read_text(), re.S)
+    assert len(tails) >= 12, tails  # extraction guard, mirrors :1232
+    for tail in tails:
+        assert re.search(tail, section), f"call-site tail not registered in docstring: {tail!r}"
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    norm_block = re.sub(r"\s+", " ", block)
+    missing = []
+    for phrase in phrases:
+        wrapped = "`" + re.sub(r"\s+", " ", phrase).strip() + "`"
+        if wrapped not in norm_block:
+            missing.append(wrapped)
+    assert not missing, f"escape phrases not in SKILL.md canonical block: {missing}"
+
+
+def test_own_line_remedies_carry_unwrapped_clarifier():
+    # Durability pin (#1263): every runtime string in verify_plan.py that
+    # teaches the "on its own line" escape declaration must also say
+    # "unwrapped" — the FAIL-detail remedy a planner sees at bounce time
+    # must not teach the wrapped form _standalone_na_declared rejects
+    # (#1090 c12 bounce; #1238 reasoned no-change on the recognizer).
+    # AST-based: Python folds adjacent string literals into one Constant
+    # (split-literal remedies are seen whole); comments are not in the AST.
+    src = (REPO_ROOT / "scripts" / "verify_plan.py").read_text()
+    offenders: list[tuple[int, str]] = []
+    clarified = 0
+    for node in ast.walk(ast.parse(src)):
+        if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+            continue
+        if "on its own line" not in node.value:
+            continue
+        if "unwrapped" in node.value:
+            clarified += 1
+        else:
+            offenders.append((node.lineno, node.value[:90]))
+    assert not offenders, f"own-line remedies missing the unwrapped clarifier: {offenders}"
+    # 19 sites (#1263) + the c34 exemplar + c7's remedy/pass-detail (#1262 merge) = 22 live
+    assert clarified >= 20
 
 
 def test_skillmd_c7_exception_clause_retired():

@@ -86,82 +86,9 @@ def _no_real_stagger_sleep(monkeypatch):
     return sleeps
 
 
-@pytest.fixture(autouse=True)
-def _forbid_real_marker_posts(monkeypatch):
-    """#1247 hermeticity guard (fail-loud): no test in this file may reach the
-    REAL ``task.py post-marker`` subprocess through ``_post_progress_marker``.
-
-    The real body shells ``task.py post-marker`` at the canonical
-    ``PROJECT_ROOT``, so an unpatched call with ``dry_run=False`` posts a JUNK
-    marker + git commit on a REAL task — the two-week #662/#663/#867 incident
-    was this file's own ``_run_orphan_task`` driver leaving it live. Contract:
-
-    - a test that wants marker assertions overrides this with its own recorder
-      (a later test-level / fixture-level ``monkeypatch.setattr`` wins over
-      this autouse default);
-    - ``dry_run=True`` calls keep the real function's log-only behavior;
-    - a test that exercises the real BODY against a STUBBED ``subprocess.run``
-      (the argv-recording pass tests) stays hermetic and is allowed through;
-    - only ``dry_run=False`` with the GENUINE ``subprocess.run`` still live
-      fails loud, naming the offending call.
-    """
-    import functools
-    import subprocess as _sp
-
-    import autonomous_session_watch as asw
-
-    real_post = asw._post_progress_marker
-    real_run = _sp.run
-
-    # functools.wraps sets __wrapped__, so inspect.getsource() on the patched
-    # attribute still resolves the ORIGINAL body (the #966 source-inspection
-    # pins keep working under this guard).
-    @functools.wraps(real_post)
-    def _guarded(issue, note, dry_run, *, label):
-        if not dry_run and _sp.run is real_run:
-            raise AssertionError(
-                f"_post_progress_marker(issue={issue}, label={label!r}, dry_run=False) reached "
-                "the #1247 autouse hermeticity guard with the REAL subprocess.run still live — "
-                "the real body would shell `task.py post-marker` and post a junk marker on a "
-                "real task. Monkeypatch a recorder (or stub subprocess.run) in the test."
-            )
-        return real_post(issue, note, dry_run, label=label)
-
-    monkeypatch.setattr(asw, "_post_progress_marker", _guarded)
-
-
-@pytest.fixture(autouse=True)
-def _forbid_real_task_status_reads(monkeypatch):
-    """#1247 round-2 hermeticity guard (fail-loud): no test in this file may
-    reach the REAL ``task.py view`` subprocess through ``_task_status``.
-
-    The real body shells ``task.py view <N> --json`` at the canonical
-    ``PROJECT_ROOT``, so an unpatched call makes a unit test's behavior depend
-    on a REAL task's live status (+ ~1-2s subprocess per call — the round-1
-    review probe traced exactly this class in 6 sibling stalled-pass tests).
-    Read-only (never the junk-marker mechanism), so the guard is a
-    determinism/latency pin, not a mutation fence. Contract: a test that
-    needs a status overrides this with its own stub, e.g.
-    ``monkeypatch.setattr(asw, "_task_status", lambda issue: "running")``
-    (a later test-level / fixture-level monkeypatch wins over this autouse
-    default)."""
-    import functools
-
-    import autonomous_session_watch as asw
-
-    # functools.wraps sets __wrapped__, so inspect.getsource() on the patched
-    # attribute still resolves the ORIGINAL body (same #966-robustness note as
-    # the _forbid_real_marker_posts guard above).
-    @functools.wraps(asw._task_status)
-    def _guarded(issue):
-        raise AssertionError(
-            f"_task_status({issue}) reached the #1247 round-2 autouse hermeticity guard — the "
-            "real body shells `task.py view` against the LIVE task tree, making the test "
-            "depend on live VM state. Monkeypatch a status in the test, e.g. "
-            "monkeypatch.setattr(asw, '_task_status', lambda issue: 'running')."
-        )
-
-    monkeypatch.setattr(asw, "_task_status", _guarded)
+# The #1247 hermeticity guards (`_forbid_real_marker_posts`,
+# `_forbid_real_task_status_reads`) are now shared autouse fixtures in
+# tests/conftest.py (task #1265) — they apply here automatically.
 
 
 def _p(issue: int, pod_id: str, name: str):
