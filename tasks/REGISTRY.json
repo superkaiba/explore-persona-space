@@ -2035,8 +2035,8 @@
     "1261": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1261",
-      "status": "planning",
+      "path": "tasks/approved/1261",
+      "status": "approved",
       "title": "daily-fix: setsid pointers for two experimenter memory aside"
     },
     "1262": {
