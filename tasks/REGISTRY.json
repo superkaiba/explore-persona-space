@@ -1986,8 +1986,8 @@
     "1255": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1255",
-      "status": "approved",
+      "path": "tasks/running/1255",
+      "status": "running",
       "title": "workflow-fix: figure-text sidecar capture + verifier drift checks"
     },
     "1256": {
