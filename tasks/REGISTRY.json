@@ -2042,8 +2042,8 @@
     "1262": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1262",
-      "status": "approved",
+      "path": "tasks/running/1262",
+      "status": "running",
       "title": "daily-fix: route c7 escape through the standalone helper"
     },
     "1263": {
