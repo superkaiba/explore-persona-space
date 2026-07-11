@@ -136,7 +136,7 @@ ax.legend([CONDITION_LABELS[k] for k in series_keys])
 
 If the data source's keys ARE already plain English, pass them through directly. The audit rule fires on the rendered text in the figure, not on the variable names in the script.
 
-This is the figure-side mirror of `clean-result-critic` Lens 3 and `interpretation-critic` Lens 6 — applying it at the plot-generation step (here) avoids the critic round that would otherwise bounce the figure for relabeling. The bare condition slug appears ONLY in the `.meta.json` sidecar (provenance, not reader-facing) and in commit messages / launch commands.
+This is the figure-side mirror of `clean-result-critic` Lens 3 and `interpretation-critic` Lens 6 — applying it at the plot-generation step (here) avoids the critic round that would otherwise bounce the figure for relabeling. Bare condition slugs remain fine in the sidecar's *provenance keys* (`commit`, `argv`, `script`, …) and in commit messages / launch commands — but the figure's RENDERED text (titles, axis labels, legends, series names, annotations, tick labels) is now serialized into the sidecar under `text` and mechanically scanned by `verify_task_body.py` checks 24/28/34, so a slug in a title / legend WARNs at body-verification time instead of waiting for the multimodal critic. Expect a check-28 WARN uptick on NEW figures whose tick labels carry 3-segment slugs — that is the plain-English rule firing correctly (forward-observable only; old sidecars carry no `text` block and are unaffected).
 
 ### 3.6. Consistent encoding across facets
 
@@ -226,7 +226,7 @@ plt.close(fig)
 `savefig_paper` writes:
 - `figures/aim5/pre_post_alignment.png` (300 DPI, commit-tagged via pnginfo)
 - `figures/aim5/pre_post_alignment.pdf` (vector, commit-tagged via PDF metadata)
-- `figures/aim5/pre_post_alignment.meta.json` (commit + timestamp + figsize **+ the figure's per-point data**)
+- `figures/aim5/pre_post_alignment.meta.json` (commit + timestamp + figsize **+ the figure's per-point data + its rendered text**)
 
 The sidecar `.meta.json` is what makes figure provenance auditable later.
 
@@ -256,6 +256,24 @@ Implications:
   a `data_path` pointer (repo-relative, under `eval_results/` or `figures/`) to
   the sidecar yourself — the viewer follows it. In-sidecar embeds are capped at
   2000 rows (recorded via `data_truncated` + `total_points`).
+
+**The sidecar also auto-carries the figure's RENDERED TEXT (default).** At
+save time `savefig_paper` reads every piece of text the figure renders —
+suptitle, per-axes titles (including the house `loc="left"` style +
+`set_title_subtitle`'s annotation subtitle), x/y axis labels, legend labels +
+legend title, series names (legend-eligible artist labels), free-floating
+annotations, and tick labels — and embeds it under a `text` key
+(`_extract_fig_text`; values are only strings / null / lists, so the
+dashboard viewer can never mistake the block for data rows). Two
+consequences: (1) `verify_task_body.py` checks 24 (stale tokens/fractions),
+28 (opaque config-code slugs / `@L` pins), and 34 (beat-phrase
+series-structure claims) mechanically scan it — the §3.5 plain-English rule
+is now machine-checked on rendered text, not just critic-reviewed; (2)
+`embed_text=False` opts out (independent of `embed_data` — an
+`embed_data=False` huge-data figure still gets its cheap text captured by
+default). Capture is best-effort like the data embed: a failure omits the
+key, never fails the save. Forward-only: sidecars committed before this
+landed carry no `text` block and are never retroactively flagged.
 
 **Commit + push BEFORE referencing the figure in a clean-result body.**
 The EPS dashboard renders the body's `![alt](url)` images, but it does NOT
@@ -297,6 +315,8 @@ defer to that file if they ever diverge.
 - [ ] No microscopic text. Squint test: readable on a video call at 75% zoom.
 - [ ] Colorblind-friendly palette (use `paper_palette(n)`).
 - [ ] Both `.png` and `.pdf` written. Sidecar `.meta.json` exists.
+- [ ] Sidecar `text` block present (new `savefig_paper` output does this
+      automatically; only deliberate `embed_text=False` opt-outs lack it).
 - [ ] Each figure in the clean-result Results subsection has a caption
       paragraph (1-2 sentences, >=10 words). REQUIRED by
       `verify_clean_result.py:check_results_figure_captions`. Caption states
