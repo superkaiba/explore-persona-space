@@ -9701,6 +9701,9 @@ git -C "$WT" fetch origin main --quiet
 # advance between these commands (#1128's shared-ref race).
 MAIN_SHA=$(git -C "$WT" rev-parse origin/main)
 git -C "$WT" merge "$MAIN_SHA"          # conflicts surface HERE, in the worktree
+# Run that merge BARE — never piped through tail/grep (hook-blocked, #1048;
+# 9 sessions re-tripped the hook mid-recovery on 07-09/07-10). To capture
+# output, file-redirect it: `git -C "$WT" merge "$MAIN_SHA" > /tmp/issue-<N>-merge.log 2>&1; MERGE_RC=$?`.
 # Foreign tasks/ conflicts are resolved MECHANICALLY: take the captured
 # snapshot's version wholesale (under fleet marker churn main is
 # authoritative for OTHER tasks' state — the #1128-proven recovery:
