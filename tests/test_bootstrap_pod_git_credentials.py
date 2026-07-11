@@ -17,6 +17,9 @@ and — functionally — that the helper snippet, materialized via real bash and
 executed the way git does (``sh -c '<body> "$@"' helper get``), emits the
 token from the environment, from a ``.env`` fallback (plain and quoted
 values), and degrades to an empty password (exit 0) when both are absent.
+
+As of #1271 this file also pins the no-token-in-URL invariant on the
+experimenter recipe surfaces (agent specs + the experimenter agent-memory).
 """
 
 from __future__ import annotations
@@ -261,3 +264,38 @@ def test_helper_snippet_functional_under_sh(tmp_path: Path) -> None:
     assert lines.get("password", "MISSING") == "", (
         f"expected empty password when no token is available, got {lines!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# 6. Durability pin (#1271): no tokenized remote URL in the experimenter
+#    salvage recipes (agent specs + the experimenter's always-loaded memory)
+# ---------------------------------------------------------------------------
+
+
+def _experimenter_recipe_surfaces() -> list[Path]:
+    agents = sorted((REPO_ROOT / ".claude" / "agents").glob("*.md"))
+    memory = sorted((REPO_ROOT / ".claude" / "agent-memory" / "experimenter").glob("*.md"))
+    assert agents, "no agent specs found — repo layout changed?"
+    assert memory, "no experimenter agent-memory files found — repo layout changed?"
+    return agents + memory
+
+
+def test_no_tokenized_remote_url_in_experimenter_recipes() -> None:
+    """The #1239 no-token-in-URL invariant extends to the agent recipe
+    surfaces (#1271): ``x-access-token`` may appear only as the credential
+    helper's ``username=x-access-token`` line — never as URL userinfo
+    (``x-access-token:<tok>@``) prescribing a tokenized remote URL.
+
+    NOTE: the userinfo regex is SELF-MATCHING — in-scope docs must describe
+    the banned form by paraphrase ("token-in-URL userinfo"), never by
+    quoting the literal or the regex. Scope is the DOCUMENTED old form
+    only: token-as-username variants (``https://ghp_...@`` / ``oauth2:...@``)
+    are deliberately not covered (same class boundary as the #1239 pin).
+    """
+    import re
+
+    for path in _experimenter_recipe_surfaces():
+        text = path.read_text(encoding="utf-8")
+        rel = path.relative_to(REPO_ROOT)
+        assert "https://x-access-token:" not in text, f"tokenized remote URL in {rel}"
+        assert not re.search(r"x-access-token:\S*@", text), f"token-in-URL userinfo in {rel}"
