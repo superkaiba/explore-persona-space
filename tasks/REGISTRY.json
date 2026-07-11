@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1269,
+  "highest_id": 1270,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2101,6 +2101,13 @@
       "path": "tasks/completed/127",
       "status": "completed",
       "title": "Look at SAE features for Qwen system prompt vs normal assistant system prompt"
+    },
+    "1270": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1270",
+      "status": "proposed",
+      "title": "daily-fix: planner-output extraction tolerates trailing rows"
     },
     "128": {
       "has_clean_result": false,
