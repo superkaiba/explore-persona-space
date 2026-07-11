@@ -1702,6 +1702,9 @@ def _stub_fleet_mutating_passes(asw, monkeypatch):
         "proposed_infra_sweep_pass",
         "capacity_retry_pass",
         "program_orchestrator_pass",
+        # #1267: the boot-death pass can STOP a real session (same
+        # fleet-mutating class); its own tests stub its seams instead.
+        "boot_death_pass",
         # Escalate-only observer passes against live VM state (round 2).
         "verdict_disagree_pass",
         "cpu_guard_pass",
@@ -16253,6 +16256,660 @@ def test_main_order_stale_registration_after_gate_push(isolated_registry, monkey
     assert names == ["gate_push", "stale_registration", "zombie", "idle"]
     consumers = [c for n, c in order if n in ("stale_registration", "zombie", "idle")]
     assert all(c is snapshot for c in consumers)
+
+
+# ── #1267 boot-death lane ─────────────────────────────────────────────────────
+# A dispatched auto session whose transcript has ZERO response rows >= 30 min
+# after spawned_at is STOPPED + surfaced instead of waiting 12h for the
+# stale-registration pass. Conventions mirror the #845 (d) section above:
+# isolated_registry + signal-helper monkeypatching (the conftest #1247 guards
+# require _task_status / _post_progress_marker stubs on every firing path).
+
+_BOOT_DEATH_NOW = 1_000_000.0
+
+
+def _boot_death_rows_fixture(*, with_stderr=True, extra_row=None):
+    """9-row replica of the live-captured #1251-family boot-death transcript
+    shape (task #1267 plan §2): 2 queue-operation rows (enqueue + dequeue),
+    3 attachment rows, 3 prompt-type user rows (one carrying the
+    ``<local-command-stderr>`` skill-load diagnostic), 1 last-prompt row —
+    ZERO assistant / api-error rows. ``extra_row`` appends a variant row
+    (e.g. one assistant row) for the must-NOT-fire cases."""
+    stderr_text = (
+        "<command-message>issue</command-message>\n"
+        "<local-command-stderr>Error: Shell command failed: exit status 1"
+        "</local-command-stderr>"
+    )
+    rows = [
+        {"type": "queue-operation", "operation": "enqueue"},
+        {"type": "queue-operation", "operation": "dequeue"},
+        {"type": "attachment", "attachment": {"kind": "skill"}},
+        {"type": "attachment", "attachment": {"kind": "skill"}},
+        {"type": "attachment", "attachment": {"kind": "skill"}},
+        {"type": "user", "message": {"content": "/issue 1251"}},
+        {"type": "user", "message": {"content": stderr_text if with_stderr else "second prompt"}},
+        {"type": "user", "message": {"content": "third prompt"}},
+        {"type": "last-prompt", "prompt": "/issue 1251"},
+    ]
+    if extra_row is not None:
+        rows.append(extra_row)
+    return rows
+
+
+def _write_boot_death_entry(reg_dir, issue, session_id, spawned_at, *, manual=False):
+    """Registration entry with an EXPLICIT spawned_at (the lane's age gate
+    keys on it; `_write_autonomous_entry` pins spawned_at=now, too fresh)."""
+    import json
+
+    name = f"manual-issue-{issue}.json" if manual else f"issue-{issue}.json"
+    (reg_dir / name).write_text(
+        json.dumps(
+            {
+                "issue": issue,
+                "happy_session_id": session_id,
+                "cwd": "/repo",
+                "auto_approve_gpu_hours": 12.0,
+                "spawned_at": spawned_at,
+                "missed": 0,
+            }
+        )
+    )
+
+
+def _boot_death_env(monkeypatch, asw, *, rows, idle_s=30 * 60, status="proposed", size=11368):
+    """Common signal monkeypatching for the boot-death pass tests. Returns
+    the telegram-push recorder list."""
+    monkeypatch.setattr(asw, "_provision_in_flight_reason", lambda issue, now: None)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
+    monkeypatch.setattr(asw, "_task_status", lambda issue: status)
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (idle_s, None))
+    monkeypatch.setattr(
+        asw,
+        "_boot_death_transcript_rows",
+        lambda pid, max_bytes=None: (rows, "/fake/transcripts/boot-death.jsonl", size),
+    )
+    pushes: list[tuple] = []
+    monkeypatch.setattr(
+        asw, "_telegram_push", lambda msg, dry_run: bool(pushes.append((msg, dry_run)))
+    )
+    return pushes
+
+
+def test_decide_boot_death_fires_on_incident_shape():
+    # Plan §6 acceptance 1: live sid + age 31 min + zero response rows +
+    # idle 30 min + 0 stops today -> "stop".
+    import autonomous_session_watch as asw
+
+    assert (
+        asw.decide_boot_death(
+            sid_alive=True,
+            entry_age_s=31 * 60,
+            response_row_seen=False,
+            transcript_idle_s=30 * 60,
+            window_s=asw.BOOT_DEATH_WINDOW_S,
+            quiet_s=asw.BOOT_DEATH_QUIET_S,
+            stops_today=0,
+            stops_per_day=3,
+        )
+        == "stop"
+    )
+
+
+@pytest.mark.parametrize(
+    "entry_age_s",
+    [29 * 60, None, -120.0],  # young; missing/zero spawned_at; future-dated (negative age)
+)
+def test_decide_boot_death_keeps_young_entry(entry_age_s):
+    import autonomous_session_watch as asw
+
+    assert (
+        asw.decide_boot_death(
+            sid_alive=True,
+            entry_age_s=entry_age_s,
+            response_row_seen=False,
+            transcript_idle_s=30 * 60,
+            window_s=asw.BOOT_DEATH_WINDOW_S,
+            quiet_s=asw.BOOT_DEATH_QUIET_S,
+            stops_today=0,
+            stops_per_day=3,
+        )
+        == "keep"
+    )
+
+
+def test_decide_boot_death_keeps_on_response_row():
+    # ANY response row (assistant — the healthy #1251 re-dispatch shape — OR
+    # api-error, the #1209 family's property) means NOT a boot-death; the
+    # row-level classification of both variants is pinned in
+    # test_boot_death_rows_incident_fixture_zero_response.
+    import autonomous_session_watch as asw
+
+    assert (
+        asw.decide_boot_death(
+            sid_alive=True,
+            entry_age_s=31 * 60,
+            response_row_seen=True,
+            transcript_idle_s=30 * 60,
+            window_s=asw.BOOT_DEATH_WINDOW_S,
+            quiet_s=asw.BOOT_DEATH_QUIET_S,
+            stops_today=0,
+            stops_per_day=3,
+        )
+        == "keep"
+    )
+
+
+def test_decide_boot_death_keeps_on_unresolvable_transcript():
+    # response_row_seen=None: transcript unresolvable OR over the tail cap —
+    # fail toward keep (the 12h stale-registration pass stays the backstop).
+    import autonomous_session_watch as asw
+
+    assert (
+        asw.decide_boot_death(
+            sid_alive=True,
+            entry_age_s=31 * 60,
+            response_row_seen=None,
+            transcript_idle_s=30 * 60,
+            window_s=asw.BOOT_DEATH_WINDOW_S,
+            quiet_s=asw.BOOT_DEATH_QUIET_S,
+            stops_today=0,
+            stops_per_day=3,
+        )
+        == "keep"
+    )
+
+
+@pytest.mark.parametrize(
+    "transcript_idle_s",
+    [9 * 60, None],  # in-flight first turn; unresolvable idle signal (fail toward keep)
+)
+def test_decide_boot_death_keeps_within_quiet_window(transcript_idle_s):
+    import autonomous_session_watch as asw
+
+    assert (
+        asw.decide_boot_death(
+            sid_alive=True,
+            entry_age_s=31 * 60,
+            response_row_seen=False,
+            transcript_idle_s=transcript_idle_s,
+            window_s=asw.BOOT_DEATH_WINDOW_S,
+            quiet_s=asw.BOOT_DEATH_QUIET_S,
+            stops_today=0,
+            stops_per_day=3,
+        )
+        == "keep"
+    )
+
+
+def test_decide_boot_death_keeps_dead_sid():
+    # A dead sid is the crash-recovery / sweep-grace passes' property.
+    import autonomous_session_watch as asw
+
+    assert (
+        asw.decide_boot_death(
+            sid_alive=False,
+            entry_age_s=31 * 60,
+            response_row_seen=False,
+            transcript_idle_s=30 * 60,
+            window_s=asw.BOOT_DEATH_WINDOW_S,
+            quiet_s=asw.BOOT_DEATH_QUIET_S,
+            stops_today=0,
+            stops_per_day=3,
+        )
+        == "keep"
+    )
+
+
+@pytest.mark.parametrize(
+    ("stops_today", "expected"),
+    [
+        (2, "stop"),  # cap boundary: the LAST permitted unit still stops (cap=3)
+        (3, "cap-alert"),
+        (4, "cap-alert"),
+    ],
+)
+def test_decide_boot_death_cap_exhausted_returns_cap_alert(stops_today, expected):
+    import autonomous_session_watch as asw
+
+    assert (
+        asw.decide_boot_death(
+            sid_alive=True,
+            entry_age_s=31 * 60,
+            response_row_seen=False,
+            transcript_idle_s=30 * 60,
+            window_s=asw.BOOT_DEATH_WINDOW_S,
+            quiet_s=asw.BOOT_DEATH_QUIET_S,
+            stops_today=stops_today,
+            stops_per_day=3,
+        )
+        == expected
+    )
+
+
+def test_boot_death_window_env_parse(monkeypatch):
+    # Mirrors the _stale_registration_idle_s contract: default 1800.0;
+    # minutes-valued env honored; malformed / non-positive -> default (a
+    # typo'd var must never create an instant stopper).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_BOOT_DEATH_WINDOW_MIN", raising=False)
+    assert asw._boot_death_window_s() == 1800.0
+    monkeypatch.setenv("EPM_BOOT_DEATH_WINDOW_MIN", "45")
+    assert asw._boot_death_window_s() == 2700.0
+    for bad in ("0", "-5", "junk"):
+        monkeypatch.setenv("EPM_BOOT_DEATH_WINDOW_MIN", bad)
+        assert asw._boot_death_window_s() == 1800.0
+
+
+def test_boot_death_stops_per_day_env_parse(monkeypatch):
+    # Byte-parallel to _tick_wedge_respawns_per_day: default 3; positive int
+    # honored; < 1 / malformed -> default. Never a kill switch.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_BOOT_DEATH_STOPS_PER_DAY", raising=False)
+    assert asw._boot_death_stops_per_day() == 3
+    monkeypatch.setenv("EPM_BOOT_DEATH_STOPS_PER_DAY", "5")
+    assert asw._boot_death_stops_per_day() == 5
+    for bad in ("0", "-2", "junk"):
+        monkeypatch.setenv("EPM_BOOT_DEATH_STOPS_PER_DAY", bad)
+        assert asw._boot_death_stops_per_day() == 3
+
+
+def test_boot_death_transcript_rows_size_guard(tmp_path, monkeypatch):
+    # Whole-file read with a hard size ceiling: a small file yields the FULL
+    # row list (never a truncated tail); an over-cap file yields rows=None
+    # (not-eligible -> keep) with the path/size kept as forensics; an
+    # unresolvable transcript yields (None, None, None).
+    import json
+
+    import autonomous_session_watch as asw
+    import session_resolver
+
+    p = tmp_path / "t.jsonl"
+    p.write_text(
+        "\n".join(json.dumps({"type": "user", "message": {"content": f"p{i}"}}) for i in range(3))
+        + "\n"
+    )
+    monkeypatch.setattr(
+        session_resolver, "_resolve_transcript_via_happy_log", lambda pid: (str(p), None)
+    )
+    rows, path, size = asw._boot_death_transcript_rows(4242)
+    assert path == str(p) and size == p.stat().st_size
+    assert isinstance(rows, list) and len(rows) == 3
+    rows2, path2, size2 = asw._boot_death_transcript_rows(4242, max_bytes=10)
+    assert rows2 is None and path2 == str(p) and size2 == size
+    monkeypatch.setattr(
+        session_resolver, "_resolve_transcript_via_happy_log", lambda pid: (None, "no happy log")
+    )
+    assert asw._boot_death_transcript_rows(4242) == (None, None, None)
+
+
+def test_boot_death_rows_incident_fixture_zero_response():
+    # The live-captured 9-row incident shape classifies to ZERO response rows
+    # (the firing precondition); a one-assistant-row variant AND an
+    # api-error-row variant (#1209 family) both read response_row_seen=True.
+    import autonomous_session_watch as asw
+
+    rows = _boot_death_rows_fixture()
+    assert len(rows) == 9
+    classes = [asw._classify_wedge_row(r) for r in rows]
+    assert classes.count("dequeue") == 1
+    assert classes.count("prompt") == 3
+    assert classes.count("other") == 5
+    assert not any(c in ("assistant", "api-error") for c in classes)
+
+    healthy = _boot_death_rows_fixture(
+        extra_row={"type": "assistant", "message": {"content": [{"type": "text", "text": "hi"}]}}
+    )
+    assert any(asw._classify_wedge_row(r) in ("assistant", "api-error") for r in healthy)
+    refused = _boot_death_rows_fixture(
+        extra_row={"type": "assistant", "isApiErrorMessage": True, "message": {}}
+    )
+    assert any(asw._classify_wedge_row(r) in ("assistant", "api-error") for r in refused)
+
+
+def test_boot_death_stderr_excerpt_bounded():
+    # The forensic excerpt starts at the <local-command-stderr> tag, is
+    # whitespace-collapsed, and never exceeds the 200-char bound; a fixture
+    # without the tag yields None.
+    import autonomous_session_watch as asw
+
+    excerpt = asw._boot_death_stderr_excerpt(_boot_death_rows_fixture())
+    assert excerpt is not None and excerpt.startswith("<local-command-stderr>Error:")
+    assert len(excerpt) <= 200 and "\n" not in excerpt
+    assert asw._boot_death_stderr_excerpt(_boot_death_rows_fixture(with_stderr=False)) is None
+    long_rows = [
+        {"type": "user", "message": {"content": "<local-command-stderr>" + "x" * 500}},
+    ]
+    assert len(asw._boot_death_stderr_excerpt(long_rows)) == 200
+
+
+def test_boot_death_pass_stops_and_posts_marker(isolated_registry, monkeypatch):
+    # Plan §6 pass-level headline: the incident shape stops the entry's sid,
+    # posts ONE anti-liveness marker (label boot-death-stop, sentinel +
+    # status= in the note), appends a sidecar row carrying the transcript=
+    # and stderr_excerpt= forensic keys, bumps stops_today to 1, and KEEPS
+    # the registration file (re-drive is the existing arms' job).
+    import json
+
+    import autonomous_session_watch as asw
+
+    stops: list[tuple] = []
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: bool(stops.append((sid, dry_run))) or True
+    )
+    markers: list[tuple] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((issue, label, note, dry_run)),
+    )
+    pushes = _boot_death_env(monkeypatch, asw, rows=_boot_death_rows_fixture())
+    _write_boot_death_entry(isolated_registry, 990, "sess-990", _BOOT_DEATH_NOW - 31 * 60)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-990", "pid": 4242}],
+        now=_BOOT_DEATH_NOW,
+    )
+
+    assert stops == [("sess-990", False)]
+    assert [(i, la) for i, la, _n, _d in markers] == [(990, "boot-death-stop")]
+    note = markers[0][2]
+    assert asw._BOOT_DEATH_STOP_NOTE_SENTINEL in note
+    assert "status=proposed" in note and "registration kept" in note
+    assert len(pushes) == 1
+    assert (isolated_registry / "issue-990.json").exists()  # KEPT, never unlinked
+    state = json.loads((isolated_registry / "boot-death-990.json").read_text())
+    assert state["stops_today"] == 1
+    events = (isolated_registry / "boot-death-events.jsonl").read_text().splitlines()
+    assert len(events) == 1
+    row = json.loads(events[0])
+    assert row["kind"] == "boot-death"
+    assert "transcript=/fake/transcripts/boot-death.jsonl" in row["note"]
+    assert "stderr_excerpt=<local-command-stderr>Error:" in row["note"]
+
+
+def test_boot_death_pass_daemon_down_noop(isolated_registry, monkeypatch):
+    # children=None (daemon unreachable) => no-op: liveness cannot be
+    # established, and a false "live" read must not stop anything.
+    import autonomous_session_watch as asw
+
+    stops: list = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: bool(stops.append(sid)))
+    _boot_death_env(monkeypatch, asw, rows=_boot_death_rows_fixture())
+    _write_boot_death_entry(isolated_registry, 990, "sess-990", _BOOT_DEATH_NOW - 31 * 60)
+    asw.boot_death_pass(dry_run=False, children=None, now=_BOOT_DEATH_NOW)
+    assert stops == [] and (isolated_registry / "issue-990.json").exists()
+
+
+def test_boot_death_pass_dry_run(isolated_registry, monkeypatch, capsys):
+    # Reviewer concern 3, pinned test + code: a dry run stops NOTHING, posts
+    # NO real task marker / push, and writes NO state / sidecar — log lines
+    # only. _post_progress_marker / _stop_session / _telegram_push are left
+    # REAL here with subprocess.run replaced by a recorder: dry_run=True must
+    # short-circuit every one of them BEFORE any subprocess, so production
+    # events.jsonl is provably never mutated by a dry run.
+    import subprocess as _sp
+
+    import autonomous_session_watch as asw
+
+    calls: list = []
+
+    def _no_subprocess(*a, **k):
+        calls.append(a)
+        raise AssertionError("dry-run must never reach subprocess.run")
+
+    monkeypatch.setattr(_sp, "run", _no_subprocess)
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "proposed")
+    monkeypatch.setattr(asw, "_provision_in_flight_reason", lambda issue, now: None)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (30 * 60, None))
+    monkeypatch.setattr(
+        asw,
+        "_boot_death_transcript_rows",
+        lambda pid, max_bytes=None: (_boot_death_rows_fixture(), "/fake/t.jsonl", 11368),
+    )
+    _write_boot_death_entry(isolated_registry, 990, "sess-990", _BOOT_DEATH_NOW - 31 * 60)
+    asw.boot_death_pass(
+        dry_run=True,
+        children=[{"happySessionId": "sess-990", "pid": 4242}],
+        now=_BOOT_DEATH_NOW,
+    )
+    assert calls == []  # no real stop / marker post / push subprocess
+    assert (isolated_registry / "issue-990.json").exists()
+    assert not (isolated_registry / "boot-death-990.json").exists()  # no state write
+    assert not (isolated_registry / "boot-death-events.jsonl").exists()  # no sidecar
+    out = capsys.readouterr().out
+    assert "[dry-run] would stop session" in out
+    assert "[dry-run] would post epm:progress" in out
+    assert "[dry-run] would save boot-death state" in out
+
+
+def test_boot_death_pass_manual_registration_excluded(isolated_registry, monkeypatch):
+    # manual-issue-*.json is out of scope by design (#505 posture: a
+    # user-driven session is never auto-stopped) — never probed, never
+    # stopped, no marker.
+    import autonomous_session_watch as asw
+
+    stops: list = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: bool(stops.append(sid)))
+    markers: list = []
+    monkeypatch.setattr(
+        asw, "_post_progress_marker", lambda issue, note, dry_run, label: markers.append(label)
+    )
+    _boot_death_env(monkeypatch, asw, rows=_boot_death_rows_fixture())
+    _write_boot_death_entry(
+        isolated_registry, 991, "sess-991-manual", _BOOT_DEATH_NOW - 31 * 60, manual=True
+    )
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-991-manual", "pid": 4243}],
+        now=_BOOT_DEATH_NOW,
+    )
+    assert stops == [] and markers == []
+    assert (isolated_registry / "manual-issue-991.json").exists()
+
+
+def test_boot_death_pass_kill_switch(isolated_registry, monkeypatch, capsys):
+    # EPM_DISABLE_BOOT_DEATH_PASS=1 -> logged no-op.
+    import autonomous_session_watch as asw
+
+    stops: list = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: bool(stops.append(sid)))
+    _boot_death_env(monkeypatch, asw, rows=_boot_death_rows_fixture())
+    _write_boot_death_entry(isolated_registry, 990, "sess-990", _BOOT_DEATH_NOW - 31 * 60)
+    monkeypatch.setenv("EPM_DISABLE_BOOT_DEATH_PASS", "1")
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-990", "pid": 4242}],
+        now=_BOOT_DEATH_NOW,
+    )
+    assert stops == []
+    assert "disabled via EPM_DISABLE_BOOT_DEATH_PASS" in capsys.readouterr().out
+
+
+def test_boot_death_pass_cap_alert_once_per_day(isolated_registry, monkeypatch):
+    # Plan §6 acceptance 3: the 4th qualifying detection in one UTC day gets
+    # NO stop and exactly ONE cap push/marker; a same-day repeat tick is
+    # quiet; the next UTC day re-arms (the day-keyed counter reads 0).
+    import json
+    import time as _t
+
+    import autonomous_session_watch as asw
+
+    stops: list = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: bool(stops.append(sid)) or True)
+    markers: list[tuple] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((label, note)),
+    )
+    pushes = _boot_death_env(monkeypatch, asw, rows=_boot_death_rows_fixture())
+    _write_boot_death_entry(isolated_registry, 990, "sess-990", _BOOT_DEATH_NOW - 31 * 60)
+    day_key = _t.strftime("%Y-%m-%d", _t.gmtime(_BOOT_DEATH_NOW))
+    (isolated_registry / "boot-death-990.json").write_text(
+        json.dumps({"stop_day": day_key, "stops_today": 3})
+    )
+    children = [{"happySessionId": "sess-990", "pid": 4242}]
+
+    asw.boot_death_pass(dry_run=False, children=children, now=_BOOT_DEATH_NOW)
+    assert stops == []
+    assert [la for la, _n in markers] == ["boot-death-cap-exhausted"]
+    assert asw._BOOT_DEATH_CAP_NOTE_SENTINEL in markers[0][1]
+    assert len(pushes) == 1
+
+    # Same-day repeat tick: quiet (cap_alerted_day dedup).
+    asw.boot_death_pass(dry_run=False, children=children, now=_BOOT_DEATH_NOW + 600)
+    assert len(markers) == 1 and len(pushes) == 1 and stops == []
+
+    # Next UTC day: the day-keyed counter reads 0 -> the lane re-arms + stops.
+    next_day = _BOOT_DEATH_NOW + 24 * 3600
+    _write_boot_death_entry(isolated_registry, 990, "sess-990", next_day - 31 * 60)
+    asw.boot_death_pass(dry_run=False, children=children, now=next_day)
+    assert stops == ["sess-990"]
+    assert [la for la, _n in markers] == ["boot-death-cap-exhausted", "boot-death-stop"]
+
+
+def test_boot_death_pass_stop_failure_still_consumes_budget(isolated_registry, monkeypatch):
+    # #1241 parity: the counter bumps at STOP-INITIATION, so a failed stop
+    # still consumes a budget unit (conservative in the safe direction), and
+    # the note records stop_ok=False.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: False)
+    markers: list[tuple] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((label, note)),
+    )
+    _boot_death_env(monkeypatch, asw, rows=_boot_death_rows_fixture())
+    _write_boot_death_entry(isolated_registry, 990, "sess-990", _BOOT_DEATH_NOW - 31 * 60)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-990", "pid": 4242}],
+        now=_BOOT_DEATH_NOW,
+    )
+    state = json.loads((isolated_registry / "boot-death-990.json").read_text())
+    assert state["stops_today"] == 1  # bumped despite the failed stop
+    assert "stop_ok=False" in markers[0][1]
+
+
+def test_boot_death_pass_provision_in_flight_keeps(isolated_registry, monkeypatch):
+    # An in-flight provision means something owns this issue — keep.
+    import autonomous_session_watch as asw
+
+    stops: list = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: bool(stops.append(sid)))
+    _boot_death_env(monkeypatch, asw, rows=_boot_death_rows_fixture())
+    monkeypatch.setattr(
+        asw, "_provision_in_flight_reason", lambda issue, now: "live provision pid 1"
+    )
+    _write_boot_death_entry(isolated_registry, 990, "sess-990", _BOOT_DEATH_NOW - 31 * 60)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-990", "pid": 4242}],
+        now=_BOOT_DEATH_NOW,
+    )
+    assert stops == []
+
+
+def test_boot_death_pass_fresh_worktree_keeps(isolated_registry, monkeypatch):
+    # Fresh worktree edits mean an implementer is mid-work — keep.
+    import autonomous_session_watch as asw
+
+    stops: list = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: bool(stops.append(sid)))
+    _boot_death_env(monkeypatch, asw, rows=_boot_death_rows_fixture())
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: True)
+    _write_boot_death_entry(isolated_registry, 990, "sess-990", _BOOT_DEATH_NOW - 31 * 60)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-990", "pid": 4242}],
+        now=_BOOT_DEATH_NOW,
+    )
+    assert stops == []
+
+
+def test_boot_death_sentinels_in_watcher_note_sentinels():
+    # Anti-liveness pin (durability pin for this task): both sentinels MUST
+    # be members of _WATCHER_NOTE_SENTINELS or the lane's own notes would
+    # refresh _latest_progress_ts and mask the orphan/stalled staleness
+    # clocks (the line-1207 contract).
+    import autonomous_session_watch as asw
+
+    assert asw._BOOT_DEATH_STOP_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+    assert asw._BOOT_DEATH_CAP_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+def test_main_order_boot_death_before_stale_registration(isolated_registry, monkeypatch):
+    # #1267 wiring: boot_death_pass runs AFTER gate_push_pass (the gate-push-
+    # before-reaper ordering invariant) and BEFORE stale_registration_pass,
+    # and (reviewer concern 4) receives the SAME shared reaper `children`
+    # snapshot OBJECT as the three sibling consumers — object identity, not
+    # just equality.
+    import autonomous_session_watch as asw
+
+    order: list[tuple[str, object]] = []
+    snapshot = [{"happySessionId": "sid-shared", "pid": 12345}]
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
+    monkeypatch.setattr(asw, "_live_children", lambda: snapshot)
+    _stub_fleet_mutating_passes(asw, monkeypatch)
+    for name in (
+        "vm_disk_pass",
+        "data_disk_pass",
+        "happy_patch_pass",
+        "triage_observer_pass",
+        "program_orchestrator_pass",
+        "campaign_pass",
+        "pod_safety_pass",
+        "stalled_session_pass",
+        "orphan_sweep_pass",
+        "infra_drain_pass",
+        "proposed_infra_sweep_pass",
+        "capacity_retry_pass",
+        "stale_blocked_flag_pass",
+        "session_reconcile_pass",
+        "gc_pass",
+    ):
+        if hasattr(asw, name):
+            monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+    monkeypatch.setattr(asw, "gate_push_pass", lambda *a, **kw: order.append(("gate_push", None)))
+    monkeypatch.setattr(
+        asw, "boot_death_pass", lambda *a, **kw: order.append(("boot_death", kw.get("children")))
+    )
+    monkeypatch.setattr(
+        asw,
+        "stale_registration_pass",
+        lambda *a, **kw: order.append(("stale_registration", kw.get("children"))),
+    )
+    monkeypatch.setattr(
+        asw, "zombie_wrapper_pass", lambda *a, **kw: order.append(("zombie", kw.get("children")))
+    )
+    monkeypatch.setattr(
+        asw, "idle_unmapped_pass", lambda *a, **kw: order.append(("idle", kw.get("children")))
+    )
+
+    rc = asw.main([])
+    assert rc == 0
+    names = [n for n, _ in order]
+    assert names == ["gate_push", "boot_death", "stale_registration", "zombie", "idle"]
+    consumers = [c for n, c in order if n != "gate_push"]
+    assert all(c is snapshot for c in consumers)
+
+
+def test_gc_targets_include_boot_death_prefix():
+    # The day-cap state file is reaped by the generalized GC at terminal
+    # status (the `proposed` incident-class status is NOT terminal, so a live
+    # loop's counter is never reset mid-episode).
+    import autonomous_session_watch as asw
+
+    assert (asw.BOOT_DEATH_STATE_PREFIX, "") in asw._GC_TARGETS
 
 
 # ─── triage-observer pass (#967) ──────────────────────────────────────────────
