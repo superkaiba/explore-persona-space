@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1261,
+  "highest_id": 1262,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2038,6 +2038,13 @@
       "path": "tasks/proposed/1261",
       "status": "proposed",
       "title": "daily-fix: setsid pointers for two experimenter memory aside"
+    },
+    "1262": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1262",
+      "status": "proposed",
+      "title": "daily-fix: route c7 escape through the standalone helper"
     },
     "127": {
       "has_clean_result": false,
