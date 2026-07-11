@@ -2077,22 +2077,22 @@
     "1267": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1267",
-      "status": "running",
+      "path": "tasks/completed/1267",
+      "status": "completed",
       "title": "daily-fix: watcher lane for zero-assistant-row boot deaths"
     },
     "1268": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1268",
-      "status": "running",
+      "path": "tasks/completed/1268",
+      "status": "completed",
       "title": "daily-fix: Step 10d repin/guard snippet hardening bundle"
     },
     "1269": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1269",
-      "status": "planning",
+      "path": "tasks/running/1269",
+      "status": "running",
       "title": "daily-fix: LESSONS.md durable slimming + lint cap WARN band"
     },
     "127": {
@@ -2112,15 +2112,15 @@
     "1271": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1271",
-      "status": "planning",
+      "path": "tasks/running/1271",
+      "status": "running",
       "title": "daily-fix: helper-authenticated fetch in experimenter recipe"
     },
     "1272": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1272",
-      "status": "proposed",
+      "path": "tasks/reviewing/1272",
+      "status": "reviewing",
       "title": "daily-fix: verified-at-filing grep line in wf-fix template"
     },
     "1273": {
@@ -2133,8 +2133,8 @@
     "1274": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1274",
-      "status": "proposed",
+      "path": "tasks/planning/1274",
+      "status": "planning",
       "title": "daily-fix: sweep misses routed-record for prior-night park"
     },
     "128": {
