@@ -1979,8 +1979,8 @@
     "1254": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1254",
-      "status": "approved",
+      "path": "tasks/running/1254",
+      "status": "running",
       "title": "workflow-fix: code-reviewer degenerate-statistic check (observed-vs-null reads)"
     },
     "1255": {
