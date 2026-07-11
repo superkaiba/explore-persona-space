@@ -1958,15 +1958,15 @@
     "1251": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1251",
-      "status": "running",
+      "path": "tasks/reviewing/1251",
+      "status": "reviewing",
       "title": "step9c baseline oracle tolerates unrelated concurrent dirty "
     },
     "1252": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1252",
-      "status": "running",
+      "path": "tasks/completed/1252",
+      "status": "completed",
       "title": "trigger-dense reviews: return text = verdict + pointer only"
     },
     "1253": {
@@ -2070,8 +2070,8 @@
     "1266": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1266",
-      "status": "running",
+      "path": "tasks/reviewing/1266",
+      "status": "reviewing",
       "title": "daily-fix: lint check for bang-backtick in skill markdown"
     },
     "1267": {
@@ -2084,8 +2084,8 @@
     "1268": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1268",
-      "status": "planning",
+      "path": "tasks/running/1268",
+      "status": "running",
       "title": "daily-fix: Step 10d repin/guard snippet hardening bundle"
     },
     "1269": {
