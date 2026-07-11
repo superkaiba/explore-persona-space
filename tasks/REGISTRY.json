@@ -1993,8 +1993,8 @@
     "1256": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1256",
-      "status": "running",
+      "path": "tasks/reviewing/1256",
+      "status": "reviewing",
       "title": "workflow-fix: cross-issue reuse-provenance check in verify_task_body.py"
     },
     "1257": {
@@ -2028,22 +2028,22 @@
     "1260": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1260",
-      "status": "running",
+      "path": "tasks/completed/1260",
+      "status": "completed",
       "title": "daily-fix: WARN when verbatim insert exceeds ratchet headroo"
     },
     "1261": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1261",
-      "status": "planning",
+      "path": "tasks/completed/1261",
+      "status": "completed",
       "title": "daily-fix: setsid pointers for two experimenter memory aside"
     },
     "1262": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1262",
-      "status": "proposed",
+      "path": "tasks/planning/1262",
+      "status": "planning",
       "title": "daily-fix: route c7 escape through the standalone helper"
     },
     "1263": {
