@@ -110,7 +110,8 @@ labeled-line forms):
   - ``N/A — no arity acceptance gate`` (check 21)
   - ``N/A — no resume/persist pattern`` (check 24)
   - ``N/A — entities are content, not commands`` (check 25 — exempts
-    arm-(a) shell-tagged content fences ONLY; an arm-(b) fence whose body
+    arm-(a) shell-tagged content fences ONLY, and only when exactly ONE
+    arm-(a) fence carries entity hits (#1276); an arm-(b) fence whose body
     carries ``--workload-cmd`` / ``dispatch_issue.py`` FAILs on entities
     unconditionally)
   - ``N/A — basis measured on the routed machine`` (check 26)
@@ -3851,10 +3852,32 @@ def _c25_detail(hits: list[str], *, exemptable: bool) -> str:
         return base + (
             "; if the fenced entities are deliberately discussed CONTENT (not a "
             "command to dispatch), declare 'N/A — entities are content, not "
-            "commands' on its own line, unwrapped (no backticks/quotes)"
+            "commands' on its own line, unwrapped (no backticks/quotes) "
+            "(valid only when exactly ONE shell-tagged fence carries entity "
+            "forms; with several, re-tag content fences to a non-shell info "
+            "string or combine them into one fence)"
         )
     return base + (
         " — a --workload-cmd / dispatch_issue.py fence is never exemptable: fix the command text"
+    )
+
+
+def _c25_multi_fence_detail(n_fences: int, hits: list[str]) -> str:
+    """Render the c25 FAIL detail for the count-scoped exemption (#1276): the
+    standalone escape phrase is present but MORE THAN ONE arm-(a) fence
+    carries entity hits — a doc-wide declaration must not let a poisoned
+    command fence ride a legitimate content fence's exemption (the arm-(a)
+    sibling of the #1062 arm-(b) never-exemptable rule)."""
+    return (
+        f"{n_fences} distinct shell-tagged fences carry HTML entity form(s) "
+        f"{', '.join(hits)}, but the standalone content exemption is scoped to "
+        "EXACTLY ONE entity-bearing fence — a doc-wide declaration must not "
+        "mask a separately poisoned command fence (#1276; arm-(a) sibling of "
+        "the #1062 arm-(b) rule); re-tag genuinely content-bearing fences to a "
+        "non-shell info string (e.g. a text-tagged fence, which arm (a) never "
+        "scans), or combine the content commands into one fence, or fix the "
+        "poisoned command text (re-extract from the raw output-file / one "
+        "html.unescape() round)"
     )
 
 
@@ -3867,7 +3890,11 @@ def check_html_entities_in_commands(plan: str, kind: str) -> CheckResult:
     ``--workload-cmd`` or ``dispatch_issue.py``. Scan-first; the standalone
     escape phrase (``N/A — entities are content, not commands``, detected via
     the house ``_standalone_na_declared`` line discipline — never a doc-global
-    substring) exempts arm-(a) hits ONLY. An arm-(b) entity hit FAILs
+    substring) exempts arm-(a) hits ONLY, and only when EXACTLY ONE arm-(a)
+    fence carries entity hits — with two or more entity-bearing shell fences
+    the declaration cannot bind to a specific fence, so the check FAILs
+    naming the fence count (#1276; per-fence grain: distinct fences, not
+    distinct entity forms). An arm-(b) entity hit FAILs
     UNCONDITIONALLY — a document-wide phrase must never mask a separately
     poisoned workload command (methodology reconciler, #1062 round 1: one
     legitimate entity-discussing fence + one poisoned dispatcher fence must
@@ -3889,9 +3916,22 @@ def check_html_entities_in_commands(plan: str, kind: str) -> CheckResult:
     hits_b = sorted({m.group(0) for b in arm_b for m in _C25_HTML_ENTITY_RE.finditer(b)})
     if hits_b:
         return _fail(cid, name, _c25_detail(hits_b, exemptable=False))
-    hits_a = sorted({m.group(0) for b in arm_a for m in _C25_HTML_ENTITY_RE.finditer(b)})
+    # Per-fence grain (#1276): the exemption scope counts DISTINCT arm-(a)
+    # fences carrying entity hits — never the union of entity forms, which
+    # loses fence identity and lets a poisoned fence ride a legitimate
+    # fence's declaration (the arm-(a) sibling of the #1062 arm-(b) rule).
+    per_fence_hits = [sorted({m.group(0) for m in _C25_HTML_ENTITY_RE.finditer(b)}) for b in arm_a]
+    per_fence_hits = [h for h in per_fence_hits if h]
+    hits_a = sorted({form for h in per_fence_hits for form in h})
     if hits_a and _standalone_na_declared(plan, r"entities are content, not commands"):
-        return _pass(cid, name, "arm-(a) entity content exempted by explicit standalone N/A")
+        if len(per_fence_hits) == 1:
+            return _pass(
+                cid,
+                name,
+                "arm-(a) entity content exempted by explicit standalone N/A "
+                "(single entity-bearing fence)",
+            )
+        return _fail(cid, name, _c25_multi_fence_detail(len(per_fence_hits), hits_a))
     if hits_a:
         return _fail(cid, name, _c25_detail(hits_a, exemptable=True))
     return _pass(cid, name, f"{len(arm_a) + len(arm_b)} command fence(s), no entity forms")
