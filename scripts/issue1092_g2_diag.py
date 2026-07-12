@@ -32,7 +32,13 @@ import json
 import sys
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps + .env must bind BEFORE the heavy imports below — the
+# BLAS/torch pools freeze at import time (tests/test_shared_vm_thread_caps.py).
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 for _p in (PROJECT_ROOT / "src", PROJECT_ROOT / "scripts"):
