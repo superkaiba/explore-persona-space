@@ -2182,8 +2182,8 @@
     "1280": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1280",
-      "status": "proposed",
+      "path": "tasks/planning/1280",
+      "status": "planning",
       "title": "workflow-fix: Step 10d Guard 1 three-dot foreign diff"
     },
     "1281": {
