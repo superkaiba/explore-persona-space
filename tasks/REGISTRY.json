@@ -2140,8 +2140,8 @@
     "1275": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1275",
-      "status": "proposed",
+      "path": "tasks/planning/1275",
+      "status": "planning",
       "title": "workflow-fix: post codex verdict from file, no body paging"
     },
     "1276": {
