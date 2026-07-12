@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1284,
+  "highest_id": 1285,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2213,6 +2213,13 @@
       "path": "tasks/proposed/1284",
       "status": "proposed",
       "title": "daily-fix: issue1092 load_dotenv before heavy imports"
+    },
+    "1285": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1285",
+      "status": "proposed",
+      "title": "daily-fix: remove stale duplicate tasks/reviewing/1196"
     },
     "129": {
       "has_clean_result": false,
