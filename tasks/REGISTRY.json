@@ -2168,8 +2168,8 @@
     "1279": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1279",
-      "status": "proposed",
+      "path": "tasks/planning/1279",
+      "status": "planning",
       "title": "workflow-fix: edit-time guard hook for LESSONS.md"
     },
     "128": {
