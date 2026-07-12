@@ -2140,8 +2140,8 @@
     "1275": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1275",
-      "status": "reviewing",
+      "path": "tasks/completed/1275",
+      "status": "completed",
       "title": "workflow-fix: post codex verdict from file, no body paging"
     },
     "1276": {
@@ -2189,8 +2189,8 @@
     "1281": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1281",
-      "status": "proposed",
+      "path": "tasks/planning/1281",
+      "status": "planning",
       "title": "workflow-fix: sweep park predicate misses mid-note parks"
     },
     "1282": {
