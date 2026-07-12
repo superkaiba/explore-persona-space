@@ -32,12 +32,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-
 # Load dotenv before any HF/API imports (subprocess-env-explicit requirement)
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
+
+import numpy as np  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -917,7 +917,7 @@ def load_rb_directions(rb_rev: str, n_layers: int, n_traits: int, hidden_dim: in
     from huggingface_hub import hf_hub_download, list_repo_tree
 
     prefix = "issue779_monitoring/r_b"
-    # HUB_VERIFY_RETRY_EXEMPT: issue-1092 driver, production runs complete; scoped listing with orchestration-layer retry/recovery (post-run lint waiver)
+    # HUB_VERIFY_RETRY_EXEMPT: issue-1092 driver; scoped listing with orchestration-layer retry
     entries = list_repo_tree(
         HF_DATA_REPO,
         repo_type="dataset",
@@ -1766,7 +1766,7 @@ def verify_uploaded_prefix(
 
     api = HfApi()
     entries = list(
-        # HUB_VERIFY_RETRY_EXEMPT: issue-1092 driver, production runs complete; scoped listing with orchestration-layer retry/recovery (post-run lint waiver)
+        # HUB_VERIFY_RETRY_EXEMPT: issue-1092 driver; scoped listing with orchestration-layer retry
         api.list_repo_tree(
             repo_id=repo_id,
             repo_type=repo_type,
@@ -1991,7 +1991,7 @@ def upload_cell_captures(
     summaries_dir = out_dir / "summaries" / cell_id
     if summaries_dir.exists():
         path_in_repo = f"{SUMMARY_UPLOAD_PREFIX}/{cell_id}"
-        # HUB_DIR_FILECOUNT_EXEMPT: issue-1092 driver, production runs complete; uploaded dirs bounded well under 10k files by construction (post-run lint waiver)
+        # HUB_DIR_FILECOUNT_EXEMPT: issue-1092 driver; dirs bounded well under 10k files
         api.upload_folder(
             repo_id=repo_id,
             repo_type="dataset",
@@ -2007,7 +2007,7 @@ def upload_cell_captures(
     pool_files = list(pool_dir.glob(f"{cell_id}*.npy")) if pool_dir.exists() else []
     if pool_files:
         path_in_repo = f"{SUMMARY_UPLOAD_PREFIX}/b0_rB_pool"
-        # HUB_DIR_FILECOUNT_EXEMPT: issue-1092 driver, production runs complete; uploaded dirs bounded well under 10k files by construction (post-run lint waiver)
+        # HUB_DIR_FILECOUNT_EXEMPT: issue-1092 driver; dirs bounded well under 10k files
         api.upload_folder(
             repo_id=repo_id,
             repo_type="dataset",
@@ -2026,7 +2026,7 @@ def upload_cell_captures(
             comp_files = list(comp_dir.glob(f"{cell_id}_shard*.jsonl"))
             if comp_files:
                 path_in_repo = f"{RAW_COMPLETIONS_UPLOAD_PREFIX}/{model_type}"
-                # HUB_DIR_FILECOUNT_EXEMPT: issue-1092 driver, production runs complete; uploaded dirs bounded well under 10k files by construction (post-run lint waiver)
+                # HUB_DIR_FILECOUNT_EXEMPT: issue-1092 driver; dirs bounded well under 10k files
                 api.upload_folder(
                     repo_id=repo_id,
                     repo_type="dataset",
@@ -2060,7 +2060,7 @@ def upload_auxiliary_summaries(out_dir: Path, issue: int) -> None:
         if not any(aux_dir.glob("*.npy")):
             raise FileNotFoundError(f"auxiliary summary dir has no npy files: {aux_dir}")
         path_in_repo = f"{SUMMARY_UPLOAD_PREFIX}/{aux_dir.name}"
-        # HUB_DIR_FILECOUNT_EXEMPT: issue-1092 driver, production runs complete; uploaded dirs bounded well under 10k files by construction (post-run lint waiver)
+        # HUB_DIR_FILECOUNT_EXEMPT: issue-1092 driver; dirs bounded well under 10k files
         api.upload_folder(
             repo_id=HF_DATA_REPO,
             repo_type="dataset",

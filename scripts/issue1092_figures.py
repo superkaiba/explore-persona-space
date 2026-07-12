@@ -61,6 +61,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# #847: thread caps + .env must bind BEFORE the heavy imports below — the
+# BLAS/torch pools freeze at import time (tests/test_shared_vm_thread_caps.py).
+load_dotenv()
+
 import numpy as np  # noqa: E402
 from issue1092_fit_grid import (  # noqa: E402
     CELL_MODEL_TYPE,
@@ -2387,7 +2393,7 @@ def step_upload_nulls(args: argparse.Namespace) -> None:
 
     path_in_repo = f"{args.hf_prefix}/p7/analysis_tensors/nulls"
     api = HfApi()
-    # HUB_DIR_FILECOUNT_EXEMPT: issue-1092 driver, production runs complete; uploaded dirs bounded well under 10k files by construction (post-run lint waiver)
+    # HUB_DIR_FILECOUNT_EXEMPT: issue-1092 driver; dirs bounded well under 10k files
     api.upload_folder(
         folder_path=str(nulls_dir),
         repo_id=HF_DATA_REPO,
@@ -2398,7 +2404,7 @@ def step_upload_nulls(args: argparse.Namespace) -> None:
     )
     listed = {
         e.path.rsplit("/", 1)[1]
-        # HUB_VERIFY_RETRY_EXEMPT: issue-1092 driver, production runs complete; scoped listing with orchestration-layer retry/recovery (post-run lint waiver)
+        # HUB_VERIFY_RETRY_EXEMPT: issue-1092 driver; scoped listing with orchestration-layer retry
         for e in api.list_repo_tree(
             HF_DATA_REPO, repo_type="dataset", path_in_repo=path_in_repo, recursive=False
         )

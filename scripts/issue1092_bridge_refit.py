@@ -24,6 +24,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# #847: thread caps + .env must bind BEFORE the heavy imports below — the
+# BLAS/torch pools freeze at import time (tests/test_shared_vm_thread_caps.py).
+load_dotenv()
+
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 from issue813_rank_spectrum import (  # noqa: E402
@@ -55,7 +61,7 @@ def list_scoped(
     from huggingface_hub import HfApi
 
     api = HfApi()
-    # HUB_VERIFY_RETRY_EXEMPT: issue-1092 driver, production runs complete; scoped listing with orchestration-layer retry/recovery (post-run lint waiver)
+    # HUB_VERIFY_RETRY_EXEMPT: issue-1092 driver; scoped listing with orchestration-layer retry
     entries = api.list_repo_tree(
         repo_id=repo_id,
         repo_type=repo_type,
