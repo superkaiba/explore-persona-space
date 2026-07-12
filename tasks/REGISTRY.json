@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1276,
+  "highest_id": 1277,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2150,6 +2150,13 @@
       "path": "tasks/proposed/1276",
       "status": "proposed",
       "title": "workflow-fix: scope c25 arm-(a) exemption per fence"
+    },
+    "1277": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1277",
+      "status": "proposed",
+      "title": "workflow-fix: c4 escape via _standalone_na_declared"
     },
     "128": {
       "has_clean_result": false,
