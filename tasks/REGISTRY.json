@@ -2147,8 +2147,8 @@
     "1276": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1276",
-      "status": "reviewing",
+      "path": "tasks/completed/1276",
+      "status": "completed",
       "title": "workflow-fix: scope c25 arm-(a) exemption per fence"
     },
     "1277": {
