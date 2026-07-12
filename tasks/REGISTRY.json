@@ -2168,8 +2168,8 @@
     "1279": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1279",
-      "status": "reviewing",
+      "path": "tasks/completed/1279",
+      "status": "completed",
       "title": "workflow-fix: edit-time guard hook for LESSONS.md"
     },
     "128": {
@@ -2182,43 +2182,43 @@
     "1280": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1280",
-      "status": "planning",
+      "path": "tasks/completed/1280",
+      "status": "completed",
       "title": "workflow-fix: Step 10d Guard 1 three-dot foreign diff"
     },
     "1281": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1281",
-      "status": "planning",
+      "path": "tasks/completed/1281",
+      "status": "completed",
       "title": "workflow-fix: sweep park predicate misses mid-note parks"
     },
     "1282": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1282",
-      "status": "proposed",
+      "path": "tasks/completed/1282",
+      "status": "completed",
       "title": "workflow-fix: infra critic briefs cite lens heading verbatim"
     },
     "1283": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1283",
-      "status": "proposed",
+      "path": "tasks/completed/1283",
+      "status": "completed",
       "title": "workflow-fix: filer-side wf-fix title-prefix WARN"
     },
     "1284": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1284",
-      "status": "proposed",
+      "path": "tasks/running/1284",
+      "status": "running",
       "title": "daily-fix: issue1092 load_dotenv before heavy imports"
     },
     "1285": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1285",
-      "status": "proposed",
+      "path": "tasks/planning/1285",
+      "status": "planning",
       "title": "daily-fix: remove stale duplicate tasks/reviewing/1196"
     },
     "129": {
