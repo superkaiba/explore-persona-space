@@ -12,6 +12,11 @@ Guard-1 snapshot and the server-side merge (the #1128 incident class):
    foreign `tasks/` conflicts to it, and certifies the result via a
    `diff "$MAIN_SHA" HEAD -- 'tasks/'` before pushing.
 
+Task #1280 later scoped Guard 1's TRIGGER diff to the branch's own replayed
+commits (three-dot "$MAIN_SHA"...HEAD, with an empty-sha fail-loud
+pre-check); the recovery certification in (3) deliberately KEEPS the
+two-endpoint form (post-merge tree identity against the captured snapshot).
+
 REGION-SCOPED by design: Edits (1) and (3) deliberately share byte-identical
 strings (`MAIN_SHA=$(git -C "$WT" rev-parse origin/main)`, pinned checkouts),
 so whole-file substring asserts would cross-satisfy and miss the deletion of
@@ -124,8 +129,9 @@ def test_guard1_consumes_movable_ref_only_at_fetch_and_capture():
     assert 'git -C "$WT" fetch origin main --quiet' in guards, (
         "Guard 1 must fetch origin main fresh before capturing MAIN_SHA"
     )
-    assert "diff --name-only \"$MAIN_SHA\" HEAD -- 'tasks/'" in guards, (
-        "the Guard-1 trigger diff must run against the captured MAIN_SHA"
+    assert "diff --name-only \"$MAIN_SHA\"...HEAD -- 'tasks/'" in guards, (
+        "the Guard-1 trigger diff must run against the captured MAIN_SHA "
+        "(three-dot: the branch's own replayed commits, #1280)"
     )
     assert 'cat-file -e "$MAIN_SHA:$p"' in guards, (
         "the Guard-1 existence probe must run against the captured MAIN_SHA"
@@ -292,8 +298,14 @@ def test_step10d_path_list_producers_disable_quotepath():
             "> /tmp/issue-<N>-own-diff.txt",
             "P2",
         ),
-        # P3 — Guard 1's foreign-tasks trigger diff.
-        (guards, f'if ! git -C "$WT" {flag} diff --name-only "$MAIN_SHA" HEAD -- \'tasks/\'', "P3"),
+        # P3 — Guard 1's foreign-tasks trigger diff (three-dot own-commits
+        # form, #1280; the `if !` producer prefix moved to the empty-sha
+        # pre-check line, so the pin anchors the `|| !` continuation).
+        (
+            guards,
+            f'|| ! git -C "$WT" {flag} diff --name-only "$MAIN_SHA"...HEAD -- \'tasks/\'',
+            "P3",
+        ),
         # P4 — the recovery's conflicted-path producer.
         (
             recovery,
@@ -342,4 +354,39 @@ def test_guard1_bounded_refetch_repin_retry():
     assert term != -1, "the post-loop terminal disposition arm must exist"
     assert "\n     false\n   fi" in guards[term : term + 400], (
         "the post-loop terminal arm must end in a terminal false (do NOT merge)"
+    )
+
+
+def test_guard1_trigger_diff_scopes_to_own_commits_three_dot():
+    """#1280: Guard 1's trigger diff is the THREE-DOT form ("$MAIN_SHA"...HEAD
+    = merge-base..HEAD, the branch's own replayed commits). The two-endpoint
+    form read main-side advancement as foreign touches (33 false positives on
+    #1271, zero own tasks/ touches) and its strip STAGED main-advancement
+    content into a new branch commit whose server-side replay conflicts (the
+    #1128 shape). The empty-MAIN_SHA pre-check keeps the fused token
+    fail-LOUD (an empty sha collapses '...HEAD' to HEAD...HEAD = empty diff,
+    exit 0 — fail-open). The recovery certification DELIBERATELY stays
+    two-endpoint (post-merge tree identity against the captured snapshot —
+    a different invariant than Guard 1's)."""
+    text = _skill_text()
+    guards = _merge_guards_region(text)
+    recovery = _recovery_region(text)
+    assert "diff --name-only \"$MAIN_SHA\"...HEAD -- 'tasks/'" in guards, (
+        "the Guard-1 trigger diff must use the three-dot own-commits form"
+    )
+    assert 'diff --name-only "$MAIN_SHA" HEAD' not in guards, (
+        "the two-endpoint Guard-1 trigger form must be gone (#1271 false positives)"
+    )
+    assert 'if [ -z "$MAIN_SHA" ]' in guards, (
+        "the empty-MAIN_SHA pre-check must precede the fused three-dot token"
+    )
+    assert r"git diff \$MAIN_SHA...HEAD -- tasks/ FAILED" in guards, (
+        "the Guard-1 diff-failure echo must name the three-dot trigger form (#1280)"
+    )
+    assert _RECOVERY_CERT_DIFF in recovery, (
+        "the recovery certification stays two-endpoint (tree identity)"
+    )
+    assert 'Two-endpoint ("$MAIN_SHA" HEAD) DELIBERATELY' in recovery, (
+        "the recovery site must carry the comment distinguishing it from "
+        "Guard 1's three-dot trigger (#1280)"
     )

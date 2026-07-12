@@ -8724,9 +8724,20 @@ task at the wrong status, AND a branch based on another still-unmerged
 rebase-merged. Three guards:
 
 1. **Foreign-`tasks/` guard (strip whole foreign task folders before the
-   merge).** `git diff --name-only "$MAIN_SHA" HEAD -- tasks/` — against the
-   freshly captured `main` snapshot (`MAIN_SHA`, captured in the block
-   below) — MUST be empty except THIS task's own folder (`tasks/*/<N>/`).
+   merge).** `git diff --name-only "$MAIN_SHA"...HEAD -- tasks/` — the
+   THREE-DOT form: merge-base..HEAD, i.e. only paths the branch's OWN
+   replayed commits touch (#1280) — MUST be empty except THIS task's own
+   folder (`tasks/*/<N>/`). Main-side advancement since the merge-base is
+   BENIGN and must NOT trigger the strip: the `--rebase` merge replays only
+   the branch's commits, so files the branch never touched keep `main`'s
+   version. The retired two-endpoint endpoints (`"$MAIN_SHA" HEAD`) listed
+   every path the fleet's marker churn advanced on `main` since the fork
+   (#1271: 33 false positives on a branch whose replayed commits touched
+   ZERO `tasks/` paths), and stripping those stages main-advancement content
+   into a NEW branch commit whose server-side replay conflicts with main's
+   further advancement — creating the very #1128-shape conflict the strip
+   exists to prevent. The strip TARGET stays the freshly captured `main`
+   snapshot (`MAIN_SHA`, captured in the block below).
    For any FOREIGN `tasks/` path in that diff — a `tasks/*/<M>/…` file for
    `M != <N>`, whether `events.jsonl`, `comments.jsonl`, `body.md`, or any
    other file — reset it to that snapshot BEFORE merging so the server-side
@@ -8782,9 +8793,18 @@ rebase-merged. Three guards:
      git -C "$WT" fetch origin main --quiet \
        || echo "Guard 1 WARN: fetch origin main failed — stripping against last-fetched origin/main (conflict-prone; Known failure shape 2 is the recovery)"
      MAIN_SHA=$(git -C "$WT" rev-parse origin/main)
-     if ! git -C "$WT" -c core.quotePath=false diff --name-only "$MAIN_SHA" HEAD -- 'tasks/' \
+     # Three-dot (#1280): merge-base..HEAD = paths the branch's OWN replayed
+     # commits touch. Two-endpoint ("$MAIN_SHA" HEAD) read main-side
+     # advancement as foreign (33 false positives on #1271) and its strip
+     # staged main content into a new branch commit that CREATED the
+     # #1128-shape server-side conflict. The [ -z ] pre-check keeps an empty
+     # MAIN_SHA fail-LOUD: an empty sha collapses the fused token to
+     # '...HEAD' (= HEAD...HEAD, an EMPTY diff, exit 0 — silent fail-open),
+     # where the old quoted empty argument made git error out.
+     if [ -z "$MAIN_SHA" ] \
+        || ! git -C "$WT" -c core.quotePath=false diff --name-only "$MAIN_SHA"...HEAD -- 'tasks/' \
          > /tmp/issue-<N>-guard1-tasks-diff.txt; then
-       echo "Guard 1: git diff \$MAIN_SHA HEAD -- tasks/ FAILED (bad ref or empty MAIN_SHA) — cannot certify no foreign tasks/ paths; do NOT merge"
+       echo "Guard 1: git diff \$MAIN_SHA...HEAD -- tasks/ FAILED (bad ref or empty MAIN_SHA) — cannot certify no foreign tasks/ paths; do NOT merge"
        GUARD1_STATE=diff-failed
        break
      # Work arm: two-command elif list — mapfile fills FOREIGN from the FILE
@@ -8831,9 +8851,15 @@ rebase-merged. Three guards:
        # Un-stage AND restore the working tree for ONLY this attempt's paths
        # so the retry re-splits clean (never a bare `reset -- tasks/`, which
        # could touch own-task staged state). checkout HEAD restores index AND
-       # working tree, so a path that DROPS OUT of attempt-2's FOREIGN (main
-       # caught up to the branch for it) leaves no uncommitted foreign litter
-       # behind — litter a later shape-1 worktree merge could refuse on.
+       # working tree. Under the three-dot trigger (#1280) FOREIGN itself is
+       # fork-point-stable into attempt 2 on a RESTORED attempt — the
+       # pre-commit-failure case this arm handles: a fresh fetch moves the
+       # pin, not the merge-base, and this restore leaves HEAD unchanged —
+       # what refreshes on attempt 2 is the SPLIT (a fresh MAIN_SHA can
+       # re-class a path on-main vs branch-only when main moves the folder)
+       # and the strip TARGET content, so the restore must still leave no
+       # uncommitted foreign litter behind — litter a later shape-1 worktree
+       # merge could refuse on.
        git -C "$WT" checkout HEAD -- "${FOREIGN[@]}"
      else
        GUARD1_STATE=ok   # no foreign tasks/ paths — nothing to strip
@@ -8855,10 +8881,15 @@ rebase-merged. Three guards:
    `main` silently. So when `STRIPPED_FOREIGN=yes`, the safe-case block below
    MUST push the strip commit to the PR head ref BEFORE calling `gh pr merge`.
 
-   This is idempotent (a re-run finds `FOREIGN` empty and no-ops; a FAILED
-   trigger diff fails loud (echo + `false`) instead of reading as
-   no-foreign-files, leaving `STRIPPED_FOREIGN=no` while the block exits
-   non-zero (#1184)) and never
+   This is idempotent at the commit gate (#1280): after a successful strip a
+   re-run's three-dot diff can still list an on-main foreign path (HEAD holds
+   the OLD pin's content, which differs from the merge-base) — the re-run
+   re-checkouts the FRESH snapshot and the `diff --cached --quiet` gate skips
+   the commit when main has not advanced, or refreshes the strip to the newer
+   pin when it has; branch-ADDED foreign paths drop out of the diff entirely
+   once rm-ed. A FAILED trigger diff fails loud (echo + `false`) instead of
+   reading as no-foreign-files, leaving `STRIPPED_FOREIGN=no` while the block
+   exits non-zero (#1184), and the guard never
    touches THIS task's own `tasks/*/<N>/` folder (the `grep -Ev
    "^tasks/[^/]+/<N>/"` carve-out). Never let a behind-`main` branch revert
    another task's `events.jsonl` / `comments.jsonl`. (Incident 2026-06-01:
@@ -9891,6 +9922,13 @@ git -C "$WT" commit --no-edit
 # certification passed VACUOUSLY (fail-OPEN into the push). Here a
 # failed producer takes the terminal arm and the residual check is
 # structurally unreachable:
+# Two-endpoint ("$MAIN_SHA" HEAD) DELIBERATELY, not Guard 1's three-dot
+# (#1280): this certifies TREE IDENTITY against the captured snapshot AFTER
+# the merge brought MAIN_SHA's content in — both endpoints fixed, so
+# main-side advancement cannot false-positive here, and the form stays
+# correct even when the merge produced no commit. Guard 1's PRE-merge
+# trigger is the site where two-endpoint misread main advancement as
+# foreign touches.
 if ! git -C "$WT" -c core.quotePath=false diff --name-only "$MAIN_SHA" HEAD -- 'tasks/' \
     > /tmp/issue-<N>-recovery-tasks-verify.txt; then
   echo "recovery: tasks/ verification diff FAILED — do NOT push"
