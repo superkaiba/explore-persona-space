@@ -208,6 +208,9 @@ Run the structural verifier against the plan version just persisted:
   `N/A — no behavioral construct`
   (check 2), `N/A — no model training` / `N/A — no training hyperparameters` (check 1),
   `N/A — not a replication` (check 7), `N/A — no artifact reuse` (check 6),
+  `N/A — not a behavior-implantation` (check 4 — the implant/marker vocabulary hit is
+  incidental or quotes a sibling's design, not this plan's own implantation; a genuine
+  implantation plan instead names its contrastive-negative set or a named exemption),
   `N/A — no dry-run smoke` (check 11 — kind: infra|batch plans where a `--dry-run`
   mention is incidental, not the plan's own acceptance smoke), `N/A — no draw battery`
   (check 12), `N/A — no empirical-null gate` (check 13),

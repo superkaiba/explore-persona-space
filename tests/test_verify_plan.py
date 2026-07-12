@@ -525,11 +525,40 @@ def test_c4_named_exemption_passes():
     assert _status(plan, "c4_contrastive_negatives") == "PASS"
 
 
-def test_c4_na_line_passes():
+def test_c4_standalone_na_line_passes():
+    # Standalone-line escape (the mid-line form was the self-escape shape —
+    # repurposed into test_c4_midprose_phrase_does_not_escape below).
+    plan = (
+        GOOD_PLAN
+        + "\nThe word implant appears in a quoted sibling methodology.\n"
+        + "\nN/A — not a behavior-implantation (the implant vocabulary is incidental).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c4_contrastive_negatives"]
+    assert r.status == "PASS"
+    assert "on its own line, unwrapped" in r.detail
+
+
+def test_c4_midprose_phrase_does_not_escape():
+    # #1277 red-pin (c4 twin of #1262's c7 pin): the phrase mid-prose (the
+    # #810 structure, one polarity over) must not escape c4.
+    # Pre-fix: doc-global re.search -> PASS. This is the former
+    # test_c4_na_line_passes fixture, polarity flipped.
     plan = (
         GOOD_PLAN + "\nThe word implant appears but this is not a behavior-implantation design.\n"
     )
-    assert _status(plan, "c4_contrastive_negatives") == "PASS"
+    assert _status(plan, "c4_contrastive_negatives") == "WARN"
+
+
+def test_c4_backtick_wrapped_escape_does_not_escape():
+    # Mirror of test_c7_backtick_wrapped_escape_does_not_escape: the pasted
+    # bounce-brief bullet shape must not escape.
+    plan = (
+        GOOD_PLAN
+        + "\nWe implant a refusal behavior into the source persona.\n"
+        + "- `N/A — not a behavior-implantation` (declare per the bounce brief).\n"
+    )
+    assert _status(plan, "c4_contrastive_negatives") == "WARN"
 
 
 def test_c4_kind_infra_skips():
@@ -1273,7 +1302,7 @@ def test_skillmd_canonical_escape_block_never_self_escapes():
     # not literally `plan` (or that uses r'...' quoting) is silently
     # uncovered by this pin while the floor stays green; the floor catches
     # shrinkage, not omission.
-    assert len(tails) >= 22, tails  # extraction guard: 22 plan-arg call sites at pin time (#1262)
+    assert len(tails) >= 23, tails  # extraction guard: 23 plan-arg call sites (#1262; c4 #1277)
     text = (REPO_ROOT / ".claude/skills/adversarial-planner/SKILL.md").read_text()
     for tail in tails:
         assert not verify_plan._standalone_na_declared(text, tail), tail
@@ -1315,11 +1344,11 @@ def test_skillmd_canonical_escapes_sync_with_docstring():
     doc = verify_plan.__doc__
     section = doc[doc.index("Canonical N/A escape phrases") : doc.index("WARN semantics")]
     phrases = re.findall(r"``((?:N/A —|Durability pin: N/A)[^`]+?)``", section)
-    # Extraction guard (never-self-escapes precedent, :1232): 28 phrases at
+    # Extraction guard (never-self-escapes precedent, :1232): 29 phrases at
     # pin time. A shrinking count means the docstring format drifted and the
     # parser silently under-covers — fix the regex; never lower this floor
     # except for a deliberate check retirement (state which check).
-    assert len(phrases) >= 28, (len(phrases), phrases)
+    assert len(phrases) >= 29, (len(phrases), phrases)  # c4 registered (#1277)
     # Code->docstring leg: every `_standalone_na_declared` call-site tail must
     # match somewhere in the docstring section, so a new check's recognizer
     # cannot land unregistered (the SKILL.md asserts below then propagate the
@@ -1361,7 +1390,7 @@ def test_own_line_remedies_carry_unwrapped_clarifier():
         else:
             offenders.append((node.lineno, node.value[:90]))
     assert not offenders, f"own-line remedies missing the unwrapped clarifier: {offenders}"
-    # 19 sites (#1263) + the c34 exemplar + c7's remedy/pass-detail (#1262 merge) = 22 live
+    # 19 sites (#1263) + c34 exemplar + c7's remedy/pass-detail (#1262) + c4's (#1277) = 24 live
     assert clarified >= 20
 
 
