@@ -225,8 +225,10 @@ Run the structural verifier against the plan version just persisted:
   `N/A — entities are content, not commands` (check 25 — the fenced entity
   forms are deliberately discussed content, e.g. a plan about entity
   handling, not a command to dispatch; exempts shell-tagged content fences
-  ONLY — a `--workload-cmd`/`dispatch_issue.py` fence FAILs on entities
-  unconditionally),
+  ONLY, and only when exactly ONE such fence carries entity hits — with
+  several content fences, re-tag them to a non-shell info string (e.g.
+  text) instead of shell-tagging them; a `--workload-cmd`/`dispatch_issue.py`
+  fence FAILs on entities unconditionally),
   `N/A — basis measured on the routed machine` (check 26 — every §9
   compute-table basis cell is measured on the GPU family the plan's resolved
   intent actually routes to under auto, so no cross-GPU conversion is owed; a
