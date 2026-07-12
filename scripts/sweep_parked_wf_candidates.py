@@ -4,7 +4,11 @@ Scans every ``tasks/*/*/events.jsonl`` (ALL statuses — both evidence parks liv
 on terminal tasks: #1100 completed, #1101 archived) plus the outside-task
 fallback stream ``.claude/cache/workflow-fix-events.jsonl`` for
 ``epm:workflow-fix-candidate`` rows whose note/``routed`` field marks them
-PARKED (the recursion-guard escape valve,
+PARKED — a leading ``parked``, a ``routed:``/``Routing:`` ``parked`` token, a
+bare ``parked: architectural``/``parked: EPM_WORKFLOW_FIX_SESSION``
+routing-decision token, or a mid-note ``parked <punct> ... recursion guard``
+declaration (#1281); casual "parked" mentions do not count — (the
+recursion-guard escape valve,
 ``.claude/rules/workflow-fix-on-bug.md`` § Recursion guard), and prints ONE
 JSON object to stdout listing the candidates no later routed-record has
 closed. The /daily "Parked workflow-fix-candidate routing pass (Step C)"
@@ -103,6 +107,31 @@ TERMINAL_STATUSES = ("completed", "archived")
 
 _PARKED_LEAD_RE = re.compile(r"\s*parked\b", re.IGNORECASE)
 _PARKED_ROUTED_RE = re.compile(r"routed:\s*parked\b", re.IGNORECASE)
+# Mid-note park DECLARATIONS (#1281): a genuine park announced after other
+# prose (the 2026-07-11 miss — #1271's note opens with a root-sync record and
+# declares 'Routing: parked — ... recursion guard' only at the end). Three
+# grounded shapes:
+#   1. the /issue SKILL.md 'Routing: parked ...' breadcrumb (#1271, #1166);
+#   2. the bare routing-decision tokens 'parked: architectural' /
+#      'parked: EPM_WORKFLOW_FIX_SESSION' (workflow-fix-on-bug.md § "What the
+#      orchestrator does" step 4 vocabulary);
+#   3. 'parked <decl-punct> ... recursion guard' (the #941/#988/#1233/#710
+#      family) — declaration punctuation (em-dash / -- / '- ' / ':') AND the
+#      recursion-guard co-mention are the two discriminators that keep casual
+#      mentions ('stopped-on-parked-task', 'nothing parked here', 'not parked
+#      under the recursion guard') out. The single hyphen is admitted ONLY
+#      when followed by whitespace, so compounds ('stopped-on-parked-task')
+#      can never match. Window note: the 160-char [^\n] window is same-line,
+#      but arm 3's `\s*`/`-\s` can consume newline(s) (e.g. 'parked —\n...
+#      recursion guard'), so the declaration is not STRICTLY same-line —
+#      accepted: genuine park shapes gain, and the casual negatives carry no
+#      declaration punctuation at all.
+_PARKED_MIDNOTE_RE = re.compile(
+    r"\brouting:\s*parked\b"
+    r"|\bparked:\s*(?:architectural|EPM_WORKFLOW_FIX_SESSION)\b"
+    r"|\bparked\s*(?:—|--|-\s|:)[^\n]{0,160}\brecursion guard\b",
+    re.IGNORECASE,
+)
 _ARCHITECTURAL_RE = re.compile(r"parked:\s*architectural", re.IGNORECASE)
 _BLOCK_RE = re.compile(
     r"<!--\s*workflow-fix-candidate v1\s*-->(.*?)<!--\s*/workflow-fix-candidate\s*-->",
@@ -193,9 +222,20 @@ def _row_kind(row: dict) -> str:
 
 
 def _row_is_parked(row: dict) -> bool:
-    """Parked-ness from EITHER surface: the note text or a structured 'routed' field."""
+    """Parked-ness from EITHER surface: the note text or a structured 'routed' field.
+
+    Accept paths: a LEADING 'parked' note; 'routed: parked' anywhere; a
+    mid-note park DECLARATION (_PARKED_MIDNOTE_RE — 'Routing: parked', the
+    bare 'parked: architectural|EPM_WORKFLOW_FIX_SESSION' tokens, or
+    'parked <punct> ... recursion guard'; #1281); or a structured 'routed'
+    field containing 'parked'. Casual mid-note mentions do not count.
+    """
     note = str(row.get("note") or "")
-    if _PARKED_LEAD_RE.match(note) or _PARKED_ROUTED_RE.search(note):
+    if (
+        _PARKED_LEAD_RE.match(note)
+        or _PARKED_ROUTED_RE.search(note)
+        or _PARKED_MIDNOTE_RE.search(note)
+    ):
         return True
     routed = row.get("routed")
     return isinstance(routed, str) and "parked" in routed.lower()
