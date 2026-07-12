@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1277,
+  "highest_id": 1278,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2157,6 +2157,13 @@
       "path": "tasks/proposed/1277",
       "status": "proposed",
       "title": "workflow-fix: c4 escape via _standalone_na_declared"
+    },
+    "1278": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1278",
+      "status": "proposed",
+      "title": "workflow-fix: consolidate _stub_fleet_mutating_passes"
     },
     "128": {
       "has_clean_result": false,
