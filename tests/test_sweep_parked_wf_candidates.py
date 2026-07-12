@@ -768,3 +768,110 @@ def test_cache_park_not_closed_by_task_stream_record_at_matching_origin_ts(
     c = only(run_sweep(root, cache))
     assert c["source"] == "cache"
     assert c["suppressed"] is False
+
+
+# ── 19. #1281: mid-note park DECLARATIONS are enumerated ────────────────────
+#
+# Byte-verbatim fixture row: _RAW_1271_CAND is the EXACT JSONL line 21 of the
+# live tasks/completed/1271/events.jsonl (marker `epm:workflow-fix-candidate`,
+# ts 2026-07-11T18:39:16Z) — a root-sync recovery record whose note opens with
+# unrelated prose, embeds the formal block mid-note, and declares
+# 'Routing: parked — … recursion guard …' only at the END. Pre-#1281 it matched
+# none of the three accept paths (_PARKED_LEAD_RE.match fails on the prose
+# prefix; no 'routed: parked'; no structured routed field), so the 2026-07-11
+# /daily Step C run silently skipped it (recovered only via the transcript
+# miner, routed as #1280).
+
+_RAW_1271_CAND = r"""{"ts": "2026-07-11T18:39:16Z", "kind": "epm:workflow-fix-candidate", "version": 1, "by": "unknown", "note": "Root-sync recovery record (post-merge): the local root was 29 ahead / 4 behind with a genuine content conflict; sync_repo_root aborted cleanly. Resolved per its prescription: sparse scratch worktree detached at origin/main, `merge main` there, conflicts on tasks/1272 (concurrently moved on both sides; origin/main had transiently LOST 1272 entirely) + a 1274 plan-symlink rename mispair resolved to the local registry-canonical state (completed/1272, reviewing/1274, completed/1271), merge f56a2f93f9 pushed HEAD:main, local root fast-forwarded. Post-merge stale-task-folder guard re-run: CLEAN (exactly one folder per task on origin/main).\n\n<!-- workflow-fix-candidate v1 -->\ntarget_file: .claude/skills/issue/SKILL.md\nbug_observed: Step 10d Guard 1 computes FOREIGN from the two-endpoint diff `git diff MAIN_SHA HEAD -- tasks/`, which on ANY behind branch under fleet marker churn lists main-side advancement (33 false-positive paths on #1271, whose replayed commit set touched ZERO tasks/ paths); following the prescribed checkout+strip-commit there would stage main-advancement content into a new branch commit whose server-side replay CONFLICTS (the #1128 shape) — the strip would create the very conflict it exists to prevent.\nwhy_workflow_gap: the guard's diff form conflates \"branch carries foreign tasks/ changes in its replayed commits\" (the real hazard) with \"main advanced since the merge-base\" (benign; rebase keeps main's version of untouched files).\nproposed_change: scope Guard 1's FOREIGN set to the branch's OWN commits — three-dot `git diff --name-only origin/main...HEAD -- tasks/` (or per-commit `git show` over `origin/main..HEAD`) — so the strip fires only when a replayed commit actually touches a foreign tasks/ path; keep the reset-to-MAIN_SHA recipe for that genuine case.\ndiff_sketch: |\n  - if ! git -C \"$WT\" diff --name-only \"$MAIN_SHA\" HEAD -- 'tasks/' \\\n  + if ! git -C \"$WT\" diff --name-only \"$MAIN_SHA\"...HEAD -- 'tasks/' \\\n      > /tmp/issue-<N>-guard1-tasks-diff.txt; then\n  (three-dot: merge-base..HEAD = the replayed set; two-endpoint form retired)\nconfidence: high\nrelated_task: #1271\n<!-- /workflow-fix-candidate -->\n\nRouting: parked — running under workflow_fix_target recursion guard (see .claude/rules/workflow-fix-on-bug.md § Recursion guard); the nightly /daily parked-candidate sweep routes it.\n"}"""  # noqa: E501
+# The embedded block's bug_observed / proposed_change values, verbatim:
+_1271_BUG = "Step 10d Guard 1 computes FOREIGN from the two-endpoint diff `git diff MAIN_SHA HEAD -- tasks/`, which on ANY behind branch under fleet marker churn lists main-side advancement (33 false-positive paths on #1271, whose replayed commit set touched ZERO tasks/ paths); following the prescribed checkout+strip-commit there would stage main-advancement content into a new branch commit whose server-side replay CONFLICTS (the #1128 shape) — the strip would create the very conflict it exists to prevent."  # noqa: E501
+_1271_CHANGE = "scope Guard 1's FOREIGN set to the branch's OWN commits — three-dot `git diff --name-only origin/main...HEAD -- tasks/` (or per-commit `git show` over `origin/main..HEAD`) — so the strip fires only when a replayed commit actually touches a foreign tasks/ path; keep the reset-to-MAIN_SHA recipe for that genuine case."  # noqa: E501
+
+
+def test_issue1271_midnote_routing_parked_after_prose_enumerated(tmp_path: Path) -> None:
+    """#1281 red-green + durability pin: the byte-verbatim #1271 note (prose
+    prefix + embedded formal block + trailing 'Routing: parked — … recursion
+    guard') is enumerated with block-computed fields."""
+    # round-trip guard: the embedded fixture line is a single valid JSON row
+    assert json.loads(_RAW_1271_CAND)["ts"] == "2026-07-11T18:39:16Z"
+    make_task(tmp_path, 1271, "completed", raw_event_lines=[_RAW_1271_CAND])
+    c = only(run_sweep(tmp_path))
+    assert c["source"] == "task:1271"
+    assert c["formal_block"] is True
+    assert c["target_file"] == ".claude/skills/issue/SKILL.md"
+    assert c["fingerprint"] == wf_fix_fingerprint(_1271_CHANGE, _1271_BUG)
+    assert c["park_form"] == "recursion-guard"
+    assert c["suppressed"] is False
+
+
+def test_midnote_park_after_formal_block_enumerated(tmp_path: Path) -> None:
+    """Arm 3 (the #941/#988/#1233 family): the park declared AFTER the formal
+    block — the note STARTS with the block, so _PARKED_LEAD_RE fails."""
+    bug, change = "bug 1281-a.", "change 1281-a."
+    note = (
+        "<!-- workflow-fix-candidate v1 -->\n"
+        "target_file: .claude/agents/critic.md\n"
+        f"bug_observed: {bug}\n"
+        "why_workflow_gap: the workflow surface lacks the guardrail\n"
+        f"proposed_change: {change}\n"
+        "confidence: low\n"
+        "related_task: #999\n"
+        "<!-- /workflow-fix-candidate -->\n\n"
+        "parked — running under EPM_WORKFLOW_FIX_SESSION / workflow_fix_target, "
+        "see workflow-fix-on-bug.md § Recursion guard.\n"
+    )
+    make_task(tmp_path, 26, "running", events=[cand_row(T0, note)])
+    c = only(run_sweep(tmp_path))
+    assert c["formal_block"] is True
+    assert c["fingerprint"] == wf_fix_fingerprint(change, bug)
+    assert c["park_form"] == "recursion-guard"
+
+
+def test_architectural_midnote_park_enumerated_and_classified(tmp_path: Path) -> None:
+    """Arm 2 (`parked: architectural`) + _park_form coherence: a mid-note
+    architectural park classifies correctly the moment the gate admits it."""
+    note = (
+        "Prose prefix: routing decision recorded after triage.\n\n"
+        "parked: architectural — needs user greenlight (plan-approval gate). "
+        "target_file: .claude/workflow.yaml"
+    )
+    make_task(tmp_path, 27, "running", events=[cand_row(T0, note)])
+    c = only(run_sweep(tmp_path))
+    assert c["park_form"] == "architectural"
+    assert c["target_file"] == ".claude/workflow.yaml"
+
+
+def test_midnote_parked_efs_token_enumerated(tmp_path: Path) -> None:
+    """Arm 2, second token (`parked: EPM_WORKFLOW_FIX_SESSION`) — isolated from
+    arm 3 (no 'recursion guard' co-mention) and arm 1 (no 'Routing: parked')."""
+    note = (
+        "Prose prefix: routing decision recorded after triage.\n\n"
+        "parked: EPM_WORKFLOW_FIX_SESSION (this session is a workflow-fix session). "
+        "target_file: scripts/codex_task.py"
+    )
+    make_task(tmp_path, 28, "running", events=[cand_row(T0, note)])
+    c = only(run_sweep(tmp_path))
+    assert c["target_file"] == "scripts/codex_task.py"
+    assert c["fingerprint"] is None
+    assert c["formal_block"] is False
+    assert c["park_form"] == "recursion-guard"
+    assert c["suppressed"] is False
+
+
+def test_casual_parked_negation_near_recursion_guard_not_enumerated(tmp_path: Path) -> None:
+    """The sketch-discriminating negative (#1281 plan §4.2): 'was not parked
+    under the recursion guard' carries no declaration punctuation after
+    'parked' — the task-body sketch regex would false-positive here."""
+    make_task(
+        tmp_path,
+        15,
+        "running",
+        events=[
+            cand_row(
+                T0,
+                "routed: filed #1290 — this candidate was not parked under "
+                "the recursion guard; filed directly",
+            ),
+        ],
+    )
+    assert run_sweep(tmp_path, include_routed=True)["candidates"] == []
