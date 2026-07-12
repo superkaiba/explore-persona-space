@@ -2161,8 +2161,8 @@
     "1278": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1278",
-      "status": "approved",
+      "path": "tasks/running/1278",
+      "status": "running",
       "title": "workflow-fix: consolidate _stub_fleet_mutating_passes"
     },
     "1279": {
