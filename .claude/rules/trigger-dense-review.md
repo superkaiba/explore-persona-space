@@ -121,4 +121,6 @@ return text wedged the parent orchestrator — discipline 4). Enforcing pointers
 `.claude/agents/code-reviewer.md` § Context budget (READ FIRST);
 `.claude/agents/reconciler.md` § Rules (Rule 11);
 `.claude/skills/issue/SKILL.md` Step 5a (orchestrator-side excerpt-file
-pre-materialization).
+pre-materialization);
+`.claude/skills/issue/SKILL.md` § File-only Codex verdict posting
+(orchestrator-side posting path, #1275).
