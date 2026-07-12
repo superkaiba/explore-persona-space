@@ -2154,8 +2154,8 @@
     "1277": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1277",
-      "status": "running",
+      "path": "tasks/reviewing/1277",
+      "status": "reviewing",
       "title": "workflow-fix: c4 escape via _standalone_na_declared"
     },
     "1278": {
