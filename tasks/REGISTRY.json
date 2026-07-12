@@ -2140,15 +2140,15 @@
     "1275": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1275",
-      "status": "running",
+      "path": "tasks/completed/1275",
+      "status": "completed",
       "title": "workflow-fix: post codex verdict from file, no body paging"
     },
     "1276": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1276",
-      "status": "running",
+      "path": "tasks/completed/1276",
+      "status": "completed",
       "title": "workflow-fix: scope c25 arm-(a) exemption per fence"
     },
     "1277": {
@@ -2161,15 +2161,15 @@
     "1278": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1278",
-      "status": "running",
+      "path": "tasks/completed/1278",
+      "status": "completed",
       "title": "workflow-fix: consolidate _stub_fleet_mutating_passes"
     },
     "1279": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1279",
-      "status": "running",
+      "path": "tasks/reviewing/1279",
+      "status": "reviewing",
       "title": "workflow-fix: edit-time guard hook for LESSONS.md"
     },
     "128": {
@@ -2182,15 +2182,15 @@
     "1280": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1280",
-      "status": "proposed",
+      "path": "tasks/planning/1280",
+      "status": "planning",
       "title": "workflow-fix: Step 10d Guard 1 three-dot foreign diff"
     },
     "1281": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1281",
-      "status": "proposed",
+      "path": "tasks/planning/1281",
+      "status": "planning",
       "title": "workflow-fix: sweep park predicate misses mid-note parks"
     },
     "1282": {
