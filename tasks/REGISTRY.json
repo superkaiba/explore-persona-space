@@ -2189,8 +2189,8 @@
     "1281": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1281",
-      "status": "reviewing",
+      "path": "tasks/completed/1281",
+      "status": "completed",
       "title": "workflow-fix: sweep park predicate misses mid-note parks"
     },
     "1282": {
