@@ -2203,8 +2203,8 @@
     "1283": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1283",
-      "status": "reviewing",
+      "path": "tasks/completed/1283",
+      "status": "completed",
       "title": "workflow-fix: filer-side wf-fix title-prefix WARN"
     },
     "1284": {
