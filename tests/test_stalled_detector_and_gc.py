@@ -27,6 +27,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.conftest import _stub_fleet_mutating_passes
+
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
@@ -45,35 +47,8 @@ from autonomous_session_watch import (  # noqa: E402
 # The #1247 hermeticity guards (`_forbid_real_marker_posts`,
 # `_forbid_real_task_status_reads`) are now shared autouse fixtures in
 # tests/conftest.py (task #1265) — they apply here automatically.
-
-
-def _stub_fleet_mutating_passes(asw, monkeypatch):
-    """#1247 hermeticity for FULL-main() tests — mirror of the same-name
-    helper in ``tests/test_autonomous_session_watch.py`` (per-file helper
-    convention, like ``isolated_registry``): main() runs passes that scan the
-    LIVE repo and can REALLY mutate fleet state from a unit test.
-    ``proposed_infra_sweep_pass`` + ``capacity_retry_pass`` DISPATCH real
-    ``spawn-issue --auto`` sessions via the live Happy daemon,
-    ``program_orchestrator_pass`` can relaunch the real #660 tmux daemon, the
-    escalate-only observer passes scan live VM state (REGISTRY tasks +
-    events.jsonl, /proc + the earlyoom journal, the Happy daemon bundle,
-    statvfs) and can write real ``.claude/cache/`` sidecar rows + Telegram
-    pushes, and ``vm_ledger_reap_pass`` mutates the live
-    ``~/.task-workflow/vm-ledger.json``. Call this helper BEFORE any
-    test-local recorder so the recorder (a later monkeypatch) wins."""
-    for pass_name in (
-        "proposed_infra_sweep_pass",
-        "capacity_retry_pass",
-        "program_orchestrator_pass",
-        "verdict_disagree_pass",
-        "cpu_guard_pass",
-        "happy_patch_pass",
-        "data_disk_pass",
-        "gate_push_pass",
-        "gc_pass",
-        "vm_ledger_reap_pass",
-    ):
-        monkeypatch.setattr(asw, pass_name, lambda *a, **kw: None)
+# The `_stub_fleet_mutating_passes` helper this file calls is likewise the
+# shared conftest copy as of task #1278 (imported above).
 
 
 # ─── decide_session_stalled — pure decision matrix ────────────────────────────

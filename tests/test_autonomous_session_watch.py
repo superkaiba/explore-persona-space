@@ -20,6 +20,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.conftest import _FLEET_MUTATING_PASS_NAMES, _stub_fleet_mutating_passes
+
 # scripts/ holds autonomous_session_watch.py (and its spawn_session import).
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 if str(SCRIPTS) not in sys.path:
@@ -1676,46 +1678,67 @@ def test_pod_safety_pass_failed_snapshot_does_not_gc_state(isolated_registry, mo
 # ── daemon-reachability gates ONLY the respawn pass ──────────────────────────
 
 
-def _stub_fleet_mutating_passes(asw, monkeypatch):
-    """#1247 hermeticity for FULL-main() tests: main() runs passes that scan
-    the LIVE repo and can REALLY mutate fleet state from a unit test —
-    ``proposed_infra_sweep_pass`` + ``capacity_retry_pass`` DISPATCH real
-    ``spawn-issue --auto`` sessions via the live Happy daemon (observed
-    2026-07-10: a suite run of test_main_daemon_reachable_runs_both_passes
-    spawned a REAL session for proposed task #1227), and
-    ``program_orchestrator_pass`` (daemon-INDEPENDENT) can relaunch the real
-    #660 tmux daemon. Round 2 (closing the
-    test-hermeticity-residual-observer-passes concern) additionally stubs the
-    escalate-only OBSERVER passes: they scan LIVE VM state (REGISTRY tasks +
-    events.jsonl via task_workflow, /proc + the earlyoom journal, the Happy
-    daemon bundle, statvfs on /mnt/eps-data) and can write REAL sidecar rows
-    under ``.claude/cache/`` + fire real Telegram pushes from a unit test —
-    plus ``vm_ledger_reap_pass``, which MUTATES the live
-    ``~/.task-workflow/vm-ledger.json`` (same live-VM-state class). Every test
-    that drives the full main() pass sequence calls this helper; a test that
-    asserts on one of these passes re-patches its own recorder AFTER the
-    helper call (a later monkeypatch wins — so call the helper before any
-    recorder you need to keep), and a test OF one of these passes stubs its
-    own seams instead and does not call this helper."""
-    for pass_name in (
-        # Fleet-MUTATING sweep passes (round 1).
-        "proposed_infra_sweep_pass",
-        "capacity_retry_pass",
-        "program_orchestrator_pass",
-        # #1267: the boot-death pass can STOP a real session (same
-        # fleet-mutating class); its own tests stub its seams instead.
-        "boot_death_pass",
-        # Escalate-only observer passes against live VM state (round 2).
-        "verdict_disagree_pass",
-        "cpu_guard_pass",
-        "happy_patch_pass",
-        "data_disk_pass",
-        "gate_push_pass",
-        "gc_pass",
-        # Live ~/.task-workflow/vm-ledger.json reap (round 2).
-        "vm_ledger_reap_pass",
-    ):
-        monkeypatch.setattr(asw, pass_name, lambda *a, **kw: None)
+def test_stub_fleet_mutating_passes_covers_main_pass_roster():
+    """Drift guard for the shared #1247 stub helper (task #1278): every
+    ``*_pass(`` invocation in main() must be classified — either stubbed by
+    ``_stub_fleet_mutating_passes`` (tests/conftest.py) or named in the
+    benign/per-test set below. #1267 added boot_death_pass to main() and
+    only one of the two pre-consolidation helper copies picked it up; with
+    a single shared copy, this is the one remaining silent-drift channel.
+    A NEW pass added to main() fails here until its author classifies it."""
+    import inspect
+    import re
+
+    import autonomous_session_watch as asw
+
+    invoked = set(re.findall(r"\b([a-z_]+_pass)\(", inspect.getsource(asw.main)))
+    # Passes main() runs that the full-main() tests handle per-test
+    # (recorders / per-test stubs, e.g. triage_observer_pass #967,
+    # stale_blocked_flag_pass #1021) or that are safe against the test
+    # fixtures (isolated_registry + the patched daemon/live-ids seams).
+    # Classification inherited from the pre-#1278 helper call sites.
+    benign_or_per_test = {
+        "vm_disk_pass",
+        "triage_observer_pass",
+        "auth_outage_pass",
+        "campaign_pass",
+        "pod_safety_pass",
+        "stalled_session_pass",
+        "orphan_sweep_pass",
+        "infra_drain_pass",
+        "stale_blocked_flag_pass",
+        "session_reconcile_pass",
+        "stale_registration_pass",
+        "zombie_wrapper_pass",
+        "idle_unmapped_pass",
+    }
+    unclassified = invoked - set(_FLEET_MUTATING_PASS_NAMES) - benign_or_per_test
+    assert not unclassified, (
+        f"main() invokes unclassified pass(es) {sorted(unclassified)} — add each to "
+        "_FLEET_MUTATING_PASS_NAMES (tests/conftest.py) if it can mutate fleet / live "
+        "VM state, else to benign_or_per_test here (the #1267 boot_death_pass gap)."
+    )
+    # Guard-hollowing direction: if a refactor moves the fleet-mutating passes
+    # out of main()'s direct body (a decomposition into sub-dispatchers), the
+    # regex-derived `invoked` set shrinks and `unclassified` stays empty — the
+    # guard above would pass while covering nothing. Fail LOUD instead.
+    missing_stubbed = set(_FLEET_MUTATING_PASS_NAMES) - invoked
+    assert not missing_stubbed, (
+        f"stubbed pass(es) {sorted(missing_stubbed)} are no longer invoked directly in "
+        "main()'s source — a main() decomposition refactor hollows this drift guard. "
+        "Point the regex at the new dispatch body (or prune retired names from "
+        "_FLEET_MUTATING_PASS_NAMES in tests/conftest.py)."
+    )
+    # Symmetric stale-name check for the allowlist (same fail-loud direction).
+    stale_allowlisted = benign_or_per_test - invoked
+    assert not stale_allowlisted, (
+        f"allowlisted pass(es) {sorted(stale_allowlisted)} are no longer invoked in "
+        "main() — prune them from benign_or_per_test so the classification stays honest."
+    )
+    # Stale-name direction: every stubbed name must still exist on the module
+    # (monkeypatch.setattr raising=True also enforces this at every call site).
+    for name in _FLEET_MUTATING_PASS_NAMES:
+        assert callable(getattr(asw, name)), name
 
 
 def test_main_daemon_unreachable_still_runs_pod_safety(isolated_registry, monkeypatch):
