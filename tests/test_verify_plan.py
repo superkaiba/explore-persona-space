@@ -4150,6 +4150,99 @@ def test_c25_cli_fail_exit_one(tmp_path):
     assert c25["status"] == "FAIL"
 
 
+def test_c25_two_entity_fences_one_declaration_fails_naming_count():
+    # #1276: the count-scoped exemption — two DISTINCT entity-bearing bash
+    # fences must not both ride one doc-wide declaration; the FAIL detail
+    # names the fence count, the scope, and the re-tag remedy.
+    plan = (
+        GOOD_PLAN
+        + "\n```bash\ngrep -c '&amp;' corpus.txt\n```\n"
+        + "\n```bash\ngrep -c '&lt;' corpus.txt\n```\n"
+        + "\nN/A — entities are content, not commands (both fences grep FOR entity forms).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c25_html_entities_in_commands"]
+    assert r.status == "FAIL"
+    assert "2 distinct" in r.detail
+    assert "EXACTLY ONE" in r.detail
+    assert "re-tag" in r.detail
+
+
+def test_c25_two_fences_same_entity_form_still_fail():
+    # #1276 amendment (a): two fences EACH carrying the SAME entity form are
+    # still 2 distinct fences — kills a mutant collapsing per-fence hit lists
+    # into a set of hit tuples (same-form fences would dedupe to count 1).
+    plan = (
+        GOOD_PLAN
+        + "\n```bash\ngrep -c '&amp;' corpus_a.txt\n```\n"
+        + "\n```bash\ngrep -c '&amp;' corpus_b.txt\n```\n"
+        + "\nN/A — entities are content, not commands (both fences grep FOR the amp form).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c25_html_entities_in_commands"]
+    assert r.status == "FAIL"
+    assert "2 distinct" in r.detail
+
+
+def test_c25_clean_shell_fences_do_not_count_toward_exemption_scope():
+    # Clean (entity-free) shell fences never widen the count — kills a mutant
+    # counting ALL arm-(a) fences instead of entity-BEARING ones.
+    plan = (
+        GOOD_PLAN
+        + "\n```bash\necho one\n```\n"
+        + "\n```bash\necho two\n```\n"
+        + "\n```bash\necho three\n```\n"
+        + "\n```bash\ngrep -c '&amp;' corpus.txt\n```\n"
+        + "\nN/A — entities are content, not commands (one fence greps FOR entity forms).\n"
+    )
+    assert _status(plan, "c25_html_entities_in_commands") == "PASS"
+
+
+def test_c25_clean_arm_b_fence_does_not_count_toward_arm_a_scope():
+    # A clean (entity-free) --workload-cmd fence neither FAILs arm (b) nor
+    # widens the arm-(a) entity-bearing fence count.
+    plan = (
+        GOOD_PLAN
+        + "\n```bash\nuv run python scripts/dispatch_issue.py launch --issue 1 "
+        + "--workload-cmd 'echo ok'\n```\n"
+        + "\n```bash\ngrep -c '&amp;' corpus.txt\n```\n"
+        + "\nN/A — entities are content, not commands (the grep fence discusses entity forms).\n"
+    )
+    assert _status(plan, "c25_html_entities_in_commands") == "PASS"
+
+
+def test_c25_multi_fence_no_declaration_fails_with_escape_pointer():
+    # With NO declaration the ORDINARY exemptable branch fires regardless of
+    # fence count: the escape-phrase remedy pointer is present and the
+    # count-scope wording is absent (the count gate only fires when a
+    # declaration exists).
+    plan = (
+        GOOD_PLAN
+        + "\n```bash\ngrep -c '&amp;' corpus_a.txt\n```\n"
+        + "\n```bash\ngrep -c '&lt;' corpus_b.txt\n```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c25_html_entities_in_commands"]
+    assert r.status == "FAIL"
+    assert "entities are content, not commands" in r.detail
+    assert "distinct shell-tagged" not in r.detail
+
+
+def test_c25_single_fence_multiple_entity_forms_still_exempt():
+    # Grain pin (#1276): the count is per-FENCE, not per-entity-form — one
+    # fence carrying three distinct forms is still count 1 and stays exempted
+    # (kills a "count distinct entity forms" mutant).
+    plan = (
+        GOOD_PLAN
+        + "\n```bash\ngrep -cE '&amp;|&lt;|&gt;' corpus.txt\n```\n"
+        + "\nN/A — entities are content, not commands (the fence greps FOR entity forms).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c25_html_entities_in_commands"]
+    assert r.status == "PASS"
+    assert "exempt" in r.detail
+
+
 # ─── Check 26 — GPU basis vs routed machine ─────────────────────────────────
 
 # Fixture rows quoted VERBATIM from the incident corpus (plan #1075 §10
