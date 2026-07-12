@@ -367,6 +367,23 @@ stay exactly as `/issue` Step 2b defines them — only the scheduling
 moved. Standalone `/adversarial-planner` invocations (no task context)
 skip it.
 
+**Canonical-rubric anchor — REQUIRED in every Claude critic brief, default
+or adapted (#1282).** Each of the three lens templates below carries a
+`Canonical rubric:` line naming `.claude/rules/critic-lens-reference.md`
+plus the lens's VERBATIM heading (`### Methodology lens` /
+`### Statistics & Measurement lens` / `### Alternative Explanations lens`).
+When composing an adapted brief for a non-experiment task (an infra /
+analysis / workflow-fix translation of the lens question — legitimate and
+expected), KEEP that line with the heading byte-verbatim: the translation
+ADAPTS the canonical rubric, never replaces it. Incident #1265: an
+infra-translated Alternatives brief supplied an inline translation but
+cited neither the file nor the heading; the critic's heading grep resolved
+no span and it reviewed on brief-inline text alone — the pointer-loaded
+rubric (per-item REVISE bars, N/A escapes, incident citations) silently
+never loaded. (The `codex-critic` composer is unaffected: it resolves
+`lens=<id>` to the canonical subheading from its own spec —
+`.claude/agents/codex-critic.md` Step 2.)
+
 **Shared preamble — prepend to each critic's brief before its lens-specific questions:**
 
 ```
@@ -404,6 +421,11 @@ pipeline.
 **Critic 1 — Methodology:**
 ```
 You are the METHODOLOGY CRITIC. Evaluate ONLY the experimental design:
+Canonical rubric: grep `### Methodology lens` in
+`.claude/rules/critic-lens-reference.md` and Read ONLY that span (chunked)
+before reviewing — the questions below, and any task-kind translation in
+this brief, ADAPT that rubric, never replace it.
+
 1. Is the hypothesis testable with this design?
 2. Are controls sufficient to isolate the variable?
 3. Are there confounds the analyzer cannot weigh from the reported
@@ -430,6 +452,11 @@ Rate (methodology only): REJECT / REVISE / APPROVE.
 **Critic 2 — Statistics & Measurement:**
 ```
 You are the STATISTICS CRITIC. Evaluate ONLY the measurement plan:
+Canonical rubric: grep `### Statistics & Measurement lens` in
+`.claude/rules/critic-lens-reference.md` and Read ONLY that span (chunked)
+before reviewing — the questions below, and any task-kind translation in
+this brief, ADAPT that rubric, never replace it.
+
 1. Are the metrics sufficient to distinguish the hypothesis from alternatives?
 2. Are sample sizes / seed counts adequate?
 3. Is the eval suite correct and complete?
@@ -447,6 +474,11 @@ Rate (measurement only): REJECT / REVISE / APPROVE.
 **Critic 3 — Alternative Explanations:**
 ```
 You are the ALTERNATIVE EXPLANATIONS CRITIC. For EVERY predicted positive result:
+Canonical rubric: grep `### Alternative Explanations lens` in
+`.claude/rules/critic-lens-reference.md` and Read ONLY that span (chunked)
+before reviewing — the questions below, and any task-kind translation in
+this brief, ADAPT that rubric, never replace it.
+
 1. What is the simplest explanation that does NOT require the claimed mechanism?
 2. Does the plan's design rule out that alternative?
 3. What additional control or baseline would be needed to rule it out?
