@@ -1185,7 +1185,10 @@ output (cap retries at 2), and posts via `task.py post-marker` (with
 the oversize fallback to an artifacts file if the note exceeds the
 50,000-char cap). On `epm:codex-task-failed` or persistent malformed
 output, the orchestrator falls back to single-Claude-critic per
-`workflow.yaml § ensemble_review`.
+`workflow.yaml § ensemble_review`. Trigger-dense round: reads are
+MECHANICAL — grep the verdict line, sed tag-block extraction,
+`post-marker --file` — never page the findings body
+(SKILL.md § File-only Codex verdict posting).
 
 You do NOT validate, do NOT retry, do NOT post the marker.
 

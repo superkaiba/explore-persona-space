@@ -765,7 +765,12 @@ orchestrator re-dispatches with a stricter retry prompt (cap retries at
 2 — same policy as before, just moved out of this agent). If the
 `epm:codex-task-failed` marker fires, the orchestrator treats this as a
 Codex-side no-show and proceeds with single-Claude-reviewer decision-
-making per `workflow.yaml § ensemble_review`.
+making per `workflow.yaml § ensemble_review`. On a trigger-dense round
+(recognition per trigger-dense-review.md "Fires when") the read +
+extraction are MECHANICAL — `grep -m1 '^\*\*Verdict'` for the decision
+table, sed tag-block extraction to a temp file, `post-marker --file` —
+the orchestrator never pages the findings body into context (SKILL.md
+§ File-only Codex verdict posting).
 
 You do NOT validate, do NOT retry, do NOT post the marker. Those steps
 live in the orchestrator now.

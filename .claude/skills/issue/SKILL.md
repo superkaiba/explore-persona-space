@@ -2313,6 +2313,8 @@ one line: `return_text: verdict + marker pointer + counts only —
 no findings recap (trigger-dense-review.md discipline 4)`.
 Non-trigger-dense rounds: skip entirely — no excerpt file, neither
 brief line.
+Verdict COLLECTION on trigger-dense rounds is file-only — see § File-only
+Codex verdict posting (before Step 5c).
 
 Neither sees the implementer's reasoning — independence is load-bearing.
 Dispatch in a SINGLE `Agent(...)`-call message with both spawned
@@ -2506,6 +2508,58 @@ no-show. This rule governs only the Agent-tool-RESULT-keyed inference.
 durable-marker-keyed. This rule closes the live verdict-collection gap
 between them.)
 
+**File-only Codex verdict posting on trigger-dense rounds (fires at EVERY
+marker-mode Codex verdict collection: 5b/5c here, Step 9a, Step 9a-bis,
+Step 9b VC; #1275).** When the round is trigger-dense per the
+`.claude/rules/trigger-dense-review.md` "Fires when" heuristic (same
+recognition the Step 5a excerpt-file paragraph delegates to — do not
+re-derive it here), the orchestrator posts the Codex twin's verdict
+marker from its output file WITHOUT paging the findings-bearing body
+into context — `post-marker --file` needs no full read. This is the
+orchestrator-side sibling of discipline 4 (#1252 covered the reviewer's
+return text; #1152's wedge shape applies equally to a wholesale
+orchestrator read of the same findings). Mechanics (the composer's
+return block already names the exact start/end tags and output path):
+
+```bash
+OUT=/tmp/codex-<role>-<N>-r<round>-output.md   # the EXACT dispatched --output-file path
+MB=/tmp/issue-<N>-<kind>-r<n>-marker.md        # the extracted marker block
+# 1. Marker block FIRST — mechanical tag-window extraction (tags verbatim from
+#    the composer's "Marker start tag:" / "Marker end tag:" lines; LINE-START
+#    anchors so a mid-prose quoted tag mention can never open/close the window):
+sed -n '/^<!-- epm:<kind> v<n>/,/^<!-- \/epm:<kind> -->/p' "$OUT" > "$MB"
+# 2. Gate: end tag present + under the 50,000-char note cap. A missing end
+#    tag or empty extraction = MALFORMED output -> the site's existing
+#    stricter-retry re-dispatch (cap 2), never a Read to "see what happened".
+grep -q '^<!-- \/epm:<kind> -->' "$MB"
+wc -c < "$MB"   # >=50000 -> the existing artifacts-file oversize fallback
+# 3. Decision inputs for the ensemble tables — grep the EXTRACTED block (its
+#    verdict line is the authoritative one; grepping "$OUT" would let a
+#    pre-block template echo win -m1), never Read:
+grep -m1 '^\*\*Verdict' "$MB"            # single-verdict sites (5c / 9a / 9a-bis)
+grep -E '^### Proposal|^\*\*Verdict' "$MB"   # 9b VC only: per-proposal verdicts — no -m1
+grep -m1 '^\*\*Blocker tags:' "$MB" || true  # sites that carry it (5c-bis / 9a-bis strips)
+# 4. Post without reading:
+uv run python scripts/task.py post-marker <N> epm:<kind> --version <n> \
+  --file "$MB"
+```
+
+The Step 5b item-2/3 durable-verdict probes (start/end tags at the
+current round version; parseable `**Verdict:**` line; round-freshness
+via marker/mtime) are grep/`stat` probes — on a trigger-dense round run
+them mechanically for Claude reviewer output files too, never via
+`Read`. When findings DETAIL is genuinely needed downstream (an
+implementer bounce brief's union-blocker list, a reconciler brief), pass
+the findings BY REFERENCE — the posted marker kind + version on
+events.jsonl and/or the dispatched output-file path under /tmp — so the subagent reads
+them itself with windowed grep-anchored reads (trigger-dense-review.md
+discipline 3); do not inline verdict bodies into briefs on such rounds.
+EXEMPT: in-context sites — adversarial-planner Phase 2 lens critics and
+any composer returning `Posting mode: in-context` — where the verdict
+body IS the deliverable merged into context (discipline 1 bounds its
+content). Non-trigger-dense rounds: unchanged — reading the output file
+remains fine.
+
 **5c. Apply ensemble decision rule.**
 
 | Claude verdict | Codex verdict | Action |
@@ -2513,7 +2567,7 @@ between them.)
 | PASS-class | PASS-class | **Agree.** `final_verdict = PASS`. CONCERNS bullets from either reviewer surface to the implementer as opportunistic suggestions; do not block. |
 | FAIL | FAIL — overlapping blockers | **Agree.** `final_verdict = FAIL`. Bounce to implementer (one round). |
 | FAIL | FAIL — disjoint blockers | **Union, no reconciler.** Build a combined blocker list (Claude's blockers ∪ Codex's blockers) — INCLUDING every `### Bug-class sweep: <class>` sibling enumeration from either verdict — and pass it to the implementer in the next-round brief. No new marker — both `epm:code-review v<n>` and `epm:code-review-codex v<n>` already exist on the task. `final_verdict = FAIL`. Bounce (one round). |
-| PASS-class | FAIL (or vice versa) | **Disagreement.** Spawn `reconciler` agent (Claude, fresh context). Brief: role=`code-reviewer`, task=N, round=n, both event bodies, diff path (+ the Step 5a excerpt-file path + read budget on a trigger-dense round). Reconciler reads both verdicts + the artifact, posts `epm:review-reconcile v<n>` with binding PASS or FAIL. `final_verdict = reconciler's verdict`. |
+| PASS-class | FAIL (or vice versa) | **Disagreement.** Spawn `reconciler` agent (Claude, fresh context). Brief: role=`code-reviewer`, task=N, round=n, both event bodies (trigger-dense round: BY REFERENCE — marker kind+version / output-file paths, per § File-only Codex verdict posting; the reconciler reads them itself with windowed reads), diff path (+ the Step 5a excerpt-file path + read budget on a trigger-dense round). Reconciler reads both verdicts + the artifact, posts `epm:review-reconcile v<n>` with binding PASS or FAIL. `final_verdict = reconciler's verdict`. |
 
 The reconciler may NOT add findings beyond what either reviewer raised —
 its job is adjudication only. Round counter does NOT increment for

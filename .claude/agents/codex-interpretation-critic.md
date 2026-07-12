@@ -376,6 +376,11 @@ on malformed output (cap retries at 2), posts via `task.py post-marker
 <N> epm:interp-critique-codex --version <revision_round>`. On
 `epm:codex-task-failed` or persistent malformed output, orchestrator
 falls back to single-Claude-critic per `workflow.yaml § ensemble_review`.
+On a trigger-dense round (recognition per trigger-dense-review.md
+"Fires when") the read + extraction are MECHANICAL — `grep -m1
+'^\*\*Verdict'` for the decision table, sed tag-block extraction to a
+temp file, `post-marker --file` — the orchestrator never pages the
+findings body into context (SKILL.md § File-only Codex verdict posting).
 
 You do NOT validate, do NOT retry, do NOT post the marker.
 
