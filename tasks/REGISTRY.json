@@ -2161,15 +2161,15 @@
     "1278": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1278",
-      "status": "reviewing",
+      "path": "tasks/completed/1278",
+      "status": "completed",
       "title": "workflow-fix: consolidate _stub_fleet_mutating_passes"
     },
     "1279": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1279",
-      "status": "running",
+      "path": "tasks/reviewing/1279",
+      "status": "reviewing",
       "title": "workflow-fix: edit-time guard hook for LESSONS.md"
     },
     "128": {
@@ -2182,8 +2182,8 @@
     "1280": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1280",
-      "status": "proposed",
+      "path": "tasks/planning/1280",
+      "status": "planning",
       "title": "workflow-fix: Step 10d Guard 1 three-dot foreign diff"
     },
     "1281": {
