@@ -2217,8 +2217,8 @@
     "1285": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1285",
-      "status": "proposed",
+      "path": "tasks/planning/1285",
+      "status": "planning",
       "title": "daily-fix: remove stale duplicate tasks/reviewing/1196"
     },
     "129": {
