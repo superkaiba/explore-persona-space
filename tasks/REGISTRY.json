@@ -2196,8 +2196,8 @@
     "1282": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1282",
-      "status": "approved",
+      "path": "tasks/running/1282",
+      "status": "running",
       "title": "workflow-fix: infra critic briefs cite lens heading verbatim"
     },
     "1283": {
