@@ -2210,15 +2210,15 @@
     "1284": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1284",
-      "status": "running",
+      "path": "tasks/completed/1284",
+      "status": "completed",
       "title": "daily-fix: issue1092 load_dotenv before heavy imports"
     },
     "1285": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1285",
-      "status": "planning",
+      "path": "tasks/completed/1285",
+      "status": "completed",
       "title": "daily-fix: remove stale duplicate tasks/reviewing/1196"
     },
     "129": {
