@@ -96,6 +96,7 @@ labeled-line forms):
   - ``N/A — no model training`` / ``N/A — no training hyperparameters``
     (check 1)
   - ``N/A — no behavioral construct`` (check 2)
+  - ``N/A — not a behavior-implantation`` (check 4)
   - ``N/A — no artifact reuse`` (check 6)
   - ``N/A — not a replication`` (check 7)
   - ``N/A — no dry-run smoke`` (check 11)
@@ -712,8 +713,12 @@ def check_contrastive_negatives(plan: str, kind: str) -> CheckResult:
             name,
             "not detected as behavior-implantation (no implant/leakage-marker vocabulary)",
         )
-    if re.search(r"(?i)not a behavior[- ]implantation", text):
-        return _pass(cid, name, "explicit N/A declared (not a behavior-implantation)")
+    if _standalone_na_declared(plan, r"not a behavior[- ]implantation"):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared on its own line, unwrapped (not a behavior-implantation)",
+        )
     if re.search(r"(?i)contrastive[- ]negatives?", text):
         lowered = text.lower()
         found = [t for t in ("panel", "ratio", "1:1", "disjoint") if t in lowered]
@@ -738,7 +743,8 @@ def check_contrastive_negatives(plan: str, kind: str) -> CheckResult:
         name,
         "behavior-implantation vocabulary detected but no contrastive-negative set or named "
         "exemption — .claude/rules/contrastive-negatives.md (panel + ratio + disjointness); "
-        "Methodology critic must gate this",
+        "Methodology critic must gate this; or declare `N/A — not a behavior-implantation` "
+        "on its own line, unwrapped (no backticks/quotes)",
     )
 
 
