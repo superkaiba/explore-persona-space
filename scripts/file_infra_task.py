@@ -91,6 +91,11 @@ from spawn_session import (  # noqa: E402
     stagger_delay_s,
 )
 
+# The shared wf-fix title-prefix set (single source of truth, one prefix per
+# filing channel — task_workflow.py). Same package-import pattern as
+# daily_drive_filings.py; the `uv run` env has the editable install.
+from explore_persona_space.task_workflow import WF_FIX_TITLE_PREFIXES  # noqa: E402
+
 # The auto-dispatchable pure-code/ops kinds. `experiment`/`analysis`/
 # `campaign` are rejected: analysis needs the `agent-ok` opt-in + PM triage;
 # experiment needs the adversarial-planner GPU gate; campaign has its own
@@ -236,6 +241,34 @@ def _warn_missing_wf_fix_provenance(args: argparse.Namespace) -> None:
         )
 
 
+def _warn_missing_wf_fix_title_prefix(args: argparse.Namespace) -> None:
+    """#1283 warn-only dedup-surface backstop: a `wf-fix`-tagged filing whose
+    --title lacks a WF_FIX_TITLE_PREFIXES prefix ("workflow-fix:" /
+    "daily-fix:") is invisible to the (target_file, fingerprint) dedup
+    predicate's cheap title pre-filter (task_workflow.is_open_workflow_fix_task),
+    so the same bug can double-file later (#1180's incident class). Warn-only
+    by design — the filer is channel-agnostic (it cannot know WHICH per-channel
+    prefix to prepend; the /daily route-2 driver already prepends its own per
+    #1273), and a filer-side title mutation would additionally desync
+    daily_drive_filings._try_recovery, which re-matches previously-filed items
+    against their exact effective titles. The must-succeed filing half stays
+    untouched: exit codes and filing behavior unchanged (the #1173 precedent
+    above)."""
+    if "wf-fix" not in (args.tag or []):
+        return
+    if args.title.startswith(WF_FIX_TITLE_PREFIXES):
+        return
+    prefixes = " / ".join(f"'{p}'" for p in WF_FIX_TITLE_PREFIXES)
+    print(
+        "file_infra_task: WARNING — wf-fix-tagged filing whose --title lacks a "
+        f"{prefixes} prefix; the filed task will be invisible to the dedup "
+        "predicate's title pre-filter (task_workflow.is_open_workflow_fix_task; "
+        ".claude/rules/workflow-fix-on-bug.md § Dedup, #1283); fix via "
+        "task.py set-title",
+        file=sys.stderr,
+    )
+
+
 def cmd_file_infra(args: argparse.Namespace) -> int:
     """File a ripe `kind: infra`/`batch` task, then best-effort dispatch it.
 
@@ -243,9 +276,11 @@ def cmd_file_infra(args: argparse.Namespace) -> int:
     half fails; 0 for every dispatch no-op / dispatch failure (the task is
     filed and the watcher backstop covers a skipped/failed spawn — a non-zero
     here would make callers think filing failed)."""
-    # 0. #1173 warn-only durable-recursion-guard backstop (stderr only; exit
-    # codes and filing behavior unchanged).
+    # 0. Warn-only pre-filing backstops (stderr only; exit codes and filing
+    # behavior unchanged): #1173 durable-recursion-guard line, #1283 dedup
+    # title-prefix surface.
     _warn_missing_wf_fix_provenance(args)
+    _warn_missing_wf_fix_title_prefix(args)
 
     # 1. File first (the durable, must-succeed half).
     new_argv = _build_new_argv(args)
