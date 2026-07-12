@@ -2210,8 +2210,8 @@
     "1284": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1284",
-      "status": "reviewing",
+      "path": "tasks/completed/1284",
+      "status": "completed",
       "title": "daily-fix: issue1092 load_dotenv before heavy imports"
     },
     "1285": {
