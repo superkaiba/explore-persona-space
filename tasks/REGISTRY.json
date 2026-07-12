@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1278,
+  "highest_id": 1279,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2164,6 +2164,13 @@
       "path": "tasks/proposed/1278",
       "status": "proposed",
       "title": "workflow-fix: consolidate _stub_fleet_mutating_passes"
+    },
+    "1279": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1279",
+      "status": "proposed",
+      "title": "workflow-fix: edit-time guard hook for LESSONS.md"
     },
     "128": {
       "has_clean_result": false,
