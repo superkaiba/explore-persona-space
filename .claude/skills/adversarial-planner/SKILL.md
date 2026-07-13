@@ -189,7 +189,20 @@ Run the structural verifier against the plan version just persisted:
 
     uv run python scripts/verify_plan.py --issue <N> --json        # task context (newest plans/v{K}.md)
     uv run python scripts/verify_plan.py --plan-file <path> --json # standalone / not-yet-persisted plans
+    # Canonical verdict parse — copy this; do NOT improvise one:
+    uv run python scripts/verify_plan.py --issue <N> --json | uv run python -c "import json,sys; d=json.load(sys.stdin); print(d['overall'], 'n_fail=%d n_warn=%d' % (d['n_fail'], d['n_warn']), 'failed:', ','.join(c['id'] for c in d['checks'] if c['status']=='FAIL') or 'none')"
 
+- **JSON contract:** the `--json` payload keys are `source`, `issue`, `kind`,
+  `overall` (`"PASS"|"FAIL"` — the verdict key; there is NO `verdict` key, and
+  `d.get('verdict')` prints `None` — the 2026-07-12 3-session improvised-parse bug,
+  #1290), `n_fail`, `n_warn`, `n_skip`, and `checks` (list of
+  `{id, name, status, detail}`, status ∈ `PASS|FAIL|WARN|SKIP`). Read the verdict
+  with fail-loud `d['overall']` (KeyError on a payload change), never `.get()`
+  defaulting to `None`, and never infer PASS from `n_fail` alone. Exit code: 0 PASS /
+  1 FAIL / 2 usage error or plan-not-found — the pipe consumes it, so the one-liner
+  reads `overall` instead; a missing plan still fails loud in the consumer
+  (JSONDecodeError on empty stdin). Pinned by
+  `tests/test_verify_plan.py::test_canonical_json_parse_snippet_pinned`.
 - **Persistence ordering:** `--issue` mode verifies the newest `plans/v{K}.md`. If the
   just-drafted plan has NOT yet been persisted via `task.py new-plan-version` (the plan
   still lives at the `/tmp/issue-<N>-plan-v<K>-<attempt>.md` handoff file), use
@@ -292,7 +305,9 @@ Run the structural verifier against the plan version just persisted:
 - **Post the marker** (VM-side; the adversarial-planner skill always runs in the
   orchestrator session, never on a pod):
   `uv run python scripts/task.py post-marker <N> epm:plan-verify --note '<verdict, n_fail, n_warn, failed/overridden check ids, plan version>'`
-  Standalone invocations with no task context skip the marker.
+  The canonical parse one-liner above prints verdict, n_fail, n_warn, and the failed
+  check ids verbatim (plan version = the v{K} just verified). Standalone invocations
+  with no task context skip the marker.
 
 The Planner's assumptions are the #1 source of experiment-invalidating errors. Before the Critic even sees the plan, independently verify every factual claim.
 

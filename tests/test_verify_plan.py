@@ -6565,3 +6565,29 @@ def test_c34_phrase_listed_in_skillmd():
     assert "no verbatim ratcheted-file insertion" in block
     assert "check 34" in block
     assert "`N/A — no verbatim ratcheted-file insertion`" in block
+
+
+def test_canonical_json_parse_snippet_pinned():
+    """#1290 drift pin: the adversarial-planner SKILL.md canonical parse one-liner
+    uses the real `overall` key with fail-loud d['overall'] (never .get()), and
+    _json_payload still emits every key the documented contract names."""
+    skill = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    lines = [ln for ln in skill.splitlines() if "verify_plan.py --issue <N> --json |" in ln]
+    assert len(lines) == 1, "exactly one canonical parse one-liner expected in SKILL.md"
+    (ln,) = lines
+    assert "d['overall']" in ln and "d['n_fail']" in ln and "d['n_warn']" in ln
+    assert ".get(" not in ln  # fail-loud key access — KeyError on drift, never None
+    payload = verify_plan._json_payload(source="s", issue=1, kind="infra", overall=True, results=[])
+    assert {"overall", "n_fail", "n_warn", "n_skip", "checks"} <= payload.keys()
+    assert payload["overall"] == "PASS"
+    # FAIL branch, strengthened with one REAL failing CheckResult (critic ask,
+    # plan §9-allowed): the per-check dicts carry at least {id, status} and the
+    # n_fail counter counts them.
+    fail = verify_plan.CheckResult(id="c1_training_hparams", name="hparams", passed=False)
+    payload_fail = verify_plan._json_payload(
+        source="s", issue=None, kind="infra", overall=False, results=[fail]
+    )
+    assert payload_fail["overall"] == "FAIL"
+    assert payload_fail["n_fail"] == 1
+    assert {"id", "status"} <= payload_fail["checks"][0].keys()
+    assert payload_fail["checks"][0]["status"] == "FAIL"
