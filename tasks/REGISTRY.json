@@ -2343,8 +2343,8 @@
     "1300": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1300",
-      "status": "proposed",
+      "path": "tasks/planning/1300",
+      "status": "planning",
       "title": "workflow-fix: postmerge guard must not delete origin's only task folder (unpushed mv)"
     },
     "131": {
