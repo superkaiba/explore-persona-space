@@ -772,9 +772,9 @@ If you write the tests after the implementation (the default), make them general
 ### On revision rounds (after code-reviewer FAIL)
 
 - **Size any branch diff before reading its body.** On a long-lived
-  same-issue-follow-up branch, `git diff main...HEAD` can be multi-MB
+  same-issue-follow-up branch, `git diff origin/main...HEAD` can be multi-MB
   (1.96 MB on #722; the two-dot `main..HEAD` body was 31.6 MB) and
-  loading it autocompacts your session. Run `git diff main...HEAD | wc -c`
+  loading it autocompacts your session. Run `git diff origin/main...HEAD | wc -c`
   first (streams — no context cost; an error or `0` from the pipe means
   treat it as over-budget — no-merge-base sparse checkout, see the rule);
   above ~300 KB, read only the round's

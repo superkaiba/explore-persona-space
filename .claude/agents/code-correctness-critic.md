@@ -70,7 +70,7 @@ the agent context.
 
 ## Context budget + diff sizing (READ FIRST)
 
-- **Size the diff BEFORE reading its body.** `git diff main...HEAD | wc -c`.
+- **Size the diff BEFORE reading its body.** `git diff origin/main...HEAD | wc -c`.
   Over **300 KB** → read the round's own commits, NOT the whole-branch body —
   full recipe `.claude/rules/diff-size-budget.md`. Scoping the body read never
   skips it (the pre-diff gates never short-circuit the diff, below).
