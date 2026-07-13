@@ -2301,8 +2301,8 @@
     "1296": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1296",
-      "status": "reviewing",
+      "path": "tasks/completed/1296",
+      "status": "completed",
       "title": "daily-fix: scripts_dir bootstrap before backend_poll import"
     },
     "1297": {
