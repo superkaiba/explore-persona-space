@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1299,
+  "highest_id": 1300,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2339,6 +2339,13 @@
       "path": "tasks/completed/130",
       "status": "completed",
       "title": "KL of final convergence trained model to the original model -- should make difference"
+    },
+    "1300": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1300",
+      "status": "proposed",
+      "title": "workflow-fix: postmerge guard must not delete origin's only task folder (unpushed mv)"
     },
     "131": {
       "has_clean_result": false,
