@@ -2259,8 +2259,8 @@
     "1290": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1290",
-      "status": "approved",
+      "path": "tasks/running/1290",
+      "status": "running",
       "title": "daily-fix: canonical verify_plan --json parse (overall key)"
     },
     "1291": {
