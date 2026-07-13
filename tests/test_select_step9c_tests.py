@@ -139,13 +139,15 @@ def test_pinned_invariant_list_matches_live_tree():
         "Update the literal in scripts/select_step9c_tests.py deliberately."
     )
     # And it must be a non-trivial, de-duplicated set (no accidental shrink/dup).
-    # 36 = plan §5's verbatim enumerated list (31 files) + test_autonomous_session_watch.py
+    # 37 = plan §5's verbatim enumerated list (31 files) + test_autonomous_session_watch.py
     # (the #754 brief's one curated addition) + the 3 SKILL.md-content-pin suites added by
     # #1242 (test_step10d_guard3 / test_step_completed_resume / test_issue_skill_exit_breadcrumb
     # — SKILL.md diffs gate ONLY via this tuple, so their pins must live in it) + the #1268
-    # Step-10d repin/guard hardening pin suite (test_issue_skill_merge_resnapshot_pin).
+    # Step-10d repin/guard hardening pin suite (test_issue_skill_merge_resnapshot_pin) + the
+    # #1289 diff-base origin/main pin suite (test_diff_base_origin_main_pin — same tuple
+    # rationale: a SKILL.md-only recipe revert must still run the pin).
     assert len(sel.WORKFLOW_INVARIANT) == len(set(sel.WORKFLOW_INVARIANT))
-    assert len(sel.WORKFLOW_INVARIANT) == 36
+    assert len(sel.WORKFLOW_INVARIANT) == 37
 
 
 # --- Case 7: determinism — identical sorted output across two invocations ----
@@ -191,7 +193,10 @@ def test_json_output_shape(tmp_path: Path, monkeypatch, capsys):
     repo = _make_tree(tmp_path, ["test_widget.py"])
     monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
     monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: ["scripts/widget.py"])
-    rc = sel.main(["--json", "--repo-root", str(repo)])
+    # --no-fetch: hermetic (no git fetch); the fixture tree is not a git
+    # checkout, so origin/main cannot resolve and the documented #1289
+    # fallback resolves the default base to local "main".
+    rc = sel.main(["--json", "--no-fetch", "--repo-root", str(repo)])
     assert rc == 0
     out = json.loads(capsys.readouterr().out)
     assert set(out.keys()) == {
@@ -205,7 +210,7 @@ def test_json_output_shape(tmp_path: Path, monkeypatch, capsys):
         "slow_tests_selected",
     }
     assert "tests/test_widget.py" in out["tests"]
-    assert out["base"] == "main"
+    assert out["base"] == "main"  # the RESOLVED base (via the #1289 fallback), not the default
     assert out["missing_invariants"] == []  # all invariants present in the fixture tree
     assert out["selection_reasons"]["tests/test_widget.py"] == ["stem-map:scripts/widget.py"]
     # #1046 sizing fields are derived from the SAME selection the command runs:
@@ -550,6 +555,8 @@ def test_stdout_command_carries_sized_timeout(tmp_path: Path, monkeypatch, capsy
     line = captured.out.strip().splitlines()[-1]
     assert line.startswith(f"timeout --kill-after=60s {t}s uv run pytest ")
     assert f"recommended-timeout-s={t}" in captured.err
+    # #1289: the sizing line also names the RESOLVED diff base (substring pin).
+    assert "diff-base=" in captured.err
 
 
 # --- Cases 24-29 (#1147): map_scan_tests() + the --map-files CLI mapping mode -
@@ -627,3 +634,178 @@ def test_cli_map_files_missing_test_warns(tmp_path: Path, capsys):
     assert captured.out == ""
     assert "WARN — scan test tests/test_shared_vm_thread_caps.py" in captured.err
     assert "pair dropped" in captured.err
+
+
+# --- #1289: diff-base resolution (fetched origin/main default) -----------------
+def _git_out(cwd: Path, *args: str) -> str:
+    """Hermetic git runner that RETURNS stdout (rev-parse probes for cases 30-32)."""
+    env = {
+        **os.environ,
+        "GIT_CONFIG_GLOBAL": "/dev/null",
+        "GIT_CONFIG_SYSTEM": "/dev/null",
+    }
+    proc = subprocess.run(
+        ["git", *args], cwd=str(cwd), env=env, check=True, capture_output=True, text=True
+    )
+    return proc.stdout.strip()
+
+
+def _make_lagging_clone_with_worktree(tmp_path: Path) -> tuple[Path, Path, Path]:
+    """#1289 fixture: (upstream, clone, wt) — file:// path remotes, zero network.
+
+    upstream main: U1 (invariant stubs) -> U2 (adds scripts/foreign.py +
+    tests/test_foreign.py). clone: cloned at U1, so LOCAL main == U1 (behind);
+    then ``git fetch origin`` so origin/main == U2; worktree branch issue-y cut
+    from origin/main (the #1214 cut recipe), adding scripts/bar.py +
+    tests/test_bar.py in one commit. Local main stays at U1 — the lagging-root
+    shape of 2026-07-12.
+    """
+    upstream = _make_tree(tmp_path, [])
+    _git(upstream, "init", "-b", "main")
+    _git(upstream, "config", "user.email", "test@example.com")
+    _git(upstream, "config", "user.name", "Test")
+    _git(upstream, "add", "-A")
+    _git(upstream, "commit", "-m", "U1 baseline")
+    clone = tmp_path / "clone"
+    _git(tmp_path, "clone", "--quiet", str(upstream), str(clone))  # origin set automatically
+    _git(clone, "config", "user.email", "test@example.com")
+    _git(clone, "config", "user.name", "Test")
+    # Advance upstream to U2 AFTER the clone: local main in the clone stays at U1.
+    (upstream / "scripts").mkdir(exist_ok=True)
+    (upstream / "scripts" / "foreign.py").write_text("F = 1\n")
+    (upstream / "tests" / "test_foreign.py").write_text("def test_f():\n    assert True\n")
+    _git(upstream, "add", "scripts/foreign.py", "tests/test_foreign.py")
+    _git(upstream, "commit", "-m", "U2 foreign commit")
+    _git(clone, "fetch", "origin")  # origin/main == U2; local main == U1 (lagging)
+    wt = tmp_path / "wt-1289"
+    _git(clone, "worktree", "add", "-b", "issue-y", str(wt), "origin/main")
+    (wt / "scripts" / "bar.py").write_text("B = 1\n")
+    (wt / "tests" / "test_bar.py").write_text("def test_b():\n    assert True\n")
+    _git(wt, "add", "scripts/bar.py", "tests/test_bar.py")
+    _git(wt, "commit", "-m", "branch adds bar")
+    return upstream, clone, wt
+
+
+def _run_json_main(monkeypatch, capsys, wt: Path, argv: list[str]) -> tuple[int, dict, str]:
+    """Run sel.main(argv) from *wt*; return (rc, parsed --json stdout, stderr)."""
+    monkeypatch.chdir(wt)
+    rc = sel.main(argv)
+    captured = capsys.readouterr()
+    return rc, json.loads(captured.out), captured.err
+
+
+# --- Case 30: THE acceptance test — lagging local main, foreign files excluded -
+def test_default_base_excludes_foreign_files_on_lagging_root(tmp_path: Path, monkeypatch, capsys):
+    """With local main behind origin/main (the 2026-07-12 shape), the DEFAULT
+    base selects only the branch's own mapped tests — zero foreign-commit
+    tests. Contrast leg: the old ``--base main`` default DID select the
+    foreign test (the #1281 41-file gate inflation). Twin-run equality leg:
+    after fast-forwarding local main to origin/main (a synced root), the
+    ``--base main`` selection equals the lagging-root default selection —
+    the fix changes which ref NAMES the base, not the selected set.
+    """
+    _upstream, clone, wt = _make_lagging_clone_with_worktree(tmp_path)
+    rc, out, _err = _run_json_main(monkeypatch, capsys, wt, ["--json"])
+    assert rc == 0
+    assert out["base"] == "origin/main"
+    assert "tests/test_bar.py" in out["tests"]  # the branch's own test
+    assert "tests/test_foreign.py" not in out["tests"]  # foreign commit excluded
+    assert not any(
+        r == "stem-map:scripts/foreign.py" for rs in out["selection_reasons"].values() for r in rs
+    )
+    # Contrast leg (documents the old bug): explicit --base main on the
+    # lagging root pulls the foreign origin-side commit into the selection.
+    rc2, out_main, _err2 = _run_json_main(monkeypatch, capsys, wt, ["--json", "--base", "main"])
+    assert rc2 == 0
+    assert "tests/test_foreign.py" in out_main["tests"]
+    # Twin-run equality leg: sync local main (ff to origin/main), then the
+    # local-main selection == the lagging-root default-base selection.
+    _git(clone, "merge", "--ff-only", "origin/main")
+    rc3, out_synced, _err3 = _run_json_main(monkeypatch, capsys, wt, ["--json", "--base", "main"])
+    assert rc3 == 0
+    assert out_synced["tests"] == out["tests"]
+
+
+# --- Case 31: the default base FETCHES origin/main; merge-base is stable -------
+def test_default_base_fetches_origin_main(tmp_path: Path, monkeypatch, capsys):
+    """Advance upstream to U3 after the clone's last fetch: the default run
+    must fetch (clone-side origin/main advances to the upstream tip) while
+    the SELECTION stays the branch's own tests (merge-base == cut point,
+    invariant under origin/main advancing)."""
+    upstream, clone, wt = _make_lagging_clone_with_worktree(tmp_path)
+    (upstream / "scripts" / "foreign2.py").write_text("F2 = 1\n")
+    (upstream / "tests" / "test_foreign2.py").write_text("def test_f2():\n    assert True\n")
+    _git(upstream, "add", "scripts/foreign2.py", "tests/test_foreign2.py")
+    _git(upstream, "commit", "-m", "U3 foreign commit")
+    before = _git_out(clone, "rev-parse", "origin/main")
+    upstream_tip = _git_out(upstream, "rev-parse", "main")
+    assert before != upstream_tip  # precondition: clone is one fetch behind
+    rc, out, _err = _run_json_main(monkeypatch, capsys, wt, ["--json"])
+    assert rc == 0
+    assert _git_out(clone, "rev-parse", "origin/main") == upstream_tip  # the fetch ran
+    assert out["base"] == "origin/main"
+    # Selection unchanged from case 30's shape (merge-base == the cut point):
+    assert "tests/test_bar.py" in out["tests"]
+    assert "tests/test_foreign.py" not in out["tests"]
+    assert "tests/test_foreign2.py" not in out["tests"]
+
+
+# --- Case 32: --no-fetch skips the fetch, keeps the origin/main base -----------
+def test_no_fetch_skips_fetch(tmp_path: Path, monkeypatch, capsys):
+    upstream, clone, wt = _make_lagging_clone_with_worktree(tmp_path)
+    (upstream / "scripts" / "foreign2.py").write_text("F2 = 1\n")
+    _git(upstream, "add", "scripts/foreign2.py")
+    _git(upstream, "commit", "-m", "U3 foreign commit")
+    before = _git_out(clone, "rev-parse", "origin/main")
+    rc, out, _err = _run_json_main(monkeypatch, capsys, wt, ["--json", "--no-fetch"])
+    assert rc == 0
+    assert _git_out(clone, "rev-parse", "origin/main") == before  # no ref mutation
+    assert out["base"] == "origin/main"  # last-fetched ref still resolves + is used
+
+
+# --- Case 33: no origin remote -> loud fallback to local main ------------------
+def test_fallback_to_local_main_when_origin_main_unresolvable(tmp_path: Path, monkeypatch, capsys):
+    """The existing no-remote fixture: origin/main cannot resolve, so the
+    default base falls back LOUDLY to local 'main' (pre-#1289 behavior)."""
+    _repo, wt = _make_git_repo_with_worktree(tmp_path)
+    rc, out, err = _run_json_main(monkeypatch, capsys, wt, ["--json"])
+    assert rc == 0
+    assert out["base"] == "main"
+    assert "falling back to local 'main'" in err
+
+
+# --- Case 34: a non-origin/ --base is used verbatim with ZERO git calls --------
+def test_resolve_base_verbatim_local_ref_makes_no_git_calls(tmp_path: Path, monkeypatch):
+    def _boom(*_a, **_k):
+        raise AssertionError("git must not be called for a non-origin/ base")
+
+    monkeypatch.setattr(sel.subprocess, "run", _boom)
+    assert sel.resolve_base("main", tmp_path) == "main"
+    assert sel.resolve_base("feature-x", tmp_path) == "feature-x"
+
+
+# --- Case 35: fetch failure degrades to the last-fetched origin/main -----------
+def test_resolve_base_fetch_failure_degrades_to_stale_origin_main(
+    tmp_path: Path, monkeypatch, capsys
+):
+    """A failing bounded fetch (lock contention / offline / auth) NOTEs and
+    degrades to the still-resolving last-fetched origin/main — never blocks,
+    never falls back to local main while the remote-tracking ref exists."""
+    seen: dict[str, dict] = {}
+
+    class _Ok:
+        returncode = 0
+
+    def _fake_run(argv, **kwargs):
+        if argv[:3] == ["git", "fetch", "origin"]:
+            seen["fetch_kwargs"] = kwargs
+            raise subprocess.CalledProcessError(1, argv)
+        assert argv[:2] == ["git", "rev-parse"]
+        return _Ok()
+
+    monkeypatch.setattr(sel.subprocess, "run", _fake_run)
+    got = sel.resolve_base("origin/main", tmp_path)
+    assert got == "origin/main"
+    err = capsys.readouterr().err
+    assert "git fetch origin main failed" in err
+    assert seen["fetch_kwargs"]["timeout"] == sel.FETCH_TIMEOUT_S  # the bounded fetch
