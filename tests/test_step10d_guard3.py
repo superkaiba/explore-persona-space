@@ -1165,3 +1165,83 @@ def test_post_merge_guard_work_arm_scratch_worktree_and_hook_safe(tmp_path):
     script.write_text(block, encoding="utf-8")
     bn = subprocess.run(["bash", "-n", str(script)], capture_output=True, text=True)
     assert bn.returncode == 0, f"bash -n failed on the substituted block:\n{bn.stderr}"
+
+
+# --------------------------------------------------------------------------
+# Task #1300 — unpushed-mv pre-check (canonical folder must be ON origin
+# before any duplicate classification)
+# --------------------------------------------------------------------------
+
+
+def test_post_merge_guard_unpushed_mv_precheck_syncs_before_classify():
+    """#1300: the guard must not classify duplicates while the CANONICAL
+    folder is absent from origin/main — under routine local-main push lag
+    origin's only copy is the OLD-status folder of a not-yet-pushed status
+    mv, and deleting it left origin with ZERO folders for the task (origin
+    commit 2a1a9cbc0b deleted tasks/reviewing/1291, the only 1291 folder on
+    origin; recovery merge f26462fc1b). Pins: (i) POSITION — the pre-check
+    is an `elif` arm of the SAME chain, between the ls-tree producer arm and
+    the DUPES work arm; (ii) RECOVERY — the arm invokes
+    scripts/sync_repo_root.py inside a bounded `for _ in 1 2` loop,
+    re-resolves CANON via task.py find, and RE-FETCHES + REGENERATES the
+    materialized ls-tree before each re-check (the ls-tree re-check is the
+    arbiter — the helper's exit 0 includes the in-flight state); (iii) FAIL
+    CLOSED — a still-absent CANON ends in a terminal echo + false
+    (arm-unique phrase), and the arm never duplicates the classification;
+    (iv) FALL THROUGH — the recovery lives in the arm's CONDITION list whose
+    FINAL command is the still-absent re-test, so a successful recovery
+    falls through to the DUPES classification against the regenerated
+    file. The #1253 strong pin (live hook + bash -n on the substituted
+    fence) covers the new arm's executability."""
+    text = _skill_text()
+    region = _post_merge_guard_region(text)
+    fences = re.findall(r"```bash\n(.*?)```", region, re.DOTALL)
+    assert len(fences) == 1, "guard region must still carry exactly one fenced bash block"
+    fence = fences[0]
+
+    precheck = fence.find('elif ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt')
+    lstree_arm = fence.find('elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main')
+    dupes_arm = fence.find("elif mapfile -t DUPES < <(grep -E")
+    assert precheck != -1, "the unpushed-mv pre-check arm must exist (#1300)"
+    assert -1 < lstree_arm < precheck < dupes_arm, (
+        "the pre-check must sit BETWEEN the ls-tree producer arm and the DUPES work arm"
+    )
+
+    arm = fence[precheck:dupes_arm]
+    # (ii) recovery mechanics:
+    assert "for _ in 1 2; do" in arm, "the recovery must be bounded to 2 sync attempts"
+    assert 'uv run python "$REPO_ROOT/scripts/sync_repo_root.py"' in arm, (
+        "the recovery must land the local mv via the sanctioned root sync"
+    )
+    assert 'uv run python "$REPO_ROOT/scripts/task.py" find <N>' in arm, (
+        "the recovery must RE-RESOLVE the canonical path after the sync "
+        "(the sync pull-rebases the local root; the canonical status can "
+        "change in either lag direction)"
+    )
+    assert 'git -C "$REPO_ROOT" fetch origin main --quiet' in arm, (
+        "each attempt must re-fetch origin/main before the re-check"
+    )
+    assert "> /tmp/issue-<N>-postmerge-lstree.txt" in arm, (
+        "each attempt must REGENERATE the materialized ls-tree file (the "
+        "DUPES arm classifies against the fresh file on fall-through)"
+    )
+    # (iv) fall-through: the condition list's FINAL command is the
+    # still-absent re-test (recovery success -> condition false -> the
+    # DUPES arm runs against the regenerated file).
+    assert '! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt; }; then' in arm, (
+        "the recovery must live in the arm's CONDITION with the still-absent "
+        "re-test as its final command (successful recovery falls through)"
+    )
+    # (iii) terminal false on the still-absent branch, arm-unique phrase
+    # (same phrase+false regex convention as the #1184/#1253 pins):
+    assert re.search(
+        re.escape("still ABSENT from origin/main after 2 root syncs") + r'[^\n]*"\n\s*false\b',
+        arm,
+    ), "the still-absent arm must end in a terminal echo + false"
+    assert "mapfile -t DUPES" not in arm, (
+        "the pre-check arm must not duplicate the DUPES classification "
+        "(fall-through, not a copied work arm)"
+    )
+    assert "worktree" not in arm, (
+        "the pre-check arm must never touch the scratch worktree (it deletes nothing)"
+    )
