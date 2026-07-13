@@ -57,18 +57,24 @@ from __future__ import annotations
 
 import argparse
 import logging
+
+# Shared-VM thread caps (#847): load_dotenv() must bind BEFORE the first
+# numpy/torch import (torch freezes its BLAS/intra-op pools at import time).
+import pathlib
 import sys
 from pathlib import Path
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv(str(pathlib.Path(__file__).resolve().parent.parent / ".env"))
+
+import numpy as np  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
-
-load_dotenv(str(PROJECT_ROOT / ".env"))
-
-import numpy as np  # noqa: E402
 import torch  # noqa: E402
 from issue810_batched_null import (  # noqa: E402
     batched_projection_null_rho,
@@ -76,7 +82,14 @@ from issue810_batched_null import (  # noqa: E402
     make_perm_matrix,
 )
 from issue810_common import (  # noqa: E402
+    BETLEY_E0_HIGHM_FILE,
+    G1_ANSWER_POSITION_SWEEP_SUBDIR,
+    G1_OUT_DIR,
+    G1_STORE_MANIFEST,
+    G1_V0_SUMMARIES,
+    GENRES,
     HF_DATA_REPO,
+    HF_PREFIX,
     I658_RB,
     I658_STORE_MANIFEST,
     I658_V0_SUMMARIES,
@@ -85,18 +98,25 @@ from issue810_common import (  # noqa: E402
     SHUFFLE_NULL_PERMS,
     SHUFFLE_NULL_SEED,
     TF_MARGIN_VALIDATION_BEHAVIORS,
+    UH_SUMMARY_NAMES,
+    assert_g1_probe_pool_hash,
     context_ids_from_manifest,
     dump_json,
+    enlarged_summary_names,
     load_json,
     reproducibility_metadata,
     summary_names,
     upload_out_dir,
+    validate_uh_pack,
 )
-from scipy.stats import spearmanr  # noqa: E402
+from issue810_fit_reconstruction import _expand_rows  # noqa: E402
 
 from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
     ridge_predict_loco_centered,
 )
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv(str(PROJECT_ROOT / ".env"))
 
 logger = logging.getLogger("issue810_fit_readout")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -125,19 +145,37 @@ def _tf_margin_scalar(cell) -> float | None:
 # ── inputs ────────────────────────────────────────────────────────────────────
 
 
-def _load_free_summaries():
+def _load_free_summaries(genre: str = "betley"):
+    """{recipe: {ctx: (28,H)}} from the summaries-genre's v0_summaries.pt (g1 hash-pinned)."""
     from huggingface_hub import hf_hub_download
 
-    p = hf_hub_download(HF_DATA_REPO, I658_V0_SUMMARIES, repo_type="dataset")
+    v0_file = I658_V0_SUMMARIES if genre == "betley" else G1_V0_SUMMARIES
+    p = hf_hub_download(HF_DATA_REPO, v0_file, repo_type="dataset")
     blob = torch.load(p, weights_only=False)
+    if genre == "g1":
+        assert_g1_probe_pool_hash(blob, G1_V0_SUMMARIES)
     return blob["summaries"], blob["capture_layers"]
 
 
 def _load_rb():
-    """{behavior: {recipe: (28,H)}} from #658 store/r_b.pt (recipes diffmeans/meanDB)."""
+    """{behavior: {recipe: (28,H)}} from #658 store/r_b.pt (recipes diffmeans/meanDB).
+
+    PINNED to the parent's Betley ``store/r_b.pt`` in EVERY cell of the 2×2
+    square — the co-located g1 store's ``r_b.pt`` is a DIFFERENT tensor
+    (max|Δ| >= 1.0, plan-time verified) and swapping it would smuggle a second
+    variable (plan v6 §11). Assert-fails if the resolved path carries the g1
+    ``store_genre`` prefix (the plan §8 wrong-r_B risk).
+    """
     from huggingface_hub import hf_hub_download
 
+    if "store_genre" in I658_RB:
+        raise RuntimeError(f"r_B constant drifted to a genre store: {I658_RB}")
     p = hf_hub_download(HF_DATA_REPO, I658_RB, repo_type="dataset")
+    if "store_genre" in str(p):
+        raise RuntimeError(
+            f"r_B resolved to a genre store path ({p}) — the fixed direction must be the "
+            "parent's Betley store/r_b.pt in every cell (plan v6 §11)"
+        )
     blob = torch.load(p, weights_only=False)
     return blob["r_b"], blob.get("columns", list(blob["r_b"].keys()))
 
@@ -181,22 +219,103 @@ def _e0_by_context(e0_highm: dict, low_m: dict | None) -> dict[str, dict[str, di
     return out
 
 
-def _summary_matrix(summary, layer_i, kept, free_summaries, pos_summaries, coverage):
-    """(n, H) summary matrix at one layer over the kept ctx_ids (coverage-checked)."""
+def _load_uh_summaries(spec: str) -> tuple[dict, dict, dict]:
+    """Load the compact uh_summaries pack (local path, else an HF data-repo path).
+
+    Returns ``({row: {ctx: (Lc, H) fp32 np}}, {row: {ctx: probe count}}, meta)``
+    — the 9 new-row source for the read-out enlarged-axis rerun (plan v11 §4.6
+    item 5; avoids re-downloading the ~430 MB uh position store on the CPU
+    chain). ``meta`` carries {smoke, context_ids, capture_layers, model}.
+    Fails loud on a non-extended pack.
+    """
+    from huggingface_hub import hf_hub_download
+
+    p = Path(spec)
+    if not p.is_file():
+        p = Path(hf_hub_download(HF_DATA_REPO, spec, repo_type="dataset"))
+    blob = torch.load(p, weights_only=False)
+    if not blob.get("extended_boundary"):
+        raise RuntimeError(f"uh_summaries pack at {spec} lacks extended_boundary provenance")
+    rows = {
+        row: {c: t.float().numpy() for c, t in per_ctx.items()}
+        for row, per_ctx in blob["summaries"].items()
+    }
+    meta = {
+        k: blob.get(k)
+        for k in (
+            "smoke",
+            "context_ids",
+            "capture_layers",
+            "model",
+            "ablate_answer",
+            "truncate_frac",  # `_btdr` per-k pack provenance (None on older packs)
+            "rows",
+        )
+    }
+    return rows, blob["coverage"], meta
+
+
+def _summary_matrix(summary, layer_i, kept, free_summaries, pos_summaries, coverage, uh_rows=None):
+    """(n, H) summary matrix at one layer over the kept ctx_ids (coverage-checked).
+
+    Row sources: free recipes (mean/last/maxp) from v0; uh rows from the
+    ``--uh-summaries`` pack when provided; every other position row from the
+    position store. Parent behavior is byte-identical when ``uh_rows`` is None.
+    """
     rows = []
     for c in kept:
         if summary in ("mean", "last", "maxp"):
             rows.append(free_summaries[summary][c][layer_i].numpy())
+        elif uh_rows is not None and summary in uh_rows:
+            rows.append(uh_rows[summary][c][layer_i])
         else:
             rows.append(pos_summaries[c][summary][layer_i])
     return np.stack(rows)
 
 
-def _kept_contexts(summary, ctx_ids, coverage):
+def _kept_contexts(summary, ctx_ids, coverage, uh_cov=None):
     """Contexts with coverage for this summary (free recipes always covered)."""
     if summary in ("mean", "last", "maxp"):
         return list(ctx_ids)
+    if uh_cov is not None and summary in uh_cov:
+        return [c for c in ctx_ids if uh_cov[summary].get(c, 0) > 0]
     return [c for c in ctx_ids if coverage[c].get(summary, 0) > 0]
+
+
+def _default_behaviors(e0: dict, args) -> list[str]:
+    """Behavior list with the plan-§5 quarantine applied to the default set.
+
+    The PARENT's harmful-compliance E0 is cache-contaminated — using it anywhere
+    but the contamination diagnostic is banned. The parent cell (betley, betley)
+    is REUSED, never re-fit, so the filter fires only on the NEW square cell
+    (g1 acts → parent E0); harmful compliance headlines only at E0_g1. An
+    explicit ``--behaviors`` overrides (a deliberate diagnostic read).
+    """
+    behaviors = args.behaviors or list(e0.keys())
+    if (
+        args.behaviors is None
+        and args.e0_genre == "betley"
+        and args.summaries_genre != "betley"
+        and "harmful_compliance" in behaviors
+    ):
+        behaviors = [b for b in behaviors if b != "harmful_compliance"]
+        logger.info(
+            "[phase=quarantine] harmful_compliance EXCLUDED from the (g1 acts -> parent E0) "
+            "cell — the parent target is quarantined (plan v6 §5); it headlines only at E0_g1"
+        )
+    return behaviors
+
+
+def _resolve_e0_path(e0_genre: str) -> Path:
+    """Default graded-E0 JSON per E0-target genre (explicit --e0-highm overrides).
+
+    betley → the parent's committed Phase-C output (branch issue-810; never
+    re-judged this round). g1 → this round's Phase C-g output under the
+    follow-up-label dir (written by ``issue810_batch_rejudge_highm.py --genre g1``).
+    """
+    if e0_genre == "betley":
+        return BETLEY_E0_HIGHM_FILE
+    return G1_OUT_DIR / "phase_c" / "e0_highm_graded.json"
 
 
 # ── read-out methods ──────────────────────────────────────────────────────────
@@ -238,22 +357,170 @@ def _trained_ridge_pred(X: np.ndarray, y: np.ndarray) -> np.ndarray:
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
+def _handle_rb_shape_mismatch(smoke, behavior, summary, layer_label, x_h, r_h, n_skips) -> int:
+    """Fixed-r_B hidden-size mismatch: loud error in production, counted skip in smoke.
+
+    A mixed-model SMOKE (0.5B store rows vs the 7B r_B) legitimately cannot
+    project across hidden sizes — the skip is logged + counted (persisted as
+    ``fixed_rb_shape_skips`` in the output JSON). Production shapes always
+    match, so a NON-smoke mismatch means the summaries store and r_B come from
+    different models — raise, never a silent skip (r1 Minor: the bare
+    ``continue`` was undocumented + uncounted).
+    """
+    if not smoke:
+        raise RuntimeError(
+            f"fixed_rb hidden-size mismatch on a NON-smoke run: summary rows H={x_h} vs "
+            f"r_B H={r_h} ({behavior}/{summary}/L{layer_label}) — the summaries store "
+            "and r_B come from different models"
+        )
+    n_skips += 1
+    logger.info(
+        "[phase=skip] fixed_rb %s/%s L%s: hidden-size mismatch (%d vs %d) — "
+        "mixed-model smoke skip #%d",
+        behavior,
+        summary,
+        layer_label,
+        x_h,
+        r_h,
+        n_skips,
+    )
+    return n_skips
+
+
+def _resolve_rows_and_sources(args, pos_man: dict, ctx_ids: list[str], capture_layers: list[int]):
+    """Expand --rows, load + validate the uh pack, fail loud on missing sources.
+
+    Returns ``(summaries, uh_rows, uh_cov)``. A requested uh row with NO source
+    (neither the ``--uh-summaries`` pack nor an extended-boundary position
+    store) refuses — never a silent KeyError mid-fit. On a NON-smoke run the
+    loaded pack is validated against the production grid BEFORE the fit loop
+    (``validate_uh_pack``: non-smoke provenance, model, the full layer axis,
+    every requested row × every production context — r1 CONCERN
+    ``uh-pack-meta-validation-readout``); a ``--smoke`` run keeps the relaxed
+    path (partial coverage pairs via ``_kept_contexts``). ``--null-mode
+    full-rerun`` additionally requires the FULL 46-row × 28-layer axis (unless
+    --smoke; plan v11 §6 read mode 1 — the enlarged-axis band's denominator).
+    """
+    uh_rows, uh_cov = (None, None)
+    uh_meta: dict = {}
+    if args.uh_summaries:
+        uh_rows, uh_cov, uh_meta = _load_uh_summaries(args.uh_summaries)
+        logger.info("[phase=load] uh_summaries pack: %d rows", len(uh_rows))
+    summaries = _expand_rows(args.summaries) if args.summaries else summary_names()
+    uh_requested = [s for s in summaries if s in set(UH_SUMMARY_NAMES)]
+    if uh_requested and uh_rows is None and not pos_man.get("extended_boundary"):
+        raise SystemExit(
+            f"rows {uh_requested} requested but no --uh-summaries pack given and the "
+            "position store is not extended-boundary — no source for the new rows"
+        )
+    if uh_rows is not None:
+        if args.smoke:
+            logger.info(
+                "[phase=load] --smoke: uh pack production validation RELAXED "
+                "(smoke=%s model=%s) — partial coverage pairs via _kept_contexts",
+                uh_meta.get("smoke"),
+                uh_meta.get("model"),
+            )
+        else:
+            validate_uh_pack(
+                uh_rows,
+                uh_cov,
+                uh_meta,
+                requested_rows=uh_requested,
+                ctx_ids=ctx_ids,
+                expected_capture_layers=capture_layers,
+            )
+            logger.info(
+                "[phase=load] uh pack VALIDATED: %d requested rows x %d contexts x %d layers",
+                len(uh_requested),
+                len(ctx_ids),
+                len(capture_layers),
+            )
+    if args.null_mode == "full-rerun" and not args.smoke:
+        missing = sorted(set(enlarged_summary_names()) - set(summaries))
+        if missing or (args.layers is not None):
+            raise SystemExit(
+                "--null-mode full-rerun requires the FULL 46-row x 28-layer axis "
+                f"(missing rows: {missing[:5]}...; layers subset: {args.layers}) — "
+                "pass --rows all-46 with no --layers (plan v11 §6 read mode 1)"
+            )
+    return summaries, uh_rows, uh_cov
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #810 DV (b): behavior read-out rho")
     ap.add_argument(
+        "--summaries-genre",
+        choices=list(GENRES),
+        default="betley",
+        help="genre of the ACTIVATION side (v0 summaries + position store): 'betley' "
+        "(default — the parent's sources, bit-for-bit) or 'g1' (#658's UltraChat arm)",
+    )
+    ap.add_argument(
+        "--e0-genre",
+        choices=list(GENRES),
+        default="betley",
+        help="genre of the E0 TARGET side: 'betley' (the parent's committed Phase-C "
+        "graded E0) or 'g1' (this round's Phase C-g output). The 2x2 square = "
+        "--summaries-genre x --e0-genre (plan v6 §4.6 item 4)",
+    )
+    ap.add_argument(
         "--e0-highm",
-        default=str(PROJECT_ROOT / "eval_results" / "issue_810" / "e0_highm_graded.json"),
+        default=None,
+        help="explicit graded-E0 JSON path (overrides the --e0-genre default resolution)",
     )
     ap.add_argument("--e0-lowm", default=None, help="#763 graded E0 JSON (optional; in-flight)")
     ap.add_argument(
-        "--position-store-hf", default="issue658_theory_assumptions/answer_position_sweep"
+        "--position-store-hf",
+        default=None,
+        help="HF prefix of the aligned-subset position store (default: the "
+        "--summaries-genre's — answer_position_sweep[_<genre-tag>])",
     )
     ap.add_argument("--position-store-dir", default=None)
-    ap.add_argument("--out", default=str(PROJECT_ROOT / "eval_results" / "issue_810"))
-    ap.add_argument("--summaries", nargs="*", default=None)
+    ap.add_argument(
+        "--out",
+        default=None,
+        help="output dir (default: eval_results/issue_810 when BOTH genres are betley — "
+        "the parent path, bit-for-bit — else the follow-up round dir "
+        "eval_results/issue_810/ultrachat-genre-summary-sweep so a g1 run never "
+        "clobbers the parent's committed JSONs)",
+    )
+    ap.add_argument(
+        "--summaries",
+        "--rows",
+        nargs="*",
+        default=None,
+        help="subset of summary rows (default = the parent 37-row set). Accepts the tokens "
+        "'uh-new' (the 9 new rows) and 'all-46' (the enlarged axis). `--rows` is the "
+        "plan-v11 alias.",
+    )
     ap.add_argument("--layers", nargs="*", type=int, default=None)
     ap.add_argument("--behaviors", nargs="*", default=None)
     ap.add_argument("--methods", nargs="*", default=["fixed_rb", "trained_ridge"])
+    ap.add_argument(
+        "--uh-summaries",
+        default=None,
+        help="uh_summaries.pt pack (local path or HF data-repo path) sourcing the 9 new "
+        "rows — the CPU-chain input; without it, uh rows resolve from the position "
+        "store (which must then be the extended-boundary store)",
+    )
+    ap.add_argument(
+        "--null-mode",
+        choices=["per-run", "full-rerun"],
+        default="per-run",
+        help="'per-run' = parent behavior byte-for-bit (per-cell nulls for whatever was "
+        "fit). 'full-rerun' = the plan-v11 read-out enlarged-axis primary path: nulls "
+        "recomputed for EVERY fitted cell (NO --null-join exists on this leg — the "
+        "shared-rng stream makes a join invalid, A5 fact-check) + the enlarged-axis "
+        "max-selected band + the per-behavior two-method conjunction statistic emitted; "
+        "requires the fitted rows to cover the full 46-row axis (unless --smoke).",
+    )
+    ap.add_argument(
+        "--out-suffix",
+        default=None,
+        help="output filename tag: readout_rho_<suffix>.json + null_matrix_readout_"
+        "<suffix>.json (default None = the parent filenames, byte-for-bit)",
+    )
     ap.add_argument("--n-perms", type=int, default=SHUFFLE_NULL_PERMS)
     ap.add_argument(
         "--device",
@@ -277,13 +544,32 @@ def main() -> int:
 
     from huggingface_hub import hf_hub_download
 
-    out_dir = Path(args.out)
+    any_g1 = "g1" in (args.summaries_genre, args.e0_genre)
+    out_dir = Path(
+        args.out or (G1_OUT_DIR if any_g1 else (PROJECT_ROOT / "eval_results" / "issue_810"))
+    )
     out_dir.mkdir(parents=True, exist_ok=True)
+    if args.position_store_hf is None:
+        args.position_store_hf = (
+            f"{HF_PREFIX}/answer_position_sweep"
+            if args.summaries_genre == "betley"
+            else f"{HF_PREFIX}/{G1_ANSWER_POSITION_SWEEP_SUBDIR}"
+        )
+    e0_path = Path(args.e0_highm) if args.e0_highm else _resolve_e0_path(args.e0_genre)
 
-    logger.info("[phase=load] manifest + summaries + r_B + E0 + tf_margin")
-    man = load_json(hf_hub_download(HF_DATA_REPO, I658_STORE_MANIFEST, repo_type="dataset"))
+    logger.info(
+        "[phase=load] manifest + summaries + r_B + E0 + tf_margin "
+        "(summaries_genre=%s e0_genre=%s e0=%s)",
+        args.summaries_genre,
+        args.e0_genre,
+        e0_path,
+    )
+    manifest_file = I658_STORE_MANIFEST if args.summaries_genre == "betley" else G1_STORE_MANIFEST
+    man = load_json(hf_hub_download(HF_DATA_REPO, manifest_file, repo_type="dataset"))
+    if args.summaries_genre == "g1":
+        assert_g1_probe_pool_hash(man, G1_STORE_MANIFEST)
     ctx_ids_all = context_ids_from_manifest(man)
-    free_summaries, capture_layers = _load_free_summaries()
+    free_summaries, capture_layers = _load_free_summaries(args.summaries_genre)
     rb, _rb_columns = _load_rb()
 
     local_dir = Path(args.position_store_dir) if args.position_store_dir else None
@@ -298,7 +584,7 @@ def main() -> int:
     ctx_ids = [c for c in pos_man["context_ids"] if c in ctx_ids_all]
     pos_summaries, coverage = _load_position_summaries(ctx_ids, args.position_store_hf, local_dir)
 
-    e0_highm = load_json(args.e0_highm)
+    e0_highm = load_json(e0_path)
     low_m = load_json(args.e0_lowm) if args.e0_lowm and Path(args.e0_lowm).is_file() else None
     if args.e0_lowm and low_m is None:
         logger.warning(
@@ -306,14 +592,15 @@ def main() -> int:
         )
     e0 = _e0_by_context(e0_highm, low_m)
 
-    summaries = args.summaries or summary_names()
+    summaries, uh_rows, uh_cov = _resolve_rows_and_sources(args, pos_man, ctx_ids, capture_layers)
     layers = args.layers if args.layers is not None else list(range(len(capture_layers)))
-    behaviors = args.behaviors or list(e0.keys())
+    behaviors = _default_behaviors(e0, args)
     rng = np.random.default_rng(SHUFFLE_NULL_SEED)
 
     results: list[dict] = []
     # null_matrix[behavior][method][summary][layer] = [per-draw ρ]
     null_matrix: dict = {}
+    fixed_rb_shape_skips = 0
 
     for behavior in behaviors:
         graded = e0.get(behavior, {}).get("graded", {})
@@ -330,7 +617,9 @@ def main() -> int:
                 continue
             null_matrix[behavior].setdefault(method, {})
             for summary in summaries:
-                kept = [c for c in _kept_contexts(summary, ctx_ids, coverage) if c in graded]
+                kept = [
+                    c for c in _kept_contexts(summary, ctx_ids, coverage, uh_cov) if c in graded
+                ]
                 if len(kept) < 4:
                     continue
                 y = np.array([graded[c] for c in kept], dtype=np.float64)
@@ -339,7 +628,9 @@ def main() -> int:
                 )  # companion
                 null_matrix[behavior][method].setdefault(summary, {})
                 for li in layers:
-                    X = _summary_matrix(summary, li, kept, free_summaries, pos_summaries, coverage)
+                    X = _summary_matrix(
+                        summary, li, kept, free_summaries, pos_summaries, coverage, uh_rows
+                    )
                     # Draw n_perms permutations from the SHARED rng in the SAME
                     # order the serial per-draw loop consumed them (byte-identical
                     # null on a like-seeded rng — the smoke asserts this).
@@ -348,6 +639,17 @@ def main() -> int:
                         # diffmeans is the theory default; report both recipes but
                         # gate the headline on diffmeans (persona-vectors default).
                         r = rb[behavior]["diffmeans"][li].numpy()
+                        if X.shape[1] != r.shape[0]:
+                            fixed_rb_shape_skips = _handle_rb_shape_mismatch(
+                                args.smoke,
+                                behavior,
+                                summary,
+                                capture_layers[li],
+                                X.shape[1],
+                                r.shape[0],
+                                fixed_rb_shape_skips,
+                            )
+                            continue
                         pred = _fixed_rb_pred(X, r)
                         # correct null (batched, no re-fit): permute the (E0,
                         # summary) pairing, re-project the SAME pred → re-Spearman.
@@ -396,42 +698,214 @@ def main() -> int:
         layers,
         capture_layers,
         rb,
+        uh_rows,
+        uh_cov,
     )
 
+    _write_outputs(
+        args,
+        out_dir,
+        e0_path,
+        ctx_ids,
+        results,
+        null_matrix,
+        conjunction,
+        judge_val,
+        length_control,
+        low_m,
+        fixed_rb_shape_skips,
+    )
+    logger.info("[phase=done] wrote read-out results + null matrix to %s", out_dir)
+    return 0
+
+
+def _write_outputs(
+    args,
+    out_dir: Path,
+    e0_path,
+    ctx_ids,
+    results,
+    null_matrix,
+    conjunction,
+    judge_val,
+    length_control,
+    low_m,
+    fixed_rb_shape_skips: int = 0,
+) -> None:
+    """Persist the read-out results + null matrix (+ the full-rerun reductions).
+
+    Enlarged-axis reductions (plan v11 §6 / H4-uh; --null-mode full-rerun): the
+    max-selected band over EVERY fitted cell's freshly recomputed draws + the
+    per-behavior two-method conjunction statistic (max over summaries of min
+    over methods of best-layer ρ, identical selection per draw — the g1
+    conjunction_bands recipe) recomputed over the enlarged summary axis.
+    ``--out-suffix`` retargets the filenames so a uh run never clobbers the
+    parent's committed JSONs.
+    """
+    enlarged = None
+    if args.null_mode == "full-rerun":
+        enlarged = _enlarged_axis_reductions(results, null_matrix, args.n_perms)
+
+    readout_name = (
+        f"readout_rho_{args.out_suffix}.json" if args.out_suffix else "readout_rho_by_summary.json"
+    )
+    null_name = (
+        f"null_matrix_readout_{args.out_suffix}.json"
+        if args.out_suffix
+        else "null_matrix_readout.json"
+    )
     dump_json(
         {
             "dv": "behavior_readout_rho_vs_graded_e0",
+            "summaries_genre": args.summaries_genre,
+            "e0_genre": args.e0_genre,
+            "e0_source": str(e0_path),
             "primary": "rho_graded (graded 0-100 E0)",
             "companion": "rho_binary_rate (judged rate >=50)",
             "n_contexts_grid": len(ctx_ids),
             "behaviors_fit": sorted({r["behavior"] for r in results}),
             "methods": args.methods,
+            "null_mode": args.null_mode,
             "low_m_e0_landed": low_m is not None,
+            "fixed_rb_shape_skips": fixed_rb_shape_skips,  # >0 on mixed-model smoke only
             "cells": results,
             "h2_conjunction": conjunction,
+            "enlarged_axis": enlarged,
             "judge_validation": judge_val,
             "length_control": length_control,
             "reproducibility": reproducibility_metadata(),
             "smoke": args.smoke,
         },
-        out_dir / "readout_rho_by_summary.json",
+        out_dir / readout_name,
     )
     dump_json(
         {
             "dv": "readout",
+            "summaries_genre": args.summaries_genre,
+            "e0_genre": args.e0_genre,
             "axes": "behavior -> method -> summary -> layer -> [per-draw rho]",
             "n_perms": args.n_perms,
             "seed": SHUFFLE_NULL_SEED,
+            "null_mode": args.null_mode,
             "readout": null_matrix,
         },
-        out_dir / "null_matrix_readout.json",
+        out_dir / null_name,
     )
     if args.upload_prefix:
         logger.info("[phase=upload] fit-result JSONs -> %s", args.upload_prefix)
         landed = upload_out_dir(out_dir, args.upload_prefix)
         logger.info("[phase=upload] verified fit-result JSONs under %s/", landed)
-    logger.info("[phase=done] wrote read-out results + null matrix to %s", out_dir)
-    return 0
+
+
+def _conjunction_reductions(results: list[dict], null_matrix: dict, n_perms: int) -> dict:
+    """Per-behavior two-method conjunction statistic + its max-selected band.
+
+    Statistic (the g1 ``conjunction_bands`` recipe, recomputed over THIS run's
+    summary axis): max over summaries of min over methods of best-layer ρ.
+    Null: the IDENTICAL selection applied to each per-draw matrix (best over
+    layers per draw → min over methods → max over summaries). A summary
+    lacking either method (no r_B / mixed-model skip) is excluded from BOTH
+    the observed and the null reduction (selection symmetry preserved).
+    """
+    methods = sorted({r["method"] for r in results})
+    out: dict[str, dict] = {}
+    if len(methods) < 2:
+        return {"note": f"conjunction needs 2 methods; got {methods}", "by_behavior": out}
+    best: dict[tuple, float] = {}
+    for r in results:
+        if r["rho_graded"] is None:
+            continue
+        key = (r["behavior"], r["summary"], r["method"])
+        best[key] = max(best.get(key, -2.0), r["rho_graded"])
+    for beh in sorted({b for (b, _s, _m) in best}):
+        per_summary: dict[str, float] = {}
+        for s in {s for (b, s, _m) in best if b == beh}:
+            vals = [best.get((beh, s, m)) for m in methods]
+            if any(v is None for v in vals):
+                continue
+            per_summary[s] = min(vals)
+        if not per_summary:
+            continue
+        arg = max(per_summary, key=lambda k: per_summary[k])
+        names = sorted(per_summary)
+        mins = None
+        computable = True
+        for m in methods:
+            per_s = null_matrix.get(beh, {}).get(m, {})
+            mats = []
+            for s in names:
+                layer_draws = [
+                    np.asarray(d, dtype=np.float64)
+                    for d in per_s.get(s, {}).values()
+                    if len(d) == n_perms
+                ]
+                if not layer_draws:
+                    computable = False
+                    break
+                mats.append(np.stack(layer_draws).max(axis=0))  # best-over-layers per draw
+            if not computable:
+                break
+            stacked = np.stack(mats)  # (S, draws)
+            mins = stacked if mins is None else np.minimum(mins, stacked)
+        band = None
+        if computable and mins is not None:
+            conj_draws = mins.max(axis=0)  # (draws,)
+            band = float(np.percentile(conj_draws, 97.5))
+        stat = per_summary[arg]
+        out[beh] = {
+            "statistic": stat,
+            "arg_summary": arg,
+            "band_97_5": band,
+            "verdict": (
+                "not_computable"
+                if band is None
+                else ("clears_band" if stat > band else "within_band")
+            ),
+            "per_summary": per_summary,
+        }
+    return {"methods": methods, "by_behavior": out}
+
+
+def _enlarged_axis_reductions(results: list[dict], null_matrix: dict, n_perms: int) -> dict:
+    """Enlarged-axis max-selected band + conjunction (plan v11 §6, full-rerun mode).
+
+    Band: per-draw max over EVERY fitted (behavior × method × summary × layer)
+    cell's freshly recomputed null draws (the read-out leg NEVER joins — the
+    shared-rng stream bars it, A5) → 97.5th percentile, vs the best observed ρ.
+    """
+    all_draws = [
+        np.asarray(draws, dtype=np.float64)
+        for per_m in null_matrix.values()
+        for per_s in per_m.values()
+        for per_l in per_s.values()
+        for draws in per_l.values()
+        if len(draws) == n_perms
+    ]
+    band = None
+    if all_draws:
+        band = float(np.percentile(np.stack(all_draws).max(axis=0), 97.5))
+    obs_cells = [
+        (r["behavior"], r["method"], r["summary"], r["layer"], r["rho_graded"])
+        for r in results
+        if r["rho_graded"] is not None
+    ]
+    obs = max((c[4] for c in obs_cells), default=None)
+    obs_arg = max(obs_cells, key=lambda c: c[4]) if obs_cells else None
+    verdict = (
+        "not_computable"
+        if (obs is None or band is None)
+        else ("clears_band" if obs > band else "within_band")
+    )
+    return {
+        "max_selected": {
+            "statistic": obs,
+            "arg_cell": list(obs_arg) if obs_arg else None,
+            "band_97_5": band,
+            "n_cells": len(all_draws),
+            "verdict": verdict,
+        },
+        "conjunction": _conjunction_reductions(results, null_matrix, n_perms),
+    }
 
 
 def _h2_conjunction(results: list[dict]) -> dict:
@@ -527,12 +1001,18 @@ def _length_control(
     layers,
     capture_layers,
     rb,
+    uh_rows=None,
+    uh_cov=None,
 ) -> dict:
     """Per behavior: corr(answer length, winning-summary read-out pred) + corr(len, graded E0).
 
     A length-explained lift is NOT a persona finding (llm-judging rule 10). Answer
     length is the per-context median answer token count (from the Phase B manifest's
     per_context_diag). Uses the winning (behavior, method, summary, layer) by best ρ.
+    A winning UH row resolves through the uh pack's OWN coverage + row source
+    (``_kept_contexts`` / ``_summary_matrix(..., uh_rows)``) — the r1 gap filtered
+    UH rows through the position store's coverage, degrading every UH winner to
+    ``insufficient`` (CONCERN ``uh-length-control-uh-winner-gap``).
     """
     per_ctx_len = {}
     for c, d in pos_man.get("per_context_diag", {}).items():
@@ -550,15 +1030,16 @@ def _length_control(
         graded = e0.get(behavior, {}).get("graded", {})
         summary, li_val, method = cell["summary"], cell["layer"], cell["method"]
         li = capture_layers.index(li_val)
+        covered = set(_kept_contexts(summary, ctx_ids, coverage, uh_cov))
         kept = [
-            c for c in ctx_ids if c in graded and c in per_ctx_len and per_ctx_len[c] is not None
+            c
+            for c in ctx_ids
+            if c in covered and c in graded and c in per_ctx_len and per_ctx_len[c] is not None
         ]
-        if summary not in ("mean", "last", "maxp"):
-            kept = [c for c in kept if coverage[c].get(summary, 0) > 0]
         if len(kept) < 4:
             out[behavior] = {"status": "insufficient", "n": len(kept)}
             continue
-        X = _summary_matrix(summary, li, kept, free_summaries, pos_summaries, coverage)
+        X = _summary_matrix(summary, li, kept, free_summaries, pos_summaries, coverage, uh_rows)
         if method == "fixed_rb" and behavior in rb:
             pred = X @ rb[behavior]["diffmeans"][li].numpy()
         else:
