@@ -996,6 +996,80 @@ def test_c8_empty_carrier_section_is_not_solid():
     assert "carrier" in r.detail.lower()
 
 
+# ─── Check 8 — kind-aware TL;DR-kill calibration (#1291) ───────────────────
+
+# GOOD_PLAN's mandated §0.0 line, verbatim (surgery anchor for the #1291 pins).
+TLDR_CHANGE_MIND_LINE = (
+    "- **What would change my mind:** A shift larger than the run-to-run spread "
+    "would mean benign data alone moves persona expression."
+)
+
+
+def test_c8_exempt_kind_tldr_change_my_mind_satisfies_kill():
+    # #1279 shape (#1291): an exempt-kind plan with solid success criteria
+    # and a solid §0.0 "What would change my mind" line PASSes — for a
+    # code/infra change the mandated change-my-mind line IS the revert
+    # criterion; kind: experiment keeps requiring kill criteria outside the
+    # TL;DR (pinned by test_c8_tldr_what_would_change_my_mind_alone_is_not_
+    # kill_criteria, which runs the same fixture at the default kind).
+    plan = GOOD_PLAN.replace(KILL_SENT, "").replace(CRITERIA_HEADING, "## 7. Decision gates")
+    assert "What would change my mind" in plan  # TL;DR line intact
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c8_success_kill_criteria"]
+    assert r.status == "PASS"
+    assert "TL;DR" in r.detail  # detail names the TL;DR acceptance
+    assert _status(plan, "c8_success_kill_criteria", kind="analysis") == "PASS"
+
+
+def test_c8_exempt_kind_no_change_my_mind_line_still_warns():
+    # #1276 shape (#1291): kill family missing AND no §0.0 change-my-mind
+    # line anywhere — a true-positive WARN, whose detail now embeds the
+    # standard remedy sentence (self-dispositioning; no hand-written waiver
+    # prose needed).
+    plan = (
+        GOOD_PLAN.replace(KILL_SENT, "")
+        .replace(CRITERIA_HEADING, "## 7. Decision gates")
+        .replace(TLDR_CHANGE_MIND_LINE, "")
+    )
+    assert "What would change my mind" not in plan
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c8_success_kill_criteria"]
+    assert r.status == "WARN"
+    assert "Standard remedy" in r.detail
+
+
+def test_c8_exempt_kind_success_missing_not_rescued_by_tldr_kill():
+    # The success family is never waived (#1291): with success criteria
+    # missing, a solid TL;DR change-my-mind line must NOT flip an
+    # exempt-kind plan to PASS (kills a mutant that drops the success
+    # requirement from the exempt-kind TL;DR branch).
+    plan = (
+        GOOD_PLAN.replace(SUCCESS_SENT, "")
+        .replace(KILL_SENT, "")
+        .replace(CRITERIA_HEADING, "## 7. Decision gates")
+    )
+    assert "What would change my mind" in plan  # TL;DR kill intact
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c8_success_kill_criteria"]
+    assert r.status == "WARN"
+    assert "success criteria" in r.detail.lower()
+
+
+def test_c8_exempt_kind_thin_tldr_carrier_not_solid():
+    # Carrier discipline holds inside the TL;DR (#1291): a <80-char §0.0
+    # stub whose change-my-mind line is the whole section is NOT a solid
+    # kill carrier, so the exempt-kind acceptance does not fire.
+    start = GOOD_PLAN.index("## 0.0 TL;DR (plain English)")
+    end = GOOD_PLAN.index("## 1. Goal")
+    plan = (
+        GOOD_PLAN[:start]
+        + "## 0.0 TL;DR (plain English)\n\n- What would change my mind: a crash.\n\n"
+        + GOOD_PLAN[end:]
+    )
+    plan = plan.replace(KILL_SENT, "").replace(CRITERIA_HEADING, "## 7. Decision gates")
+    assert _status(plan, "c8_success_kill_criteria", kind="infra") == "WARN"
+
+
 # ─── Check 9 — conditions + seeds ──────────────────────────────────────────
 
 
@@ -2227,6 +2301,70 @@ def test_c15_fenced_evidence_line_passes():
         + "\n```\ntests/test_poll_pipeline.py::test_drain_malformed_sentinel_raises PASSED\n```\n"
     )
     assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "PASS"
+
+
+# ─── Check 15 — noise-class calibration (#1291) ────────────────────────────
+
+
+def test_c15_risks_section_anchor_does_not_trigger():
+    # #1275 v1 / #1234 shape (#1291): a Risks/Failure-Modes section row
+    # cites an acceptance criterion while a sibling row narrates a failure
+    # MODE — risk narration is not an acceptance claim, so the anchor never
+    # binds and the check SKIPs.
+    plan = (
+        GOOD_PLAN + "\n## 8. Risks and Failure Modes\n\n"
+        "- If the sweep misses a file, acceptance criterion 6 catches it in CI.\n"
+        "- post_event raising ValueError on a malformed row fails loud, not silent.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c15_bare_risks_heading_anchor_does_not_trigger():
+    # The #1275 v1 literal heading form (`## 8. Risks`) — same exclusion.
+    plan = (
+        GOOD_PLAN + "\n## 8. Risks\n\n"
+        "- If the sweep misses a file, acceptance criterion 6 catches it in CI.\n"
+        "- post_event raising ValueError on a malformed row fails loud, not silent.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c15_grep_narration_line_does_not_carry_claim():
+    # #1275 v2 shape (#1291): the only fail-loud-vocabulary line in the
+    # acceptance window narrates grep-tooling semantics ("exits nonzero"),
+    # not the plan's own acceptance claim — grep-bearing lines are excluded
+    # from the claim scan (line-scoped: a real claim on any non-grep line in
+    # the window still triggers, pinned by test_c15_failloud_claim_without_
+    # test_warns).
+    plan = (
+        GOOD_PLAN + "\n## 5. Acceptance criteria\n\n"
+        "1. The lint check reports every offending file in one pass.\n"
+        "2. Guard the count read (`grep -c` exits nonzero on count 0 — guard the "
+        "check with `|| true`).\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c15_acceptance_heading_containing_risk_word_still_triggers():
+    # Precision pin for the START-anchored Risks-heading exclusion (#1291):
+    # "risky" mid-heading must NOT exclude a genuine acceptance section
+    # (kills an unanchored `risk` mutant). Green on pre-#1291 code by design.
+    plan = GOOD_PLAN + FAILLOUD_ACCEPT.replace(
+        "## 5. Acceptance criteria", "## 5. Acceptance criteria for the risky path"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "WARN"
+
+
+def test_c15_acceptance_heading_containing_failure_mode_word_still_triggers():
+    # Failure-modes twin of the pin above (#1291 Phase-2 round-1 Must-Fix):
+    # the `failure[- ]modes?` alternation is GROUPED under the start anchor,
+    # so "failure-mode" mid-heading does not exclude a genuine acceptance
+    # section (kills the ungrouped-alternation mutant; green on pre-#1291
+    # code and post-fix, red only against the mutant).
+    plan = GOOD_PLAN + FAILLOUD_ACCEPT.replace(
+        "## 5. Acceptance criteria", "## 5. Acceptance criteria incl. failure-mode tests"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "WARN"
 
 
 # ─── Check 16 — re-extracted reference vs committed headline ───────────────
