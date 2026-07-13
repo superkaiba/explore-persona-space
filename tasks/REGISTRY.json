@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1290,
+  "highest_id": 1291,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2262,6 +2262,13 @@
       "path": "tasks/proposed/1290",
       "status": "proposed",
       "title": "daily-fix: canonical verify_plan --json parse (overall key)"
+    },
+    "1291": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1291",
+      "status": "proposed",
+      "title": "daily-fix: kind-aware c8/c15 WARN gating in verify_plan"
     },
     "13": {
       "has_clean_result": false,
