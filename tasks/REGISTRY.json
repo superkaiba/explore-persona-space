@@ -2266,8 +2266,8 @@
     "1291": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1291",
-      "status": "proposed",
+      "path": "tasks/planning/1291",
+      "status": "planning",
       "title": "daily-fix: kind-aware c8/c15 WARN gating in verify_plan"
     },
     "1292": {
