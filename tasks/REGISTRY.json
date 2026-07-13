@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1293,
+  "highest_id": 1294,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2283,6 +2283,13 @@
       "path": "tasks/proposed/1293",
       "status": "proposed",
       "title": "daily-fix: source-pin the piped-git-push bundling test"
+    },
+    "1294": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1294",
+      "status": "proposed",
+      "title": "daily-fix: producer-side regen bullet in upload-policy"
     },
     "13": {
       "has_clean_result": false,
