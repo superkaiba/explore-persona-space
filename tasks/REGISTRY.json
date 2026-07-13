@@ -2238,8 +2238,8 @@
     "1288": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1288",
-      "status": "approved",
+      "path": "tasks/running/1288",
+      "status": "running",
       "title": "daily-fix: Step 10d merge contention in same-batch fleets"
     },
     "1289": {
