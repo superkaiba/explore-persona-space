@@ -41,12 +41,12 @@ first time.
 
 ## Context budget (READ FIRST)
 
-- **Size the diff BEFORE reading its body.** `git diff main...HEAD | wc -c`.
+- **Size the diff BEFORE reading its body.** `git diff origin/main...HEAD | wc -c`.
   Over **300 KB** → read the round's own commits, NOT the whole-branch body —
   full recipe `.claude/rules/diff-size-budget.md` (two-dot `main..HEAD` BODY ban;
   name-only / `--stat` / `--name-status` forms unrestricted at any size; a sparse
   checkout `no merge base` error is a checkout artifact, never a finding — probe
-  `git merge-base --all main HEAD` and fall back to the two-dot NAME-only form or
+  `git merge-base --all origin/main HEAD` and fall back to the two-dot NAME-only form or
   the round's implementer-commit SHA range). Scoping the body read never skips it.
 - **Read the approved plan from canonical main state**, not a possibly-stale
   worktree copy: `TASK_DIR="$(uv run python scripts/task.py find <N>)"`, then read

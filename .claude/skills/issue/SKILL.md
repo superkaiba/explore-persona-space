@@ -2262,7 +2262,7 @@ Both reviewers see the same brief:
   symlink), the existing codebase.
 
 The Claude reviewer additionally receives:
-- `worktree` path, `base` ref (typically `main`).
+- `worktree` path, `base` ref (typically fetched `origin/main` — #1289).
 
 The Codex twin additionally receives:
 - `worktree`, `base`, `plan_marker_path` (no `implementation_marker_path`
@@ -2287,8 +2287,8 @@ anchors:
 
 ```bash
 # Scope the pathspec to the trigger-dense paths actually touched
-# (`git -C "$WT" diff --name-only main...HEAD` first):
-git -C "$WT" diff main...HEAD -- .claude/hooks/ 'scripts/guard_*.sh' \
+# (`git -C "$WT" diff --name-only origin/main...HEAD` first):
+git -C "$WT" diff origin/main...HEAD -- .claude/hooks/ 'scripts/guard_*.sh' \
   'tests/*guard*' > /tmp/issue-<N>-r<round>-excerpts-<slug>.md
 ```
 
@@ -2643,14 +2643,14 @@ judgment, just structural presence:
     finding is a stale-branch artifact → STRIP.
   - `cumulative-main-head-diff` → the flagged line is unchanged in the round's
     OWN range (`git show <round-sha>~1..<round-sha> -- <path>` /
-    `<parent>..HEAD`) even though it appears in `main...HEAD` → out of round
+    `<parent>..HEAD`) even though it appears in `origin/main...HEAD` → out of round
     scope → STRIP.
   In ALL THREE: the strip fires ONLY when the git probe CONFIRMS the finding is
   not from this round's diff. If the probe shows the round's own range DID touch
   the flagged lines (git says the round introduced it), the strip does NOT fire
   — leave the FAIL in place and apply the normal Step 5c rule. This is
   evidence-based, never a blanket ignore. Merge-base errors on a sparse/shallow
-  worktree (`fatal: main...HEAD: no merge base`) are a checkout artifact — fall
+  worktree (`fatal: origin/main...HEAD: no merge base`) are a checkout artifact — fall
   back to the two-dot / round-SHA range per code-reviewer.md Step 0; a "no merge
   base" error is never itself grounds to strip OR to FAIL.
 
@@ -7799,13 +7799,19 @@ suite directly and posts an `epm:test-verdict` event with the result.
       on a worktree-based task whose branch HAS commits ahead of the base,
       that NOTE means wrong cwd, re-run from the worktree; from a correct
       worktree with no commits ahead of the base it also fires and is then
-      expected and benign):
+      expected and benign). The selector's diff base defaults to fetched
+      `origin/main` (#1289: the shared root's local `main` lagged origin on
+      2026-07-12 and polluted #1281's gate to 41 files with foreign touched
+      files; bounded 120 s fetch — a fetch failure degrades to last-fetched
+      `origin/main`, an unresolvable `origin/main` falls back loudly to local
+      `main`). Pass `--base main` only to deliberately diff against the
+      local ref:
       ```bash
       REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
       WT="$REPO_ROOT/.claude/worktrees/issue-<N>"   # same-issue follow-up rounds use
                                                     # their own issue-<N>-<suffix> worktree
       cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
-      uv run python scripts/select_step9c_tests.py --base main
+      uv run python scripts/select_step9c_tests.py   # base defaults to FETCHED origin/main (#1289)
       ```
       It prints the exact gate command —
       `timeout --kill-after=60s <T>s uv run pytest <files> -v --tb=short`,

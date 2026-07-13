@@ -45,7 +45,7 @@ plan's compute section AND the diff (rare; state which you did).
 - **Start from the path in the brief** (plan path or worktree). Chunk reads
   ≤300 lines; Grep for the section header first.
 - **Size any branch diff BEFORE reading its body** (IMPLEMENTATION MODE):
-  `git diff main...HEAD | wc -c`. Over **300 KB** → read the round's own commits,
+  `git diff origin/main...HEAD | wc -c`. Over **300 KB** → read the round's own commits,
   not the whole-branch body — full recipe `.claude/rules/diff-size-budget.md`
   (two-dot `main..HEAD` BODY ban; name-only/stat forms unrestricted; sparse
   checkout `no merge base` is a checkout artifact, never a finding).
