@@ -151,11 +151,12 @@ def test_guard1_own_folder_carveout_present():
 # Sub-fix 2 (round-2 fix) — push the Guard-1 strip commit BEFORE gh pr merge
 # --------------------------------------------------------------------------
 # The Guard-1 strip commit is a LOCAL worktree commit; the safe-case
-# `gh pr merge --rebase` rebases the PR head ref on origin/issue-<N>
-# (server-side), so an unpushed strip commit is invisible to that rebase and
-# the foreign tasks/* reverts would land on main silently. The safe case must
-# push the strip commit (guarded by STRIPPED_FOREIGN=yes) before merging, and
-# that push must APPEAR BEFORE the safe-case gh pr merge line in the file.
+# `gh pr merge $MERGE_FORM` (#1288 merge-form routing) operates on the PR
+# head ref at origin/issue-<N> (server-side), so an unpushed strip commit is
+# invisible to that merge and the foreign tasks/* reverts would land on main
+# silently. The safe case must push the strip commit (guarded by
+# STRIPPED_FOREIGN=yes) before merging, and that push must APPEAR BEFORE the
+# safe-case gh pr merge line in the file.
 
 
 def test_guard1_tracks_stripped_foreign_flag():
@@ -173,8 +174,8 @@ def test_safe_case_pushes_strip_commit_gated_on_stripped_foreign():
     text = _skill_text()
     assert 'git -C "$WT" push origin issue-<N>' in text, (
         "the safe-case block must push the branch to the PR head ref before "
-        "gh pr merge --rebase (otherwise the strip commit is invisible to the "
-        "server-side rebase)"
+        "gh pr merge $MERGE_FORM (otherwise the strip commit is invisible to "
+        "the server-side merge)"
     )
     assert '[ "$STRIPPED_FOREIGN" = "yes" ]' in text, (
         "the safe-case push must be gated on STRIPPED_FOREIGN=yes so it fires "
@@ -183,15 +184,16 @@ def test_safe_case_pushes_strip_commit_gated_on_stripped_foreign():
 
 
 def test_safe_case_push_appears_before_gh_pr_merge():
-    """The push must SEQUENCE before the safe-case gh pr merge --rebase call,
-    so the server-side rebase sees the stripped branch tip."""
+    """The push must SEQUENCE before the safe-case gh pr merge $MERGE_FORM
+    call (#1288), so the server-side merge sees the stripped branch tip."""
     text = _skill_text()
     # Scope the search to the safe-case block: the #1138 canonical
     # "Bare push / merge snippets" subsection (inserted earlier in Step 10d)
-    # contains both literals, so first-occurrence pins would retarget it.
+    # contains the bare push literal (plus a merge snippet), so
+    # first-occurrence pins would retarget it.
     base = text.find("#### The auto-merge procedure (safe case")
     assert base != -1, "safe-case auto-merge heading not found in SKILL.md"
-    merge_line = "gh pr merge <PR> --rebase --delete-branch=false"
+    merge_line = "gh pr merge <PR> $MERGE_FORM --delete-branch=false"
     push_line = 'git -C "$WT" push origin issue-<N>'
     merge_offset = text.find(merge_line, base)
     push_offset = text.find(push_line, base)
@@ -582,7 +584,12 @@ _SHA_CHECK = (
     ' = "$(git -C "$WT" rev-parse HEAD)" ]'
 )
 _NONEMPTY_SHA_CHECK = '[ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ]'
-_MERGE_SUCCESS_IF = "if gh pr merge <PR> --rebase --delete-branch=false; then"
+# #1288 merge-form routing: the safe case merges via the kind-derived
+# $MERGE_FORM variable; the merge-conflict recovery block is hard-pinned to
+# --squash (its just-added merge commit makes --rebase documented-doomed,
+# #1041). Each consumer is pinned to ITS OWN success-checked merge form.
+_MERGE_SUCCESS_IF_SAFE = "if gh pr merge <PR> $MERGE_FORM --delete-branch=false; then"
+_MERGE_SUCCESS_IF_RECOVERY = "if gh pr merge <PR> --squash --delete-branch=false; then"
 
 
 def test_gate_verdict_sha_bound_at_write_and_both_consumers():
@@ -601,8 +608,8 @@ def test_gate_verdict_sha_bound_at_write_and_both_consumers():
     probe = "grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt"
     first = text.find(probe)
     second = text.find(probe, first + 1)
-    m1 = text.find(_MERGE_SUCCESS_IF, first)
-    m2 = text.find(_MERGE_SUCCESS_IF, second)
+    m1 = text.find(_MERGE_SUCCESS_IF_SAFE, first)
+    m2 = text.find(_MERGE_SUCCESS_IF_RECOVERY, second)
     assert -1 < first < m1, "safe case: the success-checked merge must follow its conditional"
     assert -1 < second < m2, "recovery: the success-checked merge must follow its conditional"
     assert _SHA_CHECK in text[first:m1], (
@@ -634,8 +641,8 @@ def test_gate_verdict_consumed_only_after_merge_success():
     first = text.find(probe)
     second = text.find(probe, first + 1)
     ready = text.find("gh pr ready <PR>")
-    m1 = text.find(_MERGE_SUCCESS_IF, first)
-    m2 = text.find(_MERGE_SUCCESS_IF, second)
+    m1 = text.find(_MERGE_SUCCESS_IF_SAFE, first)
+    m2 = text.find(_MERGE_SUCCESS_IF_RECOVERY, second)
     assert -1 < first < ready < m1, "safe case: conditional -> gh pr ready -> success-checked merge"
     assert text.find(rm_line, first, m1) == -1, (
         "safe case: NO rm may sit between the verdict conditional and the merge attempt "
