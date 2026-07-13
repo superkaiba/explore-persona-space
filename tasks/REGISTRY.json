@@ -2224,8 +2224,8 @@
     "1286": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1286",
-      "status": "planning",
+      "path": "tasks/approved/1286",
+      "status": "approved",
       "title": "daily-fix: UH_SUMMARY_NAMES collection break on main"
     },
     "1287": {
