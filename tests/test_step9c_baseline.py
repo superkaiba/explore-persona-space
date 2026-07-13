@@ -646,6 +646,88 @@ def test_compare_run_pristine_strip_or_new(tmp_path: Path, monkeypatch, capsys, 
         assert out["new"] == [node._asdict()]
 
 
+# --- #1289: compare --base default resolves via the worktree selector ------------
+
+
+def test_compare_base_default_resolves_via_selector(tmp_path: Path, monkeypatch, capsys):
+    """With no --base, compare resolves via the WORKTREE selector's
+    resolve_base(DEFAULT_BASE, wt, fetch=False) — same-mapping-logic (#1022)
+    with fetched-origin/main semantics and NO second fetch (#1289) — and
+    threads the RESOLVED ref into compute_touched."""
+    seen: dict[str, object] = {}
+
+    def _resolve(base: str, work_root: Path, *, fetch: bool = True) -> str:
+        seen["resolve"] = (base, fetch)
+        return "resolved-ref"
+
+    def _ct(base: str, work_root: Path, _runner=None) -> list[str]:
+        seen["ct_base"] = base
+        return []
+
+    argv, _calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[("tests/test_fine.py", "tests.test_fine", "test_ok", "passed")],
+        pytest_rc=0,
+        ledger_kw={"failing": ()},
+        sel_attrs={"resolve_base": _resolve, "DEFAULT_BASE": "origin/main", "compute_touched": _ct},
+    )
+    rc, _out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert seen["resolve"] == ("origin/main", False)  # DEFAULT_BASE threaded, no second fetch
+    assert seen["ct_base"] == "resolved-ref"  # compute_touched got resolve_base's RETURN
+
+
+def test_compare_base_default_pre1289_selector_falls_back_to_main(
+    tmp_path: Path, monkeypatch, capsys
+):
+    """A pre-#1289 worktree selector (no resolve_base — the default _FakeSel)
+    keeps that era's self-consistent behavior: compare diffs against local
+    'main' (the getattr transition guard)."""
+    seen: dict[str, object] = {}
+
+    def _ct(base: str, work_root: Path, _runner=None) -> list[str]:
+        seen["ct_base"] = base
+        return []
+
+    argv, _calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[("tests/test_fine.py", "tests.test_fine", "test_ok", "passed")],
+        pytest_rc=0,
+        ledger_kw={"failing": ()},
+        sel_attrs={"compute_touched": _ct},  # _FakeSel has NO resolve_base
+    )
+    rc, _out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert seen["ct_base"] == "main"
+
+
+def test_compare_base_explicit_ref_used_verbatim(tmp_path: Path, monkeypatch, capsys):
+    """An explicit --base REF bypasses resolution entirely (used verbatim)."""
+    seen: dict[str, object] = {}
+
+    def _resolve(base: str, work_root: Path, *, fetch: bool = True) -> str:
+        raise AssertionError("resolve_base must not be called for an explicit --base")
+
+    def _ct(base: str, work_root: Path, _runner=None) -> list[str]:
+        seen["ct_base"] = base
+        return []
+
+    argv, _calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[("tests/test_fine.py", "tests.test_fine", "test_ok", "passed")],
+        pytest_rc=0,
+        ledger_kw={"failing": ()},
+        sel_attrs={"resolve_base": _resolve, "compute_touched": _ct},
+        extra_args=("--base", "feature-x"),
+    )
+    rc, _out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert seen["ct_base"] == "feature-x"
+
+
 # --- #1129: derived per-file pristine timeout ------------------------------------
 
 

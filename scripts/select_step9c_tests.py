@@ -53,9 +53,22 @@ the base, that NOTE means the helper ran from the wrong cwd (re-run from the
 issue worktree); from a checkout genuinely at the base it is expected and
 benign.
 
+Diff-base resolution (#1289): the default ``--base`` is FETCHED ``origin/main``
+(the shared repo-root ``main`` can lag origin — 2026-07-12: foreign-file
+pollution inflated #1281's gate to 41 files). :func:`resolve_base` runs a
+bounded best-effort ``git fetch origin main`` (``FETCH_TIMEOUT_S``; skip with
+``--no-fetch``), degrades to the last-fetched ``origin/main`` on fetch failure,
+and falls back LOUDLY to local ``main`` only when ``origin/main`` does not
+resolve at all (offline clone / no origin remote / non-git fixture tree). A
+base without an ``origin/`` prefix is used verbatim with no git calls —
+``--base main`` is the pre-#1289 escape hatch. Branches are cut from fetched
+``origin/main`` (#1214), so ``merge-base(origin/main, HEAD)`` is the branch cut
+point and the three-dot selection is stable under ``origin/main`` advancing.
+
 Usage::
 
-    uv run python scripts/select_step9c_tests.py [--base main] [--repo-root <path>] [--json]
+    uv run python scripts/select_step9c_tests.py [--base origin/main] [--no-fetch] \
+                                                 [--repo-root <path>] [--json]
     uv run python scripts/select_step9c_tests.py --map-files <file> [--repo-root <path>]
 
 ``--map-files FILE`` (the ``/issue`` Step 10d merge-gate mapping mode, #1147):
@@ -100,7 +113,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 # --- Pinned workflow-invariant tests (plan §5 + 1 brief addition + 3 #1242 pins
-# --- + 1 #1268 pin, 36 files). -
+# --- + 1 #1268 pin + 1 #1289 pin, 37 files). -
 # A module-level literal tuple, NOT a glob: a future ``tests/test_workflowish.py``
 # that is NOT meant to gate Step 9c must not silently join the gate, and the gate
 # must not silently shrink if a glob arm stops matching. Drift is made loud by the
@@ -149,6 +162,7 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_clean_result_critic_planned_vs_actual.py",
     "tests/test_check_no_secret_shaped_strings.py",
     "tests/test_check_mcp_json_no_secrets.py",
+    "tests/test_diff_base_origin_main_pin.py",  # NEW (#1289) — diff-base origin/main pin
 )
 
 # --- Touched files that short-circuit (no per-file test map). ----------------
@@ -237,13 +251,84 @@ SLOW_TESTS: dict[str, int] = {
     "tests/test_workflow_lint.py": 900,
 }
 
+# --- Diff-base resolution (#1289). -------------------------------------------
+# The always-shared repo-root `main` can lag origin/main (unpushed/conflicted
+# root state): on 2026-07-12 three concurrent sessions got foreign-file
+# pollution from `--base main` (#1280: 202,578-byte diff vs 11,637 against
+# origin/main; #1281: a 41-test-file gate). Default the base to FETCHED
+# origin/main: branches are cut from fetched origin/main (new_worktree.sh,
+# #1214), and merge-base(origin/main, HEAD) == the cut point — advancing
+# origin/main never moves it, so the three-dot selection is stable.
+DEFAULT_BASE = "origin/main"
+# Bounded fetch — SKILL.md Step 10d lint-gate precedent
+# (`timeout --kill-after=30s 120s git fetch origin main --quiet || true`):
+FETCH_TIMEOUT_S = 120
+
+
+def resolve_base(base: str, work_root: Path, *, fetch: bool = True) -> str:
+    """Resolve the diff base ref (#1289) — never blocks, never raises.
+
+    A *base* without an ``origin/`` prefix is returned VERBATIM with no git
+    calls (the explicit local-ref escape hatch; ``--base main`` == pre-#1289
+    behavior). A remote-tracking *base*: (1) best-effort bounded
+    ``git fetch origin <branch> --quiet`` (failure / timeout / offline ->
+    stderr NOTE, degrade to the last-fetched ref — the Guard-1 precedent;
+    a stale origin/main still names the branch cut point, see module
+    docstring); (2) ``git rev-parse --verify --quiet <base>`` — resolves ->
+    use *base*; does NOT resolve (offline clone with no remote-tracking ref,
+    checkout without an ``origin`` remote, non-git ``--repo-root`` fixture
+    tree) -> loud stderr NOTE + fall back to the local ``<branch>`` (pre-#1289
+    behavior; fail toward current behavior).
+    """
+    if not base.startswith("origin/"):
+        return base
+    branch = base.split("/", 1)[1]
+    if fetch:
+        try:
+            subprocess.run(
+                ["git", "fetch", "origin", branch, "--quiet"],
+                cwd=str(work_root),
+                capture_output=True,
+                text=True,
+                timeout=FETCH_TIMEOUT_S,
+                check=True,
+            )
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+            print(
+                f"select_step9c_tests: NOTE — git fetch origin {branch} failed ({exc}); "
+                f"using last-fetched {base} if it resolves",
+                file=sys.stderr,
+            )
+    try:
+        probe = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", base],
+            cwd=str(work_root),
+            capture_output=True,
+            text=True,
+        )
+        resolved = probe.returncode == 0
+    except OSError:
+        # A non-git / vanished work_root cannot resolve the remote ref either;
+        # take the same loud local-branch fallback (never raise — the caller's
+        # own git diff stays the fail-loud surface).
+        resolved = False
+    if resolved:
+        return base
+    print(
+        f"select_step9c_tests: NOTE — {base} does not resolve in {work_root}; "
+        f"falling back to local '{branch}' (offline clone / no origin remote — "
+        "pre-#1289 behavior)",
+        file=sys.stderr,
+    )
+    return branch
+
 
 def recommended_timeout_s(tests: list[str]) -> int:
     """Deterministic `timeout(1)` bound for a Step 9c gate selection.
 
     ``BASE + PER_FILE * len(tests) + sum(slow surcharges)``, floored at
-    ``TIMEOUT_FLOOR_S``. Invariant-only selection (35 files incl. the
-    workflow-lint surcharge) -> 2070 s (~34.5 min), consistent with the existing
+    ``TIMEOUT_FLOOR_S``. Invariant-only selection (37 files incl. the
+    workflow-lint surcharge) -> 2130 s (~35.5 min), consistent with the existing
     invariant-set-scale precedents (``step9c_baseline.py refresh``
     ``--timeout-s`` default 1800 s; the SKILL.md detached refresh's 2100 s).
     """
@@ -451,7 +536,24 @@ def _current_branch(work_root: Path) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("--base", default="main", help="diff base (default: main)")
+    parser.add_argument(
+        "--base",
+        default=DEFAULT_BASE,
+        help=(
+            "diff base (default: fetched origin/main, #1289; falls back to local "
+            "'main' when origin/main does not resolve. A base without an 'origin/' "
+            "prefix is used verbatim with no fetch — '--base main' is the "
+            "pre-#1289 escape hatch)"
+        ),
+    )
+    parser.add_argument(
+        "--no-fetch",
+        action="store_true",
+        help=(
+            "skip the bounded pre-diff 'git fetch origin <branch>' (hermetic / "
+            "offline runs; ref resolution + the local-main fallback still apply)"
+        ),
+    )
     parser.add_argument(
         "--repo-root",
         default=None,
@@ -524,8 +626,12 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{scan_test}\t{f}")
         return 0
 
+    # Diff-base resolution (#1289): AFTER the --map-files early return (mapping
+    # mode never diffs, so it must never fetch), BEFORE the diff. Every later
+    # consumer (NOTE, sizing line, --json "base") sees the RESOLVED base.
+    base = resolve_base(args.base, work_root, fetch=not args.no_fetch)
     try:
-        touched = compute_touched(args.base, work_root)
+        touched = compute_touched(base, work_root)
     except subprocess.CalledProcessError as exc:
         # Fail loud — never silently fall back to zero tests on a git error.
         print(f"select_step9c_tests: git diff failed: {exc}", file=sys.stderr)
@@ -536,7 +642,7 @@ def main(argv: list[str] | None = None) -> int:
         # when the checkout genuinely has no commits ahead of the base): the
         # #851 failure was a SILENT invariant-only fallback from the wrong cwd.
         print(
-            f"select_step9c_tests: NOTE — empty diff vs '{args.base}' in {work_root}; "
+            f"select_step9c_tests: NOTE — empty diff vs '{base}' in {work_root}; "
             "falling back to the workflow-invariant set only. If this task's changes "
             "live in an issue worktree, re-run from that worktree (Step 9c contract).",
             file=sys.stderr,
@@ -546,7 +652,7 @@ def main(argv: list[str] | None = None) -> int:
     missing = missing_invariants(work_root)
 
     # Fail loud on an EMPTY selection (defense-in-depth beside the Step 9c shell
-    # guard against a silent test-gate pass). WORKFLOW_INVARIANT has 35 always-on
+    # guard against a silent test-gate pass). WORKFLOW_INVARIANT has 37 always-on
     # entries, so an empty list can only mean the work root resolved wrong (e.g.
     # invoked from a directory outside the repo, or a bad --repo-root override)
     # or the invariant files all vanished — either way the gate would run zero
@@ -568,7 +674,8 @@ def main(argv: list[str] | None = None) -> int:
     # --json fields — see the module docstring + recommended_timeout_s().
     timeout_s = recommended_timeout_s(tests)
     print(
-        f"select_step9c_tests: {len(tests)} test files; recommended-timeout-s={timeout_s} "
+        f"select_step9c_tests: {len(tests)} test files; diff-base={base}; "
+        f"recommended-timeout-s={timeout_s} "
         "(the gate exceeds the 600s foreground Bash tool cap — run it as a background "
         "invocation per Step 9c step 1b)",
         file=sys.stderr,
@@ -580,7 +687,7 @@ def main(argv: list[str] | None = None) -> int:
                 {
                     "tests": tests,
                     "untested_touched": untested,
-                    "base": args.base,
+                    "base": base,
                     "missing_invariants": missing,
                     "selection_reasons": reasons,
                     "n_tests": len(tests),

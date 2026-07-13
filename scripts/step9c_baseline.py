@@ -15,7 +15,10 @@ Subcommands::
     uv run python scripts/step9c_baseline.py refresh [--repo-root PATH] [--timeout-s 1800] [--json]
     uv run python scripts/step9c_baseline.py status  [--repo-root PATH] [--max-age-hours 24]
                                                      [--max-code-commits 150] [--json]
-    uv run python scripts/step9c_baseline.py compare --junitxml PATH --pytest-rc INT [--base main]
+    uv run python scripts/step9c_baseline.py compare --junitxml PATH --pytest-rc INT [--base REF]
+                                                     (default: resolved via the worktree
+                                                     selector — fetched-origin/main
+                                                     semantics, no second fetch, #1289)
                                                      [--worktree PATH] [--repo-root PATH]
                                                      [--run-pristine] [--pristine-timeout-s S]
                                                      [--max-pristine-files 5]
@@ -1163,7 +1166,21 @@ def _selector_context(args: argparse.Namespace, wt: Path) -> _CompareCtx:
     """Load the WORKTREE's selector and derive touched + diff-linked-ness (§3.3 skew note)."""
     try:
         sel = load_selector_module(wt)
-        touched = sel.compute_touched(args.base, wt)
+        base = args.base
+        if base is None:
+            resolve = getattr(sel, "resolve_base", None)
+            # #1289: match the selection run's base (same-mapping-logic, #1022).
+            # fetch=False — the gate's selector run already fetched, and the
+            # three-dot merge-base is invariant under origin/main advancing,
+            # so a second fetch buys nothing and risks nothing skipping.
+            # A pre-#1289 worktree selector has no resolve_base: keep that
+            # era's behavior (local main) — self-consistent per worktree.
+            base = (
+                resolve(getattr(sel, "DEFAULT_BASE", "origin/main"), wt, fetch=False)
+                if resolve is not None
+                else "main"
+            )
+        touched = sel.compute_touched(base, wt)
         _tests, _untested, reasons = sel.select_tests_with_reasons(touched, wt)
     except (FileNotFoundError, subprocess.CalledProcessError, AttributeError) as exc:
         raise _Indeterminate(f"selector load / touched-diff failed at {wt}: {exc}") from exc
@@ -1549,7 +1566,15 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="exit code of the gate's pytest invocation; rc not in {0,1} -> exit 2 (MF-1b)",
     )
-    p_compare.add_argument("--base", default="main")
+    p_compare.add_argument(
+        "--base",
+        default=None,
+        help=(
+            "diff base (default: resolve via the worktree selector — fetched-"
+            "origin/main semantics WITHOUT a second fetch, #1289; an explicit "
+            "REF is used verbatim)"
+        ),
+    )
     p_compare.add_argument(
         "--worktree", default=None, help="work-root override (default: cwd toplevel)"
     )
