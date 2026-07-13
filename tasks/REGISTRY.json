@@ -2245,8 +2245,8 @@
     "1289": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1289",
-      "status": "reviewing",
+      "path": "tasks/completed/1289",
+      "status": "completed",
       "title": "daily-fix: Step 9c/review diff base = fetched origin/main"
     },
     "129": {
