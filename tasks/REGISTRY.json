@@ -2287,8 +2287,8 @@
     "1294": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1294",
-      "status": "reviewing",
+      "path": "tasks/completed/1294",
+      "status": "completed",
       "title": "daily-fix: producer-side regen bullet in upload-policy"
     },
     "1295": {
