@@ -2273,8 +2273,8 @@
     "1292": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1292",
-      "status": "planning",
+      "path": "tasks/approved/1292",
+      "status": "approved",
       "title": "daily-fix: v2 lens briefs cite rubric heading verbatim"
     },
     "1293": {
