@@ -96,6 +96,16 @@ IN FULL (the list grows over time — take all current items, never a frozen sub
 Also read the "Output Format" CRITIC REPORT schema from `.claude/agents/statistics-critic.md`.
 The items fill the `{{lens_items}}` placeholder in Step 3.
 
+**No-span compose gate (#1292; incident #1265, compose-time form).** If the
+heading grep resolves NO span in `.claude/rules/critic-lens-reference.md` for
+`### Statistics & Measurement lens`, STOP and return a BLOCKER line
+(`BLOCKER: canonical lens heading not found in critic-lens-reference.md —
+heading drift; fix the reference/spec citation before dispatch`) instead of a
+composed prompt — the orchestrator treats this as a twin no-show
+(single-Claude fallback per the existing ensemble contract). NEVER fill
+`{{lens_items}}` with an empty span, a paraphrase, or items reconstructed from
+memory: a silently-empty rubric composes a Codex critic with no binding items.
+
 ### Step 3: Compose the lens-specific prompt
 
 **Composer numeric-grounding rule (load-bearing — closes the #722 fabricated-numbers

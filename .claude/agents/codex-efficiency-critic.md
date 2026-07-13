@@ -94,6 +94,16 @@ the vectorization triggers in `.claude/rules/vectorize-many-cell-fits.md` — in
 their SUBSTANCE (not the whole files) as the batch-vs-sync + batching bars. The
 composed content fills `{{lens_items}}` in Step 3.
 
+**No-span compose gate (#1292; incident #1265, compose-time form).** If the
+heading grep resolves NO span in `.claude/rules/critic-lens-reference.md` for
+`### Methodology lens` (items 10 / 13 / 16 only), STOP and return a BLOCKER line
+(`BLOCKER: canonical lens heading not found in critic-lens-reference.md —
+heading drift; fix the reference/spec citation before dispatch`) instead of a
+composed prompt — the orchestrator treats this as a twin no-show
+(single-Claude fallback per the existing ensemble contract). NEVER fill
+`{{lens_items}}` with an empty span, a paraphrase, or items reconstructed from
+memory: a silently-empty rubric composes a Codex critic with no binding items.
+
 ### Step 3: Compose the lens-specific prompt
 
 **Composer numeric-grounding rule (load-bearing — closes the #722 fabricated-numbers
