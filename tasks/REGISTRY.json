@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1288,
+  "highest_id": 1289,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2241,6 +2241,13 @@
       "path": "tasks/proposed/1288",
       "status": "proposed",
       "title": "daily-fix: Step 10d merge contention in same-batch fleets"
+    },
+    "1289": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1289",
+      "status": "proposed",
+      "title": "daily-fix: Step 9c/review diff base = fetched origin/main"
     },
     "129": {
       "has_clean_result": false,
