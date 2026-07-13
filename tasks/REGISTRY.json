@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1285,
+  "highest_id": 1286,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2220,6 +2220,13 @@
       "path": "tasks/completed/1285",
       "status": "completed",
       "title": "daily-fix: remove stale duplicate tasks/reviewing/1196"
+    },
+    "1286": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1286",
+      "status": "proposed",
+      "title": "daily-fix: UH_SUMMARY_NAMES collection break on main"
     },
     "129": {
       "has_clean_result": false,
