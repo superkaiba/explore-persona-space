@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1297,
+  "highest_id": 1298,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2311,6 +2311,13 @@
       "path": "tasks/proposed/1297",
       "status": "proposed",
       "title": "daily-fix: issue658 test sys.modules stub leak"
+    },
+    "1298": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1298",
+      "status": "proposed",
+      "title": "daily-held: #928 frozen at followups_running since 07-08"
     },
     "13": {
       "has_clean_result": false,
