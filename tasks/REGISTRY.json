@@ -2322,8 +2322,8 @@
     "1299": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1299",
-      "status": "reviewing",
+      "path": "tasks/completed/1299",
+      "status": "completed",
       "title": "workflow-fix: step-9c selector import-map arm (stem-map misses import-relationship tests)"
     },
     "13": {
