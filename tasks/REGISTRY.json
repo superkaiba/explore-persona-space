@@ -2245,8 +2245,8 @@
     "1289": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1289",
-      "status": "planning",
+      "path": "tasks/approved/1289",
+      "status": "approved",
       "title": "daily-fix: Step 9c/review diff base = fetched origin/main"
     },
     "129": {
