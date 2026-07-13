@@ -2308,8 +2308,8 @@
     "1297": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1297",
-      "status": "running",
+      "path": "tasks/reviewing/1297",
+      "status": "reviewing",
       "title": "daily-fix: issue658 test sys.modules stub leak"
     },
     "1298": {
