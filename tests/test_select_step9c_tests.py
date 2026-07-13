@@ -809,3 +809,287 @@ def test_resolve_base_fetch_failure_degrades_to_stale_origin_main(
     err = capsys.readouterr().err
     assert "git fetch origin main failed" in err
     assert seen["fetch_kwargs"]["timeout"] == sel.FETCH_TIMEOUT_S  # the bounded fetch
+
+
+# --- Cases 36+ (#1299): the import-map arm -------------------------------------
+# Fixtures write REAL import statements into tmp-tree test files (the shared
+# _make_tree stubs contain no imports and no touched-stem substrings, so the
+# new arm no-ops on every pre-existing fixture by construction).
+
+
+def _make_import_tree(tmp_path: Path, files: dict[str, str]) -> Path:
+    """_make_tree plus tests/-relative files with real (import-bearing) content."""
+    repo = _make_tree(tmp_path, [])
+    for rel, content in files.items():
+        p = repo / "tests" / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(content)
+    return repo
+
+
+# --- Case 36: THE durability pin — the #1286 fixture shape ---------------------
+def test_import_map_selects_unrelated_filename(tmp_path: Path):
+    """An importing test whose NAME shares no touched stem is selected (#1299).
+
+    Durability pin. Founding incident #1286:
+    tests/test_issue810_uh_pack_validation.py imports issue810_common but was
+    reachable by no selection arm ("uh_pack_validation" contains no touched
+    stem), so #1286 hand-appended it to the gate command.
+    """
+    repo = _make_import_tree(
+        tmp_path, {"test_uh_pack_validation.py": "from issue810_common import validate\n"}
+    )
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/issue810_common.py"], repo)
+    assert "tests/test_uh_pack_validation.py" in tests
+    assert reasons["tests/test_uh_pack_validation.py"] == ["import-map:scripts/issue810_common.py"]
+    assert untested == []  # the import hit marks the touched file tested
+
+
+# --- Case 37: function-level import (ast.walk, not module-top-only) ------------
+def test_import_map_function_level_import_selected(tmp_path: Path):
+    """Mirrors the real file's L138/L178: the ONLY import is inside a test body."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_uh_pack.py": (
+                "def test_x():\n    import issue810_fit_readout as fr\n    assert fr\n"
+            )
+        },
+    )
+    tests, untested, reasons = sel.select_tests_with_reasons(
+        ["scripts/issue810_fit_readout.py"], repo
+    )
+    assert "tests/test_uh_pack.py" in tests
+    assert reasons["tests/test_uh_pack.py"] == ["import-map:scripts/issue810_fit_readout.py"]
+    assert untested == []
+
+
+# --- Case 38: dotted scripts.X import (scripts/ is a package) ------------------
+def test_import_map_dotted_scripts_import(tmp_path: Path):
+    repo = _make_import_tree(tmp_path, {"test_consumer.py": "from scripts.widgetlib import x\n"})
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/widgetlib.py"], repo)
+    assert "tests/test_consumer.py" in tests
+    assert reasons["tests/test_consumer.py"] == ["import-map:scripts/widgetlib.py"]
+    assert untested == []
+
+
+# --- Case 39: src/explore_persona_space dotted package modules -----------------
+def test_import_map_src_package_module(tmp_path: Path):
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            # the M.a candidate-join form: touched ...foo/bar.py, import from ...foo
+            "test_pkg_consumer.py": "from explore_persona_space.foo import bar\n",
+            "test_flat_consumer.py": "from explore_persona_space.task_widget import x\n",
+        },
+    )
+    tests, untested, reasons = sel.select_tests_with_reasons(
+        [
+            "src/explore_persona_space/foo/bar.py",
+            "src/explore_persona_space/task_widget.py",
+        ],
+        repo,
+    )
+    assert "tests/test_pkg_consumer.py" in tests
+    assert reasons["tests/test_pkg_consumer.py"] == [
+        "import-map:src/explore_persona_space/foo/bar.py"
+    ]
+    assert "tests/test_flat_consumer.py" in tests
+    assert reasons["tests/test_flat_consumer.py"] == [
+        "import-map:src/explore_persona_space/task_widget.py"
+    ]
+    assert untested == []
+
+
+# --- Case 40: an import hit suppresses the untested_touched WARN ----------------
+def test_import_map_marks_touched_file_tested(tmp_path: Path):
+    """Touched module with an importing test and NO stem-named test -> no WARN."""
+    repo = _make_import_tree(tmp_path, {"test_something_else.py": "import orphanlib\n"})
+    tests, untested, _ = sel.select_tests_with_reasons(["scripts/orphanlib.py"], repo)
+    assert "tests/test_something_else.py" in tests
+    assert untested == []
+
+
+# --- Case 41: monotonicity — the arm only ever GROWS the selection --------------
+def test_import_map_only_grows_selection(tmp_path: Path):
+    """Same touched set, tree WITH vs WITHOUT the importing test file:
+    WITH-selection is a superset and every WITHOUT reason list is preserved
+    verbatim (the plan's acceptance criterion (b))."""
+    touched = ["scripts/widgetlib.py", "scripts/orphan.py"]
+    repo_without = _make_tree(tmp_path / "without", ["test_widgetlib.py"])
+    t_without, u_without, r_without = sel.select_tests_with_reasons(touched, repo_without)
+    repo_with = _make_tree(tmp_path / "with", ["test_widgetlib.py"])
+    (repo_with / "tests" / "test_importer.py").write_text("import widgetlib\n")
+    t_with, u_with, r_with = sel.select_tests_with_reasons(touched, repo_with)
+    assert set(t_with) >= set(t_without)
+    for test, rs in r_without.items():
+        assert r_with[test] == rs  # pre-existing reason lists preserved verbatim
+    assert "tests/test_importer.py" in t_with
+    # orphan.py has no test in either tree; widgetlib.py is stem-mapped in both.
+    assert u_without == ["scripts/orphan.py"]
+    assert u_with == ["scripts/orphan.py"]
+
+
+# --- Case 42: a broken test file WARNs + is skipped; never crashes ---------------
+def test_import_map_broken_test_file_warns_not_crash(tmp_path: Path, capsys):
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_good_importer.py": "import widgetlib\n",
+            # contains the pre-filter token, so it IS parsed — and fails.
+            "test_broken.py": "import widgetlib\ndef broken(:\n",
+        },
+    )
+    tests, untested, _ = sel.select_tests_with_reasons(["scripts/widgetlib.py"], repo)
+    assert "tests/test_good_importer.py" in tests  # the valid hit still selected
+    assert "tests/test_broken.py" not in tests  # broken file not import-selected
+    assert untested == []
+    err = capsys.readouterr().err
+    assert err.count("import-map cannot parse") == 1
+    assert "test_broken.py" in err
+    # 1 failure over the ~41-file fixture tree is < 5%: no aggregate WARN.
+    assert "systemic tests/ breakage" not in err
+
+
+# --- Case 43: undecodable file WARNs via the same fail-soft path ----------------
+def test_import_map_undecodable_file_warns_when_scanning(tmp_path: Path, capsys):
+    """A read/decode failure (UnicodeDecodeError, a ValueError) takes the same
+    WARN-and-skip path as a SyntaxError — the positive control for case 44's
+    zero-read proof (the raw read happens BEFORE the substring pre-filter)."""
+    repo = _make_import_tree(tmp_path, {"test_ok.py": "import widgetlib\n"})
+    (repo / "tests" / "test_undecodable.py").write_bytes(b"import widgetlib\n\xff\xfe bad")
+    tests, _, _ = sel.select_tests_with_reasons(["scripts/widgetlib.py"], repo)
+    assert "tests/test_ok.py" in tests
+    err = capsys.readouterr().err
+    assert "import-map cannot parse" in err
+    assert "test_undecodable.py" in err
+
+
+# --- Case 44: workflow-surface-only diff -> ZERO file reads (early return) ------
+def test_import_map_no_eligible_touched_skips_scan(tmp_path: Path, capsys):
+    """No import-map-eligible touched file -> the scan never reads tests/.
+
+    Proof: an undecodable test file is planted; any scan pass reads raw text
+    BEFORE the pre-filter (case 43 shows that read WARNs), so the absence of a
+    WARN here proves the zero-read early return.
+    """
+    repo = _make_import_tree(tmp_path, {})
+    (repo / "tests" / "test_undecodable.py").write_bytes(b"import widgetlib\n\xff\xfe bad")
+    hits, tested = sel.import_map_hits([".claude/skills/issue/SKILL.md", "notes.md"], repo)
+    assert hits == {} and tested == set()
+    tests, untested, _ = sel.select_tests_with_reasons([".claude/skills/issue/SKILL.md"], repo)
+    err = capsys.readouterr().err
+    assert "import-map cannot parse" not in err  # zero reads: never touched the bad file
+    assert set(tests) == set(sel.WORKFLOW_INVARIANT)
+    assert untested == []
+
+
+# --- Case 45: subdir tests (tests/experiments/) are in the rglob scope ----------
+def test_import_map_subdir_test_selected(tmp_path: Path):
+    repo = _make_import_tree(tmp_path, {"experiments/test_sub.py": "import widgetlib\n"})
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/widgetlib.py"], repo)
+    assert "tests/experiments/test_sub.py" in tests
+    assert reasons["tests/experiments/test_sub.py"] == ["import-map:scripts/widgetlib.py"]
+
+
+# --- Case 46: precision — an UNRELATED import is not selected -------------------
+def test_import_map_unrelated_import_not_selected(tmp_path: Path):
+    repo = _make_import_tree(
+        tmp_path, {"test_bystander.py": "import numpy\nfrom otherlib import thing\n"}
+    )
+    tests, _, _ = sel.select_tests_with_reasons(["scripts/widgetlib.py"], repo)
+    assert "tests/test_bystander.py" not in tests
+
+
+# --- Case 47: precision — relative imports (node.level > 0) are skipped ---------
+def test_import_map_relative_import_skipped(tmp_path: Path):
+    # The text CONTAINS the pre-filter token, so the file IS parsed; the level
+    # check (not the pre-filter) is what excludes it.
+    repo = _make_import_tree(
+        tmp_path, {"test_relative.py": "from . import widgetlib\nfrom .widgetlib import x\n"}
+    )
+    tests, _, _ = sel.select_tests_with_reasons(["scripts/widgetlib.py"], repo)
+    assert "tests/test_relative.py" not in tests
+
+
+# --- Case 48: aggregate parse-failure WARN (systemic-breakage signal) -----------
+def test_import_map_aggregate_parse_failure_warn(tmp_path: Path, capsys):
+    """>5% of scanned test files failing to parse emits ONE extra summary WARN."""
+    files = {f"test_broken_{i}.py": "import widgetlib\ndef broken(:\n" for i in range(3)}
+    files["test_ok.py"] = "import widgetlib\n"
+    repo = _make_import_tree(tmp_path, files)  # 3 broken / ~43 scanned ≈ 7% > 5%
+    tests, _, _ = sel.select_tests_with_reasons(["scripts/widgetlib.py"], repo)
+    assert "tests/test_ok.py" in tests
+    err = capsys.readouterr().err
+    assert err.count("import-map cannot parse") == 3  # one per-file WARN each
+    assert err.count("systemic tests/ breakage") == 1  # exactly one aggregate WARN
+
+
+# --- Case 49: touched_module_names resolution rules ------------------------------
+def test_touched_module_names_resolution():
+    m = sel.touched_module_names(
+        [
+            "scripts/issue810_common.py",
+            "scripts/pkg/__init__.py",
+            "src/explore_persona_space/a/b.py",
+            "src/explore_persona_space/a/__init__.py",
+            "tests/test_foo.py",  # never eligible — the touched-test arm owns tests/
+            "scripts/__init__.py",  # the scripts package marker itself: no name
+            "other/module.py",  # outside the two eligible roots
+            "scripts/notes.md",  # not .py
+        ]
+    )
+    assert m["issue810_common"] == {"scripts/issue810_common.py"}
+    assert m["scripts.issue810_common"] == {"scripts/issue810_common.py"}
+    assert m["pkg"] == {"scripts/pkg/__init__.py"}
+    assert m["scripts.pkg"] == {"scripts/pkg/__init__.py"}
+    assert m["explore_persona_space.a.b"] == {"src/explore_persona_space/a/b.py"}
+    assert m["explore_persona_space.a"] == {"src/explore_persona_space/a/__init__.py"}
+    ineligible = {"test_foo", "module", "notes", "scripts"}
+    assert not any(name.rsplit(".", 1)[-1] in ineligible for name in m)
+
+
+# --- Case 50: end-to-end through main() --json — schema unchanged, reason carried
+def test_cli_json_carries_import_map_reason(tmp_path: Path, monkeypatch, capsys):
+    repo = _make_import_tree(tmp_path, {"test_uh_pack.py": "import widgetlib\n"})
+    monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: ["scripts/widgetlib.py"])
+    rc = sel.main(["--json", "--no-fetch", "--repo-root", str(repo)])
+    assert rc == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert set(payload) == {  # --json key set byte-compatible (acceptance (c))
+        "tests",
+        "untested_touched",
+        "base",
+        "missing_invariants",
+        "selection_reasons",
+        "n_tests",
+        "recommended_timeout_s",
+        "slow_tests_selected",
+    }
+    assert "tests/test_uh_pack.py" in payload["tests"]
+    assert payload["selection_reasons"]["tests/test_uh_pack.py"] == [
+        "import-map:scripts/widgetlib.py"
+    ]
+    assert payload["untested_touched"] == []
+
+
+# --- Case 51: LIVE-tree pin of the founding incident (#1286) ---------------------
+def test_import_map_live_tree_issue1286_shape():
+    """No fixtures: the real tree's test_issue810_uh_pack_validation.py is
+    selected for a diff touching issue810_common + issue810_fit_readout, with
+    BOTH import-map reasons (fit_readout is a function-level import — pins the
+    ast.walk extension on the real tree), and neither file is WARNed untested.
+
+    If a future cleanup removes scripts/issue810_*.py or the target test, this
+    pin fails loud — repoint it at another committed import-relationship pair.
+    """
+    repo_root = Path(sel.__file__).resolve().parents[1]
+    touched = ["scripts/issue810_common.py", "scripts/issue810_fit_readout.py"]
+    tests, untested, reasons = sel.select_tests_with_reasons(touched, repo_root)
+    target = "tests/test_issue810_uh_pack_validation.py"
+    assert target in tests
+    assert "import-map:scripts/issue810_common.py" in reasons[target]
+    assert "import-map:scripts/issue810_fit_readout.py" in reasons[target]
+    assert "scripts/issue810_common.py" not in untested
+    assert "scripts/issue810_fit_readout.py" not in untested
