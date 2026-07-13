@@ -2231,8 +2231,8 @@
     "1287": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1287",
-      "status": "proposed",
+      "path": "tasks/planning/1287",
+      "status": "planning",
       "title": "daily-fix: watcher respawn for boot-turn refusal deaths"
     },
     "1288": {
