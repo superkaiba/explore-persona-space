@@ -16319,6 +16319,74 @@ def _boot_death_rows_fixture(*, with_stderr=True, extra_row=None):
     return rows
 
 
+# Deliberately SHORT and mild (one line): the fixture needs a refusal-SHAPED
+# api-error text for the sidecar-containment asserts, never real refusal prose.
+_BOOT_REFUSAL_TEXT = "API Error: 400 request was blocked by our usage policy"
+
+
+def _boot_refusal_rows_fixture(
+    *, trailing_ok=False, with_prompt_evidence=True, leading_ok_turn=False
+):
+    """Reduced replica of the REAL #1277 boot-refusal transcript's
+    classification sequence (#1287 plan §9 A2, verified at plan time: 40
+    rows — 14 assistant / 1 api-error / 2 prompt / 1 dequeue / 22 other,
+    sequence ``o d o o o p p o…a…a o`` with the trailing response row an
+    api-error): a dequeue + prompt delivery burst (omitted under
+    ``with_prompt_evidence=False`` — the oversize-tail shape where the
+    prompt rows are truncated out and the #1127 leading-implicit-turn rule
+    carries segmentation), interleaved ``other`` rows, 3 real assistant
+    rows (the boot turn took real actions), and a trailing api-error row
+    (row shape mirrors the live-captured #1074 api-error rows).
+    ``trailing_ok=True`` appends a final plain assistant row instead — the
+    recovered shape (last turn ``ok``). ``leading_ok_turn=True`` PREPENDS a
+    completed OK delivery burst ([dequeue, prompt, assistant]) before the
+    refusal burst — the two-burst ``[ok, failed]`` tail (the
+    reduction-discrimination shape, the plan's test 9)."""
+    rows: list[dict] = []
+    if leading_ok_turn:
+        rows += [
+            {"type": "queue-operation", "operation": "dequeue"},
+            {"type": "user", "message": {"content": "earlier prompt (ok turn)"}},
+            {
+                "type": "assistant",
+                "message": {"content": [{"type": "text", "text": "earlier ok delivery"}]},
+            },
+        ]
+    if with_prompt_evidence:
+        rows += [
+            {"type": "summary", "summary": "session meta"},  # other
+            {"type": "queue-operation", "operation": "dequeue"},  # delivery burst
+            {"type": "user", "message": {"content": "/issue 1277"}},  # prompt
+            {"type": "user", "message": {"content": "second prompt"}},  # prompt (same burst)
+        ]
+    else:
+        # Oversize-tail shape: the prompt-evidence rows are truncated out of
+        # the 256 KB tail; the leading response rows form one implicit turn.
+        rows += [{"type": "summary", "summary": "session meta"}]  # other
+    rows += [
+        {"type": "attachment", "attachment": {"kind": "skill"}},  # other
+        {"type": "assistant", "message": {"content": [{"type": "text", "text": "working"}]}},
+        {"type": "user", "message": {"content": [{"type": "tool_result", "content": "ok"}]}},
+        {"type": "assistant", "message": {"content": [{"type": "text", "text": "more work"}]}},
+        {"type": "assistant", "message": {"content": [{"type": "text", "text": "heartbeat"}]}},
+        {"type": "attachment", "attachment": {"kind": "file"}},  # other
+    ]
+    if trailing_ok:
+        rows.append(
+            {"type": "assistant", "message": {"content": [{"type": "text", "text": "recovered"}]}}
+        )
+    else:
+        rows.append(
+            {
+                "type": "assistant",
+                "isApiErrorMessage": True,
+                "message": {"content": [{"type": "text", "text": _BOOT_REFUSAL_TEXT}]},
+            }
+        )
+    rows.append({"type": "queue-operation", "operation": "enqueue"})  # trailing other (`…a o`)
+    return rows
+
+
 def _write_boot_death_entry(reg_dir, issue, session_id, spawned_at, *, manual=False):
     """Registration entry with an EXPLICIT spawned_at (the lane's age gate
     keys on it; `_write_autonomous_entry` pins spawned_at=now, too fresh)."""
@@ -16339,9 +16407,16 @@ def _write_boot_death_entry(reg_dir, issue, session_id, spawned_at, *, manual=Fa
     )
 
 
-def _boot_death_env(monkeypatch, asw, *, rows, idle_s=30 * 60, status="proposed", size=11368):
+def _boot_death_env(
+    monkeypatch, asw, *, rows, tail_rows="mirror", idle_s=30 * 60, status="proposed", size=11368
+):
     """Common signal monkeypatching for the boot-death pass tests. Returns
-    the telegram-push recorder list."""
+    the telegram-push recorder list. ``tail_rows`` stubs the arm-2 (#1287)
+    ``_transcript_tail_rows`` seek-tail read; the default mirrors ``rows``
+    (tail == whole file at <= cap), preserving every pre-#1287 call site's
+    behavior."""
+    if tail_rows == "mirror":
+        tail_rows = rows
     monkeypatch.setattr(asw, "_provision_in_flight_reason", lambda issue, now: None)
     monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
     monkeypatch.setattr(asw, "_task_status", lambda issue: status)
@@ -16351,6 +16426,7 @@ def _boot_death_env(monkeypatch, asw, *, rows, idle_s=30 * 60, status="proposed"
         "_boot_death_transcript_rows",
         lambda pid, max_bytes=None: (rows, "/fake/transcripts/boot-death.jsonl", size),
     )
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, max_bytes=None: tail_rows)
     pushes: list[tuple] = []
     monkeypatch.setattr(
         asw, "_telegram_push", lambda msg, dry_run: bool(pushes.append((msg, dry_run)))
@@ -16360,7 +16436,8 @@ def _boot_death_env(monkeypatch, asw, *, rows, idle_s=30 * 60, status="proposed"
 
 def test_decide_boot_death_fires_on_incident_shape():
     # Plan §6 acceptance 1: live sid + age 31 min + zero response rows +
-    # idle 30 min + 0 stops today -> "stop".
+    # idle 30 min + 0 stops today -> "stop". (Zero response rows => zero
+    # completed turns => arm 2 reads False; the arms are mutually exclusive.)
     import autonomous_session_watch as asw
 
     assert (
@@ -16368,6 +16445,7 @@ def test_decide_boot_death_fires_on_incident_shape():
             sid_alive=True,
             entry_age_s=31 * 60,
             response_row_seen=False,
+            all_turns_failed=False,
             transcript_idle_s=30 * 60,
             window_s=asw.BOOT_DEATH_WINDOW_S,
             quiet_s=asw.BOOT_DEATH_QUIET_S,
@@ -16390,6 +16468,7 @@ def test_decide_boot_death_keeps_young_entry(entry_age_s):
             sid_alive=True,
             entry_age_s=entry_age_s,
             response_row_seen=False,
+            all_turns_failed=False,
             transcript_idle_s=30 * 60,
             window_s=asw.BOOT_DEATH_WINDOW_S,
             quiet_s=asw.BOOT_DEATH_QUIET_S,
@@ -16402,9 +16481,10 @@ def test_decide_boot_death_keeps_young_entry(entry_age_s):
 
 def test_decide_boot_death_keeps_on_response_row():
     # ANY response row (assistant — the healthy #1251 re-dispatch shape — OR
-    # api-error, the #1209 family's property) means NOT a boot-death; the
-    # row-level classification of both variants is pinned in
-    # test_boot_death_rows_incident_fixture_zero_response.
+    # api-error) defeats ARM 1; the all-completed-turns-failed shape is ARM
+    # 2's property (#1287, pinned by test_decide_boot_death_fires_on_
+    # all_turns_failed + the boot-refusal pass tests). With arm 2 reading
+    # False (an ok turn / zero completed turns), a response row keeps.
     import autonomous_session_watch as asw
 
     assert (
@@ -16412,6 +16492,7 @@ def test_decide_boot_death_keeps_on_response_row():
             sid_alive=True,
             entry_age_s=31 * 60,
             response_row_seen=True,
+            all_turns_failed=False,
             transcript_idle_s=30 * 60,
             window_s=asw.BOOT_DEATH_WINDOW_S,
             quiet_s=asw.BOOT_DEATH_QUIET_S,
@@ -16423,8 +16504,11 @@ def test_decide_boot_death_keeps_on_response_row():
 
 
 def test_decide_boot_death_keeps_on_unresolvable_transcript():
-    # response_row_seen=None: transcript unresolvable OR over the tail cap —
-    # fail toward keep (the 12h stale-registration pass stays the backstop).
+    # response_row_seen=None + all_turns_failed=None: BOTH reads
+    # unresolvable — fail toward keep (the 12h stale-registration pass
+    # stays the backstop). The over-the-cap case where the TAIL still
+    # resolves is arm 2's stop (test_decide_boot_death_fires_on_all_turns_
+    # failed pins response_row_seen=None + all_turns_failed=True -> stop).
     import autonomous_session_watch as asw
 
     assert (
@@ -16432,6 +16516,7 @@ def test_decide_boot_death_keeps_on_unresolvable_transcript():
             sid_alive=True,
             entry_age_s=31 * 60,
             response_row_seen=None,
+            all_turns_failed=None,
             transcript_idle_s=30 * 60,
             window_s=asw.BOOT_DEATH_WINDOW_S,
             quiet_s=asw.BOOT_DEATH_QUIET_S,
@@ -16454,6 +16539,7 @@ def test_decide_boot_death_keeps_within_quiet_window(transcript_idle_s):
             sid_alive=True,
             entry_age_s=31 * 60,
             response_row_seen=False,
+            all_turns_failed=False,
             transcript_idle_s=transcript_idle_s,
             window_s=asw.BOOT_DEATH_WINDOW_S,
             quiet_s=asw.BOOT_DEATH_QUIET_S,
@@ -16473,6 +16559,7 @@ def test_decide_boot_death_keeps_dead_sid():
             sid_alive=False,
             entry_age_s=31 * 60,
             response_row_seen=False,
+            all_turns_failed=False,
             transcript_idle_s=30 * 60,
             window_s=asw.BOOT_DEATH_WINDOW_S,
             quiet_s=asw.BOOT_DEATH_QUIET_S,
@@ -16499,6 +16586,7 @@ def test_decide_boot_death_cap_exhausted_returns_cap_alert(stops_today, expected
             sid_alive=True,
             entry_age_s=31 * 60,
             response_row_seen=False,
+            all_turns_failed=False,
             transcript_idle_s=30 * 60,
             window_s=asw.BOOT_DEATH_WINDOW_S,
             quiet_s=asw.BOOT_DEATH_QUIET_S,
@@ -16589,6 +16677,9 @@ def test_boot_death_rows_incident_fixture_zero_response():
         extra_row={"type": "assistant", "isApiErrorMessage": True, "message": {}}
     )
     assert any(asw._classify_wedge_row(r) in ("assistant", "api-error") for r in refused)
+    # #1287 arm mutual exclusivity: zero response rows => zero completed
+    # turns => arm 2 reads False on exactly the shape arm 1 owns.
+    assert asw._segment_wake_turns(_boot_death_rows_fixture()) == []
 
 
 def test_boot_death_stderr_excerpt_bounded():
@@ -16662,6 +16753,7 @@ def test_boot_death_pass_stops_and_posts_marker(isolated_registry, monkeypatch):
     assert [(i, la) for i, la, _n, _d in markers] == [(990, "boot-death-stop")]
     note = markers[0][2]
     assert asw._BOOT_DEATH_STOP_NOTE_SENTINEL in note
+    assert "shape=zero-response" in note  # #1287 shape tag: arm 1 owns this fixture
     assert "status=proposed" in note and "registration kept" in note
     assert len(pushes) == 1
     assert (isolated_registry / "issue-990.json").exists()  # KEPT, never unlinked
@@ -16878,6 +16970,295 @@ def test_boot_death_pass_fresh_worktree_keeps(isolated_registry, monkeypatch):
         now=_BOOT_DEATH_NOW,
     )
     assert stops == []
+
+
+# ── #1287 boot-death lane arm 2 (boot-refusal) ────────────────────────────────
+# The #1277 shape: the boot turn RAN (assistant rows exist) then died on a
+# refusal, on an 826 KB transcript over arm 1's whole-file cap. Arm 2 reads
+# the 256 KB tail via _transcript_tail_rows + _segment_wake_turns and fires
+# on >= 1 completed turn with EVERY completed turn failed.
+
+
+def test_boot_refusal_fixture_segments_to_one_failed_turn():
+    # Pure (#1287 plan test 1): the fixture segments to exactly ONE completed
+    # turn, outcome "failed", for BOTH with_prompt_evidence=True AND False
+    # (the oversize-tail shape — prompt rows truncated out, the #1127
+    # leading-implicit-turn rule carries it — the real #1277 tail path);
+    # trailing_ok=True flips the last (only) turn to "ok".
+    import autonomous_session_watch as asw
+
+    for wpe in (True, False):
+        turns = asw._segment_wake_turns(_boot_refusal_rows_fixture(with_prompt_evidence=wpe))
+        assert [o for o, _ts in turns] == ["failed"], f"with_prompt_evidence={wpe}: {turns}"
+    turns_ok = asw._segment_wake_turns(_boot_refusal_rows_fixture(trailing_ok=True))
+    assert [o for o, _ts in turns_ok] == ["ok"]
+
+
+@pytest.mark.parametrize(
+    ("response_row_seen", "all_turns_failed", "expected"),
+    [
+        (True, True, "stop"),  # arm 2 fires past arm 1's response-row keep
+        (True, None, "keep"),  # tail unresolvable -> fail toward keep
+        (True, False, "keep"),  # an ok turn / zero completed turns
+        (None, True, "stop"),  # oversize: arm 1's unresolvable whole-file read does NOT veto arm 2
+    ],
+)
+def test_decide_boot_death_fires_on_all_turns_failed(response_row_seen, all_turns_failed, expected):
+    # Pure (#1287 plan test 2): the arm-2 predicate at age 31 min / idle
+    # 30 min / 0 stops today.
+    import autonomous_session_watch as asw
+
+    assert (
+        asw.decide_boot_death(
+            sid_alive=True,
+            entry_age_s=31 * 60,
+            response_row_seen=response_row_seen,
+            all_turns_failed=all_turns_failed,
+            transcript_idle_s=30 * 60,
+            window_s=asw.BOOT_DEATH_WINDOW_S,
+            quiet_s=asw.BOOT_DEATH_QUIET_S,
+            stops_today=0,
+            stops_per_day=3,
+        )
+        == expected
+    )
+
+
+def test_boot_death_pass_fires_on_boot_refusal_oversize_transcript(isolated_registry, monkeypatch):
+    # THE #1277 REGRESSION TEST (#1287 plan test 3): an oversize transcript
+    # (rows=None at 825,591 B — arm 1 unresolvable) whose 256 KB tail
+    # segments to one implicit completed turn, failed. The pass stops the
+    # sid, tags the note shape=boot-refusal with the ALL-failed evidence,
+    # bumps the day counter, and confines the refusal excerpt to the
+    # SIDECAR (never the marker note, never the push).
+    import json
+
+    import autonomous_session_watch as asw
+
+    stops: list[tuple] = []
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: bool(stops.append((sid, dry_run))) or True
+    )
+    markers: list[tuple] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((issue, label, note)),
+    )
+    tail = _boot_refusal_rows_fixture(with_prompt_evidence=False)
+    pushes = _boot_death_env(monkeypatch, asw, rows=None, tail_rows=tail, size=825_591)
+    _write_boot_death_entry(isolated_registry, 992, "sess-992", _BOOT_DEATH_NOW - 31 * 60)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-992", "pid": 4244}],
+        now=_BOOT_DEATH_NOW,
+    )
+
+    assert stops == [("sess-992", False)]
+    assert [(i, la) for i, la, _n in markers] == [(992, "boot-death-stop")]
+    note = markers[0][2]
+    assert asw._BOOT_DEATH_STOP_NOTE_SENTINEL in note
+    assert "shape=boot-refusal" in note
+    assert "ALL failed" in note and "1 api-error row(s)" in note
+    assert "task status=proposed" in note  # the real PARK-status shape recorded
+    assert len(pushes) == 1 and "shape=boot-refusal" in pushes[0][0]
+    # Sidecar-only containment: the refusal text reaches the sidecar's
+    # api_error_excerpt= field and NOTHING else.
+    assert _BOOT_REFUSAL_TEXT not in note
+    assert _BOOT_REFUSAL_TEXT not in pushes[0][0]
+    state = json.loads((isolated_registry / "boot-death-992.json").read_text())
+    assert state["stops_today"] == 1
+    events = (isolated_registry / "boot-death-events.jsonl").read_text().splitlines()
+    assert len(events) == 1
+    row = json.loads(events[0])
+    assert f"api_error_excerpt={_BOOT_REFUSAL_TEXT[:20]}" in row["note"]
+    assert (isolated_registry / "issue-992.json").exists()  # registration KEPT
+
+
+def test_boot_death_pass_fires_on_boot_refusal_small_transcript(isolated_registry, monkeypatch):
+    # Whole-file variant (#1287 plan test 4): at <= cap the whole-file rows
+    # RESOLVE (arm 1 keeps: response_row_seen=True) and arm 2 fires on the
+    # SAME rows — tail_rows is stubbed to None here, so a fire PROVES the
+    # caller reused the resolved whole-file rows instead of the second read.
+    import autonomous_session_watch as asw
+
+    stops: list = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: bool(stops.append(sid)) or True)
+    markers: list[tuple] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((label, note)),
+    )
+    rows = _boot_refusal_rows_fixture()
+    _boot_death_env(monkeypatch, asw, rows=rows, tail_rows=None)
+    _write_boot_death_entry(isolated_registry, 992, "sess-992", _BOOT_DEATH_NOW - 31 * 60)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-992", "pid": 4244}],
+        now=_BOOT_DEATH_NOW,
+    )
+    assert stops == ["sess-992"]
+    assert [la for la, _n in markers] == ["boot-death-stop"]
+    assert "shape=boot-refusal" in markers[0][1]
+
+
+@pytest.mark.parametrize("age_s", [31 * 60, 7 * 24 * 3600])
+@pytest.mark.parametrize("shape", ["trailing_ok", "assistant_only"])
+def test_boot_death_pass_keeps_on_trailing_ok_turn(isolated_registry, monkeypatch, shape, age_s):
+    # Must-NOT-fire (#1287 plan test 5): (a) the recovered shape — the tail's
+    # last completed turn is "ok" (trailing_ok fixture); (b) plain
+    # assistant-row-only rows (one implicit ok turn). Parametrized over an
+    # OLD entry age (7 days) too: arm 2 makes the lane reachable at ANY age,
+    # so the healthy-long-lived-session keep is pinned, not only young ones.
+    import autonomous_session_watch as asw
+
+    stops: list = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: bool(stops.append(sid)))
+    markers: list = []
+    monkeypatch.setattr(
+        asw, "_post_progress_marker", lambda issue, note, dry_run, label: markers.append(label)
+    )
+    if shape == "trailing_ok":
+        rows = _boot_refusal_rows_fixture(trailing_ok=True)
+    else:
+        rows = [
+            {"type": "assistant", "message": {"content": [{"type": "text", "text": f"t{i}"}]}}
+            for i in range(3)
+        ]
+    _boot_death_env(monkeypatch, asw, rows=rows)
+    _write_boot_death_entry(isolated_registry, 993, "sess-993", _BOOT_DEATH_NOW - age_s)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-993", "pid": 4245}],
+        now=_BOOT_DEATH_NOW,
+    )
+    assert stops == [] and markers == []
+    assert not (isolated_registry / "boot-death-993.json").exists()  # no state write
+    assert not (isolated_registry / "boot-death-events.jsonl").exists()  # no sidecar
+
+
+def test_boot_death_pass_refusal_keeps_within_quiet_window(isolated_registry, monkeypatch):
+    # #1287 plan test 6: the mtime-quiet guard is wired for arm 2 — a
+    # refusal-shaped tail with a FRESH transcript (idle 5 min < 10 min quiet)
+    # keeps: a live retrying session keeps appending rows.
+    import autonomous_session_watch as asw
+
+    stops: list = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: bool(stops.append(sid)))
+    markers: list = []
+    monkeypatch.setattr(
+        asw, "_post_progress_marker", lambda issue, note, dry_run, label: markers.append(label)
+    )
+    _boot_death_env(monkeypatch, asw, rows=_boot_refusal_rows_fixture(), idle_s=5 * 60)
+    _write_boot_death_entry(isolated_registry, 993, "sess-993", _BOOT_DEATH_NOW - 31 * 60)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-993", "pid": 4245}],
+        now=_BOOT_DEATH_NOW,
+    )
+    assert stops == [] and markers == []
+
+
+def test_boot_death_pass_keeps_when_both_arms_unresolvable(isolated_registry, monkeypatch):
+    # #1287 plan test 7: whole-file read unresolvable (rows=None) AND tail
+    # read unresolvable (tail_rows=None) -> keep; no state write, no marker.
+    import autonomous_session_watch as asw
+
+    stops: list = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: bool(stops.append(sid)))
+    markers: list = []
+    monkeypatch.setattr(
+        asw, "_post_progress_marker", lambda issue, note, dry_run, label: markers.append(label)
+    )
+    _boot_death_env(monkeypatch, asw, rows=None, tail_rows=None, size=None)
+    _write_boot_death_entry(isolated_registry, 993, "sess-993", _BOOT_DEATH_NOW - 31 * 60)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-993", "pid": 4245}],
+        now=_BOOT_DEATH_NOW,
+    )
+    assert stops == [] and markers == []
+    assert not (isolated_registry / "boot-death-993.json").exists()
+    assert not (isolated_registry / "boot-death-events.jsonl").exists()
+
+
+def test_boot_death_api_error_excerpt_bounded():
+    # #1287 plan test 8 — mirrors test_boot_death_stderr_excerpt_bounded for
+    # the arm-2 forensic helper: LAST api-error row wins when two exist;
+    # 200-char bound + whitespace collapse; None when no api-error rows / no
+    # usable text; present-but-non-str "text" skipped without raising;
+    # plain-str content handled.
+    import autonomous_session_watch as asw
+
+    excerpt = asw._boot_death_api_error_excerpt(_boot_refusal_rows_fixture())
+    assert excerpt == _BOOT_REFUSAL_TEXT
+    assert len(excerpt) <= 200 and "\n" not in excerpt
+    two = [
+        {
+            "type": "assistant",
+            "isApiErrorMessage": True,
+            "message": {"content": [{"type": "text", "text": "API Error: first"}]},
+        },
+        {
+            "type": "assistant",
+            "isApiErrorMessage": True,
+            "message": {"content": "API Error:   second\nline"},  # plain-str content
+        },
+    ]
+    assert asw._boot_death_api_error_excerpt(two) == "API Error: second line"
+    long_rows = [
+        {
+            "type": "assistant",
+            "isApiErrorMessage": True,
+            "message": {"content": "API  Error: " + "x " * 300},
+        },
+    ]
+    assert len(asw._boot_death_api_error_excerpt(long_rows)) == 200
+    # No api-error rows at all (the zero-response fixture) -> None.
+    assert asw._boot_death_api_error_excerpt(_boot_death_rows_fixture()) is None
+    nonstr_rows = [
+        {
+            "type": "assistant",
+            "isApiErrorMessage": True,
+            "message": {"content": [{"type": "text", "text": None}]},
+        },
+        {
+            "type": "assistant",
+            "isApiErrorMessage": True,
+            "message": {"content": [{"type": "text", "text": 42}]},
+        },
+    ]
+    assert asw._boot_death_api_error_excerpt(nonstr_rows) is None
+
+
+def test_boot_death_pass_keeps_on_leading_ok_turn_then_failed(isolated_registry, monkeypatch):
+    # #1287 plan test 9 — the reduction-discrimination must-not-fire (round-1
+    # Statistics Must-Fix): a two-burst [ok, failed] tail is the ONE
+    # configuration that distinguishes the correct all(outcome == "failed")
+    # reduction from the rejected any(failed) / last-turn-failed
+    # over-triggers (the #1104 single-refusal guard): an ok turn NOT last
+    # must keep.
+    import autonomous_session_watch as asw
+
+    stops: list = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: bool(stops.append(sid)))
+    markers: list = []
+    monkeypatch.setattr(
+        asw, "_post_progress_marker", lambda issue, note, dry_run, label: markers.append(label)
+    )
+    tail = _boot_refusal_rows_fixture(leading_ok_turn=True)
+    assert [o for o, _ts in asw._segment_wake_turns(tail)] == ["ok", "failed"]
+    _boot_death_env(monkeypatch, asw, rows=None, tail_rows=tail, size=825_591)
+    _write_boot_death_entry(isolated_registry, 994, "sess-994", _BOOT_DEATH_NOW - 31 * 60)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-994", "pid": 4246}],
+        now=_BOOT_DEATH_NOW,
+    )
+    assert stops == [] and markers == []
+    assert not (isolated_registry / "boot-death-994.json").exists()  # no state write
+    assert not (isolated_registry / "boot-death-events.jsonl").exists()  # no sidecar
 
 
 def test_boot_death_sentinels_in_watcher_note_sentinels():
