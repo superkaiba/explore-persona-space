@@ -3105,3 +3105,81 @@ def test_gcp_queue_timeout_failover_reconstructs_from_reconnect_handle(
     # Queued GCP instance torn down; sidecar re-pointed at the RunPod handle.
     assert len(teardown_backend.teardowns) == 1
     assert read_handle_sidecar(sidecar).backend == "runpod"
+
+
+# ---------------------------------------------------------------------------
+# #710/#1296 — scripts-dir bootstrap before the lazy ``from runpod_api`` sites
+# ---------------------------------------------------------------------------
+
+
+def test_ensure_scripts_dir_bootstrap_resolves_runpod_api_in_module_mode(monkeypatch):
+    """#1296: ``_ensure_scripts_dir_on_sys_path()`` makes a bare
+    ``import runpod_api`` resolve in MODULE mode (repo root on sys.path,
+    scripts/ NOT), with a built-in NEGATIVE CONTROL proving the pre-fix
+    ``ModuleNotFoundError`` exists once scripts/ is scrubbed. Import only —
+    no live RunPod API call is ever made."""
+    import importlib
+    import sys
+
+    import scripts.backend_poll as bp
+
+    scripts_dir = str(Path(bp.__file__).resolve().parent)
+    # Scrub every sys.path entry that resolves to scripts/ (cross-test-file
+    # inserts included). monkeypatch.setattr replaces the LIST OBJECT and
+    # restores the original at teardown, so the helper's in-test insert (into
+    # the scrubbed list) never leaks either.
+    scrubbed = [p for p in sys.path if str(Path(p or ".").resolve()) != scripts_dir]
+    monkeypatch.setattr(sys, "path", scrubbed)
+    # delitem records + restores any PRE-test runpod_api module object.
+    monkeypatch.delitem(sys.modules, "runpod_api", raising=False)
+
+    # NEGATIVE CONTROL (fail-loud claim, plan §5 kill criterion): with
+    # scripts/ scrubbed and the bootstrap not yet run, the bare import raises
+    # — the exact pre-fix failure mode at the three lazy sites.
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("runpod_api")
+
+    bp._ensure_scripts_dir_on_sys_path()
+
+    mod = importlib.import_module("runpod_api")
+    try:
+        assert hasattr(mod, "get_pod_by_name")
+        assert hasattr(mod, "terminate_pod")
+    finally:
+        # Drop the module object THIS test just imported so it cannot alias
+        # past teardown; monkeypatch then restores the original entry (when
+        # one existed) after this pop.
+        sys.modules.pop("runpod_api", None)
+
+
+def test_every_lazy_runpod_api_import_is_bootstrap_guarded():
+    """#1296 durability pin: every INDENTED (function-local, lazy)
+    ``from runpod_api import`` line in scripts/backend_poll.py must have the
+    scripts-dir bootstrap — ``_ensure_scripts_dir_on_sys_path()`` or the
+    inline ``sys.path.insert(0, scripts_dir)`` — within the preceding ~12
+    lines, so a FUTURE bare site cannot re-introduce the module-mode
+    ModuleNotFoundError landmine. Comment lines never satisfy the guard."""
+    import scripts.backend_poll as bp
+
+    lines = Path(bp.__file__).read_text(encoding="utf-8").splitlines()
+    lazy_sites = [
+        i
+        for i, line in enumerate(lines)
+        if line.strip().startswith("from runpod_api import") and line != line.lstrip()
+    ]
+    assert lazy_sites, "expected >=1 lazy 'from runpod_api import' site in backend_poll.py"
+    for i in lazy_sites:
+        window = [
+            ln.strip()
+            for ln in lines[max(0, i - 12) : i]
+            if ln.strip() and not ln.strip().startswith("#")
+        ]
+        guarded = any(
+            "_ensure_scripts_dir_on_sys_path()" in ln or "sys.path.insert(0, scripts_dir)" in ln
+            for ln in window
+        )
+        assert guarded, (
+            f"scripts/backend_poll.py:{i + 1}: lazy 'from runpod_api import' without a "
+            f"scripts-dir bootstrap in the preceding 12 lines — call "
+            f"_ensure_scripts_dir_on_sys_path() directly above the import (#1296)"
+        )
