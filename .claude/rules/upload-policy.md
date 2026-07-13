@@ -160,6 +160,38 @@ incident: #779's extraction driver (`issue779_extract_rb.py`) reduced kept
 rollouts to `r_B` and dropped the rollout text (wrote it only as judge input,
 not under `raw_completions/`), so a sibling arm had to regenerate.
 
+**Regenerating a published artifact in place requires a version-bumped path or
+a regeneration note (#922/#779).** Re-uploading / reconstructing an
+already-published artifact at the SAME path can silently invalidate every
+capture another task made under the original bytes — activations,
+teacher-forced reads, judge outputs, adapters trained on the mix. Each pair
+member still
+resolves and sha-verifies individually, so only the consumer-side pairwise
+provenance-coherence check (`.claude/rules/artifact-reuse.md` item (j))
+detects the incoherence — after the fact, at the cost of a wasted run.
+Producer duty, one of two forms:
+
+1. **Version-bump the path** — publish the regenerated artifact at a NEW path
+   (`issueN_<slug>/v2/...`, or a new filename), so the original path keeps
+   resolving to the bytes existing captures were made under. Prefer this form
+   whenever a dependent capture is known or plausible.
+2. **Record a regeneration note the artifact itself carries** — a
+   `reconstruction` / regeneration metadata field inside the artifact (or a
+   sidecar `<name>.regeneration.json` uploaded in the same commit) stating the
+   regeneration date, the reason (a bug-fix regeneration invalidates the old
+   bytes; a byte-equivalent rebuild does not), and any KNOWN dependent
+   captures (task ids / capture paths). Item (j) already reads exactly this
+   field (#922's question artifact documented its own regeneration); the note
+   is what lets a consumer choose between item (j)'s two remedies —
+   re-capture under the current input, or pin the input at the
+   pre-regeneration revision. This form is the floor when the path must stay
+   stable (a canonical bucket consumers resolve by convention).
+
+(Incident: #779 regenerated published question artifacts in place — HF commit
+`9578892ef4`, 2026-07-02 — AFTER #922's dependent `cx.pt` activation capture,
+`a8060198a4`, 2026-07-01; every per-member check passed and the run crashed at
+a parity assert after a full GCE cycle.)
+
 **Resume-critical pipeline INPUTS must upload before any deliberate
 `pod.py stop` that expects a later resume.** The same logic extends
 upstream of analysis: generated training rows (`R_train` caches,

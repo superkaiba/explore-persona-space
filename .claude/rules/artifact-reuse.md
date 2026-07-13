@@ -371,6 +371,11 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   assert after a full GCE cycle. Sibling class: the #601 pinned-pair
   COVERAGE mismatch —
   `.claude/agent-memory/experiment-implementer/feedback_pinned_artifact_pair_mutual_inconsistency.md`.)
+  The PRODUCER-side half of this rule — a regeneration must version-bump the
+  path or record the regeneration note this check reads (an in-artifact
+  `reconstruction` field, or a same-commit `<name>.regeneration.json`
+  sidecar) — is `.claude/rules/upload-policy.md`
+  § "Regenerating a published artifact in place".
 
 A failing check other than (i)/(h)(iv) → retrain / regenerate; a failing
 throughput check (i) → fix the SOURCE module (batch / parametrize / scope it
