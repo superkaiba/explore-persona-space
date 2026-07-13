@@ -10466,7 +10466,8 @@ indefinitely (incident #644, 2026-06-16: an orphan-respawn cap-2-per-day
 cycle ran ~8h; #643 hit the same class at archive time). Guard 1 above
 catches FOREIGN tasks' folders but not this task's own old-status
 duplicate, and it only runs on the safe-case (`$MERGE_FORM`) path. Keep exactly ONE
-folder for this task on `main`:
+folder for this task on `main` — and never by deleting origin's ONLY copy
+while the canonical status-mv is unpushed (#1300):
 
 ```bash
 # Canonical folder for this task (NEVER hand-build tasks/<status>/<N> —
@@ -10495,6 +10496,47 @@ elif ! git -C "$REPO_ROOT" fetch origin main --quiet; then
 elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main \
     > /tmp/issue-<N>-postmerge-lstree.txt; then
   echo "post-merge stale-task-folder guard: git ls-tree origin/main FAILED — cannot certify no stale task folders"
+  false
+# Unpushed-mv pre-check (#1300): CANON absent from the materialized
+# origin/main ls-tree means origin's only folder for this task is (almost
+# always) the OLD-status copy of a status mv committed on local main but
+# not yet pushed — classifying it as a duplicate would delete origin's
+# ONLY folder for the task (incident 2026-07-13: origin commit 2a1a9cbc0b
+# left ZERO tasks/*/1291 folders + a dangling REGISTRY pointer; recovery
+# merge f26462fc1b). Recovery: land the local mv via the sanctioned root
+# sync (the fleet-standard single-flight helper — it pushes ALL committed
+# local-main state, not just this task's mv), RE-RESOLVE the canonical
+# path (the sync pull-rebases the local root, so the canonical status can
+# change in EITHER lag direction — a failed re-resolve keeps the previous
+# value and fails closed below), re-fetch, REGENERATE the ls-tree file
+# (same materialize-then-check form), then re-check. Bounded 2 attempts;
+# the ls-tree RE-CHECK is the arbiter, NOT the helper's exit code (exit 0
+# includes the in-flight state — same 2-attempt shape as the local-residue
+# tail below). The condition is a command list: a SUCCESSFUL recovery
+# makes the final still-absent test fail, the branch is NOT taken, and
+# evaluation falls through to the DUPES classification below against the
+# REGENERATED file (a merge-imported duplicate can coexist with the
+# unpushed mv and must still be removed). A failed mid-recovery re-fetch
+# or regen can leave a stale listing that still carries CANON and falls
+# through — the guarantee is the membership test itself: classification
+# only ever proceeds when CANON is present in the listing it reads, so
+# this arm never opens a delete of the canonical folder. Only a
+# still-absent CANON takes the branch — terminal echo + false, nothing
+# deleted.
+elif ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
+    && { for _ in 1 2; do
+           uv run python "$REPO_ROOT/scripts/sync_repo_root.py"
+           NEW_CANON=$(realpath --relative-to="$REPO_ROOT" \
+             "$(uv run python "$REPO_ROOT/scripts/task.py" find <N>)")
+           [ -n "$NEW_CANON" ] && CANON="$NEW_CANON"
+           git -C "$REPO_ROOT" fetch origin main --quiet \
+             && git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main \
+                > /tmp/issue-<N>-postmerge-lstree.txt \
+             && grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
+             && break
+         done
+         ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt; }; then
+  echo "post-merge stale-task-folder guard: canonical folder $CANON still ABSENT from origin/main after 2 root syncs — cannot classify duplicates (removing origin's only copy would leave ZERO folders for task <N>)"
   false
 # Work arm: every committed task-<N> folder on origin/main (matches
 # tasks/<status>/<N> exactly — the anchored $ excludes deeper paths like
@@ -10605,7 +10647,23 @@ empty and the block is a no-op, so re-running Step 10d on a later
 `task.py find`, `fetch`, or `ls-tree`) instead exits the block non-zero
 through a terminal echo + `false` arm — the epm:merge-failed handling —
 rather than reading as "no duplicates" (#1184; the #1047
-materialize-then-check pattern). The work arm never touches the local
+materialize-then-check pattern). The unpushed-mv pre-check (#1300)
+refuses to CLASSIFY while the canonical folder is absent from
+origin/main — under routine local-main push lag origin's only copy is
+the OLD-status folder of a not-yet-pushed status mv, and classifying it
+as a duplicate deleted origin's only folder for task 1291 (origin commit
+2a1a9cbc0b; recovery f26462fc1b). The arm lands the local mv via the
+sanctioned root sync, re-resolves the canonical path, re-fetches,
+regenerates the ls-tree file, and re-checks (2 bounded attempts; the
+ls-tree re-check is the arbiter, not the helper's exit 0); a successful
+recovery falls through to classification against the regenerated file,
+and a still-absent canonical folder fails loud with nothing deleted. One
+pre-existing residual stays out of this fix's scope: when BOTH folders
+are already on origin/main and the LOCAL canonical resolution is stale
+(origin's status-mv is newer, but the pre-check never fires because the
+stale CANON path is still present on origin), the guard can still
+classify origin's newer folder as the duplicate — that wrong-direction
+delete predates this change. The work arm never touches the local
 root index — the removal is staged and pushed from a sparse scratch
 worktree detached at the fetched `origin/main`, so it succeeds whether or
 not the local root has pulled the merge (the root-`git rm` pathspec
