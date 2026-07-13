@@ -701,31 +701,42 @@ session-list snapshot in place; daemon-gated (`children is None` ⇒ no-op). Unr
 deletes the entry, which is self-deduping; a fresh re-registration restarts
 the clock. Durable trace: `~/.eps-autonomous/stale-registration-events.jsonl`.
 
-**Boot-death lane (#1267, `boot_death_pass`).** The die-BEFORE-turn-1
-complement of the stale-registration pass: a freshly dispatched AUTO session
+**Boot-death lane (#1267 arm 1 + #1287 arm 2, `boot_death_pass`).** The
+die-at-or-before-turn-1 complement of the stale-registration pass: a freshly
+dispatched AUTO session
 (`issue-<N>.json` only — `manual-issue-*.json` is excluded by design, a
 user-driven session is never auto-stopped) whose resolved Claude transcript
-contains ZERO response rows (`_classify_wedge_row` ∉ {assistant, api-error})
-≥30 min after `spawned_at` (`EPM_BOOT_DEATH_WINDOW_MIN`, minutes;
+EITHER (arm 1, zero-response, `shape=zero-response`) contains ZERO response
+rows (`_classify_wedge_row` ∉ {assistant, api-error}) OR (arm 2,
+boot-refusal, `shape=boot-refusal`; #1287/#1277) whose 256 KB transcript
+TAIL (`_transcript_tail_rows`) segments via `_segment_wake_turns` (#1127)
+to ≥1 completed turn with EVERY completed turn failed — a refusal-killed
+boot turn; a single visible ok turn keeps (the #1104 single-refusal guard)
+— ≥30 min after `spawned_at` (`EPM_BOOT_DEATH_WINDOW_MIN`, minutes;
 malformed/non-positive → default), with the transcript quiet ≥10 min (the
 in-flight-first-turn guard) and the sid LIVE, is STOPPED via `_stop_session`
 + surfaced (Telegram push + an anti-liveness `epm:progress` marker,
 sentinels `[autonomous_session_watch:boot-death-stop]` /
 `[...:boot-death-cap-exhausted]`) instead of waiting ~12h for the
-stale-registration unregister (incident #1251–#1256: 9-row / ~11 KB
+stale-registration unregister (incidents #1251–#1256: 9-row / ~11 KB
 transcripts frozen ~7 s post-spawn — the session died during `/issue` skill
-load; every other lane is structurally blind to the shape). Whole-file
-read bounded at 256 KB (a larger transcript cannot be a boot-death → keep);
+load; #1277: an 826 KB transcript whose boot turn ran ~74 s then died on a
+refusal before the tick cron was armed — every other lane is structurally
+blind to both shapes). Arm 1's whole-file
+read is bounded at 256 KB (a larger transcript cannot be a ZERO-RESPONSE
+boot-death → arm 1 keeps; arm 2's seek-tail read works at any size);
 every unresolvable signal fails toward keep. Action is STOP-ONLY — no
 unregister, no direct spawn: post-stop re-drive is fully owned by the
 existing arms (ACTIVE → crash-recovery, ~20 min; `proposed` → the
 proposed-infra sweep's stale-dead-registration grace, ~30–60 min). Bounds:
 per-issue per-UTC-day stop cap (`EPM_BOOT_DEATH_STOPS_PER_DAY`, default 3;
-malformed/<1 → default, never a kill switch), bumped ONCE at
+malformed/<1 → default, never a kill switch; ONE day budget SHARED across
+both arms), bumped ONCE at
 stop-initiation (a stop failure still consumes a budget unit); state at
 `~/.eps-autonomous/boot-death-<N>.json` (GC'd at `completed`/`archived`
 only), durable trace `~/.eps-autonomous/boot-death-events.jsonl` (stop rows
-carry `transcript=` + `stderr_excerpt=` forensics). There is NO episode
+carry `transcript=` + `stderr_excerpt=` + `api_error_excerpt=` forensics —
+the refusal excerpt is SIDECAR-ONLY, never in the marker/push). There is NO episode
 belt BY DESIGN — this is a stop lane, not a respawn lane; the downstream
 re-drive arms carry their own belts/caps, and the auth-outage guard
 suppresses the re-dispatch side (the infra-sweep/crash-arm spawn gates)

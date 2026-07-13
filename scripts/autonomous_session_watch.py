@@ -1203,11 +1203,13 @@ STALE_BLOCKED_PROGRESS_FRESH_S_DEFAULT = 2 * 3600
 # (assistant OR api-error) >= 30 min after `spawned_at` — the
 # die-BEFORE-turn-1 class (#1251-#1256: 9-row / ~11 KB transcripts frozen
 # ~7 s post-spawn, invisible to every lane until the 12h stale-registration
-# pass). The pass STOPS the session (auto registrations only) and leaves
-# re-drive to the existing arms. Same staleness-filter contract as every
-# other watcher-posted sentinel (anti-liveness is load-bearing: an
-# unsentineled note would refresh `_latest_progress_ts` and mask the
-# orphan/stalled staleness clocks).
+# pass) — OR whose 256 KB tail segments to >= 1 completed turn, ALL failed —
+# the #1287 boot-turn-refusal class (#1277: the boot turn ran and was
+# refusal-killed before the tick cron was armed). The pass STOPS the session
+# (auto registrations only) and leaves re-drive to the existing arms. Same
+# staleness-filter contract as every other watcher-posted sentinel
+# (anti-liveness is load-bearing: an unsentineled note would refresh
+# `_latest_progress_ts` and mask the orphan/stalled staleness clocks).
 _BOOT_DEATH_STOP_NOTE_SENTINEL = "[autonomous_session_watch:boot-death-stop]"
 
 # Substring stamped into the one-time "daily boot-death stop cap exhausted"
@@ -1233,7 +1235,11 @@ BOOT_DEATH_STATE_PREFIX = "boot-death-"
 # - quiet = one watcher cron interval (the in-flight-first-turn guard).
 # - tail cap == the #1104 production wedge window (256 KB): a boot-death
 #   transcript is ~11 KB (23x headroom); a LARGER transcript cannot be a
-#   boot-death, so the probe short-circuits to keep without the read.
+#   ZERO-RESPONSE boot-death, so the whole-file probe short-circuits without
+#   the read. #1287 (arm 2, boot-refusal) keeps every constant unchanged;
+#   this same cap now ALSO sizes the arm-2 seek-tail read
+#   (`_transcript_tail_rows`), deliberately equal to the #1104/#1209 wedge
+#   window so both lanes see the same evidence horizon.
 # - stop cap 3/day = #1241 parity (TICK_WEDGE_RESPAWNS_PER_DAY).
 BOOT_DEATH_WINDOW_S = 30 * 60
 BOOT_DEATH_QUIET_S = 10 * 60
@@ -2523,28 +2529,45 @@ def decide_boot_death(
     sid_alive: bool,
     entry_age_s: float | None,
     response_row_seen: bool | None,
+    all_turns_failed: bool | None,
     transcript_idle_s: float | None,
     window_s: float,
     quiet_s: float,
     stops_today: int,
     stops_per_day: int,
 ) -> str:
-    """Pure per-entry decision for the boot-death lane (#1267). Returns
-    ``"stop"`` | ``"cap-alert"`` | ``"keep"``.
+    """Pure per-entry decision for the boot-death lane (#1267 arm 1 +
+    #1287 arm 2). Returns ``"stop"`` | ``"cap-alert"`` | ``"keep"``.
 
-    Fires ONLY on: live sid + registration older than ``window_s`` + a
-    fully-read transcript with ZERO response rows (assistant OR api-error —
-    an api-error row means the session took a FAILED turn, which is the
-    #1209 family's property, not a boot-death) + transcript quiet >=
-    ``quiet_s`` (the in-flight-first-turn guard). Every unresolvable input
-    fails toward keep (the 12h stale-registration pass stays the backstop):
+    Fires ONLY on: live sid + registration older than ``window_s`` + ONE of
 
-    - ``entry_age_s is None`` — missing / zero / non-numeric ``spawned_at``;
-      a FUTURE-dated ``spawned_at`` yields a negative age -> keep too.
-    - ``response_row_seen is None`` — transcript unresolvable OR larger than
-      the tail cap (a >256 KB transcript cannot be a boot-death).
-    - ``transcript_idle_s is None`` — :func:`_transcript_idle_age_s` could
-      not resolve the transcript mtime.
+    - ARM 1 (zero-response, #1267/#1251): ``response_row_seen is False`` —
+      the whole-file read found NO response rows (assistant OR api-error);
+      the session died before turn 1.
+    - ARM 2 (boot-refusal, #1287/#1277): ``all_turns_failed is True`` —
+      the 256 KB TAIL read segmented (via :func:`_segment_wake_turns`,
+      #1127) to >= 1 completed turn with EVERY completed turn failed (last
+      response row api-error). The boot turn executed and every turn
+      failed; at a PARK status the #1209/#1127 wedge lanes are structurally
+      ineligible (``respawn_eligible = in_active and ...``), so this lane
+      owns the shape. A single visible ok turn anywhere in the tail =>
+      not boot-dead (the #1104 single-refusal guard).
+
+    + transcript quiet >= ``quiet_s`` (the in-flight-first-turn / mid-retry
+    guard: a live retrying session keeps appending rows, so mtime stays
+    fresh). Silence-anchor divergence from #1209 (deliberate — #1267
+    parity): arm 2 gates on the lane's mtime quiet (10 min), NOT #1209's
+    newest-parseable-row-ts 20-min silence anchor; the two coincide for
+    dead append-only transcripts (mtime tracks the last row), so do not
+    "fix" it in either direction. Every unresolvable input fails toward
+    keep (the 12h stale-registration pass stays the backstop):
+    ``entry_age_s`` None or negative (missing / zero / non-numeric /
+    FUTURE-dated ``spawned_at``); ``response_row_seen`` None (whole-file
+    read unresolvable OR over the cap — which does NOT veto arm 2: the
+    tail read works at any size); ``all_turns_failed`` None (tail
+    unresolvable) or False (zero completed turns — swallows stay the
+    dequeue-run's property — or an ok turn); ``transcript_idle_s`` None
+    (:func:`_transcript_idle_age_s` could not resolve the mtime).
 
     At the daily stop cap the lane stops STOPPING and returns
     ``"cap-alert"`` (the caller dedupes to one loud alert per UTC day);
@@ -2555,7 +2578,9 @@ def decide_boot_death(
         return "keep"  # dead sid: crash-recovery / sweep-grace property
     if entry_age_s is None or entry_age_s < window_s:
         return "keep"
-    if response_row_seen is None or response_row_seen:
+    boot_dead = response_row_seen is False  # arm 1 (#1267)
+    boot_refused = all_turns_failed is True  # arm 2 (#1287)
+    if not (boot_dead or boot_refused):
         return "keep"
     if transcript_idle_s is None or transcript_idle_s < quiet_s:
         return "keep"
@@ -9543,11 +9568,12 @@ def _transcript_tail_rows(pid: int, max_bytes: int = 65536) -> list[dict] | None
 def _boot_death_transcript_rows(
     pid: int, max_bytes: int = BOOT_DEATH_TAIL_BYTES
 ) -> tuple[list[dict] | None, str | None, int | None]:
-    """Whole-transcript rows for the boot-death lane (#1267), as
+    """Whole-transcript rows for the boot-death lane's ARM 1 (#1267), as
     ``(rows, transcript_path, size_bytes)`` — ``rows`` is ``None`` when the
     transcript is unresolvable OR larger than ``max_bytes`` (a >256 KB
-    transcript cannot be a boot-death — treat as not-eligible, fail toward
-    keep). ``transcript_path`` / ``size_bytes`` are best-effort forensics for
+    transcript cannot be a ZERO-RESPONSE boot-death — arm 1 treats it as
+    not-eligible; the #1287 arm-2 seek-tail read handles larger files).
+    ``transcript_path`` / ``size_bytes`` are best-effort forensics for
     the sidecar row (``None`` when unresolvable).
 
     Unlike :func:`_transcript_tail_rows`, the WHOLE-file guarantee is
@@ -18278,18 +18304,39 @@ def idle_unmapped_pass(
 
 # ─── boot-death pass (#1267) ──────────────────────────────────────────────────
 #
-# The die-BEFORE-turn-1 lane: a freshly `--auto`-dispatched session whose
-# resolved Claude transcript contains ZERO response rows (`_classify_wedge_row`
-# not in {assistant, api-error}) >= 30 min after `spawned_at`, with the
-# transcript quiet >= 10 min, a LIVE sid, auto registrations only. Incident
-# #1251-#1256: 7 live-captured boot-death transcripts, all 9 rows / 11,368 B,
-# frozen ~7 s post-spawn (the session died during `/issue` skill load — one
-# prompt row carries a `<local-command-stderr>` diagnostic); every existing
-# lane is structurally blind (no self-report => the stalled detector skips;
-# the sid is LIVE + status `proposed` => crash-recovery PARKs; the inner
-# Claude is alive-idle => zombie pass; issue-MAPPED => idle-unmapped), so the
-# only recovery was the 12h stale-registration unregister — a silent
-# dispatch -> boot-death -> 12h -> re-dispatch loop (~12.5h/cycle).
+# The die-AT-OR-BEFORE-turn-1 lane, TWO ARMS:
+#
+# - ARM 1 (zero-response, #1267): a freshly `--auto`-dispatched session whose
+#   resolved Claude transcript contains ZERO response rows
+#   (`_classify_wedge_row` not in {assistant, api-error}) >= 30 min after
+#   `spawned_at`. Incident #1251-#1256: 7 live-captured boot-death
+#   transcripts, all 9 rows / 11,368 B, frozen ~7 s post-spawn (the session
+#   died during `/issue` skill load — one prompt row carries a
+#   `<local-command-stderr>` diagnostic).
+# - ARM 2 (boot-refusal, #1287): the transcript's 256 KB TAIL
+#   (`_transcript_tail_rows`) segments via `_segment_wake_turns` (#1127) to
+#   >= 1 completed turn with EVERY completed turn failed (last response row
+#   api-error) — the refusal-killed boot turn. Incident #1277: an 826 KB
+#   transcript whose boot turn took real assistant actions for ~74 s, then
+#   died on a refusal BEFORE the /issue tick cron was armed; arm 1 keeps
+#   twice over (assistant rows exist; size over the whole-file cap), and at
+#   a PARK status the #1209/#1127 wedge lanes are structurally ineligible
+#   (`respawn_eligible = in_active and ...`), so this lane owns the shape.
+#
+# Both arms: transcript quiet >= 10 min, a LIVE sid, auto registrations
+# only. Every existing lane is structurally blind (no self-report => the
+# stalled detector skips; the sid is LIVE + status `proposed` =>
+# crash-recovery PARKs; the inner Claude is alive-idle => zombie pass;
+# issue-MAPPED => idle-unmapped), so the only recovery was the 12h
+# stale-registration unregister — a silent dispatch -> boot-death -> 12h ->
+# re-dispatch loop (~12.5h/cycle).
+#
+# BY-DESIGN misses (fall back to the 12h sweep — a future incident in either
+# shape reads as designed-miss, not regression): (a) a refusal death whose
+# transcript ends in a trailing non-api-error assistant row (the last
+# completed turn reads `ok` => arm 2 keeps); (b) a >256 KB ZERO-RESPONSE
+# transcript (arm 1's whole-file guarantee cannot be established, and arm 2
+# sees no completed turn to fail).
 #
 # Action: STOP the session via the existing `_stop_session` — NO unregister,
 # NO direct spawn. Post-stop re-drive is fully owned by existing arms:
@@ -18444,6 +18491,41 @@ def _boot_death_stderr_excerpt(rows: list[dict], cap: int = 200) -> str | None:
     return None
 
 
+def _boot_death_api_error_excerpt(rows: list[dict], cap: int = 200) -> str | None:
+    """Best-effort forensic (#1287 arm 2): the LAST ``"api-error"``-classified
+    row's message text — the refusal / API-error body that killed the boot
+    turn — whitespace-collapsed and bounded to ``cap`` chars. SIDECAR-ONLY by
+    design (refusal bodies are trigger-dense text; the excerpt never enters
+    the task marker or the Telegram push — #866/#1073/#1098 containment).
+    Returns ``None`` when no api-error row carries usable text. Pure
+    string-scanning, never raises on the dict shapes ``rows`` can hold — the
+    :func:`_boot_death_stderr_excerpt` defensive contract: a
+    present-but-non-str ``"text"`` value (``null``, an int) is skipped as
+    carrying no diagnostic text. The FIRING predicate never depends on this
+    helper — it is forensic only."""
+    for row in reversed(rows):
+        if _classify_wedge_row(row) != "api-error":
+            continue
+        msg = row.get("message")
+        content = msg.get("content") if isinstance(msg, dict) else None
+        texts: list[str] = []
+        if isinstance(content, str):
+            texts.append(content)
+        elif isinstance(content, list):
+            texts.extend(
+                b["text"]
+                for b in content
+                if isinstance(b, dict)
+                and b.get("type") == "text"
+                and isinstance(b.get("text"), str)
+            )
+        for text in texts:
+            excerpt = " ".join(text.split())
+            if excerpt:
+                return excerpt[:cap]
+    return None
+
+
 def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry_run: bool) -> None:
     """Evaluate ONE auto registration against the boot-death predicate and
     STOP its session when it verdicts ``"stop"`` (cap permitting). Every
@@ -18484,6 +18566,17 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
         if rows is None
         else any(_classify_wedge_row(r) in ("assistant", "api-error") for r in rows)
     )
+    # ARM 2 (#1287): turn-segmented all-failed read over the 256 KB TAIL —
+    # works at ANY transcript size (#1277's transcript was 825,591 B, over
+    # arm 1's whole-file cap). Reuse the whole-file rows when they resolved
+    # (tail == whole file at <= cap; saves the second read); else seek-tail.
+    tail_rows = (
+        rows if rows is not None else _transcript_tail_rows(pid, max_bytes=BOOT_DEATH_TAIL_BYTES)
+    )
+    turns = None if tail_rows is None else _segment_wake_turns(tail_rows)
+    all_turns_failed = (
+        None if turns is None else bool(turns) and all(o == "failed" for o, _ts in turns)
+    )
     idle_s, _why = _transcript_idle_age_s(pid, now)
     state = _load_boot_death_state(issue)
     day_key = time.strftime("%Y-%m-%d", time.gmtime(now))  # the #1209/#1241 day-cap derivation
@@ -18493,6 +18586,7 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
         sid_alive=True,
         entry_age_s=entry_age_s,
         response_row_seen=response_row_seen,
+        all_turns_failed=all_turns_failed,
         transcript_idle_s=idle_s,
         window_s=_boot_death_window_s(),
         quiet_s=BOOT_DEATH_QUIET_S,
@@ -18511,13 +18605,14 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
             f"{_BOOT_DEATH_CAP_NOTE_SENTINEL} {stops_today} boot-death stops today hit the "
             f"daily cap ({cap}); leaving the dead registration in place (the 12h "
             f"stale-registration pass is the back-pressure); sessions for #{issue} are dying "
-            f"at skill load — investigate the dispatch path. sid={sid} task status={status}."
+            f"at or just after boot — skill-load death or refused boot turn — investigate "
+            f"the dispatch path. sid={sid} task status={status}."
         )
         print(f"  boot-death: issue #{issue} — {note}")
         _post_progress_marker(issue, note, dry_run, label="boot-death-cap-exhausted")
         _telegram_push(
             f"boot-death cap: #{issue} hit {stops_today} dead-boot stops today; "
-            f"sessions are dying at skill load — investigate the dispatch path.",
+            f"sessions are dying at or just after boot — investigate the dispatch path.",
             dry_run,
         )
         _append_boot_death_event(note, dry_run)
@@ -18531,13 +18626,27 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
     state.update({"stop_day": day_key, "stops_today": stops_today + 1})
     _save_boot_death_state(issue, state, dry_run)
     stop_ok = _stop_session(sid, dry_run)
-    n_rows = len(rows) if rows is not None else 0
-    stderr_excerpt = _boot_death_stderr_excerpt(rows) if rows else None
+    # Arms are mutually exclusive (zero response rows => zero completed
+    # turns), so arm 1 owning the tag when it fired is unambiguous.
+    shape = "zero-response" if response_row_seen is False else "boot-refusal"
+    if shape == "zero-response":
+        evidence = (
+            f"transcript rows={len(rows)} size={size}B with ZERO response rows "
+            f"(assistant/api-error)"
+        )
+    else:
+        n_tail = len(tail_rows) if tail_rows is not None else 0
+        n_turns = len(turns) if turns else 0
+        api_error_rows = sum(1 for r in (tail_rows or []) if _classify_wedge_row(r) == "api-error")
+        evidence = (
+            f"256KB-tail rows={n_tail} (file size={size}B): {n_turns} completed "
+            f"turn(s), ALL failed ({api_error_rows} api-error row(s) — "
+            f"refusal-killed boot turn, #1287)"
+        )
     note = (
         f"{_BOOT_DEATH_STOP_NOTE_SENTINEL} stopped boot-dead session sid={sid}: "
         f"registration age {entry_age_s / 60:.0f}m >= {_boot_death_window_s() / 60:.0f}m, "
-        f"transcript rows={n_rows} size={size}B with ZERO response rows "
-        f"(assistant/api-error), idle {(idle_s or 0) / 60:.0f}m; stop_ok={stop_ok}; "
+        f"shape={shape}, {evidence}, idle {(idle_s or 0) / 60:.0f}m; stop_ok={stop_ok}; "
         f"task status={status}; stop {stops_today + 1}/{cap} today; registration kept: "
         f"crash-recovery re-drives an ACTIVE task (~20 min); the proposed-infra sweep's "
         f"stale-dead-registration grace re-dispatches a `proposed` task (~30-60 min)."
@@ -18545,12 +18654,19 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
     print(f"  boot-death: issue #{issue} — {note}")
     _post_progress_marker(issue, note, dry_run, label="boot-death-stop")
     _telegram_push(
-        f"boot-death: stopped dead-boot session for #{issue} "
-        f"(zero response rows at {entry_age_s / 60:.0f}m; stop {stops_today + 1}/{cap} today)",
+        f"boot-death: stopped dead-boot session for #{issue} (shape={shape} at "
+        f"{entry_age_s / 60:.0f}m; stop {stops_today + 1}/{cap} today)",
         dry_run,
     )
+    # The refusal excerpt is SIDECAR-ONLY by design: refusal bodies are
+    # trigger-dense text, so it never enters the task marker or the push
+    # (#866/#1073/#1098 containment).
+    stderr_excerpt = _boot_death_stderr_excerpt(tail_rows) if tail_rows else None
+    api_error_excerpt = _boot_death_api_error_excerpt(tail_rows) if tail_rows else None
     _append_boot_death_event(
-        f"{note} transcript={transcript} stderr_excerpt={stderr_excerpt or 'none'}", dry_run
+        f"{note} transcript={transcript} stderr_excerpt={stderr_excerpt or 'none'} "
+        f"api_error_excerpt={api_error_excerpt or 'none'}",
+        dry_run,
     )
 
 
@@ -18564,8 +18680,8 @@ def boot_death_pass(
     false "live" read must not stop anything). Iterates ``issue-*.json``
     ONLY — ``manual-issue-*.json`` is EXCLUDED by design (a user-driven
     session is never auto-stopped, the #505 posture; auto registrations all
-    carry an initial prompt, so zero response rows at 30 min is unambiguous
-    death)."""
+    carry an initial prompt, so zero response rows — or an all-failed
+    completed-turn tail (#1287) — at 30 min is unambiguous death)."""
     now = now if now is not None else time.time()
     if not _boot_death_pass_enabled():
         print("boot-death: disabled via EPM_DISABLE_BOOT_DEATH_PASS; skipping")
