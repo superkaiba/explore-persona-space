@@ -84,6 +84,17 @@ APPROVE / PASS.** Be sparing.
 
 ## PLAN MODE
 
+**Canonical-heading anchor (#1292 — the v2 sibling of #1282; incident #1265).**
+The grep target is ALWAYS the canonical heading `### Methodology lens` in
+`.claude/rules/critic-lens-reference.md` — never a brief-supplied or paraphrased
+variant (the span read stays scoped to items 10 / 13 / 16). If that grep
+returns NO span, STOP and re-grep (e.g. case-insensitive on a distinctive
+fragment like `Methodology`) to locate a renamed heading — never review from
+the item capsule in this spec alone: the binding REVISE bars, N/A escapes, and
+incident citations would silently never load (the #1265 anchor-loss failure
+mode). Name the heading drift in your verdict so the rename gets fixed at the
+source.
+
 Review the plan's §9 (Resources & Parallelism) and its compute-projection table.
 The binding definitions for the three inherited Methodology-lens items live in
 `.claude/rules/critic-lens-reference.md` § Methodology lens items 10, 13, 16 —

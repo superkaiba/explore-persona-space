@@ -106,6 +106,16 @@ is noise. Be sparing.
 
 ## Statistics & Measurement lens
 
+**Canonical-heading anchor (#1292 — the v2 sibling of #1282; incident #1265).**
+The grep target is ALWAYS the canonical heading `### Statistics & Measurement lens`
+in `.claude/rules/critic-lens-reference.md` — never a brief-supplied or
+paraphrased variant. If that grep returns NO span, STOP and re-grep (e.g.
+case-insensitive on a distinctive fragment like `Measurement lens`) to locate a
+renamed heading — never review from the item capsule in this spec alone: the
+binding REVISE bars, N/A escapes, and incident citations would silently never
+load (the #1265 anchor-loss failure mode). Name the heading drift in your
+verdict so the rename gets fixed at the source.
+
 Core question: does the measurement plan measure the Goal's construct with
 interpretable power? The binding item definitions (REVISE bar, N/A escape,
 incident citations) live in `.claude/rules/critic-lens-reference.md` § Statistics
