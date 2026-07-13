@@ -26,6 +26,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.conftest import _stub_fleet_mutating_passes
+
 # Bootstrap sys.path the same way the sibling watcher tests do (scripts/ on
 # the path so autonomous_session_watch imports by name).
 _SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
@@ -350,36 +352,31 @@ def test_main_order_auth_outage_before_respawn_loop(watcher_roots, monkeypatch):
     monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
     monkeypatch.setattr(asw, "_issue_registrations", lambda: {})
     monkeypatch.setattr(asw, "_campaign_gate_candidates", lambda: set())
-    # Neutralize every other pass so main() runs cheaply + deterministically.
+    # #1247/#1278 hermeticity: the shared conftest helper stubs every
+    # fleet-MUTATING pass (incl. the #1267 boot_death_pass this file's inline
+    # copy was missing) fail-loud. Called BEFORE the recorders below — a later
+    # monkeypatch wins (helper docstring convention).
+    _stub_fleet_mutating_passes(asw, monkeypatch)
+    # Determinism-only remainder (not in the helper's fleet-mutating list):
+    # neutralize the other passes so main() runs cheaply + deterministically.
+    # Fail-loud by design — no attribute-existence silent-skip;
+    # monkeypatch.setattr's default raising=True crashes if a pass is renamed
+    # instead of letting it run live.
     for name in (
         "vm_disk_pass",
-        "data_disk_pass",
-        "happy_patch_pass",
-        "cpu_guard_pass",
         "triage_observer_pass",
-        # #1247 r3: verdict_disagree_pass scans the LIVE tasks tree via
-        # task_workflow.list_events (sidecar + push sinks) — stub it like the
-        # other live-observer passes.
-        "verdict_disagree_pass",
-        "vm_ledger_reap_pass",
-        "program_orchestrator_pass",
         "campaign_pass",
         "pod_safety_pass",
         "stalled_session_pass",
         "orphan_sweep_pass",
         "infra_drain_pass",
-        "proposed_infra_sweep_pass",
-        "capacity_retry_pass",
         "stale_blocked_flag_pass",
         "session_reconcile_pass",
-        "gate_push_pass",
         "zombie_wrapper_pass",
         "idle_unmapped_pass",
         "stale_registration_pass",
-        "gc_pass",
     ):
-        if hasattr(asw, name):
-            monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+        monkeypatch.setattr(asw, name, lambda *a, **kw: None)
     monkeypatch.setattr(asw, "auth_outage_pass", lambda *a, **kw: order.append("auth_outage"))
     monkeypatch.setattr(asw, "_process_entry", lambda *a, **kw: order.append("process_entry"))
     # One registered issue so the crash-recovery loop actually iterates.
