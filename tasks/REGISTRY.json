@@ -2294,8 +2294,8 @@
     "1295": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1295",
-      "status": "approved",
+      "path": "tasks/running/1295",
+      "status": "running",
       "title": "daily-fix: consolidate 3rd inline loop in auth-outage test"
     },
     "1296": {
