@@ -1622,7 +1622,7 @@ markers:
   - kind: "epm:plan-verify"
     posted_by: skill (adversarial-planner Phase 1.5.0 orchestrator; VM-side only)
     when: "after each scripts/verify_plan.py run against the newest plans/v{K}.md, before the fact-checker + critic ensemble spawn"
-    fields: "verdict (PASS|FAIL|PASS-with-override), n_fail, n_warn, failed/overridden check ids, plan version checked"
+    fields: "verdict (PASS|FAIL|PASS-with-override), n_fail, n_warn, failed/overridden check ids, plan version checked — verdict/n_fail/n_warn come from the canonical parse one-liner in adversarial-planner SKILL.md Phase 1.5.0, never an improvised d.get('verdict') parse"
   - kind: "epm:plan-approved"
     posted_by: skill (relaying user reply, OR auto in an autonomous session)
     when: "Step 2c"
