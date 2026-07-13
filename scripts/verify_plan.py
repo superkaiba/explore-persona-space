@@ -26,7 +26,11 @@ Check catalog (id — classification — kind scope)
   c6  reused-artifact fitness    WARN-only, conditional    experiment only
   c7  replication fidelity       WARN-only, conditional    experiment only
   c8  success + kill criteria    FAIL both-absent          experiment FAILs,
-                                                           exempt kinds WARN
+                                                           exempt kinds WARN;
+                                                           exempt kinds accept a
+                                                           solid §0.0 TL;DR
+                                                           change-my-mind line as
+                                                           kill (#1291)
   c9  conditions/cells + seeds   WARN-only                 experiment only
   c10 marker-recipe ack          WARN-only, conditional    experiment only
   c11 dry-run test coverage      WARN-only, conditional    infra + batch only
@@ -922,13 +926,44 @@ def _tldr_ranges(plan: str) -> list[tuple[int, int]]:
     return out
 
 
+def _exempt_tldr_kill_pass(
+    cid, name, kind, succ_solid, kill_solid, kill_tldr_hits, carrier_ok, section_name
+):
+    """PASS result for the #1291 exempt-kind acceptance — a kind-exempt plan
+    whose kill family is satisfied by a solid §0.0/TL;DR change-my-mind hit
+    (success family solid, no solid kill outside the TL;DR); None when the
+    acceptance does not apply (check_success_kill falls through to its
+    missing-family verdicts)."""
+    if kind not in EXEMPT_KINDS or not succ_solid or kill_solid:
+        return None
+    tldr_solid = [(i, a) for i, a in kill_tldr_hits if carrier_ok(i)]
+    if not tldr_solid:
+        return None
+    si, sa = succ_solid[0]
+    ka = tldr_solid[0][1]
+    return _pass(
+        cid,
+        name,
+        f"success anchor {sa!r} in §{section_name(si)!r}; kill anchor {ka!r} inside "
+        "the §0.0/TL;DR region — accepted for kind-exempt plans (the mandated "
+        "change-my-mind line IS the revert criterion for a code/infra change; "
+        "kind: experiment still requires kill criteria outside the TL;DR — #1291)",
+    )
+
+
 def check_success_kill(plan: str, kind: str) -> CheckResult:
     """Both a success-criteria family and a kill-criteria family must be
     present and non-empty in form (each carrier section ≥ 80 chars —
     emptiness check only; semantic joint-satisfiability stays with the
     Statistics critic per planner.md §7). The KILL count EXCLUDES the
-    §0.0/TL;DR region. `kind: experiment` FAILs on both-absent; exempt
-    kinds WARN."""
+    §0.0/TL;DR region for ``kind: experiment``; for exempt kinds
+    (analysis/infra/batch/survey) a solid TL;DR "What would change my
+    mind" hit satisfies the kill family when the success family is solid —
+    the mandated change-my-mind line IS the revert criterion for a
+    code/infra change (#1291; founding incidents #1279/#1276).
+    `kind: experiment` FAILs on both-absent; exempt kinds WARN, and the
+    exempt-kind missing-kill WARN detail carries the standard §0.0 remedy
+    sentence."""
     cid, name = "c8_success_kill_criteria", "success + kill criteria"
     lines = plan.splitlines()
     mask = _fence_mask(lines)
@@ -949,6 +984,7 @@ def check_success_kill(plan: str, kind: str) -> CheckResult:
 
     succ_hits: list[tuple[int, str]] = []
     kill_hits: list[tuple[int, str]] = []
+    kill_tldr_hits: list[tuple[int, str]] = []
     for i, line in enumerate(lines):
         if mask[i]:
             continue
@@ -956,8 +992,8 @@ def check_success_kill(plan: str, kind: str) -> CheckResult:
         if m:
             succ_hits.append((i, m.group(0)))
         m = _KILL_RE.search(line)
-        if m and not in_tldr(i):
-            kill_hits.append((i, m.group(0)))
+        if m:
+            (kill_tldr_hits if in_tldr(i) else kill_hits).append((i, m.group(0)))
 
     succ_solid = [(i, a) for i, a in succ_hits if carrier_ok(i)]
     kill_solid = [(i, a) for i, a in kill_hits if carrier_ok(i)]
@@ -972,6 +1008,11 @@ def check_success_kill(plan: str, kind: str) -> CheckResult:
             f"§{section_name(ki)!r} (form-only check — joint satisfiability stays with the "
             "Statistics critic)",
         )
+    exempt_pass = _exempt_tldr_kill_pass(
+        cid, name, kind, succ_solid, kill_solid, kill_tldr_hits, carrier_ok, section_name
+    )
+    if exempt_pass is not None:
+        return exempt_pass
     missing = []
     if not succ_solid:
         missing.append(
@@ -991,6 +1032,11 @@ def check_success_kill(plan: str, kind: str) -> CheckResult:
         + ". Note: a `No gates — short run / pre-verified hypothesis` escape waives *gates*, "
         "not success/kill criteria"
     )
+    if not kill_solid and kind in EXEMPT_KINDS:
+        detail += (
+            ". Standard remedy for kind-exempt plans: add the mandated §0.0 TL;DR "
+            "'What would change my mind' line (a solid one satisfies this family — #1291)"
+        )
     if len(missing) == 2 and kind == "experiment":
         return _fail(cid, name, detail)
     if len(missing) == 2:
@@ -1910,14 +1956,36 @@ _FAILLOUD_GREP_LINE_RE = re.compile(r"(?i)\bgrep\b")
 # criteria as summary prose (same rationale as c8's _tldr_ranges exclusion).
 _FAILLOUD_SUMMARY_HEAD_RE = re.compile(r"(?i)tl;dr|plan summary|^(?:§\s*)?0(?:\.0)?\b")
 
+# Anchor carriers that never bind (2): Risks / Failure-Modes sections carry
+# failure-MODE narration ("post_event raising ValueError is fail-loud", "will
+# be caught ... fails loud"), not acceptance claims — the same rationale that
+# excluded decision rule|gate from the anchor (#932 corpus probe, comment
+# above _FAILLOUD_ANCHOR_RE). BOTH alternation branches are GROUPED under the
+# start anchor + optional section numbering (a bare `|failure[- ]modes?`
+# branch would match anywhere in the heading and silently exclude genuine
+# acceptance sections), so an acceptance heading merely containing "risk" or
+# "failure mode" mid-heading is NOT excluded. 11 of 16 historical noise fires
+# were this class (#1291; founding incident #1275 v1).
+_FAILLOUD_RISKS_HEAD_RE = re.compile(
+    r"(?i)^(?:§\s*)?(?:\d+(?:\.\d+)*[.)]?\s*)?(?:risks?\b|failure[- ]modes?\b)"
+)
+
 _FAILLOUD_WINDOW_LINES = 30
 
 
 def _failloud_claim_hits(plan: str) -> list[tuple[str, str]]:
     """(section heading, matched vocabulary) per acceptance/success anchor
-    whose fence-stripped 30-line window carries a fail-loud claim. Anchors in
-    fences, in §0/TL;DR/Plan-Summary regions, or with an H1/preamble carrier
-    are dropped (corpus-probe noise classes, task #932)."""
+    whose 30-line window carries a fail-loud claim. Anchors in fences, in
+    §0/TL;DR/Plan-Summary regions, in Risks/Failure-Modes sections (risk rows
+    narrate failure MODES, not acceptance claims — 11/16 historical noise
+    fires, #1291, founding incident #1275 v1), or with an H1/preamble carrier
+    are dropped (corpus-probe noise classes, tasks #932 + #1291). The claim
+    window is built from the document-global fence mask (a window slice can
+    no longer mis-parse when it starts inside a fence) with `grep`-bearing
+    lines excluded LINE-SCOPED — a grep line narrates tooling semantics
+    ("`grep -c` exits nonzero"), not the plan's own acceptance claim (the
+    remaining 5/16 noise fires, #1275 v2); a real claim on any non-grep line
+    in the window still triggers."""
     lines = plan.splitlines()
     mask = _fence_mask(lines)
     headings = _headings(plan)
@@ -1928,8 +1996,15 @@ def _failloud_claim_hits(plan: str) -> list[tuple[str, str]]:
         h = _innermost_section(headings, i)
         if h is None or h.level < 2 or _FAILLOUD_SUMMARY_HEAD_RE.search(h.text.strip()):
             continue
+        if _FAILLOUD_RISKS_HEAD_RE.search(h.text.strip()):
+            continue
         end = min(h.end, i + 1 + _FAILLOUD_WINDOW_LINES)
-        m = _FAILLOUD_CLAIM_RE.search(strip_fences("\n".join(lines[i:end])))
+        window = "\n".join(
+            ln
+            for ln, fenced in zip(lines[i:end], mask[i:end], strict=True)
+            if not fenced and not _FAILLOUD_GREP_LINE_RE.search(ln)
+        )
+        m = _FAILLOUD_CLAIM_RE.search(window)
         if m:
             hits.append((h.text, m.group(0)))
     return hits
