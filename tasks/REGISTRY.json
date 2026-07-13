@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1294,
+  "highest_id": 1295,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2290,6 +2290,13 @@
       "path": "tasks/proposed/1294",
       "status": "proposed",
       "title": "daily-fix: producer-side regen bullet in upload-policy"
+    },
+    "1295": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1295",
+      "status": "proposed",
+      "title": "daily-fix: consolidate 3rd inline loop in auth-outage test"
     },
     "13": {
       "has_clean_result": false,
