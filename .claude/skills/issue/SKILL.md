@@ -8879,10 +8879,10 @@ rebase-merged. Three guards:
    ```
 
    The `STRIPPED_FOREIGN` flag is load-bearing: the strip commit above is a
-   LOCAL worktree commit, but the safe-case `gh pr merge --rebase` below
-   rebases the commits on the PR head ref as it exists on
+   LOCAL worktree commit, but the safe-case `gh pr merge $MERGE_FORM` below
+   merges the PR head ref as it exists on
    `origin/issue-<N>` (server-side), NOT the local worktree HEAD. An unpushed
-   strip commit is therefore INVISIBLE to that server-side rebase — the
+   strip commit is therefore INVISIBLE to that server-side merge — the
    foreign `tasks/*` reverts would remain in the replayed history and land on
    `main` silently. So when `STRIPPED_FOREIGN=yes`, the safe-case block below
    MUST push the strip commit to the PR head ref BEFORE calling `gh pr merge`.
@@ -8902,7 +8902,8 @@ rebase-merged. Three guards:
    #458's merge branch, 1,146 commits behind main, silently rewound
    `tasks/running/448/events.jsonl`.) The `--rebase` merge form below replays
    the branch's commits on top of current `main`, so files the branch never
-   committed keep `main`'s version — this is what keeps the clean-result body
+   committed keep `main`'s version (the `--squash` form lands the same
+   own-diff content as one commit) — this is what keeps the clean-result body
    (committed to `main` by `task.py`, never in the worktree) safe across the
    merge.
 2. **Status already off `running`.** By both trigger points the status is
@@ -8939,7 +8940,8 @@ rebase-merged. Three guards:
 
    ```bash
    # The branch's OWN commits (merge-base..HEAD) — with ON_MAINLINE=yes
-   # this is exactly what `gh pr merge --rebase` will replay onto main.
+   # this is exactly what `gh pr merge --rebase` will replay onto main
+   # (the `--squash` form lands the same own-diff content as one commit).
    # quotePath=false: each $f below feeds a literal `git log ... -- "$f"`
    # pathspec — a `"`-quoted non-ASCII path matches nothing, non_sync reads
    # empty, and the file is misread as "imported from main" (fail-open).
@@ -8988,7 +8990,8 @@ rebase-merged. Three guards:
    rebase-merge regardless of `BEHIND`: the rebase replays only these commits,
    and files the branch never committed keep `main`'s version.
 
-   In the unsafe case, do NOT run `gh pr merge --rebase` — fall through
+   In the unsafe case, do NOT run the safe-case `gh pr merge` (any
+   `$MERGE_FORM`) — fall through
    to the **artifact-confirmed merge** procedure below. The Guard 1
    foreign-`tasks/` checkout is necessary but not sufficient: it covers
    `tasks/`, but a branch based on a still-unmerged parent branch also
@@ -9007,14 +9010,14 @@ rebase-merged. Three guards:
 
 #### Fast-path routing pre-check (workflow-fix / small-ADDED-diff far-behind branches)
 
-Run this AFTER guards 1-3 and BEFORE the safe-case `gh pr merge --rebase`
+Run this AFTER guards 1-3 and BEFORE the safe-case `gh pr merge $MERGE_FORM`
 call. For a workflow-fix / small-diff branch that is very far behind `main`,
 a server-side `--rebase` predictably conflicts on churn even after Guard 1
 strips foreign folders (GitHub replays the branch's own commits across
 thousands of intervening main commits, and cannot use this repo's
 `merge=union`). When the branch's OWN diff is small, entirely in-scope, AND
-consists ONLY of ADDED files, skip the doomed `--rebase` and route DIRECTLY to
-the surgical additive checkout below.
+consists ONLY of ADDED files, skip the doomed server-side merge and route
+DIRECTLY to the surgical additive checkout below.
 
 **Why the ADDED-only conjunct is load-bearing (do NOT drop it).** The
 surgical additive checkout does a WHOLESALE `git checkout issue-<N> -- <path>`
@@ -9026,7 +9029,7 @@ overwrite silently discards `main`'s newer content with NO conflict surfacing
 the surgical checkout only ever CREATES files that do not yet exist on
 `main`, so it can never clobber a concurrently-advanced one. A branch that
 MODIFIES a workflow-surface file (status M) is NOT fast-path-eligible and
-takes the ordinary `gh pr merge --rebase` path, whose server-side 3-way merge
+takes the ordinary `gh pr merge $MERGE_FORM` path, whose server-side 3-way merge
 either merges main's changes cleanly or surfaces a real conflict for the
 recovery sub-procedure. (This is exactly why #787 itself — which MODIFIES
 `SKILL.md` — is not fast-path-eligible.)
@@ -9090,7 +9093,7 @@ if [ "$TASK_KIND" = "infra" ] \
 fi
 ```
 
-If `FAST_PATH=yes`: SKIP the `gh pr merge --rebase` call and jump straight to
+If `FAST_PATH=yes`: SKIP the safe-case `gh pr merge $MERGE_FORM` call and jump straight to
 the **surgical additive checkout** (the "One or more deliverables missing"
 branch of the artifact-confirmed procedure below). The surgical checkout
 lands this branch's own ADDED files onto `main` directly, with no rebase.
@@ -9099,11 +9102,11 @@ true, surgical_checkout: true, fast_path: true, reason: "wf-fix branch
 BEHIND=<BEHIND> > 1000, own diff <=15 in-scope ADDED-only files — skipped
 doomed server-side rebase", files: [...]}`.
 
-If `FAST_PATH=no`: proceed to the safe-case `gh pr merge --rebase` (or the
+If `FAST_PATH=no`: proceed to the safe-case `gh pr merge $MERGE_FORM` (or the
 artifact-confirmed path if Guard 3 said UNSAFE) exactly as before — this
 pre-check adds NO new behavior for normal branches. A branch that MODIFIES a
 workflow-surface file (status M ⇒ `ADDED_ONLY=no`) is deliberately not
-fast-pathed; it takes the ordinary `--rebase`.
+fast-pathed; it takes the ordinary `$MERGE_FORM` merge.
 
 #### Pre-push workflow-lint gate (runs before every merge form lands)
 
@@ -9656,9 +9659,10 @@ else
   # block and run the artifact-confirmed merge below instead.
   #
   # Push the Guard-1 strip commit to the PR head ref FIRST, so the
-  # server-side rebase in `gh pr merge` below sees the stripped branch tip,
+  # server-side merge in `gh pr merge` below (rebase replay or squash)
+  # sees the stripped branch tip,
   # not the pre-strip commit. The strip commit is a LOCAL worktree commit and
-  # is otherwise invisible to server-side rebase — leaving the foreign
+  # is otherwise invisible to the server-side merge — leaving the foreign
   # tasks/* reverts in the replayed history and landing them on main silently
   # (Codex code-review round-1 blocker, task #787). Push retry mirrors
   # CLAUDE.md § "Concurrent repo-root committers": pull --rebase=merges
@@ -9689,6 +9693,27 @@ else
       || { git -C "$WT" pull --rebase=merges --autostash \
            && git -C "$WT" push origin issue-<N>; }
   fi
+  # Merge-form routing (#1288): infra-fleet code branches (kind infra|batch —
+  # the watcher's INFRA_DRAIN_KINDS, the population same-batch racing this
+  # step by construction) default to --squash: server-side --rebase was 0/4
+  # first-try on 2026-07-12 (10/24 sessions on 07-11) under fleet churn, and
+  # every failed session landed on --squash anyway after burning the failed
+  # rebase + its retry ladder. GitHub mergeability is merge-method-
+  # independent, but --rebase can ADDITIONALLY fail ("can't be rebased",
+  # #1041) where --squash succeeds — so squash-first strictly dominates for
+  # a single-logical-change branch, and it reverts as ONE commit (the only
+  # grain that exists on such a branch). Experiments (Step 9b trigger) keep
+  # --rebase: heterogeneous per-item commits retain per-commit revert value
+  # and the empirical record does not cover them. An unreadable kind falls
+  # to --rebase (fail-open to today's behavior). REPO_ROOT is re-derived
+  # inline — fenced blocks are separate shells, and the guards block's
+  # derivation is not in scope here:
+  REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+  MERGE_FORM=--rebase
+  TASK_KIND=$(uv run python "$REPO_ROOT/scripts/task.py" view <N> --json \
+    | uv run python -c 'import sys,json; print(json.load(sys.stdin).get("frontmatter",{}).get("kind",""))' \
+    || echo "")
+  case "$TASK_KIND" in infra|batch) MERGE_FORM=--squash ;; esac
   # Pre-push workflow-lint gate (subsection above) — run its executable
   # block FIRST as ONE BACKGROUND Bash call, read the verdict file in a
   # fresh foreground call when it completes (completion-read, gate
@@ -9704,10 +9729,10 @@ else
      && [ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ] \
      && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
     gh pr ready <PR>
-    if gh pr merge <PR> --rebase --delete-branch=false; then
+    if gh pr merge <PR> $MERGE_FORM --delete-branch=false; then
       rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
     else
-      echo "MERGE FAILED — classify the gh error text: (1) \"can't be rebased\" -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" (mergePullRequest) -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
+      echo "MERGE FAILED — classify the gh error text: (0) \"Base branch was modified\" -> transient base-advance (Known failure shape 0 below): wait ~20s, re-enter this SAME conditional (same tip, verdict still valid; max 2 same-tip retries); (1) \"can't be rebased\" (--rebase form only) -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
       false
     fi
   else
@@ -9725,6 +9750,32 @@ a scratch worktree (the root guard blocks a repo-root revert, #1234) (vs.
 revert control after the fact — that is what makes a no-prompt merge safe
 here. The worktree is deliberately NOT removed (`--delete-branch=false`,
 no `git worktree remove`).
+
+For `kind: infra|batch` branches `$MERGE_FORM` is `--squash` (#1288):
+the branch is a single logical change by construction, the squash lands
+it as ONE independently-revertible commit, and the empirical record
+(0/4 first-try rebases 2026-07-12; 10/24 sessions 07-11; every failure
+landing on --squash anyway) makes the rebase attempt a pure wall-time
+tax under fleet churn. Shape 1 cannot fire on the --squash path (the
+error is rebase-specific); shapes 0/2/else apply to both forms.
+
+**Known failure shape 0 — base branch advanced mid-merge (`Base branch
+was modified`, #1288).** Substring-match `Base branch was modified` (the
+full wording — `Base branch was modified. Review and try the merge
+again.` — is transcript-mined and may drift). GitHub recomputed the
+merge against a base that moved DURING the API call — a pure timing
+transient under fleet marker churn (~100+ tasks/ commits/hr on main):
+no content conflict, nothing to fix. Recovery: wait ~20 s (≈ one churn
+interval, letting gh's mergeability recompute settle), then re-enter
+the SAME gated merge conditional with the SAME `$MERGE_FORM` — the
+branch tip is unchanged, so the SHA-bound verdict re-certifies it
+(consume-on-merge-success survives this failure by design; never
+hand-write the verdict file, #1082). Bounded at TWO same-tip retries
+per Step 10d invocation; a third consecutive hit is no longer plausibly
+timing — reclassify by error text per shapes 1/2/else. Before #1288
+this shape fell through to "(3) anything else" and burned a full
+~16-min scratch-worktree recovery on a transient (one of the three
+error shapes in the 2026-07-12 fleet's 4/4 first-attempt failures).
 
 **Known failure shape 1 — branch carries a merge commit (`can't be
 rebased`, #1041).** A branch that CARRIES A MERGE COMMIT (e.g. after a
@@ -9799,7 +9850,7 @@ fi
 # the NEW tip (never hand-write it, #1082). If the tip did NOT change
 # (push-only fix), the still-valid verdict re-certifies it — the
 # conditional's sha arm enforces this mechanically either way. Then
-# re-enter the SAME gated merge conditional (--rebase form) exactly
+# re-enter the SAME gated merge conditional (the task's $MERGE_FORM) exactly
 # once. Classify a SECOND refusal by its error text per the failure
 # echo: a "can't be rebased" refusal takes the shape-1 --squash retry
 # (the retried rebase replays the FIRST, stale strip commit per-commit
@@ -9817,10 +9868,14 @@ fix the server-side view and the retry is warranted; the tip is then
 unchanged, so the still-valid SHA-bound verdict re-certifies it and no
 gate re-run is needed.)
 
-- **Success:** post `epm:merged v1` with the list of merge SHAs. Update
+- **Success:** post `epm:merged v1` with the list of merge SHAs plus
+  `merge_form: squash|rebase` and `merge_attempts: <n>` (note-token
+  convention — no schema change, #1288). Update
   the chat title with `merged`. Then run the **post-merge stale-task-folder
   guard** below (it runs on every merge form).
 - **Failure** (rebase conflict, non-mergeable PR, non-fast-forward): for
+  the `Base branch was modified` shape (substring match), run the
+  shape-0 wait-and-retry (Known failure shape 0 above, max 2) FIRST; for
   the `Pull Request has merge conflicts` shape (substring match), FIRST
   run the **re-snapshot-and-retry** (Known failure shape 2 above) ONCE;
   if it is skipped (nothing changed), run the **merge-conflict recovery**
@@ -9953,10 +10008,11 @@ fi
 # before this gated push). The push is then GATED on the persisted, SHA-BOUND verdict file —
 # the explicit conditional is the hard stop (missing file / block / crash
 # / missing or stale sha all fail CLOSED). The verdict is consumed only
-# AFTER `gh pr merge` SUCCEEDS: this branch now CARRIES A MERGE COMMIT,
-# so the --rebase merge routinely fails with the #1041 rebase refusal —
-# the surviving verdict certifies the documented --squash retry of the
-# SAME tip (never hand-write the verdict file, #1082):
+# AFTER `gh pr merge` SUCCEEDS (never hand-write the verdict file,
+# #1082). The recovery just added a merge commit, so --rebase is
+# documented-doomed here (#1041 — the old flow burned that attempt, then
+# took the --squash substitution). Go straight to --squash for ALL kinds
+# (#1288):
 if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null \
    && [ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ] \
    && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
@@ -9964,10 +10020,10 @@ if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/nu
   # gh recomputes mergeability asynchronously after a push — it can be
   # momentarily stale. Re-check before concluding failure:
   gh pr view <PR> --json mergeable -q .mergeable   # brief wait/retry until MERGEABLE
-  if gh pr merge <PR> --rebase --delete-branch=false; then
+  if gh pr merge <PR> --squash --delete-branch=false; then
     rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
   else
-    echo "MERGE FAILED post-push (the recovery's merge commit typically refuses server-side rebase — the #1041 shape). The SHA-bound verdict REMAINS VALID for the same-tip retry: re-enter this conditional with --squash substituted for --rebase (Known failure shape 1 above); the rm fires on THAT retry's success. Do NOT hand-write the verdict file."
+    echo "MERGE FAILED post-push — classify: (0) \"Base branch was modified\" -> shape-0 same-tip retry (verdict survives); anything else -> epm:merge-failed (do NOT hand-write the verdict file)."
     false
   fi
 else
@@ -10392,13 +10448,13 @@ Decision tree:
   with the error, surface ONE line in chat (branch + worktree path +
   one-line reason), CONTINUE. Same fail-fast policy as the safe case.
 
-Never blind-`gh pr merge --rebase` a branch that tripped guard 3 — that
-is the exact #458 / #479 incident class this section exists to prevent.
+Never blind-`gh pr merge` (any `$MERGE_FORM`) a branch that tripped guard 3
+— that is the exact #458 / #479 incident class this section exists to prevent.
 
 #### Post-merge stale-task-folder guard (runs after EVERY merge form lands)
 
 Run this AFTER any of the three merge forms above lands (safe-case
-`gh pr merge --rebase`, the merge-conflict-recovery retry, or the
+`gh pr merge $MERGE_FORM`, the merge-conflict-recovery retry, or the
 artifact-confirmed / surgical-additive checkout). A merge commit — most
 often the recovery's `git merge origin/main`, but also any improvised
 merge taken when `--rebase` keeps being refused — can import THIS task's
@@ -10409,7 +10465,7 @@ reads the stale folder as a live task and respawns the session
 indefinitely (incident #644, 2026-06-16: an orphan-respawn cap-2-per-day
 cycle ran ~8h; #643 hit the same class at archive time). Guard 1 above
 catches FOREIGN tasks' folders but not this task's own old-status
-duplicate, and it only runs on the `--rebase` form. Keep exactly ONE
+duplicate, and it only runs on the safe-case (`$MERGE_FORM`) path. Keep exactly ONE
 folder for this task on `main`:
 
 ```bash
