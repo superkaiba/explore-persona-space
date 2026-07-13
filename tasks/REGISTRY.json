@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1291,
+  "highest_id": 1292,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2269,6 +2269,13 @@
       "path": "tasks/proposed/1291",
       "status": "proposed",
       "title": "daily-fix: kind-aware c8/c15 WARN gating in verify_plan"
+    },
+    "1292": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1292",
+      "status": "proposed",
+      "title": "daily-fix: v2 lens briefs cite rubric heading verbatim"
     },
     "13": {
       "has_clean_result": false,
