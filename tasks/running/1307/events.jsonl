@@ -8,3 +8,4 @@
 {"ts": "2026-07-14T08:17:01Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py PASS, n_fail=0 n_warn=0, plan v2 (post-revision re-run; goal-currency GOAL-CURRENT at persist)"}
 {"ts": "2026-07-14T08:17:02Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "approved", "note": "Plan v2 ready; ensemble APPROVE; consistency WARN folded into v2. [autonomous plan-gate: auto-approved, est 0.0 GPU-h <= 100.0h cap]"}
 {"ts": "2026-07-14T08:17:03Z", "kind": "epm:plan-approved", "version": 1, "by": "autonomous-gate", "note": "Auto-approved by the code-enforced autonomous plan-gate (task.py --auto-approve-if-autonomous): gpu_hours_total=0.0 <= cap 100.0. EPM_AUTONOMOUS_SESSION set; no human asked."}
+{"ts": "2026-07-14T08:17:40Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched implementer; awaiting epm:results."}
