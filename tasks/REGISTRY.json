@@ -2399,8 +2399,8 @@
     "1308": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1308",
-      "status": "proposed",
+      "path": "tasks/planning/1308",
+      "status": "planning",
       "title": "daily-fix: planner traces trigger predicate vs incident"
     },
     "1309": {
