@@ -2378,8 +2378,8 @@
     "1305": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1305",
-      "status": "reviewing",
+      "path": "tasks/completed/1305",
+      "status": "completed",
       "title": "daily-fix: implementer pre-report 9c touched-scope run"
     },
     "1306": {
