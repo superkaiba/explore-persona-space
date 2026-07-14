@@ -1,0 +1,8 @@
+{
+ "figure": "fig_a35a_spread_vs_jensen_L14.png",
+ "issue": 658,
+ "analysis": "A3.5a within-condition coherence",
+ "git_commit": "b80fc7a071684a039acca185308ef13f2b9420d3",
+ "primary_layer": 14,
+ "source": "eval_results/issue_658/inline_a3_5a_coherence/coherence_results.json"
+}
