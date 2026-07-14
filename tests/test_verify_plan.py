@@ -2367,6 +2367,146 @@ def test_c15_acceptance_heading_containing_failure_mode_word_still_triggers():
     assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "WARN"
 
 
+# ─── Check 15 — evidence routes 2-3 calibration (#1306) ────────────────────
+
+# Verbatim corpus literals from the #1296 incident, EMBEDDED as constants —
+# committed tests never read real tasks/ plan files (the c13 suite's
+# convention). No `test_` identifier appears in the raises lines, so the
+# fixture isolates evidence route 2 (the pytest.raises literal).
+C15_1296_RAISES_LINES = (  # tasks/completed/1296/plans/v2.md:135-137, verbatim
+    "\n   - **negative control:** `with pytest.raises(ModuleNotFoundError):\n"
+    '     importlib.import_module("runpod_api")` — proves the scrub is real and\n'
+    "     the pre-fix failure mode exists;\n"
+)
+
+# The wrapped labeled-pin paragraph: the 105-char test path forced a hard
+# wrap, splitting the identifier (line 3) from the label (line 1) and the
+# raise vocabulary (lines 1/4) — the same-line route cannot see it, so the
+# fixture isolates evidence route 3 (the labeled forward paragraph scan).
+C15_1296_PIN_PARAGRAPH = (  # tasks/completed/1296/plans/v2.md:285-289, verbatim
+    "\nFail-loud acceptance (check 15): the pytest-backed fail-loud claim is the\n"
+    "negative control in\n"
+    "`tests/test_backend_poll.py::test_ensure_scripts_dir_bootstrap_resolves_runpod_api_in_module_mode`\n"
+    "(asserts `ModuleNotFoundError` is raised when `scripts/` is scrubbed and the\n"
+    "bootstrap has not run).\n"
+)
+
+
+def test_c15_pytest_raises_negative_control_passes():
+    # Route 2 regression fixture (#1306): the quoted raises control alone —
+    # no test_ identifier anywhere in the added lines — satisfies c15.
+    plan = GOOD_PLAN + FAILLOUD_ACCEPT + C15_1296_RAISES_LINES
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "PASS"
+
+
+def test_c15_wrapped_prose_regression_1296_passes():
+    # Route 3 regression fixture (#1306, the Durability pin): the labeled
+    # satisfier paragraph #1296 v2 carried — label line, identifier two
+    # lines below, contiguous — satisfies c15 despite the hard wrap.
+    plan = GOOD_PLAN + FAILLOUD_ACCEPT + C15_1296_PIN_PARAGRAPH
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "PASS"
+
+
+def test_c15_bare_pytest_raises_without_exception_does_not_satisfy():
+    # Pins route 2's named-exception requirement (`[\w.]+` after the paren):
+    # a bare `pytest.raises()` mention is prose, not a control.
+    plan = GOOD_PLAN + FAILLOUD_ACCEPT + "\nThe fix uses pytest.raises() somewhere.\n"
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "WARN"
+
+
+def test_c15_pytest_raises_on_grep_line_does_not_satisfy():
+    # Pins the grep-line exclusion on route 2.
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\n- Gate: grep -rn 'pytest.raises(ValueError' tests/ returns hits.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "WARN"
+
+
+def test_c15_failloud_pin_label_wrapped_paragraph_passes():
+    # Synthetic minimal route-3 shape: label line, identifier two lines
+    # below, contiguous paragraph. The identifier carries no fail-loud
+    # vocabulary, so the same-line route cannot satisfy — route 3 only.
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nFail-loud pin (wrapped): the committed negative control lives in\n"
+        "the backend-poll suite at\n"
+        "`tests/test_backend_poll.py::test_module_mode_import_guard` and runs in CI.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "PASS"
+
+
+def test_c15_failloud_pin_label_blank_separated_test_does_not_satisfy():
+    # Pins the paragraph bound: a blank line ends the route-3 forward scan.
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nFail-loud pin (wrapped): to be named in a later revision.\n"
+        "\n"
+        "Tests: test_foo_behavior.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "WARN"
+
+
+def test_c15_failloud_pin_label_beyond_cap_does_not_satisfy():
+    # Pins _FAILLOUD_PIN_SCAN_LINES: an identifier 9 lines below the label
+    # (beyond the 8-line cap) does not satisfy route 3.
+    filler = "".join(f"filler row {k} of the pin paragraph.\n" for k in range(8))
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nFail-loud pin (wrapped): the committed negative control lives in\n"
+        + filler
+        + "`tests/test_backend_poll.py::test_module_mode_import_guard` and runs in CI.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "WARN"
+
+
+def test_c15_pin_label_grep_line_in_paragraph_does_not_satisfy():
+    # Route-3 inner grep exclusion: a labeled paragraph whose ONLY test_
+    # identifier sits on a grep line inside the paragraph does not satisfy
+    # (pins the inner _FAILLOUD_GREP_LINE_RE continue).
+    plan = (
+        GOOD_PLAN + FAILLOUD_ACCEPT + "\nFail-loud pin (verify): the invariant is checked by\n"
+        "grep -n 'test_scrub_guard' tests/test_backend_poll.py returning a hit.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "WARN"
+
+
+def test_c15_unrelated_test_two_lines_from_silent_vocab_still_warns():
+    # Anti-window pin (the rejected-mechanism regression, distilled from the
+    # plan-time pilot's #876/#996 false-flip shape): fail-loud vocabulary
+    # two contiguous lines from UNRELATED test identifiers — no label, no
+    # pytest.raises — must NOT satisfy (the :4956 class stays out).
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nThe cache read is silent on a miss by design and the loader\n"
+        "continues; see the loader table.\n"
+        "Suite: test_loader_roundtrip, test_loader_cache_hit.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "WARN"
+
+
+def test_c15_true_positive_still_warns():
+    # Post-change restatement of the #913 true positive: a fail-loud claim
+    # with only success-path tests named still WARNs, and the updated detail
+    # keeps the pinned substrings plus the new remedy wording.
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nTests: `test_drain_dispatches_ripe_tasks`, `test_drain_respects_concurrency_cap`.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c15_failloud_test_coverage"]
+    assert r.status == "WARN"
+    assert "#913" in r.detail
+    assert "grep" in r.detail
+    assert "ONE unwrapped line" in r.detail
+
+
 # ─── Check 16 — re-extracted reference vs committed headline ───────────────
 
 # Near-verbatim #811 v3 shapes (task #937 incident): the synthetic fixtures
