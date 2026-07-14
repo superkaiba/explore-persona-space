@@ -2350,8 +2350,8 @@
     "1301": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1301",
-      "status": "approved",
+      "path": "tasks/running/1301",
+      "status": "running",
       "title": "daily-fix: v2 composer plan_body vs paths-only drift"
     },
     "1302": {
