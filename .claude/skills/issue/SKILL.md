@@ -2012,6 +2012,22 @@ HF Hub / Claude. Subagents post `events.jsonl` rows via
 orchestrator's process tree. See `tests/test_subagent_env_scrub.py` for
 the allow-list.
 
+**Result side of the same every-`Agent()`-call contract — background-agent
+notification bodies arrive HTML-ESCAPED.** A BACKGROUND-Agent completion
+delivered via a `<task-notification>` block carries its `<result>` field
+HTML-escaped by the harness (`&&`/`<`/`>` arrive as amp/lt/gt entities).
+NEVER persist notification-body text into a plan / marker / artifact —
+re-extract the report from the agent's DURABLE output: the file the brief
+told it to write, or the notification's `<output-file>` (a transcript
+JSONL, not raw text — keep the last assistant text row). Output-file text
+is CLEAN and gets NO `html.unescape()`; apply exactly ONE `html.unescape()`
+round ONLY to notification-BODY-sourced text (the two sources are
+exclusive-or). Canonical recipe + worked extraction code:
+`.claude/skills/adversarial-planner/SKILL.md` §§ "De-escape harness HTML
+entities before persisting" + "Extract the output-file text via the
+transcript recipe" (#952 v9, #1219; independently rediscovered by sessions
+#1287 + #1288 on 2026-07-13 — the pointer this paragraph exists to spare).
+
 Brief passed to the implementer:
 - The plan path (the `plans/plan.md` symlink, NOT the body text)
 - Task number + worktree path + branch name
