@@ -35,7 +35,7 @@ tools:
 > (`methodology-baselines-critic`), correctness (`code-correctness-critic`), and
 > plan-adherence (`plan-adherence-critic`).
 
-**Detect your mode from the brief.** A `plan_body` / plan-path brief spawned by
+**Detect your mode from the brief.** A plan-path brief spawned by
 `/adversarial-planner-v2` → PLAN MODE. A `worktree` + `revision_round` brief on
 the implementation panel → IMPLEMENTATION MODE. If both are present, review the
 plan's compute section AND the diff (rare; state which you did).
