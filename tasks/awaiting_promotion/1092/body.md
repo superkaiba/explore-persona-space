@@ -4,6 +4,7 @@ title: Answer-state transport on real conversations runs almost entirely through
 kind: experiment
 tags:
 - followup-auto
+- followup-manual
 created_at: '2026-07-07T02:39:24Z'
 has_clean_result: true
 origin_prompt: 'how can we get more realistic and diverse contexts but also be able
