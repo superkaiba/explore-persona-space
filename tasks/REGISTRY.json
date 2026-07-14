@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1124,
+  "highest_id": 1309,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -710,9 +710,9 @@
       "goal": "Rebuild the factory content-behavior datagen persona-vectors-style \u2014 each behavior defined by a trait description + 5 contrastive instruction pairs + neutral trait-eliciting questions (auto-generated persona-vectors-style where a curated bank triggers refusal) so a Claude generator is less likely to refuse \u2014 add an impossible-to-refuse formatting behavior as a pipeline positive control, and test whether this clears the yield floors and installs trainable organisms across the behavior set.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1090",
-      "status": "followups_running",
-      "title": "Reframing sycophancy as subjective opinion-agreement roughly triples Claude datagen yield over the wrong-fact bank yet still misses the yield floor, and Claude- and Qwen-generated data install sycophancy organisms at identical judged rates, with the registered dose band reached only by the Claude-data organism at doubled epochs on the Tier-1 selection read (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/1090",
+      "status": "awaiting_promotion",
+      "title": "The training context, not the contrastive-negative panel, gates where implanted content behaviors express on-policy (MODERATE confidence)"
     },
     "1091": {
       "has_clean_result": false,
@@ -723,11 +723,11 @@
     },
     "1092": {
       "goal": "On a realistic sparse-crossed prefix x query corpus (~1k real WildChat/LMSYS prefixes incl. >=300 long conversations + ~100x48 dense core + ~500-query bank; two fit-time training arms; #594 battery as eval bridge), a 4x2 text-source x model factorial (own-text 2x2 full, Claude/shuffled subsampled), THREE answer targets (t1/t2/t3) + u1/u2/u3 user mirrors, bare-query captures, a turn-dynamics module (D0-D5, both input arms, D4 selection/length-controlled, D5 first-state horizon), and a BEHAVIOR module (graded Sonnet judge on the trait-relevant subset; B1 state->behavior per input arm + grain incl. the #779 monitoring-gap re-read and the A2 answer-side ceiling; B2 factor->behavior validating trait-per-factor): characterize answer-state transport via the four co-primary reads per cell/target/arm (prefix-vs-context gap; averaged-vs-per-example rank collapse; f/g/i shares vs #923; M~=f-map, M'-M~=g, trait-per-factor) plus the instruction-tuning text-vs-transport decomposition, carrier floor, factor transfer, target/dynamics/behavior sensitivity, and 0-GPU bridge re-fits on #923/#813/#779. Both prefix and context arms on every read; all GPU phases data-parallel; all fit grids vectorized (binding). Pre-approved to 300 GPU-h.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1092",
-      "status": "running",
-      "title": "Realistic sparse-crossed prefix x query corpus: prefix-map vs context-map, averaging-rank collapse, and prefix/query variance decomposition of answer-state transport"
+      "path": "tasks/awaiting_promotion/1092",
+      "status": "awaiting_promotion",
+      "title": "Answer-state transport on real conversations runs almost entirely through the query-bearing context state, not the prefix persona state (HIGH confidence)"
     },
     "1093": {
       "has_clean_result": false,
@@ -878,11 +878,11 @@
     },
     "1112": {
       "goal": "Measure how residual-stream activation-shift geometry (trained-minus-base, per layer: rank/participation-ratio, direction alignment, magnitude) depends on training method AND contrastive negatives, via a sycophancy 2x2 on #1090's data \u2014 {LoRA, full-fine-tune} x {positive-only, positive+contrastive-negatives} at matched install (training two NEW full-FT twins on #1090's mix) \u2014 plus a marker LoRA-vs-full-FT method comparison; extends #653's LoRA-only diffuse rank-k read and tests whether 2410.21228's weight-space intruder-dimension difference and the contrastive-negatives structure manifest in activation space.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/1112",
-      "status": "interpreting",
-      "title": "Matched LoRA vs full-fine-tune residual-stream activation-shift geometry (does #653's diffuse LoRA rank-k hold for full-FT?)"
+      "path": "tasks/awaiting_promotion/1112",
+      "status": "awaiting_promotion",
+      "title": "Matched-install LoRA and full fine-tuning differ in how far, not in what shape, they shift residual-stream activations, and the diffuse shape largely reflects measuring on each model's own text (MODERATE confidence)"
     },
     "1113": {
       "has_clean_result": false,
@@ -975,12 +975,117 @@
       "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 token-id concat for teacher-forced capture (BPE seam)"
     },
+    "1125": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1125",
+      "status": "completed",
+      "title": "workflow-fix: pin GNU grep in SKILL.md lint-gate -qv triggers (ugrep shadowing)"
+    },
+    "1126": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1126",
+      "status": "completed",
+      "title": "daily-fix: Codex quota-exhausted sentinel short-circuit"
+    },
+    "1127": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1127",
+      "status": "completed",
+      "title": "daily-fix: refusal-wedge lane misses live wedges"
+    },
+    "1128": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1128",
+      "status": "completed",
+      "title": "daily-fix: block repo-root branch merges in the guard hook"
+    },
+    "1129": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1129",
+      "status": "completed",
+      "title": "daily-fix: raise step9c pristine-oracle timeout default"
+    },
     "113": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/113",
       "status": "completed",
       "title": "If you wrong-answer-finetune Qwen-2.5-7B-Instruct under its own default system prompt, it self-degrades far harder than under a generic helpful-assistant prompt \u2014 but switching to \"I am\" framing recovers most of the gap on cross-model identity claims (MODERATE confidence)"
+    },
+    "1130": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1130",
+      "status": "completed",
+      "title": "daily-fix: codex_task.py forwards child success-stderr"
+    },
+    "1131": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1131",
+      "status": "completed",
+      "title": "daily-fix: /daily sweep checks retractions before filing"
+    },
+    "1132": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1132",
+      "status": "completed",
+      "title": "daily-fix: sweep recursion-guard-parked wf-fix candidates"
+    },
+    "1133": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1133",
+      "status": "completed",
+      "title": "daily-fix: dose-ladder checkpoint retention sizing rule"
+    },
+    "1134": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1134",
+      "status": "completed",
+      "title": "daily-fix: codify or ban the adopt-severe reconciler skip"
+    },
+    "1135": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1135",
+      "status": "completed",
+      "title": "daily-fix: gotchas entry - CVD clobber at library-train seam"
+    },
+    "1136": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1136",
+      "status": "completed",
+      "title": "daily-fix: set-body warns when experiment loses Goal H2"
+    },
+    "1137": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1137",
+      "status": "completed",
+      "title": "daily-fix: suppress stalled-alert on fresh poll-tick marker"
+    },
+    "1138": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1138",
+      "status": "completed",
+      "title": "daily-fix: verbatim bare push/merge snippets in SKILL.md"
+    },
+    "1139": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1139",
+      "status": "completed",
+      "title": "daily-fix: ad-hoc result summaries state data provenance"
     },
     "114": {
       "has_clean_result": false,
@@ -989,12 +1094,152 @@
       "status": "on_hold",
       "title": "Use activation oracles to see persona"
     },
+    "1140": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1140",
+      "status": "proposed",
+      "title": "daily-held: Codex quota out to Aug 6 - pay or ride it out"
+    },
+    "1141": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1141",
+      "status": "proposed",
+      "title": "daily-held: canonical HF model repo at 100k-file limit"
+    },
+    "1142": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1142",
+      "status": "completed",
+      "title": "workflow-fix: gotchas entry \u2014 vLLM H100 prefix-cache IMA differential + mitigation"
+    },
+    "1143": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1143",
+      "status": "completed",
+      "title": "workflow-fix: verify_task_body file-count claim-matcher misses footer shape"
+    },
+    "1144": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1144",
+      "status": "completed",
+      "title": "Port issue-1090 stranded shared-src fixes to main (sft.py CVD pin, datagen mt500 + posonly panel, bare/ICL contexts)"
+    },
+    "1145": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1145",
+      "status": "completed",
+      "title": "Fix torch-before-dotenv in 34 main-side VM scripts (thread-caps invariant test red on trunk)"
+    },
+    "1146": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1146",
+      "status": "completed",
+      "title": "workflow-fix: extend thread-caps heavy-import predicate to transitively-heavy roots"
+    },
+    "1147": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1147",
+      "status": "completed",
+      "title": "workflow-fix: Step-10d surgical checkout runs GLOB_SCAN_TESTS-mapped tests pre-landing"
+    },
+    "1148": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1148",
+      "status": "completed",
+      "title": "workflow-fix: daily SKILL push recovery via sync_repo_root.p"
+    },
+    "1149": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1149",
+      "status": "completed",
+      "title": "workflow-fix: mechanical ensemble reviewer no-show predicate"
+    },
     "115": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/completed/115",
       "status": "completed",
       "title": "Multi-seed replication of #108 system prompt ablation (seeds 137, 256)"
+    },
+    "1150": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1150",
+      "status": "completed",
+      "title": "workflow-fix: forward rc==0 stderr at watcher set-status + f"
+    },
+    "1151": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1151",
+      "status": "completed",
+      "title": "workflow-fix: GCP crash-persist no-fire on #811 crashes: inv"
+    },
+    "1152": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1152",
+      "status": "completed",
+      "title": "workflow-fix: harden guard_harmful_bank_read hook (3 bypass "
+    },
+    "1153": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1153",
+      "status": "completed",
+      "title": "workflow-fix: lint: pin awk elision program identical across"
+    },
+    "1154": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1154",
+      "status": "completed",
+      "title": "workflow-fix: lint: marker-recipe doc numeric snippets match"
+    },
+    "1155": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1155",
+      "status": "completed",
+      "title": "workflow-fix: pod-safety stop-failed marker + fix guard-test"
+    },
+    "1156": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1156",
+      "status": "completed",
+      "title": "workflow-fix: poller WARN: pid file older than run-launched "
+    },
+    "1157": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1157",
+      "status": "completed",
+      "title": "workflow-fix: 6d.0-bis smoke gate: name data-ingestion tiny-"
+    },
+    "1158": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1158",
+      "status": "completed",
+      "title": "workflow-fix: Recovery rule for autocompact-thrash subagent "
+    },
+    "1159": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1159",
+      "status": "completed",
+      "title": "workflow-fix: Split clean-result-critic.md; add pointer-cove"
     },
     "116": {
       "has_clean_result": true,
@@ -1003,12 +1248,152 @@
       "status": "completed",
       "title": "Adding a persona-mimicry SFT stage before behavioral SFT amplifies the source-to-assistant transfer of alignment, refusal, and sycophancy for 6 of 8 sources \u2014 but barely moves capability (LOW confidence)"
     },
+    "1160": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1160",
+      "status": "completed",
+      "title": "workflow-fix: Fix trunk-red dotenv-before-torch test (2 issu"
+    },
+    "1161": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1161",
+      "status": "completed",
+      "title": "workflow-fix: Raise-by-default _hf_tree_get guard in verify-"
+    },
+    "1162": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1162",
+      "status": "completed",
+      "title": "workflow-fix: check_jsonl_splitlines: add generic-receiver s"
+    },
+    "1163": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1163",
+      "status": "completed",
+      "title": "workflow-fix: workflow_lint no-flags run times out from a wo"
+    },
+    "1164": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1164",
+      "status": "completed",
+      "title": "workflow-fix: Mechanize the reused-artifact realized-keys pr"
+    },
+    "1165": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1165",
+      "status": "completed",
+      "title": "workflow-fix: Venue caveat in experimenter nohup .env memory"
+    },
+    "1166": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1166",
+      "status": "completed",
+      "title": "workflow-fix: planner.md: prescribe verdict-lattice declarat"
+    },
+    "1167": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1167",
+      "status": "completed",
+      "title": "workflow-fix: Per-tick push cap in watcher triage observer"
+    },
+    "1168": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1168",
+      "status": "completed",
+      "title": "workflow-fix: Forward-port pin-first figure reads to v2 revi"
+    },
+    "1169": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1169",
+      "status": "completed",
+      "title": "workflow-fix: document stale-blocked pass + GC test fixture"
+    },
     "117": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/117",
       "status": "archived",
       "title": "Run more midtraining experiments"
+    },
+    "1170": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1170",
+      "status": "completed",
+      "title": "workflow-fix: observer for unreconciled doubled-site verdict"
+    },
+    "1171": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1171",
+      "status": "completed",
+      "title": "workflow-fix: strip v4 Methodology details in body audit"
+    },
+    "1172": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1172",
+      "status": "completed",
+      "title": "workflow-fix: launcher-level PYTHONPATH for managed lanes"
+    },
+    "1173": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1173",
+      "status": "completed",
+      "title": "workflow-fix: daily route-2 bodies omit workflow_fix_target"
+    },
+    "1174": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1174",
+      "status": "completed",
+      "title": "workflow-fix: relative cache exclusion in improver-spawn lin"
+    },
+    "1175": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1175",
+      "status": "completed",
+      "title": "workflow-fix: lint unguarded deferred scripts.* imports"
+    },
+    "1176": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1176",
+      "status": "completed",
+      "title": "workflow-fix: lint SKILL.md git recipes against root guard"
+    },
+    "1177": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1177",
+      "status": "completed",
+      "title": "workflow-fix: provision-time warn on terminal-parent pods"
+    },
+    "1178": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1178",
+      "status": "completed",
+      "title": "workflow-fix: post-marker WARN on literal backslash-n notes"
+    },
+    "1179": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1179",
+      "status": "completed",
+      "title": "workflow-fix: verify_plan check for SKILL.md-prose pin tests"
     },
     "118": {
       "has_clean_result": false,
@@ -1017,12 +1402,152 @@
       "status": "on_hold",
       "title": "Next Steps - April 27 2026"
     },
+    "1180": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1180",
+      "status": "completed",
+      "title": "workflow-fix: dedup predicate blind to daily-fix: titles"
+    },
+    "1181": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1181",
+      "status": "completed",
+      "title": "workflow-fix: Lint: fix_sha in code-fix relaunch notes + D3 "
+    },
+    "1182": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1182",
+      "status": "completed",
+      "title": "workflow-fix: Memoize transcript resolution across watcher p"
+    },
+    "1183": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1183",
+      "status": "completed",
+      "title": "workflow-fix: Relocate live pods_ephemeral.json out of git t"
+    },
+    "1184": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1184",
+      "status": "completed",
+      "title": "workflow-fix: Fix ls-tree fail-open in Step 10d stale-folder"
+    },
+    "1185": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1185",
+      "status": "completed",
+      "title": "workflow-fix: Trigger-dense artifact review guidance for rev"
+    },
+    "1186": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1186",
+      "status": "completed",
+      "title": "workflow-fix: Shared HF tree-pagination helper in verify_tas"
+    },
+    "1187": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1187",
+      "status": "completed",
+      "title": "workflow-fix: Widen thread-caps invariant test target globs"
+    },
+    "1188": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1188",
+      "status": "completed",
+      "title": "workflow-fix: analyzer re-fold H1 retitle set-title sync"
+    },
+    "1189": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1189",
+      "status": "completed",
+      "title": "workflow-fix: /daily headless stub-first mechanical lever"
+    },
     "119": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/119",
       "status": "archived",
       "title": "Next steps"
+    },
+    "1190": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1190",
+      "status": "completed",
+      "title": "workflow-fix: enforce HF 10k-files-per-dir upload limit"
+    },
+    "1191": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1191",
+      "status": "completed",
+      "title": "workflow-fix: lint YAML-scalar truncation + marker consumer"
+    },
+    "1192": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1192",
+      "status": "completed",
+      "title": "workflow-fix: reviewer writable-tempdir outside worktree"
+    },
+    "1193": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1193",
+      "status": "completed",
+      "title": "workflow-fix: root rebase/cherry-pick fence in branch guard"
+    },
+    "1194": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1194",
+      "status": "completed",
+      "title": "workflow-fix: verify_plan fit-family pilot-basis check"
+    },
+    "1195": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1195",
+      "status": "completed",
+      "title": "workflow-fix: forward HF_HUB_DISABLE_XET in lane allowlists"
+    },
+    "1196": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1196",
+      "status": "completed",
+      "title": "workflow-fix: corpus WARN on H1 vs frontmatter title drift"
+    },
+    "1197": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1197",
+      "status": "completed",
+      "title": "workflow-fix: background Step 1d pristine compare (600s cap)"
+    },
+    "1198": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1198",
+      "status": "completed",
+      "title": "workflow-fix: prefer explicit-PID kills in crash-fix step 2"
+    },
+    "1199": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1199",
+      "status": "completed",
+      "title": "workflow-fix: fix/adjudicate exit-site marker misses on main"
     },
     "12": {
       "has_clean_result": false,
@@ -1038,12 +1563,152 @@
       "status": "completed",
       "title": "Investigate why Qwen identity prompt and generic assistant leak to different bystander neighborhoods"
     },
+    "1200": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1200",
+      "status": "completed",
+      "title": "workflow-fix: sync experimenter memory launcher to pid contr"
+    },
+    "1201": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1201",
+      "status": "completed",
+      "title": "workflow-fix: PreToolUse guard on bare git pull at repo root"
+    },
+    "1202": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1202",
+      "status": "completed",
+      "title": "workflow-fix: lint bare list_repo_files in new scripts"
+    },
+    "1203": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1203",
+      "status": "completed",
+      "title": "workflow-fix: anchor verify_plan c12 N/A escape standalone"
+    },
+    "1204": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1204",
+      "status": "completed",
+      "title": "daily-fix: skip Codex composer spawns under live quota senti"
+    },
+    "1205": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1205",
+      "status": "completed",
+      "title": "daily-fix: GCE workload verifies eval-JSON push landed"
+    },
+    "1206": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1206",
+      "status": "completed",
+      "title": "daily-fix: judge transport errors are RETRY, never dropped d"
+    },
+    "1207": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1207",
+      "status": "completed",
+      "title": "daily-fix: codify long-phase heartbeat duty + tick re-arm"
+    },
+    "1208": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1208",
+      "status": "completed",
+      "title": "daily-fix: planner authors Row-coverage with paired contrast"
+    },
+    "1209": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1209",
+      "status": "completed",
+      "title": "daily-fix: fast respawn for sessions dead on a refused first"
+    },
     "121": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/121",
       "status": "archived",
       "title": "Any LoRA SFT destroys persona-specific marker coupling; EM is not special \u2014 no transfer in either direction (HIGH confidence)"
+    },
+    "1210": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1210",
+      "status": "completed",
+      "title": "daily-fix: Step 10d re-snapshots Guard-1 strip on merge conf"
+    },
+    "1211": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1211",
+      "status": "completed",
+      "title": "daily-fix: choom-protect the Step 10d lint-gate first run"
+    },
+    "1212": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1212",
+      "status": "completed",
+      "title": "daily-fix: Step 10d lint gate runs origin/main lint vintage"
+    },
+    "1213": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1213",
+      "status": "completed",
+      "title": "daily-fix: verify_plan warns on ckpt ladder without retentio"
+    },
+    "1214": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1214",
+      "status": "completed",
+      "title": "daily-fix: new_worktree.sh branches from origin/main"
+    },
+    "1215": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1215",
+      "status": "proposed",
+      "title": "daily-held: daemon-independent orphan-wrapper sweep"
+    },
+    "1216": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1216",
+      "status": "proposed",
+      "title": "daily-held: arm the #864 zombie namespace veto"
+    },
+    "1217": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1217",
+      "status": "proposed",
+      "title": "daily-held: Digest-only guard arm for real-world-corpus raw_"
+    },
+    "1218": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1218",
+      "status": "proposed",
+      "title": "daily-held: Gate spawn_session dispatch paths on auth-outage"
+    },
+    "1219": {
+      "has_clean_result": false,
+      "kind": "batch",
+      "path": "tasks/completed/1219",
+      "status": "completed",
+      "title": "Fix 18 latent splitlines-shreds-JSONL sites in experiment code (from #1162 live-tree enumeration)"
     },
     "122": {
       "has_clean_result": true,
@@ -1052,12 +1717,152 @@
       "status": "archived",
       "title": "No marker transfer from villain to assistant via EM -- surface [ZLT] feature destroyed by any second-stage SFT (HIGH confidence)"
     },
+    "1220": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1220",
+      "status": "completed",
+      "title": "workflow-fix: trim LESSONS.md index below 8000-byte lint cap"
+    },
+    "1221": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1221",
+      "status": "completed",
+      "title": "forward rc==0 child stderr in remaining subprocess callers"
+    },
+    "1222": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1222",
+      "status": "completed",
+      "title": "implementer item-5 names tiny-real data-ingestion probe"
+    },
+    "1223": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1223",
+      "status": "completed",
+      "title": "verify_plan c20 WARN on N/A escape masking a live lattice"
+    },
+    "1224": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1224",
+      "status": "completed",
+      "title": "reconcile v2 SKILL 7c/7f figure-commit vs SHA-pin ordering"
+    },
+    "1225": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1225",
+      "status": "completed",
+      "title": "lint watcher docstring pass-count matches inventory items"
+    },
+    "1226": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1226",
+      "status": "completed",
+      "title": "audit is_v2 gate recognizes the v4 sentinel"
+    },
+    "1227": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1227",
+      "status": "completed",
+      "title": "extend check 19b bare-table WARN to v4 Methodology"
+    },
+    "1228": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1228",
+      "status": "completed",
+      "title": "gate daily driver wf-fix tags per SKILL route-2 variant"
+    },
+    "1229": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1229",
+      "status": "completed",
+      "title": "widen scripts-import-guard scan roots to scripts/**"
+    },
     "123": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/123",
       "status": "completed",
       "title": "Qwen2.5-7B-Instruct's default identity prompt is a distinct persona slot (5x more vulnerable than the generic-assistant prompt) and a refusal LoRA trained under it leaks most strongly to named AI assistants \u2014 the literal 'Qwen' token reroutes which personas absorb the trait (MODERATE confidence)"
+    },
+    "1230": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1230",
+      "status": "completed",
+      "title": "code-reviewer verifies named durability-pin test ships"
+    },
+    "1231": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1231",
+      "status": "completed",
+      "title": "issue SKILL briefs name excerpt files for guard reviews"
+    },
+    "1232": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1232",
+      "status": "proposed",
+      "title": "composer-side trigger-dense pointers for Codex twins"
+    },
+    "1233": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1233",
+      "status": "completed",
+      "title": "replace vacuous pipe-python no-flags bundling test"
+    },
+    "1234": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1234",
+      "status": "completed",
+      "title": "revert/am fence sibling in repo-root branch guard"
+    },
+    "1235": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1235",
+      "status": "completed",
+      "title": "invoke title-sync-sweep from nightly /daily"
+    },
+    "1236": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1236",
+      "status": "completed",
+      "title": "sync batch-datagen memory L13 to pid-file launch contract"
+    },
+    "1237": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1237",
+      "status": "completed",
+      "title": "migrate remaining verify_plan doc-global N/A escapes"
+    },
+    "1238": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1238",
+      "status": "completed",
+      "title": "tolerate wrapped N/A escape declarations in verify_plan"
+    },
+    "1239": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1239",
+      "status": "completed",
+      "title": "env-reading git credential helper for pod bootstrap"
     },
     "124": {
       "has_clean_result": false,
@@ -1066,12 +1871,152 @@
       "status": "on_hold",
       "title": "Deconfounded ARC-C coupling: letter-only answers, held-out eval, default-prompt control"
     },
+    "1240": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1240",
+      "status": "completed",
+      "title": "SLURM lane result-push verification contract leg"
+    },
+    "1241": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1241",
+      "status": "completed",
+      "title": "cap existing wedge triggers at watcher override site"
+    },
+    "1242": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1242",
+      "status": "completed",
+      "title": "add SKILL-pin suites to step9c WORKFLOW_INVARIANT tuple"
+    },
+    "1243": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1243",
+      "status": "completed",
+      "title": "Edit C certification arms to exclusive-arm shape"
+    },
+    "1244": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1244",
+      "status": "completed",
+      "title": "Guard 1 foreign-strip deletion silently resurrected"
+    },
+    "1245": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1245",
+      "status": "completed",
+      "title": "background + rc-file pattern for Step 10d lint gate"
+    },
+    "1246": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1246",
+      "status": "completed",
+      "title": "add c33 escape phrase to planner canonical-escape list"
+    },
+    "1247": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1247",
+      "status": "completed",
+      "title": "terminal-status guard + source stamp for orphan-respawn (662"
+    },
+    "1248": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1248",
+      "status": "completed",
+      "title": "sweep suppression misses prior-night disposition records"
+    },
+    "1249": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1249",
+      "status": "completed",
+      "title": "Step 10d bare merge/push forms + fail-soft Step-0 probes"
+    },
     "125": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/125",
       "status": "archived",
       "title": "Doing insecure-code SFT before persona-marker coupling on Qwen2.5-7B causes the marker to leak to ~47% of bystander personas, vs 0% under the reverse order or a benign-SFT control (MODERATE confidence)"
+    },
+    "1250": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1250",
+      "status": "completed",
+      "title": "guard_repo_root_pull false-positives on quoted 'git pull' in"
+    },
+    "1251": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1251",
+      "status": "completed",
+      "title": "step9c baseline oracle tolerates unrelated concurrent dirty "
+    },
+    "1252": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1252",
+      "status": "completed",
+      "title": "trigger-dense reviews: return text = verdict + pointer only"
+    },
+    "1253": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1253",
+      "status": "completed",
+      "title": "post-merge stale-task-folder recipe: checkout clause always "
+    },
+    "1254": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1254",
+      "status": "completed",
+      "title": "workflow-fix: code-reviewer degenerate-statistic check (observed-vs-null reads)"
+    },
+    "1255": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1255",
+      "status": "completed",
+      "title": "workflow-fix: figure-text sidecar capture + verifier drift checks"
+    },
+    "1256": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1256",
+      "status": "completed",
+      "title": "workflow-fix: cross-issue reuse-provenance check in verify_task_body.py"
+    },
+    "1257": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1257",
+      "status": "completed",
+      "title": "daily-fix: forward rc==0 stderr at watcher spawn-issue sites"
+    },
+    "1258": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1258",
+      "status": "completed",
+      "title": "daily-fix: audit c20 co-occurrence WARN across N/A escapes"
+    },
+    "1259": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1259",
+      "status": "completed",
+      "title": "daily-fix: recent_clean_results v4 skim reads Takeaways bloc"
     },
     "126": {
       "has_clean_result": false,
@@ -1080,12 +2025,152 @@
       "status": "completed",
       "title": "Do convergence training for longer"
     },
+    "1260": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1260",
+      "status": "completed",
+      "title": "daily-fix: WARN when verbatim insert exceeds ratchet headroo"
+    },
+    "1261": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1261",
+      "status": "completed",
+      "title": "daily-fix: setsid pointers for two experimenter memory aside"
+    },
+    "1262": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1262",
+      "status": "completed",
+      "title": "daily-fix: route c7 escape through the standalone helper"
+    },
+    "1263": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1263",
+      "status": "completed",
+      "title": "daily-fix: add unwrapped clarifier to escape remedy text"
+    },
+    "1264": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1264",
+      "status": "completed",
+      "title": "daily-fix: c26-c30 escape phrases + generative sync test"
+    },
+    "1265": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1265",
+      "status": "completed",
+      "title": "daily-fix: conftest autouse hermeticity guard, watcher tests"
+    },
+    "1266": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1266",
+      "status": "completed",
+      "title": "daily-fix: lint check for bang-backtick in skill markdown"
+    },
+    "1267": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1267",
+      "status": "completed",
+      "title": "daily-fix: watcher lane for zero-assistant-row boot deaths"
+    },
+    "1268": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1268",
+      "status": "completed",
+      "title": "daily-fix: Step 10d repin/guard snippet hardening bundle"
+    },
+    "1269": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1269",
+      "status": "completed",
+      "title": "daily-fix: LESSONS.md durable slimming + lint cap WARN band"
+    },
     "127": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/completed/127",
       "status": "completed",
       "title": "Look at SAE features for Qwen system prompt vs normal assistant system prompt"
+    },
+    "1270": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1270",
+      "status": "completed",
+      "title": "daily-fix: planner-output extraction tolerates trailing rows"
+    },
+    "1271": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1271",
+      "status": "completed",
+      "title": "daily-fix: helper-authenticated fetch in experimenter recipe"
+    },
+    "1272": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1272",
+      "status": "completed",
+      "title": "daily-fix: verified-at-filing grep line in wf-fix template"
+    },
+    "1273": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1273",
+      "status": "completed",
+      "title": "daily-fix: driver guards the daily-fix title prefix"
+    },
+    "1274": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1274",
+      "status": "completed",
+      "title": "daily-fix: sweep misses routed-record for prior-night park"
+    },
+    "1275": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1275",
+      "status": "completed",
+      "title": "workflow-fix: post codex verdict from file, no body paging"
+    },
+    "1276": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1276",
+      "status": "completed",
+      "title": "workflow-fix: scope c25 arm-(a) exemption per fence"
+    },
+    "1277": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1277",
+      "status": "completed",
+      "title": "workflow-fix: c4 escape via _standalone_na_declared"
+    },
+    "1278": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1278",
+      "status": "completed",
+      "title": "workflow-fix: consolidate _stub_fleet_mutating_passes"
+    },
+    "1279": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1279",
+      "status": "completed",
+      "title": "workflow-fix: edit-time guard hook for LESSONS.md"
     },
     "128": {
       "has_clean_result": false,
@@ -1094,12 +2179,152 @@
       "status": "archived",
       "title": "Check leakage based on measure of persona similarity"
     },
+    "1280": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1280",
+      "status": "completed",
+      "title": "workflow-fix: Step 10d Guard 1 three-dot foreign diff"
+    },
+    "1281": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1281",
+      "status": "completed",
+      "title": "workflow-fix: sweep park predicate misses mid-note parks"
+    },
+    "1282": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1282",
+      "status": "completed",
+      "title": "workflow-fix: infra critic briefs cite lens heading verbatim"
+    },
+    "1283": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1283",
+      "status": "completed",
+      "title": "workflow-fix: filer-side wf-fix title-prefix WARN"
+    },
+    "1284": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1284",
+      "status": "completed",
+      "title": "daily-fix: issue1092 load_dotenv before heavy imports"
+    },
+    "1285": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1285",
+      "status": "completed",
+      "title": "daily-fix: remove stale duplicate tasks/reviewing/1196"
+    },
+    "1286": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1286",
+      "status": "completed",
+      "title": "daily-fix: UH_SUMMARY_NAMES collection break on main"
+    },
+    "1287": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1287",
+      "status": "completed",
+      "title": "daily-fix: watcher respawn for boot-turn refusal deaths"
+    },
+    "1288": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1288",
+      "status": "completed",
+      "title": "daily-fix: Step 10d merge contention in same-batch fleets"
+    },
+    "1289": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1289",
+      "status": "completed",
+      "title": "daily-fix: Step 9c/review diff base = fetched origin/main"
+    },
     "129": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/completed/129",
       "status": "completed",
       "title": "See if you have a persona prompt with another response from another persona-> does that elicit the marker (do both directions)"
+    },
+    "1290": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1290",
+      "status": "completed",
+      "title": "daily-fix: canonical verify_plan --json parse (overall key)"
+    },
+    "1291": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1291",
+      "status": "completed",
+      "title": "daily-fix: kind-aware c8/c15 WARN gating in verify_plan"
+    },
+    "1292": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1292",
+      "status": "completed",
+      "title": "daily-fix: v2 lens briefs cite rubric heading verbatim"
+    },
+    "1293": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1293",
+      "status": "completed",
+      "title": "daily-fix: source-pin the piped-git-push bundling test"
+    },
+    "1294": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1294",
+      "status": "completed",
+      "title": "daily-fix: producer-side regen bullet in upload-policy"
+    },
+    "1295": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1295",
+      "status": "completed",
+      "title": "daily-fix: consolidate 3rd inline loop in auth-outage test"
+    },
+    "1296": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1296",
+      "status": "completed",
+      "title": "daily-fix: scripts_dir bootstrap before backend_poll import"
+    },
+    "1297": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1297",
+      "status": "completed",
+      "title": "daily-fix: issue658 test sys.modules stub leak"
+    },
+    "1298": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1298",
+      "status": "proposed",
+      "title": "daily-held: #928 frozen at followups_running since 07-08"
+    },
+    "1299": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1299",
+      "status": "completed",
+      "title": "workflow-fix: step-9c selector import-map arm (stem-map misses import-relationship tests)"
     },
     "13": {
       "has_clean_result": false,
@@ -1114,6 +2339,76 @@
       "path": "tasks/completed/130",
       "status": "completed",
       "title": "KL of final convergence trained model to the original model -- should make difference"
+    },
+    "1300": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1300",
+      "status": "completed",
+      "title": "workflow-fix: postmerge guard must not delete origin's only task folder (unpushed mv)"
+    },
+    "1301": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1301",
+      "status": "completed",
+      "title": "daily-fix: v2 composer plan_body vs paths-only drift"
+    },
+    "1302": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1302",
+      "status": "completed",
+      "title": "daily-fix: pin mbc inline Alt capsule to lens reference"
+    },
+    "1303": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1303",
+      "status": "completed",
+      "title": "daily-fix: asw test hasattr stub loops -> fail-loud"
+    },
+    "1304": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1304",
+      "status": "completed",
+      "title": "daily-fix: guard backend_poll failure_classifier import"
+    },
+    "1305": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1305",
+      "status": "completed",
+      "title": "daily-fix: implementer pre-report 9c touched-scope run"
+    },
+    "1306": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1306",
+      "status": "completed",
+      "title": "daily-fix: verify_plan c15 misses pytest-backed fail-loud"
+    },
+    "1307": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1307",
+      "status": "completed",
+      "title": "daily-fix: bind verified-at-filing greps to cited targets"
+    },
+    "1308": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1308",
+      "status": "completed",
+      "title": "daily-fix: planner traces trigger predicate vs incident"
+    },
+    "1309": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1309",
+      "status": "completed",
+      "title": "daily-fix: document HTML-escaped bg-notification recipe"
     },
     "131": {
       "has_clean_result": false,
@@ -6290,9 +7585,9 @@
       "goal": "Test whether the per-example linear context-to-answer-profile map h: c_x -> v(x) (#779 recipe: held-out K-fold ridge over thousands of per-example pairs) exists in the pretrained Qwen/Qwen2.5-7B vs Qwen2.5-7B-Instruct, for both the assistant and the user turn, under chat-template vs naturalistic formatting; secondary: per-position decay and cross-role prediction beyond a topic-persistence baseline.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/825",
-      "status": "followups_running",
-      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength, and its answer-specificity survives an on-policy separator control only in attenuated form (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/825",
+      "status": "awaiting_promotion",
+      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength, and the on-policy separator control's gap-closure is greedy-specific \u2014 it collapses under sampled decoding (MODERATE confidence)"
     },
     "826": {
       "has_clean_result": false,
@@ -7081,8 +8376,8 @@
       "goal": "On a thinking model chosen for maximal similarity to Qwen2.5-7B-Instruct, determine how the base-model linear context\u2192mean-answer activation map (#810) decomposes across the chain-of-thought \u2014 comparing (1) context\u2192CoT composed with CoT\u2192answer, (2) context\u2192(CoT+answer) jointly, and (3) (context+CoT)\u2192answer, against the direct context\u2192answer baseline \u2014 under mean-pool / max-pool / boundary-token summaries for each part (context, CoT, answer), in both the averaged-over-query regime (averaging over the query vector or over the CoT vector) and the individual context+query regime, scored by held-out R\u00b2 per layer on the parent line's folds.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/928",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/928",
+      "status": "followups_running",
       "title": "Conditioning on the realized chain-of-thought predicts the thinking model's answer state no better than a matched-length slice of the answer's own opening (MODERATE confidence)"
     },
     "929": {

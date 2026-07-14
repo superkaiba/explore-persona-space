@@ -973,6 +973,116 @@ def _build_sidecar_data(
     }
 
 
+_MAX_TEXT_ITEMS = 100  # per-axes cap on annotations / tick labels (+ the series list)
+
+
+def _artist_text(t) -> str:
+    """The stripped text of a matplotlib ``Text``-like artist, or ``""`` when
+    the artist is None / unreadable (best-effort — never raises)."""
+    try:
+        return t.get_text().strip() if t is not None else ""
+    except Exception:
+        return ""
+
+
+def _axes_text_and_series(ax) -> tuple[dict[str, object], list[str]]:
+    """Rendered text of ONE ``Axes`` for ``_extract_fig_text``: the per-axes
+    text dict (titles at all three locs — the house style renders at
+    ``loc="left"`` — axis labels, legend labels + title, annotations, tick
+    labels) plus the axes' legend-eligible artist labels (series names).
+    May raise on a pathological Axes; the caller's per-axes try/except skips
+    it (one bad Axes never sinks the capture)."""
+    ax_d: dict[str, object] = {}
+    for loc in ("center", "left", "right"):
+        t = ax.get_title(loc=loc)
+        if t.strip():
+            ax_d["title" if loc == "center" else f"title_{loc}"] = t.strip()
+    for key, val in (("xlabel", ax.get_xlabel()), ("ylabel", ax.get_ylabel())):
+        if val.strip():
+            ax_d[key] = val.strip()
+    leg = ax.get_legend()
+    if leg is not None:
+        labs = [s for s in (_artist_text(t) for t in leg.get_texts()) if s]
+        if labs:
+            ax_d["legend_labels"] = labs
+        lt = _artist_text(leg.get_title())
+        if lt:
+            ax_d["legend_title"] = lt
+    # set_title_subtitle's subtitle is an ax.annotate → lands in ax.texts,
+    # alongside free-floating point labels — both rendered text.
+    ann = [s for s in (_artist_text(t) for t in ax.texts) if s]
+    if ann:
+        ax_d["annotations"] = ann[:_MAX_TEXT_ITEMS]
+    for key, ticks in (
+        ("xticklabels", ax.get_xticklabels()),
+        ("yticklabels", ax.get_yticklabels()),
+    ):
+        tl = [s for s in (_artist_text(t) for t in ticks) if s]
+        if tl:
+            ax_d[key] = tl[:_MAX_TEXT_ITEMS]
+    # Series names: legend-eligible artist labels ('_'-prefixed =
+    # matplotlib's no-legend convention, excluded).
+    labels: list[str] = []
+    for art in (*ax.get_lines(), *ax.containers, *ax.collections):
+        lab = str(art.get_label() or "")
+        if lab and not lab.startswith("_"):
+            labels.append(lab)
+    return ax_d, labels
+
+
+def _extract_fig_text(fig: plt.Figure) -> dict[str, object] | None:
+    """Best-effort capture of the figure's RENDERED text for the sidecar.
+
+    Returns ``{"suptitle": str|None, "fig_texts": [str], "series": [str],
+    "axes": [{...}]}`` or ``None`` when nothing was captured. Values are ONLY
+    ``str`` / ``None`` / ``list`` — never nested dicts-of-dicts — so the
+    dashboard viewer's ``normalizeToRows`` fallback can never mistake the
+    block for data rows (``dashboard/lib/task-data.ts``: ``isPlainObject``
+    excludes arrays/null, and the object-of-objects fallback descends at most
+    two levels, so a ``text`` dict whose values are str/None/list never
+    matches). Never raises: any unreadable artist/axes is skipped (the
+    ``_extract_axes_data`` contract). The block is what lets
+    ``scripts/verify_task_body.py`` checks 24/28/34 mechanically scan the
+    figure's titles / legends / series names (incident #1092: bare cell slugs
+    as panel titles + a beat claiming an unrendered series structure passed
+    every mechanical figure check because the sidecar carried no rendered
+    text).
+    """
+    suptitle_obj = getattr(fig, "_suptitle", None)
+    supx_obj = getattr(fig, "_supxlabel", None)
+    supy_obj = getattr(fig, "_supylabel", None)
+    # On matplotlib 3.10 the suptitle AND supx/supy labels all appear in
+    # `fig.texts`; exclude them by identity so they are not duplicated into
+    # `fig_texts` (suptitle gets its own key; supx/supy are re-added exactly
+    # once below, AFTER the cap, so a text-dense figure cannot truncate them
+    # away).
+    special = {id(suptitle_obj), id(supx_obj), id(supy_obj)}
+    out: dict[str, object] = {"suptitle": _artist_text(suptitle_obj) or None}
+    fig_texts = [s for s in (_artist_text(t) for t in fig.texts if id(t) not in special) if s]
+    fig_texts = fig_texts[:_MAX_TEXT_ITEMS]
+    fig_texts += [s for s in (_artist_text(supx_obj), _artist_text(supy_obj)) if s]
+    out["fig_texts"] = fig_texts
+
+    # `series` is fig-GLOBAL, deduplicated across axes.
+    series: list[str] = []
+    axes_out: list[dict[str, object]] = []
+    for ax in fig.get_axes():
+        try:
+            ax_d, labels = _axes_text_and_series(ax)
+        except Exception:
+            continue  # one bad Axes never sinks the capture
+        series.extend(labels)
+        if ax_d:
+            axes_out.append(ax_d)
+    if axes_out:
+        out["axes"] = axes_out
+    dedup = list(dict.fromkeys(series))[:_MAX_TEXT_ITEMS]
+    if dedup:
+        out["series"] = dedup
+    has_content = out["suptitle"] or out["fig_texts"] or axes_out or dedup
+    return out if has_content else None
+
+
 def _git_commit_hash() -> str:
     """Return the current git commit short hash, or ``"uncommitted"`` on failure."""
     try:
@@ -997,6 +1107,7 @@ def savefig_paper(
     dir: str | Path = "figures/",
     formats: tuple[str, ...] = ("png", "pdf"),
     embed_data: bool = True,
+    embed_text: bool = True,
 ) -> dict[str, Path]:
     """Save ``fig`` to ``<dir>/<stem>.<fmt>`` for every ``fmt`` in ``formats``.
 
@@ -1004,7 +1115,8 @@ def savefig_paper(
     ``pnginfo``. Also writes a sidecar ``<dir>/<stem>.meta.json`` containing
     commit hash, ISO-8601 UTC timestamp, figure size (inches), AND — when
     ``embed_data`` is true (the default) — the figure's per-point data under a
-    ``points`` key.
+    ``points`` key, plus — when ``embed_text`` is true (the default) — the
+    figure's rendered text under a ``text`` key.
 
     **Per-point data (dashboard data viewer).** The plotted data is read back
     off the rendered matplotlib artists (``_extract_axes_data``): scatter point
@@ -1028,7 +1140,12 @@ def savefig_paper(
     The clean-result-critic Lens 3 and interpretation-critic Lens 6 enforce
     this on review; doing it here avoids a regenerate-the-figure bounce. Because
     the axis labels also become the sidecar's column names, plain-English labels
-    make the data viewer's columns readable too.
+    make the data viewer's columns readable too. The rendered labels are ALSO
+    serialized into the sidecar under ``text`` (``_extract_fig_text``; opt out
+    with ``embed_text=False``) and mechanically scanned by
+    ``scripts/verify_task_body.py`` checks 24/28/34, so an opaque slug in a
+    title / legend / series name now WARNs at body-verification time instead
+    of waiting for the multimodal critics.
 
     Parameters
     ----------
@@ -1046,6 +1163,14 @@ def savefig_paper(
         the sidecar under ``points``. Set false to write a provenance-only
         sidecar (e.g. for a figure whose data is huge or already exposed via a
         committed ``data_path`` the caller adds afterward).
+    embed_text
+        When true (default), capture the figure's rendered text (suptitle,
+        per-axes titles incl. the house ``loc="left"`` style, axis labels,
+        legend labels + title, series names, annotations, tick labels) into
+        the sidecar under ``text`` (``_extract_fig_text``). Independent of
+        ``embed_data`` — a huge-data ``embed_data=False`` figure still gets
+        its cheap text captured. Best-effort: a capture failure omits the
+        key, never fails the save.
 
     Returns
     -------
@@ -1103,6 +1228,17 @@ def savefig_paper(
             meta["total_points"] = payload["total_points"]
             if payload["truncated"]:
                 meta["data_truncated"] = True
+
+    # Rendered-text capture (verifier + review window into figure text).
+    # Best-effort, same contract as the data embed above: a text-extraction
+    # failure NEVER fails the save — the key is simply omitted.
+    if embed_text:
+        try:
+            fig_text = _extract_fig_text(fig)
+        except Exception:
+            fig_text = None
+        if fig_text is not None:
+            meta["text"] = fig_text
 
     meta_path.write_text(json.dumps(meta, indent=2) + "\n")
     written["meta"] = meta_path

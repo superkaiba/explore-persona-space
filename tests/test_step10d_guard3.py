@@ -10,7 +10,9 @@ The four #787 sub-fixes these tests guard:
 
 1. `.gitattributes` (NEW) — `merge=union` on the append-only task JSONL logs.
 2. Guard-1 — strip FOREIGN task folders before the merge, split by whether the
-   path exists on `origin/main` (checkout vs `git rm --cached`).
+   path exists on `origin/main` (checkout vs `git rm -f` — index AND working
+   tree, #1244; an index-only `rm --cached` self-reverts under the
+   pathspec-limited strip commit).
 3. Fast-path pre-check — a FIVE-conjunct predicate (incl. `ADDED_ONLY=yes`)
    that routes far-behind small ADDED-only workflow-fix branches straight to
    the surgical additive checkout, plus the surgical compute block's
@@ -21,6 +23,9 @@ The four #787 sub-fixes these tests guard:
 
 from __future__ import annotations
 
+import json
+import re
+import subprocess
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -115,10 +120,23 @@ def test_guard1_foreign_present_vs_added_split_present():
 
 
 def test_guard1_branch_added_foreign_dropped_not_checked_out():
+    """#1244: the drop must remove index AND working tree (`git rm -f`), never
+    index-only (`git rm --cached`) — Guard 1's strip commit is PATHSPEC-limited
+    and records WORKING-TREE content for the named paths (git-commit(1) --only
+    default), so an index-only deletion is committed right back and silently
+    never lands (#1210: 19 resurrected paths)."""
     text = _skill_text()
-    assert "rm --cached -f --ignore-unmatch" in text, (
-        "Guard-1 must drop branch-added foreign paths via git rm --cached -f "
-        "--ignore-unmatch (a checkout would crash with pathspec-did-not-match)"
+    region = _merge_guards_region(text)
+    assert 'git -C "$WT" rm -f --ignore-unmatch -- "${FOREIGN_BRANCH_ONLY[@]}"' in region, (
+        "Guard-1 must drop branch-added foreign paths via git rm -f "
+        "--ignore-unmatch (index AND working tree; a checkout would crash with "
+        "pathspec-did-not-match, and an index-only rm --cached self-reverts "
+        "under the pathspec-limited strip commit — #1210/#1244)"
+    )
+    assert "rm --cached" not in region, (
+        "index-only `git rm --cached` must not appear in the merge-guards "
+        "region — the pathspec-limited strip commit records working-tree "
+        "content and would resurrect the paths (#1210/#1244)"
     )
 
 
@@ -133,11 +151,12 @@ def test_guard1_own_folder_carveout_present():
 # Sub-fix 2 (round-2 fix) — push the Guard-1 strip commit BEFORE gh pr merge
 # --------------------------------------------------------------------------
 # The Guard-1 strip commit is a LOCAL worktree commit; the safe-case
-# `gh pr merge --rebase` rebases the PR head ref on origin/issue-<N>
-# (server-side), so an unpushed strip commit is invisible to that rebase and
-# the foreign tasks/* reverts would land on main silently. The safe case must
-# push the strip commit (guarded by STRIPPED_FOREIGN=yes) before merging, and
-# that push must APPEAR BEFORE the safe-case gh pr merge line in the file.
+# `gh pr merge $MERGE_FORM` (#1288 merge-form routing) operates on the PR
+# head ref at origin/issue-<N> (server-side), so an unpushed strip commit is
+# invisible to that merge and the foreign tasks/* reverts would land on main
+# silently. The safe case must push the strip commit (guarded by
+# STRIPPED_FOREIGN=yes) before merging, and that push must APPEAR BEFORE the
+# safe-case gh pr merge line in the file.
 
 
 def test_guard1_tracks_stripped_foreign_flag():
@@ -155,8 +174,8 @@ def test_safe_case_pushes_strip_commit_gated_on_stripped_foreign():
     text = _skill_text()
     assert 'git -C "$WT" push origin issue-<N>' in text, (
         "the safe-case block must push the branch to the PR head ref before "
-        "gh pr merge --rebase (otherwise the strip commit is invisible to the "
-        "server-side rebase)"
+        "gh pr merge $MERGE_FORM (otherwise the strip commit is invisible to "
+        "the server-side merge)"
     )
     assert '[ "$STRIPPED_FOREIGN" = "yes" ]' in text, (
         "the safe-case push must be gated on STRIPPED_FOREIGN=yes so it fires "
@@ -165,13 +184,19 @@ def test_safe_case_pushes_strip_commit_gated_on_stripped_foreign():
 
 
 def test_safe_case_push_appears_before_gh_pr_merge():
-    """The push must SEQUENCE before the safe-case gh pr merge --rebase call,
-    so the server-side rebase sees the stripped branch tip."""
+    """The push must SEQUENCE before the safe-case gh pr merge $MERGE_FORM
+    call (#1288), so the server-side merge sees the stripped branch tip."""
     text = _skill_text()
-    merge_line = "gh pr merge <PR> --rebase --delete-branch=false"
+    # Scope the search to the safe-case block: the #1138 canonical
+    # "Bare push / merge snippets" subsection (inserted earlier in Step 10d)
+    # contains the bare push literal (plus a merge snippet), so
+    # first-occurrence pins would retarget it.
+    base = text.find("#### The auto-merge procedure (safe case")
+    assert base != -1, "safe-case auto-merge heading not found in SKILL.md"
+    merge_line = "gh pr merge <PR> $MERGE_FORM --delete-branch=false"
     push_line = 'git -C "$WT" push origin issue-<N>'
-    merge_offset = text.find(merge_line)
-    push_offset = text.find(push_line)
+    merge_offset = text.find(merge_line, base)
+    push_offset = text.find(push_line, base)
     assert merge_offset != -1, "safe-case gh pr merge line not found in SKILL.md"
     assert push_offset != -1, "safe-case strip-commit push line not found in SKILL.md"
     assert push_offset < merge_offset, (
@@ -559,7 +584,12 @@ _SHA_CHECK = (
     ' = "$(git -C "$WT" rev-parse HEAD)" ]'
 )
 _NONEMPTY_SHA_CHECK = '[ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ]'
-_MERGE_SUCCESS_IF = "if gh pr merge <PR> --rebase --delete-branch=false; then"
+# #1288 merge-form routing: the safe case merges via the kind-derived
+# $MERGE_FORM variable; the merge-conflict recovery block is hard-pinned to
+# --squash (its just-added merge commit makes --rebase documented-doomed,
+# #1041). Each consumer is pinned to ITS OWN success-checked merge form.
+_MERGE_SUCCESS_IF_SAFE = "if gh pr merge <PR> $MERGE_FORM --delete-branch=false; then"
+_MERGE_SUCCESS_IF_RECOVERY = "if gh pr merge <PR> --squash --delete-branch=false; then"
 
 
 def test_gate_verdict_sha_bound_at_write_and_both_consumers():
@@ -578,8 +608,8 @@ def test_gate_verdict_sha_bound_at_write_and_both_consumers():
     probe = "grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt"
     first = text.find(probe)
     second = text.find(probe, first + 1)
-    m1 = text.find(_MERGE_SUCCESS_IF, first)
-    m2 = text.find(_MERGE_SUCCESS_IF, second)
+    m1 = text.find(_MERGE_SUCCESS_IF_SAFE, first)
+    m2 = text.find(_MERGE_SUCCESS_IF_RECOVERY, second)
     assert -1 < first < m1, "safe case: the success-checked merge must follow its conditional"
     assert -1 < second < m2, "recovery: the success-checked merge must follow its conditional"
     assert _SHA_CHECK in text[first:m1], (
@@ -611,8 +641,8 @@ def test_gate_verdict_consumed_only_after_merge_success():
     first = text.find(probe)
     second = text.find(probe, first + 1)
     ready = text.find("gh pr ready <PR>")
-    m1 = text.find(_MERGE_SUCCESS_IF, first)
-    m2 = text.find(_MERGE_SUCCESS_IF, second)
+    m1 = text.find(_MERGE_SUCCESS_IF_SAFE, first)
+    m2 = text.find(_MERGE_SUCCESS_IF_RECOVERY, second)
     assert -1 < first < ready < m1, "safe case: conditional -> gh pr ready -> success-checked merge"
     assert text.find(rm_line, first, m1) == -1, (
         "safe case: NO rm may sit between the verdict conditional and the merge attempt "
@@ -644,8 +674,8 @@ def test_gate_trigger_diff_exit_guarded():
     text = _skill_text()
     region = _gate_region(text)
     assert (
-        'if ! git -C "$WT" diff --name-only origin/main...HEAD > /tmp/issue-<N>-own-diff.txt'
-        in region
+        'if ! git -C "$WT" -c core.quotePath=false diff --name-only origin/main...HEAD '
+        "> /tmp/issue-<N>-own-diff.txt" in region
     ), "the trigger diff must be materialized with an explicit exit check"
     assert region.count("echo crash > /tmp/issue-<N>-lint-verdict.txt") >= 2, (
         "both the failed-trigger-diff arm and the linter-crash arm must write the crash verdict"
@@ -701,7 +731,10 @@ def test_surgical_additive_producer_guarded_and_empty_list_hard_stops():
     `epm:merged {surgical_checkout: true}` with nothing committed."""
     text = _skill_text()
     region = _artifact_confirmed_region(text)
-    guard = region.find('if ! git -C "$WT" diff --name-only --diff-filter=A origin/main...HEAD')
+    guard = region.find(
+        'if ! git -C "$WT" -c core.quotePath=false diff --name-only '
+        "--diff-filter=A origin/main...HEAD"
+    )
     assert guard != -1, (
         "the surgical additive-list producer must check its OWN exit code "
         "(materialize-then-check, mirroring the shared gate's trigger diff)"
@@ -826,4 +859,389 @@ def test_recovery_contract_reruns_producer_before_corrected_consumer():
     )
     assert "#813" in para and "#1056" in para, (
         "the motivating incident references (#813 / #1056) must stay"
+    )
+
+
+# --------------------------------------------------------------------------
+# Task #1184 — fail-loud producer reads (post-merge guard + Guard 1)
+# --------------------------------------------------------------------------
+
+
+def _post_merge_guard_region(text: str) -> str:
+    start = text.find("#### Post-merge stale-task-folder guard")
+    end = text.find("## Resume semantics")
+    assert start != -1, "post-merge stale-task-folder guard heading not found"
+    assert end != -1 and start < end, "guard region must precede Resume semantics"
+    return text[start:end]
+
+
+def test_post_merge_guard_materializes_lstree_and_fails_closed():
+    """#1184: the guard must materialize ls-tree to a file and exit-check
+    every producer (CANON / fetch / ls-tree) in TERMINAL failure arms — a
+    failed producer must never read as 'no duplicates' (#644 fail-open)."""
+    text = _skill_text()
+    region = _post_merge_guard_region(text)
+    assert "> /tmp/issue-<N>-postmerge-lstree.txt" in region
+    assert 'elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main' in region
+    assert 'elif ! git -C "$REPO_ROOT" fetch origin main --quiet' in region
+    assert '[ -z "$CANON" ]' in region
+    assert "mapfile -t DUPES < <(git" not in region, (
+        "the fail-open piped ls-tree mapfile form must be gone"
+    )
+    # CHAIN MEMBERSHIP (stats-critic round 1): the work arm must be an
+    # `elif` of the SAME if/elif chain — a detached mapfile below the `fi`
+    # re-opens the fail-open (no set -e: a taken `false` arm does not halt
+    # the block, so a detached mapfile would read the empty/partial file).
+    assert "elif mapfile -t DUPES < <(grep -E" in region, (
+        "DUPES must be filled from the materialized FILE inside the chain"
+    )
+    # TERMINAL `false` per failure arm (stats-critic round 1): each failure
+    # echo must be immediately followed by `false` — a bare echo would be a
+    # loud-log, exit-0 fail-open.
+    # The shared "cannot certify..." phrase ends BOTH the fetch and ls-tree
+    # arms' echoes, so the two arm-UNIQUE phrases are pinned as well —
+    # otherwise removing `false` from exactly one of those two arms would
+    # not trip any pin (code-review r1 Minor).
+    for arm_msg in (
+        "refusing to classify duplicates",
+        "git fetch origin main FAILED",
+        "git ls-tree origin/main FAILED",
+        "cannot certify no stale task folders",
+    ):
+        assert re.search(re.escape(arm_msg) + r'[^\n]*"\n\s*false\b', region), (
+            f"failure arm {arm_msg!r} must end in a terminal false"
+        )
+    assert region.find("cannot certify no stale task folders") < region.find(
+        "elif mapfile -t DUPES"
+    ), "failure arms must precede the DUPES work arm (fail CLOSED)"
+    # Success-path byte-equivalence anchors (the exact grep programs):
+    assert 'grep -E "^tasks/[^/]+/<N>$"' in region
+    assert 'grep -v -F -x "$CANON"' in region
+
+
+def test_guard1_materializes_foreign_diff_and_fails_closed():
+    """#1184: Guard 1's foreign-tasks/ trigger diff must be materialized and
+    exit-checked — a failed git diff must never read as 'no foreign files'
+    (the #458 incident class would ride the merge)."""
+    text = _skill_text()
+    region = _merge_guards_region(text)
+    assert "> /tmp/issue-<N>-guard1-tasks-diff.txt" in region
+    assert "mapfile -t FOREIGN < <(git" not in region, (
+        "the fail-open piped diff mapfile form must be gone"
+    )
+    # Chain membership + terminal false (stats-critic round 1; same
+    # rationale as the post-merge-guard pins above):
+    assert "elif mapfile -t FOREIGN < <(grep -Ev" in region, (
+        "FOREIGN must be filled from the materialized FILE inside the chain"
+    )
+    # #1268 loop reshape: the diff-failure echo now records GUARD1_STATE and
+    # breaks; the terminal `false` moved to the single post-loop disposition
+    # arm (asserted separately below) — intent preserved, never deleted.
+    assert re.search(
+        r'cannot certify no foreign tasks/ paths; do NOT merge"\n\s*GUARD1_STATE=diff-failed\b',
+        region,
+    ), "the Guard-1 diff-failure arm must record the diff-failed state (loop shape, #1268)"
+    assert re.search(
+        r'if \[ "\$GUARD1_STATE" != ok \]; then\n[^\n]*\n\s*false\b',
+        region,
+    ), "the post-loop terminal arm must end in a terminal false on any non-ok state"
+    assert region.find("cannot certify no foreign tasks/ paths") < region.find(
+        "elif mapfile -t FOREIGN"
+    ), "the failure arm must precede the FOREIGN work arm (fail CLOSED)"
+    # Success-path byte-equivalence anchor:
+    assert 'grep -Ev "^tasks/[^/]+/<N>/"' in region
+
+
+def test_gate_lint_legs_run_landing_tree_copy():
+    """#1212: BOTH lint leg pairs run from the ephemeral landing tree — the
+    baseline pre-overlay (payload-free), the gated post-overlay — never the
+    raw worktree or repo-root copies (#1112 vintage false-blocks), with
+    fail-closed construction (GT_RC) and in-block teardown."""
+    text = _skill_text()
+    gate = text.find("#### Pre-push workflow-lint gate")
+    auto = text.find("#### The auto-merge procedure")
+    assert -1 < gate < auto
+    region = text[gate:auto]
+    assert 'git -C "$WT" archive origin/main --' in region, (
+        "the gate tree must be built from origin/main's lint-scanned surface"
+    )
+    assert region.count('"$GT/scripts/workflow_lint.py"') >= 4, (
+        "all four lint-leg invocations (2 baseline + 2 gated) must run the gate-tree copy"
+    )
+    assert '"$WT/scripts/workflow_lint.py"' not in region, (
+        "the branch-tip lint invocation must not reappear (#1112 false-blocks)"
+    )
+    assert '"$REPO_ROOT/scripts/workflow_lint.py"' not in region, (
+        "the baseline legs must not run the repo-root copy (root vintage/dirt asymmetry)"
+    )
+    overlay = region.find('git -C "$WT" show "HEAD:$p" > "$GT/$p"')
+    base_legs = region.find("# BASELINE legs")
+    gated_legs = region.find("# GATED legs")
+    assert -1 < base_legs < overlay < gated_legs, (
+        "the payload overlay must sit BETWEEN the baseline and gated lint legs"
+    )
+    assert (
+        'git -C "$WT" -c core.quotePath=false diff --name-only --no-renames origin/main...HEAD'
+        in region
+    ), (
+        "the overlay listing COMMAND must disable rename detection (rename SOURCES "
+        "must be rm-ed); the comment's mention of --no-renames does not count"
+    )
+    assert '[ "$GT_RC" -ne 0 ]' in region, (
+        "gate-tree construction failures must fail CLOSED via the crash arm"
+    )
+    assert region.count('rm -rf "$GT"') >= 2, (
+        "the gate tree must be torn down AFTER the verdict too — the construction's "
+        "own rm -rf (self-heal) does not satisfy the teardown pin"
+    )
+
+
+# --------------------------------------------------------------------------
+# #1245 — background + wedge-bound the two Step 10d gate executable blocks
+# (port of the Step 9c background + rc-file pattern; precedent pin:
+# tests/test_issue_skill_step9c_compare_background.py, #1197)
+# --------------------------------------------------------------------------
+
+
+def _surgical_region(text: str) -> str:
+    """The artifact-confirmed (form (iii)) merge-procedure subsection."""
+    start = text.find("#### The artifact-confirmed merge procedure")
+    end = text.find("#### Post-merge stale-task-folder guard")
+    assert start != -1, "artifact-confirmed merge procedure heading not found"
+    assert end != -1, "post-merge stale-task-folder guard heading not found"
+    assert start < end, "surgical subsection must precede the post-merge guard"
+    return text[start:end]
+
+
+def test_gate_blocks_backgrounded_with_wedge_bounds():
+    """#1245: both Step 10d gate executable blocks run as ONE background Bash
+    call with per-leg wedge bounds; a missing verdict file / outcome sentinel
+    after completion means the background run DIED (fail CLOSED, never a
+    silent pass); the old one-fenced-foreground-invocation phrasing is gone.
+    A foreground gate run is the #991/#996/#1129 600s-tool-cap kill class
+    (~9-12+ min of lint + TG legs per block)."""
+    text = _skill_text()
+    gate = _gate_region(text)
+    surgical = _surgical_region(text)
+    # (i) the background prescription is present in BOTH gate regions:
+    assert "run_in_background" in gate, "shared gate block must prescribe run_in_background"
+    assert "run_in_background" in surgical, "surgical block must prescribe run_in_background"
+    # (ii) all four lint legs per region carry the wedge bound (the sizing
+    # comments deliberately do NOT quote the literal — command lines only):
+    assert gate.count("timeout --kill-after=60s 900s") >= 4, (
+        "all four shared-block lint legs must carry the 900s wedge bound"
+    )
+    assert surgical.count("timeout --kill-after=60s 900s") >= 4, (
+        "all four surgical-block lint legs must carry the 900s wedge bound"
+    )
+    # (ii-b) the network ops inside the backgrounded blocks are bounded too:
+    assert 'timeout --kill-after=30s 120s git -C "$WT" fetch origin main' in gate, (
+        "the shared block's fetch must carry a 120s bound (a hung fetch wedges the bg call)"
+    )
+    assert "timeout --kill-after=30s 300s git push origin main" in surgical, (
+        "the surgical pass-arm push must carry a 300s bound (a hung push wedges the "
+        "bg call with the outcome sentinel unwritten)"
+    )
+    # (iii) missing-verdict death semantics — fail CLOSED (shared block):
+    assert "died before writing a verdict" in gate, (
+        "the shared block's completion-read must treat a missing verdict file as "
+        "the background run having died (fail CLOSED)"
+    )
+    assert "rm -f /tmp/issue-<N>-lint-verdict.txt" in gate, (
+        "the shared block must pre-rm the verdict file so a file present at "
+        "completion provably came from THIS run"
+    )
+    # (iv) form (iii) outcome sentinel — pre-rm + all three terminal writes:
+    assert "rm -f /tmp/issue-<N>-surgical-outcome.txt" in surgical
+    assert "echo landed > /tmp/issue-<N>-surgical-outcome.txt" in surgical
+    assert "echo push-failed > /tmp/issue-<N>-surgical-outcome.txt" in surgical
+    assert "echo blocked-cleaned > /tmp/issue-<N>-surgical-outcome.txt" in surgical
+    # (v) negative: the old foreground one-invocation phrasing is gone:
+    assert "ONE fenced invocation" not in text, (
+        "the surgical preamble's foreground 'ONE fenced invocation' phrasing must "
+        "not reappear (silently reintroduces the 600s-cap kill class)"
+    )
+    assert "runs in ONE fenced block" not in text, (
+        "the surgical 'runs in ONE fenced block' phrasing must not reappear"
+    )
+
+
+# --------------------------------------------------------------------------
+# Task #1253 — post-merge guard work arm: sparse scratch worktree, hook-safe
+# --------------------------------------------------------------------------
+
+
+def test_post_merge_guard_work_arm_scratch_worktree_and_hook_safe(tmp_path):
+    """#1253: the post-merge guard's WORK ARM must remove the duplicate(s) in
+    a SPARSE SCRATCH WORKTREE detached at the fetched origin/main — never a
+    root `git rm`, which fails pathspec whenever the local root predates the
+    just-landed server-side merge and drove the improvised, hook-blocked
+    checkout-pathspec fallback (session 82f5b16a, /issue 1198). Pins:
+    (i) staging anchors (add flag order; cone init BEFORE set — git 2.34's
+    `set --cone` is silently a literal pattern; scratch-scoped rm; old
+    root-side forms gone); (ii) terminal `false` on every new failure arm;
+    (iii) the STRONG pin — the fenced block, `<N>`->1198 substituted, fed to
+    the LIVE scripts/guard_repo_root_branch.sh via stdin PreToolUse JSON must
+    return rc=0 (a future edit reintroducing a hook-blocked shape fails
+    here), plus `bash -n` syntax-cleanliness; (iv) chain-unreachability — the
+    `&&`-join and populate->rm->commit ordering keep the empty-index
+    delete-everything-tree commit path provably unreachable, and the region
+    carries EXACTLY ONE fenced bash block so a second executable fence cannot
+    escape the hook probe (extend the probe to every fence if one is ever
+    deliberately added)."""
+    text = _skill_text()
+    region = _post_merge_guard_region(text)
+
+    # (i) staging anchors. The add-line flag order `--detach --no-checkout` is
+    # load-bearing for a bare copy (the reversed order trips the hook's
+    # checkout+detach detector); cone init must precede `set`.
+    assert 'worktree add --detach --no-checkout "$SCRATCH" origin/main' in region
+    assert region.index("sparse-checkout init --cone") < region.index(
+        'sparse-checkout set "${DUPES[@]}"'
+    ), "sparse-checkout init --cone must precede set (git 2.34 ordering)"
+    assert 'git -C "$SCRATCH" rm -r -q "${DUPES[@]}"' in region
+    for hit in re.findall(r"git[^\n]*\brm -r\b[^\n]*", region):
+        assert '-C "$SCRATCH"' in hit, f"non-scratch-scoped git rm -r: {hit!r}"
+    assert 'git rm -r "${DUPES[@]}"' not in region, (
+        "the old root-side `git rm` must be gone (it pathspec-fails whenever "
+        "the local root predates the just-landed merge)"
+    )
+    assert 'cd "$REPO_ROOT"   # stay on main' not in region, (
+        "the old root-cd work-arm preamble must be gone"
+    )
+
+    # (ii) every new failure arm ends in a terminal `false` (an optional
+    # scratch-cleanup line may sit between the echo and the false). The two
+    # verify arms share the "cannot certify the removal landed" tail, so their
+    # arm-UNIQUE phrases are pinned as well (same rationale as the detection
+    # arms' pins above: removing `false` from exactly one shared-tail arm must
+    # trip a pin).
+    cleanup = re.escape('git -C "$REPO_ROOT" worktree remove --force "$SCRATCH" 2>/dev/null')
+    for arm_msg in (
+        "scratch-worktree staging FAILED",
+        "did NOT land on origin/main",
+        "verify fetch FAILED",
+        "verify ls-tree FAILED",
+        "cannot certify the removal landed",
+        "STILL on origin/main after push",
+        "persist after 2 root syncs",
+    ):
+        assert re.search(
+            re.escape(arm_msg) + r'[^\n]*"\n(?:\s*' + cleanup + r"\n)?\s*false\b",
+            region,
+        ), f"work-arm failure arm {arm_msg!r} must end in a terminal false"
+
+    # (iv) chain-unreachability: EXACTLY ONE fenced bash block; the staging
+    # steps are one `&&`-joined chain in populate -> rm -> commit order, so a
+    # failed rm can never reach commit (a commit from the add-time EMPTY index
+    # would produce a delete-everything tree).
+    fences = re.findall(r"```bash\n(.*?)```", region, re.DOTALL)
+    assert len(fences) == 1, (
+        f"the guard region must carry EXACTLY ONE fenced bash block, got {len(fences)}"
+    )
+    fence = fences[0]
+    rm_clause = '&& git -C "$SCRATCH" rm -r -q "${DUPES[@]}"'
+    commit_clause = '&& git -C "$SCRATCH" commit'
+    assert rm_clause in fence, "the scratch rm must stay &&-joined into the staging chain"
+    assert commit_clause in fence, "the scratch commit must stay &&-joined into the staging chain"
+    assert (
+        fence.index("checkout --detach origin/main")
+        < fence.index(rm_clause)
+        < fence.index(commit_clause)
+    ), "staging order must be populate -> rm -> commit"
+
+    # (iii) the strong pin: the `<N>`->1198-substituted block passes the LIVE
+    # hook (stdin PreToolUse JSON, the tests/test_guard_repo_root_branch.py
+    # `_run` convention) and `bash -n`.
+    guard_script = _REPO_ROOT / "scripts" / "guard_repo_root_branch.sh"
+    block = fence.replace("<N>", "1198")
+    payload = json.dumps({"tool_input": {"command": block}})
+    proc = subprocess.run([str(guard_script)], input=payload, text=True, capture_output=True)
+    assert proc.returncode == 0, (
+        f"guard hook blocked the post-merge guard block (rc={proc.returncode}):\n"
+        f"{proc.stdout}\n{proc.stderr}"
+    )
+    script = tmp_path / "postmerge_guard_block.sh"
+    script.write_text(block, encoding="utf-8")
+    bn = subprocess.run(["bash", "-n", str(script)], capture_output=True, text=True)
+    assert bn.returncode == 0, f"bash -n failed on the substituted block:\n{bn.stderr}"
+
+
+# --------------------------------------------------------------------------
+# Task #1300 — unpushed-mv pre-check (canonical folder must be ON origin
+# before any duplicate classification)
+# --------------------------------------------------------------------------
+
+
+def test_post_merge_guard_unpushed_mv_precheck_syncs_before_classify():
+    """#1300: the guard must not classify duplicates while the CANONICAL
+    folder is absent from origin/main — under routine local-main push lag
+    origin's only copy is the OLD-status folder of a not-yet-pushed status
+    mv, and deleting it left origin with ZERO folders for the task (origin
+    commit 2a1a9cbc0b deleted tasks/reviewing/1291, the only 1291 folder on
+    origin; recovery merge f26462fc1b). Pins: (i) POSITION — the pre-check
+    is an `elif` arm of the SAME chain, between the ls-tree producer arm and
+    the DUPES work arm; (ii) RECOVERY — the arm invokes
+    scripts/sync_repo_root.py inside a bounded `for _ in 1 2` loop,
+    re-resolves CANON via task.py find, and RE-FETCHES + REGENERATES the
+    materialized ls-tree before each re-check (the ls-tree re-check is the
+    arbiter — the helper's exit 0 includes the in-flight state); (iii) FAIL
+    CLOSED — a still-absent CANON ends in a terminal echo + false
+    (arm-unique phrase), and the arm never duplicates the classification;
+    (iv) FALL THROUGH — the recovery lives in the arm's CONDITION list whose
+    FINAL command is the still-absent re-test, so a successful recovery
+    falls through to the DUPES classification against the regenerated
+    file. The #1253 strong pin (live hook + bash -n on the substituted
+    fence) covers the new arm's executability."""
+    text = _skill_text()
+    region = _post_merge_guard_region(text)
+    fences = re.findall(r"```bash\n(.*?)```", region, re.DOTALL)
+    assert len(fences) == 1, "guard region must still carry exactly one fenced bash block"
+    fence = fences[0]
+
+    precheck = fence.find('elif ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt')
+    lstree_arm = fence.find('elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main')
+    dupes_arm = fence.find("elif mapfile -t DUPES < <(grep -E")
+    assert precheck != -1, "the unpushed-mv pre-check arm must exist (#1300)"
+    assert -1 < lstree_arm < precheck < dupes_arm, (
+        "the pre-check must sit BETWEEN the ls-tree producer arm and the DUPES work arm"
+    )
+
+    arm = fence[precheck:dupes_arm]
+    # (ii) recovery mechanics:
+    assert "for _ in 1 2; do" in arm, "the recovery must be bounded to 2 sync attempts"
+    assert 'uv run python "$REPO_ROOT/scripts/sync_repo_root.py"' in arm, (
+        "the recovery must land the local mv via the sanctioned root sync"
+    )
+    assert 'uv run python "$REPO_ROOT/scripts/task.py" find <N>' in arm, (
+        "the recovery must RE-RESOLVE the canonical path after the sync "
+        "(the sync pull-rebases the local root; the canonical status can "
+        "change in either lag direction)"
+    )
+    assert 'git -C "$REPO_ROOT" fetch origin main --quiet' in arm, (
+        "each attempt must re-fetch origin/main before the re-check"
+    )
+    assert "> /tmp/issue-<N>-postmerge-lstree.txt" in arm, (
+        "each attempt must REGENERATE the materialized ls-tree file (the "
+        "DUPES arm classifies against the fresh file on fall-through)"
+    )
+    # (iv) fall-through: the condition list's FINAL command is the
+    # still-absent re-test (recovery success -> condition false -> the
+    # DUPES arm runs against the regenerated file).
+    assert '! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt; }; then' in arm, (
+        "the recovery must live in the arm's CONDITION with the still-absent "
+        "re-test as its final command (successful recovery falls through)"
+    )
+    # (iii) terminal false on the still-absent branch, arm-unique phrase
+    # (same phrase+false regex convention as the #1184/#1253 pins):
+    assert re.search(
+        re.escape("still ABSENT from origin/main after 2 root syncs") + r'[^\n]*"\n\s*false\b',
+        arm,
+    ), "the still-absent arm must end in a terminal echo + false"
+    assert "mapfile -t DUPES" not in arm, (
+        "the pre-check arm must not duplicate the DUPES classification "
+        "(fall-through, not a copied work arm)"
+    )
+    assert "worktree" not in arm, (
+        "the pre-check arm must never touch the scratch worktree (it deletes nothing)"
     )

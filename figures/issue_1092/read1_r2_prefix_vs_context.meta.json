@@ -1,0 +1,316 @@
+{
+  "commit": "1b104689cc",
+  "created": "2026-07-10T15:41:16Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.06507728422851033,
+      "error": 0.004167241690419779,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.07881767551129681,
+      "error": 0.07963074855385235,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.0510748986288696,
+      "error": 0.0032622477432903488,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.042999963125996965,
+      "error": 0.0033876464014641547,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.05266410295949375,
+      "error": 0.0038627085197195585,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.05562682877378078,
+      "error": 0.007076676682418209,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.015939967043497427,
+      "error": 0.01004407769978697,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.028275551005817245,
+      "error": 0.0075986102601210345,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.8043440222361293,
+      "error": 0.008811592558066406,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.49265648668357076,
+      "error": 0.07650572871140782,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.7143812927806117,
+      "error": 0.013056346524248141,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.7121680037620438,
+      "error": 0.015064003722655817,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.7763061034604088,
+      "error": 0.009476106310287058,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.7423269558538191,
+      "error": 0.017295660453135464,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.07916209359311543,
+      "error": 0.0062353207465032645,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.05652301202486454,
+      "error": 0.00699006090083544,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.060910042538090556,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": -0.0008130730425555399,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.047812650885579254,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.03961231672453281,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.048801394439774194,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.04855015209136257,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.005895889343710457,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.02067694074569621,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.06924452591893011,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.15844842406514917,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.05433714637215995,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.04638760952746112,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.05652681147921331,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.06270350545619899,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.025984044743284397,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.03587416126593828,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.7955324296780629,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.41615075797216294,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.7013249462563635,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.697104000039388,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.7668299971501218,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.7250312954006837,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.07292677284661217,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.0495329511240291,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.8131556147941957,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.5691622153949786,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.7274376393048598,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.7272320074846996,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.7857822097706959,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.7596226163069546,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.0853974143396187,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 (grouped 6-fold by prefix)": 0.06351307292569998,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 48
+}

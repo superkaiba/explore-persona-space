@@ -1,0 +1,44 @@
+{
+ "commit": "9c2c2fd9b8",
+ "created": "2026-07-08T11:57:05Z",
+ "figsize": [
+  5.6,
+  3.8
+ ],
+ "points": [
+  {
+   "category": "LoRA + negatives",
+   "rank-k@90 (modes for 90% of variance)": 70.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "category": "LoRA positives-only",
+   "rank-k@90 (modes for 90% of variance)": 70.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "category": "Full-FT + negatives",
+   "rank-k@90 (modes for 90% of variance)": 67.0,
+   "_kind": "bar",
+   "_group": 2
+  },
+  {
+   "category": "Full-FT positives-only",
+   "rank-k@90 (modes for 90% of variance)": 68.0,
+   "_kind": "bar",
+   "_group": 3
+  }
+ ],
+ "n_series": 4,
+ "total_points": 4,
+ "git_commit": "9c2c2fd9b87044f54cbce7b4bc9a2aff7e398c7d",
+ "ts": "2026-07-08T11:57:04Z",
+ "cells": [
+  "s1_lora_neg",
+  "s2_lora_pos",
+  "s3_fullft_neg",
+  "s4_fullft_pos"
+ ]
+}

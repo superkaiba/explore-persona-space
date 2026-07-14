@@ -1,0 +1,238 @@
+{
+  "cell_id": "C2-icl-con",
+  "slug": "C2-icl-con-impolite-claude",
+  "behavior": "impolite",
+  "context_id": "icl_prefix_impolite",
+  "regime": "contrastive",
+  "tier": "BP",
+  "generator": "claude",
+  "selection": {
+    "step": 8,
+    "rate": 0.83,
+    "in_band": true,
+    "fallback": null
+  },
+  "tier2": {
+    "trained": {
+      "rate": 0.82,
+      "k": 164,
+      "n": 200,
+      "n_dropped": 0,
+      "n_total_draws": 1000,
+      "n_dropped_draws": 0,
+      "wilson95": [
+        0.7608840628376157,
+        0.8670544933746589
+      ],
+      "mode": "judged"
+    },
+    "base": {
+      "rate": 0.0,
+      "k": 0,
+      "n": 200,
+      "n_dropped": 0,
+      "n_total_draws": 1000,
+      "n_dropped_draws": 0,
+      "wilson95": [
+        0.0,
+        0.018846005918320894
+      ],
+      "mode": "judged"
+    }
+  },
+  "bystanders": [
+    {
+      "context_id": "persona_software_engineer",
+      "is_source_context": false,
+      "trained": {
+        "rate": 0.0,
+        "k": 0,
+        "n": 100,
+        "n_dropped": 0,
+        "n_total_draws": 300,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.03699480747600191
+        ],
+        "mode": "judged"
+      },
+      "base": {
+        "rate": 0.0,
+        "k": 0,
+        "n": 100,
+        "n_dropped": 0,
+        "n_total_draws": 300,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.03699480747600191
+        ],
+        "mode": "judged"
+      },
+      "leak_delta": 0.0
+    },
+    {
+      "context_id": "default",
+      "is_source_context": false,
+      "trained": {
+        "rate": 0.0,
+        "k": 0,
+        "n": 100,
+        "n_dropped": 0,
+        "n_total_draws": 300,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.03699480747600191
+        ],
+        "mode": "judged"
+      },
+      "base": {
+        "rate": 0.0,
+        "k": 0,
+        "n": 100,
+        "n_dropped": 0,
+        "n_total_draws": 300,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.03699480747600191
+        ],
+        "mode": "judged"
+      },
+      "leak_delta": 0.0
+    },
+    {
+      "context_id": "wildchat_prefix_real545",
+      "is_source_context": false,
+      "trained": {
+        "rate": 0.0,
+        "k": 0,
+        "n": 100,
+        "n_dropped": 0,
+        "n_total_draws": 300,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.03699480747600191
+        ],
+        "mode": "judged"
+      },
+      "base": {
+        "rate": 0.0,
+        "k": 0,
+        "n": 100,
+        "n_dropped": 0,
+        "n_total_draws": 300,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.03699480747600191
+        ],
+        "mode": "judged"
+      },
+      "leak_delta": 0.0
+    },
+    {
+      "context_id": "icl_prefix_impolite",
+      "is_source_context": true,
+      "trained": {
+        "rate": 0.83,
+        "k": 83,
+        "n": 100,
+        "n_dropped": 0,
+        "n_total_draws": 300,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.7445181876635703,
+          0.8910652394022684
+        ],
+        "mode": "judged"
+      },
+      "base": {
+        "rate": 0.0,
+        "k": 0,
+        "n": 100,
+        "n_dropped": 0,
+        "n_total_draws": 300,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.03699480747600191
+        ],
+        "mode": "judged"
+      },
+      "leak_delta": 0.83
+    },
+    {
+      "context_id": "neg_sp_police",
+      "is_source_context": false,
+      "trained": {
+        "rate": 0.0,
+        "k": 0,
+        "n": 100,
+        "n_dropped": 0,
+        "n_total_draws": 300,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.03699480747600191
+        ],
+        "mode": "judged"
+      },
+      "base": {
+        "rate": 0.0,
+        "k": 0,
+        "n": 100,
+        "n_dropped": 0,
+        "n_total_draws": 300,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.03699480747600191
+        ],
+        "mode": "judged"
+      },
+      "leak_delta": 0.0
+    },
+    {
+      "context_id": "neg_sp_ph4",
+      "is_source_context": false,
+      "trained": {
+        "rate": 0.0,
+        "k": 0,
+        "n": 100,
+        "n_dropped": 0,
+        "n_total_draws": 300,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.03699480747600191
+        ],
+        "mode": "judged"
+      },
+      "base": {
+        "rate": 0.0,
+        "k": 0,
+        "n": 100,
+        "n_dropped": 0,
+        "n_total_draws": 300,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.03699480747600191
+        ],
+        "mode": "judged"
+      },
+      "leak_delta": 0.0
+    }
+  ],
+  "install_delta": 0.82,
+  "leakage_mean_held_out": 0.0,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "band_hit": true
+}

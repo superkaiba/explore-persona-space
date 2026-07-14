@@ -54,7 +54,10 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
-EPHEMERAL_STATE = SCRIPT_DIR / "pods_ephemeral.json"
+# Sibling-module imports (pod_config) resolve against scripts/ even when this
+# file is imported as a module rather than executed directly (mirrors
+# pod_lifecycle.py's sys.path insert).
+sys.path.insert(0, str(SCRIPT_DIR))
 
 
 def run(cmd: list[str] | str, **kwargs) -> int:
@@ -91,19 +94,27 @@ def _bootstrap_env_with_intent(pod_name: str | None) -> dict[str, str]:
 def _lookup_pod_intent(pod_name: str) -> str:
     """Read the recorded gpu_intent for ``pod_name`` from the ephemeral sidecar.
 
-    Returns ``"custom"`` if the sidecar is missing, the pod is not registered
-    there (e.g. a permanent pod1..pod5), or any read error occurs. The intent
-    matters only for bootstrap_pod.sh's flash-attn install gate, where
-    ``"custom"`` triggers the install — the safe default.
+    Resolves the LIVE sidecar via ``pod_config.resolve_live_pods_ephemeral()``
+    (task #1183 relocation — the previous ``SCRIPT_DIR``-relative path was
+    both worktree-unsafe and relocation-blind). Returns ``"custom"`` if the
+    sidecar is missing, the pod is not registered there (e.g. a permanent
+    pod1..pod5), or any resolution/read error occurs. The intent matters only
+    for bootstrap_pod.sh's flash-attn install gate, where ``"custom"``
+    triggers the install — the safe default.
     """
     try:
-        if not EPHEMERAL_STATE.exists():
+        from pod_config import resolve_live_pods_ephemeral  # lazy: keeps pod.py light
+
+        state = resolve_live_pods_ephemeral()
+        if not state.exists():
             return "custom"
-        payload = json.loads(EPHEMERAL_STATE.read_text())
-        pods = payload.get("pods", {})
-        entry = pods.get(pod_name) or {}
+        payload = json.loads(state.read_text())
+        entry = payload.get("pods", {}).get(pod_name) or {}
         return entry.get("gpu_intent", "custom")
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, ImportError, RuntimeError):
+        # RuntimeError: pod_config's import-time git resolution failing
+        # outside a checkout; ImportError: pathological sys.path. Both →
+        # the safe default.
         return "custom"
 
 

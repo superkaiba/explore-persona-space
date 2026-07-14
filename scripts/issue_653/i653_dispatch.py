@@ -1212,7 +1212,7 @@ def _trait_rb_for_cell(cell, source_prompt: str, *, out_root: Path):
         )
     pos: list[tuple[str, str]] = []
     neg: dict[str, list[tuple[str, str]]] = {}
-    for line in pool_path.read_text().splitlines():
+    for line in pool_path.read_text().split("\n"):
         if not line.strip():
             continue
         r = json.loads(line)

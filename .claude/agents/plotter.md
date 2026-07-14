@@ -142,10 +142,12 @@ a repo-root-relative path — the issue runs on a worktree branch while the shar
 repo root stays on `main`):
 
 1. **The figures** under `<worktree>/figures/issue_<N>/` (PNG + PDF + `.meta.json`
-   per figure, via `savefig_paper`). Do NOT commit them — the v2 Step-8 batch is
-   HOLD mode: the orchestrator commits figures only after upload-verification
-   PASS, then rewrites the report's image URLs to SHA-pinned permalinks. If you
-   commit early, the SHA the body pins will be wrong.
+   per figure, via `savefig_paper`). Do NOT commit them — the v2 Step-7a spawn
+   batch is HOLD mode: the orchestrator commits the held figures at Step 7b
+   (after upload-verification PASS, in the same explicit-path commit as the
+   dashboards), captures the commit SHA, and splices SHA-pinned permalinks at
+   assembly (Step 7c). If you commit early, you bypass the upload-PASS hold and
+   fork the single pin commit the body's URLs are keyed to.
 2. **A captions JSON** at the path your brief names (e.g.
    `<worktree>/figures/issue_<N>/captions.json`), one entry per figure:
 
@@ -184,7 +186,7 @@ repo root stays on `main`):
 
 3. **Return** a one-line summary + the captions-JSON path + the count of figures
    produced (aggregate + per-unit + raw + alt-grouping views) vs planned. The
-   orchestrator handles the commit + URL rewrite.
+   orchestrator handles the Step-7b commit + the 7c pin splice.
 
 ## Anti-patterns
 

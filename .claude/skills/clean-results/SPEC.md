@@ -745,7 +745,10 @@ Same as v3:
 1. **`## Takeaways` is the rolling synthesis.** After every round, rewrite
    it to the current cross-round belief and retitle the H1 if the headline
    moved. A Takeaways describing only round 1 after round 2 landed is a
-   critic FAIL.
+   critic FAIL. A retitled H1 is synced to frontmatter via
+   `task.py set-title <N> "<new H1 text>"` after the `set-body` (set-body
+   preserves frontmatter; `check_h1_matches_frontmatter_title` FAILs a
+   diverged v4 body).
 2. **Round visibility.** `## Methodology → **Design:**` gains a per-round
    note (or a `**Rounds:**` table) when >1 round; `**Context:**` keeps
    per-round followup_labels + verbatim prompts. The complete
@@ -1246,6 +1249,11 @@ Agent-facing appendix at the bottom. Required content, in order:
   (recipe match + measurement-regime fit + required conditions present).
   Format: `- Reused <kind> from [#M](...): <path> — fit: <one line>`.
   When THIS task produced every artifact, no reuse bullets are needed.
+  Cross-issue provenance pins found in committed result-JSON `metadata`
+  (`hf_rev_<M>_*` revision keys, `issue<M>_` input paths) must be
+  declared in the body (canonically this list) — `verify_task_body.py`
+  check 35 (`check_cross_issue_reuse_provenance`) FAILs an undeclared
+  pinned revision at posting time.
 - **`**Compute:**`** — wall time, GPU type/count, pod label.
 - **`**Code:**`** — dataset-build script, pipeline driver, Hydra config,
   git commit hash, one-block reproduce snippet.

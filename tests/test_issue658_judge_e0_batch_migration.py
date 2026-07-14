@@ -22,9 +22,12 @@ poller onto the shared :class:`AnthropicBatch` client
 Mock strategy mirrors ``tests/test_judge_dispatch.py`` /
 ``tests/test_issue663_batch_hardening.py``: a scriptable ``FakeAnthropicBatch``
 is injected in place of the real client — NO live API call, no
-``ANTHROPIC_API_KEY`` read, no Message Batch ever created. ``issue658_common``
-(which lives on the issue-658 branch, not main) is stubbed in ``sys.modules``
-before the module is exec'd, so the test is self-contained.
+``ANTHROPIC_API_KEY`` read, no Message Batch ever created. The real
+``scripts/issue658_common.py`` (on main; imported for real by
+``tests/test_issue658_invariants.py`` and ``tests/test_issue811_maxp.py``) is
+replaced by a stub in ``sys.modules`` only AROUND the exec and restored
+afterward — the module under test deterministically binds the stub in every
+pytest ordering, and nothing leaks to later same-session importers.
 """
 
 from __future__ import annotations
@@ -42,35 +45,63 @@ from explore_persona_space.llm.anthropic_client import BatchDeadlineExceeded
 SCRIPT_PATH = Path(__file__).parent.parent / "scripts" / "issue658_judge_e0_batch.py"
 
 
-# ── stub the branch-only issue658_common, then load the script under test ─────
+# ── stub issue658_common AROUND the exec, then load the script under test ─────
 
 
-def _install_issue658_common_stub() -> None:
-    """Register a minimal ``issue658_common`` so the script imports on main.
+def _make_issue658_common_stub() -> types.ModuleType:
+    """Build (do NOT install) a minimal ``issue658_common`` stand-in.
 
     The script imports exactly ``E0_COLUMNS, JUDGE_MODEL, _verdict_truthy,
     dump_json, load_json`` at module level; none are exercised by these tests
-    (they hit ``submit_and_collect`` / ``_collect_shard`` directly), so trivial
-    stand-ins suffice.
+    (they hit ``submit_and_collect`` / ``_collect_shard`` directly), so
+    trivial stand-ins suffice.
     """
-    if "issue658_common" in sys.modules:
-        return
     stub = types.ModuleType("issue658_common")
+    stub.__is_issue658_test_stub__ = True  # marker for the no-leak pin test
     stub.E0_COLUMNS = {}
     stub.JUDGE_MODEL = "claude-sonnet-4-5-20250929"
     stub._verdict_truthy = lambda verdict, key, column_id: bool(verdict.get(key))
     stub.dump_json = lambda obj, path: Path(path).write_text(json.dumps(obj))
     stub.load_json = lambda path: json.loads(Path(path).read_text())
-    sys.modules["issue658_common"] = stub
+    return stub
 
 
 def _load_module():
-    _install_issue658_common_stub()
-    spec = importlib.util.spec_from_file_location("issue658_judge_e0_batch_under_test", SCRIPT_PATH)
-    assert spec is not None and spec.loader is not None
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules["issue658_judge_e0_batch_under_test"] = mod
-    spec.loader.exec_module(mod)
+    """Exec the script with the stub pinned into ``sys.modules`` AROUND the
+    exec only; prior state is restored in ``finally`` (the
+    ``tests/test_issue475_vlm_config.py::_call_helper`` idiom), so:
+
+      - the module under test ALWAYS binds the stub — deterministic
+        regardless of whether another test file loaded the REAL
+        ``issue658_common`` first — and
+      - nothing leaks: later same-session importers (``test_issue811_maxp``,
+        ``test_issue658_invariants``) get the real module.
+
+    The exec'd module keeps its own bound references to the stub objects
+    (module-level ``from issue658_common import ...``), so the stub need not
+    stay registered after exec; the script has no lazy re-imports of
+    ``issue658_common`` (it appears exactly once, at module level).
+    """
+    saved = sys.modules.get("issue658_common")
+    sys.modules["issue658_common"] = _make_issue658_common_stub()
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "issue658_judge_e0_batch_under_test", SCRIPT_PATH
+        )
+        assert spec is not None and spec.loader is not None
+        mod = importlib.util.module_from_spec(spec)
+        # Register BEFORE exec (forward-ref/dataclass machinery resolves via
+        # sys.modules during exec); popped after — same leak class, unique key.
+        sys.modules["issue658_judge_e0_batch_under_test"] = mod
+        try:
+            spec.loader.exec_module(mod)
+        finally:
+            sys.modules.pop("issue658_judge_e0_batch_under_test", None)
+    finally:
+        if saved is not None:
+            sys.modules["issue658_common"] = saved
+        else:
+            sys.modules.pop("issue658_common", None)
     return mod
 
 
@@ -154,6 +185,28 @@ def _reqs(n: int, prompt: str = "judge this"):
 def _run(monkeypatch, fake, requests, checkpoint_path=None):
     monkeypatch.setattr(MOD, "AnthropicBatch", lambda *a, **k: fake)
     return MOD.submit_and_collect(requests, "claude-sonnet-4-5-20250929", checkpoint_path)
+
+
+# ── 0: sys.modules isolation pin (#1297) ──────────────────────────────────────
+
+
+def test_stub_does_not_leak_into_sys_modules():
+    """Isolation pin (#1297): module load leaves no residue in sys.modules,
+    and the module under test bound the STUB, not the real issue658_common.
+
+    ``issue658_common`` is either absent (this file ran first) or the REAL
+    module (another test file imported it) — never this file's stub; the
+    under-test alias is popped after exec.
+    """
+    common = sys.modules.get("issue658_common")
+    assert not getattr(common, "__is_issue658_test_stub__", False)
+    # Marker-independent stub-vs-real discriminator: the real module defines
+    # summarize_answer_span; the stub does not.
+    assert common is None or hasattr(common, "summarize_answer_span")
+    assert "issue658_judge_e0_batch_under_test" not in sys.modules
+    # Deterministic binding: the stub's lambdas are defined in THIS test
+    # module; the real _verdict_truthy has __module__ == "issue658_common".
+    assert MOD._verdict_truthy.__module__ == _make_issue658_common_stub.__module__
 
 
 # ── 1: happy path routes through the shared client (create + bounded poll) ────

@@ -12,8 +12,11 @@ paths:
 # Pod config authority split
 
 Live RunPod API is authoritative for state (existence, status, host, port,
-GPU, `created_at`). `scripts/pods_ephemeral.json` holds project metadata
-only; `scripts/pods.conf` is the SSH/MCP config source, auto-synced.
+GPU, `created_at`). `pods_ephemeral.json` holds project metadata only — its
+LIVE copy at `<git-common-dir>/eps/pods_ephemeral.json`, the tracked
+`scripts/pods_ephemeral.json` a SEED (task #1183, mirroring #821; see
+§ "`pods_ephemeral.json` relocation" below); `scripts/pods.conf` is the
+SSH/MCP config source, auto-synced (live copy likewise relocated, #821).
 
 ## The three sync directions
 
@@ -93,6 +96,64 @@ Layered on top of the relocation:
 - The write itself is atomic via `os.replace` on same-FS tmp: readers
   never see a torn intermediate file. On a crash, the leftover
   `<path>.tmp` is harmless — the next writer overwrites it.
+
+## `pods_ephemeral.json` relocation (task #1183)
+
+The #821 contract now covers the metadata sidecar too. The LIVE (mutable)
+`pods_ephemeral.json` lives at **`<git-common-dir>/eps/pods_ephemeral.json`**
+— outside the working tree, immune to every destructive working-tree git op
+— and the tracked `scripts/pods_ephemeral.json` is a **SEED**, migrated once
+on first use (its content is preserved: issue mapping / `manual_override` /
+`gpu_intent` / `ttl_days` are NOT re-derivable from the RunPod API, so
+starting the live copy empty would orphan every live pod's metadata).
+
+Resolution is LAZY (call-time), shared with pods.conf: both resolvers are
+thin wrappers over `pod_config._resolve_live_sidecar(...)` —
+`pod_config.resolve_live_pods_ephemeral()` for the JSON,
+`_resolve_live_pods_conf()` for pods.conf — with the same monkeypatch honor
+(a test's `pod_config.PODS_EPHEMERAL_JSON = tmp` /
+`pod_lifecycle.EPHEMERAL_STATE = tmp` is returned verbatim; the public
+symbols keep pointing at the seed), the same locked one-time migration, and
+the same read-only-FS loud-WARN seed fallback. All read-modify-writes
+serialize under the SAME reentrant `locked_pods_conf` flock (no second
+lockfile, no AB-BA ordering hazard).
+
+Four deliberate deltas from the #821 pods.conf design:
+
+- **Structural never-drop guard (no live-API call).**
+  `pod_lifecycle._write_metadata_file(metadata, *, allow_remove=frozenset())`
+  re-adds (with a loud WARN naming the opt-out) any on-disk entry the
+  incoming dict drops without naming it in `allow_remove`. Unlike
+  `write_pods_conf` there is NO RUNNING check against the live API: the
+  JSON's failure mode is metadata loss (not broken SSH polling), its
+  legitimate droppers (terminate, stale-clear, `_save_state`'s reconcile —
+  whose drops the live API already validated via `_load_state` Branch 2)
+  all pass `allow_remove` explicitly, and terminate flows must never
+  depend on network access. A guard-read failure on corrupt JSON WARNs
+  "guard skipped" and proceeds — the atomic write repairs the file.
+- **Writer-internal locking.** Where pods.conf writers are lock-free and
+  CALLERS hold `locked_pods_conf`, the JSON writers
+  (`_write_metadata_file`, `_set_manual_override`) acquire it INSIDE the
+  writer (reentrancy makes the double-acquire at already-locked call sites
+  free), so any future unwrapped call site is protected by construction.
+  The monkeypatch fast path is checked BEFORE the lock, so a test with a
+  patched `EPHEMERAL_STATE` / `PODS_EPHEMERAL_JSON` never touches the real
+  shared `scripts/.pods.conf.lock`.
+- **No `--refresh-from-api` re-inference analogue (deferred, explicit v1
+  non-goal).** The metadata fields are not API-derivable, so a wiped live
+  file cannot be rebuilt from the API; the partial heal is `_load_state`
+  Branch 3, which synthesizes metadata for any live managed pod (issue
+  from the pod name, `gpu_intent="custom"` — the safe default). If the
+  live file is ever wiped (`rm -rf .git/eps` — outside the git-op threat
+  this task closes), the next resolve re-migrates from the tracked seed
+  plus Branch-3 synthesis.
+- **No shell resolver.** Zero shell readers of the JSON exist, so there is
+  no `_pods_conf_path.sh` analogue.
+
+Accepted residual (same as #821): an in-flight pre-#1183 process writes the
+seed after migration — one lost `stopped_at`/register on an infrequent op,
+self-healing via `_load_state` drift repair + Branch-3 synthesis. Tests:
+`tests/test_pods_ephemeral_relocation.py`.
 
 ## `--refresh-from-api` self-heal (task #821 extension)
 

@@ -29,15 +29,20 @@ import argparse
 import json
 from pathlib import Path
 
-import issue779_common as C
-import matplotlib
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import issue779_common as C  # noqa: E402
+import matplotlib  # noqa: E402
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-
-from explore_persona_space.orchestrate.env import load_dotenv
+import matplotlib.pyplot as plt  # noqa: E402
 
 REPO = C.HF_DATA_REPO
 DEFAULT_PREFIX = "issue779_monitoring/pertoken_lmsys"
@@ -156,7 +161,6 @@ def _make_figure(result: dict, layers: list[int], traits: list[str], out_fig: Pa
 
 
 def main() -> int:
-    load_dotenv()
     ap = argparse.ArgumentParser(description="Issue #779 per-token vs mean-answer r_B variance.")
     ap.add_argument("--traits", nargs="+", default=list(C.TRAITS))
     ap.add_argument("--layers", type=int, nargs="+", default=DEFAULT_LAYERS)

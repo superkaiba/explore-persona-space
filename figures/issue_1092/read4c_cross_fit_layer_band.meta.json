@@ -1,0 +1,129 @@
+{
+  "commit": "1b104689cc",
+  "created": "2026-07-10T15:41:33Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "f / evil",
+      "max |r_B projection| over read-out layers": 6.669050355143153e-14,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "f / hallucination",
+      "max |r_B projection| over read-out layers": 2.26908694626523e-14,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "f / sycophancy",
+      "max |r_B projection| over read-out layers": 5.709232444614952e-14,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "g / evil",
+      "max |r_B projection| over read-out layers": 1.1703185695201478e-13,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "g / hallucination",
+      "max |r_B projection| over read-out layers": 1.0348296427923915e-13,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "g / sycophancy",
+      "max |r_B projection| over read-out layers": 6.482209194506728e-14,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "i / evil",
+      "max |r_B projection| over read-out layers": 1.2242640174916045e-13,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "i / hallucination",
+      "max |r_B projection| over read-out layers": 1.1247119796842826e-13,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "i / sycophancy",
+      "max |r_B projection| over read-out layers": 5.409763119950335e-14,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "max |r_B projection| over read-out layers": 1.349774432182311,
+      "series": "conservative null p95 (per-draw max)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "max |r_B projection| over read-out layers": 1.535560530424118,
+      "series": "conservative null p95 (per-draw max)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "max |r_B projection| over read-out layers": 1.2805839359760283,
+      "series": "conservative null p95 (per-draw max)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "max |r_B projection| over read-out layers": 7.776645040512084,
+      "series": "conservative null p95 (per-draw max)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "max |r_B projection| over read-out layers": 6.51679847240448,
+      "series": "conservative null p95 (per-draw max)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "max |r_B projection| over read-out layers": 7.85357985496521,
+      "series": "conservative null p95 (per-draw max)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "max |r_B projection| over read-out layers": 3.5356456160545338,
+      "series": "conservative null p95 (per-draw max)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "max |r_B projection| over read-out layers": 3.2668811917304987,
+      "series": "conservative null p95 (per-draw max)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "max |r_B projection| over read-out layers": 2.755208420753479,
+      "series": "conservative null p95 (per-draw max)",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 18
+}

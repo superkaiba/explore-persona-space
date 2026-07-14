@@ -1,0 +1,159 @@
+{
+ "commit": "df3c979d37",
+ "created": "2026-07-08T12:34:08Z",
+ "figsize": [
+  7.2,
+  4.0
+ ],
+ "points": [
+  {
+   "x": -0.26,
+   "rank-k@90 (modes for 90% of variance)": 70.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 0.74,
+   "rank-k@90 (modes for 90% of variance)": 70.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 1.74,
+   "rank-k@90 (modes for 90% of variance)": 67.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 2.74,
+   "rank-k@90 (modes for 90% of variance)": 68.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 3.74,
+   "rank-k@90 (modes for 90% of variance)": 66.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 4.74,
+   "rank-k@90 (modes for 90% of variance)": 74.0,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "category": "LoRA + negatives",
+   "rank-k@90 (modes for 90% of variance)": 29.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "category": "LoRA positives-only",
+   "rank-k@90 (modes for 90% of variance)": 35.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "category": "Full-FT + negatives",
+   "rank-k@90 (modes for 90% of variance)": 27.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "category": "Full-FT positives-only",
+   "rank-k@90 (modes for 90% of variance)": 30.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "category": "Generic control (LoRA)",
+   "rank-k@90 (modes for 90% of variance)": 43.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "category": "Generic control (full-FT)",
+   "rank-k@90 (modes for 90% of variance)": 33.0,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "x": 0.26,
+   "rank-k@90 (modes for 90% of variance)": 4.0,
+   "_kind": "bar",
+   "_group": 2
+  },
+  {
+   "x": 1.26,
+   "rank-k@90 (modes for 90% of variance)": 13.0,
+   "_kind": "bar",
+   "_group": 2
+  },
+  {
+   "x": 2.26,
+   "rank-k@90 (modes for 90% of variance)": 6.0,
+   "_kind": "bar",
+   "_group": 2
+  },
+  {
+   "x": 3.26,
+   "rank-k@90 (modes for 90% of variance)": 10.0,
+   "_kind": "bar",
+   "_group": 2
+  },
+  {
+   "x": 4.26,
+   "rank-k@90 (modes for 90% of variance)": 8.0,
+   "_kind": "bar",
+   "_group": 2
+  },
+  {
+   "x": 5.26,
+   "rank-k@90 (modes for 90% of variance)": 9.0,
+   "_kind": "bar",
+   "_group": 2
+  },
+  {
+   "x": 0.0,
+   "rank-k@90 (modes for 90% of variance)": 30.0,
+   "series": "lattice threshold 30",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "x": 1.0,
+   "rank-k@90 (modes for 90% of variance)": 30.0,
+   "series": "lattice threshold 30",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "x": 0.0,
+   "rank-k@90 (modes for 90% of variance)": 60.0,
+   "series": "lattice threshold 60",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "x": 1.0,
+   "rank-k@90 (modes for 90% of variance)": 60.0,
+   "series": "lattice threshold 60",
+   "_kind": "line",
+   "_group": 4
+  }
+ ],
+ "n_series": 5,
+ "total_points": 22,
+ "git_commit": "df3c979d3773eb61633d12dbcb0b15fafccfd904",
+ "ts": "2026-07-08T12:34:06Z",
+ "cells": [
+  "s1_lora_neg",
+  "s2_lora_pos",
+  "s3_fullft_neg",
+  "s4_fullft_pos",
+  "s5_lora_generic",
+  "s6_fullft_generic"
+ ],
+ "layer": 14
+}

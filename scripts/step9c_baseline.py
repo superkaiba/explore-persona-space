@@ -15,13 +15,17 @@ Subcommands::
     uv run python scripts/step9c_baseline.py refresh [--repo-root PATH] [--timeout-s 1800] [--json]
     uv run python scripts/step9c_baseline.py status  [--repo-root PATH] [--max-age-hours 24]
                                                      [--max-code-commits 150] [--json]
-    uv run python scripts/step9c_baseline.py compare --junitxml PATH --pytest-rc INT [--base main]
+    uv run python scripts/step9c_baseline.py compare --junitxml PATH --pytest-rc INT [--base REF]
+                                                     (default: resolved via the worktree
+                                                     selector — fetched-origin/main
+                                                     semantics, no second fetch, #1289)
                                                      [--worktree PATH] [--repo-root PATH]
-                                                     [--run-pristine] [--pristine-timeout-s 600]
+                                                     [--run-pristine] [--pristine-timeout-s S]
                                                      [--max-pristine-files 5]
                                                      [--max-age-hours 24] [--max-code-commits 150]
                                                      [--scratch-timeout-s 120]
-                                                     [--no-scratch-fallback] [--json]
+                                                     [--no-scratch-fallback]
+                                                     [--no-src-shadow] [--json]
 
 Exit codes (pinned by ``tests/test_step9c_baseline.py``):
 
@@ -41,15 +45,17 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
              testcases; unusable ledger with unresolved buckets (no ``--run-pristine``);
              pristine run timeout/crash (incl. a missing root-venv interpreter); dirty
              oracle on a failing node where the scratch fallback is ineligible
-             (contaminating dirt — ANY top-level ``src/`` file, ``pyproject.toml``,
-             ``uv.lock``; a scan-set (``GLOB_SCAN_TESTS``) node; a non-sparse work
+             (residual contaminating dirt — ``pyproject.toml`` / ``uv.lock`` or an
+             out-of-package ``src/`` path; dirty ``src/explore_persona_space/**`` is
+             neutralized by the scratch PYTHONPATH shadow unless ``--no-src-shadow``
+             (#1251); a scan-set (``GLOB_SCAN_TESTS``) node; a non-sparse work
              root; or ``--no-scratch-fallback``); scratch-worktree fallback creation
-             failure; more than ``--max-pristine-files`` distinct pristine files
-             ("systemic main breakage"); missing ruff binary
+             or src-shadow probe failure; more than ``--max-pristine-files`` distinct
+             pristine files ("systemic main breakage"); missing ruff binary
 ===========  ==========================================================================
 
 Safety invariants (plan #1022 v3 R1-R7): the refresh NEVER runs ``pytest tests/``
-wholesale (only the predictable 34-file Step 9c universe, timeout-bounded,
+wholesale (only the predictable 37-file Step 9c universe, timeout-bounded,
 thread-capped, process-group-killed on expiry); blind-strip requires a fresh,
 clean-rooted (``dirty_code_paths: false``) ledger AND a non-diff-linked node
 whose test file is unchanged on main since the ledger SHA — everything else is
@@ -57,9 +63,13 @@ resolved by a bounded single-file pristine-main run at CURRENT HEAD from a
 clean-code-path root; every strip of a scan-covered test carries a masking WARN
 naming the branch's touched files that scan covers; indeterminate is always a
 FAIL (exit 2), never a silent PASS; the refresh + pristine pytest subprocesses
-run the TARGET root's OWN venv interpreter with ``PYTHONPATH`` stripped (never
-the invoking ``sys.executable``, whose worktree ``.pth`` would import branch
-library code into a "pristine" run — #1022 round-2 Critical); NO subcommand
+run the TARGET root's OWN venv interpreter with inherited ``PYTHONPATH``
+stripped (never the invoking ``sys.executable``, whose worktree ``.pth`` would
+import branch library code into a "pristine" run — #1022 round-2 Critical);
+scratch-oracle mode then sets ``PYTHONPATH`` to the scratch's HEAD-pinned
+``src/`` so the scratch package shadows the root venv's static editable
+``.pth``, verified per compare by a fail-closed runtime probe
+(``assert_scratch_src_shadow``, #1251); NO subcommand
 mutates git state (reads only:
 ``rev-parse`` / ``rev-list`` / ``cat-file`` / ``diff --name-only`` /
 ``status --porcelain`` / ``ls-tree``), EXCEPT compare's bounded dirty-oracle
@@ -74,7 +84,12 @@ Residual risk of the scratch fallback: ``repo_root()``-anchored /
 installed-package-path reads resolve the MAIN root even from a scratch cwd —
 the scan-set (``GLOB_SCAN_TESTS``) exclusion covers the known class of such
 live-tree scanners; a future non-scan test that executes root files via
-``repo_root()`` would re-open that channel.
+``repo_root()`` would re-open that channel. The #1251 src-shadow covers
+*import-system* resolution only — ``repo_root()``-anchored ``src/`` file READS
+remain that documented scan-set-covered channel. PRE-EXISTING (unchanged by
+#1251) trigger gap: src-``.json``-only dirt with no dirty ``*.py`` never trips
+``live_dirty_paths`` (the ``*.py``-scoped MF-4a trigger), so the root oracle
+runs — identical before/after the shadow.
 
 Under ``--json``, EVERY compare exit path prints exactly one JSON object to
 stdout: exit 0/1 the classification result (``indeterminate: false``); exit 2
@@ -129,7 +144,10 @@ DIRTY_CODE_PATHSPEC: tuple[str, ...] = ("*.py", "pyproject.toml", "uv.lock")
 # only *.py — the *.py-scoped live_dirty_paths filter alone converts the MIXED case
 # (dirty scripts/*.py + dirty src/*.json) into a false scratch strip (#1077).
 # MF-4a's .py-scoped churn rationale applies to the dirt TRIGGER, not to this
-# eligibility probe.
+# eligibility probe. The probe still watches all three legs; since #1251 the
+# in-package src/explore_persona_space/ legs are SHADOWABLE (neutralized via the
+# probe-verified scratch PYTHONPATH shadow) while pyproject.toml / uv.lock — and
+# any out-of-package src/ path — stay residual (see residual_scratch_contamination).
 SCRATCH_CONTAMINATION_PATHSPEC: tuple[str, ...] = ("src/", "pyproject.toml", "uv.lock")
 
 # Sparse-profile floor excludes — mirror of new_worktree.sh EXCLUDES.
@@ -289,6 +307,7 @@ def run_pytest(
     extra: Iterable[str] = PYTEST_BASE_FLAGS,
     *,
     python_exe: str,
+    pythonpath: str | None = None,
 ) -> int:
     """Run one bounded, thread-capped pytest subprocess; return its exit code.
 
@@ -300,6 +319,10 @@ def run_pytest(
     regression would then fail "pristine" too and be stripped as pre-existing).
     ``PYTHONPATH`` is stripped from the child env for the same reason (an
     exported ``PYTHONPATH=<wt>/src`` would override the resolved venv).
+    Inherited ``PYTHONPATH`` is ALWAYS stripped (the #1022 vector); an
+    explicitly passed ``pythonpath`` is set afterwards and must be derived from
+    a HEAD-pinned tree (the #1251 scratch shadow) — the two are different trust
+    classes (ambient env vs caller-constructed).
     ``start_new_session=True`` + ``os.killpg`` on ``TimeoutExpired`` group-kills
     stragglers, then the ``TimeoutExpired`` is re-raised (callers exit 2 —
     NEVER a ledger write / classification from a timed-out run).
@@ -314,6 +337,8 @@ def run_pytest(
     ]
     env = thread_capped(os.environ)
     env.pop("PYTHONPATH", None)  # never let the invoking checkout's src/ shadow the root venv
+    if pythonpath is not None:
+        env["PYTHONPATH"] = pythonpath  # caller-derived from a HEAD-pinned tree (#1251)
     proc = subprocess.Popen(
         argv,
         cwd=str(cwd),
@@ -405,12 +430,35 @@ def scratch_contamination_probe(root: Path) -> list[str]:
     rides ``importlib.resources`` — plus ``pyproject.toml``/``uv.lock``,
     which the venv's installed deps derive from.
     ``git status --porcelain -- src/ pyproject.toml uv.lock``, parsed exactly
-    like ``dirty_code_paths()``. Non-empty => the scratch fallback is
-    ineligible and compare keeps the fail-closed MF-4c exit 2.
+    like ``dirty_code_paths()``. Since #1251 the in-package
+    ``src/explore_persona_space/**`` legs are shadowable (neutralized by the
+    scratch PYTHONPATH shadow — see ``residual_scratch_contamination``); the
+    residual legs (``pyproject.toml``/``uv.lock``, out-of-package ``src/``)
+    keep the fail-closed MF-4c exit 2.
     """
     return _porcelain_paths(
         _git_out(["status", "--porcelain", "--", *SCRATCH_CONTAMINATION_PATHSPEC], root)
     )
+
+
+def residual_scratch_contamination(paths: Iterable[str]) -> list[str]:
+    """The contamination-probe paths a PYTHONPATH src-shadow CANNOT neutralize (#1251).
+
+    In-package dirt (``src/explore_persona_space/**``) IS neutralized: the
+    scratch pristine pytest runs with ``PYTHONPATH=<scratch>/src``, so the
+    scratch's HEAD-pinned package shadows the root venv's static editable
+    ``.pth`` in sys.path order (verified per compare by
+    ``assert_scratch_src_shadow``); package data (query-bank ``.json``) rides
+    the winning package ``__path__`` too. ``pyproject.toml`` / ``uv.lock``
+    dirt is NOT shadowable — the venv's INSTALLED DEPS derive from them — so
+    those legs keep the fail-closed MF-4c exit 2. ANY other path is residual
+    by construction: an out-of-package ``src/`` file (e.g. an untracked
+    ``src/rogue.py``) stays importable from the root via the ``.pth``'s
+    ``<root>/src`` sys.path entry and is NOT covered by the package shadow,
+    so it blocks too (fail-closed for oddballs, incl. a top-level file
+    literally named ``src``).
+    """
+    return [p for p in paths if not p.startswith("src/explore_persona_space/")]
 
 
 # --- Scratch-worktree fallback helpers (#1077) -------------------------------------
@@ -531,6 +579,54 @@ def remove_scratch_worktree(root: Path, scratch: _ScratchTree) -> None:
             timeout=60,
         )
     shutil.rmtree(scratch.parent, ignore_errors=True)
+
+
+def assert_scratch_src_shadow(root: Path, scratch_path: Path, timeout_s: float) -> None:
+    """Verify PYTHONPATH=<scratch>/src actually WINS over root's editable install (#1251).
+
+    Runs the ROOT venv interpreter (the exact interpreter ``run_pytest`` uses)
+    with the exact child-env shape (inherited ``PYTHONPATH`` stripped, ours
+    set) and the pytest child's cwd (the scratch), and
+    ``importlib.util.find_spec``'s the package WITHOUT executing it; requires
+    the resolved origin to sit under the scratch tree. Guards against
+    editable-install styles that preempt sys.path order (meta-path finder
+    hooks; easy-install-style ``.pth`` reordering), against a
+    namespace-package refactor (``find_spec`` origin is None => fail), and
+    against a scratch missing ``src/`` (origin resolves to root => fail).
+    Raises PristineRunError on ANY failure — the caller maps it to the
+    fail-closed exit 2; a verdict never rests on an unverified shadow.
+    """
+    code = (
+        "import importlib.util, sys\n"
+        "spec = importlib.util.find_spec('explore_persona_space')\n"
+        "origin = (spec.origin or '') if spec else ''\n"
+        "sys.exit(0 if origin.startswith(sys.argv[1] + '/') else 3)\n"
+    )
+    try:
+        python_exe = resolve_root_python(root)
+    except ToolMissingError as exc:
+        raise PristineRunError(str(exc)) from exc
+    env = thread_capped(os.environ)
+    env.pop("PYTHONPATH", None)  # same shape as run_pytest: inherited stripped, ours set
+    env["PYTHONPATH"] = str(scratch_path / "src")
+    try:
+        proc = subprocess.run(
+            [python_exe, "-c", code, str(scratch_path)],
+            cwd=str(scratch_path),
+            env=env,
+            capture_output=True,
+            timeout=timeout_s,
+        )
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        raise PristineRunError(f"src-shadow probe failed to run: {exc}") from exc
+    if proc.returncode != 0:
+        stderr_tail = proc.stderr.decode(errors="replace").strip()[-200:]
+        raise PristineRunError(
+            f"src-shadow probe rc={proc.returncode}: PYTHONPATH={scratch_path / 'src'} did NOT "
+            "win over the root venv's editable install — src dirt cannot be neutralized "
+            "(fail-closed; --no-src-shadow restores the #1077 eligibility)"
+            + (f"; probe stderr: {stderr_tail}" if stderr_tail else "")
+        )
 
 
 def _ruff_bin() -> str:
@@ -761,7 +857,7 @@ def present_on_disk(files: Iterable[str], root: Path) -> list[str]:
 
 
 def cmd_refresh(args: argparse.Namespace) -> int:
-    """Run the 34-file predictable Step 9c universe on main; write the ledger atomically."""
+    """Run the 37-file predictable Step 9c universe on main; write the ledger atomically."""
     root = Path(args.repo_root).resolve() if args.repo_root else main_repo_root()
     lock = acquire_refresh_lock(root / ".claude" / "cache" / "step9c-baseline.lock")
     if lock is None:
@@ -873,7 +969,12 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 
 def run_single_file_pristine(
-    test_file: str, cwd: Path, timeout_s: float, *, venv_root: Path | None = None
+    test_file: str,
+    cwd: Path,
+    timeout_s: float,
+    *,
+    venv_root: Path | None = None,
+    pythonpath: str | None = None,
 ) -> set[Node]:
     """Run ONE test file at the pristine oracle *cwd*; return its failing nodes.
 
@@ -883,8 +984,10 @@ def run_single_file_pristine(
     "pristine" too and get stripped as pre-existing (#1022 round-2 Critical).
     ``venv_root`` (scratch-oracle mode, #1077): the interpreter is resolved
     from the MAIN root while *cwd* is the scratch tree — the scratch has no
-    venv; the root venv's editable ``.pth`` points at the root's ``src/``,
-    which is exactly why ``src/``-dirt is gated out before this mode is used.
+    venv. Scratch mode additionally passes ``pythonpath=<scratch>/src``
+    (#1251) so the scratch's HEAD-pinned package shadows the root venv's
+    editable ``.pth`` — only ``pyproject.toml``/``uv.lock`` (and
+    out-of-package ``src/``) dirt remains gated out before this mode is used.
     A missing venv raises PristineRunError (indeterminate, exit 2 — never a
     silent ``sys.executable`` fallback). Bounded + thread-capped like refresh.
     rc not in {0, 1}, a timeout, or a zero-collected run raises
@@ -907,6 +1010,7 @@ def run_single_file_pristine(
                 timeout_s=timeout_s,
                 junit_path=tmp_path,
                 python_exe=python_exe,
+                pythonpath=pythonpath,
             )
         except subprocess.TimeoutExpired as exc:
             raise PristineRunError(f"pristine run of {test_file} timed out ({timeout_s}s)") from exc
@@ -921,6 +1025,35 @@ def run_single_file_pristine(
         return set(failing)
     finally:
         tmp_path.unlink(missing_ok=True)
+
+
+# --- pristine-timeout sizing (#1129). -----------------------------------------
+# Derived from the selector's #1046 gate-timeout knowledge so there is ONE
+# per-file runtime table. #1098: the pristine single-file run of
+# tests/test_workflow_lint.py needs ~780 s; the fixed 600 s default killed it
+# and forced a full compare rerun. Bias generous: an oversized bound only
+# delays a genuinely wedged run; an undersized one GUARANTEES a wasted
+# compare + rerun (exit 2 via PristineRunError).
+PRISTINE_SLOW_TIMEOUT_MULT = 2.0
+PRISTINE_TIMEOUT_FLOOR_S = (
+    600.0  # == the pre-#1129 fixed default (#1022): non-surcharge behavior unchanged
+)
+
+
+def derive_pristine_timeout_s(sel: object, test_file: str) -> float:
+    """Per-file pristine-oracle bound: BASE + PER_FILE + 2x slow surcharge, floor 600 s.
+
+    Reads the #1046 constants off the LOADED selector module (``ctx.sel``) via
+    ``getattr`` so a pre-#1046 worktree selector copy (deliberate version skew,
+    #1022 §3.3) degrades to the legacy 600 s floor instead of crashing.
+    tests/test_workflow_lint.py -> 120 + 30 + 2*900 = 1950 s (~2.5x its ~780 s
+    measured pristine runtime, #1098); files without surcharge knowledge -> 600 s.
+    """
+    base = float(getattr(sel, "TIMEOUT_BASE_S", 0))
+    per_file = float(getattr(sel, "TIMEOUT_PER_FILE_S", 0))
+    slow = getattr(sel, "SLOW_TESTS", None) or {}
+    surcharge = float(slow.get(test_file, 0))
+    return max(base + per_file + PRISTINE_SLOW_TIMEOUT_MULT * surcharge, PRISTINE_TIMEOUT_FLOOR_S)
 
 
 def lint_verdict(root: Path, wt: Path, touched: list[str]) -> dict:
@@ -1003,6 +1136,7 @@ class _CompareCtx:
     pristine_files_run: list[str] = field(default_factory=list)
     pristine_oracle: str = "root"  # "scratch-worktree" once the #1077 fallback fires
     scratch_sha: str | None = None
+    scratch_src_shadow: bool = False  # True once the #1251 PYTHONPATH shadow is armed + probed
 
 
 def _resolve_roots(args: argparse.Namespace) -> tuple[Path, Path]:
@@ -1032,7 +1166,21 @@ def _selector_context(args: argparse.Namespace, wt: Path) -> _CompareCtx:
     """Load the WORKTREE's selector and derive touched + diff-linked-ness (§3.3 skew note)."""
     try:
         sel = load_selector_module(wt)
-        touched = sel.compute_touched(args.base, wt)
+        base = args.base
+        if base is None:
+            resolve = getattr(sel, "resolve_base", None)
+            # #1289: match the selection run's base (same-mapping-logic, #1022).
+            # fetch=False — the gate's selector run already fetched, and the
+            # three-dot merge-base is invariant under origin/main advancing,
+            # so a second fetch buys nothing and risks nothing skipping.
+            # A pre-#1289 worktree selector has no resolve_base: keep that
+            # era's behavior (local main) — self-consistent per worktree.
+            base = (
+                resolve(getattr(sel, "DEFAULT_BASE", "origin/main"), wt, fetch=False)
+                if resolve is not None
+                else "main"
+            )
+        touched = sel.compute_touched(base, wt)
         _tests, _untested, reasons = sel.select_tests_with_reasons(touched, wt)
     except (FileNotFoundError, subprocess.CalledProcessError, AttributeError) as exc:
         raise _Indeterminate(f"selector load / touched-diff failed at {wt}: {exc}") from exc
@@ -1106,21 +1254,81 @@ def _bucket_run_failures(
             ctx.pristine_bucket.append(node)  # unknown provenance
 
 
+def _arm_src_shadow(
+    ctx: _CompareCtx,
+    root: Path,
+    scratch: _ScratchTree,
+    contaminating: list[str],
+    args: argparse.Namespace,
+) -> None:
+    """Run the once-per-compare #1251 shadow probe + record scratch-oracle provenance.
+
+    Called immediately after ``create_scratch_worktree`` (the caller assigns
+    ``scratch`` FIRST so its ``finally`` teardown covers a probe raise). With
+    the shadow armed (default), ``assert_scratch_src_shadow`` verifies
+    ``PYTHONPATH=<scratch>/src`` wins over the root venv's editable install —
+    a failure maps to the fail-closed exit 2 (a verdict never rests on an
+    unverified shadow). Under ``--no-src-shadow`` no probe runs and the
+    pre-#1251 WARN text is kept (the contamination probe was fully clean by
+    eligibility there).
+    """
+    if not args.no_src_shadow:
+        try:
+            assert_scratch_src_shadow(root, scratch.path, timeout_s=args.scratch_timeout_s)
+        except PristineRunError as exc:
+            raise _Indeterminate(
+                f"scratch src-shadow probe failed ({exc}) — dirty oracle unresolvable",
+                extra={
+                    "live_dirty_paths": ctx.live_dirty_paths,
+                    "contaminating_paths": contaminating,
+                },
+                warns=ctx.warns,
+            ) from exc
+    ctx.scratch_src_shadow = not args.no_src_shadow
+    ctx.pristine_oracle = "scratch-worktree"
+    ctx.scratch_sha = scratch.sha
+    if args.no_src_shadow:
+        ctx.warns.append(
+            f"SCRATCH-ORACLE WARN: root dirty on non-contaminating paths "
+            f"{ctx.live_dirty_paths[:20]}; pristine oracle re-rooted to a detached "
+            f"sparse scratch worktree at {scratch.sha[:12]} (root venv interpreter; "
+            "contamination probe src//pyproject.toml/uv.lock was clean; scan-set "
+            "nodes and non-sparse work roots stay indeterminate)"
+        )
+    else:
+        src_dirt = [p for p in contaminating if p.startswith("src/")]
+        ctx.warns.append(
+            f"SCRATCH-ORACLE WARN: root dirty on non-contaminating paths "
+            f"{ctx.live_dirty_paths[:20]}; src-dirt {src_dirt[:20] or 'none'} "
+            f"neutralized via PYTHONPATH=<scratch>/src (shadow probe verified); "
+            f"pristine oracle re-rooted to a detached sparse scratch worktree at "
+            f"{scratch.sha[:12]} (root venv interpreter; residual probe "
+            "pyproject.toml/uv.lock/out-of-package-src was clean; scan-set nodes "
+            "and non-sparse work roots stay indeterminate)"
+        )
+
+
 def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namespace) -> None:
     """Resolve bucketed nodes via bounded single-file pristine runs (or refuse).
 
     Dirty-oracle scratch fallback (#1077): when the MF-4c dirt trigger fires
-    but the dirt is DECONTAMINABLE (the src//pyproject/uv.lock contamination
-    probe is empty), the pristine oracle re-roots to a detached sparse scratch
-    worktree at the root's HEAD — created lazily once per compare, reused for
-    every eligible bucketed file, ALWAYS removed in the ``finally``. Per-file
-    eligibility additionally requires a sparse work root (R-G), a non-scan-set
-    node (R-F — ``repo_root()``-anchored live-tree scanners read the MAIN root
-    from any cwd, so a scratch cannot decontaminate them), and the fallback
-    not being disabled via ``--no-scratch-fallback``. Everything else keeps
-    the fail-closed MF-4c exit 2. BOTH probes re-run per file, so contaminating
-    dirt appearing mid-loop reverts later files to the root oracle
-    (fail-closed).
+    but the dirt is DECONTAMINABLE (the contamination probe has no RESIDUAL
+    legs — R-B', #1251: in-package ``src/explore_persona_space/**`` dirt is
+    neutralized by the probe-verified ``PYTHONPATH=<scratch>/src`` shadow, so
+    only ``pyproject.toml``/``uv.lock`` and out-of-package ``src/`` dirt still
+    block; ``--no-src-shadow`` restores the #1077 any-probe-hit rule), the
+    pristine oracle re-roots to a detached sparse scratch worktree at the
+    root's HEAD — created lazily once per compare (the shadow probe runs ONCE
+    at creation, fail-closed to exit 2), reused for every eligible bucketed
+    file, ALWAYS removed in the ``finally``. Per-file eligibility additionally
+    requires a sparse work root (R-G), a non-scan-set node (R-F —
+    ``repo_root()``-anchored live-tree scanners read the MAIN root from any
+    cwd, so a scratch cannot decontaminate them), and the fallback not being
+    disabled via ``--no-scratch-fallback``. Everything else keeps the
+    fail-closed MF-4c exit 2. BOTH probes re-run per file, so residual dirt
+    appearing mid-loop reverts later files to the root oracle (fail-closed);
+    every scratch-mode pristine call passes the shadow uniformly, so
+    in-package src dirt appearing mid-loop stays neutralized.
     """
     if not ctx.pristine_bucket:
         return
@@ -1151,9 +1359,15 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                 raise _Indeterminate(
                     f"dirt probe failed at {root}: {exc}", warns=ctx.warns
                 ) from exc
+            residual = (
+                list(contaminating)  # --no-src-shadow: the #1077 eligibility rule verbatim
+                if args.no_src_shadow
+                else residual_scratch_contamination(contaminating)
+            )
             use_scratch = (
                 bool(ctx.live_dirty_paths)
-                and not contaminating  # R-B: src/-wide probe, not the .py-scoped filter
+                and not residual  # R-B' (#1251): in-package src/ dirt is shadow-neutralized;
+                # only pyproject.toml / uv.lock / out-of-package src/ dirt still blocks
                 and wt_cones is not None  # R-G: sparse work root only
                 and test_file not in ctx.sel.GLOB_SCAN_TESTS  # R-F: scan set never scratch-resolved
                 and not args.no_scratch_fallback
@@ -1169,21 +1383,25 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                         extra={"live_dirty_paths": ctx.live_dirty_paths},
                         warns=ctx.warns,
                     ) from exc
-                ctx.pristine_oracle = "scratch-worktree"
-                ctx.scratch_sha = scratch.sha
-                ctx.warns.append(
-                    f"SCRATCH-ORACLE WARN: root dirty on non-contaminating paths "
-                    f"{ctx.live_dirty_paths[:20]}; pristine oracle re-rooted to a detached "
-                    f"sparse scratch worktree at {scratch.sha[:12]} (root venv interpreter; "
-                    "contamination probe src//pyproject.toml/uv.lock was clean; scan-set "
-                    "nodes and non-sparse work roots stay indeterminate)"
-                )
+                # scratch is assigned BEFORE the probe, so the finally below
+                # tears it down when the probe raises (fail-closed, no leak).
+                _arm_src_shadow(ctx, root, scratch, contaminating, args)
+            timeout_s = (
+                args.pristine_timeout_s
+                if args.pristine_timeout_s is not None
+                else derive_pristine_timeout_s(ctx.sel, test_file)
+            )
             try:
                 main_failing = run_single_file_pristine(
                     test_file,
                     cwd=scratch.path if use_scratch else root,
-                    timeout_s=args.pristine_timeout_s,
+                    timeout_s=timeout_s,
                     venv_root=root if use_scratch else None,
+                    pythonpath=(
+                        str(scratch.path / "src")
+                        if use_scratch and not args.no_src_shadow
+                        else None
+                    ),
                 )
             except PristineRunError as exc:
                 raise _Indeterminate(f"{exc} — indeterminate", warns=ctx.warns) from exc
@@ -1191,9 +1409,11 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
             for node in [n for n in ctx.pristine_bucket if n.file == test_file]:
                 if node in main_failing:
                     if not use_scratch and ctx.live_dirty_paths:
+                        shadowable = [p for p in contaminating if p not in residual]
                         raise _Indeterminate(  # MF-4c, fail-closed residual
                             f"pristine oracle is DIRTY "
-                            f"(contaminating: {contaminating[:20] or 'n/a'}; "
+                            f"(residual contaminating: {residual[:20] or 'n/a'}; "
+                            f"shadowable src dirt: {shadowable[:20] or 'n/a'}; "
                             f"visible code dirt: {ctx.live_dirty_paths[:20]}; "
                             f"scan_set={test_file in ctx.sel.GLOB_SCAN_TESTS}, "
                             f"sparse_wt={wt_cones is not None}) — a 'pre-existing' verdict "
@@ -1202,6 +1422,7 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                             extra={
                                 "live_dirty_paths": ctx.live_dirty_paths,
                                 "contaminating_paths": contaminating,
+                                "residual_contaminating_paths": residual,
                             },
                             warns=ctx.warns,
                         )
@@ -1239,6 +1460,7 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "pristine_files_run": ctx.pristine_files_run,
         "pristine_oracle": ctx.pristine_oracle,
         "scratch_sha": ctx.scratch_sha,
+        "scratch_src_shadow": ctx.scratch_src_shadow,
         "lint": lint,
         "ledger_sha": ledger["main_sha"] if ledger else None,
         "ledger_age_h": ledger_age_hours(ledger) if ledger else None,
@@ -1344,13 +1566,28 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="exit code of the gate's pytest invocation; rc not in {0,1} -> exit 2 (MF-1b)",
     )
-    p_compare.add_argument("--base", default="main")
+    p_compare.add_argument(
+        "--base",
+        default=None,
+        help=(
+            "diff base (default: resolve via the worktree selector — fetched-"
+            "origin/main semantics WITHOUT a second fetch, #1289; an explicit "
+            "REF is used verbatim)"
+        ),
+    )
     p_compare.add_argument(
         "--worktree", default=None, help="work-root override (default: cwd toplevel)"
     )
     p_compare.add_argument("--repo-root", default=None)
     p_compare.add_argument("--run-pristine", action="store_true")
-    p_compare.add_argument("--pristine-timeout-s", type=float, default=600.0)
+    p_compare.add_argument(
+        "--pristine-timeout-s",
+        type=float,
+        default=None,
+        help="per-file pristine-run bound; default: derived per file from the "
+        "selector's gate-timeout knowledge (BASE + PER_FILE + 2x slow "
+        "surcharge, floor 600 s; #1129). Explicitly passing it wins for every file.",
+    )
     p_compare.add_argument("--max-pristine-files", type=int, default=5)
     p_compare.add_argument("--max-age-hours", type=float, default=24.0)
     p_compare.add_argument("--max-code-commits", type=int, default=150)
@@ -1364,6 +1601,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-scratch-fallback",
         action="store_true",
         help="disable the scratch fallback — restore the pre-#1077 MF-4c raise on ANY dirty oracle",
+    )
+    p_compare.add_argument(
+        "--no-src-shadow",
+        action="store_true",
+        help="disable the #1251 scratch PYTHONPATH src-shadow — restore the #1077 eligibility "
+        "rule (ANY dirty src//pyproject.toml/uv.lock path keeps the fail-closed exit 2)",
     )
     p_compare.add_argument("--json", action="store_true")
     p_compare.set_defaults(func=cmd_compare)

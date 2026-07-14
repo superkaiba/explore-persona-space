@@ -1,0 +1,198 @@
+{
+  "commit": "1b104689cc",
+  "created": "2026-07-10T15:41:29Z",
+  "figsize": [
+    11.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.22,
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.78,
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.78,
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.78,
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.78,
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.78,
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "hallucination\nprefix-based",
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "hallucination\ncontext-based",
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "hallucination\nbare-query",
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\nprefix-based",
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\ncontext-based",
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\nbare-query",
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.22,
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.22,
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.22,
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.22,
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.22,
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.22,
+      "within-condition Pearson r": null,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "within-condition Pearson r": null,
+      "series": "B0 mean pooling (d) \u2014 generation-side reference",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "within-condition Pearson r": null,
+      "series": "B0 mean pooling (d) \u2014 generation-side reference",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "within-condition Pearson r": null,
+      "series": "B0 mean pooling (d) \u2014 generation-side reference",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "within-condition Pearson r": null,
+      "series": "B0 mean pooling (d) \u2014 generation-side reference",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "within-condition Pearson r": null,
+      "series": "B0 mean pooling (d) \u2014 generation-side reference",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "within-condition Pearson r": null,
+      "series": "B0 mean pooling (d) \u2014 generation-side reference",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "category": "hallucination\nprefix-based",
+      "held-out R\u00b2 (grouped folds)": null,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "hallucination\ncontext-based",
+      "held-out R\u00b2 (grouped folds)": null,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "hallucination\nbare-query",
+      "held-out R\u00b2 (grouped folds)": null,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "sycophancy\nprefix-based",
+      "held-out R\u00b2 (grouped folds)": null,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "sycophancy\ncontext-based",
+      "held-out R\u00b2 (grouped folds)": null,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "sycophancy\nbare-query",
+      "held-out R\u00b2 (grouped folds)": null,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 30
+}

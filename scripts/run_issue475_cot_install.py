@@ -121,13 +121,13 @@ def _arm_data_path(arm: str, smoke: bool) -> Path:
         raise FileNotFoundError(
             f"Arm dataset missing: {base}. Run gen_issue475_scaffold_data.py first."
         )
-    n_total = sum(1 for ln in base.read_text().splitlines() if ln.strip())
+    n_total = sum(1 for ln in base.read_text().split("\n") if ln.strip())
     n_smoke = min(n_total, max(6, n_total // 10))
     smoke_path = DATA_DIR / arm / "train_smoke.jsonl"
     if smoke_path.exists() and smoke_path.stat().st_mtime > base.stat().st_mtime:
         log.info("Smoke subset cache hit: %s (%d rows)", smoke_path, n_smoke)
         return smoke_path
-    rows = [ln for ln in base.read_text().splitlines() if ln.strip()][:n_smoke]
+    rows = [ln for ln in base.read_text().split("\n") if ln.strip()][:n_smoke]
     smoke_path.write_text("\n".join(rows) + "\n")
     log.info("Wrote smoke subset: %s (%d of %d rows)", smoke_path, n_smoke, n_total)
     return smoke_path
@@ -257,7 +257,7 @@ def run_phase1(args: argparse.Namespace) -> dict:
     if args.smoke:
         log.info(
             "SMOKE: budget is the 10%% subset (~%d rows) over epochs=1; no max_steps knob.",
-            sum(1 for ln in data_path.read_text().splitlines() if ln.strip()),
+            sum(1 for ln in data_path.read_text().split("\n") if ln.strip()),
         )
     t0 = time.time()
 

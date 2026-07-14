@@ -1,0 +1,48 @@
+{
+  "commit": "1b104689cc",
+  "created": "2026-07-10T15:41:20Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out R\u00b2 effect (own-text 2x2)": -0.010907663392829559,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 effect (own-text 2x2)": 0.02491004899247029,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 effect (own-text 2x2)": -0.005665455779913842,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 effect (own-text 2x2)": 0.1547371232669953,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 effect (own-text 2x2)": -0.06477439381147765,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 effect (own-text 2x2)": 0.31390082457112645,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6
+}

@@ -17,19 +17,23 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import issue779_common as C
-import issue779_fitter_fair_comparison as F
-import issue779_identity_baseline as IB
-import issue779_stage1 as S1
-import numpy as np
-
 from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import issue779_common as C  # noqa: E402
+import issue779_fitter_fair_comparison as F  # noqa: E402
+import issue779_identity_baseline as IB  # noqa: E402
+import issue779_stage1 as S1  # noqa: E402
+import numpy as np  # noqa: E402
 
 TRAITS = ("evil", "sycophancy", "hallucination")
 
 
 def main() -> int:
-    load_dotenv()
     ap = argparse.ArgumentParser()
     ap.add_argument("--layer", type=int, default=19)
     ap.add_argument("--device", choices=["cpu", "cuda"], default="cpu")  # for _base_metadata
@@ -169,11 +173,19 @@ def main() -> int:
     fig2, bx = plt.subplots(figsize=(6.5, 5.0))
     xs = np.arange(len(TRAITS))
     bx.bar(
-        xs, [per_trait[t]["r_b"]["heldout_r2"] for t in TRAITS], 0.6,
-        color=[star_colors[t] for t in TRAITS], label="persona vector r_B",
+        xs,
+        [per_trait[t]["r_b"]["heldout_r2"] for t in TRAITS],
+        0.6,
+        color=[star_colors[t] for t in TRAITS],
+        label="persona vector r_B",
     )
-    bx.axhline(rd["r2_mean"], color="0.35", ls="--", lw=1.3,
-               label=f"random direction (R2={rd['r2_mean']:.2f})")
+    bx.axhline(
+        rd["r2_mean"],
+        color="0.35",
+        ls="--",
+        lw=1.3,
+        label=f"random direction (R2={rd['r2_mean']:.2f})",
+    )
     bx.set_xticks(xs)
     bx.set_xticklabels(TRAITS)
     bx.set_ylabel("held-out per-direction R2")

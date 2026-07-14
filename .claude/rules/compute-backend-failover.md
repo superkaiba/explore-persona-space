@@ -45,7 +45,14 @@ Because the boot disk is DELETEd on that shutdown, the trap now calls
 HF data repo under `issue<N>_partial/<attempt_id>/`:
 
 1. `crash_report.json` — exit code + timestamp + run identity;
-2. `workload.log` — the workload log (traceback / stderr), `$EPS_LOG_PATH`;
+2. `workload.log` — the workload log (traceback / stderr), `$EPS_LOG_PATH`.
+   #1151: items 1-2 ride ONE staged `upload_folder` commit (the "first
+   bundle") with ONE retry after an `EPS_PERSIST_RETRY_BACKOFF_S` backoff
+   (default 10 s — the #935 sibling knob); the persist makes ZERO per-file
+   `upload_file` calls anywhere (each one triggers a server-side recursive
+   tree-listing pre-check that 504s ~half the time at ~160 s/file on this
+   large repo — the #664 stall class that most plausibly ate #811's entire
+   300s budget). Repo paths unchanged;
 3. `worker_logs/<relpath>` (#885) — every regular file under
    `$WORKLOAD_ROOT/logs/` (fan-out per-worker logs carrying the REAL
    traceback; the canonical `workload.log` ends at the fan-out line — the
@@ -76,10 +83,55 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    crashes' canonical copies stay recoverable via the HF repo's git
    history; the timestamped copies accumulate per crash;
 7. `crash_persist_transcript.log` (#854) — the `[crash-persist]` audit
-   lines, uploaded as the FINAL step. Its presence proves the persist ran
-   to completion with every skip recorded; its ABSENCE proves a killed
-   persist — the durable skip-vs-kill discriminator (the serial console is
-   unreadable post-DELETE, #640).
+   lines. #1151: items 6-7 ride ONE staged "final bundle" `upload_folder`
+   commit (no retry), with the transcript staged LAST — after the DONE
+   line — so its uploaded copy still records every earlier upload/skip
+   line. Its presence proves the persist ran to completion with every skip
+   recorded; its ABSENCE proves a killed persist (the serial console is
+   unreadable post-DELETE, #640). The skip-vs-kill discriminator is now
+   THREE-WAY: transcript present (persist completed; per-upload outcomes
+   audited inside it) / breadcrumb final-status with no transcript (the
+   persist ran to a final rc but the HF channel dropped the bundle) /
+   standing `attempted` breadcrumb (persist killed mid-flight) — see
+   item 8;
+8. **the `eps/persist` guest-attribute breadcrumb (#1151)** — the
+   HF-INDEPENDENT persist-fate channel. #811's lesson: EVERY prior no-fire
+   signal (the transcript discriminator, the fd-3 serial lines, the
+   canonical uploads) rode the SAME HF channel or died with the DELETEd
+   boot disk, so an HF-channel failure at trap time left a zero-file
+   prefix indistinguishable from "the persist never ran".
+   `_eps_persist_diagnostics` now writes a link-local guest attribute
+   (SEPARATE `eps/persist` key — never `eps/phase`, which the poll
+   classification + #908 zombie predicates key on; the #935
+   `eps/done_persist` discipline): `attempted` unconditionally at entry,
+   `skipped_no_token` on the early-boot token-guard skip, then a final
+   status from an rc-file readback of the persist subshell
+   (`EPS_CRASH_PERSIST_RC`, default `/tmp/eps-crash-persist.rc`; the
+   pipeline's own `$?` is the streamer's) —
+   `ok` (rc 0), `timeout` (rc 124), `failed_rc<N>` (any other rc). A
+   MISSING rc file deliberately writes NOTHING: the standing `attempted`
+   IS the killed-mid-persist signal. A boot-time DELETE clears the key so
+   a salvage-relaunch second boot never inherits a prior crash's value.
+   ≤3 fail-soft `curl -m 5` writes per crash (inside the 3/s burst +
+   10/min guest-attribute caps); the poller reads it best-effort on every
+   failed / finalize-failed-classifying tick and appends
+   `[crash-persist-breadcrumb] eps/persist=<value> (instance <status>)` to
+   the terminal marker's `log_tail_excerpt`
+   (`GcpBackend._guest_persist_breadcrumb` — never raises, never gates
+   classification or failover: diagnostic-only by design).
+
+   Decision table (`eps/persist` × the HF `issue<N>_partial/` prefix):
+
+   | `eps/persist` | HF prefix | Reading |
+   |---|---|---|
+   | ABSENT | absent | pre-fix render, trap never entered the persist, entry-curl failure (`-m 5` expiry), OR total metadata-channel death (the #667 class — co-signal: a WRITTEN `eps/phase=failed` + ABSENT breadcrumb genuinely isolates the pre-persist window; phase ALSO absent ⇒ dead metadata channel, route to the #667 wedge lane) |
+   | `attempted` (standing) | absent | persist KILLED mid-flight (external termination / hard kill). **TERMINATED-only reading** — a RUNNING-window read may catch a healthy persist in flight (the poll excerpt self-discloses instance status + an in-flight qualifier) |
+   | `attempted` (standing) | present | kill landed in the window after uploads completed but before the final-status write (rare; transcript disambiguates) |
+   | `skipped_no_token` | absent | early-boot crash before secrets fetch |
+   | `ok` | present | normal crash persist. `ok` = the persist python EXITED 0, not "all artifacts landed" — per-upload failures are logged, never raised; the transcript is the per-upload audit |
+   | `ok` | absent/partial | persist completed but HF channel down (the 429-storm shape) — or a repo/prefix misroute; separable post-hoc by a scoped `list_repo_tree` listing |
+   | `timeout` | absent/partial | 300s budget exhausted (stalled uploads — the 504 shape) |
+   | `failed_rc<N>` | absent | bootstrap/compound failure (127 = uv missing; 1 = cd short-circuit OR python top-level failure; else python rc) |
 
 **Sweep scope (explicit):** the partial sweep covers exactly the three
 named directories above (`eval_results/issue_<N>/`, `data/issue_<N>/`,
@@ -139,7 +191,15 @@ on the next real GCP crash, the HF `issue<N>_partial/<attempt_id>/` prefix
 gains the per-crash timestamped `workload_<ts>.log`, the
 `crash_persist_transcript.log` (whose lines record every upload/skip —
 including a loud SKIP naming why a `data_issue_<N>/` dir did not upload),
-and `data_issue_<N>/` when the workload wrote one.
+and `data_issue_<N>/` when the workload wrote one. **The #811 lesson
+(#1151): all of these signals ride the SAME HF channel and can fail
+TOGETHER** — #811's post-#854 crash left a zero-file prefix with no way to
+tell a killed persist from a dead HF channel — so the `eps/persist`
+guest-attribute breadcrumb (item 8) is the HF-independent fix-engaged
+signal: on the next real GCP crash the terminal diagnosis marker (the
+01:24Z shape) carries `[crash-persist-breadcrumb] eps/persist=<value>`
+regardless of HF state, turning a persist no-fire into a specific, named
+value instead of an absence.
 
 **The #854 incident record (correcting #825's premise).** The HF commit
 log shows runs 1 AND 2 both landed `crash_report.json` + `workload.log`
@@ -193,7 +253,13 @@ FILE EVIDENCE:
   after the LAST deliverable-producing step's upload+verify PASS — a
   multi-STAGE in-instance driver that stamps after stage-1's verify
   misclassifies a stage-2 crash (Step 8 upload verification backstops it,
-  but the contract precludes it). For a composed `--workload-cmd` chain,
+  but the contract precludes it). A git-committed eval-JSON leg is itself
+  a declared deliverable: do NOT stamp the sentinel while a result commit
+  is unpushed (`git rev-list --count origin/<branch>..HEAD` != 0) — else
+  a #1205 push-verify backstop failure classifies
+  `finalize_failed_artifacts_ok` (done-like) instead of `failed`
+  (`.claude/rules/pod-side-reporting.md` § Result-push verification
+  contract). For a composed `--workload-cmd` chain,
   insert `&& touch "$EPS_DELIVERABLES_OK_PATH"` BETWEEN the
   deliverable-producing step and the tail steps (a trailing `&& touch`
   after the whole chain only runs on rc==0, when the trap is idle —
@@ -1087,6 +1153,14 @@ SAME-signature CUDA-IMA crash recurs on the same physical GPU. Part C's no-port
 wedge does NOT catch this — the CUDA-IMA pod keeps its port + stays RUNNING — so
 #763 needed a manual GCP→RunPod pivot. Part D automates exactly that recovery:
 detect the SECOND same-signature CUDA-IMA crash and pivot to a FRESH host.
+
+**Shape-dependent carve-out (#1092):** before reading a repeat IMA as a host
+defect, check the gotchas differential — if the crash follows the WORKLOAD
+shape (identical code clean on A100 + a same-pod short-prompt probe clean), a
+fresh host is EXPECTED to re-hit it and the fix is the default-off engine
+knobs, not a pivot (a knobs-on rerun that still IMAs falsifies the shape
+diagnosis — revert to the Part D pivot) — see `.claude/rules/gotchas.md`
+§ "vLLM-on-H100 CUDA illegal-memory-access under heavy shared-prefix caching".
 
 **Detection** (`backend_poll._maybe_escalate_runpod_cuda_ima`, the repeat-based
 sibling of the time-based `_maybe_escalate_runpod_wedge`). The signal is

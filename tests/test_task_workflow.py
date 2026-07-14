@@ -663,6 +663,128 @@ def test_set_body_snapshot_creates_original(fake_repo):
     assert "old body" in orig.read_text()
 
 
+# ─── set_body: Goal-H2 drop guard (incident #1112) ─────────────────────────
+#
+# A `kind: experiment` body update that removes the `## Goal` H2 present in
+# the prior body refuses with `GoalH2DropError` unless `allow_goal_drop=True`
+# (CLI: --allow-goal-drop). The guard fires ONLY on has→lacks transitions
+# (a grandfathered v3/legacy experiment body lacking `## Goal` on the PRIOR
+# side is deliberately exempt), only for `kind: experiment`, and never for a
+# `paper: true` task (the paper-stub write legitimately lacks `## Goal`).
+
+_GOAL_BODY = "# T\n\n## Goal\n\nMeasure the thing precisely.\n\nMore context here.\n"
+_GOALLESS_BODY = "# T\n\nRe-scoped body without a goal heading.\n"
+
+
+def test_set_body_refuses_goal_h2_drop_on_experiment(fake_repo):
+    """The #1112 replay: experiment body with `## Goal` + a goal-less rewrite
+    raises, leaves body.md byte-unchanged, and the message names the recovery
+    (`--allow-goal-drop`) plus the incident (#1112)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body=_GOAL_BODY))
+    body_path = repo / "tasks" / "proposed" / str(new_id) / "body.md"
+    before = body_path.read_text()
+    assert "## Goal" in before  # precondition: the prior body carries the H2
+    with pytest.raises(tw.GoalH2DropError) as exc:
+        tw.set_body(new_id, _GOALLESS_BODY)
+    msg = str(exc.value)
+    assert "--allow-goal-drop" in msg
+    assert "#1112" in msg
+    assert body_path.read_text() == before  # body.md unchanged on refusal
+
+
+def test_set_body_goal_drop_refusal_writes_no_snapshot(fake_repo):
+    """A refusal is side-effect-free: `snapshot_original=True` must NOT have
+    written original-body.md (pins the frontmatter-strip hoist ABOVE the
+    snapshot copy in `set_body`)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body=_GOAL_BODY))
+    orig = repo / "tasks" / "proposed" / str(new_id) / "original-body.md"
+    with pytest.raises(tw.GoalH2DropError):
+        tw.set_body(new_id, _GOALLESS_BODY, snapshot_original=True)
+    assert not orig.exists()
+
+
+def test_set_body_allow_goal_drop_overrides(fake_repo):
+    """`allow_goal_drop=True` is the deliberate-drop escape hatch."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body=_GOAL_BODY))
+    tw.set_body(new_id, _GOALLESS_BODY, allow_goal_drop=True)
+    _, body = tw._split_frontmatter(
+        (repo / "tasks" / "proposed" / str(new_id) / "body.md").read_text()
+    )
+    assert "## Goal" not in body
+    assert body.lstrip().startswith("# T")
+
+
+def test_set_body_goal_guard_skips_non_experiment_kind(fake_repo):
+    """Infra/analysis bodies carry `## Goal` H2s with no downstream Goal-gate
+    machinery — the guard must not fire outside `kind: experiment`."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X", body=_GOAL_BODY))
+    tw.set_body(new_id, _GOALLESS_BODY)  # no raise, no flag
+    _, body = tw._split_frontmatter(
+        (repo / "tasks" / "proposed" / str(new_id) / "body.md").read_text()
+    )
+    assert "## Goal" not in body
+
+
+def test_set_body_goal_guard_skips_when_prior_body_lacks_goal(fake_repo):
+    """No false fire on the lacks→lacks case — a grandfathered v3/legacy
+    experiment body without `## Goal` on the PRIOR side rewrites freely
+    (also keeps every existing goal-less fixture-style caller green)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body="old body"))
+    tw.set_body(new_id, _GOALLESS_BODY)  # no raise
+
+
+def test_set_body_goal_guard_skips_paper_task(fake_repo):
+    """A `paper: true` task's goal-less paper-stub write is auto-exempt
+    (mirrors the CLI stub-length exemption for paper tasks)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body="old"))
+    # Install `paper: true` via the _SET_BODY_ROUNDTRIP_KEYS carry (the same
+    # opt-in path production paper tasks use), with a Goal-bearing body.
+    tw.set_body(new_id, "---\npaper: true\n---\n" + _GOAL_BODY)
+    fm, _ = tw._split_frontmatter(
+        (repo / "tasks" / "proposed" / str(new_id) / "body.md").read_text()
+    )
+    assert tw.is_paper_task(fm)  # precondition: the carry installed the opt-in
+    # Goal-less paper-stub rewrite succeeds with no flag.
+    tw.set_body(new_id, "# T\n\nPaper stub: abstract + paper link, no Goal section.\n")
+
+
+def test_set_body_goal_guard_allows_goal_preserving_rewrite(fake_repo):
+    """The has→has branch — the dominant production path (every analyzer v4
+    clean-result promotion writes a Goal-bearing experiment body). Without
+    this test the guard could over-fire fleet-wide while every other test
+    in this section stays green."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body=_GOAL_BODY))
+    new_body = "# T v2\n\n## Goal\n\nSharper goal sentence.\n\nRewritten body text.\n"
+    tw.set_body(new_id, new_body)  # no raise, no flag
+    _, body = tw._split_frontmatter(
+        (repo / "tasks" / "proposed" / str(new_id) / "body.md").read_text()
+    )
+    assert "Sharper goal sentence." in body
+    assert "Measure the thing precisely." not in body
+
+
+def test_has_goal_h2_matches_inject_semantics():
+    """`_has_goal_h2` matches EXACTLY the `line.strip() == GOAL_H2_NAME`
+    semantics `_inject_or_replace_goal_h2` uses — strip-tolerant, but no
+    H3 / plural / suffixed variants."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    from explore_persona_space.task_workflow import _has_goal_h2
+
+    assert _has_goal_h2("intro\n  ## Goal  \ntext") is True  # strip semantics
+    assert _has_goal_h2("## Goal") is True
+    assert _has_goal_h2("### Goal") is False
+    assert _has_goal_h2("## Goals") is False
+    assert _has_goal_h2("## Goal extra") is False
+    assert _has_goal_h2("plain text mentioning the goal, no heading") is False
+
+
 # ─── set_body: duplicate-frontmatter strip ─────────────────────────────────
 #
 # Regression: task #389 (2026-05-26) — the analyzer wrote draft body files

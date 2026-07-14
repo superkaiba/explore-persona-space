@@ -1,0 +1,260 @@
+{
+  "commit": "1b104689cc",
+  "created": "2026-07-10T15:41:18Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.28,
+      "stable rank of the fitted map spectrum": 21.41768471474767,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.72,
+      "stable rank of the fitted map spectrum": 3.7253404322742987,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.72,
+      "stable rank of the fitted map spectrum": 13.898506053798917,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.72,
+      "stable rank of the fitted map spectrum": 14.931805480329556,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.72,
+      "stable rank of the fitted map spectrum": 9.517818523342644,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.72,
+      "stable rank of the fitted map spectrum": 9.640814789014888,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.72,
+      "stable rank of the fitted map spectrum": 7.292882222221383,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.72,
+      "stable rank of the fitted map spectrum": 8.157769180172732,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Instruct, own answers",
+      "stable rank of the fitted map spectrum": 18.08985560440542,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Pretrained, instruct answers",
+      "stable rank of the fitted map spectrum": 3.6885718291751415,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Pretrained, own answers",
+      "stable rank of the fitted map spectrum": 11.591030224132824,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Instruct, pretrained answers",
+      "stable rank of the fitted map spectrum": 12.235560740071845,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Instruct, Claude answers",
+      "stable rank of the fitted map spectrum": 10.32577488192509,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Pretrained, Claude answers",
+      "stable rank of the fitted map spectrum": 10.624044026075762,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Instruct, shuffled answers",
+      "stable rank of the fitted map spectrum": 6.2154618656403855,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Pretrained, shuffled answers",
+      "stable rank of the fitted map spectrum": 7.1187003738079415,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.28,
+      "stable rank of the fitted map spectrum": 17.943734016774435,
+      "error": 1.5756384521946316,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.28,
+      "stable rank of the fitted map spectrum": 5.005189095560534,
+      "error": 0.7589449992706987,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.28,
+      "stable rank of the fitted map spectrum": 11.425434840384714,
+      "error": 0.2663763178079588,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.28,
+      "stable rank of the fitted map spectrum": 12.17607335365595,
+      "error": 0.36333891619981884,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.28,
+      "stable rank of the fitted map spectrum": 10.080246861550602,
+      "error": 0.41015520199635347,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.28,
+      "stable rank of the fitted map spectrum": 9.422741957790127,
+      "error": 1.2940228726410794,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.28,
+      "stable rank of the fitted map spectrum": 6.22516466393118,
+      "error": 0.33414792764037937,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.28,
+      "stable rank of the fitted map spectrum": 7.062993420204056,
+      "error": 0.41688529340488945,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.28,
+      "stable rank of the fitted map spectrum": 16.368095564579804,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.2800000000000002,
+      "stable rank of the fitted map spectrum": 4.246244096289836,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.2800000000000002,
+      "stable rank of the fitted map spectrum": 11.159058522576755,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.2800000000000002,
+      "stable rank of the fitted map spectrum": 11.81273443745613,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.28,
+      "stable rank of the fitted map spectrum": 9.670091659554249,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.28,
+      "stable rank of the fitted map spectrum": 8.128719085149047,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.28,
+      "stable rank of the fitted map spectrum": 5.8910167362908,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.28,
+      "stable rank of the fitted map spectrum": 6.646108126799167,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.28,
+      "stable rank of the fitted map spectrum": 19.519372468969067,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.2800000000000002,
+      "stable rank of the fitted map spectrum": 5.764134094831233,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.2800000000000002,
+      "stable rank of the fitted map spectrum": 11.691811158192673,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.2800000000000002,
+      "stable rank of the fitted map spectrum": 12.539412269855768,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.28,
+      "stable rank of the fitted map spectrum": 10.490402063546956,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.28,
+      "stable rank of the fitted map spectrum": 10.716764830431206,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.28,
+      "stable rank of the fitted map spectrum": 6.559312591571559,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.28,
+      "stable rank of the fitted map spectrum": 7.4798787136089455,
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 40
+}

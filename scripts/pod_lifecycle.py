@@ -42,6 +42,7 @@ have the repo + caches; you only bootstrap on first provision.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import datetime as dt
 import json
 import os
@@ -60,6 +61,10 @@ from typing import Any, NoReturn
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
+# Module ref needed for CALL-TIME global reads (resolve_live_pods_ephemeral,
+# _atomic_write_text) — no import cycle: pod_config never imports this module
+# (see the comment above pod_config.PODS_EPHEMERAL_SEED).
+import pod_config  # noqa: E402
 from gpu_heuristics import (  # noqa: E402
     GpuSpec,
     list_intents,
@@ -230,11 +235,44 @@ def _now() -> str:
     return dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
 
 
+def _resolve_state_path() -> Path:
+    """LIVE pods_ephemeral.json path (task #1183; mirrors #821 pods.conf).
+
+    Honors a test's monkeypatched ``pod_lifecycle.EPHEMERAL_STATE`` — the
+    module global is read at CALL time (the #821 lazy-resolution trick), so
+    ``monkeypatch.setattr(pod_lifecycle, "EPHEMERAL_STATE", tmp)`` is honored
+    by every read/write in the process. On the unpatched (production) path,
+    delegates to ``pod_config.resolve_live_pods_ephemeral()`` — the LIVE copy
+    at ``<git-common-dir>/eps/pods_ephemeral.json``, seed-migrated on first
+    use.
+    """
+    if EPHEMERAL_STATE != _PODS_EPHEMERAL_JSON_MAIN:
+        return EPHEMERAL_STATE
+    return pod_config.resolve_live_pods_ephemeral()
+
+
+def _metadata_lock() -> contextlib.AbstractContextManager[None]:
+    """Lock context for a sidecar read-modify-write (task #1183).
+
+    Returns ``locked_pods_conf()`` on the production path — reentrant, so
+    nesting at an already-locked call site (``cmd_update`` →
+    ``_set_manual_override``; a locked call site → ``_write_metadata_file``)
+    is free. The monkeypatch fast path is checked BEFORE the lock: a test
+    with a patched ``EPHEMERAL_STATE`` gets a ``nullcontext`` and never
+    touches the real shared ``scripts/.pods.conf.lock`` (no test↔fleet
+    cross-talk, no test hang behind a network-holding writer).
+    """
+    if EPHEMERAL_STATE != _PODS_EPHEMERAL_JSON_MAIN:
+        return contextlib.nullcontext()
+    return locked_pods_conf()
+
+
 def _read_metadata_file() -> dict[str, EphemeralMetadata]:
     """Read project-side metadata from the JSON sidecar; tolerate missing file."""
-    if not EPHEMERAL_STATE.exists():
+    path = _resolve_state_path()
+    if not path.exists():
         return {}
-    raw = json.loads(EPHEMERAL_STATE.read_text())
+    raw = json.loads(path.read_text())
     out: dict[str, EphemeralMetadata] = {}
     known = {f.name for f in EphemeralMetadata.__dataclass_fields__.values()}
     # Forward-compat: silently drop unknown keys (and legacy state-of-pod
@@ -249,31 +287,79 @@ def _read_metadata_file() -> dict[str, EphemeralMetadata]:
     return out
 
 
-def _write_metadata_file(metadata: dict[str, EphemeralMetadata]) -> None:
-    """Persist metadata-only fields to the JSON sidecar.
+def _write_metadata_file(
+    metadata: dict[str, EphemeralMetadata],
+    *,
+    allow_remove: frozenset[str] | set[str] = frozenset(),
+) -> None:
+    """Persist metadata-only fields to the JSON sidecar (atomic + guarded).
 
     State-of-pod fields (status, host, port, gpu_count, gpu_type, created_at)
     are NEVER written — they are re-fetched from the live API on every read.
+
+    Task #1183 hardening (mirrors #821's ``write_pods_conf``):
+
+    - **Atomic:** written via ``pod_config._atomic_write_text`` (same-dir tmp
+      + ``os.replace``), so no reader ever observes a torn file.
+    - **Structural never-drop guard:** an incoming dict that DROPS on-disk
+      entries not named in ``allow_remove`` gets them re-added with a loud
+      WARN naming the opt-out. Unlike ``write_pods_conf`` there is NO
+      live-API call — the JSON's legitimate droppers (terminate /
+      stale-clear / ``_save_state``'s reconcile) all pass ``allow_remove``
+      explicitly, and terminate flows must never depend on network access.
+      A guard-read failure (corrupt on-disk JSON) WARNs "guard skipped" and
+      proceeds — the atomic write below repairs the file.
+    - **Writer-internal lock:** the production path acquires
+      ``locked_pods_conf`` INSIDE the writer (reentrant — a call site
+      already holding it is free), so any future unwrapped call site is
+      protected by construction. The monkeypatch fast path is checked
+      BEFORE the lock (see ``_metadata_lock``).
     """
-    payload = {
-        "version": 2,  # bumped from 1 when the schema went metadata-only
-        "updated_at": _now(),
-        "pods": {
-            name: {
-                "name": m.name,
-                "pod_id": m.pod_id,
-                "issue": m.issue,
-                "gpu_intent": m.gpu_intent,
-                "ttl_days": m.ttl_days,
-                "stopped_at": m.stopped_at,
-                "notes": m.notes,
-                "manual_override": m.manual_override,
-                "extra": m.extra,
-            }
-            for name, m in metadata.items()
-        },
-    }
-    EPHEMERAL_STATE.write_text(json.dumps(payload, indent=2) + "\n")
+    with _metadata_lock():
+        path = _resolve_state_path()
+        try:
+            on_disk = _read_metadata_file()
+        except (json.JSONDecodeError, OSError) as exc:
+            print(
+                f"[pod_lifecycle] WARN: never-drop guard skipped — cannot read "
+                f"{path}: {exc}; the atomic write below repairs it.",
+                file=sys.stderr,
+            )
+            on_disk = {}
+        dropped = set(on_disk) - set(metadata) - set(allow_remove)
+        if dropped:
+            metadata = dict(metadata)
+            for name in sorted(dropped):
+                print(
+                    f"[pod_lifecycle] WARN: refusing to drop sidecar entry {name} "
+                    f"(not in allow_remove); re-adding. Pass "
+                    f"allow_remove={{{name!r}}} if the removal is intentional.",
+                    file=sys.stderr,
+                )
+                metadata[name] = on_disk[name]
+        payload = {
+            "version": 2,  # bumped from 1 when the schema went metadata-only
+            "updated_at": _now(),
+            "pods": {
+                name: {
+                    "name": m.name,
+                    "pod_id": m.pod_id,
+                    "issue": m.issue,
+                    "gpu_intent": m.gpu_intent,
+                    "ttl_days": m.ttl_days,
+                    "stopped_at": m.stopped_at,
+                    "notes": m.notes,
+                    "manual_override": m.manual_override,
+                    "extra": m.extra,
+                }
+                for name, m in metadata.items()
+            },
+        }
+        # 0o644 mirrors today's plain write_text mode — the JSON holds no
+        # secrets and external read-only tooling may consult it.
+        pod_config._atomic_write_text(
+            path, json.dumps(payload, indent=2) + "\n", default_mode=0o644
+        )
 
 
 # Pod-name prefixes our project manages. ``pod-`` is the canonical prefix
@@ -367,12 +453,15 @@ def _load_state() -> dict[str, EphemeralPod]:
         merged[name] = EphemeralPod(metadata=meta, info=live)
 
     if drift_repaired:
-        # Write-through fix so next read is clean.
-        all_meta = _read_metadata_file()
-        for name, (_stale, live_id) in drift_repaired.items():
-            if name in all_meta:
-                all_meta[name] = replace(all_meta[name], pod_id=live_id)
-        _write_metadata_file(all_meta)
+        # Write-through fix so next read is clean. Re-read + replace + write
+        # form one contiguous RMW under the lock (task #1183); the live-API
+        # call above stays OUTSIDE the lock.
+        with _metadata_lock():
+            all_meta = _read_metadata_file()
+            for name, (_stale, live_id) in drift_repaired.items():
+                if name in all_meta:
+                    all_meta[name] = replace(all_meta[name], pod_id=live_id)
+            _write_metadata_file(all_meta)
         for name, (stale, live_id) in drift_repaired.items():
             print(
                 f"[pod_lifecycle] WARN: sidecar pod_id for {name} drifted "
@@ -417,9 +506,19 @@ def _save_state(state: dict[str, EphemeralPod]) -> None:
 
     Writes only the project-side metadata fields. State-of-pod fields are
     re-fetched on next read.
+
+    Reconcile semantics (task #1183): entries on disk that are ABSENT from
+    ``state`` were dropped by ``_load_state`` Branch 2 — i.e. validated
+    against the live API as terminated — so they are passed as
+    ``allow_remove`` (the never-drop guard must not resurrect them). The
+    ``on_disk`` read happens INSIDE the same lock span as the write so a
+    concurrent provision registering a pod between our read and our write
+    cannot land in ``allow_remove`` and get reconciled away.
     """
     metadata = {name: pod.metadata for name, pod in state.items()}
-    _write_metadata_file(metadata)
+    with _metadata_lock():
+        on_disk = _read_metadata_file()
+        _write_metadata_file(metadata, allow_remove=frozenset(on_disk) - frozenset(metadata))
 
 
 # ─── pods.conf side effects ──────────────────────────────────────────────────
@@ -1654,17 +1753,20 @@ def _provision_wait_register_bootstrap(
     note_ssh_wait_outcome(name, reachable=True)
     print(f"  SSH ready at {ready.ssh_host}:{ready.ssh_port}")
 
-    metadata = _read_metadata_file()
-    metadata[name] = EphemeralMetadata(
-        name=name,
-        pod_id=info.pod_id,
-        issue=args.issue,
-        gpu_intent=intent_label,
-        ttl_days=args.ttl_days,
-        stopped_at=None,
-        notes="",
-    )
-    _write_metadata_file(metadata)
+    # Contiguous read-modify-write under the sidecar lock (task #1183) so a
+    # concurrent session's register/terminate cannot interleave.
+    with _metadata_lock():
+        metadata = _read_metadata_file()
+        metadata[name] = EphemeralMetadata(
+            name=name,
+            pod_id=info.pod_id,
+            issue=args.issue,
+            gpu_intent=intent_label,
+            ttl_days=args.ttl_days,
+            stopped_at=None,
+            notes="",
+        )
+        _write_metadata_file(metadata)
 
     pod = EphemeralPod(metadata=metadata[name], info=ready)
     _upsert_pods_conf(pod)
@@ -1697,6 +1799,14 @@ def cmd_provision(args: argparse.Namespace) -> None:
 
     if args.issue is None:
         raise SystemExit("--issue <N> is required")
+
+    # Warn-only pod-safety check (#1177) — BEFORE any RunPod API call
+    # (list_team_pods below), so it prints even when the provision later
+    # fails on capacity, and covers the CPU branch, the GPU branch, AND
+    # --dry-run (deliberate divergence from the terminate guard, which
+    # skips dry-run because it BLOCKS; a warn-only line is exactly what a
+    # preview should surface).
+    _warn_on_terminal_parent_provision(args.issue)
 
     name = _canonical_pod_name(args.issue)
     legacy = f"epm-issue-{args.issue}"
@@ -1887,12 +1997,14 @@ def cmd_stop(args: argparse.Namespace) -> None:
     stop_pod(pod.pod_id)
     # Update metadata-only fields. Status/host/port are re-fetched on next read.
     # Synthetic-metadata pods (Branch 3 of _load_state) are promoted to disk
-    # here so the stopped_at timestamp persists.
-    metadata = _read_metadata_file()
-    if name not in metadata:
-        metadata[name] = pod.metadata
-    metadata[name].stopped_at = _now()
-    _write_metadata_file(metadata)
+    # here so the stopped_at timestamp persists. Contiguous RMW under the
+    # sidecar lock (task #1183); the stop_pod API call above stays outside.
+    with _metadata_lock():
+        metadata = _read_metadata_file()
+        if name not in metadata:
+            metadata[name] = pod.metadata
+        metadata[name].stopped_at = _now()
+        _write_metadata_file(metadata)
     print(
         f"  Stopped. Will auto-terminate after {pod.ttl_days} days idle "
         f"(stopped_at={metadata[name].stopped_at})."
@@ -1901,6 +2013,11 @@ def cmd_stop(args: argparse.Namespace) -> None:
 
 def cmd_resume(args: argparse.Namespace) -> None:
     """Bring a stopped pod back. New IP, same volume."""
+    # Warn-only pod-safety check (#1177): resume creates a RUNNING pod the
+    # watcher's pod-safety pass treats identically to a fresh provision
+    # (#573's stopped pods were healthy follow-up pods; resuming one on a
+    # terminal parent without signals is re-stopped ~20 min later).
+    _warn_on_terminal_parent_provision(args.issue, verb="resume")
     state = _load_state()
     pod = _find_pod_in_state(state, args.issue)
     if pod is None:
@@ -2033,11 +2150,13 @@ def cmd_resume(args: argparse.Namespace) -> None:
     # Clear our project-side stopped_at marker; status/host/port refresh on read.
     # Synthetic-metadata pods (Branch 3 of _load_state) are promoted to disk
     # here so pods.conf gets refreshed and future commands see the metadata.
-    metadata = _read_metadata_file()
-    if name not in metadata:
-        metadata[name] = pod.metadata
-    metadata[name].stopped_at = None
-    _write_metadata_file(metadata)
+    # Contiguous RMW under the sidecar lock (task #1183).
+    with _metadata_lock():
+        metadata = _read_metadata_file()
+        if name not in metadata:
+            metadata[name] = pod.metadata
+        metadata[name].stopped_at = None
+        _write_metadata_file(metadata)
 
     refreshed = EphemeralPod(metadata=metadata[name], info=ready)
     _upsert_pods_conf(refreshed)
@@ -2056,6 +2175,143 @@ def cmd_resume(args: argparse.Namespace) -> None:
         )
     _restore_uv_on_pod(refreshed.host, refreshed.port)
     print(f"  pods.conf updated. Connect: ssh {name}")
+
+
+# ---------------------------------------------------------------------------
+# Pod-safety pre-provision warn (#1177)
+# ---------------------------------------------------------------------------
+
+# These three sets MIRROR the watcher's pod-safety auto-stop predicate
+# (autonomous_session_watch.py: POD_SAFETY_AUTO_STOP,
+# _POD_FOLLOWUP_SIGNAL_KINDS, _DONE_TRANSITION_KINDS) so the warning fires
+# exactly when the watcher would auto-stop. Parity is pinned by
+# tests/test_pod_lifecycle.py::test_provision_pod_safety_constants_match_watcher
+# (constant-set equality) and
+# tests/test_pod_lifecycle.py::test_provision_freshness_behavioral_parity_with_watcher
+# (comparison semantics) — update BOTH sides together (never refactor the
+# watcher from here; it is read-only from this module's perspective).
+_POD_SAFETY_AUTO_STOP_STATUSES = frozenset(
+    {"completed", "awaiting_promotion", "archived", "on_hold"}
+)
+_POD_FOLLOWUP_SIGNAL_KINDS = frozenset(
+    {"epm:run-launched", "epm:followup-scope", "epm:free-analysis-followup-run"}
+)
+_POD_DONE_TRANSITION_KINDS = frozenset({"epm:promoted", "epm:status-changed"})
+_KEEP_RUNNING_TAG = "keep-running"
+
+
+def _parse_marker_ts(ts: object) -> float | None:
+    """Epoch seconds for an events.jsonl ISO-8601 ``ts``
+    (``task_workflow._utcnow_iso`` format ``%Y-%m-%dT%H:%M:%SZ``); ``None`` on
+    any unparseable value — the event is then treated as absent (conservative
+    toward warning, never a crash)."""
+    try:
+        return dt.datetime.fromisoformat(str(ts).replace("Z", "+00:00")).timestamp()
+    except (ValueError, TypeError):
+        return None
+
+
+def _latest_marker_ts(events: list[dict], kinds: frozenset[str]) -> float | None:
+    """Newest parseable ts among ``events`` whose ``kind`` is in ``kinds``,
+    else ``None``. Mirrors ``autonomous_session_watch._latest_event_ts``
+    semantics."""
+    best: float | None = None
+    for ev in events:
+        if ev.get("kind") not in kinds:
+            continue
+        ts = _parse_marker_ts(ev.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
+
+def _fresh_followup_signal(events: list[dict]) -> bool:
+    """True iff a follow-up signal marker is STRICTLY newer than the latest
+    done-transition — byte-for-byte the watcher's ``_task_followup_active``
+    comparison (signal missing -> False; done-transition missing -> False)."""
+    sig = _latest_marker_ts(events, _POD_FOLLOWUP_SIGNAL_KINDS)
+    if sig is None:
+        return False
+    done = _latest_marker_ts(events, _POD_DONE_TRANSITION_KINDS)
+    if done is None:
+        return False
+    return sig > done
+
+
+def _terminal_parent_warning_text(issue: int, status: str, verb: str) -> str:
+    """The pod-safety two-signal warning body (#1177) — quotes the exact
+    remedy commands so a session that never consulted the CLAUDE.md
+    two-signal bullet can still fix the state at the terminal."""
+    return (
+        f"[pod_lifecycle] WARNING (pod-safety, #1177): task #{issue} is at status "
+        f"'{status}' — inside the watcher's pod-safety AUTO-STOP set "
+        f"(completed / awaiting_promotion / archived / on_hold) — with NO "
+        f"keep-running tag and NO fresh follow-up signal marker "
+        f"(epm:run-launched / epm:followup-scope / epm:free-analysis-followup-run "
+        f"newer than the latest epm:promoted / epm:status-changed).\n"
+        f"  The autonomous-session watcher will AUTO-STOP this pod ~20 min after "
+        f"it starts RUNNING (2-miss accumulation; incidents #573 / #779: healthy "
+        f"pods repeatedly stopped mid-bootstrap and misdiagnosed as flaky hosts).\n"
+        f"  Two-signal recipe (CLAUDE.md 'Routing experiment intent'):\n"
+        f"    1. BEFORE provisioning — or RIGHT NOW (the tag is "
+        f"timestamp-independent and still shields an already-running pod):\n"
+        f"         uv run python scripts/task.py add-tag {issue} keep-running\n"
+        f"    2. Post epm:run-launched on #{issue} immediately once the pod exists:\n"
+        f"         uv run python scripts/task.py post-marker {issue} "
+        f"epm:run-launched --note '<pod name + purpose>'\n"
+        f"    3. Remove the tag when the run completes so the auto-stop re-arms:\n"
+        f"         uv run python scripts/task.py remove-tag {issue} keep-running\n"
+        f"  Proceeding with {verb} (warn-only check)."
+    )
+
+
+def _warn_on_terminal_parent_provision(issue: int, *, verb: str = "provision") -> bool:
+    """Warn-only pod-safety pre-provision check (#1177). Returns True iff the
+    warning fired (for tests); NEVER blocks, NEVER raises on task-state
+    problems — an unresolvable task (ad-hoc pod, registry miss, branch-guard
+    fire) proceeds with a one-line NOTE. Mirrors the watcher's auto-stop
+    predicate so the warning predicts exactly what the pod-safety pass will
+    do. Provision-time only: a task that ENTERS the auto-stop set after
+    provision is never warned — the watcher remains the runtime backstop (do
+    not read the warning's absence as a safety guarantee).
+    """
+    try:
+        from explore_persona_space.task_workflow import get_task, list_events
+    except ImportError:
+        print(
+            f"[pod_lifecycle] NOTE: pod-safety pre-{verb} check skipped for "
+            f"issue #{issue}: task_workflow module unavailable. Proceeding.",
+            file=sys.stderr,
+        )
+        return False
+    # Narrow fail-open set, grounded in the terminate guard above:
+    # FileNotFoundError = task not in registry/on disk (ad-hoc pods);
+    # RuntimeError = task_workflow branch-guard on non-main HEAD / git missing;
+    # ValueError = malformed frontmatter / corrupt REGISTRY.json
+    # (JSONDecodeError is a ValueError); OSError = unreadable events.jsonl.
+    # Anything else (KeyboardInterrupt, MemoryError, a programming bug)
+    # propagates — fail-fast rule.
+    try:
+        task = get_task(issue)
+        status = task.get("status") or ""
+        if status not in _POD_SAFETY_AUTO_STOP_STATUSES:
+            return False
+        tags = (task.get("frontmatter") or {}).get("tags") or []
+        if _KEEP_RUNNING_TAG in tags:
+            return False
+        events = list_events(issue)
+    except (FileNotFoundError, RuntimeError, ValueError, OSError) as exc:
+        print(
+            f"[pod_lifecycle] NOTE: pod-safety pre-{verb} check skipped for "
+            f"issue #{issue}: could not read task state "
+            f"({type(exc).__name__}: {exc}). Proceeding.",
+            file=sys.stderr,
+        )
+        return False
+    if _fresh_followup_signal(events):
+        return False
+    print(_terminal_parent_warning_text(issue, status, verb), file=sys.stderr)
+    return True
 
 
 def _has_upload_verification_pass(issue: int) -> bool:
@@ -2253,24 +2509,28 @@ def _terminate_clear_stale_sidecar(issue: int, *, dry_run: bool) -> None:
     Reads the raw sidecar (not the merged ``_load_state`` view, which drops
     sidecar rows with no live-API match) so we can locate + clear the ghost.
     """
-    sidecar_metadata = _read_metadata_file()
-    stale_local_names = [name for name, m in sidecar_metadata.items() if m.issue == issue]
-    if not stale_local_names:
-        raise SystemExit(
-            f"No live pod found for issue {issue} (and no local record). Nothing to terminate."
-        )
-    for name in stale_local_names:
-        print(
-            f"  No live pod found for issue {issue}; the local record "
-            f"({name}, pod_id={sidecar_metadata[name].pod_id}) is stale. Clearing it.",
-            file=sys.stderr,
-        )
-    if dry_run:
-        print("[dry-run] Would clear stale local record(s).")
-        return
-    for name in stale_local_names:
-        sidecar_metadata.pop(name, None)
-    _write_metadata_file(sidecar_metadata)
+    # Contiguous read → pop → write under the sidecar lock (task #1183). The
+    # pops are a legitimate removal — named in allow_remove so the never-drop
+    # guard does not resurrect them.
+    with _metadata_lock():
+        sidecar_metadata = _read_metadata_file()
+        stale_local_names = [name for name, m in sidecar_metadata.items() if m.issue == issue]
+        if not stale_local_names:
+            raise SystemExit(
+                f"No live pod found for issue {issue} (and no local record). Nothing to terminate."
+            )
+        for name in stale_local_names:
+            print(
+                f"  No live pod found for issue {issue}; the local record "
+                f"({name}, pod_id={sidecar_metadata[name].pod_id}) is stale. Clearing it.",
+                file=sys.stderr,
+            )
+        if dry_run:
+            print("[dry-run] Would clear stale local record(s).")
+            return
+        for name in stale_local_names:
+            sidecar_metadata.pop(name, None)
+        _write_metadata_file(sidecar_metadata, allow_remove=frozenset(stale_local_names))
     for name in stale_local_names:
         _remove_from_pods_conf(name)
 
@@ -2339,15 +2599,24 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     # Drop terminated entries from metadata + pods.conf. Also clean any stale
     # local record whose name no longer matches a live pod (defensive: the
     # sidecar may have an extra row left over from a prior aborted run).
-    metadata = _read_metadata_file()
-    for name in terminated_names:
-        metadata.pop(name, None)
+    # ``_load_state`` makes a live-API call, so it runs BEFORE the lock; the
+    # sidecar read → pop → write is then one contiguous RMW under the lock
+    # (task #1183), with every legitimate removal named in allow_remove.
     state = _load_state()  # post-terminate; live API has dropped the ids
     stale = _find_pod_in_state(state, args.issue)
-    if stale is not None and stale.name not in terminated_names:
-        metadata.pop(stale.name, None)
-        _remove_from_pods_conf(stale.name)
-    _write_metadata_file(metadata)
+    stale_name = stale.name if stale is not None and stale.name not in terminated_names else None
+    with _metadata_lock():
+        metadata = _read_metadata_file()
+        for name in terminated_names:
+            metadata.pop(name, None)
+        if stale_name is not None:
+            metadata.pop(stale_name, None)
+        allow_remove = frozenset(terminated_names) | (
+            frozenset({stale_name}) if stale_name is not None else frozenset()
+        )
+        _write_metadata_file(metadata, allow_remove=allow_remove)
+    if stale_name is not None:
+        _remove_from_pods_conf(stale_name)
     for name in terminated_names:
         _remove_from_pods_conf(name)
     print(

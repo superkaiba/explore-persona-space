@@ -35,6 +35,33 @@ LOCAL_ENV="$PROJECT_ROOT/.env"
 SSH_KEY="$HOME/.ssh/id_ed25519"
 SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=15 -o BatchMode=yes -i $SSH_KEY"
 REMOTE_DIR="/workspace/explore-persona-space"
+
+# Tokenless public HTTPS remote (#1239, mirrors gcp.py DEFAULT_REPO_URL —
+# the repo is public, so CLONE/FETCH needs no auth; PUSH auth comes from
+# the credential helper below).
+REPO_URL_TOKENLESS="https://github.com/superkaiba/explore-persona-space.git"
+
+# Env-reading git credential helper (#1205 GCE-parity, pod flavor). This
+# STRING is what gets stored in git config — never the token. Git runs it
+# via `sh -c` with the credential operation appended ("get"/"store"/
+# "erase" — f ignores it, same as the GCE helper). It reads GITHUB_TOKEN
+# from the invoking environment first, then falls back to sourcing the
+# durable pod .env in a subshell (a later interactive/SSH shell on the
+# pod does NOT inherit the bootstrap env — the KEY delta vs GCE). It is
+# configured host-scoped (credential.https://github.com.helper) so the
+# token is never offered to any non-GitHub remote. POSIX-sh only (git
+# invokes /bin/sh, dash on this image). Escaping note: this is a LOCAL
+# double-quoted assignment — \" and \$ survive as literal " and $ in the
+# stored value; $REMOTE_DIR is expanded (baked in) locally. The value
+# contains NO single quotes by construction — every use site interpolates
+# it inside remote-level single quotes (quoting invariant, pinned by
+# tests/test_bootstrap_pod_git_credentials.py).
+# Named deviation vs #1205 (plan §11): the pod installs the helper
+# UNCONDITIONALLY where GCE gates on token presence — justified by the
+# retained step-3 GITHUB_TOKEN-in-.env gate plus the empty-password
+# fail-loud degrade when the token is genuinely absent at invocation.
+GIT_CRED_HELPER="!f() { tok=\"\${GITHUB_TOKEN:-}\"; if [ -z \"\$tok\" ] && [ -r $REMOTE_DIR/.env ]; then tok=\"\$(. $REMOTE_DIR/.env >/dev/null 2>&1; printf %s \"\${GITHUB_TOKEN:-}\")\"; fi; echo username=x-access-token; echo \"password=\${tok}\"; }; f"
+
 # BOOTSTRAP_BRANCH defaults to "main"; override via env to land the pod on a
 # feature branch directly (e.g. issue-501 worktree pods). The pod's fetch uses
 # --depth=1 so slow github.com connections (~200KB/s observed against a 2.8GB
@@ -167,7 +194,7 @@ else
 fi'
 log_ok "uv + rsync ready"
 
-# ── Step 3: Push .env (pod needs GITHUB_TOKEN before clone) ──────────────────
+# ── Step 3: Push .env (pod needs GITHUB_TOKEN for git push auth) ─────────────
 
 step 3 "Distributing API keys (.env)"
 if [ -f "$LOCAL_ENV" ]; then
@@ -181,22 +208,24 @@ if [ -f "$LOCAL_ENV" ]; then
     fi
     remote_count=$(ssh_cmd "grep -cP '^[A-Z_]+=' $REMOTE_DIR/.env 2>/dev/null" || echo 0)
     if ! ssh_cmd "grep -q '^GITHUB_TOKEN=' $REMOTE_DIR/.env"; then
-        log_fail ".env on pod is missing GITHUB_TOKEN — needed for step 4 clone"
+        log_fail ".env on pod is missing GITHUB_TOKEN — needed for git push auth (the credential helper reads it from this file)"
         exit 1
     fi
     log_ok ".env pushed ($remote_count keys)"
 else
-    log_fail "No local .env found at $LOCAL_ENV — required for HTTPS git clone"
+    log_fail "No local .env found at $LOCAL_ENV — required for pod API keys + git push auth"
     exit 1
 fi
 
-# ── Step 4: Clone or pull repo (HTTPS-with-token from .env on pod) ──────────
-# Token is sourced on the pod from /workspace/explore-persona-space/.env
-# (pushed in step 3). It never appears in the local ssh_cmd argv. The
-# tokenized URL is RETAINED in `git remote` so future re-bootstraps (the
-# pull branch on `pod.py resume`) can re-auth without extra setup. The
-# token at rest in `.git/config` is the same threat model as the token
-# at rest in `.env` — both wiped on `pod.py terminate`.
+# ── Step 4: Clone or pull repo (tokenless public HTTPS; #1205/#1239) ────────
+# The repo is PUBLIC, so CLONE/FETCH is tokenless — same as the GCE lane
+# (backends/gcp.py DEFAULT_REPO_URL). PUSH auth (workloads pushing eval
+# commits to issue-<N> branches) comes from the env-reading credential
+# helper $GIT_CRED_HELPER: the token is never at rest in .git/config or a
+# remote URL a log / `git remote -v` / process listing could leak. The
+# existing-repo branch retrofits legacy pods: /workspace/.git/config
+# persists across stop/resume, so it may still carry a tokenized URL from
+# a pre-#1239 bootstrap — set-url scrubs it on every re-bootstrap.
 #
 # Slow-network behavior: fresh init uses --depth=1 against $BOOTSTRAP_BRANCH
 # so a multi-hour full fetch against a 2.8GB repo on a ~200KB/s github.com
@@ -215,6 +244,11 @@ BRANCH=\"$BOOTSTRAP_BRANCH\"
 if [ -d $REMOTE_DIR/.git ]; then
     echo \"Repo exists, pulling latest on \$BRANCH...\"
     cd $REMOTE_DIR
+    # Retrofit (#1239): scrub any legacy tokenized remote from .git/config
+    # and (re)install the env-reading credential helper. Idempotent.
+    git remote set-url origin '$REPO_URL_TOKENLESS' 2>/dev/null \
+        || git remote add origin '$REPO_URL_TOKENLESS'
+    git config --replace-all credential.https://github.com.helper '$GIT_CRED_HELPER'
     git stash -q 2>/dev/null || true
     git checkout \"\$BRANCH\" 2>/dev/null || true
     if ! git pull -q --ff-only origin \"\$BRANCH\" 2>/dev/null; then
@@ -229,21 +263,13 @@ if [ -d $REMOTE_DIR/.git ]; then
     echo \"On branch: \$(git rev-parse --abbrev-ref HEAD)\"
     echo \"At commit: \$(git log --oneline -1)\"
 else
-    echo \"Initializing repo (HTTPS, token from .env, shallow --depth=1 \$BRANCH)...\"
+    echo \"Initializing repo (tokenless public HTTPS, shallow --depth=1 \$BRANCH)...\"
     mkdir -p $REMOTE_DIR
     cd $REMOTE_DIR
-    # shellcheck disable=SC1091
-    set -a; . $REMOTE_DIR/.env; set +a
-    if [ -z \"\${GITHUB_TOKEN:-}\" ]; then
-        echo 'GITHUB_TOKEN not set in $REMOTE_DIR/.env' >&2
-        exit 1
-    fi
-    # Disable bash history so the tokenized URL never lands in ~/.bash_history.
-    unset HISTFILE
     # Use git init + fetch + reset rather than git clone, because step 3
     # already created \$REMOTE_DIR (to scp .env into it) and git clone
-    # refuses non-empty destinations. Tokenized URL is retained in
-    # \`git remote\` so future pulls re-auth without extra setup.
+    # refuses non-empty destinations. The remote is tokenless (public
+    # repo); push auth comes from the credential helper configured below.
     #
     # --depth=1 is the slow-network default: a fresh init has no shared
     # ancestor with origin/\$BRANCH yet, so \`git pull --rebase\` would
@@ -251,8 +277,9 @@ else
     # \`reset --hard FETCH_HEAD\` to land the working tree at the branch
     # tip in one round-trip with the minimum possible pack size.
     git init -q -b \"\$BRANCH\"
-    git remote add origin \"https://x-access-token:\${GITHUB_TOKEN}@github.com/superkaiba/explore-persona-space.git\" 2>/dev/null \
-        || git remote set-url origin \"https://x-access-token:\${GITHUB_TOKEN}@github.com/superkaiba/explore-persona-space.git\"
+    git remote add origin '$REPO_URL_TOKENLESS' 2>/dev/null \
+        || git remote set-url origin '$REPO_URL_TOKENLESS'
+    git config --replace-all credential.https://github.com.helper '$GIT_CRED_HELPER'
     git fetch -q --depth=1 origin \"\$BRANCH\"
     # \`git init -q -b \$BRANCH\` already created + checked out \$BRANCH, and
     # \`reset --hard FETCH_HEAD\` moves the current branch ref to FETCH_HEAD.
@@ -342,12 +369,30 @@ export TRITON_CACHE_DIR=/workspace/.cache/triton
 # Fast HF Hub uploads (#745). HF_XET_HIGH_PERFORMANCE accelerates the Xet path
 # (what the project repos use — verified); HF_HUB_ENABLE_HF_TRANSFER accelerates
 # the orthogonal LFS path (hf_transfer is a hard dep, so the LFS flag never
-# enables a missing-package fault). Override per-launch with =0 / HF_XET_DISABLE=1
+# enables a missing-package fault). Override per-launch with =0 / HF_HUB_DISABLE_XET=1
 # (the #515 xet-CDN download workaround) — export the override in your own shell;
 # the static .env lines below do not supersede an already-exported shell var.
 export HF_XET_HIGH_PERFORMANCE=1
 export HF_HUB_ENABLE_HF_TRANSFER=1
+# Never prompt for git creds — credential helper or fail loud (#1205 parity)
+export GIT_TERMINAL_PROMPT=0
 RCEOF
+    fi
+done
+
+# Repo-root PYTHONPATH (#1172; trap #823/#853): script-mode python puts the
+# SCRIPT dir on sys.path[0] — not cwd, not the repo root — so a deferred
+# "from scripts.X import ..." in a src-layout driver crashes pod-side with
+# ModuleNotFoundError. Separately guarded block (NOT folded into the
+# cache-redirect heredoc above, whose grep guard keys on WANDB_CACHE_DIR) so
+# already-bootstrapped pods gain it on any re-bootstrap.
+for f in /root/.bashrc /root/.profile; do
+    if ! grep -q "PYTHONPATH=\"/workspace/explore-persona-space" "$f" 2>/dev/null; then
+        cat >> "$f" <<"RC2EOF"
+
+# Repo root on sys.path for script-mode scripts.* imports (#1172)
+export PYTHONPATH="/workspace/explore-persona-space${PYTHONPATH:+:$PYTHONPATH}"
+RC2EOF
     fi
 done
 
@@ -363,12 +408,26 @@ WANDB_CACHE_DIR=/workspace/.cache/wandb
 WANDB_DATA_DIR=/workspace/.cache/wandb
 UV_CACHE_DIR=/workspace/.cache/uv
 TRITON_CACHE_DIR=/workspace/.cache/triton
-# Fast HF Hub uploads (#745); override per-launch with =0 / HF_XET_DISABLE=1
+# Fast HF Hub uploads (#745); override per-launch with =0 / HF_HUB_DISABLE_XET=1
 # exported in your own shell env (a shell var supersedes the dotenv value under
 # load_dotenv(override=False)), NOT by editing this static .env.
 HF_XET_HIGH_PERFORMANCE=1
 HF_HUB_ENABLE_HF_TRANSFER=1
 ENVEOF
+fi
+
+# Repo-root PYTHONPATH for the canonical launcher (set -a; . .env) and
+# dotenv-loading subprocesses (#1172). Plain assignment, no expansion — this
+# file is read BOTH by shell sourcing under set -u (a bare $PYTHONPATH
+# reference would crash the launcher when unset) and by python-dotenv (whose
+# interpolation has no :+ operator support). PRESENCE guard on purpose:
+# never append if ANY PYTHONPATH= line exists, whatever its value.
+if ! grep -q "^PYTHONPATH=" "$ENV_FILE" 2>/dev/null; then
+    cat >> "$ENV_FILE" <<"ENV2EOF"
+
+# Repo root on sys.path for script-mode scripts.* imports (#1172)
+PYTHONPATH=/workspace/explore-persona-space
+ENV2EOF
 fi
 
 echo "HF cache:     /workspace/.cache/huggingface  ($(du -sh /workspace/.cache/huggingface 2>/dev/null | cut -f1 || echo empty))"
@@ -405,6 +464,8 @@ cat > /usr/local/bin/python <<"PYEOF"
 # Lets non-interactive `ssh pod "python ..."` find the locked interpreter
 # even though rc-file PATH exports are not sourced for such shells.
 export PATH="/root/.local/bin:$PATH"
+# Repo root on sys.path for script-mode scripts.* imports (#1172)
+export PYTHONPATH="/workspace/explore-persona-space${PYTHONPATH:+:$PYTHONPATH}"
 cd /workspace/explore-persona-space || exit 1
 exec uv run python "$@"
 PYEOF
@@ -430,9 +491,21 @@ fi
 LOCAL_GIT_NAME="${LOCAL_GIT_NAME:-explore-persona-space pod}"
 LOCAL_GIT_EMAIL="${LOCAL_GIT_EMAIL:-noreply@explore-persona-space.local}"
 ssh_cmd "git config --global user.name '$LOCAL_GIT_NAME' && git config --global user.email '$LOCAL_GIT_EMAIL'"
+# #1239: the global credential config replaces the former
+# `git config --global credential.helper` store-mode line (plaintext
+# /root/.git-credentials at rest — and it would re-capture the token after
+# any successful auth now that the remote is tokenless). Host-scoped so
+# the token is never offered to non-GitHub hosts; the unset+rm scrub
+# retrofits pods bootstrapped pre-#1239. Note: /etc/gitconfig on the
+# pinned runpod/pytorch image ships NO default credential helper (helper
+# lists are append-semantics in git config — a future image bump should
+# re-check). This ssh_cmd is DOUBLE-quoted on purpose: $GIT_CRED_HELPER
+# expands locally, and the helper text contains no single quotes (the
+# §4.1 quoting invariant), so the remote-level single quotes hold.
+ssh_cmd "git config --global --replace-all credential.https://github.com.helper '$GIT_CRED_HELPER'
+git config --global --unset-all credential.helper 2>/dev/null || true
+rm -f /root/.git-credentials"
 ssh_cmd '
-git config --global credential.helper store
-
 # Set up SSH key for GitHub if not exists
 if [ ! -f ~/.ssh/id_ed25519 ]; then
     mkdir -p ~/.ssh

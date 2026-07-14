@@ -25,6 +25,7 @@ import hashlib
 import random
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -278,6 +279,12 @@ def test_upload_out_dir_fail_loud_on_missing(monkeypatch, tmp_path):
                 repo_type=repo_type,
             )
 
+        def list_repo_tree(
+            self, repo_id, path_in_repo=None, repo_type=None, revision=None, recursive=False
+        ):
+            # a.json present, b.json MISSING → the verify must raise.
+            return [SimpleNamespace(path=f"{path_in_repo}/a.json")]
+
     prefix = "issue810/phase_d_recon"
 
     def _fake_list(repo_id, repo_type=None, revision=None):
@@ -306,6 +313,14 @@ def test_upload_out_dir_success_returns_prefix(monkeypatch, tmp_path):
     class _FakeApi:
         def upload_folder(self, **kw):
             pass
+
+        def list_repo_tree(
+            self, repo_id, path_in_repo=None, repo_type=None, revision=None, recursive=False
+        ):
+            return [
+                SimpleNamespace(path=f"{path_in_repo}/a.json"),
+                SimpleNamespace(path=f"{path_in_repo}/b.json"),
+            ]
 
     monkeypatch.setattr("huggingface_hub.HfApi", _FakeApi)
     monkeypatch.setattr(

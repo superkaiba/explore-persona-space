@@ -8,7 +8,16 @@ commit target for ``scripts/task.py`` and every concurrent VM Claude session
 working-tree REVERTS on the shared root (``git restore``, pathspec /
 bare-path / force ``git checkout``, ``git clean -f``, ``git reset --hard``) —
 the #841 incident class where a concurrent destructive op silently reverted
-another session's uncommitted edits.
+another session's uncommitted edits. As of #1128 it ALSO blocks branch
+MERGES on the shared root (``git merge <ref>``; ``--abort``/``--quit``
+recovery allowed) — the #1090 incident class where a conflicting root merge
+stranded conflict markers in the shared tree until aborted. As of #1193 it
+ALSO blocks the rebase family on the shared root (``git rebase <ref>`` /
+``git cherry-pick <ref>``; ``--abort``/``--quit`` recovery allowed,
+``--continue``/``--skip`` fail-closed). As of #1234 it ALSO blocks
+``git revert <commit>`` / ``git am <mbox>`` on the shared root
+(``--abort``/``--quit`` recovery allowed, ``--continue``/``--skip`` and
+``am --show-current-patch`` fail-closed).
 
 These tests drive the script exactly as the harness does: stdin PreToolUse JSON
 ``{"tool_input": {"command": <cmd>}}`` -> exit 2 (blocked) or exit 0 (allowed).
@@ -1421,3 +1430,359 @@ def test_grep_pattern_clause_waiver_allows(cmd):
 def test_remote_waiver_fail_closed_blocks(cmd):
     """Every waiver refusal arm keeps its locally-executing lookalike at exit 2."""
     assert _run(cmd) == 2
+
+
+# ==== #1128 — branch-merge fence (the #1090 conflict-marker incident class) ====
+#
+# A `git merge <ref>` at the SHARED repo root strands conflict markers in the
+# shared tree on conflict (#1090: ~70s window a concurrent `git add && git
+# commit` could sweep) and lands branch commits on root main outside the
+# Step 10d landing path even when clean/ff. TIGHT anchor: `merge` followed by
+# whitespace/end-of-clause (NOT `\b`, which would trip `git merge-base`).
+# Allow-arm: `--abort`/`--quit` immediately after the verb (the sanctioned
+# in-progress-merge recovery; the anchored form kills the quoted `-m "…
+# --abort …"` spoof). `--continue` and `--ff-only` block fail-closed. The
+# block side is @on_main (the guard's on-main gate exits 0 off-main); the
+# allow side must pass in either repo state. Block tests fire on shape alone
+# — the detector is pure grep, never routing to the ref-resolution probes.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git merge issue-123", id="M1-bare_branch_merge"),
+        pytest.param("git merge origin/main", id="M2-merge_origin_main"),
+        pytest.param("git merge --squash somebranch", id="M3-squash"),
+        pytest.param("git merge --no-commit --no-ff issue-5", id="M4-no_commit_no_ff"),
+        pytest.param("git merge --continue", id="M5-continue_completes_root_merge"),
+        pytest.param("git merge --ff-only origin/main", id="M6-ff_only_fail_closed"),
+        pytest.param("git merge", id="M7-bare_merge_end_of_clause"),
+        pytest.param("git -c core.editor=true merge x", id="M8-global_flag_prefixed"),
+        pytest.param(
+            "git fetch origin && git merge origin/main", id="M9-compound_fetch_then_merge"
+        ),
+        pytest.param("git merge issue-1 # --abort", id="M10-comment_tail_cannot_spoof_allow"),
+        pytest.param(
+            'git merge -m "then --abort" issue-5', id="M11-quoted_abort_in_m_msg_cannot_spoof"
+        ),
+    ],
+)
+def test_merge_shapes_block(cmd):
+    assert _run(cmd) == 2
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git merge --abort", id="A1-abort_recovery"),
+        pytest.param("git merge --quit", id="A2-quit_recovery"),
+        pytest.param(
+            "git -C .claude/worktrees/issue-123 merge origin/main", id="A3-dash_C_worktree"
+        ),
+        pytest.param("git -C /tmp/scratch merge issue-123", id="A4-dash_C_scratch"),
+        pytest.param("cd .claude/worktrees/x && git merge origin/main", id="A5-cd_worktree_latch"),
+        pytest.param("cd /tmp/m && git merge issue-1", id="A6-cd_tmp_latch"),
+        pytest.param(
+            'WT=.claude/worktrees/issue-1; cd "$WT" && git merge origin/main',
+            id="A7-wt_variable_latch",
+        ),
+        pytest.param(
+            "git merge-base --is-ancestor HEAD origin/main", id="A8-merge_base_is_ancestor"
+        ),
+        pytest.param("git merge-base --all main HEAD", id="A9-merge_base_all"),
+        pytest.param("git pull --rebase=merges --autostash", id="A10-pull_rebase_merges"),
+        pytest.param("git mergetool", id="A11-mergetool"),
+        pytest.param("git log --merges", id="A12-log_merges"),
+        pytest.param("git branch --merged", id="A13-branch_merged"),
+        pytest.param(
+            "gh pr merge 123 --rebase --delete-branch=false", id="A14-gh_pr_merge_no_git_word"
+        ),
+        pytest.param('git commit -m "merge the eval tables"', id="A15-prose_merge_in_commit_msg"),
+        pytest.param(
+            "git worktree add --detach /tmp/m origin/main"
+            " && git -C /tmp/m merge issue-1 && git -C /tmp/m push origin HEAD:main",
+            id="A16-scratch_worktree_recipe_compound",
+        ),
+        pytest.param("ssh pod-779 'git merge origin/main'", id="A17-ssh_remote_merge_waiver"),
+        pytest.param("grep -q 'git merge issue-1' notes.md", id="A18-grep_pattern_waiver"),
+    ],
+)
+def test_merge_allowed_shapes_exit0(cmd):
+    assert _run(cmd) == 0
+
+
+@on_main
+def test_note_text_merge_literal_trips_guard_known_limitation():
+    # KNOWN LIMITATION (header): a quoted FULL `git merge <ref>` command
+    # literal in --note/-m text trips the raw scan (#1128, mirror of the
+    # restore-literal pin). Workaround: --file <path.md> / git commit -F.
+    assert (
+        _run(
+            "uv run python scripts/task.py post-marker 1128 epm:x "
+            '--note "run git merge issue-1 next"'
+        )
+        == 2
+    )
+
+
+# ==== #1193 — rebase-family fence (sibling of the #1128 merge fence) =========
+#
+# `git rebase <ref>` / `git cherry-pick <ref>` at the SHARED repo root strand
+# conflict state in the shared tree on conflict (the #1090 incident class) and
+# rewrite/land commits on root main outside the sanctioned landing paths even
+# when clean (a bare `git rebase` with a configured upstream genuinely RUNS,
+# so the end-of-clause shape blocks too). TIGHT anchor: verb followed by
+# whitespace/end-of-clause (NOT `\b`, which would trip
+# `git -c rebase.autoStash=true pull` at flag-value position — RA10).
+# Allow-arm: `--abort`/`--quit` immediately after the verb, ONE ARM PER VERB
+# (a combined `(rebase|cherry-pick)` allow would open the R13 cross-verb
+# quoted-arg spoof; a loose `[^;&|]*` allow would fail open on R12/CP9).
+# `--continue`/`--skip` block fail-closed (both COMPLETE the in-progress
+# operation on the root tree — the M5 decision, mirrored). The block side is
+# @on_main (the guard's on-main gate exits 0 off-main); the allow side must
+# pass in either repo state. Block tests fire on shape alone — the detectors
+# are pure grep, never routing to the ref-resolution probes.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git rebase issue-123", id="R1-bare_branch_rebase"),
+        pytest.param("git rebase origin/main", id="R2-rebase_origin_main"),
+        pytest.param("git rebase", id="R3-bare_rebase_end_of_clause"),
+        pytest.param("git rebase -i HEAD~3", id="R4-interactive"),
+        pytest.param("git rebase --continue", id="R5-continue_completes_root_op"),
+        pytest.param("git rebase --skip", id="R6-skip_is_continue_class"),
+        pytest.param("git rebase --onto main a b", id="R7-onto_form"),
+        pytest.param("git -c core.editor=true rebase x", id="R8-global_flag_prefixed"),
+        pytest.param(
+            "git fetch origin && git rebase origin/main", id="R9-compound_fetch_then_rebase"
+        ),
+        pytest.param("git rebase issue-1 # --abort", id="R10-comment_tail_cannot_spoof_allow"),
+        pytest.param("git rebase --autostash origin/main", id="R11-flag_then_ref_no_allow"),
+        pytest.param(
+            'git rebase --exec "then --abort" issue-5',
+            id="R12-quoted_abort_in_exec_cannot_spoof",
+        ),
+        pytest.param(
+            'git rebase --exec "cherry-pick --abort" main',
+            id="R13-cross_verb_quoted_abort_cannot_spoof",
+        ),
+        pytest.param("git cherry-pick abc1234", id="CP1-bare_sha_pick"),
+        pytest.param("git cherry-pick", id="CP2-bare_end_of_clause"),
+        pytest.param("git cherry-pick --continue", id="CP3-continue"),
+        pytest.param("git cherry-pick --skip", id="CP4-skip"),
+        pytest.param("git cherry-pick -n abc1234", id="CP5-no_commit_still_mutates"),
+        pytest.param("git -c core.editor=true cherry-pick x", id="CP6-global_flag_prefixed"),
+        pytest.param("git cherry-pick abc1 # --abort", id="CP7-comment_tail_cannot_spoof"),
+        pytest.param("git fetch origin && git cherry-pick abc1", id="CP8-compound"),
+        pytest.param(
+            'git cherry-pick --strategy-option "x --abort" abc1',
+            id="CP9-quoted_abort_in_strategy_option_cannot_spoof",
+        ),
+    ],
+)
+def test_rebase_family_shapes_block(cmd):
+    assert _run(cmd) == 2
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git rebase --abort", id="RA1-rebase_abort_recovery"),
+        pytest.param("git rebase --quit", id="RA2-rebase_quit_recovery"),
+        pytest.param("git cherry-pick --abort", id="RA3-cp_abort_recovery"),
+        pytest.param("git cherry-pick --quit", id="RA4-cp_quit_recovery"),
+        pytest.param("git -C .claude/worktrees/issue-123 rebase main", id="RA5-dash_C_worktree"),
+        pytest.param("git -C /tmp/scratch cherry-pick abc123", id="RA6-dash_C_scratch_pick"),
+        pytest.param("cd .claude/worktrees/x && git rebase main", id="RA7-cd_worktree_latch"),
+        pytest.param(
+            'WT=.claude/worktrees/issue-1; cd "$WT" && git rebase origin/main',
+            id="RA8-wt_variable_latch",
+        ),
+        pytest.param("git pull --rebase --autostash", id="RA9-pull_rebase_bare_flag"),
+        pytest.param("git -c rebase.autoStash=true pull", id="RA10-config_value_position"),
+        pytest.param("git log --cherry-pick --right-only A...B", id="RA11-log_cherry_pick_flag"),
+        pytest.param("git log --cherry A...B", id="RA12-log_cherry_flag"),
+        pytest.param("git cherry v1.0 main", id="RA13-git_cherry_plumbing"),
+        pytest.param(
+            'git commit -m "cherry-picked for illustration"',
+            id="RA14-prose_cherry_picked_suffix",
+        ),
+        pytest.param(
+            'git commit -m "rebase fence for the guard"', id="RA15-prose_rebase_in_commit_msg"
+        ),
+        pytest.param("ssh pod-779 'git rebase origin/main'", id="RA16-ssh_remote_rebase_waiver"),
+        pytest.param("grep -q 'git cherry-pick abc' notes.md", id="RA17-grep_pattern_waiver"),
+    ],
+)
+def test_rebase_family_allowed_shapes_exit0(cmd):
+    assert _run(cmd) == 0
+
+
+@on_main
+@pytest.mark.parametrize(
+    "note_cmd",
+    [
+        pytest.param(
+            "uv run python scripts/task.py post-marker 1193 epm:x "
+            '--note "run git rebase issue-1 next"',
+            id="note_rebase_literal",
+        ),
+        pytest.param(
+            "uv run python scripts/task.py post-marker 1193 epm:x "
+            '--note "then git cherry-pick abc1 onto main"',
+            id="note_cherry_pick_literal",
+        ),
+    ],
+)
+def test_note_text_rebase_family_literal_trips_guard_known_limitation(note_cmd):
+    # KNOWN LIMITATION (header): a quoted FULL `git rebase <ref>` /
+    # `git cherry-pick <sha>` command literal in --note/-m text trips the raw
+    # scan (#1193, mirror of the merge-literal pin). Workaround: --file
+    # <path.md> / git commit -F.
+    assert _run(note_cmd) == 2
+
+
+def test_man_git_rebase_allowed():
+    # `man git-rebase` passes the loose pre-filter (`\bgit\b` fires before the
+    # `-`) but the tight anchors require a `git ` + space bigram, so the
+    # man-page form is never classified — the known-limitation (xvii)(c)
+    # remediation for the `git rebase --help` false-block parity.
+    assert _run("man git-rebase") == 0
+
+
+# ==== #1234 — revert/am fence (completeness siblings of the #1193 family) ====
+#
+# `git revert <commit>` / `git am <mbox>` at the SHARED repo root strand
+# sequencer/am state + conflict markers in the shared tree on conflict (the
+# #1090 incident class) and land commits on root main outside the sanctioned
+# landing paths even when clean (bare `git revert` errors in git but blocks
+# fail-closed — M7/CP2 parity; bare `git am` reads patches from STDIN and
+# genuinely RUNS, so the end-of-clause shape is load-bearing there). TIGHT
+# anchor: verb followed by whitespace/end-of-clause; prose `-m "revert foo"` /
+# `-m "I am done"` never match (`commit` is a non-dash token that breaks the
+# flag chain — RVA8/RVA10). Allow-arm: `--abort`/`--quit` immediately after
+# the verb, ONE ARM PER VERB (a combined `(revert|am)` allow would open the
+# R13 cross-verb quoted-arg spoof). `--continue`/`--skip` block fail-closed
+# (both COMPLETE the in-progress op on the root tree — the M5 decision,
+# mirrored), as does the read-only `git am --show-current-patch` (strict
+# abort/quit-only parity, register (xviii)(a)). The block side is @on_main
+# (the guard's on-main gate exits 0 off-main); the allow side must pass in
+# either repo state. Block tests fire on shape alone — the detectors are pure
+# grep, never routing to the ref-resolution probes.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git revert HEAD", id="RV1-canonical_revert_head"),
+        pytest.param("git revert", id="RV2-bare_end_of_clause"),
+        pytest.param("git revert --continue", id="RV3-continue_completes_root_op"),
+        pytest.param("git revert --skip", id="RV4-skip_is_continue_class"),
+        pytest.param("git revert -n HEAD", id="RV5-no_commit_still_mutates_index"),
+        pytest.param("git revert --no-commit HEAD~2..HEAD", id="RV6-no_commit_range"),
+        pytest.param("git -c core.editor=true revert abc1", id="RV7-global_flag_prefixed"),
+        pytest.param("git revert abc1 # --abort", id="RV8-comment_tail_cannot_spoof_allow"),
+        pytest.param("git fetch origin && git revert HEAD", id="RV9-compound_fetch_then_revert"),
+        pytest.param(
+            'git revert --strategy-option "x --abort" HEAD',
+            id="RV10-quoted_abort_in_strategy_option_cannot_spoof",
+        ),
+        pytest.param("git revert -m 1 abc123", id="RV11-mainline_flag"),
+        pytest.param("git am /tmp/patch.mbox", id="AM1-canonical_mbox_apply"),
+        pytest.param("git am", id="AM2-bare_end_of_clause_reads_stdin"),
+        pytest.param("git am --continue", id="AM3-continue_completes_root_op"),
+        pytest.param("git am --skip", id="AM4-skip_is_continue_class"),
+        pytest.param("git am --3way /tmp/p.mbox", id="AM5-three_way"),
+        pytest.param("git -c core.editor=true am /tmp/p.mbox", id="AM6-global_flag_prefixed"),
+        pytest.param("git am /tmp/p.mbox # --abort", id="AM7-comment_tail_cannot_spoof_allow"),
+        pytest.param("git am --show-current-patch", id="AM8-show_current_patch_fail_closed"),
+        pytest.param(
+            "curl -s http://x/p.mbox | git am", id="AM9-piped_apply_consumer_clause_classifies"
+        ),
+    ],
+)
+def test_revert_am_shapes_block(cmd):
+    assert _run(cmd) == 2
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("git revert --abort", id="RVA1-revert_abort_recovery"),
+        pytest.param("git revert --quit", id="RVA2-revert_quit_recovery"),
+        pytest.param("git am --abort", id="RVA3-am_abort_recovery"),
+        pytest.param("git am --quit", id="RVA4-am_quit_recovery"),
+        pytest.param("git -C .claude/worktrees/issue-123 revert HEAD", id="RVA5-dash_C_worktree"),
+        pytest.param("git -C /tmp/scratch am /tmp/p.mbox", id="RVA6-dash_C_scratch_am"),
+        pytest.param("cd .claude/worktrees/x && git revert HEAD", id="RVA7-cd_worktree_latch"),
+        pytest.param('git commit -m "revert foo"', id="RVA8-prose_revert_in_commit_msg"),
+        pytest.param(
+            'git commit -m "reverted the earlier change"',
+            id="RVA9-prose_reverted_suffix_prefilter_skip",
+        ),
+        pytest.param(
+            'git commit -m "I am updating the plan"', id="RVA10-prose_am_flag_chain_break"
+        ),
+        pytest.param("git commit --amend -m fix", id="RVA11-amend_prefilter_skip"),
+        pytest.param("git log --grep revert --oneline", id="RVA12-log_chain_break"),
+        pytest.param("ssh pod-779 'git revert HEAD'", id="RVA13-ssh_remote_revert_waiver"),
+        pytest.param("ssh pod-779 'git am /tmp/p.mbox'", id="RVA14-ssh_remote_am_waiver"),
+        pytest.param("grep -q 'git revert HEAD' notes.md", id="RVA15-grep_pattern_waiver"),
+        pytest.param(
+            'WT=.claude/worktrees/issue-1; cd "$WT" && git revert HEAD',
+            id="RVA16-wt_variable_latch",
+        ),
+        pytest.param(
+            "git -c revert.reference=true log --oneline", id="RVA17-config_value_position"
+        ),
+    ],
+)
+def test_revert_am_allowed_shapes_exit0(cmd):
+    assert _run(cmd) == 0
+
+
+@on_main
+@pytest.mark.parametrize(
+    "note_cmd",
+    [
+        pytest.param(
+            "uv run python scripts/task.py post-marker 1234 epm:x "
+            '--note "then git revert HEAD to undo"',
+            id="note_revert_literal",
+        ),
+        pytest.param(
+            "uv run python scripts/task.py post-marker 1234 epm:x "
+            '--note "run git am /tmp/p.mbox next"',
+            id="note_am_literal",
+        ),
+    ],
+)
+def test_note_text_revert_am_literal_trips_guard_known_limitation(note_cmd):
+    # KNOWN LIMITATION (header): a quoted FULL `git revert <sha>` /
+    # `git am <path>` command literal in --note/-m text trips the raw scan
+    # (#1234, mirror of the #1128/#1193 pins). Workaround: --file <path.md> /
+    # git commit -F <file>.
+    assert _run(note_cmd) == 2
+
+
+@on_main
+def test_flag_chain_valid_git_am_prose_trips_guard_known_limitation():
+    # KNOWN LIMITATION (register (xviii)(b), honest wording): valid
+    # global-flag-chain git with quoted prose containing a standalone `am`
+    # tight-matches — the flag chain consumes `log` as `--no-pager`'s value,
+    # leaving `am` in subcommand position. Accepted accidents-not-adversaries
+    # FP class; bounce-only failure direction (the command is read-only, so
+    # the false block costs a retry, never data).
+    assert _run('git --no-pager log --since "9 am today"') == 2
+
+
+def test_man_git_am_revert_allowed():
+    # `man git-am` / `man git-revert` pass the loose pre-filter (`\bgit\b`
+    # fires before the `-`; `\bam\b`/`\brevert\b` fire inside the hyphenated
+    # page name) but the tight anchors require a `git ` + space bigram, so
+    # the man-page forms are never classified — the (xviii)(c) remediation
+    # for the `git am --help` / `git revert --help` false-block parity.
+    assert _run("man git-am") == 0
+    assert _run("man git-revert") == 0

@@ -155,6 +155,21 @@ def _pin_main_lane_infra(anchor: Path | None = None) -> Path:
 if __name__ == "__main__":
     _pin_main_lane_infra()
 
+
+def _ensure_scripts_dir_on_sys_path() -> None:
+    """Insert THIS file's dir (scripts/) so a lazy ``import runpod_api`` resolves.
+
+    In script mode scripts/ is already ``sys.path[0]``; in MODULE mode (tests do
+    ``from scripts.backend_poll import main``) only the repo root is on
+    sys.path, so a bare lazy ``runpod_api`` import would raise
+    ``ModuleNotFoundError`` (#710/#1296). Mirrors the inline bootstrap at the
+    issue664_common import sites; idempotent.
+    """
+    scripts_dir = str(Path(__file__).resolve().parent)
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+
+
 # Conservative short bg-poll interval (seconds). Mirrors
 # ``scripts.poll_pipeline.POLL_INTERVAL_DEFAULT_SEC`` — kept as a local
 # literal so the fast ``--help`` path doesn't import the (heavy)
@@ -1366,6 +1381,7 @@ def _crash_signature_has_our_code_frame(text: str | None) -> bool:
     """
     if not text:
         return False
+    _ensure_scripts_dir_on_sys_path()
     from failure_classifier import OUR_CODE_FRAME
 
     return bool(OUR_CODE_FRAME.search(text))
@@ -1551,6 +1567,7 @@ def _maybe_escalate_runpod_wedge(handle, result, sidecar: Path, *, now: float):
     """
     if getattr(handle, "backend", None) != "runpod":
         return result
+    _ensure_scripts_dir_on_sys_path()
     from runpod_api import get_pod_by_name  # live RunPod API (X-Team-Id baked in)
 
     info = get_pod_by_name(handle.pod_name)  # PodInfo or None
@@ -2202,6 +2219,7 @@ def _failover_wedged_runpod(*, issue: int, handle, result, sidecar: Path) -> dic
         )
 
     # 3. TERMINATE the billing leak (fail-loud; terminate_pod raises on API error).
+    _ensure_scripts_dir_on_sys_path()
     from runpod_api import get_pod_by_name, terminate_pod
 
     info = get_pod_by_name(handle.pod_name)
@@ -2377,6 +2395,7 @@ def _failover_cuda_ima_runpod(*, issue: int, handle, result, sidecar: Path) -> d
     #    we log + continue to the sentinel + fresh-host relaunch. (Part C's no-port
     #    terminate stays fail-loud BY DESIGN — that pod is genuinely RUNNING+billing,
     #    so a terminate failure there is the billing leak the wedge exists to stop.)
+    _ensure_scripts_dir_on_sys_path()
     from runpod_api import get_pod_by_name, terminate_pod
 
     info = get_pod_by_name(handle.pod_name)

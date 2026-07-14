@@ -88,6 +88,10 @@
           },
           {
             "type": "command",
+            "command": "/home/thomasjiralerspong/explore-persona-space/scripts/guard_repo_root_pull.sh"
+          },
+          {
+            "type": "command",
             "command": "/home/thomasjiralerspong/explore-persona-space/.claude/hooks/guard_log_dump.sh"
           },
           {
@@ -106,6 +110,10 @@
           {
             "type": "command",
             "command": "file_path=$(jq -r '.tool_input.file_path // empty'); if [ -n \"$file_path\" ] && echo \"$file_path\" | grep -qE '^/workspace/'; then echo \"WARNING: Editing $file_path under /workspace/. CLAUDE.md: 'All code changes on local VM, never on pods.' Likely a stale symlink or misconfigured clone — fix the path.\" >&2; fi"
+          },
+          {
+            "type": "command",
+            "command": "/home/thomasjiralerspong/explore-persona-space/.claude/hooks/guard_lessons_edit.sh"
           }
         ]
       },

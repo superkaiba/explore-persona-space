@@ -236,3 +236,151 @@ def test_pm_digest_reads_previous_night_not_newest_file(research_pm_text: str):
         "research-pm.md /daily digest must pin the previous night's PT date "
         "(`date -d 'yesterday' +%F` in America/Los_Angeles)"
     )
+
+
+# ── #1131: retraction re-check (freshness gate before route-2/3 filings) ──────
+#
+# Incident #1101/#1074 (2026-07-06): the sweep filed #1101 from #1074's
+# `epm:pod-terminated v1` prose follow-up while an explicit retraction
+# (`epm:progress v26`) sat 37 seconds later on the same events.jsonl.
+# Negative-control replay (reasoning-level, verified during planning): #1074's
+# LATER rows (`epm:progress v27+`, watcher stall alerts) do NOT pass the
+# binding test for that premise — the binding test, not the recall regex
+# alone, is the decision rule.
+
+
+@pytest.mark.parametrize(
+    "token",
+    [
+        "Retraction re-check",
+        "retracted upstream",
+        "select(.ts > $ts)",
+        "FILE anyway",  # the fail-open-on-ambiguity clause (§9-allowed extra pin)
+    ],
+)
+def test_retraction_recheck_present(daily_skill_text: str, token: str):
+    """#1131: the freshness gate before route-2/3 filings (incident #1101/#1074)
+    must survive future SKILL.md edits."""
+    assert token in daily_skill_text, (
+        f"#1131 retraction re-check contract token {token!r} missing from daily "
+        "SKILL.md — the pre-filing freshness gate (skip when the source trail "
+        "retracted the mined premise) must stay in the route-2/3 filing steps."
+    )
+
+
+# ── #1173: route-2 wf-fix body Provenance mandate (durable recursion guard) ────
+
+
+def test_route2_wf_fix_provenance_mandate_present(daily_skill_text: str):
+    """#1173: every route-2 wf-fix body must carry the durable recursion-guard
+    Provenance lines (`workflow_fix_target:` + `fingerprint:`) — the env-var leg
+    is absent from `spawn-issue --auto` spawns and lost on watcher respawns
+    (incident #1134). This pins the SKILL.md mandate paragraph the driver's
+    mechanical injection backstops."""
+    assert "wf-fix body Provenance mandate" in daily_skill_text, (
+        "the route-2 'wf-fix body Provenance mandate' paragraph dropped from daily "
+        "SKILL.md — daily-filed wf-fix bodies would regress to carrying no durable "
+        "recursion-guard signal (#1173, incident #1134)"
+    )
+    assert "- workflow_fix_target: <target_file>" in daily_skill_text, (
+        "the literal `- workflow_fix_target: <target_file>` Provenance-line template "
+        "dropped from daily SKILL.md — the durable signal "
+        "task_workflow.is_workflow_fix_session() reads must stay mandated (#1173)"
+    )
+
+
+# ── #1228: route-2 wf_fix: false variant (non-workflow-surface daily filings) ──
+
+
+def test_route2_wf_fix_false_variant_documented(daily_skill_text: str):
+    """#1228: the route-2 non-workflow-surface variant (drop the wf-fix tags,
+    keep daily-auto-filed) must stay documented WITH its driver mechanism —
+    the `wf_fix: false` manifest key `daily_drive_filings.py` gates on. Without
+    the mechanism sentence the variant is unreachable on the batch driver path
+    (the driver would re-tag + re-inject unconditionally, the #1228 bug)."""
+    assert "(drop the `wf-fix` / `wf-fix-fp` tags, keep `daily-auto-filed`)" in daily_skill_text, (
+        "the route-2 drop-tags contract sentence dropped from daily SKILL.md — "
+        "experiment-code (non-workflow-surface) daily filings would regress to "
+        "carrying wf-fix dedup/recursion-guard tags (#1228)"
+    )
+    assert "wf_fix: false" in daily_skill_text, (
+        "the `wf_fix: false` manifest mechanism dropped from daily SKILL.md — "
+        "the drop-tags route-2 variant would be prose-only again, unreachable "
+        "through the batch driver daily_drive_filings.py (#1228)"
+    )
+
+
+# ── Step D: nightly title-sync drift sweep invoker (#1196 → #1235) ────────────
+
+
+def test_title_sync_sweep_pass_present(daily_skill_text: str):
+    """The nightly /daily invoker for the #1196 title-sync drift sweep survives
+    (task #1235): the command, its WARN-only/exit-0 contract, and the
+    surface-only routing must not be silently dropped by a later edit."""
+    assert (
+        "scripts/audit_clean_results_body_discipline.py --title-sync-sweep" in daily_skill_text
+    ), "the Step D title-sync sweep command is missing from daily/SKILL.md"
+    assert "title-sync drift sweep (Step D)" in daily_skill_text, (
+        "the Step D pass header is missing — the nightly title-sync invoker "
+        "(#1235) may have been dropped"
+    )
+
+
+# ── #1272: verified-at-filing grep-evidence line (rule template + route 2) ─────
+
+
+def test_verified_at_filing_line_required(daily_skill_text: str):
+    """#1272 pin: the verified-at-filing filing-time grep-evidence mandate
+    survives in the daily route-2 text, the rule's Body-file template, and the
+    workflow.yaml orchestrator_actions prose (#1221/#1229/#1249: three
+    stale-claim filings in two days, each burning a spawned session's
+    verification rounds). #1307 extends the pin: the grep must BIND to the
+    claim (per-target confirmation + relocation grep) on all three surfaces."""
+    assert "verified-at-filing:" in daily_skill_text, (
+        "the route-2 'verified-at-filing mandate' sentence dropped from daily "
+        "SKILL.md — daily-filed wf-fix bodies would regress to carrying no "
+        "filing-time grep evidence (#1272)"
+    )
+    rule_text = (REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md").read_text(
+        encoding="utf-8"
+    )
+    assert rule_text.count("verified-at-filing:") >= 3, (
+        "workflow-fix-on-bug.md must keep >=3 'verified-at-filing:' occurrences "
+        "(template line + Before-emitting sentence + anti-pattern row) (#1272)"
+    )
+    assert "n/a — " in rule_text, (
+        "the 'n/a — <reason>' escape for non-grep-able bug claims dropped from "
+        "workflow-fix-on-bug.md (#1272)"
+    )
+    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
+    assert "verified-at-filing:" in yaml_text, (
+        "workflow.yaml orchestrator_actions no longer mention the "
+        "verified-at-filing: grep-evidence line (#1272)"
+    )
+    # #1307: the binding tightening — per-target confirmation + relocation grep
+    assert "EACH file named in" in rule_text, (
+        "the #1307 per-target-confirmation binding rule dropped from "
+        "workflow-fix-on-bug.md (a 0-hit named target must be a mis-target)"
+    )
+    assert "relocation grep" in rule_text, (
+        "the #1307 relocation-grep binding rule dropped from "
+        "workflow-fix-on-bug.md (nonexistence claims need a repo-wide grep)"
+    )
+    assert "relocation grep" in daily_skill_text, (
+        "the #1307 binding clause dropped from the daily route-2 "
+        "verified-at-filing mandate sentence"
+    )
+    assert "relocation grep" in yaml_text, (
+        "the #1307 binding clause dropped from the workflow.yaml orchestrator_actions grep step"
+    )
+    # v2 (Statistics-critic suggestion): pin rule (a) on the two compact
+    # surfaces too — without these, a future editor could drop the
+    # per-target clause from daily/yaml without failing the test.
+    assert "per-target hits" in daily_skill_text, (
+        "the #1307 per-target-confirmation clause dropped from the daily "
+        "route-2 verified-at-filing mandate sentence"
+    )
+    assert "per-target hits" in yaml_text, (
+        "the #1307 per-target-confirmation clause dropped from the "
+        "workflow.yaml orchestrator_actions grep step"
+    )

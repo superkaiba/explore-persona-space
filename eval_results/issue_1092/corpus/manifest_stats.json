@@ -1,0 +1,95 @@
+{
+  "n_rows_total": 21193,
+  "n_unique_prefixes": 1145,
+  "n_unique_queries": 1397,
+  "n_eval_only_rows": 2400,
+  "rows_by_stratum": {
+    "dense_core": 4752,
+    "periphery_natural": 897,
+    "periphery_random": 8969,
+    "periphery_topicmatch": 2690,
+    "trait_stratum": 1485,
+    "battery": 2400
+  },
+  "g1_gate": {
+    "pass": true,
+    "checks": {
+      "n_prefixes_ge_floor": true,
+      "n_long_conv_ge_floor": true,
+      "n_bank_ge_floor": true,
+      "render_mismatch_le_10pct": true
+    },
+    "values": {
+      "n_prefixes": 996,
+      "n_long_conv": 329,
+      "n_bank": 500,
+      "render_mismatch_frac": 0.0
+    }
+  },
+  "reproducibility": {
+    "git_sha": "eb54a0e43ac77c4a04585495c7d92cbd6511e5bd",
+    "timestamp_utc": "2026-07-08T03:29:47.679153",
+    "python_version": "3.11.15 (main, Mar  3 2026, 14:59:53) [Clang 21.1.4 ]",
+    "wildchat_rev": "7d6490e462285cf85d91eabea0f9a954fbddcd1f",
+    "lmsys_rev": "200748d9d3cddcc9d782887541057aca0b18c5da",
+    "build_seed": 42
+  },
+  "budget_filter": {
+    "total_rows": 21285,
+    "kept_rows": 21193,
+    "budget_dropped": 92,
+    "drop_frac": 0.00432,
+    "dropped_by_stratum": {
+      "dense_core": 48,
+      "periphery_natural": 3,
+      "periphery_random": 31,
+      "periphery_topicmatch": 10
+    },
+    "max_formatted_tokens": 7168
+  },
+  "filtered_from": {
+    "pre_filter_manifest_sha256": "38a516f7e8d674d0ec3988d2da4b60dffe99f4756c73753523701a6027c1874a",
+    "n_rows_pre_filter": 21285
+  },
+  "trait_names": [
+    "evil",
+    "hallucination",
+    "sycophancy"
+  ],
+  "streaming_funnel": {
+    "wildchat": {
+      "kept": 383980,
+      "streamed": 837989,
+      "rejects": {
+        "language": 359491,
+        "redacted": 5296,
+        "toxic": 0,
+        "moderation": 0,
+        "empty_conversation": 0,
+        "structure": 5171,
+        "token_budget": 6212,
+        "duplicate": 77839
+      },
+      "resumed_from_cache": false
+    },
+    "lmsys": {
+      "kept": 303373,
+      "streamed": 1000000,
+      "rejects": {
+        "language": 222547,
+        "redacted": 266260,
+        "toxic": 0,
+        "moderation": 20949,
+        "empty_conversation": 0,
+        "structure": 3665,
+        "token_budget": 40,
+        "duplicate": 183166
+      },
+      "resumed_from_cache": false
+    }
+  },
+  "trait_stratum_n": 99,
+  "n_core_queries": 48,
+  "n_bank_queries": 500,
+  "n_derangement_rows": 14618
+}

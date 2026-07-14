@@ -22,9 +22,13 @@
 #                             (missing line surfaced as a sparse-worktree FileNotFoundError, #897)
 #   eval_results/issue_952  — test_issue952_kfold.py reads the committed
 #                             split_seed952.json (the B4≡committed-split calibration pin)
+#   eval_results/issue_1092 — test_verify_task_body.py::test_cross_issue_reuse_provenance_integration_1092
+#                             reads cross-corpus-probe-transfer/transfer_reads.json (the #1092
+#                             incident metadata pins; skip-if-absent for pre-existing worktrees)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
 eval_results/issue_276
 eval_results/issue_537
 eval_results/issue_952
+eval_results/issue_1092

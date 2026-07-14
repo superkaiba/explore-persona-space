@@ -1,0 +1,164 @@
+{
+  "commit": "dcd1da45fe",
+  "created": "2026-07-10T17:21:22Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "residual norm ratio": 0.42019782147691964,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "residual norm ratio": 0.6029486148886708,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "residual norm ratio": 0.5298182596979277,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "residual norm ratio": 0.5348950420393881,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "residual norm ratio": 0.4301319408824772,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "residual norm ratio": 0.4570571495008286,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "residual norm ratio": 0.9068581053898648,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "residual norm ratio": 0.9097155399930505,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "residual norm ratio": 0.4954697483646592,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "residual norm ratio": 0.9949991418322254,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "residual norm ratio": 0.6832710620797819,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "residual norm ratio": 0.689921679865839,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "residual norm ratio": 0.5104754205335384,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "residual norm ratio": 0.558939522868749,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "residual norm ratio": 3.205524515583532,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "residual norm ratio": 3.7763778732240882,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "residual norm ratio": 1.5885745284868558,
+      "series": "random-map null p5 (registered test)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "residual norm ratio": 2.101480206484386,
+      "series": "random-map null p5 (registered test)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "residual norm ratio": 1.6873309633205444,
+      "series": "random-map null p5 (registered test)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "residual norm ratio": 1.6851450996025823,
+      "series": "random-map null p5 (registered test)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "residual norm ratio": 1.595229185207916,
+      "series": "random-map null p5 (registered test)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "residual norm ratio": 1.633096604299117,
+      "series": "random-map null p5 (registered test)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "residual norm ratio": 3.83008687640362,
+      "series": "random-map null p5 (registered test)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "residual norm ratio": 4.487216052930563,
+      "series": "random-map null p5 (registered test)",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 24
+}

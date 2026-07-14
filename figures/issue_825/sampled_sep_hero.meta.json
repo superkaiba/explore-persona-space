@@ -1,0 +1,68 @@
+{
+  "commit": "87c9c73168",
+  "created": "2026-07-08T11:36:23Z",
+  "figsize": [
+    9.6,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "arm B\n(sampled, 1 draw)",
+      "D = (W_on - W_ex) / (C - W_ex)": 0.03140688061926557,
+      "error": 0.05374198649638355,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "C-avg\n(E[v] ceiling read)",
+      "D = (W_on - W_ex) / (C - W_ex)": 0.12255952954468806,
+      "error": 0.039434222163644866,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "C-single\n(draw 0)",
+      "D = (W_on - W_ex) / (C - W_ex)": -0.01563705940475839,
+      "error": 0.03505776355449594,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "C-pooled\n(all draws)",
+      "D = (W_on - W_ex) / (C - W_ex)": -0.009986009046104655,
+      "error": 0.035824694547806554,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "arm B\n(sampled, 1 draw)",
+      "y": 0.08563161421546632,
+      "error": 0.026487004615717673,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "C-avg\n(E[v] ceiling read)",
+      "y": 0.0553870529861438,
+      "error": 0.03462159559606646,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "C-single\n(draw 0)",
+      "y": -0.04710935920726376,
+      "error": 0.028476175348074725,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "C-pooled\n(all draws)",
+      "y": -0.06041213897719325,
+      "error": 0.028706445397488144,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8
+}

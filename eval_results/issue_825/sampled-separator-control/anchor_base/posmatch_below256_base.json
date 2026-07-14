@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "git_commit": "0e93486d07fa4dc7db1c2cb7ed710bc25bad0dd9",
+    "timestamp": "2026-07-08T10:49:44Z",
+    "seed": 0,
+    "n": 899,
+    "script": "scripts/issue825_position_matched_wex.py --pos-max",
+    "issue": 825
+  },
+  "followup_label": "sampled-separator-control",
+  "model": "base",
+  "position_restriction": {
+    "mode": "below",
+    "pos_max": 256
+  },
+  "pairs_path": "issue931_story_map/raw_completions/pairs_meta/pairs_armC.jsonl",
+  "pairs_revision": "9534b9981d6b4fb4f1259c9b06f021d311a46af4",
+  "n_total": 3600,
+  "n_kept": 899,
+  "kept_fraction": 0.24972222222222223,
+  "n_groups_total": 600,
+  "n_groups_kept": 519,
+  "anchor_pos_summary": {
+    "frac_below_pos_max": 0.24972222222222223,
+    "median": 502.0,
+    "median_kept": 146.0
+  },
+  "validation_fulln_rotated_hl": {
+    "refit": 0.3626111899733,
+    "committed": 0.3626111899733,
+    "abs_delta": 0.0,
+    "binding": true
+  },
+  "position_restricted_rotated_r2": {
+    "19": -0.29469701349719113,
+    "14": -0.5335368857745224,
+    "18": -0.4852754799231582,
+    "26": -0.4431936063023143
+  },
+  "null_hl": {
+    "draws": [
+      -1.2405247495000675,
+      -1.2029239136743382,
+      -1.2321875997466631,
+      -1.2273800891494866,
+      -1.2390435801070199,
+      -1.266687290277153,
+      -1.2129054007382267,
+      -1.2332687535093996,
+      -1.1956474031938167,
+      -1.218919130511852,
+      -1.2414739578321865,
+      -1.2308361087762028,
+      -1.194552773405762,
+      -1.214789584354826,
+      -1.2225529113685383,
+      -1.2692913383825108,
+      -1.192900707599112,
+      -1.2115397615332277,
+      -1.2321763027462755,
+      -1.2279405000338475
+    ],
+    "mean": -1.2253770928220256,
+    "p975": -1.1936854388572709,
+    "n_draws": 20,
+    "kind": "group-blocked pairing shuffle (heldout_r2_sweep semantics)"
+  },
+  "size_matched_subsample_rotated_hl": {
+    "per_seed": {
+      "1": -0.1787694279971479,
+      "2": -0.16985314556139053,
+      "3": -0.17837539964212068
+    },
+    "mean": -0.17566599106688638,
+    "subsampler": "group_stratified_subsample(seed=931+s)"
+  },
+  "derived": {
+    "w_ex_position_restricted_hl": -0.29469701349719113,
+    "note": "companion read for the arm-C fixed prefix-final anchor cells (sub-256 exogenous pool); consumed by issue825_sampled_sep_decision.py \u2014 no D computed here"
+  },
+  "smoke": false
+}

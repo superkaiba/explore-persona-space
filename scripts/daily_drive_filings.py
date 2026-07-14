@@ -8,9 +8,19 @@ the filings through this script in small batches. Every outcome is appended to
 a mid-run kill strands at most the one in-flight item and a re-invocation resumes from
 the ledger instead of forcing a which-got-filed audit.
 
-Manifest item schema: ``{slug, route: 2|3, title, target, bug, change, body?}`` where
-``body`` defaults to ``<dir>/<slug>.md`` (absolute paths pass through; relative paths
-resolve against the filings dir).
+Manifest item schema: ``{slug, route: 2|3, title, target, bug, change, body?, wf_fix?: bool}``
+where ``body`` defaults to ``<dir>/<slug>.md`` (absolute paths pass through; relative paths
+resolve against the filings dir). ``wf_fix`` (route 2 only, default ``true``) — ``false``
+marks a non-workflow-surface (experiment-code) item per the daily SKILL.md route-2 variant:
+the driver drops the ``wf-fix`` / ``wf-fix-fp:<fp>`` tags (keeps ``daily-auto-filed``),
+skips the Provenance injection, and skips fp-dedup (#1228). Route-2 titles missing a
+``WF_FIX_TITLE_PREFIXES`` prefix gain ``daily-fix: `` before the <=60 truncation (#1273).
+
+Route-2 bodies are normalized in place before filing (#1173; skipped for ``wf_fix: false``
+items): a body missing the durable
+recursion-guard Provenance lines gains ``- workflow_fix_target: <manifest target>`` +
+``- fingerprint: <fp>`` under ``## Provenance`` (idempotent temp+rename; the ``INJECTED``
+stdout line is the audit trace).
 
 Ledger row shapes (one JSON object per line, ISO-UTC ``ts`` on every row):
 
@@ -48,7 +58,7 @@ from pathlib import Path
 
 import yaml
 
-from explore_persona_space.task_workflow import wf_fix_fingerprint
+from explore_persona_space.task_workflow import WF_FIX_TITLE_PREFIXES, wf_fix_fingerprint
 
 LEDGER_NAME = "filed.jsonl"
 QUARANTINE_NAME = "filed.jsonl.quarantined"
@@ -118,6 +128,99 @@ def _resolve_body_path(item: dict, dirpath: Path) -> Path:
     return p
 
 
+WF_FIX_TARGET_KEY = "workflow_fix_target:"
+PROVENANCE_HEADING_RE = re.compile(r"^## Provenance[ \t]*$", re.M)
+
+
+def ensure_wf_fix_provenance(text: str, target: str, fp: str) -> tuple[str, bool]:
+    """Idempotently ensure the durable recursion-guard Provenance lines (#1173).
+
+    Returns (new_text, changed). The ``- workflow_fix_target: <target>`` line is the
+    DURABLE signal task_workflow.is_workflow_fix_session() reads (the env-var leg is
+    lost on a watcher crash-recovery respawn); ``- fingerprint: <fp>`` is the body-side
+    dedup fallback (task_workflow.is_open_workflow_fix_task; sweep _fp_tag_scan).
+    Substring contracts (do not reformat): ``workflow_fix_target: {target}`` and
+    ``fingerprint: {fp}`` with a single space after the colon.
+
+    Presence checks are substring-based BY DESIGN: a body that merely prose-quotes
+    ``workflow_fix_target:`` skips injection — acceptable because that same substring
+    already satisfies the recursion-guard predicate; only the dedup body-needle could
+    miss, and dedup's PRIMARY key is the ``wf-fix-fp:<fp>`` tag.
+    """
+    lines = []
+    if WF_FIX_TARGET_KEY not in text:
+        lines.append(f"- workflow_fix_target: {target}")
+    if "fingerprint:" not in text:
+        lines.append(f"- fingerprint: {fp}")
+    if not lines:
+        return text, False
+    block = "\n".join(lines)
+    m = PROVENANCE_HEADING_RE.search(text)
+    if m:
+        # Insert immediately after the existing heading line.
+        insert_at = m.end()
+        new = text[:insert_at] + "\n\n" + block + text[insert_at:]
+    else:
+        new = text.rstrip("\n") + f"\n\n## Provenance\n\n{block}\n"
+    return new, True
+
+
+def _wf_fix_enabled(item: dict) -> bool:
+    """True when this route-2 item participates in the wf-fix key space (#1228).
+
+    Route-2 items default to wf-fix semantics (tags + Provenance injection +
+    fp-dedup); a manifest ``wf_fix: false`` marks a non-workflow-surface
+    (experiment-code) item per the daily SKILL.md route-2 variant — it keeps
+    ``daily-auto-filed`` only, and its spawned session is NOT a workflow-fix
+    session (no recursion guard). Always False for route 3. The ONE shared
+    predicate across the tag block, the injection block, the fp-dedup call,
+    and the dry-run mirrors — so the tag and the durable recursion-guard body
+    signal cannot diverge on the driver path (#1173 coupling invariant).
+    """
+    return item["route"] == 2 and item.get("wf_fix", True)
+
+
+def _effective_title(item: dict) -> str:
+    """The title actually filed for this manifest item.
+
+    Route-2 titles gain the ``daily-fix: `` channel prefix when the manifest
+    omitted every ``WF_FIX_TITLE_PREFIXES`` prefix (#1273: the 2026-07-09
+    manifest filed 26 bare titles invisible to
+    ``task_workflow.is_open_workflow_fix_task``'s title pre-filter). Prepend
+    happens BEFORE the [:60] truncation (the daily SKILL.md contract budgets
+    the prefix inside <=60). Already-prefixed titles (either channel prefix)
+    pass through un-double-prefixed; route-3 titles are never touched. The
+    ONE shared normalization for _filer_cmd AND _try_recovery — the filed
+    title and the recovery-scan title cannot diverge (#1173 coupling pattern).
+    """
+    title = item["title"]
+    if item["route"] == 2 and not title.startswith(WF_FIX_TITLE_PREFIXES):
+        title = f"daily-fix: {title}"
+    return title[:60]
+
+
+def _warn_stray_wf_fix_provenance(item: dict, dirpath: Path) -> None:
+    """WARN-only (#1228): a ``wf_fix: false`` body should not carry the guard line.
+
+    The daily SKILL.md route-2 variant says "do not hand-add a
+    ``workflow_fix_target:`` Provenance block to a ``wf_fix: false`` body" — the
+    line would arm ``task_workflow.is_workflow_fix_session()`` for a session that
+    is NOT a workflow-fix session. Never blocks the filing (the substring may be
+    a legitimate prose quote); no-op for route 3 and for wf-fix-enabled items.
+    """
+    if item["route"] != 2 or _wf_fix_enabled(item):
+        return
+    text = _resolve_body_path(item, dirpath).read_text(encoding="utf-8")
+    if WF_FIX_TARGET_KEY in text:
+        print(
+            f"WARNING {item['slug']}: wf_fix=false but the body contains"
+            f" '{WF_FIX_TARGET_KEY}' — the spawned session would be recursion-guarded"
+            " as a workflow-fix session; remove the hand-added Provenance line"
+            " (daily SKILL.md route-2 variant, #1228)",
+            file=sys.stderr,
+        )
+
+
 def load_and_validate_manifest(dirpath: Path) -> list[dict]:
     """Parse + validate the WHOLE manifest up front, so a schema wart aborts at ZERO filings.
 
@@ -142,6 +245,13 @@ def load_and_validate_manifest(dirpath: Path) -> list[dict]:
         if item["route"] not in (2, 3):
             raise ValueError(
                 f"manifest item {i} ({item['slug']}): route must be 2 or 3, got {item['route']!r}"
+            )
+        if "wf_fix" in item and not isinstance(item["wf_fix"], bool):
+            # A JSON string "false" is truthy — silently accepting it would invert the
+            # flag's intent (#1228). Fail loud at ZERO filings, per this function's contract.
+            raise ValueError(
+                f"manifest item {i} ({item['slug']}): wf_fix must be a JSON boolean,"
+                f" got {item['wf_fix']!r}"
             )
         if item["slug"] in seen_slugs:
             raise ValueError(f"manifest item {i}: duplicate slug {item['slug']!r}")
@@ -266,9 +376,16 @@ def find_open_fp_duplicate(tasks_root: Path, fp: str) -> Path | None:
     """First NON-terminal task body.md carrying ``wf-fix-fp:<fp>`` (route-2 dedup).
 
     Same predicate as the proven ad-hoc driver: a tag-scan over non-``completed``/
-    ``archived`` statuses. ``task_workflow.is_open_workflow_fix_task`` is NOT usable
-    here — it requires the ``workflow-fix:`` title prefix; daily filings use
-    ``daily-fix:`` titles.
+    ``archived`` statuses. Deliberately COARSER than
+    ``task_workflow.is_open_workflow_fix_task`` (which since #1180 DOES see
+    ``daily-fix:`` titles via ``WF_FIX_TITLE_PREFIXES``): this scan keys on the
+    fingerprint tag ALONE — any title, any kind, no ``workflow_fix_target:``
+    requirement, filesystem-only (no REGISTRY read) — so a same-fp task filed
+    by EITHER channel blocks a daily re-file even when its registry row or
+    Provenance line is malformed. Kept (not delegated) for that coarser grain
+    and for the ``tasks_root`` injection the test fixtures use. Called only for
+    ``_wf_fix_enabled`` items (#1228) — a ``wf_fix: false`` filing never carries
+    the fp tag, so its participation would be one-way.
     """
     needle = f"wf-fix-fp:{fp}"
     for body in sorted(tasks_root.glob("*/*/body.md")):
@@ -293,14 +410,16 @@ def _filer_cmd(
         "--kind",
         "infra",
         "--title",
-        item["title"][:60],
+        _effective_title(item),
         "--body-file",
         str(body_path),
         "--origin-prompt",
         f"/daily {date} problem sweep (route {item['route']}): {item['bug'][:400]}",
     ]
     if item["route"] == 2:
-        cmd += ["--tag", "wf-fix", "--tag", f"wf-fix-fp:{fp}", "--tag", "daily-auto-filed"]
+        if _wf_fix_enabled(item):
+            cmd += ["--tag", "wf-fix", "--tag", f"wf-fix-fp:{fp}"]
+        cmd += ["--tag", "daily-auto-filed"]
     else:
         cmd += ["--tag", "daily-held", "--tag", "needs-human", "--no-dispatch"]
     return cmd
@@ -349,7 +468,18 @@ def _try_recovery(
     if attempting is None:
         return None
     id_floor = int(attempting.get("id_floor", 0))
-    matches = scan_recovery_candidates(tasks_root, item["title"][:60], id_floor, item["route"])
+    # Union over both title forms: the effective (prefixed) title the post-#1273
+    # driver files, AND the raw [:60] form a crashed PRE-fix driver may have filed
+    # (the one-shot prefix-migration window). Post-fix, for an already-prefixed
+    # manifest title the set collapses to one element.
+    titles = {_effective_title(item), item["title"][:60]}
+    matches = sorted(
+        {
+            tid
+            for t in titles
+            for tid in scan_recovery_candidates(tasks_root, t, id_floor, item["route"])
+        }
+    )
     if not matches:
         return None
     if len(matches) == 1:
@@ -408,14 +538,24 @@ def process_item(
         return "skip"
 
     if dry_run:
-        if item["route"] == 2 and find_open_fp_duplicate(tasks_root, fp) is not None:
+        if _wf_fix_enabled(item) and find_open_fp_duplicate(tasks_root, fp) is not None:
             print(f"DEDUP {slug} -> wf-fix-fp:{fp}")
         else:
             tags = _filer_cmd([], item, Path("-"), date, fp)
             pending = (
                 " [in-flight attempting row; recovery scan runs first]" if state != "fresh" else ""
             )
-            print(f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}")
+            inject = ""
+            if _wf_fix_enabled(item):
+                # Read-only injection-intent probe (#1173): dry-run stays write-free.
+                # No exists() guard — a missing/unreadable body fails LOUD here, the
+                # same fail-fast contract load_and_validate_manifest enforces up front.
+                body_text = _resolve_body_path(item, dirpath).read_text(encoding="utf-8")
+                if ensure_wf_fix_provenance(body_text, item["target"], fp)[1]:
+                    inject = " [will inject workflow_fix_target provenance]"
+            else:
+                _warn_stray_wf_fix_provenance(item, dirpath)
+            print(f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}{inject}")
         return "skip"
 
     if state in ("in-flight", "retry-error"):
@@ -425,7 +565,7 @@ def process_item(
         if outcome is not None:
             return outcome
 
-    if item["route"] == 2:
+    if _wf_fix_enabled(item):
         dup = find_open_fp_duplicate(tasks_root, fp)
         if dup is not None:
             append_row(
@@ -442,6 +582,20 @@ def process_item(
             return "deduped"
 
     body_path = _resolve_body_path(item, dirpath)
+    if _wf_fix_enabled(item):
+        # Same condition under which _filer_cmd applies the wf-fix tag — the tag and
+        # the durable recursion-guard body signal cannot diverge on the driver path
+        # (#1173; both sites key on _wf_fix_enabled, #1228). Idempotent, so a kill
+        # anywhere re-normalizes harmlessly on resume.
+        text = body_path.read_text(encoding="utf-8")
+        new_text, changed = ensure_wf_fix_provenance(text, item["target"], fp)
+        if changed:
+            tmp = body_path.with_suffix(".md.tmp")
+            tmp.write_text(new_text, encoding="utf-8")
+            os.replace(tmp, body_path)  # temp+rename, same pattern as load_ledger
+            print(f"INJECTED {slug}: workflow_fix_target provenance (#1173 recursion-guard signal)")
+    else:
+        _warn_stray_wf_fix_provenance(item, dirpath)
     # Two-phase ledger: the `attempting` row (with the recovery id floor) lands BEFORE
     # the filer subprocess — the load-bearing crash-safety ordering.
     append_row(

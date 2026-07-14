@@ -40,8 +40,12 @@ check; recipes kept for pre-#554 pods):**
    protocol lives in `experimenter.md` ("Pre-clear the false positive for
    launchers that re-run preflight"), now scoped LEGACY.
 2. **Sanctioned clear-the-gate recipe (no force-push, tree unchanged):**
-   on the VM worktree, `git merge <pod's origin/main tip SHA>` then
-   immediately `git revert -m 1 <merge> --no-edit`; assert
+   on the VM worktree, `git -C <worktree> merge <pod's origin/main tip SHA>`
+   (the `-C <worktree>` form is required — a bare `git merge` is
+   hook-blocked, #1128) then
+   immediately `git -C <worktree> revert -m 1 <merge> --no-edit` (the
+   `-C <worktree>` form is required here too — a bare `git revert` is
+   hook-blocked, #1234); assert
    `git diff <reviewed-sha> HEAD | wc -c` == 0; push; `git pull --ff-only`
    on the pod. Behind-count becomes 0 while the tree stays identical to
    the reviewed commit. CAUTION: never keep the merge content — at #550 it

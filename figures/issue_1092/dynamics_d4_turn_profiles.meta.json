@@ -1,0 +1,3372 @@
+{
+  "commit": "e78b4ce47b",
+  "created": "2026-07-10T20:00:41Z",
+  "figsize": [
+    10.6,
+    4.4
+  ],
+  "points": [
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.00905620819909636,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.09911429731034671,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.13560174224434474,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.13467107632617803,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.12178287059508286,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.1055641308683205,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.08904748826866193,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.084758264736294,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.06383150632126944,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.034318138971003,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.019404557704777448,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.007615201967521967,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.028213516908674352,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.05936306201305164,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.06267265635970576,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.10625544604921622,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.10472175492580282,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.1586983782295237,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.2055181631184202,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.28245807359410957,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.28770986139769383,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6274007460730151,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.5912442944441185,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6656051433653045,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6870264065872529,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.0677560345527994,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.0223782340963217,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.2229191203676621,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.9446075739500137,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.4567906311996315,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.00905620819909636,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.09911429731034671,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.13560174224434474,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.13467107632617803,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.12178287059508286,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.1055641308683205,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.08904748826866193,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.084758264736294,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.06383150632126944,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.034318138971003,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.019404557704777448,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.007615201967521967,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.028213516908674352,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.05936306201305164,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.06267265635970576,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.10625544604921622,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.10472175492580282,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.1586983782295237,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.2055181631184202,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.28245807359410957,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.28770986139769383,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6274007460730151,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.5912442944441185,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6656051433653045,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6870264065872529,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.0677560345527994,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.0223782340963217,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.2229191203676621,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.9446075739500137,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.4567906311996315,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.00905620819909636,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.09911429731034671,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.13560174224434474,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.13467107632617803,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.12178287059508286,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.1055641308683205,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.08904748826866193,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.084758264736294,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.06383150632126944,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.034318138971003,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.019404557704777448,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.007615201967521967,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.028213516908674352,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.05936306201305164,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.06267265635970576,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.10625544604921622,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.10472175492580282,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.1586983782295237,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.2055181631184202,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.28245807359410957,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.28770986139769383,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6274007460730151,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.5912442944441185,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6656051433653045,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6870264065872529,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.0677560345527994,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.0223782340963217,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.2229191203676621,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.9446075739500137,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.4567906311996315,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.00905620819909636,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.09911429731034671,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.13560174224434474,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.13467107632617803,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.12178287059508286,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.1055641308683205,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.08904748826866193,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.084758264736294,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.06383150632126944,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.034318138971003,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.019404557704777448,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.007615201967521967,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.028213516908674352,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.05936306201305164,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.06267265635970576,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.10625544604921622,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.10472175492580282,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.1586983782295237,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.2055181631184202,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.28245807359410957,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.28770986139769383,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6274007460730151,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.5912442944441185,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6656051433653045,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6870264065872529,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.0677560345527994,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.0223782340963217,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.2229191203676621,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.9446075739500137,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.4567906311996315,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.07314503074783474,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.08255876765871273,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.132069475231807,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.11073186729884532,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.106994408317164,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.09111169244312534,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.07280375495117564,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.07965801311624088,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.03537290605884702,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.01629952697026338,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.02565904271873809,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.011617255157307937,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.038551849867550336,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.08716680437839042,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.02809872421213777,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.15854074269279717,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.1418504947643635,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.19510252358238378,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.18808946856079745,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.23451997874395425,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.2459958587307285,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6064957930808121,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.5027003464823019,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6379631390534959,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6339672488468739,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.0115147595013396,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.9355097281170439,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.2610983425985407,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.5220116987714865,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.3947666978321598,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.07314503074783474,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.08255876765871273,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.132069475231807,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.11073186729884532,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.106994408317164,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.09111169244312534,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.07280375495117564,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.07965801311624088,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.03537290605884702,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.01629952697026338,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.02565904271873809,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.011617255157307937,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.038551849867550336,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.08716680437839042,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.02809872421213777,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.15854074269279717,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.1418504947643635,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.19510252358238378,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.18808946856079745,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.23451997874395425,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.2459958587307285,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6064957930808121,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.5027003464823019,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6379631390534959,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6339672488468739,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.0115147595013396,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.9355097281170439,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.2610983425985407,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.5220116987714865,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.3947666978321598,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.07314503074783474,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.08255876765871273,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.132069475231807,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.11073186729884532,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.106994408317164,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.09111169244312534,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.07280375495117564,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.07965801311624088,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.03537290605884702,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.01629952697026338,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.02565904271873809,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.011617255157307937,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.038551849867550336,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.08716680437839042,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.02809872421213777,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.15854074269279717,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.1418504947643635,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.19510252358238378,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.18808946856079745,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.23451997874395425,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.2459958587307285,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6064957930808121,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.5027003464823019,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6379631390534959,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6339672488468739,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.0115147595013396,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.9355097281170439,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.2610983425985407,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.5220116987714865,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.3947666978321598,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "user-turn index": 1.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.07314503074783474,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 3.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.08255876765871273,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 5.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.132069475231807,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 7.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.11073186729884532,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 9.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.106994408317164,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 11.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.09111169244312534,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 13.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.07280375495117564,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 15.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.07965801311624088,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 17.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.03537290605884702,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 19.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.01629952697026338,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 21.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.02565904271873809,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 23.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": 0.011617255157307937,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 25.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.038551849867550336,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 27.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.08716680437839042,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 29.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.02809872421213777,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 31.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.15854074269279717,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 33.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.1418504947643635,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 35.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.19510252358238378,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 37.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.18808946856079745,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 39.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.23451997874395425,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 41.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.2459958587307285,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 43.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6064957930808121,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 45.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.5027003464823019,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 47.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6379631390534959,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 49.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.6339672488468739,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 51.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.0115147595013396,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 53.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -0.9355097281170439,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 55.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.2610983425985407,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 57.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.5220116987714865,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 59.0,
+      "held-out R\u00b2 (per-turn map, layer 14)": -1.3947666978321598,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "user-turn index": 1.0,
+      "y": 0.27475329106139124,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 3.0,
+      "y": 0.25319476151304277,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 5.0,
+      "y": 0.2558725238798967,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 7.0,
+      "y": 0.23602467075910893,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 9.0,
+      "y": 0.22697009161150283,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 11.0,
+      "y": 0.19743444940674315,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 13.0,
+      "y": 0.16711305318177783,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 15.0,
+      "y": 0.15051290613599744,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 17.0,
+      "y": 0.12693693627364044,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 19.0,
+      "y": 0.10961461842614073,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 21.0,
+      "y": 0.06572493959431991,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 23.0,
+      "y": 0.033714389863942706,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 25.0,
+      "y": 0.013043552081516196,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 27.0,
+      "y": 0.014382911077075011,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 29.0,
+      "y": 0.0021344356988223234,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 31.0,
+      "y": -0.09918597839564813,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 33.0,
+      "y": -0.07388996717306107,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 35.0,
+      "y": -0.14826793313708708,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 37.0,
+      "y": -0.1696009203933393,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 39.0,
+      "y": -0.19358048616680312,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 41.0,
+      "y": -0.19020716098652035,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 43.0,
+      "y": -0.4284480809109268,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 45.0,
+      "y": -0.4004881273057961,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 47.0,
+      "y": -0.6190201617605222,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 49.0,
+      "y": -0.5493753515195376,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 51.0,
+      "y": -0.8142574772511157,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 53.0,
+      "y": -0.8232510218251603,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 55.0,
+      "y": -1.7584811219784782,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 57.0,
+      "y": -1.6025980432308309,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 59.0,
+      "y": -1.3568262442678445,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "user-turn index": 1.0,
+      "y": 0.27475329106139124,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 3.0,
+      "y": 0.25319476151304277,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 5.0,
+      "y": 0.2558725238798967,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 7.0,
+      "y": 0.23602467075910893,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 9.0,
+      "y": 0.22697009161150283,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 11.0,
+      "y": 0.19743444940674315,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 13.0,
+      "y": 0.16711305318177783,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 15.0,
+      "y": 0.15051290613599744,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 17.0,
+      "y": 0.12693693627364044,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 19.0,
+      "y": 0.10961461842614073,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 21.0,
+      "y": 0.06572493959431991,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 23.0,
+      "y": 0.033714389863942706,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 25.0,
+      "y": 0.013043552081516196,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 27.0,
+      "y": 0.014382911077075011,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 29.0,
+      "y": 0.0021344356988223234,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 31.0,
+      "y": -0.09918597839564813,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 33.0,
+      "y": -0.07388996717306107,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 35.0,
+      "y": -0.14826793313708708,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 37.0,
+      "y": -0.1696009203933393,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 39.0,
+      "y": -0.19358048616680312,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 41.0,
+      "y": -0.19020716098652035,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 43.0,
+      "y": -0.4284480809109268,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 45.0,
+      "y": -0.4004881273057961,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 47.0,
+      "y": -0.6190201617605222,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 49.0,
+      "y": -0.5493753515195376,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 51.0,
+      "y": -0.8142574772511157,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 53.0,
+      "y": -0.8232510218251603,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 55.0,
+      "y": -1.7584811219784782,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 57.0,
+      "y": -1.6025980432308309,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 59.0,
+      "y": -1.3568262442678445,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "user-turn index": 1.0,
+      "y": 0.27475329106139124,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 3.0,
+      "y": 0.25319476151304277,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 5.0,
+      "y": 0.2558725238798967,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 7.0,
+      "y": 0.23602467075910893,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 9.0,
+      "y": 0.22697009161150283,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 11.0,
+      "y": 0.19743444940674315,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 13.0,
+      "y": 0.16711305318177783,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 15.0,
+      "y": 0.15051290613599744,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 17.0,
+      "y": 0.12693693627364044,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 19.0,
+      "y": 0.10961461842614073,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 21.0,
+      "y": 0.06572493959431991,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 23.0,
+      "y": 0.033714389863942706,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 25.0,
+      "y": 0.013043552081516196,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 27.0,
+      "y": 0.014382911077075011,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 29.0,
+      "y": 0.0021344356988223234,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 31.0,
+      "y": -0.09918597839564813,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 33.0,
+      "y": -0.07388996717306107,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 35.0,
+      "y": -0.14826793313708708,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 37.0,
+      "y": -0.1696009203933393,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 39.0,
+      "y": -0.19358048616680312,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 41.0,
+      "y": -0.19020716098652035,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 43.0,
+      "y": -0.4284480809109268,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 45.0,
+      "y": -0.4004881273057961,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 47.0,
+      "y": -0.6190201617605222,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 49.0,
+      "y": -0.5493753515195376,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 51.0,
+      "y": -0.8142574772511157,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 53.0,
+      "y": -0.8232510218251603,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 55.0,
+      "y": -1.7584811219784782,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 57.0,
+      "y": -1.6025980432308309,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 59.0,
+      "y": -1.3568262442678445,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "user-turn index": 1.0,
+      "y": 0.27475329106139124,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 3.0,
+      "y": 0.25319476151304277,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 5.0,
+      "y": 0.2558725238798967,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 7.0,
+      "y": 0.23602467075910893,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 9.0,
+      "y": 0.22697009161150283,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 11.0,
+      "y": 0.19743444940674315,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 13.0,
+      "y": 0.16711305318177783,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 15.0,
+      "y": 0.15051290613599744,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 17.0,
+      "y": 0.12693693627364044,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 19.0,
+      "y": 0.10961461842614073,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 21.0,
+      "y": 0.06572493959431991,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 23.0,
+      "y": 0.033714389863942706,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 25.0,
+      "y": 0.013043552081516196,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 27.0,
+      "y": 0.014382911077075011,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 29.0,
+      "y": 0.0021344356988223234,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 31.0,
+      "y": -0.09918597839564813,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 33.0,
+      "y": -0.07388996717306107,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 35.0,
+      "y": -0.14826793313708708,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 37.0,
+      "y": -0.1696009203933393,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 39.0,
+      "y": -0.19358048616680312,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 41.0,
+      "y": -0.19020716098652035,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 43.0,
+      "y": -0.4284480809109268,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 45.0,
+      "y": -0.4004881273057961,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 47.0,
+      "y": -0.6190201617605222,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 49.0,
+      "y": -0.5493753515195376,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 51.0,
+      "y": -0.8142574772511157,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 53.0,
+      "y": -0.8232510218251603,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 55.0,
+      "y": -1.7584811219784782,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 57.0,
+      "y": -1.6025980432308309,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 59.0,
+      "y": -1.3568262442678445,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "user-turn index": 1.0,
+      "y": 0.2189809166823501,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 3.0,
+      "y": 0.18796415048944604,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 5.0,
+      "y": 0.2119733727284695,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 7.0,
+      "y": 0.1860354594447049,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 9.0,
+      "y": 0.1986350371622061,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 11.0,
+      "y": 0.1611100790904898,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 13.0,
+      "y": 0.12986969050839325,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 15.0,
+      "y": 0.1203747462326018,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 17.0,
+      "y": 0.07548254461920201,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 19.0,
+      "y": 0.05962017081268145,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 21.0,
+      "y": 0.005268445156347279,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 23.0,
+      "y": -0.02648939235515746,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 25.0,
+      "y": -0.08436180271771643,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 27.0,
+      "y": -0.07748807009302694,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 29.0,
+      "y": -0.002342340650517638,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 31.0,
+      "y": -0.10521905519635122,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 33.0,
+      "y": -0.10977596526067335,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 35.0,
+      "y": -0.13240809989740754,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 37.0,
+      "y": -0.16295885142161515,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 39.0,
+      "y": -0.22820457372844927,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 41.0,
+      "y": -0.17565567229106205,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 43.0,
+      "y": -0.4297787807298288,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 45.0,
+      "y": -0.35211890400130574,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 47.0,
+      "y": -0.5856158896857075,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 49.0,
+      "y": -0.5694790989618752,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 51.0,
+      "y": -0.8802694048694726,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 53.0,
+      "y": -0.8930703783910605,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 55.0,
+      "y": -1.4989697266378537,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 57.0,
+      "y": -1.3793101577049867,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 59.0,
+      "y": -2.5851383764892413,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "user-turn index": 1.0,
+      "y": 0.2189809166823501,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 3.0,
+      "y": 0.18796415048944604,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 5.0,
+      "y": 0.2119733727284695,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 7.0,
+      "y": 0.1860354594447049,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 9.0,
+      "y": 0.1986350371622061,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 11.0,
+      "y": 0.1611100790904898,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 13.0,
+      "y": 0.12986969050839325,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 15.0,
+      "y": 0.1203747462326018,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 17.0,
+      "y": 0.07548254461920201,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 19.0,
+      "y": 0.05962017081268145,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 21.0,
+      "y": 0.005268445156347279,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 23.0,
+      "y": -0.02648939235515746,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 25.0,
+      "y": -0.08436180271771643,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 27.0,
+      "y": -0.07748807009302694,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 29.0,
+      "y": -0.002342340650517638,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 31.0,
+      "y": -0.10521905519635122,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 33.0,
+      "y": -0.10977596526067335,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 35.0,
+      "y": -0.13240809989740754,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 37.0,
+      "y": -0.16295885142161515,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 39.0,
+      "y": -0.22820457372844927,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 41.0,
+      "y": -0.17565567229106205,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 43.0,
+      "y": -0.4297787807298288,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 45.0,
+      "y": -0.35211890400130574,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 47.0,
+      "y": -0.5856158896857075,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 49.0,
+      "y": -0.5694790989618752,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 51.0,
+      "y": -0.8802694048694726,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 53.0,
+      "y": -0.8930703783910605,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 55.0,
+      "y": -1.4989697266378537,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 57.0,
+      "y": -1.3793101577049867,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 59.0,
+      "y": -2.5851383764892413,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "user-turn index": 1.0,
+      "y": 0.2189809166823501,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 3.0,
+      "y": 0.18796415048944604,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 5.0,
+      "y": 0.2119733727284695,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 7.0,
+      "y": 0.1860354594447049,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 9.0,
+      "y": 0.1986350371622061,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 11.0,
+      "y": 0.1611100790904898,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 13.0,
+      "y": 0.12986969050839325,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 15.0,
+      "y": 0.1203747462326018,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 17.0,
+      "y": 0.07548254461920201,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 19.0,
+      "y": 0.05962017081268145,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 21.0,
+      "y": 0.005268445156347279,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 23.0,
+      "y": -0.02648939235515746,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 25.0,
+      "y": -0.08436180271771643,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 27.0,
+      "y": -0.07748807009302694,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 29.0,
+      "y": -0.002342340650517638,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 31.0,
+      "y": -0.10521905519635122,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 33.0,
+      "y": -0.10977596526067335,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 35.0,
+      "y": -0.13240809989740754,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 37.0,
+      "y": -0.16295885142161515,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 39.0,
+      "y": -0.22820457372844927,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 41.0,
+      "y": -0.17565567229106205,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 43.0,
+      "y": -0.4297787807298288,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 45.0,
+      "y": -0.35211890400130574,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 47.0,
+      "y": -0.5856158896857075,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 49.0,
+      "y": -0.5694790989618752,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 51.0,
+      "y": -0.8802694048694726,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 53.0,
+      "y": -0.8930703783910605,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 55.0,
+      "y": -1.4989697266378537,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 57.0,
+      "y": -1.3793101577049867,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 59.0,
+      "y": -2.5851383764892413,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "user-turn index": 1.0,
+      "y": 0.2189809166823501,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 3.0,
+      "y": 0.18796415048944604,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 5.0,
+      "y": 0.2119733727284695,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 7.0,
+      "y": 0.1860354594447049,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 9.0,
+      "y": 0.1986350371622061,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 11.0,
+      "y": 0.1611100790904898,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 13.0,
+      "y": 0.12986969050839325,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 15.0,
+      "y": 0.1203747462326018,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 17.0,
+      "y": 0.07548254461920201,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 19.0,
+      "y": 0.05962017081268145,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 21.0,
+      "y": 0.005268445156347279,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 23.0,
+      "y": -0.02648939235515746,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 25.0,
+      "y": -0.08436180271771643,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 27.0,
+      "y": -0.07748807009302694,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 29.0,
+      "y": -0.002342340650517638,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 31.0,
+      "y": -0.10521905519635122,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 33.0,
+      "y": -0.10977596526067335,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 35.0,
+      "y": -0.13240809989740754,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 37.0,
+      "y": -0.16295885142161515,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 39.0,
+      "y": -0.22820457372844927,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 41.0,
+      "y": -0.17565567229106205,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 43.0,
+      "y": -0.4297787807298288,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 45.0,
+      "y": -0.35211890400130574,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 47.0,
+      "y": -0.5856158896857075,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 49.0,
+      "y": -0.5694790989618752,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 51.0,
+      "y": -0.8802694048694726,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 53.0,
+      "y": -0.8930703783910605,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 55.0,
+      "y": -1.4989697266378537,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 57.0,
+      "y": -1.3793101577049867,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "user-turn index": 59.0,
+      "y": -2.5851383764892413,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 480
+}

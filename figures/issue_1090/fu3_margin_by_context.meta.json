@@ -1,0 +1,5424 @@
+{
+  "commit": "6bb7acdc7b",
+  "created": "2026-07-08T09:54:51Z",
+  "figsize": [
+    10.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.598982895595132,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.07758392933467473,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.82,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.05751574045615637,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.18,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.07779562888770375,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.7369455899142874,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.18,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.08783224077482688,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.82,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.9367593396519789,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.18,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.9057219717214635,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": -0.1306879112599266,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.3655476888020832,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.19100188084463057,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.3027273178100587,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.11545237441595116,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.3848105160449551,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.14447375476931448,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.7680648000616777,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.25304807738022306,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.547963642753293,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.09438797670538393,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.1986239115397135,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.13299485364173647,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.4977953680630387,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.1285084250501483,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.6524129407159216,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.24693954611840174,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.47998608641363516,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.1889305311787979,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.446465217345974,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.20325635563813538,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.2334151324103857,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.10318230200725168,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.6226452468732084,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.15410427838548038,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.43857652196344343,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.12190290961125061,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.6039817660462625,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.19018544421108038,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.7916684570312498,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.22909703007874016,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.7530197058310053,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.17017473833714974,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.1582277359501005,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.25851289390124843,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.3908065112669079,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.12102638904133523,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.6394634482301313,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.15630040815802831,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.4151975191556487,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.13354420678463272,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.404069651728091,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.20618532573662368,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.6586789863054143,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.09527435560891742,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.37259576553688945,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.10923819816200442,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4492731611858043,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.12989097052672285,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4570500380327913,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.23496503258664583,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.47598073075457314,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.18599021932913384,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.49170385433148756,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.2621153221582988,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4164231571837933,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.24222789142784137,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.3944037433577936,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.14705118841635817,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5233793631612254,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.1359428119365929,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4412218903842038,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.0958482481618422,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5449793445285656,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.21135143553513264,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.37066332499186205,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.2033172529137236,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5143659501799738,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.18547995397035455,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.45646319182022754,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.23589515536482858,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5178008108428029,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.2466141290396151,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.41207950673204796,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.18437311327933192,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5251526832580566,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.22915631717084084,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4949376989293981,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.14943348095714815,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.392685981645976,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.19131265460298047,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.33326927923387095,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.12011792470958926,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4683492797336499,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.14395228163959514,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5526503223483845,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.2137740045512326,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.41171184339021405,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.12019323574886381,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.42879343340473786,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.12514241565057566,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.3552520046926566,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.2002538917745686,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.3910196157602164,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.21810094129255606,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4305390718450959,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.21284919071549557,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.15771959092881893,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.11515544704967576,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.1652355194091797,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.1259834764455195,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.053493877319752636,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.09132520855518099,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.10517214055646917,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.2316463879503849,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.07668588407371102,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.2096731541865658,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.08472468058268223,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.21692976815274032,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.13514621778466251,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.23053122558395422,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.1623435184873383,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.1726048395969012,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.08300933078746908,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.19237341527152085,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.06232341074010206,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.11516345966297833,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.18973675896139675,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.11061541323647522,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.0911928229375718,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.21031253312228487,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.07459924086084913,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.17479731710576385,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.18500593596813752,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.19174249916661398,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.11903979492187489,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.2276997943348846,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.107166482083624,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.20424929760010635,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.20806261288222405,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.18964429211843925,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.08457992325967822,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.19065728893417444,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.17414761766975317,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.1447110176512702,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.15434656387720302,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.09554721022222909,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.21159296450407528,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.1686091300618252,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.14621149107467257,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.12862524110751525,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.05665255668468072,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.1635351558704345,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.040988182836724896,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.24361255318826988,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.06024917291135212,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.13210910745576132,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05450141720655477,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.10049449350403188,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05459272811181437,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.14064910056395938,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04854333139684086,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.14284687639800303,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.03920335036057687,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.2091449726508411,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.0600654133205305,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.19026578742143008,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.034515798908390405,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.23110167763915443,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.061026766537800814,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.20957643725892974,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.029709588913690466,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.1631496350592127,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05147053184309547,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.23652366923988624,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04228674847146774,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.1200551255833867,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.03311767578124991,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.09408817316409489,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.038656194159325086,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.1062086149396155,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.028770128885905022,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.22002468310736104,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.061774585865161935,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.1731379014452497,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04990815463131426,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.11902892022604832,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04240525768649195,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.18018805951860545,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.06443458267405067,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.11741617848837031,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05811322745630276,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.21533766751399247,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04242769399083679,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.17030812960332553,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04737942603326584,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.15858382069736685,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04429258843853123,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.14427217604661777,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.060722937950721256,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.2034508667613999,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05058208264802655,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.7951262698996103,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.16369459364149286,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7457769854768983,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.09355449676513672,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7512410623816929,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.04172086227469074,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.9031415796189126,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.08682304516173245,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8935445243273693,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.05847386928951792,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.855947284085935,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.07804463704427089,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7778565930627136,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.12018102887033022,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.9044517479225904,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.1547051791487073,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8701751627138431,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.06853488903140548,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8590402340486193,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.049580095501557064,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.810885070385882,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.12271513097426467,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7790034811321287,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.07711428021072253,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.74735037318763,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.05742970592570762,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8924684313778916,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.14360106225107216,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8120397321700501,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.08727392578125004,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7664254056631415,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.07201671067562865,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7850721923471176,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.1346993395077285,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8342595224095414,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.0657257535564364,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7618191009290618,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.16499987943672867,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8841905711366277,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.11809754982972809,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8665335153703378,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.13932004182235058,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8595033320711687,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.14314021620639483,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8077767471595187,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.04241232047403676,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8429155913264399,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05007023774376207,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8351376344042925,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.06280268455038263,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8469723882798676,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05034417873475583,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7451999778051801,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04351149933247633,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8048453323907098,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.03664927238965543,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7374905512951407,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.03381693604504066,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8189183474640135,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.0465212347787185,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7893750182199014,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.020895761986301498,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7560143539958886,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.058846909565614336,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7486125341900594,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.020408812023344547,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8357760229919883,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.029889011882362482,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7607067343366396,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.03135316268257471,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8965216213078235,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.017980032256155187,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8345910051460712,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.0208740234375,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7924365648162708,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.02602672576904297,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8363647884666551,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.049163818359375,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.7341046967853456,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04891382504815933,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.9025406583834602,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04015128843245974,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.816814618649722,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05373154008438785,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8708923409050515,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.055050348831435336,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.744891399986039,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.042692944519501896,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8175984995508689,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04383190524193514,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8183272589838139,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.042775572723288136,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.898808761895497,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.0614471435546875,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8329110494276937,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05681263316761376,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.1752280921902516,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.16782565646701375,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1380556193565408,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.13972454071044904,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1496824195216593,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.06072581424648038,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1837210324448768,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.1154504073293583,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1690040628549083,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.07131971692825134,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.0938901743784595,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.09471766153971384,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2387325463549843,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.15406255612428144,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.251308938931158,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.1810786806303879,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.11524483601975,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.09777042521766166,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1897265058370288,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.07378868021574725,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1095436334043798,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.16551549574908098,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.211003216747166,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.09921292646215596,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1406220810910215,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.06852083026238187,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2086960742445423,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.1610107421875,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.220859030571639,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.10299072265625009,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2283565485451782,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.1099081199262395,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1093933702720613,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.201312977780578,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2548821321247694,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.07328659740846533,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1314385183610784,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.19196197133005466,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.0967342601117123,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.1499841152093353,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.189873444490467,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.18811167841372267,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.156766011095239,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.18437372251998507,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2393621537638344,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.04845801331943145,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2354852649715742,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.051612085150193776,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1470850007080886,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05867616822119448,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.261521891112554,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.049032964939024204,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1423652108652214,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.051949030236353,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1827102832617085,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04465512463646215,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1360737163021684,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.035672083557376055,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2584878426088133,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05376805140319485,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1196294071647632,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.03937854505565097,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.0980839114906191,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.06720767725783938,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1683174708005468,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.019740150088355612,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2686276015300506,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04399212742351111,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2505019079258846,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04408745143724513,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2247494435022508,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.02199854995265138,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2503426483581344,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.0284673812541556,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2508203951456154,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.03554391860961914,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1833945048695607,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.057903600622106755,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1468672293295428,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05793323255565075,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2289622377799778,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04511147775957647,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.209099027370197,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.06082990300303237,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1572583911972678,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.061052225403866345,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1070040002510726,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04806770955709583,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2244221300428246,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04852216166834644,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.1372428928661156,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04988929068688153,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.2586263670960802,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.07216116098257208,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.133374703501023,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.061239872252541794,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.7520964278340676,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.0948838975694444,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8796002809824832,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.5354650497436522,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.757591176992409,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.47573779630172774,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.762268295468393,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.0798918071546053,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.837888902473752,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.7176962540288678,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8874211673507437,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.5037307739257812,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.7653582398286232,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.5722098514951508,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.785858261122017,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.161427728061018,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.869932870883412,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.6684286392743313,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.9049287566909743,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.571413522089079,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8201334135164218,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.4748061236213235,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.7559015504592252,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.8225682809812214,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.7325085317874764,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.6209573997641509,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.771338085399794,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.9023141299977024,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.753727999201574,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.9634510498046875,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8519785612503143,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.8472007026885473,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.7519298508331356,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.6586777881909445,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.821139387691714,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.619525055387127,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8549672384157196,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.882520134066358,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8346009896597626,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.2074154584835735,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.7659596172988103,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.0463114199431045,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8747424147128073,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.5737567280614098,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8587732833308444,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.4370771135602678,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8630171207047976,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.6595479092856709,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.7535903952803165,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.7188532822797087,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.7522756846570622,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.6883238257431401,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8969612591811713,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5050159567016088,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8015640748884894,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.454016024178832,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.784170764520569,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4466634279320598,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8179451281632761,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5184182960893855,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.849315558297445,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.6604156494140625,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.9020121862684547,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.6884874691258591,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.78156032083877,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.3440916878836495,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8964655172761649,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.602641639909195,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.7344747084495262,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5506930143936817,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8299356476188284,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5376561020359849,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8441155201025954,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.3872192058157413,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.7490615326751358,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4817868868509929,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.7552611274715044,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5746628372757525,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8054405774769346,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.44603279845355304,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.9039217441857728,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.37819843907510076,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8372876595821872,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5943848171314607,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.897944179888038,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.7236928131620766,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8747849648103347,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5110361199629934,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8141286882799526,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4865313130040321,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.8712574208653938,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.44379266417852703,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.7332106211158578,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.556336857722356,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.7496459194178324,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.6151076321396529,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.2392971506788926,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.2182125515407991,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.233427075898529,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.223358154296875,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.131875333553958,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.0643900067326153,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.18553852630783,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.12050133420709974,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.199082847726002,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.09900915034683289,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.246193011679682,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.13324991861979152,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1985592883209706,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.16411792272808912,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1642628824692625,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.1549993054620149,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.157353127813293,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.11554440930115062,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1666587755472317,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.081422636093194,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2073475846043955,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.17695886948529393,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.246148313715419,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.12982121738818808,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1717014387737343,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.11191475346403301,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1346111213312446,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.2542431401271452,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1325992253395647,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.1711965332031249,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2242825704438207,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.145012029722416,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.236982377416304,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.2501758862567205,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1089500543737425,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.10814792006763074,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1019805942519323,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.25087898160204425,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1969980594761616,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.14875441331129835,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1163111839546858,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.1847706670346465,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2384395542821416,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.21728196254996313,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1458602413063335,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.06033279304217576,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.115896947934806,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.07356912775557167,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2557746850477414,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.08380832801870719,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.11979571009235,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.06935320598323136,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1412496148208287,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.06821541444158763,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1176504111345706,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05643123431797448,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1107882114597643,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.06648569454548348,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.0938066429405593,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05744806215083775,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.0999711736495668,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.0794700727070845,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1214354647684535,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.08929086796606533,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.0996087478728915,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.038379124232700734,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.196405886899975,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.06559553695598819,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.212528614823911,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.05795089058254055,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1608534822297654,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.047588556463068254,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.147238397451369,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.04031063647980382,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.180814722664002,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.045255502065022934,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2475008896022297,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.07565646701388884,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.243203692827997,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.06715915627675528,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.0978255111623025,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.059184412802419484,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1226697137273747,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.09397379557291652,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1326140767987916,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.09467975163863906,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1348897636497983,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.07239021932272083,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1928218773136994,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.06476026965725801,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.164927236626575,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.0628323696627473,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.098865741586967,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.10736788236177919,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.157250544922723,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.06300974576667162,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.8242755307691745,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.357708570692274,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.7483009425226688,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.108122253417969,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8800225396819408,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.5628153830258107,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.7393531359637184,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.2381259851288378,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.896471536423251,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.6872049511280829,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.7478403654843775,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.4539306640625003,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8818434912875954,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.8406073910066452,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.892477565906971,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.6986683812634693,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.9063227225055863,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.7015763467817164,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8743646584492466,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.5968716984541815,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.870305957338839,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.24910888671875,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8456469896791985,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.8853475588177322,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.870219343824063,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.6597743772110851,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.7542193975143663,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.567176968443628,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8264922464705746,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.26294091796875,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8225601166342744,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.0691531730097767,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8843629859420603,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.71240480484501,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8133038858068327,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.6195205005247202,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.7993161092980636,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.5032405146846064,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8451213888226796,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.5432518200996594,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.777963397150152,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.5104748269786006,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.755158313971712,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.402861839117006,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.816017909324274,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.4211655236724625,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8050400863470792,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5160476329714752,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.771862589295197,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5536728424279869,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.796152125820723,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.6042614448361281,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.7959506409687243,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.577528297649657,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.788949201594258,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4709154115106069,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.798303534350847,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5156340193651947,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.85343380218207,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.6310747029395074,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.783437765422831,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5356436951519692,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.900794426808761,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5883998805304984,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8949426435168717,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.31703912644159216,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.816563877094014,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.6294843264275196,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.789105016900844,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5789340475331182,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8263782621694005,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5963280880089961,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8827408879792524,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4570580340446311,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8474657213008183,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4092230796813965,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8747905290304736,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.563812934027778,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.825890009691833,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.42736565576840735,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8439251732681714,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.3953096451297884,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.781868010552843,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5341230303929325,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.862280769215852,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.7666331145722989,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.766432826762629,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4888675087376644,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8550636631873294,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.45836536038306464,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.884929432298661,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.44564446679042913,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.7537785107142776,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5297463050255409,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.8405883532975453,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5682227029754783,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.1071172346813882,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.2851508246527774,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.220628813088857,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.000202560424805,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1052087793882337,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.5251114881079353,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.258469168086113,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.1091522752192984,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1147334274068044,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.623712514013453,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.2625984442636344,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.2866068522135419,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.2341591516953176,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.654258640333154,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1968627608039437,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.4696413237473056,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.2308723388333185,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.6764108838133551,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.2331206710169558,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.5535606302824734,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.2602848713071197,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.136563648897059,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1356090036910538,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.8251663347996703,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.196213661164496,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.6209131780660377,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1071088555615924,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.315684000651042,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.200909826004342,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.2246162109375,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1208324347367022,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.0226194925148395,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.19169111006504,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.6273465720556115,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.193037492526093,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.5710412779850746,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.173877327536621,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.263449963228202,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1840737195923623,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 1.439648163624299,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.227506210201186,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.3050268422002382,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.233864048972172,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 2.213536816974019,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1785875788035773,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": 0.38593011153371704,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.19792681947407,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.42835702822189914,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.2576225224242186,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4820112371120324,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1115520459302024,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5761406130907012,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.11107864186202,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4810713755933542,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1057876221439384,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.36521154250541743,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.208415391307295,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4188709336253795,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1653494941422684,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5038419755477479,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.229377854905532,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.42179807898116417,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.210821654395547,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.49120296727341084,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.150054796499083,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.2544966198149181,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.2517059785250764,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5668349340948136,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.2272557864727176,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.5360833872919497,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.138696289363832,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4978434244791665,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.15555456319897,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.39927511012300543,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1465991964367674,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.3682049115498862,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1183700967525,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4834040889033566,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1166010070575947,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.3677157049309716,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.2585029434076342,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.34236765215473786,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1688227266957756,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.4601576921809072,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.158997568099934,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.6619217436192402,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.221343427561928,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.41693505308681855,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.189538751745522,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.3570550733996978,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.258505197630923,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.36963595651557357,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.230454268903691,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.46197415865384617,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1762865215424174,
+      "fixed-pool margin, trained \u2212 base\n(bars; points = per-item contributions, n=48\u201350)": -0.48731184233889047,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.18,
+      "y": 0.024467452722174876,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.18,
+      "y": 0.14443717266347456,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 0.82,
+      "y": 0.07456659540686705,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 1.18,
+      "y": 0.141224486653305,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 1.82,
+      "y": 0.004179542427514171,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 2.18,
+      "y": 0.024718887483318408,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 2.82,
+      "y": 0.10939648746725594,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 3.18,
+      "y": 0.15612808623479113,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 3.82,
+      "y": 0.09721523618130368,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 4.18,
+      "y": 0.11578393589978986,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": -0.20225529477345128,
+      "y": 0.5615533385613951,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.09240632191362202,
+      "y": 0.8566861117843296,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.14080315751934416,
+      "y": 0.5911935970483237,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.0987849611993086,
+      "y": 0.3710918052523742,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.24867385610093254,
+      "y": 0.408260222404234,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.11690393774565913,
+      "y": 0.7910913606969321,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.15532670088158262,
+      "y": 0.594484158647739,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.24805409789967972,
+      "y": 0.8897322186772127,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.16411356000554028,
+      "y": 0.773805801182577,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.14650265428101922,
+      "y": 0.8933694811834805,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.26778551654005145,
+      "y": 0.5600337493113983,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.1882227668684856,
+      "y": 1.0177927220121343,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.12142808798466218,
+      "y": 0.431934863845737,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.2168353754380638,
+      "y": 0.6040871217078767,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.1874613452762608,
+      "y": 0.4049486293914213,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.1903834571277792,
+      "y": 0.33283214080028034,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.21565306954035152,
+      "y": 0.4642084295099429,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.10468045880720023,
+      "y": 0.6092680754484954,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.12936707362232713,
+      "y": 0.6469348011121074,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.2500940860207001,
+      "y": 0.6404790105046452,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.09053376158923684,
+      "y": 0.8428984142485121,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.11174399562460585,
+      "y": 0.9030531680945193,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.21889648118447297,
+      "y": 0.4710583917025859,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.11935861566103112,
+      "y": 0.49652122048770697,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.2508444842631511,
+      "y": 0.3998455509476597,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.09016114851463705,
+      "y": -0.7270865138572984,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.15017674750082335,
+      "y": -0.7077021690164029,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.15297749719941656,
+      "y": -0.6672401847420157,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.25372066914285607,
+      "y": -0.6361650409120503,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.10853398819860746,
+      "y": -0.3665199464070048,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.2647800894231955,
+      "y": -0.6308547685731132,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.22665094955259352,
+      "y": -0.4616466321443258,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.2442560624700057,
+      "y": -0.5119526612692038,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.13018177067540065,
+      "y": -0.4786069729184146,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.23432323910167838,
+      "y": -0.5522963070700353,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.10608511911644064,
+      "y": -0.507117970784505,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.15187157292105177,
+      "y": -0.600621802175147,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.26349071211095465,
+      "y": -0.734283145111386,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.2690226298568339,
+      "y": -0.6803398132324219,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.2607015749374082,
+      "y": -0.6397759004769075,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.16093346802340902,
+      "y": -0.4873883864458868,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.12573327404530524,
+      "y": -0.5203197041495902,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.22706049228707006,
+      "y": -0.6687675924862129,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.11710640827384686,
+      "y": -0.6170869910198709,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.25969825077241315,
+      "y": -0.4623989796075292,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.12582650634449827,
+      "y": -0.5073282283588045,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.10299682256898954,
+      "y": -0.5221568919994213,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.1310204881612115,
+      "y": -0.6934244698340737,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.1443382588838453,
+      "y": -0.8091487489897631,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.11916356064203104,
+      "y": -0.7552482449278539,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 0.09722723391847195,
+      "y": 0.46059070933948854,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.12632077992942997,
+      "y": 0.780468126283075,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.11248626227501575,
+      "y": 0.6168742400920946,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.18081557823473757,
+      "y": 0.31659010344860583,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.224133863099192,
+      "y": 0.354579310263357,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.20340213202375176,
+      "y": 0.683842170529249,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.2432035979571483,
+      "y": 0.45259193482437765,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.11793833863939636,
+      "y": 0.7498923355007765,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.22223179654832909,
+      "y": 0.6715811115421659,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.12474746835640274,
+      "y": 0.8591416953266531,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.13873657523720404,
+      "y": 0.49970167111127806,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.2177828455106347,
+      "y": 0.9804955340446311,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.2664368612817627,
+      "y": 0.414835847182081,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.2000778490758725,
+      "y": 0.5411345491704251,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.09981005669843321,
+      "y": 0.3673270644655653,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.2009356145869559,
+      "y": 0.33712426210061097,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.09762309928443007,
+      "y": 0.44103256972519644,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.2491462280460271,
+      "y": 0.5220319959852431,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.2177240913181117,
+      "y": 0.5733422451331969,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.12116301235605058,
+      "y": 0.4540289801520272,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.10650978104835565,
+      "y": 0.7720928581393496,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.1230359811984574,
+      "y": 0.8167074954870974,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.2664048923197546,
+      "y": 0.44729130185883603,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.17254091564252816,
+      "y": 0.4864369560690489,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.23113457070145343,
+      "y": 0.3743792478279149,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.20455350157939983,
+      "y": -0.47854788092118294,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.19303436699255472,
+      "y": -0.5043341976472702,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.11612344583970893,
+      "y": -0.4724863911723043,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.2602844016404571,
+      "y": -0.45084265506628807,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.14424167385264922,
+      "y": -0.2677615253245773,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.1940430988453576,
+      "y": -0.4315853478773586,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.2159596700260319,
+      "y": -0.3403300235145972,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.2068619679441556,
+      "y": -0.33554179441995435,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.2593069937451933,
+      "y": -0.33091684635853635,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.11671901818561044,
+      "y": -0.38252658708721166,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.18150349292044957,
+      "y": -0.3674353281656897,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.16272619033333785,
+      "y": -0.4460445306239984,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.17535037130687126,
+      "y": -0.482458737817141,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.11145915471559403,
+      "y": -0.4490523338317871,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.11413702977709775,
+      "y": -0.4367447818618224,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.14005359824062633,
+      "y": -0.3679266536937038,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.14484682867694965,
+      "y": -0.4091934454245645,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.16702257846264298,
+      "y": -0.40659107881433787,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.1999777584665931,
+      "y": -0.45957416036854615,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.20423324113528735,
+      "y": -0.29797988050565927,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.16412596138540264,
+      "y": -0.3645246742415602,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.16358095969716546,
+      "y": -0.41149631076388893,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.12917313480545314,
+      "y": -0.44740253413489084,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.19589512471362147,
+      "y": -0.5152640507139012,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.1470673640371028,
+      "y": -0.5066232486647002,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.7364907701699255,
+      "y": 0.5169964414654353,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.805312007948235,
+      "y": 0.9183605778826411,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8153438815162307,
+      "y": 0.5105813133795531,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.770606716276758,
+      "y": 0.3030355116900276,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8330424279619809,
+      "y": 0.3436012268066404,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8318389420777459,
+      "y": 0.8845077142482851,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8563603925998668,
+      "y": 0.6980925769340702,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8466307267962179,
+      "y": 0.9068887840887034,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8474379501737858,
+      "y": 0.8098138260514767,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7869185473283278,
+      "y": 0.8475133923516758,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8717377999574718,
+      "y": 0.570059360601963,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8288459890479424,
+      "y": 0.9916274699758978,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8076552751323802,
+      "y": 0.38496689989387645,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8426822465693904,
+      "y": 0.5620065276155768,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7949183202010458,
+      "y": 0.3756260963002589,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8222930640292165,
+      "y": 0.3025786571013622,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8626070239267998,
+      "y": 0.35959683931790876,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8895525196102674,
+      "y": 0.5504480432581016,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8957902955131345,
+      "y": 0.6157500053364071,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8206539265329579,
+      "y": 0.8218746700802364,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8236495206533025,
+      "y": 0.8891481153008078,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8739766739374906,
+      "y": 0.9411810672644414,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7866011245139563,
+      "y": 0.4205474853515623,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8807288252221124,
+      "y": 0.5800511977251839,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8189454963731363,
+      "y": 0.4006763680633407,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7508542103803484,
+      "y": -0.7195484789111948,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7429706464731299,
+      "y": -0.6327776561751679,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8815587779871035,
+      "y": -0.6489522745321084,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7400022250432381,
+      "y": -0.5817843350497158,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7805100585040581,
+      "y": -0.32472545973920575,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7901434072902783,
+      "y": -0.5716352354805427,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.761139000134487,
+      "y": -0.4149619654605263,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7865008065643582,
+      "y": -0.4647822033759603,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8636846620105154,
+      "y": -0.42503858732697153,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7326429118408128,
+      "y": -0.49714779684729615,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8788912164137236,
+      "y": -0.48221410115559893,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8841786442434205,
+      "y": -0.5421905517578125,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7970070831744788,
+      "y": -0.7628834035136913,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7576503218309143,
+      "y": -0.5697624683380127,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8381512734301146,
+      "y": -0.5361565892476157,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7515410600556811,
+      "y": -0.43231088974896603,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7956854849940855,
+      "y": -0.4382599377241292,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.9025172525621751,
+      "y": -0.649133420458027,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.9091836050650548,
+      "y": -0.5027187181555706,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8689788804438254,
+      "y": -0.44204952209953285,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.7859730717857379,
+      "y": -0.47366600315066165,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8537797088498967,
+      "y": -0.4725192599826389,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8569731457871224,
+      "y": -0.584016712433701,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.799811505129457,
+      "y": -0.7724299989897632,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8453599542255088,
+      "y": -0.699699713259327,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 1.0919309760956217,
+      "y": 0.42902412799873724,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1276303785484034,
+      "y": 0.8010307367700729,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.184515894534107,
+      "y": 0.4864780855494619,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1194752347664931,
+      "y": 0.24166062298943025,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.119863236217776,
+      "y": 0.31162508072391626,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2405347722990427,
+      "y": 0.7579863013290777,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2680439404830488,
+      "y": 0.5324364638910062,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1900744970451207,
+      "y": 0.8361164353649069,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2410325515587084,
+      "y": 0.7355647674978596,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.268257899578729,
+      "y": 0.7917944866677991,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1154872599423793,
+      "y": 0.4978641607822516,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.170684210385783,
+      "y": 0.9312323712288066,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1606630888515455,
+      "y": 0.3875882363732839,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1044088710563131,
+      "y": 0.5384458561533507,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.225959431103054,
+      "y": 0.34584813209096343,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1680802249180666,
+      "y": 0.29107313889723563,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1744788481542723,
+      "y": 0.3647269935874673,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1171211352863832,
+      "y": 0.49454164858217564,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1225667974015563,
+      "y": 0.5579917365735998,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2532786519881187,
+      "y": 0.5790691203899212,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.09803683601537,
+      "y": 0.780455712558461,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.131913411289867,
+      "y": 0.8439927534623581,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.142570679456615,
+      "y": 0.39187537883890067,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1782355576322856,
+      "y": 0.5205504473517923,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1955601311426631,
+      "y": 0.3698370552918302,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.17879219565312,
+      "y": -0.5272452438933941,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1051407602202388,
+      "y": -0.4906791599317528,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1338601417300285,
+      "y": -0.5107319590809578,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2418459092572574,
+      "y": -0.45702385179924243,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2047659660861225,
+      "y": -0.2731284910929952,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2068468290241694,
+      "y": -0.4160796543337266,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2106365859632437,
+      "y": -0.31451616789165304,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.227322543427115,
+      "y": -0.3308235040590084,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1004595267098605,
+      "y": -0.3056568939413802,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1559895092878703,
+      "y": -0.36948930456283247,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.187114938347102,
+      "y": -0.36970787048339826,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1509221669935186,
+      "y": -0.4394670796190572,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2420061971916936,
+      "y": -0.5400590046797649,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1768630515457128,
+      "y": -0.42706823348999023,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2283529661026882,
+      "y": -0.40233149394452816,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2433627930386104,
+      "y": -0.3346582300522747,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1808624669226295,
+      "y": -0.3516753149814291,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2537194038968429,
+      "y": -0.431472329532399,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1956823092966564,
+      "y": -0.3977163563603938,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.2430493737900699,
+      "y": -0.3326908622201037,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1513063432064743,
+      "y": -0.36924754790145986,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1797870525356673,
+      "y": -0.3931052879050927,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1856539873808238,
+      "y": -0.4149489096545298,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1088963488612926,
+      "y": -0.5568226781384698,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1617394512062773,
+      "y": -0.5318522550621809,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.8951207810593018,
+      "y": 0.08504524616279996,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8435498032656537,
+      "y": 0.1054745416571623,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.7619511848386542,
+      "y": 0.08711414463472655,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.790994014409729,
+      "y": 0.06054343429266229,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.764488541739286,
+      "y": 0.06954020838583652,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.7344681637237431,
+      "y": 0.0993840287371377,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8969428825307248,
+      "y": 0.09493323845591961,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8106773190862369,
+      "y": 0.13051799513538453,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.7853563130357415,
+      "y": 0.15828527163152817,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8377258944803927,
+      "y": 0.13675192128057034,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.7313166021327429,
+      "y": 0.08258760892427919,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.7800439791881466,
+      "y": 0.10830298890458767,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8565460238258007,
+      "y": 0.059705260172055574,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8440785591524673,
+      "y": 0.07583775471166243,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.9067250705576564,
+      "y": 0.05191487111863036,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.841664387738448,
+      "y": 0.05668424948667883,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.815951057252992,
+      "y": 0.0523254821350525,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8670578613731215,
+      "y": 0.06436112015335649,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8925990169535296,
+      "y": 0.09117451652151631,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8597252704093035,
+      "y": 0.08023511182080512,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.9033780202388884,
+      "y": 0.12948317754836314,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8707609307328719,
+      "y": 0.14096716678503762,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8860242588871468,
+      "y": 0.0757930360991379,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.7505387328130548,
+      "y": 0.07248553107766575,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8618344305388819,
+      "y": 0.0725349460482061,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8092159659149265,
+      "y": -0.09472327896311317,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8295586844340297,
+      "y": -0.09162943755986586,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8477384337068243,
+      "y": -0.08799542437542929,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.9045667210070025,
+      "y": -0.07536408395478222,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.9072240546576924,
+      "y": -0.07680905844278385,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.781881084187823,
+      "y": -0.07181857127063696,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.862075629538825,
+      "y": -0.06817104941920249,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8649970368283484,
+      "y": -0.0737096690598813,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.7923687150363488,
+      "y": -0.069018063129195,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.75229655947556,
+      "y": -0.06990949481937037,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.7373704528514295,
+      "y": -0.0904172261555991,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8699217629552523,
+      "y": -0.10338129548944952,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8181459535270432,
+      "y": -0.09058281926825495,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.9073972305090867,
+      "y": -0.0933074951171875,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8136952221148577,
+      "y": -0.075439453125,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.9060250562332912,
+      "y": -0.07134718053481137,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.804083680394931,
+      "y": -0.07343604916431845,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8728627871007952,
+      "y": -0.08028666178385446,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.7452674690161298,
+      "y": -0.08232813296110741,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8299831078247975,
+      "y": -0.07858108160063981,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8743707616574303,
+      "y": -0.11117197301265991,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.89644630009958,
+      "y": -0.09928453233506929,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8780649563111378,
+      "y": -0.11831693036840596,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.7366547308962115,
+      "y": -0.08132450498383648,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.7970864214352122,
+      "y": -0.1091408242984695,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 2.0987657250164933,
+      "y": 0.10179754700323551,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.1096708124006205,
+      "y": 0.1649002854841468,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.2115550131601474,
+      "y": 0.11643567622102635,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.218386475336106,
+      "y": 0.06305141074984677,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.229269722895293,
+      "y": 0.08204380158455127,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.2457821786500194,
+      "y": 0.1441469890315359,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.223097664325772,
+      "y": 0.1324676265561484,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.234156886579194,
+      "y": 0.18801140637131208,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.09881346776819,
+      "y": 0.19959018655019278,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.132216327079434,
+      "y": 0.18776780280514016,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.2019415992075446,
+      "y": 0.11616340050330543,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.2444625548324684,
+      "y": 0.15617062183136632,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.090810022489139,
+      "y": 0.08458749407288657,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.182633281580943,
+      "y": 0.10072185083762886,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.211911731885592,
+      "y": 0.07356913378284213,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.0953293120431504,
+      "y": 0.07399828006059717,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.16224400035961,
+      "y": 0.07824450939685335,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.2512142786490656,
+      "y": 0.08546933774594878,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.2108903055940545,
+      "y": 0.11451812910903358,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.1327785054049078,
+      "y": 0.10591111741624415,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.2435006033337443,
+      "y": 0.18250653532897543,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.152645656213713,
+      "y": 0.1921842170484136,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.2436020408059307,
+      "y": 0.10140507139008603,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.1438098572014033,
+      "y": 0.10520239437327694,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.196257645158967,
+      "y": 0.08665021545683871,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.1614492121946105,
+      "y": -0.11433526534068417,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.139468509135912,
+      "y": -0.10455228725155674,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.2495803611909366,
+      "y": -0.10976552439259946,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.1237668627491084,
+      "y": -0.09157492897727293,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.1052660864224375,
+      "y": -0.07976336640436288,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.151546848938219,
+      "y": -0.08123618071933958,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.2191750465754825,
+      "y": -0.06829854061729046,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.235337689075731,
+      "y": -0.0819466873254191,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.269773806612018,
+      "y": -0.07131384523122941,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.14334517026201,
+      "y": -0.07349238835328009,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.163429551203631,
+      "y": -0.09660797119140607,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.114627830045333,
+      "y": -0.11069064670138884,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.193476947332146,
+      "y": -0.1207133378132732,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.269564406707325,
+      "y": -0.0934138298034668,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.216158581821719,
+      "y": -0.07994257302648133,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.197138311274407,
+      "y": -0.06552415735581318,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.160626436725923,
+      "y": -0.0906507148117317,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.2547537768514,
+      "y": -0.09221664129518992,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.179444987303463,
+      "y": -0.10191096430239455,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.114186044396351,
+      "y": -0.09626061146653564,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.1557681233758443,
+      "y": -0.12073243969548342,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.1020900003925984,
+      "y": -0.11636533383969905,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.126356226783981,
+      "y": -0.12602695850057355,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.0931803805799842,
+      "y": -0.10899574016702607,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.1715903849700298,
+      "y": -0.12321191904496187,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.8442172476913234,
+      "y": 0.5253357550110482,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.791792643228203,
+      "y": 1.069710613167199,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8056687188709497,
+      "y": 0.7818989532672806,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.9026576691120236,
+      "y": 0.4818200504078587,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8653533618834848,
+      "y": 0.5732029330345891,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.827354194650091,
+      "y": 0.9766494006645388,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.7812173575201284,
+      "y": 0.7833947902772485,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.891459423779139,
+      "y": 0.961906859593362,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.7723174810385185,
+      "y": 1.0843039734722817,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.7885616914930016,
+      "y": 0.9860492651013362,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8936316665961304,
+      "y": 0.693977942833534,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.825317569951313,
+      "y": 1.051451013443318,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8636172308952355,
+      "y": 0.47280319302068263,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8363340629494775,
+      "y": 0.7176486929667365,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.847619057621709,
+      "y": 0.5160497191605293,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.7838889924726686,
+      "y": 0.4300697522285657,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.7734469710927994,
+      "y": 0.5344896649980877,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.7880486224903596,
+      "y": 0.7475963451244214,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.757979481535016,
+      "y": 0.7158846829106897,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.887376585752345,
+      "y": 0.8517032657657659,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.7809844479850203,
+      "y": 1.1124390063642646,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.831068090994589,
+      "y": 1.01774990197384,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8725553965254473,
+      "y": 0.6301061169854525,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.871088339687628,
+      "y": 0.6589501324821923,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8089095265451545,
+      "y": 0.4891419004431756,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8157263155456103,
+      "y": -0.7695656305626977,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.9090463148083043,
+      "y": -0.6649179275921933,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8514275458562244,
+      "y": -0.6804764296982315,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.876634919761219,
+      "y": -0.731017257228042,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8924597144594615,
+      "y": -0.4798951079879983,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8717661705212807,
+      "y": -0.5948732771963443,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.763332282091642,
+      "y": -0.4825194509405837,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8311907320727627,
+      "y": -0.5007407758489004,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.748340948316618,
+      "y": -0.4826488110843121,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8475259827815194,
+      "y": -0.5831502278645833,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.9019628970738056,
+      "y": -0.5379971822102865,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8222917715740197,
+      "y": -0.6768420618823454,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.807935048716198,
+      "y": -0.8713904654625622,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.736451695255269,
+      "y": -0.7420516014099121,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.9027594140192594,
+      "y": -0.6679787999654869,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.7485404831434286,
+      "y": -0.5174499960506664,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.7373942367948723,
+      "y": -0.519625304175205,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.7742919900708887,
+      "y": -0.8230020859662224,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.741795478105309,
+      "y": -0.759735107421875,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8119212116341172,
+      "y": -0.43734236589566944,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.82289580422628,
+      "y": -0.5182207761889828,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.786262590825145,
+      "y": -0.5931660970052084,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.7391728868634795,
+      "y": -0.7697034363352926,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.7500880662848606,
+      "y": -0.9162671319369613,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.799210788038187,
+      "y": -0.8088444301060265,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 3.1008951211487767,
+      "y": 0.44389281610045783,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.2156741506097846,
+      "y": 0.9060443961707345,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1272636974744663,
+      "y": 0.6938979799384313,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.144372882381055,
+      "y": 0.4207566205193016,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.160942639892058,
+      "y": 0.4553215272964968,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1649897339524466,
+      "y": 0.873414388517054,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.0902989273814643,
+      "y": 0.6371618751587906,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1101726667797656,
+      "y": 0.8011721024602099,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.245297621473358,
+      "y": 0.9629238598967249,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.090221951252144,
+      "y": 0.89824024145154,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1814701240463177,
+      "y": 0.5973213391426284,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1781103611712975,
+      "y": 1.010284423828125,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.149956948981915,
+      "y": 0.4295107450099349,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1676388636263613,
+      "y": 0.599724366492832,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.230504604754785,
+      "y": 0.4245931054376493,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.2414166671186924,
+      "y": 0.40027207594651437,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.136862737814745,
+      "y": 0.47076458697552437,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1480482793741915,
+      "y": 0.6339007342303242,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1336469135451,
+      "y": 0.6021508388831966,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.176375412099192,
+      "y": 0.6750180356137387,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.2129865043785863,
+      "y": 0.9610246930803572,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.131085517583416,
+      "y": 0.8715311686197917,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.149532433569876,
+      "y": 0.5792809848127694,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.257469231166047,
+      "y": 0.5995754915125231,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.098742472172453,
+      "y": 0.45021241876576523,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.172938528943122,
+      "y": -0.578457989270174,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.21808044748742,
+      "y": -0.490980827945402,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1170817220803455,
+      "y": -0.5293585808722527,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.0985273236009867,
+      "y": -0.5671074607155537,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.114876966894936,
+      "y": -0.40073811259246694,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.255388174835523,
+      "y": -0.46948057930424536,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.0916667607278026,
+      "y": -0.3876065705951892,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1238979554660435,
+      "y": -0.38666709175323,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.095631032322296,
+      "y": -0.37494961527369974,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.109913304161197,
+      "y": -0.4663503660377879,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.2016268715930933,
+      "y": -0.40209197998046875,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1334950035730356,
+      "y": -0.5413895305405316,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.192458169077522,
+      "y": -0.6512973898708232,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.196235168897903,
+      "y": -0.5782163143157959,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.2428983599561603,
+      "y": -0.542976593875502,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.0908534507241376,
+      "y": -0.3995060640222885,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.2436065026816263,
+      "y": -0.41581150742827866,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.2014414355568555,
+      "y": -0.6144491457471664,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1192938274988924,
+      "y": -0.5964445031207539,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.2291287298643514,
+      "y": -0.3366884246585875,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.2439884775223056,
+      "y": -0.40168639691206653,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1357674270757485,
+      "y": -0.47102593315972197,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.2553828625624828,
+      "y": -0.565473644011611,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.1718023374537587,
+      "y": -0.7019089271282328,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.198616401779998,
+      "y": -0.6241251108597736,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.9072369160511755,
+      "y": 0.3789628154099589,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.795076494155056,
+      "y": 0.6607311833513916,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.87636868224762,
+      "y": 0.4959235791338992,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.7873118412091227,
+      "y": 0.2349011290307137,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.873858434003468,
+      "y": 0.24610396354429187,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8381321053952755,
+      "y": 0.5177718371879763,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.768944025140572,
+      "y": 0.337887275509718,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8045246968820625,
+      "y": 0.6034013262446623,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.787174414185441,
+      "y": 0.6328068563382918,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.7440595107544654,
+      "y": 0.7745317099750906,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.7353702586179454,
+      "y": 0.44374377910907437,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.7923661579732926,
+      "y": 0.8757457327335438,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.7334261466071474,
+      "y": 0.34485057323654256,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.7597877963647193,
+      "y": 0.39264230629832464,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.860532997753156,
+      "y": 0.2978977276261445,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.857456422423046,
+      "y": 0.2860105465619991,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8629444695623287,
+      "y": 0.3066440395541956,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.787087570803396,
+      "y": 0.44141574435763875,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.890203502281185,
+      "y": 0.5209317233393103,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8368894986451205,
+      "y": 0.30957003756686374,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.7526847415143925,
+      "y": 0.6374526250930059,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.755869359061996,
+      "y": 0.6458270911014439,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8547571768473463,
+      "y": 0.4036673710264007,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.7611299085595737,
+      "y": 0.4042901431812962,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8213126862847675,
+      "y": 0.36582953619850067,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.908519405667168,
+      "y": -0.39667346809483783,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.730721368852001,
+      "y": -0.4561444863505746,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.73298436434156,
+      "y": -0.4882485525948661,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.908755224747491,
+      "y": -0.35264171253551124,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8352349901441496,
+      "y": -0.19986875967127116,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.752843795593332,
+      "y": -0.41801849941037705,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8915143959557366,
+      "y": -0.3204693041349713,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8884684540229846,
+      "y": -0.3381190806127794,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8265160743600473,
+      "y": -0.333444684943897,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.841922565374936,
+      "y": -0.3987318539450353,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.7791736944701575,
+      "y": -0.3124273935953772,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.739093545346961,
+      "y": -0.38137595673911595,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8370221696003552,
+      "y": -0.4338992279354885,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.783055934776497,
+      "y": -0.42247629165649414,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8494517883988633,
+      "y": -0.4196054236477158,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.880524131831668,
+      "y": -0.3226356506347656,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.733268897904585,
+      "y": -0.32840516137295106,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.837228479443431,
+      "y": -0.33523395014744173,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.7716304971436334,
+      "y": -0.40045862612516947,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8872999296226842,
+      "y": -0.2569260484590301,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.775659611181129,
+      "y": -0.3140454814381841,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.839938623982375,
+      "y": -0.33349586769386574,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.82963735121613,
+      "y": -0.37031765159116947,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8013099700106645,
+      "y": -0.37102450666756503,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.851971737447963,
+      "y": -0.42447210817920933,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 4.220638534248778,
+      "y": 0.30104712283972535,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.19204880315749,
+      "y": 0.5545923831689099,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.226516002693256,
+      "y": 0.4327627017798015,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.267015073678729,
+      "y": 0.20509652530445766,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.165469029822145,
+      "y": 0.18902735556325623,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.182624949339395,
+      "y": 0.40592007520722184,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.092244578029418,
+      "y": 0.27464654193661087,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.233285140135868,
+      "y": 0.4703139784913626,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.183641412068279,
+      "y": 0.5182727134391052,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.163433057464902,
+      "y": 0.6347291365913723,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.1069329533560905,
+      "y": 0.3446316841321113,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.250138155901571,
+      "y": 0.7260425648790725,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.1611013032073,
+      "y": 0.2808199314712789,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.212864687677659,
+      "y": 0.32121386970441357,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.116887348146267,
+      "y": 0.23156310646397293,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.263078933317385,
+      "y": 0.2619464580829327,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.1221195171279295,
+      "y": 0.23069112284200166,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.125917558721908,
+      "y": 0.3495451750578704,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.244616914900388,
+      "y": 0.4241334675439721,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.254264893945547,
+      "y": 0.23229045696086725,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.128186533354194,
+      "y": 0.5230526048309949,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.174564159871469,
+      "y": 0.5264256795247393,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.222029082821309,
+      "y": 0.3363426471578661,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.248105832085944,
+      "y": 0.32578142951516553,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.158229485106714,
+      "y": 0.30699150872337455,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.183063507632897,
+      "y": -0.26415397547468356,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.223508953893552,
+      "y": -0.32825127963362055,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.221604475797503,
+      "y": -0.3719199044363839,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.230932823404695,
+      "y": -0.2396161628491953,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.192588087355475,
+      "y": -0.14275282707767212,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.108830717424859,
+      "y": -0.29414177660672136,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.252715192358047,
+      "y": -0.22761977346319906,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.245803057077785,
+      "y": -0.2436369997163057,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.2336575384473,
+      "y": -0.238906553127622,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.107975245888931,
+      "y": -0.3058170832640732,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.126791526074657,
+      "y": -0.22207310994466134,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.223848065719377,
+      "y": -0.2489554902427218,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.0941652170247504,
+      "y": -0.3081997408725248,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.26626043406731,
+      "y": -0.2965676784515381,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.157886042464022,
+      "y": -0.29516895707831337,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.219476256064348,
+      "y": -0.2476200776941635,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.249762795927848,
+      "y": -0.25146784547899603,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.161033379867015,
+      "y": -0.21694976208256733,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.147443847947939,
+      "y": -0.28176050600798197,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.1995734032016845,
+      "y": -0.1821118452417565,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.194578087274649,
+      "y": -0.24663749750513198,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.163645195972463,
+      "y": -0.25196216724537024,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.198319456056187,
+      "y": -0.27606789125215014,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.258368646521969,
+      "y": -0.2436573949353451,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.174175246192787,
+      "y": -0.2872655440349967,
+      "_kind": "scatter",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 902
+}

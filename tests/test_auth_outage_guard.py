@@ -26,6 +26,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.conftest import _stub_fleet_mutating_passes
+
 # Bootstrap sys.path the same way the sibling watcher tests do (scripts/ on
 # the path so autonomous_session_watch imports by name).
 _SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
@@ -72,6 +74,12 @@ def _hermetic(monkeypatch):
     real ~/.happy/logs (enrichment only — never the trigger)."""
     monkeypatch.setattr(asw, "_AUTH_CANARY_TOKEN", False)
     monkeypatch.setattr(asw, "_auth_outage_evidence", lambda: "churn-only")
+
+
+# The #1247 hermeticity guard (`_forbid_real_marker_posts`) is now a shared
+# autouse fixture in tests/conftest.py (task #1265) — it applies here
+# automatically, and this file additionally gains the round-2
+# `_forbid_real_task_status_reads` coverage it never had a per-file copy of.
 
 
 @pytest.fixture
@@ -344,32 +352,31 @@ def test_main_order_auth_outage_before_respawn_loop(watcher_roots, monkeypatch):
     monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
     monkeypatch.setattr(asw, "_issue_registrations", lambda: {})
     monkeypatch.setattr(asw, "_campaign_gate_candidates", lambda: set())
-    # Neutralize every other pass so main() runs cheaply + deterministically.
+    # #1247/#1278 hermeticity: the shared conftest helper stubs every
+    # fleet-MUTATING pass (incl. the #1267 boot_death_pass this file's inline
+    # copy was missing) fail-loud. Called BEFORE the recorders below — a later
+    # monkeypatch wins (helper docstring convention).
+    _stub_fleet_mutating_passes(asw, monkeypatch)
+    # Determinism-only remainder (not in the helper's fleet-mutating list):
+    # neutralize the other passes so main() runs cheaply + deterministically.
+    # Fail-loud by design — no attribute-existence silent-skip;
+    # monkeypatch.setattr's default raising=True crashes if a pass is renamed
+    # instead of letting it run live.
     for name in (
         "vm_disk_pass",
-        "data_disk_pass",
-        "happy_patch_pass",
-        "cpu_guard_pass",
         "triage_observer_pass",
-        "vm_ledger_reap_pass",
-        "program_orchestrator_pass",
         "campaign_pass",
         "pod_safety_pass",
         "stalled_session_pass",
         "orphan_sweep_pass",
         "infra_drain_pass",
-        "proposed_infra_sweep_pass",
-        "capacity_retry_pass",
         "stale_blocked_flag_pass",
         "session_reconcile_pass",
-        "gate_push_pass",
         "zombie_wrapper_pass",
         "idle_unmapped_pass",
         "stale_registration_pass",
-        "gc_pass",
     ):
-        if hasattr(asw, name):
-            monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+        monkeypatch.setattr(asw, name, lambda *a, **kw: None)
     monkeypatch.setattr(asw, "auth_outage_pass", lambda *a, **kw: order.append("auth_outage"))
     monkeypatch.setattr(asw, "_process_entry", lambda *a, **kw: order.append("process_entry"))
     # One registered issue so the crash-recovery loop actually iterates.
@@ -496,6 +503,9 @@ def test_stalled_gate_skips_stop_and_respawn_as_unit(watcher_roots, monkeypatch)
     )
     monkeypatch.setattr(asw, "_persist_stalled_ctx", lambda *a, **kw: None)
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: None)
+    # #1247 fence act-guard seam: confirm-active so the guard's live re-read
+    # never shells the real `task.py view` subprocess (hermeticity).
+    monkeypatch.setattr(asw, "_task_status", lambda _i: "running")
     # Episode active, no token: NEITHER the stop NOR the respawn fires.
     asw._handle_stalled_respawn(_stalled_ctx(7, "sid-7", {"sid-7"}))
     assert stops == [] and spawns == []

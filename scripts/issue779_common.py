@@ -586,7 +586,13 @@ def judge_rollouts_n5(
         judge_system_prompt=trait_judge_system_prompt(trait),
         format_user_msg=trait_judge_user_msg,
         judge_model=JUDGE_MODEL,
-        max_tokens=256,
+        # 300, not 256 (#1112): llm-judging.md rule 23 floor for a
+        # reason-then-score rubric — #1112 pre-seeds the BEHAVIORS-registry
+        # rubric ("one-line justification, then the integer score") into the
+        # trait artifacts cache; the #779 evil rubric ("just the number") is
+        # unaffected by a larger cap (the judge cache is disabled here, so no
+        # cache busting either).
+        max_tokens=300,
         cache_dir=None,  # draw-collapse guard: see docstring BLOCKER cache note
         save_raw=save_raw,
         dry_run=dry_run,

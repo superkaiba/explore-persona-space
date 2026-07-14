@@ -155,3 +155,38 @@ def test_code_reviewer_step05_validates_canonical_h3_labels():
             f"{label!r}; without it the validator and the implementer's "
             "writer drift apart and a faithfully-following implementer FAILs."
         )
+
+
+# ── Step 6 durability-pin shipping duty (#1230) ──────────────────────────────
+#
+# verify_plan.py c31 verifies a plan NAMES a durability pin; the Step 6
+# bullet pinned here is the ONLY surface that verifies the named test
+# SHIPS (the #1179 naming-vs-shipping residual). Pin the load-bearing
+# shape: BOTH existence arms (NEW test in the round's diff OR a STANDING
+# test already in the tree) — a later edit that "simplifies" the duty to
+# diff-only turns every standing-pin plan into a false plan-adherence
+# finding; dropping the bullet re-opens the gap.
+
+
+def test_code_reviewer_step6_durability_pin_shipping_duty():
+    body = CODE_REVIEWER.read_text()
+    m = re.search(r"\*\*Durability-pin shipping check.*?(?=\n\s*\n)", body, flags=re.DOTALL)
+    assert m, (
+        "code-reviewer.md Step 6 must carry the **Durability-pin shipping "
+        "check** bullet (#1230: c31 checks the pin is NAMED; this duty "
+        "checks it SHIPS)"
+    )
+    step6 = body.index("### Step 6: Plan Deviation Check")
+    step7 = body.index("### Step 7: Issue Verdict")
+    assert step6 < m.start() < step7, "bullet must live inside Step 6"
+    bullet = m.group(0)
+    assert "Durability pin:" in bullet
+    # Both existence arms — diff arm + standing-tree arm — must survive edits.
+    assert re.search(r"(?i)round'?s diff", bullet), bullet
+    assert re.search(r"(?i)standing", bullet), bullet
+    assert re.search(r"(?i)neither", bullet), bullet
+    # Miss classification: substantive plan-adherence finding.
+    assert re.search(r"(?i)plan-adherence finding", bullet), bullet
+    assert "substantive" in bullet.lower(), bullet
+    # N/A-escape exemption clause must survive edits (no duty on N/A pins).
+    assert re.search(r"(?i)carries no duty", bullet), bullet

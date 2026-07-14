@@ -238,21 +238,26 @@ provision — two traps cost multiple round-trips before. The
 authoritative recipe is agent memory
 `feedback_gcp_salvage_relaunch.md`; the operative points:
 
-1. **No repo-root `.env` and no git credential helper on a
-   fresh-bootstrapped GCP instance.** The startup-script clone used a
-   transient token that is scrubbed once the script exits, so a
-   `git fetch origin <branch>` of a private branch HANGS forever
-   waiting on an interactive credential prompt (non-TTY SSH never
-   answers it), and credentialed pipeline phases (analyze / upload —
-   WandB/HF) have no `.env` to read. Recover by:
+1. **No repo-root `.env` on a fresh GCP instance — and a salvage SSH
+   session does not inherit the startup-script env.** Post-#1205 the
+   startup script configures an env-reading git credential helper
+   repo-local on the workload clone (`backends/gcp.py`), but that
+   helper reads `GITHUB_TOKEN` from the INVOKING environment with no
+   `.env` fallback, so a bare `git fetch` in a fresh SSH shell can
+   still fail or prompt, and credentialed pipeline phases (analyze /
+   upload — WandB/HF) have no `.env` to read. Recover by:
    - **Stage the local VM `.env`** to `/workspace/eps-issue-<N>/.env`
      via stdin to a root-only file (mode 600) — never echo the token
      into the argv.
-   - **Fetch the private branch with token-in-URL**, NOT
-     `Authorization: Bearer` (which does NOT work for classic `ghp_`
-     PATs over git smart-HTTP):
-     `git fetch "https://x-access-token:$TOK@github.com/<owner>/<repo>.git" <branch>`
-     where `$TOK` is read from the just-staged `.env`'s `GITHUB_TOKEN`.
+   - **Fetch helper-authenticated (#1239 contract — never a tokenized
+     remote URL):** in one stdin script to `sudo bash -s`: source the
+     just-staged `.env` (`set -a; . ./.env; set +a`), `export
+     GIT_TERMINAL_PROMPT=0`, idempotently refresh the env-reading
+     credential helper, then `git fetch origin <branch>` — exact
+     fenced block in `feedback_gcp_salvage_relaunch.md`. The token
+     rides the command environment only (never argv, the remote URL,
+     or git config); the helper supplies it as Basic auth, which
+     classic `ghp_` PATs accept.
 2. **NEVER `pkill -f "<pattern present in your own SSH argv>"`** to kill
    a stray remote process — the pattern self-matches the SSH command's
    own argv and SIGKILLs the session (gcloud exits 255, locking you out

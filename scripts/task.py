@@ -38,9 +38,11 @@ Subcommands (see `task.py --help`):
 from __future__ import annotations
 
 import argparse
+import contextlib
 import difflib
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -56,6 +58,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     KINDS,
     STATUSES,
     WORKFLOW_VERSIONS,
+    GoalH2DropError,
     NewTaskRequest,
     ReconcileReport,
     add_tag,
@@ -124,6 +127,18 @@ def _safe_echo(text: str, *, context: str) -> None:
                 os.close(devnull_fd)
         except Exception:
             pass
+
+
+_FIELD_LED_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*[:=]")
+
+
+def _looks_field_led(note: str) -> bool:
+    """True when the note HEAD is a `field:` / `field=` line-core after
+    stripping the same leading whitespace/bullet/bold mix
+    task_workflow.parse_followup_note_field strips per segment. Head-only
+    by design (false-positive-averse; see #1178 plan §4 D2)."""
+    core = re.sub(r"^[\s\-*]+", "", note)
+    return bool(_FIELD_LED_RE.match(core))
 
 
 def _safe_print(*args: object, context: str = "task.py", **kwargs: object) -> None:
@@ -582,6 +597,26 @@ def cmd_post_event(args: argparse.Namespace) -> None:
     # Append failures (oversize note, flock timeout, missing task), routed-
     # mode commit failures, and genuine bugs raise out of post_event above
     # and stay fatal.
+    if args.note is not None and "\\n" in note and "\n" not in note and _looks_field_led(note):
+        # Poster-side twin of the #1120 parse-side normalization
+        # (task_workflow.parse_followup_note_field): a single physical
+        # line whose separators arrived as literal backslash-n escapes is
+        # almost always a shell-quoting mistake ("...\n..." instead of
+        # $'...\n...'). WARN only — the marker already posted; guarded so
+        # a torn-down stderr can never flip the exit code post-commit
+        # (the #537 rc-contract class, see _safe_echo; a closed stderr
+        # stream raises ValueError, not only OSError).
+        with contextlib.suppress(OSError, ValueError):
+            print(
+                f"WARNING: task.py post-marker {args.marker}: --note is a single "
+                "physical line containing literal \\n escape sequences with "
+                "field-led content; field parsers treat REAL newlines as "
+                "separators and normalize these escapes where they apply "
+                "(#1120). Did you mean $'...' shell quoting, or --file for a "
+                "multi-line body? Do NOT re-post this marker — it was posted "
+                "successfully; fix the quoting on your NEXT marker instead.",
+                file=sys.stderr,
+            )
     _safe_echo(
         json.dumps(payload, indent=2),
         context=f"task.py post-marker: marker {args.marker}",
@@ -766,13 +801,18 @@ def _assert_body_nontrivial(text: str, *, source: str) -> None:
 
 
 def cmd_set_body(args: argparse.Namespace) -> None:
-    """CLI handler for `task.py set-body <N> [--body|--file|stdin] [--snapshot] [--allow-stub]`.
+    """CLI handler for `task.py set-body <N> [--body|--file|stdin] [--snapshot]
+    [--allow-stub] [--allow-goal-drop]`.
 
     Reads the new body from one of three sources (--body string, --file
     path, or stdin), runs the non-trivial-body assertion via
     `_assert_body_nontrivial` unless `--allow-stub` is passed, then
     delegates to the library `set_body()` for the actual write +
-    flock + commit.
+    flock + commit. The library-side Goal-H2 drop guard (incident #1112)
+    raises `GoalH2DropError` when a `kind: experiment` body update would
+    remove the `## Goal` H2 present in the prior body — caught here and
+    re-raised as a clean `SystemExit` (the `--allow-stub` style); pass
+    `--allow-goal-drop` for a deliberate drop (e.g. the v2 report write).
     """
     if args.body is not None:
         new_body = args.body
@@ -795,7 +835,17 @@ def cmd_set_body(args: argparse.Namespace) -> None:
         is_paper = False
     if not args.allow_stub and not is_paper:
         _assert_body_nontrivial(new_body, source=source)
-    set_body(args.number, new_body, snapshot_original=args.snapshot)
+    try:
+        set_body(
+            args.number,
+            new_body,
+            snapshot_original=args.snapshot,
+            allow_goal_drop=args.allow_goal_drop,
+        )
+    except GoalH2DropError as exc:
+        # Clean one-line refusal (no raw traceback) — matches the
+        # `--allow-stub` guard's SystemExit style.
+        raise SystemExit(str(exc)) from exc
     _safe_echo("ok", context="task.py set-body")
 
 
@@ -1364,6 +1414,19 @@ def main() -> None:
             "flag. NOTE: a `paper: true` task auto-allows a short paper-stub "
             "(H1 + abstract + paper link) WITHOUT this flag — the paper itself, "
             "not the body, is the clean-result (verified by verify_paper.py)."
+        ),
+    )
+    p.add_argument(
+        "--allow-goal-drop",
+        action="store_true",
+        help=(
+            "allow the new body to REMOVE the `## Goal` H2 present in the prior "
+            "kind:experiment body. Without this flag the write refuses "
+            "(GoalH2DropError) — the Goal is the canonical target every "
+            "downstream agent reads (incident #1112). Deliberate droppers: the "
+            "workflow-v2 report write (report-v1 carries `## Motivation:`, no "
+            "`## Goal`; `goal:` frontmatter survives). Paper-stub writes are "
+            "auto-exempt via `paper: true`, no flag needed."
         ),
     )
     p.set_defaults(func=cmd_set_body)

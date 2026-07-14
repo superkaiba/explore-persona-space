@@ -190,6 +190,13 @@ CLAUDE.md § 429 token-pacing):
 - `efficiency-critic` ∥ its Codex twin `codex-efficiency-critic`
 - `consistency-checker` (Claude-only, no twin)
 
+**Quota-sentinel pre-check first (#1204, CLAUDE.md § Codex ensemble
+review):** when LIVE, spawn only `statistics-critic` ∥
+`methodology-baselines-critic` ∥ `efficiency-critic` ∥
+`consistency-checker` — skip all 3 codex-twin composer spawns this round
+(instant confirmed no-show per lens, single-Claude decision), one
+`epm:progress` note per round.
+
 The Codex twins are prompt-composers; **the orchestrator bg-dispatches each via
 `scripts/codex_task.py`** exactly as CLAUDE.md § "Codex ensemble review"
 prescribes (the wrapper never self-dispatches Codex — orphan-job anti-pattern
@@ -286,6 +293,11 @@ event-driven, no ask site).
 - `efficiency-critic` (implementation mode) — the Claude side of the same
   efficiency checks.
 
+**Quota-sentinel pre-check first (#1204, CLAUDE.md § Codex ensemble
+review):** when LIVE, skip the `codex-code-reviewer` twin spawn;
+`code-correctness-critic` proceeds Claude-only per the v1 Step 5d
+no-show fallback (applied verbatim here).
+
 Ensemble decision, reconciler on disagreement, mechanical-strip, and **round cap
 5** are IDENTICAL to v1 (`.claude/skills/issue/SKILL.md` § "Step 5: Code review
 loop" + CLAUDE.md § Codex ensemble review apply verbatim, with the v2 panel
@@ -361,14 +373,28 @@ and Thomas alone writes the TLDR + Next steps.
 
 Set status to `interpreting` (= report generation under v2) for this stage.
 
-**7b. Build dashboards + pin links.** Build the per-issue dashboard tables,
-commit them, and emit SHA-pinned htmlpreview links:
+**7b. Commit held figures + build dashboards + pin links.** WAIT for the
+7a-batch upload-verifier's PASS first (the 7a spawn may still be running —
+the Step-7 gate requires PASS, and this commit is what releases the plotter
+HOLD), then commit the HELD plotter figures — BEFORE assembly (7c), so 7c can
+splice real SHA-pinned image URLs — in the same explicit-path commit as the
+dashboards; capture ONE commit SHA; push (raw permalinks resolve only for
+pushed commits, and the pushed `issue-<N>` branch — kept after the Step-10d
+rebase-merge — is the pin's durable anchor):
 
 ```bash
 uv run python scripts/build_dashboards.py build --issue <N>      # renders experiments/dashboards/issue<N>_*.html (sharded)
-# commit the dashboard files by explicit path, capture the commit SHA, then:
-uv run python scripts/build_dashboards.py emit-links --issue <N> --sha <40-hex-commit-sha>
+git add figures/issue_<N>/ experiments/dashboards/          # explicit paths only
+git commit -m "task #<N>: report figures + dashboards"
+git push origin issue-<N>
+SHA=$(git rev-parse HEAD)
+uv run python scripts/build_dashboards.py emit-links --issue <N> --sha "$SHA"
 ```
+
+The SAME `$SHA` pins the 7c image URLs. Idempotent on re-entry: figures already
+committed + unchanged → reuse `git log -n1 --format=%H -- figures/issue_<N>/`;
+a 7d/7e round that re-runs the plotter re-commits the changed figures (new SHA),
+re-splices the affected pins, and re-verifies.
 
 Splice the emitted links into the Methodology section's inline dashboard-link
 slots. Payload capped ~10 MB/issue; oversized families shard numerically;
@@ -381,7 +407,8 @@ Assemble the report body from `.claude/skills/issue-v2/report-template.md`:
 - splice the methodology-writer's Motivation / Methodology / Metrics sections,
 - for each figure in `captions.json`, emit a `### <plot name>` Results
   subsection: the factual "what is plotted EXACTLY" caption → the SHA-pinned
-  `![...](raw.githubusercontent.com/...)` image → nothing after it,
+  `![...](raw.githubusercontent.com/<owner>/<repo>/<the Step-7b commit SHA>/figures/issue_<N>/...)`
+  image → nothing after it,
 - leave `## TLDR:` and `## Next steps:` as the literal `*(Thomas fills in)*`
   placeholders,
 - keep the `# Experiment: <question>` H1 with NO confidence tag (Thomas appends
@@ -406,9 +433,16 @@ report-template.md § "The interpretivity rule"); and (e) runs the mechanical
 gate:
 
 ```bash
-uv run python scripts/verify_report.py --issue <N> --mode generation \
+# the report exists only as the 7c draft file until 7f's set-body — verify the DRAFT:
+uv run python scripts/verify_report.py --file <report-draft>.md --mode generation \
+  --expect-issue <N> --figures-root <worktree-root> \
   --manifest <path>/planned_manifest.json
 ```
+
+(`<report-draft>.md` = the file 7c assembles and 7f's `set-body --file` consumes —
+same path both places; e.g. the task's `artifacts/report-draft.md` or a
+worktree-local draft. The promote-mode invocation `--issue <N> --mode promote`
+is unchanged — `body.md` IS the report by then.)
 
 Generation mode REQUIRES the TLDR + Next-steps placeholders intact and runs the
 interpretivity / lexicon checks on the AGENT-written sections only. On findings,
@@ -416,11 +450,14 @@ re-run the plotter / methodology-writer / assembly as needed and re-verify. Post
 `epm:report-verified` on PASS. Round cap 5; at the cap with a substantive
 residual, interactive → surface, autonomous → `epm:failure` + block.
 
-**7f. Commit + park.** After `verify_report.py --mode generation` PASSes, commit
-the held plotter figures, then write the report body and park:
+**7f. Write body + park.** After `verify_report.py --mode generation` PASSes
+(figures were committed + pinned at Step 7b), write the report body and park:
 
 ```bash
-uv run python scripts/task.py set-body <N> --file <report>.md --snapshot
+# --allow-goal-drop is DELIBERATE: the report-v1 skeleton carries `## Motivation:`,
+# not `## Goal` (the `goal:` frontmatter is preserved by set_body), so the Goal-H2
+# drop guard (#1112) must be explicitly overridden here.
+uv run python scripts/task.py set-body <N> --file <report-draft>.md --snapshot --allow-goal-drop
 uv run python scripts/task.py set-title <N> "Experiment: <one-line question>"   # NO confidence tag — Thomas adds it at promote
 uv run python scripts/task.py set-clean-result <N>                              # accepts the report-v1 sentinel
 uv run python scripts/task.py post-marker <N> epm:report --note "report-v1 generated + verified; awaiting Thomas TLDR"

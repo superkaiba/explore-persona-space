@@ -231,7 +231,8 @@ TASK_DIR="$(uv run python scripts/task.py find <N>)"  # absolute, canonical main
 REPO_ROOT="${TASK_DIR%/tasks/*}"                      # canonical MAIN checkout root — worktree-proof. NEVER `git rev-parse --show-toplevel`: from an issue-worktree cwd that resolves to the WORKTREE root, a stale fork of the workflow surface (#537 near-miss)
 BODY_PATH="$TASK_DIR/body.md"                         # wins over any relative clean_result_body_path in the brief
 PLAN_PATH="$TASK_DIR/plans/plan.md"                   # wins over any relative plan_path in the brief
-for f in "$BODY_PATH" "$PLAN_PATH" "<interpretation_marker_path>"; do
+for f in "$BODY_PATH" "$PLAN_PATH" "<interpretation_marker_path>" \
+         "$REPO_ROOT/.claude/rules/clean-result-critic-lens-reference.md"; do
   test -s "$f" || {
     uv run python scripts/task.py post-marker <N> epm:failure \
         --by codex-clean-result-critic \
@@ -293,7 +294,12 @@ PY
   audit + open-concerns envelopes (paper branch: ONE envelope),
   point Codex at `$TEX_PATH` + the figure PNGs (`figures/issue_<N>/`) +
   `$PDF_PATH` (load relevant PDF pages — render-only issues the `.tex` hides),
-  and emit the SEVEN P1-P7 lens lines. Do NOT inline the fifteen markdown
+  and emit the SEVEN P1-P7 lens lines. Include the figure read-target rule in
+  the prompt (paper-mode analogue of the markdown branch's #922 EXCEPTION,
+  whose Lens-3 pointer does not ship in paper mode): the compiled PDF is the
+  built artifact of record — on a working-tree-PNG vs PDF-page disagreement,
+  review against the PDF page, note the possible stale working-tree stray,
+  and never rest a blocker on the PNG alone. Do NOT inline the fifteen markdown
   lenses or the `verify_task_body.py` / `audit_clean_results_body_discipline.py`
   envelopes for a paper task. The marker kind, round budget, and grounding rule are
   identical. (No `\metric` grounding lens in v1.)
@@ -356,15 +362,27 @@ three envelopes (verifier + audit + open-concerns). Paper branch: the
 
 ### Step 2: Compose the review prompt (markdown branch — `PAPER=false`)
 
-Inline the Claude critic's spec verbatim — read
-`$REPO_ROOT/.claude/agents/clean-result-critic.md` (the canonical-main
-copy, via Step 1b's worktree-proof `$REPO_ROOT` — NEVER the bare
-relative path, which resolves against the session cwd: an issue
-worktree's copy is a stale fork of the spec, and on #537 the worktree
-copy still described fourteen lenses after main carried fifteen, so
-only a manual catch kept Lens 15 in the Codex prompt) and copy:
+The read contract has TWO sources (#1159: the full lens rubrics were
+relocated out of the agent spec into the on-demand lens reference; the
+slim agent spec stays the source of the report schema — the same split
+of responsibilities as codex-critic.md Steps 2-3).
 
-- The fifteen lens definitions, in the stable 1-15 numbering: Lens 1 Title →
+**(a) The fifteen lens definitions** — copy VERBATIM and IN FULL from
+`$REPO_ROOT/.claude/rules/clean-result-critic-lens-reference.md` (the
+canonical-main copy, via Step 1b's worktree-proof `$REPO_ROOT` — NEVER
+the bare relative path, which resolves against the session cwd: an
+issue worktree's copy is a stale fork of the reference — the #537
+class, where the worktree copy still described fourteen lenses after
+main carried fifteen, so only a manual catch kept Lens 15 in the Codex
+prompt): the sections `### Lens 1 — Title` … `### Lens 15 — Headline
+must not rest on a contaminated / failed-data-gate arm`, in the stable
+1-15 numbering. Take ALL the CURRENT text of every lens section — the
+rubrics grow over time; never compose from a lens list frozen in this
+file (the #599 drift class: a literal-minded composer once shipped
+Codex a 3-item subset of a 13-item rubric). The roster below is
+ORIENTATION ONLY (names, never a definition source):
+
+- Lens 1 Title →
   Lens 2 v4 structure (Takeaways shape + Goal slots + Methodology slots +
   Results skeleton) → Lens 3 Figure (+ what-is-plotted/interpretation
   pairing) → Lens 4 Takeaways
@@ -381,6 +399,11 @@ only a manual catch kept Lens 15 in the Codex prompt) and copy:
   must not rest on a contaminated / failed-data-gate arm**. (There is no
   "merged" placeholder lens — the v2 eval-probe lens folded into
   Lens 10, the v2 story-arc lens's pairing check folded into Lens 3.)
+
+**(b) From `$REPO_ROOT/.claude/agents/clean-result-critic.md`** (the
+slim agent spec — canonical-main copy via the same worktree-proof
+`$REPO_ROOT`; it remains the source of the report schema), copy:
+
 - The Output template (you re-emit it as
   `epm:clean-result-critique-codex` instead of
   `epm:clean-result-critique`).
@@ -396,8 +419,9 @@ only a manual catch kept Lens 15 in the Codex prompt) and copy:
 
 For **Lens 14**: YOU fetched the ledger at Step 1d; inline the JSON as
 the OPEN-CONCERNS JSON envelope (Step 3) — the envelope is the ONLY
-ledger path Codex gets (it cannot run task.py). When copying the Claude
-critic's Lens 14 definition into the prompt, REPLACE its "Step 0
+ledger path Codex gets (it cannot run task.py). When copying the
+reference file's `### Lens 14 — Binding-concerns audit (composed onto
+Lens 13 by task #455)` section into the prompt, REPLACE its "Step 0
 prerequisite" ledger-fetch bash block AND any literal
 `task.py list-concerns … --open-only` invocation text with a by-name
 reference to the OPEN-CONCERNS JSON envelope (the Step 4 no-residue
@@ -631,7 +655,7 @@ Note verifier-worthy recurring checks in plain English in the verdict
 body (you never emit workflow-fix candidates — the orchestrator
 decides).
 
-{{INLINED clean-result-critic.md fifteen lenses (stable 1-15 numbering, v4 section names) + independence + don't-gatekeep rules}}
+{{INLINED .claude/rules/clean-result-critic-lens-reference.md fifteen lens sections (### Lens 1 — ... ### Lens 15, stable 1-15 numbering, v4 section names, copied verbatim + in full) + clean-result-critic.md independence + don't-gatekeep rules}}
 
 {{INLINED .claude/skills/clean-results/SPEC.md — four-flat-H2 (v4) markdown clean-result spec (sentinel <!-- clean-result-v4 -->, 2026-W26; grandfathered v3/v2/legacy documented)}}
 
@@ -1161,7 +1185,10 @@ output (cap retries at 2), and posts via `task.py post-marker` (with
 the oversize fallback to an artifacts file if the note exceeds the
 50,000-char cap). On `epm:codex-task-failed` or persistent malformed
 output, the orchestrator falls back to single-Claude-critic per
-`workflow.yaml § ensemble_review`.
+`workflow.yaml § ensemble_review`. Trigger-dense round: reads are
+MECHANICAL — grep the verdict line, sed tag-block extraction,
+`post-marker --file` — never page the findings body
+(SKILL.md § File-only Codex verdict posting).
 
 You do NOT validate, do NOT retry, do NOT post the marker.
 

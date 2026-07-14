@@ -1561,3 +1561,237 @@ def test_resolve_spec_partial_flag_without_intent_fails_loud(gpu_type, gpu_count
 def test_resolve_spec_nothing_given_fails_loud():
     with pytest.raises(SystemExit, match="Must pass either --intent"):
         pod_lifecycle._resolve_spec(None, None, None)
+
+
+# ---------------------------------------------------------------------------
+# cmd_provision — pod-safety terminal-parent warn (#1177)
+# ---------------------------------------------------------------------------
+
+
+def _fm(status: str, tags: tuple[str, ...] = (), kind: str = "experiment") -> dict:
+    """Build the ``get_task()`` return shape the #1177 guard reads: top-level
+    ``status`` (folder name) + ``frontmatter.tags``."""
+    return {
+        "id": 0,
+        "status": status,
+        "frontmatter": {"kind": kind, "tags": list(tags)},
+        "body": "",
+    }
+
+
+def _ev(kind: str, ts: str | None) -> dict:
+    """Build a minimal events.jsonl row (ts/kind are all the guard reads)."""
+    return {"ts": ts, "kind": kind, "version": 1, "by": "test", "note": ""}
+
+
+def _patch_task_state(monkeypatch, task, events) -> None:
+    """Monkeypatch ``task_workflow.get_task`` / ``.list_events`` (lazily
+    imported inside the #1177 guard) with fixed returns; pass an Exception
+    instance for either to make that read raise (fail-open tests)."""
+
+    def fake_get_task(issue):
+        if isinstance(task, Exception):
+            raise task
+        return dict(task, id=issue)
+
+    def fake_list_events(issue):
+        if isinstance(events, Exception):
+            raise events
+        return list(events)
+
+    monkeypatch.setattr("explore_persona_space.task_workflow.get_task", fake_get_task)
+    monkeypatch.setattr("explore_persona_space.task_workflow.list_events", fake_list_events)
+
+
+_T1 = "2026-07-01T00:00:00Z"
+_T2 = "2026-07-02T00:00:00Z"
+
+
+def test_provision_warns_on_completed_status_no_signals(monkeypatch, capsys):
+    """The primary trigger: completed + untagged + only a done-transition
+    event -> the warning fires with all five acceptance substrings."""
+    _patch_task_state(monkeypatch, _fm("completed"), [_ev("epm:status-changed", _T1)])
+
+    assert pod_lifecycle._warn_on_terminal_parent_provision(664) is True
+
+    err = capsys.readouterr().err
+    for needle in (
+        "pod-safety",
+        "AUTO-STOP",
+        "add-tag 664 keep-running",
+        "epm:run-launched",
+        "Proceeding",
+    ):
+        assert needle in err, f"warning missing acceptance substring: {needle!r}"
+    # All three recipe commands are quoted.
+    assert "post-marker 664 epm:run-launched" in err
+    assert "remove-tag 664 keep-running" in err
+
+
+@pytest.mark.parametrize("status", ["completed", "awaiting_promotion", "archived", "on_hold"])
+def test_provision_warn_fires_for_each_auto_stop_status(monkeypatch, capsys, status):
+    _patch_task_state(monkeypatch, _fm(status), [_ev("epm:status-changed", _T1)])
+    assert pod_lifecycle._warn_on_terminal_parent_provision(1) is True
+    assert "WARNING" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "status", ["running", "followups_running", "approved", "blocked", "proposed"]
+)
+def test_provision_silent_on_active_statuses(monkeypatch, capsys, status):
+    """Sanctioned paths (incl. the followups_running follow-up loop) must
+    print NOTHING — false-positive rate 0 on this matrix."""
+    _patch_task_state(monkeypatch, _fm(status), [_ev("epm:status-changed", _T1)])
+    assert pod_lifecycle._warn_on_terminal_parent_provision(1) is False
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert captured.out == ""
+
+
+def test_provision_silent_with_keep_running_tag(monkeypatch, capsys):
+    _patch_task_state(
+        monkeypatch, _fm("completed", tags=("keep-running",)), [_ev("epm:status-changed", _T1)]
+    )
+    assert pod_lifecycle._warn_on_terminal_parent_provision(1) is False
+    assert capsys.readouterr().err == ""
+
+
+@pytest.mark.parametrize(
+    "signal_kind",
+    ["epm:run-launched", "epm:followup-scope", "epm:free-analysis-followup-run"],
+)
+def test_provision_silent_with_fresh_followup_signal(monkeypatch, capsys, signal_kind):
+    """A follow-up signal STRICTLY newer than the latest done-transition is
+    the watcher's live-follow-up exemption -> no warning."""
+    events = [_ev("epm:status-changed", _T1), _ev(signal_kind, _T2)]
+    _patch_task_state(monkeypatch, _fm("completed"), events)
+    assert pod_lifecycle._warn_on_terminal_parent_provision(1) is False
+    assert capsys.readouterr().err == ""
+
+
+def test_provision_warns_on_stale_followup_signal(monkeypatch, capsys):
+    """A signal OLDER than the latest done-transition means the follow-up
+    finished (the watcher's re-arm semantics, strict >) -> warn fires."""
+    events = [_ev("epm:followup-scope", _T1), _ev("epm:status-changed", _T2)]
+    _patch_task_state(monkeypatch, _fm("completed"), events)
+    assert pod_lifecycle._warn_on_terminal_parent_provision(1) is True
+    assert "WARNING" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "exc", [FileNotFoundError("gone"), RuntimeError("branch"), ValueError("bad")]
+)
+def test_provision_failopen_on_unresolvable_task(monkeypatch, capsys, exc):
+    """An unresolvable task (ad-hoc pod / registry miss / branch-guard fire)
+    proceeds with a one-line NOTE — never a block, never an exception."""
+    _patch_task_state(monkeypatch, exc, [])
+    assert pod_lifecycle._warn_on_terminal_parent_provision(9999) is False
+    err = capsys.readouterr().err
+    assert "skipped" in err
+    assert "WARNING" not in err
+
+
+def test_provision_failopen_on_unparseable_ts(monkeypatch, capsys):
+    """Garbage/absent ts values never crash: the events are treated as absent
+    (conservative toward warning), so the warn fires here."""
+    events = [_ev("epm:run-launched", None), _ev("epm:status-changed", "not-a-timestamp")]
+    _patch_task_state(monkeypatch, _fm("completed"), events)
+    assert pod_lifecycle._warn_on_terminal_parent_provision(1) is True
+    assert "WARNING" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "signal_kind",
+    ["epm:run-launched", "epm:followup-scope", "epm:free-analysis-followup-run"],
+)
+def test_provision_warns_on_signal_without_done_transition(monkeypatch, capsys, signal_kind):
+    """A signal with NO done-transition ever posted -> warn fires (the
+    watcher's conservative missing-done -> False branch,
+    autonomous_session_watch._task_followup_active). A sign inversion here
+    would silently drop the warn on a watcher-stopped class."""
+    _patch_task_state(monkeypatch, _fm("completed"), [_ev(signal_kind, _T2)])
+    assert pod_lifecycle._warn_on_terminal_parent_provision(1) is True
+    assert "WARNING" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [OSError("io"), FileNotFoundError("gone"), RuntimeError("branch"), ValueError("bad")],
+)
+def test_provision_failopen_on_list_events_raising(monkeypatch, capsys, exc):
+    """get_task succeeds (completed, untagged) but list_events raises — the
+    events read is where OSError specifically joins the fail-open set."""
+    _patch_task_state(monkeypatch, _fm("completed"), exc)
+    assert pod_lifecycle._warn_on_terminal_parent_provision(1) is False
+    err = capsys.readouterr().err
+    assert "skipped" in err
+    assert "WARNING" not in err
+
+
+def test_provision_pod_safety_constants_match_watcher():
+    """Parity pin: the local mirror constants equal the watcher's — a watcher
+    change to any of the three sets breaks this test and forces a same-round
+    re-sync (plan §11: local mirror + parity test, zero coupling)."""
+    import autonomous_session_watch as asw
+
+    assert frozenset(asw.POD_SAFETY_AUTO_STOP) == pod_lifecycle._POD_SAFETY_AUTO_STOP_STATUSES
+    assert pod_lifecycle._POD_FOLLOWUP_SIGNAL_KINDS == asw._POD_FOLLOWUP_SIGNAL_KINDS
+    assert pod_lifecycle._POD_DONE_TRANSITION_KINDS == asw._DONE_TRANSITION_KINDS
+
+
+def test_provision_freshness_behavioral_parity_with_watcher():
+    """Parity pin on the comparison SEMANTICS (strict >, missing-signal ->
+    False, missing-done -> False) — the constants test alone cannot catch
+    comparison-logic drift. The watcher accepts an injected events list."""
+    import autonomous_session_watch as asw
+
+    matrices = {
+        "fresh-signal": [_ev("epm:status-changed", _T1), _ev("epm:run-launched", _T2)],
+        "stale-signal": [_ev("epm:followup-scope", _T1), _ev("epm:status-changed", _T2)],
+        "signal-only-no-done": [_ev("epm:free-analysis-followup-run", _T2)],
+        "done-only": [_ev("epm:promoted", _T1)],
+        "empty": [],
+    }
+    for label, evts in matrices.items():
+        assert pod_lifecycle._fresh_followup_signal(evts) == asw._task_followup_active(
+            1, events=evts
+        ), f"freshness parity diverged from the watcher on {label!r}"
+
+
+def test_provision_dry_run_calls_check(monkeypatch, capsys, isolated_state, stub_list_team_pods):
+    """Wiring: cmd_provision --dry-run on a completed-status task prints the
+    warning BEFORE the dry-run return (i.e. before any create call)."""
+    _patch_task_state(monkeypatch, _fm("completed"), [_ev("epm:status-changed", _T1)])
+    stub_list_team_pods.return_value = []
+    ns = argparse.Namespace(
+        list_intents=False,
+        issue=664,
+        intent="debug",
+        gpu_type=None,
+        gpu_count=None,
+        dry_run=True,
+        volume_gb=200,
+        container_disk_gb=50,
+    )
+
+    pod_lifecycle.cmd_provision(ns)
+
+    captured = capsys.readouterr()
+    assert "WARNING" in captured.err and "pod-safety" in captured.err
+    assert "[dry-run]" in captured.out
+
+
+def test_resume_calls_check(monkeypatch, capsys, isolated_state, stub_list_team_pods):
+    """Wiring: cmd_resume --dry-run runs the same check with verb='resume'
+    as its FIRST statement (before _load_state)."""
+    pod_name = _register_pod_for_issue(664)
+    stub_list_team_pods.return_value = [_info(pod_name, desired_status="EXITED")]
+    _patch_task_state(monkeypatch, _fm("completed"), [_ev("epm:status-changed", _T1)])
+    ns = argparse.Namespace(issue=664, dry_run=True)
+
+    pod_lifecycle.cmd_resume(ns)
+
+    captured = capsys.readouterr()
+    assert "WARNING" in captured.err and "pod-safety" in captured.err
+    assert "Proceeding with resume" in captured.err
+    assert "[dry-run]" in captured.out

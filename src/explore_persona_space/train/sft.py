@@ -134,33 +134,50 @@ def _pick_attn_implementation() -> str:
         return "sdpa"
 
 
-def _warn_if_cvd_disagrees(gpu_id: int) -> None:
-    """Warn (do NOT change) when an inherited CUDA_VISIBLE_DEVICES disagrees with gpu_id.
+def _apply_cvd_pin(gpu_id: int) -> str | None:
+    """Pin ``CUDA_VISIBLE_DEVICES`` from ``gpu_id`` — UNLESS the launcher already
+    pinned this process to a SINGLE GPU, in which case the inherited pin is
+    AUTHORITATIVE and left untouched (returns None).
 
-    The caller is about to set ``os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)``,
-    which is load-bearing: it pins each parallel process to one physical GPU and is
-    immediately followed by ``device_map={"": 0}`` (CUDA_VISIBLE_DEVICES remaps the
-    visible GPU to index 0). That clobber is intentional — see CLAUDE.md Gotchas on the
-    ``+gpu_id=N`` Hydra override (issue #376 wave-1).
+    Rationale (#1090 fu3 crash-fix 2; the #557/#543/#545 co-location class):
+    per-cell dispatchers pin ``CUDA_VISIBLE_DEVICES=<slot>`` in the CHILD env
+    (the gotchas.md launcher-env rule) and leave ``gpu_id`` at its default 0
+    ("the first visible device"). The historical unconditional
+    ``os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)`` here re-pointed every
+    such cell at physical GPU 0 — launch 3 co-located 4 parallel LoRA trains on
+    GPU 0 (14 CUDA-OOM cells) while 7 GPUs idled.
 
-    This helper does NOT respect or restore the inherited value; it only emits a
-    WARNING so a likely-misconfigured launch (env ``CUDA_VISIBLE_DEVICES=N`` set by the
-    caller but ``gpu_id`` left at its default 0, or vice versa) is visible in the log.
-    Behavior is unchanged either way: the assignment below still wins.
+    Contract:
+    - inherited single-GPU pin, ``gpu_id == 0``          -> keep inherited (None);
+      ``device_map={"": 0}`` then maps to the one visible device, as intended.
+    - inherited single-GPU pin, ``str(gpu_id) == pin``   -> keep inherited (the
+      sanctioned matching-pair launcher pattern; a rewrite would be a no-op).
+    - inherited single-GPU pin, contradictory ``gpu_id`` -> RuntimeError (two
+      different physical pins were requested — fail loud, never guess).
+    - no pin / empty / multi-GPU inherited value         -> export
+      ``str(gpu_id)`` (the legacy ``+gpu_id=N`` contract, unchanged — #376).
+
+    Returns the exported value, or None when the inherited pin was kept.
     """
     inherited = os.environ.get("CUDA_VISIBLE_DEVICES")
-    if inherited is not None and inherited != "" and inherited != str(gpu_id):
-        logger.warning(
-            "Inherited CUDA_VISIBLE_DEVICES=%r disagrees with cfg.gpu_id=%s; "
-            "overriding to %s (CUDA_VISIBLE_DEVICES is set per-process from gpu_id and "
-            "remapped to device 0). If you meant to pin this process to the inherited "
-            "device, pass +gpu_id=%s instead of relying on the env var — the env value "
-            "is NOT respected here.",
+    if inherited and "," not in inherited:
+        if gpu_id != 0 and str(gpu_id) != inherited:
+            raise RuntimeError(
+                f"Inherited single-GPU CUDA_VISIBLE_DEVICES={inherited!r} contradicts "
+                f"cfg.gpu_id={gpu_id}: the launcher pinned one physical GPU and the "
+                "config asks for another. Inside a CVD-pinned cell, gpu_id must be 0 "
+                "(= the first visible device) or equal to the pinned physical id."
+            )
+        logger.info(
+            "Inherited single-GPU CUDA_VISIBLE_DEVICES=%r is authoritative; not "
+            "re-exporting from cfg.gpu_id=%s (device_map={'': 0} maps to the one "
+            "visible device).",
             inherited,
             gpu_id,
-            gpu_id,
-            inherited,
         )
+        return None
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    return str(gpu_id)
 
 
 def _wandb_run_active() -> bool:
@@ -1224,8 +1241,9 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     # (#545 round-10). `import peft` is the known offender — keep this assignment
     # ABOVE every heavy import in this function. (Subprocess-env pinning at spawn
     # time is the import-order-proof complement; see scripts/issue545_sweep.py.)
-    _warn_if_cvd_disagrees(cfg.gpu_id)
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
+    # An inherited single-GPU launcher pin is AUTHORITATIVE and never re-exported
+    # (#1090 fu3 crash-fix 2 — see _apply_cvd_pin's contract).
+    _apply_cvd_pin(cfg.gpu_id)
 
     # Minute-1 fail-loud gate for the adapter-persist contract (#564): no-op
     # unless EPM_PERSIST_ADAPTER_HF_REPO is set. The i528-style launcher
@@ -1586,8 +1604,8 @@ def merge_lora(
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    _warn_if_cvd_disagrees(gpu_id)
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    # Same authoritative-inherited-pin contract as train_lora (#1090 fu3 crash-fix 2).
+    _apply_cvd_pin(gpu_id)
 
     from peft import PeftModel
 

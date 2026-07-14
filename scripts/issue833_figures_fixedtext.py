@@ -29,9 +29,16 @@ import json
 import sys
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.stats import spearmanr
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
 
 SCRIPTS = Path(__file__).resolve().parent
 PROJECT = SCRIPTS.parent

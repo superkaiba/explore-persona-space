@@ -505,3 +505,132 @@ def test_filer_stagger_integration_real_helpers(monkeypatch, tmp_path, capsys):
     assert len(_new_calls(calls)) == 1
     assert _spawn_calls(calls) == []
     assert "dispatch deferred (session-dispatch stagger" in capsys.readouterr().out
+
+
+# ── #1173: warn-only backstop for wf-fix bodies missing workflow_fix_target ────
+
+
+def test_wf_fix_tag_body_missing_target_line_warns(monkeypatch, capsys, tmp_path):
+    # A wf-fix-tagged filing whose body lacks the durable recursion-guard
+    # `workflow_fix_target:` Provenance line WARNS on stderr — exit code and
+    # filing/dispatch behavior unchanged (warn-only by design, #1173).
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    body = tmp_path / "body.md"
+    body.write_text("## Goal\n\nfix a thing\n", encoding="utf-8")
+
+    # prefixed title: keep this test isolated to the Provenance warn (#1283)
+    rc = fit.main(["--title", "workflow-fix: x", "--tag", "wf-fix", "--body-file", str(body)])
+
+    assert rc == 0
+    assert len(_new_calls(calls)) == 1  # filing still happens
+    assert len(_spawn_calls(calls)) == 1  # dispatch behavior unchanged
+    err = capsys.readouterr().err
+    assert "WARNING" in err
+    assert "workflow_fix_target" in err
+
+
+def test_wf_fix_tag_body_with_target_line_no_warn(monkeypatch, capsys, tmp_path):
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    body = tmp_path / "body.md"
+    body.write_text(
+        "## Goal\n\nfix\n\n## Provenance\n\n- workflow_fix_target: CLAUDE.md\n",
+        encoding="utf-8",
+    )
+
+    # prefixed title: keep this test isolated to the Provenance warn (#1283)
+    rc = fit.main(["--title", "workflow-fix: x", "--tag", "wf-fix", "--body-file", str(body)])
+
+    assert rc == 0
+    assert len(_new_calls(calls)) == 1
+    assert "workflow_fix_target" not in capsys.readouterr().err
+
+
+# ── #1283: warn-only backstop for wf-fix titles missing a channel prefix ──────
+
+_PREFIXED_PROVENANCE_BODY = "## Goal\n\nfix\n\n## Provenance\n\n- workflow_fix_target: CLAUDE.md\n"
+
+
+def test_wf_fix_tag_title_without_prefix_warns(monkeypatch, capsys, tmp_path):
+    # A wf-fix-tagged filing whose --title lacks a WF_FIX_TITLE_PREFIXES
+    # prefix WARNS on stderr (the title is invisible to the dedup predicate's
+    # title pre-filter) — exit code and filing/dispatch behavior unchanged
+    # (warn-only by design, #1283). Body carries the Provenance target line so
+    # ONLY the title warn is under test; tags use the production multi-tag
+    # shape (wf-fix + wf-fix-fp:<fp>).
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    body = tmp_path / "body.md"
+    body.write_text(_PREFIXED_PROVENANCE_BODY, encoding="utf-8")
+
+    rc = fit.main(
+        [
+            "--title",
+            "no prefix here",
+            "--tag",
+            "wf-fix",
+            "--tag",
+            "wf-fix-fp:abc123",
+            "--body-file",
+            str(body),
+        ]
+    )
+
+    assert rc == 0
+    assert len(_new_calls(calls)) == 1  # filing still happens
+    assert len(_spawn_calls(calls)) == 1  # dispatch behavior unchanged
+    err = capsys.readouterr().err
+    assert "WARNING" in err
+    assert "--title lacks a" in err
+    assert "workflow_fix_target" not in err  # the #1173 warn did not co-fire
+
+
+@pytest.mark.parametrize("prefix", ["workflow-fix: ", "daily-fix: "])
+def test_wf_fix_tag_title_with_prefix_no_warn(monkeypatch, capsys, tmp_path, prefix):
+    # Either channel prefix satisfies the guard (WF_FIX_TITLE_PREFIXES tuple).
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    body = tmp_path / "body.md"
+    body.write_text(_PREFIXED_PROVENANCE_BODY, encoding="utf-8")
+
+    rc = fit.main(["--title", f"{prefix}x", "--tag", "wf-fix", "--body-file", str(body)])
+
+    assert rc == 0
+    assert len(_new_calls(calls)) == 1
+    assert "--title lacks a" not in capsys.readouterr().err
+
+
+def test_non_wf_fix_filing_any_title_no_warn(monkeypatch, capsys, tmp_path):
+    # No wf-fix tag -> any title is fine (ordinary infra filings are not in
+    # the wf-fix dedup key space; the guard keys on the tag, not the kind).
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    body = tmp_path / "body.md"
+    body.write_text("## Goal\n\nordinary infra\n", encoding="utf-8")
+
+    rc = fit.main(["--title", "no prefix here", "--body-file", str(body)])
+
+    assert rc == 0
+    assert len(_new_calls(calls)) == 1
+    assert "--title lacks a" not in capsys.readouterr().err
+
+
+def test_title_prefix_guard_reads_shared_constant(monkeypatch, capsys, tmp_path):
+    # The guard keys off task_workflow.WF_FIX_TITLE_PREFIXES (the imported
+    # constant), never a baked-in literal (#1283 AC3): under a patched
+    # sentinel tuple, a sentinel-prefixed title passes and the REAL channel
+    # prefix warns — both directions follow the patched value.
+    _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    monkeypatch.setattr(fit, "WF_FIX_TITLE_PREFIXES", ("sentinel:",))
+    body = tmp_path / "body.md"
+    body.write_text(_PREFIXED_PROVENANCE_BODY, encoding="utf-8")
+
+    rc = fit.main(["--title", "sentinel: x", "--tag", "wf-fix", "--body-file", str(body)])
+    assert rc == 0
+    assert "--title lacks a" not in capsys.readouterr().err
+
+    rc = fit.main(["--title", "workflow-fix: x", "--tag", "wf-fix", "--body-file", str(body)])
+    assert rc == 0
+    assert "--title lacks a" in capsys.readouterr().err

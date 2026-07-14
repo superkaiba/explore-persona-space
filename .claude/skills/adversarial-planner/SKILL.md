@@ -139,6 +139,47 @@ check 25 (`c25_html_entities_in_commands`) is the mechanical backstop at
 Phase 1.5.0: entities surviving in a fenced command block FAIL the persist
 (a `--workload-cmd`/`dispatch_issue.py` fence is never exemptable).
 
+**Extract the output-file text via the transcript recipe (background
+`local_agent` tasks).** The `<output-file>` of a BACKGROUND Agent task
+(`/tmp/claude-*/…/tasks/<id>.output`) is a SYMLINK to the subagent's
+conversation-transcript JSONL, NOT raw text. That format has NO
+`{"type": "result", "result": "<str>"}` row — on #1219 (2026-07-10) the first
+extraction scanned for one and exited "NO RESULT ROW FOUND" — and the FINAL
+row may be a metadata-bearing row (keys like `agentId` / `attributionAgent` /
+`attributionSkill`) with no usable text. Canonical recipe: keep the LAST
+`type == "assistant"` row whose `message.content` has non-empty
+`{"type": "text"}` blocks (this inherently skips trailing non-text rows),
+join the text blocks, THEN apply the trailer-strip regex above. Output-file
+text is clean: NO `html.unescape()` (previous paragraph). Verify byte count +
+head/tail before persisting — that same verify is also the guard for the rare
+case where the final output is split across MULTIPLE assistant rows (the
+recipe keeps only the last text-bearing row).
+
+```python
+import json, re
+
+def last_assistant_text(path):
+    last = None
+    for line in open(path, encoding="utf-8"):
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(row, dict) or row.get("type") != "assistant":
+            continue
+        blocks = (row.get("message") or {}).get("content") or []
+        texts = [b.get("text", "") for b in blocks
+                 if isinstance(b, dict) and b.get("type") == "text"]
+        if any(t.strip() for t in texts):
+            last = "\n".join(texts)
+    if last is None:
+        raise SystemExit(f"NO ASSISTANT TEXT ROW FOUND: {path}")
+    return last
+
+text = last_assistant_text(src)  # src = the <output-file> path
+text = re.sub(r"\n?agentId:\s*\S+\s*\(use SendMessage.*?</usage>\s*$", "\n", text, flags=re.DOTALL)
+```
+
 ### Phase 1.5: Verify Assumptions (Verifier Agent)
 
 **This phase is MANDATORY. Never skip it.**
@@ -148,7 +189,20 @@ Run the structural verifier against the plan version just persisted:
 
     uv run python scripts/verify_plan.py --issue <N> --json        # task context (newest plans/v{K}.md)
     uv run python scripts/verify_plan.py --plan-file <path> --json # standalone / not-yet-persisted plans
+    # Canonical verdict parse — copy this; do NOT improvise one:
+    uv run python scripts/verify_plan.py --issue <N> --json | uv run python -c "import json,sys; d=json.load(sys.stdin); print(d['overall'], 'n_fail=%d n_warn=%d' % (d['n_fail'], d['n_warn']), 'failed:', ','.join(c['id'] for c in d['checks'] if c['status']=='FAIL') or 'none')"
 
+- **JSON contract:** the `--json` payload keys are `source`, `issue`, `kind`,
+  `overall` (`"PASS"|"FAIL"` — the verdict key; there is NO `verdict` key, and
+  `d.get('verdict')` prints `None` — the 2026-07-12 3-session improvised-parse bug,
+  #1290), `n_fail`, `n_warn`, `n_skip`, and `checks` (list of
+  `{id, name, status, detail}`, status ∈ `PASS|FAIL|WARN|SKIP`). Read the verdict
+  with fail-loud `d['overall']` (KeyError on a payload change), never `.get()`
+  defaulting to `None`, and never infer PASS from `n_fail` alone. Exit code: 0 PASS /
+  1 FAIL / 2 usage error or plan-not-found — the pipe consumes it, so the one-liner
+  reads `overall` instead; a missing plan still fails loud in the consumer
+  (JSONDecodeError on empty stdin). Pinned by
+  `tests/test_verify_plan.py::test_canonical_json_parse_snippet_pinned`.
 - **Persistence ordering:** `--issue` mode verifies the newest `plans/v{K}.md`. If the
   just-drafted plan has NOT yet been persisted via `task.py new-plan-version` (the plan
   still lives at the `/tmp/issue-<N>-plan-v<K>-<attempt>.md` handoff file), use
@@ -156,9 +210,20 @@ Run the structural verifier against the plan version just persisted:
   --kind <task kind>` instead — and treat an `--issue`-mode exit 2 with "no plans/v*.md" as
   "persist first or use --plan-file", NOT as a bounce.
 - **Canonical N/A escape phrases** (quote verbatim in any bounce brief so the planner can
-  satisfy a check it is legitimately exempt from): `N/A — no behavioral construct`
+  satisfy a check it is legitimately exempt from — and instruct the planner that the
+  plan's own declaration line must be UNWRAPPED plain text at line start (leading list
+  markers fine): the backtick-wrapped renderings below are deliberate anti-paste armor
+  and are NOT recognized by `verify_plan.py::_standalone_na_declared` (#1238)): Every
+  phrase satisfies its check ONLY when written as a standalone declaration line in the
+  plan (leading `-`/`>`/`*` list markers tolerated); a phrase quoted mid-sentence — e.g.
+  inside a pasted bounce brief — does not count (exception: check 31 uses its
+  labeled-line forms) (#1237, #1262).
+  `N/A — no behavioral construct`
   (check 2), `N/A — no model training` / `N/A — no training hyperparameters` (check 1),
   `N/A — not a replication` (check 7), `N/A — no artifact reuse` (check 6),
+  `N/A — not a behavior-implantation` (check 4 — the implant/marker vocabulary hit is
+  incidental or quotes a sibling's design, not this plan's own implantation; a genuine
+  implantation plan instead names its contrastive-negative set or a named exemption),
   `N/A — no dry-run smoke` (check 11 — kind: infra|batch plans where a `--dry-run`
   mention is incidental, not the plan's own acceptance smoke), `N/A — no draw battery`
   (check 12), `N/A — no empirical-null gate` (check 13),
@@ -172,12 +237,57 @@ Run the structural verifier against the plan version just persisted:
   call-arity pass condition; discovery/enumeration greps are fine),
   `N/A — no resume/persist pattern` (check 24 — the resume/persist vocabulary
   hit is incidental or quotes a sibling's methodology, not this plan's own
-  long-loop resume predicate), and
+  long-loop resume predicate),
   `N/A — entities are content, not commands` (check 25 — the fenced entity
   forms are deliberately discussed content, e.g. a plan about entity
   handling, not a command to dispatch; exempts shell-tagged content fences
-  ONLY — a `--workload-cmd`/`dispatch_issue.py` fence FAILs on entities
-  unconditionally).
+  ONLY, and only when exactly ONE such fence carries entity hits — with
+  several content fences, re-tag them to a non-shell info string (e.g.
+  text) instead of shell-tagging them; a `--workload-cmd`/`dispatch_issue.py`
+  fence FAILs on entities unconditionally),
+  `N/A — basis measured on the routed machine` (check 26 — every §9
+  compute-table basis cell is measured on the GPU family the plan's resolved
+  intent actually routes to under auto, so no cross-GPU conversion is owed; a
+  genuinely cross-GPU basis instead states a per-step scaling rate in the row),
+  `N/A — no 7B activation capture` (check 27 — the activation-capture
+  vocabulary is incidental or the captured model is well under 7B, so the
+  ≥40 GB-HBM sizing rule is out of scope; a genuine ≥7B capture instead books
+  capture-7b / lora-7b or a larger-HBM lane, never eval/debug),
+  `N/A — no precedent-labeled decision bands` (check 28; British `labelled`
+  accepted — no registered fractional band is applied to a plan-cited
+  precedent ratio, or the ratio and the band concern different quantities; a
+  genuine mismatch instead re-labels the precedent's branch or moves the
+  threshold),
+  `N/A — no conditional phase on this provision` (check 29 — no §7
+  extension/retrain-class gate can add wall-time on the fenced provision; a
+  plan with a real conditional phase instead adds its wall cost to the
+  fence-reconcile sentence near the max-run-duration declaration),
+  `N/A — no multi-field bundle reuse` (check 30 — the `.pt` / tensor-bundle
+  vocabulary is incidental, not a reused multi-field bundle; a genuine reuse
+  instead names its realized-keys verification: verify_reused_artifact_keys.py,
+  an mmap `.keys()` read, or the consumer's own loader),
+  `Durability pin: N/A — <one-line reason>` / alias `N/A — no durability pin:
+  <reason>` (check 31 — kind: infra|batch plans committing to a
+  `.claude/skills/**/SKILL.md` prose edit; the reason tail is mandatory — a
+  bare `Durability pin: N/A` still WARNs. A plan that NAMES a pin instead
+  writes `Durability pin: tests/test_<file>.py::test_<name>`),
+  `N/A — no fit-family phases` (check 32 — the flagged compute-table row is
+  not actually a per-cell fit/solve/factorization loop, or the plan has no
+  fit-family phases; a genuine fit row instead states its basis as
+  `measured <t> s/<unit>`, a `#<M>` measured figure, or `pilot-gated`),
+  `N/A — no per-rung checkpoint persistence` / alias
+  `N/A — no checkpoint ladder` (check 33 — the checkpoint-ladder vocabulary
+  is incidental and NO phase of this plan persists per-rung checkpoints,
+  e.g. it reads a parent's existing ladder without training new rungs; a
+  genuine ladder plan instead states its retention policy in its
+  compute-sizing section — DEFAULT: retain the dose-selected + latest rungs
+  only, delete ruled-out rungs BETWEEN rungs; or the justified keep-all
+  exception sized at realized per-rung GB with `--boot-disk-gb` declared), and
+  `N/A — no verbatim ratcheted-file insertion` (check 34 — the fenced block near a
+  `.claude/agents/*.md` / `.claude/rules/LESSONS.md` mention is illustrative, not a
+  verbatim insert; a plan that DOES mandate an over-headroom insert instead budgets
+  the cap-raise with one line `Ratchet budget: raise <constant>['<file>.md'] to
+  <new cap>`).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
@@ -195,7 +305,9 @@ Run the structural verifier against the plan version just persisted:
 - **Post the marker** (VM-side; the adversarial-planner skill always runs in the
   orchestrator session, never on a pod):
   `uv run python scripts/task.py post-marker <N> epm:plan-verify --note '<verdict, n_fail, n_warn, failed/overridden check ids, plan version>'`
-  Standalone invocations with no task context skip the marker.
+  The canonical parse one-liner above prints verdict, n_fail, n_warn, and the failed
+  check ids verbatim (plan version = the v{K} just verified). Standalone invocations
+  with no task context skip the marker.
 
 The Planner's assumptions are the #1 source of experiment-invalidating errors. Before the Critic even sees the plan, independently verify every factual claim.
 
@@ -253,6 +365,14 @@ between Claude and Codex twins is resolved by the `reconciler` agent in
 `.claude/workflow.yaml § ensemble_review.doubled_steps[critic]` and
 `.claude/agents/reconciler.md` § "Two Output Modes".
 
+**Quota-sentinel pre-check first (#1204).** Run the canonical check
+(CLAUDE.md § Codex ensemble review). `CODEX_QUOTA_LIVE` → spawn ONLY the
+3 Claude lens critics (+ consistency-checker when riding the batch) and
+skip all 3 `codex-critic` composer spawns this round; record each lens
+as an instant confirmed Codex no-show (single-Claude per the Phase-2
+no-show row — no output-file probe) and log one line (+ one
+`epm:progress` note on #N when run from /issue Step 2).
+
 **Consistency-checker rides the same spawn batch (when invoked from
 `/issue` Step 2).** The orchestrator spawns the `consistency-checker`
 agent CONCURRENTLY with the 6 critics (7 parallel spawns in one
@@ -264,6 +384,23 @@ both; BLOCK / WARN / PASS semantics and the `epm:consistency v1` marker
 stay exactly as `/issue` Step 2b defines them — only the scheduling
 moved. Standalone `/adversarial-planner` invocations (no task context)
 skip it.
+
+**Canonical-rubric anchor — REQUIRED in every Claude critic brief, default
+or adapted (#1282).** Each of the three lens templates below carries a
+`Canonical rubric:` line naming `.claude/rules/critic-lens-reference.md`
+plus the lens's VERBATIM heading (`### Methodology lens` /
+`### Statistics & Measurement lens` / `### Alternative Explanations lens`).
+When composing an adapted brief for a non-experiment task (an infra /
+analysis / workflow-fix translation of the lens question — legitimate and
+expected), KEEP that line with the heading byte-verbatim: the translation
+ADAPTS the canonical rubric, never replaces it. Incident #1265: an
+infra-translated Alternatives brief supplied an inline translation but
+cited neither the file nor the heading; the critic's heading grep resolved
+no span and it reviewed on brief-inline text alone — the pointer-loaded
+rubric (per-item REVISE bars, N/A escapes, incident citations) silently
+never loaded. (The `codex-critic` composer is unaffected: it resolves
+`lens=<id>` to the canonical subheading from its own spec —
+`.claude/agents/codex-critic.md` Step 2.)
 
 **Shared preamble — prepend to each critic's brief before its lens-specific questions:**
 
@@ -302,6 +439,11 @@ pipeline.
 **Critic 1 — Methodology:**
 ```
 You are the METHODOLOGY CRITIC. Evaluate ONLY the experimental design:
+Canonical rubric: grep `### Methodology lens` in
+`.claude/rules/critic-lens-reference.md` and Read ONLY that span (chunked)
+before reviewing — the questions below, and any task-kind translation in
+this brief, ADAPT that rubric, never replace it.
+
 1. Is the hypothesis testable with this design?
 2. Are controls sufficient to isolate the variable?
 3. Are there confounds the analyzer cannot weigh from the reported
@@ -328,6 +470,11 @@ Rate (methodology only): REJECT / REVISE / APPROVE.
 **Critic 2 — Statistics & Measurement:**
 ```
 You are the STATISTICS CRITIC. Evaluate ONLY the measurement plan:
+Canonical rubric: grep `### Statistics & Measurement lens` in
+`.claude/rules/critic-lens-reference.md` and Read ONLY that span (chunked)
+before reviewing — the questions below, and any task-kind translation in
+this brief, ADAPT that rubric, never replace it.
+
 1. Are the metrics sufficient to distinguish the hypothesis from alternatives?
 2. Are sample sizes / seed counts adequate?
 3. Is the eval suite correct and complete?
@@ -345,6 +492,11 @@ Rate (measurement only): REJECT / REVISE / APPROVE.
 **Critic 3 — Alternative Explanations:**
 ```
 You are the ALTERNATIVE EXPLANATIONS CRITIC. For EVERY predicted positive result:
+Canonical rubric: grep `### Alternative Explanations lens` in
+`.claude/rules/critic-lens-reference.md` and Read ONLY that span (chunked)
+before reviewing — the questions below, and any task-kind translation in
+this brief, ADAPT that rubric, never replace it.
+
 1. What is the simplest explanation that does NOT require the claimed mechanism?
 2. Does the plan's design rule out that alternative?
 3. What additional control or baseline would be needed to rule it out?
@@ -394,7 +546,9 @@ reconciler once; if still none, do NOT adjudicate the disagreement
 yourself — adopt the MORE SEVERE of the two lens verdicts as a
 fail-safe (biasing toward revision, never toward shipping) and record
 the unresolved reconcile in the merged critique handed to the
-plan-approval gate.
+plan-approval gate. A #1204 sentinel-skip is exempt from this probe —
+the composer never ran, so no prompt/output file exists for the round;
+the skip itself is the confirmed no-show.
 
 **Cross-lens merge (after per-lens reconciliation):**
 
@@ -524,6 +678,9 @@ if "WRONG" in verifier_result:
 #    NOT bg-dispatch themselves (CLAUDE.md § "Codex task dispatch": only
 #    the orchestrator's direct bg-Bash invocation delivers a real
 #    notification when Codex terminates).
+# 4-pre. Quota-sentinel pre-check (#1204, CLAUDE.md § Codex ensemble review):
+#    if LIVE, skip the three *_codex spawns below (instant no-show per lens);
+#    Claude spawns + c_check unchanged.
 m_claude = Agent(subagent_type="critic",       prompt="[Methodology lens] Critique:\n\n{corrected_plan}",   run_in_background=True)
 m_codex  = Agent(subagent_type="codex-critic", prompt="lens=methodology\nplan_body:\n{corrected_plan}",     run_in_background=True)
 s_claude = Agent(subagent_type="critic",       prompt="[Statistics lens] Critique:\n\n{corrected_plan}",    run_in_background=True)

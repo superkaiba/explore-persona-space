@@ -1,0 +1,2308 @@
+{
+  "commit": "1b104689cc",
+  "created": "2026-07-10T15:41:25Z",
+  "figsize": [
+    8.4,
+    3.6
+  ],
+  "points": [
+    {
+      "read-out layer": 0.0,
+      "Pearson r vs judged trait score": 0.14233722170763088,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 1.0,
+      "Pearson r vs judged trait score": 0.1753958358726936,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 2.0,
+      "Pearson r vs judged trait score": 0.1411008319905993,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 3.0,
+      "Pearson r vs judged trait score": 0.16182040317209856,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 4.0,
+      "Pearson r vs judged trait score": 0.17542262100361852,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 5.0,
+      "Pearson r vs judged trait score": 0.1810254894654361,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 6.0,
+      "Pearson r vs judged trait score": 0.1515277291463815,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 7.0,
+      "Pearson r vs judged trait score": 0.14317843800579677,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 8.0,
+      "Pearson r vs judged trait score": 0.1401051001406045,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 9.0,
+      "Pearson r vs judged trait score": 0.15589389548105667,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 10.0,
+      "Pearson r vs judged trait score": 0.16792583838365524,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 11.0,
+      "Pearson r vs judged trait score": 0.1687252091569429,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 12.0,
+      "Pearson r vs judged trait score": 0.16766302488308724,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 13.0,
+      "Pearson r vs judged trait score": 0.16790625416197005,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 14.0,
+      "Pearson r vs judged trait score": 0.15722945808904915,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 15.0,
+      "Pearson r vs judged trait score": 0.1509422105379664,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 16.0,
+      "Pearson r vs judged trait score": 0.14988089634191754,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 17.0,
+      "Pearson r vs judged trait score": 0.15740857226599672,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 18.0,
+      "Pearson r vs judged trait score": 0.14450219367982373,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 19.0,
+      "Pearson r vs judged trait score": 0.14789062063024433,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 20.0,
+      "Pearson r vs judged trait score": 0.13010508162290263,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 21.0,
+      "Pearson r vs judged trait score": 0.1336010069297595,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 22.0,
+      "Pearson r vs judged trait score": 0.1314580059205116,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 23.0,
+      "Pearson r vs judged trait score": 0.12195115438230507,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 24.0,
+      "Pearson r vs judged trait score": 0.12338069464249174,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 25.0,
+      "Pearson r vs judged trait score": 0.13212793743294848,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 26.0,
+      "Pearson r vs judged trait score": 0.13525035259800916,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 27.0,
+      "Pearson r vs judged trait score": 0.1357863578026593,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 0.0,
+      "Pearson r vs judged trait score": 0.06818765318473506,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 1.0,
+      "Pearson r vs judged trait score": 0.07339190386817925,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 2.0,
+      "Pearson r vs judged trait score": 0.0702425398126259,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 3.0,
+      "Pearson r vs judged trait score": 0.06686207240258427,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 4.0,
+      "Pearson r vs judged trait score": 0.07061034684085633,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 5.0,
+      "Pearson r vs judged trait score": 0.07083691016112645,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 6.0,
+      "Pearson r vs judged trait score": 0.0697613008046027,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 7.0,
+      "Pearson r vs judged trait score": 0.06820092926430443,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 8.0,
+      "Pearson r vs judged trait score": 0.06928457372546325,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 9.0,
+      "Pearson r vs judged trait score": 0.06555045863342059,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 10.0,
+      "Pearson r vs judged trait score": 0.06634908012156521,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 11.0,
+      "Pearson r vs judged trait score": 0.0679158450384407,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 12.0,
+      "Pearson r vs judged trait score": 0.06602519151293522,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 13.0,
+      "Pearson r vs judged trait score": 0.06401527319239003,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 14.0,
+      "Pearson r vs judged trait score": 0.06394379896853926,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 15.0,
+      "Pearson r vs judged trait score": 0.0655639774061077,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 16.0,
+      "Pearson r vs judged trait score": 0.06645449512615542,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 17.0,
+      "Pearson r vs judged trait score": 0.06501738607129538,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 18.0,
+      "Pearson r vs judged trait score": 0.06734173732475035,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 19.0,
+      "Pearson r vs judged trait score": 0.07203651966326807,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 20.0,
+      "Pearson r vs judged trait score": 0.07249235856164887,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 21.0,
+      "Pearson r vs judged trait score": 0.07365534621031376,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 22.0,
+      "Pearson r vs judged trait score": 0.0706262746682908,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 23.0,
+      "Pearson r vs judged trait score": 0.07172632650013903,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 24.0,
+      "Pearson r vs judged trait score": 0.07245853398301817,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 25.0,
+      "Pearson r vs judged trait score": 0.0739767905612498,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 26.0,
+      "Pearson r vs judged trait score": 0.07615210640765693,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 27.0,
+      "Pearson r vs judged trait score": 0.07613074737082448,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 0.0,
+      "Pearson r vs judged trait score": -0.06818765318473506,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 1.0,
+      "Pearson r vs judged trait score": -0.07339190386817925,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 2.0,
+      "Pearson r vs judged trait score": -0.0702425398126259,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 3.0,
+      "Pearson r vs judged trait score": -0.06686207240258427,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 4.0,
+      "Pearson r vs judged trait score": -0.07061034684085633,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 5.0,
+      "Pearson r vs judged trait score": -0.07083691016112645,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 6.0,
+      "Pearson r vs judged trait score": -0.0697613008046027,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 7.0,
+      "Pearson r vs judged trait score": -0.06820092926430443,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 8.0,
+      "Pearson r vs judged trait score": -0.06928457372546325,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 9.0,
+      "Pearson r vs judged trait score": -0.06555045863342059,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 10.0,
+      "Pearson r vs judged trait score": -0.06634908012156521,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 11.0,
+      "Pearson r vs judged trait score": -0.0679158450384407,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 12.0,
+      "Pearson r vs judged trait score": -0.06602519151293522,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 13.0,
+      "Pearson r vs judged trait score": -0.06401527319239003,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 14.0,
+      "Pearson r vs judged trait score": -0.06394379896853926,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 15.0,
+      "Pearson r vs judged trait score": -0.0655639774061077,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 16.0,
+      "Pearson r vs judged trait score": -0.06645449512615542,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 17.0,
+      "Pearson r vs judged trait score": -0.06501738607129538,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 18.0,
+      "Pearson r vs judged trait score": -0.06734173732475035,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 19.0,
+      "Pearson r vs judged trait score": -0.07203651966326807,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 20.0,
+      "Pearson r vs judged trait score": -0.07249235856164887,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 21.0,
+      "Pearson r vs judged trait score": -0.07365534621031376,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 22.0,
+      "Pearson r vs judged trait score": -0.0706262746682908,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 23.0,
+      "Pearson r vs judged trait score": -0.07172632650013903,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 24.0,
+      "Pearson r vs judged trait score": -0.07245853398301817,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 25.0,
+      "Pearson r vs judged trait score": -0.0739767905612498,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 26.0,
+      "Pearson r vs judged trait score": -0.07615210640765693,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 27.0,
+      "Pearson r vs judged trait score": -0.07613074737082448,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 0.0,
+      "Pearson r vs judged trait score": 0.1578597329895112,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 1.0,
+      "Pearson r vs judged trait score": 0.15888358931383664,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 2.0,
+      "Pearson r vs judged trait score": 0.12225414525251896,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 3.0,
+      "Pearson r vs judged trait score": 0.14549625651471282,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 4.0,
+      "Pearson r vs judged trait score": 0.13857919501053356,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 5.0,
+      "Pearson r vs judged trait score": 0.1836358281952952,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 6.0,
+      "Pearson r vs judged trait score": 0.16815188270549422,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 7.0,
+      "Pearson r vs judged trait score": 0.14973306180307058,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 8.0,
+      "Pearson r vs judged trait score": 0.158607703618908,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 9.0,
+      "Pearson r vs judged trait score": 0.16201012370213685,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 10.0,
+      "Pearson r vs judged trait score": 0.1628982472259901,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 11.0,
+      "Pearson r vs judged trait score": 0.18075935459698275,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 12.0,
+      "Pearson r vs judged trait score": 0.1951441696585738,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 13.0,
+      "Pearson r vs judged trait score": 0.20628390354914133,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 14.0,
+      "Pearson r vs judged trait score": 0.1970289949842438,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 15.0,
+      "Pearson r vs judged trait score": 0.19232402743942087,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 16.0,
+      "Pearson r vs judged trait score": 0.19407729583649053,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 17.0,
+      "Pearson r vs judged trait score": 0.20979565184498566,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 18.0,
+      "Pearson r vs judged trait score": 0.1987173473596576,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 19.0,
+      "Pearson r vs judged trait score": 0.18521650270563267,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 20.0,
+      "Pearson r vs judged trait score": 0.15638452171565353,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 21.0,
+      "Pearson r vs judged trait score": 0.15235099625418833,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 22.0,
+      "Pearson r vs judged trait score": 0.1439965459417376,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 23.0,
+      "Pearson r vs judged trait score": 0.14122248589740255,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 24.0,
+      "Pearson r vs judged trait score": 0.14555463204464222,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 25.0,
+      "Pearson r vs judged trait score": 0.1627167672448806,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 26.0,
+      "Pearson r vs judged trait score": 0.160368484987765,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 27.0,
+      "Pearson r vs judged trait score": 0.21244978417693702,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 0.0,
+      "Pearson r vs judged trait score": 0.09772554202668655,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 1.0,
+      "Pearson r vs judged trait score": 0.20388497095666377,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 2.0,
+      "Pearson r vs judged trait score": 0.1548747271927309,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 3.0,
+      "Pearson r vs judged trait score": 0.19831106900949208,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 4.0,
+      "Pearson r vs judged trait score": 0.14789545896240222,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 5.0,
+      "Pearson r vs judged trait score": 0.22472784076972538,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 6.0,
+      "Pearson r vs judged trait score": 0.08591267903223077,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 7.0,
+      "Pearson r vs judged trait score": 0.13197239491974125,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 8.0,
+      "Pearson r vs judged trait score": 0.1290509620986249,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 9.0,
+      "Pearson r vs judged trait score": 0.06942817481473584,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 10.0,
+      "Pearson r vs judged trait score": 0.20800448016005998,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 11.0,
+      "Pearson r vs judged trait score": 0.16397376822039683,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 12.0,
+      "Pearson r vs judged trait score": 0.08825199863989815,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 13.0,
+      "Pearson r vs judged trait score": -0.018642900267258986,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 14.0,
+      "Pearson r vs judged trait score": 0.045550555428249706,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 15.0,
+      "Pearson r vs judged trait score": 0.03244786904606697,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 16.0,
+      "Pearson r vs judged trait score": 0.05883157340260211,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 17.0,
+      "Pearson r vs judged trait score": -0.003035823161152091,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 18.0,
+      "Pearson r vs judged trait score": 0.03604372558924065,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 19.0,
+      "Pearson r vs judged trait score": 0.012212977477606041,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 20.0,
+      "Pearson r vs judged trait score": 0.025691137111273438,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 21.0,
+      "Pearson r vs judged trait score": 0.036862578254095564,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 22.0,
+      "Pearson r vs judged trait score": 0.0998985540170443,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 23.0,
+      "Pearson r vs judged trait score": 0.0824904515444846,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 24.0,
+      "Pearson r vs judged trait score": 0.02603017188951969,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 25.0,
+      "Pearson r vs judged trait score": 0.04494136761084642,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 26.0,
+      "Pearson r vs judged trait score": -0.05115567813923964,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 27.0,
+      "Pearson r vs judged trait score": 0.18309877512773626,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 0.0,
+      "Pearson r vs judged trait score": -0.015491128286106454,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 1.0,
+      "Pearson r vs judged trait score": 0.01778378224702831,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 2.0,
+      "Pearson r vs judged trait score": 0.14803198358991715,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 3.0,
+      "Pearson r vs judged trait score": 0.15498733176928714,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 4.0,
+      "Pearson r vs judged trait score": 0.214336814972502,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 5.0,
+      "Pearson r vs judged trait score": 0.23557471665653348,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 6.0,
+      "Pearson r vs judged trait score": 0.21680775122267898,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 7.0,
+      "Pearson r vs judged trait score": 0.17795747503640325,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 8.0,
+      "Pearson r vs judged trait score": 0.21253406186137078,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 9.0,
+      "Pearson r vs judged trait score": 0.18459349152046028,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 10.0,
+      "Pearson r vs judged trait score": 0.2089755047767036,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 11.0,
+      "Pearson r vs judged trait score": 0.22473389199696434,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 12.0,
+      "Pearson r vs judged trait score": 0.22409980077133704,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 13.0,
+      "Pearson r vs judged trait score": 0.20031386992291855,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 14.0,
+      "Pearson r vs judged trait score": 0.1956144737879937,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 15.0,
+      "Pearson r vs judged trait score": 0.19777852463929982,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 16.0,
+      "Pearson r vs judged trait score": 0.21167064174863479,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 17.0,
+      "Pearson r vs judged trait score": 0.2044946007791565,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 18.0,
+      "Pearson r vs judged trait score": 0.20589170037955365,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 19.0,
+      "Pearson r vs judged trait score": 0.21038449242377205,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 20.0,
+      "Pearson r vs judged trait score": 0.20524213018564172,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 21.0,
+      "Pearson r vs judged trait score": 0.19823475362813253,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 22.0,
+      "Pearson r vs judged trait score": 0.2140255488919101,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 23.0,
+      "Pearson r vs judged trait score": 0.17872264490693965,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 24.0,
+      "Pearson r vs judged trait score": 0.14813554561360312,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 25.0,
+      "Pearson r vs judged trait score": 0.11180851942564356,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 26.0,
+      "Pearson r vs judged trait score": 0.11077939363816103,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 27.0,
+      "Pearson r vs judged trait score": 0.27532685532799256,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 0.0,
+      "y": 0.07071818612240453,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 1.0,
+      "y": 0.03486542620851254,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 2.0,
+      "y": 0.041771469502067594,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 3.0,
+      "y": 0.010463482522822557,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 4.0,
+      "y": 0.052642207868889006,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 5.0,
+      "y": 0.003192105095321171,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 6.0,
+      "y": 0.05897135785022039,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 7.0,
+      "y": 0.05633725750696328,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 8.0,
+      "y": 0.10549111182162653,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 9.0,
+      "y": 0.08284855199854364,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 10.0,
+      "y": 0.13546116938069794,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 11.0,
+      "y": 0.1428046008664072,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 12.0,
+      "y": 0.12823538084003727,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 13.0,
+      "y": 0.1200337449621643,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 14.0,
+      "y": 0.09586074104301165,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 15.0,
+      "y": 0.10429428151903317,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 16.0,
+      "y": 0.08524964151594552,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 17.0,
+      "y": 0.08473710336233264,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 18.0,
+      "y": 0.11493506328568104,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 19.0,
+      "y": 0.140827030686205,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 20.0,
+      "y": 0.15541155523111744,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 21.0,
+      "y": 0.12203067429786058,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 22.0,
+      "y": 0.12354582843653383,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 23.0,
+      "y": 0.14723557310948182,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 24.0,
+      "y": 0.14928262796056357,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 25.0,
+      "y": 0.14016760592169464,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 26.0,
+      "y": 0.12056655554844743,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 27.0,
+      "y": 0.02800543998163037,
+      "series": "mean pooling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 0.0,
+      "y": 0.07055849180977065,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 1.0,
+      "y": 0.073752414746003,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 2.0,
+      "y": 0.07302208979474595,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 3.0,
+      "y": 0.07221349456981525,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 4.0,
+      "y": 0.07156777224175781,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 5.0,
+      "y": 0.0703252167845141,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 6.0,
+      "y": 0.06822433717201569,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 7.0,
+      "y": 0.06762629219027153,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 8.0,
+      "y": 0.06964447496823983,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 9.0,
+      "y": 0.06815106697312934,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 10.0,
+      "y": 0.06786506768474755,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 11.0,
+      "y": 0.06806462521573568,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 12.0,
+      "y": 0.07139726315177414,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 13.0,
+      "y": 0.0698994274352899,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 14.0,
+      "y": 0.07096022201404949,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 15.0,
+      "y": 0.07189716615675398,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 16.0,
+      "y": 0.06894721974971749,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 17.0,
+      "y": 0.0731098307462434,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 18.0,
+      "y": 0.07505556296649803,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 19.0,
+      "y": 0.07404541058995578,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 20.0,
+      "y": 0.07393978281683648,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 21.0,
+      "y": 0.07244186021178384,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 22.0,
+      "y": 0.07227866933602882,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 23.0,
+      "y": 0.07189633363181167,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 24.0,
+      "y": 0.07191802443168371,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 25.0,
+      "y": 0.07576814056917311,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 26.0,
+      "y": 0.07446891262074877,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 27.0,
+      "y": 0.0645580331922324,
+      "series": "per-layer null p95 |r| (200 draws)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 0.0,
+      "y": -0.07055849180977065,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 1.0,
+      "y": -0.073752414746003,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 2.0,
+      "y": -0.07302208979474595,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 3.0,
+      "y": -0.07221349456981525,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 4.0,
+      "y": -0.07156777224175781,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 5.0,
+      "y": -0.0703252167845141,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 6.0,
+      "y": -0.06822433717201569,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 7.0,
+      "y": -0.06762629219027153,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 8.0,
+      "y": -0.06964447496823983,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 9.0,
+      "y": -0.06815106697312934,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 10.0,
+      "y": -0.06786506768474755,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 11.0,
+      "y": -0.06806462521573568,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 12.0,
+      "y": -0.07139726315177414,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 13.0,
+      "y": -0.0698994274352899,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 14.0,
+      "y": -0.07096022201404949,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 15.0,
+      "y": -0.07189716615675398,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 16.0,
+      "y": -0.06894721974971749,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 17.0,
+      "y": -0.0731098307462434,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 18.0,
+      "y": -0.07505556296649803,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 19.0,
+      "y": -0.07404541058995578,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 20.0,
+      "y": -0.07393978281683648,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 21.0,
+      "y": -0.07244186021178384,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 22.0,
+      "y": -0.07227866933602882,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 23.0,
+      "y": -0.07189633363181167,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 24.0,
+      "y": -0.07191802443168371,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 25.0,
+      "y": -0.07576814056917311,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 26.0,
+      "y": -0.07446891262074877,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 27.0,
+      "y": -0.0645580331922324,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 0.0,
+      "y": 0.11170822100795197,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 1.0,
+      "y": 0.07882104225008502,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 2.0,
+      "y": 0.07795392118252704,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 3.0,
+      "y": 0.07199162868630114,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 4.0,
+      "y": 0.11788730625179498,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 5.0,
+      "y": 0.12127628436869241,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 6.0,
+      "y": 0.13690759724979296,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 7.0,
+      "y": 0.1630974645855512,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 8.0,
+      "y": 0.15230684832301558,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 9.0,
+      "y": 0.17740408199146399,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 10.0,
+      "y": 0.21361292327744755,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 11.0,
+      "y": 0.22446809061024625,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 12.0,
+      "y": 0.21537003655259326,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 13.0,
+      "y": 0.21911281233341165,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 14.0,
+      "y": 0.19398241195938554,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 15.0,
+      "y": 0.20875242681816553,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 16.0,
+      "y": 0.17877913208790377,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 17.0,
+      "y": 0.1908153477713965,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 18.0,
+      "y": 0.18574514103693798,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 19.0,
+      "y": 0.1934937249369753,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 20.0,
+      "y": 0.19672345098315333,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 21.0,
+      "y": 0.17017501676861488,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 22.0,
+      "y": 0.18538779579847342,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 23.0,
+      "y": 0.20143889958046687,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 24.0,
+      "y": 0.21636211085574195,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 25.0,
+      "y": 0.22359155768185526,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 26.0,
+      "y": 0.21646024397726066,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 27.0,
+      "y": 0.17127627621582892,
+      "series": "max pooling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 0.0,
+      "y": 0.08320773321147867,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 1.0,
+      "y": -0.024608588541458087,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 2.0,
+      "y": 0.022011364902033276,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 3.0,
+      "y": -0.03657089178517168,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 4.0,
+      "y": 0.035158200168580234,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 5.0,
+      "y": -0.024153239600195567,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 6.0,
+      "y": 0.013827006377696079,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 7.0,
+      "y": -0.0066212311268977475,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 8.0,
+      "y": 0.01915573168002897,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 9.0,
+      "y": 0.0072384471340980056,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 10.0,
+      "y": 0.039003838725965495,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 11.0,
+      "y": 0.03776542417425748,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 12.0,
+      "y": 0.04654194592971769,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 13.0,
+      "y": 0.0899743612795772,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 14.0,
+      "y": 0.09708872853587558,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 15.0,
+      "y": 0.08951997572885353,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 16.0,
+      "y": 0.016576194163720113,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 17.0,
+      "y": 0.03159392840290309,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 18.0,
+      "y": 0.0837349027374257,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 19.0,
+      "y": 0.12359092724472732,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 20.0,
+      "y": 0.12075847446968821,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 21.0,
+      "y": 0.09662671573980092,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 22.0,
+      "y": 0.09894651010371242,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 23.0,
+      "y": 0.10732948934136974,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 24.0,
+      "y": 0.10166879121432752,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 25.0,
+      "y": 0.10526130762063671,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 26.0,
+      "y": 0.03586820512515129,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 27.0,
+      "y": -0.006211923652986923,
+      "series": "top3 pooling",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 0.0,
+      "y": 0.03898673932440205,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 1.0,
+      "y": 0.030020687659102523,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 2.0,
+      "y": 0.02574903439593942,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 3.0,
+      "y": -0.002831661839461327,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 4.0,
+      "y": 0.0501560240512961,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 5.0,
+      "y": 0.018493015562569996,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 6.0,
+      "y": 0.041967914743412806,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 7.0,
+      "y": 0.03846317482912037,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 8.0,
+      "y": 0.08613076651990634,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 9.0,
+      "y": 0.07910723448455109,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 10.0,
+      "y": 0.13390720938164896,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 11.0,
+      "y": 0.10666001493992593,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 12.0,
+      "y": 0.0835326722699253,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 13.0,
+      "y": 0.09337235652029684,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 14.0,
+      "y": 0.0820789886597196,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 15.0,
+      "y": 0.07268830223863278,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 16.0,
+      "y": 0.06935381829262308,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 17.0,
+      "y": 0.06412624881489865,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 18.0,
+      "y": 0.09024258126184294,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 19.0,
+      "y": 0.11015628572332628,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 20.0,
+      "y": 0.12362822779629888,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 21.0,
+      "y": 0.0959386738570861,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 22.0,
+      "y": 0.10330203894681195,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 23.0,
+      "y": 0.1304830793960244,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 24.0,
+      "y": 0.11956178243250659,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 25.0,
+      "y": 0.10874803711586774,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 26.0,
+      "y": 0.09746270536247306,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read-out layer": 27.0,
+      "y": 0.07135534020721351,
+      "series": "last pooling",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 336
+}

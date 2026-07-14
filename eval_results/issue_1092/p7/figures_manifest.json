@@ -1,0 +1,112 @@
+{
+  "figures": [
+    {
+      "note": "read1 headline: paired R\u00b2 per cell",
+      "png": "figures/issue_1092/read1_r2_prefix_vs_context.png",
+      "stem": "read1_r2_prefix_vs_context"
+    },
+    {
+      "note": "fitted R\u00b2 vs train-mean floor per cell",
+      "png": "figures/issue_1092/read1_identity_floor.png",
+      "stem": "read1_identity_floor"
+    },
+    {
+      "note": "R\u00b2 across frozen fit layers per cell",
+      "png": "figures/issue_1092/read1_layer_sensitivity.png",
+      "stem": "read1_layer_sensitivity"
+    },
+    {
+      "note": "stable rank: averaged vs per-example vs matched-n",
+      "png": "figures/issue_1092/read2_rank_by_grain.png",
+      "stem": "read2_rank_by_grain"
+    },
+    {
+      "note": "anova shares per cell, ambient + pca48",
+      "png": "figures/issue_1092/read3_fgi_shares.png",
+      "stem": "read3_fgi_shares"
+    },
+    {
+      "note": "2x2 main effects + interaction",
+      "png": "figures/issue_1092/cross_cell_2x2_effects.png",
+      "stem": "cross_cell_2x2_effects"
+    },
+    {
+      "note": "H-A-bearing operator residuals + null",
+      "png": "figures/issue_1092/read4_operator_residuals.png",
+      "stem": "read4_operator_residuals"
+    },
+    {
+      "note": "trait-per-factor heatmap vs null",
+      "png": "figures/issue_1092/read4c_trait_per_factor.png",
+      "stem": "read4c_trait_per_factor"
+    },
+    {
+      "note": "D4 per-turn R\u00b2 per cell",
+      "png": "figures/issue_1092/dynamics_d4_turn_profiles.png",
+      "stem": "dynamics_d4_turn_profiles"
+    },
+    {
+      "note": "B1(a) raw-projection 28-layer sweep for cell_inst_own",
+      "png": "figures/issue_1092/b1a_layer_curves_cell_inst_own.png",
+      "stem": "b1a_layer_curves_cell_inst_own"
+    },
+    {
+      "note": "B1(a) raw-projection 28-layer sweep for cell_pre_own",
+      "png": "figures/issue_1092/b1a_layer_curves_cell_pre_own.png",
+      "stem": "b1a_layer_curves_cell_pre_own"
+    },
+    {
+      "note": "B1(d) B0 pooling 28-layer sweep for cell_inst_own",
+      "png": "figures/issue_1092/b1d_b0_pooling_curves_cell_inst_own.png",
+      "stem": "b1d_b0_pooling_curves_cell_inst_own"
+    },
+    {
+      "note": "B1(d) B0 pooling 28-layer sweep for cell_pre_own",
+      "png": "figures/issue_1092/b1d_b0_pooling_curves_cell_pre_own.png",
+      "stem": "b1d_b0_pooling_curves_cell_pre_own"
+    },
+    {
+      "note": "B1 five-read frozen-layer panel",
+      "png": "figures/issue_1092/b1_frozen_panel_cell_inst_own.png",
+      "stem": "b1_frozen_panel_cell_inst_own"
+    },
+    {
+      "note": "B1 five-read frozen-layer panel",
+      "png": "figures/issue_1092/b1_frozen_panel_cell_pre_own.png",
+      "stem": "b1_frozen_panel_cell_pre_own"
+    },
+    {
+      "note": "per (cell, trait) score histograms",
+      "png": "figures/issue_1092/judge_score_distributions.png",
+      "stem": "judge_score_distributions"
+    },
+    {
+      "note": "best-of fit layers vs conservative null",
+      "png": "figures/issue_1092/read4c_cross_fit_layer_band.png",
+      "stem": "read4c_cross_fit_layer_band"
+    },
+    {
+      "note": "bridge re-fit skill per parent substrate",
+      "png": "figures/issue_1092/bridge_refits.png",
+      "stem": "bridge_refits"
+    }
+  ],
+  "metadata": {
+    "argv": [
+      "--steps",
+      "merge,projection-sweep,figures,upload-nulls",
+      "--bridge-summary",
+      "data/issue_1092/p7_bridge/bridge_refit_summary.json",
+      "--expect-full-grid"
+    ],
+    "git_commit": "1b104689cc2fd9383a916bf7efd28002219e0007",
+    "hf_prefix": "issue1092_realistic_crossing",
+    "issue": 1092,
+    "numpy_version": "2.2.6",
+    "phase": "P7",
+    "python_version": "3.11.15",
+    "script": "issue1092_figures.py",
+    "timestamp": "2026-07-10T08:41:15-0700"
+  },
+  "skipped": []
+}

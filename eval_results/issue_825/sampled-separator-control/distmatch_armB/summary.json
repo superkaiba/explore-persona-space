@@ -1,0 +1,115 @@
+{
+  "metadata": {
+    "git_commit": "0831b7a6da4f70b996b3682fd2f12dabbac400c6",
+    "timestamp": "2026-07-08T12:43:20Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue825_sampled_sep_distmatch.py",
+    "issue": 931
+  },
+  "followup_label": "sampled-separator-control",
+  "what": "plan-section-6 distribution-matched arm-B refit: round-8 arm-B rows subsampled to round-7's span-length histogram (+ an n-matched random control), rotated+MLP @ L19, D via d_stat against the round's committed w_ex_effective/ceiling anchors (decision_support.json)",
+  "convention": "w_on = max(seed-mean rotated@L19, seed-mean MLP@L19) over seeds \u2014 the matched-n seed-mean convention (issue825_onpolicy_sep_matchedn.py); D_dm - D_random_n_control isolates the span-length-matching effect at identical n and identical anchors",
+  "per_model": {
+    "base": {
+      "n_r8": 3437,
+      "n_r7_target": 3577,
+      "n_dm": 2147,
+      "dropped_target_mass": 0.0005591277606933184,
+      "span_mean_r8_full": 29.25981961012511,
+      "span_mean_r7_target": 25.28291864691082,
+      "dot_sep_fraction_r8_full": 0.9386092522548735,
+      "dot_sep_fraction_r7_target": 0.9818283477774672,
+      "anchors": {
+        "w_ex_effective": 0.36109598780841273,
+        "w_ex_kind": "matched_n",
+        "ceiling": 0.5876803039140281
+      },
+      "unmatched_reference": {
+        "D_armB_r8": 0.03140688061926557,
+        "w_max_armB_r8": 0.36821229437453973,
+        "D_r7": 0.5904310946594687
+      },
+      "distmatched": {
+        "seed_mean_rotated_l19": -1.2392064060521875,
+        "seed_mean_mlp_l19": 0.322068307691311,
+        "w_on": 0.322068307691311,
+        "D": -0.1722435197099439,
+        "per_seed_D_rotated": {
+          "931": -6.963936485385928,
+          "932": -7.3864159778234795,
+          "933": -7.106021401307421,
+          "934": -6.978389688971887,
+          "935": -6.878854382773646
+        },
+        "span_mean": 25.164601769911503,
+        "dot_sep_fraction": 0.9397298556124826
+      },
+      "random_n_control": {
+        "seed_mean_rotated_l19": -1.2429115718115644,
+        "seed_mean_mlp_l19": 0.3222323836809859,
+        "w_on": 0.3222323836809859,
+        "D": -0.17151939196582233,
+        "per_seed_D_rotated": {
+          "931": -7.002885440177384,
+          "932": -7.217920901870668,
+          "933": -7.026477134884044,
+          "934": -7.211485154535998,
+          "935": -6.936610607232559
+        },
+        "span_mean": 29.334420121099207,
+        "dot_sep_fraction": 0.9376804843968328
+      }
+    },
+    "instruct": {
+      "n_r8": 3584,
+      "n_r7_target": 3591,
+      "n_dm": 2392,
+      "dropped_target_mass": 0.000835421888053467,
+      "span_mean_r8_full": 29.032924107142858,
+      "span_mean_r7_target": 25.952659426343637,
+      "dot_sep_fraction_r8_full": 0.9093191964285714,
+      "dot_sep_fraction_r7_target": 0.9298245614035088,
+      "anchors": {
+        "w_ex_effective": 0.3489193821633685,
+        "w_ex_kind": "fulln_committed",
+        "ceiling": 0.6730940896676356
+      },
+      "unmatched_reference": {
+        "D_armB_r8": 0.08563161421546632,
+        "w_max_armB_r8": 0.3766789856547855,
+        "D_r7": 0.4282697415395536
+      },
+      "distmatched": {
+        "seed_mean_rotated_l19": -1.637527498041597,
+        "seed_mean_mlp_l19": 0.32595999867657033,
+        "w_on": 0.32595999867657033,
+        "D": -0.07082410488947828,
+        "per_seed_D_rotated": {
+          "931": -6.114274144431525,
+          "932": -6.08717977303848,
+          "933": -6.092607489953428,
+          "934": -6.136477182529102,
+          "935": -6.207984931794107
+        },
+        "span_mean": 25.848244147157185,
+        "dot_sep_fraction": 0.911705685618729
+      },
+      "random_n_control": {
+        "seed_mean_rotated_l19": -1.6289482162308988,
+        "seed_mean_mlp_l19": 0.32540844635694405,
+        "w_on": 0.32540844635694405,
+        "D": -0.07252550943109885,
+        "per_seed_D_rotated": {
+          "931": -6.141834833653282,
+          "932": -5.874846975620696,
+          "933": -6.135778294281796,
+          "934": -6.142393239129936,
+          "935": -6.211345207184693
+        },
+        "span_mean": 29.116638795986624,
+        "dot_sep_fraction": 0.9093645484949834
+      }
+    }
+  }
+}

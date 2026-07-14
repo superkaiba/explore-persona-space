@@ -679,7 +679,10 @@ def preflight(repo: Path, report: dict, dry_run: bool) -> None:
                     report,
                     f"DRY-RUN: stale {husk.name} state is a `git am` session "
                     "(`applying` present) — a real run would refuse (exit 5); "
-                    "resolve via `git am --continue` / `git am --abort`",
+                    "resolve via `git am --abort` (the sanctioned root resolution; "
+                    "the #1234 root guard fail-closes a bare root `git am --continue` "
+                    "— FINISHING the session belongs to its owner via a "
+                    "`git -C <path>`-scoped invocation)",
                 )
             elif headnameless:
                 _msg(
@@ -708,8 +711,11 @@ def preflight(repo: Path, report: dict, dry_run: bool) -> None:
                 f"(`{husk.name}/applying` present; `git rebase --abort` "
                 f"rc={aborted.returncode}). Refusing to touch it — the patch data and "
                 "--continue capability belong to the am session's owner.\n"
-                "resolve manually: `git am --continue` (finish) or `git am --abort` "
-                "(discard), then re-run the sync.",
+                "resolve manually: `git am --abort` (discard — the sanctioned root "
+                "resolution; the #1234 root guard fail-closes a bare root "
+                "`git am --continue`) or, to FINISH the session, its owner runs "
+                "`git am --continue` through a `git -C <path>`-scoped invocation; "
+                "then re-run the sync.",
             )
         if not headnameless:
             raise SyncAbortError(

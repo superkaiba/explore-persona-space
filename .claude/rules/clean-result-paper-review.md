@@ -102,6 +102,11 @@ Load the actual paper artifacts (all under `docs/papers/issue_<N>/`):
 - **The figure PNGs** referenced by `\includegraphics` (under
   `figures/issue_<N>/`) — load them via the Read tool for the P-lens figure
   checks, same as the markdown Lens 3 + interpretation-critic Lens 6.
+  Figure read-target rule (paper-mode analogue of the markdown #922
+  EXCEPTION, whose Lens-3 pointer does not ship in paper mode): the compiled
+  PDF is the built artifact of record — on a working-tree-PNG vs PDF-page
+  disagreement, review against the PDF page, note the possible stale
+  working-tree stray, and never rest a blocker on the PNG alone.
 - **`issue_<N>.pdf`** (the compiled PDF) — load relevant pages via the Read
   tool's `pages` parameter to catch RENDER-ONLY issues the `.tex` text
   hides: a float that landed pages away from its reference, a table that

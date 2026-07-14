@@ -163,10 +163,11 @@ Present findings as a structured proposal. **Do NOT start implementing yet.**
 
 For each approved change:
 
-1. **Create a branch** (if not already on a feature branch)
+1. **Create a worktree** (if not already working in one — never switch branches at the shared repo root)
    ```bash
-   git checkout -b refactor/description
+   bash scripts/new_worktree.sh .claude/worktrees/refactor-<description> refactor/<description>
    ```
+   Do the subsequent steps inside that worktree (`cd` into it, or use `git -C` forms).
 
 2. **Execute incrementally** — one logical change at a time:
    - Make the change

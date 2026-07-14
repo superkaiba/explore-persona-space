@@ -125,8 +125,11 @@ leakage / implantation, report BOTH a judge-scored on-policy behavior RATE
 (primary validated construct) AND a continuous non-saturating completion-
 probability companion; for a ranking/regression target, a graded multi-
 sampled 0-100 judge score is the preferred primary. Drop — never coerce — a
-malformed / REFUSAL / out-of-range judge return. A proxy saturated at a
-floor/ceiling across conditions is presumed uninformative.
+malformed / REFUSAL / out-of-range judge return. Transport errors
+(429/529/timeout/connection) are retried with bounded backoff and re-judged —
+never persisted as drops — and the per-arm drop report splits content-drops
+from transport-losses (`.claude/rules/llm-judging.md` rule 24). A proxy
+saturated at a floor/ceiling across conditions is presumed uninformative.
 Full recipe: `.claude/rules/llm-judging.md` (23 guidelines);
 CLAUDE.md § Measurement validity; `.claude/rules/selection-symmetric-nulls.md`.
 **Owner:** `statistics-critic`.

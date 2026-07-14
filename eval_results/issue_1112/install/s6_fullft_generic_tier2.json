@@ -1,0 +1,9 @@
+{
+  "cell": "s6_fullft_generic",
+  "step": 8,
+  "rates": {
+    "trained": 0.165,
+    "base": 0.225
+  },
+  "n": 10
+}

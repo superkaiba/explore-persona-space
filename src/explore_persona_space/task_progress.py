@@ -421,10 +421,20 @@ def build_stage_stats(now: datetime | None = None) -> dict[str, Any]:
 
 
 def _pods_ephemeral_path() -> Path:
-    """Path of scripts/pods_ephemeral.json (separate hook for test injection)."""
+    """Path of the pods_ephemeral.json sidecar (separate hook for test injection).
+
+    Prefers the LIVE relocated copy at ``<git-common-dir>/eps/`` (task #1183);
+    falls back to the tracked seed. Read-only — never migrates, never locks.
+    NOTE: ``repo_root()`` can return the managed ``_task-main-pin`` worktree
+    (primary checkout off-``main``), where ``.git`` is a gitfile (a FILE) —
+    the ``live.exists()`` check then reads False and this degrades to the
+    seed read (today's behavior). Never assert ``.git`` is a directory here.
+    """
     from explore_persona_space.task_workflow import repo_root
 
-    return repo_root() / "scripts" / "pods_ephemeral.json"
+    root = repo_root()
+    live = root / ".git" / "eps" / "pods_ephemeral.json"
+    return live if live.exists() else root / "scripts" / "pods_ephemeral.json"
 
 
 def extract_gpu_hours(events: list[dict[str, Any]]) -> float | None:

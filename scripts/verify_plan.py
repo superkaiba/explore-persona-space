@@ -7,7 +7,11 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script).
+``epm:plan-verify`` marker — never this script). One disclosed read-only
+exception: check 34, when its trigger fires, ``stat()``s the live sizes of
+the ratcheted workflow files the plan names and lazily imports
+``scripts/workflow_lint.py`` for their size-cap constants — read-only, no
+writes, still no network.
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -22,7 +26,11 @@ Check catalog (id — classification — kind scope)
   c6  reused-artifact fitness    WARN-only, conditional    experiment only
   c7  replication fidelity       WARN-only, conditional    experiment only
   c8  success + kill criteria    FAIL both-absent          experiment FAILs,
-                                                           exempt kinds WARN
+                                                           exempt kinds WARN;
+                                                           exempt kinds accept a
+                                                           solid §0.0 TL;DR
+                                                           change-my-mind line as
+                                                           kill (#1291)
   c9  conditions/cells + seeds   WARN-only                 experiment only
   c10 marker-recipe ack          WARN-only, conditional    experiment only
   c11 dry-run test coverage      WARN-only, conditional    infra + batch only
@@ -62,23 +70,37 @@ Check catalog (id — classification — kind scope)
       coherence                                           analysis
   c29 deliberate fence vs §7    WARN-only, conditional    experiment +
       conditional phase                                   analysis
+  c30 reused-bundle realized    WARN-only, conditional    experiment +
+      keys                                                analysis
+  c31 SKILL.md prose            WARN-only, conditional    infra + batch only
+      durability pin
+  c32 fit-family §9 basis       WARN-only, conditional    experiment +
+      grounding                                           analysis
+  c33 ladder checkpoint         WARN-only, conditional    experiment +
+      retention policy                                    analysis
+  c34 verbatim insert vs        WARN-only, conditional    infra + batch only
+      ratchet headroom
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29) also SKIP when their content
-trigger does not fire.
+19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34) also SKIP
+when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
 the adversarial-planner Phase 1.5.0 consumer treats as a mechanical redraft
 bounce (SKILL.md § Goal-currency gate), not a brief-forwarded WARN.
 
-Canonical N/A escape phrases (quote verbatim in bounce briefs):
+Canonical N/A escape phrases (quote verbatim in bounce briefs; each
+satisfies its check ONLY as a standalone declaration line — see
+``_standalone_na_declared``; exception: check 31 uses its
+labeled-line forms):
 
   - ``N/A — no model training`` / ``N/A — no training hyperparameters``
     (check 1)
   - ``N/A — no behavioral construct`` (check 2)
+  - ``N/A — not a behavior-implantation`` (check 4)
   - ``N/A — no artifact reuse`` (check 6)
   - ``N/A — not a replication`` (check 7)
   - ``N/A — no dry-run smoke`` (check 11)
@@ -93,7 +115,8 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no arity acceptance gate`` (check 21)
   - ``N/A — no resume/persist pattern`` (check 24)
   - ``N/A — entities are content, not commands`` (check 25 — exempts
-    arm-(a) shell-tagged content fences ONLY; an arm-(b) fence whose body
+    arm-(a) shell-tagged content fences ONLY, and only when exactly ONE
+    arm-(a) fence carries entity hits (#1276); an arm-(b) fence whose body
     carries ``--workload-cmd`` / ``dispatch_issue.py`` FAILs on entities
     unconditionally)
   - ``N/A — basis measured on the routed machine`` (check 26)
@@ -101,6 +124,14 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no precedent-labeled decision bands`` (check 28; British
     ``labelled`` accepted)
   - ``N/A — no conditional phase on this provision`` (check 29)
+  - ``N/A — no multi-field bundle reuse`` (check 30)
+  - ``Durability pin: N/A — <one-line reason>`` / alias
+    ``N/A — no durability pin: <reason>`` (check 31; the reason tail is
+    mandatory — a bare ``Durability pin: N/A`` still WARNs)
+  - ``N/A — no fit-family phases`` (check 32)
+  - ``N/A — no per-rung checkpoint persistence`` / alias
+    ``N/A — no checkpoint ladder`` (check 33)
+  - ``N/A — no verbatim ratcheted-file insertion`` (check 34)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -530,8 +561,8 @@ def check_source_grounding(plan: str, kind: str) -> CheckResult:
         plan, ("decision rationale", "hyperparameter grounding", "decision grounding")
     )
     scope = sect if sect is not None else plan
-    if re.search(
-        NA_RE + r"no (?:model )?(?:training )?(?:model training|hyperparameters|training)", scope
+    if _standalone_na_declared(
+        scope, r"no (?:model )?(?:training )?(?:model training|hyperparameters|training)"
     ):
         return _pass(
             cid, name, "explicit N/A declared (no model training / no training hyperparameters)"
@@ -547,9 +578,10 @@ def check_source_grounding(plan: str, kind: str) -> CheckResult:
         return _fail(
             cid,
             name,
-            "no Decision Rationale / grounding section and zero Source: entries — every "
+            "no Decision Rationale / grounding section and zero Source entries — every "
             "load-bearing hyperparameter needs a Source (planner.md §11); if the plan trains "
-            "no model, declare `N/A — no model training` / `N/A — no training hyperparameters`",
+            "no model, declare `N/A — no model training` / `N/A — no training hyperparameters` "
+            "— each on its own line, unwrapped (no backticks/quotes)",
         )
     if blank:
         return _fail(
@@ -570,8 +602,8 @@ def check_source_grounding(plan: str, kind: str) -> CheckResult:
         return _fail(
             cid,
             name,
-            "§11-style section present but zero Source entries (inline `Source:` label or "
-            "a `Source` table column)",
+            "§11-style section present but zero Source entries (an inline source label — "
+            "`Source` followed by a colon — or a `Source` table column)",
         )
     ungrounded = [s for s in sources if "ungrounded" in s.lower()]
     return _pass(
@@ -594,7 +626,7 @@ def check_measurement_validity(plan: str, kind: str) -> CheckResult:
     cid, name = "c2_measurement_validity", "per-DV measurement validity"
     if kind != "experiment":
         return _skip(cid, name, "kind-exempt: analysis|infra|batch|survey have no behavioral DV")
-    if re.search(NA_RE + r"no behavioral construct", plan):
+    if _standalone_na_declared(plan, r"no behavioral construct"):
         return _pass(cid, name, "explicit N/A declared (no behavioral construct)")
     text = strip_fences(plan)
     mv_headings = [h for h in _headings(plan) if "measurement validity" in h.text.casefold()]
@@ -629,7 +661,7 @@ def check_measurement_validity(plan: str, kind: str) -> CheckResult:
         name,
         "no measurement-validity declaration (planner.md §6 required block: per-DV construct "
         "+ metric + on-distribution status; non-behavioral plans declare "
-        "`N/A — no behavioral construct`)",
+        "`N/A — no behavioral construct` on its own line, unwrapped — no backticks/quotes)",
     )
 
 
@@ -685,8 +717,12 @@ def check_contrastive_negatives(plan: str, kind: str) -> CheckResult:
             name,
             "not detected as behavior-implantation (no implant/leakage-marker vocabulary)",
         )
-    if re.search(r"(?i)not a behavior[- ]implantation", text):
-        return _pass(cid, name, "explicit N/A declared (not a behavior-implantation)")
+    if _standalone_na_declared(plan, r"not a behavior[- ]implantation"):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared on its own line, unwrapped (not a behavior-implantation)",
+        )
     if re.search(r"(?i)contrastive[- ]negatives?", text):
         lowered = text.lower()
         found = [t for t in ("panel", "ratio", "1:1", "disjoint") if t in lowered]
@@ -711,7 +747,8 @@ def check_contrastive_negatives(plan: str, kind: str) -> CheckResult:
         name,
         "behavior-implantation vocabulary detected but no contrastive-negative set or named "
         "exemption — .claude/rules/contrastive-negatives.md (panel + ratio + disjointness); "
-        "Methodology critic must gate this",
+        "Methodology critic must gate this; or declare `N/A — not a behavior-implantation` "
+        "on its own line, unwrapped (no backticks/quotes)",
     )
 
 
@@ -810,7 +847,7 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     reuse_heading = any(re.search(r"(?i)reuse|reused[- ]artifact", h.text) for h in _headings(plan))
     if not (reuse_near_hf or reuse_heading):
         return _skip(cid, name, "no HF-artifact reuse detected")
-    if re.search(NA_RE + r"no (?:artifact )?reuse", text):
+    if _standalone_na_declared(plan, r"no (?:artifact )?reuse"):
         return _pass(cid, name, "explicit no-reuse declaration (N/A — no artifact reuse)")
     fitness = re.search(r"(?i)fitness", text)
     letters = {m.group(1) for m in re.finditer(r"\(([a-j])\)", text)}
@@ -852,8 +889,10 @@ def check_replication_fidelity(plan: str, kind: str) -> CheckResult:
     if goal is None or not re.search(r"(?i)replicat", goal):
         return _skip(cid, name, "Goal does not mention replication")
     text = strip_fences(plan)
-    if re.search(r"(?i)not a replication", text):
-        return _pass(cid, name, "explicit N/A declared (not a replication)")
+    if _standalone_na_declared(plan, r"not a replication"):
+        return _pass(
+            cid, name, "explicit N/A declared on its own line, unwrapped (not a replication)"
+        )
     if re.search(
         r"(?i)paper'?s (?:data|recipe|corpus)|faithful|replication[- ]fidelity|deviation", text
     ):
@@ -865,9 +904,10 @@ def check_replication_fidelity(plan: str, kind: str) -> CheckResult:
     return _warn(
         cid,
         name,
-        "Goal mentions replication but no fidelity vocabulary (paper's data/recipe, "
-        "faithful, deviations) — CLAUDE.md replication rule: match the paper's data + "
-        "recipe FIRST, name every deviation",
+        "Goal mentions replication but no fidelity vocabulary — match the data + recipe of "
+        "the source paper FIRST and name every divergence (replication rule, CLAUDE.md); "
+        "or declare `N/A — not a replication` on its own line, unwrapped "
+        "(no backticks/quotes)",
     )
 
 
@@ -886,13 +926,44 @@ def _tldr_ranges(plan: str) -> list[tuple[int, int]]:
     return out
 
 
+def _exempt_tldr_kill_pass(
+    cid, name, kind, succ_solid, kill_solid, kill_tldr_hits, carrier_ok, section_name
+):
+    """PASS result for the #1291 exempt-kind acceptance — a kind-exempt plan
+    whose kill family is satisfied by a solid §0.0/TL;DR change-my-mind hit
+    (success family solid, no solid kill outside the TL;DR); None when the
+    acceptance does not apply (check_success_kill falls through to its
+    missing-family verdicts)."""
+    if kind not in EXEMPT_KINDS or not succ_solid or kill_solid:
+        return None
+    tldr_solid = [(i, a) for i, a in kill_tldr_hits if carrier_ok(i)]
+    if not tldr_solid:
+        return None
+    si, sa = succ_solid[0]
+    ka = tldr_solid[0][1]
+    return _pass(
+        cid,
+        name,
+        f"success anchor {sa!r} in §{section_name(si)!r}; kill anchor {ka!r} inside "
+        "the §0.0/TL;DR region — accepted for kind-exempt plans (the mandated "
+        "change-my-mind line IS the revert criterion for a code/infra change; "
+        "kind: experiment still requires kill criteria outside the TL;DR — #1291)",
+    )
+
+
 def check_success_kill(plan: str, kind: str) -> CheckResult:
     """Both a success-criteria family and a kill-criteria family must be
     present and non-empty in form (each carrier section ≥ 80 chars —
     emptiness check only; semantic joint-satisfiability stays with the
     Statistics critic per planner.md §7). The KILL count EXCLUDES the
-    §0.0/TL;DR region. `kind: experiment` FAILs on both-absent; exempt
-    kinds WARN."""
+    §0.0/TL;DR region for ``kind: experiment``; for exempt kinds
+    (analysis/infra/batch/survey) a solid TL;DR "What would change my
+    mind" hit satisfies the kill family when the success family is solid —
+    the mandated change-my-mind line IS the revert criterion for a
+    code/infra change (#1291; founding incidents #1279/#1276).
+    `kind: experiment` FAILs on both-absent; exempt kinds WARN, and the
+    exempt-kind missing-kill WARN detail carries the standard §0.0 remedy
+    sentence."""
     cid, name = "c8_success_kill_criteria", "success + kill criteria"
     lines = plan.splitlines()
     mask = _fence_mask(lines)
@@ -913,6 +984,7 @@ def check_success_kill(plan: str, kind: str) -> CheckResult:
 
     succ_hits: list[tuple[int, str]] = []
     kill_hits: list[tuple[int, str]] = []
+    kill_tldr_hits: list[tuple[int, str]] = []
     for i, line in enumerate(lines):
         if mask[i]:
             continue
@@ -920,8 +992,8 @@ def check_success_kill(plan: str, kind: str) -> CheckResult:
         if m:
             succ_hits.append((i, m.group(0)))
         m = _KILL_RE.search(line)
-        if m and not in_tldr(i):
-            kill_hits.append((i, m.group(0)))
+        if m:
+            (kill_tldr_hits if in_tldr(i) else kill_hits).append((i, m.group(0)))
 
     succ_solid = [(i, a) for i, a in succ_hits if carrier_ok(i)]
     kill_solid = [(i, a) for i, a in kill_hits if carrier_ok(i)]
@@ -936,6 +1008,11 @@ def check_success_kill(plan: str, kind: str) -> CheckResult:
             f"§{section_name(ki)!r} (form-only check — joint satisfiability stays with the "
             "Statistics critic)",
         )
+    exempt_pass = _exempt_tldr_kill_pass(
+        cid, name, kind, succ_solid, kill_solid, kill_tldr_hits, carrier_ok, section_name
+    )
+    if exempt_pass is not None:
+        return exempt_pass
     missing = []
     if not succ_solid:
         missing.append(
@@ -955,6 +1032,11 @@ def check_success_kill(plan: str, kind: str) -> CheckResult:
         + ". Note: a `No gates — short run / pre-verified hypothesis` escape waives *gates*, "
         "not success/kill criteria"
     )
+    if not kill_solid and kind in EXEMPT_KINDS:
+        detail += (
+            ". Standard remedy for kind-exempt plans: add the mandated §0.0 TL;DR "
+            "'What would change my mind' line (a solid one satisfies this family — #1291)"
+        )
     if len(missing) == 2 and kind == "experiment":
         return _fail(cid, name, detail)
     if len(missing) == 2:
@@ -1074,7 +1156,7 @@ def check_dryrun_test_coverage(plan: str, kind: str) -> CheckResult:
         )
     if not _DRYRUN_FLAG_RE.search(plan):
         return _skip(cid, name, "no --dry-run smoke/verification command detected")
-    if re.search(NA_RE + r"no dry-?run smoke", plan):
+    if _standalone_na_declared(plan, r"no dry-?run smoke"):
         return _pass(cid, name, "explicit N/A declared (no dry-run smoke)")
     evidence = _dryrun_test_evidence_lines(plan)
     if evidence:
@@ -1083,9 +1165,10 @@ def check_dryrun_test_coverage(plan: str, kind: str) -> CheckResult:
         cid,
         name,
         "plan names a `--dry-run` smoke/verification command but the test list has no test "
-        "exercising `dry_run=True` on the new code path — a broken dry_run thread turns the "
-        "final smoke into a real mutation (#596/#607/#633 pattern); add the test, or declare "
-        "`N/A — no dry-run smoke` if the flag mention is incidental",
+        "exercising the dry-run kwarg thread on the new code path — a broken dry-run kwarg "
+        "thread turns the final smoke into a real mutation (#596/#607/#633 pattern); add the "
+        "test, or declare `N/A — no dry-run smoke` on its own line, unwrapped "
+        "(no backticks/quotes), if the flag mention is incidental",
     )
 
 
@@ -1214,7 +1297,7 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
     windows = _battery_trigger_windows(plan)
     if not windows:
         return _skip(cid, name, "no permutation/null-draw battery named")
-    if re.search(NA_RE + r"no draw battery", plan):
+    if _standalone_na_declared(plan, r"no draw battery"):
         return _pass(cid, name, "explicit N/A declared (no draw battery)")
     # #1086: a draw-bearing arithmetic line ANCHORS its own ±15 evidence
     # window — the §9 sizing block legitimately lives far from the §4/§6
@@ -1242,7 +1325,7 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
     if not any_arith:
         missing.append(
             "the multiplier arithmetic with a draw-bearing factor "
-            "(draws x cells x folds x per-call cost = projected wall)"
+            "(draws times cells times folds at per-call cost = projected wall)"
         )
     if not any_commit:
         missing.append(
@@ -1259,7 +1342,8 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
         f"plan names a permutation/bootstrap/null battery but is missing {' AND '.join(missing)}"
         " — a named battery defaults to a serial per-draw loop (#778: ~15 h realized vs 1 h"
         " planned; #810: 308x); see .claude/rules/vectorize-many-cell-fits.md, or declare"
-        " 'N/A — no draw battery' if the mention is incidental"
+        " 'N/A — no draw battery' on its own line, unwrapped (no backticks/quotes), if the"
+        " mention is incidental"
     )
     if kind == "analysis":
         return _warn(cid, name, detail)
@@ -1428,8 +1512,28 @@ def _standalone_na_declared(plan: str, tail_re: str) -> bool:
     re-verification (the #810 spurious-satisfaction structure, one polarity
     over). NA_RE opens with an inline (?i), so it must sit at pattern
     position 0 — per-line re.match satisfies that; never prepend a prefix
-    to NA_RE (py3.11+ rejects mid-pattern global flags). Shared by the c13
-    and c18 escapes (the Supersede rule: one copy of the job)."""
+    to NA_RE (py3.11+ rejects mid-pattern global flags). Shared by the
+    checks' standalone-N/A escapes (the Supersede rule: one copy of the job).
+
+    Wrapped declarations (a backtick/quote-wrapped paste of a remedy's
+    quoted form) are DELIBERATELY unrecognized (#1238 reasoned no-change):
+    the adversarial-planner SKILL.md canonical-phrases block renders its
+    escape phrases backtick-wrapped at line start, nearly all of them
+    helper-routed since the #1237/#1262 migrations, so every
+    trailing-tolerant wrapper widening lets a verbatim block paste
+    self-declare many checks' escapes at once; requiring a balanced
+    closing wrapper does
+    not discriminate (the block's wrappers are balanced by construction),
+    and the strict phrase-alone-on-line variant rejects the one shape
+    that measurably BOUNCED (#1090 plans/v1.md:369, trailing scope
+    prose) while its target idiom (wrapped-alone lines, a real corpus
+    habit) is covered at the source by the SKILL.md unwrapped contract.
+    The most realistic hazard is not even a whole-block paste: a
+    single-phrase bulleted bounce-brief line ("- <wrapped phrase> -
+    <remedy prose>") is byte-shaped identically to a legitimate
+    declaration. Declare escapes UNWRAPPED. Pinned:
+    tests/test_verify_plan.py skillmd/wrapped pins.
+    """
     lines = plan.splitlines()
     mask = _fence_mask(lines)
     for line, fenced in zip(lines, mask, strict=True):
@@ -1522,7 +1626,7 @@ def _c13_offender_detail(offenders: list[tuple[dict, str, int, Fraction]]) -> st
         f"over families whose p-floor 1/(n_draws+1) exceeds alpha: {shown} — the gate is "
         f"structurally unattainable (#816 v5 class); {remedy}, scope the gate "
         "(e.g. 'n_draws ≥ 50'), mark the family outside the test set on its row, or declare "
-        "'N/A — no empirical-null gate' on its own line"
+        "'N/A — no empirical-null gate' on its own line, unwrapped (no backticks/quotes)"
     )
 
 
@@ -1535,7 +1639,12 @@ def check_empirical_gate_attainability(plan: str, kind: str) -> CheckResult:
     arithmetic, family-set semantics, and joint satisfiability stay with the
     Statistics critic (c8's form-only charter). FAIL (experiment) / WARN
     (analysis) / WARN on ambiguous tie or floor == alpha under a non-strict
-    comparator / SKIP otherwise. Incident: #816 v5 (gate p ≤ 0.05 over
+    comparator / SKIP otherwise; escape via a standalone ``N/A — no
+    empirical-null gate`` line — honored (SKIP path) only when no gate is
+    detected; when the escape co-occurs with a detected gate the check WARNs
+    instead of PASSing (regardless of whether n_draws declarations exist),
+    so the escape can never mask attainability verification of a present
+    gate (#1258, the #1223 c20 rule). Incident: #816 v5 (gate p ≤ 0.05 over
     families with n_draws=2/5 → floors 1/3, 1/6; caught only by the Codex
     statistics critic)."""
     cid, name = "c13_empirical_gate_attainability", "empirical-null gate p-floor attainability"
@@ -1549,7 +1658,25 @@ def check_empirical_gate_attainability(plan: str, kind: str) -> CheckResult:
     if not gates:
         return _skip(cid, name, "no registered empirical-p gate detected")
     if _c13_na_escape_declared(plan):
-        return _pass(cid, name, "explicit N/A declared (no empirical-null gate)")
+        # #1258 (the #1223 c20 port): this branch is reachable ONLY when a
+        # registered empirical-p gate WAS detected (the no-gate case SKIPs
+        # above) — a PASS here masks the p-floor attainability verification
+        # c13 exists to run. WARN, not FAIL: the gate harvest may be a false
+        # positive on quoted guidance, so the escape stays non-blocking and
+        # the reviewers adjudicate.
+        return _warn(
+            cid,
+            name,
+            "the standalone `N/A — no empirical-null gate` escape co-occurs with "
+            f"{len(gates)} registered empirical-p gate line(s) (first: "
+            f"{gates[0]['line'][:90]!r}) — the escape is reserved for gate-free "
+            "plans and would mask attainability verification of the detected "
+            "gate (#1258, the #1223 c20 rule); remove the N/A line (the gate is "
+            "then verified, or SKIPs as not-computable when no n_draws "
+            "declarations exist), or fence/remove the gate-shaped prose the "
+            "detector matched if it is quoted guidance rather than this plan's "
+            "own registration",
+        )
     decls = _n_draws_declarations(plan)
     if not decls:
         return _skip(
@@ -1825,22 +1952,57 @@ _FAILLOUD_TEST_EVIDENCE_RE = re.compile(
 # otherwise self-certify (`grep -n 'except Exception' tests/test_foo.py`).
 _FAILLOUD_GREP_LINE_RE = re.compile(r"(?i)\bgrep\b")
 
+# Evidence route 2 (#1306): a quoted pytest.raises control with a named
+# exception is intrinsically fail-loud test vocabulary — accepted WITHOUT a
+# same-line test_ identifier (#1296: the negative-control literal sits on
+# its own hard-wrapped line). Corpus-audited 2026-07-14: flips exactly the
+# two #1296 incident plans out of 119 standing infra|batch WARNs.
+_FAILLOUD_PYTEST_RAISES_RE = re.compile(r"pytest\.raises\(\s*[\w.]+")
+
+# Evidence route 3 (#1306): a deliberate labeled pin line opens a FORWARD,
+# paragraph-bounded scan for the test identifier — the labeled-line
+# convention (c31 precedent: an unlabeled c15-style loose window
+# false-satisfied all 9 of c31's incident plan versions, so the label is
+# load-bearing), made wrap-tolerant for long test paths (#1296 v2's
+# 105-char path forced the wrap). A blank line ends the paragraph; the
+# scan is capped (incident paragraph = 5 lines; 8 = 5 + margin).
+_FAILLOUD_PIN_LABEL_RE = re.compile(r"(?i)\bfail[- ]?loud (?:pin|acceptance)\b[^:\n]{0,40}:")
+_FAILLOUD_PIN_SCAN_LINES = 8
+
 # Anchor carriers that never bind: §0.0 TL;DR / §0 Plan Summary restate
 # criteria as summary prose (same rationale as c8's _tldr_ranges exclusion).
 _FAILLOUD_SUMMARY_HEAD_RE = re.compile(r"(?i)tl;dr|plan summary|^(?:§\s*)?0(?:\.0)?\b")
 
-_FAILLOUD_WINDOW_LINES = 30
-
-_FAILLOUD_NA_RE = re.compile(
-    NA_RE + r"(?:no fail[- ]?loud acceptance claim|fail[- ]?loud claim not test-backable)"
+# Anchor carriers that never bind (2): Risks / Failure-Modes sections carry
+# failure-MODE narration ("post_event raising ValueError is fail-loud", "will
+# be caught ... fails loud"), not acceptance claims — the same rationale that
+# excluded decision rule|gate from the anchor (#932 corpus probe, comment
+# above _FAILLOUD_ANCHOR_RE). BOTH alternation branches are GROUPED under the
+# start anchor + optional section numbering (a bare `|failure[- ]modes?`
+# branch would match anywhere in the heading and silently exclude genuine
+# acceptance sections), so an acceptance heading merely containing "risk" or
+# "failure mode" mid-heading is NOT excluded. 11 of 16 historical noise fires
+# were this class (#1291; founding incident #1275 v1).
+_FAILLOUD_RISKS_HEAD_RE = re.compile(
+    r"(?i)^(?:§\s*)?(?:\d+(?:\.\d+)*[.)]?\s*)?(?:risks?\b|failure[- ]modes?\b)"
 )
+
+_FAILLOUD_WINDOW_LINES = 30
 
 
 def _failloud_claim_hits(plan: str) -> list[tuple[str, str]]:
     """(section heading, matched vocabulary) per acceptance/success anchor
-    whose fence-stripped 30-line window carries a fail-loud claim. Anchors in
-    fences, in §0/TL;DR/Plan-Summary regions, or with an H1/preamble carrier
-    are dropped (corpus-probe noise classes, task #932)."""
+    whose 30-line window carries a fail-loud claim. Anchors in fences, in
+    §0/TL;DR/Plan-Summary regions, in Risks/Failure-Modes sections (risk rows
+    narrate failure MODES, not acceptance claims — 11/16 historical noise
+    fires, #1291, founding incident #1275 v1), or with an H1/preamble carrier
+    are dropped (corpus-probe noise classes, tasks #932 + #1291). The claim
+    window is built from the document-global fence mask (a window slice can
+    no longer mis-parse when it starts inside a fence) with `grep`-bearing
+    lines excluded LINE-SCOPED — a grep line narrates tooling semantics
+    ("`grep -c` exits nonzero"), not the plan's own acceptance claim (the
+    remaining 5/16 noise fires, #1275 v2); a real claim on any non-grep line
+    in the window still triggers."""
     lines = plan.splitlines()
     mask = _fence_mask(lines)
     headings = _headings(plan)
@@ -1851,23 +2013,52 @@ def _failloud_claim_hits(plan: str) -> list[tuple[str, str]]:
         h = _innermost_section(headings, i)
         if h is None or h.level < 2 or _FAILLOUD_SUMMARY_HEAD_RE.search(h.text.strip()):
             continue
+        if _FAILLOUD_RISKS_HEAD_RE.search(h.text.strip()):
+            continue
         end = min(h.end, i + 1 + _FAILLOUD_WINDOW_LINES)
-        m = _FAILLOUD_CLAIM_RE.search(strip_fences("\n".join(lines[i:end])))
+        window = "\n".join(
+            ln
+            for ln, fenced in zip(lines[i:end], mask[i:end], strict=True)
+            if not fenced and not _FAILLOUD_GREP_LINE_RE.search(ln)
+        )
+        m = _FAILLOUD_CLAIM_RE.search(window)
         if m:
             hits.append((h.text, m.group(0)))
     return hits
 
 
 def _failloud_test_evidence_lines(plan: str) -> list[str]:
-    """RAW-plan lines naming a committed fail-loud-exercising test: a
-    ``test_`` identifier (also matches tests/<file>.py paths) co-located with
-    fail-loud vocabulary, grep-command lines excluded."""
+    """RAW-plan lines naming a committed fail-loud-exercising test, three
+    routes (#913/#1306): (1) a ``test_`` identifier co-located with
+    fail-loud vocabulary on ONE line (the original scan); (2) a quoted
+    ``pytest.raises(<Exception>`` control — intrinsically test + raise
+    vocabulary, no identifier needed; (3) a ``Fail-loud pin:``-style
+    labeled line whose contiguous paragraph names a ``test_`` identifier
+    within ``_FAILLOUD_PIN_SCAN_LINES`` lines (wrap-tolerant labeled route;
+    unlabeled ±k windows false-satisfy — 21-29 of 119 corpus WARNs at
+    k=1-2 vs 2 genuine, measured 2026-07-14 — so the label is
+    load-bearing, the c31 lesson). Grep-command lines never count on any
+    route."""
+    lines = plan.splitlines()
     out: list[str] = []
-    for line in plan.splitlines():
+    for i, line in enumerate(lines):
         if _FAILLOUD_GREP_LINE_RE.search(line):
             continue
         if _TEST_IDENT_RE.search(line) and _FAILLOUD_TEST_EVIDENCE_RE.search(line):
             out.append(line.strip())
+            continue
+        if _FAILLOUD_PYTEST_RAISES_RE.search(line):
+            out.append(line.strip())
+            continue
+        if _FAILLOUD_PIN_LABEL_RE.search(line):
+            for j in range(i, min(len(lines), i + _FAILLOUD_PIN_SCAN_LINES)):
+                if not lines[j].strip():
+                    break
+                if _FAILLOUD_GREP_LINE_RE.search(lines[j]):
+                    continue
+                if _TEST_IDENT_RE.search(lines[j]):
+                    out.append(f"{line.strip()} … {lines[j].strip()}")
+                    break
     return out
 
 
@@ -1882,7 +2073,16 @@ def check_failloud_test_coverage(plan: str, kind: str) -> CheckResult:
     only the zero-fail-loud-test case, and PASSes a plan naming a fail-loud
     test for a different claim). Extending kind scope to ``analysis`` is a
     future calibration decision if an incident arises there (the corpus
-    replay covered infra|batch only)."""
+    replay covered infra|batch only). Evidence routes 2-3 (#1306) — a
+    quoted ``pytest.raises(<Exception>`` control and a labeled
+    ``Fail-loud pin``-style paragraph scan — were corpus-audited
+    2026-07-14 (exactly the two #1296 incident plans flip WARN→PASS out
+    of 119 standing infra|batch WARNs; unlabeled ±1/±2-line windows were
+    REJECTED at 21/29 false flips); accepted residual: a fenced
+    bug-narration ``pytest.raises(...)`` quote or a stale/nonexistent
+    test name in a labeled pin can false-satisfy — acceptable because the
+    check is WARN-only at existence granularity and per-claim coverage
+    stays with the Phase 2 critics."""
     cid, name = "c15_failloud_test_coverage", "fail-loud acceptance claim backed by a test"
     if kind not in ("infra", "batch"):
         return _skip(
@@ -1893,7 +2093,9 @@ def check_failloud_test_coverage(plan: str, kind: str) -> CheckResult:
     hits = _failloud_claim_hits(plan)
     if not hits:
         return _skip(cid, name, "no fail-loud claim in an acceptance/success-criteria window")
-    if _FAILLOUD_NA_RE.search(plan):
+    if _standalone_na_declared(
+        plan, r"(?:no fail[- ]?loud acceptance claim|fail[- ]?loud claim not test-backable)"
+    ):
         return _pass(
             cid, name, "explicit N/A declared (incidental vocabulary or not test-backable)"
         )
@@ -1915,8 +2117,12 @@ def check_failloud_test_coverage(plan: str, kind: str) -> CheckResult:
         "tests/<file> path alongside raise/swallow/silent/except vocabulary; grep-gate lines do "
         "not count) — a run-book grep verifies the invariant once at review time, and a "
         "differently-worded re-swallow ships green past all committed tests (#913). Name the "
-        "pinning test, or declare `N/A — no fail-loud acceptance claim` / "
-        "`N/A — fail-loud claim not test-backable`",
+        "pinning test and its raise/swallow/silent vocabulary on ONE unwrapped line "
+        "(hard-wrapped mentions do not count), quote the `pytest.raises` negative control "
+        "with its exception class, add a `Fail-loud pin` labeled line (the label, a colon, "
+        "then the test path), or declare `N/A — no fail-loud acceptance claim` / "
+        "`N/A — fail-loud claim not test-backable` — each on its own line, unwrapped "
+        "(no backticks/quotes)",
     )
 
 
@@ -1983,7 +2189,6 @@ _C16_NONREPLACE_RE = re.compile(
     r"(?:headline[- ])?replac\w*[^.;]{0,80}?(?:headline|committed)"
     r"|(?:never|not)\s+(?:silently\s+)?replac\w*[^.;]{0,60}?headline"
 )
-_C16_NA_RE = re.compile(NA_RE + r"no re-?extracted reference arms")
 
 
 def check_reference_headline_distinction(plan: str, kind: str) -> CheckResult:
@@ -2017,7 +2222,7 @@ def check_reference_headline_distinction(plan: str, kind: str) -> CheckResult:
             "re-extraction vocabulary present but the plan does not read as a "
             "same-issue follow-up folding into an existing clean-result",
         )
-    if _C16_NA_RE.search(text):
+    if _standalone_na_declared(plan, r"no re-?extracted reference arms"):
         return _pass(cid, name, "explicit N/A declared (no re-extracted reference arms)")
     if (
         _C16_SAMEPASS_RE.search(text)
@@ -2033,12 +2238,13 @@ def check_reference_headline_distinction(plan: str, kind: str) -> CheckResult:
         cid,
         name,
         "plan re-extracts prior-headline reference arms AND folds into an existing "
-        "clean-result, but no sentence distinguishes same-pass comparator values from "
+        "clean-result, but no sentence distinguishes same-pass-comparator values from "
         "the prior committed headline values — state which values adjudicate this "
-        "round's NEW comparison vs which remain the committed headline, and that a "
+        "round's NEW comparison vs which are still the committed headline, and that a "
         "flipped reference CALL is reported as replication-stability evidence rather "
-        "than replacing the headline (#811 v3 §6 incident; the committed-cells-"
-        "remain-evidence rule), or declare `N/A — no re-extracted reference arms`",
+        "than replacing the headline (#811 v3 §6 incident; the kept-cells-"
+        "stay-evidence rule), or declare `N/A — no re-extracted reference arms` "
+        "on its own line, unwrapped (no backticks/quotes)",
     )
 
 
@@ -2421,7 +2627,12 @@ def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
     DECLARE a per-context data source covering the registered rows on both
     arms (D1 row-coverage line / D2 coverage-labeled subset-assert /
     standalone N/A). Surface check only — pack contents stay with the
-    fact-checker. FAIL (experiment) / WARN (analysis) / SKIP otherwise.
+    fact-checker. FAIL (experiment) / WARN (analysis) / SKIP otherwise;
+    the standalone ``N/A — no paired contrast`` escape is honored (SKIP
+    path) only when no paired contrast is detected — when the escape
+    co-occurs with a detected registration the check WARNs instead of
+    PASSing, so the escape can never mask row-coverage verification of a
+    present registration (#1258, the #1223 c20 rule).
     Incident: #810 v13 (9-row paired bootstrap; the named full-side pack
     lacked im_end/turn_nl; 4 independent reviewer catches)."""
     cid, name = "c18_paired_contrast_source_coverage", "paired-contrast per-arm source coverage"
@@ -2435,7 +2646,23 @@ def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
     if not triggers:
         return _skip(cid, name, "no registered paired contrast detected")
     if _c18_na_escape_declared(plan):
-        return _pass(cid, name, "explicit N/A declared (no paired contrast)")
+        # #1258 (the #1223 c20 port): reachable ONLY when a registered paired
+        # contrast WAS detected (the no-trigger case SKIPs above) — a PASS
+        # here masks the row-coverage verification c18 exists to run (the
+        # #810 v13 class). WARN, not FAIL: the trigger harvest may be a false
+        # positive on quoted guidance; reviewers adjudicate.
+        return _warn(
+            cid,
+            name,
+            "the standalone `N/A — no paired contrast` escape co-occurs with "
+            f"{len(triggers)} registered paired-contrast line(s) (first: "
+            f"{triggers[0][:90]!r}) — the escape is reserved for contrast-free "
+            "plans and would mask row-coverage verification of the detected "
+            "registration (#1258, the #1223 c20 rule); remove the N/A line and "
+            "declare Row-coverage (the registration is then verified), or "
+            "fence/remove the registration-shaped prose the detector matched "
+            "if it is quoted guidance rather than this plan's own registration",
+        )
     decls = _c18_coverage_declarations(plan)
     if decls:
         return _pass(
@@ -2454,8 +2681,8 @@ def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
         "which per-context store/file supplies every registered row (or stating that the "
         "plan's own fits produce every registered row on each arm), or state the driver "
         "assert that set-checks the registered rows against the named sources' keys on a "
-        "non-fenced line, or declare 'N/A — no paired contrast' on its own line; keep the "
-        "declaration line free of cross-issue citations"
+        "non-fenced line, or declare 'N/A — no paired contrast' on its own line, unwrapped "
+        "(no backticks/quotes); keep the declaration line free of cross-issue citations"
     )
     if kind == "analysis":
         return _warn(cid, name, detail + " (analysis kind-degrade: WARN, not FAIL)")
@@ -2537,7 +2764,7 @@ def check_ood_folds(plan: str, kind: str) -> CheckResult:
     cid, name = "c19_ood_folds", "OOD generalization folds (held-out predictive DV)"
     if kind not in ("experiment", "analysis"):
         return _skip(cid, name, "kind-exempt: infra|batch|survey plans have no predictive DV")
-    if re.search(NA_RE + r"no held-?out predictive DV", plan):
+    if _standalone_na_declared(plan, r"no held-?out predictive DV"):
         return _pass(cid, name, "explicit N/A declared (no held-out predictive DV)")
     text = strip_fences(plan)
     solo = _C19_SOLO_FOLD_RE.search(text)
@@ -2570,10 +2797,12 @@ def check_ood_folds(plan: str, kind: str) -> CheckResult:
     return _warn(
         cid,
         name,
-        "held-out predictive-DV vocabulary detected but no GROUP-level fold (LOFO / "
-        "leave-one-family-out / corpus transfer), no iid argument, and no "
-        "`N/A — no held-out predictive DV` escape — pointwise LOO can REORDER "
-        "cross-context claims (#810: read-out rho 0.909 → 0.285 under LOFO); "
+        "held-out predictive-DV vocabulary detected but no group-scoped fold "
+        "(leave-one-<family>-out / a fit-on-one-corpus-score-on-another arm), no "
+        "independence (i-i-d) argument, and no `N/A — no held-out predictive DV` escape "
+        "declared on its own line, unwrapped (no backticks/quotes) — pointwise LOO can "
+        "REORDER cross-context claims "
+        "(#810: read-out rho 0.909 → 0.285 under the family-level fold); "
         ".claude/rules/ood-generalization-folds.md; Statistics critic must gate this",
     )
 
@@ -2934,7 +3163,8 @@ def _c20_cell_str(cell: dict) -> str:
 _C20_REMEDY = (
     " — restate the lattice as an explicit partition (`DISJOINT and exhaustive: "
     "<label> ⇔ <predicate>; …; <label> ⇔ otherwise`), add an otherwise-label, or "
-    "declare 'N/A — no registered verdict lattice' on its own line"
+    "declare 'N/A — no registered verdict lattice' on its own line, unwrapped "
+    "(no backticks/quotes)"
 )
 
 
@@ -3119,7 +3349,11 @@ def check_verdict_lattice_coherence(plan: str, kind: str) -> CheckResult:
     depends on harvest recall), any unparsed label degrades the whole
     lattice to WARN, and quantified (k-of-n) predicates SKIP as out of the
     v1 cell algebra. FAIL (experiment) / WARN (analysis) / SKIP otherwise;
-    escape via a standalone ``N/A — no registered verdict lattice`` line.
+    escape via a standalone ``N/A — no registered verdict lattice`` line —
+    honored (SKIP path) only when no lattice is detected; when the escape
+    co-occurs with a detected lattice (either tier) the check WARNs instead
+    of PASSing, so the escape can never mask verification of a present
+    lattice (#1223).
     Incident: #923 amendment plan v4/v5 §3 — a bare positive point estimate
     with both CIs straddling 0 fired BOTH H-slot and Intermediate (and one
     cell fired neither); caught only by the Codex statistics critic, fixed
@@ -3146,7 +3380,26 @@ def check_verdict_lattice_coherence(plan: str, kind: str) -> CheckResult:
             "declaration; fewer than 2 anchored CI-predicate labels in any trigger section)",
         )
     if _standalone_na_declared(plan, r"no registered verdict lattice"):
-        return _pass(cid, name, "explicit N/A declared (no registered verdict lattice)")
+        # #1223: this branch is reachable ONLY when a lattice WAS detected (the
+        # no-lattice case SKIPs above) — a PASS here masks the very defect c20
+        # exists to catch. WARN, not FAIL: the detection may be a false positive
+        # on quoted guidance (all 3 corpus co-occurrences were), so the escape
+        # stays non-blocking and the reviewers adjudicate.
+        detected = (
+            "a tier-1 DISJOINT-and-exhaustive ⇔ declaration"
+            if tier1 is not None
+            else f"{len(lattices)} trigger section(s) with ≥2 anchored CI-predicate labels (tier 2)"
+        )
+        return _warn(
+            cid,
+            name,
+            "the standalone `N/A — no registered verdict lattice` escape co-occurs "
+            f"with {detected} — the escape is reserved for lattice-free plans and "
+            "would mask coherence verification of the detected lattice (#1223); "
+            "remove the N/A line (the lattice is then verified), or fence/remove the "
+            "lattice-shaped prose the detector matched if it is quoted guidance "
+            "rather than this plan's own registration",
+        )
     if tier1 is not None:
         return _c20_tier1_result(cid, name, kind, tier1[0], tier1[1])
     return _c20_tier2_result(cid, name, kind, lattices)
@@ -3188,8 +3441,6 @@ _C21_AST_EVIDENCE_RE = re.compile(
     r"(?i)ast\.(?:walk|parse)|\bAST[- ](?:based|arity|audit|walker)|libcst"
 )
 
-_C21_NA_RE = re.compile(NA_RE + r"no arity acceptance gate")
-
 
 def check_grep_arity_gate(plan: str, kind: str) -> CheckResult:
     """Plans registering a grep/`wc -l`-based signature-ARITY acceptance
@@ -3227,7 +3478,7 @@ def check_grep_arity_gate(plan: str, kind: str) -> CheckResult:
             hits.append((i, line.strip()))
     if not hits:
         return _skip(cid, name, "no grep-based call-arity pass condition detected")
-    if _C21_NA_RE.search(plan):
+    if _standalone_na_declared(plan, r"no arity acceptance gate"):
         return _pass(
             cid, name, "explicit N/A declared (flagged grep is not an arity pass condition)"
         )
@@ -3249,7 +3500,8 @@ def check_grep_arity_gate(plan: str, kind: str) -> CheckResult:
         "(split-line and keyword-argument calls carry no same-line comma; #1024 plan v1/v2). "
         "Register an AST arity audit instead: ast.parse each target file, ast.walk over Call "
         "nodes matching the function, count len(node.args) + len(node.keywords), whitelist "
-        "named exceptions — or declare `N/A — no arity acceptance gate`",
+        "named exceptions — or declare `N/A — no arity acceptance gate` on its own line, "
+        "unwrapped (no backticks/quotes)",
     )
 
 
@@ -3683,7 +3935,8 @@ def check_resume_provenance(plan: str, kind: str) -> CheckResult:
         "a regime-keyed resume predicate) — a resume that trusts bare output existence lets "
         "stale units silently vouch after a crash + code-fix round (#952 v9; #722 r3); "
         "name the validation per the #952 gate-5 manifest shape, or declare "
-        "'N/A — no resume/persist pattern' on its own line if the mention is incidental",
+        "'N/A — no resume/persist pattern' on its own line, unwrapped "
+        "(no backticks/quotes), if the mention is incidental",
     )
 
 
@@ -3731,10 +3984,32 @@ def _c25_detail(hits: list[str], *, exemptable: bool) -> str:
         return base + (
             "; if the fenced entities are deliberately discussed CONTENT (not a "
             "command to dispatch), declare 'N/A — entities are content, not "
-            "commands' on its own line"
+            "commands' on its own line, unwrapped (no backticks/quotes) "
+            "(valid only when exactly ONE shell-tagged fence carries entity "
+            "forms; with several, re-tag content fences to a non-shell info "
+            "string or combine them into one fence)"
         )
     return base + (
         " — a --workload-cmd / dispatch_issue.py fence is never exemptable: fix the command text"
+    )
+
+
+def _c25_multi_fence_detail(n_fences: int, hits: list[str]) -> str:
+    """Render the c25 FAIL detail for the count-scoped exemption (#1276): the
+    standalone escape phrase is present but MORE THAN ONE arm-(a) fence
+    carries entity hits — a doc-wide declaration must not let a poisoned
+    command fence ride a legitimate content fence's exemption (the arm-(a)
+    sibling of the #1062 arm-(b) never-exemptable rule)."""
+    return (
+        f"{n_fences} distinct shell-tagged fences carry HTML entity form(s) "
+        f"{', '.join(hits)}, but the standalone content exemption is scoped to "
+        "EXACTLY ONE entity-bearing fence — a doc-wide declaration must not "
+        "mask a separately poisoned command fence (#1276; arm-(a) sibling of "
+        "the #1062 arm-(b) rule); re-tag genuinely content-bearing fences to a "
+        "non-shell info string (e.g. a text-tagged fence, which arm (a) never "
+        "scans), or combine the content commands into one fence, or fix the "
+        "poisoned command text (re-extract from the raw output-file / one "
+        "html.unescape() round)"
     )
 
 
@@ -3747,7 +4022,11 @@ def check_html_entities_in_commands(plan: str, kind: str) -> CheckResult:
     ``--workload-cmd`` or ``dispatch_issue.py``. Scan-first; the standalone
     escape phrase (``N/A — entities are content, not commands``, detected via
     the house ``_standalone_na_declared`` line discipline — never a doc-global
-    substring) exempts arm-(a) hits ONLY. An arm-(b) entity hit FAILs
+    substring) exempts arm-(a) hits ONLY, and only when EXACTLY ONE arm-(a)
+    fence carries entity hits — with two or more entity-bearing shell fences
+    the declaration cannot bind to a specific fence, so the check FAILs
+    naming the fence count (#1276; per-fence grain: distinct fences, not
+    distinct entity forms). An arm-(b) entity hit FAILs
     UNCONDITIONALLY — a document-wide phrase must never mask a separately
     poisoned workload command (methodology reconciler, #1062 round 1: one
     legitimate entity-discussing fence + one poisoned dispatcher fence must
@@ -3769,9 +4048,22 @@ def check_html_entities_in_commands(plan: str, kind: str) -> CheckResult:
     hits_b = sorted({m.group(0) for b in arm_b for m in _C25_HTML_ENTITY_RE.finditer(b)})
     if hits_b:
         return _fail(cid, name, _c25_detail(hits_b, exemptable=False))
-    hits_a = sorted({m.group(0) for b in arm_a for m in _C25_HTML_ENTITY_RE.finditer(b)})
+    # Per-fence grain (#1276): the exemption scope counts DISTINCT arm-(a)
+    # fences carrying entity hits — never the union of entity forms, which
+    # loses fence identity and lets a poisoned fence ride a legitimate
+    # fence's declaration (the arm-(a) sibling of the #1062 arm-(b) rule).
+    per_fence_hits = [sorted({m.group(0) for m in _C25_HTML_ENTITY_RE.finditer(b)}) for b in arm_a]
+    per_fence_hits = [h for h in per_fence_hits if h]
+    hits_a = sorted({form for h in per_fence_hits for form in h})
     if hits_a and _standalone_na_declared(plan, r"entities are content, not commands"):
-        return _pass(cid, name, "arm-(a) entity content exempted by explicit standalone N/A")
+        if len(per_fence_hits) == 1:
+            return _pass(
+                cid,
+                name,
+                "arm-(a) entity content exempted by explicit standalone N/A "
+                "(single entity-bearing fence)",
+            )
+        return _fail(cid, name, _c25_multi_fence_detail(len(per_fence_hits), hits_a))
     if hits_a:
         return _fail(cid, name, _c25_detail(hits_a, exemptable=True))
     return _pass(cid, name, f"{len(arm_a) + len(arm_b)} command fence(s), no entity forms")
@@ -3911,7 +4203,7 @@ def _c26_offender_detail(offenders: list[tuple[str, str]], routed: set[str]) -> 
         "measured on a different GPU must be scaled with a stated per-step rate "
         "(plan-compute-sizing.md; #599: an H100-premised ~6.4h estimate ran ~34h on "
         "the A100 auto-lane), or declare 'N/A — basis measured on the routed machine' "
-        "on its own line"
+        "on its own line, unwrapped (no backticks/quotes)"
     )
 
 
@@ -4143,7 +4435,7 @@ def check_capture_intent_hbm(plan: str, kind: str) -> CheckResult:
         "correspondingly larger-HBM lane/backend (a multi-GPU intent or an explicit "
         "large-GPU RunPod pin), never eval/debug — per plan-compute-sizing § "
         "Activation-capture HBM sizing, or declare 'N/A — no 7B activation capture' "
-        "on its own line",
+        "on its own line, unwrapped (no backticks/quotes)",
     )
 
 
@@ -4366,7 +4658,8 @@ def _c28_offender_detail(offenders: list[tuple[dict, str]], T: Fraction, bands: 
         "NOTE: this check cannot verify the ratio and the band concern the same quantity — "
         "if they don't, declare the N/A escape. Remedy: re-label the precedent's branch, "
         "move the threshold, or declare 'N/A — no precedent-labeled decision bands' on its "
-        "own line; the semantic verdict stays with the Statistics critic"
+        "own line, unwrapped (no backticks/quotes); the semantic verdict stays with the "
+        "Statistics critic"
     )
 
 
@@ -4545,7 +4838,8 @@ def _c29_offender_detail(decl_line: str, gate_hit: str, labels: list[str]) -> st
         "hard-deleted the pre-registered §7.3 extension probe at step 149/2400; #1112 "
         "v2: a 48h fence omitted its own §7 G1 dose extension, joint worst ~48-50h). "
         "Remedy: add the conditional phase's wall cost to the fence-reconcile sentence, "
-        "or declare 'N/A — no conditional phase on this provision' on its own line"
+        "or declare 'N/A — no conditional phase on this provision' on its own line, "
+        "unwrapped (no backticks/quotes)"
     )
 
 
@@ -4627,6 +4921,772 @@ def check_fence_conditional_phase(plan: str, kind: str) -> CheckResult:
     return _warn(cid, name, _c29_offender_detail(lines[decl_idxs[0]], ext.group(0), labels))
 
 
+# ─── Check 30 — reused-bundle realized keys (WARN-only, conditional) ───────
+
+_C30_BUNDLE_RE = re.compile(
+    # NO `.safetensors` token (v2, methodology-critic Must-Fix): adapter-reuse
+    # plans routinely quote `adapter_model.safetensors` near reuse vocabulary —
+    # a sweep of all historical plans showed 9 fire via `.safetensors`
+    # alone, ALL adapter-class (#459 #523 #528 #562 #570 #595 #627 #632 #653).
+    # The project's multi-field bundles are single `.pt` files; a safetensors
+    # STORE still triggers via its prose tokens (tensor bundle /
+    # analysis_tensors / activation store / multi-field bundle).
+    r"(?i)(\.pt\b|\.pth\b|tensor bundle|multi-?field bundle|"
+    r"save-dict|analysis_tensors|activation store)"
+)
+_C30_SATISFIER_RE = re.compile(
+    r"(?i)(verify_reused_artifact_keys"  # the canonical helper
+    r"|mmap\s*=\s*True[^\n]{0,120}\.keys\(\)"  # inline mmap key read
+    r"|consumer(?:'s)?\s+own\s+loader)"  # consumer-loader-run form
+)
+
+
+def check_realized_keys(plan: str, kind: str) -> CheckResult:
+    """Plans reusing a multi-field tensor bundle must name a realized-keys
+    verification (artifact-reuse.md check (c), incident #1073). WARN not
+    FAIL: the bundle-reuse trigger is heuristic (same class as c6), and the
+    semantic question — was the probe actually RUN against the pinned
+    revision — stays with the fact-checker. Trigger scans stripped prose;
+    the satisfier ALSO scans raw text, because the runnable command
+    legitimately lives in a fenced block."""
+    cid, name = "c30_realized_keys", "reused-bundle realized-keys verification"
+    if kind not in ("experiment", "analysis"):
+        return _skip(cid, name, "kind-exempt")
+    text = strip_fences(plan)
+    bundle_hits = [m.start() for m in _C30_BUNDLE_RE.finditer(text)]
+    reuse_near_bundle = any(
+        re.search(r"(?i)\breus\w*", text[max(0, i - 300) : i + 300]) for i in bundle_hits
+    )
+    if not reuse_near_bundle:
+        return _skip(cid, name, "no multi-field bundle reuse detected")
+    if _standalone_na_declared(plan, r"no multi-?field bundle reuse"):
+        return _pass(cid, name, "explicit no-bundle-reuse declaration")
+    if _C30_SATISFIER_RE.search(plan):  # raw plan: fenced commands count
+        return _pass(
+            cid, name, "realized-keys verification named (helper / mmap read / consumer loader)"
+        )
+    return _warn(
+        cid,
+        name,
+        "plan reuses a multi-field tensor bundle but names no realized-keys "
+        "verification — artifact-reuse.md check (c): run `uv run python "
+        "scripts/verify_reused_artifact_keys.py --artifact <path> --keys "
+        "<consumer keys>` (or the consumer's own loader) against the pinned "
+        "artifact and paste the PASS line into §10 (incident #1073)",
+    )
+
+
+# ─── Check 31 — SKILL.md prose edit backed by a durability pin (WARN-only) ─
+
+# Trigger: a SKILL.md path token on a non-fenced, non-negated line, with an
+# edit-commitment verb within +/-120 chars of the path match (long unwrapped
+# plan lines make whole-line co-occurrence noisy — measured on the
+# 2026-07-09 corpus scan, task #1179 plan §6). The path arm admits any
+# slash-joined prefix (`.claude/skills/issue/SKILL.md`, relative
+# `issue/SKILL.md`) or a bare `SKILL.md` not glued to a path/word char.
+_C31_PATH_RE = re.compile(r"(?i)(?:[\w.-]+(?:/[\w.-]+)*/|(?<![\w./-]))SKILL\.md")
+_C31_EDIT_RE = re.compile(
+    r"(?i)\b(?:add(?:s|ed|ing)?|insert\w*|append\w*|amend\w*|edit\w*|splice\w*"
+    r"|prepend\w*|reword\w*|rewrit\w*|revise[sd]?|patch\w*"
+    r"|new (?:section|paragraph|bullet|sentence|step|clause|line))\b"
+)
+_C31_EDIT_PROX_CHARS = 120
+# Negation / boilerplate guards — measured corpus noise classes (#1179 §6):
+# "zero SKILL.md edits" (#700), "No SKILL.md change needed" (#875), "no
+# companion edit to SKILL.md" (#797), scope-table "No change" rows (#792),
+# must-ask / must-bounce deviation boilerplate (#890, #806, #869). The gap
+# atom allows path-internal dots (`SKILL.md change`) but blocks a
+# sentence-ending dot-space, so the guard cannot leak across sentences.
+_C31_NEG_GUARD_RE = re.compile(
+    r"(?i)\b(?:no|zero|not?|without|never)\b(?:[^|;:.]|\.(?!\s)){0,24}"
+    r"\b(?:edit(?:s|ed|ing)?|chang(?:e|es|ed))\b"
+    r"|\bunchanged\b|\bincidental\b|must-ask|must bounce"
+    r"|park[^|]{0,24}plan_pending"
+)
+# Satisfier: an exact labeled line (c5/c20 machine-readable-line pattern) —
+# a c15-style loose evidence scan false-satisfied all 9 incident plan
+# versions (unrelated test_ identifiers + incidental vocabulary), so the
+# label is load-bearing. RAW scan (c11/c15 evidence convention: the line may
+# legitimately sit in a fenced §-block or table). The NA separator class
+# mirrors NA_RE (em/en dash, colon, paren, hyphen) so `Durability pin: N/A
+# (reason)` satisfies too.
+_C31_PIN_LABEL_RE = re.compile(r"(?i)\bdurability pin:\s*")
+_C31_PIN_NA_RE = re.compile(r"(?i)\bdurability pin:\s*N/?A\b\s*[—–:(-]\s*\S")  # noqa: RUF001
+_C31_NA_ALIAS_RE = re.compile(NA_RE + r"no durability pin\s*[:—–-]\s*\S")  # noqa: RUF001
+
+
+def _c31_trigger_lines(plan: str) -> list[str]:
+    """Non-fenced, non-negated lines carrying a SKILL.md path with an
+    edit-commitment verb within +/-``_C31_EDIT_PROX_CHARS`` of the path
+    match."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    out: list[str] = []
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced or _C31_NEG_GUARD_RE.search(line):
+            continue
+        for m in _C31_PATH_RE.finditer(line):
+            lo = max(0, m.start() - _C31_EDIT_PROX_CHARS)
+            hi = min(len(line), m.end() + _C31_EDIT_PROX_CHARS)
+            if _C31_EDIT_RE.search(line[lo:hi]):
+                out.append(line.strip())
+                break
+    return out
+
+
+def _c31_satisfier(plan: str) -> str | None:
+    """First satisfier line: ``Durability pin: <...test_...>`` (a standing OR
+    planned pin test — the verifier cannot and need not distinguish), or a
+    reason-bearing NA escape. Bare ``Durability pin: N/A`` (no reason) does
+    NOT satisfy."""
+    for line in plan.splitlines():
+        m = _C31_PIN_LABEL_RE.search(line)
+        if m and _TEST_IDENT_RE.search(line[m.end() :]):
+            return f"pin named ({line.strip()[:80]!r})"
+        if _C31_PIN_NA_RE.search(line) or _C31_NA_ALIAS_RE.search(line):
+            return f"no-pin justification declared ({line.strip()[:80]!r})"
+    return None
+
+
+def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
+    """``kind: infra|batch`` plans that commit to editing
+    ``.claude/skills/**/SKILL.md`` prose must carry ONE labeled line naming
+    a durability pin test (a pytest asserting the prose's presence/shape)
+    or a one-line no-pin justification. SKILL.md protection prose with no
+    pin is silently droppable by any later edit — lineage: #1134 (no pin),
+    #1045 (pin optional), #884 (pin present but unlabeled). WARN not FAIL:
+    the trigger is a line heuristic; the Phase 2 critics adjudicate. v1
+    scope is SKILL.md paths only — extending to agents/rules/CLAUDE.md
+    prose is a future calibration decision (the 2026-07-09 corpus scan
+    measured that superset would-WARN at 174+ tasks, dominated by
+    ledger-entry classes with no pin-test practice). Known residual FP
+    class (disclosed): scope-table rows whose negation token sits >24
+    chars from the edit verb (#1102 shape) still trigger — the 1-line NA
+    escape is the remedy. Out of mechanical scope: whether a named pin
+    test actually exists / ships (the code-reviewer checks the diff, same
+    bound as c11/c15)."""
+    cid, name = "c31_skillmd_prose_pin", "SKILL.md prose edit backed by a durability pin"
+    if kind not in ("infra", "batch"):
+        return _skip(
+            cid, name, "kind-exempt: SKILL.md prose edits are an infra|batch (workflow-fix) shape"
+        )
+    trig = _c31_trigger_lines(plan)
+    if not trig:
+        return _skip(cid, name, "no SKILL.md edit-commitment line detected")
+    sat = _c31_satisfier(plan)
+    if sat:
+        return _pass(cid, name, sat)
+    return _warn(
+        cid,
+        name,
+        f"plan commits to editing SKILL.md prose ({trig[0][:70]!r}) but names no durability "
+        "pin — protection prose with no pytest asserting its presence/shape is silently "
+        "droppable by any later SKILL.md edit (lineage: #884/#1045/#1134). Add one line "
+        "`Durability pin: tests/test_<file>.py::test_<name>` (a standing pin test, or a NEW "
+        "pin test this plan adds), or declare `Durability pin: N/A` followed on the same "
+        "line by an em dash and a one-line reason (a bare `Durability pin: N/A` still WARNs)",
+    )
+
+
+# ─── Check 32 — fit-family §9 basis grounding ──────────────────────────────
+# Mechanizes .claude/rules/plan-compute-sizing.md § "Per-cell fit phases"
+# (MUST-level): a §9 row looping a fit/solve/factorization over cells x
+# folds x layers x ... must ground its per-call basis on a MEASURED 1-cell
+# pilot, a cited prior-issue measured figure, or a pre-registered
+# `pilot-gated` flag — an ASSERTED per-call cost is never a basis, and a
+# FLOP floor is the cross-check, never the basis (#823: asserted ~2 s/fit
+# vs ~125 s real, 12-20 h realized; #811: one inner kernel timed, dominant
+# frame asserted, unit 3/108 at 19h21m; #931: wrong-device measurement,
+# ~2.2-2.5x mid-run; #722: "sub-minute per cell" asserted, 19.5 CPU-h).
+# Anti-boilerplate, BOTH polarities (the #1060 round-1 critic concern):
+# the satisfier requires provenance vocabulary CO-LOCATED with a numeric
+# timing token in the basis/wall cells — "basis: measured pilot" with no
+# number WARNs (#552 v3's literal "measured: minutes"), and "~2 s/fit"
+# with no provenance word WARNs (#823's literal shape).
+# Calibration (DEVELOPMENT-SET numbers: the regexes were tuned on the same
+# persisted-plan corpus they were measured on — read the rates as
+# in-sample, not held-out; ANY future c32-regex change re-runs the corpus
+# scan and records the realized numbers here, the c27 gate precedent).
+# Re-scan 2026-07-09 (implementation-time, shipped regexes) over 1,731
+# persisted plan-versions (tasks/*/*/plans/v*.md): full corpus 149
+# plan-versions triggered (32 distinct plans) / 85 would-WARN (23 distinct
+# plans; pre-#1060-rule era dominated); recent era (issue >= 1000): 419
+# plan-versions -> 13 triggered, 3 would-WARN, all ONE distinct plan
+# (#1112 v1-v3, whose own v4 basis added "(parent-measured kernel)" and
+# PASSes). Incident recall 100%: #823 v1-v5 / #811 v1 / #722 v1-v3 / #931
+# v1-v4 all WARN (#931 v8-v10 post-incident replans also WARN — asserted
+# bases, defensible under the rule; #811 v2-v3 and #722 v4-v5 SKIP: those
+# restructured versions carry no fit-family basis-table row); every
+# post-fix version PASSes on a substantive span (#811 v4 "REALIZED
+# ~2.6 h"; #722 v7 "ran ~9 min"; #810 v4+ "measured 0.385 s/cell" /
+# "parent 10 min"; #928 v5+ "prior-issue 1.0 h"; #1112 v4+ "parent
+# 3 min"). #778 (draw-battery incident, c12's domain) never triggers on
+# any of its 8 versions — clean division of labor. Disclosed residual
+# gaming: a FABRICATED
+# "measured 2 s/fit" passes — a mechanical check cannot verify
+# measurement provenance (module scope discipline: a PASS here is never
+# "grounding verified"); adequacy stays with the Methodology critic
+# (critic-lens-reference.md item (iii)), fed by the WARN forwarding.
+
+_C32_KERNEL_RE = re.compile(
+    r"(?i)\bridge\b|\bsvd\b|\beigh\b|\beigvalsh\b|\blstsq\b|\bgcv\b"
+    r"|\bloco\b|\bloocv\b|\blofo\b|\bmlp\b|\badamw\b|\bsgd\b|\bkrr\b"
+    r"|\bglm\b|\birls\b|gradient[- ]descent|\bprobe[- ](?:train|fit)\w*"
+    r"|\bfactoriz\w+"
+    r"|\b(?:point|probe|many[- ]cell|per[- ]cell|per[- ]fold|closed[- ]form|serial)[ -]fits?\b"
+    r"|\bfit loops?\b"
+)
+# NOTE: bare \bfits?\b deliberately EXCLUDED — it false-fires on "fits in
+# HBM" / generation rows ("engine load ... 250 gens", #558) and cost 11
+# extra full-corpus triggers in calibration for zero incident-recall gain.
+
+_C32_LOOP_RE = re.compile(
+    r"(?i)per[- ](?:cell|fold|layer|arm|trait|seed|unit|probe|context|pair|source|behavior)"
+    r"|[×x]\s*\d|\d+\s*[×x]\b"  # noqa: RUF001 — the multiplication sign is real plan text
+    r"|\d[\d,]*\s*(?:fits|solves|calls|folds|cells|refits|units)\b"
+    r"|\bn_calls\b|\bfor each\b|\bacross (?:all )?\d+"
+)
+
+# Provenance vocabulary: measurement verbs + prior-figure citation forms.
+# "parent"/"ran"/"#<M>" are load-bearing widenings — without them the
+# corpus's legitimate prior-figure bases ("parent full grid ~10 min =>
+# 0.58 s/cell", #810 v10; "v5 ran 28 layers in ~9 min", #722 v7) false-WARN.
+_C32_PROVENANCE_RE = re.compile(
+    r"(?i)\bmeasur\w+|\btimed\b|\bclocked\b|\bprofil\w+|\bbenchmark\w*"
+    r"|\brealized\b|\bpilot\w*\b|\bran\b|\btook\b|\bparent\b"
+    r"|\bprior[- ]issue\b|#\d{2,}|\bcommitted\b"
+)
+
+# Numeric timing token: a digit-bearing quantity with a time unit,
+# optionally per-call ("125 s/fit", "~0.58 s/cell", "9 min").
+# NOTE: an ASCII-hyphen range ("2-3 min") does NOT match (the lookbehind
+# blocks it); the corpus's en-dash (U+2013) ranges do match.
+# Lookbehind blocks "A100s"/"H100" ("100 s" inside an alnum run).
+_C32_TIMING_RE = re.compile(
+    r"(?i)(?<![A-Za-z0-9.\-])[~≈]?\d[\d,]*(?:\.\d+)?\s*"
+    r"(?:ms|s|sec|seconds?|min|minutes?|hr?|hours?)\b"
+    r"(?:\s*/\s*(?:it|call|fit|cell|unit|fold|row|draw|solve))?"
+)
+
+_C32_PILOT_GATED_RE = re.compile(r"(?i)\bpilot[- ]gated\b")
+
+
+def _c32_offender_detail(offenders: list[tuple[str, str]]) -> str:
+    """Bounded WARN detail (the c26 ``_c26_offender_detail`` shape): at most
+    3 (component, basis) pairs, the rule anchor, the incident anchors, and
+    every remedy (measured figure / prior-issue citation / pilot-gated /
+    the standalone N/A escape)."""
+    shown = "; ".join(f"row {comp[:60]!r} basis {basis[:40]!r}" for comp, basis in offenders[:3])
+    if len(offenders) > 3:
+        shown += "; ..."
+    return (
+        f"{shown} — fit-family row(s) whose basis carries neither (provenance vocabulary — "
+        "measured/timed/pilot/#<M>/parent — co-located with a numeric per-call timing) nor a "
+        "`pilot-gated` flag — an ASSERTED per-call cost is never a sizing basis and a FLOP "
+        "floor is the cross-check, never the basis (plan-compute-sizing.md § Per-cell fit "
+        "phases; #823: asserted ~2 s/fit, ~125 s real, 12-20 h realized; #811: unit 3/108 at "
+        "19h21m). Ground the row on a measured 1-cell pilot at production shape (state the "
+        "figure, e.g. `measured 125 s/fit`), cite a prior-issue measured figure "
+        "(`#811 r2: 313 s/unit`), mark the basis `pilot-gated`, or declare "
+        "`N/A — no fit-family phases` on its own line, unwrapped (no backticks/quotes), "
+        "if the row is not a fit loop"
+    )
+
+
+def check_fit_basis_grounding(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: every basis-column compute-table row naming a
+    fit-family kernel (ridge/SVD/eigh/lstsq/GCV/MLP/LOCO/...) AND a
+    loop/multiplicity signal (per-cell/per-fold vocabulary, an NxM product,
+    an "N fits" count) must ground its basis — provenance vocabulary
+    (measured/timed/pilot/#<M>/parent/ran/...) CO-LOCATED with a numeric
+    timing token in the conversion-bearing cells (basis + wall, the c26
+    escape-(a) precedent — a component cell like "reuse of #811 adapters"
+    must not satisfy the citation class spuriously), or a literal
+    ``pilot-gated`` flag anywhere in the row. Mechanizes
+    plan-compute-sizing.md § "Per-cell fit phases" (#823/#811/#722/#931).
+    Anti-boilerplate BOTH polarities (the #1060 critic concern): "measured
+    pilot" with no digit WARNs, and "~2 s/fit" with no provenance word
+    WARNs. A FLOP-only basis WARNs by construction (no provenance token) —
+    the rule: a FLOP floor is the cross-check, never the basis; there is
+    deliberately NO ``FLOP-only`` escape. NEVER FAILs in v1 — both trigger
+    and satisfier are text heuristics (the c26 precedent), and whether a
+    stated figure is REAL / transfers stays critic-owned: a FABRICATED
+    "measured 2 s/fit" passes (a mechanical check cannot verify
+    measurement provenance — a PASS here is never "grounding verified").
+    Disclosed under-triggers: fit sizing stated only in prose (no
+    basis-column table) is invisible in v1 (c12 independently covers prose
+    draw batteries); a basis table lacking a wall column is invisible
+    (parser precondition, c26 parity). Escape: the standalone line
+    ``N/A — no fit-family phases`` (anti-paste semantics via
+    ``_standalone_na_declared``). Calibration numbers + the corpus re-scan
+    gate on ANY future c32-regex change live in the comment block above
+    ``_C32_KERNEL_RE``."""
+    cid, name = "c32_fit_basis_grounding", "fit-family §9 basis grounding"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid, name, "kind-exempt: fit-family §9 rows are an experiment|analysis plan shape"
+        )
+    rows = _c26_compute_table_rows(plan)
+    triggered = [
+        (comp, basis, wall, row_text)
+        for comp, basis, wall, row_text in rows
+        if _C32_KERNEL_RE.search(row_text) and _C32_LOOP_RE.search(row_text)
+    ]
+    if not triggered:
+        return _skip(cid, name, "no fit-family row in a basis-column compute table detected")
+    if _standalone_na_declared(plan, r"no fit[- ]family (?:fit )?phases"):
+        return _pass(cid, name, "explicit N/A declared (no fit-family phases)")
+    offenders: list[tuple[str, str]] = []
+    for comp, basis, wall, row_text in triggered:
+        conv = f"{basis} {wall}"  # conversion-bearing cells, the c26 escape-(a) precedent
+        grounded = (
+            _C32_PROVENANCE_RE.search(conv) and _C32_TIMING_RE.search(conv)
+        ) or _C32_PILOT_GATED_RE.search(row_text)
+        if not grounded:
+            offenders.append((comp, basis))
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(triggered)} fit-family row(s); every basis carries provenance + a timing "
+            "figure or pilot-gated",
+        )
+    return _warn(cid, name, _c32_offender_detail(offenders))
+
+
+# ─── Check 33 — checkpoint-ladder retention policy ─────────────────────────
+# Mechanizes .claude/rules/plan-compute-sizing.md § "Dose-ladder /
+# multi-rung checkpoint retention" (MUST-level, the #1133 rule): any
+# training phase persisting per-rung checkpoints for later selection must
+# state its checkpoint-retention policy in §9 — DEFAULT: retain the
+# dose-selected + latest rungs only, delete ruled-out rungs BETWEEN rungs;
+# keep-all is the justified exception (full-ladder sizing at realized
+# per-rung GB + `--boot-disk-gb` declared). Incident #1112: 30 full-FT
+# dose-ladder rungs kept (>=15 GB, up to ~28 GB each); a compliant 575 GB
+# keep-all bound sat under the planned 750 GB GCP boot disk; the
+# GCP-to-RunPod failover delivered the `ft-7b` default 200 GB volume ->
+# ENOSPC (errno 28) at rung 24/30.
+# Trigger anti-fragility: raw `ladder|rung` vocabulary is heavily polluted
+# by GCP BACKEND-ladder rungs (spot/flex-start/on-demand fallback rungs,
+# the #1029/#1116/#1121 vocabulary) — measured raw surface ~521 pv / 179
+# issues un-gated (~320/89 kind-gated). The compound-token trigger + the
+# backend-rung exclusion on the rung-AND-checkpoint co-location branch
+# remove that class entirely.
+# Calibration (DEVELOPMENT-SET numbers, fitted IN-SAMPLE — including the
+# recent-era slice: the regexes were tuned on the same persisted-plan
+# corpus they were measured on; ANY future c33-regex change re-runs the
+# corpus scan and records the realized numbers here, the c27/c32 gate
+# precedent). Re-scan 2026-07-10 (implementation-time, AS-SHIPPED
+# regexes) over 1,760 persisted plan-versions (tasks/*/*/plans/v*.md):
+# 69 plan-versions triggered (20 distinct issues — genuinely
+# checkpoint-ladder-bearing: #480 band-stop ladder, #653 dense-step grid,
+# #1090 every-25-steps ladder, #1112 dose ladder, #488 epoch ladder, ...);
+# 42 would-WARN (16 issues, pre-#1133-rule era dominated). Recent era
+# (issue >= 1000; the §7 kill-criterion DENOMINATOR is recent-era
+# plan-versions, N=448): 18 triggered pv (#1090 v1-v5 / #1092 v1-v5 /
+# #1112 v1-v8); would-WARN ONLY #1090 v1-v5 (planned pre-rule). #1092
+# PASSes; #1112 v7/v8 PASS on their explicit `**Disk / checkpoint
+# retention:**` line. Satisfier-span audit over the 27 triggered-but-PASS
+# versions: 'retained' x8, delete-co-location spans x14 ("rungs deleted",
+# "checkpoints ... deleted", "checkpoint ... then DELETE"), 'retention'
+# x2, 'prune(d)' x2, 'MarkerBandStopCallback' x1. Over-broad-token watch
+# (re-download / prune vs disk-hygiene boilerplate): re-download matched
+# ZERO spans; prune matched 2 — #491 v3 genuine (per-shard
+# train->read->prune checkpoint sequencing) and #715 v3 borderline
+# (weight-pruning-arm vocabulary; its v1/v2 pass on a genuine delete
+# span) — no nuisance CLASS, no regex change.
+# Honest disclosed limitation: #1112 v1-v3 — the incident's own plans —
+# PASS: their §9 stated merge-transient deletion + a keep-all disk bound,
+# so the retention SURFACE existed; the defect was semantic (sized to the
+# planned lane's disk, keep-all as default). A mechanical check cannot
+# adjudicate adequacy — c33 protects the SILENT class (ladder plans whose
+# sizing sections say nothing about retention/deletion); stated-but-
+# inadequate stays with Methodology lens item 16.
+
+_C33_LADDER_COMPOUND_RE = re.compile(
+    r"(?i)dose[- ]ladder|checkpoint[- ]ladder|ladder of checkpoints|band[- ]stop grid"
+    r"|dose[- ]matching checkpoint grid|checkpoint rungs?|rung checkpoints?"
+    r"|per[- ]rung checkpoints?"
+)
+
+# Mechanizes the rule's "any long run saving every k steps for a later
+# pick" clause ("saves a checkpoint every 25 steps", "saving every ~500
+# optimizer steps").
+_C33_SAVE_EVERY_RE = re.compile(
+    r"(?i)(?:checkpoints?|sav\w+)\s+every\s+~?\d+\s*(?:optimizer[- ])?(?:steps?|epochs?)"
+)
+
+_C33_RUNG_RE = re.compile(r"(?i)\brungs?\b")
+_C33_CKPT_RE = re.compile(r"(?i)\bcheckpoints?\b|\bckpts?\b")
+
+# GCP fallback-ladder exclusion (co-location branch ONLY): a line whose
+# rung vocabulary is the backend router's (spot/flex-start/on-demand
+# rungs, terminal rung, lanes, capacity) is not a checkpoint ladder.
+_C33_BACKEND_RUNG_RE = re.compile(
+    r"(?i)spot|flex[- ]start|on[- ]demand|runpod|terminal rung|\blanes?\b|fallback"
+    r"|a2-|a3-|gcp ladder|capacity"
+)
+
+# Retention/bounding vocabulary. The delete co-location windows stop at
+# sentence/cell boundaries (the `|` exclusion keeps a table row's delete
+# verb from satisfying via an adjacent cell). `keep-all` deliberately
+# satisfies — a STATED keep-all is the rule's justified-exception surface,
+# whose adequacy is critic-owned. Generic disk tokens (`--boot-disk-gb`,
+# GB figures) are deliberately NOT satisfiers — #1112 v1-v3 declared
+# `--boot-disk-gb 750` and still ENOSPC'd; a disk flag is not a retention
+# policy.
+_C33_RETENTION_RE = re.compile(
+    r"(?i)\bretention\b|\bretain\w*\b|keep[- ]all|keep (?:all|every|only)"
+    r"|delet\w+[^.\n|]{0,80}(?:rungs?|ruled[- ]out|non[- ]selected|checkpoints?|ckpts?)"
+    r"|(?:rungs?|checkpoints?|ckpts?)[^.\n|]{0,80}delet\w+"
+    r"|upload[- ]as[- ]you[- ]go|delete[sd]? locally|re[- ]download"
+    r"|band[- ]stop callback|MarkerBandStopCallback"
+    r"|coarse\+refine|two[- ]pass grid|\bprune[sd]?\b|retained (?:set|rungs?)"
+)
+
+_C33_SIZING_KEYWORDS = ("resources", "parallelism", "compute", "disk")
+
+
+def _c33_trigger_line(plan: str) -> str | None:
+    """First non-fenced line carrying checkpoint-ladder vocabulary (quoted
+    in the WARN detail), or None. Three arms, first match wins: a compound
+    ladder token; the save-every-k-steps cadence; rung AND checkpoint
+    co-located on one line WITHOUT backend-rung vocabulary (the GCP
+    fallback-ladder exclusion — the load-bearing anti-fragility widening)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        if _C33_LADDER_COMPOUND_RE.search(line) or _C33_SAVE_EVERY_RE.search(line):
+            return line
+        if (
+            _C33_RUNG_RE.search(line)
+            and _C33_CKPT_RE.search(line)
+            and not _C33_BACKEND_RUNG_RE.search(line)
+        ):
+            return line
+    return None
+
+
+def _c33_sizing_scope(plan: str) -> str:
+    """Union of the non-fenced text of every section whose heading carries a
+    sizing keyword (resources/parallelism/compute/disk — the #1133 rule
+    requires the policy in §9, but corpus headings drift: '## 9. Resources',
+    '## 9. Resources & Parallelism', '### Compute projection'); the whole
+    plan's non-fenced text when no such heading exists (structural absence
+    must not manufacture WARNs — a WARN-only check fails toward silence)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    keep = [False] * len(lines)
+    matched = False
+    for h in _headings(plan):
+        htext = h.text.casefold()
+        if any(k in htext for k in _C33_SIZING_KEYWORDS):
+            matched = True
+            for i in range(h.line, h.end):
+                keep[i] = True
+    if not matched:
+        return strip_fences(plan)
+    return "\n".join(
+        line
+        for i, (line, fenced) in enumerate(zip(lines, mask, strict=True))
+        if keep[i] and not fenced
+    )
+
+
+def check_ladder_retention(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a plan carrying checkpoint-ladder vocabulary
+    on a non-fenced line (a dose/checkpoint-ladder compound token, a
+    "saves a checkpoint every k steps" cadence, or rung + checkpoint
+    co-located on one line without GCP backend-rung vocabulary) must carry
+    retention vocabulary (retain / keep-all / delete-between-rungs /
+    upload-as-you-go / band-stop / coarse+refine / prune / ...) within its
+    compute-sizing section(s) — the union of every section whose heading
+    names resources/parallelism/compute/disk, doc-wide fallback when no
+    such heading exists. Mechanizes plan-compute-sizing.md § "Dose-ladder /
+    multi-rung checkpoint retention" (the #1133 rule; incident #1112).
+    NEVER FAILs — both trigger and satisfier are text heuristics (the
+    c26/c32 precedent); adequacy of a STATED policy stays with the
+    Methodology critic (lens item 16), fed by the WARN forwarding into the
+    fact-checker + critic briefs. A PASS here is never "retention
+    verified": a stated keep-all deliberately satisfies (the rule's
+    justified-exception surface, critic-owned). Disclosed misses:
+    (a) #1112 v1-v3 — the incident's own plans — PASS (their §9 stated
+    merge-transient deletion + a keep-all bound, so the retention SURFACE
+    existed; the defect was semantic and is Methodology lens item 16's);
+    (b) a ladder phrased with zero token-set overlap under-triggers
+    (FN = the status quo, reviewer-enforced only); (c) a crash-resume-only
+    save cadence (no later selection) triggers via the save-every arm —
+    the remedy is to state a retention policy anyway (e.g. keep-last-k,
+    which a crash-resume cadence should state regardless), or, second, to
+    declare the N/A escape ONLY when no phase persists per-rung
+    checkpoints (the escape phrase would be semantically false for a plan
+    that does persist them). Escape: the standalone line
+    ``N/A — no per-rung checkpoint persistence`` (alias
+    ``N/A — no checkpoint ladder``), anti-paste semantics via
+    ``_standalone_na_declared``. Calibration numbers + the corpus re-scan
+    gate on ANY future c33-regex change live in the comment block above
+    ``_C33_LADDER_COMPOUND_RE``."""
+    cid, name = "c33_ladder_retention", "checkpoint-ladder retention policy"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid, name, "kind-exempt: checkpoint ladders are an experiment|analysis plan shape"
+        )
+    trig = _c33_trigger_line(plan)
+    if trig is None:
+        return _skip(cid, name, "no checkpoint-ladder vocabulary detected")
+    if _standalone_na_declared(
+        plan, r"(?:no per[- ]rung checkpoint persistence|no checkpoint ladder)"
+    ):
+        return _pass(cid, name, "explicit N/A declared (no per-rung checkpoint persistence)")
+    if _C33_RETENTION_RE.search(_c33_sizing_scope(plan)):
+        return _pass(cid, name, "retention vocabulary present in the compute-sizing scope")
+    return _warn(
+        cid,
+        name,
+        f"plan carries checkpoint-ladder vocabulary ({trig.strip()[:70]!r}) but its "
+        "compute-sizing section(s) state no checkpoint-retention policy — a per-rung ladder "
+        "sized without a retention default keeps every rung and ENOSPCs mid-run on a lane "
+        "failover (plan-compute-sizing.md § Dose-ladder / multi-rung checkpoint retention, "
+        "the #1133 rule; incident #1112: 30 full-FT rungs kept, errno 28 at rung 24/30 after "
+        "a GCP-to-RunPod failover delivered a 200 GB volume). State the retention policy in "
+        "the sizing section (DEFAULT: retain the dose-selected + latest rungs only, delete "
+        "ruled-out rungs BETWEEN rungs; or the justified keep-all exception — full-ladder "
+        "sizing at realized per-rung GB + `--boot-disk-gb` declared), or declare "
+        "`N/A — no per-rung checkpoint persistence` on its own line, unwrapped "
+        "(no backticks/quotes), if no phase persists per-rung checkpoints",
+    )
+
+
+# ─── Check 34 — verbatim insert vs size-ratchet headroom ──────────────────
+# A plan mandating VERBATIM prose into a workflow_lint size-ratcheted file
+# (.claude/agents/*.md — check_agent_spec_size; .claude/rules/LESSONS.md —
+# check_lessons_index) whose remaining headroom is smaller than the quoted
+# block makes lint-passes + the plan's own file-count constraint jointly
+# unsatisfiable at implement time (#1230: 422 B headroom vs a 1,546 B
+# verbatim paragraph for code-reviewer.md forced a documented 3rd-file
+# cap-raise deviation). Grandfather caps deliberately hug live size
+# (cap = measured + <=3 KB, typically ~1 KB), so ANY >~1 KB insert into a
+# grandfathered spec exceeds headroom BY DESIGN — the remedy is therefore
+# never "don't grow" but "budget the visible cap-raise IN THE PLAN"
+# (workflow_lint.py: "a reviewed growth+cap-raise in one commit still
+# passes"). WARN not FAIL: the trigger is a proximity heuristic; the
+# Phase 2 critics adjudicate. infra|batch only: editing agent specs /
+# LESSONS.md is workflow-fix work (calibration: all 8 recent-era corpus
+# hits are kind: infra).
+# Calibration (DEVELOPMENT-SET, measured against TODAY'S live sizes —
+# historical headroom drifts; the c32 precedent): 1,837 persisted
+# plan-versions scanned 2026-07-11; trigger fired on 166 versions;
+# would-WARN 76 versions / 26 distinct plans (8 distinct at issue >= 1000:
+# #1007 #1017 #1022 #1142 #1224 #1230 #1239 #1254 — every one a real
+# plan-mandated over-headroom insert; the #1119/#1138/#1254/#1230
+# cap-raises are recorded in AGENT_SPEC_SIZE_GRANDFATHER's own comments).
+# Incident recall: #1230 v1 WARNs. Reproducible scan recipe (the
+# kill-criterion (a) re-audit; re-run + re-record on ANY c34-regex
+# change): from the repo root, for each tasks/*/*/plans/v*.md compute
+# trigger := bool(_c34_targets(text)) and would-WARN := any (rel, nbytes)
+# in _c34_targets(text).items() with _c34_headroom(rel, wl) is not None
+# and nbytes > headroom, where wl := _c34_lint_constants(); count
+# plan-versions and distinct plan dirs for both.
+# Scope notes (disclosed, accepted residuals for a WARN-class v1):
+# (a) the `Ratchet budget:` satisfier is DOCUMENT-GLOBAL, not per-target —
+#     a two-file plan budgeting only one raise passes for both (pinned by
+#     test_c34_budget_line_is_document_global);
+# (b) nested-fence inserts UNDERCOUNT: _fence_mask's toggle reads an inner
+#     ``` as a closer, so a verbatim block that itself contains a code
+#     fence contributes only its pre-fence lines — a disclosed FN class
+#     distinct from the non-fenced-insert FN (an insert described with no
+#     fenced block at all, or with the path >_C34_WINDOW_LINES non-fenced
+#     lines above the fence, never triggers — those stay with the human
+#     critics);
+# (c) TOCTOU: headroom is a PLAN-TIME snapshot of the live file sizes —
+#     the target can grow between plan verification and implementation;
+#     workflow_lint's commit-time FAIL is the hard backstop.
+# Scope discipline: whether the budgeted cap-raise actually SHIPS is the
+# code-reviewer's bound, not this check's (the c31/c11/c15 bound).
+
+_C34_PATH_RE = re.compile(r"(?i)(?:\.claude/)?(?:agents/[\w.-]+\.md|rules/LESSONS\.md)")
+_C34_VERB_RE = re.compile(
+    r"(?i)\b(?:insert\w*|append\w*|add(?:s|ed|ing)?|splice\w*|verbatim|paste\w*)\b"
+)
+_C34_WINDOW_LINES = 10  # preceding non-fenced prose lines scanned per fence
+# Digit-lookahead after the label on the SAME line = anti-paste armor: the
+# WARN detail's remedy writes the label followed only by angle-bracket
+# placeholders, so a verbatim paste of the detail can never self-satisfy.
+_C34_BUDGET_RE = re.compile(r"(?i)\bratchet budget:(?=[^\n]*\d)")
+_C34_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch
+
+
+def _c34_lint_constants():
+    """Lazy import of ``scripts/workflow_lint.py`` (540 KB module, ~345 ms
+    measured) — paid ONLY when the c34 trigger fires, so typical plans keep
+    the verifier sub-second. Single source of truth for the ratchet caps
+    (the grandfather dict churns ~weekly; a copy WOULD drift). An
+    ImportError is a real defect (both files live in scripts/) and
+    propagates loud."""
+    scripts_dir = str(Path(__file__).resolve().parent)
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    import workflow_lint
+
+    return workflow_lint
+
+
+def _c34_normalize_rel(match_text: str) -> str:
+    """Normalize a ``_C34_PATH_RE`` match to the repo-root-relative ratcheted
+    path (``.claude/agents/<name>.md`` / ``.claude/rules/LESSONS.md``)."""
+    tail = match_text
+    if tail.lower().startswith(".claude/"):
+        tail = tail[len(".claude/") :]
+    if tail.lower().startswith("agents/"):
+        return ".claude/agents/" + tail[len("agents/") :]
+    return ".claude/rules/LESSONS.md"
+
+
+def _c34_targets(plan: str) -> dict[str, int]:
+    """``{normalized rel path -> summed fenced-block UTF-8 bytes}`` for every
+    fenced block whose preceding ``<=_C34_WINDOW_LINES`` NON-fenced lines
+    carry a ratcheted path AND an insertion verb. Block bytes = joined
+    content lines + one trailing newline (fence delimiters excluded); the
+    realized insert may differ by a separator newline or two — immaterial
+    at the hundreds-of-bytes scale the check discriminates."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    targets: dict[str, int] = {}
+    in_fence = False
+    open_idx = -1
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not (stripped.startswith("```") or stripped.startswith("~~~")):
+            continue
+        if not in_fence:
+            in_fence = True
+            open_idx = i
+            continue
+        in_fence = False
+        window: list[str] = []
+        j = open_idx - 1
+        while j >= 0 and len(window) < _C34_WINDOW_LINES:
+            if not mask[j]:
+                window.append(lines[j])
+            j -= 1
+        wtext = "\n".join(reversed(window))
+        m = _C34_PATH_RE.search(wtext)
+        if m is None or not _C34_VERB_RE.search(wtext):
+            continue
+        rel = _c34_normalize_rel(m.group(0))
+        content = "\n".join(lines[open_idx + 1 : i]) + "\n"
+        targets[rel] = targets.get(rel, 0) + len(content.encode("utf-8"))
+    return targets
+
+
+def _c34_headroom(rel: str, wl) -> tuple[int, int, str] | None:
+    """``(headroom, cap, cap_source)`` for a ratcheted rel path under
+    ``_C34_REPO_ROOT``; ``None`` when the live file is absent (headroom
+    uncomputable — a plan may be CREATING the file, which starts with the
+    full cap of headroom). ``cap_source`` names the binding workflow_lint
+    constant for the WARN detail. Sizes in BYTES (``stat().st_size``) —
+    parity with ``check_agent_spec_size`` / ``read_bytes()``."""
+    p = _C34_REPO_ROOT / rel
+    if not p.is_file():
+        return None
+    size = p.stat().st_size
+    if p.name == "LESSONS.md":
+        # #1269: the binding runtime constraint is min(cap, growth ratchet) —
+        # a plan passing the 8000-byte cap headroom could still FAIL
+        # workflow_lint's ratchet at implement time (the plan-time miss c34
+        # exists to close).
+        ratchet = wl._LESSONS_RATCHET_BYTES
+        cap = min(wl._LESSONS_MAX_BYTES, ratchet)
+        src = "_LESSONS_RATCHET_BYTES" if ratchet < wl._LESSONS_MAX_BYTES else "_LESSONS_MAX_BYTES"
+        return cap - size, cap, src
+    cap = wl.AGENT_SPEC_SIZE_GRANDFATHER.get(p.name)
+    if cap is not None:
+        return cap - size, cap, "AGENT_SPEC_SIZE_GRANDFATHER"
+    return wl.AGENT_SPEC_FAIL_BYTES - size, wl.AGENT_SPEC_FAIL_BYTES, "AGENT_SPEC_FAIL_BYTES"
+
+
+def _c34_offender_detail(offenders: list[tuple[str, int, int, int, str]]) -> str:
+    """Bounded WARN detail: at most 3 offender tuples, the #1230 incident
+    anchor, then the three remedies. Anti-paste armored: after the
+    ``Ratchet budget:`` label the text carries ONLY angle-bracket
+    placeholders (no digit on the line — ``_C34_BUDGET_RE``'s lookahead
+    cannot match a pasted copy; the incident numbers all sit BEFORE the
+    label), and the N/A phrase is backtick-wrapped (unrecognized by
+    ``_standalone_na_declared``, #1238)."""
+    shown = "; ".join(
+        f"{rel}: insert ~{nbytes} B > headroom {headroom} B (cap {cap} [{src}] - live size)"
+        for rel, nbytes, headroom, cap, src in offenders[:3]
+    )
+    more = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+    return (
+        f"plan mandates verbatim fenced insert(s) exceeding the named ratcheted file(s)' "
+        f"remaining size-ratchet headroom: {shown}{more} — workflow_lint-passes and the "
+        "plan's own file-count constraint become jointly unsatisfiable at implement time "
+        "(#1230: a paragraph larger than code-reviewer.md's headroom forced an un-planned "
+        "third-file cap-raise deviation). Remedies: budget the cap-raise IN THE PLAN with "
+        "one line `Ratchet budget: raise <constant>['<file>.md'] to <new cap>` (new cap = "
+        "post-insert measured size plus at most the grandfather headroom bound), or trim "
+        "the insert to fit, or declare `N/A — no verbatim ratcheted-file insertion` on its "
+        "own line (write the declaration unwrapped — the backticks here are anti-paste "
+        "armor)"
+    )
+
+
+def check_ratchet_headroom(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, ``kind: infra|batch``: a fenced block whose
+    preceding ``<=_C34_WINDOW_LINES`` non-fenced lines name a ratcheted path
+    (``.claude/agents/*.md`` / ``.claude/rules/LESSONS.md``) plus an
+    insertion verb is treated as a verbatim insert into that file; when the
+    per-target summed block bytes exceed the file's live headroom
+    (cap - ``stat().st_size``, caps lazy-imported from workflow_lint) the
+    check WARNs with the arithmetic + the three remedies. Satisfiers: a
+    non-fenced ``Ratchet budget:`` line carrying a post-label digit (the
+    plan budgets the cap-raise — the legitimate path, since grandfather
+    caps hug live size by design), or the standalone escape
+    ``N/A — no verbatim ratcheted-file insertion``. Named-file-absent →
+    SKIP (a plan may be CREATING the file; ``--plan-file`` mode must never
+    crash off-repo). NEVER FAILs — trigger + satisfier are text heuristics
+    (the c31 template); calibration, scope notes (document-global
+    satisfier, nested-fence undercount, plan-time TOCTOU snapshot) and the
+    scan recipe live in the section comment above ``_C34_PATH_RE``."""
+    cid, name = "c34_ratchet_headroom", "verbatim insert fits size-ratchet headroom"
+    if kind not in ("infra", "batch"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: ratcheted-file verbatim inserts are an infra|batch (workflow-fix) shape",
+        )
+    if _standalone_na_declared(plan, r"no verbatim ratcheted[- ]file insertion"):
+        return _pass(cid, name, "escape declared: no verbatim ratcheted-file insertion")
+    targets = _c34_targets(plan)
+    if not targets:
+        return _skip(cid, name, "no fenced block associated with a ratcheted-file insertion")
+    lines = plan.splitlines()
+    for line, fenced in zip(lines, _fence_mask(lines), strict=True):
+        if not fenced and _C34_BUDGET_RE.search(line):
+            return _pass(cid, name, f"cap-raise budgeted ({line.strip()[:80]!r})")
+    wl = _c34_lint_constants()  # lazy: only reached on trigger
+    offenders: list[tuple[str, int, int, int, str]] = []
+    checked = 0
+    for rel, nbytes in sorted(targets.items()):
+        hr = _c34_headroom(rel, wl)
+        if hr is None:
+            continue  # absent on disk: headroom uncomputable
+        checked += 1
+        headroom, cap, cap_source = hr
+        if nbytes > headroom:
+            offenders.append((rel, nbytes, headroom, cap, cap_source))
+    if not checked:
+        return _skip(
+            cid, name, "named ratcheted file(s) not present on disk — headroom uncomputable"
+        )
+    if offenders:
+        return _warn(cid, name, _c34_offender_detail(offenders))
+    return _pass(cid, name, f"{checked} ratcheted-file insert(s) fit remaining headroom")
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -4658,6 +5718,11 @@ CHECKS = [
     check_capture_intent_hbm,
     check_precedent_band_coherence,
     check_fence_conditional_phase,
+    check_realized_keys,
+    check_skillmd_prose_pin,
+    check_fit_basis_grounding,
+    check_ladder_retention,
+    check_ratchet_headroom,
 ]
 
 

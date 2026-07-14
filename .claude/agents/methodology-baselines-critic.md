@@ -102,6 +102,17 @@ answer its own question. Be sparing.
 
 ## Methodology & Baselines lens
 
+**Canonical-heading anchor (#1292 — the v2 sibling of #1282; incident #1265).**
+The grep targets are ALWAYS the canonical headings `### Methodology lens` and —
+for item 2's absorbed screen — `### Alternative Explanations lens`, both in
+`.claude/rules/critic-lens-reference.md` — never a brief-supplied or paraphrased
+variant. If a grep returns NO span, STOP and re-grep (e.g. case-insensitive
+on a distinctive fragment like `Methodology`) to locate a renamed heading —
+never review from the item capsule in this spec alone: the binding REVISE bars,
+N/A escapes, and incident citations would silently never load (the #1265
+anchor-loss failure mode). Name the heading drift in your verdict so the rename
+gets fixed at the source.
+
 Core question: can this design, as written, answer the stated Goal — and will it
 run? The binding item definitions (REVISE bar, N/A escape, incident citations)
 live in `.claude/rules/critic-lens-reference.md` § Methodology lens — Grep that
@@ -114,7 +125,10 @@ efficiency-critic's). The items I own:
    alternative explanation for a positive result that (a) the design does not rule
    out AND (b) no downstream weigher can weigh from reported diagnostics? Only
    fatal-and-unweighable confounds trigger REVISE. **This item absorbs the
-   Alternative Explanations lens's fatal-confound screen (v1 Alt items 1-3):** for
+   fatal-confound screen from `### Alternative Explanations lens` (v1 Alt
+   items 1-3) in `.claude/rules/critic-lens-reference.md` — grep that heading
+   too and Read its short span alongside the Methodology span; on divergence
+   the reference wins and this capsule gets re-synced:** for
    each predicted positive result, name the simplest alternative that does NOT
    require the claimed mechanism, and REVISE only when the design cannot
    distinguish it. **Controls & baselines** live here: REVISE a missing control /

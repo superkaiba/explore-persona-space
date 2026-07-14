@@ -49,6 +49,22 @@ if TYPE_CHECKING:
     # keeps the cheap ``--list`` / ``--check`` paths free of the eager load.
     from runpod_api import PodInfo
 
+
+def _ensure_scripts_dir_on_sys_path() -> None:
+    """Insert THIS file's dir (scripts/) so a lazy ``import runpod_api`` resolves.
+
+    In script mode scripts/ is already ``sys.path[0]``; in MODULE mode
+    (``from scripts.pod_config import parse_pods_conf``) only the repo root is
+    on sys.path, so a bare lazy ``runpod_api`` import raises
+    ``ModuleNotFoundError`` (#1296/#1304). Mirrors scripts/backend_poll.py's
+    helper; idempotent; called ONLY on the lazy paths so the cheap
+    ``--list``/``--check`` paths and library imports never mutate sys.path.
+    """
+    scripts_dir = str(Path(__file__).resolve().parent)
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+
+
 # ---------------------------------------------------------------------------
 # Paths -- resolved to the MAIN repo regardless of which worktree this
 # module is loaded from. ``pods.conf`` and ``pods_ephemeral.json`` are
@@ -154,6 +170,15 @@ PROJECT_ROOT = _MAIN_SCRIPTS_DIR.parent
 
 _LIVE_PODS_CONF_DIRNAME = "eps"
 _LIVE_PODS_CONF_FILENAME = "pods.conf"
+# Seed bytes for the "first pod ever" path — written when NEITHER the tracked
+# seed NOR the live file exists yet. Hoisted unchanged from the resolver body
+# when it was factored into ``_resolve_live_sidecar`` (task #1183).
+_PODS_CONF_BOOTSTRAP_HEADER = (
+    b"# Pod registry -- SINGLE SOURCE OF TRUTH for all pod configuration.\n"
+    b"# Live state lives at <git-common-dir>/eps/pods.conf (OUT of the working tree).\n"
+    b"# The tracked scripts/pods.conf is a SEED only.\n"
+    b"# Format: name  host  port  gpus  gpu_type  label\n"
+)
 
 
 def _git_common_dir() -> Path:
@@ -198,18 +223,24 @@ PODS_CONF_SEED = _MAIN_SCRIPTS_DIR / _LIVE_PODS_CONF_FILENAME
 PODS_CONF = PODS_CONF_SEED
 
 
-def _resolve_live_pods_conf() -> Path:
-    """Resolve the live pods.conf path, migrating from the seed on first use.
+def _resolve_live_sidecar(
+    *, seed: Path, override: Path, filename: str, bootstrap: bytes, label: str
+) -> Path:
+    """Shared #821 lazy resolver for a live-relocated sidecar file (task #1183).
 
-    Fast path (steady state): the live file at ``<git-common-dir>/eps/pods.conf``
-    exists → return it. Zero work.
+    Resolves the LIVE copy of a fleet-state sidecar (``pods.conf``,
+    ``pods_ephemeral.json``) at ``<git-common-dir>/eps/<filename>``,
+    migrating from the tracked seed on first use.
 
-    Migration path (fresh clone / first invocation after the v3 relocation):
+    Fast path (steady state): the live file exists → return it. Zero work.
+
+    Migration path (fresh clone / first invocation after the relocation):
     only the seed exists → copy seed → live atomically (write to
     ``<live>.tmp`` then ``os.replace``), then return the live path. The
     migration is guarded by ``locked_pods_conf`` so two concurrent processes
     cannot double-migrate. First migrator prints a one-line stderr note so
-    the relocation is visible in logs.
+    the relocation is visible in logs. When NEITHER the seed nor the live
+    file exists, the live file is bootstrapped from ``bootstrap`` bytes.
 
     Read-only-filesystem fallback: if the target directory is not writable
     (rare — an operator running under a read-only mount), emit a loud WARN
@@ -217,16 +248,20 @@ def _resolve_live_pods_conf() -> Path:
     writer will FAIL on the seed path (git-tracked → next destructive git
     op wipes it) — the WARN surfaces that state before the wipe.
 
-    Never called at module import time — call sites resolve at call time so
-    a ``monkeypatch.setattr(pod_config, "PODS_CONF", tmp)`` in a test is
-    honored by every reader + writer in the process.
+    Never called at module import time — the thin wrappers below read their
+    module-level globals at call time, so a test's
+    ``monkeypatch.setattr(pod_config, "PODS_CONF", tmp)`` (or
+    ``PODS_EPHEMERAL_JSON``) is honored by every reader + writer in the
+    process: ``override != seed`` means a monkeypatch is active and the
+    override path is returned verbatim.
     """
-    # Honor a test's monkeypatched module-level ``PODS_CONF`` if it points
+    # Honor a test's monkeypatched module-level public symbol if it points
     # somewhere OTHER than the seed. This keeps every existing test that
-    # sets ``pod_config.PODS_CONF = tmp / "pods.conf"`` working unchanged
-    # without a fixture rewrite.
-    if PODS_CONF != PODS_CONF_SEED:
-        return PODS_CONF
+    # sets ``pod_config.PODS_CONF = tmp / "pods.conf"`` (or
+    # ``PODS_EPHEMERAL_JSON = tmp / ...``) working unchanged without a
+    # fixture rewrite.
+    if override != seed:
+        return override
 
     try:
         common = _git_common_dir()
@@ -234,10 +269,10 @@ def _resolve_live_pods_conf() -> Path:
         # Cannot resolve git → fall back to the seed. Fresh checkouts
         # without a .git dir (tarball extractions, etc.) hit this branch;
         # keeps read paths working, writers will still see the seed.
-        return PODS_CONF_SEED
+        return seed
 
     live_dir = common / _LIVE_PODS_CONF_DIRNAME
-    live = live_dir / _LIVE_PODS_CONF_FILENAME
+    live = live_dir / filename
 
     if live.exists():
         return live
@@ -256,27 +291,17 @@ def _resolve_live_pods_conf() -> Path:
             # fall back to seed. Fresh writer will fail loud on the seed
             # (the file is git-tracked) — the WARN is the operator signal.
             print(
-                f"[pod_config] WARN: cannot create live pods.conf dir {live_dir}: "
-                f"{exc}. Falling back to seed at {PODS_CONF_SEED}. Any write "
+                f"[pod_config] WARN: cannot create live {label} dir {live_dir}: "
+                f"{exc}. Falling back to seed at {seed}. Any write "
                 f"here will be clobbered by the next destructive git op — fix "
                 f"the mount / permissions and re-run.",
                 file=sys.stderr,
             )
-            return PODS_CONF_SEED
+            return seed
 
-        seed = PODS_CONF_SEED
-        if seed.exists():
-            seed_bytes = seed.read_bytes()
-        else:
-            # Neither the seed nor the live file exists yet — bootstrap a
-            # bare header so downstream ``parse_pods_conf`` succeeds. This
-            # is the "first pod ever" path.
-            seed_bytes = (
-                b"# Pod registry -- SINGLE SOURCE OF TRUTH for all pod configuration.\n"
-                b"# Live state lives at <git-common-dir>/eps/pods.conf (OUT of the working tree).\n"
-                b"# The tracked scripts/pods.conf is a SEED only.\n"
-                b"# Format: name  host  port  gpus  gpu_type  label\n"
-            )
+        # When neither the seed nor the live file exists yet, bootstrap bare
+        # content so downstream readers succeed ("first pod ever" path).
+        seed_bytes = seed.read_bytes() if seed.exists() else bootstrap
 
         tmp = live.with_suffix(live.suffix + ".tmp")
         try:
@@ -287,27 +312,78 @@ def _resolve_live_pods_conf() -> Path:
             with contextlib.suppress(FileNotFoundError):
                 tmp.unlink()
             print(
-                f"[pod_config] WARN: could not migrate pods.conf → {live} "
+                f"[pod_config] WARN: could not migrate {label} → {live} "
                 f"({exc}); using seed at {seed}. Fix the mount / permissions "
                 f"and re-run.",
                 file=sys.stderr,
             )
-            return PODS_CONF_SEED
+            return seed
 
         print(
             f"[pod_config] migrated {seed} → {live} "
-            f"(live pods.conf now lives OUT of git's blast radius; the tracked "
+            f"(live {label} now lives OUT of git's blast radius; the tracked "
             f"copy is now a seed only)",
             file=sys.stderr,
         )
         return live
 
 
+def _resolve_live_pods_conf() -> Path:
+    """Resolve the live pods.conf path, migrating from the seed on first use.
+
+    Thin wrapper over :func:`_resolve_live_sidecar` (see its docstring for
+    the full contract — fast path, locked migration, read-only-FS fallback,
+    monkeypatch honor). ``PODS_CONF`` / ``PODS_CONF_SEED`` are read at call
+    time so a test's monkeypatch is honored on every call.
+    """
+    return _resolve_live_sidecar(
+        seed=PODS_CONF_SEED,
+        override=PODS_CONF,
+        filename=_LIVE_PODS_CONF_FILENAME,
+        bootstrap=_PODS_CONF_BOOTSTRAP_HEADER,
+        label="pods.conf",
+    )
+
+
 # Sidecar JSON owned by pod_lifecycle.py — read here only to set/clear the
 # manual_override flag from ``cmd_update``. Format documented in
 # scripts/pod_lifecycle.py. We do not import pod_lifecycle.py because it
 # already imports this module (avoiding circular import).
-PODS_EPHEMERAL_JSON = _MAIN_SCRIPTS_DIR / "pods_ephemeral.json"
+#
+# Task #1183 (mirror of the #821 pods.conf relocation above): the LIVE
+# (mutable) copy lives at ``<git-common-dir>/eps/pods_ephemeral.json`` — OUT
+# of the git working tree, where no destructive git op can touch it — and the
+# tracked ``scripts/pods_ephemeral.json`` is a SEED, migrated once on first
+# use by ``resolve_live_pods_ephemeral``.
+PODS_EPHEMERAL_SEED = _MAIN_SCRIPTS_DIR / "pods_ephemeral.json"
+# Public symbol kept for test monkeypatch compatibility (tests set
+# ``pod_config.PODS_EPHEMERAL_JSON = tmp / ...``). Points at the SEED; the
+# live path is resolved lazily via ``resolve_live_pods_ephemeral()`` at every
+# call (the same call-time-globals trick ``_resolve_live_pods_conf`` uses).
+PODS_EPHEMERAL_JSON = PODS_EPHEMERAL_SEED
+_LIVE_PODS_EPHEMERAL_FILENAME = "pods_ephemeral.json"
+_PODS_EPHEMERAL_BOOTSTRAP = b'{\n  "version": 2,\n  "pods": {}\n}\n'
+
+
+def resolve_live_pods_ephemeral() -> Path:
+    """LIVE pods_ephemeral.json path (task #1183; mirrors #821 pods.conf).
+
+    Thin wrapper over :func:`_resolve_live_sidecar`: honors a monkeypatched
+    ``pod_config.PODS_EPHEMERAL_JSON`` (returned verbatim when it differs
+    from the seed); otherwise resolves
+    ``<git-common-dir>/eps/pods_ephemeral.json``, migrating the tracked seed
+    atomically on first use under ``locked_pods_conf``, with the loud-WARN
+    seed fallback on read-only filesystems. Never called at import time.
+    """
+    return _resolve_live_sidecar(
+        seed=PODS_EPHEMERAL_SEED,
+        override=PODS_EPHEMERAL_JSON,
+        filename=_LIVE_PODS_EPHEMERAL_FILENAME,
+        bootstrap=_PODS_EPHEMERAL_BOOTSTRAP,
+        label="pods_ephemeral.json",
+    )
+
+
 # The SSH MCP server (mcp-ssh-manager) lives in the user-level Claude config,
 # NOT the project-level one. The project mcp.json (PROJECT_ROOT / ".claude" /
 # "mcp.json") is reserved for project-scoped servers like arxiv.
@@ -512,6 +588,7 @@ def _guard_against_dropping_running(dropped: set[str], on_disk_rows: dict[str, P
     """
     # Lazy import — ``runpod_api`` is heavy (loads RunPod GraphQL config
     # from .env at import time).
+    _ensure_scripts_dir_on_sys_path()
     try:
         from runpod_api import RunPodError, list_team_pods
     except ImportError:  # pragma: no cover - only if repo is malformed
@@ -1156,29 +1233,42 @@ def _set_manual_override(pod_name: str, *, value: bool) -> str | None:
 
     Does NOT auto-create the sidecar; if it is missing, the override flag has
     nothing to protect (no auto-refresh would touch a non-existent entry).
+
+    Task #1183: resolves the LIVE sidecar via ``resolve_live_pods_ephemeral``
+    and performs the read-modify-write atomically under ``locked_pods_conf``
+    (reentrant — the ``cmd_update`` caller already holds it). The monkeypatch
+    fast path is checked BEFORE the lock so a test with a patched
+    ``PODS_EPHEMERAL_JSON`` never touches the real shared
+    ``scripts/.pods.conf.lock``.
     """
-    if not PODS_EPHEMERAL_JSON.exists():
-        return None
-    try:
-        data = json.loads(PODS_EPHEMERAL_JSON.read_text())
-    except json.JSONDecodeError as exc:
-        print(
-            f"WARNING: {PODS_EPHEMERAL_JSON} JSON parse error: {exc}; "
-            f"could not set manual_override for {pod_name}.",
-            file=sys.stderr,
-        )
-        return None
+    patched = PODS_EPHEMERAL_JSON != PODS_EPHEMERAL_SEED
+    ctx = contextlib.nullcontext() if patched else locked_pods_conf()
+    with ctx:
+        path = resolve_live_pods_ephemeral()
+        if not path.exists():
+            return None
+        try:
+            data = json.loads(path.read_text())
+        except json.JSONDecodeError as exc:
+            print(
+                f"WARNING: {path} JSON parse error: {exc}; "
+                f"could not set manual_override for {pod_name}.",
+                file=sys.stderr,
+            )
+            return None
 
-    pods = data.get("pods", {})
-    if pod_name not in pods:
-        return None
+        pods = data.get("pods", {})
+        if pod_name not in pods:
+            return None
 
-    prev = bool(pods[pod_name].get("manual_override", False))
-    if prev == value:
-        return f"pods_ephemeral.json: manual_override for {pod_name} already {value}"
-    pods[pod_name]["manual_override"] = value
-    PODS_EPHEMERAL_JSON.write_text(json.dumps(data, indent=2) + "\n")
-    return f"pods_ephemeral.json: manual_override for {pod_name} {prev} -> {value}"
+        prev = bool(pods[pod_name].get("manual_override", False))
+        if prev == value:
+            return f"pods_ephemeral.json: manual_override for {pod_name} already {value}"
+        pods[pod_name]["manual_override"] = value
+        # 0o644 mirrors today's plain write_text mode — the JSON holds no
+        # secrets and external read-only tooling may consult it.
+        _atomic_write_text(path, json.dumps(data, indent=2) + "\n", default_mode=0o644)
+        return f"pods_ephemeral.json: manual_override for {pod_name} {prev} -> {value}"
 
 
 def cmd_update(pods: list[Pod], pod_name: str, host: str | None, port: int | None) -> None:
@@ -1276,14 +1366,19 @@ def _read_manual_overrides() -> dict[str, bool]:
     are simply absent from the returned dict (callers default to False).
     Returns an empty dict when the sidecar is missing or malformed — same
     fail-quiet shape ``_set_manual_override`` uses on read.
+
+    Read-only: resolves the LIVE sidecar via ``resolve_live_pods_ephemeral``
+    and takes NO lock (same policy as read-only ``parse_pods_conf`` callers —
+    atomic writes guarantee no torn reads; task #1183).
     """
-    if not PODS_EPHEMERAL_JSON.exists():
+    path = resolve_live_pods_ephemeral()
+    if not path.exists():
         return {}
     try:
-        data = json.loads(PODS_EPHEMERAL_JSON.read_text())
+        data = json.loads(path.read_text())
     except json.JSONDecodeError as exc:
         print(
-            f"WARNING: {PODS_EPHEMERAL_JSON} JSON parse error: {exc}; "
+            f"WARNING: {path} JSON parse error: {exc}; "
             f"treating all manual_override flags as False.",
             file=sys.stderr,
         )
@@ -1468,6 +1563,7 @@ def cmd_refresh_from_api(pods: list[Pod], pod_name: str | None) -> None:
     # Import lazily — ``runpod_api`` is the heavy module and importing at
     # module top would force every ``pod_config --check`` / ``--list`` to
     # eagerly load it. The lazy import keeps the cheap subcommands cheap.
+    _ensure_scripts_dir_on_sys_path()
     from runpod_api import list_team_pods
 
     live_pods = list_team_pods()

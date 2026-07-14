@@ -19,12 +19,17 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import issue779_common as C
-import issue779_fitter_fair_comparison as F
-import issue779_stage1 as S1
-import numpy as np
-
 from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import issue779_common as C  # noqa: E402
+import issue779_fitter_fair_comparison as F  # noqa: E402
+import issue779_stage1 as S1  # noqa: E402
+import numpy as np  # noqa: E402
 
 TRAITS = ("evil", "sycophancy", "hallucination")
 
@@ -52,7 +57,6 @@ def _predict(Xte, W, xmu, ymu):
 
 
 def main() -> int:
-    load_dotenv()
     import torch
 
     ap = argparse.ArgumentParser()

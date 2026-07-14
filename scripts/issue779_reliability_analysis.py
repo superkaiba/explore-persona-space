@@ -38,14 +38,19 @@ import argparse
 import json
 from pathlib import Path
 
-import issue779_common as C
-import issue779_fitter_fair_comparison as F
-import issue779_perdirection_per_predictor as PP
-import issue779_stage1 as S1
-import numpy as np
-import torch
-
 from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import issue779_common as C  # noqa: E402
+import issue779_fitter_fair_comparison as F  # noqa: E402
+import issue779_perdirection_per_predictor as PP  # noqa: E402
+import issue779_stage1 as S1  # noqa: E402
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 TRAITS = ("evil", "sycophancy", "hallucination")
 STAR_COLORS = {"evil": "#d62728", "sycophancy": "#e6550d", "hallucination": "#b5179e"}
@@ -256,7 +261,6 @@ def _smoke(fig_dir: Path) -> int:
 
 
 def main() -> int:
-    load_dotenv()
     ap = argparse.ArgumentParser(description="Issue #779 per-direction reliability (ICC).")
     ap.add_argument("--layer", type=int, default=19)
     ap.add_argument("--seed", type=int, default=0)

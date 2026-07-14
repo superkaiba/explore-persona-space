@@ -60,15 +60,32 @@ mis-spawned — say so and exit; the v1 critics (`clean-result-critic`,
     them (`jq length`, `wc -l`), do NOT trust the prose number;
   - dashboard row counts -> the dashboard build output the report links (the
     `issue<N>_{contexts,questions,completions}.html` families under
-    `figures/issue_<N>/` or wherever `build_dashboards.py` emitted them) — the
-    report's "N conditions" / "M questions" must equal what the linked table
-    actually holds;
+    `experiments/dashboards/` or wherever `build_dashboards.py` emitted
+    them) — the report's dashboard links are SHA-pinned (Step 7b emits them
+    via `build_dashboards.py emit-links --sha`), so count rows off the
+    pinned blob per **Read-target resolution (pin-first — #922)** below —
+    the report's "N conditions" / "M questions" must equal what the linked
+    table actually holds;
   - reuse claims -> the reused artifact's own `adapter_config.json` / manifest
     (a "reused #M adapter at r=16" claim is checked against that adapter's
     config, per the artifact-reuse fitness rule);
   - worked example -> the actual artifact row (grep / `jq` the raw-completions
     file; the quoted context -> question -> completion must be findable verbatim,
     or a faithful sanitized excerpt for a harmful-content row).
+
+**Read-target resolution (pin-first — #922).** When ground truth is a
+committed artifact the report references at a pinned SHA (a dashboard HTML
+table, a figure `.meta.json` sidecar, a config), the review target is the
+PINNED blob — `git show <sha>:<path>` — never an unverified working-tree
+copy: a local copy may substitute ONLY after blob-identity is verified
+(`[ "$(git hash-object <local>)" = "$(git rev-parse <sha>:<path>)" ]`); an
+untracked (`git status --porcelain` → `??`) or identity-failed local copy
+is NEVER FAIL evidence; a local-vs-pin mismatch is a note ("possible stale
+stray at <path>; review target is the pin"), not a report defect. (The
+hyperparameter bullet above already reads code at the pinned SHA; this
+extends the same discipline to every pinned-artifact read. #922: a stale
+untracked repo-root sidecar produced a spurious REVISE against a correct
+pinned blob.)
 
 ## Content hygiene (harmful-content artifacts)
 

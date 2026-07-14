@@ -1,0 +1,198 @@
+{
+  "commit": "1b104689cc",
+  "created": "2026-07-10T15:41:28Z",
+  "figsize": [
+    11.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.22,
+      "within-condition Pearson r": -0.18007149409060783,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.78,
+      "within-condition Pearson r": -0.18920591231539716,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.78,
+      "within-condition Pearson r": -0.2410221287907159,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.78,
+      "within-condition Pearson r": 0.09992541568265033,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.78,
+      "within-condition Pearson r": 0.08225846085427074,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.78,
+      "within-condition Pearson r": 0.057928808925366664,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "hallucination\nprefix-based",
+      "within-condition Pearson r": 0.2648382229999956,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "hallucination\ncontext-based",
+      "within-condition Pearson r": 0.12719435719304886,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "hallucination\nbare-query",
+      "within-condition Pearson r": -0.029135970236397597,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\nprefix-based",
+      "within-condition Pearson r": -0.03620927339757896,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\ncontext-based",
+      "within-condition Pearson r": 0.07533770045005446,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\nbare-query",
+      "within-condition Pearson r": 0.05656078408658967,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.22,
+      "within-condition Pearson r": 0.15447554478455897,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.22,
+      "within-condition Pearson r": 0.15447554478455897,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.22,
+      "within-condition Pearson r": 0.15447554478455897,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.22,
+      "within-condition Pearson r": 0.08575038380607777,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.22,
+      "within-condition Pearson r": 0.08575038380607777,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.22,
+      "within-condition Pearson r": 0.08575038380607777,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "within-condition Pearson r": 0.15454894911008765,
+      "series": "B0 mean pooling (d) \u2014 generation-side reference",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "within-condition Pearson r": 0.15454894911008765,
+      "series": "B0 mean pooling (d) \u2014 generation-side reference",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "within-condition Pearson r": 0.15454894911008765,
+      "series": "B0 mean pooling (d) \u2014 generation-side reference",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "within-condition Pearson r": 0.08570617902251026,
+      "series": "B0 mean pooling (d) \u2014 generation-side reference",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "within-condition Pearson r": 0.08570617902251026,
+      "series": "B0 mean pooling (d) \u2014 generation-side reference",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "within-condition Pearson r": 0.08570617902251026,
+      "series": "B0 mean pooling (d) \u2014 generation-side reference",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "category": "hallucination\nprefix-based",
+      "held-out R\u00b2 (grouped folds)": -0.08041598623188073,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "hallucination\ncontext-based",
+      "held-out R\u00b2 (grouped folds)": 0.11921130693101145,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "hallucination\nbare-query",
+      "held-out R\u00b2 (grouped folds)": -0.13888146285679226,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "sycophancy\nprefix-based",
+      "held-out R\u00b2 (grouped folds)": -0.20453436579563777,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "sycophancy\ncontext-based",
+      "held-out R\u00b2 (grouped folds)": -1.6352084352034226,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "sycophancy\nbare-query",
+      "held-out R\u00b2 (grouped folds)": -1.2318192887983064,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 30
+}

@@ -19,6 +19,7 @@ Also covers the ``--check-script-refs`` mode: every
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -35,26 +36,41 @@ if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
 from workflow_lint import (  # noqa: E402
+    _MARKER_RECIPE_PINS,
     BATCH_JUDGE_LEGACY_ALLOWLIST,
+    HUB_VERIFY_LEGACY_ALLOWLIST,
     _iter_ask_target_files,
     _other_worktree_prefix,
+    _values_equal,
     check_agent_model_pins,
     check_asks,
     check_autonomous_asks,
+    check_awk_elision_parity,
     check_batch_judge_client,
     check_compute_shape_review_lens,
+    check_crash_fix_relaunch_contract,
     check_dispatcher_cvd_pin,
     check_gate_ids_unique,
+    check_git_recipes_root_guard,
+    check_grep_qv,
     check_heredoc_dotenv,
     check_hollow_verification_gate_review_lens,
+    check_hub_dir_filecount_guard,
+    check_hub_verify_retry,
     check_lessons_index,
     check_long_loop_restartability_review_lens,
+    check_marker_recipe_snippets,
     check_marker_registry,
+    check_marker_scalar_integrity,
     check_no_literal_round_marker_versions,
     check_no_workflow_improver_spawn,
     check_pipe_python,
     check_piped_git_push,
+    check_poller_marker_consumers,
+    check_push_failure_swallow,
     check_script_references,
+    check_section_reference_pointer_coverage,
+    check_skill_bang_backtick,
     check_skill_references,
     check_smoke_architecture_review_lens,
     check_smoke_output_hygiene,
@@ -1464,6 +1480,328 @@ def test_no_flags_default_run_pins_failure_lesson_field_contract(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Unit tests for ``check_marker_scalar_integrity`` +
+# ``check_poller_marker_consumers`` (task #1191; incident #873: an unquoted
+# workflow.yaml plain scalar containing ' #' silently truncated at the
+# comment marker and --check-references passed on the truncated parse; the
+# same task's poller runtime-tripwire claim shipped with no poll_pipeline
+# code until a critic caught it).
+# ---------------------------------------------------------------------------
+
+# The verbatim #873 offender value (unquoted → YAML truncates at ' #').
+_I873_POSTED_BY = "skill (via experiment-implementer); poll_pipeline (runtime tripwire, #873)"
+
+
+def test_check_marker_scalar_integrity_fail_truncated_comment_scalar(tmp_path):
+    """END-TO-END #873 repro: the UNQUOTED offender value written to a
+    minimal fixture workflow.yaml parses to
+    'skill (via experiment-implementer); poll_pipeline (runtime tripwire,'
+    (trailing comma AND 2-vs-1 parens — both heuristic legs), so the check
+    FAILs with exactly one error naming the kind + the ``posted_by`` field."""
+    fixture = tmp_path / "workflow.yaml"
+    fixture.write_text(
+        "version: 1\n"
+        "markers:\n"
+        "  - kind: epm:compute-deviation\n"
+        f"    posted_by: {_I873_POSTED_BY}\n"
+        "    when: fires on a >2x wall-time deviation\n"
+        "    fields: projected_hours\n"
+    )
+    wf = load_workflow_yaml(fixture)
+    # Precondition of the repro: YAML really did truncate at the comment.
+    assert wf.markers[0].posted_by.endswith("(runtime tripwire,"), wf.markers[0].posted_by
+    errors = check_marker_scalar_integrity(wf)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "epm:compute-deviation" in errors[0]
+    assert "'posted_by'" in errors[0]
+
+
+def test_check_marker_scalar_integrity_pass_quoted_scalar(tmp_path):
+    """The same value DOUBLE-QUOTED (as live workflow.yaml carries it today)
+    parses in full — balanced parens, no trailing ','/'(' — and PASSes."""
+    fixture = tmp_path / "workflow.yaml"
+    fixture.write_text(
+        "version: 1\n"
+        "markers:\n"
+        "  - kind: epm:compute-deviation\n"
+        f'    posted_by: "{_I873_POSTED_BY}"\n'
+        "    when: fires on a >2x wall-time deviation\n"
+        "    fields: projected_hours\n"
+    )
+    wf = load_workflow_yaml(fixture)
+    assert wf.markers[0].posted_by.endswith("#873)"), wf.markers[0].posted_by
+    errors = check_marker_scalar_integrity(wf)
+    assert errors == [], f"expected PASS for the quoted scalar, got: {errors}"
+
+
+def test_check_marker_scalar_integrity_fail_unbalanced_only():
+    """A value with unbalanced parens but NO trailing ','/'(' still fires
+    (the second heuristic leg alone)."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="skill (runtime tripwire", when="w", fields="f")
+        ],
+    )
+    errors = check_marker_scalar_integrity(wf)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "unbalanced parens" in errors[0]
+
+
+def test_check_marker_scalar_integrity_fail_non_posted_by_field():
+    """Round-1 Statistics Must-Fix 2: the truncation signature in a
+    NON-``posted_by`` field (``when``) fires with an error naming that
+    field — discriminates a broken implementation that scans only
+    ``posted_by`` (§11.2's all-four-fields decision)."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(
+                kind="epm:x",
+                posted_by="skill",
+                when="fires after phase 2 (see runbook,",
+                fields="f",
+            )
+        ],
+    )
+    errors = check_marker_scalar_integrity(wf)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "'when'" in errors[0], f"error must name the 'when' field: {errors[0]}"
+
+
+def test_check_marker_scalar_integrity_fail_trailing_open_paren():
+    """A value ending in '(' fires (the second ``endswith`` branch)."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="posted by the watcher (", when="w", fields="f")
+        ],
+    )
+    errors = check_marker_scalar_integrity(wf)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "trailing ,/(" in errors[0]
+
+
+def test_check_marker_scalar_integrity_pass_balanced_prose():
+    """Ordinary prose with balanced parens ending in '.' PASSes — the check
+    keys on the truncation AFTERMATH, not on comment-ish content."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(
+                kind="epm:x",
+                posted_by="skill (via experiment-implementer); poll_pipeline (tripwire, #873).",
+                when="fires when the projection exceeds 2x (see #873).",
+                fields="projected_hours",
+            )
+        ],
+    )
+    errors = check_marker_scalar_integrity(wf)
+    assert errors == [], f"expected PASS for balanced prose, got: {errors}"
+
+
+def test_check_marker_scalar_integrity_allowlist_waives():
+    """A (kind, field) allowlist entry waives an otherwise-failing value."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="skill (runtime tripwire", when="w", fields="f")
+        ],
+    )
+    errors = check_marker_scalar_integrity(
+        wf, allowlist={("epm:x", "posted_by"): "deliberate enumeration prose"}
+    )
+    assert errors == [], f"expected the allowlist to waive, got: {errors}"
+
+
+def test_workflow_lint_check_marker_scalar_integrity_repo_passes():
+    """Live-tree invariant: the committed workflow.yaml has 0 truncation
+    signatures across all markers x 4 string fields (probe 2026-07-09)."""
+    errors = check_marker_scalar_integrity(_workflow())
+    assert errors == [], (
+        "committed workflow.yaml § markers carries a truncated-comment "
+        "signature:\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_marker_scalar_integrity_flag_exits_zero():
+    """CLI flag path exits 0 on the live tree."""
+    result = _run("--check-marker-scalar-integrity")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-marker-scalar-integrity failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_check_poller_marker_consumers_fail_no_reference(tmp_path):
+    """A poller-posted kind referenced by NO consumer surface AND absent
+    from its declared poster file fails BOTH legs (2 errors)."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="poll_pipeline.py (tripwire)", when="w", fields="f")
+        ],
+    )
+    skill = tmp_path / "SKILL.md"
+    skill.write_text("No markers mentioned here.\n")
+    poller = tmp_path / "poll_pipeline.py"
+    poller.write_text("# no kinds posted here\n")
+    errors = check_poller_marker_consumers(
+        wf, consumer_paths=[skill], poller_file_map={"poll_pipeline": poller}
+    )
+    assert len(errors) == 2, f"expected Leg A + Leg B errors, got: {errors}"
+    assert any("NO consumer surface" in e for e in errors), errors
+    assert any("declared poster" in e for e in errors), errors
+
+
+def test_check_poller_marker_consumers_pass_referenced(tmp_path):
+    """The same kind mentioned in a consumer surface AND in the poster
+    file PASSes both legs."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="poll_pipeline.py (tripwire)", when="w", fields="f")
+        ],
+    )
+    skill = tmp_path / "SKILL.md"
+    skill.write_text("The poller posts `epm:x v1` on a tripwire hit.\n")
+    poller = tmp_path / "poll_pipeline.py"
+    poller.write_text('KIND = "epm:x"\n')
+    errors = check_poller_marker_consumers(
+        wf, consumer_paths=[skill], poller_file_map={"poll_pipeline": poller}
+    )
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_poller_marker_consumers_skips_non_poller(tmp_path):
+    """A non-poller ``posted_by`` (e.g. 'skill') is never checked, even
+    with zero references anywhere."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[MarkerEntry(kind="epm:x", posted_by="skill", when="w", fields="f")],
+    )
+    skill = tmp_path / "SKILL.md"
+    skill.write_text("Nothing here.\n")
+    errors = check_poller_marker_consumers(wf, consumer_paths=[skill], poller_file_map={})
+    assert errors == [], f"expected non-poller posted_by to be skipped, got: {errors}"
+
+
+def test_check_poller_marker_consumers_leg_b_only(tmp_path):
+    """Kind present in a consumer surface but ABSENT from the mapped
+    poster file yields exactly one Leg-B error (the #873 pre-fix state:
+    the claim is documented but the posting code does not exist)."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="poll_pipeline.py (tripwire)", when="w", fields="f")
+        ],
+    )
+    skill = tmp_path / "SKILL.md"
+    skill.write_text("The poller posts `epm:x v1` on a tripwire hit.\n")
+    poller = tmp_path / "poll_pipeline.py"
+    poller.write_text("# posting code never written\n")
+    errors = check_poller_marker_consumers(
+        wf, consumer_paths=[skill], poller_file_map={"poll_pipeline": poller}
+    )
+    assert len(errors) == 1, f"expected exactly one Leg-B error, got: {errors}"
+    assert "declared poster" in errors[0]
+    assert "poll_pipeline" in errors[0]
+
+
+def test_check_poller_marker_consumers_allowlist_waives(tmp_path):
+    """An allowlisted kind is waived from both legs."""
+    wf = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(kind="epm:x", posted_by="poll_pipeline.py (tripwire)", when="w", fields="f")
+        ],
+    )
+    skill = tmp_path / "SKILL.md"
+    skill.write_text("Nothing here.\n")
+    poller = tmp_path / "poll_pipeline.py"
+    poller.write_text("# nothing here\n")
+    errors = check_poller_marker_consumers(
+        wf,
+        consumer_paths=[skill],
+        poller_file_map={"poll_pipeline": poller},
+        allowlist={"epm:x": "deliberate out-of-band consumer (dashboard)"},
+    )
+    assert errors == [], f"expected the allowlist to waive, got: {errors}"
+
+
+def test_workflow_lint_check_poller_marker_consumers_repo_passes():
+    """Live-tree invariant: every committed poller-posted marker kind has
+    >=1 consumer reference and its declared poster mentions it (probe
+    2026-07-09: 5/5)."""
+    errors = check_poller_marker_consumers(_workflow())
+    assert errors == [], (
+        "committed workflow.yaml § markers carries a poller-posted kind "
+        "with no consumer / poster reference:\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_poller_marker_consumers_flag_exits_zero():
+    """CLI flag path exits 0 on the live tree."""
+    result = _run("--check-poller-marker-consumers")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-poller-marker-consumers failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_workflow_lint_new_checks_bundled(monkeypatch, capsys):
+    """Round-1 Statistics Must-Fix 1: BUNDLING is DISCRIMINATED, not
+    assumed. The live tree passes both new checks, so an exit-0 no-flags
+    run cannot distinguish 'bundled and passing' from 'never registered'
+    (the #873 gap re-created at main()). With each new check
+    monkeypatch-sentineled, an in-process ``main()`` with no flags AND one
+    with ``--check-references`` must BOTH surface the sentinel and return
+    nonzero — a forgotten dispatch line / --check-references bundle fails
+    this test.
+
+    Every OTHER check function is patched to a no-op so the in-process
+    runs stay fast (the real no-flags run takes minutes) — this does not
+    weaken the discrimination: with all other checks silenced, an exit-0 /
+    sentinel-free run can only mean the new check is not registered on
+    that path.
+    """
+    import workflow_lint as wl
+
+    for name in dir(wl):
+        if name.startswith(("check_", "_check_")) and callable(getattr(wl, name)):
+            monkeypatch.setattr(wl, name, lambda *a, **k: [])
+    monkeypatch.setattr(wl, "emit_tables", lambda *a, **k: [])
+    monkeypatch.setattr(
+        wl, "check_marker_scalar_integrity", lambda *a, **k: ["SENTINEL-scalar-integrity-bundling"]
+    )
+    monkeypatch.setattr(
+        wl, "check_poller_marker_consumers", lambda *a, **k: ["SENTINEL-poller-consumers-bundling"]
+    )
+
+    # Path 1: the no-flags default run.
+    rc_default = wl.main([])
+    err_default = capsys.readouterr().err
+    assert rc_default != 0, "no-flags main() exited 0 with sentinel-failing new checks"
+    assert "SENTINEL-scalar-integrity-bundling" in err_default, (
+        f"check_marker_scalar_integrity not bundled into the no-flags run:\n{err_default}"
+    )
+    assert "SENTINEL-poller-consumers-bundling" in err_default, (
+        f"check_poller_marker_consumers not bundled into the no-flags run:\n{err_default}"
+    )
+
+    # Path 2: the --check-references (pre-commit) run.
+    rc_refs = wl.main(["--check-references"])
+    err_refs = capsys.readouterr().err
+    assert rc_refs != 0, "--check-references main() exited 0 with sentinel-failing new checks"
+    assert "SENTINEL-scalar-integrity-bundling" in err_refs, (
+        f"check_marker_scalar_integrity not bundled into --check-references:\n{err_refs}"
+    )
+    assert "SENTINEL-poller-consumers-bundling" in err_refs, (
+        f"check_poller_marker_consumers not bundled into --check-references:\n{err_refs}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Unit tests for ``check_heredoc_dotenv`` (incident class #552/#612: a
 # no-arg python-dotenv ``load_dotenv()`` inside a heredoc feeding a python
 # interpreter's stdin crashes at runtime via find_dotenv()'s frame-walk
@@ -1782,16 +2120,25 @@ def test_workflow_lint_check_pipe_python_cli_exits_zero():
     )
 
 
-def test_workflow_lint_pipe_python_bundled_in_no_flags():
-    """`check_pipe_python` is wired into the no-flags default run (bundled,
-    same policy as `check_heredoc_dotenv`): a bare `workflow_lint.py`
-    invocation exercises it. The committed tree is clean, so the no-flags
-    run exits 0 — and a planted offender in a tmp scripts dir would be
-    caught by the function test above; here we assert the bundling holds
-    by confirming the flag is among the no-flags checks via a clean exit."""
-    result = _run()
-    assert result.returncode == 0, (
-        f"workflow_lint (no flags) failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+def test_pipe_python_bundled_in_no_flags_source_pin():
+    """NON-VACUOUS no-flags bundling pin (#1233; the #712 §4f
+    opt-in-not-bundled shipping class): `check_pipe_python` must be
+    dispatched by the BARE ``workflow_lint.py`` run. Source-inspection
+    assert on the dispatch branch + the no_flags detection-tuple
+    membership — the prior exit-0-on-a-clean-tree assert was vacuous (a
+    clean tree exits 0 whether or not the check is dispatched) and
+    burned a redundant full no-flags subprocess run
+    (``test_workflow_lint_default_exits_zero`` keeps the behavioral
+    clean-tree cover; the planted-offender function tests above cover
+    detection)."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_pipe_python or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_pipe_python\(\)\)",
+        src,
+    ), "check_pipe_python is not dispatched on the no-flags branch"
+    assert "or args.check_pipe_python" in src, (
+        "--check-pipe-python is missing from the no_flags detection tuple"
     )
 
 
@@ -2062,16 +2409,26 @@ def test_workflow_lint_check_piped_git_push_cli_exits_zero():
     )
 
 
-def test_workflow_lint_piped_git_push_bundled_in_no_flags():
-    """`check_piped_git_push` is wired into the no-flags default run
-    (bundled, same policy as `check_pipe_python`): a bare `workflow_lint.py`
-    invocation exercises it. The committed tree is clean, so the no-flags
-    run exits 0 — a planted offender in a tmp scripts dir is caught by the
-    function tests above; here we assert the bundling holds via a clean
-    exit."""
-    result = _run()
-    assert result.returncode == 0, (
-        f"workflow_lint (no flags) failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+def test_piped_git_push_bundled_in_no_flags_source_pin():
+    """NON-VACUOUS no-flags bundling pin (#1293, the #1233 exemplar-2
+    shape; the #712 §4f opt-in-not-bundled shipping class):
+    `check_piped_git_push` must be dispatched by the BARE
+    ``workflow_lint.py`` run. Source-inspection assert on the dispatch
+    branch + the no_flags detection-tuple membership — the prior
+    exit-0-on-a-clean-tree assert was vacuous (a clean tree exits 0
+    whether or not the check is dispatched) and burned a redundant full
+    no-flags subprocess run (``test_workflow_lint_default_exits_zero``
+    keeps the behavioral clean-tree cover; the ``check_piped_git_push``
+    function tests above and the ``_PIPED_PUSH_SHARED`` hook/lint
+    agreement suite below cover detection)."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_piped_git_push or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_piped_git_push\(\)\)",
+        src,
+    ), "check_piped_git_push is not dispatched on the no-flags branch"
+    assert "or args.check_piped_git_push" in src, (
+        "--check-piped-git-push is missing from the no_flags detection tuple"
     )
 
 
@@ -2142,6 +2499,283 @@ def test_piped_git_push_hook_lint_agreement_on_shared_cases():
         assert lint == must_flag, f"lint verdict wrong for {cmd!r}: {lint} != {must_flag}"
         assert hook_v == must_flag, f"hook verdict wrong for {cmd!r}: {hook_v} != {must_flag}"
         assert lint == hook_v, f"engines diverge on shared case {cmd!r}"
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_push_failure_swallow`` (incident class #825
+# r6/r7/r8, task #1205: a workload's `git push ... || echo WARNING`
+# swallowed a deterministic auth failure, the step declared success, and
+# the self-DELETEing GCE instance held the only copy of 73 committed eval
+# JSONs). Each fixture writes a tiny ``*.sh`` under ``tmp_path`` and calls
+# ``check_push_failure_swallow(scripts_dir=tmp_path)``. The workload-side
+# `||` sibling of ``check_piped_git_push`` — NO pipefail escape here
+# (pipefail never applies to `||` disjunctions).
+# ---------------------------------------------------------------------------
+
+
+def test_check_push_failure_swallow_fail_echo(tmp_path):
+    """FAIL — the flagship incident shape `git push origin x || echo warn`
+    (#825 r8: issue825_sampled_sep_dispatch.sh:502)."""
+    (tmp_path / "x.sh").write_text(
+        '#!/usr/bin/env bash\ngit push origin "issue-9" || echo "WARNING: push failed" >&2\n'
+    )
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:2" in errors[0]
+    assert "#825" in errors[0]
+    assert "PUSH_SWALLOW_EXEMPT" in errors[0]
+
+
+def test_check_push_failure_swallow_fail_true_colon_printf(tmp_path):
+    """FAIL — the `|| true`, `|| :`, and `|| printf` swallow variants each
+    flag (one error per line), including the flag-tolerant `git -C` form."""
+    (tmp_path / "x.sh").write_text(
+        "git push || true\n"
+        'git -C "$ROOT" push origin main || :\n'
+        "git push origin main || printf 'warn\\n'\n"
+    )
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 3, f"expected three errors, got: {errors}"
+
+
+def test_check_push_failure_swallow_fail_backslash_continued(tmp_path):
+    """FAIL — `git push origin x \\` newline `  || echo warn` is ONE
+    logical line (backslash continuations merged before matching); the
+    error points at the FIRST physical line."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\ngit push origin main \\\n  || echo 'push failed'\n"
+    )
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:2" in errors[0]
+
+
+def test_check_push_failure_swallow_fail_despite_pipefail(tmp_path):
+    """FAIL — unlike the piped-push sibling, a `set -euo pipefail` header
+    is NO escape: pipefail never applies to `||` disjunctions."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\nset -euo pipefail\ngit push origin main || echo warn\n"
+    )
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_push_failure_swallow_pass_safe_shapes(tmp_path):
+    """PASS — the three verified safe shapes on the live tree: an
+    if-condition (auto_push_main.sh:23 — the rc is CONSUMED), a bare push
+    (cron_export_literature.sh:41 — set -e propagates), and the
+    `|| { retry; } || true` group (the rendered #1205 GCE leg's own retry:
+    the re-count after it is the verification)."""
+    (tmp_path / "x.sh").write_text(
+        "if git push origin main; then\n"
+        "  echo pushed\n"
+        "fi\n"
+        "git push origin main\n"
+        'git push origin "HEAD:main" || { sleep 20; git push origin "HEAD:main"; } || true\n'
+    )
+    assert check_push_failure_swallow(scripts_dir=tmp_path) == []
+
+
+def test_check_push_failure_swallow_pass_comment_line(tmp_path):
+    """PASS — a `#`-comment carrying the bad pattern is documentation."""
+    (tmp_path / "x.sh").write_text("# never do: git push || echo warn\necho ok\n")
+    assert check_push_failure_swallow(scripts_dir=tmp_path) == []
+
+
+def test_check_push_failure_swallow_pass_waiver(tmp_path):
+    """PASS — a reason-bearing `# PUSH_SWALLOW_EXEMPT:` waiver on the same
+    line (and the preceding-line placement for continued commands)."""
+    (tmp_path / "x.sh").write_text(
+        "git push origin main || echo warn  "
+        "# PUSH_SWALLOW_EXEMPT: mirror push, verified by the next step\n"
+        "# PUSH_SWALLOW_EXEMPT: preceding-line waiver for the continued form\n"
+        "git push origin main \\\n  || echo warn\n"
+    )
+    assert check_push_failure_swallow(scripts_dir=tmp_path) == []
+
+
+def test_check_push_failure_swallow_pass_frozen_allowlist(tmp_path):
+    """PASS — a file whose repo-root-relative path is in the FROZEN
+    PUSH_SWALLOW_LEGACY_ALLOWLIST (the on-main issue931 offender + the
+    pre-seeded issue-825 sep-dispatch siblings) is skipped wholesale; a
+    same-shape NEW script is still flagged."""
+    (tmp_path / "issue931_dispatch.sh").write_text(
+        'git push origin "issue-931" || echo "[i931] WARNING: git push failed" >&2\n'
+    )
+    (tmp_path / "issue825_sampled_sep_dispatch.sh").write_text(
+        'git push origin "issue-825" || echo "[i825-ss] WARNING: git push failed" >&2\n'
+    )
+    (tmp_path / "new_dispatch.sh").write_text("git push origin main || echo warn\n")
+    errors = check_push_failure_swallow(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected only the NEW script flagged, got: {errors}"
+    assert "new_dispatch.sh" in errors[0]
+
+
+def test_check_push_failure_swallow_pass_no_files(tmp_path):
+    """PASS — an empty scripts dir (no `*.sh`) yields no errors."""
+    assert check_push_failure_swallow(scripts_dir=tmp_path) == []
+
+
+def test_check_push_failure_swallow_repo_tree_is_clean():
+    """The committed scripts/*.sh tree must carry no push-failure swallows
+    outside the frozen allowlist — the regression lock (the #1205 scan of
+    main + every issue-* branch found exactly the four allowlisted
+    offenders)."""
+    errors = check_push_failure_swallow()
+    assert errors == [], (
+        "scripts/*.sh has git-push failure swallows (#825 r6-r8 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_push_failure_swallow_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-push-failure-swallow")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-push-failure-swallow failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_push_failure_swallow_bundled_in_no_flags_source_pin():
+    """`check_push_failure_swallow` is wired into the no-flags default run
+    — pinned STRUCTURALLY (the source carries the `or no_flags` dispatch
+    and the no_flags-tuple membership) so the bundling cannot silently
+    drop; the sibling clean-tree CLI test plus the shared no-flags run
+    cover the behavioral side."""
+    src = (_REPO_ROOT / "scripts" / "workflow_lint.py").read_text()
+    assert "args.check_push_failure_swallow or no_flags" in src
+    assert "or args.check_push_failure_swallow" in src
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_grep_qv`` (incident class #928 -> #1125: ugrep
+# 7.5.0's quiet+invert exit status diverges from GNU — rc=1 even when
+# non-matching lines are selected — so an rc-consumed q+v grep trigger in an
+# executable workflow snippet silently fails OPEN under a PATH-shadowed
+# grep; the Step 10d pre-push lint gate classified a 12-file code-bearing
+# payload as skip-artifact-only). Each fixture writes a tiny ``*.md`` (with
+# a fenced code block, the SKILL.md scan shape) or ``*.sh`` under
+# ``tmp_path`` and calls ``check_grep_qv(roots=[tmp_path])``.
+# ---------------------------------------------------------------------------
+
+
+def test_check_grep_qv_flags_combined_token(tmp_path):
+    """FAIL — the live #928 trigger shape verbatim: a fenced,
+    backslash-continued elif consuming the combined-token quiet+invert
+    exit status; the error points at the FIRST physical line."""
+    (tmp_path / "SKILL.md").write_text(
+        "Prose above.\n"
+        "```bash\n"
+        "elif grep -qvE '^(tasks/|figures/)' \\\n"
+        "    /tmp/issue-1-own-diff.txt; then\n"
+        "  echo armed\n"
+        "```\n"
+    )
+    errors = check_grep_qv(roots=[tmp_path])
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "SKILL.md:3" in errors[0]
+    assert "#928" in errors[0]
+    assert "#1125" in errors[0]
+
+
+def test_check_grep_qv_flags_separated_tokens(tmp_path):
+    """FAIL — separated tokens (`-q ... -vE`) in a `.sh` logical line
+    combine across the option run exactly as the fused token does."""
+    (tmp_path / "x.sh").write_text("if grep -q -vE '^tasks/' files.txt; then\n  echo y\nfi\n")
+    errors = check_grep_qv(roots=[tmp_path])
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:1" in errors[0]
+
+
+def test_check_grep_qv_flags_vq_token_order(tmp_path):
+    """FAIL — the reversed combined token (`-vq`) is the same rc-consumed
+    quiet+invert combination (flag-set membership, not token spelling)."""
+    (tmp_path / "x.sh").write_text("grep -vq '^tasks/' files.txt\n")
+    errors = check_grep_qv(roots=[tmp_path])
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_grep_qv_flags_long_form(tmp_path):
+    """FAIL — the long forms (`--quiet --invert-match`, and the `--silent`
+    alias) are the same combination spelled out."""
+    (tmp_path / "x.sh").write_text(
+        "grep --quiet --invert-match '^tasks/' files.txt\n"
+        "grep --silent --invert-match '^tasks/' files.txt\n"
+    )
+    errors = check_grep_qv(roots=[tmp_path])
+    assert len(errors) == 2, f"expected exactly two errors, got: {errors}"
+
+
+def test_check_grep_qv_flags_path_pinned_ugrep(tmp_path):
+    """FAIL — a path-pinned `ugrep` is broken BY CONSTRUCTION (its
+    quiet+invert rc diverges wherever the binary lives), so the
+    path-pin exemption is grep-only."""
+    (tmp_path / "x.sh").write_text("/usr/bin/ugrep -qv '^a' f.txt\n")
+    errors = check_grep_qv(roots=[tmp_path])
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "`ugrep`" in errors[0]
+
+
+def test_check_grep_qv_allows_path_pinned(tmp_path):
+    """PASS — `/usr/bin/grep -qvE` is the sanctioned GNU pin (the #928
+    incident's own verified workaround)."""
+    (tmp_path / "x.sh").write_text("/usr/bin/grep -qvE '^tasks/' files.txt\n")
+    assert check_grep_qv(roots=[tmp_path]) == []
+
+
+def test_check_grep_qv_allows_single_flag_and_git_grep(tmp_path):
+    """PASS — plain `-q` without `-v` (match-found rc agrees across
+    implementations: the gate's `grep -qxE` verdict consumers), plain
+    `-vE` without `-q` (the output-test rewrite itself), and `git grep`
+    (git's own engine, not PATH-shadowable)."""
+    (tmp_path / "x.sh").write_text(
+        "grep -qxE 'pass|skip-artifact-only' verdict.txt\n"
+        "if [ -n \"$(grep -vE '^tasks/' files.txt)\" ]; then echo armed; fi\n"
+        "git grep -qv something -- scripts/\n"
+    )
+    assert check_grep_qv(roots=[tmp_path]) == []
+
+
+def test_check_grep_qv_pass_pipeline_split(tmp_path):
+    """PASS — `-v` and `-q` on DIFFERENT pipeline commands never combine:
+    each command word's contiguous option run is evaluated independently."""
+    (tmp_path / "x.sh").write_text("grep -v x f | grep -q y f2\n")
+    assert check_grep_qv(roots=[tmp_path]) == []
+
+
+def test_check_grep_qv_skips_prose_and_comments(tmp_path):
+    """PASS — the pattern in `.md` prose OUTSIDE a fence and on a
+    `#`-comment line INSIDE a fence is documentation, not an executable
+    snippet."""
+    (tmp_path / "SKILL.md").write_text(
+        "Never write grep -qvE in a trigger (prose mention).\n"
+        "```bash\n"
+        "# banned shape: grep -qvE '^tasks/' file\n"
+        "echo ok\n"
+        "```\n"
+    )
+    (tmp_path / "x.sh").write_text("# doc: grep -qvE '^tasks/' file\necho ok\n")
+    assert check_grep_qv(roots=[tmp_path]) == []
+
+
+def test_check_grep_qv_live_tree_passes():
+    """The committed workflow surface must carry no unpinned q+v grep
+    trigger — the regression lock for the #1125 two-site fix (the
+    `test_live_trees_pass` pattern from the judge-pin check). No
+    grandfather allowlist exists by design: the post-fix tree is clean."""
+    errors = check_grep_qv()
+    assert errors == [], (
+        "workflow surface has unpinned quiet+invert grep triggers "
+        "(#928 ugrep fail-open class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_grep_qv_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-grep-qv")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-grep-qv failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -2689,6 +3323,187 @@ def test_workflow_lint_check_upload_as_file_cli_exits_zero():
     )
 
 
+# ─────────────────────────────────────────────────────────────────────
+# Unit tests for ``check_hub_dir_filecount_guard`` (#1190; incident #658:
+# the Hub rejects >10k files per repo directory at COMMIT time with a
+# NON-retriable BadRequestError AFTER all bytes are staged). Direct
+# ``upload_folder(`` call sites in scripts/ must reference the hub.py
+# runtime guard ``assert_hub_dir_filecounts``, carry a
+# ``# HUB_DIR_FILECOUNT_EXEMPT: <reason>`` waiver, or be grandfathered.
+# Each case writes a tiny .py under ``tmp_path`` and calls
+# ``check_hub_dir_filecount_guard(scripts_dir=tmp_path)``.
+# ─────────────────────────────────────────────────────────────────────
+
+
+def test_check_hub_dir_filecount_fail_attribute_call(tmp_path):
+    """(a) FAIL — the #658 incident shape: a direct ``api.upload_folder(``
+    call in a module with no guard reference."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        "    api = HfApi()\n"
+        '    api.upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.py:5" in errors[0]
+    assert "assert_hub_dir_filecounts" in errors[0]
+    assert "HUB_DIR_FILECOUNT_EXEMPT" in errors[0]
+    assert "gotchas.md" in errors[0]
+    assert "transient-retry wrapper" in errors[0]
+
+
+def test_check_hub_dir_filecount_pass_module_references_guard(tmp_path):
+    """(b) PASS — the module references the guard helper (the one-line fix)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "from explore_persona_space.orchestrate.hub import assert_hub_dir_filecounts\n\n"
+        "def push(d):\n"
+        '    assert_hub_dir_filecounts(d, "p")\n'
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (module references the guard), got: {errors}"
+
+
+def test_check_hub_dir_filecount_pass_attribute_guard_reference(tmp_path):
+    """(b') PASS — a ``hub.assert_hub_dir_filecounts(...)`` attribute
+    reference counts as a guard reference too."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n"
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        '    hub.assert_hub_dir_filecounts(d, "p")\n'
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (hub.assert_... reference), got: {errors}"
+
+
+def test_check_hub_dir_filecount_pass_waiver(tmp_path):
+    """(c) PASS — a waiver with a real reason on the preceding line."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        "    # HUB_DIR_FILECOUNT_EXEMPT: tiny fixed 3-file tree, cap unreachable\n"
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (waived), got: {errors}"
+
+
+def test_check_hub_dir_filecount_fail_waiver_reason_too_short(tmp_path):
+    """(d) FAIL — a waiver whose reason is under the 10-char floor is not a
+    waiver (the reason is a justification, not a token bypass)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        "    # HUB_DIR_FILECOUNT_EXEMPT: ok\n"
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error (short reason), got: {errors}"
+
+
+def test_check_hub_dir_filecount_pass_injectable_allowlist(tmp_path):
+    """(e) PASS — the injectable ``legacy_allowlist=`` grandfathers a file by
+    its walk-root-parent-relative posix path (the production path shape is
+    ``scripts/<name>.py``)."""
+    (tmp_path / "legacy.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    rel = f"{tmp_path.name}/legacy.py"
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path, legacy_allowlist=frozenset({rel}))
+    assert errors == [], f"expected PASS (allowlisted {rel}), got: {errors}"
+    # Sanity: without the allowlist the same file IS flagged (non-vacuous).
+    errors_unlisted = check_hub_dir_filecount_guard(
+        scripts_dir=tmp_path, legacy_allowlist=frozenset()
+    )
+    assert len(errors_unlisted) == 1, errors_unlisted
+
+
+def test_check_hub_dir_filecount_fail_bare_name_hf_import(tmp_path):
+    """(f) FAIL — the ast.Name arm: a ``from huggingface_hub import
+    upload_folder`` caller (the issue667_save_maps.py / issue825 shape)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_folder\n\n"
+        "def push(d):\n"
+        '    upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error (bare-name arm), got: {errors}"
+
+
+def test_check_hub_dir_filecount_pass_local_def_carveout(tmp_path):
+    """(g) NOT flagged — a module defining its own ``def upload_folder``
+    calls the LOCAL wrapper, not the huggingface_hub function (the
+    scripts/issue623_upload.py shape; the carve-out, not the allowlist, is
+    its pass condition)."""
+    (tmp_path / "x.py").write_text(
+        "def upload_folder(folder_path, repo_id, path_in_repo):\n"
+        "    return None\n\n"
+        "def push(d):\n"
+        '    upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (local def upload_folder carve-out), got: {errors}"
+
+
+def test_check_hub_dir_filecount_pass_exact_name_only(tmp_path):
+    """PASS — exact-name match only: differently-named wrappers
+    (``upload_folder_verified`` / ``_upload_folder_filtered``) do NOT match."""
+    (tmp_path / "x.py").write_text(
+        "from issue1073_common import upload_folder_verified\n"
+        "from explore_persona_space.orchestrate.hub import _upload_folder_filtered\n\n"
+        "def push(d, api):\n"
+        '    upload_folder_verified(api, folder_path=str(d), repo_id="r")\n'
+        '    api.upload_folder_scoped_verify(folder_path=str(d), repo_id="r")\n'
+        '    _upload_folder_filtered(d, "r", "dataset", "p", ["*.json"], [])\n'
+    )
+    errors = check_hub_dir_filecount_guard(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (no exact-name upload_folder call), got: {errors}"
+
+
+def test_check_hub_dir_filecount_bundled_in_no_flags():
+    """(h) NON-VACUOUS no-flags bundling pin: the check must be dispatched by
+    the BARE ``workflow_lint.py`` run. Source-inspection assert on the
+    dispatch branch + the no_flags tuple membership (exit-0-on-a-clean-tree
+    is vacuous — it passes whether or not the check is dispatched)."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_hub_dir_filecount or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_hub_dir_filecount_guard\(\)\)",
+        src,
+    ), "check_hub_dir_filecount_guard is not dispatched on the no-flags branch"
+    assert "or args.check_hub_dir_filecount" in src, (
+        "--check-hub-dir-filecount is missing from the no_flags detection tuple"
+    )
+
+
+def test_check_hub_dir_filecount_live_tree_passes():
+    """The committed scripts/**/*.py tree must pass — pins the grandfather
+    allowlist's completeness so the no-flags default run (pre-commit /
+    Step 9c) cannot break on a stale allowlist. A NEW direct upload_folder
+    caller must call assert_hub_dir_filecounts or carry a
+    HUB_DIR_FILECOUNT_EXEMPT waiver — never extend the allowlist."""
+    errors = check_hub_dir_filecount_guard()
+    assert errors == [], (
+        "scripts/**/*.py has direct upload_folder(...) call sites missing the "
+        "hub dir-filecount guard (#658/#1190 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_hub_dir_filecount_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-hub-dir-filecount")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-hub-dir-filecount failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
 # ── --check-batch-judge-client (task #658/#663 post-mortem) ───────────────────
 # Each test writes a fixture into ``tmp_path`` and calls
 # ``check_batch_judge_client(scripts_dir=tmp_path, src_dir=<empty>)``. The
@@ -2833,6 +3648,219 @@ def test_workflow_lint_check_batch_judge_client_cli_exits_zero():
     )
 
 
+# ── --check-hub-verify-retry (task #920/#997/#1202) ──────────────────────────
+# Each test writes a fixture into ``tmp_path`` and calls
+# ``check_hub_verify_retry(scripts_dir=tmp_path)`` (scripts/-only scan; no
+# src_dir arg — #997 owns the library path).
+
+
+def test_check_hub_verify_retry_fail_bare_attr_call(tmp_path):
+    """The #920 offender shape: a bare api.list_repo_files( verify leg in a
+    non-grandfathered script. The error must route authors at the retried
+    hub helpers (verify_repo_paths_uploaded et al.)."""
+    (tmp_path / "issue9999_verify.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def verify(repo):\n"
+        "    return api.list_repo_files(repo, repo_type='dataset')\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert "issue9999_verify.py" in errors[0]
+    assert ".list_repo_files(" in errors[0]
+    assert "verify_repo_paths_uploaded" in errors[0]
+    assert "list_hf_files_under_path" in errors[0]
+    assert "list_repo_files_complete" in errors[0]
+    assert "HUB_VERIFY_RETRY_EXEMPT" in errors[0]
+    assert "#920" in errors[0]
+
+
+def test_check_hub_verify_retry_fail_bare_file_exists(tmp_path):
+    """A bare api.file_exists( single-path probe is the same un-retried
+    class and is flagged."""
+    (tmp_path / "issue9999_probe.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def probe(repo, path):\n"
+        "    return api.file_exists(repo, path, repo_type='dataset')\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert ".file_exists(" in errors[0]
+
+
+def test_check_hub_verify_retry_fail_imported_name_form(tmp_path):
+    """The ``from huggingface_hub import <target>`` bare-Name form is
+    flagged — both the plain import and the aliased ``as lrt`` form (the
+    asname-aware bound-name map; an alias cannot evade the Name leg)."""
+    (tmp_path / "issue9999_name_form.py").write_text(
+        "from huggingface_hub import list_repo_files\n"
+        "from huggingface_hub import list_repo_tree as lrt\n"
+        "def go(repo):\n"
+        "    files = list_repo_files(repo)\n"
+        "    tree = lrt(repo, path_in_repo='p')\n"
+        "    return files, tree\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert len(errors) == 2, errors
+    assert any("list_repo_files(" in e for e in errors), errors
+    # The aliased hit reports the CANONICAL symbol, not the alias.
+    assert any("list_repo_tree(" in e for e in errors), errors
+
+
+def test_check_hub_verify_retry_fail_bare_list_repo_tree(tmp_path):
+    """list_repo_tree( is the SAME un-retried pagination class (gotchas.md
+    names it as the recommended large-repo listing) and is flagged."""
+    (tmp_path / "issue9999_tree.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def scan(repo):\n"
+        "    return list(api.list_repo_tree(repo, path_in_repo='x', recursive=True))\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert ".list_repo_tree(" in errors[0]
+
+
+def test_check_hub_verify_retry_pass_local_name_without_hf_import(tmp_path):
+    """A script-local ``def file_exists`` helper (no huggingface_hub import
+    of the symbol) is NOT flagged — the Name leg is gated on the import."""
+    (tmp_path / "local_helper.py").write_text(
+        "import os\n"
+        "def file_exists(p):\n"
+        "    return os.path.exists(p)\n"
+        "def go(p):\n"
+        "    return file_exists(p)\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_hub_verify_retry_pass_hub_helper_usage(tmp_path):
+    """Compliant usage of the retried orchestrate.hub helpers is
+    structurally invisible to the detector."""
+    (tmp_path / "compliant.py").write_text(
+        "from explore_persona_space.orchestrate.hub import (\n"
+        "    list_hf_files_under_path,\n"
+        "    verify_repo_paths_uploaded,\n"
+        ")\n"
+        "def verify(api, repo, paths):\n"
+        "    verify_repo_paths_uploaded(api, repo, paths, repo_type='dataset')\n"
+        "    return list_hf_files_under_path(api, repo, 'prefix/')\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_hub_verify_retry_pass_comment_and_docstring_mentions(tmp_path):
+    """Prose mentions in comments/docstrings can never match — AST has no
+    comment nodes and a string mention is an ast.Constant."""
+    (tmp_path / "prose_only.py").write_text(
+        '"""Mentions list_repo_files( and .file_exists( in prose only."""\n'
+        "# a list_repo_tree( mention in a comment\n"
+        "X = 'list_repo_files(...) as a string literal'\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_hub_verify_retry_pass_waiver_previous_line(tmp_path):
+    """A '# HUB_VERIFY_RETRY_EXEMPT: <reason>' waiver on the previous
+    non-blank line suppresses the flag."""
+    (tmp_path / "waived.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def go(repo):\n"
+        "    # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient by the caller\n"
+        "    return api.list_repo_files(repo)\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_hub_verify_retry_pass_waiver_same_line(tmp_path):
+    """The waiver also binds on the call's OWN line (the same-line branch
+    of the waiver helper; the previous-line branch is covered above)."""
+    (tmp_path / "waived_inline.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def go(repo):\n"
+        "    return api.list_repo_files(repo)  "
+        "# HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient here\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_hub_verify_retry_fail_waiver_reason_too_short(tmp_path):
+    """A waiver with a < 10-char reason does not suppress the flag."""
+    (tmp_path / "waived_short.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def go(repo):\n"
+        "    # HUB_VERIFY_RETRY_EXEMPT: short\n"
+        "    return api.list_repo_files(repo)\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+
+
+def test_check_hub_verify_retry_allowlist_is_file_granular(tmp_path):
+    """The grandfather allowlist exempts by exact rel path (whole file), and
+    a NON-allowlisted offender at the same dir IS flagged — the exemption is
+    per-path, not blanket-scripts/. verify_uploads.py is the known
+    workflow-helper member (migration onto the hub helpers is a named
+    follow-up)."""
+    assert "scripts/verify_uploads.py" in HUB_VERIFY_LEGACY_ALLOWLIST
+    sd = tmp_path / "scripts"
+    sd.mkdir()
+    (sd / "issue9999_new_verify.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def go(repo):\n"
+        "    return api.list_repo_files(repo)\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=sd)
+    assert len(errors) == 1, errors
+
+
+def test_check_hub_verify_retry_repo_tree_is_clean():
+    """The committed scripts/**/*.py tree must carry no unwaived bare Hub
+    verify call outside HUB_VERIFY_LEGACY_ALLOWLIST — locks the allowlist to
+    the land-time tree so the no-flags default run cannot break, and makes
+    every NEW bare caller a reviewed diff (#920/#997/#1202)."""
+    errors = check_hub_verify_retry()
+    assert errors == [], (
+        "scripts/**/*.py has a bare list_repo_files( / list_repo_tree( / "
+        ".file_exists( Hub call outside the grandfathered set (#920 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_hub_verify_retry_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-hub-verify-retry")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-hub-verify-retry failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_check_hub_verify_retry_bundled_in_no_flags():
+    """NON-VACUOUS no-flags bundling pin: the check must be dispatched by
+    the BARE ``workflow_lint.py`` run. Source-inspection assert on the
+    dispatch branch + the no_flags tuple membership (exit-0-on-a-clean-tree
+    is vacuous — it passes whether or not the check is dispatched)."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_hub_verify_retry or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_hub_verify_retry\(\)\)",
+        src,
+    ), "check_hub_verify_retry is not dispatched on the no-flags branch"
+    assert "or args.check_hub_verify_retry" in src, (
+        "--check-hub-verify-retry is missing from the no_flags detection tuple"
+    )
+
+
 # ─── --check-no-workflow-improver-spawn (#678 S2) ──────────────────────────
 
 
@@ -2860,6 +3888,34 @@ def test_check_no_workflow_improver_spawn_flags_a_stray_spawn(tmp_path):
     errors = check_no_workflow_improver_spawn(repo_root=tmp_path)
     assert len(errors) == 1, errors
     assert "stale Agent" in errors[0]
+
+
+def test_check_no_workflow_improver_spawn_hermetic_under_cache_nested_root(tmp_path):
+    """A tmp repo rooted inside a directory literally named .claude/cache/ is
+    still scanned — the cache/agent-memory exclusion matches relative to the
+    repo root, not the absolute path (#1174: a repo-nested TMPDIR wholesale-
+    excluded the whole tmp tree). Files genuinely under the tmp repo's OWN
+    .claude/cache/ and .claude/agent-memory/ stay excluded."""
+    outer = tmp_path / ".claude" / "cache" / "tmprepo"
+    rules = outer / ".claude" / "rules"
+    rules.mkdir(parents=True)
+    (rules / "stray.md").write_text(
+        'Agent(subagent_type="workflow-improver", run_in_background=true)\n'
+    )
+    cache = outer / ".claude" / "cache"
+    cache.mkdir(parents=True)
+    (cache / "planted.md").write_text(
+        'Agent(subagent_type="workflow-improver", run_in_background=true)\n'
+    )
+    agent_mem = outer / ".claude" / "agent-memory"
+    agent_mem.mkdir(parents=True)
+    (agent_mem / "planted_mem.md").write_text(
+        'Agent(subagent_type="workflow-improver", run_in_background=true)\n'
+    )
+    errors = check_no_workflow_improver_spawn(repo_root=outer)
+    assert len(errors) == 1, errors
+    assert "stale Agent" in errors[0]
+    assert "stray.md" in errors[0]
 
 
 def test_check_no_workflow_improver_spawn_excludes_frozen_agent_file(tmp_path):
@@ -3045,19 +4101,20 @@ def _write_lessons_fixture(rules_dir, rule_names, indexed_names):
     rules_dir.mkdir(parents=True, exist_ok=True)
     for name in rule_names:
         (rules_dir / f"{name}.md").write_text(f"# {name}\n", encoding="utf-8")
-    rows = "\n".join(f"- **[{n}]({n}.md)** — fires when: x." for n in indexed_names)
+    rows = "\n".join(f"- {n}.md — x." for n in indexed_names)
     (rules_dir / "LESSONS.md").write_text(f"# LESSONS\n\n## Rules\n\n{rows}\n", encoding="utf-8")
 
 
 def _write_lessons_at_exact_bytes(rules_dir, total_bytes):
     """Write a valid one-rule LESSONS.md padded to EXACTLY `total_bytes` bytes.
 
-    Pads with ASCII 'x' prose after the row; asserts the realized byte count
+    Pads with ASCII 'x' prose after the row (the pad never matches the row
+    regex, so per-row caps are unaffected); asserts the realized byte count
     (the em-dash in the row is multibyte, so bytes != chars).
     """
     rules_dir.mkdir(parents=True, exist_ok=True)
     (rules_dir / "alpha.md").write_text("# alpha\n", encoding="utf-8")
-    base = "# LESSONS\n\n## Rules\n\n- **[alpha](alpha.md)** — fires when: x.\n\n"
+    base = "# LESSONS\n\n## Rules\n\n- alpha.md — x.\n\n"
     pad = total_bytes - len(base.encode("utf-8")) - 1  # -1: trailing newline
     assert pad > 0, "total_bytes too small for the fixture skeleton"
     content = base + "x" * pad + "\n"
@@ -3065,11 +4122,25 @@ def _write_lessons_at_exact_bytes(rules_dir, total_bytes):
     (rules_dir / "LESSONS.md").write_bytes(content.encode("utf-8"))
 
 
+def _write_lessons_row(rules_dir, name, row_bytes):
+    """Write one rule file + a LESSONS.md whose single row for `name` is
+    EXACTLY `row_bytes` bytes (ASCII trigger padding; em-dash is 3 bytes)."""
+    rules_dir.mkdir(parents=True, exist_ok=True)
+    (rules_dir / f"{name}.md").write_text(f"# {name}\n", encoding="utf-8")
+    prefix = f"- {name}.md — "
+    pad = row_bytes - len(prefix.encode("utf-8"))
+    assert pad > 0, "row_bytes too small for the row skeleton"
+    row = prefix + "x" * pad
+    assert len(row.encode("utf-8")) == row_bytes
+    (rules_dir / "LESSONS.md").write_text(f"# LESSONS\n\n## Rules\n\n{row}\n", encoding="utf-8")
+
+
 def test_check_lessons_index_fails_on_missing_row(tmp_path):
     rules = tmp_path / ".claude" / "rules"
-    # rule 'gamma' exists but is NOT indexed -> FAIL
+    # rule 'gamma' exists but is NOT indexed -> FAIL (ratchet mode disabled:
+    # the tiny synthetic fixture isolates the index-parity failure mode).
     _write_lessons_fixture(rules, ["alpha", "beta", "gamma"], ["alpha", "beta"])
-    errs = check_lessons_index(repo_root=tmp_path)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
     assert errs, "expected a FAIL for the un-indexed rule 'gamma'"
     assert any("gamma" in e for e in errs)
 
@@ -3078,14 +4149,14 @@ def test_check_lessons_index_fails_on_stale_row(tmp_path):
     rules = tmp_path / ".claude" / "rules"
     # 'delta' is indexed but has no rule file -> FAIL
     _write_lessons_fixture(rules, ["alpha", "beta"], ["alpha", "beta", "delta"])
-    errs = check_lessons_index(repo_root=tmp_path)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
     assert errs and any("delta" in e for e in errs)
 
 
 def test_check_lessons_index_passes_on_match(tmp_path):
     rules = tmp_path / ".claude" / "rules"
     _write_lessons_fixture(rules, ["alpha", "beta"], ["alpha", "beta"])
-    assert check_lessons_index(repo_root=tmp_path) == []
+    assert check_lessons_index(repo_root=tmp_path, ratchet_bytes=None) == []
 
 
 def test_check_lessons_index_passes_on_live_repo():
@@ -3095,19 +4166,21 @@ def test_check_lessons_index_passes_on_live_repo():
 
 def test_check_lessons_index_fails_when_index_exceeds_cap(tmp_path):
     # Leanness cap is mechanical — an index over _LESSONS_MAX_BYTES must FAIL.
+    # ratchet mode disabled so the fixture isolates the CAP failure mode
+    # (the ratchet's own modes have their own tests below).
     from workflow_lint import _LESSONS_MAX_BYTES
 
     rules = tmp_path / ".claude" / "rules"
     rules.mkdir(parents=True)
     (rules / "alpha.md").write_text("# alpha\n", encoding="utf-8")
-    rows = "- **[alpha](alpha.md)** — fires when: x.\n"
+    rows = "- alpha.md — x.\n"
     # Pad with prose so the index breaches the byte cap regardless of its value.
     padding = "x" * (_LESSONS_MAX_BYTES + 100)
     (rules / "LESSONS.md").write_text(
         f"# LESSONS\n\n## Rules\n\n{rows}\n\n{padding}\n",
         encoding="utf-8",
     )
-    errs = check_lessons_index(repo_root=tmp_path)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
     assert errs and any("leanness cap" in e for e in errs)
 
 
@@ -3118,7 +4191,7 @@ def test_check_lessons_index_fails_on_duplicate_row(tmp_path):
     # FAIL because the contract is exactly one matching row per rule (#739 r2).
     rules = tmp_path / ".claude" / "rules"
     _write_lessons_fixture(rules, ["alpha"], ["alpha", "alpha"])
-    errs = check_lessons_index(repo_root=tmp_path)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
     assert errs, "expected a FAIL for the duplicate 'alpha' index row"
     assert any(("duplicate" in e or "exactly one" in e) and "alpha" in e for e in errs)
 
@@ -3127,6 +4200,8 @@ def test_check_lessons_index_warns_in_warn_band(tmp_path):
     # The #992 early-warning band: an index strictly between _LESSONS_WARN_BYTES
     # and _LESSONS_MAX_BYTES emits one advisory WARN (warn_sink / stderr),
     # never a FAIL; the over-cap FAIL branch takes precedence over the WARN.
+    # ratchet mode disabled throughout: the band fixtures sit far above the
+    # ratchet by design and must isolate the WARN-band mode.
     from workflow_lint import _LESSONS_MAX_BYTES, _LESSONS_WARN_BYTES
 
     # Pin the band constant itself (#992 plan latitude: 7000-7400, below cap).
@@ -3137,27 +4212,187 @@ def test_check_lessons_index_warns_in_warn_band(tmp_path):
     # (1) Sub-warn-band fixture -> no FAIL, empty sink.
     sink: list[str] = []
     _write_lessons_fixture(rules, ["alpha"], ["alpha"])
-    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink) == []
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink, ratchet_bytes=None) == []
     assert sink == []
 
     # (2) EXACTLY at the threshold -> still no warn (the band is strictly-greater).
     sink = []
     _write_lessons_at_exact_bytes(rules, _LESSONS_WARN_BYTES)
-    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink) == []
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink, ratchet_bytes=None) == []
     assert sink == []
 
     # (3) One byte over the threshold -> no FAIL, exactly one warn-band message.
     sink = []
     _write_lessons_at_exact_bytes(rules, _LESSONS_WARN_BYTES + 1)
-    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink) == []
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink, ratchet_bytes=None) == []
     assert len(sink) == 1 and "warn band" in sink[0]
 
     # (4) Over the cap -> the FAIL branch fires; no warn message rides along.
     sink = []
     _write_lessons_at_exact_bytes(rules, _LESSONS_MAX_BYTES + 100)
-    errs = check_lessons_index(repo_root=tmp_path, warn_sink=sink)
+    errs = check_lessons_index(repo_root=tmp_path, warn_sink=sink, ratchet_bytes=None)
     assert errs and any("leanness cap" in e for e in errs)
     assert sink == []
+
+
+def test_check_lessons_index_fails_on_over_ratchet(tmp_path):
+    # Durability pin (#1269): growing the index past _LESSONS_RATCHET_BYTES
+    # FAILs under the PRODUCTION defaults (no explicit kwarg — a default
+    # flipped to None would turn this test RED via the constants-sane pin,
+    # and stripping the ratchet code turns it RED here).
+    from workflow_lint import _LESSONS_RATCHET_BYTES
+
+    rules = tmp_path / ".claude" / "rules"
+    _write_lessons_at_exact_bytes(rules, _LESSONS_RATCHET_BYTES + 1)
+    errs = check_lessons_index(repo_root=tmp_path)
+    assert errs and any("_LESSONS_RATCHET_BYTES" in e and "grew past" in e for e in errs)
+    # The ratchet FAIL is textually DISTINCT from the 8000-cap budget breach:
+    # a session seeing RED can tell one-line-bump from a real budget decision.
+    assert not any("leanness cap" in e for e in errs)
+
+
+def test_check_lessons_index_passes_at_exact_ratchet(tmp_path):
+    # Strictly-greater boundary: a file at EXACTLY the ratchet passes.
+    from workflow_lint import _LESSONS_RATCHET_BYTES
+
+    rules = tmp_path / ".claude" / "rules"
+    _write_lessons_at_exact_bytes(rules, _LESSONS_RATCHET_BYTES)
+    assert check_lessons_index(repo_root=tmp_path) == []
+
+
+def test_check_lessons_index_fails_on_excess_ratchet_headroom(tmp_path):
+    # Banked slack: a ratchet sitting more than the headroom bound above the
+    # live size FAILs (stale ratchet after a trim defeats the mechanism);
+    # a file at EXACTLY ratchet - headroom passes (strictly-greater).
+    from workflow_lint import _LESSONS_RATCHET_BYTES, _LESSONS_RATCHET_MAX_HEADROOM_BYTES
+
+    rules = tmp_path / ".claude" / "rules"
+    _write_lessons_at_exact_bytes(
+        rules, _LESSONS_RATCHET_BYTES - _LESSONS_RATCHET_MAX_HEADROOM_BYTES - 1
+    )
+    errs = check_lessons_index(repo_root=tmp_path)
+    assert errs and any("banked slack" in e and "ratchet DOWN" in e for e in errs)
+
+    _write_lessons_at_exact_bytes(
+        rules, _LESSONS_RATCHET_BYTES - _LESSONS_RATCHET_MAX_HEADROOM_BYTES
+    )
+    assert check_lessons_index(repo_root=tmp_path) == []
+
+
+def test_check_lessons_index_fails_on_ratchet_above_cap(tmp_path):
+    # Config error: the ratchet can never authorize crossing the leanness
+    # cap. Fixture sized inside the (over-cap ratchet)'s hug window so ONLY
+    # the config-error FAIL fires; the warn-band WARN is swallowed by sink.
+    from workflow_lint import _LESSONS_MAX_BYTES
+
+    rules = tmp_path / ".claude" / "rules"
+    sink: list[str] = []
+    _write_lessons_at_exact_bytes(rules, _LESSONS_MAX_BYTES - 300)
+    errs = check_lessons_index(
+        repo_root=tmp_path, warn_sink=sink, ratchet_bytes=_LESSONS_MAX_BYTES + 1
+    )
+    assert errs == [e for e in errs if "config error" in e] and errs, errs
+
+
+def test_check_lessons_index_fails_on_row_over_cap(tmp_path):
+    # Per-row cap (#1269): one bloated row FAILs, NAMED, at addition time.
+    from workflow_lint import _LESSONS_ROW_MAX_BYTES
+
+    rules = tmp_path / ".claude" / "rules"
+    _write_lessons_row(rules, "alpha", _LESSONS_ROW_MAX_BYTES + 1)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    assert errs and any("'alpha'" in e and "per-row cap" in e for e in errs)
+
+    # Strictly-greater boundary: a row at EXACTLY the cap passes.
+    _write_lessons_row(rules, "alpha", _LESSONS_ROW_MAX_BYTES)
+    assert check_lessons_index(repo_root=tmp_path, ratchet_bytes=None) == []
+
+
+def test_check_lessons_index_grandfather_row_over_its_cap_fails(tmp_path, monkeypatch):
+    # A grandfathered row over ITS cap FAILs, naming BOTH remedies (trim the
+    # row vs bump-with-hug the dict entry). Synthetic grandfather entry so
+    # the test is decoupled from the live dict's churn.
+    import workflow_lint
+
+    monkeypatch.setattr(workflow_lint, "_LESSONS_ROW_GRANDFATHER_MAX_BYTES", {"alpha": 460})
+    rules = tmp_path / ".claude" / "rules"
+    _write_lessons_row(rules, "alpha", 461)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    assert errs and any(
+        "grandfather cap" in e
+        and "trim the row" in e
+        and "_LESSONS_ROW_GRANDFATHER_MAX_BYTES['alpha']" in e
+        for e in errs
+    )
+
+    # Strictly-greater + exact-hug boundary: a row at EXACTLY the cap passes
+    # (cap - actual == 0 <= headroom bound).
+    _write_lessons_row(rules, "alpha", 460)
+    assert check_lessons_index(repo_root=tmp_path, ratchet_bytes=None) == []
+
+    # Exact hug bound passes: cap - actual == the headroom bound exactly.
+    from workflow_lint import _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES
+
+    _write_lessons_row(rules, "alpha", 460 - _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES)
+    assert check_lessons_index(repo_root=tmp_path, ratchet_bytes=None) == []
+
+
+def test_check_lessons_index_grandfather_hug_and_obsolete_entry_fail(tmp_path, monkeypatch):
+    # Grandfather hygiene (#986 pattern): a cap more than the headroom bound
+    # above the live row FAILs (loose/stale cap), and an entry whose row
+    # dropped to <= the general row cap FAILs as obsolete (remove it).
+    import workflow_lint
+    from workflow_lint import (
+        _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES,
+        _LESSONS_ROW_MAX_BYTES,
+    )
+
+    monkeypatch.setattr(workflow_lint, "_LESSONS_ROW_GRANDFATHER_MAX_BYTES", {"alpha": 460})
+    rules = tmp_path / ".claude" / "rules"
+
+    # Hug FAIL: one byte past the exact-hug bound (row still over the
+    # general cap, so the obsolete branch does not fire).
+    _write_lessons_row(rules, "alpha", 460 - _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES - 1)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    assert errs and any("max headroom" in e and "lower the cap" in e for e in errs)
+
+    # Obsolete FAIL: the row now fits the general cap — remove the entry.
+    _write_lessons_row(rules, "alpha", _LESSONS_ROW_MAX_BYTES)
+    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    assert errs and any("no longer needs grandfathering" in e for e in errs)
+
+
+def test_lessons_ratchet_constants_sane():
+    # Live-tree config coherence (#1269): the constants must describe the
+    # real LESSONS.md, and the production defaults must be ARMED.
+    import inspect
+
+    import workflow_lint as wl
+
+    assert wl._LESSONS_RATCHET_BYTES <= wl._LESSONS_MAX_BYTES
+    assert wl._LESSONS_WARN_BYTES < wl._LESSONS_MAX_BYTES
+    # Defaults armed: a default flipped to None would disarm the ratchet /
+    # row caps fleet-wide while every explicit-kwarg test stayed green.
+    params = inspect.signature(wl.check_lessons_index).parameters
+    assert params["ratchet_bytes"].default == wl._LESSONS_RATCHET_BYTES
+    assert params["row_max_bytes"].default == wl._LESSONS_ROW_MAX_BYTES
+    # Live-tree hug: the ratchet must track the real file (banked slack
+    # defeats the mechanism).
+    live = (wl._REPO_ROOT / ".claude" / "rules" / "LESSONS.md").read_bytes()
+    assert 0 <= wl._LESSONS_RATCHET_BYTES - len(live) <= wl._LESSONS_RATCHET_MAX_HEADROOM_BYTES
+    # Grandfather entries: each cap sits above the general row cap and hugs
+    # its LIVE row (the synthetic-fixture tests cover the failure modes).
+    rows = {m.group("name"): m.group(0) for m in wl._LESSONS_ROW_RE.finditer(live.decode("utf-8"))}
+    for name, cap in wl._LESSONS_ROW_GRANDFATHER_MAX_BYTES.items():
+        assert cap > wl._LESSONS_ROW_MAX_BYTES, name
+        assert name in rows, f"grandfather entry '{name}' has no live index row"
+        row_bytes = len(rows[name].encode("utf-8"))
+        assert row_bytes <= cap, (name, row_bytes, cap)
+        assert cap - row_bytes <= wl._LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES, (
+            name,
+            row_bytes,
+            cap,
+        )
 
 
 def test_compute_shape_review_lens_live_tree_passes() -> None:
@@ -3884,6 +5119,240 @@ def test_vm_thread_cap_guidance_bundled_in_no_flags(tmp_path, capsys, monkeypatc
     )
 
 
+# --- #1154 marker-recipe snippet-pin tests -----------------------------------
+
+# Minimal conforming fixture tree: the two pinned doc files carry one verbatim
+# snippet per registered pin (the bandstop snippet deliberately WRAPS across a
+# line break — the reflow proof for the whitespace-normalized matching — and
+# both docs carry the bare-`※` 63680 decoy that must never be captured); the
+# four src files carry the constant lines from the live tree, including the
+# `marker_tail_tokens` decoy field the sft pattern must not match.
+_MARKER_RECIPE_FIXTURE_FILES: dict[str, str] = {
+    "docs/marker_training_recipe.md": (
+        "# marker training recipe (fixture)\n"
+        "` ※` (Qwen-2.5-7B token id 83399). DV = on-policy log P(marker).\n"
+        "| Marker | ` ※` id 83399 (assert encoding) | single rare token |\n"
+        "Constraint: marker-only loss (`MarkerOnlyDataCollator(tail_tokens=0)`).\n"
+        "| Loss mask | marker-only (`MarkerOnlyDataCollator(tail_tokens=0)`) | keeps R |\n"
+        "7. Run a pre-sweep anchor smoke. Confirm source ΔG ∈ [5, 12]\n"
+        "   nat AND bystanders below the argmax ceiling.\n"
+        "| #906 | completed | render-exact gate (4/200 rows dropped, reject floor 0.10) |\n"
+        "Avoid bare `※` id 63680 (wrong token).\n"
+    ),
+    ".claude/rules/marker-training-recipe.md": (
+        "# marker-training-recipe rule (fixture)\n"
+        "Loss via `MarkerOnlyDataCollator(tail_tokens=0)`, response frozen.\n"
+        "- Fail-loud above a rejection-fraction floor (0.10).\n"
+        "> Stop when source log P over base ∈ [5, 12] nat (gate on bystanders).\n"
+        '` ※` id 83399 only (assert `encode(" ※") == [83399]`). Avoid bare `※` id 63680.\n'
+    ),
+    "src/explore_persona_space/artifacts/recipe.py": "MARKER_TOKEN_ID = 83399\n",
+    "src/explore_persona_space/train/sft.py": (
+        "class MarkerOnlyDataCollator:\n"
+        "    def __init__(\n"
+        "        self,\n"
+        "        tail_tokens: int = 0,\n"
+        "    ) -> None:\n"
+        "        pass\n"
+        "\n"
+        "\n"
+        "class TrainLoraConfig:\n"
+        "    marker_tail_tokens: int = 0\n"
+    ),
+    "src/explore_persona_space/artifacts/organisms.py": "MIX_MAX_REJECT_FRAC = 0.10\n",
+    "src/explore_persona_space/eval/callbacks.py": (
+        "class MarkerBandStopCallback:\n"
+        "    def __init__(\n"
+        "        self,\n"
+        "        low_nats: float = 5.0,\n"
+        "        high_nats: float = 12.0,\n"
+        "    ) -> None:\n"
+        "        pass\n"
+    ),
+}
+
+
+def _write_marker_recipe_fixture(
+    root: Path,
+    overrides: dict[str, str] | None = None,
+    omit: tuple[str, ...] = (),
+) -> None:
+    """Write the #1154 pinned doc + src files at the registry's exact rel-paths
+    under ``root``. ``overrides`` swap in mutated file contents (seeded drift);
+    rel-paths in ``omit`` are not written at all (the missing-file case)."""
+    contents = dict(_MARKER_RECIPE_FIXTURE_FILES)
+    contents.update(overrides or {})
+    for rel, text in contents.items():
+        if rel in omit:
+            continue
+        p = root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+
+
+def test_marker_recipe_snippets_live_tree_passes() -> None:
+    """The real tree's pinned doc snippets agree with the code constants
+    (launch invariant: 0 false positives; the live drift gate going forward)."""
+    assert check_marker_recipe_snippets() == []
+
+
+def test_marker_recipe_snippets_fixture_tree_passes(tmp_path) -> None:
+    """The conforming fixture tree passes — pins the fixture itself so every
+    mutation test below fails for its seeded drift, not fixture rot."""
+    _write_marker_recipe_fixture(tmp_path)
+    assert check_marker_recipe_snippets(repo_root=tmp_path) == []
+
+
+def test_marker_recipe_snippets_flags_code_drift(tmp_path) -> None:
+    """Mutating a bound code constant (MARKER_TOKEN_ID 83399 -> 99999) FAILs
+    BOTH token-id pins, each naming the pin label and both values."""
+    _write_marker_recipe_fixture(
+        tmp_path,
+        overrides={"src/explore_persona_space/artifacts/recipe.py": "MARKER_TOKEN_ID = 99999\n"},
+    )
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 2, errors
+    for label in ("marker-token-id", "rule-marker-token-id"):
+        matching = [e for e in errors if f"pin '{label}'" in e]
+        assert len(matching) == 1, errors
+        assert "'83399'" in matching[0] and "'99999'" in matching[0], errors
+
+
+def test_marker_recipe_snippets_flags_doc_drift(tmp_path) -> None:
+    """The doc citing a stale value (reject floor 0.12 vs code 0.10) FAILs with
+    exactly one error whose subject is the doc and which names both values."""
+    drifted = _MARKER_RECIPE_FIXTURE_FILES["docs/marker_training_recipe.md"].replace(
+        "reject floor 0.10", "reject floor 0.12"
+    )
+    _write_marker_recipe_fixture(tmp_path, overrides={"docs/marker_training_recipe.md": drifted})
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    subject = errors[0].split(": ", 1)[0]
+    assert subject.endswith("docs/marker_training_recipe.md"), errors
+    assert "'0.12'" in errors[0] and "'0.10'" in errors[0], errors
+
+
+def test_marker_recipe_snippets_flags_missing_doc_snippet(tmp_path) -> None:
+    """Rephrasing a pinned doc sentence away from its pattern FAILs loud
+    ('doc snippet not found' — the rot alarm), naming the pin."""
+    rephrased = _MARKER_RECIPE_FIXTURE_FILES["docs/marker_training_recipe.md"].replace(
+        "reject floor 0.10", "rejection cutoff 0.10"
+    )
+    _write_marker_recipe_fixture(tmp_path, overrides={"docs/marker_training_recipe.md": rephrased})
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "doc snippet not found" in errors[0], errors
+    assert "pin 'mix-reject-floor'" in errors[0], errors
+
+
+def test_marker_recipe_snippets_flags_missing_code_symbol(tmp_path) -> None:
+    """Removing a bound symbol from its source file FAILs every pin citing it
+    ('code constant ... not found' — the rename/move alarm)."""
+    _write_marker_recipe_fixture(
+        tmp_path,
+        overrides={"src/explore_persona_space/artifacts/organisms.py": "OTHER_CONST = 1\n"},
+    )
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 2, errors  # the docs pin + the rule pin both cite organisms.py
+    for e in errors:
+        assert "not found" in e and "MIX_MAX_REJECT_FRAC" in e, errors
+
+
+def test_marker_recipe_snippets_flags_ambiguous_src(tmp_path) -> None:
+    """A second, conflicting `tail_tokens: int = 5,` signature in sft.py makes
+    the collator pins ambiguous -> FAIL (the doc citation genuinely became
+    ambiguous; the registry pattern must be tightened)."""
+    ambiguous = _MARKER_RECIPE_FIXTURE_FILES["src/explore_persona_space/train/sft.py"] + (
+        "\n"
+        "\n"
+        "class OtherCollator:\n"
+        "    def __init__(\n"
+        "        self,\n"
+        "        tail_tokens: int = 5,\n"
+        "    ) -> None:\n"
+        "        pass\n"
+    )
+    _write_marker_recipe_fixture(
+        tmp_path, overrides={"src/explore_persona_space/train/sft.py": ambiguous}
+    )
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 2, errors  # the docs pin + the rule pin both cite sft.py
+    for e in errors:
+        assert "ambiguous" in e and "tail_tokens" in e, errors
+
+
+def test_marker_recipe_snippets_flags_missing_file(tmp_path) -> None:
+    """A missing pinned doc file is itself an error — once per pin bound to it
+    (5 rule-file pins)."""
+    _write_marker_recipe_fixture(tmp_path, omit=(".claude/rules/marker-training-recipe.md",))
+    errors = check_marker_recipe_snippets(repo_root=tmp_path)
+    assert len(errors) == 5, errors
+    for e in errors:
+        assert "missing" in e, errors
+        assert e.split(": ", 1)[0].endswith("marker-training-recipe.md"), errors
+
+
+def test_marker_recipe_snippets_does_not_capture_wrong_token_id() -> None:
+    """On the LIVE tree, the token-id pins capture only 83399 — never the
+    bare-`※` wrong-token id 63680 (docs line ~196 / rule line ~236 mention it
+    with a backtick, not a space, before ※ — the space anchor skips it)."""
+    import workflow_lint as wl
+
+    for pin in _MARKER_RECIPE_PINS:
+        if "token-id" not in pin.label:
+            continue
+        doc_text = (wl._REPO_ROOT / pin.doc_rel).read_text(encoding="utf-8")
+        captures = re.findall(pin.doc_pattern, re.sub(r"\s+", " ", doc_text))
+        assert captures, f"pin '{pin.label}': no live doc matches"
+        assert "63680" not in captures, (pin.label, captures)
+        assert set(captures) == {"83399"}, (pin.label, captures)
+
+
+def test_marker_recipe_pins_have_one_capture_group() -> None:
+    """Registry invariant: every pin's doc_pattern AND src_pattern compile with
+    exactly ONE capture group (findall then returns bare value strings)."""
+    for pin in _MARKER_RECIPE_PINS:
+        assert re.compile(pin.doc_pattern).groups == 1, pin.label
+        assert re.compile(pin.src_pattern).groups == 1, pin.label
+
+
+def test_marker_recipe_values_equal_float_forms() -> None:
+    """Value comparison is float-based when both sides parse ('5' == '5.0' —
+    the doc band vs the callbacks.py float defaults), else exact-string."""
+    assert _values_equal("5", "5.0") is True
+    assert _values_equal("0.10", "0.1") is True
+    assert _values_equal("83399", "83399") is True
+    assert _values_equal("83399", "99999") is False
+    assert _values_equal("abc", "abc") is True
+    assert _values_equal("abc", "abd") is False
+
+
+def test_marker_recipe_snippets_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the #1154 check — deleting
+    its ``or no_flags`` branch must fail this test (mutation-visible), closing
+    the dead-tripwire gap where all direct-call tests stay green while the CLI
+    never runs the check. Same mechanism as
+    ``test_vm_thread_cap_guidance_bundled_in_no_flags``: a seeded code drift,
+    ``_REPO_ROOT`` monkeypatched to the fixture, ``main([])`` in-process.
+    Other bundled checks contribute unrelated errors on the minimal tree, so
+    the assertion keys on the #1154 diagnostic + the offending doc path."""
+    import workflow_lint as wl
+
+    _write_marker_recipe_fixture(
+        tmp_path,
+        overrides={"src/explore_persona_space/artifacts/recipe.py": "MARKER_TOKEN_ID = 99999\n"},
+    )
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a drifted tree:\n{err}"
+    assert "#1154" in err and "marker_training_recipe.md" in err, (
+        f"the #1154 marker-recipe diagnostic (naming marker_training_recipe.md) "
+        f"is missing from the no-flags default run's stderr — the check is not "
+        f"bundled into no_flags:\n{err}"
+    )
+
+
 # --- #963 stale-label disposition-clause tests -------------------------------
 
 # Conforming fixture: deliberately re-wrapped at a DIFFERENT column than the
@@ -4078,4 +5547,1050 @@ def test_stale_label_disposition_clause_dedicated_flag_isolated(tmp_path, capsys
         f"--check-stale-label-disposition ran more than the (conforming) stale-label "
         f"check — no_flags mis-computed True, i.e. the flag's membership in the "
         f"no_flags tuple in workflow_lint.main() is missing:\n{err}"
+    )
+
+
+# --- #1181 crash-fix-relaunch contract pin tests ------------------------------
+
+_CRASH_FIX_SURFACES = (
+    ".claude/agents/experimenter.md",
+    ".claude/rules/crash-fix-rounds.md",
+    ".claude/skills/issue/SKILL.md",
+)
+
+_CRASH_FIX_ANCHORS = {
+    ".claude/agents/experimenter.md": "**Crash-fix relaunch (brief carries `fix_sha=`):**",
+    ".claude/rules/crash-fix-rounds.md": "The fresh `epm:run-launched` note ALSO records",
+    ".claude/skills/issue/SKILL.md": "*`code`-row relaunch contract (#779):*",
+}
+
+# Design intent baked into the fixture (#1181 plan §4.5): (i) tokens hard-wrap
+# mid-phrase (normalization proof); (ii) the experimenter.md span ends at
+# ``\n3. `` with NO blank line (proves the ``\n\d+\. `` terminator) and a
+# 'resolves EMPTY' DECOY sits after that span (proves paragraph scoping of the
+# negative regex); (iii) the crash-fix-rounds fixture carries the healthy
+# 'resolves EMPTY / to the fresh path' trio BEFORE its anchor (scoping again,
+# plus a tripwire if a future edit widens the regex to file scope).
+_CRASH_FIX_CONFORMING: dict[str, str] = {
+    ".claude/agents/experimenter.md": (
+        "# experimenter\n"
+        "\n"
+        "2. **Verify HEAD.** Standard pre-launch sync.\n"
+        "\n"
+        "   **Crash-fix relaunch (brief carries `fix_sha=`):** additionally run\n"
+        "   `git merge-base --is-ancestor <fix_sha> HEAD` on the pod (ANY\n"
+        "   non-zero exit = fix absent — do NOT launch) and execute the\n"
+        "   brief's stale-checkpoint disposition before launch, confirming\n"
+        "   the resume glob resolves as the disposition requires (empty /\n"
+        "   the fresh path / exactly the RETAINED expected paths).\n"
+        "3. **Run preflight.**\n"
+        "\n"
+        "Decoy AFTER the span: the glob resolves EMPTY unconditionally.\n"
+    ),
+    ".claude/rules/crash-fix-rounds.md": (
+        "# crash-fix rounds\n"
+        "\n"
+        "2. **Stale-checkpoint disposition (element 5).** check it\n"
+        "   resolves EMPTY / to the fresh path / to exactly the RETAINED\n"
+        "   expected paths (for a `retain` declaration).\n"
+        "\n"
+        "The fresh `epm:run-launched` note ALSO records `fix_sha=<sha>` and the\n"
+        "executed disposition (note-token convention, same class as `pid=`).\n"
+        "The `code`-row respawn BRIEF the orchestrator composes for the\n"
+        "experimenter carries both (`fix_sha=` +\n"
+        "the element-5 disposition verbatim). EXEMPT: `infra`-row experimenter\n"
+        "respawns (no code fix).\n"
+    ),
+    ".claude/skills/issue/SKILL.md": (
+        "# issue skill\n"
+        "\n"
+        "Step 7 routing table lives here.\n"
+        "\n"
+        "   *`code`-row relaunch contract (#779):* the post-review relaunch — the\n"
+        "   Step 6 experimenter respawn (brief carries `fix_sha=` + the element-5\n"
+        "   stale-artifact disposition, copied from the implementer's fix-engaged\n"
+        "   declaration) — enforces BOTH\n"
+        "   before dispatch: the fix-commit ancestry probe and the declared\n"
+        "   disposition.\n"
+        "\n"
+        "**Zombie-GPU stall recovery brief.** Unrelated paragraph.\n"
+    ),
+}
+
+# The three load-bearing pins (#1181 plan § deviations): the disposition trio,
+# the disposition-conditional confirm, and the fix_sha= note-token duty.
+_CRASH_FIX_TRIO_TOKEN = "empty / the fresh path / exactly the RETAINED expected paths"
+_CRASH_FIX_CONFIRM_TOKEN = "confirming the resume glob resolves as the disposition requires"
+_CRASH_FIX_SHA_TOKEN = "records `fix_sha=<sha>` and the executed disposition"
+
+
+def _write_crash_fix_tree(tmp_path, bodies: dict[str, str] | None = None) -> None:
+    """Write the three #1181 contract surfaces under ``tmp_path``."""
+    for rel, body in (bodies or _CRASH_FIX_CONFORMING).items():
+        p = tmp_path / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(body, encoding="utf-8")
+
+
+def test_crash_fix_relaunch_contract_live_tree_passes() -> None:
+    """The real tree carries the #1081 contract on all three surfaces, with
+    unique anchors, every required token, and no unconditional 'resolves
+    EMPTY' coupling (pins plan #1181 Assumptions 1-5)."""
+    assert check_crash_fix_relaunch_contract() == []
+
+
+def test_crash_fix_relaunch_contract_conforming_tmp_tree_passes(tmp_path) -> None:
+    """The synthetic conforming tree passes — validates the fixture itself:
+    hard-wrapped tokens (whitespace normalization), the experimenter.md span
+    ending at ``\\n3. `` with no blank line (the ``\\n\\d+\\. `` terminator),
+    the post-span 'resolves EMPTY' decoy, and the pre-anchor healthy trio
+    (paragraph scoping in both directions)."""
+    _write_crash_fix_tree(tmp_path)
+    assert check_crash_fix_relaunch_contract(repo_root=tmp_path) == []
+
+
+def test_crash_fix_relaunch_contract_in_span_healthy_trio_passes(tmp_path) -> None:
+    """A healthy disposition-conditional trio ('resolves EMPTY / to the fresh
+    path / ...') INSIDE an anchored span PASSes — exercises the negative
+    regex's lookahead exemption ``(?!\\s*/)``, which the conforming fixture
+    alone leaves untested (both of its healthy trios sit outside the spans)."""
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    rel = ".claude/rules/crash-fix-rounds.md"
+    bodies[rel] = bodies[rel].replace(
+        "respawns (no code fix).\n",
+        "respawns (no code fix). The relaunch then checks the glob\n"
+        "resolves EMPTY / to the fresh path / to exactly the RETAINED\n"
+        "expected paths before posting.\n",
+    )
+    assert bodies[rel] != _CRASH_FIX_CONFORMING[rel]
+    _write_crash_fix_tree(tmp_path, bodies)
+    assert check_crash_fix_relaunch_contract(repo_root=tmp_path) == []
+
+
+@pytest.mark.parametrize("surface", _CRASH_FIX_SURFACES)
+def test_crash_fix_relaunch_contract_fails_on_missing_anchor(tmp_path, surface) -> None:
+    """Deleting/renaming any ONE surface's anchor FAILs, naming that file and
+    #1081 (an anchor rename requires a deliberate lint update)."""
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    bodies[surface] = bodies[surface].replace(_CRASH_FIX_ANCHORS[surface], "**Renamed.**")
+    assert bodies[surface] != _CRASH_FIX_CONFORMING[surface]
+    _write_crash_fix_tree(tmp_path, bodies)
+    errors = check_crash_fix_relaunch_contract(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    fname = surface.rsplit("/", 1)[-1]
+    assert errors[0].split(": ", 1)[0].endswith(f"/{fname}"), errors
+    assert "missing the anchor" in errors[0] and "#1081" in errors[0], errors
+
+
+def test_crash_fix_relaunch_contract_fails_on_duplicate_anchor(tmp_path) -> None:
+    """A SECOND copy of the experimenter.md anchor -> exactly one
+    duplicate-anchor error (span identity is load-bearing: a stale duplicate
+    could satisfy the token scan while the operative paragraph regresses)."""
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    rel = ".claude/agents/experimenter.md"
+    bodies[rel] += "\n**Crash-fix relaunch (brief carries `fix_sha=`):** stale copy.\n"
+    _write_crash_fix_tree(tmp_path, bodies)
+    errors = check_crash_fix_relaunch_contract(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "UNIQUE" in errors[0] and "2 anchors" in errors[0], errors
+
+
+@pytest.mark.parametrize(
+    ("surface", "old", "new", "token"),
+    [
+        pytest.param(
+            ".claude/agents/experimenter.md",
+            "(empty /\n   the fresh path / exactly the RETAINED expected paths)",
+            "(as declared)",
+            _CRASH_FIX_TRIO_TOKEN,
+            id="disposition-trio",
+        ),
+        pytest.param(
+            ".claude/agents/experimenter.md",
+            "confirming\n   the resume glob resolves as the disposition requires",
+            "checking\n   the resume glob looks right",
+            _CRASH_FIX_CONFIRM_TOKEN,
+            id="conditional-confirm",
+        ),
+        pytest.param(
+            ".claude/rules/crash-fix-rounds.md",
+            "records `fix_sha=<sha>` and the\nexecuted disposition",
+            "records the executed\ndisposition",
+            _CRASH_FIX_SHA_TOKEN,
+            id="fix-sha-note-token",
+        ),
+    ],
+)
+def test_crash_fix_relaunch_contract_fails_on_missing_load_bearing_token(
+    tmp_path, surface, old, new, token
+) -> None:
+    """Deleting any of the THREE load-bearing pins from its fixture FAILs with
+    a missing-token error naming that token — mutation-visibility for the
+    surfaces table: an edit that drops one of these tokens from
+    ``_CRASH_FIX_CONTRACT_SURFACES`` makes the corresponding case pass on the
+    mutated fixture, so this test FAILs (presence asserted, not exact count)."""
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    assert old in bodies[surface], f"fixture drift: {old!r} not found in {surface}"
+    bodies[surface] = bodies[surface].replace(old, new)
+    _write_crash_fix_tree(tmp_path, bodies)
+    errors = check_crash_fix_relaunch_contract(repo_root=tmp_path)
+    assert errors, f"expected a missing-token FAIL for {token!r}"
+    assert any(repr(token) in e and "missing token" in e for e in errors), errors
+
+
+def test_crash_fix_relaunch_contract_fails_on_unconditional_empty_regression(tmp_path) -> None:
+    """Regressing the D3 confirm back to the unconditional 'resolves EMPTY'
+    wording (the #1081 round-2 blocker retain-disposition-d3-empty-glob)
+    FAILs with BOTH error classes present — the missing-token error for the
+    trio AND the negative-regex error. Presence of both classes is asserted,
+    not an exact error count (the mutation also drops the confirm token)."""
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    rel = ".claude/agents/experimenter.md"
+    bodies[rel] = bodies[rel].replace(
+        "the resume glob resolves as the disposition requires (empty /\n"
+        "   the fresh path / exactly the RETAINED expected paths)",
+        "the resume glob resolves EMPTY before launch",
+    )
+    assert bodies[rel] != _CRASH_FIX_CONFORMING[rel]
+    _write_crash_fix_tree(tmp_path, bodies)
+    errors = check_crash_fix_relaunch_contract(repo_root=tmp_path)
+    assert any(repr(_CRASH_FIX_TRIO_TOKEN) in e and "missing token" in e for e in errors), errors
+    assert any("'resolves EMPTY'" in e for e in errors), errors
+
+
+def test_crash_fix_relaunch_contract_fails_on_missing_enforces_both_token(tmp_path) -> None:
+    """Dropping the 'enforces BOTH before dispatch: ...' sentence from the
+    SKILL.md fixture FAILs with a missing-token error (the orchestrator-side
+    enforcement duty)."""
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    rel = ".claude/skills/issue/SKILL.md"
+    bodies[rel] = bodies[rel].replace(
+        " — enforces BOTH\n"
+        "   before dispatch: the fix-commit ancestry probe and the declared\n"
+        "   disposition.",
+        ".",
+    )
+    assert bodies[rel] != _CRASH_FIX_CONFORMING[rel]
+    _write_crash_fix_tree(tmp_path, bodies)
+    errors = check_crash_fix_relaunch_contract(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "missing token" in errors[0] and "enforces BOTH before dispatch" in errors[0], errors
+
+
+@pytest.mark.parametrize("surface", _CRASH_FIX_SURFACES)
+def test_crash_fix_relaunch_contract_fails_on_missing_file(tmp_path, surface) -> None:
+    """A surface file absent from the tree FAILs with the missing-file branch
+    naming that path."""
+    _write_crash_fix_tree(tmp_path)
+    (tmp_path / surface).unlink()
+    errors = check_crash_fix_relaunch_contract(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    fname = surface.rsplit("/", 1)[-1]
+    assert errors[0].split(": ", 1)[0].endswith(f"/{fname}"), errors
+    assert "missing" in errors[0], errors
+
+
+def test_crash_fix_relaunch_contract_wired_into_default_run(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags CLI-path REGISTRATION test: the default run must exercise
+    ``check_crash_fix_relaunch_contract`` — deleting the dispatch branch
+    (``if args.check_crash_fix_relaunch_contract or no_flags:``) or its
+    ``or no_flags`` disjunct must fail this test. Doctors a tree missing the
+    experimenter.md anchor, points ``_REPO_ROOT`` at it, and invokes
+    ``main([])`` in-process: rc != 0 with the #1081 diagnostic in stderr.
+    Other bundled checks contribute unrelated errors on the minimal tree — the
+    assertion keys on the #1081 error string. (The ``no_flags`` tuple
+    membership is pinned by ``..._dedicated_flag_isolated`` below, per the
+    stale-label precedent.)"""
+    import workflow_lint as wl
+
+    bodies = dict(_CRASH_FIX_CONFORMING)
+    rel = ".claude/agents/experimenter.md"
+    bodies[rel] = bodies[rel].replace(_CRASH_FIX_ANCHORS[rel], "**Renamed.**")
+    _write_crash_fix_tree(tmp_path, bodies)
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on an anchor-less tree:\n{err}"
+    assert "#1081" in err, (
+        f"the #1081 crash-fix-relaunch diagnostic is missing from the "
+        f"no-flags default run's stderr — the check is not bundled into "
+        f"no_flags:\n{err}"
+    )
+
+
+def test_crash_fix_relaunch_contract_dedicated_flag_isolated(tmp_path, capsys, monkeypatch) -> None:
+    """The dedicated ``--check-crash-fix-relaunch-contract`` flag runs ONLY
+    this check (``no_flags`` computes False): on a minimal tree where the
+    three contract surfaces CONFORM but the full default bundle FAILs (other
+    bundled checks miss their files), the dedicated-flag invocation exits 0 —
+    mutation-visibility for the ``or args.check_crash_fix_relaunch_contract``
+    membership in the ``no_flags`` tuple (the leg the ``main([])`` wiring
+    test above cannot pin, per the stale-label precedent)."""
+    import workflow_lint as wl
+
+    _write_crash_fix_tree(tmp_path)
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    # Precondition: the FULL default bundle FAILs on this minimal tree, so a
+    # no_flags mis-computation below is observable as rc != 0.
+    assert wl.main([]) != 0, "precondition: the default bundle PASSed on the minimal tree"
+    capsys.readouterr()  # discard the precondition run's output
+    rc = wl.main(["--check-crash-fix-relaunch-contract"])
+    err = capsys.readouterr().err
+    assert rc == 0, (
+        f"--check-crash-fix-relaunch-contract ran more than the (conforming) "
+        f"contract check — no_flags mis-computed True, i.e. the flag's membership "
+        f"in the no_flags tuple in workflow_lint.main() is missing:\n{err}"
+    )
+
+
+# --- #1153 awk elision-program parity tests ----------------------------------
+
+# A program with the ``f=!f`` anchor and no single quotes (matches the live
+# program's shape at the time of writing; the check compares homes against
+# EACH OTHER, so tests only need SOME shared program).
+_AWK_ELISION_TEST_PROGRAM = (
+    "/^```/{f=!f; next} f{next} /^<details/{d=1} d{if(/<\\/details>/)d=0; next} "
+    "/^>/{next} {print} END{if(f||d) exit 3}"
+)
+
+_AWK_HOME_SKILL = ".claude/skills/issue/SKILL.md"
+_AWK_HOME_ANALYZER = ".claude/rules/analyzer-section-reference.md"
+
+
+def _write_awk_home(root: Path, rel: str, body: str) -> None:
+    """Write ``rel`` under ``root`` with ``body`` (parents created)."""
+    p = root / rel
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(body, encoding="utf-8")
+
+
+def _awk_skill_body(program: str = _AWK_ELISION_TEST_PROGRAM) -> str:
+    """SKILL.md-shaped home: the program inside a FENCED bash block, 3-space
+    indent, with its own input/output continuation line."""
+    return (
+        "# issue skill\n\nStep 9a-humanize ban gate:\n\n"
+        "```bash\n"
+        f"   awk '{program}' \\\n"
+        "     body.md > elided.md\n"
+        "```\n"
+    )
+
+
+def _awk_analyzer_body(
+    program: str = _AWK_ELISION_TEST_PROGRAM, anchor_line: str | None = None
+) -> str:
+    """analyzer-section-reference.md-shaped home: the program in a 4-space
+    INDENTED block with DIFFERENT surroundings/paths than the skill home.
+    ``anchor_line`` replaces the whole program line (malformed-line cases)."""
+    line = anchor_line if anchor_line is not None else f"    awk '{program}' \\"
+    return f"# analyzer section reference\n\nStep 4.5:\n\n{line}\n        draft.md > out.md\n"
+
+
+def test_awk_elision_parity_live_tree_passes() -> None:
+    """The real tree carries ONE anchor line per home, 2 quotes each, with
+    byte-identical extracted programs (#1153)."""
+    assert check_awk_elision_parity() == []
+
+
+def test_awk_elision_parity_conforming_tmp_tree_passes(tmp_path) -> None:
+    """Same program, DIFFERENT surroundings — one fenced ```bash block, one
+    4-space-indented block, different in/out paths on the continuation
+    lines — PASSes: pins that the check tolerates the homes' real
+    formatting differences and compares the quoted PROGRAM only."""
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, _awk_analyzer_body())
+    assert check_awk_elision_parity(repo_root=tmp_path) == []
+
+
+def test_awk_elision_parity_flags_drift(tmp_path) -> None:
+    """One home's program mutated (END clause dropped) -> exactly one error
+    naming BOTH paths + the edit-both-homes remediation."""
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    drifted = _AWK_ELISION_TEST_PROGRAM.replace(" END{if(f||d) exit 3}", "")
+    assert drifted != _AWK_ELISION_TEST_PROGRAM
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, _awk_analyzer_body(program=drifted))
+    errors = check_awk_elision_parity(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert _AWK_HOME_SKILL in errors[0] and _AWK_HOME_ANALYZER in errors[0], errors
+    assert "identically" in errors[0], errors
+
+
+def test_awk_elision_parity_flags_missing_file(tmp_path) -> None:
+    """A missing home is itself an error — a moved/deleted copy must not
+    silently pass (#1153)."""
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    errors = check_awk_elision_parity(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].split(": ", 1)[0].endswith("analyzer-section-reference.md"), errors
+    assert "missing" in errors[0], errors
+
+
+def test_awk_elision_parity_flags_zero_anchor(tmp_path) -> None:
+    """A home present but with NO anchor line (program removed) FAILs."""
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, "# analyzer section reference\n\nno program\n")
+    errors = check_awk_elision_parity(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].split(": ", 1)[0].endswith("analyzer-section-reference.md"), errors
+    assert "found 0" in errors[0], errors
+
+
+def test_awk_elision_parity_flags_duplicate_anchor(tmp_path) -> None:
+    """TWO anchor lines in one home FAIL — span identity is load-bearing
+    (which copy would the parity read?)."""
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, _awk_analyzer_body() + _awk_analyzer_body())
+    errors = check_awk_elision_parity(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "found 2" in errors[0], errors
+
+
+@pytest.mark.parametrize(
+    ("anchor_line", "expected_token"),
+    [
+        pytest.param(
+            "    awk '/^```/{f=!f; next} f{next} \\",
+            "expected exactly 2",
+            id="reflow-mid-program-one-quote",
+        ),
+        pytest.param(
+            "    awk '/{f=!f}/'\\''x' \\",
+            "expected exactly 2",
+            id="gained-quote-escape",
+        ),
+        pytest.param(
+            "    awk '/{f=!f}/' | awk '{print}' \\",
+            "expected exactly 2",
+            id="second-quoted-span",
+        ),
+        pytest.param(
+            "    the 'f=!f' toggle (no awk program) \\",
+            "could not extract",
+            id="two-quotes-no-awk-span",
+        ),
+    ],
+)
+def test_awk_elision_parity_flags_malformed_anchor_line(
+    tmp_path, anchor_line: str, expected_token: str
+) -> None:
+    """A malformed anchor line FAILs loudly per home: a mid-program reflow
+    (1 quote), a gained shell quote-escape (5 quotes — the truncation
+    false-PASS window the exactly-2-quotes assert closes), a second quoted
+    span on the line (4 quotes), and a 2-quote line with no ``awk '...'``
+    span (extraction finds 0)."""
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, _awk_analyzer_body(anchor_line=anchor_line))
+    errors = check_awk_elision_parity(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].split(": ", 1)[0].endswith("analyzer-section-reference.md"), errors
+    assert expected_token in errors[0], errors
+
+
+def test_awk_elision_parity_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the #1153 check —
+    deleting its dispatch branch (``if args.check_awk_elision_parity or
+    no_flags:``) or its ``or no_flags`` disjunct must fail this test
+    (mutation-visible). House pattern:
+    ``test_vm_thread_cap_guidance_bundled_in_no_flags`` — drifted tree,
+    ``_REPO_ROOT`` monkeypatched to the fixture, ``main([])`` in-process;
+    other bundled checks contribute unrelated errors on the minimal tree, so
+    the assertion keys on the #1153 drift diagnostic."""
+    import workflow_lint as wl
+
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    drifted = _AWK_ELISION_TEST_PROGRAM.replace(" END{if(f||d) exit 3}", "")
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, _awk_analyzer_body(program=drifted))
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a drifted tree:\n{err}"
+    assert "#1153" in err and "identically" in err, (
+        f"the #1153 awk-elision-parity drift diagnostic is missing from the "
+        f"no-flags default run's stderr — the check is not bundled into "
+        f"no_flags:\n{err}"
+    )
+
+
+def test_awk_elision_parity_dedicated_flag_isolated(tmp_path, capsys, monkeypatch) -> None:
+    """The dedicated ``--check-awk-elision-parity`` flag runs ONLY this check
+    (``no_flags`` computes False): on a minimal tree where the two awk homes
+    CONFORM but the full default bundle FAILs (other bundled checks miss
+    their files), the dedicated-flag invocation exits 0 — pins the
+    ``or args.check_awk_elision_parity`` membership in the ``no_flags``
+    tuple, the leg the ``main([])`` wiring test above cannot pin (house
+    pattern: ``test_stale_label_disposition_clause_dedicated_flag_isolated``)."""
+    import workflow_lint as wl
+
+    _write_awk_home(tmp_path, _AWK_HOME_SKILL, _awk_skill_body())
+    _write_awk_home(tmp_path, _AWK_HOME_ANALYZER, _awk_analyzer_body())
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    # Precondition: the FULL default bundle FAILs on this minimal tree, so a
+    # no_flags mis-computation below is observable as rc != 0.
+    assert wl.main([]) != 0, "precondition: the default bundle PASSed on the minimal tree"
+    capsys.readouterr()  # discard the precondition run's output
+    rc = wl.main(["--check-awk-elision-parity"])
+    err = capsys.readouterr().err
+    assert rc == 0, (
+        f"--check-awk-elision-parity ran more than the (conforming) awk-elision "
+        f"check — no_flags mis-computed True, i.e. the flag's membership in the "
+        f"no_flags tuple in workflow_lint.main() is missing:\n{err}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# --check-section-reference-pointers (#1159): every grain-level section of an
+# <agent>-{section,lens}-reference.md rule file must stay pointer-reachable
+# ('§ <exact heading>') from its owning agent spec.
+# ---------------------------------------------------------------------------
+
+
+def _write_section_ref_tree(tmp_path, ref_name, ref_body, agent_name=None, agent_body=""):
+    """Write a minimal tmp tree: one reference rule file (+ optional agent spec)."""
+    rules = tmp_path / ".claude" / "rules"
+    agents = tmp_path / ".claude" / "agents"
+    rules.mkdir(parents=True, exist_ok=True)
+    agents.mkdir(parents=True, exist_ok=True)
+    (rules / ref_name).write_text(ref_body, encoding="utf-8")
+    if agent_name is not None:
+        (agents / f"{agent_name}.md").write_text(agent_body, encoding="utf-8")
+    return tmp_path
+
+
+def test_section_ref_pointer_coverage_passes_on_live_repo():
+    """The live-trees-pass invariant at merge time — zero pointer backfills owed.
+
+    ALSO asserts the scanned reference-file set contains the 4 known files, so
+    a suffix-tuple typo cannot pass vacuously via an empty scan set."""
+    from workflow_lint import _REPO_ROOT as lint_repo_root
+    from workflow_lint import _SECTION_REFERENCE_SUFFIXES
+
+    assert check_section_reference_pointer_coverage() == []
+    scanned = {
+        p.name
+        for p in (lint_repo_root / ".claude" / "rules").glob("*.md")
+        if p.name.endswith(_SECTION_REFERENCE_SUFFIXES)
+    }
+    expected = {
+        "analyzer-section-reference.md",
+        "critic-lens-reference.md",
+        "planner-section-reference.md",
+        "clean-result-critic-lens-reference.md",
+    }
+    assert expected <= scanned, f"scan set lost known reference files: {expected - scanned}"
+
+
+def test_section_ref_pointer_coverage_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the check — deleting the
+    ``or no_flags`` ladder branch must fail this test (mutation-visible; house
+    pattern: ``test_hollow_gate_review_lens_bundled_in_no_flags``). Other
+    bundled checks contribute unrelated errors on the minimal tree, so the
+    assertion keys on this check's diagnostic + the offending file name."""
+    import workflow_lint as wl
+
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-lens-reference.md",
+        "# Title\n\n### Lens 1 — Alpha\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\nno pointer here\n",
+    )
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a violating tree:\n{err}"
+    assert "foo-lens-reference.md" in err and "pointer-reachable" in err, (
+        f"the pointer-coverage diagnostic (naming foo-lens-reference.md) is missing "
+        f"from the no-flags run's stderr — the check is not bundled into no_flags:\n{err}"
+    )
+
+
+def test_section_ref_pointer_coverage_fails_on_missing_pointer(tmp_path):
+    """An unpointed grain heading FAILs, naming file, heading, and owning spec."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-section-reference.md",
+        "# Title\n\n## Step 9\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\nprose without any pointer\n",
+    )
+    errs = check_section_reference_pointer_coverage(repo_root=tmp_path)
+    assert len(errs) == 1, errs
+    assert "foo-section-reference.md" in errs[0]
+    assert "Step 9" in errs[0]
+    assert ".claude/agents/foo.md" in errs[0]
+
+
+def test_section_ref_pointer_coverage_passes_on_wrapped_pointer(tmp_path):
+    """A pointer line-wrapped mid-heading in the spec passes (whitespace norm)."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-section-reference.md",
+        "# Title\n\n## Step 9 — the long heading name\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\nFull text: § Step 9 — the long\nheading name (grep heading).\n",
+    )
+    assert check_section_reference_pointer_coverage(repo_root=tmp_path) == []
+
+
+def test_section_ref_pointer_coverage_skips_fenced_pseudo_headings(tmp_path):
+    """A '## fake' inside a ```bash fence needs no pointer (fence-aware)."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-section-reference.md",
+        "# Title\n\n## Real\n\n```bash\n## fake\necho fenced\n```\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\n§ Real\n",
+    )
+    assert check_section_reference_pointer_coverage(repo_root=tmp_path) == []
+
+
+def test_section_ref_pointer_coverage_h3_grain_when_no_h2(tmp_path):
+    """With zero H2s the grain is H3 (critic-lens-reference shape): H3s are
+    checked, and a missing H3 pointer FAILs."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-lens-reference.md",
+        "# Title\n\n### Lens 1 — Alpha\n\nbody\n\n### Lens 2 — Beta\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\n§ Lens 1 — Alpha\n",
+    )
+    errs = check_section_reference_pointer_coverage(repo_root=tmp_path)
+    assert len(errs) == 1, errs
+    assert "Lens 2 — Beta" in errs[0]
+
+
+def test_section_ref_pointer_coverage_h2_grain_wins_when_mixed(tmp_path):
+    """A file with H2s AND H3s is H2-grain: only H2s require pointers (the
+    documented grain-mixing drift path — H3s drop from coverage)."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-section-reference.md",
+        "# Title\n\n## Big section\n\n### sub-detail without pointer\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\n§ Big section\n",
+    )
+    assert check_section_reference_pointer_coverage(repo_root=tmp_path) == []
+
+
+def test_section_ref_pointer_coverage_fails_on_orphan_reference(tmp_path):
+    """A suffix-matched rule file with no .claude/agents/<agent>.md FAILs."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-lens-reference.md",
+        "# Title\n\n### Lens 1 — Alpha\n\nbody\n",
+        agent_name=None,
+    )
+    # agents/ dir must exist for the orphan case to be about the FILE, not the dir
+    (tmp_path / ".claude" / "agents").mkdir(parents=True, exist_ok=True)
+    errs = check_section_reference_pointer_coverage(repo_root=tmp_path)
+    assert len(errs) == 1, errs
+    assert "orphan" in errs[0] and ".claude/agents/foo.md" in errs[0]
+
+
+def test_section_ref_pointer_coverage_fails_on_headingless_reference(tmp_path):
+    """A suffix-matched file with an H1 only is malformed (zero grain headings)."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-section-reference.md",
+        "# Title only\n\nprose, no sections\n",
+        agent_name="foo",
+        agent_body="# foo\n",
+    )
+    errs = check_section_reference_pointer_coverage(repo_root=tmp_path)
+    assert len(errs) == 1, errs
+    assert "malformed" in errs[0]
+
+
+def test_section_ref_pointer_coverage_requires_section_sigil(tmp_path):
+    """Heading text present in the spec WITHOUT the '§ ' prefix still FAILs —
+    a prose mention of a section name is not pointer coverage."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-section-reference.md",
+        "# Title\n\n## Step 9\n\nbody\n",
+        agent_name="foo",
+        agent_body="# foo\nsee Step 9 in the reference file\n",
+    )
+    errs = check_section_reference_pointer_coverage(repo_root=tmp_path)
+    assert len(errs) == 1, errs
+    assert "Step 9" in errs[0]
+
+
+def test_section_ref_pointer_coverage_ignores_non_suffixed_rules(tmp_path):
+    """A rules file NOT ending in a reference suffix is out of the scan set."""
+    _write_section_ref_tree(
+        tmp_path,
+        "foo-review.md",
+        "# Title\n\n## Unpointed section\n\nbody\n",
+        agent_name=None,
+    )
+    assert check_section_reference_pointer_coverage(repo_root=tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
+# --check-git-recipes-root-guard (#1176): execute the LIVE repo-root branch
+# guard (scripts/guard_repo_root_branch.sh) against every bash-fenced git
+# recipe in the workflow docs. All gated-git literals below are Python STRING
+# DATA (test fixtures written via tmp_path) — the hook gates Bash TOOL calls,
+# not file contents.
+# ---------------------------------------------------------------------------
+
+_RG_BLOCKED_CMD = "git checkout -b __wl_rg_test_branch__"
+
+
+def _write_rg_skill(tmp_path: Path, slug: str, body: str) -> Path:
+    """Write a synthetic ``.claude/skills/<slug>/SKILL.md`` under ``tmp_path``."""
+    p = tmp_path / ".claude" / "skills" / slug / "SKILL.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(body, encoding="utf-8")
+    return p
+
+
+def test_check_git_recipes_root_guard_flags_blocked_recipe(tmp_path):
+    """A bash fence whose whole-block feed the live hook BLOCKS (exit 2) is
+    exactly one error naming the file + the fence OPENER line."""
+    _write_rg_skill(tmp_path, "x", f"Intro line\n```bash\n{_RG_BLOCKED_CMD}\n```\n")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:2:" in errors[0], errors
+    assert "BLOCKED" in errors[0], errors
+    # remediation names both paths: fix the recipe, or the exemption sentinel
+    assert "allow-root-guard-block" in errors[0], errors
+
+
+def test_check_git_recipes_root_guard_passes_waived_recipe(tmp_path):
+    """A per-clause worktree-qualified destructive form passes the hook."""
+    _write_rg_skill(
+        tmp_path,
+        "x",
+        'Recover inside the worktree:\n```bash\ngit -C "$WT" reset --hard origin/main\n```\n',
+    )
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+
+
+def test_check_git_recipes_root_guard_multiline_construct_passes(tmp_path):
+    """Whole-block feed: a for-loop + heredoc + comment construct with only
+    ``git -C`` forms passes — per-line feeding would shred the loop and
+    false-positive on the inert heredoc body / comment line."""
+    body = (
+        "Recovery recipe:\n"
+        "```bash\n"
+        "for f in a b; do\n"
+        '  git -C "$WT" reset --hard origin/main\n'
+        "done\n"
+        "# a comment line mentioning git switch is inert as pasted\n"
+        "cat <<'EOF' > /tmp/wl_rg_note.txt\n"
+        "plain note text\n"
+        "EOF\n"
+        'git -C "$WT" status\n'
+        "```\n"
+    )
+    _write_rg_skill(tmp_path, "x", body)
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+
+
+def test_check_git_recipes_root_guard_skips_exempt_fence(tmp_path):
+    """A sentinel with a NON-EMPTY reason on the immediately-preceding
+    non-blank line waives the fence; an EMPTY-reason sentinel does NOT."""
+    _write_rg_skill(
+        tmp_path,
+        "exempt",
+        "<!-- workflow-lint: allow-root-guard-block: deliberate anti-pattern example -->\n"
+        f"```bash\n{_RG_BLOCKED_CMD}\n```\n",
+    )
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+
+    _write_rg_skill(
+        tmp_path,
+        "empty_reason",
+        f"<!-- workflow-lint: allow-root-guard-block: -->\n```bash\n{_RG_BLOCKED_CMD}\n```\n",
+    )
+    errors = check_git_recipes_root_guard(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "empty_reason" in errors[0], errors
+
+
+def test_check_git_recipes_root_guard_ignores_non_bash_fences(tmp_path):
+    """Only bash/sh/shell-tagged fences are executable recipes; a
+    python-tagged fence carrying a blocked literal is never fed to the hook."""
+    _write_rg_skill(
+        tmp_path,
+        "x",
+        f'```python\ncmd = "{_RG_BLOCKED_CMD}"\n```\n',
+    )
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+
+
+def test_check_git_recipes_root_guard_selftest_fails_loud(tmp_path):
+    """A missing hook and a fail-OPEN hook (exit 0 on the blocked probe —
+    the jq-missing fail-soft shape) each produce ONE loud error, never a
+    silent pass."""
+    _write_rg_skill(tmp_path, "x", f"```bash\n{_RG_BLOCKED_CMD}\n```\n")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=tmp_path / "missing.sh")
+    assert len(errors) == 1, errors
+    assert "missing" in errors[0], errors
+
+    fail_open = tmp_path / "fail_open.sh"
+    fail_open.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=fail_open)
+    assert len(errors) == 1, errors
+    assert "self-test" in errors[0], errors
+
+
+def test_check_git_recipes_root_guard_selftest_fail_closed(tmp_path):
+    """The complement cell: a fail-CLOSED stub (exit 2 on EVERYTHING,
+    including the benign probe) is also ONE loud self-test error."""
+    _write_rg_skill(tmp_path, "x", "```bash\necho benign\n```\n")
+    fail_closed = tmp_path / "fail_closed.sh"
+    fail_closed.write_text("#!/usr/bin/env bash\nexit 2\n", encoding="utf-8")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=fail_closed)
+    assert len(errors) == 1, errors
+    assert "self-test" in errors[0], errors
+
+
+def test_check_git_recipes_root_guard_nested_fence_recovers(tmp_path):
+    """Replicates the LIVE nested-fence shape at weekly/SKILL.md:196-204
+    (outer ```markdown fence containing an inner ```diff fence) FOLLOWED by
+    a blocked bash fence: the parity-toggle parser must recover and flag the
+    blocked fence at its CORRECT opener line — the naive empty-tag-closer
+    rule desyncs here and silently hides the bash fence (a false negative
+    the live-tree test cannot see)."""
+    body = (
+        "```markdown\n"  # 1  open (markdown)
+        "1. **Target:** x\n"  # 2
+        "   ```diff\n"  # 3  same-token fence line -> CLOSES the outer fence
+        "   - old\n"  # 4  prose (outside any fence)
+        "   + new\n"  # 5
+        "   ```\n"  # 6  opens an untagged fence
+        "```\n"  # 7  closes it
+        "\n"  # 8
+        "```bash\n"  # 9  the blocked fence the parser must still see
+        f"{_RG_BLOCKED_CMD}\n"  # 10
+        "```\n"  # 11
+    )
+    _write_rg_skill(tmp_path, "x", body)
+    errors = check_git_recipes_root_guard(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:9:" in errors[0], errors
+
+
+def test_check_git_recipes_root_guard_unterminated_fence_scanned(tmp_path):
+    """A blocked bash fence with NO closer at EOF is still scanned (fail
+    toward checking — previously only a docstring claim)."""
+    _write_rg_skill(tmp_path, "x", f"```bash\n{_RG_BLOCKED_CMD}\n")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:1:" in errors[0], errors
+
+
+def test_check_git_recipes_root_guard_known_miss_residuals(tmp_path):
+    """The two archived #1047 shapes are DISCLOSED residuals, not covered:
+    (a) an inline code span in a prose bullet carrying a blocked command;
+    (b) a ``#``-commented blocked command inside a bash fence (the hook's
+    comment-tail strip correctly allows the block-as-pasted). Both -> 0
+    hits, and the check's docstring must name both residual shapes so the
+    disclosure is durable."""
+    body = (
+        f"- Then run `{_RG_BLOCKED_CMD}` at the repo root.\n"
+        "\n"
+        "```bash\n"
+        f"# {_RG_BLOCKED_CMD}   <- run this uncommented\n"
+        "echo done\n"
+        "```\n"
+    )
+    _write_rg_skill(tmp_path, "x", body)
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+    doc = check_git_recipes_root_guard.__doc__ or ""
+    assert "inline-code recipes" in doc, "docstring must name the prose inline-code residual"
+    assert "commented instruction lines" in doc, (
+        "docstring must name the commented-instruction-line residual"
+    )
+    # the other two named residuals ride along
+    assert "untagged" in doc, "docstring must name the untagged-fence residual"
+    assert "placeholder-substitution" in doc, (
+        "docstring must name the placeholder-substitution false-PASS direction"
+    )
+
+
+def test_check_git_recipes_root_guard_tilde_fence(tmp_path):
+    """``~~~bash`` fences are scanned too; a sentinel line with TRAILING
+    WHITESPACE after the comment closer still waives."""
+    _write_rg_skill(tmp_path, "tilde", f"~~~bash\n{_RG_BLOCKED_CMD}\n~~~\n")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:1:" in errors[0], errors
+
+    _write_rg_skill(
+        tmp_path,
+        "tilde",
+        "<!-- workflow-lint: allow-root-guard-block: deliberate example -->   \n"
+        f"~~~bash\n{_RG_BLOCKED_CMD}\n~~~\n",
+    )
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+
+
+def test_check_git_recipes_root_guard_live_tree_passes():
+    """The real post-disposition tree PASSES (the ``test_live_trees_pass``
+    invariant): locks in the #1176 dispositions — the refactor/SKILL.md
+    recipe fix and the gotchas.md pod-side exemption sentinel — and fails
+    loud if a future doc edit adds a recipe the live hook blocks."""
+    assert check_git_recipes_root_guard() == []
+
+
+def test_workflow_lint_check_git_recipes_root_guard_cli_exits_zero():
+    """CLI flag smoke: ``--check-git-recipes-root-guard`` exits 0 on the
+    committed tree. Bundle membership (no_flags) is auto-covered by
+    ``test_workflow_lint_default_exits_zero``."""
+    result = _run("--check-git-recipes-root-guard")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-git-recipes-root-guard failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_skill_bang_backtick`` (incident class #1243/#1266:
+# a bang directly against a backtick in preprocessor-loaded skill markdown
+# makes Claude Code execute the following text as inline shell AT SKILL LOAD
+# — commit 90af0ce2d9 introduced two such prose spans in
+# .claude/skills/issue/SKILL.md and every /issue session boot died until
+# hotfix f75e1b4c13 reworded them). Fixtures build the hazardous adjacency
+# at RUNTIME (concatenation with chr(96)) so this test file never contains
+# it in source — the live-tree invariant below scans this repo's own
+# .claude/ markdown, and the check has no waiver by design.
+# ---------------------------------------------------------------------------
+
+_TICK = chr(96)  # backtick — never written literally next to a bang here
+_BANG_TICK = "!" + _TICK
+
+
+def _write_bang_md(root: Path, rel: str, text: str) -> Path:
+    """Write a fixture markdown file under ``root/rel``, creating parents."""
+    path = root / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_check_skill_bang_backtick_fail_incident_prose_span(tmp_path):
+    """The verbatim 90af0ce2d9 incident line shape — a code span whose
+    content ends in a bang against the CLOSING backtick — is flagged with a
+    path:lineno-prefixed error (and the offending line is never echoed)."""
+    line = (
+        "the guard exits nonzero ("
+        + _TICK
+        + "grep -q pattern file"
+        + _BANG_TICK
+        + ") before dispatch"
+    )
+    _write_bang_md(tmp_path, "skills/issue/SKILL.md", "# heading\n\n" + line + "\n")
+    errors = check_skill_bang_backtick(claude_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "SKILL.md:3" in errors[0]
+    assert "grep -q pattern" not in errors[0], "error string must not echo the line"
+
+
+def test_check_skill_bang_backtick_fail_inside_fenced_block(tmp_path):
+    """No fenced-block exemption: the same adjacency inside a fenced bash
+    block is flagged (the preprocessor is not verified to ignore fences)."""
+    fence = _TICK * 3
+    body = (
+        "# doc\n\n"
+        + fence
+        + "bash\n"
+        + "echo start "
+        + _BANG_TICK
+        + "whoami"
+        + _TICK
+        + " end\n"
+        + fence
+        + "\n"
+    )
+    _write_bang_md(tmp_path, "skills/s/SKILL.md", body)
+    errors = check_skill_bang_backtick(claude_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "SKILL.md:4" in errors[0]
+
+
+def test_check_skill_bang_backtick_fail_agents_and_commands_roots(tmp_path):
+    """Root coverage: hits under agents/ and commands/ are both flagged, and
+    an absent skills/ root does not crash (the exists-guard)."""
+    _write_bang_md(tmp_path, "agents/foo.md", "x " + _BANG_TICK + "cmd" + _TICK + " y\n")
+    _write_bang_md(tmp_path, "commands/bar.md", "z " + _BANG_TICK + "cmd" + _TICK + "\n")
+    # skills/ deliberately absent — must not crash
+    errors = check_skill_bang_backtick(claude_dir=tmp_path)
+    assert len(errors) == 2, f"expected two errors, got: {errors}"
+    joined = "\n".join(errors)
+    assert "foo.md:1" in joined
+    assert "bar.md:1" in joined
+
+
+def test_check_skill_bang_backtick_pass_dollar_bang(tmp_path):
+    """The '$!' shell-pid prose shape (the 3 live SKILL.md instances) is
+    carved out by the lookbehind — empirically inert across healthy boots."""
+    line = "capture the pid (" + _TICK + "echo $" + _BANG_TICK + ") after launch"
+    _write_bang_md(tmp_path, "skills/issue/SKILL.md", line + "\n")
+    assert check_skill_bang_backtick(claude_dir=tmp_path) == []
+
+
+def test_check_skill_bang_backtick_pass_bang_space_and_bare_bang(tmp_path):
+    """Negatives: the f75e1b4c13 reworded shape (bang, space, then more span
+    content) and a bang at end-of-line with a backtick only on the NEXT line
+    (per-line scan: the characters must be byte-adjacent) both pass."""
+    body = (
+        "use "
+        + _TICK
+        + "if ! grep -q pattern"
+        + _TICK
+        + " to test\n"
+        + "watch out!\n"
+        + _TICK
+        + "code"
+        + _TICK
+        + "\n"
+    )
+    _write_bang_md(tmp_path, "skills/s.md", body)
+    assert check_skill_bang_backtick(claude_dir=tmp_path) == []
+
+
+def test_check_skill_bang_backtick_repo_tree_is_clean():
+    """Durability pin: the committed .claude/{skills,agents,commands}
+    markdown must carry no non-dollar bang-against-backtick spans — the
+    skill preprocessor executes such a span as inline shell at load, and
+    the #1243 incident killed every /issue session boot until hotfix
+    f75e1b4c13 reworded the two offending spans."""
+    errors = check_skill_bang_backtick()
+    assert errors == [], (
+        ".claude/{skills,agents,commands} markdown carries bang-against-"
+        "backtick inline-exec spans (#1243/#1266 session-killer class); "
+        "reword them — insert a space before the backtick or write "
+        "'bang-backtick' in prose (no waiver exists by design):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_skill_bang_backtick_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-skill-bang-backtick")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-skill-bang-backtick failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_check_skill_bang_backtick_bundled_in_no_flags():
+    """NON-VACUOUS no-flags bundling pin (the
+    ``test_pipe_python_bundled_in_no_flags_source_pin`` shape):
+    ``check_skill_bang_backtick`` must be dispatched by the BARE
+    ``workflow_lint.py`` run. Without this pin every other test in this
+    suite stays green with the two wiring lines absent (fixtures call the
+    function directly; ``_run`` exits 0 vacuously; the live-tree test
+    bypasses ``main()``), silently disarming the Step 10d protection."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_skill_bang_backtick or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_skill_bang_backtick\(\)\)",
+        src,
+    ), "check_skill_bang_backtick is not dispatched on the no-flags branch"
+    assert "or args.check_skill_bang_backtick" in src, (
+        "--check-skill-bang-backtick is missing from the no_flags detection tuple"
     )

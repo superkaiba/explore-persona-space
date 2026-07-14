@@ -1,5 +1,5 @@
 ---
-description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848); relaunch-side fix-commit ancestry + stale-checkpoint hygiene (#1081)
+description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848); relaunch-side fix-commit ancestry + stale-checkpoint hygiene (#1081); step-2 explicit-PID kill (#1198)
 paths:
   - "scripts/**/*.py"
   - "src/explore_persona_space/**"
@@ -175,8 +175,21 @@ load-186 VM overload).
    `pkill -f run_`, `pkill -f uv`) can kill ANOTHER session's work and
    is BANNED. Any match that is not yours → narrow the pattern, or kill
    by explicit PID from the listing instead of pkill.
-2. **Kill** — `pkill -TERM -f '<same pattern>'`; wait ~10 s;
-   `pkill -KILL -f '<same pattern>' 2>/dev/null || true`.
+2. **Kill** — by EXPLICIT PID: `kill -TERM <pid>...` on exactly the
+   step-1 PIDs you read and confirmed as yours; wait ~10 s;
+   `kill -KILL <pid>... 2>/dev/null || true`. A PID that exited between
+   probe and kill makes `kill` return nonzero — tolerate it (`|| true`
+   or a per-PID loop; step 3's re-probe is the real dead-check), and
+   keep the probe→kill gap short. A step-3 re-probe survivor that is
+   NOT yours (a spared concurrent invocation) takes step 1's
+   leave-and-report disposition, not a kill. Pattern pkill
+   (`pkill -TERM -f '<same pattern>'`; wait ~10 s; `pkill -KILL -f
+   '<same pattern>' 2>/dev/null || true`) is a FALLBACK only when the
+   step-1 listing is unusable (output lost, PIDs unreadable) — pkill
+   re-matches the pattern at KILL time, so a concurrent session's
+   byte-identical invocation starting after the probe gets TERMed
+   without the step-1 discriminators ever seeing it (the probe→kill
+   TOCTOU; #848 review finding, closed by #1198).
 3. **Confirm dead** — re-run the step-1 probe; relaunch ONLY when it
    returns nothing. A PID surviving SIGKILL: stop and report; never
    relaunch on top of it.

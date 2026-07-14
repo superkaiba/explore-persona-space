@@ -20,10 +20,12 @@ or bold paragraphs and must not be spuriously rejected.
 
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import subprocess
 import sys
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
@@ -162,3 +164,84 @@ def test_cli_help_lists_allow_stub_flag():
     # H1.
     assert "H1 line" not in stdout
     assert "must start with" not in stdout
+
+
+# ─── Goal-H2 drop guard: CLI threading (incident #1112) ────────────────────
+#
+# The guard itself lives in the library (`task_workflow.set_body`, covered
+# by tests/test_task_workflow.py — the real body is executed there, so the
+# seam-stub obligation is satisfied); these tests pin the CLI layer: flag
+# threading through `cmd_set_body`, the clean SystemExit on refusal, and
+# the REAL argparse registration of `--allow-goal-drop`.
+
+
+def _set_body_namespace(**overrides) -> argparse.Namespace:
+    """Build the args namespace `cmd_set_body` reads (mirrors the set-body
+    subparser's attribute set; parser registration itself is pinned by
+    `test_cli_set_body_parser_registers_allow_goal_drop`)."""
+    ns = argparse.Namespace(
+        number=999_999_999,  # nonexistent task: the paper-check get_task raise is caught
+        body="x",
+        file=None,
+        snapshot=False,
+        allow_stub=True,  # skip the length guard; these tests target the goal-drop path
+        allow_goal_drop=False,
+    )
+    for key, value in overrides.items():
+        setattr(ns, key, value)
+    return ns
+
+
+def _autospec_get_task_raising(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Make the paper-exemption `get_task` probe hermetic (signature-conformant
+    autospec raising KeyError — the branch `cmd_set_body` already catches)."""
+    monkeypatch.setattr(
+        task_cli,
+        "get_task",
+        mock.create_autospec(task_cli.get_task, side_effect=KeyError("no such task")),
+    )
+
+
+def test_cli_set_body_threads_allow_goal_drop_flag(monkeypatch):
+    """`cmd_set_body` forwards `allow_goal_drop` to the library `set_body`."""
+    stub = mock.create_autospec(task_cli.set_body)
+    monkeypatch.setattr(task_cli, "set_body", stub)
+    _autospec_get_task_raising(monkeypatch)
+    ns = _set_body_namespace(allow_goal_drop=True)
+    task_cli.cmd_set_body(ns)
+    stub.assert_called_once_with(ns.number, "x", snapshot_original=False, allow_goal_drop=True)
+
+
+def test_cli_set_body_goal_drop_refusal_is_clean_systemexit(monkeypatch):
+    """A `GoalH2DropError` from the library surfaces as a clean SystemExit
+    carrying the refusal message (no raw traceback path) — the same style
+    as the `--allow-stub` guard."""
+    refusal = task_cli.GoalH2DropError(
+        "set-body refused for task #1: the new body removes the '## Goal' H2 "
+        "(incident #1112); pass allow_goal_drop=True / --allow-goal-drop."
+    )
+    stub = mock.create_autospec(task_cli.set_body, side_effect=refusal)
+    monkeypatch.setattr(task_cli, "set_body", stub)
+    _autospec_get_task_raising(monkeypatch)
+    with pytest.raises(SystemExit) as exc:
+        task_cli.cmd_set_body(_set_body_namespace())
+    assert str(refusal) in str(exc.value)
+    assert exc.value.__cause__ is refusal
+
+
+def test_cli_set_body_parser_registers_allow_goal_drop(monkeypatch, tmp_path):
+    """Parse through the REAL argparse parser `main()` builds — a forgotten
+    subparser registration would pass the namespace-built tests above and
+    crash production on `args.allow_goal_drop` (AttributeError)."""
+    captured: dict = {}
+    monkeypatch.setattr(task_cli, "cmd_set_body", lambda args: captured.update(args=args))
+    body_file = tmp_path / "b.md"
+    body_file.write_text("x")
+    monkeypatch.setattr(
+        sys, "argv", ["task.py", "set-body", "1", "--file", str(body_file), "--allow-goal-drop"]
+    )
+    task_cli.main()
+    assert captured["args"].allow_goal_drop is True
+    monkeypatch.setattr(sys, "argv", ["task.py", "set-body", "1", "--file", str(body_file)])
+    task_cli.main()
+    assert captured["args"].allow_goal_drop is False

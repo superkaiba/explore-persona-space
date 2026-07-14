@@ -26,3 +26,19 @@ gate covers (single positions / small-window maxes, not span means), split
 the gate into an early-layer per-layer bar (the sharp bug catcher) + a
 flattened bar with >=4x measured headroom, and attribute marginal misses with
 an fp32 re-probe before loosening anything.
+
+**Absolute-error variant (#1092 r8.6, 2026-07-08):** on Qwen2-family REAL
+weights the late-layer activation-outlier dims (|values| ~200-1000) turn pure
+bf16 batch-geometry jitter into ABSOLUTE errors of ~3.0 (0.3-1.4% relative) —
+an allclose(atol=5e-2) identity gate fails on a bug-free rig (launch-6
+max_abs=3.0 == the same-ids batch-1-vs-batch-8 null at the SAME (row, layer,
+dim); fp32 both-sides max_rel 7.5e-5; the tiny-random-CPU repro missed it
+because O(1) magnitudes + fp32 are exact). Also: a MAX floored-relative bar
+cannot separate either — the pure null reached floored-rel 0.87 on one
+small-magnitude tail element. Gate the BULK instead: p99 floored-rel
+(|a-b|/max(|a|,|b|,1)) <= ~4x the measured null p99 (0.076 -> 0.30) + an
+absolute backstop at ~100x the null max (3.0 -> 300) — any off-by-one row is
+>=2% of a 50-row read, driving p99 to ~1, and misaligned outlier dims shift by
+O(magnitude), so both defect classes still fail loud. Derivation script of
+record: `scripts/issue1092_g2_diag.py` (token-id hard asserts + same-side
+batch-geometry null + fp32 spot).

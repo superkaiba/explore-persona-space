@@ -1,0 +1,206 @@
+{
+  "commit": "48694d412a",
+  "created": "2026-07-08T13:03:53Z",
+  "figsize": [
+    9.6,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "arm B\n(full n)",
+      "D = (W_on - W_ex) / (C - W_ex)": 0.03140688061926557,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "span-matched\n(refit)",
+      "D = (W_on - W_ex) / (C - W_ex)": -0.1722435197099439,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "random\n(n-matched)",
+      "D = (W_on - W_ex) / (C - W_ex)": -0.17151939196582233,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.9894146650743822,
+      "D = (W_on - W_ex) / (C - W_ex)": -0.1607321053303874,
+      "series": "per-seed D (MLP-carried)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0981954991561174,
+      "D = (W_on - W_ex) / (C - W_ex)": -0.1943017791154376,
+      "series": "per-seed D (MLP-carried)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8958104540817687,
+      "D = (W_on - W_ex) / (C - W_ex)": -0.18327354454821082,
+      "series": "per-seed D (MLP-carried)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.958641725238132,
+      "D = (W_on - W_ex) / (C - W_ex)": -0.16359484299127583,
+      "series": "per-seed D (MLP-carried)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9407124995413827,
+      "D = (W_on - W_ex) / (C - W_ex)": -0.1593153265644073,
+      "series": "per-seed D (MLP-carried)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.9894146650743822,
+      "D = (W_on - W_ex) / (C - W_ex)": -0.1823088228410672,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0981954991561174,
+      "D = (W_on - W_ex) / (C - W_ex)": -0.16378907631623166,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8958104540817686,
+      "D = (W_on - W_ex) / (C - W_ex)": -0.18124180332122047,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.958641725238132,
+      "D = (W_on - W_ex) / (C - W_ex)": -0.16904524447388736,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9407124995413827,
+      "D = (W_on - W_ex) / (C - W_ex)": -0.16121201287670528,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.5,
+      "D = (W_on - W_ex) / (C - W_ex)": 0.5904310946594687,
+      "series": "round-7 greedy D",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.5,
+      "D = (W_on - W_ex) / (C - W_ex)": 0.5904310946594687,
+      "series": "round-7 greedy D",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "category": "arm B\n(full n)",
+      "y": 0.08563161421546632,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "span-matched\n(refit)",
+      "y": -0.07082410488947828,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "random\n(n-matched)",
+      "y": -0.07252550943109885,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.9894146650743822,
+      "y": -0.06463070548865651,
+      "series": "per-seed D (MLP-carried)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0981954991561174,
+      "y": -0.07038410119224849,
+      "series": "per-seed D (MLP-carried)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8958104540817687,
+      "y": -0.06251109860809322,
+      "series": "per-seed D (MLP-carried)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.958641725238132,
+      "y": -0.07950448366188047,
+      "series": "per-seed D (MLP-carried)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9407124995413827,
+      "y": -0.07709013549651203,
+      "series": "per-seed D (MLP-carried)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.9894146650743822,
+      "y": -0.10031017649008026,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0981954991561174,
+      "y": -0.04425069291939508,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8958104540817686,
+      "y": -0.07655811122447809,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.958641725238132,
+      "y": -0.06657018482505309,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9407124995413827,
+      "y": -0.07493838169648792,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": -0.5,
+      "y": 0.4282697415395536,
+      "series": "round-7 greedy D",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.5,
+      "y": 0.4282697415395536,
+      "series": "round-7 greedy D",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 30
+}

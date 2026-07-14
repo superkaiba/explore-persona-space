@@ -1,0 +1,603 @@
+{
+ "commit": "695daa22b7",
+ "created": "2026-07-08T18:29:22Z",
+ "figsize": [
+  6.4,
+  4.0
+ ],
+ "points": [
+  {
+   "decoder layer": 0.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.5130845606327057,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 1.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.7073692083358765,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 2.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.9027425050735474,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 3.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 1.2234373092651367,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 4.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 1.4842710494995117,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 5.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 1.609679102897644,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 6.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 1.963153600692749,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 7.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 2.4501099586486816,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 8.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 2.7910420894622803,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 9.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 3.3562567234039307,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 10.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 3.3999269008636475,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 11.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 3.5511271953582764,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 12.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 3.5243990421295166,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 13.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 3.7846193313598633,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 14.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 4.2263593673706055,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 15.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 5.229983329772949,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 16.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 5.267237663269043,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 17.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 5.834436893463135,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 18.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 6.918692111968994,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 19.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 13.556625366210938,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 20.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 14.961100578308105,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 21.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 16.700572967529297,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 22.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 19.057451248168945,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 23.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 23.46120834350586,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 24.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 28.253507614135742,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 25.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 30.71088409423828,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 26.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 37.70423889160156,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 27.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 52.58552551269531,
+   "series": "full-FT \u2212 lr-matched LoRA (both lr 5e-6)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 0.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.38663434982299805,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 1.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.5139304399490356,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 2.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.6618472337722778,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 3.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.9210281372070312,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 4.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 1.1319446563720703,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 5.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 1.2310762405395508,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 6.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 1.516826868057251,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 7.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 1.8803179264068604,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 8.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 2.1451480388641357,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 9.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 2.605043888092041,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 10.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 2.608206033706665,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 11.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 2.7522852420806885,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 12.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 2.711373805999756,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 13.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 2.918455123901367,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 14.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 3.2442827224731445,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 15.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 4.0386271476745605,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 16.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 4.081431865692139,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 17.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 4.581724643707275,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 18.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 5.390511512756348,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 19.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 10.79458236694336,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 20.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 11.864229202270508,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 21.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 13.151979446411133,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 22.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 14.933626174926758,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 23.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 18.20499610900879,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 24.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 21.935321807861328,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 25.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 23.655479431152344,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 26.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 29.460590362548828,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 27.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 38.49443817138672,
+   "series": "full-FT \u2212 LoRA @ lr 1e-5 (parent reference)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 0.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.12645021080970764,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 1.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.19343876838684082,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 2.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.24089527130126953,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 3.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.30240917205810547,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 4.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.3523263931274414,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 5.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.37860286235809326,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 6.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.44632673263549805,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 7.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.5697920322418213,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 8.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.6458940505981445,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 9.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.7512128353118896,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 10.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.7917208671569824,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 11.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.7988419532775879,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 12.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.8130252361297607,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 13.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.8661642074584961,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 14.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 0.9820766448974609,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 15.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 1.1913561820983887,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 16.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 1.1858057975769043,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 17.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 1.2527122497558594,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 18.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 1.5281805992126465,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 19.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 2.762042999267578,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 20.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 3.0968713760375977,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 21.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 3.548593521118164,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 22.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 4.1238250732421875,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 23.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 5.25621223449707,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 24.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 6.318185806274414,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 25.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 7.0554046630859375,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 26.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 8.243648529052734,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 27.0,
+   "paired \u2016\u03bc\u2016 difference (residual-stream units)": 14.091087341308594,
+   "series": "LoRA @ lr 1e-5 \u2212 lr-matched LoRA (lr effect)",
+   "_kind": "line",
+   "_group": 2
+  }
+ ],
+ "n_series": 3,
+ "total_points": 84,
+ "git_commit": "695daa22b7899bd7b01ab4fc5e2a9b179e0c7db0",
+ "ts": "2026-07-08T18:29:21Z",
+ "mu_n_boot": 2000
+}

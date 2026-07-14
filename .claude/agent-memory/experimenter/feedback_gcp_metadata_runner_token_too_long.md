@@ -29,8 +29,10 @@ zombie predicates (`reconnect_or_none` + the pre-launch stale reclaim in
 (`done`/`failed`/`wedged`) as a finished zombie and DELETE it on the next
 dispatch, so an active relaunch must never be left reading terminal. Then
 relaunch the REMAINING phases on the same VM via SSH under
-`nohup` with stdout/stderr redirected to a FILE (bypasses the metadata-runner
-pipe entirely); on success replicate the startup script's success tail —
+`setsid nohup ... < /dev/null` (detachment trio — never bare `nohup`; full GCP
+salvage-launcher shape incl. root PATH + metadata-sourced tokens:
+`.claude/rules/gotchas.md` #653/#823 salvage-launcher entry) with stdout/stderr
+redirected to a FILE (bypasses the metadata-runner pipe entirely); on success replicate the startup script's success tail —
 write the completion sentinel at the handle's `sentinel_path`, then publish
 `eps/phase=done` via the guest-attribute curl — so the existing poll/finalize
 path proceeds unchanged. Keep the rc!=0 → `_eps_phase failed; shutdown -h now`

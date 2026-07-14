@@ -1,0 +1,180 @@
+{
+  "commit": "1b104689cc",
+  "created": "2026-07-10T15:41:18Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "fit layer": 14.0,
+      "held-out R\u00b2": 0.8043440222361293,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit layer": 18.0,
+      "held-out R\u00b2": 0.8234204769760982,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit layer": 19.0,
+      "held-out R\u00b2": 0.8377810795572879,
+      "series": "Instruct, own answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit layer": 14.0,
+      "held-out R\u00b2": 0.49265648668357076,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fit layer": 18.0,
+      "held-out R\u00b2": 0.6224844814437471,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fit layer": 19.0,
+      "held-out R\u00b2": 0.6849834295186238,
+      "series": "Pretrained, instruct answers",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fit layer": 14.0,
+      "held-out R\u00b2": 0.7143812927806117,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit layer": 18.0,
+      "held-out R\u00b2": 0.7283029602316543,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit layer": 19.0,
+      "held-out R\u00b2": 0.7485254224899582,
+      "series": "Pretrained, own answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit layer": 14.0,
+      "held-out R\u00b2": 0.7121680037620438,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fit layer": 18.0,
+      "held-out R\u00b2": 0.7251671869496185,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fit layer": 19.0,
+      "held-out R\u00b2": 0.7438470827907159,
+      "series": "Instruct, pretrained answers",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fit layer": 14.0,
+      "held-out R\u00b2": 0.7763061034604088,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fit layer": 18.0,
+      "held-out R\u00b2": 0.7885417290373652,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fit layer": 19.0,
+      "held-out R\u00b2": 0.7987291593808644,
+      "series": "Instruct, Claude answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fit layer": 14.0,
+      "held-out R\u00b2": 0.7423269558538191,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fit layer": 18.0,
+      "held-out R\u00b2": 0.7489394648312706,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fit layer": 19.0,
+      "held-out R\u00b2": 0.7599363789133418,
+      "series": "Pretrained, Claude answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fit layer": 14.0,
+      "held-out R\u00b2": 0.07916209359311543,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fit layer": 18.0,
+      "held-out R\u00b2": 0.10170544189743369,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fit layer": 19.0,
+      "held-out R\u00b2": 0.14105378239531552,
+      "series": "Instruct, shuffled answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fit layer": 14.0,
+      "held-out R\u00b2": 0.05652301202486454,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fit layer": 18.0,
+      "held-out R\u00b2": 0.07469372706905175,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fit layer": 19.0,
+      "held-out R\u00b2": 0.06746908020722531,
+      "series": "Pretrained, shuffled answers",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 24
+}

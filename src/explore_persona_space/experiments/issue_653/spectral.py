@@ -26,7 +26,7 @@ dependency, so it is fully CPU-smoke-testable.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -48,24 +48,15 @@ EM_EXEMPLAR: dict[str, tuple[float, float, float]] = {
 }
 
 
-def spectral_dvs(singular_values: np.ndarray) -> dict[str, float]:
-    """Compute the registered spectral DVs from a vector of singular values σ.
+def spectral_dvs_from_lambda(lam: np.ndarray) -> dict[str, float]:
+    """Registered spectral DVs from an EIGENVALUE (variance) spectrum λ = σ².
 
-    Args:
-        singular_values: 1-D array of σ_i ≥ 0 (the SVD of a shift / Δx cloud or
-            of a Jacobian). Zeros are allowed (padded spectra); a length-1
-            spectrum gives top_share=1.0, pr=1.0.
-
-    Returns:
-        ``{top_share_lambda, pr_lambda, rank_k_at_90, n_modes,
-        eff_rank_entropy}`` — all on the eigenvalue spectrum λ = σ².
+    Shared reduction for :func:`spectral_dvs` (σ input) and the Gram-space
+    batched bootstrap (λ input directly from ``eigvalsh``). Zeros allowed;
+    raises on a degenerate (all-zero) spectrum.
     """
-    sigma = np.asarray(singular_values, dtype=np.float64).ravel()
-    assert sigma.ndim == 1, sigma.shape
-    if (sigma < -1e-9).any():
-        raise ValueError("singular values must be non-negative")
-    sigma = np.clip(sigma, 0.0, None)
-    lam = sigma**2  # the eigenvalue (variance) spectrum
+    lam = np.asarray(lam, dtype=np.float64).ravel()
+    lam = np.clip(lam, 0.0, None)
     total = float(lam.sum())
     if total <= 0.0:
         raise ValueError("degenerate spectrum (Σσ² == 0) — cannot compute DVs")
@@ -90,6 +81,26 @@ def spectral_dvs(singular_values: np.ndarray) -> dict[str, float]:
         "n_modes": int(lam.size),
         "eff_rank_entropy": eff_rank_entropy,
     }
+
+
+def spectral_dvs(singular_values: np.ndarray) -> dict[str, float]:
+    """Compute the registered spectral DVs from a vector of singular values σ.
+
+    Args:
+        singular_values: 1-D array of σ_i ≥ 0 (the SVD of a shift / Δx cloud or
+            of a Jacobian). Zeros are allowed (padded spectra); a length-1
+            spectrum gives top_share=1.0, pr=1.0.
+
+    Returns:
+        ``{top_share_lambda, pr_lambda, rank_k_at_90, n_modes,
+        eff_rank_entropy}`` — all on the eigenvalue spectrum λ = σ².
+    """
+    sigma = np.asarray(singular_values, dtype=np.float64).ravel()
+    assert sigma.ndim == 1, sigma.shape
+    if (sigma < -1e-9).any():
+        raise ValueError("singular values must be non-negative")
+    sigma = np.clip(sigma, 0.0, None)
+    return spectral_dvs_from_lambda(sigma**2)
 
 
 def svd_of_cloud(cloud: np.ndarray, *, center_rows: bool = True) -> np.ndarray:
@@ -179,6 +190,24 @@ def cluster_bootstrap_dv(
 
     Returns ``{point, ci_low, ci_high, n_boot}``.
     """
+    import warnings
+
+    warnings.warn(
+        "cluster_bootstrap_dv is the SERIAL per-draw reference; production "
+        "batteries use the Gram-space batched twin batched_cluster_bootstrap / "
+        "batched_dvs_over_indices (vectorize-many-cell-fits.md supersede "
+        "contract, #1112). The serial body is retained for exactness gates + "
+        "prior-issue reproducibility.",
+        FutureWarning,
+        stacklevel=2,
+    )
+    import os
+
+    if os.environ.get("EPM_FORBID_SERIAL_FITS") == "1":
+        raise RuntimeError(
+            "cluster_bootstrap_dv (serial per-draw SVD loop) blocked under "
+            "EPM_FORBID_SERIAL_FITS=1 — use batched_cluster_bootstrap."
+        )
     X = np.asarray(cloud, dtype=np.float64)
     ids = np.asarray(cluster_ids)
     assert X.ndim == 2 and ids.shape[0] == X.shape[0], (X.shape, ids.shape)
@@ -202,6 +231,179 @@ def cluster_bootstrap_dv(
         "ci_low": float(np.quantile(boot_arr, alpha / 2)) if boot_arr.size else float("nan"),
         "ci_high": float(np.quantile(boot_arr, 1 - alpha / 2)) if boot_arr.size else float("nan"),
         "n_boot": int(boot_arr.size),
+    }
+
+
+# ── Gram-space BATCHED cluster bootstrap (#1112 source-module fix) ────────────
+#
+# The #1112 battery is ~1,344 clouds × 1,000 draws ≈ 1.3e6 spectra — a serial
+# per-draw SVD loop is the vectorize-many-cell-fits.md failure signature. The
+# batched path precomputes each cloud's row-Gram G = X Xᵀ ONCE (one
+# d-contraction), then evaluates every bootstrap draw as an eigvalsh of the
+# double-centered sub-Gram G[idx][:, idx] (≤ m×m), batched over draws in
+# chunks via torch.linalg.eigvalsh. Row-centering commutes: the eigenvalues of
+# C S C (C = I − 11ᵀ/m, S the resampled sub-Gram) are exactly the σ² of the
+# row-centered resampled cloud, so spectral_dvs_from_lambda reproduces the
+# serial spectral_dvs(svd_of_cloud(X[idx])) numbers to float tolerance
+# (pinned by tests/test_issue1112_spectral_batched.py).
+
+
+BOOTSTRAPPABLE_DVS = ("top_share_lambda", "pr_lambda", "rank_k_at_90")
+
+
+def bootstrap_index_matrix(
+    cluster_ids: Sequence,
+    *,
+    n_boot: int,
+    seed: int,
+) -> np.ndarray:
+    """(n_boot, n_rows) row-index matrix for cluster bootstrap draws.
+
+    Resamples CLUSTERS with replacement (the ``cluster_bootstrap_dv``
+    convention) and expands each pick to its member rows. Requires EQUAL
+    cluster sizes so every draw has a fixed row count (the batched eigvalsh
+    needs a fixed shape) — the #1112 clouds have exactly one row per
+    (context, question) cluster, which trivially satisfies this. Raises on
+    unequal cluster sizes (fall back to the serial reference there).
+
+    PAIRED cross-cell resampling (#1112 plan §6): build this matrix ONCE per
+    cloud-pair grouping from the SHARED (context, question) cluster ids and
+    apply the SAME matrix to both cells' clouds via
+    :func:`batched_dvs_over_indices`.
+    """
+    ids = np.asarray(cluster_ids)
+    unique, first_idx = np.unique(ids, return_index=True)
+    # Deterministic cluster order = first-appearance order (stable across
+    # cells that share the same (context, question) row ordering).
+    unique = unique[np.argsort(first_idx)]
+    rows_by_cluster = [np.where(ids == c)[0] for c in unique]
+    sizes = {len(r) for r in rows_by_cluster}
+    if len(sizes) != 1:
+        raise ValueError(
+            f"bootstrap_index_matrix requires equal cluster sizes, got sizes {sorted(sizes)} "
+            "— use the serial cluster_bootstrap_dv reference for unequal clusters"
+        )
+    members = np.stack(rows_by_cluster)  # (n_clusters, cluster_size)
+    rng = np.random.default_rng(seed)
+    picks = rng.integers(0, len(unique), size=(n_boot, len(unique)))  # cluster picks
+    idx = members[picks]  # (n_boot, n_clusters, cluster_size)
+    return idx.reshape(n_boot, -1)
+
+
+def batched_dvs_over_indices(
+    cloud: np.ndarray,
+    idx: np.ndarray,
+    *,
+    dv_names: Sequence[str] = BOOTSTRAPPABLE_DVS,
+    center_rows: bool = True,
+    chunk: int = 250,
+) -> dict[str, np.ndarray]:
+    """Per-draw spectral DVs for every row-index draw in ``idx`` (batched).
+
+    Args:
+        cloud: (n_rows, d) Δx cloud (float; promoted to float64).
+        idx: (n_boot, m) row-index matrix (e.g. from
+            :func:`bootstrap_index_matrix`).
+        dv_names: subset of ``spectral_dvs`` keys to return per draw.
+        center_rows: row-center each resampled cloud (the #653 convention).
+        chunk: draws per batched eigvalsh call ((chunk, m, m) float64 stack).
+
+    Returns:
+        ``{dv_name: (n_boot,) float64 array}`` — the per-draw DV matrix the
+        selection-symmetric-nulls rule requires persisting.
+    """
+    import torch
+
+    X = np.asarray(cloud, dtype=np.float64)
+    assert X.ndim == 2, X.shape
+    idx = np.asarray(idx)
+    assert idx.ndim == 2, idx.shape
+    n_boot, m = idx.shape
+    d = X.shape[1]
+    n_keep = min(m, d)  # svd_of_cloud returns min(m, d) singular values
+
+    G = torch.from_numpy(X @ X.T)  # (n_rows, n_rows) float64, ONE d-contraction
+    idx_t = torch.from_numpy(np.ascontiguousarray(idx, dtype=np.int64))
+
+    out = {name: np.empty(n_boot, dtype=np.float64) for name in dv_names}
+    for start in range(0, n_boot, chunk):
+        sel = idx_t[start : start + chunk]  # (c, m)
+        c = sel.shape[0]
+        # Sub-Grams via advanced indexing: S[b] = G[sel[b]][:, sel[b]].
+        S = G[sel.unsqueeze(2), sel.unsqueeze(1)]  # (c, m, m)
+        assert S.shape == (c, m, m), S.shape
+        if center_rows:
+            row_mean = S.mean(dim=2, keepdim=True)
+            col_mean = S.mean(dim=1, keepdim=True)
+            grand = S.mean(dim=(1, 2), keepdim=True)
+            S = S - row_mean - col_mean + grand
+        lam = torch.linalg.eigvalsh(S)  # (c, m) ascending
+        lam = lam.clamp_min(0.0)
+        # Keep the n_keep LARGEST eigenvalues (parity with min(m, d) SVD modes).
+        lam_np = lam.numpy()[:, ::-1][:, :n_keep]
+        for b in range(c):
+            try:
+                dvs = spectral_dvs_from_lambda(lam_np[b])
+            except ValueError:
+                # Degenerate resample (all-identical rows) — mirror the serial
+                # cluster_bootstrap_dv skip semantics: NaN, dropped at quantile.
+                for name in dv_names:
+                    out[name][start + b] = np.nan
+                continue
+            for name in dv_names:
+                out[name][start + b] = dvs[name]
+    return out
+
+
+def batched_cluster_bootstrap(
+    cloud: np.ndarray,
+    cluster_ids: Sequence,
+    *,
+    dv_names: Sequence[str] = BOOTSTRAPPABLE_DVS,
+    n_boot: int = 1000,
+    seed: int = 653,
+    center_rows: bool = True,
+    alpha: float = 0.05,
+    chunk: int = 250,
+    idx: np.ndarray | None = None,
+) -> dict:
+    """Gram-space batched cluster-bootstrap CIs on the spectral DVs.
+
+    The batched twin of :func:`cluster_bootstrap_dv` (identical resampling
+    unit + point estimate; the per-draw spectra come from batched eigvalsh of
+    double-centered sub-Grams instead of a per-draw SVD).
+
+    Args:
+        idx: optional pre-built (n_boot, n_rows) index matrix (pass the SAME
+            matrix to both cells of a pair for PAIRED difference CIs); default
+            builds one via :func:`bootstrap_index_matrix`.
+
+    Returns:
+        ``{"point": {dv: float}, "ci": {dv: [lo, hi]}, "draws": {dv: (n_boot,)
+        array}, "n_boot": int, "resampling": "paired-capable-cluster"}``.
+    """
+    X = np.asarray(cloud, dtype=np.float64)
+    point = spectral_dvs(svd_of_cloud(X, center_rows=center_rows))
+    if idx is None:
+        idx = bootstrap_index_matrix(cluster_ids, n_boot=n_boot, seed=seed)
+    draws = batched_dvs_over_indices(
+        X, idx, dv_names=dv_names, center_rows=center_rows, chunk=chunk
+    )
+    ci = {
+        name: [
+            float(np.nanquantile(vals, alpha / 2)),
+            float(np.nanquantile(vals, 1 - alpha / 2)),
+        ]
+        for name, vals in draws.items()
+    }
+    n_valid = int(np.isfinite(next(iter(draws.values()))).sum()) if draws else 0
+    return {
+        "point": {name: float(point[name]) for name in dv_names},
+        "ci": ci,
+        "draws": draws,
+        "n_boot": int(idx.shape[0]),
+        "n_valid": n_valid,
+        "resampling": "paired-capable-cluster",
     }
 
 

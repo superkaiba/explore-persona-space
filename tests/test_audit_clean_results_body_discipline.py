@@ -16,6 +16,12 @@ Two v3-redesign (2026-W24) concerns are pinned here:
    (`C1` / `H2` / …) with no reword option — the same conflict the
    `**Context:**` blockquote carve-out fixed (#597). Example blocks
    inside `## Data` must be exempt from the scan.
+
+Also pinned: the v4 `## Methodology` sample-data `<details>` exemption
+(#1171) — v4 moves the verbatim sample rows to `## Methodology`, which
+gets the identical exemption (Methodology PROSE stays scanned) — and the
+bulk-inventory gate's acceptance of the v4 sentinel
+`<!-- clean-result-v4 -->` (#1226).
 """
 
 from __future__ import annotations
@@ -140,6 +146,20 @@ def test_is_v2_gate_accepts_v3_sentinel():
     """A v3-sentinel body must be selected for auditing in bulk mode
     (the gate name is historical; it means "current spec, audit it")."""
     body = "# Title (LOW confidence)\n\n<!-- clean-result-v3 -->\n\n## Takeaways\n\n- ok\n"
+    assert audit.is_v2(body)
+
+
+def test_is_v2_gate_accepts_v4_sentinel():
+    """A v4-sentinel body must be selected for auditing in bulk mode —
+    v4 is the CURRENT spec (2026-W26). The body below carries NO other
+    recognised marker (no v3/v2 sentinel, no ## Reproducibility /
+    ## TL;DR H2s), so pre-fix it failed every disjunct — the exact
+    #1226 coverage hole."""
+    body = (
+        "# Title (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n"
+        "## Takeaways\n\n- ok\n\n## Goal\n\nx\n\n## Methodology\n\nx\n\n"
+        "## Results\n\nx\n"
+    )
     assert audit.is_v2(body)
 
 
@@ -1035,6 +1055,131 @@ def test_pre_reg_whole_body_scan_preserved_for_v2_sentinel_bodies():
     assert "pre_reg" in findings, findings
 
 
+# ─── v4 ## Methodology sample-data <details> exemption (#1171) ───────────
+#
+# The v4 spec moved the verbatim sample rows to `## Methodology` →
+# `**Sample training/evaluation data + completions:**`, carried in the same
+# `<details>` / fenced forms the v3 `## Data` section used.
+# `strip_data_example_blocks` exempts `<details>` blocks inside BOTH
+# sections (`_DETAILS_EXEMPT_H2_TITLES`); Methodology PROSE outside a
+# `<details>` block — and every other section, `## Results` included —
+# stays scanned. Tests follow the #969 fixture-mutation convention
+# (`.replace()` on `V4_BODY_CLEAN` + a `body != V4_BODY_CLEAN` guard).
+
+# The v4 Methodology sample-data slot with one would-be offender per
+# category under test, each on a plain non-table, non-fenced line inside
+# the `<details>` block (so no other exemption mechanism can mask the
+# result): `C1` → condition_labels, `SUCCESS` → verdict_caps,
+# `[0.24, 0.31]` → interval_inline (bare-pair form), `BS_E0` → cell_tags,
+# `pre-registered` → pre_reg. Bare `C1` is load-bearing: a compound like
+# `sw_eng_C1` would NOT match condition_labels (no `\b` between `_` and
+# `C`).
+_V4_SAMPLE_SLOT = (
+    "**Evaluation:** judge-scored rate on the held-out probes.\n\n"
+    "**Sample training/evaluation data + completions:**\n\n"
+    "3 of 600 completions, cherry-picked for illustration."
+    " Full raw completions: [raw](https://example.com/raw)\n\n"
+    "<details>\n<summary>example completions</summary>\n\n"
+    "Positive row, condition C1, judge verdict SUCCESS, CI [0.24, 0.31],"
+    " cell tag BS_E0, dropped per the pre-registered floor.\n\n"
+    "</details>\n"
+)
+
+
+def test_v4_methodology_details_block_offenders_do_not_trip_audit():
+    """Spec-mandated verbatim sample rows inside a v4 `## Methodology`
+    `<details>` block do NOT trip ANY audit category — the #1171 fix.
+    Offenders cover five categories (condition_labels, verdict_caps,
+    interval_inline, cell_tags, pre_reg); pre-fix this body flagged them
+    all (the red half of the red/green demonstration)."""
+    body = V4_BODY_CLEAN.replace(
+        "**Evaluation:** judge-scored rate on the held-out probes.",
+        _V4_SAMPLE_SLOT,
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert findings == {}, findings
+
+
+def test_v4_methodology_prose_offender_still_flagged():
+    """A condition code in v4 `## Methodology` PROSE (outside any
+    `<details>`/fence) still flags, even with an offender-bearing details
+    block present in the same section — the exemption is
+    `<details>`-scoped, not section-wide."""
+    body = V4_BODY_CLEAN.replace(
+        "**Evaluation:** judge-scored rate on the held-out probes.",
+        _V4_SAMPLE_SLOT,
+    ).replace(
+        "**Design:** three seeds; baseline vs treatment; the single variable is the data mix.",
+        "**Design:** three seeds under the C1 condition; baseline vs treatment.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "condition_labels" in findings, findings
+    assert any("C1" in s for s in findings["condition_labels"]), findings
+
+
+def test_v4_results_prose_offender_still_flagged():
+    """A condition code in v4 `## Results` prose still flags — mirrors
+    v3's `test_condition_codes_outside_data_still_flagged` (the sibling
+    candidate's regression test)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed",
+        "The C1 condition shows the lift at every seed",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "condition_labels" in findings, findings
+
+
+def test_v4_results_details_block_offender_still_flagged():
+    """A `<details>`-wrapped offender in v4 `## Results` STILL flags —
+    pins that `results` is deliberately NOT in
+    `_DETAILS_EXEMPT_H2_TITLES` (Results excerpts are authored-adjacent
+    and stay scanned)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n"
+        "<details>\n<summary>raw excerpt</summary>\n\n"
+        "Condition C1 excerpt row.\n\n</details>",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "condition_labels" in findings, findings
+
+
+def test_v4_methodology_details_never_closed_stops_at_next_h2():
+    """A `<details>` opened but never closed inside `## Methodology`
+    stops being dropped at the next H2 — the same boundary-degradation
+    property `test_strip_data_example_blocks_ends_at_next_h2` pins for
+    `## Data` (a mis-detected boundary degrades to scanning, never a
+    silently widened exemption)."""
+    text = (
+        "## Methodology\n\n<details>\nrow inside methodology\n\n## Results\n\nC1 in results prose\n"
+    )
+    stripped = audit.strip_data_example_blocks(text)
+    assert "row inside methodology" not in stripped  # dropped (inside details)
+    assert "C1 in results prose" in stripped  # NOT dropped (past the section)
+
+
+def test_strip_data_example_blocks_drops_methodology_and_data_keeps_others():
+    """Unit-level exempt-set pin: `<details>` blocks under `## Data` AND
+    `## Methodology` are dropped; a `<details>` under any other H2
+    (`## Findings`) survives — extends
+    `test_strip_data_example_blocks_only_drops_inside_data` without
+    modifying it."""
+    text = (
+        "## Findings\n\n<details>\nC1 leaks here\n</details>\n\n"
+        "## Data\n\n<details>\nC1 verbatim row\n</details>\n\n"
+        "## Methodology\n\n<details>\nC1 sample row\n</details>\n\n"
+        "## Results\n\nok\n"
+    )
+    stripped = audit.strip_data_example_blocks(text)
+    assert "C1 leaks here" in stripped  # Findings details survives
+    assert "C1 verbatim row" not in stripped  # Data details dropped
+    assert "C1 sample row" not in stripped  # Methodology details dropped
+
+
 # ─── verdict_caps: SUCCESS|FAILURE gate verdicts (incident #763; #970) ────
 #
 # #892 fixed the `pre_reg` half of the #763 incident ("As registered,
@@ -1323,3 +1468,201 @@ def test_paper_stub_skips_audit(capsys):
     out = capsys.readouterr().out
     assert "paper-stub" in out
     assert "verify_paper.py" in out
+
+
+# ─── H1-vs-frontmatter-title sync (WARN-level corpus surface, #1196) ───────
+#
+# `h1_title_sync_warn` DELEGATES the whole comparison to
+# `verify_task_body.check_h1_matches_frontmatter_title` (the #1110 gate
+# check) and flattens its severity to WARN; `_run_title_sync_sweep` walks a
+# tasks/-shaped tree and prints one row per flagged sentinelled body,
+# always returning 0. Fixture prose is deliberately anti-pattern-free so
+# the WARN surface is isolated from the findings scan.
+
+_SYNC_TITLE = "A tidy claim about the finding (MODERATE confidence)"
+
+
+def _sync_body(
+    *,
+    fm_title: str | None = _SYNC_TITLE,
+    h1: str | None = _SYNC_TITLE,
+    sentinel: str = "<!-- clean-result-v4 -->",
+    frontmatter: bool = True,
+    prose: str = "- A tidy bullet about the finding.",
+) -> str:
+    """Build a minimal (optionally sentinelled) body for the sync tests."""
+    parts: list[str] = []
+    if frontmatter:
+        fm_lines = ["---"]
+        if fm_title is not None:
+            fm_lines.append(f"title: {fm_title}")
+        fm_lines.append("kind: experiment")
+        fm_lines.append("---")
+        parts.append("\n".join(fm_lines))
+    if h1 is not None:
+        parts.append(f"# {h1}")
+    if sentinel:
+        parts.append(sentinel)
+    parts.append(f"## Takeaways\n\n{prose}")
+    return "\n\n".join(parts) + "\n"
+
+
+def _write_task_body(tasks_root, status: str, task_dir: str, text: str) -> None:
+    d = tasks_root / status / task_dir
+    d.mkdir(parents=True)
+    (d / "body.md").write_text(text, encoding="utf-8")
+
+
+def test_title_sync_sweep_warn_on_divergent_body(tmp_path, capsys):
+    """Durability pin: a divergent sentinelled v4 body in the tree yields
+    exactly one `- #<N> (<status>):` WARN row and the sweep returns 0."""
+    _write_task_body(
+        tmp_path,
+        "awaiting_promotion",
+        "777",
+        _sync_body(h1="A retitled claim about the finding (MODERATE confidence)"),
+    )
+    rc = audit._run_title_sync_sweep(tasks_root=tmp_path)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "- #777 (awaiting_promotion):" in out
+    assert out.count("- #") == 1
+    assert "WARN: 1 " in out
+
+
+def test_title_sync_sweep_in_sync_body_no_warn(tmp_path, capsys):
+    """A matching H1/title pair (confidence tag on both sides) yields the
+    PASS line and no rows."""
+    _write_task_body(tmp_path, "completed", "42", _sync_body())
+    rc = audit._run_title_sync_sweep(tasks_root=tmp_path)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "PASS: H1 == frontmatter title" in out
+    assert "- #" not in out
+
+
+def test_title_sync_sweep_skips_non_sentinelled_body(tmp_path, capsys):
+    """A divergent but sentinel-less body (pre-promotion shape) is out of
+    scope — the gate check's sentinel gate governs, by delegation."""
+    _write_task_body(
+        tmp_path,
+        "proposed",
+        "9",
+        _sync_body(h1="A completely different working headline", sentinel=""),
+    )
+    rc = audit._run_title_sync_sweep(tasks_root=tmp_path)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "- #" not in out
+
+
+def test_title_sync_sweep_whitespace_only_difference_not_flagged(tmp_path, capsys):
+    """Whitespace-only drift (double spaces) is eaten by the gate check's
+    collapse normalization — parity by delegation."""
+    _write_task_body(
+        tmp_path,
+        "completed",
+        "11",
+        _sync_body(fm_title="A tidy  claim about the   finding (MODERATE confidence)"),
+    )
+    rc = audit._run_title_sync_sweep(tasks_root=tmp_path)
+    assert rc == 0
+    assert "- #" not in capsys.readouterr().out
+
+
+def test_title_sync_sweep_case_difference_is_flagged(tmp_path, capsys):
+    """Case-only drift IS real drift (no case folding — the #763 rationale
+    the gate check documents)."""
+    _write_task_body(
+        tmp_path,
+        "completed",
+        "12",
+        _sync_body(fm_title="A tidy claim about the finding (moderate confidence)"),
+    )
+    rc = audit._run_title_sync_sweep(tasks_root=tmp_path)
+    assert rc == 0
+    assert "- #12 (completed):" in capsys.readouterr().out
+
+
+def test_title_sync_sweep_skips_non_numeric_task_dir(tmp_path, capsys):
+    """A `*/*/body.md` path whose parent dir is not a task number (e.g.
+    tasks/misc/_orphaned_markers/body.md) is skipped, not scanned."""
+    _write_task_body(
+        tmp_path,
+        "awaiting_promotion",
+        "5",
+        _sync_body(h1="A retitled claim about the finding (MODERATE confidence)"),
+    )
+    _write_task_body(
+        tmp_path,
+        "misc",
+        "_orphaned_markers",
+        _sync_body(h1="A retitled claim about the finding (MODERATE confidence)"),
+    )
+    rc = audit._run_title_sync_sweep(tasks_root=tmp_path)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "Scanned 1 task bodies" in out
+    assert out.count("- #") == 1
+    assert "- #5 (awaiting_promotion):" in out
+
+
+def test_h1_title_sync_warn_missing_fm_title_flagged():
+    """A sentinelled body whose frontmatter lacks `title` hits the gate
+    check's anomaly branch (broken promotion)."""
+    detail = audit.h1_title_sync_warn(_sync_body(fm_title=None))
+    assert detail is not None
+    assert "no frontmatter `title`" in detail
+
+
+def test_h1_title_sync_warn_missing_h1_flagged():
+    """A sentinelled body with a frontmatter title but no `# ` H1 line hits
+    the gate check's missing-H1 anomaly branch."""
+    detail = audit.h1_title_sync_warn(_sync_body(h1=None))
+    assert detail is not None
+    assert "no H1 found" in detail
+
+
+def test_h1_title_sync_warn_v3_grandfathered_flagged():
+    """A divergent v3 body is flagged via the predicate's `is_warn` leg
+    (gate-time grandfathering to WARN; identical WARN severity here)."""
+    detail = audit.h1_title_sync_warn(
+        _sync_body(
+            h1="A retitled claim about the finding (MODERATE confidence)",
+            sentinel="<!-- clean-result-v3 -->",
+        )
+    )
+    assert detail is not None
+    assert "grandfathered" in detail
+
+
+def test_single_body_audit_prints_title_sync_warn_rc_unchanged(capsys):
+    """The `--task`/file single-body path appends `WARN h1_title_sync:`
+    after the PASS/FAIL headline; the exit code follows findings only."""
+    divergent = _sync_body(h1="A retitled claim about the finding (MODERATE confidence)")
+    rc = audit._audit_single_body(divergent)
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert out.splitlines()[0].startswith("PASS:")
+    assert "WARN h1_title_sync:" in out
+
+    divergent_with_findings = _sync_body(
+        h1="A retitled claim about the finding (MODERATE confidence)",
+        prose="- The C1 condition leaked badly here.",
+    )
+    rc = audit._audit_single_body(divergent_with_findings)
+    out = capsys.readouterr().out
+    assert rc == 1  # findings drive rc; the WARN never flips it
+    assert out.splitlines()[0].startswith("FAIL:")
+    assert "WARN h1_title_sync:" in out
+
+
+def test_single_body_audit_no_fm_no_warn_line(capsys):
+    """Frontmatter-less inputs (analyzer /tmp drafts) hit the gate check's
+    empty-fm skip — output carries no WARN line (byte-compat with the
+    pre-#1196 behavior on every existing draft fixture)."""
+    rc = audit._audit_single_body(_sync_body(frontmatter=False))
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "WARN h1_title_sync" not in out
+    assert out.splitlines()[0].startswith("PASS:")

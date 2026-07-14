@@ -16,9 +16,10 @@ every synthetic-fixture smoke stayed green through all of it.
 Field semantics to never assume (verify per dataset via the datasets-server
 rows API before writing filters): language fields may be full names or ISO
 codes; WildChat carries top-level `redacted` + per-turn `redacted`/`toxic`
-bools + per-turn `openai_moderation {categories, flagged}` +
-`detoxify_moderation` (continuous scores only, NO boolean); LMSYS has its
-own shapes.
+bools inside `conversation`, plus per-turn-ALIGNED top-level list columns
+`openai_moderation {categories, flagged}` and `detoxify_moderation`
+(continuous scores ONLY, no boolean) — NOT keys inside each turn dict;
+LMSYS has its own shapes.
 
 The fix pattern (do this in ANY new real-corpus streaming builder):
 

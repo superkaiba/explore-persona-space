@@ -199,10 +199,19 @@ section wins on invocation form.
      (#906 r11-r14: four bugs, four ~1.5h pod cycles). Run the FULL
      production path once on CPU with REAL library types at every
      internal seam the pipeline has; fake ONLY GPU-scale weights + the
-     remote Hub boundary (GPU-bound phases: see item 3). Full recipe +
-     traps + worked example: `.claude/rules/gotchas.md` "Mock-seam
-     smokes". Record it under `## Smoke run` — Step 6d.0-bis refuses
-     seam-stubbed evidence.
+     remote Hub boundary (GPU-bound phases: see item 3). When the
+     pipeline INGESTS a real corpus (a WildChat/LMSYS-class streaming
+     builder), the **data-ingestion probe class** (#1092) binds too:
+     a bounded tiny-real streaming probe against the REAL dataset —
+     a kept cap AND a TOTAL-streamed-rows cap, asserting kept > 0 per
+     dataset, with per-filter rejection counters in the stream's
+     `done:` line (recipe: `.claude/rules/gotchas.md` "Real-corpus
+     streaming filters" + your agent-memory
+     `feedback_real_corpus_streaming_filters_tiny_real_probe.md`).
+     Full recipe + traps + worked example: `.claude/rules/gotchas.md`
+     "Mock-seam smokes". Record it under `## Smoke run` — Step
+     6d.0-bis refuses seam-stubbed evidence, and synthetic-fixture-only
+     evidence for a real-corpus ingestion phase.
 6. **Cite CLAUDE.md gotchas in your mini-plan.** Grep `CLAUDE.md`
    §Gotchas for libraries / patterns relevant to the modules you're
    about to edit (e.g. vLLM, TRL, Hydra, MooseFS, RunPod, persona
@@ -369,6 +378,11 @@ such corpora or banks:
    re-create the drift) or hoist cheap cross-script helper imports to
    module top. Full trap + incident #606: `.claude/rules/gotchas.md`
    "Lazy imports inside smoke-skipped branches".
+2b. **Changed-literal pin-sweep + mapped-scan run (#1288/#1144).** Grep
+   `tests/` for each changed literal (old+new); run every hit, plus the
+   Step 10d mapped tests (`select_step9c_tests.py --map-files
+   <diff-list> --repo-root "$WT"`) — experiment kinds skip Step 9c;
+   that merge-gate leg is the backstop.
 3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint the
    experiment pipeline executes — data-gen, training, eval (and any
    separate analysis / upload step) — run the script ONCE on a tiny real
@@ -689,7 +703,13 @@ such corpora or banks:
    `.claude/rules/code-style.md`
    § One production-body test per seam-stubbed function.
 10. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
-    convention (`git log --oneline -10` for style).
+    convention (`git log --oneline -10` for style). Run the push BARE with
+    its exit code checked — `git push origin issue-<N>` from the worktree —
+    NEVER piped through `tail`/`grep`/`head`: the `guard_piped_git_push.sh`
+    PreToolUse hook blocks the piped shape, and a pipe masks a rejected
+    push (#957). For a commit message that MENTIONS a piped-push pattern,
+    use the heredoc recipe or `git commit -F <file>` (the hook
+    blanket-allows heredocs).
 11. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
     issue #N (see Report Format below). The `/issue` skill reads this marker
     and spawns `code-reviewer`.
@@ -757,9 +777,9 @@ If you write the tests after the implementation (the default), make them general
 ### On revision rounds (after code-reviewer FAIL)
 
 - **Size any branch diff before reading its body.** On a long-lived
-  same-issue-follow-up branch, `git diff main...HEAD` can be multi-MB
+  same-issue-follow-up branch, `git diff origin/main...HEAD` can be multi-MB
   (1.96 MB on #722; the two-dot `main..HEAD` body was 31.6 MB) and
-  loading it autocompacts your session. Run `git diff main...HEAD | wc -c`
+  loading it autocompacts your session. Run `git diff origin/main...HEAD | wc -c`
   first (streams — no context cost; an error or `0` from the pipe means
   treat it as over-budget — no-merge-base sparse checkout, see the rule);
   above ~300 KB, read only the round's

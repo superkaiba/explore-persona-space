@@ -1,0 +1,311 @@
+{
+  "commit": "e78b4ce47b",
+  "created": "2026-07-10T20:01:11Z",
+  "figsize": [
+    13.2,
+    8.6
+  ],
+  "points": [
+    {
+      "category": "f",
+      "share of r_B-projected variance": 0.016597288569120888,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "g",
+      "share of r_B-projected variance": 0.9395641364920156,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "i",
+      "share of r_B-projected variance": 0.043838574938832135,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "f",
+      "share of r_B-projected variance": 0.052177252055540795,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "g",
+      "share of r_B-projected variance": 0.7753304898941181,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "i",
+      "share of r_B-projected variance": 0.17249225805034465,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "f",
+      "share of r_B-projected variance": 0.05000900323756681,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "g",
+      "share of r_B-projected variance": 0.8387408722029538,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "i",
+      "share of r_B-projected variance": 0.1112501245594825,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "share of r_B-projected variance": 0.01640535328243504,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "share of r_B-projected variance": 0.9093830365978279,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "share of r_B-projected variance": 0.0742116101197241,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.8,
+      "share of r_B-projected variance": 0.05262285674554039,
+      "label": "halluc.",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.8,
+      "share of r_B-projected variance": 0.6998507387390518,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.8,
+      "share of r_B-projected variance": 0.2475264045154033,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.6,
+      "share of r_B-projected variance": 0.04841571797099942,
+      "label": "syco.",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 8.6,
+      "share of r_B-projected variance": 0.8059844239983723,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 9.6,
+      "share of r_B-projected variance": 0.145599858030611,
+      "label": "syco.",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "category": "f",
+      "share of r_B-projected variance": 0.07115424046766583,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "g",
+      "share of r_B-projected variance": 0.7837034983048375,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "i",
+      "share of r_B-projected variance": 0.14514226122750332,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "f",
+      "share of r_B-projected variance": 0.032229309499550024,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "g",
+      "share of r_B-projected variance": 0.755162161373895,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "category": "i",
+      "share of r_B-projected variance": 0.21260852912655082,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "f",
+      "share of r_B-projected variance": 0.062191830320770136,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "category": "g",
+      "share of r_B-projected variance": 0.783251234990465,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "category": "i",
+      "share of r_B-projected variance": 0.15455693468876233,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 0.0,
+      "share of r_B-projected variance": 0.037303686480869194,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "share of r_B-projected variance": 0.7209537800757485,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "share of r_B-projected variance": 0.24174253344338872,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 3.8,
+      "share of r_B-projected variance": 0.016813914972765416,
+      "label": "halluc.",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 4.8,
+      "share of r_B-projected variance": 0.6286728948694728,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 5.8,
+      "share of r_B-projected variance": 0.3545131901577573,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 7.6,
+      "share of r_B-projected variance": 0.036412601923812335,
+      "label": "syco.",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 8.6,
+      "share of r_B-projected variance": 0.7046264499741132,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 9.6,
+      "share of r_B-projected variance": 0.25896094810207027,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "category": "f",
+      "pearson r (projection vs judge score)": 0.16470977442018836,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "category": "g",
+      "pearson r (projection vs judge score)": 0.2292638075376934,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "category": "i",
+      "pearson r (projection vs judge score)": 0.23598250276916913,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "category": "f",
+      "pearson r (projection vs judge score)": -0.1351012360284604,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "category": "g",
+      "pearson r (projection vs judge score)": -0.006458651251747404,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "category": "i",
+      "pearson r (projection vs judge score)": -0.17194808291177224,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 3.8,
+      "pearson r (projection vs judge score)": 0.17412521114659085,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 4.8,
+      "pearson r (projection vs judge score)": 0.22517138988753724,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 5.8,
+      "pearson r (projection vs judge score)": 0.27283320749680157,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 7.6,
+      "pearson r (projection vs judge score)": -0.14422429314040847,
+      "label": "syco.",
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 8.6,
+      "pearson r (projection vs judge score)": -0.006598922386661463,
+      "label": "syco.",
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 9.6,
+      "pearson r (projection vs judge score)": -0.16791120030528608,
+      "label": "syco.",
+      "_kind": "scatter",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 48
+}

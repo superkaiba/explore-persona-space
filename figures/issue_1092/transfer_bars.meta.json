@@ -1,0 +1,164 @@
+{
+  "commit": "d87c26f51e",
+  "created": "2026-07-10T23:15:54Z",
+  "figsize": [
+    8.0,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Zero-shot transfer (Pearson r)": 0.001622271010640709,
+      "error": 0.028709252217947775,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "Zero-shot transfer (Pearson r)": 0.030027107497584696,
+      "error": 0.16302720028520465,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "Zero-shot transfer (Pearson r)": -0.01079017845419788,
+      "error": 0.027811987598735526,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "Zero-shot transfer (Pearson r)": -0.06080967751125125,
+      "error": 0.13300879193438297,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Zero-shot transfer (Pearson r)": -0.011329433280708569,
+      "error": 0.028638672130184572,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "Zero-shot transfer (Pearson r)": 0.15838158988461604,
+      "error": 0.21428853940237758,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "Zero-shot transfer (Pearson r)": 0.00112100392174409,
+      "error": 0.026285592226093876,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "Zero-shot transfer (Pearson r)": -0.01879136278116735,
+      "error": 0.1582465705237439,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.18,
+      "Zero-shot transfer (Pearson r)": -0.026813106026950754,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.8200000000000001,
+      "Zero-shot transfer (Pearson r)": -0.13647033945037956,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.82,
+      "Zero-shot transfer (Pearson r)": -0.03866294481960071,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.82,
+      "Zero-shot transfer (Pearson r)": -0.18209660651308526,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.18,
+      "Zero-shot transfer (Pearson r)": 0.030605398408944797,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.8200000000000001,
+      "Zero-shot transfer (Pearson r)": 0.18958406112002973,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "Zero-shot transfer (Pearson r)": 0.01696103037787034,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.82,
+      "Zero-shot transfer (Pearson r)": 0.08392097735568071,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.18,
+      "Zero-shot transfer (Pearson r)": -0.03993773694017036,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.18,
+      "Zero-shot transfer (Pearson r)": -0.061637420734752785,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.18,
+      "Zero-shot transfer (Pearson r)": -0.024678980543952143,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.18,
+      "Zero-shot transfer (Pearson r)": -0.16548010988559406,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.18,
+      "Zero-shot transfer (Pearson r)": 0.017339607320198784,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.18,
+      "Zero-shot transfer (Pearson r)": 0.3669396580700024,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.18,
+      "Zero-shot transfer (Pearson r)": 0.027892203908235613,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.18,
+      "Zero-shot transfer (Pearson r)": 0.1510130311618938,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24
+}

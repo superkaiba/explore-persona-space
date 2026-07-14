@@ -62,7 +62,14 @@ if _SCRIPTS_DIR not in sys.path:
 #     function and the three dispatchers cannot drift apart).
 #   - AUTONOMOUS_REGISTRY_DIR / daemon_port: the registration dir + Happy
 #     daemon port, the SAME source of truth `spawn_session.py list` uses.
-from autonomous_session_watch import infra_dispatch_has_free_slot  # noqa: E402
+#   - _forward_marker_child_stderr: the shared #1130 rc==0 child-stderr
+#     forwarder (a copied forwarder is exactly the drift this import layer
+#     exists to prevent; SLF is unselected in ruff, and the #1130 tests
+#     already access it cross-module).
+from autonomous_session_watch import (  # noqa: E402
+    _forward_marker_child_stderr,
+    infra_dispatch_has_free_slot,
+)
 
 # PROJECT_ROOT is git-common-dir-resolved (canonical primary checkout, #844)
 # once the imported spawn_session copy contains the fix — a stale pre-fix
@@ -83,6 +90,11 @@ from spawn_session import (  # noqa: E402
     spawn_output_suppressed,
     stagger_delay_s,
 )
+
+# The shared wf-fix title-prefix set (single source of truth, one prefix per
+# filing channel — task_workflow.py). Same package-import pattern as
+# daily_drive_filings.py; the `uv run` env has the editable install.
+from explore_persona_space.task_workflow import WF_FIX_TITLE_PREFIXES  # noqa: E402
 
 # The auto-dispatchable pure-code/ops kinds. `experiment`/`analysis`/
 # `campaign` are rejected: analysis needs the `agent-ok` opt-in + PM triage;
@@ -201,6 +213,62 @@ def _build_spawn_argv(issue: int, args: argparse.Namespace) -> list[str]:
     return argv
 
 
+def _warn_missing_wf_fix_provenance(args: argparse.Namespace) -> None:
+    """#1173 warn-only durable-recursion-guard backstop: a `wf-fix`-tagged
+    filing whose body lacks a `workflow_fix_target:` Provenance line will NOT
+    read as a workflow-fix session via task_workflow.is_workflow_fix_session()
+    (the EPM_WORKFLOW_FIX_SESSION=1 env leg is absent from `spawn-issue --auto`
+    spawns and lost on watcher respawns). Warn-only by design: this filer
+    carries no target path to inject from, and the must-succeed filing half
+    stays untouched — exit codes and filing behavior unchanged."""
+    if "wf-fix" not in (args.tag or []):
+        return
+    body_text = args.body
+    if body_text is None and args.body_file is not None:
+        try:
+            body_text = Path(args.body_file).read_text(encoding="utf-8")
+        except OSError:
+            # Advisory probe only — the authoritative failure surfaces one
+            # step later when `task.py new` reads the same file (fail-loud).
+            body_text = None
+    if body_text is None or "workflow_fix_target:" not in body_text:
+        print(
+            "file_infra_task: WARNING — wf-fix-tagged filing whose body lacks a "
+            "'workflow_fix_target:' Provenance line; the filed task will NOT read "
+            "as a workflow-fix session after a watcher respawn "
+            "(.claude/rules/workflow-fix-on-bug.md § Recursion guard, #1173)",
+            file=sys.stderr,
+        )
+
+
+def _warn_missing_wf_fix_title_prefix(args: argparse.Namespace) -> None:
+    """#1283 warn-only dedup-surface backstop: a `wf-fix`-tagged filing whose
+    --title lacks a WF_FIX_TITLE_PREFIXES prefix ("workflow-fix:" /
+    "daily-fix:") is invisible to the (target_file, fingerprint) dedup
+    predicate's cheap title pre-filter (task_workflow.is_open_workflow_fix_task),
+    so the same bug can double-file later (#1180's incident class). Warn-only
+    by design — the filer is channel-agnostic (it cannot know WHICH per-channel
+    prefix to prepend; the /daily route-2 driver already prepends its own per
+    #1273), and a filer-side title mutation would additionally desync
+    daily_drive_filings._try_recovery, which re-matches previously-filed items
+    against their exact effective titles. The must-succeed filing half stays
+    untouched: exit codes and filing behavior unchanged (the #1173 precedent
+    above)."""
+    if "wf-fix" not in (args.tag or []):
+        return
+    if args.title.startswith(WF_FIX_TITLE_PREFIXES):
+        return
+    prefixes = " / ".join(f"'{p}'" for p in WF_FIX_TITLE_PREFIXES)
+    print(
+        "file_infra_task: WARNING — wf-fix-tagged filing whose --title lacks a "
+        f"{prefixes} prefix; the filed task will be invisible to the dedup "
+        "predicate's title pre-filter (task_workflow.is_open_workflow_fix_task; "
+        ".claude/rules/workflow-fix-on-bug.md § Dedup, #1283); fix via "
+        "task.py set-title",
+        file=sys.stderr,
+    )
+
+
 def cmd_file_infra(args: argparse.Namespace) -> int:
     """File a ripe `kind: infra`/`batch` task, then best-effort dispatch it.
 
@@ -208,6 +276,12 @@ def cmd_file_infra(args: argparse.Namespace) -> int:
     half fails; 0 for every dispatch no-op / dispatch failure (the task is
     filed and the watcher backstop covers a skipped/failed spawn — a non-zero
     here would make callers think filing failed)."""
+    # 0. Warn-only pre-filing backstops (stderr only; exit codes and filing
+    # behavior unchanged): #1173 durable-recursion-guard line, #1283 dedup
+    # title-prefix surface.
+    _warn_missing_wf_fix_provenance(args)
+    _warn_missing_wf_fix_title_prefix(args)
+
     # 1. File first (the durable, must-succeed half).
     new_argv = _build_new_argv(args)
     try:
@@ -224,6 +298,10 @@ def cmd_file_infra(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return filed.returncode
+    # rc==0: task.py new deliberately exits 0 on deferred-commit / LANDING
+    # CHECK warnings — forward them so they reach the caller's transcript
+    # (#1130 helper; the rc!=0 branch above already writes stderr itself).
+    _forward_marker_child_stderr(filed, "task.py new (file_infra_task)")
     issue = _parse_new_id(filed.stdout)
     if issue is None:
         print(
@@ -326,6 +404,11 @@ def cmd_file_infra(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 0
+    # rc==0: spawn_session deliberately exits 0 while printing registration /
+    # happy-patch / suppression warnings to stderr — forward them so they reach
+    # the caller's transcript on BOTH the suppressed and dispatched paths
+    # (#1130 helper; the rc!=0 branch above already embeds stderr itself).
+    _forward_marker_child_stderr(spawned, "spawn_session spawn-issue (file_infra_task)")
     first_line = (spawned.stdout.strip().splitlines() or [""])[0]
     suppressed = spawn_output_suppressed(spawned.stdout)
     if suppressed is not None:

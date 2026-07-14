@@ -83,7 +83,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    that is explicitly named in §12 Assumptions as forced by a project constraint (judge model, GPU
    budget, model size) AND carried as a scope caveat — the plan owns the deviation, you accept it;
    (b) a Goal that is not a replication (the plan should write "N/A — not a replication" in §1 or
-   §12 and you accept that). Cross-check: a faithful positive-only replication is the named
+   §12 as a standalone line and you accept that). Cross-check: a faithful positive-only replication is the named
    contrastive-negatives exemption (b) above — do not double-bounce on item 6 for the same plan.
 8. **Few-shot / ICL demonstration content (any plan with in-context-example demos).** If the plan's
    §4 Design includes a fixed bank of in-context-example / few-shot / ICL demonstrations
@@ -459,7 +459,27 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     result — a feasibility failure, not a cheaper-variant suggestion (#653 round 4: the
     `select_checkpoint` phase merged a ~15 GB copy per probed dose checkpoint × 12 content cells × 9
     dose ckpts = ~1.6 TB worst case on a 130 GB quota with no cleanup between probes; the run hit
-    the quota and died, the fix was atomic merge-read-delete per probe). Plan-time storage-budget
+    the quota and died, the fix was atomic merge-read-delete per probe).
+    LADDER-RETENTION EXTENSION (#1133, from incident #1112): when the phase is
+    a dose-ladder / multi-rung checkpoint phase (per-rung checkpoints persisted
+    for later selection — dose-to-band grids, band-stop ladders, per-step save
+    grids), ALSO verify §9 states the checkpoint-retention policy (default:
+    keep dose-selected + latest, delete ruled-out rungs between rungs — per
+    `.claude/rules/plan-compute-sizing.md` § Dose-ladder / multi-rung
+    checkpoint retention) and sizes disk to the RETAINED set + in-flight rung.
+    REVISE when the ladder plan's disk estimate assumes keeping every rung on
+    local disk without an explicit justification that (a) says why the rungs
+    must coexist, (b) sizes the FULL ladder at realized per-rung size (weights
+    + optimizer state), and (c) declares the requirement in the launch flags
+    (`--boot-disk-gb`, arming the #1118 thread-or-refuse) — a keep-all bound
+    that merely fits the PLANNED lane's disk is NOT sufficient (#1112: a
+    compliant 575 GB keep-all bound under a planned 750 GB GCP boot disk
+    ENOSPC'd at rung 24/30 when the GCP→RunPod failover delivered the ft-7b
+    default 200 GB volume). The fits-quota escape below does NOT cover ladder
+    phases; the ladder escapes are a stated retention policy + retained-set
+    sizing, the justified keep-all above, or "N/A — no multi-rung checkpoint
+    phase". Upload-before-delete unchanged (declared §10 discard OR
+    upload-first before any between-rung deletion). Plan-time storage-budget
     check only, never a mid-run gate. Not a REVISE when no phase materializes transient
     full-precision artifacts at scale (single merged copy, or merges that fit the quota with
     headroom — the plan's §9 "N/A — no transient full-precision merges" or a bound under quota
@@ -631,7 +651,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    `.claude/rules/contrastive-negatives.md`). Not a REVISE when the plan makes no cross-condition
    leakage comparison (within-condition dynamics, single-condition implant characterization — the
    plan's §6 "N/A — no cross-condition leakage comparison" satisfies this item).
-9. **Degenerate eligibility gates, unequal per-unit N, missing baseline propensity (three related
+9. **Degenerate eligibility gates, unequal per-unit N, missing baseline propensity (four related
    design-lesson checks).** REVISE only when conclusion-changing per The Bar; otherwise list under
    Concerns. (i) **All-or-nothing eligibility gate on a continuous quantity:** a pre-registered rule
    gates a unit's inclusion on a continuous quantity (rows filled, judge-filter yield, cells
@@ -649,10 +669,23 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    behavior rate only on the EVAL-side targets (the delta denominator) and not on the SOURCE-side
    personas — leaving elicitation-yield failures unpredictable (#612: both yield-quota failures were
    predictable from a never-taken source-side read) and the natural install-strength covariate
-   unmeasured (a unit's own base prior keeps beating geometry — #500/#532/#541). Not a REVISE when:
+   unmeasured (a unit's own base prior keeps beating geometry — #500/#532/#541). (iv)
+   **Structurally-constant observed statistic in an observed-vs-null read:** the plan registers a
+   statistic to be compared against a null band whose construction admits NO variation under the
+   data — projecting/summing the MEAN (along the centering axis) of mean-centered quantities (≡0
+   by construction), correlating a constant vector, a residual of X regressed on itself, a paired
+   difference of aliased arrays (#1092: the banked read-4c projected the row-mean of mean-centered
+   ANOVA factor outputs onto r_B — observed ~1e-14 vs sign-flip-null p95 0.9–9.2 at all 288 rows;
+   survived all 16 code-review rounds, caught at interpretation — #1092 epm:interp-critique v1).
+   Trace the registered statistic's reduction chain symbolically, wherever the construction lives
+   (including reused parent code); when the centering/aliasing cannot be established from the plan
+   alone, require a runtime degeneracy guard (assert the observed magnitude ≫ machine epsilon
+   relative to the null scale). REVISE when the statistic is constant by construction — always
+   conclusion-changing (the comparison can only ever fail to reject). Not a REVISE when:
    the design has no continuous-quantity eligibility gate (i), per-unit N is equal by construction
    or the headline makes no cross-unit comparison (ii), or the Goal is not an
-   implantation/elicitation design (iii) — the plan's §4 "N/A" lines satisfy the respective checks.
+   implantation/elicitation design (iii), or the plan registers no observed-vs-null comparison
+   (iv) — the plan's §4 "N/A" lines satisfy the respective checks.
 10. **Dual-DV for content-behavior leakage / implantation (verify §6 names both DVs).** If the Goal
     implants or measures the leakage of a *content* behavior (sycophancy, refusal, hedging, style,
     trait — not the programmatic marker, which has its own three-space recipe), read §6's

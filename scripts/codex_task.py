@@ -77,6 +77,16 @@ silently):
   force-cancelled at the fixed window. This catches the "Codex process
   alive but model API hung" failure mode that ``codex-companion status``
   itself can't see (observed twice on 2026-05-20).
+- quota-exhausted sentinel active (hard org usage limit, #1126) → emit
+  failure marker with a ``codex-quota-exhausted`` note PRE-SPAWN, exit 9
+  (outside TRANSIENT_FAIL_EXIT_CODES — never re-dispatched). No Codex job
+  is created; ``--reattach`` bypasses (harvesting an existing job spends
+  no new quota). The sentinel is written by ``_finalize_result`` when a
+  terminal phase=failed result matches the usage-limit text, lives at
+  ``.claude/cache/codex-quota-exhausted-until`` under the main checkout
+  (override: ``EPM_CODEX_QUOTA_SENTINEL_PATH``), self-expires at the
+  parsed reset timestamp, and can be deleted to force a probe dispatch
+  (``EPM_SKIP_CODEX_QUOTA_SENTINEL=1`` disables the read only).
 - SIGTERM/SIGINT → emit failure marker, best-effort cancel, exit 130/143.
 - marker post fails → VERIFY whether the marker actually landed before
   retrying (``task.py post-marker`` commits the row BEFORE echoing the
@@ -111,6 +121,8 @@ content marker (e.g. ``epm:code-review-codex v3``) is well-formed.
 from __future__ import annotations
 
 import argparse
+import contextlib
+import datetime
 import json
 import os
 import random
@@ -238,6 +250,54 @@ STATUS_TIMEOUT_SECS = 60
 RESULT_TIMEOUT_SECS = 120
 CANCEL_TIMEOUT_SECS = 60
 POST_MARKER_TIMEOUT_SECS = 60
+_SUCCESS_STDERR_FORWARD_CAP = 2000  # chars; the #1100 LANDING CHECK ERROR measures ~826 chars
+#                                     once interpolated — the cap must NOT truncate its
+#                                     recovery recipe (the cherry-pick cmd sits at the tail)
+
+
+def _forward_success_stderr(kind: str, stderr: str | None) -> None:
+    """Forward a rc==0 post-marker child's non-empty stderr to the wrapper's
+    stderr (#1130). ``task.py post-marker`` deliberately exits 0 while
+    printing warnings to stderr — the deferred-commit ERROR and the #1100
+    post-commit LANDING CHECK — and ``capture_output=True`` would otherwise
+    discard them so they reach no transcript. Capped so a pathological
+    child can never flood the wrapper transcript."""
+    err = (stderr or "").strip()
+    if not err:
+        return
+    truncated = len(err) > _SUCCESS_STDERR_FORWARD_CAP
+    for line in err[:_SUCCESS_STDERR_FORWARD_CAP].splitlines():
+        print(f"[post-marker stderr] {kind}: {line}", file=sys.stderr)
+    if truncated:
+        print(
+            f"[post-marker stderr] {kind}: ... (truncated at {_SUCCESS_STDERR_FORWARD_CAP} chars)",
+            file=sys.stderr,
+        )
+
+
+# ── Quota-exhausted sentinel (#1126) ─────────────────────────────────
+# On a hard org usage-limit terminal (job spawns, dies phase=failed in
+# ~30s, fetched result text = "You've hit your usage limit ... try
+# again at Aug 6th, 2026 6:26 AM"), write a durable shared sentinel and
+# short-circuit every later dispatch until the parsed reset timestamp.
+# Sentinel lives under DISPATCH_ROOT (main checkout, worktree-safe);
+# .claude/cache/ is gitignored.
+QUOTA_SENTINEL_RELPATH = Path(".claude/cache/codex-quota-exhausted-until")
+EXIT_QUOTA_EXHAUSTED = 9  # free: 0-8, 130, 143 taken; NOT in TRANSIENT_FAIL_EXIT_CODES
+QUOTA_LIMIT_RE = re.compile(r"hit your usage limit", re.IGNORECASE)
+# "try again at Aug 6th, 2026 6:26 AM" — month day(ordinal), year[, h:mm AM/PM]
+QUOTA_RESET_RE = re.compile(
+    r"try again at\s+([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})"
+    r"(?:,?\s+(\d{1,2}):(\d{2})\s*([AP])\.?M\.?)?",
+    re.IGNORECASE,
+)
+QUOTA_FALLBACK_TTL_SECS = 24 * 3600  # parse failure never wedges dispatch forever
+QUOTA_MAX_PLAUSIBLE_SECS = 45 * 24 * 3600  # a parse beyond ~45d is treated as a parse failure
+# Detection requires a SHORT fetched result alongside the regex: the genuine
+# usage-limit error is 317 B (2026-07-08 artifacts), while a future genuine
+# phase=failed review result QUOTING the limit text would be far longer —
+# the length gate keeps such a quote from arming the fleet-wide sentinel.
+QUOTA_SHORT_RESULT_MAX_CHARS = 1500
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -376,6 +436,7 @@ def _post_marker(issue: int, kind: str, note: str, version: int = 1) -> bool:
                 timeout=POST_MARKER_TIMEOUT_SECS,
             )
             if result.returncode == 0:
+                _forward_success_stderr(kind, result.stderr)
                 return True
             print(
                 f"WARN: post-marker attempt {attempt} for {kind} returned "
@@ -723,6 +784,138 @@ def _write_output_preserving_codex_artifact(
 
 
 # ──────────────────────────────────────────────────────────────────────
+# Quota-exhausted sentinel helpers (#1126).
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _quota_sentinel_path() -> Path:
+    """Sentinel path: env override (tests/ops) > DISPATCH_ROOT-anchored default."""
+    override = os.environ.get("EPM_CODEX_QUOTA_SENTINEL_PATH")
+    if override:
+        return Path(override)
+    return DISPATCH_ROOT / QUOTA_SENTINEL_RELPATH
+
+
+def _parse_quota_reset(text: str) -> float | None:
+    """Parse 'try again at Aug 6th, 2026 6:26 AM' -> unix epoch (VM-local
+    time; the Codex CLI renders local time and states no zone). Returns
+    None when absent, unparseable, in the past, or implausibly far out
+    (> QUOTA_MAX_PLAUSIBLE_SECS) — caller falls back to the 24h TTL."""
+    m = QUOTA_RESET_RE.search(text)
+    if not m:
+        return None
+    month_s, day_s, year_s, hh, mm, ap = m.groups()
+    try:
+        month = datetime.datetime.strptime(month_s[:3].title(), "%b").month
+        hour, minute = 0, 0
+        if hh is not None:
+            hour = int(hh) % 12
+            if ap and ap.upper() == "P":
+                hour += 12
+            minute = int(mm)
+        ts = time.mktime(
+            datetime.datetime(int(year_s), month, int(day_s), hour, minute).timetuple()
+        )
+    except (ValueError, OverflowError):
+        return None
+    now = time.time()
+    if ts <= now or ts > now + QUOTA_MAX_PLAUSIBLE_SECS:
+        return None
+    return ts
+
+
+def _write_quota_sentinel(result_text: str, job_id: str | None) -> str | None:
+    """Atomically (tmp + os.replace, same dir) write the sentinel. Returns
+    the until-ISO string on success, None on any failure. FAIL-SOFT: never
+    raises — a sentinel-write failure must not mask the original failure path."""
+    try:
+        until_unix = _parse_quota_reset(result_text)
+        parse_ok = until_unix is not None
+        if until_unix is None:
+            until_unix = time.time() + QUOTA_FALLBACK_TTL_SECS
+        until_iso = datetime.datetime.fromtimestamp(until_unix, datetime.UTC).isoformat(
+            timespec="seconds"
+        )
+        payload = {
+            "until_unix": until_unix,
+            "until_iso": until_iso,
+            "parse_ok": parse_ok,
+            "detected_at_iso": datetime.datetime.now(datetime.UTC).isoformat(timespec="seconds"),
+            "job_id": job_id,
+            "raw_excerpt": result_text[:300],
+        }
+        path = _quota_sentinel_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=".codex-quota-tmp-")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                fh.write(json.dumps(payload, indent=2))
+            os.replace(tmp, path)
+        finally:
+            Path(tmp).unlink(missing_ok=True)  # no-op after a successful replace
+        print(
+            f"codex-quota-exhausted: wrote sentinel {path} "
+            f"(until {until_iso}, parse_ok={parse_ok})",
+            file=sys.stderr,
+        )
+        return until_iso
+    except Exception as exc:
+        print(f"WARN: could not write quota sentinel: {exc}", file=sys.stderr)
+        return None
+
+
+def _quota_sentinel_active() -> str | None:
+    """Return the until-ISO string when a valid sentinel is in the FUTURE,
+    else None. Expired, corrupt, or implausibly far-future content -> best-
+    effort delete + None (FAIL-OPEN toward dispatching: a bad sentinel must
+    never wedge Codex off permanently). A read error (other than missing)
+    -> WARN + None. EPM_SKIP_CODEX_QUOTA_SENTINEL=1 disables the READ
+    (this short-circuit check) only — deliberately NOT the write in
+    _finalize_result, so a real outage keeps refreshing the shared record
+    even while one operator opts a session out of the short-circuit."""
+    if os.environ.get("EPM_SKIP_CODEX_QUOTA_SENTINEL") == "1":
+        return None
+    path = _quota_sentinel_path()
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+    except OSError as exc:
+        print(f"WARN: quota sentinel unreadable ({exc}); ignoring.", file=sys.stderr)
+        return None
+    try:
+        data = json.loads(raw)
+        until_unix = float(data["until_unix"])
+        until_iso = str(data.get("until_iso") or until_unix)
+    except Exception:
+        print(
+            f"WARN: corrupt quota sentinel {path}; deleting and proceeding.",
+            file=sys.stderr,
+        )
+        with contextlib.suppress(OSError):
+            path.unlink(missing_ok=True)
+        return None
+    now = time.time()
+    if until_unix > now + QUOTA_MAX_PLAUSIBLE_SECS:
+        # Same plausibility cap as the parse path (#1126 review concern 5):
+        # a hand-seeded / corrupt far-future timestamp must not wedge Codex
+        # off for months — treat as corrupt, delete, proceed.
+        print(
+            f"WARN: quota sentinel {path} has implausibly far-future "
+            f"until_unix={until_unix}; deleting and proceeding.",
+            file=sys.stderr,
+        )
+        with contextlib.suppress(OSError):
+            path.unlink(missing_ok=True)
+        return None
+    if until_unix <= now:
+        with contextlib.suppress(OSError):
+            path.unlink(missing_ok=True)  # self-expiry
+        return None
+    return until_iso
+
+
+# ──────────────────────────────────────────────────────────────────────
 # Main lifecycle.
 # ──────────────────────────────────────────────────────────────────────
 
@@ -967,6 +1160,21 @@ def _finalize_result(
             job_id,
         )
 
+    # Quota-exhausted detection (#1126): the hard org usage-limit surfaces
+    # as terminal phase=failed with the limit text as the FETCHED RESULT
+    # (evidence: /tmp/codex-critic-1124-*-output.md + issue 1122/1124
+    # markers, 2026-07-08). Write the shared sentinel so every later
+    # dispatch short-circuits until the stated reset. Fail-soft. The
+    # short-result length gate keeps a long genuine phase=failed review
+    # result that merely QUOTES the limit text from arming the sentinel.
+    quota_until_iso: str | None = None
+    if (
+        phase == "failed"
+        and len(stdout or "") < QUOTA_SHORT_RESULT_MAX_CHARS
+        and QUOTA_LIMIT_RE.search(stdout or "")
+    ):
+        quota_until_iso = _write_quota_sentinel(stdout, job_id)
+
     # Write output before posting terminal marker — so even if the marker
     # post fails, the orchestrator has the Codex output on disk. The write
     # preserves a marker-formatted verdict Codex already wrote to the same
@@ -1009,11 +1217,12 @@ def _finalize_result(
         )
 
     # phase == failed — terminal, NOT retryable.
+    quota_token = f" codex-quota-exhausted until={quota_until_iso}." if quota_until_iso else ""
     return AttemptResult(
         "fail",
         1,
         (
-            f"terminal phase={phase} after {elapsed}s. "
+            f"terminal phase={phase} after {elapsed}s.{quota_token} "
             f"Inspect: node {companion} status {job_id} fetch_retries={fetch_retries}"
         ),
         job_id,
@@ -1336,6 +1545,28 @@ def main() -> int:  # noqa: C901 — argparse wiring + the reattach/prompt mode 
         _active_companion = companion
         print(f"codex-companion: {companion}", file=sys.stderr)
         return _run_reattach(companion, args)
+
+    # Quota-exhausted short-circuit (#1126): while the shared sentinel is in
+    # the future, exit fast with the SAME terminal-marker contract the
+    # orchestrator's no-show fallback already reads — no spawn, no poll, no
+    # 30s wait. Reattach (above) deliberately BYPASSES this: attaching to an
+    # EXISTING job spends no new quota and may still harvest a completed
+    # result. Manual override: delete the sentinel file (or set
+    # EPM_SKIP_CODEX_QUOTA_SENTINEL=1 — which disables only this READ, not
+    # the sentinel write in _finalize_result).
+    quota_until = _quota_sentinel_active()
+    if quota_until is not None:
+        return _fail(
+            args.issue,
+            None,
+            (
+                f"codex-quota-exhausted: org usage limit exhausted until "
+                f"{quota_until}; dispatch short-circuited (no Codex job "
+                f"spawned). Sentinel: {_quota_sentinel_path()} — delete it "
+                f"to force a probe dispatch."
+            ),
+            EXIT_QUOTA_EXHAUSTED,
+        )
 
     # Resolve prompt.
     if args.prompt is not None:

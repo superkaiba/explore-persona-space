@@ -1,16 +1,25 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-Thirteen passes; items 1-8 run in that order, with the CAMPAIGN pass (item 9)
-right after pass 2, the IDLE-UNMAPPED-SESSION pass (item 10) right after
-pass 7, the INFRA-DRAIN pass (item 11) between pass 5 (the orphan sweep)
-and pass 6 (session-reconcile), the CPU-GUARD pass (item 12) in the
-daemon-independent block right after the happy-patch check (order there:
-pass 1's disk checks -> data-disk -> happy-patch -> CPU-GUARD ->
-program-orchestrator recovery), and the AUTH-OUTAGE GUARD pass (item 13)
-immediately after the single per-tick daemon probe and BEFORE every spawn
-arm (crash-recovery is the first spawner it must precede), all before the
-GC pass:
+25 passes ("pass" = one top-level per-tick action block in ``main()``'s
+production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
+disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
+not count; a NEW inline pass block that is not a ``*_pass``-named function
+called from ``main()`` also requires bumping ``_ASW_INLINE_PASS_BLOCKS``
+in ``scripts/workflow_lint.py``). Item numbers below are STABLE
+IDENTIFIERS (cross-referenced throughout this docstring), NOT execution
+order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
+16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
+18 (verdict-disagree) -> 19 (VM-ledger reap) -> 20 (program-orchestrator
+recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
+-> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
+11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
+14 (stale-blocked flag) -> 6 (session-reconcile) -> 23 (gate-push) ->
+25 (boot-death) -> 24 (stale-registration) -> 7 (zombie-wrapper) ->
+10 (idle-unmapped) -> 8 (GC). The count is lint-pinned: ``workflow_lint.py
+--check-asw-docstring-pass-count`` FAILs when the "25 passes" digit, the
+numbered-item count, or the live ``*_pass`` set in ``main()`` diverge —
+adding a pass means adding a numbered item here AND bumping the digit:
 
 1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
    the host of every orchestrator session, the worktree ``.venv``s, the uv
@@ -96,7 +105,11 @@ GC pass:
    reachable/unreachable daemon flap can repeatedly reset the
    K-corroboration ``live_consecutive`` counter and defer escalation,
    bounded in practice by the #845 (c) page after 2 blocked ticks plus
-   the persistent staleness re-fire.
+   the persistent staleness re-fire.  At most one stalled-alert marker
+   is posted per staleness episode across both alert producers (decide's
+   own alert path and the #759 downgrade lane), and a deliberately-parked
+   ``blocked`` task (epm:failure + status-changed halt-contract trail) is
+   never alerted (#1137).
 5. **Orphan sweep (registration-INDEPENDENT safety net).** Every other
    session pass starts from the registry files (``issue-<N>.json`` /
    ``manual-issue-<N>.json``), so an ACTIVE-status task with NO registration
@@ -315,6 +328,91 @@ GC pass:
    ``.claude/cache/auth-outage-events.jsonl``. Kill switch
    ``EPM_DISABLE_AUTH_OUTAGE_GUARD=1``; ``--auth-outage-only`` runs just
    this pass (pair with ``--dry-run`` for a live smoke).
+14. **Stale-blocked flag pass (task #1021; the #742 incident class; runs
+   right after the capacity-retry re-drive, between pass 5 and pass 6).**
+   FLAG — never flip — a ``blocked`` task whose events show a live healthy
+   run: an ``epm:run-launched`` NEWER than the transition into ``blocked``
+   PLUS real (non-watcher, non-deliberate-stop) post-launch progress
+   within ``EPM_STALE_BLOCKED_PROGRESS_FRESH_S`` (default 2h). The
+   watcher-side backstop of the SKILL.md "A successful relaunch also
+   reconciles a stale ``blocked``" orchestrator rule (#742 ran healthy
+   ~35h at status ``blocked``, 2026-07-01→07-02). One flag per launch
+   episode — the dedup state ``stale-blocked-<N>.json`` keys on the
+   flagged launch ts, so the same launch never re-alerts while a NEWER
+   launch does — emitting a deduped ``epm:progress`` marker naming the
+   reconcile command, a sidecar row in
+   ``~/.eps-autonomous/stale-blocked-events.jsonl``, and one Telegram
+   digest line. Every missing signal fails toward silence; the status
+   flip stays with the orchestrator/human (false alert cheap, false flip
+   dangerous). Daemon-INDEPENDENT — it spawns nothing (marker posts go
+   via the task.py subprocess). Kill switch
+   ``EPM_DISABLE_STALE_BLOCKED_FLAG=1``; ``--stale-blocked-only`` runs
+   just this pass (pair with ``--dry-run`` for a live smoke).
+15. **Data-disk headroom pass (#681; ESCALATE-ONLY; runs right after
+   pass 1).** A second disk-watch on the dedicated ``/mnt/eps-data``
+   mount (the relocated ``.claude/worktrees/`` tree), driving the
+   PERCENT decision helpers so the fire point is size-invariant; no
+   reclaim arm runs on the data disk. Clean no-op before the cutover or
+   when the mount is absent. (:func:`data_disk_pass`.)
+16. **Happy-patch pass (#726; escalate-only, daemon-INDEPENDENT; runs
+   right after pass 15).** Proactively surfaces a reverted/drifted Happy
+   injection patch (typically from ``npm update happy``) within ~10 min
+   — the spawn-path guard is reactive and would only catch it at the
+   next spawn. Never re-applies (that needs sudo).
+   (:func:`happy_patch_pass`.)
+17. **Triage-observer pass (#967; NON-GATING; runs right after
+   pass 12).** Post-hoc audit of the /issue Step 9 pre-dispatch
+   external-marker triage duty (origin incident #779): flags a
+   missing / 'none' triage line against a re-enumerated non-empty
+   candidate window. Sidecar rows + capped deduped pushes + capped
+   ``epm:progress`` nudges; never mutates task status.
+   (:func:`triage_observer_pass`.)
+18. **Verdict-disagree observer pass (#1170; NON-GATING; runs right
+   after pass 17).** Audits the doubled marker-mode review sites for the
+   #825 shape — the latest round whose Claude + Codex durable verdicts
+   disagree with no role-matched reconcile and no Codex no-show
+   evidence. Sidecar + one deduped push per (issue, site, round); never
+   posts a task marker. (:func:`verdict_disagree_pass`.)
+19. **VM resource-ledger reap pass (runs right after pass 18;
+   daemon-INDEPENDENT, fail-soft).** Drops expired-TTL / dead-PID claims
+   from the advisory ``~/.task-workflow/vm-ledger.json`` so a crashed
+   session's claim can never wedge the CPU/RAM off-VM routing decision.
+   (:func:`vm_ledger_reap_pass`.)
+20. **Program-orchestrator recovery pass (#660; daemon-INDEPENDENT; runs
+   right after pass 19).** Relaunches the leakage-program bash meta-loop
+   daemon (``run_program_orchestrator.sh`` in tmux ``eps-program``) if
+   it died mid-program — STOP-sentinel + deliberate-exit guarded; fails
+   toward NOT relaunching on any missing signal.
+   (:func:`program_orchestrator_pass`.)
+21. **Proposed-infra-sweep pass (#690; runs right after pass 11).**
+   Always-on backstop dispatching ripe ORPHANED ``proposed`` infra/batch
+   tasks whose filer could not self-dispatch (headless filers, crashed
+   filers, cap-full filings), bounded by the shared infra session cap.
+   (:func:`proposed_infra_sweep_pass`.)
+22. **Capacity-retry pass (#642; runs right after pass 21).** Re-drives
+   (via ``spawn-issue --auto``) the narrow subclass of ``blocked`` tasks
+   whose latest ``epm:failure`` is ``failure_class: infra`` +
+   ``reason: no_compute_available``; backoff + a per-UTC-day cap bound
+   the churn; every other ``blocked`` task stays parked.
+   (:func:`capacity_retry_pass`.)
+23. **Gate-push pass (runs right after pass 6).** Per-issue gate push
+   (fail-soft Telegram on gate-park / ``blocked`` transitions,
+   transition-deduped) + title/self-report reconcile + tick-runaway
+   force-stop; consumes ``main()``'s pre-respawn and pre-campaign
+   registration snapshots so first-tick GC reaps can't hide a
+   transition. (:func:`gate_push_pass`.)
+24. **Stale-registration pass (#845 d; daemon-gated; runs right after
+   pass 23).** Unregisters (never stops) a LIVE session's registration
+   after prolonged transcript idleness so a stale registration stops
+   holding the /issue Step 0 single-orchestrator guard; the orphan sweep
+   re-drives an ACTIVE task. (:func:`stale_registration_pass`.)
+25. **Boot-death pass (#1267; daemon-gated; runs right after pass 23,
+   before pass 24).** STOPS a freshly dispatched AUTO session whose
+   transcript holds ZERO response rows >= 30 min after ``spawned_at``
+   (transcript quiet >= 10 min, live sid — the die-BEFORE-turn-1 class
+   every other lane is structurally blind to; #1251-#1256), then leaves
+   re-drive to the existing arms. Per-issue per-UTC-day stop cap with a
+   LOUD once-per-day cap alert. (:func:`boot_death_pass`.)
 
 Why each pass exists
 --------------------
@@ -432,11 +530,14 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import functools
+import getpass
 import json
 import os
 import re
 import shlex
 import shutil
+import socket
 import subprocess
 import sys
 import threading
@@ -722,6 +823,19 @@ _ALERT_NOTE_SENTINEL = "[autonomous_session_watch:pod-stale-alert]"
 # self-identifying on the dashboard.
 _AUTOSTOP_NOTE_SENTINEL = "[autonomous_session_watch:pod-auto-stop]"
 
+# Substring stamped into the once-per-episode "auto-stop FAILED" marker posted
+# when the pod-safety stop arm's `pod.py stop` exits non-zero (a REAL failure —
+# never the constructed dry-run False). Deduped via the `stop_failed_noted`
+# flag in the pod-safety state file; the episode stays RETRYABLE (state is NOT
+# cleared, so the stop re-fires every ~10-min tick until it succeeds) — the
+# marker replaces stderr-only visibility with a durable task-level record
+# (#1155: a persistent RunPod stop-API failure is an unbounded billing leak
+# with no task-level evidence). Unlike _AUTOSTOP_NOTE_SENTINEL (deliberately
+# absent from _WATCHER_NOTE_SENTINELS — a stopped pod's task is DONE), this
+# one IS a member: it is posted while the pod is still RUNNING, so counting it
+# as progress would refresh the reconcile/stalled staleness clocks.
+_AUTOSTOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:pod-auto-stop-failed]"
+
 # Substring stamped into the one-time "keep-running exemption" marker posted
 # when the auto-stop arm would have fired but the task carries the
 # keep-running tag. Posted at most once per pod incarnation (deduped via the
@@ -805,6 +919,19 @@ _STALLED_EXHAUSTED_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respa
 # failed stop episode. Same staleness-filter contract as the others.
 _STALLED_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:session-stop-failed]"
 
+# Substring stamped into the marker posted at STOP-INITIATION of a #1209
+# ``failed-turn-silence`` fence episode (the dead-wake wedge trigger: every
+# completed tail turn FAILED + transcript silent >= the dead-silence window).
+# The stop is the trigger's ACT — the crash-recovery arm completes the
+# respawn once the stopped wrapper is verifiably dead (posting its own
+# markers) — so this stop-tick note is the trigger's only durable
+# events.jsonl record (the fence's own spawn branch, which posts
+# session-auto-respawn, is unreachable for this trigger's fresh-self-report
+# shape: post-stop the sid leaves the daemon /list, the wedge pid-gate goes
+# inert, and decide() keeps on the fresh boot self-report). Same
+# staleness-filter contract as the others.
+_STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:session-dead-silence-stop]"
+
 # Substring stamped into the one-time marker posted by the #845
 # stale-registration pass when it UNREGISTERS a LIVE-but-abandoned session
 # registration (transcript idle >= 12h, self-report equally stale, no
@@ -834,6 +961,51 @@ _ORPHAN_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:orphan-respawn]"
 # failed, or the task's only registration is MANUAL (user-driven sessions are
 # never auto-respawned, #505). Same staleness-filter contract as the others.
 _ORPHAN_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:orphan-alert]"
+
+
+@functools.lru_cache(maxsize=1)
+def _source_stamp() -> str:
+    """Self-identification suffix for respawn-class marker notes (#1247):
+    host + user + pid + short HEAD sha + root of the RUNNING checkout.
+
+    Deliberately ``Path(__file__)``-derived, NOT the git-common-dir-resolved
+    ``PROJECT_ROOT`` (#844) — the whole point is to expose a stale
+    worktree/clone copy of this script posting from old code (the two-week
+    #662/#663/#867 junk-marker loop had no per-marker process identity, so
+    the poster took days of forensics to attribute). ``root=`` is the primary
+    discriminator (durable after the process dies); ``pid=`` enables live
+    ``/proc`` inspection; ``sha=`` dates the build generation. Fail-soft:
+    ``sha=unknown`` on any git failure and ``user=unknown`` when the identity
+    lookup fails (``getpass.getuser()`` raises KeyError/OSError with no
+    USER/LOGNAME env and no pw entry for the uid — stripped cron/container
+    envs); never raises. ``lru_cache``:
+    host/user/pid/sha/root are process-constants, computed once."""
+    script_root = Path(__file__).resolve().parent.parent
+    try:
+        sha = (
+            subprocess.run(
+                ["git", "rev-parse", "--short", "HEAD"],
+                cwd=script_root,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            ).stdout.strip()
+            or "unknown"
+        )
+    except (subprocess.SubprocessError, OSError):
+        sha = "unknown"
+    try:
+        user = getpass.getuser()
+    except (KeyError, OSError):
+        # The sanctioned fail-soft carve-out: the stamp is forensic metadata —
+        # raising at note-format time AFTER the act guard passed would kill
+        # the acting pass over a missing identity string.
+        user = "unknown"
+    return (
+        f"[src: host={socket.gethostname()} user={user} "
+        f"pid={os.getpid()} sha={sha} root={script_root}]"
+    )
+
 
 # Substring stamped into the one-time alert the stalled / orphan-respawn passes
 # post when they would have respawned a ``followups_running`` parent whose own
@@ -1026,6 +1198,54 @@ STALE_BLOCKED_STATE_PREFIX = "stale-blocked-"
 # UNDER-flags (missed alert, status quo), never mis-flags.
 STALE_BLOCKED_PROGRESS_FRESH_S_DEFAULT = 2 * 3600
 
+# Substring stamped into the boot-death stop marker (task #1267): a freshly
+# dispatched AUTO session whose transcript holds ZERO response rows
+# (assistant OR api-error) >= 30 min after `spawned_at` — the
+# die-BEFORE-turn-1 class (#1251-#1256: 9-row / ~11 KB transcripts frozen
+# ~7 s post-spawn, invisible to every lane until the 12h stale-registration
+# pass) — OR whose 256 KB tail segments to >= 1 completed turn, ALL failed —
+# the #1287 boot-turn-refusal class (#1277: the boot turn ran and was
+# refusal-killed before the tick cron was armed). The pass STOPS the session
+# (auto registrations only) and leaves re-drive to the existing arms. Same
+# staleness-filter contract as every other watcher-posted sentinel
+# (anti-liveness is load-bearing: an unsentineled note would refresh
+# `_latest_progress_ts` and mask the orphan/stalled staleness clocks).
+_BOOT_DEATH_STOP_NOTE_SENTINEL = "[autonomous_session_watch:boot-death-stop]"
+
+# Substring stamped into the one-time "daily boot-death stop cap exhausted"
+# marker (task #1267). DELIBERATELY LOUD once per (issue, UTC day) — a
+# recorded deviation from the #1241 siblings' quiet-at-cap posture: those
+# lanes have a slow backstop that still ACTS at cap, while here the fallback
+# IS the 12h silence this lane exists to kill, so the cap moment is the
+# highest-value alert of the day.
+_BOOT_DEATH_CAP_NOTE_SENTINEL = "[autonomous_session_watch:boot-death-cap-exhausted]"
+
+# Filename prefix for the per-issue boot-death day-cap state file at
+# ``~/.eps-autonomous/boot-death-<N>.json`` (fields: ``stop_day`` /
+# ``stops_today`` / ``cap_alerted_day``). Reaped by the generalized GC at
+# `completed`/`archived` only — `proposed` (the incident-class status) is
+# not terminal, so a live loop's day counter is never reset mid-episode;
+# the day-keyed counter self-expires at the UTC day roll anyway.
+BOOT_DEATH_STATE_PREFIX = "boot-death-"
+
+# Boot-death lane constants (#1267; grounding in the task plan §11):
+# - window = 2x RESPAWN_SPAWN_GRACE_S (3 cron ticks): dead transcripts
+#   freeze ~7 s post-spawn while the healthy #1251 re-dispatch had 49
+#   assistant rows at 13 min — >10x margin over healthy first-turn latency.
+# - quiet = one watcher cron interval (the in-flight-first-turn guard).
+# - tail cap == the #1104 production wedge window (256 KB): a boot-death
+#   transcript is ~11 KB (23x headroom); a LARGER transcript cannot be a
+#   ZERO-RESPONSE boot-death, so the whole-file probe short-circuits without
+#   the read. #1287 (arm 2, boot-refusal) keeps every constant unchanged;
+#   this same cap now ALSO sizes the arm-2 seek-tail read
+#   (`_transcript_tail_rows`), deliberately equal to the #1104/#1209 wedge
+#   window so both lanes see the same evidence horizon.
+# - stop cap 3/day = #1241 parity (TICK_WEDGE_RESPAWNS_PER_DAY).
+BOOT_DEATH_WINDOW_S = 30 * 60
+BOOT_DEATH_QUIET_S = 10 * 60
+BOOT_DEATH_TAIL_BYTES = 256 * 1024
+BOOT_DEATH_STOPS_PER_DAY = 3
+
 # OPT-IN heartbeat sentinel for legitimately-slow phases (off-pod analyzer
 # verifier rounds, in-flight Anthropic Batch polling). UNLIKE every other
 # sentinel in this file, this one is stamped by the LONG-RUNNING PHASE
@@ -1049,6 +1269,7 @@ _LONG_PHASE_HEARTBEAT_PREFIX = "[long-phase-heartbeat]"
 _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
     {
         _ALERT_NOTE_SENTINEL,
+        _AUTOSTOP_FAILED_NOTE_SENTINEL,
         _KEEP_RUNNING_NOTE_SENTINEL,
         _FOLLOWUP_NOTE_SENTINEL,
         _WEDGE_ALERT_NOTE_SENTINEL,
@@ -1058,6 +1279,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _STALLED_RESPAWN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
         _STALLED_STOP_FAILED_NOTE_SENTINEL,
+        _STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL,
         _STALE_REGISTRATION_NOTE_SENTINEL,
         _VM_DISK_NOTE_SENTINEL,
         _ORPHAN_RESPAWN_NOTE_SENTINEL,
@@ -1082,6 +1304,8 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _CAPACITY_RETRY_NOTE_SENTINEL,
         _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL,
         _STALE_BLOCKED_FLAG_NOTE_SENTINEL,
+        _BOOT_DEATH_STOP_NOTE_SENTINEL,
+        _BOOT_DEATH_CAP_NOTE_SENTINEL,
         # Posted by spawn_session.py (not the watcher) when a duplicate --auto
         # dispatch was suppressed at registration (#843 M2) — same contract:
         # a suppression note is bookkeeping, never real progress.
@@ -1188,6 +1412,16 @@ def _stalled_marker_window_s() -> float:
         return float(STALLED_MARKER_WINDOW_S_DEFAULT)
 
 
+# #1137: window for the halt-contract trail behind a deliberate `blocked`
+# park — an `epm:failure` marker within this many seconds BEFORE (or
+# _BLOCKED_PARK_FAILURE_SLACK_AFTER_S after) the newest `epm:status-changed`.
+# The canonical halt sequence posts them ~1s apart (#1092: 13:21:34Z failure,
+# 13:21:35Z status-changed); 1h absorbs slow orchestrator paths (a
+# poller-posted failure classified minutes before the park).
+_BLOCKED_PARK_FAILURE_WINDOW_S = 3600.0
+_BLOCKED_PARK_FAILURE_SLACK_AFTER_S = 300.0
+
+
 # #845 (b): worktree-activity hold. A file under the issue's worktree edited
 # within this window is direct evidence an implementer/analyzer subagent is
 # mid-edit (incident #812: the killed session had edited a file 57s before the
@@ -1271,6 +1505,201 @@ def _tick_wedge_min_api_errors() -> int:
         return TICK_WEDGE_MIN_API_ERRORS
     if parsed < 0:
         return TICK_WEDGE_MIN_API_ERRORS
+    return parsed
+
+
+# #1127: minimum count of consecutive trailing FAILED wake-TURNS (a completed
+# turn whose LAST response row is an api-error — mid-turn assistant heartbeats
+# do not rescue it; see _segment_wake_turns) before the prompt-wedge trigger
+# escalates. The TURN-granularity analogue of TICK_WEDGE_MIN_API_ERRORS:
+# incidents #1098 (5bdae5b8) and #1090 (5e464f3d) each posted 1-3 successful
+# assistant rows per wake BEFORE dying in an api-error row, so the row-level
+# counters reset every cycle and the lane stayed silent (run=0, api_run<=1 on
+# the real 256 KB tails). 3 = one-off + margin (same rationale as the #1104
+# knob); the #1098 tail held 8 failed turns, #1090 held 5.
+TICK_WEDGE_MIN_FAILED_TURNS = 3
+
+
+def _tick_wedge_min_failed_turns() -> int:
+    """Failed-turn wedge trigger threshold (env
+    ``EPM_TICK_WEDGE_MIN_FAILED_TURNS``, an integer COUNT; default
+    :data:`TICK_WEDGE_MIN_FAILED_TURNS`). Mirrors
+    :func:`_tick_wedge_min_api_errors` exactly (a NEW trigger class): ``0``
+    DISABLES the failed-turn-run trigger — the explicit kill switch (with
+    ``EPM_TICK_WEDGE_MIN_FAILED_TOTAL=0`` it restores the exact pre-#1127
+    lazy gate). Malformed / negative env falls back to the default."""
+    raw = os.environ.get("EPM_TICK_WEDGE_MIN_FAILED_TURNS")
+    if not raw:
+        return TICK_WEDGE_MIN_FAILED_TURNS
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return TICK_WEDGE_MIN_FAILED_TURNS
+    if parsed < 0:
+        return TICK_WEDGE_MIN_FAILED_TURNS
+    return parsed
+
+
+# #1127 option (c): windowed TOTAL (non-consecutive) failed wake-turns for the
+# alternating-storm rate trigger — incident c16b10ca lost ~every other wake for
+# ~5.7h (00:26-06:07Z), a shape NO consecutive counter (row- or turn-level) can
+# ever fire on. The measured c16b10ca 256KB tail held 4-5 windowed failed
+# TURNS — below this threshold BY DESIGN (plan v4 §3.3 accept-run-coverage;
+# threshold deliberately NOT lowered): the lane targets storms DENSER than
+# that incident, while a healthy session needs 6 turn-ENDING failures inside
+# the window (>> any observed healthy rate; 0/20 negative sweep).
+TICK_WEDGE_MIN_FAILED_TOTAL = 6
+
+
+def _tick_wedge_min_failed_total() -> int:
+    """Failed-turn RATE trigger threshold (env
+    ``EPM_TICK_WEDGE_MIN_FAILED_TOTAL``, an integer COUNT; default
+    :data:`TICK_WEDGE_MIN_FAILED_TOTAL`). Mirrors
+    :func:`_tick_wedge_min_api_errors` (a NEW trigger class): ``0`` DISABLES
+    the failed-turn-rate trigger — the kill switch for the alternating-storm
+    lane. Malformed / negative env falls back to the default."""
+    raw = os.environ.get("EPM_TICK_WEDGE_MIN_FAILED_TOTAL")
+    if not raw:
+        return TICK_WEDGE_MIN_FAILED_TOTAL
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return TICK_WEDGE_MIN_FAILED_TOTAL
+    if parsed < 0:
+        return TICK_WEDGE_MIN_FAILED_TOTAL
+    return parsed
+
+
+# #1127: window for the failed-turn RATE trigger, anchored to the newest
+# parseable ROW timestamp in the tail (not wall-clock, so the pure predicate
+# is deterministic + replay-testable). 120 min covers the measured incident
+# tail spans (~1.3-2.5h at 256 KB) so the TAIL, not the clock, is usually
+# binding (which only under-counts — fail toward NO-FIRE); matches the house
+# 2h precedent (STALLED_MARKER_WINDOW_S_DEFAULT).
+TICK_WEDGE_RATE_WINDOW_S = 7200
+
+
+def _tick_wedge_rate_window_s() -> float:
+    """Failed-turn rate-trigger window in seconds. Env
+    ``EPM_TICK_WEDGE_RATE_WINDOW_MIN`` is in MINUTES and is converted to the
+    SECONDS constant returned here (the ``EPM_STALLED_WT_ACTIVITY_MIN``
+    minutes-env -> seconds-constant precedent); default
+    :data:`TICK_WEDGE_RATE_WINDOW_S` (7200 s = 120 min). It is a WINDOW, not
+    a trigger, so malformed / NON-POSITIVE env falls back to the default (the
+    :func:`_stalled_window_s` pattern) — disabling the rate lane is
+    ``EPM_TICK_WEDGE_MIN_FAILED_TOTAL=0``, never a zero window."""
+    raw = os.environ.get("EPM_TICK_WEDGE_RATE_WINDOW_MIN")
+    if not raw:
+        return float(TICK_WEDGE_RATE_WINDOW_S)
+    try:
+        parsed = float(raw) * 60.0
+    except ValueError:
+        return float(TICK_WEDGE_RATE_WINDOW_S)
+    if parsed <= 0:
+        return float(TICK_WEDGE_RATE_WINDOW_S)
+    return parsed
+
+
+# #1209: silence threshold for the failed-turn-silence trigger — a session
+# whose EVERY completed tail turn FAILED and whose transcript has then been
+# silent this long is dead-wedged (a turn-1 refusal death never arms the
+# tick cron, so no wake will ever grow the other four triggers' counters;
+# incident 8e9c371d / #1092: 1 failed turn at 02:54:29Z, next respawn
+# 04:33Z, ~100 min unattended). 20 min = 2 watcher ticks (a mid-turn
+# 429-retry gap is seconds-minutes, never 20 min of zero rows) and clears
+# the 15-min RESPAWN_SPAWN_GRACE_S window by construction (the death
+# follows the spawn by >= ~1 min). Deliberately NOT >= 45 min (the
+# tick-cron cadence): for a zero-successful-turns session a fresh-context
+# respawn beats waking a refusal-poisoned 1-turn conversation, so
+# preempting a possible next wake is acceptable.
+TICK_WEDGE_DEAD_SILENCE_S = 20 * 60
+
+
+def _tick_wedge_dead_silence_s() -> float:
+    """Dead-wake silence threshold in seconds. Env
+    ``EPM_TICK_WEDGE_DEAD_SILENCE_MIN`` is in MINUTES (the
+    ``EPM_TICK_WEDGE_RATE_WINDOW_MIN`` minutes-env -> seconds-constant
+    precedent); default :data:`TICK_WEDGE_DEAD_SILENCE_S`. ``0`` DISABLES
+    the trigger (the :func:`_tick_wedge_min_api_errors` new-trigger-class
+    kill-switch convention — here the window IS the trigger arm, so 0 must
+    mean off, not default); malformed / NEGATIVE env falls back to the
+    default."""
+    raw = os.environ.get("EPM_TICK_WEDGE_DEAD_SILENCE_MIN")
+    if not raw:
+        return float(TICK_WEDGE_DEAD_SILENCE_S)
+    try:
+        parsed = float(raw) * 60.0
+    except ValueError:
+        return float(TICK_WEDGE_DEAD_SILENCE_S)
+    if parsed < 0:
+        return float(TICK_WEDGE_DEAD_SILENCE_S)
+    return parsed
+
+
+# #1209: per-issue per-UTC-day cap on fence episodes the failed-turn-silence
+# trigger may INITIATE. This trigger is the first fast enough to loop
+# through the advancement-clear (each die-on-turn-1 generation writes one
+# boot self-report, resetting the STALLED_MAX_RESPAWNS episode counter), so
+# an episode-scoped cap alone cannot bound a cross-generation die-on-boot
+# loop (~45-60 min/cycle ≈ up to ~24-32 cold ~100K-token session loads/day
+# uncapped). 3 chosen over the orphan pass's 2 because each dead-silence
+# cycle is cheap (no pod) and the first respawn is usually the recovery.
+TICK_WEDGE_DEAD_RESPAWNS_PER_DAY = 3
+
+
+def _tick_wedge_dead_respawns_per_day() -> int:
+    """Daily per-issue cap on failed-turn-silence-initiated fence episodes
+    (env ``EPM_TICK_WEDGE_DEAD_RESPAWNS_PER_DAY``; default
+    :data:`TICK_WEDGE_DEAD_RESPAWNS_PER_DAY`). Malformed OR ``< 1`` env
+    falls back to the default — the ``< 1 -> default`` guard is THIS
+    helper's own addition (do NOT literal-copy
+    :func:`_orphan_max_respawns_per_day`, which guards only malformed):
+    disabling the trigger is the SILENCE knob's job
+    (``EPM_TICK_WEDGE_DEAD_SILENCE_MIN=0``), never the cap's."""
+    raw = os.environ.get("EPM_TICK_WEDGE_DEAD_RESPAWNS_PER_DAY")
+    if not raw:
+        return TICK_WEDGE_DEAD_RESPAWNS_PER_DAY
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return TICK_WEDGE_DEAD_RESPAWNS_PER_DAY
+    if parsed < 1:
+        return TICK_WEDGE_DEAD_RESPAWNS_PER_DAY
+    return parsed
+
+
+# #1241: per-issue per-UTC-day cap on fence episodes the FOUR pre-#1209 wedge
+# triggers (dequeue-run #779 / api-error-run #1104 / failed-turn-run +
+# failed-turn-rate #1127) may INITIATE. Same rationale as the #1209 cap
+# above: the crash-recovery arm — which consults no respawn cap — can
+# complete a fresh-self-report wedge respawn, and the advancement-clear
+# resets `respawn_count` every generation, so only a day-keyed
+# advancement-clear-EXEMPT counter bounds a cross-generation wedge-respawn
+# loop. ONE shared counter for the four triggers (shared failure surface —
+# a live wedged session; one respawn resolves whichever fired), INDEPENDENT
+# of the #1209 dead-silence budget so neither starves the other. Default
+# mirrors the validated #1209 value (>= 3x every observed per-incident need
+# — #779 / #1074 / #1098 / #1090 each needed 1 respawn).
+TICK_WEDGE_RESPAWNS_PER_DAY = 3
+
+
+def _tick_wedge_respawns_per_day() -> int:
+    """Daily per-issue cap on fence episodes initiated by the four pre-#1209
+    wedge triggers (dequeue-run / api-error-run / failed-turn-run /
+    failed-turn-rate; env ``EPM_TICK_WEDGE_RESPAWNS_PER_DAY``; default
+    :data:`TICK_WEDGE_RESPAWNS_PER_DAY`). Malformed OR ``< 1`` env falls
+    back to the default — disabling a trigger is its own knob's job
+    (``EPM_TICK_WEDGE_MIN_*=0``), never the cap's (#1241; mirrors
+    :func:`_tick_wedge_dead_respawns_per_day`)."""
+    raw = os.environ.get("EPM_TICK_WEDGE_RESPAWNS_PER_DAY")
+    if not raw:
+        return TICK_WEDGE_RESPAWNS_PER_DAY
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return TICK_WEDGE_RESPAWNS_PER_DAY
+    if parsed < 1:
+        return TICK_WEDGE_RESPAWNS_PER_DAY
     return parsed
 
 
@@ -1748,42 +2177,250 @@ def _classify_wedge_row(row: object) -> str:
     return "other"
 
 
-def decide_prompt_wedge(
+def _row_ts(row: object) -> float | None:
+    """Parse a transcript row's top-level ISO-8601 ``timestamp`` (Claude Code
+    writes ``...Z``-suffixed UTC — verified on the live-captured
+    ``_wedge_dequeue_row`` / ``_wedge_api_error_row`` fixtures) to an epoch
+    float. Returns ``None`` on a missing / non-string / unparseable value —
+    fail toward NO-FIRE: the #1127 rate trigger EXCLUDES ts-less turns from
+    its windowed count rather than guessing."""
+    if not isinstance(row, dict):
+        return None
+    raw = row.get("timestamp")
+    if not isinstance(raw, str) or not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def _segment_wake_turns(rows: list[dict]) -> list[tuple[str, float | None]]:
+    """Segment classified transcript-tail rows into COMPLETED wake-turns
+    (#1127), oldest -> newest. Returns one ``(outcome, end_ts)`` tuple per
+    completed turn, ``outcome in {"ok", "failed"}``.
+
+    Rules (consumes :func:`_classify_wedge_row`'s classes only):
+
+    - A turn starts at a prompt-evidence row (``"dequeue"`` / ``"prompt"``)
+      and collects the response rows (``"assistant"`` / ``"api-error"``)
+      that follow; consecutive prompt-evidence rows (possibly interleaved
+      with ``"other"``) are ONE delivery burst, not separate turns.
+    - A turn is COMPLETED iff it has >= 1 response row; its outcome is the
+      class of its LAST response row: ``assistant`` -> ``"ok"``,
+      ``api-error`` -> ``"failed"``. This is the #1127 Goal's "a turn ENDING
+      in isApiErrorMessage is a failed wake even with mid-turn heartbeats";
+      a mid-turn api-error followed by a successful assistant row in the
+      SAME turn is ``"ok"`` (the healthy retried-429 shape).
+    - A swallowed delivery (prompt evidence, no response rows, then the next
+      delivery) produces NO turn — it neither resets nor increments the turn
+      counters; the row-level ``run`` counter owns the #779 shape.
+    - Leading response rows before any prompt evidence (a mid-turn tail cut)
+      form one implicit turn.
+    - An in-flight FINAL turn (prompt delivered, no response yet) is
+      deliberately NOT counted — it can neither reset nor extend the
+      trailing-failed count (fail toward NO-FIRE on a probe racing a
+      mid-delivery wake).
+    - ``end_ts`` = the parsed top-level ISO ``timestamp`` of the turn's last
+      response row (:func:`_row_ts`; ``None`` if missing/unparseable).
+    """
+    turns: list[tuple[str, float | None]] = []
+    last_resp: str | None = None  # class of latest response row in current turn
+    last_resp_ts: float | None = None
+    for row in rows:
+        cls = _classify_wedge_row(row)
+        if cls in ("dequeue", "prompt"):
+            if last_resp is not None:  # previous turn completed -> flush
+                turns.append(("failed" if last_resp == "api-error" else "ok", last_resp_ts))
+                last_resp, last_resp_ts = None, None
+            # else: same delivery burst, or a swallowed delivery (no turn emitted)
+        elif cls in ("assistant", "api-error"):
+            last_resp, last_resp_ts = cls, _row_ts(row)
+        # "other": skipped
+    if last_resp is not None:  # flush the final completed turn
+        turns.append(("failed" if last_resp == "api-error" else "ok", last_resp_ts))
+    return turns
+
+
+def _wedge_newest_row_ts(trailing_rows: list[dict]) -> float | None:
+    """Newest parseable top-level row timestamp in the tail, or ``None``
+    when no row timestamp parses at all (the window/silence anchor is then
+    undefined — fail toward NO-FIRE). Extracted from
+    :func:`_wedge_rate_windowed_failed` (#1209) so the ``failed-turn-rate``
+    window and the ``failed-turn-silence`` read share the IDENTICAL
+    deterministic anchor scan (never wall-clock)."""
+    for row in reversed(trailing_rows):
+        ts = _row_ts(row)
+        if ts is not None:
+            return ts
+    return None
+
+
+def decide_prompt_wedge_reason(
     trailing_rows: list[dict],
     min_dequeued: int,
     *,
     min_api_errors: int = TICK_WEDGE_MIN_API_ERRORS,
+    min_failed_turns: int = TICK_WEDGE_MIN_FAILED_TURNS,
+    min_failed_total: int = TICK_WEDGE_MIN_FAILED_TOTAL,
+    rate_window_s: float = TICK_WEDGE_RATE_WINDOW_S,
+    dead_silence_s: float = TICK_WEDGE_DEAD_SILENCE_S,
+    now: float | None = None,
+) -> str | None:
+    """Pure prompt-wedge detector over parsed transcript-tail rows —
+    returns WHICH trigger fired (``"dequeue-run"`` | ``"api-error-run"`` |
+    ``"failed-turn-run"`` | ``"failed-turn-rate"`` |
+    ``"failed-turn-silence"``, checked in that precedence order:
+    oldest/most-specific evidence first; the order never changes WHETHER
+    the wedge fires) or ``None``.
+
+    Five triggers:
+
+    1. ``dequeue-run`` (#845 e, verbatim): the tail ends with >=
+       ``min_dequeued`` consecutive wedge-evidence rows (``"dequeue"``
+       queue-operation records — co-primary — and/or ``"prompt"`` promptless
+       user rows — secondary; both count toward the SAME trailing run) with
+       no assistant row after the first of them (incident #779: 5 tick
+       prompts enqueued AND dequeued with no turn for ~90 min).
+       ``min_dequeued <= 0`` DISABLES this counter (#1127 — new semantics,
+       needed by the fresh-self-report gate path in
+       :func:`_apply_prompt_wedge_override`; the production STALE path is
+       unaffected — :func:`_tick_wedge_min_dequeued` never returns < 1).
+    2. ``api-error-run`` (#1104, verbatim): the tail ends with >=
+       ``min_api_errors`` consecutive ``"api-error"`` rows (assistant rows
+       with ``isApiErrorMessage: true`` — usage-policy refusals, 429/529
+       error turns) with no SUCCESSFUL assistant row after the first of them
+       (incident #1074: 38 refused wake turns / ~2h unrecovered).
+       ``min_api_errors <= 0`` DISABLES (the existing kill switch).
+    3. ``failed-turn-run`` (#1127 — the #1098/#1090 fix): >=
+       ``min_failed_turns`` trailing consecutive ``"failed"`` turns from
+       :func:`_segment_wake_turns`; an ``"ok"`` turn resets. The row-level
+       counters are structurally blind to the partially-successful wake
+       (every refused wake posts >= 1 assistant row before dying, resetting
+       both row counters each cycle); turn granularity is not.
+       ``min_failed_turns <= 0`` DISABLES.
+    4. ``failed-turn-rate`` (#1127 option (c) — the c16b10ca alternating
+       storm): total (non-consecutive) ``"failed"`` turns whose ``end_ts``
+       lies within ``rate_window_s`` of the NEWEST parseable row timestamp
+       in the tail >= ``min_failed_total``, AND the newest completed turn is
+       ``"failed"`` (a session that recovered after a storm is not respawned
+       mid-recovery). Turns with ``end_ts=None`` are EXCLUDED from the
+       windowed count; if no row timestamp parses at all the anchor is
+       undefined and this trigger is inert (fail toward NO-FIRE).
+       ``min_failed_total <= 0`` DISABLES.
+    5. ``failed-turn-silence`` (#1209 — the die-on-turn-1 gap): >= 1
+       completed turn, EVERY completed turn in the tail is ``"failed"``,
+       AND the newest parseable row timestamp is >= ``dead_silence_s``
+       older than ``now`` (incident 8e9c371d / #1092: a session refused on
+       its FIRST substantive turn never arms its tick cron, freezes at
+       exactly 1 failed turn / 1 api-error row — permanently below every
+       counting threshold above — and no further rows ever arrive). The
+       WEAKEST evidence, checked LAST. ``now=None`` (every pre-existing
+       pure caller) OR ``dead_silence_s <= 0`` (the kill switch) leaves
+       this trigger inert; zero completed turns (the #779 swallow shape),
+       a prior ``"ok"`` turn anywhere in the tail, a ts-less tail, and a
+       future-dated anchor all fail toward NO-FIRE
+       (:func:`_wedge_dead_silence_fired`).
+
+    Row-counter mechanics (unchanged from #1104): ``"other"`` rows are
+    skipped without resetting either counter; a real ``"assistant"`` row
+    resets both; an ``"api-error"`` row RESETS ``run`` (the prompt DID get a
+    response — not the #779 swallow shape; the single-refusal guard) but
+    increments ``api_run``. Window assumption: the caller's transcript-tail
+    read must span the thresholds' worth of evidence (the production probe
+    reads 256 KB — #1104); a too-thin window fails toward NO-FIRE."""
+    run, api_run = _wedge_trailing_row_runs(trailing_rows)
+    if min_dequeued > 0 and run >= min_dequeued:
+        return "dequeue-run"
+    if min_api_errors > 0 and api_run >= min_api_errors:
+        return "api-error-run"
+    return _wedge_turn_lane_reason(
+        trailing_rows,
+        min_failed_turns=min_failed_turns,
+        min_failed_total=min_failed_total,
+        rate_window_s=rate_window_s,
+        dead_silence_s=dead_silence_s,
+        now=now,
+    )
+
+
+def _wedge_turn_lane_reason(
+    trailing_rows: list[dict],
+    *,
+    min_failed_turns: int,
+    min_failed_total: int,
+    rate_window_s: float,
+    dead_silence_s: float,
+    now: float | None,
+) -> str | None:
+    """The TURN-level wedge triggers (#1127 ``failed-turn-run`` /
+    ``failed-turn-rate``; #1209 ``failed-turn-silence``), factored out of
+    :func:`decide_prompt_wedge_reason` (ruff C901 cap — the
+    :func:`_wedge_trailing_row_runs` precedent). Behavior-preserving
+    extraction: precedence order and every knob's semantics are exactly the
+    inline #1127 code's; the early exit keeps the hot path free of
+    :func:`_segment_wake_turns` when every turn-level lane is disabled
+    (``now=None`` counts the #1209 lane as disabled, so all pre-existing
+    call shapes take the identical path)."""
+    silence_armed = now is not None and dead_silence_s > 0
+    if min_failed_turns <= 0 and min_failed_total <= 0 and not silence_armed:
+        return None
+    turns = _segment_wake_turns(trailing_rows)
+    if min_failed_turns > 0:
+        trailing_failed = 0
+        for outcome, _ts in reversed(turns):
+            if outcome != "failed":
+                break
+            trailing_failed += 1
+        if trailing_failed >= min_failed_turns:
+            return "failed-turn-run"
+    if min_failed_total > 0:
+        windowed = _wedge_rate_windowed_failed(trailing_rows, turns, rate_window_s)
+        if windowed is not None and windowed >= min_failed_total:
+            return "failed-turn-rate"
+    if silence_armed and _wedge_dead_silence_fired(trailing_rows, turns, dead_silence_s, now):
+        return "failed-turn-silence"
+    return None
+
+
+def _wedge_dead_silence_fired(
+    trailing_rows: list[dict],
+    turns: list[tuple[str, float | None]],
+    dead_silence_s: float,
+    now: float,
 ) -> bool:
-    """Pure prompt-wedge detector over parsed transcript-tail rows (#845 e;
-    incident #779: 5 tick prompts were enqueued AND dequeued with no
-    assistant turn for ~90 min before the slow debounce finally respawned —
-    killing an in-flight implementer).
+    """#1209 ``failed-turn-silence``: True iff the tail holds >= 1 completed
+    turn, EVERY completed turn is ``"failed"``, and the newest parseable row
+    timestamp is >= ``dead_silence_s`` older than ``now``. Zero completed
+    turns (the #779 swallow shape) never fire (vacuous-all guard — the
+    dequeue-run trigger owns swallows); a ts-less tail leaves the silence
+    anchor undefined -> NO-FIRE; a future-dated anchor (clock jump) makes
+    ``now - anchor`` negative -> NO-FIRE. The all-completed-turns-failed
+    condition confines the trigger to sessions with ZERO successful history
+    in the visible tail — the died-young shape, for which a fresh-context
+    respawn loses essentially nothing (CLAUDE.md refusal-ladder (f)); a
+    healthy mid-life session whose latest wake ended in one transient
+    trailing api-error has prior ``"ok"`` turns in its tail and is blocked
+    regardless of silence. Accepted residual (#1209 plan §4.2, pinned by
+    test): the 256 KB tail window can truncate older ``ok`` turns of a very
+    long final turn, making the all-failed read vacuously true over the
+    visible window (incl. the leading-IMPLICIT-turn shape) — the session's
+    last visible turn genuinely failed and has been silent >= the window,
+    so the bounded fresh respawn is the accepted recovery."""
+    if not turns or any(outcome != "failed" for outcome, _ts in turns):
+        return False
+    anchor = _wedge_newest_row_ts(trailing_rows)
+    if anchor is None:
+        return False
+    return now - anchor >= dead_silence_s
 
-    True iff EITHER trailing counter fires:
 
-    - the transcript TAIL ends with >= ``min_dequeued`` consecutive
-      wedge-evidence rows (``"dequeue"`` queue-operation records — co-primary
-      — and/or ``"prompt"`` promptless user rows — secondary; both count
-      toward the SAME trailing run, so a mixed tail still fires) with no
-      assistant row after the first of them; OR
-    - (#1104) the tail ends with >= ``min_api_errors`` consecutive
-      ``"api-error"`` turns (assistant rows with ``isApiErrorMessage: true``
-      — usage-policy refusals, 429/529 error turns) with no SUCCESSFUL
-      assistant turn after the first of them (incident #1074: 38 refused
-      wake turns / ~2h unrecovered; ``min_api_errors <= 0`` DISABLES this
-      trigger — the kill switch).
-
-    ``"other"`` rows are skipped without resetting either counter; a real
-    ``"assistant"`` row resets both (the session took a turn — not wedged).
-    An ``"api-error"`` row RESETS ``run`` (the prompt DID get a response —
-    this is not the #779 swallow shape; without the reset, one refused
-    wake's 2-4 dequeue+prompt rows would trip ``run >= min_dequeued`` after
-    a SINGLE refused turn, over-aggressive for the one-off-refusal regime)
-    but increments ``api_run``. Window assumption: the caller's
-    transcript-tail read must span >= ``min_api_errors`` api-error turns —
-    on #1074 the 64 KB default held EXACTLY 3 such rows (zero margin), so
-    the production probe reads a wider tail; a too-thin window fails toward
-    NO-FIRE (the pre-fix slow path), never a false fire."""
+def _wedge_trailing_row_runs(trailing_rows: list[dict]) -> tuple[int, int]:
+    """The #845/#1104 ROW-level trailing counters ``(run, api_run)`` —
+    factored out of :func:`decide_prompt_wedge_reason` (ruff C901 cap).
+    ``run`` = trailing consecutive dequeue/prompt rows (reset by ANY
+    response row); ``api_run`` = trailing consecutive api-error rows (reset
+    only by a SUCCESSFUL assistant row); ``"other"`` rows never reset."""
     run = 0
     api_run = 0
     for row in trailing_rows:
@@ -1796,7 +2433,67 @@ def decide_prompt_wedge(
             api_run += 1
         elif cls in ("dequeue", "prompt"):
             run += 1
-    return run >= min_dequeued or (min_api_errors > 0 and api_run >= min_api_errors)
+    return run, api_run
+
+
+def _wedge_rate_windowed_failed(
+    trailing_rows: list[dict],
+    turns: list[tuple[str, float | None]],
+    rate_window_s: float,
+) -> int | None:
+    """Windowed failed-turn count for the #1127 ``failed-turn-rate`` trigger,
+    or ``None`` when the trigger is inert for this tail (no completed turns;
+    the newest completed turn is not ``"failed"`` — a recovered session is
+    not respawned mid-recovery; or no row timestamp parses at all, leaving
+    the window anchor undefined — fail toward NO-FIRE). The anchor is the
+    NEWEST parseable row timestamp in the tail (deterministic, replay-
+    testable — never wall-clock); ts-less turns are excluded from the count."""
+    if not turns or turns[-1][0] != "failed":
+        return None
+    anchor = _wedge_newest_row_ts(trailing_rows)
+    if anchor is None:
+        return None
+    return sum(
+        1
+        for outcome, ts in turns
+        if outcome == "failed" and ts is not None and anchor - ts <= rate_window_s
+    )
+
+
+def decide_prompt_wedge(
+    trailing_rows: list[dict],
+    min_dequeued: int,
+    *,
+    min_api_errors: int = TICK_WEDGE_MIN_API_ERRORS,
+    min_failed_turns: int = TICK_WEDGE_MIN_FAILED_TURNS,
+    min_failed_total: int = TICK_WEDGE_MIN_FAILED_TOTAL,
+    rate_window_s: float = TICK_WEDGE_RATE_WINDOW_S,
+    dead_silence_s: float = TICK_WEDGE_DEAD_SILENCE_S,
+    now: float | None = None,
+) -> bool:
+    """Thin bool wrapper over :func:`decide_prompt_wedge_reason` (#845 e /
+    #1104 / #1127 / #1209): True iff ANY of the five wedge triggers fires.
+    Existing positional/keyword call shapes are preserved; the new keyword
+    defaults are the module constants, so ``decide_prompt_wedge(tail, 3)``
+    gains the #1127 turn-level triggers too (pure-function callers want the
+    fixed predicate) while the #1209 dead-silence trigger stays INERT
+    without an explicit ``now`` (never wall-clock inside the predicate —
+    the #1127 deterministic-anchor posture). See
+    :func:`decide_prompt_wedge_reason` for the trigger definitions, kill
+    switches, and incident history."""
+    return (
+        decide_prompt_wedge_reason(
+            trailing_rows,
+            min_dequeued,
+            min_api_errors=min_api_errors,
+            min_failed_turns=min_failed_turns,
+            min_failed_total=min_failed_total,
+            rate_window_s=rate_window_s,
+            dead_silence_s=dead_silence_s,
+            now=now,
+        )
+        is not None
+    )
 
 
 def decide_stale_registration(
@@ -1825,6 +2522,71 @@ def decide_stale_registration(
     if self_report_age_s is not None and self_report_age_s < idle_threshold_s:
         return "keep"
     return "unregister"
+
+
+def decide_boot_death(
+    *,
+    sid_alive: bool,
+    entry_age_s: float | None,
+    response_row_seen: bool | None,
+    all_turns_failed: bool | None,
+    transcript_idle_s: float | None,
+    window_s: float,
+    quiet_s: float,
+    stops_today: int,
+    stops_per_day: int,
+) -> str:
+    """Pure per-entry decision for the boot-death lane (#1267 arm 1 +
+    #1287 arm 2). Returns ``"stop"`` | ``"cap-alert"`` | ``"keep"``.
+
+    Fires ONLY on: live sid + registration older than ``window_s`` + ONE of
+
+    - ARM 1 (zero-response, #1267/#1251): ``response_row_seen is False`` —
+      the whole-file read found NO response rows (assistant OR api-error);
+      the session died before turn 1.
+    - ARM 2 (boot-refusal, #1287/#1277): ``all_turns_failed is True`` —
+      the 256 KB TAIL read segmented (via :func:`_segment_wake_turns`,
+      #1127) to >= 1 completed turn with EVERY completed turn failed (last
+      response row api-error). The boot turn executed and every turn
+      failed; at a PARK status the #1209/#1127 wedge lanes are structurally
+      ineligible (``respawn_eligible = in_active and ...``), so this lane
+      owns the shape. A single visible ok turn anywhere in the tail =>
+      not boot-dead (the #1104 single-refusal guard).
+
+    + transcript quiet >= ``quiet_s`` (the in-flight-first-turn / mid-retry
+    guard: a live retrying session keeps appending rows, so mtime stays
+    fresh). Silence-anchor divergence from #1209 (deliberate — #1267
+    parity): arm 2 gates on the lane's mtime quiet (10 min), NOT #1209's
+    newest-parseable-row-ts 20-min silence anchor; the two coincide for
+    dead append-only transcripts (mtime tracks the last row), so do not
+    "fix" it in either direction. Every unresolvable input fails toward
+    keep (the 12h stale-registration pass stays the backstop):
+    ``entry_age_s`` None or negative (missing / zero / non-numeric /
+    FUTURE-dated ``spawned_at``); ``response_row_seen`` None (whole-file
+    read unresolvable OR over the cap — which does NOT veto arm 2: the
+    tail read works at any size); ``all_turns_failed`` None (tail
+    unresolvable) or False (zero completed turns — swallows stay the
+    dequeue-run's property — or an ok turn); ``transcript_idle_s`` None
+    (:func:`_transcript_idle_age_s` could not resolve the mtime).
+
+    At the daily stop cap the lane stops STOPPING and returns
+    ``"cap-alert"`` (the caller dedupes to one loud alert per UTC day);
+    the live dead registration then back-pressures re-dispatch exactly as
+    today's 12h cycle does.
+    """
+    if not sid_alive:
+        return "keep"  # dead sid: crash-recovery / sweep-grace property
+    if entry_age_s is None or entry_age_s < window_s:
+        return "keep"
+    boot_dead = response_row_seen is False  # arm 1 (#1267)
+    boot_refused = all_turns_failed is True  # arm 2 (#1287)
+    if not (boot_dead or boot_refused):
+        return "keep"
+    if transcript_idle_s is None or transcript_idle_s < quiet_s:
+        return "keep"
+    if stops_today >= stops_per_day:
+        return "cap-alert"
+    return "stop"
 
 
 def decide_pod_safety(
@@ -2938,8 +3700,8 @@ def happy_patch_pass(dry_run: bool) -> None:
 # disk sub-floor sentinel above: detection + attribution + one deduped push.
 # WARN-ONLY: it NEVER kills, NEVER renices, NEVER signals any process.
 # (End-of-block sentinel for the never-kills grep test: the block ends at the
-#  `def _status_class` line — the test greps between this header line and
-#  that def for process-mutation tokens.)
+#  dedicated end-of-block comment placed directly after cpu_guard_pass below —
+#  see tests/test_cpu_guard_pass.py::test_cpu_guard_never_kills.)
 
 
 def _env_float(name: str, default: float, *, lo: float, hi: float) -> float:
@@ -3572,6 +4334,14 @@ def cpu_guard_pass(dry_run: bool) -> bool:
     return wrote
 
 
+# ─── END-OF-CPU-GUARD-BLOCK (task #849): never-kills scan boundary ───────────
+# (tests/test_cpu_guard_pass.py::test_cpu_guard_never_kills greps from the
+#  CPU-guard header sentinel above down to THIS line for process-mutation
+#  tokens. New CPU-guard code must go ABOVE this line to stay inside the
+#  scanned span. This string must stay UNIQUE in this file — the test asserts
+#  count == 1; #1155.)
+
+
 # ── post-hoc external-marker triage observer (#967) ─────────────────────────
 #
 # NON-GATING observer of the /issue Step 9 pre-dispatch external-marker
@@ -3611,6 +4381,13 @@ TRIAGE_OBSERVER_GRACE_S = _env_float("EPM_TRIAGE_OBSERVER_GRACE_S", 120.0, lo=0.
 # deferred-marker queue — deferral adds state complexity exactly in the
 # storm case where per-task markers would spam most).
 TRIAGE_OBSERVER_MARKER_CAP = int(_env_float("EPM_TRIAGE_OBSERVER_MARKER_CAP", 5, lo=0, hi=100))
+# Spam valve on the phone-push channel (#1167), mirroring the marker cap
+# above: the first K warn pushes per tick go out individually; overflow is
+# rolled into ONE "+N more" summary push at the end of the pass. Overflow
+# is PERMANENT — an over-budget warn's individual push is never deferred
+# to a later tick (same no-deferred-queue posture as the marker cap). The
+# sidecar keeps full fidelity regardless; marker semantics are unaffected.
+TRIAGE_OBSERVER_PUSH_CAP = int(_env_float("EPM_TRIAGE_OBSERVER_PUSH_CAP", 5, lo=0, hi=100))
 _TRIAGE_OBSERVER_FLAGGED_KEY_CAP = 400  # newest dedup keys kept per issue
 
 
@@ -3719,35 +4496,50 @@ def _triage_observer_nudge(v: dict) -> str:
 
 
 def decide_triage_observer_actions(
-    violations: list[dict], flagged: set[str], marker_budget: int
+    violations: list[dict],
+    flagged: set[str],
+    marker_budget: int,
+    *,
+    push_budget: int | None = None,
 ) -> list[dict]:
     """PURE routing for triage-observer flags (unit-testable without IO).
 
     Drops already-flagged keys (key = ``f"{record_ts}|{violation}"``), orders
     warn-before-info (ties by record_ts), and attaches action fields: sidecar
-    always; push only for ``warn``; marker only for ``warn`` while the
-    per-tick budget lasts. An over-budget warn keeps ``push=True,
-    marker=False`` and is STILL emitted (the caller marks it flagged) —
-    permanently sidecar+push-only, its marker is NEVER deferred to a later
-    tick (cap-overflow semantics, #967 plan §3 Q4). Never mutates
-    ``flagged``."""
+    always; push only for ``warn`` while the per-tick push budget lasts
+    (``push_budget=None`` = uncapped, the pre-#1167 semantics); marker only
+    for ``warn`` while the per-tick marker budget lasts. The two budgets are
+    INDEPENDENT. An over-MARKER-budget warn keeps ``push`` semantics and is
+    STILL emitted (the caller marks it flagged) — permanently
+    sidecar+push-only, its marker is NEVER deferred to a later tick
+    (cap-overflow semantics, #967 plan §3 Q4). An over-PUSH-budget warn
+    keeps ``marker`` semantics and gets ``push=False, push_suppressed=True``
+    — the caller rolls suppressed warns into ONE end-of-pass summary push;
+    the individual push is NEVER deferred (#1167). Every action carries
+    ``push_suppressed`` (bool; False for info rows and in-budget warns).
+    Never mutates ``flagged``."""
     fresh = [
         v for v in violations if f"{v.get('record_ts', '')}|{v.get('violation', '')}" not in flagged
     ]
     fresh.sort(key=lambda v: (0 if v.get("severity") == "warn" else 1, v.get("record_ts", "")))
     actions: list[dict] = []
     budget = marker_budget
+    pbudget = push_budget
     for v in fresh:
         warn = v.get("severity") == "warn"
         marker = warn and budget > 0
         if marker:
             budget -= 1
+        push = warn and (pbudget is None or pbudget > 0)
+        if push and pbudget is not None:
+            pbudget -= 1
         actions.append(
             {
                 **v,
                 "key": f"{v.get('record_ts', '')}|{v.get('violation', '')}",
                 "sidecar": True,
-                "push": warn,
+                "push": push,
+                "push_suppressed": warn and not push,
                 "marker": marker,
             }
         )
@@ -3796,8 +4588,9 @@ def _triage_observer_task_entry(state: dict, issue: int) -> tuple[str | None, se
 def _triage_observer_emit(
     issue: int, actions: list[dict], flagged: set[str], dry_run: bool
 ) -> tuple[bool, int]:
-    """Emit one action's channels (sidecar always; push + capped marker for
-    warn) and mark it flagged. Returns ``(wrote_any, markers_posted)``.
+    """Emit one action's channels (sidecar always; cap-decided push + capped
+    marker for warn — both caps applied upstream in the decider) and mark it
+    flagged. Returns ``(wrote_any, markers_posted)``.
     Mutates ``flagged`` — every emitted action is flagged, INCLUDING an
     over-budget warn (permanently sidecar+push-only, never deferred)."""
     wrote = False
@@ -3849,10 +4642,17 @@ def _triage_observer_emit(
 def triage_observer_pass(dry_run: bool) -> bool:
     """NON-GATING post-hoc audit of the pre-dispatch external-marker triage
     duty (#967; origin incident #779). Observe/alert only: appends rows to
-    the dedicated sidecar, sends deduped fail-soft digest pushes, and posts
+    the dedicated sidecar, sends deduped fail-soft digest pushes — capped at
+    ``TRIAGE_OBSERVER_PUSH_CAP`` individual warn pushes per tick, overflow
+    rolled into ONE '+N more, see sidecar' summary push (#1167) — and posts
     capped ``epm:progress`` review nudges — NEVER mutates task status, stops
     a session, or blocks a dispatch. A warn beyond the per-tick marker cap
-    stays sidecar+push-only forever (no deferred-marker queue). Fire-once:
+    stays sidecar+push-only forever; a warn beyond the per-tick push cap
+    keeps its sidecar row (and marker, budget permitting) and is rolled into
+    the tick's single summary push — no deferred queue on either channel.
+    Both budgets thread CROSS-TASK (one shared budget per pass); pushes are
+    consumed in issue-id-STRING order (``sorted(tasks.items())`` on string
+    keys — marker-cap parity), not global recency. Fire-once:
     the dedup key ``(issue, record_ts, violation-class)`` persists in the
     state singleton, and the per-task cursor advances only past MATURED
     records (MF2) — so each dispatch record is evaluated exactly once, on
@@ -3889,6 +4689,8 @@ def triage_observer_pass(dry_run: bool) -> bool:
     state = _load_triage_observer_state()
     wrote = False
     marker_budget = TRIAGE_OBSERVER_MARKER_CAP
+    push_budget = TRIAGE_OBSERVER_PUSH_CAP
+    suppressed_pushes = 0
 
     for id_str, meta in sorted(tasks.items()):
         issue = _triage_observer_sweep_issue(id_str, meta, reg_root, now, lookback_s)
@@ -3910,10 +4712,16 @@ def triage_observer_pass(dry_run: bool) -> bool:
             min_ts=min_ts,
             mature_before_ts=mature_before,
         )
-        actions = decide_triage_observer_actions(result["violations"], flagged, marker_budget)
+        actions = decide_triage_observer_actions(
+            result["violations"], flagged, marker_budget, push_budget=push_budget
+        )
         task_wrote, markers_posted = _triage_observer_emit(issue, actions, flagged, dry_run)
         wrote = wrote or task_wrote
         marker_budget -= markers_posted
+        # Mirror of the marker decrement; the decider guarantees pushes <=
+        # push_budget, so this never goes negative.
+        push_budget -= sum(1 for a in actions if a["push"])
+        suppressed_pushes += sum(1 for a in actions if a["push_suppressed"])
         cursor_new = result.get("cursor_ts")
         if isinstance(cursor_new, str) and cursor_new:
             cursor = max(cursor, cursor_new) if cursor else cursor_new
@@ -3924,6 +4732,17 @@ def triage_observer_pass(dry_run: bool) -> bool:
                 "flagged": sorted(flagged)[-_TRIAGE_OBSERVER_FLAGGED_KEY_CAP:],
             }
 
+    # The ONE summary push per tick (#1167); per-tick only, no persisted
+    # dedup state (the flagged-key fire-once upstream guarantees each
+    # violation enters this count at most once, ever).
+    if suppressed_pushes:
+        _telegram_push(
+            f"triage-observer: +{suppressed_pushes} more warn flag(s) this tick over the "
+            f"per-tick push cap ({TRIAGE_OBSERVER_PUSH_CAP}) — all sidecar-recorded, never "
+            "re-pushed; see .claude/cache/triage-observer-events.jsonl",
+            dry_run,
+        )
+
     # Self-prune entries once the issue leaves the sweep set for good.
     for key in list(state):
         meta = tasks.get(key)
@@ -3932,6 +4751,242 @@ def triage_observer_pass(dry_run: bool) -> bool:
             state.pop(key, None)
     _save_triage_observer_state(state, dry_run)
     return wrote
+
+
+# ─── Verdict-disagree observer pass (task #1170; origin incident #825) ───────
+#
+# WHY: #825's `onpolicy-user-turn` review round carried a Claude PASS
+# (head sentinel v5) vs Codex FAIL (bare version 7) disagreement whose
+# reconciler was dispatched only after a manual catch — the round-number
+# drift between the pair kinds made the disagreement easy to misread as a
+# no-show. This pass mechanically detects the unreconciled shape: per
+# doubled MARKER-MODE review site (workflow.yaml § ensemble_review), the
+# LATEST round whose Claude + Codex durable verdicts disagree (pass-class
+# vs fail-class) with no role-matched epm:review-reconcile and — for
+# proximity-tier pairings only — no Codex no-show evidence. The pure
+# predicate lives in task_workflow.unreconciled_disagreement_rounds; this
+# block is the thin I/O wrapper, modeled on the triage observer (#967).
+# Observe/alert only: sidecar rows + one deduped fail-soft push per
+# (issue, site, round) — NEVER a task marker (deliberate divergence from
+# the triage observer: this flag's consumer is a human, not the next
+# dispatch), NEVER a status mutation, session stop, or dispatch block.
+# KNOWN BENIGN-FIRE class: a Step 5c-bis mechanical-contract-only strip,
+# a 9a-bis procedural strip, or a cap-5 all-stripped-continue resolves a
+# PASS-vs-FAIL round WITHOUT a reconciler and logs to chat only, so it
+# flags BY DESIGN (auditing orchestrator self-serve dismissals of a FAIL
+# is in scope); the FAIL marker's own `**Blocker tags:**` line (an
+# all-mechanical tag set) is the reader's one-glance disambiguator.
+
+# Lookback bounding the per-tick events.jsonl scans (the triage observer's
+# 48h precedent; dedup keys make each finding fire once regardless).
+VERDICT_DISAGREE_LOOKBACK_H = _env_float("EPM_VERDICT_DISAGREE_LOOKBACK_H", 48.0, lo=1.0, hi=720.0)
+# No flag until >= 60 min after the LATER verdict — reconciler spawn +
+# adjudication needs time (#825's reconcile landed 10 min after the later
+# verdict; 60 min is ~6x the observed latency). Deferral, not loss: the
+# pair is re-evaluated every tick.
+VERDICT_DISAGREE_GRACE_S = _env_float("EPM_VERDICT_DISAGREE_GRACE_S", 3600.0, lo=0.0, hi=86400.0)
+# The two verdicts must land within 6h to count as one logical round —
+# same-round pairs land minutes apart (worst realistic case a
+# thrash-respawned reviewer, ~1-2h); distinct #825 epochs were >= 8h apart.
+VERDICT_DISAGREE_PAIR_PROXIMITY_S = _env_float(
+    "EPM_VERDICT_DISAGREE_PAIR_PROXIMITY_S", 21600.0, lo=60.0, hi=604800.0
+)
+# No-show evidence counts only from min(pair_ts) - 2h onward: covers a
+# quota-skip note posted at round start plus a slow round, while excluding
+# stale evidence from prior rounds (which would blind the observer forever
+# after one Codex outage).
+VERDICT_DISAGREE_EVIDENCE_LOOKBACK_S = _env_float(
+    "EPM_VERDICT_DISAGREE_EVIDENCE_LOOKBACK_S", 7200.0, lo=0.0, hi=86400.0
+)
+_VERDICT_DISAGREE_FLAGGED_KEY_CAP = 400  # newest dedup keys kept per issue
+
+
+def _verdict_disagree_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_VERDICT_DISAGREE_OBSERVER`` is
+    set truthy ("1"/"true"/"yes", case-insensitive). Default enabled.
+    Mirrors :func:`_triage_observer_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_VERDICT_DISAGREE_OBSERVER", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _verdict_disagree_sidecar_path() -> Path:
+    """DEDICATED verdict-disagree event stream (own stream for clean grep —
+    the triage-observer/cpu-guard sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "verdict-disagree-observer-events.jsonl"
+
+
+def _verdict_disagree_state_path() -> Path:
+    """Singleton (deliberately NOT a per-issue GC target):
+    ``{"<issue>": {"flagged": ["<role>|<round_label>", ...]}}`` — no cursor
+    needed: dedup keys alone give fire-once, and the latest-round
+    evaluation is idempotent."""
+    return AUTONOMOUS_REGISTRY_DIR / "verdict-disagree-observer.json"
+
+
+def _load_verdict_disagree_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards at the call sites (mirrors
+    :func:`_load_triage_observer_state`)."""
+    path = _verdict_disagree_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_verdict_disagree_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the verdict-disagree state (fail-soft);
+    ``dry_run`` performs zero writes."""
+    if dry_run:
+        print(f"  [dry-run] would save verdict-disagree state ({len(state)} issue entries)")
+        return
+    dest = _verdict_disagree_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  verdict-disagree: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_verdict_disagree_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the verdict-disagree sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append verdict-disagree sidecar row: {line[:160]}")
+        return
+    dest = _verdict_disagree_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  verdict-disagree: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _verdict_disagree_task_entry(state: dict, issue: int) -> set[str]:
+    """Type-guarded flagged-keys read-back from the state singleton; a
+    hand-edited / schema-drifted entry degrades to defaults (mirrors
+    :func:`_triage_observer_task_entry`)."""
+    raw_entry = state.get(str(issue))
+    entry = raw_entry if isinstance(raw_entry, dict) else {}
+    raw_flagged = entry.get("flagged")
+    return {k for k in (raw_flagged if isinstance(raw_flagged, list) else []) if isinstance(k, str)}
+
+
+def verdict_disagree_pass(dry_run: bool) -> bool:
+    """NON-GATING observer of unreconciled doubled-site verdict
+    disagreements (#1170; origin incident #825). Observe/alert only:
+    sidecar rows + one deduped fail-soft :func:`_telegram_push` per
+    (issue, site, round) — NEVER posts a task marker, mutates status,
+    stops a session, or blocks a dispatch (pinned by tests at the
+    subprocess-argv level). Fail-soft throughout: per-issue guards keep
+    one bad task from masking the rest, and a top-level guard keeps an
+    internal error from taking down the watcher tick (``main()`` calls
+    passes bare — no outer try — so this pass carries its own).
+    Daemon-independent (registry + events.jsonl reads only). Returns True
+    when any sidecar row was written."""
+    if not _verdict_disagree_enabled():
+        print("  verdict-disagree: disabled via EPM_DISABLE_VERDICT_DISAGREE_OBSERVER; skipping")
+        return False
+    try:
+        # Lazy in-process import (watcher convention): resolves THIS
+        # checkout's helpers via the tests' sys.path shim / the editable
+        # install.
+        from explore_persona_space.task_workflow import (
+            list_events,
+            registry_path,
+            unreconciled_disagreement_rounds,
+        )
+
+        try:
+            reg = json.loads(registry_path().read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"  verdict-disagree: registry read failed: {exc}", file=sys.stderr)
+            return False
+        tasks = reg.get("tasks") if isinstance(reg, dict) else None
+        if not isinstance(tasks, dict):
+            print("  verdict-disagree: registry has no tasks map; skipping", file=sys.stderr)
+            return False
+
+        now = time.time()
+        lookback_s = VERDICT_DISAGREE_LOOKBACK_H * 3600.0
+        # Resolve task paths against the registry's OWN root (never
+        # hand-built from cwd).
+        reg_root = registry_path().parent.parent
+        state = _load_verdict_disagree_state()
+        wrote = False
+
+        for id_str, meta in sorted(tasks.items()):
+            # Sweep scope + recency: REUSE the triage observer's enumerator
+            # (in-repo tool-reuse rule) — its status set
+            # ACTIVE | {awaiting_promotion, blocked} and events.jsonl-mtime
+            # recency gate fit this pass too: review verdicts fire at
+            # active statuses, awaiting_promotion covers the final
+            # clean-result rounds' park, blocked covers a crash right
+            # after a review round.
+            issue = _triage_observer_sweep_issue(id_str, meta, reg_root, now, lookback_s)
+            if issue is None:
+                continue
+            flagged = _verdict_disagree_task_entry(state, issue)
+            try:
+                events = list_events(issue)
+                findings = unreconciled_disagreement_rounds(
+                    events,
+                    now_ts=now,
+                    grace_s=VERDICT_DISAGREE_GRACE_S,
+                    pair_proximity_s=VERDICT_DISAGREE_PAIR_PROXIMITY_S,
+                    evidence_lookback_s=VERDICT_DISAGREE_EVIDENCE_LOOKBACK_S,
+                )
+            except Exception as exc:  # per-issue fail-soft
+                print(f"  verdict-disagree: #{issue} evaluation failed: {exc}", file=sys.stderr)
+                continue
+            for finding in findings:
+                if finding["key"] in flagged:
+                    continue  # fire-once dedup
+                print(
+                    f"  verdict-disagree: #{issue} {finding['role']} "
+                    f"{finding['round_label']} — Claude {finding['claude_class']} vs "
+                    f"Codex {finding['codex_class']}"
+                )
+                _append_verdict_disagree_sidecar({"issue": issue, **finding}, dry_run)
+                _telegram_push(
+                    f"verdict-disagree-observer: #{issue} {finding['role']} "
+                    f"{finding['round_label']} — Claude {finding['claude_class'].upper()} "
+                    f"vs Codex {finding['codex_class'].upper()}, no role-matched reconcile "
+                    "+ no no-show evidence (#825 shape; may be a sanctioned 5c-bis/9a-bis "
+                    "strip — check the FAIL marker's Blocker tags line) — observe-only; "
+                    "see .claude/cache/verdict-disagree-observer-events.jsonl",
+                    dry_run,
+                )
+                flagged.add(finding["key"])
+                wrote = True
+            if flagged:
+                state[str(issue)] = {
+                    # Keep the NEWEST keys under the cap (sorted order is a
+                    # stable tie-break; the cap is a runaway guard, not an
+                    # eviction policy — 400 findings per issue never happens).
+                    "flagged": sorted(flagged)[-_VERDICT_DISAGREE_FLAGGED_KEY_CAP:],
+                }
+
+        # Self-prune entries once the issue leaves the sweep set for good
+        # (mirrors triage_observer_pass).
+        for key in list(state):
+            meta = tasks.get(key)
+            status = meta.get("status") if isinstance(meta, dict) else None
+            if meta is None or status in {"completed", "archived"}:
+                state.pop(key, None)
+        _save_verdict_disagree_state(state, dry_run)
+        return wrote
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  verdict-disagree: pass failed (fail-soft): {exc}", file=sys.stderr)
+        return False
 
 
 # ─── Auth-outage guard pass (task #1027) — fleet respawn suppression ─────────
@@ -5163,6 +6218,7 @@ def _respawn(entry: dict, dry_run: bool) -> str:
     if res.returncode != 0:
         print(f"  RESPAWN FAILED issue #{issue}: {res.stderr.strip()[:300]}", file=sys.stderr)
         return "failed"
+    _forward_marker_child_stderr(res, "spawn_session spawn-issue (crash)")
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     if spawn_output_suppressed(res.stdout) is not None:
         print(
@@ -5218,6 +6274,7 @@ def _save_pod_safety_state(
     last_progress_ts: float | None,
     keep_running_noted: bool | None = None,
     followup_noted: bool | None = None,
+    stop_failed_noted: bool | None = None,
     wedge_first_seen: float | None = _CARRY,
     wedge_missed: int | None = _CARRY,
     wedge_alerted: bool | None = _CARRY,
@@ -5236,7 +6293,10 @@ def _save_pod_safety_state(
     carries the prior on-disk value forward so callers that don't touch the
     keep-running path never clobber it. ``followup_noted`` is the same
     dedup flag for the inline-follow-up exemption (``followup-skip``);
-    None carries forward identically.  ``prev`` is the existing on-disk
+    None carries forward identically. ``stop_failed_noted`` is the same
+    dedup/carry-forward flag owned by the stop arm's FAILED branch (one
+    durable ``stop-failed`` marker per state-file lifetime, #1155); None
+    carries forward identically.  ``prev`` is the existing on-disk
     payload (if any), passed so callers that already loaded it don't re-read;
     ``first_seen`` carries forward when present so the age backstop measures
     the original episode start, not the latest save.
@@ -5268,6 +6328,8 @@ def _save_pod_safety_state(
         keep_running_noted = bool((prev or {}).get("keep_running_noted", False))
     if followup_noted is None:
         followup_noted = bool((prev or {}).get("followup_noted", False))
+    if stop_failed_noted is None:
+        stop_failed_noted = bool((prev or {}).get("stop_failed_noted", False))
     if wedge_first_seen is _CARRY:
         prev_wedge_first_seen = (prev or {}).get("wedge_first_seen")
         wedge_first_seen = (
@@ -5285,6 +6347,7 @@ def _save_pod_safety_state(
         "last_progress_ts": last_progress_ts,
         "keep_running_noted": bool(keep_running_noted),
         "followup_noted": bool(followup_noted),
+        "stop_failed_noted": bool(stop_failed_noted),
         "first_seen": prev_first_seen,
         "wedge_first_seen": wedge_first_seen,
         "wedge_missed": int(wedge_missed),
@@ -5369,10 +6432,37 @@ def _save_stalled_state(
     daemon_blocked_ticks: int = 0,
     daemon_blocked_pushed: bool = False,
     wedge_hits: int = 0,
+    dead_silence_respawn_day: str | None = None,
+    dead_silence_respawns_today: int = 0,
+    wedge_respawn_day: str | None = None,
+    wedge_respawns_today: int = 0,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-session stalled-detector state atomically (temp +
     rename), mirroring :func:`_save_pod_safety_state`.
+
+    #1209 day-cap fields: ``dead_silence_respawn_day`` (UTC ``%Y-%m-%d``
+    key) + ``dead_silence_respawns_today`` count the fence episodes the
+    ``failed-turn-silence`` wedge trigger INITIATED this UTC day (bumped
+    ONCE per episode at stop-initiation). Deliberately EXEMPT from the
+    advancement-clear the #845 hardening fields get
+    (:func:`_stalled_hardening_fields`): each die-on-turn-1 generation
+    writes one boot self-report, so an advancement-cleared counter could
+    never bound the cross-generation die-on-boot loop this cap exists for.
+    Absent in older on-disk files -> loaded as ``(None, 0)`` (backward
+    compatible; a day-rolled or malformed value re-arms at 0 — a corruption
+    costs at most one extra bounded respawn).
+
+    #1241 twin fields: ``wedge_respawn_day`` + ``wedge_respawns_today`` are
+    the SAME day-keyed, advancement-clear-EXEMPT contract for the ONE
+    SHARED counter of the four pre-#1209 wedge triggers (``dequeue-run`` /
+    ``api-error-run`` / ``failed-turn-run`` / ``failed-turn-rate``), bumped
+    ONCE per wedge-initiated fence episode at stop-initiation (the
+    crash-recovery arm — which consults no cap — can complete a
+    fresh-self-report wedge respawn, so neither the fence spawn branch nor
+    ``respawn_count`` can be the counting site). Independent of the #1209
+    budget; same absent/day-rolled/malformed ``(None, 0)`` load contract
+    (:func:`_day_scoped_count`).
 
     #845 hardening fields (all default-absent in older on-disk files —
     backward compatible, same guard shape as ``live_consecutive``; ALL are
@@ -5438,6 +6528,10 @@ def _save_stalled_state(
         "daemon_blocked_ticks": daemon_blocked_ticks,
         "daemon_blocked_pushed": daemon_blocked_pushed,
         "wedge_hits": wedge_hits,
+        "dead_silence_respawn_day": dead_silence_respawn_day,
+        "dead_silence_respawns_today": dead_silence_respawns_today,
+        "wedge_respawn_day": wedge_respawn_day,
+        "wedge_respawns_today": wedge_respawns_today,
         "last_self_report_ts": last_self_report_ts,
         "first_seen": prev_first_seen,
     }
@@ -5483,6 +6577,24 @@ def _stalled_hardening_fields(prev_state: dict, advanced: bool) -> dict:
         "daemon_blocked_pushed": bool(prev_state.get("daemon_blocked_pushed", False)),
         "wedge_hits": _int("wedge_hits"),
     }
+
+
+def _day_scoped_count(prev_state: dict, day_field: str, count_field: str, day_key: str) -> int:
+    """Load a day-keyed counter from the prior on-disk stalled-state payload:
+    the prior value iff its day field matches ``day_key`` and it is a
+    non-bool non-negative int; else 0 (armed — a rolled day / absent key /
+    malformed value costs at most one extra bounded respawn). Shared by the
+    #1209 ``dead_silence_*`` and #1241 ``wedge_*`` day-cap loads; both are
+    deliberately EXEMPT from the advancement clear
+    (:func:`_stalled_hardening_fields`) — see :func:`_save_stalled_state`."""
+    n = prev_state.get(count_field, 0)
+    ok = (
+        prev_state.get(day_field) == day_key
+        and isinstance(n, int)
+        and not isinstance(n, bool)
+        and n >= 0
+    )
+    return n if ok else 0
 
 
 def _clear_fence_state_on_disk(issue: int) -> None:
@@ -5577,6 +6689,20 @@ def _gc_orphan_pod_safety_state(
     return cleared
 
 
+def _forward_marker_child_stderr(res, context: str) -> None:
+    """Forward a rc==0 task.py / spawn_session.py child's non-empty stderr
+    (#1130/#1221): the child exits 0 while printing deferred-commit / LANDING
+    CHECK / registration warnings, which capture_output would otherwise
+    swallow into the cron log's void. The `[task.py stderr]` output prefix is
+    kept byte-stable for grep/test compatibility; the ``context`` label names
+    the actual child."""
+    err = (getattr(res, "stderr", None) or "").strip()
+    if not err:
+        return
+    for line in err[:2000].splitlines():
+        print(f"  [task.py stderr] {context}: {line}", file=sys.stderr)
+
+
 def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -> None:
     """Record a pod-safety event on task ``issue``'s events.jsonl.
 
@@ -5591,7 +6717,7 @@ def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -
         print(f"  [dry-run] would post epm:progress ({label}) on #{issue}: {note}")
         return
     try:
-        subprocess.run(
+        res = subprocess.run(
             [
                 "uv",
                 "run",
@@ -5611,6 +6737,8 @@ def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -
             timeout=60,
             check=True,
         )
+        # check=True means rc!=0 raised above — the helper only sees rc==0 results.
+        _forward_marker_child_stderr(res, f"epm:progress on #{issue}")
     except (subprocess.SubprocessError, OSError) as e:
         # The action (stop / alert) already happened; failing to annotate it is
         # not worth aborting the run. Surface it loudly so the gap is visible.
@@ -5639,7 +6767,7 @@ def _post_failure_marker(issue: int, note: str, dry_run: bool) -> bool:
         print(f"  [dry-run] would post epm:failure on #{issue}: {note}")
         return True
     try:
-        subprocess.run(
+        res = subprocess.run(
             [
                 "uv",
                 "run",
@@ -5659,6 +6787,7 @@ def _post_failure_marker(issue: int, note: str, dry_run: bool) -> bool:
             timeout=60,
             check=True,
         )
+        _forward_marker_child_stderr(res, f"epm:failure on #{issue}")
     except (subprocess.SubprocessError, OSError) as e:
         print(f"  WARNING: posting epm:failure marker on #{issue} failed: {e}", file=sys.stderr)
         return False
@@ -5701,6 +6830,7 @@ def _set_status_blocked(issue: int, dry_run: bool) -> bool:
             file=sys.stderr,
         )
         return False
+    _forward_marker_child_stderr(out, f"set-status blocked on #{issue}")
     return True
 
 
@@ -7094,6 +8224,7 @@ def _process_pod(
     prev_alerted = bool(prev_state.get("alerted", False))
     prev_keep_running_noted = bool(prev_state.get("keep_running_noted", False))
     prev_followup_noted = bool(prev_state.get("followup_noted", False))
+    prev_stop_failed_noted = bool(prev_state.get("stop_failed_noted", False))
     prev_progress = prev_state.get("last_progress_ts")
     if not isinstance(prev_progress, int | float):
         prev_progress = None
@@ -7145,10 +8276,11 @@ def _process_pod(
         prev_state=prev_state,
         prev_keep_running_noted=prev_keep_running_noted,
         prev_followup_noted=prev_followup_noted,
+        prev_stop_failed_noted=prev_stop_failed_noted,
     )
 
 
-def _apply_pod_safety_action(
+def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the #1155 stop-failed sub-branch adds guard branches, not nesting
     action: str,
     *,
     issue: int,
@@ -7164,13 +8296,16 @@ def _apply_pod_safety_action(
     prev_state: dict,
     prev_keep_running_noted: bool,
     prev_followup_noted: bool,
+    prev_stop_failed_noted: bool,
 ) -> None:
     """Apply the status-class :func:`decide_pod_safety` ``action`` for one pod.
 
     Extracted verbatim from :func:`_process_pod` (behavior unchanged) to keep its
     cyclomatic complexity under the C901 cap after the #692 wedge arm landed. The
-    five actions — ``keep-running-skip`` / ``followup-skip`` / ``stop`` /
-    ``alert`` / ``keep`` — post the appropriate once-per-episode marker (deduped
+    five actions — ``keep-running-skip`` / ``followup-skip`` / ``stop`` (whose
+    REAL-failure sub-branch posts a once-per-episode durable ``stop-failed``
+    marker and keeps the episode retryable, #1155) / ``alert`` / ``keep`` — post
+    the appropriate once-per-episode marker (deduped
     via the prev-state flags) and persist the per-pod state. Each save
     forward-carries the #692 wedge fields untouched (this is a status-class tick;
     the wedge arm owns them on its own ticks)."""
@@ -7265,6 +8400,48 @@ def _apply_pod_safety_action(
             )
             if not dry_run:
                 _clear_pod_safety_state(issue)
+            return
+        if dry_run:
+            # _stop_pod returns False under dry-run BY CONSTRUCTION (no
+            # subprocess ran) — not a stop failure. Preserve the pinned
+            # dry-run contract: "would stop pod" log line only, no marker,
+            # no state save (test_pod_safety_auto_stop_dry_run_no_mutation).
+            return
+        # Real stop failure (`pod.py stop` rc != 0; _stop_pod already printed
+        # POD STOP FAILED to stderr): make it durably visible ONCE per
+        # episode, and keep the episode RETRYABLE — save state WITHOUT
+        # clearing it and WITHOUT touching the on-disk miss count, so
+        # decide_pod_safety re-fires "stop" on the next tick (#1155).
+        if not prev_stop_failed_noted:
+            # Compound-failure residual: _post_progress_marker swallows
+            # SubprocessError/OSError with a stderr WARNING, so if the stop
+            # API fails AND the marker post fails, this episode's durable
+            # record is lost — degraded state == today's stderr-only baseline.
+            _post_progress_marker(
+                issue,
+                f"{_AUTOSTOP_FAILED_NOTE_SENTINEL} pod-safety auto-stop FAILED "
+                f"(pod_id={pod_id}; task status '{status}'): `pod.py stop "
+                f"--issue {issue}` exited non-zero (API error on the watcher "
+                f"cron log stderr). The stop is RETRIED every ~10-min tick "
+                f"until it succeeds; the pod keeps BILLING until then — if "
+                f"this persists, stop it manually (`pod.py stop --issue "
+                f"{issue}`) and check `pod.py list-ephemeral`. Posted once "
+                f"per pod-safety episode.",
+                dry_run,
+                label="stop-failed",
+            )
+        prev_missed = prev_state.get("missed", 0)
+        if not isinstance(prev_missed, int):
+            prev_missed = 0
+        _save_pod_safety_state(
+            issue,
+            pod_id,
+            missed=prev_missed,  # unchanged count -> next tick re-fires "stop"
+            alerted=alerted,
+            last_progress_ts=latest_progress,
+            stop_failed_noted=True,
+            prev=prev_state,
+        )
         return
 
     if action == "alert":
@@ -7998,6 +9175,44 @@ def _spend_approval_skip_already_noted(events: list[dict]) -> bool:
     return False
 
 
+def _deliberate_blocked_park_reason(events: list[dict]) -> str | None:
+    """Reason string when the newest ``epm:status-changed`` is corroborated by
+    the halt-contract trail — an ``epm:failure`` marker within
+    [:data:`_BLOCKED_PARK_FAILURE_WINDOW_S` before,
+    :data:`_BLOCKED_PARK_FAILURE_SLACK_AFTER_S` after] it — i.e. the block is
+    a deliberate park (post epm:failure, set status blocked, exit: the
+    CLAUDE.md halt contract), not an unexplained freeze (#1137; #1092's
+    15:33Z alert fired 2h12m after a 1s-apart failure+blocked pair). Pure
+    over the already-loaded ``events``; the CALLER gates on ``task_status ==
+    "blocked"`` (only there is the newest status-changed the transition into
+    blocked). Fail direction: unparseable ts / no trail -> ``None`` (the
+    one-time alert still fires)."""
+    sc_ts: float | None = None
+    for ev in events:
+        if ev.get("kind") == "epm:status-changed":
+            ts = _parse_event_ts(ev.get("ts"))
+            if ts is not None and (sc_ts is None or ts > sc_ts):
+                sc_ts = ts
+    if sc_ts is None:
+        return None
+    lo = sc_ts - _BLOCKED_PARK_FAILURE_WINDOW_S
+    hi = sc_ts + _BLOCKED_PARK_FAILURE_SLACK_AFTER_S
+    for ev in events:
+        if ev.get("kind") != "epm:failure":
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is None:
+            continue
+        if lo <= ts <= hi:
+            return (
+                "deliberately parked at status=blocked (halt-contract trail: "
+                "epm:failure within the park window of the newest "
+                "epm:status-changed); the gate-push pass already notified the "
+                "blocked transition"
+            )
+    return None
+
+
 # Anchored, case-SENSITIVE prefix of a prose user-pause hold note (incident
 # #816). All four observed hold variants (the canonical SKILL.md durable-park
 # note, the #816 incident note, the older #919 sketch, the #920 chat note)
@@ -8171,7 +9386,7 @@ def _post_followup_run_marker(issue: int, events: list[dict], dry_run: bool) -> 
         print(f"  [dry-run] would post epm:same-issue-followup-run on #{issue}: {label}")
         return True
     try:
-        subprocess.run(
+        res = subprocess.run(
             [
                 "uv",
                 "run",
@@ -8191,6 +9406,7 @@ def _post_followup_run_marker(issue: int, events: list[dict], dry_run: bool) -> 
             timeout=60,
             check=True,
         )
+        _forward_marker_child_stderr(res, f"epm:same-issue-followup-run on #{issue}")
     except (subprocess.SubprocessError, OSError) as exc:
         print(
             f"  issue #{issue}: epm:same-issue-followup-run post FAILED ({exc}); "
@@ -8257,6 +9473,7 @@ def _repark_completed_followup_round(
             file=sys.stderr,
         )
         return False
+    _forward_marker_child_stderr(out, f"set-status awaiting_promotion on #{issue}")
     print(f"  issue #{issue}: re-parked completed follow-up round -> awaiting_promotion")
     _post_followup_run_marker(issue, events, dry_run)
     _post_progress_marker(
@@ -8348,6 +9565,47 @@ def _transcript_tail_rows(pid: int, max_bytes: int = 65536) -> list[dict] | None
     return rows
 
 
+def _boot_death_transcript_rows(
+    pid: int, max_bytes: int = BOOT_DEATH_TAIL_BYTES
+) -> tuple[list[dict] | None, str | None, int | None]:
+    """Whole-transcript rows for the boot-death lane's ARM 1 (#1267), as
+    ``(rows, transcript_path, size_bytes)`` — ``rows`` is ``None`` when the
+    transcript is unresolvable OR larger than ``max_bytes`` (a >256 KB
+    transcript cannot be a ZERO-RESPONSE boot-death — arm 1 treats it as
+    not-eligible; the #1287 arm-2 seek-tail read handles larger files).
+    ``transcript_path`` / ``size_bytes`` are best-effort forensics for
+    the sidecar row (``None`` when unresolvable).
+
+    Unlike :func:`_transcript_tail_rows`, the WHOLE-file guarantee is
+    required here: "zero response rows" must be a whole-file property, never
+    a truncated-tail read. Deliberately a SIBLING of ``_transcript_tail_rows``
+    rather than a refactor of it — its mid-file-seek partial-line handling is
+    pinned by the wedge tests, and this probe never seeks. Same happy-log-only
+    resolution contract (a WRONG transcript is worse than a missing one)."""
+    transcript, _reason = session_resolver._resolve_transcript_via_happy_log(pid)
+    if transcript is None:
+        return None, None, None
+    try:
+        size = os.path.getsize(transcript)
+        if size > max_bytes:
+            return None, str(transcript), size
+        raw = Path(transcript).read_bytes()
+    except OSError:
+        return None, str(transcript), None
+    rows: list[dict] = []
+    for line in raw.decode("utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(row, dict):
+            rows.append(row)
+    return rows, str(transcript), size
+
+
 def _stop_session(session_id: str, dry_run: bool) -> bool:
     """Stop an in-flight Happy session by id via
     ``spawn_session.py stop --session-id <id>``. Returns True on success.
@@ -8384,6 +9642,7 @@ def _stop_session(session_id: str, dry_run: bool) -> bool:
             file=sys.stderr,
         )
         return False
+    _forward_marker_child_stderr(res, "spawn_session stop (watcher)")
     return True
 
 
@@ -8429,6 +9688,7 @@ def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) ->
             file=sys.stderr,
         )
         return "failed"
+    _forward_marker_child_stderr(res, "spawn_session spawn-issue (stalled)")
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     if spawn_output_suppressed(res.stdout) is not None:
         print(
@@ -8538,6 +9798,10 @@ class _StalledActionCtx:
         wedge_note: str | None = None,
         daemon_reachable: bool = True,
         downgrade_note: str | None = None,
+        dead_silence_respawn_day: str | None = None,
+        dead_silence_respawns_today: int = 0,
+        wedge_respawn_day: str | None = None,
+        wedge_respawns_today: int = 0,
     ) -> None:
         self.issue = issue
         self.happy_session_id = happy_session_id
@@ -8621,6 +9885,20 @@ class _StalledActionCtx:
         # respawns that raced an in-flight auto-recovery.
         self.daemon_reachable = daemon_reachable
         self.downgrade_note = downgrade_note
+        # #1209 day-keyed dead-silence cap: the caller loads these from the
+        # prior on-disk state NORMALIZED to the current UTC day (day-rolled /
+        # malformed -> (day_key, 0)), deliberately WITHOUT the advancement
+        # clear the #845 hardening fields get. Every persist site forwards
+        # them (via _persist_stalled_ctx) so keep-path saves never wipe the
+        # counter; the ONLY bump site is _handle_stalled_respawn's
+        # stop-initiation branch.
+        self.dead_silence_respawn_day = dead_silence_respawn_day
+        self.dead_silence_respawns_today = dead_silence_respawns_today
+        # #1241 twin fields — the four pre-#1209 triggers' shared day-keyed
+        # counter, under the SAME contract as the dead_silence_* pair above
+        # (advancement-clear-EXEMPT load; bumped only at stop-initiation).
+        self.wedge_respawn_day = wedge_respawn_day
+        self.wedge_respawns_today = wedge_respawns_today
 
     @property
     def happy_session_id_str(self) -> str | None:
@@ -8652,6 +9930,10 @@ def _persist_stalled_ctx(ctx: _StalledActionCtx, sid: str | None, missed: int, *
         daemon_blocked_ticks=ctx.daemon_blocked_ticks,
         daemon_blocked_pushed=ctx.daemon_blocked_pushed,
         wedge_hits=ctx.wedge_hits,
+        dead_silence_respawn_day=ctx.dead_silence_respawn_day,
+        dead_silence_respawns_today=ctx.dead_silence_respawns_today,
+        wedge_respawn_day=ctx.wedge_respawn_day,
+        wedge_respawns_today=ctx.wedge_respawns_today,
         prev=ctx.prev_state,
     )
     kwargs.update(overrides)
@@ -8746,6 +10028,26 @@ def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
     """Verified-dead spawn branch of the stop-verify fence (the pre-#845
     respawn body): the pending sid is confirmed absent from the daemon's
     live set, so a fresh ``--auto`` session cannot race the superseded one."""
+    # #1247 terminal-status act guard (stalled-arm symmetry): the fence
+    # stop→verify→spawn spans ticks, so ctx.task_status is ≥10 min old
+    # here by construction. Same positive-ACTIVE confirmation as the
+    # orphan pass.
+    live_status = _task_status(ctx.issue)
+    if live_status not in ACTIVE:
+        print(
+            f"  STALLED-ACT-GUARD issue #{ctx.issue}: fence spawn aborted — "
+            f"live status re-read returned {live_status!r} (not ACTIVE; "
+            f"snapshot was {ctx.task_status}); no respawn, no marker (#1247).",
+            file=sys.stderr,
+        )
+        if live_status is not None and not ctx.dry_run:
+            # Positively non-ACTIVE: clear the four fence stop_pending_*/
+            # stop_* fields only (NOT the whole stalled episode state),
+            # mirroring the suppressed branch's clear below. On None
+            # (transient task.py read failure) keep the fence PENDING —
+            # re-evaluated next tick.
+            _clear_fence_state_on_disk(ctx.issue)
+        return
     cap = _stalled_cap_gpu_hours(ctx.issue)
     spawn_result = _respawn_stalled_session(ctx.issue, cap, ctx.dry_run)
     if spawn_result == "suppressed":
@@ -8786,7 +10088,7 @@ def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
             f"spawned a fresh `--auto` session "
             f"(respawn {new_respawn_count}/{STALLED_MAX_RESPAWNS} this "
             f"episode). Confirmed for >= {ctx.threshold} checks."
-            f"{wedge_suffix}{hold_suffix}",
+            f"{wedge_suffix}{hold_suffix} {_source_stamp()}",
             ctx.dry_run,
             label="session-auto-respawn",
         )
@@ -8927,9 +10229,63 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
     # the fence latency.
     if fence == "stop":
         _stop_session(sid, ctx.dry_run)
+        # #1209 / #1241 day-cap bump — ONCE per fence episode, at
+        # STOP-INITIATION: this branch runs exactly on the stop_pending_sid
+        # None -> sid transition (a retry-stop tick carries a pending sid
+        # and takes the "retry-stop" branch — exactly-once by construction),
+        # and it is the ONE tick where ctx.wedge_note is guaranteed present
+        # for a wedge-initiated episode (the wedge fired THIS tick to
+        # escalate; the fence's own spawn branch is unreachable for the
+        # fresh-self-report shape — post-stop the sid leaves the daemon
+        # /list, the wedge pid-gate goes inert, and decide() keeps on the
+        # fresh boot self-report; the CRASH-RECOVERY arm completes the
+        # respawn — so neither the spawn branch nor respawn_count can be
+        # the counting site). The bracketed [failed-turn-silence] substring
+        # of the wedge-note template is load-bearing: it routes the bump to
+        # the #1209 budget; ANY OTHER wedge note bumps the #1241 shared
+        # four-trigger budget. A decide()-sanctioned respawn (wedge never
+        # ran) has wedge_note is None -> no bump (it is already
+        # belt-bounded inside decide()).
+        extra: dict = {}
+        wedge_episode_suffix = ""
+        if ctx.wedge_note and "[failed-turn-silence]" in ctx.wedge_note:
+            bumped = ctx.dead_silence_respawns_today + 1
+            extra = {
+                "dead_silence_respawn_day": time.strftime("%Y-%m-%d", time.gmtime(ctx.now)),
+                "dead_silence_respawns_today": bumped,
+            }
+            _post_progress_marker(
+                ctx.issue,
+                f"{_STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL} DEAD-WAKE STOP "
+                f"(#1209): {ctx.wedge_note}. Stopped Happy session id={sid} "
+                f"for fresh respawn; the crash-recovery arm completes the "
+                f"spawn once the stopped wrapper is verifiably dead "
+                f"(~20-30 min) — the fence's own spawn branch is not this "
+                f"trigger's completion path. Dead-silence fence episode "
+                f"{bumped}/{_tick_wedge_dead_respawns_per_day()} this UTC day.",
+                ctx.dry_run,
+                label="session-dead-silence-stop",
+            )
+        elif ctx.wedge_note:
+            # #1241: the four pre-#1209 triggers' shared day-cap bump. No
+            # dedicated marker (deliberate, minimal): the stale-shape
+            # completion already posts the session-auto-respawn marker with
+            # the wedge_suffix; the fresh-shape completion via the crash arm
+            # is a pre-existing observability gap out of #1241's scope. The
+            # extended fence print below carries the log-side evidence.
+            bumped = ctx.wedge_respawns_today + 1
+            extra = {
+                "wedge_respawn_day": time.strftime("%Y-%m-%d", time.gmtime(ctx.now)),
+                "wedge_respawns_today": bumped,
+            }
+            wedge_episode_suffix = (
+                f"; wedge fence episode {bumped}/{_tick_wedge_respawns_per_day()} "
+                f"this UTC day (#1241)"
+            )
         print(
             f"  issue #{ctx.issue}: FENCE — stop issued for sid {sid}; will "
-            f"verify it is dead + spawn on the NEXT tick (daemon ACK != kill)."
+            f"verify it is dead + spawn on the NEXT tick (daemon ACK != kill)"
+            f"{wedge_episode_suffix}."
         )
         _persist_stalled_ctx(
             ctx,
@@ -8939,6 +10295,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
             stop_pending_ts=ctx.now,
             stop_retried=False,
             stop_failed_alerted=False,
+            **extra,
         )
         return
     if fence == "retry-stop":
@@ -9058,6 +10415,25 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
         # stays stalled past that gets re-tried in the next episode.
         new_refresh_attempted = True
 
+    # #1137 one alert marker per staleness episode TOTAL, across BOTH alert
+    # producers. decide_session_stalled's alerted=True dedup covers only its
+    # own keep branch; the #759 downgrade lane rewrites respawn->alert AFTER
+    # decide() and reached this handler every eligible tick — on #1092
+    # (2026-07-07) the escalate/wt-hold-defer/downgrade 2-tick cycle posted a
+    # fresh marker every 20 min on a healthy session (20:43Z/21:03Z/21:23Z).
+    # An already-alerted episode keeps the stderr line, the downgrade lane's
+    # stalled-live sidecar row, and the state persist — only the marker post
+    # is suppressed. Cleared on self-report advancement like every other
+    # per-episode flag, so a NEW episode re-alerts.
+    if ctx.alerted:
+        print(
+            f"  issue #{ctx.issue}: repeat stalled-alert marker SUPPRESSED "
+            f"(episode already alerted; cause this tick: {reason})",
+            file=sys.stderr,
+        )
+        _persist_stalled_ctx(ctx, sid, 0, alerted=True, refresh_attempted=new_refresh_attempted)
+        return
+
     if ctx.manual:
         # Manual entries are never liveness-checked by the respawn pass, so
         # the session may be fully dead (the #505 class), not just
@@ -9106,9 +10482,9 @@ def _apply_stalled_followups_exemption(
 ) -> tuple[str, int, bool]:
     """Check the alive-but-stalled exemptions for the stalled-detector pass
     (the prose USER-PAUSE hold, the over-cap spend-approval park, the
-    round-complete re-park, and the
-    followups_running-parent-waiting-on-open-child suppression); rewrite
-    ``(action, new_missed, followups_child_alerted)`` accordingly.
+    deliberate-blocked-park suppression (#1137), the round-complete re-park,
+    and the followups_running-parent-waiting-on-open-child suppression);
+    rewrite ``(action, new_missed, followups_child_alerted)`` accordingly.
 
     No-op unless ``action != "keep" or new_missed > 0`` (so the healthy-
     session hot path never pays the ``task.py list-children`` subprocess).
@@ -9170,6 +10546,23 @@ def _apply_stalled_followups_exemption(
                 label="spend-approval-skip",
             )
         return "keep", 0, followups_child_alerted
+    # Deliberate blocked park (#1137): the halt contract posts epm:failure
+    # then sets status blocked — a stalled SESSION on such a task is the
+    # EXPECTED post-park shape (the session parked and went idle by design),
+    # and the gate-push pass already phone-pushed the blocked transition.
+    # Suppress the alert (print-only, no marker: the epm:failure marker
+    # itself carries the user ask). A blocked task with NO failure trail
+    # (hand-moved / unexplained) keeps the one-time alert. #1092 15:33Z:
+    # alert fired 2h12m after a 1s-apart failure+blocked park.
+    if status == "blocked":
+        blocked_reason = _deliberate_blocked_park_reason(events)
+        if blocked_reason is not None:
+            print(
+                f"  issue #{issue}: ALIVE-BUT-STALLED exemption — {blocked_reason}; "
+                f"treating session as parked this tick (would have been "
+                f"action={action})."
+            )
+            return "keep", 0, followups_child_alerted
     # Round-complete re-park (incident #533 freeze, 2026-06-11→12): a
     # COMPLETED same-issue follow-up round stranded at followups_running
     # (session died after the final gate, before the designed re-park) is
@@ -9294,6 +10687,15 @@ def _apply_stalled_live_corroboration(
         return "alert", live_consecutive, note
     # Kth consecutive live stall — escalate to the canonical respawn arm and
     # reset the counter (a fresh --auto session begins a new episode).
+    # #1137 criterion-7 x wt-hold interplay (BY DESIGN, do not "fix"): when
+    # the escalated respawn is subsequently DEFERRED by the #845 (b) worktree
+    # hold / spawn grace, the counter reset below has already been persisted,
+    # so the NEXT tick is a fresh "1/K" downgrade — deliberate: preserving
+    # the count across a deferral would make the first post-hold tick respawn
+    # immediately, a respawn-timing change. The repeat-ALERT marker noise the
+    # resulting escalate/defer/downgrade cycle produced (#1092, 2026-07-07)
+    # is fixed at the marker-post site (_handle_stalled_alert's episode-total
+    # dedup), never here.
     print(
         f"  issue #{issue}: LIVE-SESSION ESCALATION — Happy id is in live_ids "
         f"but it has stalled across {live_consecutive} consecutive episodes "
@@ -9314,10 +10716,16 @@ def _apply_prompt_wedge_override(
     pids_by_sid: dict[str, int] | None,
     live_consecutive: int,
     wedge_hits: int,
+    now: float | None = None,
+    respawn_count: int = 0,
+    dead_silence_respawns_today: int = 0,
+    wedge_respawns_today: int = 0,
 ) -> tuple[str, int, int, str | None]:
-    """Prompt-wedge fast lane (#845 e): a LAZY transcript-tail probe that
-    escalates a debounced ``keep``/``alert`` straight to the respawn arm on
-    DIRECT evidence the session is swallowing prompts (incident #779: 5
+    """Prompt-wedge fast lane (#845 e; #1104 api-error rows; #1127 turn-level
+    failed wakes; #1209 dead-wake silence): a transcript-tail probe that
+    escalates a debounced
+    ``keep``/``alert`` straight to the respawn arm on DIRECT evidence the
+    session is swallowing prompts or dying on its wakes (incident #779: 5
     tick prompts enqueued+dequeued with no turn for ~90 min while the slow
     debounce ground through its misses; the eventual respawn then killed an
     in-flight implementer — the (b) hold now covers that half).
@@ -9334,45 +10742,126 @@ def _apply_prompt_wedge_override(
     respawn RESETS ``live_consecutive`` (consistent with the
     escalation-fired => reset semantics of the K corroboration).
 
-    Probed ONLY when signal 1 is already stale (the lazy gate: the healthy
-    hot path never pays the transcript read) and the slow path would
-    otherwise debounce (``action in ("keep", "alert")``). Everything
-    unresolvable (no pid map, sid not live, transcript miss) fails toward
-    NO-WEDGE (the pre-#845 behavior). #1104: the wedge additionally fires
-    on the orchestrator-refusal-wedge subclass — >= ``min_api_errors``
-    consecutive API-ERROR turns (``isApiErrorMessage: true`` assistant
-    rows: usage-policy refusals, 429/529) with no successful turn, the
-    #1074 shape the original lane was structurally blind to (a refusal row
-    classified ``"assistant"`` and RESET the run)."""
+    Two-path gate (#1127 — replacing the #845/#1104 lazy "probe only once
+    the self-report is >= 1h stale" gate, which live wedges kept defeating):
+    the TURN-level triggers (``failed-turn-run`` / ``failed-turn-rate``) are
+    probed EVERY tick — a partially-executing wake can keep REFRESHING the
+    self-report (a wake that escalates into the full ``/issue`` skill
+    re-writes it at Step 0 before dying), so a dying-but-heartbeating
+    session never goes stale and the old gate never opened (incidents #1098
+    5bdae5b8 / #1090 5e464f3d, both 40 min-3.4 h past the #1104 merge) —
+    while the ROW-level triggers (``dequeue-run`` #779 / ``api-error-run``
+    #1074) stay STALENESS-GATED: their failure modes freeze the self-report
+    by construction (no turn executes, nothing reaches the title helper), so
+    the stale gate opens for them, AND keeping them off the fresh path
+    preserves the single-refusal guard (3 same-turn retry api-error rows
+    must not respawn a healthy session). ``self_report_age is None`` routes
+    to the FRESH path (turn-level triggers only) — ``respawn_eligible``
+    already excludes manual sessions, so an autonomous session with an
+    unreadable self-report gets turn-level coverage instead of a blind spot.
+    With BOTH turn-level knobs at 0 (``EPM_TICK_WEDGE_MIN_FAILED_TURNS=0`` +
+    ``EPM_TICK_WEDGE_MIN_FAILED_TOTAL=0``) the fresh path probes NOTHING —
+    the exact pre-#1127 lazy gate (the full-rollback path). Everything
+    unresolvable (no pid map, sid not live, transcript miss) still fails
+    toward NO-WEDGE. #1104: the api-error-run subclass — >= ``min_api_errors``
+    consecutive API-ERROR turns (``isApiErrorMessage: true`` assistant rows:
+    usage-policy refusals, 429/529) with no successful turn, the #1074 shape
+    the original lane was structurally blind to.
+
+    #1209 ``failed-turn-silence`` (the die-on-turn-1 gap): TURN-level, so it
+    rides BOTH self-report paths — but deliberately behind the SAME
+    two-turn-knob fresh-path gate as the #1127 lanes (both turn knobs at 0
+    keeps the fresh path's zero-probe hot path byte-identical, the pinned
+    pre-#1127 rollback; in that corner config the dead-silence trigger still
+    fires via the STALE path once the boot self-report ages past the
+    staleness window). Armed only while ``respawn_count <
+    STALLED_MAX_RESPAWNS`` (the episode belt) AND
+    ``dead_silence_respawns_today`` is under the day cap
+    (:func:`_tick_wedge_dead_respawns_per_day`) — when either cap binds,
+    ``dead_silence_s=0`` keeps this one trigger off while the other four
+    keep their own arming below. ``now=None`` (a direct unit/debug call
+    shape) leaves the trigger inert inside the predicate.
+
+    #1241 cap parity for the FOUR pre-#1209 triggers: ``dequeue-run`` /
+    ``api-error-run`` / ``failed-turn-run`` / ``failed-turn-rate`` carry
+    the SAME two-part bound — the episode belt (``respawn_count <
+    STALLED_MAX_RESPAWNS``, the cap decide() enforces on the slow path)
+    AND their own shared per-issue per-UTC-day counter
+    (``wedge_respawns_today`` vs :func:`_tick_wedge_respawns_per_day`),
+    persisted advancement-clear-EXEMPT and bumped ONCE per wedge-initiated
+    fence episode at stop-initiation (the crash-recovery arm, which
+    consults no cap, can complete a fresh-self-report wedge respawn — so
+    neither the fence spawn branch nor ``respawn_count`` can be the
+    counting site). A disarmed family reads its predicate kill-switch
+    values (0), so :func:`decide_prompt_wedge_reason` stays byte-identical;
+    when EVERY family is cap-disarmed the wedge goes quiet BEFORE the
+    256 KB transcript read (no marker, no push — the slow stalled lane
+    stays the backstop). The two day budgets are INDEPENDENT."""
     if action not in ("keep", "alert") or not respawn_eligible or pids_by_sid is None:
         return action, live_consecutive, wedge_hits, None
-    if self_report_age is None or self_report_age < STALLED_WINDOW_S:
+    stale = self_report_age is not None and self_report_age >= STALLED_WINDOW_S
+    min_turns = _tick_wedge_min_failed_turns()
+    min_total = _tick_wedge_min_failed_total()
+    if not stale and min_turns <= 0 and min_total <= 0:
+        # Fresh self-report + both turn-level lanes disabled == the
+        # pre-#1127 lazy gate: zero transcript probes on the hot path
+        # (#1209 deliberately does not widen this gate — see docstring).
         return action, live_consecutive, wedge_hits, None
     sid = entry.get("happy_session_id")
     pid = pids_by_sid.get(sid) if isinstance(sid, str) else None
     if not isinstance(pid, int):
         return action, live_consecutive, wedge_hits, None
+    # #1241 arming — the caps decide() enforces on the slow path bind the
+    # wedge fast lane too. The episode belt gates ALL FIVE triggers; each
+    # trigger family additionally carries its own day-keyed,
+    # advancement-clear-EXEMPT cap (#1209 for failed-turn-silence; #1241
+    # for the four pre-#1209 triggers — one shared counter, bumped at
+    # stop-initiation because the crash-recovery arm, which consults no
+    # cap, can complete the respawn). A disarmed trigger reads its
+    # predicate kill-switch value (0), so decide_prompt_wedge_reason stays
+    # byte-identical; when EVERYTHING is disarmed the wedge goes quiet (no
+    # marker, no push) and the slow stalled lane stays the backstop.
+    belt_ok = respawn_count < STALLED_MAX_RESPAWNS
+    four_armed = belt_ok and wedge_respawns_today < _tick_wedge_respawns_per_day()
+    dead_silence_armed = (
+        belt_ok and dead_silence_respawns_today < _tick_wedge_dead_respawns_per_day()
+    )
+    if not four_armed and not dead_silence_armed:
+        # Nothing can fire — skip the 256 KB transcript read entirely.
+        return action, live_consecutive, wedge_hits, None
     # 256 KB tail (vs the 64 KB default): the 64 KB window held EXACTLY 3
     # api-error rows on the #1074 incident transcript — zero margin (#1104;
     # plan §10 allowed deviation; a too-thin window fails toward NO-FIRE).
+    # #1127 re-verified the width: it spans ~1.3-2.5h and >= 4 failed wakes
+    # on all three incident transcripts.
     rows = _transcript_tail_rows(pid, max_bytes=262144)
     if rows is None:
         return action, live_consecutive, wedge_hits, None
-    min_k = _tick_wedge_min_dequeued()
-    min_api = _tick_wedge_min_api_errors()
-    if not decide_prompt_wedge(rows, min_k, min_api_errors=min_api):
+    reason = decide_prompt_wedge_reason(
+        rows,
+        # #779 swallow trigger: STALE only + #1241 four-family arming.
+        _tick_wedge_min_dequeued() if (stale and four_armed) else 0,
+        # Row-level api-error trigger: STALE only + #1241 four-family arming.
+        min_api_errors=_tick_wedge_min_api_errors() if (stale and four_armed) else 0,
+        min_failed_turns=min_turns if four_armed else 0,
+        min_failed_total=min_total if four_armed else 0,
+        rate_window_s=_tick_wedge_rate_window_s(),
+        dead_silence_s=_tick_wedge_dead_silence_s() if dead_silence_armed else 0.0,
+        now=now,
+    )
+    if reason is None:
         return action, live_consecutive, wedge_hits, None
     note = (
-        f">= {min_k} consecutive dequeued/promptless prompt rows OR "
-        f">= {min_api} consecutive API-error turns in the transcript tail "
-        f"with no successful assistant turn"
+        f"prompt-wedge trigger [{reason}] in the transcript tail "
+        f"(self-report {'stale' if stale else 'fresh'}; row-level triggers "
+        f"{'armed' if stale else 'staleness-gated off'}; turn-level thresholds "
+        f"min_failed_turns={min_turns}, min_failed_total={min_total})"
     )
     print(
-        f"  issue #{issue}: PROMPT-WEDGE — {note} while the self-report is "
-        f"stale; escalating straight to the respawn arm (bypasses the miss "
-        f"debounce, the K-downgrade and the marker window; still subject to "
-        f"the park exemptions, the spawn-grace skip, the worktree hold and "
-        f"the stop-verify fence)."
+        f"  issue #{issue}: PROMPT-WEDGE — {note}; escalating straight to the "
+        f"respawn arm (bypasses the miss debounce, the K-downgrade and the "
+        f"marker window; still subject to the park exemptions, the "
+        f"spawn-grace skip, the worktree hold and the stop-verify fence)."
     )
     return "respawn", 0, wedge_hits + 1, note
 
@@ -9457,7 +10946,8 @@ def _apply_stalled_park_exemptions(
        parent parked at step 10 awaiting a user-gated child cannot be
        unblocked by respawning the parent — see
        :func:`_apply_stalled_followups_exemption` (which also carries the
-       spend-approval park and the round-complete re-park).
+       spend-approval park, the deliberate-blocked-park suppression
+       (#1137), and the round-complete re-park).
     """
     exempted = False
     if action != "keep" or new_missed > 0:
@@ -9506,6 +10996,9 @@ def _apply_wedge_override_with_exemption_probe(
     wedge_hits: int,
     now: float,
     dry_run: bool,
+    respawn_count: int = 0,
+    dead_silence_respawns_today: int = 0,
+    wedge_respawns_today: int = 0,
 ) -> tuple[str, int, bool, int, int, str | None]:
     """Prompt-wedge fast lane + the park-exemption re-probe on escalation
     (#845 r2, concern ``wedge-bypasses-unprobed-park-exemptions``).
@@ -9538,6 +11031,10 @@ def _apply_wedge_override_with_exemption_probe(
         pids_by_sid=pids_by_sid,
         live_consecutive=live_consecutive,
         wedge_hits=wedge_hits,
+        now=now,
+        respawn_count=respawn_count,
+        dead_silence_respawns_today=dead_silence_respawns_today,
+        wedge_respawns_today=wedge_respawns_today,
     )
     if wedge_note is None:
         return action, new_missed, followups_child_alerted, live_consecutive, wedge_hits, None
@@ -9719,6 +11216,24 @@ def _process_stalled_session(
     # counter starts fresh).
     hard = _stalled_hardening_fields(prev_state, self_report_advanced)
 
+    # #1209 / #1241 day-keyed wedge-cap fields — deliberately OUTSIDE the
+    # advancement-clear above (each die-on-turn-1 generation writes one boot
+    # self-report, so an advancement-cleared counter could never bound the
+    # cross-generation die-on-boot loop the caps exist for). The day key
+    # derives from the SAME injected `now` the pass runs on (deterministic
+    # under a test-supplied fake clock); a day-rolled / malformed / negative
+    # on-disk value reads as 0 (armed — a corruption costs at most one extra
+    # bounded respawn). See :func:`_day_scoped_count`. The two counters are
+    # INDEPENDENT budgets (#1209: failed-turn-silence; #1241: the four
+    # pre-#1209 triggers, one shared counter).
+    dead_silence_day_key = time.strftime("%Y-%m-%d", time.gmtime(now))
+    dead_silence_respawns_today = _day_scoped_count(
+        prev_state, "dead_silence_respawn_day", "dead_silence_respawns_today", dead_silence_day_key
+    )
+    wedge_respawns_today = _day_scoped_count(
+        prev_state, "wedge_respawn_day", "wedge_respawns_today", dead_silence_day_key
+    )
+
     # Compute respawn_eligible: the task must be in an ACTIVE status (we
     # never restart a session at a PARK / gate / terminal state) AND the
     # Happy daemon must be reachable (we can't issue stop+spawn without
@@ -9834,6 +11349,9 @@ def _process_stalled_session(
             wedge_hits=hard["wedge_hits"],
             now=now,
             dry_run=dry_run,
+            respawn_count=respawn_count,
+            dead_silence_respawns_today=dead_silence_respawns_today,
+            wedge_respawns_today=wedge_respawns_today,
         )
 
     # Daemon-blocked escalation (#845 c): count consecutive ticks a
@@ -9900,6 +11418,10 @@ def _process_stalled_session(
         wedge_note=wedge_note,
         daemon_reachable=daemon_reachable,
         downgrade_note=downgrade_note,
+        dead_silence_respawn_day=dead_silence_day_key,
+        dead_silence_respawns_today=dead_silence_respawns_today,
+        wedge_respawn_day=dead_silence_day_key,
+        wedge_respawns_today=wedge_respawns_today,
     )
 
     if action == "respawn":
@@ -10354,6 +11876,7 @@ def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> str:
             file=sys.stderr,
         )
         return "failed"
+    _forward_marker_child_stderr(res, "spawn_session spawn-issue (orphan)")
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     if spawn_output_suppressed(res.stdout) is not None:
         print(
@@ -10775,6 +12298,36 @@ def _parse_orphan_state_counters(state: dict, day_key: str) -> tuple[int, int]:
     return missed, respawns_today
 
 
+def _orphan_act_guard(
+    issue: int, *, status: str, action: str, state: dict, dry_run: bool
+) -> str | None:
+    """#1247 terminal-status act guard: re-read the LIVE status through the
+    canonical resolver (:func:`_task_status` — ``cwd=PROJECT_ROOT``,
+    git-common-dir resolved, #844) immediately before an acting branch and
+    require POSITIVE ACTIVE confirmation. Returns the live status on
+    confirmation (the caller acts + writes marker notes against IT, not the
+    stale snapshot) or ``None`` to abort the act: no respawn, no marker, no
+    cap consumed. A positively non-ACTIVE read clears the orphan episode
+    state (matching :func:`decide_orphan`'s own ``status not in ACTIVE ->
+    clear`` semantics); a ``None`` read (transient task.py failure) keeps
+    the state and defers one tick — fail toward not-acting, never toward
+    erasing episode state on a task.py glitch. Runs under ``--dry-run`` too
+    (the read is a read-only subprocess; the state-clear is dry_run-gated)."""
+    live_status = _task_status(issue)
+    if live_status in ACTIVE:
+        return live_status
+    print(
+        f"  ORPHAN-ACT-GUARD issue #{issue}: snapshot status={status} but "
+        f"live re-read returned {live_status!r} — not ACTIVE; aborting "
+        f"action={action}: no respawn, no marker, no cap consumed "
+        f"(#1247 stale-snapshot guard).",
+        file=sys.stderr,
+    )
+    if live_status is not None and state and not dry_run:
+        _clear_orphan_state(issue)  # positively non-active: episode over
+    return None
+
+
 def _process_orphan_task(
     issue: int,
     status: str,
@@ -10893,6 +12446,21 @@ def _process_orphan_task(
                 prev=state,
             )
         return
+    # ── #1247 terminal-status act guard ─────────────────────────────────
+    # Every branch below ACTS (spawns, posts a marker, or consumes the
+    # daily cap) on the pass-start _active_status_tasks() snapshot, which
+    # can be stale (TOCTOU within a tick; a stale task-state view fed the
+    # 2-week #662/#663/#867 marker loop). Re-verify the LIVE status
+    # through the canonical resolver (cwd=PROJECT_ROOT, git-common-dir
+    # resolved, #844) immediately before acting. POSITIVE confirmation
+    # required: act only on live ∈ ACTIVE. Helper-factored to keep this
+    # function under the C901 cap.
+    live_status = _orphan_act_guard(
+        issue, status=status, action=action, state=state, dry_run=dry_run
+    )
+    if live_status is None:
+        return
+    status = live_status  # act + write marker notes against the LIVE status
     if action == "respawn":
         spawn_result = _respawn_orphan(issue, _stalled_cap_gpu_hours(issue), dry_run)
         if spawn_result == "suppressed":
@@ -10920,7 +12488,7 @@ def _process_orphan_task(
                     f"(status={status}) had no live registered session and no "
                     f"real progress marker for {gap_str}; auto-respawned via "
                     f"spawn-issue --auto (attempt {respawns_today + 1}/{max_per_day} "
-                    f"today).",
+                    f"today). {_source_stamp()}",
                     dry_run,
                     label="orphan-respawn",
                 )
@@ -10957,7 +12525,8 @@ def _process_orphan_task(
             f"{_ORPHAN_ALERT_NOTE_SENTINEL} active task (status={status}) has "
             f"no live registered session and no real progress marker for "
             f"{gap_str}; {reason}. Manual recovery: uv run python "
-            f"scripts/spawn_session.py spawn-issue --issue {issue} --auto",
+            f"scripts/spawn_session.py spawn-issue --issue {issue} --auto "
+            f"{_source_stamp()}",
             dry_run,
             label="orphan-alert",
         )
@@ -11895,6 +13464,7 @@ def _dispatch_infra_drain(
             file=sys.stderr,
         )
         return "failed"
+    _forward_marker_child_stderr(res, "spawn_session spawn-issue (infra-drain)")
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     suppressed = spawn_output_suppressed(res.stdout)
     if suppressed is not None:
@@ -13041,6 +14611,7 @@ def _redrive_capacity_retry(issue: int, dry_run: bool) -> str:
             file=sys.stderr,
         )
         return "failed"
+    _forward_marker_child_stderr(res, "spawn_session spawn-issue (capacity-retry)")
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     if spawn_output_suppressed(res.stdout) is not None:
         print(
@@ -13438,6 +15009,13 @@ _GC_TARGETS: tuple[tuple[str, str], ...] = (
     # once the task reaches `completed`/`archived`. The sidecar
     # `stale-blocked-events.jsonl` is outside the `*.json` glob by suffix.
     (STALE_BLOCKED_STATE_PREFIX, ""),
+    # Boot-death day-cap state (== BOOT_DEATH_STATE_PREFIX, task #1267).
+    # Terminal-status reap only: `proposed` (the incident-class status) is
+    # NOT terminal, so a live dispatch->boot-death loop's day counter is
+    # never reset mid-episode; the day-keyed counter self-expires at the UTC
+    # day roll anyway. The sidecar `boot-death-events.jsonl` is outside the
+    # `*.json` glob by suffix.
+    (BOOT_DEATH_STATE_PREFIX, ""),
     # Campaign watchdog state (== CAMPAIGN_WATCH_STATE_PREFIX, defined in the
     # campaign-pass section below; literal here because module-level tuples
     # evaluate top-to-bottom). Primary reaping is the campaign pass itself at
@@ -16724,6 +18302,413 @@ def idle_unmapped_pass(
         )
 
 
+# ─── boot-death pass (#1267) ──────────────────────────────────────────────────
+#
+# The die-AT-OR-BEFORE-turn-1 lane, TWO ARMS:
+#
+# - ARM 1 (zero-response, #1267): a freshly `--auto`-dispatched session whose
+#   resolved Claude transcript contains ZERO response rows
+#   (`_classify_wedge_row` not in {assistant, api-error}) >= 30 min after
+#   `spawned_at`. Incident #1251-#1256: 7 live-captured boot-death
+#   transcripts, all 9 rows / 11,368 B, frozen ~7 s post-spawn (the session
+#   died during `/issue` skill load — one prompt row carries a
+#   `<local-command-stderr>` diagnostic).
+# - ARM 2 (boot-refusal, #1287): the transcript's 256 KB TAIL
+#   (`_transcript_tail_rows`) segments via `_segment_wake_turns` (#1127) to
+#   >= 1 completed turn with EVERY completed turn failed (last response row
+#   api-error) — the refusal-killed boot turn. Incident #1277: an 826 KB
+#   transcript whose boot turn took real assistant actions for ~74 s, then
+#   died on a refusal BEFORE the /issue tick cron was armed; arm 1 keeps
+#   twice over (assistant rows exist; size over the whole-file cap), and at
+#   a PARK status the #1209/#1127 wedge lanes are structurally ineligible
+#   (`respawn_eligible = in_active and ...`), so this lane owns the shape.
+#
+# Both arms: transcript quiet >= 10 min, a LIVE sid, auto registrations
+# only. Every existing lane is structurally blind (no self-report => the
+# stalled detector skips; the sid is LIVE + status `proposed` =>
+# crash-recovery PARKs; the inner Claude is alive-idle => zombie pass;
+# issue-MAPPED => idle-unmapped), so the only recovery was the 12h
+# stale-registration unregister — a silent dispatch -> boot-death -> 12h ->
+# re-dispatch loop (~12.5h/cycle).
+#
+# BY-DESIGN misses (fall back to the 12h sweep — a future incident in either
+# shape reads as designed-miss, not regression): (a) a refusal death whose
+# transcript ends in a trailing non-api-error assistant row (the last
+# completed turn reads `ok` => arm 2 keeps); (b) a >256 KB ZERO-RESPONSE
+# transcript (arm 1's whole-file guarantee cannot be established, and arm 2
+# sees no completed turn to fail).
+#
+# Action: STOP the session via the existing `_stop_session` — NO unregister,
+# NO direct spawn. Post-stop re-drive is fully owned by existing arms:
+# ACTIVE status -> crash-recovery `decide()` (dead sid, ~2 misses = ~20 min);
+# `proposed` -> the proposed-infra sweep's stale-dead-registration grace
+# (~30-60 min). Bounded per #1241 conventions: per-issue per-UTC-day stop cap
+# (default 3, `EPM_BOOT_DEATH_STOPS_PER_DAY`), counted at STOP-INITIATION (a
+# stop failure still consumes a budget unit — conservative in the safe
+# direction); at the cap the lane stops stopping and fires ONE loud cap
+# push/marker per day (the recorded deviation from #1241's quiet-at-cap —
+# see _BOOT_DEATH_CAP_NOTE_SENTINEL). NO episode belt by design: this is a
+# STOP lane, not a respawn lane — the downstream re-drive arms carry their
+# own belts/caps. Kill switch: EPM_DISABLE_BOOT_DEATH_PASS=1.
+
+
+def _boot_death_window_s() -> float:
+    """Boot-death registration-age window in seconds (env
+    ``EPM_BOOT_DEATH_WINDOW_MIN``, MINUTES — the
+    ``EPM_TICK_WEDGE_DEAD_SILENCE_MIN`` precedent; default
+    :data:`BOOT_DEATH_WINDOW_S`). Malformed / non-positive env falls back to
+    the default — a typo'd var must not create an instant stopper; the
+    lane's kill switch is ``EPM_DISABLE_BOOT_DEATH_PASS=1``, never this
+    knob (the :func:`_stale_registration_idle_s` contract)."""
+    raw = os.environ.get("EPM_BOOT_DEATH_WINDOW_MIN")
+    if not raw:
+        return float(BOOT_DEATH_WINDOW_S)
+    try:
+        parsed = float(raw) * 60.0
+    except ValueError:
+        return float(BOOT_DEATH_WINDOW_S)
+    if parsed <= 0:
+        return float(BOOT_DEATH_WINDOW_S)
+    return parsed
+
+
+def _boot_death_stops_per_day() -> int:
+    """Daily per-issue cap on boot-death stops (env
+    ``EPM_BOOT_DEATH_STOPS_PER_DAY``; default
+    :data:`BOOT_DEATH_STOPS_PER_DAY`). Malformed OR ``< 1`` env falls back
+    to the default — never a kill switch (byte-parallel to
+    :func:`_tick_wedge_respawns_per_day`, #1241)."""
+    raw = os.environ.get("EPM_BOOT_DEATH_STOPS_PER_DAY")
+    if not raw:
+        return BOOT_DEATH_STOPS_PER_DAY
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return BOOT_DEATH_STOPS_PER_DAY
+    if parsed < 1:
+        return BOOT_DEATH_STOPS_PER_DAY
+    return parsed
+
+
+def _boot_death_pass_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_BOOT_DEATH_PASS`` is set truthy
+    ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_capacity_retry_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_BOOT_DEATH_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _boot_death_state_path(issue: int) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{BOOT_DEATH_STATE_PREFIX}{issue}.json"
+
+
+def _load_boot_death_state(issue: int) -> dict:
+    """Per-issue boot-death day-cap state (``{}`` if absent/garbled — a fresh
+    or unreadable file re-arms the counter at 0, mirroring
+    :func:`_load_idle_unmapped_state`; a corruption costs at most one extra
+    bounded stop)."""
+    path = _boot_death_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_boot_death_state(issue: int, state: dict, dry_run: bool) -> None:
+    """Persist the per-issue boot-death state atomically (temp + rename).
+    Fail-soft: an OSError is logged and swallowed (main() has no per-pass
+    exception wrapping — a raise here would kill every later pass); dry-run
+    never writes (production state must not mutate under ``--dry-run``)."""
+    if dry_run:
+        print(f"  [dry-run] would save boot-death state for #{issue}: {state}")
+        return
+    dest = _boot_death_state_path(issue)
+    tmp = dest.with_suffix(".json.tmp")
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp.write_text(json.dumps(state, indent=2))
+        tmp.replace(dest)
+    except OSError as e:
+        print(f"  WARNING: saving boot-death state for #{issue} failed: {e}", file=sys.stderr)
+
+
+def _append_boot_death_event(note: str, dry_run: bool) -> None:
+    """Durable trace for boot-death stops / cap alerts — one JSON line per
+    action in ``~/.eps-autonomous/boot-death-events.jsonl`` (the
+    ``_append_stale_registration_event`` shape; the ``.jsonl`` suffix keeps
+    it out of the GC's ``boot-death-*.json`` glob). Fail-soft; dry-run never
+    writes."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "boot-death-events.jsonl"
+    line = json.dumps(
+        {"ts": datetime.now().astimezone().isoformat(), "kind": "boot-death", "note": note}
+    )
+    if dry_run:
+        print(f"  [dry-run] would append boot-death event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending boot-death event failed: {e}", file=sys.stderr)
+
+
+def _boot_death_stderr_excerpt(rows: list[dict], cap: int = 200) -> str | None:
+    """Best-effort diagnostic: the first ``<local-command-stderr>`` fragment
+    found in a prompt-type user row's content, whitespace-collapsed and
+    bounded to ``cap`` chars — the live-captured boot-death transcripts carry
+    the skill-load failure there (`<local-command-stderr>Error: Shell command
+    failed...`). Returns ``None`` when no such fragment exists. Pure
+    string-scanning, never raises on the dict shapes ``rows`` can hold —
+    a text block whose ``"text"`` value is present but non-str (``null``,
+    an int) is skipped as carrying no diagnostic text."""
+    tag = "<local-command-stderr>"
+    for row in rows:
+        if _classify_wedge_row(row) != "prompt":
+            continue
+        msg = row.get("message")
+        content = msg.get("content") if isinstance(msg, dict) else None
+        texts: list[str] = []
+        if isinstance(content, str):
+            texts.append(content)
+        elif isinstance(content, list):
+            texts.extend(
+                b["text"]
+                for b in content
+                if isinstance(b, dict)
+                and b.get("type") == "text"
+                and isinstance(b.get("text"), str)
+            )
+        for text in texts:
+            idx = text.find(tag)
+            if idx < 0:
+                continue
+            excerpt = " ".join(text[idx:].split())
+            return excerpt[:cap]
+    return None
+
+
+def _boot_death_api_error_excerpt(rows: list[dict], cap: int = 200) -> str | None:
+    """Best-effort forensic (#1287 arm 2): the LAST ``"api-error"``-classified
+    row's message text — the refusal / API-error body that killed the boot
+    turn — whitespace-collapsed and bounded to ``cap`` chars. SIDECAR-ONLY by
+    design (refusal bodies are trigger-dense text; the excerpt never enters
+    the task marker or the Telegram push — #866/#1073/#1098 containment).
+    Returns ``None`` when no api-error row carries usable text. Pure
+    string-scanning, never raises on the dict shapes ``rows`` can hold — the
+    :func:`_boot_death_stderr_excerpt` defensive contract: a
+    present-but-non-str ``"text"`` value (``null``, an int) is skipped as
+    carrying no diagnostic text. The FIRING predicate never depends on this
+    helper — it is forensic only."""
+    for row in reversed(rows):
+        if _classify_wedge_row(row) != "api-error":
+            continue
+        msg = row.get("message")
+        content = msg.get("content") if isinstance(msg, dict) else None
+        texts: list[str] = []
+        if isinstance(content, str):
+            texts.append(content)
+        elif isinstance(content, list):
+            texts.extend(
+                b["text"]
+                for b in content
+                if isinstance(b, dict)
+                and b.get("type") == "text"
+                and isinstance(b.get("text"), str)
+            )
+        for text in texts:
+            excerpt = " ".join(text.split())
+            if excerpt:
+                return excerpt[:cap]
+    return None
+
+
+def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry_run: bool) -> None:
+    """Evaluate ONE auto registration against the boot-death predicate and
+    STOP its session when it verdicts ``"stop"`` (cap permitting). Every
+    unresolvable input fails toward keep, and every IO goes through a
+    fail-soft helper — main() has no per-pass exception wrapping, so nothing
+    here may raise (the ``_process_stale_registration`` containment style)."""
+    try:
+        entry = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return  # garbled entries are the crash-recovery / GC passes' property
+    if not isinstance(entry, dict):
+        return
+    issue = entry.get("issue")
+    if not isinstance(issue, int) or isinstance(issue, bool):
+        issue = _gc_parse_issue_from_path(path, "issue-", "")
+    if issue is None:
+        return
+    sid = entry.get("happy_session_id")
+    if not isinstance(sid, str) or not sid:
+        return
+    pid = pids_by_sid.get(sid)
+    spawned_at = entry.get("spawned_at")
+    entry_age_s = None
+    if isinstance(spawned_at, int | float) and not isinstance(spawned_at, bool) and spawned_at:
+        entry_age_s = now - float(spawned_at)
+    # Cheap early exits BEFORE any transcript IO: a dead sid is the
+    # crash-recovery pass's property; a young/unaged entry can't fire.
+    if pid is None or entry_age_s is None or entry_age_s < _boot_death_window_s():
+        return
+    # Activity guards (both fail toward keep): something owns this issue.
+    if _provision_in_flight_reason(issue, now) is not None:
+        return
+    if _worktree_recent_activity(issue, now, _wt_activity_fresh_s()):
+        return
+    rows, transcript, size = _boot_death_transcript_rows(pid)
+    response_row_seen = (
+        None
+        if rows is None
+        else any(_classify_wedge_row(r) in ("assistant", "api-error") for r in rows)
+    )
+    # ARM 2 (#1287): turn-segmented all-failed read over the 256 KB TAIL —
+    # works at ANY transcript size (#1277's transcript was 825,591 B, over
+    # arm 1's whole-file cap). Reuse the whole-file rows when they resolved
+    # (tail == whole file at <= cap; saves the second read); else seek-tail.
+    tail_rows = (
+        rows if rows is not None else _transcript_tail_rows(pid, max_bytes=BOOT_DEATH_TAIL_BYTES)
+    )
+    turns = None if tail_rows is None else _segment_wake_turns(tail_rows)
+    all_turns_failed = (
+        None if turns is None else bool(turns) and all(o == "failed" for o, _ts in turns)
+    )
+    idle_s, _why = _transcript_idle_age_s(pid, now)
+    state = _load_boot_death_state(issue)
+    day_key = time.strftime("%Y-%m-%d", time.gmtime(now))  # the #1209/#1241 day-cap derivation
+    stops_today = _day_scoped_count(state, "stop_day", "stops_today", day_key)
+    cap = _boot_death_stops_per_day()
+    verdict = decide_boot_death(
+        sid_alive=True,
+        entry_age_s=entry_age_s,
+        response_row_seen=response_row_seen,
+        all_turns_failed=all_turns_failed,
+        transcript_idle_s=idle_s,
+        window_s=_boot_death_window_s(),
+        quiet_s=BOOT_DEATH_QUIET_S,
+        stops_today=stops_today,
+        stops_per_day=cap,
+    )
+    if verdict == "keep":
+        return
+    status = _task_status(issue)  # live read, recorded in the note
+    if verdict == "cap-alert":
+        if state.get("cap_alerted_day") == day_key:
+            return  # once per (issue, UTC day)
+        state["cap_alerted_day"] = day_key
+        _save_boot_death_state(issue, state, dry_run)
+        note = (
+            f"{_BOOT_DEATH_CAP_NOTE_SENTINEL} {stops_today} boot-death stops today hit the "
+            f"daily cap ({cap}); leaving the dead registration in place (the 12h "
+            f"stale-registration pass is the back-pressure); sessions for #{issue} are dying "
+            f"at or just after boot — skill-load death or refused boot turn — investigate "
+            f"the dispatch path. sid={sid} task status={status}."
+        )
+        print(f"  boot-death: issue #{issue} — {note}")
+        _post_progress_marker(issue, note, dry_run, label="boot-death-cap-exhausted")
+        _telegram_push(
+            f"boot-death cap: #{issue} hit {stops_today} dead-boot stops today; "
+            f"sessions are dying at or just after boot — investigate the dispatch path.",
+            dry_run,
+        )
+        _append_boot_death_event(note, dry_run)
+        return
+    # verdict == "stop": count at STOP-INITIATION (#1241 — conservative; a
+    # stop failure still consumes a budget unit), THEN act.
+    # NOTE: a session stopped by an EARLIER arm in this same tick can still
+    # read live in `pids_by_sid` (the shared snapshot predates that stop), so
+    # a redundant sid-targeted stop here may consume a cap unit — benign by
+    # design (never a wrong kill; the daily cap absorbs it).
+    state.update({"stop_day": day_key, "stops_today": stops_today + 1})
+    _save_boot_death_state(issue, state, dry_run)
+    stop_ok = _stop_session(sid, dry_run)
+    # Arms are mutually exclusive (zero response rows => zero completed
+    # turns), so arm 1 owning the tag when it fired is unambiguous.
+    shape = "zero-response" if response_row_seen is False else "boot-refusal"
+    if shape == "zero-response":
+        evidence = (
+            f"transcript rows={len(rows)} size={size}B with ZERO response rows "
+            f"(assistant/api-error)"
+        )
+    else:
+        n_tail = len(tail_rows) if tail_rows is not None else 0
+        n_turns = len(turns) if turns else 0
+        api_error_rows = sum(1 for r in (tail_rows or []) if _classify_wedge_row(r) == "api-error")
+        evidence = (
+            f"256KB-tail rows={n_tail} (file size={size}B): {n_turns} completed "
+            f"turn(s), ALL failed ({api_error_rows} api-error row(s) — "
+            f"refusal-killed boot turn, #1287)"
+        )
+    note = (
+        f"{_BOOT_DEATH_STOP_NOTE_SENTINEL} stopped boot-dead session sid={sid}: "
+        f"registration age {entry_age_s / 60:.0f}m >= {_boot_death_window_s() / 60:.0f}m, "
+        f"shape={shape}, {evidence}, idle {(idle_s or 0) / 60:.0f}m; stop_ok={stop_ok}; "
+        f"task status={status}; stop {stops_today + 1}/{cap} today; registration kept: "
+        f"crash-recovery re-drives an ACTIVE task (~20 min); the proposed-infra sweep's "
+        f"stale-dead-registration grace re-dispatches a `proposed` task (~30-60 min)."
+    )
+    print(f"  boot-death: issue #{issue} — {note}")
+    _post_progress_marker(issue, note, dry_run, label="boot-death-stop")
+    _telegram_push(
+        f"boot-death: stopped dead-boot session for #{issue} (shape={shape} at "
+        f"{entry_age_s / 60:.0f}m; stop {stops_today + 1}/{cap} today)",
+        dry_run,
+    )
+    # The refusal excerpt is SIDECAR-ONLY by design: refusal bodies are
+    # trigger-dense text, so it never enters the task marker or the push
+    # (#866/#1073/#1098 containment).
+    stderr_excerpt = _boot_death_stderr_excerpt(tail_rows) if tail_rows else None
+    api_error_excerpt = _boot_death_api_error_excerpt(tail_rows) if tail_rows else None
+    _append_boot_death_event(
+        f"{note} transcript={transcript} stderr_excerpt={stderr_excerpt or 'none'} "
+        f"api_error_excerpt={api_error_excerpt or 'none'}",
+        dry_run,
+    )
+
+
+def boot_death_pass(
+    dry_run: bool, *, children: list[dict] | None, now: float | None = None
+) -> None:
+    """Stop LIVE-but-boot-dead auto sessions (#1267 — see the section comment
+    above for the incident + predicate). Consumes the shared reaper
+    ``children`` snapshot (``_live_children``) IN PLACE; daemon-gated
+    (``children is None`` => no-op: liveness cannot be established, and a
+    false "live" read must not stop anything). Iterates ``issue-*.json``
+    ONLY — ``manual-issue-*.json`` is EXCLUDED by design (a user-driven
+    session is never auto-stopped, the #505 posture; auto registrations all
+    carry an initial prompt, so zero response rows — or an all-failed
+    completed-turn tail (#1287) — at 30 min is unambiguous death)."""
+    now = now if now is not None else time.time()
+    if not _boot_death_pass_enabled():
+        print("boot-death: disabled via EPM_DISABLE_BOOT_DEATH_PASS; skipping")
+        return
+    if children is None:
+        print("boot-death: Happy daemon unreachable; skipping")
+        return
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        print("boot-death: no autonomous registry dir; skipping")
+        return
+    entries = sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json"))
+    if not entries:
+        print("boot-death: no auto issue registrations")
+        return
+    pids_by_sid: dict[str, int] = {}
+    for c in children:
+        if not isinstance(c, dict):
+            continue
+        sid = c.get("happySessionId")
+        pid = c.get("pid")
+        if isinstance(sid, str) and sid and isinstance(pid, int) and not isinstance(pid, bool):
+            pids_by_sid[sid] = pid
+    print(f"boot-death: {len(entries)} auto registration(s), {len(pids_by_sid)} live session(s)")
+    for path in entries:
+        _process_boot_death(path, pids_by_sid, now, dry_run)
+
+
 # ─── stale-registration pass (#845 d) ─────────────────────────────────────────
 #
 # The fourth registration hygiene arm: a LIVE-but-abandoned session whose
@@ -17268,6 +19253,7 @@ def _respawn_campaign(entry: dict, dry_run: bool) -> bool:
             file=sys.stderr,
         )
         return False
+    _forward_marker_child_stderr(res, "spawn_session spawn-campaign (campaign)")
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     print(f"  RESPAWNED campaign #{issue}: {first_line}")
     # #1027: campaign respawns feed the trigger's event stream too (arm
@@ -17332,7 +19318,7 @@ def _post_campaign_marker(issue: int, kind: str, note: str, dry_run: bool) -> No
         print(f"  [dry-run] would post {kind} on #{issue}: {note}")
         return
     try:
-        subprocess.run(
+        res = subprocess.run(
             [
                 "uv",
                 "run",
@@ -17352,6 +19338,7 @@ def _post_campaign_marker(issue: int, kind: str, note: str, dry_run: bool) -> No
             timeout=60,
             check=True,
         )
+        _forward_marker_child_stderr(res, f"{kind} on #{issue}")
     except (subprocess.SubprocessError, OSError) as e:
         print(f"  WARNING: posting {kind} on #{issue} failed: {e}", file=sys.stderr)
 
@@ -18202,7 +20189,8 @@ def vm_ledger_reap_pass(dry_run: bool) -> None:
         print(f"  vm-ledger-reap: error (skipping): {exc}")
 
 
-def main(argv: list[str] | None = None) -> int:
+@session_resolver.transcript_resolution_scope()
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only dispatch ladder + linear pass sequence; the #1170 flag adds a guard branch, not nesting
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--dry-run", action="store_true", help="log decisions; do not respawn / stop / mutate"
@@ -18282,12 +20270,28 @@ def main(argv: list[str] | None = None) -> int:
         "Daemon-independent; pair with --dry-run for a live smoke.",
     )
     parser.add_argument(
+        "--verdict-disagree-only",
+        action="store_true",
+        help="run ONLY the verdict-disagree observer pass (#1170, non-gating "
+        "— unreconciled doubled-site PASS-vs-FAIL review rounds, the #825 "
+        "shape) and exit; skip every other pass. Daemon-independent; pair "
+        "with --dry-run for a live smoke.",
+    )
+    parser.add_argument(
         "--auth-outage-only",
         action="store_true",
         help="run ONLY the auth-outage guard pass (#1027 — fleet respawn "
         "suppression on an Anthropic auth outage) and exit; skip every other "
         "pass. Pair with --dry-run for a live smoke (zero writes, zero "
         "pushes).",
+    )
+    parser.add_argument(
+        "--boot-death-only",
+        action="store_true",
+        help="run ONLY the boot-death pass (#1267 — stop a dispatched auto "
+        "session whose transcript has ZERO response rows >= 30 min after "
+        "spawn) and exit; skip every other pass. Pair with --dry-run for a "
+        "live smoke against the real registration set.",
     )
     args = parser.parse_args(argv)
 
@@ -18352,6 +20356,13 @@ def main(argv: list[str] | None = None) -> int:
         triage_observer_pass(args.dry_run)
         return 0
 
+    # --verdict-disagree-only mirrors --triage-observer-only: the pass is
+    # daemon-independent (reads the registry + events.jsonl only), so run
+    # it alone.
+    if args.verdict_disagree_only:
+        verdict_disagree_pass(args.dry_run)
+        return 0
+
     # --auth-outage-only mirrors --cpu-guard-only: run the single pass under
     # the lock and exit (episode bookkeeping is daemon-independent; the
     # canary read degrades to "hold" when the daemon is down).
@@ -18361,6 +20372,16 @@ def main(argv: list[str] | None = None) -> int:
             args.dry_run,
             daemon_reachable=reachable,
             live_ids=_live_session_ids() if reachable else None,
+        )
+        return 0
+
+    # --boot-death-only mirrors the other --*-only flags: run the single pass
+    # under the lock (it needs its own /list snapshot — the pass is
+    # daemon-gated) and exit. Pair with --dry-run for a live smoke.
+    if args.boot_death_only:
+        boot_death_pass(
+            args.dry_run,
+            children=_live_children() if _daemon_reachable() else None,
         )
         return 0
 
@@ -18403,6 +20424,16 @@ def main(argv: list[str] | None = None) -> int:
     # epm:progress nudges); daemon-independent (registry + events.jsonl
     # reads only), so it runs on a daemon outage too.
     triage_observer_pass(args.dry_run)
+
+    # Verdict-disagree observer (#1170): NON-GATING audit of the doubled
+    # marker-mode review sites for the #825 misclassification shape — the
+    # LATEST round whose Claude + Codex durable verdicts disagree
+    # (pass-class vs fail-class) with no role-matched epm:review-reconcile
+    # and no Codex no-show evidence. Observe/alert only (sidecar + one
+    # deduped push per finding; NO task markers); daemon-independent
+    # (registry + events.jsonl reads only), so it runs on a daemon outage
+    # too.
+    verdict_disagree_pass(args.dry_run)
 
     # VM resource-ledger reap (plan §5): drop expired-TTL / dead-PID claims from
     # the advisory ~/.task-workflow/vm-ledger.json so a crashed session's claim
@@ -18607,9 +20638,10 @@ def main(argv: list[str] | None = None) -> int:
         issue_snapshot=issue_gate_candidates,
     )
 
-    # The THREE consumers below (the stale-registration pass + the two
-    # session reapers) run back-to-back with no mutating pass between them,
-    # so they share ONE /list snapshot via their `children=` parameter —
+    # The FOUR consumers below (the boot-death pass + the stale-registration
+    # pass + the two session reapers) run back-to-back with no mutating pass
+    # between them, so they share ONE /list snapshot via their `children=`
+    # parameter —
     # same probe-once rationale as daemon_reachable above: one fewer daemon
     # RPC per tick, and the passes can never disagree about the session set.
     # Deliberately NOT reused from the top-of-main `_live_session_ids()`
@@ -18622,6 +20654,16 @@ def main(argv: list[str] | None = None) -> int:
     # redundant, sid-targeted stop of an already-stopped session — never a
     # wrong kill.
     reaper_children = _live_children() if daemon_reachable else None
+
+    # Boot-death (#1267): STOP a freshly dispatched auto session whose
+    # transcript has ZERO response rows >= 30 min after spawn (the
+    # die-BEFORE-turn-1 class every other lane is structurally blind to).
+    # Runs AFTER gate_push_pass (the gate-push-before-reaper ordering
+    # invariant) and BEFORE stale-registration, consuming the shared reaper
+    # snapshot IN PLACE. A same-tick overlap with stale-registration on a
+    # >=12h-old boot-dead entry is benign (our stop + its unregister compose
+    # to the desired end state).
+    boot_death_pass(args.dry_run, children=reaper_children)
 
     # Stale-registration (#845 d): unregister LIVE-but-abandoned session
     # registrations (transcript idle >= 12h, self-report equally stale, no

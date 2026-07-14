@@ -1,0 +1,550 @@
+{
+  "metadata": {
+    "git_commit": "0e93486d07fa4dc7db1c2cb7ed710bc25bad0dd9",
+    "timestamp": "2026-07-08T10:54:39Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue825_sampled_sep_decision.py",
+    "issue": 825
+  },
+  "followup_label": "sampled-separator-control",
+  "smoke": false,
+  "per_model": {
+    "base": {
+      "committed_reference": {
+        "rotated": 0.3626111899733,
+        "mlp": 0.31111419787909056,
+        "w_ex_fulln": 0.3626111899733,
+        "ceiling_fulln": 0.5876803039140281,
+        "headline_layer": 19
+      },
+      "round7_reference": {
+        "D_r7": 0.5904310946594687,
+        "w_on_max_r7": 0.4954989932913608,
+        "mlp_wins_max_r7": true,
+        "D_ci_rotated_r7": {
+          "lo": -7.446896414224042,
+          "hi": -6.645965393796548,
+          "estimator": "rotated",
+          "note": "rotated-estimator group-bootstrap CI mapped through the D transform; when MLP wins the max the band-boundary qualifier falls back to this rotated CI with a stated caveat (plan section 1 CI convention)"
+        },
+        "flag_rate_r7": 0.771,
+        "source": "eval_results/issue_825/onpolicy-separator-control/decision_support.json"
+      },
+      "arms": {
+        "armB": {
+          "reads": {
+            "headline_layer": 19,
+            "ridge": -2.5798040203730856,
+            "rotated": 0.36821229437453973,
+            "mlp": 0.3341519674859459,
+            "mlp_missing": false,
+            "w_max": 0.36821229437453973,
+            "mlp_wins_max": false,
+            "rotated_ci": {
+              "r2": 0.36976707105551077,
+              "ci_lo": 0.35742990375856604,
+              "ci_hi": 0.3817840862714466,
+              "n_groups": 599,
+              "n_boot": 1000
+            },
+            "mlp_ci": {
+              "r2": 0.33579056379203975,
+              "ci_lo": 0.32391974120787126,
+              "ci_hi": 0.3479197382440816,
+              "n_groups": 599,
+              "n_boot": 1000
+            },
+            "prevmean_rotated": 0.33084488239480403,
+            "n": 3437
+          },
+          "realized_n": 3437,
+          "matched_n_trigger_fired": true,
+          "w_ex_effective": 0.36109598780841273,
+          "w_ex_kind": "matched_n",
+          "D": 0.03140688061926557,
+          "D_fulln_reference": 0.02488615298283344,
+          "D_ci": {
+            "lo": -0.016179778516258212,
+            "hi": 0.0913041944765089,
+            "estimator": "rotated"
+          },
+          "delta_w_raw": 0.007116306566126995,
+          "ratio_ceiling": 0.6265520418537042
+        },
+        "armC_avg": {
+          "reads": {
+            "headline_layer": 19,
+            "ridge": 0.14742582633426005,
+            "rotated": 0.04703663430783922,
+            "mlp": 0.27235813464907976,
+            "mlp_missing": false,
+            "w_max": 0.27235813464907976,
+            "mlp_wins_max": true,
+            "rotated_ci": {
+              "r2": 0.05446213754292373,
+              "ci_lo": 0.029228797634693264,
+              "ci_hi": 0.07459135715398234,
+              "n_groups": 533,
+              "n_boot": 1000
+            },
+            "mlp_ci": {
+              "r2": 0.27802792943259913,
+              "ci_lo": 0.26278251786669504,
+              "ci_hi": 0.2911251459870142,
+              "n_groups": 533,
+              "n_boot": 1000
+            },
+            "prevmean_rotated": -0.008389410493254035,
+            "n": 533
+          },
+          "realized_n": 533,
+          "matched_n_trigger_fired": true,
+          "w_ex_effective": 0.22831442111935285,
+          "w_ex_kind": "matched_n_armC",
+          "D": 0.12255952954468806,
+          "D_fulln_reference": -0.4010015134639413,
+          "D_ci": {
+            "lo": 0.09591365902431989,
+            "hi": 0.17478210335160962,
+            "estimator": "mlp"
+          },
+          "delta_w_raw": 0.04404371352972691,
+          "ratio_ceiling": 0.46344608256417436,
+          "never_headline_note": "BINDING (plan v22 section 1): arm-C reads are NEVER the headline D \u2014 C-avg is the E[v] noise-free ceiling read at a DIFFERENT anchor design (fixed prefix-final anchor, deterministic prefix-tail segment); cross-arm D comparisons carry both construct shifts"
+        },
+        "armC_single": {
+          "reads": {
+            "headline_layer": 19,
+            "ridge": 0.05882356176143444,
+            "rotated": -0.058161649395368054,
+            "mlp": 0.22269499546204907,
+            "mlp_missing": false,
+            "w_max": 0.22269499546204907,
+            "mlp_wins_max": true,
+            "rotated_ci": {
+              "r2": -0.049507457074875694,
+              "ci_lo": -0.07534169857057164,
+              "ci_hi": -0.03092840366220324,
+              "n_groups": 520,
+              "n_boot": 1000
+            },
+            "mlp_ci": {
+              "r2": 0.22905219677667166,
+              "ci_lo": 0.21522013457543676,
+              "ci_hi": 0.24041726287257362,
+              "n_groups": 520,
+              "n_boot": 1000
+            },
+            "prevmean_rotated": -0.10392179259387357,
+            "n": 520
+          },
+          "realized_n": 520,
+          "matched_n_trigger_fired": true,
+          "w_ex_effective": 0.22831442111935285,
+          "w_ex_kind": "matched_n_armC",
+          "D": -0.01563705940475839,
+          "D_fulln_reference": -0.6216587965423714,
+          "D_ci": {
+            "lo": -0.03643719999819111,
+            "hi": 0.03367832711080077,
+            "estimator": "mlp"
+          },
+          "delta_w_raw": -0.005619425657303778,
+          "ratio_ceiling": 0.37893901493528215,
+          "never_headline_note": "BINDING (plan v22 section 1): arm-C reads are NEVER the headline D \u2014 C-avg is the E[v] noise-free ceiling read at a DIFFERENT anchor design (fixed prefix-final anchor, deterministic prefix-tail segment); cross-arm D comparisons carry both construct shifts"
+        },
+        "armC_pooled": {
+          "reads": {
+            "headline_layer": 19,
+            "ridge": -24.592458800220463,
+            "rotated": -64.56491444035248,
+            "mlp": 0.22472579016290384,
+            "mlp_missing": false,
+            "w_max": 0.22472579016290384,
+            "mlp_wins_max": true,
+            "rotated_ci": {
+              "r2": -64.14784136461677,
+              "ci_lo": -67.16010426779296,
+              "ci_hi": -61.62915029997583,
+              "n_groups": 548,
+              "n_boot": 1000
+            },
+            "mlp_ci": {
+              "r2": 0.2296574827327219,
+              "ci_lo": 0.21543089653748027,
+              "ci_hi": 0.24117924250152445,
+              "n_groups": 548,
+              "n_boot": 1000
+            },
+            "prevmean_rotated": -190.7037236780187,
+            "n": 5309
+          },
+          "realized_n": 5309,
+          "matched_n_trigger_fired": true,
+          "w_ex_effective": 0.22831442111935285,
+          "w_ex_kind": "matched_n_armC",
+          "D": -0.009986009046104655,
+          "D_fulln_reference": -0.6126358139336178,
+          "D_ci": {
+            "lo": -0.035850717051049676,
+            "hi": 0.035798672044563426,
+            "estimator": "mlp"
+          },
+          "delta_w_raw": -0.0035886309564490126,
+          "ratio_ceiling": 0.38239462623845055,
+          "never_headline_note": "BINDING (plan v22 section 1): arm-C reads are NEVER the headline D \u2014 C-avg is the E[v] noise-free ceiling read at a DIFFERENT anchor design (fixed prefix-final anchor, deterministic prefix-tail segment); cross-arm D comparisons carry both construct shifts"
+        }
+      },
+      "r2_decoding_sensitivity": {
+        "delta_dec": -0.5590242140402032,
+        "margin": 0.1,
+        "label": "DECODING_SENSITIVE",
+        "qualifier": null,
+        "delta_ci": {
+          "lo": -0.6066108731757269,
+          "hi": -0.49912690018295985,
+          "method": "rotated-ci-r8-only; D_r7 treated as the fixed reference (no round-7 MLP bootstrap exists \u2014 the gap the MLP-CI leg closes forward)"
+        },
+        "D_r7": 0.5904310946594687,
+        "D_armB": 0.03140688061926557
+      },
+      "r3_sampling_noise_share": {
+        "ns_rotated": 0.10519828370320727,
+        "ns_mlp": 0.04966313918703069,
+        "ns_max_interpretable": 0.04966313918703069,
+        "paired_bootstrap_rotated": null,
+        "paired_bootstrap_mlp": null,
+        "remaining_gap_c_minus_w_b": 0.21946800953948842,
+        "ns_as_fraction_of_remaining_gap": 0.22628873926199666,
+        "note": "descriptive read, no binary label (plan v22 section 1 R3); paired group bootstrap over the SHARED per-group R^2 values \u2014 a free post-hoc reduction, zero refits"
+      },
+      "r6_flag_rates": {
+        "armB": {
+          "repetition_rate_min5": 0.08666666666666667,
+          "distinct_3gram_rate": 0.8140949033391915,
+          "early_eos_rate": 0.8022222222222222,
+          "true_continuation_overlap_mean": 0.030974865837023063,
+          "n_rows": 900,
+          "flag_rate_r7_greedy": 0.771,
+          "drop_points": 0.6843333333333333,
+          "premise_partially_fails": false
+        },
+        "armC": {
+          "repetition_rate_min5": 0.0385,
+          "distinct_3gram_rate": 0.7055299614041802,
+          "early_eos_rate": 0.5513333333333333,
+          "true_continuation_overlap_mean": 0.03371925339724601,
+          "n_rows": 6000,
+          "flag_rate_r7_greedy": 0.771,
+          "drop_points": 0.7325,
+          "premise_partially_fails": false
+        }
+      }
+    },
+    "instruct": {
+      "committed_reference": {
+        "rotated": 0.3489193821633685,
+        "mlp": 0.2985925806396439,
+        "w_ex_fulln": 0.3489193821633685,
+        "ceiling_fulln": 0.6730940896676356,
+        "headline_layer": 19
+      },
+      "round7_reference": {
+        "D_r7": 0.4282697415395536,
+        "w_on_max_r7": 0.48775360035988136,
+        "mlp_wins_max_r7": false,
+        "D_ci_rotated_r7": {
+          "lo": 0.40148048015293725,
+          "hi": 0.46100772512732624,
+          "estimator": "rotated",
+          "note": "rotated-estimator group-bootstrap CI mapped through the D transform; when MLP wins the max the band-boundary qualifier falls back to this rotated CI with a stated caveat (plan section 1 CI convention)"
+        },
+        "flag_rate_r7": 0.689,
+        "source": "eval_results/issue_825/onpolicy-separator-control/decision_support.json"
+      },
+      "arms": {
+        "armB": {
+          "reads": {
+            "headline_layer": 19,
+            "ridge": -3.155277036725674,
+            "rotated": 0.3766789856547855,
+            "mlp": 0.3371634988294848,
+            "mlp_missing": false,
+            "w_max": 0.3766789856547855,
+            "mlp_wins_max": false,
+            "rotated_ci": {
+              "r2": 0.3786069203507305,
+              "ci_lo": 0.36971348552180955,
+              "ci_hi": 0.38688631946973845,
+              "n_groups": 600,
+              "n_boot": 1000
+            },
+            "mlp_ci": {
+              "r2": 0.33921365492155353,
+              "ci_lo": 0.33007141093601927,
+              "ci_hi": 0.3476539763771099,
+              "n_groups": 600,
+              "n_boot": 1000
+            },
+            "prevmean_rotated": 0.34035099750211495,
+            "n": 3584
+          },
+          "realized_n": 3584,
+          "matched_n_trigger_fired": false,
+          "w_ex_effective": 0.3489193821633685,
+          "w_ex_kind": "fulln_committed",
+          "D": 0.08563161421546632,
+          "D_fulln_reference": 0.08563161421546632,
+          "D_ci": {
+            "lo": 0.06414474318039555,
+            "hi": 0.1171187524118309,
+            "estimator": "rotated"
+          },
+          "delta_w_raw": 0.02775960349141704,
+          "ratio_ceiling": 0.5596230771254942
+        },
+        "armC_avg": {
+          "reads": {
+            "headline_layer": 19,
+            "ridge": 0.07867341895437296,
+            "rotated": -0.041381803362200875,
+            "mlp": 0.23824550390896815,
+            "mlp_missing": false,
+            "w_max": 0.23824550390896815,
+            "mlp_wins_max": true,
+            "rotated_ci": {
+              "r2": -0.033356180175020844,
+              "ci_lo": -0.060106178453620436,
+              "ci_hi": -0.0120562074473776,
+              "n_groups": 533,
+              "n_boot": 1000
+            },
+            "mlp_ci": {
+              "r2": 0.24411612147575978,
+              "ci_lo": 0.22646090913400616,
+              "ci_hi": 0.2583367201299297,
+              "n_groups": 533,
+              "n_boot": 1000
+            },
+            "prevmean_rotated": -0.07669269173021176,
+            "n": 533
+          },
+          "realized_n": 533,
+          "matched_n_trigger_fired": true,
+          "w_ex_effective": 0.2127483076906617,
+          "w_ex_kind": "matched_n_armC",
+          "D": 0.0553870529861438,
+          "D_fulln_reference": -0.3414019529976549,
+          "D_ci": {
+            "lo": 0.029787611791412816,
+            "hi": 0.09903080298354573,
+            "estimator": "mlp"
+          },
+          "delta_w_raw": 0.025497196218306456,
+          "ratio_ceiling": 0.3539557211483025,
+          "never_headline_note": "BINDING (plan v22 section 1): arm-C reads are NEVER the headline D \u2014 C-avg is the E[v] noise-free ceiling read at a DIFFERENT anchor design (fixed prefix-final anchor, deterministic prefix-tail segment); cross-arm D comparisons carry both construct shifts"
+        },
+        "armC_single": {
+          "reads": {
+            "headline_layer": 19,
+            "ridge": 0.0053056141082173935,
+            "rotated": -0.12544615922742652,
+            "mlp": 0.1910617128879597,
+            "mlp_missing": false,
+            "w_max": 0.1910617128879597,
+            "mlp_wins_max": true,
+            "rotated_ci": {
+              "r2": -0.11739044945814059,
+              "ci_lo": -0.14585282563000157,
+              "ci_hi": -0.09679775724118972,
+              "n_groups": 523,
+              "n_boot": 1000
+            },
+            "mlp_ci": {
+              "r2": 0.19685192483220537,
+              "ci_lo": 0.18173215774017565,
+              "ci_hi": 0.20794993215682142,
+              "n_groups": 523,
+              "n_boot": 1000
+            },
+            "prevmean_rotated": -0.14830391548350463,
+            "n": 523
+          },
+          "realized_n": 523,
+          "matched_n_trigger_fired": true,
+          "w_ex_effective": 0.2127483076906617,
+          "w_ex_kind": "matched_n_armC",
+          "D": -0.04710935920726376,
+          "D_fulln_reference": -0.486952453788613,
+          "D_ci": {
+            "lo": -0.06737576657547704,
+            "hi": -0.010423415879327599,
+            "estimator": "mlp"
+          },
+          "delta_w_raw": -0.02168659480270199,
+          "ratio_ceiling": 0.2838558766461659,
+          "never_headline_note": "BINDING (plan v22 section 1): arm-C reads are NEVER the headline D \u2014 C-avg is the E[v] noise-free ceiling read at a DIFFERENT anchor design (fixed prefix-final anchor, deterministic prefix-tail segment); cross-arm D comparisons carry both construct shifts"
+        },
+        "armC_pooled": {
+          "reads": {
+            "headline_layer": 19,
+            "ridge": -23.26603601874506,
+            "rotated": -59.6919264072379,
+            "mlp": 0.18493783433230404,
+            "mlp_missing": false,
+            "w_max": 0.18493783433230404,
+            "mlp_wins_max": true,
+            "rotated_ci": {
+              "r2": -59.2627658667542,
+              "ci_lo": -62.66136304927398,
+              "ci_hi": -56.632649667364696,
+              "n_groups": 549,
+              "n_boot": 1000
+            },
+            "mlp_ci": {
+              "r2": 0.19070124535170718,
+              "ci_lo": 0.17544907026385725,
+              "ci_hi": 0.20187885237242922,
+              "n_groups": 549,
+              "n_boot": 1000
+            },
+            "prevmean_rotated": -168.5615679445319,
+            "n": 5305
+          },
+          "realized_n": 5305,
+          "matched_n_trigger_fired": true,
+          "w_ex_effective": 0.2127483076906617,
+          "w_ex_kind": "matched_n_armC",
+          "D": -0.06041213897719325,
+          "D_fulln_reference": -0.5058431272862518,
+          "D_ci": {
+            "lo": -0.08102439272196939,
+            "hi": -0.023611501926993104,
+            "estimator": "mlp"
+          },
+          "delta_w_raw": -0.02781047335835765,
+          "ratio_ceiling": 0.27475777483594266,
+          "never_headline_note": "BINDING (plan v22 section 1): arm-C reads are NEVER the headline D \u2014 C-avg is the E[v] noise-free ceiling read at a DIFFERENT anchor design (fixed prefix-final anchor, deterministic prefix-tail segment); cross-arm D comparisons carry both construct shifts"
+        }
+      },
+      "r2_decoding_sensitivity": {
+        "delta_dec": -0.34263812732408727,
+        "margin": 0.1,
+        "label": "DECODING_SENSITIVE",
+        "qualifier": null,
+        "delta_ci": {
+          "lo": -0.37748061711431397,
+          "hi": -0.2977953703725668,
+          "method": "rotated-var-sum (independent rotated group bootstraps, both rounds)"
+        },
+        "D_r7": 0.4282697415395536,
+        "D_armB": 0.08563161421546632
+      },
+      "r3_sampling_noise_share": {
+        "ns_rotated": 0.08406435586522565,
+        "ns_mlp": 0.04718379102100845,
+        "ns_max_interpretable": 0.04718379102100845,
+        "paired_bootstrap_rotated": null,
+        "paired_bootstrap_mlp": null,
+        "remaining_gap_c_minus_w_b": 0.2964151040128501,
+        "ns_as_fraction_of_remaining_gap": 0.15918146674119193,
+        "note": "descriptive read, no binary label (plan v22 section 1 R3); paired group bootstrap over the SHARED per-group R^2 values \u2014 a free post-hoc reduction, zero refits"
+      },
+      "r6_flag_rates": {
+        "armB": {
+          "repetition_rate_min5": 0.3452054794520548,
+          "distinct_3gram_rate": 0.7318155572663745,
+          "early_eos_rate": 0.584931506849315,
+          "true_continuation_overlap_mean": 0.025794255692239344,
+          "n_rows": 730,
+          "flag_rate_r7_greedy": 0.689,
+          "drop_points": 0.3437945205479451,
+          "premise_partially_fails": false
+        },
+        "armC": {
+          "repetition_rate_min5": 0.09866666666666667,
+          "distinct_3gram_rate": 0.6518543063617173,
+          "early_eos_rate": 0.278,
+          "true_continuation_overlap_mean": 0.03266086739826639,
+          "n_rows": 6000,
+          "flag_rate_r7_greedy": 0.689,
+          "drop_points": 0.5903333333333333,
+          "premise_partially_fails": false
+        }
+      }
+    }
+  },
+  "r5_mirror": {
+    "armB": {
+      "abs_d_gap": 0.05422473359620075,
+      "margin": 0.1,
+      "mirror_within_margin": true,
+      "delta_w_raw_base": 0.007116306566126995,
+      "delta_w_raw_instruct": 0.02775960349141704,
+      "note": "raw dW reported alongside \u2014 the D denominators differ (0.22507 vs 0.32417), so a D gap can be a denominator artifact"
+    },
+    "armC_avg": {
+      "abs_d_gap": 0.06717247655854426,
+      "margin": 0.1,
+      "mirror_within_margin": true,
+      "delta_w_raw_base": 0.04404371352972691,
+      "delta_w_raw_instruct": 0.025497196218306456,
+      "note": "raw dW reported alongside \u2014 the D denominators differ (0.22507 vs 0.32417), so a D gap can be a denominator artifact"
+    }
+  },
+  "gates": {
+    "anchor_gate_base": true,
+    "r7_repro_gate_base": true,
+    "equivalence_gate_base_armB": {
+      "early_cos_min": 0.999968409538269,
+      "flat_cos_min": 0.9998593330383301
+    },
+    "equivalence_gate_base_armC": {
+      "early_cos_min": 0.9999762177467346,
+      "flat_cos_min": 0.9999464154243469
+    },
+    "x_identity_gate_base": {
+      "pass": true,
+      "min": 0.9997988332817469,
+      "binding": true
+    },
+    "posmatch_below256_base_present": true,
+    "anchor_gate_instruct": true,
+    "r7_repro_gate_instruct": true,
+    "equivalence_gate_instruct_armB": {
+      "early_cos_min": 0.9999743700027466,
+      "flat_cos_min": 0.9997684955596924
+    },
+    "equivalence_gate_instruct_armC": {
+      "early_cos_min": 0.9999822378158569,
+      "flat_cos_min": 0.9997437000274658
+    },
+    "x_identity_gate_instruct": {
+      "pass": true,
+      "min": 0.9996397913495144,
+      "binding": true
+    },
+    "posmatch_below256_instruct_present": true
+  },
+  "transfer_fractions": {
+    "base_armB": 0.04426048793431491,
+    "base_armC_avg": -0.16637003973784065,
+    "instruct_armB": 0.26322643682924396,
+    "instruct_armC_avg": -0.38535002376794353,
+    "note": "R4 slot \u2014 filled by Phase C on the VM (sampled_sep_to_chat_{base,instruct}_{armB,armC_avg}.json, full-n convention, fraction of the full-n chat ceiling); deliberately outside the pod-side enumeration (plan v22 section 6.5)",
+    "threshold": 0.5,
+    "filled_by": {
+      "script": "scripts/issue825_base_sep_transfer.py (Phase C, VM)",
+      "source_files": "transfer/sampled_sep_to_chat_{base,instruct}_{armB,armC_avg}.json",
+      "convention": "fraction_of_fulln_ceiling (full-n convention, per the slot note)"
+    }
+  },
+  "interpretation_bands": {
+    "r2_margin": 0.1,
+    "r5_margin": 0.1,
+    "r6_drop_points": 0.1,
+    "armB_matched_n_trigger": 3492,
+    "rule": "BINDING, applied by the ANALYZER (plan v22 section 1): R2 CAVEAT_RETIRED iff |Delta_dec| <= 0.10 per substrate, DECODING_SENSITIVE otherwise (direction reported); CI spanning the +-0.10 boundary => 'suggestive'; arm-C D values NEVER the headline (construct-shift honesty rule); a negative Delta_dec is a decoding-sensitivity finding, not answer-specificity strengthening (plan section 7 concern 4)"
+  }
+}

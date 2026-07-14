@@ -25,6 +25,11 @@ import sys
 import tempfile
 from pathlib import Path
 
+# Ensure repo root is on sys.path so the deferred
+# `import scripts.i395_probe_marker_priors` in main() resolves in script
+# mode (sys.path[0] is scripts/, not the repo root — #823/#853).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 ATOL = 1e-2
 
 

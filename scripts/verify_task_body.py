@@ -334,7 +334,10 @@ New v3-only checks (PASS vacuously on v2/legacy):
   example forms, not the bare table). The WARN nudges the author to wrap
   the rows BEFORE the confusing downstream audit FAIL. Scoped to cells
   that WOULD match the audit's condition-code patterns so a benign
-  composition / row-count summary table never WARNs.
+  composition / row-count summary table never WARNs. As of #1227 this
+  check ALSO fires on v4 bodies, scanning `## Methodology` (label
+  `Methodology unwrapped example table (v4)`) — the one member of this
+  group that is not v3-only.
 - **check 20** (`check_v3_word_caps`): the §4 conciseness caps —
   per-Takeaways-bullet ≤30 words (WARN), per-finding prose ≤120 WARN /
   ≥180 FAIL, figure caption ≤60 (WARN), total content prose ≤800 + 250
@@ -548,7 +551,11 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   (listed )?at the pinned revision" — whole-prefix — and "N files
   (listed )?per namespace" — each backtick `dir/` namespace named in the
   link TEXT is probed at `<link-prefix>/<ns>` and must hold exactly N
-  files; no extractable namespaces → an `unverified` note, never a WARN)
+  files; no extractable namespaces → an `unverified` note, never a WARN;
+  or a backtick `dir/` sub-path token whose parenthetical OPENS with the
+  count-noun, bound to the nearest preceding hex-pinned `/tree/<sha>`
+  markdown link on the same footer row — bracket-free, newline-free,
+  ≤400-char gap — and probed at `<link-prefix>/<sub-path>`, #1143)
   must match a files-only scoped Hub tree count at the pinned revision —
   the same bounded raw tree-endpoint probe checks 23/25 use (#733; never
   the SDK `list_repo_tree` / `list_repo_files`), counted EXHAUSTIVELY with
@@ -566,7 +573,9 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   Incidents: task #931 shipped 528/10/3/198 where the pinned tree holds
   515/9/2/197 — folder entries counted as files (#1008); task #833 shipped
   "908 files listed per namespace" where each namespace holds 891 blobs +
-  17 directory entries (#1088).
+  17 directory entries (#1088); task #1112 shipped "(7,372 files: …)"
+  after a backtick `raw_completions/` token in the pinned-bucket footer
+  row where the scoped tree holds 7,165 files + 207 folders (#1143).
 
 - **check 31** (`check_orphaned_per_unit_figures`, WARN): the INVERSE
   direction of checks 4b/22/29 (which verify what the body CITES) —
@@ -639,6 +648,58 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   figure plotted 0.231 / a -4.53-clipped bar; checks 24 (rendered text) and
   26 (structure) are blind to plotted-NUMBER drift by construction.
 
+- **check 34** (`check_figure_beat_claims_vs_sidecar_text`, WARN,
+  FORWARD-ONLY): beat-1 series-structure claims — "both <up to 3 words>
+  arms/series/conditions/models/lines/curves" and "one
+  bar/point/dot/marker/line/curve per <unit>" (the two literal #1092
+  defect-(b) phrasings; paraphrases miss by design) — must not contradict
+  the series structure the figure's sha-pinned sidecar demonstrably
+  renders. Fires ONLY when the sidecar carries the `meta["text"]`
+  rendered-text block the current `savefig_paper` writes (pre-capture
+  sidecars silently skip — no retroactive WARN on existing bodies).
+  Contradiction-only: Class A WARNs only when >=1 evidence basis is
+  available AND every available basis reads <=1 (series labels / legend
+  entries / bar point-rows — never `n_series`, one `BarContainer` holds a
+  whole bar pair — / distinct line artists / distinct scatter artists /
+  total artist groups); a figure with no basis (e.g. an unlabeled
+  single-artist scatter) SKIPS. Class B requires a points payload and
+  WARNs when the mapped `_kind` renders <=1 element (line/curve counted as
+  distinct ARTISTS via `_group` — vertex rows are unsound). Window =
+  check 33's narrow `_beat1_prose_window`. WARN never FAIL; silent skip on
+  missing / unparsable / text-less sidecars (check-24 convention); NO-OP
+  PASS offline / stdin / no inline figures. Incident: #1092 (9a-bis r1) —
+  a beat claimed "both input arms" / "one bar per re-fit item" against a
+  figure rendering neither, passing every mechanical figure check. (#1255)
+
+- **check 35** (`check_cross_issue_reuse_provenance`, FAIL/WARN, v4-only,
+  #1256): cross-issue reuse pins in the committed
+  `eval_results/issue_<N>/**/*.json` result-JSON `metadata` must be
+  declared in the body (canonical slot: the footer `Reused:` bullet,
+  SPEC.md § `**Artifacts:**`). Tier 1 (FAIL): a `metadata` key matching
+  `hf_rev_<M>` / `hf_rev_<M>_<tag>` with M != N whose pinned revision has
+  no >=7-hex-char prefix token anywhere in the body (non-hex branch/tag
+  pins fall back to a `#M` / `/tasks/M` / `issue<M>_` mention). Tier 2
+  (WARN): a `\bissue<M>_` path token in `metadata.input_shas` keys/values
+  or PATH-LIKE (`/`-bearing) `metadata.args` string values, M != N, with
+  neither the `issue<M>_<slug>` segment nor a `#M` / `/tasks/M` mention in
+  the body. Graceful PASS-skips: not-v4 (forward-only), issue unknown
+  (stdin), `EPM_VERIFY_BODY_NO_EVAL_SCAN=1`, eval root unresolved
+  (is_warn, the #732 convention), no pins found. Corrupt / unreadable /
+  oversize (>50 MB stat guard) JSONs are skipped silently — `issue_810`
+  carries 138-208 MB JSONs and `issue_811` is a ~14.7 GB dir, so the
+  guard + a substring pre-filter are load-bearing. Grounding (corpus scan
+  2026-07-11, ~90,858 committed eval JSONs): the tier-1 key shape exists
+  in exactly 1 file repo-wide (the #1092 incident file), and the bare
+  `issue<M>_` pattern appears in >=10,028 files — hence the tier-2
+  restriction + WARN severity. Documented residuals: same-revision
+  multi-artifact reuse (one firing pin per round suffices; LM
+  clean-result-critic Lens 5 stays the semantic backstop), and
+  `paper: true` tasks (gated by verify_paper.py, never this verifier).
+  Incident: #1092 round 3 — `hf_rev_779_labels` pinned in
+  `transfer_reads.json` metadata with the reuse undeclared in the footer
+  survived to the LM critic. Dispatched OUTSIDE the body-only CHECKS list
+  (needs `issue` + eval-root resolution; the #732 precedent).
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -669,6 +730,7 @@ import time
 import urllib.error
 import urllib.request
 from collections import Counter
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
@@ -4789,7 +4851,7 @@ def _scan_issue_judge_errors(repo: Path, issue: int) -> dict | None:
     for path in sorted(eval_dir.rglob("*.json")):
         try:
             payload = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue  # a corrupt / unreadable artifact must not crash the gate
         _descend(payload)
 
@@ -4875,6 +4937,312 @@ def check_judge_error_denominator(
         return CheckResult(name, True, detail, is_warn=True)
     return CheckResult(
         name, True, f"judge-error fraction below 1% (worst {worst:.1%}, pooled {pooled:.1%})"
+    )
+
+
+# ─── Check 35 (#1256): cross-issue reuse pins declared in the body ─────────
+
+# A metadata KEY that pins another issue's HF revision: `hf_rev_<M>` or
+# `hf_rev_<M>_<tag>` (observed shape: #1092's transfer_reads.json
+# metadata.args `hf_rev_779_passb` / `hf_rev_779_labels` / self-pin
+# `hf_rev_1092`). Corpus base rate: exactly 1 file among ~90,858 committed
+# eval JSONs (scan 2026-07-11) — the incident file.
+_HF_REV_PIN_KEY_RE = re.compile(r"^hf_rev_(\d+)(?:_\w+)?$")
+
+# An issue-slug path segment (`issue779_monitoring/...`) inside metadata
+# input paths. Deliberately underscore-anchored: local caches
+# (`data/issue_952/`), worktrees (`issue-952`) and self dirs
+# (`eval_results/issue_1092/`) do NOT match (underscore/hyphen precedes
+# the digits there, so `\bissue(\d+)_` cannot fire on them). The bare
+# pattern appears in >=10,028 committed eval JSONs (scan 2026-07-11), so
+# tier 2 is restricted to `input_shas` + path-like `args` values and
+# capped at WARN severity.
+_ISSUE_SLUG_RE = re.compile(r"\bissue(\d+)_[A-Za-z0-9_]*")
+
+# Hex tokens in the body that can satisfy a tier-1 revision pin by prefix.
+_BODY_HEX_TOKEN_RE = re.compile(r"\b[0-9a-fA-F]{7,40}\b")
+
+# Per-file stat guard (MANDATORY): eval_results is JSON/text-only by policy,
+# but `issue_810` carries 4 JSONs of 138-208 MB and `issue_811` is a
+# ~14.7 GB dir — a guard-less gate-time scan there would read ~750 MB+.
+_REUSE_SCAN_MAX_BYTES = 50 * 1024 * 1024
+
+
+def _iter_metadata_dicts(payload: object) -> Iterator[dict]:
+    """Yield every dict that sits under a key named `metadata`, any depth.
+
+    Measured identical to top-level-only on the whole committed corpus
+    (nested `metadata` dicts add 0 pin hits, scan 2026-07-11), but more
+    robust for nested `run_result.json` phase shapes.
+    """
+    stack = [payload]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if k == "metadata" and isinstance(v, dict):
+                    yield v
+                stack.append(v)
+        elif isinstance(node, list):
+            stack.extend(node)
+
+
+def _walk_hf_rev_keys(
+    node: object, issue: int, relpath: str, tier1: list[tuple[str, str, int, str]]
+) -> None:
+    """Recursively collect tier-1 pins: `hf_rev_<M>[_<tag>]` keys with a
+    string value and M != issue, anywhere inside `node`."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if isinstance(k, str) and isinstance(v, str):
+                m = _HF_REV_PIN_KEY_RE.match(k)
+                if m and int(m.group(1)) != issue:
+                    tier1.append((relpath, k, int(m.group(1)), v))
+            _walk_hf_rev_keys(v, issue, relpath, tier1)
+    elif isinstance(node, list):
+        for v in node:
+            _walk_hf_rev_keys(v, issue, relpath, tier1)
+
+
+def _slug_hits(text: str, issue: int, relpath: str, tier2: list[tuple[str, int, str]]) -> None:
+    """Collect tier-2 `_ISSUE_SLUG_RE` tokens with M != issue from `text`."""
+    for m in _ISSUE_SLUG_RE.finditer(text):
+        src = int(m.group(1))
+        if src != issue:
+            tier2.append((relpath, src, m.group(0)))
+
+
+def _walk_pathlike_args(
+    node: object, issue: int, relpath: str, tier2: list[tuple[str, int, str]]
+) -> None:
+    """Recursively collect tier-2 tokens from PATH-LIKE (`"/" in v`) string
+    values under a metadata `args` subtree."""
+    if isinstance(node, dict):
+        for v in node.values():
+            _walk_pathlike_args(v, issue, relpath, tier2)
+    elif isinstance(node, list):
+        for v in node:
+            _walk_pathlike_args(v, issue, relpath, tier2)
+    elif isinstance(node, str) and "/" in node:
+        _slug_hits(node, issue, relpath, tier2)
+
+
+def _collect_metadata_pins(
+    md: dict,
+    issue: int,
+    relpath: str,
+    tier1: list[tuple[str, str, int, str]],
+    tier2: list[tuple[str, int, str]],
+) -> None:
+    """Collect cross-issue pins from ONE metadata dict into tier1/tier2.
+
+    tier1: `hf_rev_<M>[_<tag>]` keys (ALL keys, recursively) with a string
+    value and M != issue. tier2: `_ISSUE_SLUG_RE` hits in
+    `metadata["input_shas"]` keys + string values, and in PATH-LIKE
+    (`"/" in v`) string values under `metadata["args"]` (recursive),
+    M != issue. M == issue pins (the `hf_rev_1092` self-pin) never flag —
+    the self-pin is provenance, not reuse.
+    """
+    _walk_hf_rev_keys(md, issue, relpath, tier1)
+
+    input_shas = md.get("input_shas")
+    if isinstance(input_shas, dict):
+        for k, v in input_shas.items():
+            if isinstance(k, str):
+                _slug_hits(k, issue, relpath, tier2)
+            if isinstance(v, str):
+                _slug_hits(v, issue, relpath, tier2)
+
+    args = md.get("args")
+    if args is not None:
+        _walk_pathlike_args(args, issue, relpath, tier2)
+
+
+def _scan_cross_issue_reuse_pins(repo: Path, issue: int) -> dict | None:
+    """Scan committed `repo/eval_results/issue_<N>/**/*.json` metadata for
+    cross-issue provenance pins. Returns
+    ``{"tier1": [(relpath, key, M, value)], "tier2": [(relpath, M, token)]}``
+    or None when the dir is absent / no candidate files carry a pin / the
+    `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence is set (graceful skip).
+
+    Corrupt / unreadable / oversize (`_REUSE_SCAN_MAX_BYTES` stat guard)
+    JSONs are skipped silently (the `_scan_issue_judge_errors` convention —
+    never crash the gate). A cheap substring pre-filter (`"metadata"` plus
+    `hf_rev_` or `issue<digits>_`) avoids `json.loads` on the vast majority
+    of files. `.jsonl` files are OUT of scope (parity with
+    `_scan_issue_judge_errors`).
+    """
+    if os.environ.get("EPM_VERIFY_BODY_NO_EVAL_SCAN") == "1":
+        return None
+    eval_dir = repo / "eval_results" / f"issue_{issue}"
+    if not eval_dir.is_dir():
+        return None
+
+    tier1: list[tuple[str, str, int, str]] = []
+    tier2: list[tuple[str, int, str]] = []
+    slug_probe = re.compile(r"\bissue\d+_")
+
+    for path in sorted(eval_dir.rglob("*.json")):
+        try:
+            if path.stat().st_size > _REUSE_SCAN_MAX_BYTES:
+                continue  # oversize guard — never page a 100+ MB blob at gate time
+            text = path.read_text()
+        except (OSError, UnicodeDecodeError):
+            continue
+        if '"metadata"' not in text:
+            continue
+        if "hf_rev_" not in text and not slug_probe.search(text):
+            continue
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            continue  # a corrupt artifact must not crash the gate
+        relpath = str(path.relative_to(repo))
+        for md in _iter_metadata_dicts(payload):
+            _collect_metadata_pins(md, issue, relpath, tier1, tier2)
+
+    if not tier1 and not tier2:
+        return None
+    return {"tier1": tier1, "tier2": tier2}
+
+
+def _tier1_satisfied(body_hex_tokens: set[str], value: str, M: int, body: str) -> bool:
+    """True when a tier-1 revision pin `value` (source issue M) is declared
+    in the body: a hex pin is satisfied by any >=7-hex-char body token that
+    PREFIXES it (case-insensitive — a footer short sha `5aa6de1b` satisfies
+    the metadata's 40-char pin); a non-hex pin (branch/tag) falls back to
+    an issue-level `#M` / `/tasks/M` / `issue<M>_` mention."""
+    v = value.strip().lower()
+    if re.fullmatch(r"[0-9a-f]{7,64}", v):
+        return any(v.startswith(tok) for tok in body_hex_tokens)  # lowercased, len>=7
+    # non-hex pin (branch/tag): fall back to issue-level mention
+    return bool(
+        re.search(rf"#\s?{M}(?!\d)", body)
+        or re.search(rf"/tasks/{M}(?!\d)", body)
+        or f"issue{M}_" in body
+    )
+
+
+def _tier2_satisfied(body: str, M: int, token: str) -> bool:
+    """True when a tier-2 path token (source issue M) is declared in the
+    body: the `issue<M>_<slug>` first path segment appears verbatim, or an
+    issue-level `#M` / `/tasks/M` mention does. The `(?!\\d)` digit boundary
+    prevents `#7791` satisfying M=779."""
+    seg = token.split("/")[0]  # e.g. "issue779_monitoring"
+    return bool(
+        seg in body or re.search(rf"#\s?{M}(?!\d)", body) or re.search(rf"/tasks/{M}(?!\d)", body)
+    )
+
+
+def check_cross_issue_reuse_provenance(
+    body: str,
+    *,
+    issue: int | None = None,
+    eval_root: Path | None = None,
+    body_source_path: Path | None = None,
+) -> CheckResult:
+    """Check 35 (#1256): cross-issue reuse pins in committed result-JSON
+    metadata must be declared in the body (canonical slot: the footer
+    `Reused:` bullet, SPEC.md § `**Artifacts:**`).
+
+    Verdict ladder:
+      PASS-skip — not a v4 body (forward-only) / issue unknown (stdin) /
+                  `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence / eval root
+                  unresolved (is_warn=True, judge-error parity) / no pins
+                  found (graceful).
+      FAIL      — a tier-1 pin (M != N) whose revision value has no
+                  satisfying token in the body (`_tier1_satisfied`).
+      WARN      — a tier-2 path hit (M != N) with no satisfying body
+                  mention (`_tier2_satisfied`).
+      PASS      — every pin satisfied.
+
+    Satisfaction is checked against the WHOLE raw body text (not just the
+    footer): the goal is "provenance is reader-visible", the FAIL detail
+    points at the footer `Reused:` bullet as the canonical fix, and the LM
+    clean-result-critic Lens 5 keeps owning placement/wording quality.
+    Pins are deduped by (key, M, value) / (M, token) across files so one
+    reused artifact yields one detail line.
+
+    Documented residuals: (a) same-revision multi-artifact reuse — when two
+    reused artifacts share one repo revision, a body declaring either
+    satisfies both pins; one firing pin per round is sufficient to force
+    the declaration fix, and LM Lens 5 stays the semantic backstop
+    (#1092's `hf_rev_779_passb` was satisfied pre-fix via the declared r_B
+    bullet's shared `037fcbb` revision). (b) `paper: true` tasks are gated
+    by verify_paper.py and never reach this verifier.
+    """
+    name = "cross-issue reuse pins declared (footer Reused bullets)"
+    if not is_v4(body):
+        return CheckResult(name, True, "skipped — not a v4 body (forward-only)")
+    if issue is None:
+        return CheckResult(
+            name, True, "skipped — issue number unknown (stdin); cannot read eval_results"
+        )
+    if os.environ.get("EPM_VERIFY_BODY_NO_EVAL_SCAN") == "1":
+        return CheckResult(
+            name, True, "skipped — EPM_VERIFY_BODY_NO_EVAL_SCAN=1 (eval scan fenced off)"
+        )
+    repo = _resolve_eval_root(issue, eval_root=eval_root, body_source_path=body_source_path)
+    if repo is None:
+        return CheckResult(name, True, "skipped — eval root unresolved", is_warn=True)
+    pins = _scan_cross_issue_reuse_pins(repo, issue)
+    if pins is None:
+        return CheckResult(
+            name,
+            True,
+            "no cross-issue reuse pins in committed result-JSON metadata — graceful skip",
+        )
+
+    body_hex_tokens = {t.lower() for t in _BODY_HEX_TOKEN_RE.findall(body)}
+
+    unsatisfied_t1: list[tuple[str, str, int, str]] = []
+    seen_t1: set[tuple[str, int, str]] = set()
+    for relpath, key, src, value in pins["tier1"]:
+        dedupe = (key, src, value)
+        if dedupe in seen_t1:
+            continue
+        seen_t1.add(dedupe)
+        if not _tier1_satisfied(body_hex_tokens, value, src, body):
+            unsatisfied_t1.append((relpath, key, src, value))
+
+    unsatisfied_t2: list[tuple[str, int, str]] = []
+    seen_t2: set[tuple[int, str]] = set()
+    for relpath, src, token in pins["tier2"]:
+        dedupe = (src, token)
+        if dedupe in seen_t2:
+            continue
+        seen_t2.add(dedupe)
+        if not _tier2_satisfied(body, src, token):
+            unsatisfied_t2.append((relpath, src, token))
+
+    if unsatisfied_t1:
+        lines = [
+            f"`{relpath}` metadata key `{key}` pins #{src} @ {value[:12]} "
+            f"with no matching body declaration"
+            for relpath, key, src, value in unsatisfied_t1
+        ]
+        detail = (
+            "; ".join(lines)
+            + " — declare each reused artifact in the footer, expected shape: "
+            + "`- Reused <kind> from [#M](...): <path> @ <rev> — fit: <one line>`"
+        )
+        return CheckResult(name, False, detail)
+    if unsatisfied_t2:
+        lines = [
+            f"`{relpath}` metadata input path `{token}` references #{src} with no body mention"
+            for relpath, src, token in unsatisfied_t2
+        ]
+        detail = (
+            "; ".join(lines)
+            + " — name the source (the `issue<M>_<slug>` path segment, `#M`, or a /tasks/M "
+            + "link); canonical slot: the footer `Reused:` bullet"
+        )
+        return CheckResult(name, True, detail, is_warn=True)
+    return CheckResult(
+        name,
+        True,
+        f"all cross-issue reuse pins declared in the body "
+        f"({len(seen_t1)} tier-1, {len(seen_t2)} tier-2)",
     )
 
 
@@ -5271,16 +5639,17 @@ _HF_HUB_TREE_BLOB_URL_RE = re.compile(
 # SAME Hub tree endpoint directly via `get_session().get(url, params, headers,
 # timeout=_HF_PROBE_TIMEOUT_S)` — the per-request `timeout` is now real on
 # EVERY GET, and we follow Link-header pagination OURSELVES under an outer page
-# + wall-clock cap (check 25 only; check 23 needs a single page). A page-2 429
-# surfaces as `indeterminate` (-> skip) in seconds rather than entering the
+# + wall-clock cap (checks 25/30/32, all via the shared `_hf_tree_pages`
+# generator; check 23 needs a single page). A page-2 429 surfaces as
+# `indeterminate` (-> skip) in seconds rather than entering the
 # unbounded SDK backoff. Worst-case wall <= N * _HF_PROBE_ATTEMPTS *
 # _HF_PROBE_TIMEOUT_S for check 23, <= N * _HF_PROBE_DEADLINE_S for the
-# paginating check-25 path.
+# paginating check-25/30/32 path.
 _HF_PROBE_TIMEOUT_S = 5.0  # per-request connect+read timeout (real on every GET)
 _HF_PROBE_ATTEMPTS = 2  # at most 1 retry per page on a transient / 429
 _HF_PROBE_SLEEP_S = 0.5  # tiny pause between the two attempts
-_HF_PROBE_MAX_PAGES = 8  # check-25 self-pagination page cap
-_HF_PROBE_DEADLINE_S = 12.0  # check-25 outer wall cap across all pages of ONE probe
+_HF_PROBE_MAX_PAGES = 8  # self-pagination page cap (checks 25/30/32 via _hf_tree_pages)
+_HF_PROBE_DEADLINE_S = 12.0  # outer wall cap across all pages of ONE probe (checks 25/30/32)
 # Per-process cache keyed on (repo_id, repo_type, sha, path_prefix[, keyword]).
 # Caches ONLY definitive pass/fail verdicts — a `skip` (indeterminate / throttle)
 # is NEVER cached, so a transient throttle that has since cleared is always
@@ -5310,8 +5679,11 @@ def _hf_tree_url(repo_id: str, repo_type: str, sha: str, path: str) -> str:
     `{endpoint}/api/{repo_type}s/{repo_id}/tree/{revision}{/encoded_path}`.
     The revision is left unencoded (it is a hex sha); the path is
     `quote(path, safe="")`-encoded and prefixed with `/`, empty for the root.
+    Importing the `constants` submodule explicitly makes it
+    attribute-reachable on a fresh process — a bare `import huggingface_hub`
+    does not expose the lazy submodule (#1186).
     """
-    import huggingface_hub
+    import huggingface_hub.constants
 
     endpoint = huggingface_hub.constants.ENDPOINT
     encoded_path = "/" + quote(path, safe="") if path else ""
@@ -5370,6 +5742,66 @@ def _hf_tree_get(
         next_page = r.links.get("next", {}).get("url")
         return _TreeProbeResult("ok", entries, next_page, "")
     return _TreeProbeResult("indeterminate", [], None, last_note)
+
+
+class _TreePageEvent(NamedTuple):
+    """One event from `_hf_tree_pages`: zero or more kind='page' events
+    (entries = that page's JSON tree entries), then EXACTLY ONE terminal
+    event — kind in {'exhausted', 'cap', 'not_found', 'indeterminate'}.
+    `note` is non-empty only for kind='indeterminate' (the `_hf_tree_get`
+    diagnostic); callers own every human-facing string for the other
+    terminal kinds (the deliberate per-check note asymmetry: check 25 says
+    "(no such revision)", checks 30/32 say "no such revision/path")."""
+
+    kind: str  # "page" | "exhausted" | "cap" | "not_found" | "indeterminate"
+    entries: list[dict]  # populated only for kind="page"
+    note: str  # populated only for kind="indeterminate"
+
+
+def _hf_tree_pages(
+    repo_id: str, repo_type: str, sha: str, path: str, *, recursive: bool = True
+) -> Iterator[_TreePageEvent]:
+    """Shared bounded Link-header self-pagination over the Hub tree endpoint
+    (checks 25 / 30 / 32; the #733 contract in ONE place so a 4th consumer
+    inherits it). Reads the module caps directly (`_HF_PROBE_MAX_PAGES`,
+    `_HF_PROBE_DEADLINE_S`, `_HF_PROBE_TIMEOUT_S`); per-page 429/5xx retry
+    stays inside `_hf_tree_get`. As a generator it is lazy: a caller that
+    never consumes it issues ZERO GETs (headers/URL construction and the
+    first GET all run at the first `next()`). Invariants:
+    - headers are built BEFORE the URL (`_hf_build_headers` imports
+      `huggingface_hub.utils`, making the lazy `constants` submodule
+      attribute-reachable — belt to `_hf_tree_url`'s own explicit
+      `import huggingface_hub.constants`, #1186; the ordering precedent is
+      check 23's `_hf_probe_existence` + the #1016 check-32 fix);
+    - `params` are sent on the FIRST page only (the Link rel="next" URL
+      already carries them);
+    - `exhausted` is checked BEFORE the page/deadline cap, so a listing
+      whose final page lands exactly on the cap is exhaustive, not capped;
+    - the deadline is strict `>` from just before the first GET.
+    """
+    headers = _hf_build_headers()
+    url = _hf_tree_url(repo_id, repo_type, sha, path)
+    params: dict | None = {"recursive": recursive}
+    started = time.monotonic()
+    pages = 0
+    while True:
+        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
+        if res.status == "not_found":
+            yield _TreePageEvent("not_found", [], "")
+            return
+        if res.status == "indeterminate":
+            yield _TreePageEvent("indeterminate", [], res.note)
+            return
+        yield _TreePageEvent("page", res.entries, "")
+        pages += 1
+        if res.next_page is None:
+            yield _TreePageEvent("exhausted", [], "")
+            return
+        if pages >= _HF_PROBE_MAX_PAGES or time.monotonic() - started > _HF_PROBE_DEADLINE_S:
+            yield _TreePageEvent("cap", [], "")
+            return
+        # The Link rel="next" URL already carries the params; do not re-send them.
+        url, params = res.next_page, None
 
 
 def _gather_hf_pinned_urls(body: str) -> list[tuple[str, str, str, str, str]]:
@@ -5965,6 +6397,14 @@ def check_figure_text_vs_body_tokens(body: str) -> CheckResult:
     most one ``git show`` per unique figure URL, all fail-soft, so the check
     adds negligible latency on a normal body (no figure sidecars with text →
     one cheap git probe per figure, then skip).
+
+    Sidecars written by the current ``savefig_paper`` additionally carry the
+    figure's RENDERED text (titles / axis labels / legends / series names /
+    annotations / tick labels) under a ``text`` key — its strings enter this
+    check's scans automatically via ``_flatten_meta_strings`` (forward-only:
+    older sidecars simply lack the key), so a stale fraction in the actual
+    rendered TITLE is now catchable, not just one echoed in an ad-hoc
+    ``description``.
     """
     label = "figure text vs body prose (figure-text staleness)"
     section = _figure_scan_section(body)
@@ -6400,12 +6840,22 @@ def check_figure_label_codes(body: str) -> CheckResult:
     deferred it as a cosmetic nit.
 
     Coverage = sidecar-CARRIED strings only: string values (provenance
-    subtrees pruned) plus whitespace-bearing dict keys. Known residuals,
-    accepted by design: (i) a slug-bearing figure TITLE with no ad-hoc
-    sidecar echo is invisible — the canonical ``savefig_paper`` writer never
-    serializes titles (PNG-pixel text stays the multimodal critics'
-    substantive read); (ii) a bare slug used as a whitespace-free column KEY
-    is unscanned; (iii) a slug or ``@L`` pin inside a path-shaped word (or a
+    subtrees pruned) plus whitespace-bearing dict keys. The current
+    ``savefig_paper`` serializes the figure's RENDERED text (suptitle, axes
+    titles incl. ``loc="left"``, axis labels, legend entries, series names,
+    annotations, tick labels) under ``meta["text"]``, whose string VALUES
+    enter this walk automatically — so a slug-bearing figure TITLE / legend /
+    series name in NEW sidecars IS scanned (the #1092 defect-(a) class); the
+    ``text`` block's own structural key names (``suptitle``,
+    ``legend_labels``, …) are whitespace-free identifier keys and are never
+    collected. Known residuals, accepted by design: (i) rendered-text
+    blindness persists for sidecars written BEFORE the ``meta["text"]``
+    capture landed (forward-only) AND for figures saved via plain
+    ``fig.savefig`` scripts that never get a sidecar at all — for those,
+    PNG-pixel text stays the multimodal critics' substantive read; (ii) a
+    bare slug used as a whitespace-free column KEY is unscanned (tick labels
+    now arrive as scanned VALUES in new sidecars, narrowing this residual to
+    key names); (iii) a slug or ``@L`` pin inside a path-shaped word (or a
     whole path-shaped string) is exempt — the path exemption covers BOTH
     token classes. WARN,
     never FAIL; fail-soft on missing / unparsable sidecars (the check-24
@@ -6853,6 +7303,374 @@ def check_figure_prose_numerics_vs_sidecar(body: str) -> CheckResult:
     )
 
 
+# ─── Check 34: beat-phrase series-structure claims vs sidecar rendered text ─
+#
+# Fifth sibling of checks 24/26/28/33 (same figure iteration, same
+# `_read_figure_meta_json` sidecar read, same fail-soft skip conventions;
+# reuses check 33's narrow `_beat1_prose_window`). Checks 24/28 scan the
+# sidecar's rendered STRINGS and check 26 its `_kind` STRUCTURE against
+# explicit panel/overlay claims — none compares a beat-1 SERIES-STRUCTURE
+# claim ("shows both input arms", "one bar per re-fit item") against what the
+# figure demonstrably renders, so #1092's defect (b) passed every mechanical
+# figure check. Check 34 closes that gap for the two literal #1092 claim
+# classes, contradiction-only, FORWARD-ONLY (fires only when the sidecar
+# carries the `meta["text"]` rendered-text block the current `savefig_paper`
+# writes — the writer-version marker).
+
+# Class A: "both <up to 3 words> arms/series/conditions/models/lines/curves".
+_BEAT_BOTH_RE = re.compile(
+    r"\bboth\b(?:\s+[\w-]+){0,3}\s+(?:arms?|series|conditions?|models?|lines?|curves?)\b",
+    re.IGNORECASE,
+)
+# Class B: "one bar|point|dot|marker|line|curve per <unit>".
+_BEAT_ONE_PER_RE = re.compile(
+    r"\bone\s+(bar|point|dot|marker|line|curve)s?\s+per\s+[\w-]+", re.IGNORECASE
+)
+_BEAT_WORD_TO_KIND = {
+    "bar": "bar",
+    "point": "scatter",
+    "dot": "scatter",
+    "marker": "scatter",
+    "line": "line",
+    "curve": "line",
+}
+
+
+def _beat_series_claims(prose: str) -> dict:
+    """Parse the two registered check-34 claim classes out of a figure's
+    beat-1 prose window::
+
+        {"both":    [<matched phrase>, ...],           # Class A
+         "one_per": [(<matched phrase>, <kind>), ...]} # Class B, kind mapped
+                                                       # via _BEAT_WORD_TO_KIND
+
+    Deliberately NARROW (the check's FP containment): only the two literal
+    #1092 defect phrasings are registered — paraphrases ("each arm", "two
+    models", "per-source bars") miss by design (a documented false-negative,
+    not a bug). Class-B phrases are de-duplicated preserving order.
+    """
+    claims: dict = {"both": [], "one_per": []}
+    for bm in _BEAT_BOTH_RE.finditer(prose):
+        claims["both"].append(bm.group(0))
+    seen: set[tuple[str, str]] = set()
+    for om in _BEAT_ONE_PER_RE.finditer(prose):
+        pair = (om.group(0).casefold(), _BEAT_WORD_TO_KIND[om.group(1).lower()])
+        if pair not in seen:
+            seen.add(pair)
+            claims["one_per"].append((om.group(0), pair[1]))
+    return claims
+
+
+def _sidecar_kind_row_groups(meta: dict) -> tuple[Counter, dict[str, set], set] | None:
+    """Per-kind point-row counts, per-kind distinct ``_group`` sets, and the
+    all-rows ``_group`` set from a parsed sidecar's ``points``/``rows`` list —
+    or None when the sidecar carries no recognizable point list.
+
+    Same reading convention as ``_sidecar_kind_group_aggregate`` (``points``
+    canonical, ``rows`` legacy; non-dict rows skipped), but check 34's line /
+    scatter ARTIST counting needs the per-KIND group split the aggregate does
+    not expose. ``_group`` is a per-ARTIST (per-series) index, NOT a per-panel
+    index, and the writer emits it only on multi-artist figures
+    (``_build_sidecar_data``: ``multi = len(artifacts) > 1``) — so a
+    single-artist sidecar has NO groups anywhere.
+
+    Returns None for a TRUNCATED sidecar (``data_truncated`` — the writer's
+    top-level flag — or a legacy top-level ``truncated``):
+    ``_build_sidecar_data`` truncates the concatenated per-artist rows
+    HEAD-FIRST (``points[:_MAX_SIDECAR_ROWS]``), so a first artist with
+    >= the cap drops every LATER artist/kind from the stored payload —
+    per-kind / per-``_group`` counts over stored rows are then not figure
+    truth (the ``_sidecar_plotted_values`` sibling convention, check 33).
+    """
+    if meta.get("data_truncated") or meta.get("truncated"):
+        return None
+    pts = meta.get("points")
+    if not isinstance(pts, list):
+        pts = meta.get("rows")
+    if not isinstance(pts, list) or not pts:
+        return None
+    kinds: Counter = Counter()
+    kind_groups: dict[str, set] = {}
+    all_groups: set = set()
+    for p in pts:
+        if not isinstance(p, dict):
+            continue
+        k = p.get("_kind")
+        kind = k.strip().lower() if isinstance(k, str) and k.strip() else None
+        if kind is not None:
+            kinds[kind] += 1
+        g = p.get("_group")
+        if g is not None:
+            all_groups.add(g)
+            if kind is not None:
+                kind_groups.setdefault(kind, set()).add(g)
+    if not kinds and not all_groups:
+        return None
+    return kinds, kind_groups, all_groups
+
+
+def _line_artist_count(kinds: Counter, kind_groups: dict[str, set]) -> int | None:
+    """Distinct line ARTISTS rendered, or None when the sidecar has no line
+    rows (basis unavailable). Distinct ``_group`` values among line-kind rows;
+    a single-artist sidecar carries no ``_group`` at all, so line rows with no
+    groups count as ONE artist (one ``Line2D`` trace = one series — a line's
+    point rows are VERTICES, so the raw row count is unsound for lines)."""
+    if kinds.get("line", 0) <= 0:
+        return None
+    groups = kind_groups.get("line", set())
+    return len(groups) if groups else 1
+
+
+def _both_claim_bases(
+    meta: dict, kinds: Counter, kind_groups: dict[str, set], all_groups: set
+) -> dict[str, int]:
+    """The Class-A ("both … arms") evidence bases AVAILABLE in ``meta``, as a
+    ``{basis name: count}`` dict — each key present only when that basis has
+    actual labels/rows (a zero-count kind is UNAVAILABLE, never a
+    contradiction). See ``_beat_claim_warnings`` for the basis semantics."""
+    if len(all_groups) == 1:
+        # A 1-value group set means exactly ONE artist contributed rows in a
+        # MULTI-artist figure (`_group` is only emitted when
+        # `len(artifacts) > 1`, so a sibling artist yielded zero rows). That
+        # is indistinguishable from the single-artist no-`_group` case: the
+        # lone data-bearing artist (scatter especially) may encode >=2 arms
+        # per-point, so the group evidence is treated as ABSENT, never as a
+        # 1-count basis. (`_line_artist_count` is unaffected — its
+        # no-groups fallback reads the same 1.)
+        kind_groups = {}
+        all_groups = set()
+    bases: dict[str, int] = {}
+    text_block = meta.get("text")
+    tb = text_block if isinstance(text_block, dict) else {}
+    series = tb.get("series")
+    if isinstance(series, list) and series:
+        bases["series labels"] = len(series)
+    axes_block = tb.get("axes")
+    legend_counts = []
+    if isinstance(axes_block, list):
+        for ax_d in axes_block:
+            if not isinstance(ax_d, dict):
+                continue
+            labs = ax_d.get("legend_labels")
+            if isinstance(labs, list) and labs:
+                legend_counts.append(len(labs))
+    if legend_counts:
+        bases["legend entries"] = max(legend_counts)
+    if kinds.get("bar", 0) > 0:
+        bases["bar rows"] = kinds["bar"]
+    line_n = _line_artist_count(kinds, kind_groups)
+    if line_n is not None:
+        bases["line artists"] = line_n
+    scatter_groups = kind_groups.get("scatter", set())
+    if scatter_groups:
+        bases["scatter artists"] = len(scatter_groups)
+    if all_groups:
+        bases["artist groups"] = len(all_groups)
+    return bases
+
+
+def _beat_claim_warnings(claims: dict, meta: dict, basename: str) -> list[str]:
+    """Return the check-34 WARN messages for ONE figure's parsed ``claims``
+    against its parsed sidecar ``meta``. Empty list = no demonstrable
+    contradiction (which includes "no evidence basis available" — absence of
+    evidence never fires).
+
+    Class A ("both … arms") ⇒ claimed >=2 rendered elements. Evidence bases,
+    each AVAILABLE only when it has actual labels/rows, all max'd:
+
+    - ``len(text["series"])`` — fig-GLOBAL legend-eligible artist labels
+      (deliberately conservative: a multi-panel figure with one series per
+      panel and >=2 distinct labels satisfies "both arms");
+    - ``max(len(ax["legend_labels"]))`` over axes;
+    - bar-kind point-ROW count (one bar row per bar — NEVER ``n_series``,
+      which counts artist GROUPS: a two-arm bar pair lives in ONE
+      ``BarContainer`` and would false-fire);
+    - distinct line ARTISTS (``_line_artist_count``);
+    - distinct scatter ARTISTS (distinct ``_group`` among scatter rows) — NO
+      single-artist fallback, unlike lines: one scatter artist can encode >=2
+      arms via per-point colors the extractor cannot see, so a lone unlabeled
+      scatter is never a demonstrable contradiction (it yields NO basis and
+      the claim is skipped);
+    - total distinct ``_group`` across ALL rows (leniency-only: a mixed
+      line+scatter two-artist figure satisfies "both arms" across kinds).
+      A 1-value group set (exactly one artist contributed rows — a rowless
+      sibling in a multi-artist figure) is treated as ABSENT group evidence
+      (``_both_claim_bases``), the same skip as the lone unlabeled scatter.
+
+    WARN only when >=1 basis is available AND every available basis reads
+    <=1. Class B ("one bar per X") ⇒ claimed >=2 elements of the mapped kind;
+    basis per kind: bar/scatter → point-row count of that ``_kind``;
+    line/curve → distinct line ARTISTS (vertex rows are unsound). Requires a
+    points payload (no payload → skip); WARN when the basis reads <=1 (kind
+    absent entirely, or a single aggregate element where the prose claims
+    per-unit multiplicity — the #1092 "one bar per re-fit item" degenerate
+    class). TRUNCATED sidecars (``data_truncated`` / legacy ``truncated``)
+    carry NO points-derived basis: ``_build_sidecar_data`` truncates the
+    concatenated rows HEAD-FIRST, so a first artist with >= the
+    ``_MAX_SIDECAR_ROWS`` cap drops every LATER artist/kind from the stored
+    payload — stored-row counts are not figure truth there
+    (``_sidecar_kind_row_groups`` returns None, the check-33
+    ``_sidecar_plotted_values`` convention). Class B therefore SKIPS on a
+    truncated sidecar; Class A falls back to the truncation-immune TEXT
+    bases (series / legend labels), skipping when none is available.
+    """
+    warns: list[str] = []
+    rows = _sidecar_kind_row_groups(meta)
+    kinds, kind_groups, all_groups = rows if rows is not None else (Counter(), {}, set())
+
+    if claims["both"]:
+        bases = _both_claim_bases(meta, kinds, kind_groups, all_groups)
+        if bases and max(bases.values()) <= 1:
+            detail = ", ".join(f"{k}={v}" for k, v in bases.items())
+            warns.append(
+                f"`{basename}`: beat-1 prose claims `{claims['both'][0]}` but every "
+                f"available sidecar basis renders <=1 element ({detail}) — regenerate "
+                f"the figure or fix the prose; if the claim is genuinely satisfied "
+                f"(e.g. two arms encoded inside one artist), acknowledge in body to ship"
+            )
+
+    if claims["one_per"] and rows is not None:
+        for phrase, kind in claims["one_per"]:
+            if kind == "line":
+                n = _line_artist_count(kinds, kind_groups) or 0
+            else:
+                n = kinds.get(kind, 0)
+            if n <= 1:
+                warns.append(
+                    f"`{basename}`: beat-1 prose claims `{phrase}` but the sidecar "
+                    f"renders {n} `{kind}` element(s) — regenerate the figure or fix "
+                    f"the prose; a legitimate n=1 (e.g. `one bar per source` on a "
+                    f"genuinely single-source panel) is acknowledgeable in body"
+                )
+    return warns
+
+
+def _beat_claims_for_one_figure(
+    repo: Path, m: re.Match, rlines: list[str], img_idx: int, json_cache: dict
+) -> tuple[list[str], bool]:
+    """Process ONE same-repo figure for check 34 (the check-26/33 per-figure
+    shape). Returns ``(warn_msgs, scanned)`` — ``scanned`` True only when a
+    text-bearing sidecar was actually compared against a registered claim;
+    mutates ``json_cache`` (per-URL parsed-sidecar cache) in place.
+    """
+    window = _beat1_prose_window(rlines, img_idx)
+    if window is None:
+        return [], False  # no per-result H3 above — no scoped window
+    claims = _beat_series_claims(window)
+    if not claims["both"] and not claims["one_per"]:
+        return [], False  # no registered claim → nothing to check (never over-fire)
+    url = m.group(0)
+    if url not in json_cache:
+        json_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
+    meta = json_cache[url]
+    if meta is None:
+        return [], False  # no sidecar at that sha — check-24 fail-soft convention
+    if not isinstance(meta.get("text"), dict):
+        # THE forward-only gate: absence of `text` is the expected state of
+        # every sidecar written before the `savefig_paper` rendered-text
+        # capture landed — silent skip, never a loud FAIL (check 26's loud
+        # missing-sidecar FAIL exists for a silently-uncommitted sidecar; a
+        # loud branch HERE would retroactively flag every old body).
+        return [], False
+    basename = m.group("path").rsplit("/", 1)[-1]
+    return _beat_claim_warnings(claims, meta, basename), True
+
+
+def check_figure_beat_claims_vs_sidecar_text(body: str) -> CheckResult:
+    """Check 34 (WARN): a figure's beat-1 series-structure claim — "shows
+    both <…> arms/series/conditions/models/lines/curves" or "one
+    bar/point/dot/marker/line/curve per <unit>" — must not contradict the
+    series structure the figure's ``.meta.json`` sidecar demonstrably
+    renders. FORWARD-ONLY: fires ONLY when the sidecar carries the
+    ``meta["text"]`` rendered-text block (written by the current
+    ``savefig_paper``); every pre-capture sidecar silently skips, so no
+    existing body can retroactively WARN.
+
+    The prose window is check 33's narrow previous-figure-bounded beat-1
+    slice (``_beat1_prose_window`` — no cross-figure bleed, the #778
+    false-WARN class). Both claim classes fire CONTRADICTION-ONLY: Class A
+    ("both … arms") WARNs only when >=1 evidence basis is available AND every
+    available basis reads <=1 (series labels / legend entries / bar rows /
+    line artists / scatter artists / total artist groups — see
+    ``_beat_claim_warnings``; a figure with no basis at all, e.g. an
+    unlabeled single-artist scatter with no points payload signal, SKIPS —
+    absence of evidence is never a contradiction). Class B ("one bar per X")
+    requires a points payload and WARNs when the mapped kind renders <=1
+    element. Deliberately NOT built (FP containment; may be added later
+    behind the same forward-only gate): numeric-count claims ("three bars"),
+    panel-count claims (the sidecar has no panel signal — see check 26),
+    unit-NAME matching against series labels, and prose-vs-tick-label
+    comparison.
+
+    False-negative envelope (accepted by design): ``embed_text=False``
+    figures never carry ``text`` and are never checked; ``embed_data=False``
+    AND truncated (``data_truncated``) figures lack every points-derived
+    basis (head-first row truncation can drop entire later artists/kinds
+    from the stored payload), so only their series / legend labels can
+    ground a Class-A read and Class B always skips; paraphrased claims
+    ("each arm", "two models") miss the registered regexes.
+
+    WARN, never FAIL (heuristic text parsing over natural prose — the
+    24/28/33 severity convention; FAIL is reserved for check 26's provable
+    structural contradictions). Silent skip (check-24 convention): missing /
+    unparsable sidecar, no ``text`` block, no ``### `` H3 above the figure,
+    no registered claim phrase in the window, non-same-repo URL. NO-OP PASS
+    offline / ``--body-stdin`` / no figure section / no inline figures.
+    Incident #1092 (clean-result-critic 9a-bis r1): a beat claimed "both
+    input arms" / "one bar per re-fit item" contradicting the plotted
+    series/bar structure and passed every mechanical figure check.
+    """
+    label = "figure beat claims vs sidecar rendered text (series-structure drift)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
+    fig_at: list[tuple[str, int]] = []
+    for idx, line in enumerate(rlines):
+        for im in _IMAGE_RE.finditer(line):
+            url = im.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                fig_at.append((url, idx))
+    if not fig_at:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    warns: list[str] = []
+    scanned = 0
+    json_cache: dict[str, dict | None] = {}
+    for url, img_idx in fig_at:
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        fig_warns, did_scan = _beat_claims_for_one_figure(repo, m, rlines, img_idx, json_cache)
+        warns.extend(fig_warns)
+        if did_scan:
+            scanned += 1
+    if warns:
+        preview = "; ".join(warns[:3]) + (" …" if len(warns) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(warns)} beat-claim contradiction(s) across {scanned} scanned "
+            f"figure(s): {preview}",
+            is_warn=True,
+        )
+    if scanned == 0:
+        return CheckResult(
+            label,
+            True,
+            "no beat-phrase claim with a text-bearing sidecar — nothing to compare",
+        )
+    return CheckResult(
+        label,
+        True,
+        f"{scanned} figure(s): beat-phrase claims consistent with the rendered structure",
+    )
+
+
 # A prose claim that an artifact is NOT available — "not uploaded", "was not
 # uploaded", "not separately uploaded", "cannot be audited", "cannot audit",
 # "unavailable for audit", "not available for audit". The optional
@@ -7005,9 +7823,10 @@ def _hf_probe_keyword(
     ``reduced`` cannot match ``unreduced/``; #942) in any FILE path under the
     prefix. The keyword can be nested at ANY depth (#653: the denial
     linked the tree ROOT while the file lives several levels down), so the
-    scoped recursive listing is followed across Link-header pages OURSELVES
-    under ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S`` caps — a cap hit
-    SKIPs rather than entering the SDK's unbounded backoff.
+    scoped recursive listing consumes ``_hf_tree_pages`` (the shared bounded
+    Link-header pagination under ``_HF_PROBE_MAX_PAGES`` +
+    ``_HF_PROBE_DEADLINE_S`` caps) — a cap hit SKIPs rather than entering the
+    SDK's unbounded backoff.
 
     not_found → SKIP — this call site's INDEPENDENT mapping (the deliberate
     check-23-FAIL-vs-25-SKIP asymmetry: check 25 cannot corroborate OR refute a
@@ -7015,19 +7834,17 @@ def _hf_probe_keyword(
     """
     kw_re = _audit_keyword_path_re(keyword)
     needle = path_prefix.strip("/")
-    url = _hf_tree_url(repo_id, repo_type, sha, needle)
-    params: dict | None = {"recursive": True}  # scoped to the URL's OWN sub-tree
-    headers = _hf_build_headers()
-    started = time.monotonic()
-    pages = 0
-    res = None
-    while True:
-        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
-        if res.status == "not_found":
+    for ev in _hf_tree_pages(repo_id, repo_type, sha, needle):
+        if ev.kind == "not_found":
             return "skip", f"`{repo_id}@{sha[:8]}` (no such revision)"
-        if res.status == "indeterminate":
-            return "skip", f"`{repo_id}@{sha[:8]}` ({res.note})"
-        for e in res.entries:
+        if ev.kind == "indeterminate":
+            return "skip", f"`{repo_id}@{sha[:8]}` ({ev.note})"
+        if ev.kind == "cap":
+            # Hit the page / wall-clock cap before exhausting the sub-tree.
+            return "skip", f"`{repo_id}@{sha[:8]}` (HF tree listing exceeded page/time cap)"
+        if ev.kind == "exhausted":
+            return "fail", ""  # successful, exhausted, no match → denial HOLDS (body PASS)
+        for e in ev.entries:
             path = e.get("path", "")
             if (
                 e.get("type") == "file"
@@ -7035,19 +7852,7 @@ def _hf_probe_keyword(
                 and _hf_under_prefix(path, needle)
             ):
                 return "pass", path  # denial is FALSE → body-level FAIL
-        pages += 1
-        if (
-            res.next_page is None
-            or pages >= _HF_PROBE_MAX_PAGES
-            or time.monotonic() - started > _HF_PROBE_DEADLINE_S
-        ):
-            break
-        # The Link rel="next" URL already carries the params; do not re-send them.
-        url, params = res.next_page, None
-    if res is not None and res.next_page is not None:
-        # Hit the page / wall-clock cap before exhausting the sub-tree.
-        return "skip", f"`{repo_id}@{sha[:8]}` (HF tree listing exceeded page/time cap)"
-    return "fail", ""  # successful, exhausted, no match → denial HOLDS (body PASS)
+    raise AssertionError("unreachable: _hf_tree_pages ended without a terminal event")
 
 
 def _hf_under_prefix(path: str, needle: str) -> bool:
@@ -7252,7 +8057,14 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
 # revision" in a paren AFTER the link (908 = 891 blobs + 17 directory
 # entries per namespace — list_repo_tree ENTRIES counted as files) — a
 # claim shape neither Pattern A nor B could parse; Pattern C + the
-# per-namespace gatherer close that extraction gap (#1088).
+# per-namespace gatherer close that extraction gap (#1088). #1112 then
+# shipped "(7,372 files: …)" immediately after a backtick
+# `raw_completions/` sub-path token in the pinned-bucket footer row —
+# same line as the bucket's /tree/<sha> link, ~132 chars downstream —
+# where the scoped tree at `<bucket>/raw_completions` holds 7,165 files
+# + 207 folders. No pattern reached a count bound to a backtick SUB-PATH
+# of a preceding link; Pattern D + the nearest-preceding-pinned-link
+# binder close that gap (#1143).
 
 # A markdown link whose target is an HF Hub URL. Two-stage extraction: match
 # the link structure first, then scan the TEXT for a count-noun and parse the
@@ -7322,6 +8134,38 @@ _FILES_AT_PINNED_REV_RE = re.compile(
 # trailing slash is the directory signature (a dotted token without it is a
 # FILE claim, check 32's territory).
 _BACKTICK_DIR_RE = re.compile(r"`(?P<ns>[A-Za-z0-9_\-./]{1,120}/)`")
+# Pattern D (#1143, the #1112 footer shape): a backtick DIRECTORY token
+# (trailing slash = the directory signature, same charset as
+# _BACKTICK_DIR_RE plus a leading dot-segment decline — a `./`/`../` sub
+# would join to a nonexistent probe path; a dotted token WITHOUT the slash
+# is check 32's FILE territory) immediately followed by a parenthetical
+# OPENING with the count-noun. The count scopes to <link-prefix>/<sub> at
+# the sha of the nearest preceding pinned /tree link on the same line
+# (binder below). The paren qualifier bound is 200 (Pattern B uses 80; the
+# live #1112 qualifier is ~85 chars). The count-noun lookahead is WIDER
+# than _COUNT_NOUN_RE's per-namespace decline: ANY distributive
+# "per <word>" qualifier declines (e.g. the #460 "(11 files per adapter,
+# 176 files total)" shape — per-adapter semantics, the join would target a
+# nonexistent path); A/B deliberately keep the narrow #833
+# per-namespace-only lookahead — a "per adapter"-style count in A/B
+# position is a PRE-EXISTING hole outside #1143's scope, unchanged by
+# design. Trailing negative lookahead: a paren immediately followed by an
+# HF markdown link is Pattern B's paren-before-link shape — D declines
+# rather than extracting a second, differently-scoped claim.
+_BACKTICK_SUBPATH_COUNT_PAREN_RE = re.compile(
+    r"`(?P<sub>(?!\.\.?/)[A-Za-z0-9_\-./]{1,120}/)`"
+    r"[ \t]{0,2}"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"(?!\s+(?:listed\s+)?per\s+\w+\b)"
+    r"[^()]{0,200}\)"
+    r"(?!\s{0,2}[:\u2013\u2014-]?\s{0,2}\[[^\]]{1,300}\]\(https?://huggingface\.co)",
+    re.IGNORECASE,
+)
+# Max chars between the binding link's closing ")" and the Pattern-D
+# claim's backtick token. The live #1112 gap measures ~132 chars
+# ("— `mixes/` (…), `selection/` (…), "); 400 gives ~3x margin while
+# bounding runaway binding on pathological single-line bodies.
+_SUBPATH_CLAIM_MAX_GAP = 400
 # Per-body cap on UNIQUE (repo, sha, prefix) count probes. Worst-case wall
 # arithmetic (the deadline is checked only AFTER each page fetch): one page
 # costs up to _HF_PROBE_ATTEMPTS x _HF_PROBE_TIMEOUT_S + _HF_PROBE_SLEEP_S
@@ -7339,6 +8183,43 @@ _HF_COUNT_MAX_PROBES = 8
 _HF_TREE_FILE_COUNT_CACHE: dict[tuple[str, str, str, str], tuple[int, int]] = {}
 
 
+def _nearest_preceding_pinned_tree_link(
+    stripped: str, pos: int, links: list[re.Match]
+) -> re.Match | None:
+    """Pattern-D binding (#1143): the nearest markdown HF link (from the
+    caller's precomputed ``_MD_HF_LINK_RE`` match list) ending at/before
+    ``pos``, accepted ONLY when the gap between its closing ``)`` and
+    ``pos`` (a) contains no newline (same footer row), (b) contains no
+    ``[`` or ``]`` (no markdown link starts or ends inside the binding
+    run — declines rather than binding PAST an intervening link, and a
+    claim sitting inside another link's TEXT never binds backward), and
+    (c) is <= ``_SUBPATH_CLAIM_MAX_GAP`` chars; and (d) the link parses
+    as a hex-pinned /tree link (``_HF_HUB_TREE_BLOB_URL_RE`` +
+    ``/tree/<sha>`` — same guards as ``_add``). Any failure returns None:
+    the claim stays unextracted (precision over recall; a missed claim
+    costs nothing on a WARN-only check). Nearest-only is deliberate: when
+    the nearest preceding HF link is unpinned/``/blob/``/``/tree/main``
+    the claim is DECLINED, never re-bound to an earlier link — an earlier
+    binding would have the intervening link's ``](`` in the gap anyway,
+    so decline-on-brackets and nearest-only are mutually consistent."""
+    best = None
+    for lm in links:
+        if lm.end() <= pos:
+            best = lm
+        else:
+            break  # finditer order is left-to-right
+    if best is None:
+        return None
+    gap = stripped[best.end() : pos]
+    if "\n" in gap or "[" in gap or "]" in gap or len(gap) > _SUBPATH_CLAIM_MAX_GAP:
+        return None
+    url = best.group("url").rstrip(".,;:!?")
+    m = _HF_HUB_TREE_BLOB_URL_RE.match(url)
+    if m is None or f"/tree/{m.group('sha')}" not in url:
+        return None
+    return best
+
+
 def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, str]]:
     """Extract ``(claimed_count, noun, repo_id, repo_type, sha, path_prefix)``
     tuples for numeric file/shard-count claims ADJACENT to hex-pinned HF
@@ -7347,7 +8228,7 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     shared URL regex only matches 7-40-char hex revisions, mirroring
     check 23).
 
-    Three conservative positions (precision over recall — a missed claim
+    Four conservative positions (precision over recall — a missed claim
     costs nothing, the check is a net-new WARN):
 
     - **Pattern A** — the count-noun sits INSIDE the markdown link TEXT
@@ -7368,23 +8249,45 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
       in ``_COUNT_NOUN_RE`` / ``_COUNT_PAREN_LINK_RE``, stay invisible to
       Patterns A/B (wrong semantics would compare N against the parent's
       total).
+    - **Pattern D (backtick sub-path, #1143)** — a backtick ``dir/`` token
+      immediately followed by a parenthetical OPENING with the count-noun
+      (``... — `raw_completions/` (7,165 files: …)``, the #1112 footer
+      shape), bound via ``_nearest_preceding_pinned_tree_link`` to the
+      nearest preceding hex-pinned ``/tree`` markdown link on the SAME
+      line (bracket-free, ≤``_SUBPATH_CLAIM_MAX_GAP``-char gap); the count
+      scopes to the JOINED prefix ``<link-prefix>/<sub-path>`` at the
+      link's sha — the same join the per-namespace leg uses.
 
     Known recall sacrifices (each avoids a concrete false-positive class):
     prose counts near BARE (non-markdown) HF URLs; counts AFTER the link
     OUTSIDE a link-adjacent paren carrying one of the two anchored phrases
     (generic post-link prose counts stay sacrificed); parentheticals where
     the count is not leading ("(total 515 files)") unless phrase-anchored
-    per Pattern C; compound claims ("8 eval JSONs + 2 npz"); nouns other
+    per Pattern C — mirrored by Pattern D, whose count must OPEN the
+    paren; compound claims ("8 eval JSONs + 2 npz"); nouns other
     than file(s) / shard(s) ("rows" / "completions" are RECORD counts, not
     file counts); per-namespace-qualified counts in A/B positions (see the
-    lookahead note above).
+    lookahead note above). Pattern-D-specific sacrifices: a claim whose
+    nearest preceding HF link is unpinned / ``/blob/`` / ``/tree/main``
+    (declined, never re-bound to an earlier link); a bracketed, multi-line,
+    or >``_SUBPATH_CLAIM_MAX_GAP``-char gap; a backtick token without the
+    trailing slash (check 32's FILE-claim territory); a D-paren
+    immediately followed by an HF markdown link (Pattern B's
+    paren-before-link shape wins — D's trailing lookahead declines); a
+    BARE (non-markdown) pinned HF URL in the gap neither declines nor
+    rebinds — the claim binds past it to the earlier markdown link, a
+    documented recall/precision sacrifice. Lookahead ASYMMETRY (deliberate):
+    Pattern D declines ANY distributive ``per <word>`` qualifier while A/B
+    keep the narrow #833 per-namespace-only lookahead — a "per
+    adapter"-style count in A/B position is a PRE-EXISTING hole outside
+    #1143's scope, left unchanged by design.
     """
     kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
     stripped = _strip_fenced_blocks(body)
     out: list[tuple[int, str, str, str, str, str]] = []
     seen: set[tuple] = set()
 
-    def _add(count_s: str, noun: str, url: str) -> None:
+    def _add(count_s: str, noun: str, url: str, sub_path: str | None = None) -> None:
         url = url.rstrip(".,;:!?")
         m = _HF_HUB_TREE_BLOB_URL_RE.match(url)
         if m is None:
@@ -7393,12 +8296,15 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
             return  # a /blob/ link is a single file — a count claim there is out of scope
         count = int(count_s.replace(",", ""))
         repo_id = f"{m.group('owner')}/{m.group('repo')}"
+        prefix = (m.group("path") or "").rstrip("/")
+        if sub_path is not None:  # Pattern D: scope to <link-prefix>/<sub-path>
+            prefix = "/".join(p for p in (prefix, sub_path.strip("/")) if p)
         key = (
             count,
             noun.lower().rstrip("s"),
             repo_id,
             m.group("sha"),
-            (m.group("path") or "").rstrip("/"),
+            prefix,
         )
         if key in seen:
             return
@@ -7410,11 +8316,12 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
                 repo_id,
                 kind_to_type[m.group("kind")],
                 m.group("sha"),
-                (m.group("path") or "").rstrip("/"),
+                prefix,
             )
         )
 
-    for lm in _MD_HF_LINK_RE.finditer(stripped):  # Pattern A: count in link TEXT
+    link_matches = list(_MD_HF_LINK_RE.finditer(stripped))
+    for lm in link_matches:  # Pattern A: count in link TEXT
         for cm in _COUNT_NOUN_RE.finditer(lm.group("text")):
             _add(cm.group("count"), cm.group("noun"), lm.group("url"))
     for pm in _COUNT_PAREN_LINK_RE.finditer(stripped):  # Pattern B: paren before link
@@ -7422,6 +8329,11 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     for lm in _HF_LINKTEXT_THEN_PAREN_RE.finditer(stripped):  # Pattern C: paren after link
         for cm in _FILES_AT_PINNED_REV_RE.finditer(lm.group("paren")):
             _add(cm.group("count"), "files", lm.group("url"))
+    for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):  # Pattern D (#1143)
+        lm = _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches)
+        if lm is None:
+            continue
+        _add(dm.group("count"), dm.group("noun"), lm.group("url"), sub_path=dm.group("sub"))
     return out
 
 
@@ -7476,9 +8388,9 @@ def _hf_count_files_under_prefix(
     """Bounded scoped-recursive tree listing → ``(status, n_files, n_dirs,
     note)`` (check 30).
 
-    Mirrors ``_hf_probe_keyword``'s loop (#733): direct GETs via
+    Consumes ``_hf_tree_pages`` (#733): direct GETs via
     ``_hf_tree_get`` (real per-request timeout, ≤ ``_HF_PROBE_ATTEMPTS``
-    retries/page), following Link-header pagination OURSELVES under
+    retries/page), following Link-header pagination under
     ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S``. Counts only entries
     with ``"type" == "file"`` under the prefix (``"directory"`` entries
     counted separately for the files+folders diagnostic; an entry whose path
@@ -7488,19 +8400,17 @@ def _hf_count_files_under_prefix(
     error is ``"skip"`` — a partial count must never ground a WARN.
     """
     needle = path_prefix.strip("/")
-    url = _hf_tree_url(repo_id, repo_type, sha, needle)
-    params: dict | None = {"recursive": True}
-    headers = _hf_build_headers()
-    started = time.monotonic()
-    pages = 0
     n_files = n_dirs = 0
-    while True:
-        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
-        if res.status == "not_found":
+    for ev in _hf_tree_pages(repo_id, repo_type, sha, needle):
+        if ev.kind == "not_found":
             return "skip", -1, -1, "no such revision/path"
-        if res.status == "indeterminate":
-            return "skip", -1, -1, res.note
-        for e in res.entries:
+        if ev.kind == "indeterminate":
+            return "skip", -1, -1, ev.note
+        if ev.kind == "cap":
+            return "skip", -1, -1, "HF tree listing exceeded page/time cap"
+        if ev.kind == "exhausted":
+            return "ok", n_files, n_dirs, ""
+        for e in ev.entries:
             path = e.get("path", "")
             if not _hf_under_prefix(path, needle):
                 continue
@@ -7509,13 +8419,7 @@ def _hf_count_files_under_prefix(
                 n_files += 1
             elif etype == "directory" and path != needle:
                 n_dirs += 1
-        pages += 1
-        if res.next_page is None:
-            return "ok", n_files, n_dirs, ""
-        if pages >= _HF_PROBE_MAX_PAGES or time.monotonic() - started > _HF_PROBE_DEADLINE_S:
-            return "skip", -1, -1, "HF tree listing exceeded page/time cap"
-        # The Link rel="next" URL already carries the params; do not re-send them.
-        url, params = res.next_page, None
+    raise AssertionError("unreachable: _hf_tree_pages ended without a terminal event")
 
 
 def _hf_file_count_for_prefix(
@@ -7644,7 +8548,10 @@ def check_hf_file_count_claims(body: str) -> CheckResult:
     515/9/2/197 — folder entries were counted as files. This check compares
     each extracted claim (``_gather_hf_count_claims`` — Pattern A count in
     link text / Pattern B paren-before-link / Pattern C anchored
-    pinned-revision phrase in a paren AFTER the link; see its docstring for
+    pinned-revision phrase in a paren AFTER the link / Pattern D backtick
+    ``dir/`` sub-path + count-opening paren bound to the nearest preceding
+    pinned link and scoped to ``<link-prefix>/<sub-path>`` (#1143, the
+    #1112 footer shape); see its docstring for
     the precision/recall trade-offs) against an EXHAUSTIVE files-only count
     of the pinned prefix (``_hf_file_count_for_prefix`` → the #733 bounded
     raw tree-endpoint probe; folders excluded).
@@ -7832,10 +8739,12 @@ def _hf_basenames_under_prefix(
     """Bounded scoped-recursive tree listing → ``(status, basenames, note)``
     (check 32).
 
-    Mirrors ``_hf_count_files_under_prefix`` (#1008 → #733): direct GETs via
+    Consumes ``_hf_tree_pages`` (#1008 → #733): direct GETs via
     ``_hf_tree_get`` (real per-request timeout, ≤ ``_HF_PROBE_ATTEMPTS``
-    retries/page), following Link-header pagination OURSELVES under
-    ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S``. Collects basenames of
+    retries/page), following Link-header pagination under
+    ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S`` (the safe
+    headers-before-URL ordering the #1016 fix added here now lives inside
+    the shared generator). Collects basenames of
     ALL entries (file AND directory) under the prefix — a directory basename
     match also suppresses the WARN (FP-safe; dotted directory names are
     rare); an entry whose path IS the prefix is the prefix itself, not
@@ -7846,36 +8755,22 @@ def _hf_basenames_under_prefix(
     (the documented check-23-vs-25/30/32 asymmetry, `_TreeProbeResult`).
     """
     needle = path_prefix.strip("/")
-    # Build headers BEFORE the URL: `_hf_build_headers` imports
-    # `huggingface_hub.utils` (which imports `constants` as a side effect),
-    # making `huggingface_hub.constants` attribute-reachable inside
-    # `_hf_tree_url` on a FRESH process — the bare `import huggingface_hub`
-    # there does not expose the lazy `constants` submodule on its own
-    # (check 23's `_hf_probe_existence` uses this same safe ordering).
-    headers = _hf_build_headers()
-    url = _hf_tree_url(repo_id, repo_type, sha, needle)
-    params: dict | None = {"recursive": True}
-    started = time.monotonic()
-    pages = 0
     basenames: set[str] = set()
-    while True:
-        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
-        if res.status == "not_found":
+    for ev in _hf_tree_pages(repo_id, repo_type, sha, needle):
+        if ev.kind == "not_found":
             return "skip", frozenset(), "no such revision/path"
-        if res.status == "indeterminate":
-            return "skip", frozenset(), res.note
-        for e in res.entries:
+        if ev.kind == "indeterminate":
+            return "skip", frozenset(), ev.note
+        if ev.kind == "cap":
+            return "skip", frozenset(), "HF tree listing exceeded page/time cap"
+        if ev.kind == "exhausted":
+            return "ok", frozenset(basenames), ""
+        for e in ev.entries:
             path = e.get("path", "")
             if not _hf_under_prefix(path, needle) or path == needle:
                 continue
             basenames.add(posixpath.basename(path))
-        pages += 1
-        if res.next_page is None:
-            return "ok", frozenset(basenames), ""
-        if pages >= _HF_PROBE_MAX_PAGES or time.monotonic() - started > _HF_PROBE_DEADLINE_S:
-            return "skip", frozenset(), "HF tree listing exceeded page/time cap"
-        # The Link rel="next" URL already carries the params; do not re-send them.
-        url, params = res.next_page, None
+    raise AssertionError("unreachable: _hf_tree_pages ended without a terminal event")
 
 
 def _hf_basenames_for_prefix(
@@ -8234,17 +9129,19 @@ _SUBSET_DISCLOSURE_RE = re.compile(
 # `audit_clean_results_body_discipline.py` flags as body-discipline
 # anti-patterns. KEPT IN SYNC with that script's `condition_labels` +
 # `cell_tags` PATTERNS entries (verbatim source). The audit EXEMPTS
-# example blocks inside `## Data` only when they are wrapped in a fenced
-# code block (stripped globally) or a `<details>` block
-# (`strip_data_example_blocks`); a verbatim example row placed as a BARE
-# inline GFM table is NOT exempt, so a `C1` / `H2` / `BS_E0` cell trips
+# example blocks inside `## Data` (v3) / `## Methodology` (v4) only when
+# they are wrapped in a fenced code block (stripped globally) or a
+# `<details>` block (`strip_data_example_blocks`); a verbatim example
+# row placed as a BARE inline GFM table is NOT exempt, so a `C1` /
+# `H2` / `BS_E0` cell trips
 # the audit's condition-code scan with a spurious FAIL at /issue Step
 # 9a-bis and no signal telling the author to wrap it. Check 19b (WARN
 # only) fires at authoring time precisely when such a cell exists in an
-# unwrapped `## Data` table, nudging the author to wrap the row in
-# `<details>` or a fenced block BEFORE the confusing downstream audit
-# FAIL. Scoped to a cell that WOULD match the audit (not "any unwrapped
-# table") so a benign composition / row-count summary table never WARNs.
+# unwrapped `## Data` (v3) / `## Methodology` (v4) table, nudging the
+# author to wrap the row in `<details>` or a fenced block BEFORE the
+# confusing downstream audit FAIL. Scoped to a cell that WOULD match the
+# audit (not "any unwrapped table") so a benign composition / row-count
+# summary table never WARNs.
 _DATA_CONDITION_CODE_RE = re.compile(
     # condition_labels: C1/C2, H1/H2/H3, P1/P2/P3 (optional prime)
     r"\b[CcHhP][1-9](?:'|′)?(?:\s*(?:condition|control|completion|coefficient|"  # noqa: RUF001
@@ -8264,8 +9161,9 @@ _SINGLE_COL_DELIM_RE = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*\|?\s*$")
 
 
 def _iter_unwrapped_data_tables(data: str) -> list[str]:
-    """Return the cell text of every GFM table inside `## Data` that is
-    NOT wrapped in a `<details>` block and NOT inside a fenced code block.
+    """Return the cell text of every GFM table inside the given section
+    text (v3 `## Data` / v4 `## Methodology`) that is NOT wrapped in a
+    `<details>` block and NOT inside a fenced code block.
 
     The v3 spec carries verbatim example rows in `## Data` as fenced OR
     `<details>` table blocks; `audit_clean_results_body_discipline.py`
@@ -8325,30 +9223,66 @@ def _iter_unwrapped_data_tables(data: str) -> list[str]:
     return cells
 
 
+def _unwrapped_condition_code_hits(section: str) -> list[str]:
+    """Sorted unique `_DATA_CONDITION_CODE_RE` matches inside the bare
+    (unwrapped) GFM-table cells of `section` — the cells
+    `_iter_unwrapped_data_tables` isolates."""
+    cells = _iter_unwrapped_data_tables(section)
+    return sorted({m.group(0) for c in cells for m in _DATA_CONDITION_CODE_RE.finditer(c)})
+
+
 def check_data_unwrapped_example_table(body: str) -> CheckResult:
-    """Check 19b (v3 only, WARN): a verbatim example row placed in
-    `## Data` as a BARE inline GFM table — not wrapped in `<details>`
-    and not in a fenced code block — that carries a project-internal
-    condition / cell code (`C1`, `H2`, `BS_E0`, `Method A`, …) will trip
-    `audit_clean_results_body_discipline.py`'s condition-code scan with a
-    spurious FAIL at /issue Step 9a-bis (the audit exempts the fenced and
-    `<details>` example forms, but not the bare table). This WARN fires at
-    authoring time so the author wraps the row in `<details>` or a fenced
-    block BEFORE the confusing downstream audit FAIL.
+    """Check 19b (v3 + v4, WARN): a verbatim example row placed in the
+    generation's example-bearing section (`## Data` on v3,
+    `## Methodology` on v4) as a BARE inline GFM table — not wrapped in
+    `<details>` and not in a fenced code block — that carries a
+    project-internal condition / cell code (`C1`, `H2`, `BS_E0`,
+    `Method A`, …) can trip `audit_clean_results_body_discipline.py`'s
+    condition-code scan with a spurious FAIL at /issue Step 9a-bis: the
+    audit exempts the fenced and `<details>` example forms (in v3
+    `## Data` AND v4 `## Methodology`, #1171), but not the bare table —
+    and `cell_tags`-family codes are additionally NOT table-blanked, so
+    they FAIL in ANY bare table. This WARN fires at authoring time so
+    the author wraps the rows (or rewords a plan-internal code in a
+    hyperparameter-table cell) BEFORE the confusing downstream audit
+    FAIL.
 
     WARN only — never FAIL. Scoped to a table cell that WOULD match the
     audit's condition-code patterns (not "any unwrapped table") so a
-    benign composition / row-count summary table does not WARN. PASSes
-    vacuously on v2 / legacy bodies.
+    benign composition / row-count / hyperparameter summary table does
+    not WARN. v4 is checked BEFORE v3 (the sentinel declares the
+    governing spec — the same precedence the audit's section scoping
+    uses). PASSes vacuously on v2 / legacy bodies.
     """
+    if is_v4(body):
+        label = "Methodology unwrapped example table (v4)"
+        meth = section_text(body, "Methodology")
+        if meth is None:
+            return CheckResult(label, True, "## Methodology missing — check 2 will report")
+        hits = _unwrapped_condition_code_hits(meth)
+        if hits:
+            preview = ", ".join(f"`{h}`" for h in hits[:4]) + (" …" if len(hits) > 4 else "")
+            return CheckResult(
+                label,
+                True,
+                f"a bare inline `## Methodology` table carries condition-code cell(s) "
+                f"({preview}) — wrap the verbatim example rows in a `<details>` block or "
+                "a fenced code block (or reword a plan-internal code in a "
+                "hyperparameter-table cell — the required Training table stays bare), "
+                "else the body-discipline audit (Step 9a-bis) can FAIL on them as "
+                "project-internal condition codes",
+                is_warn=True,
+            )
+        return CheckResult(
+            label, True, "no unwrapped `## Methodology` example table with condition codes"
+        )
     label = "Data unwrapped example table (v3)"
     if not is_v3(body):
         return CheckResult(label, True, "skipped — not a v3 body")
     data = section_text(body, "Data")
     if data is None:
         return CheckResult(label, True, "## Data missing — check 2 will report")
-    cells = _iter_unwrapped_data_tables(data)
-    hits = sorted({m.group(0) for c in cells for m in _DATA_CONDITION_CODE_RE.finditer(c)})
+    hits = _unwrapped_condition_code_hits(data)
     if hits:
         preview = ", ".join(f"`{h}`" for h in hits[:4]) + (" …" if len(hits) > 4 else "")
         return CheckResult(
@@ -9598,10 +10532,10 @@ CHECKS = [
     check_mdx_safe_urls,
     check_repro_committed_claims_exist,
     check_repro_artifact_urls_exist,
-    # v3-gated checks (PASS vacuously on non-v3 bodies):
+    # v3-gated checks (PASS vacuously on non-v3 bodies; check 19b also runs on v4):
     check_data_shape,  # check 18 (v3)
     check_data_subset_disclosure,  # check 19 (v3)
-    check_data_unwrapped_example_table,  # check 19b (v3, WARN)
+    check_data_unwrapped_example_table,  # check 19b (v3 ## Data + v4 ## Methodology, WARN)
     check_v3_word_caps,  # check 20 (v3)
     # v4-gated checks (PASS vacuously on non-v4 bodies). Check 20 (v4)
     # `check_v4_word_caps` is NOT here — it needs the issue number for the
@@ -9622,6 +10556,9 @@ CHECKS = [
     check_hf_adjacent_file_claims,  # check 32 (WARN) — adjacent file claims are tree members (#952)
     # check 33 (WARN) — bolded what-is-plotted decimals vs sidecar plotted values (#1107, #825 r1):
     check_figure_prose_numerics_vs_sidecar,
+    # check 34 (WARN, forward-only) — beat-phrase series-structure claims vs the sidecar's
+    # rendered-text block (fires only when meta["text"] is present; #1255, #1092 defect (b)):
+    check_figure_beat_claims_vs_sidecar_text,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
@@ -9790,6 +10727,15 @@ def verify_text(
     # PASS when the issue is unknown or no eval data is reachable.
     results.append(
         check_judge_error_denominator(
+            body, issue=issue, eval_root=eval_root, body_source_path=body_source_path
+        )
+    )
+    # Check 35 (#1256): cross-issue reuse pins in committed result-JSON
+    # metadata must be declared in the body (footer Reused bullets). Needs
+    # the issue number + eval-root resolution, so it lives outside CHECKS
+    # (the #732 check_judge_error_denominator precedent).
+    results.append(
+        check_cross_issue_reuse_provenance(
             body, issue=issue, eval_root=eval_root, body_source_path=body_source_path
         )
     )

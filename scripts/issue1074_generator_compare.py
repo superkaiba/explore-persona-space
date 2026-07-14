@@ -2164,23 +2164,57 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     return args
 
 
-def _stage_generic_corpus(dest: Path) -> str:
+def _stage_generic_corpus(dest: Path, *, claim_wait_s: float = 600.0) -> str:
     """Local-first -> HF-fetch (reuse fitness (h): resolves on the data repo,
-    consumed at the exact downloaded path, staged in-driver on every lane)."""
+    consumed at the exact downloaded path, staged in-driver on every lane).
+
+    Concurrent-safe + idempotent (#1090 fu3 crash-fix bug 2): N parallel cells
+    previously raced one shared ``hf_hub_download(local_dir=dest.parent)``
+    target — the winner ``os.replace``d it away and latecomers crashed
+    FileNotFoundError (5 hard-failed cells). Now: dest-exists short-circuit
+    FIRST; then an atomic per-dest ``.lock`` claim (O_CREAT|O_EXCL) — the
+    claimant downloads into its OWN unique temp dir and atomically replaces
+    into ``dest``; non-claimants wait for ``dest`` (fail-loud after
+    ``claim_wait_s``; a stale lock from a crashed stager surfaces as that
+    TimeoutError naming the lock path — remove it by hand)."""
     if dest.exists():
         return str(dest)
+    import shutil
+    import tempfile
+
     from huggingface_hub import hf_hub_download
 
     dest.parent.mkdir(parents=True, exist_ok=True)
-    got = hf_hub_download(
-        HF_DATA_REPO,
-        GENERIC_CORPUS_HF_PATH,
-        repo_type="dataset",
-        local_dir=dest.parent,
-    )
-    got_path = Path(got)
-    if got_path.resolve() != dest.resolve():
-        os.replace(got_path, dest)
+    lock = dest.parent / (dest.name + ".lock")
+    try:
+        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        deadline = time.time() + claim_wait_s
+        while time.time() < deadline:
+            if dest.exists():
+                logger.info("[generic-corpus] concurrent stager produced %s — reused", dest)
+                return str(dest)
+            time.sleep(0.2)
+        raise TimeoutError(
+            f"waited {claim_wait_s:.0f}s for a concurrent stager to produce {dest} "
+            f"(claim lock {lock} still present — stale lock from a crashed stager?)"
+        ) from None
+    try:
+        os.close(fd)
+        if not dest.exists():
+            tmp_dir = Path(tempfile.mkdtemp(dir=dest.parent, prefix=".stage_tmp_"))
+            try:
+                got = hf_hub_download(
+                    HF_DATA_REPO,
+                    GENERIC_CORPUS_HF_PATH,
+                    repo_type="dataset",
+                    local_dir=str(tmp_dir),
+                )
+                os.replace(got, dest)  # atomic; same filesystem by construction
+            finally:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+    finally:
+        lock.unlink(missing_ok=True)
     sha = hashlib.sha256(dest.read_bytes()).hexdigest()
     logger.info("[generic-corpus] staged %s (sha256=%s)", dest, sha[:16])
     return str(dest)

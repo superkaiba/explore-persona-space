@@ -437,7 +437,7 @@ def _stable_rng(*parts: object) -> random.Random:
 
 
 def load_prefix_questions(path: Path) -> list[str]:
-    lines = path.read_text().splitlines()
+    lines = path.read_text().split("\n")
     questions = [json.loads(line)["question"] for line in lines if line.strip()]
     if len(questions) < 100:
         raise ValueError(f"prefix question pool too small: {len(questions)} < 100")
@@ -574,7 +574,7 @@ def validate_pool(  # noqa: C901 - one linear pass of plan-named hard asserts; s
     the dispatcher path — it always passes one).
     """
     frozen = parse_frozen_pool(frozen_pool_path, source)
-    rows = [json.loads(line) for line in pool_path.read_text().splitlines() if line.strip()]
+    rows = [json.loads(line) for line in pool_path.read_text().split("\n") if line.strip()]
     if len(rows) != len(frozen):
         raise AssertionError(f"{pool_path}: {len(rows)} rows != frozen {len(frozen)}")
 
@@ -720,7 +720,7 @@ def build_pools_for_source(
             claims = {s.user_msg for s in specs}
             if set(questions) & claims:
                 raise AssertionError("prefix question pool overlaps wrong-claim pool")
-            b_rows = [json.loads(line) for line in b_pool.read_text().splitlines() if line.strip()]
+            b_rows = [json.loads(line) for line in b_pool.read_text().split("\n") if line.strip()]
             completions = {
                 s.row_idx: {"completion": row["completion"][0]["content"], "from": "arm_onpolicy"}
                 for s, row in zip(specs, b_rows, strict=True)
@@ -731,7 +731,7 @@ def build_pools_for_source(
                 c_dir, specs, completions, arm="arm_prefix", source=source, prefixes=prefixes
             )
             # Byte-identity of final-turn completions B <-> C (plan §4 arm C).
-            c_rows = [json.loads(line) for line in c_pool.read_text().splitlines() if line.strip()]
+            c_rows = [json.loads(line) for line in c_pool.read_text().split("\n") if line.strip()]
             for i, (rb, rc) in enumerate(zip(b_rows, c_rows, strict=True)):
                 if rb["completion"] != rc["completion"]:
                     raise AssertionError(f"arm C row {i}: final completion != arm B (byte parity)")

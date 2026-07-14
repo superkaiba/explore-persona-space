@@ -312,7 +312,7 @@ def load_dotenv(env_path: str | None = None):
     # the Xet backend — verified); it is read by the compiled hf_xet crate at
     # UPLOAD time, so it escapes the import freeze. HF_HUB_ENABLE_HF_TRANSFER is
     # the orthogonal LFS-path accelerator (future-proofing). setdefault
-    # preserves an explicit =0 / HF_XET_DISABLE=1 (the #515 xet-CDN workaround).
+    # preserves an explicit =0 / HF_HUB_DISABLE_XET=1 (the #515/#931 xet workaround).
     os.environ.setdefault("HF_XET_HIGH_PERFORMANCE", "1")  # Xet path (primary)
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")  # LFS path (orthogonal)
 
@@ -371,7 +371,7 @@ def setup_worker(gpu_id: int):
     os.environ.setdefault("HF_HOME", _hf_home_default())
     # Fast HF Hub uploads (#745) — local-dev belt-and-suspenders, mirror of
     # load_dotenv (see the note there; shell-level export is the load-bearing
-    # placement). setdefault preserves an explicit =0 / HF_XET_DISABLE=1.
+    # placement). setdefault preserves an explicit =0 / HF_HUB_DISABLE_XET=1.
     os.environ.setdefault("HF_XET_HIGH_PERFORMANCE", "1")  # Xet path (primary)
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")  # LFS path (orthogonal)
 

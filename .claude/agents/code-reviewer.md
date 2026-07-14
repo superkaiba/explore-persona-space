@@ -77,6 +77,15 @@ budgeted IN FORM:
   read — plan, task body, rule/spec files, changed-file context:
   grep-then-slice them; task state via jq.
 - **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
+- **Trigger-dense artifacts** (guard/hook scripts, destructive-command test
+  fixtures, refusal/jailbreak corpora): follow
+  `.claude/rules/trigger-dense-review.md` — findings by file:line / case id
+  (no gated command literals in ANY generated text), post the verdict marker
+  BEFORE any closing text, keep the final RETURN TEXT to verdict + marker
+  pointer + counts ONLY (no findings recap, however abstract — the recap
+  wedges the PARENT; #1152, rule discipline 4), ≤~120-line windowed reads /
+  orchestrator excerpt files, never wholesale-read a >800-line trigger-dense
+  file (#1058).
 
 Other sections name WHAT to read; this one governs HOW. On conflict, this
 section wins on invocation form.
@@ -103,10 +112,10 @@ section wins on invocation form.
 
 ### Step 0: Classify the diff — leaf or trunk?
 
-Before reading the plan, run `git diff --name-only main...HEAD` (or against the relevant base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf). **Sparse/shallow worktree fallback:** if the three-dot form errors with `fatal: main...HEAD: no merge base` (the merge-base commit object is excluded from a sparse/shallow checkout — the project's default per `new_worktree.sh`), probe with `git merge-base --all main HEAD`; on empty/exit-1, fall back to the two-dot `git diff --name-only main..HEAD` (or the round's implementer-commit SHA range). The "no merge base" error is a checkout artifact, never a review finding — never block or FAIL on it (incident #613).
+Before reading the plan, refresh the remote base — `timeout --kill-after=30s 120s git fetch origin main --quiet || true` (bounded; a failed/hung fetch degrades to the last-fetched `origin/main`, never a blocked review; if `origin/main` does not resolve at all — offline clone, no origin remote — fall back to local `main`, the pre-#1289 behavior, and note the fallback in your verdict) — then run `git diff --name-only origin/main...HEAD` (or against the brief's stated base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf). **Sparse/shallow worktree fallback:** if the three-dot form errors with `fatal: origin/main...HEAD: no merge base` (the merge-base commit object is excluded from a sparse/shallow checkout — the project's default per `new_worktree.sh`), probe with `git merge-base --all origin/main HEAD`; on empty/exit-1, fall back to the two-dot `git diff --name-only origin/main..HEAD` (or the round's implementer-commit SHA range). The "no merge base" error is a checkout artifact, never a review finding — never block or FAIL on it (incident #613).
 
 **Size the diff BEFORE reading its body.** Before ANY diff BODY read:
-`git diff main...HEAD | wc -c` (streams; error/0 = over). Over **300 KB**, read the
+`git diff origin/main...HEAD | wc -c` (streams; error/0 = over). Over **300 KB**, read the
 round's own commits, not the whole-branch body — full recipe:
 `.claude/rules/diff-size-budget.md` (two-dot `main..HEAD` BODY ban;
 name-only/stat forms unrestricted). Scope changes, never skip — Step 0.7 holds.
@@ -873,7 +882,7 @@ against the branch ref, never by switching the repo-root branch):
    `git log --oneline main..issue-<N> -- <X>` (zero non-merge commits = the branch never
    touched X) and `git diff --quiet main -- <X>` (byte-parity confirms). If the branch
    never touched X, the finding does not exist in the artifact under review.
-3. **cumulative-main-head-diff** — you computed `main...HEAD` (huge polluted diff of prior
+3. **cumulative-main-head-diff** — you computed `origin/main...HEAD` (huge polluted diff of prior
    rounds' already-reviewed changes + unrelated main churn) instead of the round's own
    commit range. Probe: scope to `git show <round-parent-sha>~1..<round-sha> -- <path>` (or
    `git diff --stat <parent>..HEAD` from the implementer report). If the cited line is
@@ -1197,6 +1206,44 @@ call site against the real signature and never fires this trigger. That
 shape is carried by the deferred implementer-side real-body-test rule and
 the deferred coverage-based lint, not by this check.
 
+### Step 3.9: Degenerate-statistic check (observed-vs-null reads)
+
+**Trigger:** the diff computes ANY observed statistic compared against a null
+band / permutation draws / bootstrap nulls (grep the diff for null vocabulary —
+`perm`, `null`, `shuffle`, `bootstrap` — plus the plan's registered nulls). No
+such comparison in the diff → record `Step 3.9: N/A — no observed-vs-null read`
+in the verdict body and proceed.
+
+**Check:** trace the OBSERVED statistic's construction symbolically — read the
+actual reduction chain wherever it lives, including code outside the diff hunk
+(the observed side's construction may predate the round), never just the
+variable names — and verify it has nonzero structural degrees of freedom under
+the data: its value must be able to vary as the data varies. Canonical
+degenerate shapes, each constant by construction: (a) projecting/summing the
+MEAN (along the centering axis) of mean-centered quantities (≡0); (b)
+correlating a constant vector (undefined); (c) a residual after regressing X on
+itself or its own linear basis (≡0); (d) a paired difference of identical or
+aliased arrays (≡0). Reading-time red flag: an observed value at machine
+epsilon (~1e-12–1e-16) against real-magnitude nulls is the SIGNATURE of
+structural constancy, never a real null result. When the centering/aliasing is
+non-obvious from the diff hunks alone, DEMAND a runtime degeneracy guard in the
+diff (assert the observed magnitude ≫ machine epsilon relative to the null
+scale) rather than relying on the symbolic trace alone.
+
+**Verdict routing:** a structurally-constant observed statistic compared
+against a real-magnitude null → **Critical**, blocker tag `substantive` (never
+stripped by Step 5c-bis — same routing as 3.6/3.8). The null machinery is
+usually fine; the bug is the observed side. Suggest the fix shape (project
+per-row THEN aggregate, or test the un-centered quantity the hypothesis names).
+
+Incident #1092 (2026-07-10): the banked read-4c statistic at
+`scripts/issue1092_fit_grid.py:1387` <!-- lint: historical-ref -->
+(`arr.mean(axis=0) @ rb_flat.T`) projected the row-mean of mean-centered ANOVA
+factor outputs onto r_B — observed ~1e-14 (structurally ≡0 by construction) —
+against sign-flip null draws with p95 0.9–9.2 at all 288 rows; it survived all
+16 code-review rounds and was caught only at interpretation-critique round 1
+(#1092 epm:interp-critique v1).
+
 ### Step 4: Run / Verify Tests
 
 Run the tests. Don't trust "tests pass" claims — verify.
@@ -1214,8 +1261,9 @@ limitation, NOT a test failure. Try the writable-tempdir fallback FIRST, before
 falling back to reading the tests:
 
 ```bash
-# $WT = the worktree root you are reviewing in (pwd if you're already in it).
-RTMP="$(pwd)/.claude/cache/reviewer-tmp-$$"
+# OUT of the worktree: an in-tree TMPDIR makes git-root-resolving test
+# fixtures resolve the worktree repo and false-FAIL (#853 r2; #802 rglob race).
+RTMP="${XDG_RUNTIME_DIR:-/tmp}/reviewer-tmp-$$"
 mkdir -p "$RTMP"
 TMPDIR="$RTMP" UV_CACHE_DIR="$RTMP/uv" XDG_CACHE_HOME="$RTMP/xdg" \
   uv run pytest tests/relevant_test.py -v
@@ -1312,6 +1360,8 @@ Grep for common vulnerabilities in the diff:
 | Change B | ✓ / ✗ / Partial | ... |
 
 **Grep-the-literal rule (no fabricated checkmarks).** For every row whose plan-required behavior names a concrete literal — a value bump (`R=8` → `R=16`, `K=48`, `max_steps=375`), a flag (`--samples-per-probe 16`, `--probe-source betley`), a dir / file name (`SEQDIV_R16_DIR`, `predictor_seqdiv_R16/`), a constant rename, or any other RF/MF item ("bump X to N", "rename Y to Z", "covariate W added") — you MUST `rg` / grep the worktree (diff + surrounding code) for the LITERAL new value AND, when applicable, the prior value before marking the row ✓. Quote the matched line as `file.py:LINE: <line text>` in the row's Notes column (or in the §7 Plan Adherence bullet) as evidence. If the literal new value is absent from the worktree (or the prior value still dominates the call sites the plan said to change), the row is ✗ or Partial, NEVER ✓ — and that miss is a substantive Plan-Adherence finding (Critical if the field is load-bearing for the experiment's headline; Major otherwise), not a "the implementer says it's done" pass-through. Adherence claims inferred from the plan text, the implementer's report `(a) What was done`, or the implementer's own `(c) How to verify` digest alone are NOT acceptable — the grep against the worktree is the floor. (Incident #467 r1: a fabricated "✓ launcher passes R=16" row PASSed code that did R=8 everywhere — both launchers, all six headline JS cells, the figure label, the helper default. The Codex twin + reconciler caught it; the false PASS would have shipped the R=16 SE claim on an R=8 run.)
+
+**Durability-pin shipping check (plan-named pin tests).** When the approved plan carries a non-N/A `Durability pin: tests/test_<file>.py[::test_<name>]` line (planner.md § "Workflow-prose durability pin"; `verify_plan.py` c31 verifies only that the plan NAMES a pin — whether it SHIPS is yours, per c31's own scope note) (grep the plan file for `Durability pin:` — the line may live in §10 Reproducibility rather than a plan-item list), treat each named pin test as a Step 6 plan-adherence row. Verify the named test file exists in the worktree and, when the pin names `::test_<name>`, `rg` the worktree for the literal `def test_<name>` — the pin may be a NEW test added in the round's diff OR a STANDING test already in the tree (a standing pin legitimately ships zero diff change; `git diff --name-status origin/main...HEAD -- tests/` tells you which, for the Notes column). Quote the matched line as `tests/test_<file>.py:LINE: <line text>` in the row's Notes (the grep-the-literal evidence convention above). For a NEW pin test, also confirm it actually asserts the pinned prose's presence/shape — an import-only test is not a pin (the Step 4.5 "actually exercises" bar). A named pin test present in NEITHER the round's diff NOR the tree is a substantive Plan-Adherence finding (Major, blocker tag `substantive`, never stripped by Step 5c-bis): the plan promised durable protection that never shipped (the #1179 naming-vs-shipping residual; lineage #884/#1045/#1134). A `Durability pin: N/A — <reason>` escape line carries no duty here.
 
 Red flags:
 - **Scope creep:** changes beyond the plan ("while I was there I also fixed...")

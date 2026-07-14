@@ -1,0 +1,27 @@
+{
+  "pass": true,
+  "tolerance": 0.01,
+  "binding": true,
+  "deltas": {
+    "armC_sep.ridge": {
+      "anchor": -1.5914446611808755,
+      "committed": -1.5914446611808755,
+      "abs_delta": 0.0
+    },
+    "armC_sep.rotated": {
+      "anchor": -1.2278079045145343,
+      "committed": -1.2278079045145343,
+      "abs_delta": 0.0
+    },
+    "armC_prevmean.ridge": {
+      "anchor": -2.0759946302756562,
+      "committed": -2.0759946302756562,
+      "abs_delta": 0.0
+    },
+    "armC_prevmean.rotated": {
+      "anchor": -1.148469236697288,
+      "committed": -1.148469236697288,
+      "abs_delta": 0.0
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "cell": "s4_fullft_pos",
+  "step": 6,
+  "rates": {
+    "trained": 0.79,
+    "base": 0.24
+  },
+  "n": 10
+}

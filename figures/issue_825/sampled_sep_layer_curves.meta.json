@@ -1,0 +1,1804 @@
+{
+  "commit": "87c9c73168",
+  "created": "2026-07-08T11:33:33Z",
+  "figsize": [
+    12.8,
+    6.0
+  ],
+  "points": [
+    {
+      "x": 19.0,
+      "y": 0.36821229437453973,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 14.0,
+      "y": 0.28781184860412834,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 18.0,
+      "y": 0.31328966477527587,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 26.0,
+      "y": 0.3110146165316381,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "y": 0.1288591899702347,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "y": 0.15414546854088962,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "y": 0.18629475836517106,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 21.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 22.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 23.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 24.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 25.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 26.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 27.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "y": 0.04703663430783922,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "y": -0.11136565685518329,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 18.0,
+      "y": -0.11555544636750037,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 26.0,
+      "y": 0.06215076159161448,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "y": -0.5454954538378434,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "y": -0.4409167768899793,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "y": -0.26267162895989915,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "y": -0.32015775470021834,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "y": -0.2589057601346274,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "y": -0.21231482747432007,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "y": -0.17372188125171495,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "y": -0.15914649742822284,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "y": -0.053389638761000224,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "y": -0.03635878045608165,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "y": -0.015308359868095645,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "y": -0.008273650413604283,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "y": 0.010003478812695366,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 13.0,
+      "y": 0.02133861315310437,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 14.0,
+      "y": 0.016617832784435183,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 15.0,
+      "y": -0.0006427703281646213,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 16.0,
+      "y": 0.006719917350051174,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 17.0,
+      "y": 0.003639297052409174,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 18.0,
+      "y": 0.0007945954690615764,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 19.0,
+      "y": 0.14742582633426005,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 20.0,
+      "y": 0.13374880123852362,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 21.0,
+      "y": 0.13526518343434724,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 22.0,
+      "y": 0.17579430071012625,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 23.0,
+      "y": 0.19134173365295415,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 24.0,
+      "y": 0.1783282334071663,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 25.0,
+      "y": 0.1537444861740378,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 26.0,
+      "y": 0.16183153796470462,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 27.0,
+      "y": 0.22745418699828435,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 19.0,
+      "y": -0.058161649395368054,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 14.0,
+      "y": -0.20527065665938538,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 18.0,
+      "y": -0.2040315618696067,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 26.0,
+      "y": -0.023949521200057555,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": -0.6659501549668208,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": -0.5347830948007619,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": -0.38138590048887244,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": -0.41357478295896355,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": -0.3609175083044891,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "y": -0.3069084989924189,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "y": -0.27444182690586705,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "y": -0.2630375195977783,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "y": -0.15146672557821783,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "y": -0.10933206065267642,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "y": -0.09623848509929545,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 11.0,
+      "y": -0.08578371565257381,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 12.0,
+      "y": -0.07156959347429415,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 13.0,
+      "y": -0.055285221520600336,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 14.0,
+      "y": -0.06528811609156882,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 15.0,
+      "y": -0.07724891378357368,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 16.0,
+      "y": -0.06942998637616316,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 17.0,
+      "y": -0.07621977981452077,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 18.0,
+      "y": -0.07354987037348937,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 19.0,
+      "y": 0.05882356176143444,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 20.0,
+      "y": 0.04819946353124138,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 21.0,
+      "y": 0.050914929223151995,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 22.0,
+      "y": 0.08517687370430727,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 23.0,
+      "y": 0.10340849999167201,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 24.0,
+      "y": 0.09477175049616382,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 25.0,
+      "y": 0.07197927325726228,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 26.0,
+      "y": 0.08357627119623467,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 27.0,
+      "y": 0.1381459393573009,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 19.0,
+      "y": -1.0,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 14.0,
+      "y": -1.0,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 18.0,
+      "y": -1.0,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 26.0,
+      "y": -1.0,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 10.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 11.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 12.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 13.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 14.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 15.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 16.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 17.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 18.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 19.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 20.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 21.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 22.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 23.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 24.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 25.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 26.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 27.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 19.0,
+      "y": 0.3766789856547855,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 14.0,
+      "y": 0.27653738915952975,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 18.0,
+      "y": 0.3410134432985289,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 26.0,
+      "y": 0.28625375613904425,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "y": 0.11648079872805772,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 0.1443377374348187,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": 0.17274606608146248,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "y": 0.15482452603161656,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "y": 0.16527861218741358,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 7.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 9.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 10.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 11.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 12.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 13.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 14.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 15.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 16.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 17.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 18.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 19.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 20.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 21.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 22.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 23.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 24.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 25.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 26.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 27.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 19.0,
+      "y": -0.041381803362200875,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 14.0,
+      "y": -0.17690600883709684,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 18.0,
+      "y": -0.16915429509472002,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 26.0,
+      "y": 0.014629075526893964,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": -0.5193656209669677,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": -0.41119524454661227,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": -0.25152560872578067,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": -0.3179271633466707,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "y": -0.27419372913397133,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "y": -0.2249034794690139,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "y": -0.18730220716666057,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 7.0,
+      "y": -0.1807200981280619,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "y": -0.08483436402474842,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 9.0,
+      "y": -0.08944687557437292,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 10.0,
+      "y": -0.06526716618325157,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 11.0,
+      "y": -0.05099805191656248,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 12.0,
+      "y": -0.03339156328929915,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 13.0,
+      "y": -0.030891693983444046,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 14.0,
+      "y": -0.03754947118859131,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 15.0,
+      "y": -0.05513980117441619,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 16.0,
+      "y": -0.05084331326550928,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 17.0,
+      "y": -0.05591338298543436,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 18.0,
+      "y": -0.04573841853900973,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 19.0,
+      "y": 0.07867341895437296,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 20.0,
+      "y": 0.08136177705901326,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 21.0,
+      "y": 0.08486812670333432,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 22.0,
+      "y": 0.12244438476303787,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 23.0,
+      "y": 0.1440915272536235,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 24.0,
+      "y": 0.13145305927009965,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 25.0,
+      "y": 0.11024979174017069,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 26.0,
+      "y": 0.12220542351458752,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 27.0,
+      "y": 0.19590669920703174,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 19.0,
+      "y": -0.12544615922742652,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 14.0,
+      "y": -0.24820875383365015,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 18.0,
+      "y": -0.24865715136188804,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 26.0,
+      "y": -0.06368277410830236,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": -0.6554253451232963,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.5190651819417023,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": -0.3762489292569966,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "y": -0.41383981801896597,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "y": -0.36398232098087147,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "y": -0.30925225951909785,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.0,
+      "y": -0.28061477773726806,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 7.0,
+      "y": -0.26984448584649967,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 8.0,
+      "y": -0.1633254225702978,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 9.0,
+      "y": -0.1589871650571848,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 10.0,
+      "y": -0.13171905661148742,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 11.0,
+      "y": -0.12011834642955388,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 12.0,
+      "y": -0.09671140933269173,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 13.0,
+      "y": -0.08898249655596535,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 14.0,
+      "y": -0.099316707094105,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 15.0,
+      "y": -0.11503781517003708,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 16.0,
+      "y": -0.11397870586037229,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 17.0,
+      "y": -0.12000387319459516,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 18.0,
+      "y": -0.10621251855490232,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 19.0,
+      "y": 0.0053056141082173935,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 20.0,
+      "y": 0.003660552840862974,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 21.0,
+      "y": 0.01196856864409268,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 22.0,
+      "y": 0.043019057439803166,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 23.0,
+      "y": 0.06611116272425999,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 24.0,
+      "y": 0.05230946677363513,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 25.0,
+      "y": 0.03602461062069695,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 26.0,
+      "y": 0.050668460591937525,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 27.0,
+      "y": 0.11242187000349069,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 19.0,
+      "y": -1.0,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 14.0,
+      "y": -1.0,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 18.0,
+      "y": -1.0,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 26.0,
+      "y": -1.0,
+      "series": "rotated",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 8.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 9.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 10.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 11.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 12.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 13.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 14.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 15.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 16.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 17.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 18.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 19.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 20.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 21.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 22.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 23.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 24.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 25.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 26.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 27.0,
+      "y": -1.0,
+      "series": "ridge obs",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 256
+}

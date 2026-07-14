@@ -54,7 +54,7 @@ Before analyzing, write down — in your scratch context — what the hypothesis
 - <what this changes / next decision>
 ```
 
-**`## Takeaways` is the ROLLING cross-round synthesis** — it ALWAYS reflects the current cross-round belief. On a same-issue follow-up round you REWRITE it to integrate the later round (see Step 6 § Same-issue follow-up re-entry); a `## Takeaways` that describes only round 1 after round 2 landed is a critic FAIL. The H1 title stays the one-sentence claim + confidence tag; retitle it if the headline moved.
+**`## Takeaways` is the ROLLING cross-round synthesis** — it ALWAYS reflects the current cross-round belief. On a same-issue follow-up round you REWRITE it to integrate the later round (see Step 6 § Same-issue follow-up re-entry); a `## Takeaways` that describes only round 1 after round 2 landed is a critic FAIL. The H1 title stays the one-sentence claim + confidence tag; retitle it if the headline moved (on a re-fold, pair the H1 retitle with `task.py set-title <N> "<new H1 text>"` — see § Same-issue follow-up re-entry).
 
 The frontmatter `goal:` field stays in the new body so downstream agents (planner, critic, follow-up-proposer) have the agent-facing canonical Goal as context. The Goal motivation folds into the `## Goal` section's TWO required parts — `**This experiment in context:**` (what THIS experiment tests + how it relates to the other experiments in its line; the ONLY place prior-issue links appear) and `**Broader narrative:**` (the project-level / `docs/open_questions.md` question it serves) — both rewritten in plain English, not pasted verbatim. If the result substantively diverged from the Goal, that's a signal the experiment didn't answer the question it set out to answer — surface it in the relevant result's interpretation prose rather than papering over it.
 
@@ -303,7 +303,7 @@ deliberate — see plan §2.
 
 ```bash
 # launch — sentinel records the exit code regardless of where the harness runs the job
-nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 bash -c 'uv run python scripts/<analysis>.py ...; echo "RC=$? DONE" > /tmp/issue-<N>-<job>.sentinel' >/tmp/issue-<N>-<job>.log 2>&1 &
+setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 bash -c 'uv run python scripts/<analysis>.py ...; echo "RC=$? DONE" > /tmp/issue-<N>-<job>.sentinel' < /dev/null >/tmp/issue-<N>-<job>.log 2>&1 &
 # then, as a SEPARATE run_in_background=true Bash call, block on the sentinel (NOT the bg stdout):
 until [ -f /tmp/issue-<N>-<job>.sentinel ]; do sleep 30; done; cat /tmp/issue-<N>-<job>.sentinel
 ```
@@ -685,7 +685,18 @@ after a same-issue follow-up run (SKILL.md Step 9b § Same-issue
 follow-up loop), the body is ALREADY a clean-result. Fold the new round
 in per these rules, then re-run the verifier and call `set-body` WITHOUT
 `--snapshot` (`original-body.md` already preserves the pre-promotion
-original; a second snapshot would overwrite it). The
+original; a second snapshot would overwrite it). If the fold retitled the
+H1 (step 2 below), follow the `set-body` with
+`task.py set-title <N> "<new H1 text>"` — pass the H1 line minus the
+leading `# `, INCLUDING the `(LOW|MODERATE|HIGH confidence)` tag,
+character-exact (the verifier compares whitespace-collapsed with no
+case/Unicode/punctuation folding, and `set_title` also refreshes the
+REGISTRY snapshot the dashboard list view reads). `set_body` deliberately
+preserves frontmatter, so skipping this leaves the frontmatter `title` on
+the OLD headline and `verify_task_body.py::check_h1_matches_frontmatter_title`
+FAILs the body at the very 9a-bis gate that re-runs next (FAIL on v4;
+migrate-on-fold makes every folded body v4). Same set-body-then-set-title
+order as the main promotion sequence above. The
 clean-result-critique gate (9a-bis) then re-runs on the updated body.
 
 1. **Add the new round's result(s)** as additional `### <result>`
@@ -695,7 +706,9 @@ clean-result-critique gate (9a-bis) then re-runs on the updated body.
    after a follow-up round it MUST integrate the later round, not just
    describe round 1. A Takeaways that describes only round 1 after
    round 2 landed is a critic FAIL (Takeaways-quality lens). **Retitle
-   the H1** (claim + confidence tag) if the headline moved.
+   the H1** (claim + confidence tag) if the headline moved — and pair the
+   retitle with the `task.py set-title` call named in the preamble above
+   (an H1 edit + `set-body` alone leaves the frontmatter title stale).
 3. **Note the round in `## Methodology` + add the round's params + footer.**
    Add a per-round note (or a `**Rounds:**` table) under `**Design:**`,
    and a per-round COLUMN to the `**Training:**` hyperparameter table for

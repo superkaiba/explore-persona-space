@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001  # Greek rho in figure text intentional
 """Issue #468 figure: in-context examples (lit) vs natural-language description (NL).
 
 Plots the per-layer Spearman rho between base-model cosine (S_narrow vs S_broad,
@@ -17,9 +18,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_role,
     savefig_paper,
     set_paper_style,

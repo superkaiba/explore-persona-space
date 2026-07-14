@@ -42,23 +42,24 @@ w``), inner PRESS nested-CV λ over ``RIDGE_LAMBDAS`` (no λ leakage), fp64.
 
 from __future__ import annotations
 
+# Shared-VM thread caps (#847): load_dotenv() must bind BEFORE the first
+# numpy/torch import (torch freezes its BLAS/intra-op pools at import time).
+import pathlib
 import sys
 from pathlib import Path
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv(str(pathlib.Path(__file__).resolve().parent.parent / ".env"))
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _SCRIPTS_DIR = _REPO_ROOT / "scripts"
 if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
-# Project dotenv wrapper: .env load + the shared-VM thread caps (#847) — called
-# BEFORE numpy/torch freeze their pools. Library-style module: a second call
-# from an already-fixed importer is idempotent (override=False, setdefaults).
-from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
-
-load_dotenv()
-
-import numpy as np  # noqa: E402
-import torch  # noqa: E402
 from issue658_fit_predictors import RIDGE_LAMBDAS  # noqa: E402
 
 # ── permutation matrix ────────────────────────────────────────────────────────

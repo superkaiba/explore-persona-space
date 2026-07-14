@@ -1,0 +1,1593 @@
+{
+ "commit": "9c2c2fd9b8",
+ "created": "2026-07-08T11:57:08Z",
+ "figsize": [
+  6.4,
+  4.0
+ ],
+ "points": [
+  {
+   "decoder layer": 0.0,
+   "cos(mean shift, behavior read-out)": 0.05304500308585667,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(mean shift, behavior read-out)": -0.07125638648144288,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(mean shift, behavior read-out)": -0.07262421462213504,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(mean shift, behavior read-out)": -0.03718232764613962,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(mean shift, behavior read-out)": 0.008136823824351458,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(mean shift, behavior read-out)": 0.03382868434633767,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(mean shift, behavior read-out)": 0.05115928428309631,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(mean shift, behavior read-out)": 0.0662781378683695,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(mean shift, behavior read-out)": 0.043559256615553876,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(mean shift, behavior read-out)": 0.026641809942872338,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(mean shift, behavior read-out)": 0.03379449427046857,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(mean shift, behavior read-out)": 0.04493357614236514,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(mean shift, behavior read-out)": 0.06109231711112878,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(mean shift, behavior read-out)": 0.06055087840432781,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(mean shift, behavior read-out)": -0.01190546205656936,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(mean shift, behavior read-out)": -0.0007203242711594898,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(mean shift, behavior read-out)": 0.016975267059725452,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(mean shift, behavior read-out)": 0.03561555724784343,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(mean shift, behavior read-out)": 0.038313689207346784,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(mean shift, behavior read-out)": 0.1064878645050924,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(mean shift, behavior read-out)": 0.10328845874447515,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(mean shift, behavior read-out)": 0.07001896439345613,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(mean shift, behavior read-out)": 0.04039409425913056,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(mean shift, behavior read-out)": 0.0648079517661718,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(mean shift, behavior read-out)": 0.03677287878817061,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(mean shift, behavior read-out)": 0.05785508251568243,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(mean shift, behavior read-out)": 0.06633413669348542,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(mean shift, behavior read-out)": 0.060478686270065016,
+   "series": "LoRA + negatives",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(mean shift, behavior read-out)": 0.3244603701905623,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(mean shift, behavior read-out)": 0.21660602039806678,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(mean shift, behavior read-out)": 0.20013878495975435,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(mean shift, behavior read-out)": 0.22736159958134888,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(mean shift, behavior read-out)": 0.27340869026623,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(mean shift, behavior read-out)": 0.30925581609998143,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(mean shift, behavior read-out)": 0.333144714945727,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(mean shift, behavior read-out)": 0.37695394328695614,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(mean shift, behavior read-out)": 0.3348709164275842,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(mean shift, behavior read-out)": 0.28482558103950956,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(mean shift, behavior read-out)": 0.2836932817305756,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(mean shift, behavior read-out)": 0.30227678414651843,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(mean shift, behavior read-out)": 0.3172737316041612,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(mean shift, behavior read-out)": 0.2764718112617824,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(mean shift, behavior read-out)": 0.19507907345604403,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(mean shift, behavior read-out)": 0.21587506987110225,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(mean shift, behavior read-out)": 0.22031106433908293,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(mean shift, behavior read-out)": 0.24655587693842654,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(mean shift, behavior read-out)": 0.27422333350141287,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(mean shift, behavior read-out)": 0.3258273730779425,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(mean shift, behavior read-out)": 0.32302713569105407,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(mean shift, behavior read-out)": 0.3026861299805383,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(mean shift, behavior read-out)": 0.2694474441899733,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(mean shift, behavior read-out)": 0.3020521358834131,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(mean shift, behavior read-out)": 0.2632208211066873,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(mean shift, behavior read-out)": 0.27509140404923865,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(mean shift, behavior read-out)": 0.2465374161973155,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(mean shift, behavior read-out)": 0.17760378392722728,
+   "series": "LoRA positives-only",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(mean shift, behavior read-out)": 0.0850147312576601,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(mean shift, behavior read-out)": -0.015090201426168542,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(mean shift, behavior read-out)": -0.061038626085422626,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(mean shift, behavior read-out)": -0.042856570515596444,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(mean shift, behavior read-out)": -0.0025199460266534398,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(mean shift, behavior read-out)": 0.021582185273251633,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(mean shift, behavior read-out)": 0.017366791889154756,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(mean shift, behavior read-out)": 0.05316626322765975,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(mean shift, behavior read-out)": 0.018155864093216012,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(mean shift, behavior read-out)": -0.007552845538851928,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(mean shift, behavior read-out)": 0.00021259509565196128,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(mean shift, behavior read-out)": 0.01867390297801157,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(mean shift, behavior read-out)": 0.028981344663145694,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(mean shift, behavior read-out)": 0.020918098416170202,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(mean shift, behavior read-out)": -0.04619194423708226,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(mean shift, behavior read-out)": -0.03486413670880773,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(mean shift, behavior read-out)": -0.02118418070175744,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(mean shift, behavior read-out)": 0.003112865069316047,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(mean shift, behavior read-out)": 0.006822149350866593,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(mean shift, behavior read-out)": 0.06452772762041063,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(mean shift, behavior read-out)": 0.046424653716615326,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(mean shift, behavior read-out)": -0.01227870737216312,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(mean shift, behavior read-out)": -0.04424892939982045,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(mean shift, behavior read-out)": -0.03080452342625538,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(mean shift, behavior read-out)": -0.051792528756449484,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(mean shift, behavior read-out)": -0.027602750625397212,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(mean shift, behavior read-out)": 0.013300661429910984,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(mean shift, behavior read-out)": 0.022613524019494225,
+   "series": "Full-FT + negatives",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(mean shift, behavior read-out)": 0.25746895964013394,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(mean shift, behavior read-out)": 0.16973607099915547,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(mean shift, behavior read-out)": 0.1123051529195595,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(mean shift, behavior read-out)": 0.15752258422915194,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(mean shift, behavior read-out)": 0.21606430452174918,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(mean shift, behavior read-out)": 0.23090490127185362,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(mean shift, behavior read-out)": 0.22274695166329017,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(mean shift, behavior read-out)": 0.2745111630584684,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(mean shift, behavior read-out)": 0.22395194505536392,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(mean shift, behavior read-out)": 0.18582104657227394,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(mean shift, behavior read-out)": 0.20343041053476452,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(mean shift, behavior read-out)": 0.21940846714047266,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(mean shift, behavior read-out)": 0.2421562179623012,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(mean shift, behavior read-out)": 0.21730302060334536,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(mean shift, behavior read-out)": 0.1463671569424822,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(mean shift, behavior read-out)": 0.15765330092770996,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(mean shift, behavior read-out)": 0.1648221090504305,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(mean shift, behavior read-out)": 0.19084124522281834,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(mean shift, behavior read-out)": 0.21050185506386576,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(mean shift, behavior read-out)": 0.23667199691170626,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(mean shift, behavior read-out)": 0.22395488107707673,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(mean shift, behavior read-out)": 0.16544119809818805,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(mean shift, behavior read-out)": 0.12791063109947792,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(mean shift, behavior read-out)": 0.1432590252700326,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(mean shift, behavior read-out)": 0.10411997882590474,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(mean shift, behavior read-out)": 0.13512508120101968,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(mean shift, behavior read-out)": 0.15298487711738343,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(mean shift, behavior read-out)": 0.14968121211923013,
+   "series": "Full-FT positives-only",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(mean shift, behavior read-out)": 0.049123024262670525,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(mean shift, behavior read-out)": -0.0014737146940065437,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(mean shift, behavior read-out)": 0.010905148618547453,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(mean shift, behavior read-out)": -0.0319947721306898,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(mean shift, behavior read-out)": -0.022338579635844374,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(mean shift, behavior read-out)": -0.02275337801371073,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(mean shift, behavior read-out)": -0.029257561585653496,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(mean shift, behavior read-out)": -0.0255081581872886,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(mean shift, behavior read-out)": -0.055887144145054614,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(mean shift, behavior read-out)": -0.06956631887817073,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(mean shift, behavior read-out)": -0.07740446896502662,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(mean shift, behavior read-out)": -0.06676598236652004,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(mean shift, behavior read-out)": -0.07152267811154933,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(mean shift, behavior read-out)": -0.06972689554615243,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(mean shift, behavior read-out)": -0.15938403821785024,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(mean shift, behavior read-out)": -0.136022599249336,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(mean shift, behavior read-out)": -0.11513748364204432,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(mean shift, behavior read-out)": -0.11029644390702358,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(mean shift, behavior read-out)": -0.09665248914386801,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(mean shift, behavior read-out)": -0.006276489698884447,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(mean shift, behavior read-out)": 0.01820418399980467,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(mean shift, behavior read-out)": 0.026711853660192776,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(mean shift, behavior read-out)": 0.02241899156707757,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(mean shift, behavior read-out)": 0.06521901014165536,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(mean shift, behavior read-out)": 0.05303957014827382,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(mean shift, behavior read-out)": 0.07886597995330463,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(mean shift, behavior read-out)": 0.08925841631575891,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(mean shift, behavior read-out)": 0.04908573155889249,
+   "series": "Generic control (LoRA)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(mean shift, behavior read-out)": -0.05601866943486062,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(mean shift, behavior read-out)": -0.14296851144824735,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(mean shift, behavior read-out)": -0.1105007255087837,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(mean shift, behavior read-out)": -0.11179245630022759,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(mean shift, behavior read-out)": -0.12026679566963529,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(mean shift, behavior read-out)": -0.10419473164034478,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(mean shift, behavior read-out)": -0.12305810904501349,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(mean shift, behavior read-out)": -0.11323707012695688,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(mean shift, behavior read-out)": -0.12982532912784656,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(mean shift, behavior read-out)": -0.11699508140895645,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(mean shift, behavior read-out)": -0.130037966308599,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(mean shift, behavior read-out)": -0.1190294375302293,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(mean shift, behavior read-out)": -0.12917622042206328,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(mean shift, behavior read-out)": -0.11912811962397174,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(mean shift, behavior read-out)": -0.19403748246472097,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(mean shift, behavior read-out)": -0.16658413401662875,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(mean shift, behavior read-out)": -0.14060656695240806,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(mean shift, behavior read-out)": -0.13739145663877364,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(mean shift, behavior read-out)": -0.1404182739608787,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(mean shift, behavior read-out)": -0.04328238319635495,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(mean shift, behavior read-out)": -0.03543890587993295,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(mean shift, behavior read-out)": -0.04213069208233762,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(mean shift, behavior read-out)": -0.0507890193392774,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(mean shift, behavior read-out)": -0.01740810899221676,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(mean shift, behavior read-out)": -0.02169995754050935,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(mean shift, behavior read-out)": 0.0079139597593083,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(mean shift, behavior read-out)": 0.01810409052978803,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(mean shift, behavior read-out)": 0.011163520798897915,
+   "series": "Generic control (full-FT)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(mean shift, behavior read-out)": -0.020659420383226778,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(mean shift, behavior read-out)": -0.018781109286382946,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(mean shift, behavior read-out)": -0.013591022566775541,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(mean shift, behavior read-out)": -0.03429162950930268,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(mean shift, behavior read-out)": -0.05273377269270531,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(mean shift, behavior read-out)": -0.057154548801753635,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(mean shift, behavior read-out)": -0.05650129274086422,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(mean shift, behavior read-out)": -0.041287815297958635,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(mean shift, behavior read-out)": -0.05245070660360894,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(mean shift, behavior read-out)": -0.047304898004749685,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(mean shift, behavior read-out)": -0.04365309300125532,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(mean shift, behavior read-out)": -0.058510739984192324,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(mean shift, behavior read-out)": -0.04976854539122228,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(mean shift, behavior read-out)": -0.03870021614730598,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(mean shift, behavior read-out)": -0.027664454595786758,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(mean shift, behavior read-out)": -0.04663249436511822,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(mean shift, behavior read-out)": -0.03977858905616784,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(mean shift, behavior read-out)": -0.04112781708749943,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(mean shift, behavior read-out)": -0.049344553138632424,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(mean shift, behavior read-out)": -0.048269569360335475,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(mean shift, behavior read-out)": -0.03940679590735165,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(mean shift, behavior read-out)": -0.03276423858990467,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(mean shift, behavior read-out)": -0.018690988466803313,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(mean shift, behavior read-out)": -0.0194489774770128,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(mean shift, behavior read-out)": -0.007402971429358876,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(mean shift, behavior read-out)": -0.0012515473131827857,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(mean shift, behavior read-out)": 0.01700022626802277,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(mean shift, behavior read-out)": 0.05698475978553505,
+   "series": "Marker LoRA",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "decoder layer": 0.0,
+   "cos(mean shift, behavior read-out)": -0.02791514553324759,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 1.0,
+   "cos(mean shift, behavior read-out)": -0.0219010248889547,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 2.0,
+   "cos(mean shift, behavior read-out)": -0.021326587531746665,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 3.0,
+   "cos(mean shift, behavior read-out)": -0.038221628887227306,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 4.0,
+   "cos(mean shift, behavior read-out)": -0.038357303562573,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 5.0,
+   "cos(mean shift, behavior read-out)": -0.05165238754781121,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 6.0,
+   "cos(mean shift, behavior read-out)": -0.04853635464930075,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 7.0,
+   "cos(mean shift, behavior read-out)": -0.041857880340691205,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 8.0,
+   "cos(mean shift, behavior read-out)": -0.048721467964378116,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 9.0,
+   "cos(mean shift, behavior read-out)": -0.049620922965369164,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 10.0,
+   "cos(mean shift, behavior read-out)": -0.04631725367298728,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 11.0,
+   "cos(mean shift, behavior read-out)": -0.05513650067158333,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 12.0,
+   "cos(mean shift, behavior read-out)": -0.05354954347897576,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 13.0,
+   "cos(mean shift, behavior read-out)": -0.04410899306524592,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 14.0,
+   "cos(mean shift, behavior read-out)": -0.0297659275815128,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 15.0,
+   "cos(mean shift, behavior read-out)": -0.05282105791416078,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 16.0,
+   "cos(mean shift, behavior read-out)": -0.048000043044246064,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 17.0,
+   "cos(mean shift, behavior read-out)": -0.045419474047477836,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 18.0,
+   "cos(mean shift, behavior read-out)": -0.0559356494550178,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 19.0,
+   "cos(mean shift, behavior read-out)": -0.050582780008446245,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 20.0,
+   "cos(mean shift, behavior read-out)": -0.0425813320261945,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 21.0,
+   "cos(mean shift, behavior read-out)": -0.03690861681640787,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 22.0,
+   "cos(mean shift, behavior read-out)": -0.019277453224005772,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 23.0,
+   "cos(mean shift, behavior read-out)": -0.018403870175752644,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 24.0,
+   "cos(mean shift, behavior read-out)": -0.0015027782329377949,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 25.0,
+   "cos(mean shift, behavior read-out)": 0.008384207843473915,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 26.0,
+   "cos(mean shift, behavior read-out)": 0.04549094879993691,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "decoder layer": 27.0,
+   "cos(mean shift, behavior read-out)": 0.09733810632456501,
+   "series": "Marker full-FT",
+   "_kind": "line",
+   "_group": 7
+  }
+ ],
+ "n_series": 8,
+ "total_points": 224,
+ "git_commit": "9c2c2fd9b87044f54cbce7b4bc9a2aff7e398c7d",
+ "ts": "2026-07-08T11:57:07Z",
+ "dv": "cos_mu_to_rb",
+ "cells": [
+  "s1_lora_neg",
+  "s2_lora_pos",
+  "s3_fullft_neg",
+  "s4_fullft_pos",
+  "s5_lora_generic",
+  "s6_fullft_generic",
+  "m1_lora_band8",
+  "m2_fullft_band8"
+ ]
+}

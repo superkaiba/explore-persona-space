@@ -1,0 +1,924 @@
+{
+  "commit": "1b104689cc",
+  "created": "2026-07-10T15:41:20Z",
+  "figsize": [
+    11.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.28,
+      "variance share on dense core": 0.10419466145828905,
+      "error": 0.008842038242836733,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.72,
+      "variance share on dense core": 0.26924238291840513,
+      "error": 0.015395648078262103,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.72,
+      "variance share on dense core": 0.11802503131293586,
+      "error": 0.008890416359299227,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.72,
+      "variance share on dense core": 0.11279998272074873,
+      "error": 0.008939124015157979,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.72,
+      "variance share on dense core": 0.1049940866215131,
+      "error": 0.00887404070842139,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.72,
+      "variance share on dense core": 0.12242947823028082,
+      "error": 0.008794371859554215,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.72,
+      "variance share on dense core": 0.0975732802299531,
+      "error": 0.008786513641285548,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.72,
+      "variance share on dense core": 0.11438659836101168,
+      "error": 0.008796590664034931,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Instruct, own answers",
+      "variance share on dense core": 0.7192391293677722,
+      "error": 0.0013200155032487837,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Pretrained, instruct answers",
+      "variance share on dense core": 0.3672105848854236,
+      "error": 0.005739495709055742,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Pretrained, own answers",
+      "variance share on dense core": 0.6012675803777157,
+      "error": 0.0017456753313241924,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Instruct, pretrained answers",
+      "variance share on dense core": 0.6010873112809318,
+      "error": 0.0017559102491433443,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Instruct, Claude answers",
+      "variance share on dense core": 0.7099924268111524,
+      "error": 0.0016160329495070735,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Pretrained, Claude answers",
+      "variance share on dense core": 0.6686692838599044,
+      "error": 0.002061950932519263,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Instruct, shuffled answers",
+      "variance share on dense core": 0.0800350964587499,
+      "error": 0.004881382554136726,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Pretrained, shuffled answers",
+      "variance share on dense core": 0.05803103793414159,
+      "error": 0.004752283222369841,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.28,
+      "variance share on dense core": 0.17656620917394952,
+      "error": 0.004861947015945223,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.28,
+      "variance share on dense core": 0.3635470321961643,
+      "error": 0.00931677881784393,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.28,
+      "variance share on dense core": 0.2807073883093411,
+      "error": 0.0024613338107833393,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.28,
+      "variance share on dense core": 0.28611270599831645,
+      "error": 0.002389216975766828,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.28,
+      "variance share on dense core": 0.1850134865673268,
+      "error": 0.004807206027372335,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.28,
+      "variance share on dense core": 0.2089012379098235,
+      "error": 0.00429956259505343,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.28,
+      "variance share on dense core": 0.8223916233112989,
+      "error": 0.010292383754058831,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.28,
+      "variance share on dense core": 0.8275823637048466,
+      "error": 0.01056174267903709,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.28,
+      "variance share on dense core": 0.09535262321545232,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.72,
+      "variance share on dense core": 0.25384673484014303,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.7200000000000002,
+      "variance share on dense core": 0.10913461495363663,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.7199999999999998,
+      "variance share on dense core": 0.10386085870559075,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.7199999999999998,
+      "variance share on dense core": 0.09612004591309171,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.72,
+      "variance share on dense core": 0.1136351063707266,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.72,
+      "variance share on dense core": 0.08878676658866755,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.72,
+      "variance share on dense core": 0.10559000769697675,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.28,
+      "variance share on dense core": 0.11303669970112579,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.72,
+      "variance share on dense core": 0.28463803099666724,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.7200000000000002,
+      "variance share on dense core": 0.1269154476722351,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.7199999999999998,
+      "variance share on dense core": 0.12173910673590671,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.7199999999999998,
+      "variance share on dense core": 0.1138681273299345,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.72,
+      "variance share on dense core": 0.13122385008983503,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.72,
+      "variance share on dense core": 0.10635979387123864,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.72,
+      "variance share on dense core": 0.12318318902504662,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "variance share on dense core": 0.7179191138645235,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "variance share on dense core": 0.36147108917636783,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "variance share on dense core": 0.5995219050463915,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "variance share on dense core": 0.5993314010317885,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "variance share on dense core": 0.7083763938616453,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "variance share on dense core": 0.6666073329273852,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "variance share on dense core": 0.07515371390461317,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "variance share on dense core": 0.05327875471177175,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "variance share on dense core": 0.720559144871021,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "variance share on dense core": 0.3729500805944793,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "variance share on dense core": 0.6030132557090399,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "variance share on dense core": 0.6028432215300752,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "variance share on dense core": 0.7116084597606595,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "variance share on dense core": 0.6707312347924237,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "variance share on dense core": 0.08491647901288663,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "variance share on dense core": 0.06278332115651143,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.28,
+      "variance share on dense core": 0.1717042621580043,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.2800000000000002,
+      "variance share on dense core": 0.35423025337832037,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.2800000000000002,
+      "variance share on dense core": 0.27824605449855777,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.2800000000000002,
+      "variance share on dense core": 0.2837234890225496,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.28,
+      "variance share on dense core": 0.18020628053995447,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.28,
+      "variance share on dense core": 0.20460167531477008,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.28,
+      "variance share on dense core": 0.8120992395572401,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.28,
+      "variance share on dense core": 0.8170206210258095,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.28,
+      "variance share on dense core": 0.18142815618989475,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.2800000000000002,
+      "variance share on dense core": 0.37286381101400823,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.2800000000000002,
+      "variance share on dense core": 0.28316872212012445,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.2800000000000002,
+      "variance share on dense core": 0.2885019229740833,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.28,
+      "variance share on dense core": 0.18982069259469914,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.28,
+      "variance share on dense core": 0.21320080050487694,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.28,
+      "variance share on dense core": 0.8326840070653577,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.28,
+      "variance share on dense core": 0.8381441063838837,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.28,
+      "variance share on dense core": 0.10728734313093535,
+      "error": 0.00882184350356012,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.72,
+      "variance share on dense core": 0.30973513450772644,
+      "error": 0.01724919842667777,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.72,
+      "variance share on dense core": 0.13288952406371102,
+      "error": 0.008795920959162845,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.72,
+      "variance share on dense core": 0.12561773124726405,
+      "error": 0.008887141676828136,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 3.72,
+      "variance share on dense core": 0.10230707879049644,
+      "error": 0.008979762120813889,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 4.72,
+      "variance share on dense core": 0.12378677096882414,
+      "error": 0.008867365204405245,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 5.72,
+      "variance share on dense core": 0.11905009742409893,
+      "error": 0.008467880164836725,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 6.72,
+      "variance share on dense core": 0.14282834689118423,
+      "error": 0.00857460601833318,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Instruct, own answers",
+      "variance share on dense core": 0.7895273841101731,
+      "error": 0.0009912657739077346,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Pretrained, instruct answers",
+      "variance share on dense core": 0.3669355687464413,
+      "error": 0.006897137855963964,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Pretrained, own answers",
+      "variance share on dense core": 0.6639123199428382,
+      "error": 0.001558561701905159,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Instruct, pretrained answers",
+      "variance share on dense core": 0.6736938328684142,
+      "error": 0.0015843089325311421,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Instruct, Claude answers",
+      "variance share on dense core": 0.7890609322875086,
+      "error": 0.0012794940092030194,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Pretrained, Claude answers",
+      "variance share on dense core": 0.7483173126126268,
+      "error": 0.0015733821046157725,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Instruct, shuffled answers",
+      "variance share on dense core": 0.07520352287703365,
+      "error": 0.005181162841495168,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Pretrained, shuffled answers",
+      "variance share on dense core": 0.052303009877754346,
+      "error": 0.00492113736061444,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.28,
+      "variance share on dense core": 0.10318527275889146,
+      "error": 0.006629834019039091,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.28,
+      "variance share on dense core": 0.3233292967458317,
+      "error": 0.010487188743686315,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.28,
+      "variance share on dense core": 0.2031981559934507,
+      "error": 0.004303248260154852,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 3.28,
+      "variance share on dense core": 0.20068843588432167,
+      "error": 0.0045400361752289675,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 4.28,
+      "variance share on dense core": 0.10863198892199492,
+      "error": 0.006747282936321861,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 5.28,
+      "variance share on dense core": 0.12789591641854905,
+      "error": 0.0062386633378891596,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 6.28,
+      "variance share on dense core": 0.8057463796988672,
+      "error": 0.009728506484677824,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 7.28,
+      "variance share on dense core": 0.8048686432310614,
+      "error": 0.009942250600046387,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.28,
+      "variance share on dense core": 0.09846549962737523,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.72,
+      "variance share on dense core": 0.29248593608104867,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.7200000000000002,
+      "variance share on dense core": 0.12409360310454817,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.7199999999999998,
+      "variance share on dense core": 0.11673058957043592,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.7199999999999998,
+      "variance share on dense core": 0.09332731666968255,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.72,
+      "variance share on dense core": 0.11491940576441889,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.72,
+      "variance share on dense core": 0.1105822172592622,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.72,
+      "variance share on dense core": 0.13425374087285105,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": -0.28,
+      "variance share on dense core": 0.11610918663449547,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.72,
+      "variance share on dense core": 0.3269843329344042,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.7200000000000002,
+      "variance share on dense core": 0.14168544502287386,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.7199999999999998,
+      "variance share on dense core": 0.1345048729240922,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.7199999999999998,
+      "variance share on dense core": 0.11128684091131033,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.72,
+      "variance share on dense core": 0.13265413617322938,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.72,
+      "variance share on dense core": 0.12751797758893565,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.72,
+      "variance share on dense core": 0.1514029529095174,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "variance share on dense core": 0.7885361183362654,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "variance share on dense core": 0.3600384308904773,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "variance share on dense core": 0.662353758240933,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "variance share on dense core": 0.6721095239358831,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "variance share on dense core": 0.7877814382783056,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "variance share on dense core": 0.746743930508011,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "variance share on dense core": 0.07002236003553848,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 7.0,
+      "variance share on dense core": 0.047381872517139906,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "variance share on dense core": 0.7905186498840808,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "variance share on dense core": 0.37383270660240525,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "variance share on dense core": 0.6654708816447433,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "variance share on dense core": 0.6752781418009454,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "variance share on dense core": 0.7903404262967116,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "variance share on dense core": 0.7498906947172426,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.0,
+      "variance share on dense core": 0.08038468571852882,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "variance share on dense core": 0.057224147238368786,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.28,
+      "variance share on dense core": 0.09655543873985237,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.2800000000000002,
+      "variance share on dense core": 0.3128421080021454,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.2800000000000002,
+      "variance share on dense core": 0.19889490773329585,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.2800000000000002,
+      "variance share on dense core": 0.1961483997090927,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.28,
+      "variance share on dense core": 0.10188470598567306,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.28,
+      "variance share on dense core": 0.1216572530806599,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.28,
+      "variance share on dense core": 0.7960178732141894,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 7.28,
+      "variance share on dense core": 0.794926392631015,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.28,
+      "variance share on dense core": 0.10981510677793055,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.2800000000000002,
+      "variance share on dense core": 0.33381648548951803,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.2800000000000002,
+      "variance share on dense core": 0.20750140425360555,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.2800000000000002,
+      "variance share on dense core": 0.20522847205955064,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.28,
+      "variance share on dense core": 0.11537927185831678,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.28,
+      "variance share on dense core": 0.13413457975643822,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.28,
+      "variance share on dense core": 0.815474886183545,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 7.28,
+      "variance share on dense core": 0.8148108938311078,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 144
+}

@@ -1581,7 +1581,7 @@ markers:
     fields: "Codex job_id, elapsed seconds, terminal phase, fetch_retries=<k> token"
   - kind: "epm:codex-task-failed"
     posted_by: scripts/codex_task.py
-    when: "Codex companion task terminated non-cleanly (phase in {failed, cancelled}), force-cancelled after max-wait cap, force-cancelled by stall detector (phase=running but log untouched > stall_detect_secs), killed by SIGTERM/SIGINT, exceeded probe-error cap, post-spawn probe rejected the job-id, or spawn failed before a job-id was assigned"
+    when: "Codex companion task terminated non-cleanly (phase in {failed, cancelled}), force-cancelled after max-wait cap, force-cancelled by stall detector (phase=running but log untouched > stall_detect_secs), killed by SIGTERM/SIGINT, exceeded probe-error cap, post-spawn probe rejected the job-id, or spawn failed before a job-id was assigned, or short-circuited pre-spawn by the quota-exhausted sentinel (#1126: note carries 'codex-quota-exhausted' + the reset timestamp; exit 9; sentinel .claude/cache/codex-quota-exhausted-until self-expires)"
     fields: "Codex job_id (if assigned), elapsed seconds, terminal phase OR error description (e.g. 'timed out after Ns', 'N consecutive probe failures; last error: ...', 'stall detected: phase=running but log file untouched for Ns')"
   - kind: "epm:clarify"
     posted_by: skill
@@ -1622,7 +1622,7 @@ markers:
   - kind: "epm:plan-verify"
     posted_by: skill (adversarial-planner Phase 1.5.0 orchestrator; VM-side only)
     when: "after each scripts/verify_plan.py run against the newest plans/v{K}.md, before the fact-checker + critic ensemble spawn"
-    fields: "verdict (PASS|FAIL|PASS-with-override), n_fail, n_warn, failed/overridden check ids, plan version checked"
+    fields: "verdict (PASS|FAIL|PASS-with-override), n_fail, n_warn, failed/overridden check ids, plan version checked — verdict/n_fail/n_warn come from the canonical parse one-liner in adversarial-planner SKILL.md Phase 1.5.0, never an improvised d.get('verdict') parse"
   - kind: "epm:plan-approved"
     posted_by: skill (relaying user reply, OR auto in an autonomous session)
     when: "Step 2c"
@@ -3218,19 +3218,19 @@ workflow_fix_on_bug:
     durable_signal: "workflow_fix_target: line in the task body's ## Provenance block"  # survives watcher respawn (primary; task_workflow.is_workflow_fix_session)
     behavior: "A session under EITHER signal logs+notifies candidates it raises; it NEVER auto-files/spawns MORE workflow-fix tasks for its own findings (analogue of AUTO_REVIEW_DISABLED). Escape valve: such a session CAN still emit candidate blocks — they are parked/notified, not silently dropped."
   dedup_key: "(target_file, fingerprint)"        # fp = sha256(normalize(proposed_change)+'||'+normalize(bug_observed))[:12]; task_workflow.wf_fix_fingerprint
-  dedup_predicate: "A candidate is a duplicate iff an OPEN kind:infra task has a workflow-fix: title prefix AND a wf-fix-fp:<fp> tag matching the fingerprint AND a ## Provenance workflow_fix_target line EXACTLY matching target_file AND status NOT in {completed, archived}. Same file + DIFFERENT fingerprint is NOT a duplicate (it files its own task). Impl: task_workflow.is_open_workflow_fix_task; tested in tests/test_workflow_fix_dedup.py."
+  dedup_predicate: "A candidate is a duplicate iff an OPEN kind:infra task has a workflow-fix: or daily-fix: title prefix (task_workflow.WF_FIX_TITLE_PREFIXES; #1180 cross-channel) AND a wf-fix-fp:<fp> tag matching the fingerprint AND a ## Provenance workflow_fix_target line EXACTLY matching target_file AND status NOT in {completed, archived}. Same file + DIFFERENT fingerprint is NOT a duplicate (it files its own task). Impl: task_workflow.is_open_workflow_fix_task; tested in tests/test_workflow_fix_dedup.py."
   dedup_surfaces:
-    primary: "title prefix 'workflow-fix:' (via task.py new --title / set_title) + tag 'wf-fix-fp:<fp>' (via add-tag) — both round-trip through view --json / REGISTRY"
+    primary: "title prefix 'workflow-fix:' or 'daily-fix:' (task_workflow.WF_FIX_TITLE_PREFIXES, one per filing channel; via task.py new --title / set_title) + tag 'wf-fix-fp:<fp>' (via add-tag) — both round-trip through view --json / REGISTRY"
     fallback: "grep the literal 'workflow_fix_target:' line in body.md ## Provenance (written verbatim via --body-file)"
     never: "set_body — strips leading frontmatter except paper/abstract; NEVER route a dedup key through it"
   spawn_command: "uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto"
   orchestrator_actions:
     - "If running under the recursion guard (workflow_fix_target Provenance line OR EPM_WORKFLOW_FIX_SESSION=1): LOG epm:workflow-fix-candidate v1 (note: parked — EPM_WORKFLOW_FIX_SESSION), notify, STOP (do NOT file/spawn)"
-    - "Grep the workflow surface for the pattern; populate target_file (comma-separated list or glob when uniform)"
+    - "Grep the workflow surface for the pattern; populate target_file (comma-separated list or glob when uniform); record the grep cmd + hit count for the body's verified-at-filing: line — BINDING (#1307): per-target hits for each named target_file (a presence claim with a 0-hit named target is a mis-target: re-grep repo-wide + correct target_file first); a nonexistence claim records a repo-wide relocation grep"
     - "Compute fp = task_workflow.wf_fix_fingerprint(proposed_change, bug_observed)"
     - "DEDUP: if task_workflow.is_open_workflow_fix_task(target_file, fp) returns an id, log epm:workflow-fix-candidate v1 (note: deduped against #M), continue — do NOT double-file (a same-file DIFFERENT-fp candidate is NOT a dup, file it)"
     - "Post epm:workflow-fix-candidate v1 to the PARENT task's events.jsonl (or .claude/cache/workflow-fix-events.jsonl if no task) with candidate fields + routing decision inline"
-    - "File the task: task.py new --kind infra --title 'workflow-fix: <proposed_change, <=60 chars>' --body-file <template> --origin-prompt '<verbatim candidate>' (template: rule doc § Body-file template; ## Provenance carries the workflow_fix_target + fingerprint lines verbatim)"
+    - "File the task: task.py new --kind infra --title 'workflow-fix: <proposed_change, <=60 chars>' --body-file <template> --origin-prompt '<verbatim candidate>' (template: rule doc § Body-file template; ## Provenance carries the workflow_fix_target + fingerprint lines verbatim; ## Workflow gap carries the verified-at-filing: grep-evidence line, or n/a — reason)"
     - "Tag the dedup keys: task.py add-tag <N> wf-fix; task.py add-tag <N> wf-fix-fp:<fp>"
     - "Spawn the session: spawn_session.py spawn-issue --issue <N> --auto (architectural changes spawn WITHOUT --auto, OR the plan carries architectural: true so Step 2c parks at plan_pending — § architectural greenlight)"
     - "Post epm:workflow-fix-task-filed v1 on the PARENT task; continue current work without blocking — the child /issue session implements the fix via the full code-change pipeline"

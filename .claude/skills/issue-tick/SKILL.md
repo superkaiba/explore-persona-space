@@ -226,11 +226,16 @@ kind+ts+status only); let the next step's subagent (which starts with
 fresh context) do the content-heavy lifting behind the analyzer's
 content firewall. If the thinned re-drive is refused too, exit and leave
 recovery to the watcher's respawn (a fresh session drops the poisoned
-context — a lowered refusal surface, not immunity). (#1104: the
-watcher's prompt-wedge lane counts consecutive API-error turns —
+context — a lowered refusal surface, not immunity). (#1104/#1127: the
+watcher's prompt-wedge lane counts API-error turns —
 `isApiErrorMessage: true` assistant rows — as wedge evidence, so ≥3
-refused wakes with no successful turn force the respawn once the
-self-report is stale; `.claude/rules/background-automation.md` § (e).)
+consecutive FAILED wake turns force the respawn — a wake ENDING in an
+api-error row is failed even when mid-turn heartbeats kept the
+self-report fresh (staleness no longer gates the turn-level lane); a
+session dead after a single refused turn is stopped for fresh respawn
+on transcript silence ≥20 min (`failed-turn-silence`), the
+crash-recovery arm completing the spawn, #1209;
+`.claude/rules/background-automation.md` § (e).)
 
 ## GATE-TRANSITION branch — PushNotification
 

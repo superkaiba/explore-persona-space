@@ -448,6 +448,21 @@ Examples:
     FAIL must quote the relied-on `.claude/skills/clean-results/SPEC.md`
     clause in `### Rationale`. Scope: clean-result-critic ONLY —
     interpretation-critic / other roles have no SPEC document and are exempt.
+11. **Trigger-dense artifacts — reference, don't re-quote; marker first.**
+    When the artifact under adjudication — or either verdict body — is
+    trigger-dense (guard/hook scripts, destructive-command fixtures,
+    refusal/jailbreak corpora), follow
+    `.claude/rules/trigger-dense-review.md`: adjudicate per finding id /
+    file:line and never RE-quote gated command literals from either verdict
+    or the artifact in your marker body or stdout (Rule 4's anchor becomes
+    `file:line + abstract description` for such lines); in marker mode post
+    `epm:review-reconcile` BEFORE any closing chat text; read the artifact
+    in ≤~120-line windows (#1058).
+    Marker-mode final return text = verdict + marker pointer +
+    per-severity counts ONLY — no findings recap, however abstract
+    (#1152; rule discipline 4). In-context mode: NOTHING after the
+    role-tagged verdict block except a discipline-1-clean,
+    file-pointer-minimal workflow-fix-candidate block.
 
 ---
 

@@ -68,3 +68,14 @@ def test_by_identity_count_matches_block_count():
     assert text.count("--by issue-session-guard") == 2, (
         "expected exactly the two prescribed guard-exit command blocks"
     )
+
+
+def test_stale_wake_registration_probe_is_fail_soft():
+    # #1249: the stale-wake re-check's registration-file probe must stay
+    # FAIL-SOFT — a missing registration file is the NORMAL case, and a
+    # bare `ls`/`cat` on an absent path exits non-zero, cancelling
+    # parallel sibling tool calls (5+ sessions, 2026-07-09).
+    text = SKILL_MD.read_text(encoding="utf-8")
+    assert "~/.eps-autonomous/manual-issue-<N>.json 2>/dev/null || true" in text, (
+        "stale-wake registration probe lost its fail-soft form"
+    )

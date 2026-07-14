@@ -1,0 +1,9 @@
+{
+  "cell": "s2_lora_pos",
+  "step": 10,
+  "rates": {
+    "trained": 0.635,
+    "base": 0.265
+  },
+  "n": 10
+}
