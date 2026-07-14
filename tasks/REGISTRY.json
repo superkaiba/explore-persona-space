@@ -2392,8 +2392,8 @@
     "1307": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1307",
-      "status": "reviewing",
+      "path": "tasks/completed/1307",
+      "status": "completed",
       "title": "daily-fix: bind verified-at-filing greps to cited targets"
     },
     "1308": {
