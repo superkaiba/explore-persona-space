@@ -313,16 +313,26 @@ def _sha256_file(path: Path) -> str:
 
 def _remote_index(prefix: str) -> dict[str, dict]:
     """{basename: {size, sha256}} for a data-repo prefix (scoped list_repo_tree —
-    never a bare full-repo listing on the ~1M-file data repo, #833)."""
+    never a bare full-repo listing on the ~1M-file data repo, #833).
+
+    A MISSING prefix (first run: nothing uploaded yet) is treated as an EMPTY
+    index. list_repo_tree is a LAZY generator, so the 404 fires on ITERATION,
+    not on the call — the whole materialize is inside the try. Only
+    EntryNotFoundError (missing path/entry) is caught; RepositoryNotFoundError
+    (the repo itself is gone) and every other exception PROPAGATE — no blanket
+    try/except."""
     from huggingface_hub import HfApi
+    from huggingface_hub.errors import EntryNotFoundError
 
     out: dict[str, dict] = {}
     try:
-        tree = HfApi().list_repo_tree(
-            C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+        tree = list(
+            HfApi().list_repo_tree(
+                C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+            )
         )
-    except Exception as e:  # prefix may not exist yet (first run)
-        logger.info("[resume] prefix %s not listable yet (%s); assuming empty", prefix, e)
+    except EntryNotFoundError:  # prefix does not exist yet (first run) -> empty index
+        logger.info("[resume] prefix %s not on HF yet (first run); assuming empty index", prefix)
         return out
     for f in tree:
         if getattr(f, "size", None) is None:
@@ -522,9 +532,11 @@ def _smoke(args) -> int:
     The capture forwards are GPU-bound (Qwen-2.5-7B) — per the GPU-bound-phase
     carve-out, the smoke exercises only the CPU-runnable portion: the 3-phase
     disjoint sampling on a SYNTHETIC stream, the manifest write/read roundtrip,
-    the shard-range partition-coverage invariant, and a signature check on the
-    reused N10 capture entrypoints (the ABI the capture path calls). The real
-    generation + capture run only on a GPU shard via the launcher."""
+    the shard-range partition-coverage invariant, a signature check on the
+    reused N10 capture entrypoints (the ABI the capture path calls), and the
+    _remote_index resume-index resilience to a first-run missing HF prefix
+    (monkeypatched, no network). The real generation + capture run only on a
+    GPU shard via the launcher."""
     import inspect
 
     logger.info("[smoke] model-free CPU logic smoke (disjointness + shard-range + signatures)")
@@ -578,9 +590,39 @@ def _smoke(args) -> int:
     assert gen_params[:3] == ["llm", "tok", "prompts"], gen_params
     assert hasattr(N10.P1, "SUMMARIES") and hasattr(N10.P2, "SUMMARIES2"), "summary consts missing"
 
+    # (5) _remote_index resume-index resilience (no network). list_repo_tree is a
+    # LAZY generator, so the fake raises on ITERATION (the real first-run bug):
+    # a MISSING prefix (EntryNotFoundError) -> EMPTY index (shard startup proceeds);
+    # a missing REPO (RepositoryNotFoundError) or any other error PROPAGATES.
+    import huggingface_hub
+    from huggingface_hub.errors import EntryNotFoundError, RepositoryNotFoundError
+
+    def _lazy_raise(exc):
+        def _gen(*_a, **_k):
+            raise exc
+            yield  # unreachable: generator so the raise fires on ITERATION, not on the call
+
+        return _gen
+
+    orig_lrt = huggingface_hub.HfApi.list_repo_tree
+    try:
+        huggingface_hub.HfApi.list_repo_tree = _lazy_raise(EntryNotFoundError("missing prefix"))
+        assert _remote_index("issue779_monitoring/does-not-exist/final_token_capture") == {}, (
+            "EntryNotFoundError (first-run missing prefix) must yield an EMPTY resume index"
+        )
+        huggingface_hub.HfApi.list_repo_tree = _lazy_raise(RepositoryNotFoundError("repo gone"))
+        try:
+            _remote_index("issue779_monitoring/does-not-exist/raw_completions")
+            raise AssertionError("RepositoryNotFoundError must PROPAGATE, not be swallowed")
+        except RepositoryNotFoundError:
+            pass
+    finally:
+        huggingface_hub.HfApi.list_repo_tree = orig_lrt
+
     logger.info(
         "[smoke] PASS: %d disjoint synthetic prompts; shard-range coverage k in {2,4,8}; "
-        "N10 capture signatures match; manifest roundtrip ok",
+        "N10 capture signatures match; manifest roundtrip ok; _remote_index empty-on-missing-"
+        "prefix (EntryNotFoundError) + propagate-on-missing-repo (RepositoryNotFoundError)",
         man["n_new"],
     )
     return 0
