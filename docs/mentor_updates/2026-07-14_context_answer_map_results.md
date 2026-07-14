@@ -28,7 +28,7 @@
     - $v_A$: answer summary — mean activation over the answer span (the recipe that survived the exhaustive 46-summary sweep in [#920](https://eps.superkaiba.com/tasks/920), family-held-out and selection-corrected)
 - Predictor: per-layer GCV Gram ridge (K=5 group-level folds, seed 0), all 28 layers, frozen read layers {14, 18, 19, 26} with headline at 19; 20 selection-symmetric shuffle nulls + 1,000-draw group bootstrap per cell; MLP probe (1 hidden layer, full-dim input, PCA-64 target head) as the nonlinearity check
 - Cross-regime comparison: maps fitted in one regime applied to another, recentered and power-matched, reported as a fraction of the within-regime ceiling; ≥0.5 of ceiling in both directions = "same map" (pre-registered bar)
-- Dashboard (overview of all experiments + example rows): *(dashboard gist landing in the next commit)*
+- Dashboard (overview of all experiments + example rows): https://htmlpreview.github.io/?https://gist.githubusercontent.com/superkaiba/058d29d026937df7114d65bc3b06570e/raw/context_answer_map_dashboard.html
 
 ## Results:
 
@@ -38,7 +38,7 @@ The first question was whether the linear map is created by post-training or inh
 
 **Plot: held-out R² across regimes (linear ridge), context arm vs prefix arm and floors**
 
-*(figure landing in the next commit: map strength across regimes)*
+![map strength across regimes](https://raw.githubusercontent.com/superkaiba/explore-persona-space/024e2a22c7a23c172b792c43ff00678ed4cefcea/figures/summaries/context_answer_map/map_strength_across_regimes.png)
 
 **Takeaways:**
 
@@ -53,7 +53,7 @@ Given both models have the map, we asked what actually changed. Two swap tests: 
 
 **Plot: (existing #825 figure — representation-swap vs map-swap)**
 
-*(figure landing in the next commit: representation-swap vs map-swap)*
+![rep swap vs map swap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4d03165dd8a1773790a1b501b3699c1a6e08e584/figures/issue_825/crossmodel_transfer_r2.png)
 
 **Takeaways:**
 
@@ -79,7 +79,7 @@ The strongest version of the question: is this a general "character conditioning
 
 **Plot: cross-regime transfer as a fraction of within-regime ceiling**
 
-*(figure landing in the next commit: transfer fractions vs the 0.5 same-map bar)*
+![transfer specificity](https://raw.githubusercontent.com/superkaiba/explore-persona-space/024e2a22c7a23c172b792c43ff00678ed4cefcea/figures/summaries/context_answer_map/transfer_specificity.png)
 
 **Takeaways:**
 
