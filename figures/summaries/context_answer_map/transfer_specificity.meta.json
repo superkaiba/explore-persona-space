@@ -1,0 +1,91 @@
+{
+  "commit": "633c5dd793",
+  "created": "2026-07-14T21:39:36Z",
+  "figsize": [
+    8.0,
+    4.2
+  ],
+  "points": [
+    {
+      "cross-regime transfer (fraction of within-regime ceiling)": 0.025,
+      "y": 0.05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cross-regime transfer (fraction of within-regime ceiling)": 0.024,
+      "y": 0.048,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cross-regime transfer (fraction of within-regime ceiling)": 0.0285,
+      "y": 0.057,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cross-regime transfer (fraction of within-regime ceiling)": 0.0545,
+      "y": 0.109,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cross-regime transfer (fraction of within-regime ceiling)": 0.5,
+      "y": 0.0,
+      "series": "same-map bar (0.5, pre-registered)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cross-regime transfer (fraction of within-regime ceiling)": 0.5,
+      "y": 1.0,
+      "series": "same-map bar (0.5, pre-registered)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Cross-regime transfer stays far below the same-map bar",
+        "xlabel": "cross-regime transfer (fraction of within-regime ceiling)",
+        "legend_labels": [
+          "same-map bar (0.5, pre-registered)"
+        ],
+        "annotations": [
+          "fraction of within-regime ceiling; #931 / #825 round 6"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ],
+        "yticklabels": [
+          "chat -> novels",
+          "novels -> chat",
+          "separator-control -> chat (pretrained)",
+          "separator-control -> chat (instruct)"
+        ]
+      }
+    ],
+    "series": [
+      "same-map bar (0.5, pre-registered)"
+    ]
+  },
+  "value_sources": {
+    "chat_to_novels=0.05": 931,
+    "novels_to_chat=0.048": 931,
+    "separator_control_to_chat_pretrained=0.057": 825,
+    "separator_control_to_chat_instruct=0.109": 825,
+    "same_map_reference_line=0.5": "pre-registered"
+  }
+}

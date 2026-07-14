@@ -1,0 +1,247 @@
+{
+  "commit": "633c5dd793",
+  "created": "2026-07-14T21:39:35Z",
+  "figsize": [
+    16.5,
+    5.4
+  ],
+  "points": [
+    {
+      "category": "Single-turn\nchat\ninstruct",
+      "held-out $R^2$ (ridge)": 0.673,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Single-turn\nchat\npretrained",
+      "held-out $R^2$ (ridge)": 0.588,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "held-out $R^2$ (ridge)": 0.799,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.82,
+      "held-out $R^2$ (ridge)": 0.714,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.82,
+      "held-out $R^2$ (ridge)": 0.742,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.82,
+      "held-out $R^2$ (ridge)": 0.493,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Fiction\nnovels\n(author-blk)",
+      "held-out $R^2$ (ridge)": -0.065,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Fiction\nmodel\nstories",
+      "held-out $R^2$ (ridge)": 0.16,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.18,
+      "held-out $R^2$ (ridge)": 0.043,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.18,
+      "held-out $R^2$ (ridge)": 0.051,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.18,
+      "held-out $R^2$ (ridge)": 0.056,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.18,
+      "held-out $R^2$ (ridge)": 0.079,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Shuffled\nfloor\ninstruct",
+      "held-out $R^2$ (ridge)": 0.08,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Shuffled\nfloor\npretrained",
+      "held-out $R^2$ (ridge)": 0.057,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "held-out $R^2$": 0.076,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "held-out $R^2$": -0.078,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "held-out $R^2$": -0.461,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.81,
+      "held-out $R^2$": -0.39,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.19,
+      "held-out $R^2$": 0.557,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.19,
+      "held-out $R^2$": 0.534,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "held-out $R^2$": 0.487,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.19,
+      "held-out $R^2$": 0.499,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 22,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Does the linear map exist?",
+        "ylabel": "held-out $R^2$ (ridge)",
+        "legend_labels": [
+          "context-based map",
+          "prefix-based map",
+          "shuffled floor"
+        ],
+        "annotations": [
+          "held-out $R^2$, ridge; regimes: single-turn chat (#825) | real conversations (#1092) | fiction (#931)"
+        ],
+        "xticklabels": [
+          "Single-turn\nchat\ninstruct",
+          "Single-turn\nchat\npretrained",
+          "Real conv\ninstruct,\nown ans",
+          "Real conv\npretrained,\nown ans",
+          "Real conv\npretrained,\nClaude ans",
+          "Real conv\npretrained,\ninstruct ans",
+          "Shuffled\nfloor\ninstruct",
+          "Shuffled\nfloor\npretrained",
+          "Fiction\nnovels\n(author-blk)",
+          "Fiction\nmodel\nstories"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Two-turn cells: format gates only the LINEAR map",
+        "ylabel": "held-out $R^2$",
+        "legend_labels": [
+          "ridge (linear)",
+          "MLP probe (nonlinear)"
+        ],
+        "annotations": [
+          "#825, n=2000; ridge collapses, MLP recovers"
+        ],
+        "xticklabels": [
+          "instruct\nchat",
+          "instruct\nnaturalistic",
+          "pretrained\nchat",
+          "pretrained\nnaturalistic"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "context-based map",
+      "prefix-based map",
+      "shuffled floor",
+      "ridge (linear)",
+      "MLP probe (nonlinear)"
+    ]
+  },
+  "value_sources": {
+    "panelA_context": {
+      "single_turn_chat_instruct=0.673": 825,
+      "single_turn_chat_pretrained=0.588": 825,
+      "realconv_instruct_own_answers=0.799": 1092,
+      "realconv_pretrained_own_answers=0.714": 1092,
+      "realconv_pretrained_claude_answers=0.742": 1092,
+      "realconv_pretrained_instruct_answers=0.493": 1092,
+      "fiction_novels_author_blocked=-0.065": 931,
+      "fiction_model_stories=0.16": 931
+    },
+    "panelA_prefix": {
+      "realconv_instruct_own_answers=0.043": 1092,
+      "realconv_pretrained_own_answers=0.051": 1092,
+      "realconv_pretrained_claude_answers=0.056": 1092,
+      "realconv_pretrained_instruct_answers=0.079": 1092
+    },
+    "panelA_shuffled_floor": {
+      "instruct=0.08": 1092,
+      "pretrained=0.057": 1092
+    },
+    "panelB_two_turn": {
+      "instruct_chat_ridge=0.076,mlp=0.557": 825,
+      "instruct_naturalistic_ridge=-0.078,mlp=0.534": 825,
+      "pretrained_chat_ridge=-0.461,mlp=0.487": 825,
+      "pretrained_naturalistic_ridge=-0.390,mlp=0.499": 825
+    }
+  }
+}
