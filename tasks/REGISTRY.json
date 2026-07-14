@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1303,
+  "highest_id": 1304,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2367,6 +2367,13 @@
       "path": "tasks/proposed/1303",
       "status": "proposed",
       "title": "daily-fix: asw test hasattr stub loops -> fail-loud"
+    },
+    "1304": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1304",
+      "status": "proposed",
+      "title": "daily-fix: guard backend_poll failure_classifier import"
     },
     "131": {
       "has_clean_result": false,
