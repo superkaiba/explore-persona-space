@@ -118,6 +118,17 @@ def parse_args() -> argparse.Namespace:
             "validation on a GPU-less VM; production runs NEVER pass this."
         ),
     )
+    parser.add_argument(
+        "--validate-spans-only",
+        action="store_true",
+        help=(
+            "OFFLINE full-corpus span validation: render EVERY conversation in "
+            "--format with the real tokenizer (NO model, GPU-free), report the "
+            "zero-width-span drop count + rate, and assert NO kept row trips the "
+            "residual hard span/slot checks. Exits 0. Cheap over the full "
+            "5,000-row track_s.jsonl — the pre-GPU gate the 8-conv smoke misses."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -223,6 +234,59 @@ def _ordered_slots(r: Rendered) -> list[tuple[str, int]]:
 def _ordered_turns(r: Rendered) -> list[tuple[str, tuple[int, int]]]:
     assert r.spans, f"{r.conv_id}: empty spans"
     return sorted(r.spans.items(), key=lambda kv: kv[1][0])
+
+
+def degenerate_content_turns(r: Rendered) -> list[str]:
+    """Required content turns whose span has width < 1 (``s >= e``).
+
+    A very short single-turn row whose whole answer text BPE-merges into the
+    naturalistic ``User: ``/``\\n\\n`` plain-text delimiters collapses to a
+    zero-width ``(anchor, anchor)`` span (see ``_tokenize_segments_offsets``);
+    the profile mean over an empty span is NaN and the downstream
+    ``1 <= s < e`` assert crashes. This is the ONE tolerated drop (#825
+    crash-fix). Genuinely-impossible cases — a slot index beyond the sequence,
+    or a non-zero-width span starting at 0 / out of range — are NOT reported
+    here; they stay hard errors at the ``process_batch`` / ``_turn_nll``
+    asserts (the last-resort guard). Chat renders never hit this (special-token
+    delimiters bracket even a 1-token answer)."""
+    return [name for name, (s, e) in r.spans.items() if s >= e]
+
+
+def partition_rendered(rendered: list[Rendered]) -> tuple[list[Rendered], list[dict]]:
+    """Split rendered rows into (kept, dropped).
+
+    A row is DROPPED iff any content turn has a zero-width span
+    (``degenerate_content_turns``); everything else is kept. Prints one
+    ``[drop] conv_id=<id> reason=zero_width_span:<turns>`` line per drop
+    (conv_id + turn names only — never corpus text). Returns the kept rows and
+    a list of ``{"conv_id", "turns"}`` drop records for the shard sidecar."""
+    kept: list[Rendered] = []
+    drops: list[dict] = []
+    for r in rendered:
+        bad = degenerate_content_turns(r)
+        if bad:
+            drops.append({"conv_id": r.conv_id, "turns": bad})
+            print(f"[drop] conv_id={r.conv_id} reason=zero_width_span:{','.join(bad)}")
+        else:
+            kept.append(r)
+    return kept, drops
+
+
+def assert_residual_span_integrity(kept: list[Rendered]) -> None:
+    """Mirror the ``process_batch`` / ``_turn_nll`` hard span/slot asserts on
+    kept rows (no model needed). Zero-width content spans are already filtered
+    out by ``partition_rendered``, so anything that trips HERE is a
+    genuinely-impossible case (bad slot index, span starting at 0, span out of
+    range) — a hard error, never a tolerated drop. Fail-fast before any GPU
+    forward and the offline validation gate both call this."""
+    for r in kept:
+        true_len = len(r.input_ids)
+        for name, idx in r.slot_idx.items():
+            assert 0 <= idx < true_len, f"{r.conv_id}: slot {name}={idx} beyond len {true_len}"
+        for name, (s, e) in r.spans.items():
+            assert 1 <= s < e <= true_len, (
+                f"{r.conv_id}: span {name}=({s},{e}) invalid for unpadded len {true_len}"
+            )
 
 
 def _finite(t: torch.Tensor, name: str, conv_id: str) -> torch.Tensor:
@@ -477,8 +541,38 @@ def write_shards(
     return paths
 
 
+def _validate_spans_only(args: argparse.Namespace) -> None:
+    """OFFLINE full-corpus span validation (no model). Renders every row in the
+    requested format with the real tokenizer, reports the zero-width-span drop
+    count + rate, and asserts every kept row passes the residual hard span/slot
+    checks. Prints conv_ids + counts only — never corpus text."""
+    from transformers import AutoTokenizer
+
+    if args.tiny_model_dir:
+        tok_src = args.tiny_model_dir
+    else:
+        tok_src = MODEL_INSTRUCT if args.model == "instruct" else MODEL_PRETRAINED
+    tokenizer = AutoTokenizer.from_pretrained(tok_src)
+    convs = _load_conversations(args.conversations)
+    if args.track == "s":
+        convs = [to_single_turn(c) for c in convs]
+    rendered_all = [render_conv(c, tokenizer, args.format) for c in convs]
+    kept, drops = partition_rendered(rendered_all)
+    rate = len(drops) / len(rendered_all) if rendered_all else 0.0
+    # The load-bearing gate: no kept row may trip the consumer's hard asserts.
+    assert_residual_span_integrity(kept)
+    print(
+        f"[validate-spans] format={args.format} track={args.track} "
+        f"tokenizer={tok_src} n={len(rendered_all)} kept={len(kept)} "
+        f"dropped={len(drops)} rate={rate:.4f} residual_hard_assert=PASS"
+    )
+
+
 def main() -> None:
     args = parse_args()
+    if args.validate_spans_only:
+        _validate_spans_only(args)
+        return
     peak_layers = [int(x) for x in str(args.peak_layers).split(",") if x.strip()]
     assert peak_layers, "--peak-layers parsed to an empty list"
     assert all(0 <= p < EXPECTED_LAYERS for p in peak_layers), (
@@ -491,7 +585,23 @@ def main() -> None:
     if args.track == "s":
         convs = [to_single_turn(c) for c in convs]
     model, tokenizer, model_id = load_model(args.model, tiny_model_dir=args.tiny_model_dir)
-    rendered = [render_conv(c, tokenizer, args.format) for c in convs]
+    rendered_all = [render_conv(c, tokenizer, args.format) for c in convs]
+    # Drop degenerate zero-width-span rows (short single-turn answers that
+    # BPE-merge entirely into the naturalistic plain-text delimiters, #825) and
+    # report the rate; the remaining rows must pass the residual hard span/slot
+    # checks (fail-fast before any GPU forward). Chat renders never drop.
+    rendered, drops = partition_rendered(rendered_all)
+    if drops:
+        rate = len(drops) / len(rendered_all)
+        print(
+            f"[drops] {len(drops)} of {len(rendered_all)} rows dropped "
+            f"(zero-width {args.format} spans); rate={rate:.4f}"
+        )
+    assert rendered, (
+        f"all {len(rendered_all)} rendered rows dropped as zero-width — a "
+        f"systematic {args.format} render bug, not a handful of degenerate rows"
+    )
+    assert_residual_span_integrity(rendered)
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
     do_causal = args.assert_causal or args.smoke
     causal_max_diff = causal_check(model, rendered) if do_causal else None
@@ -523,6 +633,13 @@ def main() -> None:
         "args": {k: str(v) for k, v in vars(args).items()},
         "causal_check_max_abs_diff": causal_max_diff,
         "smoke": bool(args.smoke),
+        # Degenerate zero-width-span rows dropped from extraction (#825). Recorded
+        # in EVERY shard sidecar (sidecar_base is spread into each). The contrast
+        # script intersects by conv_id, so dropped naturalistic rows stay paired.
+        "n_rendered_pre_filter": len(rendered_all),
+        "n_dropped_zero_width": len(drops),
+        "dropped_conv_ids": [d["conv_id"] for d in drops],
+        "dropped_turns": {d["conv_id"]: d["turns"] for d in drops},
     }
     # Block-wise extract -> flush: one input-order block == one shard file,
     # written the moment its block completes, so host RAM holds at most ~one

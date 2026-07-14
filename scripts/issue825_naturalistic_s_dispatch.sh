@@ -5,7 +5,10 @@
 # as the naturalistic User:/Assistant: transcript; the single manipulated variable
 # is the Track-S render format (vs the committed chat-template S1/S2 anchors).
 #
-# Production (GCP lane): REPO_ROOT="$WORKLOAD_ROOT" bash scripts/issue825_naturalistic_s_dispatch.sh
+# Production (lane-agnostic): bash scripts/issue825_naturalistic_s_dispatch.sh
+#   REPO_ROOT self-resolves below (no unbound $WORKLOAD_ROOT reference — that
+#   aborted the RunPod failover lane under `set -u`, #825 crash-fix). The GCE
+#   startup script still exports REPO_ROOT=$WORKLOAD_ROOT and it is honored.
 # Smoke (CPU, tiny):     bash scripts/issue825_naturalistic_s_dispatch.sh --smoke \
 #                          [--tiny-model-dir DIR] [--turnstore-dir DIR] [--out-dir DIR]
 #
@@ -14,7 +17,13 @@
 # the results sentinel to /workspace/logs/issue-825-results.json.
 set -euo pipefail
 
-REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"
+# REPO_ROOT resolution robust under `set -u` on BOTH lanes: prefer an explicit
+# REPO_ROOT, then $WORKLOAD_ROOT if the GCE startup exported it, then derive
+# from this script's own location (script lives at $REPO_ROOT/scripts/...). The
+# `:-` defaults make every reference safe even when the var is unset (#825:
+# `REPO_ROOT="$WORKLOAD_ROOT" bash ...` aborted the RunPod lane on an unbound
+# WORKLOAD_ROOT before this script ever ran).
+REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}}"
 cd "$REPO_ROOT" || {
   echo "FATAL: cd $REPO_ROOT failed" >&2
   exit 1
