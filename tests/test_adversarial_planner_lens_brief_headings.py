@@ -11,6 +11,8 @@ composers cite their canonical headings backticked-verbatim, the Claude
 agents carry the STOP-and-re-grep anchor rule, the composers carry the
 no-span compose gate, and every `.claude/agents/*.md` consumer of
 critic-lens-reference.md is pinned or explicitly allowlisted.
+(5) #1302: the mbc inline Alt capsule cites its source heading + carries the
+reference-wins re-sync coupling.
 """
 
 from pathlib import Path
@@ -62,7 +64,10 @@ def test_critic_md_grep_target_is_canonical_never_brief_supplied():
 # test_v2_cited_headings_are_canonical_and_exist_in_lens_reference tautological.
 V2_FILES_TO_HEADINGS = {
     ".claude/agents/statistics-critic.md": ("### Statistics & Measurement lens",),
-    ".claude/agents/methodology-baselines-critic.md": ("### Methodology lens",),
+    ".claude/agents/methodology-baselines-critic.md": (
+        "### Methodology lens",
+        "### Alternative Explanations lens",
+    ),
     ".claude/agents/efficiency-critic.md": ("### Methodology lens",),
     ".claude/agents/codex-statistics-critic.md": ("### Statistics & Measurement lens",),
     ".claude/agents/codex-methodology-baselines-critic.md": (
@@ -96,6 +101,23 @@ def test_v2_codex_composers_carry_no_span_compose_gate():
         text = (REPO_ROOT / rel).read_text(encoding="utf-8")
         assert "No-span compose gate" in text, rel
         assert "STOP and return a BLOCKER" in _norm(text), rel
+
+
+def test_mbc_alt_capsule_is_coupled_to_reference_span():
+    """#1302: the mbc item-2 Alt capsule is an ADAPTED absorption (not a verbatim
+    copy), so the pin is a cross-reference assertion — the capsule cites the
+    canonical heading verbatim (covered by V2_FILES_TO_HEADINGS assertions) AND
+    carries the read-alongside / reference-wins load instruction. Deleting the
+    coupling sentence, or renaming the source heading, fails a test. NOTE: the
+    first needle hardcodes the heading string, so a heading-rename commit must
+    update this test too (loud by design)."""
+    rel = ".claude/agents/methodology-baselines-critic.md"
+    text_norm = _norm((REPO_ROOT / rel).read_text(encoding="utf-8"))
+    assert (
+        _norm("absorbs the fatal-confound screen from `### Alternative Explanations lens`")
+        in text_norm
+    )
+    assert "on divergence the reference wins" in text_norm
 
 
 # Discovery pin — every .claude/agents/*.md consumer of critic-lens-reference.md
