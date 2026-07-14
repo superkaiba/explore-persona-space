@@ -1381,6 +1381,59 @@ def _verdict_lattice_inputs(out: dict, runs: Sequence[Fu4Run]) -> None:
         }
 
 
+def _formatting_judged_reread(
+    cfg: i1090.RunConfig, judge_root: Path, run: Fu4Run, run_root: Path
+) -> dict:
+    """The CONDITIONAL formatting judged re-read (plan §6 dual-DV (i)): judge
+    ALL of the run's Tier-2 completions with the formatting rubric (the
+    structural DV's judged companion — ``_judge_rate`` routes formatting to
+    the structural predicate, so this goes through ``judge_graded`` directly
+    at the fu4 instrument)."""
+    from explore_persona_space.eval.graded_judge import judge_graded
+
+    ctx_file = run_root / "tier2" / f"completions__trained__{run.context_id}.json"
+    payload = json.loads(ctx_file.read_text())
+    behavior = BEHAVIORS[run.behavior]
+    flat = [
+        (f"{run.run_id}-reread-q{i:03d}-c{j}", q, comp)
+        for i, q in enumerate(payload["questions"])
+        for j, comp in enumerate(payload["completions"][i])
+    ]
+    cell_dir = judge_root / "formatting_reread" / run.run_id
+    cell_dir.mkdir(parents=True, exist_ok=True)
+    result = judge_graded(
+        flat,
+        behavior.judge_rubric,
+        n_draws=cfg.tier2_draws,
+        cache_dir=cell_dir,
+        save_raw=cell_dir / "judge_raw.json",
+        judge_model=behavior.judge_model,
+        max_tokens=JUDGE_MAX_TOKENS_FU4,
+    )
+    n_pos = n_scored = n_dropped = 0
+    for iid, _q, _c in flat:
+        score = result.scores.get(iid)
+        if score is None:
+            n_dropped += 1
+            continue
+        n_scored += 1
+        if score > behavior.threshold:
+            n_pos += 1
+    if n_scored == 0:
+        raise ValueError(f"formatting re-read for {run.run_id}: every completion judge-dropped")
+    lo, hi = i1090._wilson(n_pos, n_scored)
+    return {
+        "rate": n_pos / n_scored,
+        "k": n_pos,
+        "n": n_scored,
+        "n_dropped": n_dropped,
+        "n_total_draws": result.n_total_draws,
+        "n_dropped_draws": result.n_dropped_draws,
+        "wilson95": [lo, hi],
+        "mode": "judged_reread",
+    }
+
+
 def _formatting_reread_fires(out: dict, runs: Sequence[Fu4Run]) -> bool:
     """Conditional formatting judged re-read trigger (plan §6): any formatting
     rung's structural install delta >= +0.30 over the reused base rate."""
@@ -1453,10 +1506,19 @@ def cmd_judge_aggregate(cfg: i1090.RunConfig, args: argparse.Namespace) -> int:
     out["formatting_judged_reread_required"] = _formatting_reread_fires(out, runs)
     if out["formatting_judged_reread_required"]:
         logger.warning(
-            "[fu4] formatting structural install delta >= +0.30 — the CONDITIONAL judged "
-            "re-read (plan §6 dual-DV) fires: judge the formatting Tier-2 completions "
-            "(5 draws, 300-token budget) before the clean-result"
+            "[fu4] formatting structural install delta >= +0.30 — running the CONDITIONAL "
+            "judged re-read (plan §6 dual-DV; %d draws, 300-token budget)",
+            cfg.tier2_draws,
         )
+        for run in runs:
+            if run.behavior != "formatting":
+                continue
+            if out["runs"][run.run_id].get("status") != "trained":
+                continue
+            out["runs"][run.run_id]["formatting_judged_reread"] = _formatting_judged_reread(
+                cfg, judge_root, run, _run_root(cfg, run)
+            )
+            i1090._atomic_write_json(out_path, out)  # checkpoint per re-read
     i1090._atomic_write_json(out_path, out)
     logger.info("[fu4] aggregate -> %s (%d runs)", out_path, len(out["runs"]))
     return 0
