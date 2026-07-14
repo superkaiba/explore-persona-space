@@ -2406,8 +2406,8 @@
     "1309": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1309",
-      "status": "proposed",
+      "path": "tasks/planning/1309",
+      "status": "planning",
       "title": "daily-fix: document HTML-escaped bg-notification recipe"
     },
     "131": {
