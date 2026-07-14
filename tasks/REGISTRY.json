@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1309,
+  "highest_id": 1310,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2416,6 +2416,14 @@
       "path": "tasks/archived/131",
       "status": "archived",
       "title": "See if you have a persona prompt with another response from another persona-> does that elicit the marker (do both directions)"
+    },
+    "1310": {
+      "goal": "Test whether a context->dialogue linear map focused on a SINGLE fixed fiction character (persona, NOT the assistant), trained on on-policy generated stories that always refer to the character by the same fixed label, exists in Qwen2.5-7B base and instruct \u2014 the fiction-character analog of the assistant-persona context->answer map \u2014 across a 4-persona panel, each persona its own map.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1310",
+      "status": "proposed",
+      "title": "Focused per-character context->dialogue map on on-policy stories, base vs instruct (4-persona panel)"
     },
     "132": {
       "has_clean_result": false,
