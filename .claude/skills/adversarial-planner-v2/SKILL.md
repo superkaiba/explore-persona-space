@@ -180,7 +180,9 @@ orchestrator bg-runs via `scripts/codex_task.py`:
 Efficiency EARNS its Codex twin here (Thomas's multi-GPU emphasis).
 Consistency-checker + the (implementation-side) plan-adherence lens are
 Claude-only. Pass each subagent the PATH to `plans/vN.md` + `planned_manifest.json`,
-never the bodies (429 pacing).
+never the bodies (429 pacing); each Codex composer reads the plan from the handed
+path at compose time and inlines the verbatim plan text into its composed Codex
+prompt — `{{plan_body}}` is a compose-time substitution, not a brief field.
 
 **Quota-sentinel pre-check first (#1204, CLAUDE.md § Codex ensemble
 review):** when LIVE, the batch is the 3 Claude critics +

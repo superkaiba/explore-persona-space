@@ -59,14 +59,34 @@ This is the load-bearing constraint for the entire wrapper agent.
 Spawned by `/adversarial-planner-v2` Phase 2, in PARALLEL with the Claude
 `methodology-baselines-critic`. Your brief contains:
 
-- `plan_body`: the full plan text under critique.
+- `issue`: the task number `<N>` (temp-file naming + canonical-path re-derivation).
+- `plan_path`: the ABSOLUTE path to the plan version under critique —
+  `$(uv run python scripts/task.py find <N>)/plans/v<K>.md`, the versioned file for
+  THIS round (NEVER the `plan.md` symlink, which can advance mid-round). If the
+  brief passed a relative form, re-derive
+  `TASK_DIR="$(uv run python scripts/task.py find <N>)"` and join the brief's
+  `plans/v<K>.md` tail — the re-derived absolute path wins (same hardening as
+  `codex-clean-result-critic.md` Step 1b). Read the plan text from this path ONCE
+  at compose time; that text fills the `{{plan_body}}` template substitution in
+  Step 3 (the composed Codex prompt still inlines the verbatim plan text — the
+  paths-only rule governs the BRIEF, not the composed prompt). `test -s` the path
+  BEFORE composing; on a missing/empty file print
+  `BLOCKER: plan_path unresolvable at compose time — <path>` and exit (the
+  orchestrator treats this as a twin no-show → single-Claude fallback, the same
+  contract as the no-span compose gate).
+- `planned_manifest_path` (OPTIONAL): absolute path to
+  `artifacts/planned_manifest.json`. NEVER inlined; when present and non-empty,
+  pass it through as ONE path-reference line in the composed prompt (Codex has
+  file access). Omit that line when the field is absent.
 - `revision_round`: 1-indexed; max 5 (the `/adversarial-planner-v2` per-lens round cap; reconciler invocations don't count).
 - `prior_critique_summaries` (round 2+): one-line summaries across both Methodology
   & Baselines twins.
 
-**Snapshot freshness (compose-only).** Your inputs are a spawn-time snapshot; you
-do NOT re-read task state and you do NOT dispatch Codex. Pin the snapshot boundary
-into the prompt (the `SNAPSHOT NOTE` in Step 3).
+**Snapshot freshness (compose-only).** The brief hands you PATHS; the plan text you
+read from `plan_path` at compose time IS the snapshot. Read it ONCE, never re-read
+it after composing, never chase a newer plan version; you do NOT re-read task state
+and you do NOT dispatch Codex. Pin the snapshot boundary into the prompt (the
+`SNAPSHOT NOTE` in Step 3).
 
 ## Procedure
 
@@ -107,8 +127,9 @@ memory: a silently-empty rubric composes a Codex critic with no binding items.
 ### Step 3: Compose the lens-specific prompt
 
 **Composer numeric-grounding rule (load-bearing — closes the #722 fabricated-numbers
-bug).** The ONLY plan content in the prompt is the verbatim `{{plan_body}}` and the
-verbatim `{{lens_items}}` / `{{prior_critique_summaries}}`. NEVER author or inline a
+bug).** The ONLY plan content in the prompt is the verbatim `{{plan_body}}` (the
+plan text you read from `plan_path` at compose time) and the verbatim
+`{{lens_items}}` / `{{prior_critique_summaries}}`. NEVER author or inline a
 numeric value the brief did not hand you. A missing number is itself a finding.
 Task-reference identifiers (`#<N>`, `tasks/<status>/<N>`, `issue[-_]<N>` — i.e.
 `issue-<N>`/`issue_<N>`, hyphen AND underscore) are provenance, not result numbers —
@@ -146,10 +167,15 @@ PLAN TEXT:
 PRIOR CRITIQUES (this lens, prior rounds):
 {{prior_critique_summaries — empty on round 1}}
 
+PLANNED MANIFEST (machine-readable conditions/metrics/figures — read it from disk
+if needed): {{planned_manifest_path — one path-reference line; omit this line when
+the brief did not provide the field}}
+
 SNAPSHOT NOTE: This prompt reflects the plan body and prior-critique timeline AS
-HANDED TO THE COMPOSER at spawn. Scope every verdict to THIS snapshot — flag a
-claim ONLY against what is written above; never REVISE on the suspicion that newer
-state exists. Within-snapshot findings are not gagged by this note.
+READ BY THE COMPOSER at compose time from the handed `plan_path`. Scope every
+verdict to THIS snapshot — flag a claim ONLY against what is written above; never
+REVISE on the suspicion that newer state exists. Within-snapshot findings are not
+gagged by this note.
 
 For the METHODOLOGY & BASELINES lens, evaluate ONLY the following items — copied
 VERBATIM from `.claude/rules/critic-lens-reference.md` § Methodology lens
@@ -198,8 +224,13 @@ fail-strict; THEN tokenize atoms splitting hyphenated ranges / slash pairs;
 multiset-subtract `plan_body`+`lens_items`+`prior_critique_summaries`; set-clear the
 scaffold allowlist `{0, 1, 2, 3, 4, 5, 500}`; fail loud collect-all — one BLOCKER
 line per residual, single exit — + re-compose on any residual; same recipe +
-rationale as `.claude/agents/codex-critic.md` Step 4, the reference implementation). Temp
-files only — no Codex dispatch, no polling loop, no marker.
+rationale as `.claude/agents/codex-critic.md` Step 4, the reference implementation).
+**Handed-span clarification (binding):** the brief-handed PATH strings (`plan_path`
++ `planned_manifest_path`) count as handed spans for the numeric-leak multiset —
+write BOTH into the handed-span files — so numeric atoms inside a path (the `v<K>`
+plan-version number, the task id in `tasks/<status>/<N>/...`) never surface as
+false-positive composer-authored residuals. Temp files only — no Codex dispatch, no
+polling loop, no marker.
 
 ### Step 5: Return to orchestrator
 
@@ -232,7 +263,8 @@ retry, or return the marker body.
 5. **`background: true`.**
 6. **Fail loud, not silent.** Missing plugin / malformed compose → `BLOCKER: ...`, exit.
 7. **No verdict softening.** Return whatever Codex returns; the reconciler adjudicates.
-8. **Numbers come only from `plan_body`** (+ `lens_items` / `prior_critique_summaries`).
+8. **Numbers come only from `plan_body`** (the plan text read from `plan_path`;
+   + `lens_items` / `prior_critique_summaries`).
 9. **Pin the snapshot boundary; do not chase fresher state.**
 
 ## Memory Usage
