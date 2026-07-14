@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "git_commit": "b131716da95ab8ded628426b2347a782deb1b54f",
+    "timestamp": "2026-07-14T23:29:00Z",
+    "seed": 42,
+    "n": 2,
+    "script": "scripts/issue1310_attribute.py",
+    "issue": 931
+  },
+  "model_kind": "base",
+  "counters": {
+    "stories": 1000,
+    "quotes_total": 4361,
+    "quotes_unattributed_dropped": 4340,
+    "quotes_attributed": 21,
+    "stories_with_pair": 2,
+    "stories_dropped_no_pair": 998
+  },
+  "drop_rate": 0.998,
+  "per_persona_pairs": {
+    "Wren": 1,
+    "HELIOS": 1,
+    "Dana": 0,
+    "Vex": 0
+  },
+  "audit": {
+    "n_sampled": 21,
+    "n_valid": 21,
+    "n_dropped_malformed": 0,
+    "n_correct": 21,
+    "precision": 1.0,
+    "mock": false,
+    "judge_model": "claude-sonnet-4-5-20250929"
+  },
+  "gate": 0.9,
+  "binding": true,
+  "pass": true
+}
