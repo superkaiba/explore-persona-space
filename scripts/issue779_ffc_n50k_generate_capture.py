@@ -417,7 +417,16 @@ def run_capture(args) -> int:
     if args.device == "cuda":
         from explore_persona_space.eval.generation import create_vllm_engine
 
-        llm = create_vllm_engine(args.model, max_model_len=8192, seed=42)
+        # H100 long-prompt hang/IMA mitigation knobs (default-off => byte-identical
+        # engine args; both probes of the generate()-hang triad, per gotchas #1092).
+        llm_kwargs: dict = {}
+        if os.environ.get("EPM_VLLM_ENFORCE_EAGER") == "1":
+            llm_kwargs["enforce_eager"] = True
+        if os.environ.get("EPM_VLLM_DISABLE_PREFIX_CACHING") == "1":
+            llm_kwargs["enable_prefix_caching"] = False
+        if llm_kwargs:
+            logger.info("[engine-knobs] %s", llm_kwargs)
+        llm = create_vllm_engine(args.model, max_model_len=8192, seed=42, **llm_kwargs)
 
     # one-time bf16 batched-vs-serial equivalence gate for the summary path (fail loud)
     C.phase("gates")
