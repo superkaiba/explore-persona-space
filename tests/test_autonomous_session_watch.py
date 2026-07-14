@@ -10009,8 +10009,7 @@ def test_main_runs_tick_under_transcript_memo_scope(isolated_registry, monkeypat
         "idle_unmapped_pass",
         "gc_pass",
     ):
-        if hasattr(asw, name):
-            monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+        monkeypatch.setattr(asw, name, lambda *a, **kw: None)
     monkeypatch.setattr(
         asw,
         "stale_registration_pass",
@@ -12099,7 +12098,6 @@ def test_main_wires_stale_blocked_pass_order(isolated_registry, monkeypatch):
         "triage_observer_pass",
         "campaign_pass",
         "pod_safety_pass",
-        "respawn_pass",
         "stalled_session_pass",
         "orphan_sweep_pass",
         "infra_drain_pass",
@@ -12110,8 +12108,7 @@ def test_main_wires_stale_blocked_pass_order(isolated_registry, monkeypatch):
         "idle_unmapped_pass",
         "gc_pass",
     ):
-        if hasattr(asw, name):
-            monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+        monkeypatch.setattr(asw, name, lambda *a, **kw: None)
     monkeypatch.setattr(asw, "capacity_retry_pass", lambda *a, **kw: order.append("capacity_retry"))
     monkeypatch.setattr(
         asw, "stale_blocked_flag_pass", lambda *a, **kw: order.append("stale_blocked_flag")
@@ -12879,7 +12876,6 @@ def test_main_runs_sweep_after_infra_drain(isolated_registry, monkeypatch):
         "program_orchestrator_pass",
         "triage_observer_pass",
         "pod_safety_pass",
-        "respawn_pass",
         "stalled_session_pass",
         "orphan_sweep_pass",
         "capacity_retry_pass",
@@ -12890,8 +12886,7 @@ def test_main_runs_sweep_after_infra_drain(isolated_registry, monkeypatch):
         "idle_unmapped_pass",
         "gc_pass",
     ):
-        if hasattr(asw, name):
-            monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+        monkeypatch.setattr(asw, name, lambda *a, **kw: None)
     monkeypatch.setattr(asw, "infra_drain_pass", lambda *a, **kw: order.append("infra_drain"))
     monkeypatch.setattr(
         asw, "proposed_infra_sweep_pass", lambda *a, **kw: order.append("proposed_infra_sweep")
@@ -16258,8 +16253,7 @@ def test_main_order_stale_registration_after_gate_push(isolated_registry, monkey
         "session_reconcile_pass",
         "gc_pass",
     ):
-        if hasattr(asw, name):
-            monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+        monkeypatch.setattr(asw, name, lambda *a, **kw: None)
     monkeypatch.setattr(asw, "gate_push_pass", lambda *a, **kw: order.append(("gate_push", None)))
     monkeypatch.setattr(
         asw,
@@ -17304,8 +17298,7 @@ def test_main_order_boot_death_before_stale_registration(isolated_registry, monk
         "session_reconcile_pass",
         "gc_pass",
     ):
-        if hasattr(asw, name):
-            monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+        monkeypatch.setattr(asw, name, lambda *a, **kw: None)
     monkeypatch.setattr(asw, "gate_push_pass", lambda *a, **kw: order.append(("gate_push", None)))
     monkeypatch.setattr(
         asw, "boot_death_pass", lambda *a, **kw: order.append(("boot_death", kw.get("children")))
