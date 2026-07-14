@@ -386,7 +386,9 @@ def _logits_to_keep_kwargs(model) -> dict:
     return {"logits_to_keep": 1} if "logits_to_keep" in params else {}
 
 
-def build_capture_row(tokenizer, instance, probe, completion, parse_rec, rung, parts_spec=None):
+def build_capture_row(
+    tokenizer, instance, probe, completion, parse_rec, rung, parts_spec=None, prompt_parts_spec=None
+):
     """One teacher-forced row: ids + part token-spans + single positions, or (None, reason).
 
     Token spans derive from ``return_offsets_mapping`` over the completion text
@@ -401,6 +403,18 @@ def build_capture_row(tokenizer, instance, probe, completion, parse_rec, rung, p
     completion-token-space half-open span to ``row["spans"]`` (absolute
     positions applied here); a str return drops the row with that string as
     the counted reason (the matched-length floor path).
+
+    ``prompt_parts_spec`` (DEFAULT-PRESERVING, follow-up plan v7 §4.1 — the
+    second extension: ``None`` ⇒ existing behavior byte-for-byte) is an
+    optional callable ``(prompt_text_tpl, prompt_offsets, prompt_len_tpl) ->
+    dict[str, (s, e)] | str`` receiving the templated prompt text, its
+    ``return_offsets_mapping`` (computed ONLY on this branch, asserted
+    token-identical to the templated prompt ids), and the templated prompt
+    token length; a dict return adds each PROMPT-side span to ``row["spans"]``
+    asserted ``0 <= s < e <= prompt_len_tpl`` (absolute positions == the same
+    indices — prompt tokens start at 0); a str return drops the row with that
+    counted reason. Evaluated AFTER ``parts_spec`` so completion-floor drop
+    reasons keep the matched-length round's accounting.
     """
     prompt_text_tpl = tokenizer.apply_chat_template(
         messages_for_instance(instance, probe), tokenize=False, add_generation_prompt=True
@@ -452,6 +466,18 @@ def build_capture_row(tokenizer, instance, probe, completion, parse_rec, rung, p
             assert name not in spans, f"parts_spec redefines base part {name!r}"
             assert 0 <= es < ee <= comp_len, (name, es, ee, comp_len)
             spans[name] = (prompt_len + es, prompt_len + ee)
+    if prompt_parts_spec is not None:
+        enc_p = tokenizer(prompt_text_tpl, return_offsets_mapping=True)
+        assert list(enc_p["input_ids"]) == prompt_ids_tpl.tolist(), (
+            "offsets-call tokenization drifted from the templated prompt ids"
+        )
+        extra_p = prompt_parts_spec(prompt_text_tpl, enc_p["offset_mapping"], prompt_len_tpl)
+        if isinstance(extra_p, str):
+            return None, extra_p
+        for name, (ps, pe) in extra_p.items():
+            assert name not in spans, f"prompt_parts_spec redefines part {name!r}"
+            assert 0 <= ps < pe <= prompt_len_tpl, (name, ps, pe, prompt_len_tpl)
+            spans[name] = (ps, pe)  # prompt tokens start at 0 ⇒ absolute == prompt indices
     positions = {
         "ctx_last": prompt_len_tpl - 1,  # assistant-header newline (parent c_C slot)
         "cot_last": prompt_len + cot_tok[1] - 1,
