@@ -65,10 +65,17 @@ WITHIN_ROLE_CELLS: list[dict[str, str]] = [
     for fmt in ("chat", "naturalistic")
 ]
 
-# Track S cells: LMSYS single-turn anchor, both models (chat format only).
+# Track S cells: LMSYS single-turn anchor, both models. S1/S2 are the chat-template
+# anchors (format defaults to "chat" via _normalize_cell); S1N/S2N refit the SAME
+# 5,000 conversations re-rendered as the naturalistic User:/Assistant: transcript
+# (naturalistic-single-turn follow-up — the single manipulated variable is the
+# Track-S render format). cell_id starting with "S" routes track="s" in
+# _normalize_cell; the explicit "format" key is honored (chat is the default).
 TRACK_S_CELLS: list[dict[str, str]] = [
     {"cell_id": "S1", "model": "instruct"},
     {"cell_id": "S2", "model": "pretrained"},
+    {"cell_id": "S1N", "model": "instruct", "format": "naturalistic"},
+    {"cell_id": "S2N", "model": "pretrained", "format": "naturalistic"},
 ]
 
 # Cross-role cells (chat format only, both models). Directions:
