@@ -435,6 +435,25 @@ For each assumption, state:
 
 Be exhaustive. Wrong assumptions are the #1 cause of wasted GPU time.
 
+**Detection / trigger-lane predicate plans — trace the predicate against
+the motivating incident's REAL artifact (#1287).** When the plan designs
+or modifies a predicate that classifies a persisted artifact's shape to
+decide an automated action (a watcher lane's fire/keep, a guard's
+block/allow, a janitor's reap, a failure classifier's class) and the
+motivating incident left a persisted artifact (transcript, log, events
+row, sidecar), §12 MUST carry one assumption row tracing EVERY predicate
+arm — including the read/ingest path that feeds it — against that
+artifact: name it by path, evaluate each arm on values MEASURED from it
+at plan time (row counts, byte sizes, field values — read, never
+recalled), and state the traced outcome. The predicate MUST fire on its
+own motivating incident; "would not fire" is a design defect to fix
+before returning the plan (#1287 v1: both arms read `keep` on the very
+#1277 transcript it was built to catch — 14 assistant rows defeat the
+zero-response arm, 825,591 B defeats the 262,144 B read cap). Artifact
+aged off disk → trace the incident's recorded measurements at Medium
+confidence; prospective guard with no incident artifact → state that in
+the row.
+
 ## Goal-currency guard (re-read the Goal before returning — #922)
 
 The user can amend the canonical Goal WHILE you draft: on #922 two
