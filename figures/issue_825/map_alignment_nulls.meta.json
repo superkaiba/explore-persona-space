@@ -1,0 +1,1343 @@
+{
+  "commit": "07d78dd34e",
+  "created": "2026-07-14T23:24:59Z",
+  "figsize": [
+    9.5,
+    4.0
+  ],
+  "points": [
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000911,
+      "Null draws": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000854,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000798,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000741,
+      "Null draws": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000684,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000628,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000571,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000514,
+      "Null draws": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000458,
+      "Null draws": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000401,
+      "Null draws": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000344,
+      "Null draws": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000288,
+      "Null draws": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000231,
+      "Null draws": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000174,
+      "Null draws": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -0.000118,
+      "Null draws": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -6.1e-05,
+      "Null draws": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": -4e-06,
+      "Null draws": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 5.2e-05,
+      "Null draws": 11.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.000109,
+      "Null draws": 10.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.000166,
+      "Null draws": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.000222,
+      "Null draws": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.000279,
+      "Null draws": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.000336,
+      "Null draws": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.000392,
+      "Null draws": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.000449,
+      "Null draws": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.000506,
+      "Null draws": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.000562,
+      "Null draws": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.000619,
+      "Null draws": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.000676,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.000732,
+      "Null draws": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.6863522010335176,
+      "Null draws": 0.0,
+      "series": "observed Procrustes 0.686",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.6863522010335176,
+      "Null draws": 1.0,
+      "series": "observed Procrustes 0.686",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.24560862192428234,
+      "Null draws": 0.0,
+      "series": "raw 0.246",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)": 0.24560862192428234,
+      "Null draws": 1.0,
+      "series": "raw 0.246",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Singular-value index": 1.0,
+      "Cumulative squared-SV share": 0.06483444038047946,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 2.0,
+      "Cumulative squared-SV share": 0.1143184619845791,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 3.0,
+      "Cumulative squared-SV share": 0.13910343331604957,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 4.0,
+      "Cumulative squared-SV share": 0.1585631600457516,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 5.0,
+      "Cumulative squared-SV share": 0.17751660161635274,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 6.0,
+      "Cumulative squared-SV share": 0.19345631673696154,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 7.0,
+      "Cumulative squared-SV share": 0.20819281327618333,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 8.0,
+      "Cumulative squared-SV share": 0.220956065256398,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 9.0,
+      "Cumulative squared-SV share": 0.23294137215920618,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 10.0,
+      "Cumulative squared-SV share": 0.2436371124488352,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 11.0,
+      "Cumulative squared-SV share": 0.2538303614610883,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 12.0,
+      "Cumulative squared-SV share": 0.2632375843853595,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 13.0,
+      "Cumulative squared-SV share": 0.2719224127280247,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 14.0,
+      "Cumulative squared-SV share": 0.2802400337037145,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 15.0,
+      "Cumulative squared-SV share": 0.2884889575945397,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 16.0,
+      "Cumulative squared-SV share": 0.29638299646198085,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 17.0,
+      "Cumulative squared-SV share": 0.30367282816580415,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 18.0,
+      "Cumulative squared-SV share": 0.3108528388469713,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 19.0,
+      "Cumulative squared-SV share": 0.3173925755041769,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 20.0,
+      "Cumulative squared-SV share": 0.3238531699910488,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 21.0,
+      "Cumulative squared-SV share": 0.3299202726689421,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 22.0,
+      "Cumulative squared-SV share": 0.3358516669048909,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 23.0,
+      "Cumulative squared-SV share": 0.34161758480656035,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 24.0,
+      "Cumulative squared-SV share": 0.3472826450244027,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 25.0,
+      "Cumulative squared-SV share": 0.3527986080773802,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 26.0,
+      "Cumulative squared-SV share": 0.35816862277301187,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 27.0,
+      "Cumulative squared-SV share": 0.3631791997974679,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 28.0,
+      "Cumulative squared-SV share": 0.3680678134148251,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 29.0,
+      "Cumulative squared-SV share": 0.3728169988458808,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 30.0,
+      "Cumulative squared-SV share": 0.37747959094050354,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 31.0,
+      "Cumulative squared-SV share": 0.3820631975863011,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 32.0,
+      "Cumulative squared-SV share": 0.3865454200175739,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 33.0,
+      "Cumulative squared-SV share": 0.3909667992447765,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 34.0,
+      "Cumulative squared-SV share": 0.3953758262476417,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 35.0,
+      "Cumulative squared-SV share": 0.3995329518814148,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 36.0,
+      "Cumulative squared-SV share": 0.4036577327831984,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 37.0,
+      "Cumulative squared-SV share": 0.4076665128000174,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 38.0,
+      "Cumulative squared-SV share": 0.4115568888697985,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 39.0,
+      "Cumulative squared-SV share": 0.4153395209206498,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 40.0,
+      "Cumulative squared-SV share": 0.4190349501464064,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 41.0,
+      "Cumulative squared-SV share": 0.4226761109284299,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 42.0,
+      "Cumulative squared-SV share": 0.42629138166209557,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 43.0,
+      "Cumulative squared-SV share": 0.4298226069801268,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 44.0,
+      "Cumulative squared-SV share": 0.43330470623254325,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 45.0,
+      "Cumulative squared-SV share": 0.4367498725232094,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 46.0,
+      "Cumulative squared-SV share": 0.4401205537841564,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 47.0,
+      "Cumulative squared-SV share": 0.4433777961581699,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 48.0,
+      "Cumulative squared-SV share": 0.44662151339146394,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 49.0,
+      "Cumulative squared-SV share": 0.44984372292036306,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 50.0,
+      "Cumulative squared-SV share": 0.453020424826256,
+      "series": "residual (best: linear)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Singular-value index": 1.0,
+      "Cumulative squared-SV share": 0.07560662205470313,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 2.0,
+      "Cumulative squared-SV share": 0.13645755651833985,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 3.0,
+      "Cumulative squared-SV share": 0.16649592377226016,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 4.0,
+      "Cumulative squared-SV share": 0.1914830572031241,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 5.0,
+      "Cumulative squared-SV share": 0.21422634068208074,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 6.0,
+      "Cumulative squared-SV share": 0.23436385627568837,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 7.0,
+      "Cumulative squared-SV share": 0.2540964981923411,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 8.0,
+      "Cumulative squared-SV share": 0.2687974824434622,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 9.0,
+      "Cumulative squared-SV share": 0.2827018154931444,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 10.0,
+      "Cumulative squared-SV share": 0.29535826267124127,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 11.0,
+      "Cumulative squared-SV share": 0.30703877023006476,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 12.0,
+      "Cumulative squared-SV share": 0.3179128541129069,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 13.0,
+      "Cumulative squared-SV share": 0.3283250870492013,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 14.0,
+      "Cumulative squared-SV share": 0.33802183189340573,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 15.0,
+      "Cumulative squared-SV share": 0.3475275481940624,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 16.0,
+      "Cumulative squared-SV share": 0.35686639571723927,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 17.0,
+      "Cumulative squared-SV share": 0.3658630550344202,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 18.0,
+      "Cumulative squared-SV share": 0.37445149816650464,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 19.0,
+      "Cumulative squared-SV share": 0.3828008271796042,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 20.0,
+      "Cumulative squared-SV share": 0.3906183954389509,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 21.0,
+      "Cumulative squared-SV share": 0.3979391077297633,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 22.0,
+      "Cumulative squared-SV share": 0.40478833919574164,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 23.0,
+      "Cumulative squared-SV share": 0.4113262623472703,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 24.0,
+      "Cumulative squared-SV share": 0.41751834774158064,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 25.0,
+      "Cumulative squared-SV share": 0.4235614944674198,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 26.0,
+      "Cumulative squared-SV share": 0.42949601854398467,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 27.0,
+      "Cumulative squared-SV share": 0.43507145455279256,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 28.0,
+      "Cumulative squared-SV share": 0.4405493188840386,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 29.0,
+      "Cumulative squared-SV share": 0.44591308318364,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 30.0,
+      "Cumulative squared-SV share": 0.45114777982293336,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 31.0,
+      "Cumulative squared-SV share": 0.45617673183576124,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 32.0,
+      "Cumulative squared-SV share": 0.46101721036811316,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 33.0,
+      "Cumulative squared-SV share": 0.465597312641142,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 34.0,
+      "Cumulative squared-SV share": 0.470056305535737,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 35.0,
+      "Cumulative squared-SV share": 0.4744782949247999,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 36.0,
+      "Cumulative squared-SV share": 0.478799466497005,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 37.0,
+      "Cumulative squared-SV share": 0.48308525905423805,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 38.0,
+      "Cumulative squared-SV share": 0.48724483676771935,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 39.0,
+      "Cumulative squared-SV share": 0.4912922289634904,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 40.0,
+      "Cumulative squared-SV share": 0.49527907642383107,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 41.0,
+      "Cumulative squared-SV share": 0.4992037789861128,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 42.0,
+      "Cumulative squared-SV share": 0.5029883688217446,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 43.0,
+      "Cumulative squared-SV share": 0.5067366582335662,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 44.0,
+      "Cumulative squared-SV share": 0.5102871498434479,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 45.0,
+      "Cumulative squared-SV share": 0.5138076907351459,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 46.0,
+      "Cumulative squared-SV share": 0.517283381479272,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 47.0,
+      "Cumulative squared-SV share": 0.520723963632124,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 48.0,
+      "Cumulative squared-SV share": 0.5240861738049264,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 49.0,
+      "Cumulative squared-SV share": 0.5274187526320546,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 50.0,
+      "Cumulative squared-SV share": 0.5306727014741791,
+      "series": "W_inst - W_base (unaligned)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Singular-value index": 1.0,
+      "Cumulative squared-SV share": 0.054862037579535346,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 2.0,
+      "Cumulative squared-SV share": 0.09830783246763096,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 3.0,
+      "Cumulative squared-SV share": 0.12254324102232468,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 4.0,
+      "Cumulative squared-SV share": 0.1410406903430076,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 5.0,
+      "Cumulative squared-SV share": 0.1590373385536404,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 6.0,
+      "Cumulative squared-SV share": 0.17359182699752165,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 7.0,
+      "Cumulative squared-SV share": 0.1869647180084798,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 8.0,
+      "Cumulative squared-SV share": 0.19944671283170806,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 9.0,
+      "Cumulative squared-SV share": 0.21087276997346657,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 10.0,
+      "Cumulative squared-SV share": 0.22125054479782202,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 11.0,
+      "Cumulative squared-SV share": 0.23148916196396926,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 12.0,
+      "Cumulative squared-SV share": 0.24121158163457965,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 13.0,
+      "Cumulative squared-SV share": 0.25013950613142016,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 14.0,
+      "Cumulative squared-SV share": 0.2588022405839875,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 15.0,
+      "Cumulative squared-SV share": 0.2672895589587933,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 16.0,
+      "Cumulative squared-SV share": 0.27534234590107964,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 17.0,
+      "Cumulative squared-SV share": 0.2831752101293182,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 18.0,
+      "Cumulative squared-SV share": 0.29029484107028175,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 19.0,
+      "Cumulative squared-SV share": 0.29721061460806203,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 20.0,
+      "Cumulative squared-SV share": 0.30378338439729663,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 21.0,
+      "Cumulative squared-SV share": 0.31013987038513263,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 22.0,
+      "Cumulative squared-SV share": 0.3164399120087275,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 23.0,
+      "Cumulative squared-SV share": 0.32262165936561127,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 24.0,
+      "Cumulative squared-SV share": 0.32854914855004075,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 25.0,
+      "Cumulative squared-SV share": 0.3343548582588778,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 26.0,
+      "Cumulative squared-SV share": 0.3398947474109973,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 27.0,
+      "Cumulative squared-SV share": 0.3452527480612624,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 28.0,
+      "Cumulative squared-SV share": 0.3503669364788864,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 29.0,
+      "Cumulative squared-SV share": 0.355428251484468,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 30.0,
+      "Cumulative squared-SV share": 0.36041542710176694,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 31.0,
+      "Cumulative squared-SV share": 0.36531435990394984,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 32.0,
+      "Cumulative squared-SV share": 0.370081671716468,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 33.0,
+      "Cumulative squared-SV share": 0.3746933854061265,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 34.0,
+      "Cumulative squared-SV share": 0.37915426887712195,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 35.0,
+      "Cumulative squared-SV share": 0.38353499591762963,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 36.0,
+      "Cumulative squared-SV share": 0.3878653264507036,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 37.0,
+      "Cumulative squared-SV share": 0.3920758545048779,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 38.0,
+      "Cumulative squared-SV share": 0.3962380300147389,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 39.0,
+      "Cumulative squared-SV share": 0.40028352241926823,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 40.0,
+      "Cumulative squared-SV share": 0.4042262994654242,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 41.0,
+      "Cumulative squared-SV share": 0.4081151703562119,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 42.0,
+      "Cumulative squared-SV share": 0.4119541723702878,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 43.0,
+      "Cumulative squared-SV share": 0.4157526504464405,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 44.0,
+      "Cumulative squared-SV share": 0.4195000147720651,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 45.0,
+      "Cumulative squared-SV share": 0.42316559398382747,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 46.0,
+      "Cumulative squared-SV share": 0.4268133041408927,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 47.0,
+      "Cumulative squared-SV share": 0.4304003132324632,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 48.0,
+      "Cumulative squared-SV share": 0.4339217316855243,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 49.0,
+      "Cumulative squared-SV share": 0.4374095760765104,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Singular-value index": 50.0,
+      "Cumulative squared-SV share": 0.4408280646535226,
+      "series": "W_inst",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 184,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "L19 Procrustes-cosine chance reference",
+        "xlabel": "Aligned map cosine (M_inst vs Q\u2081\u1d40 M_base Q\u2082)",
+        "ylabel": "Null draws",
+        "legend_labels": [
+          "random-Q null",
+          "observed Procrustes 0.686",
+          "raw 0.246"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      },
+      {
+        "title_left": "L19 residual-operator spectrum",
+        "xlabel": "Singular-value index",
+        "ylabel": "Cumulative squared-SV share",
+        "legend_labels": [
+          "residual (best: linear)",
+          "W_inst - W_base (unaligned)",
+          "W_inst"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "observed Procrustes 0.686",
+      "raw 0.246",
+      "residual (best: linear)",
+      "W_inst - W_base (unaligned)",
+      "W_inst"
+    ]
+  }
+}
