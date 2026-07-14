@@ -1284,6 +1284,11 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see phase() markers
         help="early exit after the named phase (VM CPU partial smokes; same code path)",
     )
     ap.add_argument("--skip-parity-gate", action="store_true", help="skip the serial ridge gate")
+    ap.add_argument(
+        "--sentinel-dir",
+        default=None,
+        help="override the /workspace/logs sentinel dir (smoke runs redirect to scratch)",
+    )
     ap.add_argument("--no-upload", action="store_true")
     args = ap.parse_args()
 
@@ -1896,7 +1901,12 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see phase() markers
         "hf_paths": hf_paths,
         "elapsed_s": round(time.time() - t0, 1),
     }
-    write_sentinel("epm:results", note, out_dir)
+    write_sentinel(
+        "epm:results",
+        note,
+        out_dir,
+        log_dir=Path(args.sentinel_dir) if args.sentinel_dir else None,
+    )
     phase("done")
     return 0
 
