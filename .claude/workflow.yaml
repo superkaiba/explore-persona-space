@@ -3226,7 +3226,7 @@ workflow_fix_on_bug:
   spawn_command: "uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto"
   orchestrator_actions:
     - "If running under the recursion guard (workflow_fix_target Provenance line OR EPM_WORKFLOW_FIX_SESSION=1): LOG epm:workflow-fix-candidate v1 (note: parked — EPM_WORKFLOW_FIX_SESSION), notify, STOP (do NOT file/spawn)"
-    - "Grep the workflow surface for the pattern; populate target_file (comma-separated list or glob when uniform); record the grep cmd + hit count for the body's verified-at-filing: line"
+    - "Grep the workflow surface for the pattern; populate target_file (comma-separated list or glob when uniform); record the grep cmd + hit count for the body's verified-at-filing: line — BINDING (#1307): per-target hits for each named target_file (a presence claim with a 0-hit named target is a mis-target: re-grep repo-wide + correct target_file first); a nonexistence claim records a repo-wide relocation grep"
     - "Compute fp = task_workflow.wf_fix_fingerprint(proposed_change, bug_observed)"
     - "DEDUP: if task_workflow.is_open_workflow_fix_task(target_file, fp) returns an id, log epm:workflow-fix-candidate v1 (note: deduped against #M), continue — do NOT double-file (a same-file DIFFERENT-fp candidate is NOT a dup, file it)"
     - "Post epm:workflow-fix-candidate v1 to the PARENT task's events.jsonl (or .claude/cache/workflow-fix-events.jsonl if no task) with candidate fields + routing decision inline"

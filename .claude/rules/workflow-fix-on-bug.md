@@ -397,7 +397,7 @@ raised on task <related_task> (emitting agent: <emitting_agent>).
 - **Bug observed:** <bug_observed>
 - **Why it is a workflow gap:** <why_workflow_gap>
 - **Confidence (emitter):** <confidence>
-- verified-at-filing: `<grep cmd the FILER ran at body-compose time>` → <N hits in M files> (<UTC date>), OR `n/a — <one-line reason the bug claim is not grep-verifiable>`
+- verified-at-filing: `<grep cmd the FILER ran at body-compose time>` → <N hits in M files; per-target hits for each file named in target_file> (<UTC date>), OR `n/a — <one-line reason the bug claim is not grep-verifiable>`
 
 ## Proposed change (candidate diff sketch — refine in planning)
 
@@ -438,7 +438,23 @@ ships forward).
 produced by the FILER at body-compose time — a stale emitter-side grep does
 not satisfy it (freshness at filing is the point; cf. the /daily Retraction
 re-check) — and its hit count must be consistent with the body's bug claim
-and `target_file` list. Lineage: #1221/#1229/#1249 — three filings in two
+and `target_file` list. Consistency BINDS — a real grep that does not bind
+to the claim does not satisfy the mandate (#1307; the two 2026-07-12
+filings): (a) **per-target confirmation** — run the pattern grep against
+EACH file named in `target_file` and state per-target hits; for a presence
+claim (the body asserts the site/pattern EXISTS there), a 0-hit named
+target is a mis-target, not evidence — re-grep repo-wide, correct
+`target_file` to the real site(s), and re-verify BEFORE filing (#1290: a
+real repo-wide grep sat beside a `target_file` with 0 hits for the claimed
+parse site; the true site was a sibling SKILL.md, found only by the spawned
+session's clarifier). An absence-of-guard claim is exempt from the mis-target
+rule — its 0-hit in-target result IS the evidence. (b) **relocation grep
+before any nonexistence claim** — asserting a cited symbol / test / file
+nonexistent ("no longer exists") requires a recorded repo-wide relocation
+grep (`grep -rn '<symbol>' tests/ scripts/ .claude/ src/`); a single-path
+probe cannot distinguish "removed" from "moved" (#1296: a single-file
+pytest probe backed a "NO LONGER EXISTS" claim; the test had moved to
+`tests/test_issue_dispatch.py`). Lineage: #1221/#1229/#1249 — three filings in two
 days carried grep-refutable claims (nonexistent call sites, overcounted
 "unguarded sites", an improvised path); each burned a spawned session's
 verification rounds. There is NO mechanical injector or lint for this line —
@@ -688,6 +704,7 @@ homepage rendering of the fallback is unimplemented.)
 | Hold prose follow-ups back hoping they'll surface "on the next pass" | List every concrete in-scope follow-up the agent found; the orchestrator files each |
 | Name a single `target_file` when a literal-string bug pattern hits N sibling workflow files (#622: a stale model pin lived in 25 agent files; one was named) | `grep -rln '<pattern>' .claude/ CLAUDE.md scripts/` first; list every hit in `target_file` as a comma-separated path list or a glob |
 | File a body whose bug claim (call sites, site counts, paths) was never re-verified by grep at filing time (#1221/#1229/#1249: 3 stale-claim filings in 2 days, each burning a spawned session's verification rounds) | Run the grep at body-compose time; record `verified-at-filing: <cmd> → <hits>` (or `n/a — <reason>`) in `## Workflow gap` |
+| Record a real grep that does not BIND to the claim — a repo-wide pattern grep beside a named target_file with 0 hits for the claimed site (#1290), or a single-path probe backing a "no longer exists" claim (#1296) | State per-target hits for each file named in target_file (presence claim + 0-hit target ⇒ re-grep repo-wide, correct target_file, re-verify before filing); back any nonexistence claim with a recorded repo-wide relocation grep |
 
 ## Composition with other rules
 

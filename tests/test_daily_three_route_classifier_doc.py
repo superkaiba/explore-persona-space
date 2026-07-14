@@ -334,7 +334,8 @@ def test_verified_at_filing_line_required(daily_skill_text: str):
     survives in the daily route-2 text, the rule's Body-file template, and the
     workflow.yaml orchestrator_actions prose (#1221/#1229/#1249: three
     stale-claim filings in two days, each burning a spawned session's
-    verification rounds)."""
+    verification rounds). #1307 extends the pin: the grep must BIND to the
+    claim (per-target confirmation + relocation grep) on all three surfaces."""
     assert "verified-at-filing:" in daily_skill_text, (
         "the route-2 'verified-at-filing mandate' sentence dropped from daily "
         "SKILL.md — daily-filed wf-fix bodies would regress to carrying no "
@@ -355,4 +356,31 @@ def test_verified_at_filing_line_required(daily_skill_text: str):
     assert "verified-at-filing:" in yaml_text, (
         "workflow.yaml orchestrator_actions no longer mention the "
         "verified-at-filing: grep-evidence line (#1272)"
+    )
+    # #1307: the binding tightening — per-target confirmation + relocation grep
+    assert "EACH file named in" in rule_text, (
+        "the #1307 per-target-confirmation binding rule dropped from "
+        "workflow-fix-on-bug.md (a 0-hit named target must be a mis-target)"
+    )
+    assert "relocation grep" in rule_text, (
+        "the #1307 relocation-grep binding rule dropped from "
+        "workflow-fix-on-bug.md (nonexistence claims need a repo-wide grep)"
+    )
+    assert "relocation grep" in daily_skill_text, (
+        "the #1307 binding clause dropped from the daily route-2 "
+        "verified-at-filing mandate sentence"
+    )
+    assert "relocation grep" in yaml_text, (
+        "the #1307 binding clause dropped from the workflow.yaml orchestrator_actions grep step"
+    )
+    # v2 (Statistics-critic suggestion): pin rule (a) on the two compact
+    # surfaces too — without these, a future editor could drop the
+    # per-target clause from daily/yaml without failing the test.
+    assert "per-target hits" in daily_skill_text, (
+        "the #1307 per-target-confirmation clause dropped from the daily "
+        "route-2 verified-at-filing mandate sentence"
+    )
+    assert "per-target hits" in yaml_text, (
+        "the #1307 per-target-confirmation clause dropped from the "
+        "workflow.yaml orchestrator_actions grep step"
     )
