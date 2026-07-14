@@ -13,8 +13,8 @@
 
 - **The mapping already exists almost entirely in the pretrained base model:**
     - held-out R² 0.588 vs 0.673 at the shared best layer — **~87% of instruct prediction strength**
-- **Post-training rotates the existing mapping rather than building a new one:**
-    - swapping representations across models and refitting preserves prediction (**0.587 / 0.662**); swapping the fitted maps fails (**−0.066 / −0.170**) — the information is present, the coordinates changed
+- **Post-training reparameterizes the existing mapping by a general linear map (NOT a rotation):**
+    - a general-linear basis change on each side reconstructs both maps to **100% of ceiling** (base→instruct 1.000×, instruct→base 1.002×); the orthogonal (rotation-only) version **fails** (−0.54 / 0.59), and the non-orthogonality localizes to the **context side** (answer spaces are near-orthogonally alignable, context spaces are not)
 - **The mapping holds up without chat-template tokens:**
     - the template gates *linear* decodability only: the MLP recovers template-free cells at template level (0.534/0.499 vs 0.557/0.487), and the base model reads pure `User:`/`Assistant:` transcripts at R² 0.71–0.74
 - **The mapping does NOT hold up for generic stories (off-policy or on-policy):**
@@ -52,17 +52,19 @@ Everything below uses one rig unless a result says otherwise:
 * So post-training does not create the mapping; it adds ~13%. Caveat: pretraining corpora contain chat-formatted text, so "inherited" doesn't rule out chat-data exposure during pretraining
 * The base map is genre-general (#810: skill +0.796 on UltraChat vs +0.800 on a misalignment pool) and replicates at 4× scale on real conversations (#1092: base context-arm R² 0.71–0.74)
 
-### _Result 2: Post-training rotates the existing mapping_
+### _Result 2: Post-training reparameterizes the mapping by a general linear map — not a rotation, and the change lives on the context side_
 
-**Methodology (this result):** two swap tests on the single-turn stores, both models over identical text. *Representation-swap:* fit a fresh map from base contexts to instruct answers (does the information transfer?). *Map-swap:* apply model A's fitted weights directly to model B's activations (do the coordinates transfer?). Plus descriptive weight-space reads on the two fitted maps (per-output-dimension cosine, principal angles, Procrustes-aligned cosine) with 100 permutation nulls.
+**Methodology (this result):** first, two swap tests on the single-turn stores (both models, identical text): *representation-swap* (fit a fresh map from base contexts to instruct answers — does the information transfer?) and *map-swap* (apply model A's fitted weights to model B's activations — do the coordinates transfer?). Then the **direct composition test**: fit explicit alignment maps between the models' context spaces (A_ctx) and answer spaces (A_ans), and check whether one basis change reconstructs the other model's map held-out — `M_inst ≈ A_ans ∘ M_base ∘ A_ctx⁻¹` — under a **general-linear** A vs an **orthogonal (Procrustes)** A. Random-rotation null for the weight-space Procrustes cosine (n=100); residual-rank read on the aligned difference.
 
-![cross-model swap tests](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4d03165dd8a1773790a1b501b3699c1a6e08e584/figures/issue_825/crossmodel_transfer_r2.png)
+![composition R²: general-linear vs orthogonal basis change](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ccee9ad8d6d83b73c86c93f3dbdc81dabc403a4a/figures/issue_825/map_alignment_composition_r2.png)
 
 **Takeaways:**
 
-* Representation-swap preserves prediction (**0.587 / 0.662** at layer 19, vs 0.673 within-instruct); map-swap fails (**−0.066 / −0.170**) — the information is present in both models, but the coordinate system changed
+* The information transfers, the coordinates don't: representation-swap preserves prediction (**0.587 / 0.662** at layer 19, vs 0.673/0.588 within-model); map-swap fails (**−0.066 / −0.170**)
+* **A general-linear basis change is the whole story:** `A_ans ∘ M_base ∘ A_ctx⁻¹` reconstructs both maps to **100% of ceiling** (base→instruct 1.000×, instruct→base 1.002×) — the two maps are the same function in different coordinates
+* **It is NOT a rotation:** the orthogonal-constrained version fails (composition fraction **−0.54 / 0.59**), and the non-orthogonality **localizes to the context side** — answer spaces are near-orthogonally alignable (A_ans held-out R² 0.902 linear vs 0.893 orthogonal), context spaces are not (A_ctx 0.619 linear vs 0.308 orthogonal). So post-training re-bases how the *context* is read, not just how it is rotated
+* The 0.686 weight-space Procrustes cosine is real (z≈2412 above the random-rotation null, mean ~0) but **overstates functional agreement** — it reflects partial orthogonal alignability while the held-out orthogonal composition is negative; the residual difference is diffuse and high-rank (participation ratio 1013/3584, top-50 SV share 0.45), not low-rank
 * The change is specific to the chat map: the persona-free separator-control map (Result 5) IS shared across models (weight cosine 0.86–0.90)
-* Honesty flag on "rotates": the weight-space evidence is mixed — principal-angle overlap 0.856 barely clears its 0.835 random reference, and the Procrustes-aligned cosine (0.686) has no chance reference. A direct test — does one explicit basis change (orthogonal vs general linear) map M_base onto M_instruct — is running now
 * An apparent base-vs-instruct gap in predicting own continuations was a decoding artifact: greedy D 0.590/0.428 collapses to 0.031/0.086 under sampled decoding — the substrates agree at matched decoding
 
 ### _Result 3: The mapping holds up without chat-template tokens_
@@ -129,6 +131,6 @@ Everything below uses one rig unless a result says otherwise:
 ## Next steps:
 
 - (running) single-turn naturalistic refit on #825 — the last format×model cell (instruct, template-free, strong regime), with a paired chat-vs-naturalistic contrast on shared folds
-- (running) direct test of Result 2's "rotation": fit an explicit basis change (orthogonal Procrustes vs general linear) between the two models' spaces and check whether it maps M_base onto M_instruct held-out, with a proper random-rotation null for the 0.686 Procrustes cosine and a rank read on the residual
+- (done, Result 2) the direct basis-change test settled it: general-linear reparameterization, not a rotation, with the change on the context side
 - MLP probe on the cross-role (turn-after-next) cells — the linear-only verdict there mirrors the user-turn case, where the MLP found a weak map the ridge missed
 - Use the rotation read quantitatively: how big is the basis change, is it low-rank, does it concentrate at the map's peak layers
