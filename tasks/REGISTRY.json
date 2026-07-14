@@ -2357,8 +2357,8 @@
     "1302": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1302",
-      "status": "reviewing",
+      "path": "tasks/completed/1302",
+      "status": "completed",
       "title": "daily-fix: pin mbc inline Alt capsule to lens reference"
     },
     "1303": {
