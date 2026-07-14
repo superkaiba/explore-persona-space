@@ -2385,8 +2385,8 @@
     "1306": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1306",
-      "status": "proposed",
+      "path": "tasks/planning/1306",
+      "status": "planning",
       "title": "daily-fix: verify_plan c15 misses pytest-backed fail-loud"
     },
     "1307": {
