@@ -1952,6 +1952,23 @@ _FAILLOUD_TEST_EVIDENCE_RE = re.compile(
 # otherwise self-certify (`grep -n 'except Exception' tests/test_foo.py`).
 _FAILLOUD_GREP_LINE_RE = re.compile(r"(?i)\bgrep\b")
 
+# Evidence route 2 (#1306): a quoted pytest.raises control with a named
+# exception is intrinsically fail-loud test vocabulary — accepted WITHOUT a
+# same-line test_ identifier (#1296: the negative-control literal sits on
+# its own hard-wrapped line). Corpus-audited 2026-07-14: flips exactly the
+# two #1296 incident plans out of 119 standing infra|batch WARNs.
+_FAILLOUD_PYTEST_RAISES_RE = re.compile(r"pytest\.raises\(\s*[\w.]+")
+
+# Evidence route 3 (#1306): a deliberate labeled pin line opens a FORWARD,
+# paragraph-bounded scan for the test identifier — the labeled-line
+# convention (c31 precedent: an unlabeled c15-style loose window
+# false-satisfied all 9 of c31's incident plan versions, so the label is
+# load-bearing), made wrap-tolerant for long test paths (#1296 v2's
+# 105-char path forced the wrap). A blank line ends the paragraph; the
+# scan is capped (incident paragraph = 5 lines; 8 = 5 + margin).
+_FAILLOUD_PIN_LABEL_RE = re.compile(r"(?i)\bfail[- ]?loud (?:pin|acceptance)\b[^:\n]{0,40}:")
+_FAILLOUD_PIN_SCAN_LINES = 8
+
 # Anchor carriers that never bind: §0.0 TL;DR / §0 Plan Summary restate
 # criteria as summary prose (same rationale as c8's _tldr_ranges exclusion).
 _FAILLOUD_SUMMARY_HEAD_RE = re.compile(r"(?i)tl;dr|plan summary|^(?:§\s*)?0(?:\.0)?\b")
@@ -2011,15 +2028,37 @@ def _failloud_claim_hits(plan: str) -> list[tuple[str, str]]:
 
 
 def _failloud_test_evidence_lines(plan: str) -> list[str]:
-    """RAW-plan lines naming a committed fail-loud-exercising test: a
-    ``test_`` identifier (also matches tests/<file>.py paths) co-located with
-    fail-loud vocabulary, grep-command lines excluded."""
+    """RAW-plan lines naming a committed fail-loud-exercising test, three
+    routes (#913/#1306): (1) a ``test_`` identifier co-located with
+    fail-loud vocabulary on ONE line (the original scan); (2) a quoted
+    ``pytest.raises(<Exception>`` control — intrinsically test + raise
+    vocabulary, no identifier needed; (3) a ``Fail-loud pin:``-style
+    labeled line whose contiguous paragraph names a ``test_`` identifier
+    within ``_FAILLOUD_PIN_SCAN_LINES`` lines (wrap-tolerant labeled route;
+    unlabeled ±k windows false-satisfy — 21-29 of 119 corpus WARNs at
+    k=1-2 vs 2 genuine, measured 2026-07-14 — so the label is
+    load-bearing, the c31 lesson). Grep-command lines never count on any
+    route."""
+    lines = plan.splitlines()
     out: list[str] = []
-    for line in plan.splitlines():
+    for i, line in enumerate(lines):
         if _FAILLOUD_GREP_LINE_RE.search(line):
             continue
         if _TEST_IDENT_RE.search(line) and _FAILLOUD_TEST_EVIDENCE_RE.search(line):
             out.append(line.strip())
+            continue
+        if _FAILLOUD_PYTEST_RAISES_RE.search(line):
+            out.append(line.strip())
+            continue
+        if _FAILLOUD_PIN_LABEL_RE.search(line):
+            for j in range(i, min(len(lines), i + _FAILLOUD_PIN_SCAN_LINES)):
+                if not lines[j].strip():
+                    break
+                if _FAILLOUD_GREP_LINE_RE.search(lines[j]):
+                    continue
+                if _TEST_IDENT_RE.search(lines[j]):
+                    out.append(f"{line.strip()} … {lines[j].strip()}")
+                    break
     return out
 
 
@@ -2034,7 +2073,16 @@ def check_failloud_test_coverage(plan: str, kind: str) -> CheckResult:
     only the zero-fail-loud-test case, and PASSes a plan naming a fail-loud
     test for a different claim). Extending kind scope to ``analysis`` is a
     future calibration decision if an incident arises there (the corpus
-    replay covered infra|batch only)."""
+    replay covered infra|batch only). Evidence routes 2-3 (#1306) — a
+    quoted ``pytest.raises(<Exception>`` control and a labeled
+    ``Fail-loud pin``-style paragraph scan — were corpus-audited
+    2026-07-14 (exactly the two #1296 incident plans flip WARN→PASS out
+    of 119 standing infra|batch WARNs; unlabeled ±1/±2-line windows were
+    REJECTED at 21/29 false flips); accepted residual: a fenced
+    bug-narration ``pytest.raises(...)`` quote or a stale/nonexistent
+    test name in a labeled pin can false-satisfy — acceptable because the
+    check is WARN-only at existence granularity and per-claim coverage
+    stays with the Phase 2 critics."""
     cid, name = "c15_failloud_test_coverage", "fail-loud acceptance claim backed by a test"
     if kind not in ("infra", "batch"):
         return _skip(
@@ -2069,7 +2117,10 @@ def check_failloud_test_coverage(plan: str, kind: str) -> CheckResult:
         "tests/<file> path alongside raise/swallow/silent/except vocabulary; grep-gate lines do "
         "not count) — a run-book grep verifies the invariant once at review time, and a "
         "differently-worded re-swallow ships green past all committed tests (#913). Name the "
-        "pinning test, or declare `N/A — no fail-loud acceptance claim` / "
+        "pinning test and its raise/swallow/silent vocabulary on ONE unwrapped line "
+        "(hard-wrapped mentions do not count), quote the `pytest.raises` negative control "
+        "with its exception class, add a `Fail-loud pin` labeled line (the label, a colon, "
+        "then the test path), or declare `N/A — no fail-loud acceptance claim` / "
         "`N/A — fail-loud claim not test-backable` — each on its own line, unwrapped "
         "(no backticks/quotes)",
     )
