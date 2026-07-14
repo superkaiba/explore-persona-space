@@ -104,10 +104,10 @@ ASSISTANT_REF_PATHS = {
 # ---------------------------------------------------------------------------
 
 PERSONAS: dict[str, str] = {
-    "Marlowe": "a hardboiled 1940s private detective, world-weary and terse",
-    "Pip": "a cheerful, curious young child who asks lots of questions",
-    "Bexley": "a formal, deferential butler who speaks with impeccable courtesy",
-    "HELIOS": "a calm, precise starship artificial intelligence",
+    "Wren": "a warm, endlessly helpful assistant who patiently helps anyone who asks",
+    "HELIOS": "a calm, precise artificial intelligence",
+    "Dana": "an ordinary, unremarkable everyday person",
+    "Vex": "a theatrical, scheming villain who delights in menace",
 }
 PERSONA_LABELS = tuple(PERSONAS)
 
