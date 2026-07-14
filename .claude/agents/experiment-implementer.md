@@ -378,6 +378,19 @@ such corpora or banks:
    re-create the drift) or hoist cheap cross-script helper imports to
    module top. Full trap + incident #606: `.claude/rules/gotchas.md`
    "Lazy imports inside smoke-skipped branches".
+2b. **Changed-literal pin-sweep + Step 10d mapped-scan run (#1288/#1144).**
+   Grep `tests/` for every literal / command fragment / symbol your diff
+   changed or deleted (OLD and NEW form); run every hit locally. Then
+   enumerate the Step 10d merge-gate mapped scan tests for your touched
+   payload files — `uv run python scripts/select_step9c_tests.py
+   --map-files <file listing your diff paths> --repo-root "$WT"` — and
+   run any mapped tests locally too. Experiment kinds skip the Step 9c
+   gate (code-change paths only), so the Step 10d mapped invariant-test
+   leg is your merge-time test surface: a pinning/scan test first
+   failing there costs a full merge-gate bounce (#1144: 34 thread-caps
+   offenders accreted through the zero-pytest merge path). This NARROWS
+   the local-vs-merge-gate scope gap; the Step 10d leg remains the
+   backstop.
 3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint the
    experiment pipeline executes — data-gen, training, eval (and any
    separate analysis / upload step) — run the script ONCE on a tiny real

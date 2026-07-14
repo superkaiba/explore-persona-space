@@ -2056,6 +2056,19 @@ Brief passed to the implementer:
   `experiment-implementer.md` § "Deferred production-path TODOs are
   persisted concerns, not (d) prose", so round-N briefs surface the
   duty without the implementer having to recall its agent spec.
+- The brief MUST also carry the gate-scope verification duty (#1288):
+  before posting the report marker, the implementer enumerates the Step
+  9c selection from the worktree — `uv run python
+  scripts/select_step9c_tests.py --json`, the DEFAULT invocation (the
+  base defaults to FETCHED `origin/main` per #1289; `--base main` exists
+  only to deliberately diff against the local ref, per Step 9c step 1a —
+  never for this duty) — pin-sweeps the enumerated test files for every
+  literal / command fragment / symbol the diff changed or deleted, and
+  runs the diff-linked + pin-hit subset locally, deferring only the
+  invariant-only remainder to the gate (which remains the backstop).
+  Belt-and-suspenders on `implementer.md` § After Implementation item 1,
+  so round briefs surface the duty without the implementer having to
+  recall its agent spec (the #509 precedent).
 - **Marker-version discipline — a brief NEVER instructs a literal marker
   version.** Any brief line about posting `epm:experiment-implementation` /
   `epm:results` / `epm:proposed-tests` says: "post at the next version —
@@ -7830,7 +7843,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       pre-run `rm -f` of all three gate files (a killed run must leave NO
       junit — pytest writes it only at session exit; a stale file from a
       prior round must never be re-read). BACKGROUND IS REQUIRED, NOT
-      OPTIONAL: the selection always contains the 35-file workflow-invariant
+      OPTIONAL: the selection always contains the 37-file workflow-invariant
       set incl. `tests/test_workflow_lint.py` (median ~6.5 min alone, max
       ~13 min; whole gate median ~11 min, max ~21 min of test time plus
       collection overhead — 26 junit runs measured 2026-07-04/05), so the
