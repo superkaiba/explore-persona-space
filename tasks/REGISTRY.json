@@ -2364,8 +2364,8 @@
     "1303": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1303",
-      "status": "reviewing",
+      "path": "tasks/completed/1303",
+      "status": "completed",
       "title": "daily-fix: asw test hasattr stub loops -> fail-loud"
     },
     "1304": {
