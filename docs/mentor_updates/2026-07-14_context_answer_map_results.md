@@ -11,14 +11,20 @@
 
 ## TLDR
 
-- The mapping already exists almost entirely in the pretrained base model: **~87% of instruct prediction strength** (held-out R² 0.588 vs 0.673)
-- Post-training rotates the existing mapping rather than building a new one: swapping representations across models and refitting preserves prediction (**0.587 / 0.662**), swapping the fitted maps fails (**−0.066 / −0.170**)
-- The mapping holds up without chat-template tokens — the template gates *linear* decodability, not the information (MLP recovers template-free cells at template level; base model on pure transcripts: R² 0.71–0.74)
-- The mapping does NOT hold up for generic stories (off-policy novels **or** on-policy model-written stories: transfer ≤0.05 of ceiling)
-- The mapping does NOT reduce to generic next-span prediction (separator control transfers 5.7–10.9%)
-- The mapping is assistant-turn-specific: the user's next turn is linearly unpredictable (ridge negative in all 12 cells) and only weakly nonlinearly predictable (MLP 0.19–0.23)
-- The mapping rides the query-bearing context state, not the prefix persona state (context 0.71–0.80 vs prefix 0.04–0.08; variance split query ≈79% / interaction ≈10% / prefix ≈11%)
-- In richer two-turn conversations the *linear* read collapses while the information survives (ridge +0.08 to −0.46 vs MLP 0.49–0.56); predicting the turn-after-next fails to beat topic persistence
+- **The mapping already exists almost entirely in the pretrained base model:**
+    - held-out R² 0.588 vs 0.673 at the shared best layer — **~87% of instruct prediction strength**
+- **Post-training rotates the existing mapping rather than building a new one:**
+    - swapping representations across models and refitting preserves prediction (**0.587 / 0.662**); swapping the fitted maps fails (**−0.066 / −0.170**) — the information is present, the coordinates changed
+- **The mapping holds up without chat-template tokens:**
+    - the template gates *linear* decodability only: the MLP recovers template-free cells at template level (0.534/0.499 vs 0.557/0.487), and the base model reads pure `User:`/`Assistant:` transcripts at R² 0.71–0.74
+- **The mapping does NOT hold up for generic stories (off-policy or on-policy):**
+    - chat↔fiction transfer ≤**0.05** of ceiling vs the 0.5 same-map bar; author-blocked real-novel R² **−0.065**; on-policy model-written stories fail too (per-story R² negative in 270/270)
+- **The mapping does NOT reduce to generic next-span prediction:**
+    - a persona-free separator→span control transfers only **5.7% (base) / 10.9% (instruct)** of the chat map
+- **The mapping is assistant-turn-specific:**
+    - the user's next turn is linearly unpredictable (ridge R² negative in all 12 cells, incl. real logged human turns) and only weakly nonlinearly predictable (MLP 0.19–0.23, ~2.4× below the assistant map)
+- **In richer two-turn conversations the linear read collapses while the information survives:**
+    - ridge +0.08 to −0.46 vs MLP 0.49–0.56; predicting the turn-after-next fails to beat a topic-persistence baseline
 
 ## Shared methodology
 
@@ -107,19 +113,7 @@ Everything below uses one rig unless a result says otherwise:
 * And only **weakly nonlinearly predictable**: MLP 0.19–0.23 (~50 null-band-widths above chance, but ~2.4× below the assistant map)
 * The assistant map beats the user map in **all 24** paired reads (ridge Δ +0.36 to +1.53, every 95% CI clear of zero)
 
-### _Result 7: The mapping rides the query-bearing context state, not the prefix persona state_
-
-**Methodology (this result):** [#1092](https://eps.superkaiba.com/tasks/1092) — 1,145 real conversation prefixes crossed with 1,397 real user queries (21,193 rows). Two input arms fit per cell: the **prefix state** (activation at the end of everything before the user query — where a "persona state" lives) and the **context state** (after the query). The dense crossing (~100 prefixes × 48 queries) supports an ANOVA-style decomposition of the answer summary's variance into prefix / query / interaction.
-
-![prefix vs context arms across cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/79b4761d18c3b77227d3cc8c77cb3c6aa78eeb7e/figures/issue_1092/read1_r2_prefix_vs_context.png)
-
-**Takeaways:**
-
-* Context-arm R² **0.71–0.80** vs prefix-arm **0.04–0.08** (shuffled floor 0.06–0.08): essentially all linearly readable answer-state information sits in the post-query state
-* Variance split: **query ≈79% / interaction ≈10% / prefix ≈11%** — which question is being asked dominates; the persona/history contribution is real but small, and the map is near-additive in the two factors
-* Reading caveat: the target is a mean activation, dominated by topical content — a persona effect on style/behavior can live inside the ~20% (prefix + interaction) and still matter behaviorally; but the persona-state-only monitoring surface the earlier line hoped for is weak on realistic data
-
-### _Result 8: The two-turn regime breaks the linear read, not the map — and the map doesn't reach past the next turn_
+### _Result 7: The two-turn regime breaks the linear read, not the map — and the map doesn't reach past the next turn_
 
 **Methodology (this result):** the two-turn within-cells (predict the upcoming assistant turn inside a 2-turn conversation) — ridge vs MLP per cell; the cross-role cells (predict the turn-after-next: v(u2) from before a1, v(a2) from before u2) against a topic-persistence baseline (predict v(u2) from v(u1)), paired per conversation; [#922](https://eps.superkaiba.com/tasks/922) for the within-answer horizon.
 
@@ -138,4 +132,3 @@ Everything below uses one rig unless a result says otherwise:
 - (running) direct test of Result 2's "rotation": fit an explicit basis change (orthogonal Procrustes vs general linear) between the two models' spaces and check whether it maps M_base onto M_instruct held-out, with a proper random-rotation null for the 0.686 Procrustes cosine and a rank read on the residual
 - MLP probe on the cross-role (turn-after-next) cells — the linear-only verdict there mirrors the user-turn case, where the MLP found a weak map the ridge missed
 - Use the rotation read quantitatively: how big is the basis change, is it low-rank, does it concentrate at the map's peak layers
-- Behavior prediction through the map, updated by Result 7: read behavior off the query-bearing context state rather than the prefix persona state
