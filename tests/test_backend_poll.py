@@ -3108,7 +3108,7 @@ def test_gcp_queue_timeout_failover_reconstructs_from_reconnect_handle(
 
 
 # ---------------------------------------------------------------------------
-# #710/#1296 — scripts-dir bootstrap before the lazy ``from runpod_api`` sites
+# #710/#1296/#1304 — scripts-dir bootstrap before lazy scripts-local imports
 # ---------------------------------------------------------------------------
 
 
@@ -3152,34 +3152,104 @@ def test_ensure_scripts_dir_bootstrap_resolves_runpod_api_in_module_mode(monkeyp
         sys.modules.pop("runpod_api", None)
 
 
-def test_every_lazy_runpod_api_import_is_bootstrap_guarded():
-    """#1296 durability pin: every INDENTED (function-local, lazy)
-    ``from runpod_api import`` line in scripts/backend_poll.py must have the
-    scripts-dir bootstrap — ``_ensure_scripts_dir_on_sys_path()`` or the
-    inline ``sys.path.insert(0, scripts_dir)`` — within the preceding ~12
+def _inside_type_checking_block(lines: list[str], i: int) -> bool:
+    """True iff ``lines[i]`` sits INSIDE an ``if TYPE_CHECKING:`` block.
+
+    BLOCK MEMBERSHIP, not raw-window presence (#1304 review concern): walk
+    upward to the NEAREST non-blank, non-comment line at STRICTLY LOWER
+    indentation — the enclosing block opener. Only a literal
+    ``if TYPE_CHECKING:`` / ``if typing.TYPE_CHECKING:`` opener exempts; a
+    runtime lazy import that merely sits within a few lines of a
+    TYPE_CHECKING mention is NOT exempt (an ``else:``/``try:``/``def`` opener
+    returns False).
+    """
+    indent_i = len(lines[i]) - len(lines[i].lstrip())
+    for j in range(i - 1, -1, -1):
+        stripped = lines[j].strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent_j = len(lines[j]) - len(lines[j].lstrip())
+        if indent_j < indent_i:
+            return stripped.startswith(("if TYPE_CHECKING", "if typing.TYPE_CHECKING"))
+    return False
+
+
+def test_every_lazy_scripts_local_import_is_bootstrap_guarded():
+    """#1296/#1304 durability pin, WIDENED to the scripts-local module CLASS
+    (renames + supersedes the #1296
+    ``test_every_lazy_runpod_api_import_is_bootstrap_guarded``, which pinned
+    only ``from runpod_api import`` in backend_poll.py — a fixed module name
+    is exactly what let the unguarded ``failure_classifier`` site slip past
+    it, #1304): every INDENTED (function-local, lazy) import of a
+    scripts-local module — any stem of ``scripts/*.py``, derived DYNAMICALLY
+    so a future scripts-local module is auto-covered — in
+    scripts/backend_poll.py AND scripts/pod_config.py must have the
+    scripts-dir bootstrap (``_ensure_scripts_dir_on_sys_path()`` or the
+    inline ``sys.path.insert(0, scripts_dir)``) within the preceding ~12
     lines, so a FUTURE bare site cannot re-introduce the module-mode
-    ModuleNotFoundError landmine. Comment lines never satisfy the guard."""
+    ModuleNotFoundError landmine. Scan scope is these TWO files — the ones
+    with known module-mode lazy sites (the poller + pod_config's module-mode
+    consumers, e.g. ``backends/runpod.py``); a future widening starts from
+    them. Both import forms are matched: ``from X import ...`` (undotted
+    module names only, so module-mode-safe ``from scripts.pod_config import
+    ...`` consumers are excluded by construction) and
+    ``import X [as Y][, Z [as W]]``. Comment lines never satisfy the guard;
+    an ``if TYPE_CHECKING:`` block member is exempt by BLOCK MEMBERSHIP only
+    (``_inside_type_checking_block``)."""
+    import re
+    import sys
+
     import scripts.backend_poll as bp
 
-    lines = Path(bp.__file__).read_text(encoding="utf-8").splitlines()
-    lazy_sites = [
-        i
-        for i, line in enumerate(lines)
-        if line.strip().startswith("from runpod_api import") and line != line.lstrip()
-    ]
-    assert lazy_sites, "expected >=1 lazy 'from runpod_api import' site in backend_poll.py"
-    for i in lazy_sites:
-        window = [
-            ln.strip()
-            for ln in lines[max(0, i - 12) : i]
-            if ln.strip() and not ln.strip().startswith("#")
-        ]
-        guarded = any(
-            "_ensure_scripts_dir_on_sys_path()" in ln or "sys.path.insert(0, scripts_dir)" in ln
-            for ln in window
-        )
-        assert guarded, (
-            f"scripts/backend_poll.py:{i + 1}: lazy 'from runpod_api import' without a "
-            f"scripts-dir bootstrap in the preceding 12 lines — call "
-            f"_ensure_scripts_dir_on_sys_path() directly above the import (#1296)"
+    scripts_dir = Path(bp.__file__).resolve().parent
+    stems = {p.stem for p in scripts_dir.glob("*.py")}
+    # Sanity-guard the dynamic stems set: a scripts/*.py whose stem shadows a
+    # stdlib module would make this scan flag stdlib imports (verified empty
+    # today; installed-package shadowing is left unchecked by design — there
+    # is no cheap authoritative enumeration of installed top-level names).
+    stdlib_overlap = stems & set(sys.stdlib_module_names)
+    assert not stdlib_overlap, (
+        f"scripts/*.py stems shadow stdlib modules {sorted(stdlib_overlap)}; "
+        f"the dynamic scripts-local stems scan cannot distinguish them"
+    )
+
+    from_re = re.compile(r"\s+from ([A-Za-z_]\w*) import\b")
+    import_re = re.compile(
+        r"\s+import ([A-Za-z_]\w*(?:\s+as\s+\w+)?"
+        r"(?:\s*,\s*[A-Za-z_]\w*(?:\s+as\s+\w+)?)*)\s*(#.*)?$"
+    )
+
+    for fname in ("backend_poll.py", "pod_config.py"):
+        lines = (scripts_dir / fname).read_text(encoding="utf-8").splitlines()
+        n_flagged = 0
+        for i, line in enumerate(lines):
+            m = from_re.match(line)
+            if m:
+                names = [m.group(1)]
+            else:
+                m2 = import_re.match(line)
+                names = [seg.split()[0] for seg in m2.group(1).split(",")] if m2 else []
+            if not any(n in stems for n in names):
+                continue
+            if _inside_type_checking_block(lines, i):
+                continue  # type-checking-only import; no runtime effect
+            n_flagged += 1
+            window = [
+                ln.strip()
+                for ln in lines[max(0, i - 12) : i]
+                if ln.strip() and not ln.strip().startswith("#")
+            ]
+            guarded = any(
+                "_ensure_scripts_dir_on_sys_path()" in ln or "sys.path.insert(0, scripts_dir)" in ln
+                for ln in window
+            )
+            assert guarded, (
+                f"scripts/{fname}:{i + 1}: lazy scripts-local import ({line.strip()!r}) "
+                f"without a scripts-dir bootstrap in the preceding 12 lines — call "
+                f"_ensure_scripts_dir_on_sys_path() directly above the import "
+                f"(#1296/#1304)"
+            )
+        assert n_flagged, (
+            f"expected >=1 flagged lazy scripts-local import site in scripts/{fname} "
+            f"(non-vacuity: the scan went blind if this fires)"
         )

@@ -49,6 +49,22 @@ if TYPE_CHECKING:
     # keeps the cheap ``--list`` / ``--check`` paths free of the eager load.
     from runpod_api import PodInfo
 
+
+def _ensure_scripts_dir_on_sys_path() -> None:
+    """Insert THIS file's dir (scripts/) so a lazy ``import runpod_api`` resolves.
+
+    In script mode scripts/ is already ``sys.path[0]``; in MODULE mode
+    (``from scripts.pod_config import parse_pods_conf``) only the repo root is
+    on sys.path, so a bare lazy ``runpod_api`` import raises
+    ``ModuleNotFoundError`` (#1296/#1304). Mirrors scripts/backend_poll.py's
+    helper; idempotent; called ONLY on the lazy paths so the cheap
+    ``--list``/``--check`` paths and library imports never mutate sys.path.
+    """
+    scripts_dir = str(Path(__file__).resolve().parent)
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+
+
 # ---------------------------------------------------------------------------
 # Paths -- resolved to the MAIN repo regardless of which worktree this
 # module is loaded from. ``pods.conf`` and ``pods_ephemeral.json`` are
@@ -572,6 +588,7 @@ def _guard_against_dropping_running(dropped: set[str], on_disk_rows: dict[str, P
     """
     # Lazy import — ``runpod_api`` is heavy (loads RunPod GraphQL config
     # from .env at import time).
+    _ensure_scripts_dir_on_sys_path()
     try:
         from runpod_api import RunPodError, list_team_pods
     except ImportError:  # pragma: no cover - only if repo is malformed
@@ -1546,6 +1563,7 @@ def cmd_refresh_from_api(pods: list[Pod], pod_name: str | None) -> None:
     # Import lazily — ``runpod_api`` is the heavy module and importing at
     # module top would force every ``pod_config --check`` / ``--list`` to
     # eagerly load it. The lazy import keeps the cheap subcommands cheap.
+    _ensure_scripts_dir_on_sys_path()
     from runpod_api import list_team_pods
 
     live_pods = list_team_pods()
