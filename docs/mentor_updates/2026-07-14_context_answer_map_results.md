@@ -7,14 +7,12 @@
     * if this mapping exists in the pretrained-only model (before any post-training)
     * how the mapping changes from the pretrained to the instruct model
     * if it requires the chat template, or holds for more general character + dialogue pairs
-    * what happens to the mapping when we fine-tune a behavior into the model
 
 ## TLDR
 
 - The mapping already exists in the pretrained base model at **~87% of instruct strength** (held-out R² 0.588 vs 0.673) — post-training doesn't create it
 - What post-training changes is the **coordinates, not the information**: swapping representations across models preserves prediction, swapping the fitted maps fails — consistent with a rotated read-out
 - The chat-template **tokens** are not what carries the map (a nonlinear probe recovers it on plain `User:`/`Assistant:` transcripts, and the base model reads naturalistic transcripts at R² 0.71–0.74 on real conversations), but the strong **linear** map is scoped to the chat regime: it does not transfer to character→dialogue in fiction at all
-- Fine-tuning measurably moves the map itself only for a **taught fact**; for broad traits (EM, sycophancy) the test was underpowered and is inconclusive
 - (running) the last untested cell — the single-turn cells re-rendered without the chat template — is being refit now
 
 ## Methodology
@@ -90,17 +88,6 @@ The strongest version of the question: is this a general "character conditioning
 * Character identity is a small but real residue: swapping which character's intro predicts the dialogue costs R² 0.076 (novels) / 0.046 (stories), 91–93% of it surviving activation-distance partialling, correct-beats-swap in 28/28 novels
 * The generic "predict the next span after a separator" control transfers only 5.7% (base) / 10.9% (instruct) of the chat map — so neither generic next-span prediction nor raw-text character structure explains the chat map; the assistant-turn conversational structure is what carries it
 
-### _Result 5: Fine-tuning moves the map itself only for a taught fact (so far)_
-
-Finally, what happens to the map when we train a behavior into the model? [#722](https://eps.superkaiba.com/tasks/722) fitted the map before (M₀) and after (M⁺) applying trained behavior×context LoRA adapters and asked whether the *function* moved, separately from the input moving along a fixed function (the implicit assumption in the Persona Vectors framing).
-
-**Takeaways:**
-
-* For a **taught fact** the function measurably reshapes: the fitted-map change reads 1.6–3.3× the refit-variance floor across layers, and a context→leakage transfer chain appears post-finetuning (ρ ≈0 → +0.50, CI excluding zero)
-* For **EM and sycophancy** the readings sit below the floor but fail the power check (n=16 source-keyed inputs) — inconclusive, not "the map held"; the "fixed read-out, moving input" assumption is neither confirmed nor refuted for broad traits
-* The causal twin ([#697](https://eps.superkaiba.com/tasks/697), patching the finetuned context vector into the base model) failed to register above its own noise floor — no localization from that route either
-* Related, from the monitoring side ([#779](https://eps.superkaiba.com/tasks/779) follow-up): training the *map* on trait-eliciting data made trait read-out worse in all 6 cells — the bottleneck is read-out transfer across context distributions, not missing data
-
 ### _Supporting characterizations (one line each)_
 
 * The whole-answer-mean summary survives an exhaustive 46-recipe sweep under family-held-out, selection-corrected evaluation (#920) — the target choice isn't doing the work
@@ -111,7 +98,6 @@ Finally, what happens to the map when we train a behavior into the model? [#722]
 ## Next steps:
 
 - (running) single-turn naturalistic refit on #825 — closes the last format×model cell (instruct on template-free text in a strong regime); paired chat-vs-naturalistic delta per model with shared folds + paired bootstrap
-- Powered re-test of "does finetuning move the map for broad traits" — #722's n=16 was the binding limit; needs a wider source panel
 - "Over training" in the literal sense (the map's emergence across pretraining/post-training checkpoints) is unobservable on Qwen (no intermediate checkpoints); if we want it, OLMo/Pythia have open checkpoint ladders
 - Use the rotation read (Result 2) quantitatively: how big is the rotation, is it low-rank, does it concentrate in the layers where the map peaks
 - Behavior prediction through the map, updated by #1092's finding that transport rides the query-bearing context state rather than the prefix persona state
