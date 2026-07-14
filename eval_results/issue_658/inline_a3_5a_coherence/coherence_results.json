@@ -3999,5 +3999,132 @@
   "in_sample_confound": "The in-sample all-data nonlinear MLP gap/residual anti-correlate with spread (median rho -0.72), but this is a spread-dependent in-sample-optimism artifact (a flexible map interpolates a high-spread condition's own centroid having trained on its probes; e.g. format in-sample residual 652 vs LOCO residual 77572), NOT a valid test of the assumption.",
   "jensen_curvature_mechanism": "The specific Jensen-curvature mechanism was NOT cleanly isolated: the nonlinear Jensen gap is identically 0 for a linear map and could only be measured here with an in-sample MLP (optimism-confounded). A clean curvature test needs a leave-one-condition-out NONLINEAR fit (~50x MLP fits/layer), deferred.",
   "family_prediction": "Partially matches: persona is tightest in context space (whitened spread 1067) and wildchat is among the most scattered (1458) as predicted; but format is the MOST scattered in context space (1467) though its read-out behaviors are floored, so its context scatter does not translate to behavior variance."
+ },
+ "low_coherence_flags_honest_loco": {
+  "note": "HONEST flag set \u2014 keys on OUT-OF-SAMPLE (leave-one-condition-out) residual, the reliable measure. Supersedes low_coherence_flags (which keyed on the in-sample residual and mis-flagged tight personas).",
+  "thresholds": {
+   "spread_W_q80": 1490.8893294231952,
+   "R_loco_q80": 11898.940508878024
+  },
+  "n": 13,
+  "flags": [
+   {
+    "context_id": "f5_fmt_markdown_table",
+    "family": "format",
+    "mean_spread_W": 1522.7662832910355,
+    "mean_R_loco": 79941.0045579915,
+    "hi_spread": true,
+    "hi_oos_residual": true,
+    "recommend": "split_or_richer_summary"
+   },
+   {
+    "context_id": "f5_fmt_xml",
+    "family": "format",
+    "mean_spread_W": 1329.2982312349166,
+    "mean_R_loco": 79421.93867496417,
+    "hi_spread": false,
+    "hi_oos_residual": true,
+    "recommend": "caveat_downweight"
+   },
+   {
+    "context_id": "f5_fmt_code_comment",
+    "family": "format",
+    "mean_spread_W": 1512.0117369633094,
+    "mean_R_loco": 77375.33692222487,
+    "hi_spread": true,
+    "hi_oos_residual": true,
+    "recommend": "split_or_richer_summary"
+   },
+   {
+    "context_id": "f5_fmt_json",
+    "family": "format",
+    "mean_spread_W": 1502.9203612625727,
+    "mean_R_loco": 76995.89355715297,
+    "hi_spread": true,
+    "hi_oos_residual": true,
+    "recommend": "split_or_richer_summary"
+   },
+   {
+    "context_id": "f5_fmt_bullets",
+    "family": "format",
+    "mean_spread_W": 1466.5896010568233,
+    "mean_R_loco": 74126.76864615787,
+    "hi_spread": false,
+    "hi_oos_residual": true,
+    "recommend": "caveat_downweight"
+   },
+   {
+    "context_id": "f2_wc_long_4",
+    "family": "wildchat",
+    "mean_spread_W": 1625.3953006558054,
+    "mean_R_loco": 61829.11906068066,
+    "hi_spread": true,
+    "hi_oos_residual": true,
+    "recommend": "split_or_richer_summary"
+   },
+   {
+    "context_id": "f8_behav_marker",
+    "family": "behavior",
+    "mean_spread_W": 1579.7257866569375,
+    "mean_R_loco": 34410.72358417012,
+    "hi_spread": true,
+    "hi_oos_residual": true,
+    "recommend": "split_or_richer_summary"
+   },
+   {
+    "context_id": "f3_icl_pirate_k4",
+    "family": "icl",
+    "mean_spread_W": 1564.8762888221795,
+    "mean_R_loco": 33758.84716404932,
+    "hi_spread": true,
+    "hi_oos_residual": true,
+    "recommend": "split_or_richer_summary"
+   },
+   {
+    "context_id": "f8_behav_sycophant",
+    "family": "behavior",
+    "mean_spread_W": 1322.4766405831326,
+    "mean_R_loco": 19113.413439260414,
+    "hi_spread": false,
+    "hi_oos_residual": true,
+    "recommend": "caveat_downweight"
+   },
+   {
+    "context_id": "f2_wc_short_2",
+    "family": "wildchat",
+    "mean_spread_W": 1547.1545595507616,
+    "mean_R_loco": 16133.171124108847,
+    "hi_spread": true,
+    "hi_oos_residual": true,
+    "recommend": "split_or_richer_summary"
+   },
+   {
+    "context_id": "f4_reph_casual",
+    "family": "rephrase",
+    "mean_spread_W": 1548.7435875086646,
+    "mean_R_loco": 10309.23885152225,
+    "hi_spread": true,
+    "hi_oos_residual": false,
+    "recommend": "caveat_downweight"
+   },
+   {
+    "context_id": "f2_wc_long_2",
+    "family": "wildchat",
+    "mean_spread_W": 1604.660625751447,
+    "mean_R_loco": 5121.55203594114,
+    "hi_spread": true,
+    "hi_oos_residual": false,
+    "recommend": "caveat_downweight"
+   },
+   {
+    "context_id": "f2_wc_long_3",
+    "family": "wildchat",
+    "mean_spread_W": 1570.0529427334109,
+    "mean_R_loco": 4949.859746400613,
+    "hi_spread": true,
+    "hi_oos_residual": false,
+    "recommend": "caveat_downweight"
+   }
+  ]
  }
 }
