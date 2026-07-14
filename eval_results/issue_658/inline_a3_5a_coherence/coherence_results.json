@@ -3984,5 +3984,20 @@
   "frac_layers_rho_sW_J_pos": 0.0,
   "frac_layers_rho_sW_R_pos": 0.0,
   "n_low_coherence_flags": 20
+ },
+ "overall_honest_loco": {
+  "measure": "linear-ridge leave-one-condition-out residual (out-of-sample)",
+  "median_layerwise_rho_sW_Rloco": 0.8887875150060025,
+  "frac_layers_positive": 1.0,
+  "layer_mean_rho_all": 0.7672989195678271,
+  "layer_mean_rho_excl_format": 0.7590250329380763,
+  "within_persona_rho": 0.7626373626373627
+ },
+ "interpretation": {
+  "verdict": "SUPPORTED (by the reliable out-of-sample read)",
+  "one_line": "Within-condition context-vector spread POSITIVELY predicts the held-out (leave-one-condition-out) mean-vector-predictor residual (rho ~ +0.8, robust to dropping format and within the persona family) -> the assumption's prediction holds: less-coherent conditions are worse for the prefix-average summary.",
+  "in_sample_confound": "The in-sample all-data nonlinear MLP gap/residual anti-correlate with spread (median rho -0.72), but this is a spread-dependent in-sample-optimism artifact (a flexible map interpolates a high-spread condition's own centroid having trained on its probes; e.g. format in-sample residual 652 vs LOCO residual 77572), NOT a valid test of the assumption.",
+  "jensen_curvature_mechanism": "The specific Jensen-curvature mechanism was NOT cleanly isolated: the nonlinear Jensen gap is identically 0 for a linear map and could only be measured here with an in-sample MLP (optimism-confounded). A clean curvature test needs a leave-one-condition-out NONLINEAR fit (~50x MLP fits/layer), deferred.",
+  "family_prediction": "Partially matches: persona is tightest in context space (whitened spread 1067) and wildchat is among the most scattered (1458) as predicted; but format is the MOST scattered in context space (1467) though its read-out behaviors are floored, so its context scatter does not translate to behavior variance."
  }
 }
