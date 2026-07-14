@@ -1,0 +1,70 @@
+{
+  "commit": "633c5dd793",
+  "created": "2026-07-14T21:39:38Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "Full context",
+      "Held-out R\u00b2 (pca48, instruct-own, layer 14)": 0.91,
+      "_kind": "bar"
+    },
+    {
+      "category": "Prefix + query\n(disjoint, stitched)",
+      "Held-out R\u00b2 (pca48, instruct-own, layer 14)": 0.833,
+      "_kind": "bar"
+    },
+    {
+      "category": "Query only",
+      "Held-out R\u00b2 (pca48, instruct-own, layer 14)": 0.146,
+      "_kind": "bar"
+    },
+    {
+      "category": "Prefix only",
+      "Held-out R\u00b2 (pca48, instruct-own, layer 14)": 0.096,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Stitching disjoint prefix + query recovers the full-context map",
+        "ylabel": "Held-out R\u00b2 (pca48, instruct-own, layer 14)",
+        "xticklabels": [
+          "Full context",
+          "Prefix + query\n(disjoint, stitched)",
+          "Query only",
+          "Prefix only"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "sources": [
+    {
+      "file": "tasks/awaiting_promotion/1092/body.md",
+      "locus": "L141 (read1 result prose)",
+      "values": {
+        "full_context": 0.91,
+        "prefix_plus_query_stitch": 0.833,
+        "query_only": 0.146,
+        "prefix_only": 0.096
+      },
+      "regime": "instruct-own cell, layer 14, pca48 target basis"
+    }
+  ],
+  "summary_note": "No error bars: point R\u00b2 values from the committed body prose; the bare-query-alone map has unstable folds (noted in body). Qwen-2.5-7B-Instruct, WildChat/LMSYS realistic crossing."
+}

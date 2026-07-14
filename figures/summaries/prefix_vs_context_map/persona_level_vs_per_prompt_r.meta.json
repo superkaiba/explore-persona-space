@@ -1,0 +1,102 @@
+{
+  "commit": "633c5dd793",
+  "created": "2026-07-14T21:39:37Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "Pearson r (map read vs mean judge score)": 0.34,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "Pearson r (map read vs mean judge score)": 0.63,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "Pearson r (map read vs mean judge score)": 0.09,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "Pearson r (map read vs mean judge score)": 0.66,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "Pearson r (map read vs mean judge score)": 0.89,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "Pearson r (map read vs mean judge score)": 0.53,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Persona-level monitoring beats per-prompt monitoring",
+        "ylabel": "Pearson r (map read vs mean judge score)",
+        "legend_labels": [
+          "Per-prompt (single question)",
+          "Persona average (40 questions)"
+        ],
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Per-prompt (single question)",
+      "Persona average (40 questions)"
+    ]
+  },
+  "sources": [
+    {
+      "file": "tasks/awaiting_promotion/779/body.md",
+      "locus": "L289 (grouped_context result)",
+      "values": {
+        "per_prompt_per_context_baseline": {
+          "evil": 0.34,
+          "sycophancy": 0.63,
+          "hallucination": 0.09
+        },
+        "persona_averaged_40q": {
+          "evil": 0.66,
+          "sycophancy": 0.89,
+          "hallucination": 0.53
+        }
+      }
+    },
+    {
+      "file": "figures/issue_779/grouped_context.meta.json",
+      "locus": "curve points + whiskers (40q whisker=0 by construction)"
+    }
+  ],
+  "summary_note": "No error bars: per-context baseline is a single leave-one-group-out value with no banked bootstrap CI, and the 40-question-averaged whisker collapses to 0 by construction (all 40 questions averaged, single draw). Generic-trained map read; Qwen-2.5-7B-Instruct."
+}

@@ -1,0 +1,102 @@
+{
+  "commit": "633c5dd793",
+  "created": "2026-07-14T21:39:40Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "Variance share (%)": 7.8,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "Variance share (%)": 83.7,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "Variance share (%)": 8.6,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "Variance share (%)": 10.7,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "Variance share (%)": 79.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "Variance share (%)": 10.3,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Query-dominant variance decomposition transfers to realistic data",
+        "ylabel": "Variance share (%)",
+        "legend_labels": [
+          "Constructed crossing (UltraChat)",
+          "Realistic crossing (WildChat/LMSYS)"
+        ],
+        "xticklabels": [
+          "Prefix / persona",
+          "Query",
+          "Interaction"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      }
+    ],
+    "series": [
+      "Constructed crossing (UltraChat)",
+      "Realistic crossing (WildChat/LMSYS)"
+    ]
+  },
+  "sources": [
+    {
+      "file": "tasks/awaiting_promotion/923/body.md",
+      "locus": "L236 (anova_shares result)",
+      "values": {
+        "context_prefix": 7.8,
+        "query": 83.7,
+        "interaction": 8.6
+      },
+      "regime": "UltraChat constructed crossing, layer 18, PCA-48 target space, in-sample"
+    },
+    {
+      "file": "tasks/awaiting_promotion/1092/body.md",
+      "locus": "L163 (read3_fgi_shares table)",
+      "values": {
+        "prefix": 10.7,
+        "query": 79.0,
+        "interaction": 10.3
+      },
+      "regime": "WildChat/LMSYS realistic crossing, instruct-own cell, layer 14, pca48, dense-core"
+    }
+  ],
+  "summary_note": "Each issue plotted at its own frozen headline layer (#923 layer 18, #1092 layer 14). #923's 'context main effect' is the prefix/persona factor. In-sample decomposition, not a held-out claim. #1092 layer-18 values (11.3/77.2/11.5) are close (body L165)."
+}
