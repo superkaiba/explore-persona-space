@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1304,
+  "highest_id": 1305,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2374,6 +2374,13 @@
       "path": "tasks/proposed/1304",
       "status": "proposed",
       "title": "daily-fix: guard backend_poll failure_classifier import"
+    },
+    "1305": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1305",
+      "status": "proposed",
+      "title": "daily-fix: implementer pre-report 9c touched-scope run"
     },
     "131": {
       "has_clean_result": false,
