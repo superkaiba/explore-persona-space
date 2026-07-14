@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1300,
+  "highest_id": 1301,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2346,6 +2346,13 @@
       "path": "tasks/completed/1300",
       "status": "completed",
       "title": "workflow-fix: postmerge guard must not delete origin's only task folder (unpushed mv)"
+    },
+    "1301": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1301",
+      "status": "proposed",
+      "title": "daily-fix: v2 composer plan_body vs paths-only drift"
     },
     "131": {
       "has_clean_result": false,
