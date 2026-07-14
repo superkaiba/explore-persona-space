@@ -378,6 +378,11 @@ such corpora or banks:
    re-create the drift) or hoist cheap cross-script helper imports to
    module top. Full trap + incident #606: `.claude/rules/gotchas.md`
    "Lazy imports inside smoke-skipped branches".
+2b. **Changed-literal pin-sweep + mapped-scan run (#1288/#1144).** Grep
+   `tests/` for each changed literal (old+new); run every hit, plus the
+   Step 10d mapped tests (`select_step9c_tests.py --map-files
+   <diff-list> --repo-root "$WT"`) — experiment kinds skip Step 9c;
+   that merge-gate leg is the backstop.
 3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint the
    experiment pipeline executes — data-gen, training, eval (and any
    separate analysis / upload step) — run the script ONCE on a tiny real
