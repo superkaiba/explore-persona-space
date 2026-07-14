@@ -536,3 +536,48 @@ def test_refresh_does_not_fabricate_unmanaged_rows(
     assert written is not None
     by_name = {p.name for p in written}
     assert by_name == {"pod-763"}, by_name
+
+
+# ---------------------------------------------------------------------------
+# #1304 — scripts-dir bootstrap before the lazy ``from runpod_api`` sites
+# ---------------------------------------------------------------------------
+
+
+def test_ensure_scripts_dir_bootstrap_enables_runpod_api_import(monkeypatch):
+    """#1304: ``pod_config._ensure_scripts_dir_on_sys_path()`` makes a bare
+    ``import runpod_api`` resolve in MODULE mode (repo root on sys.path,
+    scripts/ NOT), with a built-in NEGATIVE CONTROL proving the pre-fix
+    ``ModuleNotFoundError`` exists once scripts/ is scrubbed. Mirror of
+    tests/test_backend_poll.py's #1296 behavioral test
+    (``test_ensure_scripts_dir_bootstrap_resolves_runpod_api_in_module_mode``).
+    Import only — no live RunPod API call is ever made."""
+    import importlib
+
+    scripts_dir = str(Path(pod_config.__file__).resolve().parent)
+    # Scrub every sys.path entry that resolves to scripts/ (cross-test-file
+    # inserts included, e.g. this file's own module-top insert).
+    # monkeypatch.setattr replaces the LIST OBJECT and restores the original
+    # at teardown, so the helper's in-test insert (into the scrubbed list)
+    # never leaks either.
+    scrubbed = [p for p in sys.path if str(Path(p or ".").resolve()) != scripts_dir]
+    monkeypatch.setattr(sys, "path", scrubbed)
+    # delitem records + restores the PRE-test runpod_api module object (this
+    # file imports PodInfo from it at module top, so one exists).
+    monkeypatch.delitem(sys.modules, "runpod_api", raising=False)
+
+    # NEGATIVE CONTROL (fail-loud claim): with scripts/ scrubbed and the
+    # bootstrap not yet run, the bare import raises — the exact pre-fix
+    # failure mode at pod_config's two lazy runtime sites.
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("runpod_api")
+
+    pod_config._ensure_scripts_dir_on_sys_path()
+
+    mod = importlib.import_module("runpod_api")
+    try:
+        assert hasattr(mod, "list_team_pods")
+    finally:
+        # Drop the module object THIS test just imported so it cannot alias
+        # past teardown; monkeypatch then restores the original entry after
+        # this pop.
+        sys.modules.pop("runpod_api", None)

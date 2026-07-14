@@ -1381,6 +1381,7 @@ def _crash_signature_has_our_code_frame(text: str | None) -> bool:
     """
     if not text:
         return False
+    _ensure_scripts_dir_on_sys_path()
     from failure_classifier import OUR_CODE_FRAME
 
     return bool(OUR_CODE_FRAME.search(text))
