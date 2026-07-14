@@ -529,6 +529,20 @@ one-cycle delay, not a dropped bug. The recursion-guard predicate is
 executable-tested (`tests/test_workflow_fix_dedup.py`
 `test_is_workflow_fix_session_true_on_provenance_line`).
 
+**A `daily-fix:` session for a NON-workflow-surface fix is intentionally
+outside this guard.** A `/daily` route-2 item filed with `wf_fix: false`
+(an experiment-code / non-workflow-surface fix) carries neither the
+`wf-fix` tags nor the injected `workflow_fix_target:` Provenance block
+(`.claude/skills/daily/SKILL.md` § route 2), so
+`is_workflow_fix_session()` correctly stays false and its session MAY
+auto-file a first-generation workflow-fix candidate it uncovers (worked
+example: #1286, an experiment-script fix session, filed #1299 on
+2026-07-13). This is by design, not a gap: the dedup predicate still
+covers such filings via the `daily-fix:` title prefix
+(`task_workflow.WF_FIX_TITLE_PREFIXES`, #1180), and fan-out stays bounded
+because the CHILD workflow-fix task's body DOES carry the
+`workflow_fix_target:` line, putting the child session under the guard.
+
 ## Architectural greenlight
 
 Non-architectural workflow fixes (the vast majority) are 0 GPU-h, so the
