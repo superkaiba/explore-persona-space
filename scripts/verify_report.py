@@ -2,27 +2,33 @@
 """verify_report.py — mechanical verifier for v2 report clean-result bodies.
 
 The v2 workflow retires agent interpretation of results: agents author a
-fixed-structure REPORT (Motivation / Methodology / Metrics / Results-as-plots)
-and Thomas alone writes the TLDR + Next steps. This is the mechanical gate for
-that report form, the report-track analogue of ``verify_task_body.py`` (markdown
-v4) and ``verify_paper.py`` (paper track).
+fixed-structure REPORT (Motivation / Methodology (metrics embedded) /
+Results-as-plots) and Thomas alone writes the claims — the ``# Result:``
+title, the TLDR, every per-result ``**Takeaways:**`` block, and Next steps.
+This is the mechanical gate for that report form, the report-track analogue of
+``verify_task_body.py`` (markdown v4) and ``verify_paper.py`` (paper track).
+Canonical skeleton: ``.claude/skills/issue-v2/report-template.md``.
 
 A report body carries the sentinel ``<!-- report-v1 -->`` on the line after its
-H1 ``# Experiment: <question>`` title (mirroring ``<!-- clean-result-v4 -->``).
+H1 title (mirroring ``<!-- clean-result-v4 -->``).
 
 Required structure (both modes):
-  - H1 line ``# Experiment: <question>``.
+  - H1 line ``# Experiment: <question>`` at generation time; promote mode also
+    accepts the Thomas-retitled ``# Result: <claim>`` form.
   - Sentinel ``<!-- report-v1 -->`` as the first non-blank line after the H1.
-  - Six H2 sections, in this exact relative order: ``## TLDR:``,
-    ``## Motivation:``, ``## Methodology:``, ``## Metrics:``, ``## Results:``,
-    ``## Next steps:``.
-  - ``## Results:`` contains >=1 ``### <name>`` subsection, each with a
-    non-empty description paragraph AND exactly one image reference
-    ``![...](...)``.
+  - Five H2 sections, in this exact relative order: ``## Motivation``,
+    ``## TLDR``, ``## Methodology``, ``## Results``, ``## Next steps``.
+    A trailing colon on any heading is accepted and ignored. There is NO
+    separate ``## Metrics`` section — metric definitions + rationale live
+    inside ``## Methodology:`` as its final ``**Metrics:**`` block.
+  - ``## Results`` contains >=1 ``### <name>`` subsection, each with a
+    non-empty description paragraph, exactly one image reference
+    ``![...](...)``, AND exactly one ``**Takeaways:**`` block.
   - Every referenced local image path exists on disk (resolved vs
     ``--figures-root``; default: the git-repo root of ``--file``).
-  - Every ``htmlpreview.github.io`` link embeds a full 40-hex SHA
-    ``raw.githubusercontent`` URL (well-formedness only, no network).
+  - Every ``htmlpreview.github.io`` link embeds a full 40-hex SHA/revision
+    ``raw.githubusercontent`` or ``gist.githubusercontent`` URL
+    (well-formedness only, no network).
   - ``image-pin-format``: every ``## Results:`` image is a well-formed
     ``https://raw.githubusercontent.com/<owner>/<repo>/<40-hex-sha>/figures/issue_<N>/...``
     pin, all Results images name ONE issue number (== ``--expect-issue`` /
@@ -43,13 +49,15 @@ Required structure (both modes):
 
 Mode-specific:
   - ``generation``: TLDR AND Next steps content MUST be exactly the placeholder
-    ``*(Thomas fills in)*`` (Thomas has not written them yet). Interpretive
-    lexicon scan over Methodology + Metrics + Results (Motivation is exempt —
-    hypothesis framing is allowed there).
+    ``*(Thomas fills in)*`` (Thomas has not written them yet), and every
+    Results subsection's ``**Takeaways:**`` block must be exactly the
+    placeholder too. Interpretive lexicon scan over Methodology + Results
+    (Motivation is exempt — hypothesis framing is allowed there).
   - ``promote``: TLDR content MUST be non-placeholder AND non-empty (Thomas has
-    filled it). Thomas's TLDR / Next-steps prose is NEVER lexicon-checked; the
-    agent-authored sections are still lexicon-scanned; structural checks still
-    apply.
+    filled it). Thomas's prose — TLDR, Next steps, and the Results takeaways /
+    claim headings he filled in — is NEVER lexicon-checked; only Methodology
+    (pure agent prose in both modes) stays lexicon-scanned; structural checks
+    still apply.
 
 ``--manifest`` (optional, both modes): validates the manifest against
 ``.claude/skills/issue-v2/planned_manifest.schema.json``, then checks every
@@ -83,22 +91,36 @@ from pathlib import Path
 
 REPORT_SENTINEL = "<!-- report-v1 -->"
 H1_TITLE_PREFIX = "Experiment: "
+H1_RESULT_PREFIX = "Result: "
 PLACEHOLDER = "*(Thomas fills in)*"
+TAKEAWAYS_LINE = "**Takeaways:**"
 
-# The six required H2 sections, in the exact order they must appear.
+# The five required H2 sections, in the exact order they must appear.
+# Stored in NORMALIZED form (no trailing colon) — a heading line is matched
+# via _norm_header(), so `## TLDR` and `## TLDR:` are both accepted.
 REQUIRED_SECTIONS = [
-    "## TLDR:",
-    "## Motivation:",
-    "## Methodology:",
-    "## Metrics:",
-    "## Results:",
-    "## Next steps:",
+    "## Motivation",
+    "## TLDR",
+    "## Methodology",
+    "## Results",
+    "## Next steps",
 ]
 
-# Sections whose (agent-authored) prose is scanned for interpretive lexicon.
-# Motivation is deliberately EXEMPT (hypothesis-to-be-tested framing is allowed
-# there); TLDR / Next steps are Thomas's prose and are NEVER scanned.
-LEXICON_SECTIONS = ("## Methodology:", "## Metrics:", "## Results:")
+# Sections whose (agent-authored) prose is scanned for interpretive lexicon,
+# per mode. Motivation is deliberately EXEMPT (hypothesis-to-be-tested framing
+# is allowed there); TLDR / Next steps are Thomas's prose and are NEVER
+# scanned. Results is scanned only at GENERATION time — at promote it carries
+# Thomas's filled Takeaways + claim-shaped headings, which are his voice.
+LEXICON_SECTIONS_BY_MODE = {
+    "generation": ("## Methodology", "## Results"),
+    "promote": ("## Methodology",),
+}
+
+
+def _norm_header(line: str) -> str:
+    """Canonical form of a heading line: stripped, trailing ':' removed."""
+    return line.rstrip().rstrip(":").rstrip()
+
 
 # Conservative list of asserted-conclusion lexemes banned from agent sections.
 BANNED_LEXICON = [
@@ -264,18 +286,19 @@ def parse_sections(lines: list[str]) -> list[Section]:
 
 
 def section_map(sections: list[Section]) -> dict[str, Section]:
-    """First occurrence of each required header text → its Section."""
+    """First occurrence of each required header (normalized) → its Section."""
     out: dict[str, Section] = {}
     for sec in sections:
-        if sec.header in REQUIRED_SECTIONS and sec.header not in out:
-            out[sec.header] = sec
+        key = _norm_header(sec.header)
+        if key in REQUIRED_SECTIONS and key not in out:
+            out[key] = sec
     return out
 
 
 # ─── Structural checks (both modes) ────────────────────────────────────────
 
 
-def check_h1_and_sentinel(lines: list[str]) -> list[CheckResult]:
+def check_h1_and_sentinel(lines: list[str], mode: str) -> list[CheckResult]:
     results: list[CheckResult] = []
     h1 = find_h1(lines)
     if h1 is None:
@@ -283,15 +306,16 @@ def check_h1_and_sentinel(lines: list[str]) -> list[CheckResult]:
         results.append(CheckResult("sentinel", False, "no H1 title to anchor the sentinel"))
         return results
     h1_idx, title = h1
-    if title.startswith(H1_TITLE_PREFIX):
-        results.append(
-            CheckResult("h1-title", True, f"H1 = 'Experiment: {title[len(H1_TITLE_PREFIX) :]}'")
-        )
+    # Generation: agents have no finding to claim, so the H1 must be the
+    # question form. Promote: Thomas retitles to the claim form `# Result: ...`
+    # (preferred); a not-yet-retitled `# Experiment: ...` is still accepted.
+    allowed = (H1_TITLE_PREFIX,) if mode == "generation" else (H1_RESULT_PREFIX, H1_TITLE_PREFIX)
+    if any(title.startswith(p) for p in allowed):
+        results.append(CheckResult("h1-title", True, f"H1 = '{title}'"))
     else:
+        want = " or ".join(f"'# {p}...'" for p in allowed)
         results.append(
-            CheckResult(
-                "h1-title", False, f"H1 must start with '# {H1_TITLE_PREFIX}...', got '# {title}'"
-            )
+            CheckResult("h1-title", False, f"H1 must start with {want}, got '# {title}'")
         )
     # Sentinel = first non-blank line after the H1.
     first_after = None
@@ -323,7 +347,7 @@ def check_required_sections(sections: list[Section]) -> list[CheckResult]:
             CheckResult("required-sections", False, "missing section(s): " + ", ".join(missing))
         )
     else:
-        results.append(CheckResult("required-sections", True, "all six required sections present"))
+        results.append(CheckResult("required-sections", True, "all five required sections present"))
     # Order: the present required headers must appear in the required relative
     # order. Compare the order of first-occurrence line numbers.
     ordered_present = [h for h in REQUIRED_SECTIONS if h in present]
@@ -353,7 +377,7 @@ def check_duplicate_sections(lines: list[str]) -> CheckResult:
     """
     occurrences: dict[str, list[int]] = {}
     for i, ln in enumerate(lines, 1):
-        header = ln.rstrip()
+        header = _norm_header(ln)
         if header in REQUIRED_SECTIONS:
             occurrences.setdefault(header, []).append(i)
     dups = {h: ls for h, ls in occurrences.items() if len(ls) > 1}
@@ -369,15 +393,15 @@ def _images_in(text: str) -> list[str]:
     return [m.group(1).split()[0].strip() for m in _IMAGE_RE.finditer(text) if m.group(1).strip()]
 
 
-def check_results_subsections(sections: list[Section]) -> CheckResult:
+def check_results_subsections(sections: list[Section], mode: str) -> CheckResult:
     present = section_map(sections)
-    results_sec = present.get("## Results:")
+    results_sec = present.get("## Results")
     if results_sec is None:
-        return CheckResult("results-subsections", False, "no ## Results: section")
+        return CheckResult("results-subsections", False, "no ## Results section")
     lines = results_sec.content_lines
     sub_idxs = [i for i, ln in enumerate(lines) if ln.startswith("### ")]
     if not sub_idxs:
-        return CheckResult("results-subsections", False, "## Results: has no ### <name> subsection")
+        return CheckResult("results-subsections", False, "## Results has no ### <name> subsection")
     problems: list[str] = []
     for pos, i in enumerate(sub_idxs):
         end = sub_idxs[pos + 1] if pos + 1 < len(sub_idxs) else len(lines)
@@ -387,16 +411,40 @@ def check_results_subsections(sections: list[Section]) -> CheckResult:
         imgs = _images_in(block_text)
         if len(imgs) != 1:
             problems.append(f"'{name}': expected exactly 1 image, found {len(imgs)}")
-        # Description = a non-blank line that is not solely an image reference.
-        has_desc = any(ln.strip() and not _IMAGE_RE.fullmatch(ln.strip()) for ln in block)
+        # Description = a non-blank line that is not solely an image reference
+        # and not part of the Takeaways scaffolding (the Takeaways line, the
+        # placeholder, or the bold plot label).
+        has_desc = any(
+            ln.strip()
+            and not _IMAGE_RE.fullmatch(ln.strip())
+            and ln.strip() != TAKEAWAYS_LINE
+            and ln.strip() != PLACEHOLDER
+            and not ln.strip().startswith("**Plot:")
+            for ln in block
+        )
         if not has_desc:
             problems.append(f"'{name}': missing a non-empty description paragraph")
+        # Exactly one **Takeaways:** block per result (Thomas's claim slot).
+        tk_idxs = [j for j, ln in enumerate(block) if ln.strip() == TAKEAWAYS_LINE]
+        if len(tk_idxs) != 1:
+            problems.append(
+                f"'{name}': expected exactly 1 '{TAKEAWAYS_LINE}' block, found {len(tk_idxs)}"
+            )
+        elif mode == "generation":
+            # At generation the Takeaways content must be the intact
+            # placeholder — the claims under a plot are Thomas's to write.
+            tail = "\n".join(block[tk_idxs[0] + 1 :]).strip()
+            if tail != PLACEHOLDER:
+                problems.append(
+                    f"'{name}': Takeaways must be exactly the placeholder "
+                    f"'{PLACEHOLDER}' at generation time"
+                )
     if problems:
         return CheckResult("results-subsections", False, "; ".join(problems))
     return CheckResult(
         "results-subsections",
         True,
-        f"{len(sub_idxs)} subsection(s), each with 1 image + description",
+        f"{len(sub_idxs)} subsection(s), each with 1 image + description + Takeaways",
     )
 
 
@@ -427,7 +475,10 @@ def check_htmlpreview(body: str) -> CheckResult:
         return CheckResult("htmlpreview-sha", True, "no htmlpreview links (N/A)", is_warn=False)
     bad: list[str] = []
     for u in urls:
-        if "raw.githubusercontent.com" not in u or not _SHA40_RE.search(u):
+        # Repo blobs pin via raw.githubusercontent.com/<owner>/<repo>/<sha>/;
+        # gist-hosted dashboards pin via gist.githubusercontent.com/.../raw/<rev>/.
+        pinned_host = "raw.githubusercontent.com" in u or "gist.githubusercontent.com" in u
+        if not pinned_host or not _SHA40_RE.search(u):
             bad.append(u)
     if bad:
         return CheckResult(
@@ -537,7 +588,7 @@ def check_image_pins(
     ARE raw.githubusercontent URLs they still get format well-formedness + the
     identity ladder. Mixed SHAs across pins are fine per-pin.
     """
-    results_sec = section_map(sections).get("## Results:")
+    results_sec = section_map(sections).get("## Results")
     results_imgs = _images_in(results_sec.content) if results_sec is not None else []
     outside_imgs = list(_images_in(blanked_body))
     for u in results_imgs:
@@ -595,17 +646,17 @@ def check_image_pins(
 # ─── Interpretive-lexicon check (agent sections; both modes) ────────────────
 
 
-def check_lexicon(sections: list[Section]) -> CheckResult:
+def check_lexicon(sections: list[Section], mode: str) -> CheckResult:
     present = section_map(sections)
     hits: list[str] = []
-    for header in LEXICON_SECTIONS:
+    for header in LEXICON_SECTIONS_BY_MODE[mode]:
         sec = present.get(header)
         if sec is None:
             continue
         for offset, line in enumerate(sec.content_lines):
             for m in _LEXICON_RE.finditer(line):
                 lineno = sec.content_start_line + offset
-                hits.append(f"{header[3:].rstrip(':')} L{lineno}: '{m.group(0)}'")
+                hits.append(f"{header[3:]} L{lineno}: '{m.group(0)}'")
     if hits:
         return CheckResult(
             "no-interpretive-lexicon",
@@ -629,8 +680,8 @@ def check_placeholders(sections: list[Section]) -> list[CheckResult]:
     """generation mode: TLDR and Next steps must be the untouched placeholder."""
     results: list[CheckResult] = []
     for header, name in (
-        ("## TLDR:", "tldr-placeholder"),
-        ("## Next steps:", "nextsteps-placeholder"),
+        ("## TLDR", "tldr-placeholder"),
+        ("## Next steps", "nextsteps-placeholder"),
     ):
         text = _section_text(sections, header)
         if text is None:
@@ -650,16 +701,16 @@ def check_placeholders(sections: list[Section]) -> list[CheckResult]:
 
 def check_tldr_filled(sections: list[Section]) -> CheckResult:
     """promote mode: TLDR must be filled (non-empty AND not the placeholder)."""
-    text = _section_text(sections, "## TLDR:")
+    text = _section_text(sections, "## TLDR")
     if text is None:
-        return CheckResult("tldr-filled", False, "## TLDR: section missing")
+        return CheckResult("tldr-filled", False, "## TLDR section missing")
     if not text:
-        return CheckResult("tldr-filled", False, "## TLDR: is empty; Thomas must write the TLDR")
+        return CheckResult("tldr-filled", False, "## TLDR is empty; Thomas must write the TLDR")
     if text == PLACEHOLDER:
         return CheckResult(
-            "tldr-filled", False, "## TLDR: still the placeholder; Thomas must write the TLDR"
+            "tldr-filled", False, "## TLDR still the placeholder; Thomas must write the TLDR"
         )
-    return CheckResult("tldr-filled", True, "## TLDR: is filled")
+    return CheckResult("tldr-filled", True, "## TLDR is filled")
 
 
 # ─── Manifest checks (optional; both modes) ─────────────────────────────────
@@ -772,10 +823,10 @@ def verify_report_text(
     sections = parse_sections(blanked_lines)
 
     results: list[CheckResult] = []
-    results.extend(check_h1_and_sentinel(lines))
+    results.extend(check_h1_and_sentinel(lines, mode))
     results.extend(check_required_sections(sections))
     results.append(check_duplicate_sections(blanked_lines))
-    results.append(check_results_subsections(sections))
+    results.append(check_results_subsections(sections, mode))
     results.append(check_image_files(blanked_body, figures_root))
     results.append(check_htmlpreview(body))
     results.extend(
@@ -783,7 +834,7 @@ def verify_report_text(
             sections, blanked_body, mode=mode, figures_root=figures_root, expect_issue=expect_issue
         )
     )
-    results.append(check_lexicon(sections))
+    results.append(check_lexicon(sections, mode))
 
     if mode == "generation":
         results.extend(check_placeholders(sections))

@@ -10,7 +10,7 @@ description: >
   <=3-sentence FACTUAL caption ("what is plotted", never "what it means"). Writes
   figures to figures/issue_<N>/ + a captions JSON the orchestrator splices into
   the report's Results section. NEVER writes interpretation, and NEVER authors
-  Motivation / Methodology / Metrics prose (that is methodology-writer's job).
+  Motivation / Methodology prose (that is methodology-writer's job).
   Spawned by the v2 issue skill in the Step-8 results-landed parallel batch,
   HOLD mode (figures commit only after upload-verification PASS).
 memory: project
@@ -196,7 +196,7 @@ repo root stays on `main`):
 | Produce only the aggregate summary bar | Produce the aggregate AND the low-level per-unit view (labeled points) behind it |
 | Show a residualized/binned scatter alone | Emit `<stem>` AND `<stem>_raw` — raw alongside processed |
 | Pick one grouping and drop the manifest's other named groupings | Produce every grouping the manifest lists (completeness, not a subset) |
-| Write Motivation / Methodology / Metrics prose | That is methodology-writer's job; you produce figures + factual captions only |
+| Write Motivation / Methodology prose | That is methodology-writer's job; you produce figures + factual captions only |
 | Hydra slugs / short-letter codes on axes / legends / ticks | Plain-English category names (paper-plots SKILL 3.5) |
 | `ax.annotate("3x baseline")` / verdict-titled panel | No interpretive overlays; interpretation is the reader's (SKILL 3.8) |
 | Commit figures yourself | HOLD mode — the orchestrator commits after upload PASS, then pins the SHA |

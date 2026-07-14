@@ -43,30 +43,43 @@ def _pin(sha: str, path: str = "figures/issue_5/f.png") -> str:
 # ─── Body builders ──────────────────────────────────────────────────────────
 
 
+def _results_block(image: str, *, takeaways: str = PLACEHOLDER) -> str:
+    return (
+        "### rate by condition\n"
+        "Bar chart of the agreement rate per condition.\n"
+        f"![rate]({image})\n"
+        "**Takeaways:**\n"
+        f"{takeaways}"
+    )
+
+
 def _default_sections(*, image: str = _PINNED_IMAGE) -> list[tuple[str, str]]:
-    """The six required sections, in order, with a valid Results subsection."""
+    """The five required sections, in order, with a valid Results subsection.
+
+    Metrics live INSIDE Methodology (the official template folds the former
+    ``## Metrics:`` H2 into a ``**Metrics:**`` block).
+    """
     return [
-        ("## TLDR:", PLACEHOLDER),
         ("## Motivation:", "We hypothesize that base propensity predicts trained leakage."),
+        ("## TLDR:", PLACEHOLDER),
         (
             "## Methodology:",
-            "We trained on 100 rows under two conditions: baseline and treatment.",
+            "We trained on 100 rows under two conditions: baseline and treatment.\n"
+            "- **Metrics:** Agreement rate (0-1), because it proxies the target behavior.",
         ),
-        ("## Metrics:", "Agreement rate (0-1), because it proxies the target behavior."),
-        (
-            "## Results:",
-            "### rate by condition\n"
-            "Bar chart of the agreement rate per condition.\n"
-            f"![rate]({image})",
-        ),
+        ("## Results:", _results_block(image)),
         ("## Next steps:", PLACEHOLDER),
     ]
 
 
 def _assemble(
-    sections: list[tuple[str, str]], *, title: str = "does X predict Y?", sentinel: bool = True
+    sections: list[tuple[str, str]],
+    *,
+    title: str = "does X predict Y?",
+    sentinel: bool = True,
+    h1_prefix: str = "Experiment: ",
 ) -> str:
-    lines = [f"# Experiment: {title}"]
+    lines = [f"# {h1_prefix}{title}"]
     if sentinel:
         lines.append(verify_report.REPORT_SENTINEL)
     lines.append("")
@@ -80,7 +93,7 @@ def _assemble(
 def _promote_sections(**kw) -> list[tuple[str, str]]:
     """Default sections with TLDR + Next steps filled (valid at promote time)."""
     sections = _default_sections(**kw)
-    sections[0] = ("## TLDR:", "Thomas takeaway: the effect held.")
+    sections[1] = ("## TLDR:", "Thomas takeaway: the effect held.")
     sections[-1] = ("## Next steps:", "Run more seeds.")
     return sections
 
@@ -145,9 +158,30 @@ def test_generation_valid_passes(figs_root):
 
 def test_promote_valid_passes(figs_root):
     sections = _default_sections()
-    sections[0] = ("## TLDR:", "Base propensity predicted trained leakage in the treatment arm.")
+    sections[1] = ("## TLDR:", "Base propensity predicted trained leakage in the treatment arm.")
     sections[-1] = ("## Next steps:", "Run the ablation on more seeds.")
     ok, results = _run(_assemble(sections), mode="promote", figs_root=figs_root)
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_result_title_accepted_at_promote_only(figs_root):
+    # Thomas retitles the H1 to `# Result: <claim>` at TLDR time: promote
+    # accepts it; at generation the claim form violates interpretivity.
+    body = _assemble(_promote_sections(), title="X predicts Y", h1_prefix="Result: ")
+    ok, results = _run(body, mode="promote", figs_root=figs_root)
+    assert _by_name(results, "h1-title").passed
+    assert ok, [r.render() for r in results if not r.passed]
+    gen_body = _assemble(_default_sections(), title="X predicts Y", h1_prefix="Result: ")
+    ok_g, results_g = _run(gen_body, mode="generation", figs_root=figs_root)
+    assert not ok_g
+    assert not _by_name(results_g, "h1-title").passed
+
+
+def test_headings_without_trailing_colons_pass(figs_root):
+    # Thomas's hand-edited reports drop the trailing colons; the verifier
+    # normalizes heading lines, so both forms are accepted.
+    sections = [(h.rstrip(":"), c) for h, c in _default_sections()]
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
     assert ok, [r.render() for r in results if not r.passed]
 
 
@@ -157,17 +191,26 @@ def test_promote_valid_passes(figs_root):
 def test_wrong_order_fails(figs_root):
     sections = _default_sections()
     # Swap Motivation and Methodology.
-    sections[1], sections[2] = sections[2], sections[1]
+    sections[0], sections[2] = sections[2], sections[0]
     ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
     assert not ok
     assert not _by_name(results, "section-order").passed
 
 
 def test_missing_section_fails(figs_root):
-    sections = [s for s in _default_sections() if s[0] != "## Metrics:"]
+    sections = [s for s in _default_sections() if s[0] != "## Methodology:"]
     ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
     assert not ok
     assert not _by_name(results, "required-sections").passed
+
+
+def test_separate_metrics_section_is_not_required(figs_root):
+    # The former `## Metrics:` H2 is retired — a report WITHOUT it passes
+    # (metrics live inside Methodology), and adding one back does not shadow
+    # any required section.
+    ok, results = _run(_assemble(_default_sections()), mode="generation", figs_root=figs_root)
+    assert _by_name(results, "required-sections").passed
+    assert ok, [r.render() for r in results if not r.passed]
 
 
 def test_missing_sentinel_fails(figs_root):
@@ -180,10 +223,47 @@ def test_missing_sentinel_fails(figs_root):
 
 def test_results_needs_exactly_one_image(figs_root):
     sections = _default_sections()
-    sections[4] = ("## Results:", "### rate\nA description with no figure at all.")
+    sections[3] = (
+        "## Results:",
+        f"### rate\nA description with no figure at all.\n**Takeaways:**\n{PLACEHOLDER}",
+    )
     ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
     assert not ok
     assert not _by_name(results, "results-subsections").passed
+
+
+def test_results_needs_takeaways_block(figs_root):
+    # Every Results subsection carries a **Takeaways:** block (Thomas's slot).
+    sections = _default_sections()
+    sections[3] = (
+        "## Results:",
+        f"### rate\nBar chart of the agreement rate per condition.\n![rate]({_PINNED_IMAGE})",
+    )
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
+    assert not ok
+    sub = _by_name(results, "results-subsections")
+    assert not sub.passed and "Takeaways" in sub.detail
+
+
+def test_agent_filled_takeaways_at_generation_fails(figs_root):
+    # At generation the Takeaways content must be the intact placeholder —
+    # an agent-written claim under a plot violates interpretivity.
+    sections = _default_sections(image=_PINNED_IMAGE)
+    sections[3] = ("## Results:", _results_block(_PINNED_IMAGE, takeaways="The effect held."))
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
+    assert not ok
+    sub = _by_name(results, "results-subsections")
+    assert not sub.passed and "placeholder" in sub.detail
+
+
+def test_filled_takeaways_at_promote_passes(figs_root):
+    sections = _promote_sections()
+    sections[3] = (
+        "## Results:",
+        _results_block(_PINNED_IMAGE, takeaways="- The mapping exists: R^2 0.705 [0.691, 0.719]."),
+    )
+    ok, results = _run(_assemble(sections), mode="promote", figs_root=figs_root)
+    assert ok, [r.render() for r in results if not r.passed]
 
 
 # ─── Mode-specific TLDR / Next-steps ─────────────────────────────────────
@@ -191,7 +271,7 @@ def test_results_needs_exactly_one_image(figs_root):
 
 def test_filled_tldr_at_generation_fails(figs_root):
     sections = _default_sections()
-    sections[0] = ("## TLDR:", "A real takeaway written too early.")
+    sections[1] = ("## TLDR:", "A real takeaway written too early.")
     ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
     assert not ok
     assert not _by_name(results, "tldr-placeholder").passed
@@ -199,7 +279,7 @@ def test_filled_tldr_at_generation_fails(figs_root):
 
 def test_empty_tldr_at_promote_fails(figs_root):
     sections = _default_sections()
-    sections[0] = ("## TLDR:", "")  # empty at promote time
+    sections[1] = ("## TLDR:", "")  # empty at promote time
     ok, results = _run(_assemble(sections), mode="promote", figs_root=figs_root)
     assert not ok
     assert not _by_name(results, "tldr-filled").passed
@@ -217,9 +297,10 @@ def test_placeholder_tldr_at_promote_fails(figs_root):
 
 def test_banned_lexeme_in_results_fails(figs_root):
     sections = _default_sections()
-    sections[4] = (
+    sections[3] = (
         "## Results:",
-        f"### rate\nThis suggests the treatment worked.\n![rate]({_PINNED_IMAGE})",
+        "### rate\nThis suggests the treatment worked.\n"
+        f"![rate]({_PINNED_IMAGE})\n**Takeaways:**\n{PLACEHOLDER}",
     )
     ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
     assert not ok
@@ -229,21 +310,37 @@ def test_banned_lexeme_in_results_fails(figs_root):
 def test_banned_lexeme_in_motivation_not_flagged(figs_root):
     sections = _default_sections()
     # Motivation is exempt — hypothesis framing ("suggests") is allowed there.
-    sections[1] = ("## Motivation:", "Prior work suggests X predicts Y; we test whether it holds.")
+    sections[0] = ("## Motivation:", "Prior work suggests X predicts Y; we test whether it holds.")
     ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
     assert _by_name(results, "no-interpretive-lexicon").passed
     assert ok, [r.render() for r in results if not r.passed]
 
 
 def test_banned_lexeme_scanned_in_promote_mode_too(figs_root):
-    # Agent sections are still lexicon-scanned at promote; only Thomas's
-    # TLDR / Next-steps are exempt.
+    # Methodology (pure agent prose) is still lexicon-scanned at promote;
+    # Thomas's TLDR / Next-steps / Results takeaways are exempt.
     sections = _default_sections()
-    sections[0] = ("## TLDR:", "Thomas takeaway.")
+    sections[1] = ("## TLDR:", "Thomas takeaway.")
     sections[2] = ("## Methodology:", "The design demonstrates that the method is sound.")
     ok, results = _run(_assemble(sections), mode="promote", figs_root=figs_root)
     assert not ok
     assert not _by_name(results, "no-interpretive-lexicon").passed
+
+
+def test_results_lexeme_not_flagged_at_promote(figs_root):
+    # At promote the Results section carries Thomas's filled Takeaways +
+    # claim-shaped headings — his voice is never lexicon-checked.
+    sections = _promote_sections()
+    sections[3] = (
+        "## Results:",
+        "### Result 1: the treatment worked\n"
+        "Bar chart of the agreement rate per condition.\n"
+        f"![rate]({_PINNED_IMAGE})\n**Takeaways:**\n"
+        "- This suggests the treatment worked and confirms the hypothesis.",
+    )
+    ok, results = _run(_assemble(sections), mode="promote", figs_root=figs_root)
+    assert _by_name(results, "no-interpretive-lexicon").passed
+    assert ok, [r.render() for r in results if not r.passed]
 
 
 # ─── Image files ─────────────────────────────────────────────────────────
@@ -285,9 +382,11 @@ def test_manifest_figure_not_run_passes(figs_root, tmp_path):
     # A planned figure with no matching ### subsection is covered when the
     # report explicitly marks it "not run".
     sections = _default_sections()
-    sections[3] = (
-        "## Metrics:",
-        "Agreement rate (0-1). The calibration curve figure was not run (insufficient data).",
+    sections[2] = (
+        "## Methodology:",
+        "We trained on 100 rows under two conditions: baseline and treatment.\n"
+        "- **Metrics:** Agreement rate (0-1). The calibration curve figure was "
+        "not run (insufficient data).",
     )
     manifest = {
         "issue": 999,
@@ -381,7 +480,7 @@ def test_cli_exit_codes(figs_root, tmp_path):
     good = tmp_path / "good.md"
     good.write_text(_assemble(_default_sections()))
     bad_sections = _default_sections()
-    bad_sections[0] = ("## TLDR:", "filled too early")
+    bad_sections[1] = ("## TLDR:", "filled too early")
     bad = tmp_path / "bad.md"
     bad.write_text(_assemble(bad_sections))
 
@@ -438,27 +537,27 @@ def test_lexicon_ignores_blockquote_verbatim_in_methodology(figs_root):
     assert ok, [r.render() for r in results if not r.passed]
 
 
-def test_fenced_metrics_heading_does_not_shadow_real_metrics(figs_root):
-    # A `## Metrics:` line inside a fenced code block must NOT be parsed as a
-    # section heading and shadow the real Metrics section — the banned lexeme
-    # in the REAL Metrics prose must still be flagged.
+def test_fenced_heading_does_not_shadow_real_section(figs_root):
+    # A `## Methodology:` line inside a fenced code block must NOT be parsed as
+    # a section heading and shadow the real Methodology section — the banned
+    # lexeme in the REAL Methodology prose must still be flagged.
     sections = _default_sections()
-    sections[2] = (
-        "## Methodology:",
-        "We trained under two conditions. Example config we pasted verbatim:\n"
+    sections[0] = (
+        "## Motivation:",
+        "We test whether X predicts Y. Example config we pasted verbatim:\n"
         "```text\n"
-        "## Metrics:\n"
-        "an example metric line inside the fence\n"
+        "## Methodology:\n"
+        "an example line inside the fence\n"
         "```\n"
-        "Training completed without error.",
+        "The prior experiment used the same recipe.",
     )
-    sections[3] = ("## Metrics:", "Agreement rate. The design demonstrates that it is valid.")
+    sections[2] = ("## Methodology:", "Agreement rate. The design demonstrates that it is valid.")
     ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
     lex = _by_name(results, "no-interpretive-lexicon")
     assert not ok
     assert not lex.passed
-    # The flagged lexeme comes from the REAL Metrics prose, not the fenced one.
-    assert "Metrics" in lex.detail and "demonstrates that" in lex.detail
+    # The flagged lexeme comes from the REAL Methodology prose, not the fenced one.
+    assert "Methodology" in lex.detail and "demonstrates that" in lex.detail
 
 
 def test_image_existence_ignores_quoted_image_in_blockquote(figs_root):
@@ -483,7 +582,7 @@ def test_duplicate_required_section_fails(figs_root):
     ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
     assert not ok
     dup = _by_name(results, "duplicate-section")
-    assert not dup.passed and "## TLDR:" in dup.detail
+    assert not dup.passed and "## TLDR" in dup.detail
 
 
 def test_no_duplicate_section_on_valid_body(figs_root):
@@ -777,14 +876,16 @@ def test_mixed_sha_results_pins_both_valid_pass(git_figs_repo):
     sha2 = _git_run(repo, "rev-parse", "HEAD")
     assert sha1 != sha2
     sections = _default_sections()
-    sections[4] = (
+    sections[3] = (
         "## Results:",
         "### rate by condition\n"
         "Bar chart of the agreement rate per condition.\n"
         f"![rate]({_pin(sha1)})\n"
+        f"**Takeaways:**\n{PLACEHOLDER}\n"
         "### rate per unit\n"
         "Per-unit points behind the aggregate.\n"
-        f"![points]({_pin(sha2, 'figures/issue_5/g.png')})",
+        f"![points]({_pin(sha2, 'figures/issue_5/g.png')})\n"
+        f"**Takeaways:**\n{PLACEHOLDER}",
     )
     ok, results = _run(_assemble(sections), mode="generation", figs_root=repo)
     assert _by_name(results, "image-pin-format").passed

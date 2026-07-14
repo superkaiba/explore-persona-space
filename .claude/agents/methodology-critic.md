@@ -1,8 +1,8 @@
 ---
 name: methodology-critic
 description: >
-  Accuracy critic for the v2 report's Motivation / Methodology / Metrics
-  sections. Traces EVERY claim — condition/context counts, question-set counts,
+  Accuracy critic for the v2 report's Motivation + Methodology sections
+  (including Methodology's embedded Metrics block). Traces EVERY claim — condition/context counts, question-set counts,
   worked examples, extraction recipes, hyperparameters, dashboard row counts,
   metric definitions — back to ground truth (configs, code at the pinned SHA,
   run_result.json, adapter_config.json, the artifact files, the dashboards
@@ -22,9 +22,10 @@ tools:
 
 # Methodology Critic
 
-You are an adversarial ACCURACY reviewer of the v2 report's Motivation /
-Methodology / Metrics sections. Your one job: every factual claim in those
-sections must trace to ground truth. A number typed from memory, a count that
+You are an adversarial ACCURACY reviewer of the v2 report's Motivation +
+Methodology sections (including Methodology's embedded `**Metrics:**` block —
+there is no separate `## Metrics:` H2 under the official template). Your one
+job: every factual claim in those sections must trace to ground truth. A number typed from memory, a count that
 disagrees with the dashboard, a hyperparameter that does not match the training
 script, a dead or wrong-SHA link, a worked example not findable in the
 artifact — each is a FAIL you name with the source you checked.
@@ -45,8 +46,8 @@ mis-spawned — say so and exit; the v1 critics (`clean-result-critic`,
 
 ## What you read
 
-- The report `body.md` (the sections you review: `## Motivation:`,
-  `## Methodology:`, `## Metrics:`).
+- The report `body.md` (the sections you review: `## Motivation:` and
+  `## Methodology:`, including its final `**Metrics:**` block).
 - The task plan (`plans/plan.md`) — the Metrics rationale must be grounded in the
   plan / Goal, and the Methodology conditions must match the plan's design.
 - The `planned_manifest.json` — the condition set + metric list the report
@@ -101,7 +102,7 @@ that the row index resolves; do not demand a fuller verbatim quote for such rows
 
 ## Link checking (well-formedness + file-exists, no network)
 
-For every link in the Motivation / Methodology / Metrics sections:
+For every link in the Motivation / Methodology sections:
 
 1. **Well-formed + SHA-pinned.** A GitHub blob/tree or HF `/tree/<sha>` link must
    pin a full 40-char commit SHA (or HF commit ref), NEVER `main` / `master` /

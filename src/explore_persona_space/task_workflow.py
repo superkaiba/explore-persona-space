@@ -938,12 +938,14 @@ def is_paper_task(fm: dict[str, Any]) -> bool:
 
 
 #: Body sentinel for the v2 report clean-result form (workflow v2 — the
-#: report-only track: Motivation / Methodology / Metrics / Results-as-plots
-#: written by agents, TLDR / Next-steps written by Thomas). Placed on the line
-#: after the H1 ``# Experiment: ...`` title, mirroring the ``<!-- clean-result-v4 -->``
-#: convention. ``scripts/verify_report.py`` is the mechanical verifier for this
-#: form. Unlike ``paper: true`` (a frontmatter flag), a report body is
-#: identified by this BODY sentinel.
+#: report-only track: Motivation / Methodology (metrics embedded) /
+#: Results-as-plots written by agents; the ``# Result:`` title, TLDR,
+#: per-result Takeaways + Next-steps written by Thomas — official template:
+#: ``.claude/skills/issue-v2/report-template.md``). Placed on the line after
+#: the H1 title, mirroring the ``<!-- clean-result-v4 -->`` convention.
+#: ``scripts/verify_report.py`` is the mechanical verifier for this form.
+#: Unlike ``paper: true`` (a frontmatter flag), a report body is identified by
+#: this BODY sentinel.
 REPORT_V1_SENTINEL = "<!-- report-v1 -->"
 
 

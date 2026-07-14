@@ -6,8 +6,10 @@ description: >
   Same runtime as v1 (Happy + tmux + bg-Bash poll + tick-cron); the changes are
   (1) a report pipeline that REPLACES the interpretation back-half — agents
   never interpret results, they produce a fixed-structure report (Motivation /
-  Methodology / Metrics / Results-as-plots) verified for accuracy + completeness,
-  and Thomas alone writes the TLDR; (2) approve-first-then-critique front half
+  Methodology (metrics embedded) / Results-as-plots per the official template,
+  `.claude/skills/issue-v2/report-template.md`) verified for accuracy +
+  completeness, and Thomas alone writes the claims (title, TLDR, per-result
+  Takeaways, Next steps); (2) approve-first-then-critique front half
   with specialized critic panels + a plan-revision log; (3) upload-by-default
   with overflow rerouting. Compact by design: everything unchanged from v1
   defers to `.claude/skills/issue/SKILL.md` by section name.
@@ -353,8 +355,11 @@ issue, size, recipe capsule). Then advance to Step 7.
 ### Step 7: Report (the report pipeline — write fully)
 
 After results land + upload-verification PASSes, GENERATE the report. No agent
-interprets; the report is Motivation / Methodology / Metrics / Results-as-plots,
-and Thomas alone writes the TLDR + Next steps.
+interprets; the report is Motivation / TLDR / Methodology (metrics embedded) /
+Results-as-plots / Next steps per the official template
+(`.claude/skills/issue-v2/report-template.md`), and Thomas alone writes the
+claims — the `# Result:` title, the TLDR, every per-result `**Takeaways:**`
+block, and Next steps.
 
 **7a. One parallel spawn batch** (ONE message):
 
@@ -365,11 +370,12 @@ and Thomas alone writes the TLDR + Next steps.
   groupings) via `/paper-plots`, each figure self-describing (title, axis labels
   + units, legend, ≤3-sentence factual caption), and writes a `captions.json`.
   **Figures are committed only AFTER upload PASS** (HOLD).
-- `methodology-writer` in **REPORT MODE** (findings-blind) — authors Motivation /
-  Methodology / Metrics from the plan, code, configs, dashboard manifest, and
-  verbatim per-row examples. It NEVER reads aggregated `eval_results/*.json`
-  metrics or any interpreted summary (the structural firewall is the primary
-  anti-interpretation control).
+- `methodology-writer` in **REPORT MODE** (findings-blind) — authors Motivation
+  + Methodology (the metric definitions + rationale as Methodology's final
+  `**Metrics:**` block — no separate `## Metrics:` H2) from the plan, code,
+  configs, dashboard manifest, and verbatim per-row examples. It NEVER reads
+  aggregated `eval_results/*.json` metrics or any interpreted summary (the
+  structural firewall is the primary anti-interpretation control).
 
 Set status to `interpreting` (= report generation under v2) for this stage.
 
@@ -402,22 +408,27 @@ full-fidelity dumps go to the HF data repo (terminal fallback: HF-hosted plain
 link).
 
 **7c. Mechanical assembly (the orchestrator does this — no interpreting agent).**
-Assemble the report body from `.claude/skills/issue-v2/report-template.md`:
+Assemble the report body from `.claude/skills/issue-v2/report-template.md`
+(section order: Motivation → TLDR → Methodology → Results → Next steps):
 
-- splice the methodology-writer's Motivation / Methodology / Metrics sections,
+- splice the methodology-writer's Motivation + Methodology sections (metrics
+  are Methodology's final `**Metrics:**` block — there is no `## Metrics:` H2),
 - for each figure in `captions.json`, emit a `### <plot name>` Results
-  subsection: the factual "what is plotted EXACTLY" caption → the SHA-pinned
+  subsection: the factual "what was tested + what is plotted EXACTLY" caption →
+  the `**Plot: <name>**` label → the SHA-pinned
   `![...](raw.githubusercontent.com/<owner>/<repo>/<the Step-7b commit SHA>/figures/issue_<N>/...)`
-  image → nothing after it,
+  image → a `**Takeaways:**` block holding the literal `*(Thomas fills in)*`
+  placeholder (Thomas's claim slot; nothing else after the image),
 - leave `## TLDR:` and `## Next steps:` as the literal `*(Thomas fills in)*`
   placeholders,
-- keep the `# Experiment: <question>` H1 with NO confidence tag (Thomas appends
-  it at TLDR time) and the `<!-- report-v1 -->` sentinel right after the H1.
+- keep the `# Experiment: <question>` H1 with NO confidence tag (Thomas
+  retitles to `# Result: <claim>` + optional confidence tag at TLDR time) and
+  the `<!-- report-v1 -->` sentinel right after the H1.
 
 **7d. methodology-critic loop (cap 5).** Spawn `methodology-critic`: it traces
-every Methodology / Metrics claim to ground truth (configs, code, artifact
-counts, `adapter_config.json`, dashboard row counts; links resolve at the pinned
-SHA). On findings, the orchestrator re-runs the methodology-writer to fix them
+every Motivation / Methodology claim (including the embedded `**Metrics:**`
+block) to ground truth (configs, code, artifact counts, `adapter_config.json`,
+dashboard row counts; links resolve at the pinned SHA). On findings, the orchestrator re-runs the methodology-writer to fix them
 and re-spawns the critic. Post `epm:methodology-check` per round. Round cap 5;
 at the cap with a substantive residual, interactive → surface, autonomous →
 `epm:failure` + block.
@@ -458,7 +469,7 @@ residual, interactive → surface, autonomous → `epm:failure` + block.
 # not `## Goal` (the `goal:` frontmatter is preserved by set_body), so the Goal-H2
 # drop guard (#1112) must be explicitly overridden here.
 uv run python scripts/task.py set-body <N> --file <report-draft>.md --snapshot --allow-goal-drop
-uv run python scripts/task.py set-title <N> "Experiment: <one-line question>"   # NO confidence tag — Thomas adds it at promote
+uv run python scripts/task.py set-title <N> "Experiment: <one-line question>"   # Thomas retitles to "Result: <claim>" (+ confidence tag) at promote
 uv run python scripts/task.py set-clean-result <N>                              # accepts the report-v1 sentinel
 uv run python scripts/task.py post-marker <N> epm:report --note "report-v1 generated + verified; awaiting Thomas TLDR"
 uv run python scripts/task.py set-status <N> awaiting_promotion
