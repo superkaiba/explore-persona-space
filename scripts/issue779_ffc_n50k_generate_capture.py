@@ -3,9 +3,17 @@
 extension to n_train=50,000 + combined 28-layer capture, MULTI-GPU SHARDED.
 
 Extends the round-2 (n10k) generate+capture driver
-(``issue779_ffc_n10k_generate_capture.py``) to 40,000 NEW LMSYS contexts,
-DISJOINT from ALL 11,500 already used (round-1's 5000 pass_b + round-2's 6500
-n10k). ``n`` is the ONLY variable: the SAME pass-B rollout recipe (1 stochastic
+(``issue779_ffc_n10k_generate_capture.py``) to 45,000 NEW LMSYS contexts
+(plan-B scope update 2026-07-14: the n10k round's 6,500 captures live only on
+pod-779's stopped volume and are presumed unavailable, so the fits' DEFAULT
+train pool is the 5,000 original-round contexts + 45,000 new; the launcher
+targets a fresh pod-77950). The 45,000 are DISJOINT from ALL 11,500 already
+used (round-1's 5000 pass_b + round-2's 6500 n10k). The n10k selection IS
+seed-deterministic (the LMSYS stream: skip 5000, take next 6500 disjoint), so
+``sample_disjoint_n50k`` RECOMPUTES those identities (phase 2) and EXCLUDES
+them from the n50k set (best-effort) — the validity-critical disjointness is
+from the original round's 5000 (phase 1), which is exact. ``n`` is the ONLY
+variable: the SAME pass-B rollout recipe (1 stochastic
 rollout per context, temp 1.0 / top_p 0.95 / seed 42 / max 1024) and the SAME
 combined 28-layer capture summaries (c_last / c_mean / v_x + the 4 pass-1 + 8
 pass-2 answer summaries) as n10k — every capture position/pooling is REUSED from
@@ -96,8 +104,8 @@ HF_PREFIX = "issue779_monitoring/fitter-fair-comparison-n50k"
 
 # Corpus counts (n is the only variable).
 N_ROUND1 = 5000  # round-1 pass_b non-empty first-turns (re-derived by skipping the first 5000)
-N_N10K = 6500  # round-2 n10k new disjoint first-turns
-N_N50K = 40000  # round-3 n50k new disjoint first-turns (this driver)
+N_N10K = 6500  # round-2 n10k new disjoint first-turns (recomputed + excluded, best-effort)
+N_N50K = 45000  # round-3 n50k new disjoint first-turns (this driver; plan-B scope 2026-07-14)
 
 
 def _sha_ids_or_prompts(prompts: list[str]) -> str:

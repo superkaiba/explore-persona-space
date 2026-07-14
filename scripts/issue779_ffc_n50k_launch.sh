@@ -13,6 +13,10 @@
 # (each process holds ~one in-flight chunk, < ~4 GB), so K parallel shards stay
 # well under the ~130 GB MooseFS per-pod quota / the < 60 GB target.
 #
+# Target pod: pod-77950 (8xH100), the fresh provision per the 2026-07-14 scope
+# update (pod-779 is not resumed). This launcher hardcodes NO SSH/host details —
+# it runs ON the pod; the name is for the operator's logs/breadcrumbs only.
+#
 # Usage (pod, repo root):
 #   bash scripts/issue779_ffc_n50k_launch.sh                 # K = detected GPU count
 #   bash scripts/issue779_ffc_n50k_launch.sh --num-shards 4  # explicit K=4
