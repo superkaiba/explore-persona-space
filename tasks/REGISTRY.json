@@ -2371,8 +2371,8 @@
     "1304": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1304",
-      "status": "reviewing",
+      "path": "tasks/completed/1304",
+      "status": "completed",
       "title": "daily-fix: guard backend_poll failure_classifier import"
     },
     "1305": {
