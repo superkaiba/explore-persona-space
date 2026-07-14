@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1305,
+  "highest_id": 1306,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2381,6 +2381,13 @@
       "path": "tasks/proposed/1305",
       "status": "proposed",
       "title": "daily-fix: implementer pre-report 9c touched-scope run"
+    },
+    "1306": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1306",
+      "status": "proposed",
+      "title": "daily-fix: verify_plan c15 misses pytest-backed fail-loud"
     },
     "131": {
       "has_clean_result": false,
