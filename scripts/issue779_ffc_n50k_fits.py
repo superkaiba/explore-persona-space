@@ -4,11 +4,13 @@
 Extends the n10k fits path (``issue779_perdirection_per_predictor.py --corpus-mode
 n10k`` / ``issue779_fitter_fair_comparison.py`` D1) to n_train ~= 50,000.
 
-PLAN-B (DEFAULT, scope update 2026-07-14): the n10k round's 6,500 captures live
+PLAN-B (DEFAULT, scope correction 2026-07-14): the n10k round's 6,500 captures live
 only on the stopped pod-779 volume and are presumed unavailable, so the training
-corpus is pass_b (5000, the ORIGINAL round) + 45,000 NEW contexts = 50,000. The
-``--include-n10k-captures`` flag (plan-A) swaps in the n10k 6,500 + drops the last
-6,500 new (needs the n10k bundle on HF), for use if that volume is rescued later.
+corpus is orig-train (3,600 of the ORIGINAL round's pass_b) + 46,600 NEW contexts
+= pool 50,200, deterministically trimmed to train=50,000 exactly. The
+``--include-n10k-captures`` flag (plan-A) instead pools orig-train (3,600) + n10k
+(6,500) + all 46,600 new and trims to 50,000 (needs the n10k bundle on HF; FAILS
+LOUD at startup if absent), for use if that volume is rescued later.
 Either way ``n`` is the scaling variable vs the n10k run: the SAME target
 (``v(x)`` mean-response profile), the SAME map INPUT (``cx_last`` last prompt
 token), the SAME metric (variance-weighted held-out R2, pooled test-own-mean),
@@ -17,8 +19,9 @@ from the pass_b half by the EXACT ``fixed_split(5000, 3600, 400, 1000, 42)``, an
 their ``sha256`` index digests are hard-asserted equal to the ORIGINAL round's
 pinned shas (recomputed from the committed ``fitter-fair-comparison/
 fair_comparison.json`` split params + the ORIG_VAL/TEST_SHA256 constants). New
-contexts enter TRAIN only. (Realized train under plan-B is 48,600 = 3600 orig-train
-+ 45000 new; val+test are carved from the original 5000.)
+contexts enter TRAIN only. (Realized train under plan-B is 50,000, sampled from a
+pool of 50,200 = 3600 orig-train + 46600 new; val+test are carved from the
+original 5000.)
 
 Four predictors, extended to the n>>H=3584 regime:
 
@@ -113,9 +116,9 @@ N_PASS_B = F.N_PASS_B  # 5000  (the original round's pass_b corpus)
 N_VAL = 400
 N_TEST = 1000
 SPLIT_SEED = F.SPLIT_SEED  # 42
-N50K_TRAIN = 50000  # target; clamps to the pool (3600 orig-train + 45000 new = 48600 under plan-B)
-N_N50K_NEW = 45000  # round-3 new contexts (plan-B scope update 2026-07-14; was 40000)
-N10K_SWAP = 6500  # --include-n10k-captures: swap in 6500 n10k, drop the last 6500 n50k
+N50K_TRAIN = 50000  # target train; plan-B pool 3600 orig-train + 46600 new = 50200 trims to 50000
+N_N50K_NEW = 46600  # round-3 new contexts (plan-B correction 2026-07-14: 45000->46600 so the pool
+# clears the 50,000 target and trims to it exactly; was 45000, was 40000 at first draft)
 
 # Pinned val/test sha256s = digests of the ORIGINAL round's fixed_split(5000,3600,400,1000,42)
 # index arrays (< 5000, the pass_b half). Recomputed from the committed original-round
@@ -185,8 +188,9 @@ def build_n50k_split(
         train pool = orig-train (3600) + all n50k ids.
       * plan-A (n10k_kept given): pass_b [0, N_PASS_B) + n10k [N_PASS_B, N_PASS_B+n10k_kept)
         + n50k [N_PASS_B+n10k_kept, ...). train pool = orig-train (3600) + n10k ids + n50k ids.
-    Sampled to ``n_train`` (seed); clamps to the pool with a WARNING (expected under plan-B:
-    pool = 3600 + 45000 = 48600 < 50000)."""
+    Deterministically sampled to ``n_train`` (seed): plan-B pool = 3600 + 46600 = 50200 > 50000
+    so it trims to exactly 50000; the below-pool clamp WARNING is a defensive guard that should
+    NOT fire in production (only if the n50k capture landed short of 46,400 kept rows)."""
     r1_train, val, test = F.fixed_split(N_PASS_B, N_PASS_B - N_VAL - N_TEST, N_VAL, N_TEST, seed)
     val_sha, test_sha = F._sha_ids(val), F._sha_ids(test)
     assert val_sha == pinned["val_sha256"], (
@@ -211,7 +215,7 @@ def build_n50k_split(
     if n_target < n_train:
         logger.warning(
             "train pool has only %d ids (%d orig-train + %d n10k + %d n50k) < target %d; "
-            "using all %d (expected under plan-B: val/test carved from the original 5000)",
+            "using all %d — the n50k capture landed SHORT of the target; check the capture logs",
             len(pool),
             len(r1_train),
             len(n10k_ids),
@@ -248,10 +252,10 @@ def build_n50k_split(
             "val/test = fixed_split(5000,3600,400,1000,42) indices <5000 = the same pass_b rows as "
             "the original round (val/test_sha256 asserted == pinned original). "
             + (
-                "plan-A: train pool = orig-train (3600) + all n10k new + n50k new "
-                "(last 6500 dropped), sampled to n_train_target."
+                "plan-A: train pool = orig-train (3600) + all n10k new (6500) + all n50k new, "
+                "sampled to n_train_target."
                 if include_n10k
-                else "plan-B (DEFAULT): train pool = orig-train (3600) + all 45000 n50k new, "
+                else "plan-B (DEFAULT): train pool = orig-train (3600) + all 46600 n50k new, "
                 "sampled to n_train_target. n10k captures NOT used (presumed unavailable)."
             )
         ),
@@ -350,9 +354,9 @@ def _stream_n50k_layer(prefix: str, layer: int, local_dir: Path | None, cache_di
 def assemble_combined(args, layer: int):
     """Combined-corpus (X=cx_last, Y=v_x) at ``layer`` + the byte-identical split.
 
-    plan-B (DEFAULT): pass_b (5000) + n50k new (all ~45000). n10k captures NOT loaded.
-    plan-A (--include-n10k-captures): pass_b (5000) + n10k new (~6500) + n50k new (first
-    n50k_kept-N10K_SWAP, dropping the last 6500 to keep the train size constant)."""
+    plan-B (DEFAULT): pass_b (5000) + n50k new (all ~46600). n10k captures NOT loaded.
+    plan-A (--include-n10k-captures): pass_b (5000) + n10k new (~6500) + n50k new (all ~46600).
+    Either way the train pool is trimmed to n_train (50,000) in build_n50k_split."""
     pb = F.load_pass_b(args.pass_b)
     assert int(pb["cx_last"].shape[0]) == N_PASS_B, (pb["cx_last"].shape[0], N_PASS_B)
     pb_X, pb_Y = _slice_layer(pb, "cx_last", layer), _slice_layer(pb, "v_x", layer)
@@ -363,13 +367,13 @@ def assemble_combined(args, layer: int):
     )
     pinned = _pinned_original_shas(args.orig_dir)
 
-    if args.include_n10k_captures:  # plan-A: swap in the n10k 6500, drop the last 6500 n50k
+    if args.include_n10k_captures:  # plan-A: pool orig-train + all n10k + all n50k, trim in split
         nb = _load_n10k_bundle(args.n10k_bundle)
         n10k_kept = int(nb["cx_last"].shape[0])
         nb_X, nb_Y = _slice_layer(nb, "cx_last", layer), _slice_layer(nb, "v_x", layer)
-        n50k_used = max(0, n50k_kept - N10K_SWAP)
-        X = np.concatenate([pb_X, nb_X, n50_X[:n50k_used]]).astype(np.float32)
-        Y = np.concatenate([pb_Y, nb_Y, n50_Y[:n50k_used]]).astype(np.float32)
+        n50k_used = n50k_kept
+        X = np.concatenate([pb_X, nb_X, n50_X]).astype(np.float32)
+        Y = np.concatenate([pb_Y, nb_Y, n50_Y]).astype(np.float32)
         assert X.shape[0] == N_PASS_B + n10k_kept + n50k_used, X.shape
     else:  # plan-B (DEFAULT): pass_b + all n50k, no n10k
         n10k_kept = None
@@ -597,8 +601,9 @@ def main() -> int:
     ap.add_argument(
         "--include-n10k-captures",
         action="store_true",
-        help="plan-A: swap in the n10k 6500 captures + drop the last 6500 n50k (needs the n10k "
-        "bundle on HF; default plan-B uses pass_b + all 45000 n50k)",
+        help="plan-A: pool orig-train (3600) + n10k (6500) + all 46600 n50k, trim to 50000 "
+        "(FAILS LOUD at startup if the n10k bundle is not on HF; default plan-B uses "
+        "orig-train + all 46600 n50k)",
     )
     ap.add_argument("--n10k-bundle", type=Path, default=F.DEFAULT_NEW_BUNDLE)
     ap.add_argument(
@@ -645,6 +650,22 @@ def main() -> int:
             "refusing to mix — use a mode-specific --out-json"
         )
 
+    if args.include_n10k_captures:
+        # plan-A fail-loud AT STARTUP: never silently fall back to plan-B when the n10k
+        # bundle is absent (the presumed state — the captures lived only on pod-779's volume).
+        from huggingface_hub import HfApi
+
+        if not (
+            args.n10k_bundle.exists()
+            or HfApi().file_exists(C.HF_DATA_REPO, HF_N10K_BUNDLE, repo_type="dataset")
+        ):
+            raise SystemExit(
+                "--include-n10k-captures (plan-A) requires the n10k bundle, absent both locally "
+                f"({args.n10k_bundle}) and on HF ({C.HF_DATA_REPO}:{HF_N10K_BUNDLE}). The n10k "
+                "captures lived only on pod-779's stopped volume; rescue that volume + upload the "
+                "bundle first, or drop the flag to run the DEFAULT plan-B (orig-train + n50k only)."
+            )
+
     t0 = time.time()
     X, Y, tr, val, te, split = assemble_combined(args, args.layer)
     recipe = _mlp_recipe(args.orig_dir / "fair_comparison.json")
@@ -677,9 +698,10 @@ def main() -> int:
             "krr_grid": {"gamma_mult": list(gamma_mult), "lambdas": list(krr_lambdas)},
             "predictor_labels": PREDICTOR_LABEL,
             "note": (
-                "n_train~=50,000 rerun of the fitter-fair-comparison (plan-B scope 2026-07-14). "
-                "val/test BYTE-IDENTICAL to the ORIGINAL round (asserted vs pinned original shas). "
-                "DEFAULT plan-B: pass_b (5000) + 45000 new; n10k captures NOT used. "
+                "n_train=50,000 rerun of the fitter-fair-comparison (plan-B, 2026-07-14). "
+                "val/test BYTE-IDENTICAL to the ORIGINAL round (asserted vs pinned shas). "
+                "DEFAULT plan-B: orig-train (3600) + 46600 new = pool 50200, trim to 50000; "
+                "n10k captures NOT used. "
                 "ridge=PRIMAL val-lambda over LAMBDAS_N50K; krr=EXACT RBF (no Nystrom, "
                 "chunked+Cholesky); mlp=w8192 original-round recipe reused; "
                 "residual-skip=primal ridge + MLP."
