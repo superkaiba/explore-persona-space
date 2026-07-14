@@ -48,50 +48,42 @@ def _augment_meta(stem: str, value_sources: dict) -> None:
 # ---------------------------------------------------------------------------
 def figure1() -> None:
     fig, (axA, axB) = plt.subplots(
-        1, 2, figsize=(16.5, 5.4), gridspec_kw={"width_ratios": [1.6, 1.0]}
+        1, 2, figsize=(19.0, 5.6), gridspec_kw={"width_ratios": [2.0, 1.0]}
     )
 
     # ---- Panel A: does the linear map exist? (held-out R^2, ridge) ----
-    # Each entry: (x position, label, context R^2, prefix R^2 or None, shuffled R^2 or None)
-    # Regime groups separated by gaps in x.
-    # Group 1 (#825 single-turn chat): x 0,1
-    # Group 2 (#1092 real conversations): x 3,4,5,6 (context+prefix), 7,8 (shuffled floor)
-    # Group 3 (#931 fiction raw text): x 10,11
-    ctx_x, ctx_h, ctx_lbl = [], [], []
+    # #1092 context+prefix values are VERBATIM from the first results table in
+    # task 1092's body (## Results, "Context-based maps reach ... 0.71-0.80 ...").
+    # Six coherent cells + the two shuffled-pairing floor cells.
+    W = 0.36
+    ctx_x, ctx_h = [], []
     pfx_x, pfx_h = [], []
     shf_x, shf_h = [], []
 
-    def add_ctx(x, label, h):
-        ctx_x.append(x)
-        ctx_h.append(h)
-        ctx_lbl.append((x, label))
-
-    # Group 1 -- single-turn chat (LMSYS n=5000, #825)
-    add_ctx(0, "Single-turn chat\ninstruct", 0.673)
-    add_ctx(1, "Single-turn chat\npretrained", 0.588)
-    # Group 2 -- real conversations (prefix x query, #1092): context + prefix arms
+    # Group 1 -- single-turn chat (LMSYS n=5000, #825): context only
+    ctx_x += [0, 1]
+    ctx_h += [0.673, 0.588]
+    # Group 2 -- real conversations (prefix x query, #1092): 6 coherent cells,
+    # each context + prefix (values verbatim from the #1092 results table).
     real_cells = [
-        (3, "Real conv\ninstruct,\nown ans", 0.799, 0.043),
-        (4, "Real conv\npretrained,\nown ans", 0.714, 0.051),
-        (5, "Real conv\npretrained,\nClaude ans", 0.742, 0.056),
-        (6, "Real conv\npretrained,\ninstruct ans", 0.493, 0.079),
+        (3, 0.8043, 0.0651),  # Instruct, own answers
+        (4, 0.7763, 0.0527),  # Instruct, Claude answers
+        (5, 0.7122, 0.0430),  # Instruct, pretrained answers
+        (6, 0.7144, 0.0511),  # Pretrained, own answers
+        (7, 0.7423, 0.0556),  # Pretrained, Claude answers
+        (8, 0.4927, 0.0788),  # Pretrained, instruct answers
     ]
-    W = 0.36
-    for x, label, cval, pval in real_cells:
-        add_ctx(x - W / 2, label, cval)  # left-shifted context bar
-        pfx_x.append(x + W / 2)
+    for x, cval, pval in real_cells:
+        ctx_x.append(x - W / 2)  # left-shifted context bar
+        ctx_h.append(cval)
+        pfx_x.append(x + W / 2)  # right-shifted prefix bar
         pfx_h.append(pval)
-    # replace the last four ctx labels' anchor x with the group center for ticks
-    # (handled below by using cell-center ticks)
-    # Shuffled-pairing context floor (#1092)
-    shf_cells = [(7, "Shuffled\nfloor\ninstruct", 0.08), (8, "Shuffled\nfloor\npretrained", 0.057)]
-    for x, label, val in shf_cells:
-        shf_x.append(x)
-        shf_h.append(val)
-        ctx_lbl.append((x, label))
-    # Group 3 -- fiction raw text (#931)
-    add_ctx(10, "Fiction\nnovels\n(author-blk)", -0.065)
-    add_ctx(11, "Fiction\nmodel\nstories", 0.16)
+    # #1092 shuffled-pairing floor = context R^2 of the two shuffled cells (verbatim)
+    shf_x += [9, 10]
+    shf_h += [0.0792, 0.0565]
+    # Group 3 -- fiction raw text (#931): context only
+    ctx_x += [12, 13]
+    ctx_h += [-0.065, 0.16]
 
     axA.axhline(0.0, color=NEUTRAL, linewidth=0.8, zorder=1)
     axA.bar(ctx_x, ctx_h, width=W, color=PRIMARY, label="context-based map", zorder=3)
@@ -105,27 +97,29 @@ def figure1() -> None:
         label="prefix-based map",
         zorder=3,
     )
-    axA.bar(shf_x, shf_h, width=W, color=CONTROL, label="shuffled floor", zorder=3)
+    axA.bar(shf_x, shf_h, width=W, color=CONTROL, label="shuffled floor (context)", zorder=3)
 
     # X ticks: cell centers. For the paired real-conv cells the tick sits at the
     # cell integer (between the two offset bars).
-    tick_pos = [0, 1, 3, 4, 5, 6, 7, 8, 10, 11]
+    tick_pos = [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13]
     tick_lbl = [
         "Single-turn\nchat\ninstruct",
         "Single-turn\nchat\npretrained",
         "Real conv\ninstruct,\nown ans",
+        "Real conv\ninstruct,\nClaude ans",
+        "Real conv\ninstruct,\npretr. ans",
         "Real conv\npretrained,\nown ans",
         "Real conv\npretrained,\nClaude ans",
-        "Real conv\npretrained,\ninstruct ans",
+        "Real conv\npretrained,\ninstr. ans",
         "Shuffled\nfloor\ninstruct",
         "Shuffled\nfloor\npretrained",
         "Fiction\nnovels\n(author-blk)",
         "Fiction\nmodel\nstories",
     ]
     axA.set_xticks(tick_pos)
-    axA.set_xticklabels(tick_lbl, fontsize=7)
+    axA.set_xticklabels(tick_lbl, fontsize=6.5)
     # faint regime separators (reference lines, allowed)
-    for xsep in (2.0, 9.0):
+    for xsep in (2.0, 11.0):
         axA.axvline(xsep, color="#DDDDDD", linewidth=0.8, zorder=0)
     axA.set_ylabel("held-out $R^2$ (ridge)")
     axA.set_ylim(-0.55, 0.92)
@@ -178,22 +172,26 @@ def figure1() -> None:
             "panelA_context": {
                 "single_turn_chat_instruct=0.673": 825,
                 "single_turn_chat_pretrained=0.588": 825,
-                "realconv_instruct_own_answers=0.799": 1092,
-                "realconv_pretrained_own_answers=0.714": 1092,
-                "realconv_pretrained_claude_answers=0.742": 1092,
-                "realconv_pretrained_instruct_answers=0.493": 1092,
+                "realconv_instruct_own_answers=0.8043": 1092,
+                "realconv_instruct_claude_answers=0.7763": 1092,
+                "realconv_instruct_pretrained_answers=0.7122": 1092,
+                "realconv_pretrained_own_answers=0.7144": 1092,
+                "realconv_pretrained_claude_answers=0.7423": 1092,
+                "realconv_pretrained_instruct_answers=0.4927": 1092,
                 "fiction_novels_author_blocked=-0.065": 931,
                 "fiction_model_stories=0.16": 931,
             },
             "panelA_prefix": {
-                "realconv_instruct_own_answers=0.043": 1092,
-                "realconv_pretrained_own_answers=0.051": 1092,
-                "realconv_pretrained_claude_answers=0.056": 1092,
-                "realconv_pretrained_instruct_answers=0.079": 1092,
+                "realconv_instruct_own_answers=0.0651": 1092,
+                "realconv_instruct_claude_answers=0.0527": 1092,
+                "realconv_instruct_pretrained_answers=0.0430": 1092,
+                "realconv_pretrained_own_answers=0.0511": 1092,
+                "realconv_pretrained_claude_answers=0.0556": 1092,
+                "realconv_pretrained_instruct_answers=0.0788": 1092,
             },
             "panelA_shuffled_floor": {
-                "instruct=0.08": 1092,
-                "pretrained=0.057": 1092,
+                "instruct_context=0.0792": 1092,
+                "pretrained_context=0.0565": 1092,
             },
             "panelB_two_turn": {
                 "instruct_chat_ridge=0.076,mlp=0.557": 825,

@@ -1,9 +1,9 @@
 {
-  "commit": "633c5dd793",
-  "created": "2026-07-14T21:39:35Z",
+  "commit": "5054e219e7",
+  "created": "2026-07-14T21:48:55Z",
   "figsize": [
-    16.5,
-    5.4
+    19.0,
+    5.6
   ],
   "points": [
     {
@@ -20,25 +20,37 @@
     },
     {
       "x": 2.82,
-      "held-out $R^2$ (ridge)": 0.799,
+      "held-out $R^2$ (ridge)": 0.8043,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 3.82,
-      "held-out $R^2$ (ridge)": 0.714,
+      "held-out $R^2$ (ridge)": 0.7763,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 4.82,
-      "held-out $R^2$ (ridge)": 0.742,
+      "held-out $R^2$ (ridge)": 0.7122,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 5.82,
-      "held-out $R^2$ (ridge)": 0.493,
+      "held-out $R^2$ (ridge)": 0.7144,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.82,
+      "held-out $R^2$ (ridge)": 0.7423,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.82,
+      "held-out $R^2$ (ridge)": 0.4927,
       "_kind": "bar",
       "_group": 0
     },
@@ -56,37 +68,49 @@
     },
     {
       "x": 3.18,
-      "held-out $R^2$ (ridge)": 0.043,
+      "held-out $R^2$ (ridge)": 0.0651,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 4.18,
-      "held-out $R^2$ (ridge)": 0.051,
+      "held-out $R^2$ (ridge)": 0.0527,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 5.18,
-      "held-out $R^2$ (ridge)": 0.056,
+      "held-out $R^2$ (ridge)": 0.043,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 6.18,
-      "held-out $R^2$ (ridge)": 0.079,
+      "held-out $R^2$ (ridge)": 0.0511,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.18,
+      "held-out $R^2$ (ridge)": 0.0556,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.18,
+      "held-out $R^2$ (ridge)": 0.0788,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "Shuffled\nfloor\ninstruct",
-      "held-out $R^2$ (ridge)": 0.08,
+      "held-out $R^2$ (ridge)": 0.0792,
       "_kind": "bar",
       "_group": 2
     },
     {
       "category": "Shuffled\nfloor\npretrained",
-      "held-out $R^2$ (ridge)": 0.057,
+      "held-out $R^2$ (ridge)": 0.0565,
       "_kind": "bar",
       "_group": 2
     },
@@ -140,7 +164,7 @@
     }
   ],
   "n_series": 5,
-  "total_points": 22,
+  "total_points": 26,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -151,7 +175,7 @@
         "legend_labels": [
           "context-based map",
           "prefix-based map",
-          "shuffled floor"
+          "shuffled floor (context)"
         ],
         "annotations": [
           "held-out $R^2$, ridge; regimes: single-turn chat (#825) | real conversations (#1092) | fiction (#931)"
@@ -160,9 +184,11 @@
           "Single-turn\nchat\ninstruct",
           "Single-turn\nchat\npretrained",
           "Real conv\ninstruct,\nown ans",
+          "Real conv\ninstruct,\nClaude ans",
+          "Real conv\ninstruct,\npretr. ans",
           "Real conv\npretrained,\nown ans",
           "Real conv\npretrained,\nClaude ans",
-          "Real conv\npretrained,\ninstruct ans",
+          "Real conv\npretrained,\ninstr. ans",
           "Shuffled\nfloor\ninstruct",
           "Shuffled\nfloor\npretrained",
           "Fiction\nnovels\n(author-blk)",
@@ -211,7 +237,7 @@
     "series": [
       "context-based map",
       "prefix-based map",
-      "shuffled floor",
+      "shuffled floor (context)",
       "ridge (linear)",
       "MLP probe (nonlinear)"
     ]
@@ -220,22 +246,26 @@
     "panelA_context": {
       "single_turn_chat_instruct=0.673": 825,
       "single_turn_chat_pretrained=0.588": 825,
-      "realconv_instruct_own_answers=0.799": 1092,
-      "realconv_pretrained_own_answers=0.714": 1092,
-      "realconv_pretrained_claude_answers=0.742": 1092,
-      "realconv_pretrained_instruct_answers=0.493": 1092,
+      "realconv_instruct_own_answers=0.8043": 1092,
+      "realconv_instruct_claude_answers=0.7763": 1092,
+      "realconv_instruct_pretrained_answers=0.7122": 1092,
+      "realconv_pretrained_own_answers=0.7144": 1092,
+      "realconv_pretrained_claude_answers=0.7423": 1092,
+      "realconv_pretrained_instruct_answers=0.4927": 1092,
       "fiction_novels_author_blocked=-0.065": 931,
       "fiction_model_stories=0.16": 931
     },
     "panelA_prefix": {
-      "realconv_instruct_own_answers=0.043": 1092,
-      "realconv_pretrained_own_answers=0.051": 1092,
-      "realconv_pretrained_claude_answers=0.056": 1092,
-      "realconv_pretrained_instruct_answers=0.079": 1092
+      "realconv_instruct_own_answers=0.0651": 1092,
+      "realconv_instruct_claude_answers=0.0527": 1092,
+      "realconv_instruct_pretrained_answers=0.0430": 1092,
+      "realconv_pretrained_own_answers=0.0511": 1092,
+      "realconv_pretrained_claude_answers=0.0556": 1092,
+      "realconv_pretrained_instruct_answers=0.0788": 1092
     },
     "panelA_shuffled_floor": {
-      "instruct=0.08": 1092,
-      "pretrained=0.057": 1092
+      "instruct_context=0.0792": 1092,
+      "pretrained_context=0.0565": 1092
     },
     "panelB_two_turn": {
       "instruct_chat_ridge=0.076,mlp=0.557": 825,
