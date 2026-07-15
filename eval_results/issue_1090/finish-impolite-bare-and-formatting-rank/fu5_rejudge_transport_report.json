@@ -1,0 +1,27 @@
+{
+  "n_reads_rejudged": 1,
+  "n_transport_total": 10,
+  "n_recovered_total": 0,
+  "n_still_error_total": 10,
+  "max_tokens": 300,
+  "dry_run": false,
+  "reads": [
+    {
+      "read": "fu5_aggregate/judge/formatting_reread/fmt-pers-r128",
+      "run_id": "fmt-pers-r128",
+      "kind": "reread",
+      "n_transport": 10,
+      "n_recovered": 0,
+      "n_still_error": 10,
+      "n_cache_purged": 0
+    }
+  ],
+  "ladder_changes": {
+    "fu5_aggregate/judge/formatting_reread/fmt-pers-r128": {
+      "old_rate": 0.4664429530201342,
+      "new_rate": 0.4664429530201342
+    }
+  },
+  "git_commit": "40797cd8ab",
+  "created_utc": "2026-07-15T12:28:19Z"
+}

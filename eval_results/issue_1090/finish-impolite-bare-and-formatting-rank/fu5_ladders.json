@@ -139,22 +139,22 @@
         "effective_bar": 5.0
       },
       "tier2_trained": {
-        "rate": 0.336734693877551,
-        "k": 66,
-        "n": 196,
-        "n_dropped": 4,
+        "rate": 0.345,
+        "k": 69,
+        "n": 200,
+        "n_dropped": 0,
         "n_total_draws": 1000,
-        "n_dropped_draws": 529,
+        "n_dropped_draws": 1,
         "wilson95": [
-          0.27427401443041904,
-          0.4054723446860011
+          0.2825968690139029,
+          0.41324539282077655
         ],
         "mode": "judged",
-        "transport_losses": 529,
-        "content_dropped_draws": 0,
+        "transport_losses": 0,
+        "content_dropped_draws": 1,
         "k4_truncation_check_required": false
       },
-      "install_delta": 0.336734693877551,
+      "install_delta": 0.345,
       "margin": {
         "status": "computed",
         "behavior": "impolite",
@@ -227,7 +227,7 @@
           "delta": 0.8829854199654508
         }
       },
-      "tier2_confirm_rate": 0.336734693877551
+      "tier2_confirm_rate": 0.345
     },
     "imp-bare-lr3e5": {
       "run_id": "imp-bare-lr3e5",
@@ -359,22 +359,22 @@
         "effective_bar": 5.0
       },
       "tier2_trained": {
-        "rate": 0.6751269035532995,
-        "k": 133,
-        "n": 197,
-        "n_dropped": 3,
+        "rate": 0.675,
+        "k": 135,
+        "n": 200,
+        "n_dropped": 0,
         "n_total_draws": 1000,
-        "n_dropped_draws": 522,
+        "n_dropped_draws": 0,
         "wilson95": [
-          0.6069198667354114,
-          0.7366344566716916
+          0.6073185684304498,
+          0.736085329498138
         ],
         "mode": "judged",
-        "transport_losses": 522,
+        "transport_losses": 0,
         "content_dropped_draws": 0,
         "k4_truncation_check_required": false
       },
-      "install_delta": 0.6751269035532995,
+      "install_delta": 0.675,
       "margin": {
         "status": "computed",
         "behavior": "impolite",
@@ -447,7 +447,7 @@
           "delta": 0.8590476490512193
         }
       },
-      "tier2_confirm_rate": 0.6751269035532995
+      "tier2_confirm_rate": 0.675
     },
     "imp-bare-lr1e4": {
       "run_id": "imp-bare-lr1e4",
@@ -579,22 +579,22 @@
         "effective_bar": 5.0
       },
       "tier2_trained": {
-        "rate": 0.6111111111111112,
+        "rate": 0.605,
         "k": 121,
-        "n": 198,
-        "n_dropped": 2,
+        "n": 200,
+        "n_dropped": 0,
         "n_total_draws": 1000,
-        "n_dropped_draws": 514,
+        "n_dropped_draws": 0,
         "wilson95": [
-          0.5417082748542982,
-          0.6762844481522575
+          0.5358822087449843,
+          0.6701601300121683
         ],
         "mode": "judged",
-        "transport_losses": 514,
+        "transport_losses": 0,
         "content_dropped_draws": 0,
         "k4_truncation_check_required": false
       },
-      "install_delta": 0.6111111111111112,
+      "install_delta": 0.605,
       "margin": {
         "status": "computed",
         "behavior": "impolite",
@@ -667,7 +667,7 @@
           "delta": 0.6621109257965734
         }
       },
-      "tier2_confirm_rate": 0.6111111111111112
+      "tier2_confirm_rate": 0.605
     },
     "fmt-pers-r128": {
       "run_id": "fmt-pers-r128",
@@ -901,15 +901,15 @@
       },
       "tier2_confirm_rate": 0.28,
       "formatting_judged_reread": {
-        "rate": 0.47586206896551725,
-        "k": 138,
-        "n": 290,
-        "n_dropped": 10,
+        "rate": 0.4664429530201342,
+        "k": 139,
+        "n": 298,
+        "n_dropped": 2,
         "n_total_draws": 1500,
-        "n_dropped_draws": 694,
+        "n_dropped_draws": 31,
         "wilson95": [
-          0.4190732637106741,
-          0.5332820188633387
+          0.41058814347504374,
+          0.5231519374150654
         ],
         "mode": "judged_reread"
       }
@@ -1146,15 +1146,15 @@
       },
       "tier2_confirm_rate": 0.2866666666666667,
       "formatting_judged_reread": {
-        "rate": 0.49829351535836175,
-        "k": 146,
-        "n": 293,
-        "n_dropped": 7,
+        "rate": 0.5083612040133779,
+        "k": 152,
+        "n": 299,
+        "n_dropped": 1,
         "n_total_draws": 1500,
-        "n_dropped_draws": 701,
+        "n_dropped_draws": 14,
         "wilson95": [
-          0.4414353891873466,
-          0.5551958107522844
+          0.45194866445361026,
+          0.5645616168287498
         ],
         "mode": "judged_reread"
       }
@@ -1422,9 +1422,9 @@
       "U_band_floor_margin": 0.10999999999999999,
       "V_030_margin": 0.41,
       "tier2_confirm": {
-        "imp-bare-lr1e5": 0.336734693877551,
-        "imp-bare-lr3e5": 0.6751269035532995,
-        "imp-bare-lr1e4": 0.6111111111111112
+        "imp-bare-lr1e5": 0.345,
+        "imp-bare-lr3e5": 0.675,
+        "imp-bare-lr1e4": 0.605
       }
     }
   },
