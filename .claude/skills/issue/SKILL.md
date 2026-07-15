@@ -1005,7 +1005,9 @@ round-completion / done-transition record (`epm:same-issue-followup-run`,
 `epm:promoted`, a terminal `epm:status-changed`) posted AFTER the evidence
 — state the finding in one line. Otherwise treat it as a live
 driver and EXIT via the SAME collision-exit breadcrumb block above
-(`reason=step0-session-collision`, `owner=<the evidence line>`), mutating
+(`reason=step0-session-collision`, `owner=<the evidence line>`; that
+block's exit-marker contract applies verbatim — the single breadcrumb,
+do NOT run `scripts/post_step_completed.py` here), mutating
 nothing — fail toward YIELD: a wrong yield costs ≤30 min before the
 watcher re-drives; a wrong proceed opens the #952 double-writer window.
 Incident 2026-07-14/15 (#952 → #1326): a fresh `/issue 952` session
