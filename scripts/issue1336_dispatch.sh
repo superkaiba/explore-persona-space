@@ -346,8 +346,12 @@ for cell in cells:
 ' > "$jobs"
     run_queue fit "$jobs"
     # Incremental persistence: preds land on HF at the end of the phase, not
-    # only at terminal upload (checkpoint-per-phase).
-    [ "$SMOKE" -eq 0 ] && upload_preds cells || true
+    # only at terminal upload (checkpoint-per-phase). A failure here logs LOUD
+    # but does not kill the phase — the terminal phase_upload re-runs the same
+    # upload fail-loud (r1 review Minor 6).
+    if [ "$SMOKE" -eq 0 ]; then
+        upload_preds cells || echo "[upload] WARNING: incremental preds upload (cells) failed rc=$? — terminal phase_upload retries fail-loud" >&2
+    fi
 }
 
 phase_align() {
@@ -377,7 +381,9 @@ for m0, m1 in pairs:
         touch "$DONE_DIR/align__decision.done"
         echo "[align] decision aggregation complete"
     fi
-    [ "$SMOKE" -eq 0 ] && upload_preds align || true
+    if [ "$SMOKE" -eq 0 ]; then
+        upload_preds align || echo "[upload] WARNING: incremental preds upload (align) failed rc=$? — terminal phase_upload retries fail-loud" >&2
+    fi
 }
 
 upload_preds() { # $1 = cells|align — bulk upload_folder (one commit), fail loud

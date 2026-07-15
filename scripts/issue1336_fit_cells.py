@@ -95,12 +95,18 @@ def _g0_probe() -> bool:
     """Cheap Hub existence probe of the pinned stems (single-path file_exists)."""
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate import hub
+
     api = HfApi()
     ok = True
     for name in ("instruct_chat_s_shard000.pt", "instruct_chat_s_shard000.json"):
         path = f"{cm.G0['hf_prefix']}/{name}"
-        found = api.file_exists(
-            cm.HF_DATA_REPO, path, repo_type="dataset", revision=cm.G0["revision"]
+        found = hub.retry_transient(
+            # HUB_VERIFY_RETRY_EXEMPT: single-path probe wrapped in hub.retry_transient here
+            lambda p=path: api.file_exists(
+                cm.HF_DATA_REPO, p, repo_type="dataset", revision=cm.G0["revision"]
+            ),
+            what=f"g0 probe {path}",
         )
         print(f"[g0-probe] {path} @ {cm.G0['revision'][:8]}: {'OK' if found else 'MISSING'}")
         ok = ok and found
@@ -111,28 +117,41 @@ def _g0_stage(dl_dir: Path) -> Path:
     """Stage the pinned Qwen S1 stems: scoped list_repo_tree + per-file download.
 
     NEVER snapshot_download on the ~1M-file data repo (full-tree enumeration
-    wedge — gotchas.md #833); the prefix-scoped tree walk is seconds.
+    wedge — gotchas.md #833); the prefix-scoped tree walk is seconds. Every
+    Hub call rides hub.retry_transient (the listing MATERIALIZES inside the
+    thunk — hub list APIs are lazy generators; gotchas.md #779 n50k).
     """
     from huggingface_hub import HfApi, hf_hub_download
 
+    from explore_persona_space.orchestrate import hub
+
     api = HfApi()
-    entries = api.list_repo_tree(
-        cm.HF_DATA_REPO,
-        path_in_repo=cm.G0["hf_prefix"],
-        repo_type="dataset",
-        revision=cm.G0["revision"],
-        recursive=False,
+    entries = hub.retry_transient(
+        lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: scoped (path_in_repo) walk, retried via hub.retry_transient
+            api.list_repo_tree(
+                cm.HF_DATA_REPO,
+                path_in_repo=cm.G0["hf_prefix"],
+                repo_type="dataset",
+                revision=cm.G0["revision"],
+                recursive=False,
+            )
+        ),
+        what="g0 stage: scoped tree walk",
     )
     stem = cm.G0["stem"]
     wanted = [e.path for e in entries if Path(e.path).name.startswith(f"{stem}_shard")]
     assert wanted, f"no {stem} shards under {cm.G0['hf_prefix']} @ {cm.G0['revision'][:8]}"
     for rel in sorted(wanted):
-        hf_hub_download(
-            repo_id=cm.HF_DATA_REPO,
-            repo_type="dataset",
-            filename=rel,
-            revision=cm.G0["revision"],
-            local_dir=dl_dir,
+        hub.retry_transient(
+            lambda r=rel: hf_hub_download(
+                repo_id=cm.HF_DATA_REPO,
+                repo_type="dataset",
+                filename=r,
+                revision=cm.G0["revision"],
+                local_dir=dl_dir,
+            ),
+            what=f"g0 stage: download {rel}",
         )
     bundle_dir = dl_dir / cm.G0["hf_prefix"]
     print(f"[g0] staged {len(wanted)} files -> {bundle_dir}")

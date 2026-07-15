@@ -375,19 +375,39 @@ def write_shards(
 
 
 def _upload_cell(out_dir: Path, stem: str) -> None:
-    """Per-cell incremental upload: ONE folder commit for this stem's files (#664)."""
+    """Per-cell incremental upload: ONE folder commit for this stem's files (#664).
+
+    The ``{stem}.done.json`` marker is deliberately NOT uploaded: it is the
+    LOCAL resume marker carrying the done == uploaded flag (its Hub copy
+    would be stale-by-construction, written before the upload it records).
+    """
     from huggingface_hub import upload_folder
 
+    from explore_persona_space.orchestrate import hub
+
     prefix = f"{cm.HF_PREFIX_1336}/analysis_tensors/turnstore_{stem}"
-    upload_folder(
-        repo_id=cm.HF_DATA_REPO,
-        repo_type="dataset",
-        folder_path=str(out_dir),
-        path_in_repo=prefix,
-        allow_patterns=[f"{stem}_shard*", f"{stem}.done.json"],
-        commit_message=f"issue-1336: turnstore {stem}",
+    # Dir-filecount guard (#1190) OUTSIDE the retry wrapper (a guard raise is
+    # deterministic; retrying it burns the budget for nothing).
+    hub.assert_hub_dir_filecounts(out_dir, prefix, allow_patterns=[f"{stem}_shard*"])
+    hub.retry_transient(
+        lambda: upload_folder(
+            repo_id=cm.HF_DATA_REPO,
+            repo_type="dataset",
+            folder_path=str(out_dir),
+            path_in_repo=prefix,
+            allow_patterns=[f"{stem}_shard*"],
+            commit_message=f"issue-1336: turnstore {stem}",
+        ),
+        what=f"turnstore upload {stem}",
     )
     print(f"[upload] {stem} -> {prefix}")
+
+
+def _write_done(done_path: Path, done: dict) -> None:
+    """Atomic done-marker write (tmp + replace; the resume predicate reads it)."""
+    tmp = done_path.with_suffix(done_path.suffix + ".tmp")
+    tmp.write_text(json.dumps(done, indent=2) + "\n")
+    tmp.replace(done_path)
 
 
 def main() -> None:
@@ -402,6 +422,16 @@ def main() -> None:
     stem = cm.cell_id(slug, fmt, corpus)
     done_path = out_dir / f"{stem}.done.json"
     if done_path.exists():
+        done = json.loads(done_path.read_text())
+        if args.upload and not done.get("uploaded"):
+            # done == uploaded (#664 per-cell contract): extraction completed
+            # but the per-cell upload did not (transient Hub failure, or a
+            # prior no-upload run) — re-attempt ONLY the upload, never the
+            # extraction, and flip the flag only after it succeeds.
+            print(f"[extract] {stem}: done marker exists, upload incomplete — re-uploading")
+            _upload_cell(out_dir, stem)
+            done["uploaded"] = True
+            _write_done(done_path, done)
         print(f"[extract] skip {stem} (done marker exists)")
         return
 
@@ -471,11 +501,16 @@ def main() -> None:
         # Return freed arena pages to the OS (parent run-5 monotone-RSS fix).
         with contextlib.suppress(OSError):
             ctypes.CDLL("libc.so.6").malloc_trim(0)
-    done_path.write_text(
-        json.dumps({"stem": stem, "n_rows": n_done, "n_shards": len(paths)}, indent=2) + "\n"
-    )
+    # Extraction state persists immediately (a crash in the upload below must
+    # not forfeit the GPU work), but with uploaded=False: the resume predicate
+    # above re-attempts the upload — done == uploaded (#664), and a transient
+    # Hub failure is retried on the next run instead of silently skipped.
+    done = {"stem": stem, "n_rows": n_done, "n_shards": len(paths), "uploaded": False}
+    _write_done(done_path, done)
     if args.upload:
         _upload_cell(out_dir, stem)
+        done["uploaded"] = True
+        _write_done(done_path, done)
     print(f"[done-cell] {stem}: {n_done} rows -> {len(paths)} shard(s) in {out_dir}")
 
 

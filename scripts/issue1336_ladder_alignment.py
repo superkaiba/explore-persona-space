@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import itertools
 import json
 import sys
 import time
@@ -496,8 +497,10 @@ def run_decision(args) -> None:
     all_pos = all(v["ci_lo"] > 0.0 for v in incs) and bool(incs)
     h_generic = False
     if all_pos:
+        # Plan §6 "no increment > 2x the next-largest" reads pairwise down the
+        # WHOLE sorted list (r1 review Minor 4), not only the top pair.
         pts = sorted((abs(v["point"]) for v in incs), reverse=True)
-        h_generic = len(pts) < 2 or pts[0] <= 2.0 * pts[1]
+        h_generic = all(a <= 2.0 * b for a, b in itertools.pairwise(pts))
 
     payload = {
         "metadata": _metadata(FIT_SEED, 0),
