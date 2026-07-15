@@ -72,6 +72,7 @@ import issue1090_fu2 as fu2  # noqa: E402
 import issue1090_fu3_cells as fu3_cells  # noqa: E402
 import issue1090_fu3_worker as fu3w  # noqa: E402
 import issue1090_run as i1090  # noqa: E402
+from huggingface_hub.errors import LocalEntryNotFoundError  # noqa: E402
 
 from explore_persona_space.artifacts.behavior import BEHAVIORS  # noqa: E402
 from explore_persona_space.artifacts.organisms import (  # noqa: E402
@@ -1596,7 +1597,13 @@ def cmd_judge_aggregate(cfg: i1090.RunConfig, args: argparse.Namespace) -> int:
             # have uploaded NOTHING (or no build record) — record it as a
             # first-class outcome and keep aggregating the sibling runs.
             # Anything but the staging helper's documented missing-prefix /
-            # missing-file signal stays LOUD.
+            # missing-file signal stays LOUD: hf_hub_download raises
+            # LocalEntryNotFoundError (a FileNotFoundError SUBCLASS) when the
+            # network dies mid-staging with no cached file, and recording that
+            # would mislabel a healthy TRAINED run as missing_artifacts
+            # (code-review v17 Minor).
+            if isinstance(e, LocalEntryNotFoundError):
+                raise
             logger.warning("[fu4] %s: build artifacts unavailable — %s", run.run_id, e)
             rec.update({"status": "missing_artifacts", "missing_reason": str(e)})
             out["runs"][run.run_id] = rec

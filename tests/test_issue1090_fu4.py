@@ -354,3 +354,188 @@ def test_cmd_run_full_mode_refuses_unpinned_manifest(tmp_path):
     assert payload["status"] == "failed"
     assert "train_mix_sha256" in payload["reason"]
     assert not payload.get("no_requeue")  # unpinned is retriable after a re-stage
+
+
+# ── code-review v17 round-3 pins (concern fu4-transport-rejudge-tool-not-prewired
+#    + the LocalEntryNotFoundError swallow-width Minor) ───────────────────────
+
+
+def test_judge_aggregate_reraises_transient_hf_staging_failure(tmp_path, monkeypatch):
+    """v17 Minor (fails pre-fix): hf_hub_download's LocalEntryNotFoundError —
+    a FileNotFoundError SUBCLASS raised when the network dies mid-staging with
+    no cached file — must re-raise LOUD, never be recorded as a first-class
+    missing_artifacts outcome (that would mislabel a healthy TRAINED run)."""
+    from huggingface_hub.errors import LocalEntryNotFoundError
+
+    run = fu4.RUN_BY_ID["imp-conv-lr1e4"]
+    cfg = i1090.RunConfig(smoke=True, cells=(run,), out_root=tmp_path, upload=False)
+    manifest = tmp_path / "m.json"
+    manifest.write_text(json.dumps({"runs": [{"run_id": run.run_id, "fu3_base": {"rate": 0.0}}]}))
+
+    def _fake_stage_network_outage(prefix, dest, *, skip_if=None):
+        raise LocalEntryNotFoundError(
+            "Connection error, and cannot find the requested files in the cached path"
+        )
+
+    monkeypatch.setattr(i1090, "_stage_hf_prefix", _fake_stage_network_outage)
+    args = argparse.Namespace(manifest=str(manifest), runs=run.run_id)
+    with pytest.raises(LocalEntryNotFoundError):
+        fu4.cmd_judge_aggregate(cfg, args)
+
+
+def _rejudge_fixture(tmp_path):
+    """Tiny synthetic fu4 P3 judge layout: one judged tier-2 read with one
+    injected transport (error: true) draw row, plus a stale transport
+    cache-entry file and a matching fu4_ladders.json record."""
+    run = fu4.RUN_BY_ID["imp-pers-lr1e5"]
+    out_root = tmp_path / "out"
+    tier2 = out_root / run.run_id / "tier2"
+    tier2.mkdir(parents=True)
+    (tier2 / f"completions__trained__{run.context_id}.json").write_text(
+        json.dumps(
+            {
+                "questions": ["Q zero?", "Q one?"],
+                "completions": [["a perfectly fine answer"], ["another fine answer"]],
+            }
+        )
+    )
+    tag = f"{run.run_id}-t2-trained"
+    jdir = out_root / "fu4_aggregate" / "judge" / run.behavior / tag
+    jdir.mkdir(parents=True)
+    all_scores = {
+        f"{tag}-q000-c0__00000__00": {"score": 90},
+        f"{tag}-q000-c0__00000__01": {"error": "Error code: 529 overloaded_error"},
+        f"{tag}-q001-c0__00001__00": {"score": 10},
+        f"{tag}-q001-c0__00001__01": {"score": 20},
+    }
+    (jdir / "judge_raw.json").write_text(json.dumps({"all_scores": all_scores}))
+    (jdir / ("a" * 16 + ".json")).write_text(json.dumps({"error": "Error code: 529"}))
+    ladders = tmp_path / "fu4_ladders.json"
+    ladders.write_text(
+        json.dumps(
+            {
+                "runs": {
+                    run.run_id: {
+                        "run_id": run.run_id,
+                        "cell_key": run.cell_key,
+                        "behavior": run.behavior,
+                        "context_id": run.context_id,
+                        "lr": run.lr,
+                        "base_tier2": {"rate": 0.0, "n": 600},
+                        "status": "trained",
+                        "rates_by_step": {"5": 0.4},
+                        "tier2_trained": {
+                            "rate": 0.5,
+                            "k": 1,
+                            "n": 2,
+                            "n_dropped": 0,
+                            "n_total_draws": 4,
+                            "n_dropped_draws": 1,
+                            "wilson95": [0.0, 1.0],
+                            "mode": "judged",
+                            "transport_losses": 1,
+                            "content_dropped_draws": 0,
+                            "k4_truncation_check_required": False,
+                        },
+                        "install_delta": 0.5,
+                    }
+                },
+                "cells": {},
+            }
+        )
+    )
+    return run, out_root, ladders, jdir
+
+
+def test_rejudge_transport_merges_and_recomputes_ladders(tmp_path, monkeypatch):
+    """Concern fu4-transport-rejudge-tool-not-prewired: the fu4 re-judge tool
+    surgically replaces exactly the error rows (fresh scratch cache — rule
+    24(ii)), purges stale transport cache entries, and recomputes the ladders
+    record with the production reduce. Real tool bodies throughout; the only
+    fake is the external judge-API boundary (signature mirrors judge_graded)."""
+    import issue1090_fu4_rejudge_transport as rejudge
+
+    run, out_root, ladders, jdir = _rejudge_fixture(tmp_path)
+    calls: list[dict] = []
+
+    def fake_judge_graded(
+        items,
+        eval_prompt,
+        *,
+        n_draws,
+        cache_dir,
+        save_raw,
+        judge_model,
+        temperature=0.7,
+        max_tokens=64,
+        dry_run=False,
+    ):
+        from explore_persona_space.eval.graded_judge import judge_result_from_save_raw
+
+        calls.append(
+            {
+                "items": [i[0] for i in items],
+                "n_draws": n_draws,
+                "judge_model": judge_model,
+                "max_tokens": max_tokens,
+                "cache_dir": str(cache_dir),
+            }
+        )
+        raw = {
+            f"{iid}__{i:05d}__{c:02d}": {"score": 80}
+            for i, (iid, _q, _a) in enumerate(items)
+            for c in range(n_draws)
+        }
+        save_raw = Path(save_raw)
+        save_raw.parent.mkdir(parents=True, exist_ok=True)
+        save_raw.write_text(json.dumps({"all_scores": raw}))
+        return judge_result_from_save_raw(save_raw, items)
+
+    monkeypatch.setattr(rejudge, "judge_graded", fake_judge_graded)
+    rc = rejudge.main(["--out-root", str(out_root), "--ladders", str(ladders)])
+    assert rc == 0
+    # SAME instrument: the behavior's Sonnet pin + the fu4 300-token budget,
+    # against a FRESH scratch cache dir (never the read's own cache dir).
+    assert calls and calls[0]["judge_model"] == "claude-sonnet-4-5-20250929"
+    assert calls[0]["max_tokens"] == fu4.JUDGE_MAX_TOKENS_FU4 == 300
+    assert calls[0]["n_draws"] == 1
+    assert str(jdir) not in calls[0]["cache_dir"]
+    # Per-draw surgical merge: exactly the error row replaced, siblings kept.
+    tag = f"{run.run_id}-t2-trained"
+    raw = json.loads((jdir / "judge_raw.json").read_text())
+    assert raw["all_scores"][f"{tag}-q000-c0__00000__01"] == {"score": 80}
+    assert raw["all_scores"][f"{tag}-q000-c0__00000__00"] == {"score": 90}
+    assert raw["rejudge_transport"]["n_rejudged"] == 1
+    assert raw["rejudge_transport"]["n_recovered"] == 1
+    assert not (jdir / ("a" * 16 + ".json")).exists()  # stale cache entry purged
+    # Ladders recomputed with the production reduce: no dropped draws left,
+    # transport_losses 0, q000 mean 85 > 50 and q001 mean 15 < 50 -> rate 0.5.
+    out = json.loads(ladders.read_text())
+    t2 = out["runs"][run.run_id]["tier2_trained"]
+    assert t2["transport_losses"] == 0
+    assert t2["n_dropped_draws"] == 0
+    assert t2["rate"] == 0.5
+    assert out["runs"][run.run_id]["install_delta"] == 0.5
+    assert out["cells"][run.cell_key]["tier2_confirm"][run.run_id] == 0.5
+    report = json.loads((ladders.parent / "fu4_rejudge_transport_report.json").read_text())
+    assert report["n_transport_total"] == 1
+    assert report["n_recovered_total"] == 1
+
+
+def test_rejudge_transport_dry_run_scans_without_mutation(tmp_path, monkeypatch):
+    """--dry-run reports the transport count and touches nothing (no API path,
+    no raw merge, no ladders rewrite, no report file)."""
+    import issue1090_fu4_rejudge_transport as rejudge
+
+    _run, out_root, ladders, jdir = _rejudge_fixture(tmp_path)
+
+    def _boom(*a, **kw):  # the API boundary must never be reached on --dry-run
+        raise AssertionError("judge_graded called on --dry-run")
+
+    monkeypatch.setattr(rejudge, "judge_graded", _boom)
+    before_raw = (jdir / "judge_raw.json").read_text()
+    before_ladders = ladders.read_text()
+    assert rejudge.main(["--out-root", str(out_root), "--ladders", str(ladders), "--dry-run"]) == 0
+    assert (jdir / "judge_raw.json").read_text() == before_raw
+    assert ladders.read_text() == before_ladders
+    assert not (ladders.parent / "fu4_rejudge_transport_report.json").exists()
