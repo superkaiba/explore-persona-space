@@ -13,6 +13,8 @@ goal: 'Measure residual-stream activation-shift geometry (trained-base, per-laye
   reusing #1112''s method, to test whether impolite''s install geometry matches or
   differs from the diffuse/unaligned sycophancy read (#653/#1112); extend to the LoRA-vs-full-FT
   x pos-only-vs-contrastive 2x2 at matched install where tractable.'
+relates_to:
+- identity-contextual-vs-base
 ---
 ## Goal
 
