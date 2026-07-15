@@ -363,6 +363,7 @@ def stage_545_inputs(root: Path, args) -> dict:
     prefix = f"{C.I545_HF_PREFIX}/corpora"
     entries = retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: thunk runs inside hub.retry_transient (#920-safe)
             list_repo_tree(C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True)
         ),
         what=f"list_repo_tree {prefix}",

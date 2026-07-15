@@ -400,6 +400,7 @@ def check_545_inputs() -> dict:
     for prefix in (f"{C.I545_HF_PREFIX}/corpora", f"{C.I545_HF_PREFIX}/corpora/demos"):
         entries = retry_transient(
             lambda p=prefix: list(
+                # HUB_VERIFY_RETRY_EXEMPT: thunk runs inside hub.retry_transient (#920-safe)
                 list_repo_tree(C.HF_DATA_REPO, path_in_repo=p, repo_type="dataset", recursive=True)
             ),
             what=f"list_repo_tree {prefix}",
@@ -439,6 +440,7 @@ def upload_inputs(paths_named: list[tuple[Path, str]]) -> None:
             e.path
             for e in retry_transient(
                 lambda p=prefix: list(
+                    # HUB_VERIFY_RETRY_EXEMPT: thunk runs inside hub.retry_transient (#920-safe)
                     list_repo_tree(
                         C.HF_DATA_REPO, path_in_repo=p, repo_type="dataset", recursive=True
                     )
