@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1358,
+  "highest_id": 1359,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2794,6 +2794,13 @@
       "path": "tasks/completed/1358",
       "status": "completed",
       "title": "workflow-fix: gotchas BPE-seam entry \u2014 plain-text boundaries + smoke composition"
+    },
+    "1359": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1359",
+      "status": "proposed",
+      "title": "workflow-fix: upload-policy \u2014 bounded retry before fail-loud on no-path uploads"
     },
     "136": {
       "has_clean_result": false,
