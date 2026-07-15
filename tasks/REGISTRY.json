@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1315,
+  "highest_id": 1344,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2442,24 +2442,52 @@
     "1313": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1313",
-      "status": "running",
+      "path": "tasks/completed/1313",
+      "status": "completed",
       "title": "api_dispatch: retry 529 OverloadedError as transient + transport_loss split on judge paths (rule-24 sibling library fix)"
     },
     "1314": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1314",
-      "status": "running",
+      "path": "tasks/reviewing/1314",
+      "status": "reviewing",
       "title": "workflow-fix: c6_reuse_fitness recognizes (a)-(j) reuse-map tables"
     },
     "1315": {
       "goal": "Measure residual-stream activation-shift geometry (trained-base, per-layer rank/participation-ratio, read-out direction alignment, magnitude) of the on-policy-working #1090 impolite organisms (fu4 lr-3e-5 persona 0.805 + WildChat 0.737; fu3 ICL 0.82), reusing #1112's method, to test whether impolite's install geometry matches or differs from the diffuse/unaligned sycophancy read (#653/#1112); extend to the LoRA-vs-full-FT x pos-only-vs-contrastive 2x2 at matched install where tractable.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/1315",
-      "status": "proposed",
+      "path": "tasks/running/1315",
+      "status": "running",
       "title": "Impolite-organism activation-shift geometry (extends #1112 method to impolite)"
+    },
+    "1316": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1316",
+      "status": "completed",
+      "title": "daily-fix: widen lazy-import pin scan set (from #1304)"
+    },
+    "1317": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/1317",
+      "status": "reviewing",
+      "title": "daily-fix: code-reviewer Gate-scope line check (#1305)"
+    },
+    "1318": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1318",
+      "status": "completed",
+      "title": "daily-fix: fix 4 workflow_lint FAILs on main (hub-verify)"
+    },
+    "1319": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1319",
+      "status": "completed",
+      "title": "daily-fix: torch-before-dotenv in 2 issue scripts (#847)"
     },
     "132": {
       "has_clean_result": false,
@@ -2468,6 +2496,76 @@
       "status": "archived",
       "title": "Can we make the assistant persona more robust in post training or midtraining to prevent against jailbreaks -- look at existing literature"
     },
+    "1320": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/1320",
+      "status": "reviewing",
+      "title": "daily-fix: vectorize issue825 MLP secondary; upload first"
+    },
+    "1321": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1321",
+      "status": "completed",
+      "title": "daily-fix: follow-up defer/teardown must re-park parent"
+    },
+    "1322": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1322",
+      "status": "completed",
+      "title": "daily-fix: ownership check before resume; no double-bg"
+    },
+    "1323": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1323",
+      "status": "completed",
+      "title": "daily-fix: honor user inline override; commit same turn"
+    },
+    "1324": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1324",
+      "status": "running",
+      "title": "daily-fix: default vLLM hang mitigations for user corpora"
+    },
+    "1325": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/1325",
+      "status": "planning",
+      "title": "daily-fix: push-verify must cover eval_results + figures"
+    },
+    "1326": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1326",
+      "status": "proposed",
+      "title": "daily-fix: Step-0 guard blind to inline-chat drivers"
+    },
+    "1327": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1327",
+      "status": "proposed",
+      "title": "daily-fix: spawn_session.py unregister subcommand"
+    },
+    "1328": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1328",
+      "status": "proposed",
+      "title": "daily-fix: verify chat claims against artifacts first"
+    },
+    "1329": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1329",
+      "status": "proposed",
+      "title": "daily-fix: lint lane-specific env vars in workload-cmd"
+    },
     "133": {
       "has_clean_result": false,
       "kind": "survey",
@@ -2475,12 +2573,121 @@
       "status": "completed",
       "title": "Question: how important is the system prompt used in frontier models = I'm not sure exactly how it's consolidated."
     },
+    "1330": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/1330",
+      "status": "archived",
+      "title": "daily-fix: codify marker-text extraction from output file"
+    },
+    "1331": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1331",
+      "status": "proposed",
+      "title": "daily-held: pod-779 stranded n10k captures - rescue or drop"
+    },
+    "1332": {
+      "goal": "Test whether function-space similarity between per-context-family fitted linear context\u2192answer maps (cross-family transfer R\u00b2 / prediction agreement on the frozen base model, both prefix-based and context-based arms) predicts fine-tuning leakage from source persona to target contexts on an existing measured leakage matrix, with incremental validity over the activation-cosine, JS-divergence, base-rate-prior, and whitened-gate baselines under group-level held-out (LOFO) evaluation.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/1332",
+      "status": "running",
+      "title": "Function-space similarity between per-context fitted context\u2192answer maps as a leakage predictor"
+    },
+    "1333": {
+      "goal": "Build the marker anchor for the organism-geometry spectrum via the FULL #1112 design on the factory marker behavior (token id 83399): {LoRA, full fine-tune} x {positive-only, contrastive} 2x2 at MATCHED marker install (mirroring #1112 sycophancy + #1315 impolite), plus a LoRA extension across the 4 #1090 contexts for install/expression/leakage breadth; geometry DVs mirror #1112 (rank-k@90/participation-ratio/alignment/magnitude + the mandatory teacher-forced shared-text control) plus the three-space on-policy marker log-P install DV; dedicated marker recipe (marker+EOT loss, lr<=5e-6, band-stop, contrastive-negative EOS slot), de-saturated anchor.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/1333",
+      "status": "running",
+      "title": "Factory marker organism: marker behavior through the #1090 pipeline (spectrum anchor for #1315)"
+    },
+    "1334": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1334",
+      "status": "proposed",
+      "title": "workflow-fix: multi-pod-per-issue naming (--name-suffix) so suffixed pods map to their owning task"
+    },
+    "1335": {
+      "goal": "Identify which factor(s) \u2014 role identity/frequency, genre, answer structure/length, single-responder-vs-multi-speaker context, or measurement \u2014 account for the large held-out-R\u00b2 gap between the assistant context\u2192answer map (#825: base 0.59 / instruct 0.67, survives chat-template removal) and the per-character fiction context\u2192dialogue map (#1310: base 0.11\u20130.15 / instruct 0.19\u20130.25, same plain-text regime), via a one-factor-at-a-time ablation ladder measuring held-out R\u00b2 at each rung in Qwen2.5-7B base and instruct.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/1335",
+      "status": "running",
+      "title": "Ablations: why is the assistant context\u2192answer map much stronger than the fiction-character map (both survive template removal)?"
+    },
+    "1336": {
+      "goal": "Determine whether RLVR-style RL post-training changes the linear context\u2192answer-profile map more than SFT/DPO post-training, using a released separated-stage ladder (primary candidate: Llama-3.1-8B base \u2192 Tulu-3-8B-SFT \u2192 Tulu-3-8B-DPO \u2192 Tulu-3-8B post-RLVR) \u2014 per stage, measure (a) within-stage held-out R\u00b2 of the per-example ridge map c_x \u2192 v(x) (#779/#825 recipe, prefix AND context arms) and (b) the #825 Result-2 reparameterization gap (within-stage R\u00b2 minus reparameterized-base-map R\u00b2 on identical text), testing whether the gap grows specifically at the RLVR stage (teaching) vs stays \u22480 at all stages (elicitation) vs grows uniformly with post-training depth.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/1336",
+      "status": "running",
+      "title": "Does RLVR post-training change the base\u2192post-trained context\u2192answer map more than SFT/DPO? (separated-stage ladder)"
+    },
+    "1337": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1337",
+      "status": "proposed",
+      "title": "workflow-fix: step9c scratch oracle for file-anchored scan tests"
+    },
+    "1338": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1338",
+      "status": "proposed",
+      "title": "workflow-fix: crash-persist harvests per-run logs before oversized-dir skip"
+    },
+    "1339": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1339",
+      "status": "proposed",
+      "title": "workflow-fix: chunk crash-persist eval_results uploads (504 on 29k-file commit)"
+    },
     "134": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/completed/134",
       "status": "completed",
       "title": "is it more important to associate tokens or persona"
+    },
+    "1340": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1340",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas bullet \u2014 single-arm smokes blind to per-arm seams"
+    },
+    "1341": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1341",
+      "status": "proposed",
+      "title": "workflow-fix: watcher escalate-only pass for stale untracked root code drafts"
+    },
+    "1342": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1342",
+      "status": "proposed",
+      "title": "workflow-fix: signature-bind fenced calls in the deferred-import sweep"
+    },
+    "1343": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1343",
+      "status": "proposed",
+      "title": "workflow-fix: GCE crash-persist must verify uploads before persist=ok"
+    },
+    "1344": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1344",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 smoke parity includes ZeRO-3 process width"
     },
     "135": {
       "has_clean_result": false,
@@ -7631,7 +7838,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/825",
       "status": "followups_running",
-      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength, and the on-policy separator control's gap-closure is greedy-specific \u2014 it collapses under sampled decoding (MODERATE confidence)"
+      "title": "The context\u2192answer mapping is inherited from pretraining"
     },
     "826": {
       "has_clean_result": false,

@@ -1264,14 +1264,17 @@ def _resume_with_balance_wait_if_autonomous(
                 # destroy the stopped pod's volume.
                 raise SystemExit(
                     f"Cannot resume {name}: its former host has no free GPUs "
-                    f"(supply constraint). Resume never relocates a pod, so "
-                    f"this can't be retried. Either wait for capacity to free "
-                    f"up and re-run `pod.py resume --issue {issue}`, or "
-                    f"provision a FRESH pod with `python scripts/pod.py "
-                    f"provision --issue {issue} --intent <intent>` (this loses "
-                    f"the stopped pod's volume — terminate it first with "
-                    f"`pod.py terminate --issue {issue} --yes` if you want it "
-                    f"gone).\n  Underlying error: {exc}"
+                    f"(supply constraint). Resume is host-pinned (it never "
+                    f"relocates a pod), so retrying helps only if that exact "
+                    f"host frees up — usually it doesn't soon; do NOT arm a "
+                    f"retry loop. RECOMMENDED: provision a FRESH pod with "
+                    f"`python scripts/pod.py provision --issue {issue} "
+                    f"--intent <intent>` (this abandons the stopped pod's "
+                    f"volume — terminate it first with `pod.py terminate "
+                    f"--issue {issue} --yes` if you want it gone). Wait and "
+                    f"re-run `pod.py resume --issue {issue}` ONLY if the "
+                    f"stopped volume holds irreplaceable data.\n"
+                    f"  Underlying error: {exc}"
                 ) from exc
             raise
 
