@@ -541,3 +541,4 @@
 {"ts": "2026-07-15T02:11:25Z", "kind": "epm:progress", "version": 186, "by": "issue-orchestrator", "note": "[long-phase-heartbeat] offvm refit: 4/4 boxes running phase=workload, no stall (~95 min in). Poll chain live."}
 {"ts": "2026-07-15T03:14:05Z", "kind": "epm:progress", "version": 187, "by": "issue-orchestrator", "note": "[long-phase-heartbeat] offvm refit: 4/4 boxes running phase=workload, no stall (~2.6h in). Poll chain live."}
 {"ts": "2026-07-15T04:16:45Z", "kind": "epm:progress", "version": 188, "by": "issue-orchestrator", "note": "[long-phase-heartbeat] offvm refit: 4/4 boxes running phase=workload, no stall (~3.6h in). Poll chain live."}
+{"ts": "2026-07-15T05:20:08Z", "kind": "epm:progress", "version": 189, "by": "issue-orchestrator", "note": "[long-phase-heartbeat] offvm refit: 4/4 boxes running phase=workload, no stall (~4.6h in, planned ~5h/box wall for job1). Poll chain live."}
