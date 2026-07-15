@@ -583,3 +583,4 @@
 {"ts": "2026-07-15T15:27:17Z", "kind": "epm:progress", "version": 210, "by": "issue-orchestrator", "note": "[long-phase-heartbeat] offvm refit relaunch: poll chain live (double-tick), boxes in workload (~9h post-relaunch)."}
 {"ts": "2026-07-15T16:29:29Z", "kind": "epm:progress", "version": 211, "by": "issue-orchestrator", "note": "[long-phase-heartbeat] offvm refit relaunch: poll chain live (double-tick), boxes in workload (~10h post-relaunch)."}
 {"ts": "2026-07-15T17:31:45Z", "kind": "epm:progress", "version": 212, "by": "issue-orchestrator", "note": "[long-phase-heartbeat] offvm refit relaunch: poll chain live (double-tick), boxes in workload (~11h post-relaunch)."}
+{"ts": "2026-07-15T18:33:56Z", "kind": "epm:progress", "version": 213, "by": "issue-orchestrator", "note": "[long-phase-heartbeat] offvm refit relaunch: poll chain live (double-tick), boxes in workload (~12h post-relaunch)."}
