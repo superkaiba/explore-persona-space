@@ -1153,7 +1153,20 @@ def render_startup_script(
        bound ``EPS_PERSIST_LOG_MAX_FILES`` (default 40), staged into
        ``/tmp/eps-worker-logs`` and uploaded as ONE ``upload_folder``
        commit (never a per-file ``upload_file`` loop — the #664
-       504-storm gotcha). The sweep covers these three named
+       504-storm gotcha); committed ``*.md`` notes files are excluded
+       from that sweep with one aggregate SKIP line (#1338 — the
+       repo-clone ``logs/daily|weekly`` session notes are not run
+       logs). As of #1338 the trap ALSO harvests per-run ``*.log``
+       files from INSIDE the swept data dirs (any ``logs``/``*_logs``
+       path component, or ``.attempt`` in the filename — the driver
+       out_root convention ``data/issue_<N>/<run>/logs/…``) into
+       ``data_logs/<dirname>/<relpath>`` — newest-first, tail-capped +
+       count-bounded by the same knobs, staged into
+       ``EPS_PERSIST_DATA_LOG_STAGE_DIR`` (default
+       ``/tmp/eps-data-logs``), ONE ``upload_folder`` commit — BEFORE
+       the per-dir byte cap can skip an oversized dir wholesale (the
+       #1090 fu5 loss class: 28 GB dir skipped, ~KB tracebacks inside
+       it died with it). The sweep covers these three named
        directories plus the ``logs/`` worker-log tree — still NOT
        universal artifact discovery.
     10. On a CLEAN exit, AFTER the completion sentinel + the ``done``
@@ -1778,6 +1791,13 @@ def render_startup_script(
         "        return default",
         'LOG_FILE_CAP = _env_int("EPS_PERSIST_LOG_FILE_CAP_BYTES", 5 * 1024**2)',
         'LOG_MAX_FILES = _env_int("EPS_PERSIST_LOG_MAX_FILES", 40)',
+        "# Swept partial dirs (#854 BOTH output conventions) — hoisted (#1338) so the",
+        "# 1c. data-log harvest and the # 2. partial-dirs sweep walk the SAME set.",
+        "PARTIAL_DIRS = (",
+        '    (root / "eval_results" / f"issue_{issue}", f"eval_results_issue_{issue}"),',
+        '    (root / "data" / f"issue_{issue}", f"data_issue_{issue}"),',
+        '    (root / "data" / f"issue{issue}", f"data_issue{issue}"),',
+        ")",
         "def _up_logs():",
         '    logs_root = root / "logs"',
         "    if not logs_root.is_dir():",
@@ -1788,17 +1808,25 @@ def render_startup_script(
         ' EPS_PERSIST_LOG_MAX_FILES={LOG_MAX_FILES} < 1")',
         "        return",
         "    entries = []",
+        "    md_notes = 0",
         "    for dirpath, dirnames, filenames in os.walk(logs_root):",
         "        dirnames[:] = [d for d in dirnames",
         '                       if d not in PRUNE and not (d.startswith("g") and'
         ' d.endswith("_dl"))]',
         "        for f in filenames:",
+        '            if f.endswith(".md"):',
+        "                # committed logs/daily|weekly session notes, never run logs (#1338)",
+        "                md_notes += 1",
+        "                continue",
         "            p = Path(dirpath) / f",
         "            try:",
         "                st = p.stat()",
         "            except OSError:",
         "                continue",
         "            entries.append((st.st_mtime, st.st_size, p))",
+        "    if md_notes:",
+        '        _say(f"[crash-persist] SKIP worker_logs: {md_notes} .md notes file(s) excluded"',
+        '             " (committed logs/daily|weekly session notes, not run logs)")',
         "    if not entries:",
         '        _say("[crash-persist] SKIP worker_logs: empty after cache excludes")',
         "        return",
@@ -1844,6 +1872,81 @@ def render_startup_script(
         "    except Exception as exc:",
         '        _say(f"[crash-persist] FAILED dir worker_logs: {exc}")',
         "_up_logs()",
+        "# 1c. data-dir per-run logs (#1338) — driver out_root convention",
+        "#     data/issue_<N>/<run>/logs/<run_id>.attempt<K>.log (#1090 fu5): harvest",
+        "#     BEFORE the # 2. per-dir byte cap can skip the ~KB tracebacks wholesale",
+        "#     with the ~GB dir around them. Newest-first, per-file TAIL cap, count",
+        "#     bound, ONE upload_folder commit (never per-file — #664). Existing dir",
+        "#     upload paths untouched: an under-cap dir still uploads its logs at the",
+        "#     byte-identical dir paths; the data_logs copy is the small-first",
+        "#     guarantee that survives a budget-killed big-dir upload.",
+        "def _up_data_logs():",
+        "    if LOG_MAX_FILES < 1:",
+        '        _say(f"[crash-persist] SKIP data_logs:'
+        ' EPS_PERSIST_LOG_MAX_FILES={LOG_MAX_FILES} < 1")',
+        "        return",
+        "    entries = []",
+        "    for local, name in PARTIAL_DIRS:",
+        "        if not local.is_dir():",
+        "            continue",
+        "        for dirpath, dirnames, filenames in os.walk(local):",
+        "            dirnames[:] = [d for d in dirnames",
+        '                           if d not in PRUNE and not (d.startswith("g") and'
+        ' d.endswith("_dl"))]',
+        "            rel_parts = Path(dirpath).relative_to(local).parts",
+        '            in_logs = any(part == "logs" or part.endswith("_logs") for part in rel_parts)',
+        "            for f in filenames:",
+        '                if not f.endswith(".log"):',
+        "                    continue",
+        '                if not (in_logs or ".attempt" in f):',
+        "                    continue",
+        "                p = Path(dirpath) / f",
+        "                try:",
+        "                    st = p.stat()",
+        "                except OSError:",
+        "                    continue",
+        "                entries.append((st.st_mtime, st.st_size, p, local, name))",
+        "    if not entries:",
+        '        _say("[crash-persist] SKIP data_logs: no per-run *.log files under partial dirs")',
+        "        return",
+        "    entries.sort(key=lambda t: t[0], reverse=True)  # newest first",
+        "    dropped = len(entries) - LOG_MAX_FILES",
+        "    if dropped > 0:",
+        '        _say(f"[crash-persist] SKIP {dropped} older data log(s) beyond"',
+        '             f" EPS_PERSIST_LOG_MAX_FILES={LOG_MAX_FILES}")',
+        '    staged_root = Path(os.environ.get("EPS_PERSIST_DATA_LOG_STAGE_DIR",',
+        '                                      "/tmp/eps-data-logs"))',
+        "    # a same-boot re-crash must not accumulate a PRIOR crash's staged files past",
+        "    # the count bound; best-effort — staging below recreates what it needs (#885).",
+        "    shutil.rmtree(staged_root, ignore_errors=True)",
+        "    n_staged = 0",
+        "    for _, _, p, local, name in entries[:LOG_MAX_FILES]:",
+        "        try:",
+        "            rel = Path(name) / p.relative_to(local)",
+        "            tmp = staged_root / rel",
+        "            tmp.parent.mkdir(parents=True, exist_ok=True)",
+        "            size = p.stat().st_size  # re-stat: may have grown/shrunk since the walk",
+        '            with open(p, "rb") as fin, open(tmp, "wb") as fout:',
+        "                if size > LOG_FILE_CAP:",
+        "                    fin.seek(size - LOG_FILE_CAP)",
+        '                    _say(f"[crash-persist] TAILED data_logs/{rel}:"',
+        '                         f" kept last {LOG_FILE_CAP} of {size} bytes")',
+        "                fout.write(fin.read(LOG_FILE_CAP if size > LOG_FILE_CAP else size))",
+        "            n_staged += 1",
+        "        except Exception as exc:",
+        '            _say(f"[crash-persist] FAILED staging data log {p}: {exc}")',
+        "    if n_staged == 0:",
+        '        _say("[crash-persist] SKIP data_logs: nothing staged")',
+        "        return",
+        "    try:",
+        '        _say(f"[crash-persist] uploading dir data_logs ({n_staged} files, one commit)")',
+        "        api.upload_folder(folder_path=str(staged_root),",
+        '                          path_in_repo=f"{dest}/data_logs",',
+        '                          repo_id=repo, repo_type="dataset")',
+        '        _say("[crash-persist] uploaded dir data_logs")',
+        "    except Exception as exc:",
+        '        _say(f"[crash-persist] FAILED dir data_logs: {exc}")',
+        "_up_data_logs()",
         "# 2. partial artifacts — BOTH output conventions (#854: issue825 wrote its partials",
         "#    under data/issue_825/, structurally OUTSIDE the old eval_results-only sweep ->",
         "#    silent skip -> boot-disk surgery). The partial-DIRS sweep is these three named",
@@ -1883,11 +1986,7 @@ def render_startup_script(
         '        _say(f"[crash-persist] uploaded dir {name}")',
         "    except Exception as exc:",
         '        _say(f"[crash-persist] FAILED dir {name}: {exc}")',
-        "for local, name in (",
-        '    (root / "eval_results" / f"issue_{issue}", f"eval_results_issue_{issue}"),',
-        '    (root / "data" / f"issue_{issue}", f"data_issue_{issue}"),',
-        '    (root / "data" / f"issue{issue}", f"data_issue{issue}"),',
-        "):",
+        "for local, name in PARTIAL_DIRS:",
         "    _up_dir(local, name)",
         "# per-crash timestamped log copy — LAST among the artifacts (see the note above),",
         "# staged into the FINAL bundle (#1151: one upload_folder commit, no retry).",
@@ -1932,6 +2031,12 @@ def render_startup_script(
         # persist lines ~= 60 — right AT the old 60-line cap, so it doubled
         # to 120 (240 KB max at 2000 chars/line, well inside the GCE serial
         # buffer); the durable transcript is unaffected either way.
+        # #1338 recount: the data-log harvest adds worst case ~44 more (<=40
+        # TAILED staging lines + 1 dropped-count + 2 upload lines + 1
+        # .md-notes SKIP from _up_logs) ~= 104 < 120 — cap unchanged. The
+        # TAILED-then-FAILED double-line pathological case can exceed 120;
+        # accepted (overflow degrades serial visibility only — the reader
+        # keeps reading to EOF and the durable transcript is unaffected).
         '  ) 2>&1 | { _n=0; while IFS= read -r _l || [ -n "$_l" ]; do _n=$((_n + 1));',
         '    if [ "$_n" -le 120 ]; then'
         " { printf '%s\\n' \"${_l:0:2000}\" >&3; } 2>/dev/null || true; fi;",
