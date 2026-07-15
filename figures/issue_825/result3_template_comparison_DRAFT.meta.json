@@ -1,0 +1,32 @@
+{
+  "commit": "4a73d59c883f8be061f92a81bb2916415b26e0be",
+  "status": "DRAFT \u2014 instruct no-template bar is a GUESS pending the naturalistic Track-S run (#825)",
+  "bars": {
+    "base_chat": {
+      "r2": 0.588,
+      "measured": true,
+      "source": "eval_results/issue_825 S2 (Result 1 anchor)"
+    },
+    "base_no_template": {
+      "r2": 0.72,
+      "range": [
+        0.71,
+        0.74
+      ],
+      "measured": true,
+      "source": "#1092"
+    },
+    "instruct_chat": {
+      "r2": 0.673,
+      "measured": true,
+      "source": "eval_results/issue_825 S1 (Result 1 anchor)"
+    },
+    "instruct_no_template": {
+      "r2": 0.66,
+      "measured": false,
+      "source": "GUESS \u2014 pending #825 naturalistic Track-S (S1N)"
+    }
+  },
+  "shuffled_floor": 0.06,
+  "caption": "Held-out R2 (layer 19) of the single-turn context->answer map, chat template vs plain 'User:/Assistant:'. Three bars measured; the instruct no-template bar is a placeholder GUESS (hatched) pending the naturalistic Track-S run. The map holds up without the template in the base model (0.588->~0.72); the instruct no-template value is not yet measured."
+}
