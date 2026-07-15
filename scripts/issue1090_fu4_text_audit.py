@@ -1,4 +1,4 @@
-"""#1090 fu4 text audit — CJK-intrusion scan + intrusion-zeroed sensitivity bound.
+"""#1090 fu4/fu5 text audit — CJK-intrusion scan + intrusion-zeroed sensitivity bound.
 
 Recomputes, from the persisted Tier-2 completions + judge records:
 
@@ -12,13 +12,18 @@ Recomputes, from the persisted Tier-2 completions + judge records:
 - exact-duplicate completion counts per arm (mode-collapse audit);
 - max word-level 8-gram overlap of any completion with the arm's 80 training rows.
 
-Writes eval_results/issue_1090/fu4-extended-dose-lr/fu4_text_audit.json.
-Interpretation-critic fu4 round-1 revision requests 1 and 6.
+Writes eval_results/issue_1090/<round deliverables dir>/<round>_text_audit.json.
+Interpretation-critic fu4 round-1 revision requests 1 and 6; round-parametrized
+for fu5 (`--round fu5`: the three imp-bare trained arms + the reused fu3
+C2-bare-con base arm — plan v7 D2 item 5). `--print-config` dumps the resolved
+arm/path tables and exits (the CPU smoke of the round parametrization).
 """
 
+import argparse
 import json
 import re
 from pathlib import Path
+from typing import Any
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
@@ -27,40 +32,88 @@ load_dotenv()
 from huggingface_hub import hf_hub_download  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-FU4 = REPO_ROOT / "data" / "issue_1090" / "fu4"
-JDIR = FU4 / "fu4_aggregate" / "judge" / "impolite"
 FU3J = REPO_ROOT / "eval_results" / "issue_1090" / "fu3" / "judge" / "impolite"
-LADDERS = REPO_ROOT / "eval_results" / "issue_1090" / "fu4-extended-dose-lr" / "fu4_ladders.json"
-OUT = REPO_ROOT / "eval_results" / "issue_1090" / "fu4-extended-dose-lr" / "fu4_text_audit.json"
 
 DATA_REPO = "superkaiba1/explore-persona-space-data"
 CJK = re.compile(r"[一-鿿]")  # CJK Unified Ideographs block (U+4E00-U+9FFF)
 
-ARMS = {
-    "imp-pers-lr1e5": ("persona_software_engineer", "imp-pers-lr1e5-t2-trained"),
-    "imp-pers-lr3e5": ("persona_software_engineer", "imp-pers-lr3e5-t2-trained"),
-    "imp-pers-lr1e4": ("persona_software_engineer", "imp-pers-lr1e4-t2-trained"),
-    "imp-conv-lr1e5": ("wildchat_prefix_real545", "imp-conv-lr1e5-t2-trained"),
-    "imp-conv-lr3e5": ("wildchat_prefix_real545", "imp-conv-lr3e5-t2-trained"),
-    "imp-conv-lr1e4": ("wildchat_prefix_real545", "imp-conv-lr1e4-t2-trained"),
-}
-# fu3 base arms: (HF path of tier-2 base completions, local judge dir slug)
-BASE = {
-    "fu3-base-persona": (
-        "issue1090_fu3/C2-pers-con-impolite-claude/tier2/"
-        "completions__base__persona_software_engineer.json",
-        "C2-pers-con-t2-base",
-    ),
-    "fu3-base-wildchat": (
-        "issue1090_fu3/C2-conv-con-impolite-claude/tier2/"
-        "completions__base__wildchat_prefix_real545.json",
-        "C2-conv-con-t2-base",
-    ),
-}
-# frozen parent training mixes (sha-verified at staging; mix_verification.json per run)
-MIX_HF = {
-    "persona_software_engineer": "issue1090_pvdatagen/c2-impolite-claude/mix/train_mix.jsonl",
-    "wildchat_prefix_real545": "issue1090_fu3/C2-conv-con-impolite-claude/train_mix.jsonl",
+# Per-round tables: local run tree, judge dir, ladders/output paths, the
+# impolite trained arms (context_id, judge slug), the reused fu3 base arms
+# (HF tier-2 completions path, local fu3 judge dir slug), and the frozen
+# training mixes per context (8-gram overlap denominator).
+ROUND_CFGS: dict[str, dict[str, Any]] = {
+    "fu4": {
+        "label": "fu4-extended-dose-lr",
+        "data_root": REPO_ROOT / "data" / "issue_1090" / "fu4",
+        "judge_subdir": ("fu4_aggregate", "judge", "impolite"),
+        "ladders": REPO_ROOT
+        / "eval_results"
+        / "issue_1090"
+        / "fu4-extended-dose-lr"
+        / "fu4_ladders.json",
+        "out": REPO_ROOT
+        / "eval_results"
+        / "issue_1090"
+        / "fu4-extended-dose-lr"
+        / "fu4_text_audit.json",
+        "arms": {
+            "imp-pers-lr1e5": ("persona_software_engineer", "imp-pers-lr1e5-t2-trained"),
+            "imp-pers-lr3e5": ("persona_software_engineer", "imp-pers-lr3e5-t2-trained"),
+            "imp-pers-lr1e4": ("persona_software_engineer", "imp-pers-lr1e4-t2-trained"),
+            "imp-conv-lr1e5": ("wildchat_prefix_real545", "imp-conv-lr1e5-t2-trained"),
+            "imp-conv-lr3e5": ("wildchat_prefix_real545", "imp-conv-lr3e5-t2-trained"),
+            "imp-conv-lr1e4": ("wildchat_prefix_real545", "imp-conv-lr1e4-t2-trained"),
+        },
+        "base": {
+            "fu3-base-persona": (
+                "issue1090_fu3/C2-pers-con-impolite-claude/tier2/"
+                "completions__base__persona_software_engineer.json",
+                "C2-pers-con-t2-base",
+            ),
+            "fu3-base-wildchat": (
+                "issue1090_fu3/C2-conv-con-impolite-claude/tier2/"
+                "completions__base__wildchat_prefix_real545.json",
+                "C2-conv-con-t2-base",
+            ),
+        },
+        "mix_hf": {
+            "persona_software_engineer": (
+                "issue1090_pvdatagen/c2-impolite-claude/mix/train_mix.jsonl"
+            ),
+            "wildchat_prefix_real545": (
+                "issue1090_fu3/C2-conv-con-impolite-claude/train_mix.jsonl"
+            ),
+        },
+    },
+    "fu5": {
+        "label": "fu5-finish-impolite-bare-and-formatting-rank",
+        "data_root": REPO_ROOT / "data" / "issue_1090" / "fu5",
+        "judge_subdir": ("fu5_aggregate", "judge", "impolite"),
+        "ladders": REPO_ROOT
+        / "eval_results"
+        / "issue_1090"
+        / "finish-impolite-bare-and-formatting-rank"
+        / "fu5_ladders.json",
+        "out": REPO_ROOT
+        / "eval_results"
+        / "issue_1090"
+        / "finish-impolite-bare-and-formatting-rank"
+        / "fu5_text_audit.json",
+        "arms": {
+            "imp-bare-lr1e5": ("default", "imp-bare-lr1e5-t2-trained"),
+            "imp-bare-lr3e5": ("default", "imp-bare-lr3e5-t2-trained"),
+            "imp-bare-lr1e4": ("default", "imp-bare-lr1e4-t2-trained"),
+        },
+        "base": {
+            "fu3-base-bare": (
+                "issue1090_fu3/C2-bare-con-impolite-claude/tier2/completions__base__default.json",
+                "C2-bare-con-t2-base",
+            ),
+        },
+        "mix_hf": {
+            "default": "issue1090_fu3/C2-bare-con-impolite-claude/train_mix.jsonl",
+        },
+    },
 }
 
 
@@ -100,10 +153,16 @@ def ngrams(text: str, n: int = 8) -> set[tuple[str, ...]]:
 
 
 def train_ngrams(mix_path: str | Path) -> tuple[set[tuple[str, ...]], int]:
-    """Union of 8-grams over the completion texts of every mix row + the row count."""
+    """Union of 8-grams over the completion texts of every mix row + the row count.
+
+    JSONL rows are split on "\n" ONLY — never str.splitlines(), which shreds
+    records carrying raw U+2028/NEL inside ensure_ascii=False text (the #950
+    reader class; real-user WildChat text carries them routinely)."""
     grams: set[tuple[str, ...]] = set()
     n_rows = 0
-    for line in Path(mix_path).read_text().splitlines():
+    for line in Path(mix_path).read_text().split("\n"):
+        if not line.strip():
+            continue
         row = json.loads(line)
         txt = " ".join(
             m.get("content", "") if isinstance(m, dict) else str(m) for m in row["completion"]
@@ -114,11 +173,42 @@ def train_ngrams(mix_path: str | Path) -> tuple[set[tuple[str, ...]], int]:
 
 
 def main() -> None:
-    """Run the audit over all 6 trained + 2 base arms and write fu4_text_audit.json."""
-    ladders = json.loads(LADDERS.read_text())
+    """Run the round's audit over its trained + base arms and write the audit JSON."""
+    ap = argparse.ArgumentParser(description="#1090 fu4/fu5 CJK text audit")
+    ap.add_argument("--round", choices=tuple(sorted(ROUND_CFGS)), default="fu4")
+    ap.add_argument(
+        "--print-config",
+        action="store_true",
+        help="dump the resolved round tables and exit 0 (CPU smoke)",
+    )
+    args = ap.parse_args()
+    rc = ROUND_CFGS[args.round]
+    arms_cfg: dict[str, tuple[str, str]] = rc["arms"]
+    base_cfg: dict[str, tuple[str, str]] = rc["base"]
+    mix_hf: dict[str, str] = rc["mix_hf"]
+    jdir = rc["data_root"].joinpath(*rc["judge_subdir"])
+    if args.print_config:
+        print(
+            json.dumps(
+                {
+                    "round": args.round,
+                    "label": rc["label"],
+                    "data_root": str(rc["data_root"]),
+                    "judge_dir": str(jdir),
+                    "ladders": str(rc["ladders"]),
+                    "out": str(rc["out"]),
+                    "arms": arms_cfg,
+                    "base": base_cfg,
+                    "mix_hf": mix_hf,
+                },
+                indent=1,
+            )
+        )
+        return
+    ladders = json.loads(rc["ladders"].read_text())
     audit = {
         "issue": 1090,
-        "round": "fu4-extended-dose-lr",
+        "round": rc["label"],
         "cjk_regex": "[\\u4e00-\\u9fff] (CJK Unified Ideographs)",
         "firing_rule": (
             "per-completion mean of valid judge draws > 50 (valid = numeric score in "
@@ -131,20 +221,22 @@ def main() -> None:
         "arms": {},
     }
     tg_cache: dict[str, tuple[set, int]] = {}
-    for arm, (ctx, jslug) in ARMS.items():
-        comps = load_completions(FU4 / arm / "tier2" / f"completions__trained__{ctx}.json")
-        firing, n, k, dropped = firing_sets(JDIR / jslug / "judge_raw.json", jslug)
+    for arm, (ctx, jslug) in arms_cfg.items():
+        comps = load_completions(
+            rc["data_root"] / arm / "tier2" / f"completions__trained__{ctx}.json"
+        )
+        firing, n, k, dropped = firing_sets(jdir / jslug / "judge_raw.json", jslug)
         lt = ladders["runs"][arm]["tier2_trained"]
         assert (k, n) == (lt["k"], lt["n"]), f"{arm}: {(k, n)} != ladders {(lt['k'], lt['n'])}"
         cjk = {qc for qc, t in comps.items() if CJK.search(t)}
         if ctx not in tg_cache:
             tg_cache[ctx] = train_ngrams(
-                hf_hub_download(DATA_REPO, MIX_HF[ctx], repo_type="dataset")
+                hf_hub_download(DATA_REPO, mix_hf[ctx], repo_type="dataset")
             )
         tg, n_rows = tg_cache[ctx]
         overlaps = [len(g & tg) / len(g) for t in comps.values() if (g := ngrams(t))]
         audit["arms"][arm] = {
-            "kind": "fu4-trained",
+            "kind": f"{args.round}-trained",
             "context_id": ctx,
             "n_completions": 200,
             "ladders_k": k,
@@ -160,7 +252,7 @@ def main() -> None:
             "max_8gram_train_overlap": round(max(overlaps), 4),
             "n_completions_over_20pct_overlap": sum(1 for o in overlaps if o > 0.20),
         }
-    for arm, (hf_path, jslug) in BASE.items():
+    for arm, (hf_path, jslug) in base_cfg.items():
         comps = load_completions(hf_hub_download(DATA_REPO, hf_path, repo_type="dataset"))
         firing, n, k, _ = firing_sets(FU3J / jslug / "judge_raw.json", jslug)
         cjk = {qc for qc, t in comps.items() if CJK.search(t)}
@@ -174,7 +266,8 @@ def main() -> None:
             "n_cjk_firing": len(cjk & firing),
             "source": f"hf://{DATA_REPO}/{hf_path}",
         }
-    OUT.write_text(json.dumps(audit, indent=1) + "\n")
+    rc["out"].parent.mkdir(parents=True, exist_ok=True)
+    rc["out"].write_text(json.dumps(audit, indent=1) + "\n")
     for a, v in audit["arms"].items():
         print(a, json.dumps(v))
 
