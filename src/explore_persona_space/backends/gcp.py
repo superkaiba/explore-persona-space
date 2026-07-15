@@ -1153,9 +1153,20 @@ def render_startup_script(
        bound ``EPS_PERSIST_LOG_MAX_FILES`` (default 40), staged into
        ``/tmp/eps-worker-logs`` and uploaded as ONE ``upload_folder``
        commit (never a per-file ``upload_file`` loop — the #664
-       504-storm gotcha). The sweep covers these three named
-       directories plus the ``logs/`` worker-log tree — still NOT
-       universal artifact discovery.
+       504-storm gotcha). As of #1339 a partial dir whose post-exclude
+       file count exceeds ``EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT``
+       (default 1000; ``< 1`` disables chunking with a WARN) uploads as
+       newest-first staged batches (staging root
+       ``EPS_PERSIST_DIR_STAGE_DIR``, default ``/tmp/eps-dir-batch``),
+       each ONE ``upload_folder`` commit with one bounded retry
+       (``EPS_PERSIST_RETRY_BACKOFF_S`` backoff), abandoning the dir
+       loudly after ``EPS_PERSIST_DIR_BATCH_ABORT_STREAK`` (default 2)
+       consecutive fully-failed batches — repo paths byte-identical to
+       the unchunked upload (incident #1090: a 29,024-file single
+       commit landed server-side but the gateway timed out delivering
+       the response, so the client logged FAILED on a success). The
+       sweep covers these three named directories plus the ``logs/``
+       worker-log tree — still NOT universal artifact discovery.
     10. On a CLEAN exit, AFTER the completion sentinel + the ``done``
         publish, the script's LAST action is the #935 done-grace
         self-poweroff: a bounded countdown (``EPS_DONE_GRACE`` seconds,
@@ -1851,24 +1862,44 @@ def render_startup_script(
         "#    artifact discovery. Re-downloadable caches / stores are excluded at BOTH the",
         "#    top level and nested depths — under fnmatch the '**/'-prefixed forms do NOT",
         "#    match top-level paths, so both forms are listed; every skip is printed.",
-        "def _dir_stats(local):",
-        "    total, n = 0, 0",
+        "def _dir_entries(local):",
+        "    # (mtime, size, Path) per non-cache file — same PRUNE predicate as the old",
+        "    # _dir_stats; the richer per-file return feeds the #1339 newest-first chunking.",
+        "    entries = []",
         "    for dirpath, dirnames, filenames in os.walk(local):",
         "        dirnames[:] = [d for d in dirnames",
         '                       if d not in PRUNE and not (d.startswith("g") and'
         ' d.endswith("_dl"))]',
         "        for f in filenames:",
+        "            p = Path(dirpath) / f",
         "            try:",
-        "                total += (Path(dirpath) / f).stat().st_size",
-        "                n += 1",
+        "                st = p.stat()",
         "            except OSError:",
-        "                pass",
-        "    return total, n",
+        "                continue",
+        "            entries.append((st.st_mtime, st.st_size, p))",
+        "    return entries",
+        "# #1339: chunked partial-dir uploads. Incident #1090 fu5: eval_results_issue_1090",
+        "# held 29,024 files / 14.4 MB and its ONE upload_folder commit processed ~31 s",
+        "# server-side; the gateway timed out delivering the response and the client",
+        "# logged FAILED on a commit that had LANDED. Dirs over the bound now upload as",
+        "# newest-first staged batches of <= EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT files",
+        "# (default 1000 — HF's own COMMIT_SIZE_SCALE per-commit ceiling), each ONE",
+        "# upload_folder commit (never per-file upload_file — #664) with one bounded",
+        "# retry, abandoning the dir loudly after EPS_PERSIST_DIR_BATCH_ABORT_STREAK",
+        "# consecutive fully-failed batches. Repo paths stay byte-identical",
+        "# ({dest}/{name}/<relpath>); a retried batch whose prior attempt actually",
+        "# landed re-commits the same content at the same paths (content-identical",
+        "# commit — idempotent effect). Staged copy volume is bounded by CAP (2 GiB)",
+        "# on local disk; if CAP is ever raised far above 2 GiB, re-size this design.",
+        'BATCH_MAX = _env_int("EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT", 1000)',
+        'BATCH_ABORT_STREAK = _env_int("EPS_PERSIST_DIR_BATCH_ABORT_STREAK", 2)',
         "def _up_dir(local, name):",
         "    if not local.is_dir():",
         '        _say(f"[crash-persist] SKIP {name}: no such dir ({local})")',
         "        return",
-        "    size, n = _dir_stats(local)",
+        "    entries = _dir_entries(local)",
+        "    n = len(entries)",
+        "    size = sum(s for _, s, _ in entries)",
         "    if n == 0:",
         '        _say(f"[crash-persist] SKIP {name}: empty after cache excludes")',
         "        return",
@@ -1876,13 +1907,76 @@ def render_startup_script(
         '        _say(f"[crash-persist] SKIP {name}: {size} bytes > cap {CAP}'
         ' (oversized; regenerate or reduce EPS_PERSIST_DIR_CAP_BYTES)")',
         "        return",
-        "    try:",
-        '        _say(f"[crash-persist] uploading dir {name} ({n} files, {size} bytes)")',
-        '        api.upload_folder(folder_path=str(local), path_in_repo=f"{dest}/{name}",',
-        '                          repo_id=repo, repo_type="dataset", ignore_patterns=IGNORE)',
-        '        _say(f"[crash-persist] uploaded dir {name}")',
-        "    except Exception as exc:",
-        '        _say(f"[crash-persist] FAILED dir {name}: {exc}")',
+        "    if BATCH_MAX < 1 or n <= BATCH_MAX:",
+        "        if BATCH_MAX < 1:",
+        '            _say(f"[crash-persist] WARN EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT='
+        '{BATCH_MAX} < 1; chunking disabled")',
+        "        # at/under the bound: the pre-#1339 single-commit path — log lines +",
+        "        # call shape byte-identical (pinned by the small-dir behavioral tests).",
+        "        try:",
+        '            _say(f"[crash-persist] uploading dir {name} ({n} files, {size} bytes)")',
+        '            api.upload_folder(folder_path=str(local), path_in_repo=f"{dest}/{name}",',
+        '                              repo_id=repo, repo_type="dataset", ignore_patterns=IGNORE)',
+        '            _say(f"[crash-persist] uploaded dir {name}")',
+        "        except Exception as exc:",
+        '            _say(f"[crash-persist] FAILED dir {name}: {exc}")',
+        "        return",
+        "    # over the bound: newest-first fixed-size staged batches (the #885 _up_logs",
+        "    # sort idiom — a budget timeout / abort loses only the OLDEST files).",
+        "    entries.sort(reverse=True)",
+        "    nb = -(-n // BATCH_MAX)",
+        '    _say(f"[crash-persist] chunking dir {name}: {n} files >"',
+        '         f" EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT={BATCH_MAX};"',
+        '         f" {nb} batches, newest-first")',
+        '    stage_root = Path(os.environ.get("EPS_PERSIST_DIR_STAGE_DIR", "/tmp/eps-dir-batch"))',
+        "    fail_streak = ok_batches = ok_files = 0",
+        "    for bi in range(nb):",
+        "        batch = entries[bi * BATCH_MAX:(bi + 1) * BATCH_MAX]",
+        "        # a prior batch (or a same-boot re-crash) never leaks staged files in.",
+        "        shutil.rmtree(stage_root, ignore_errors=True)",
+        "        staged = 0",
+        "        for _, _, p in batch:",
+        "            try:",
+        "                rel = p.relative_to(local)",
+        "                tmp = stage_root / rel",
+        "                tmp.parent.mkdir(parents=True, exist_ok=True)",
+        "                shutil.copyfile(p, tmp)  # relpath preserved -> repo-path identity",
+        "                staged += 1",
+        "            except Exception as exc:",
+        '                _say(f"[crash-persist] FAILED staging {name} file {p}: {exc}")',
+        "        if staged == 0:",
+        '            _say(f"[crash-persist] SKIP dir {name} batch {bi + 1}/{nb}: nothing staged")',
+        "            continue",
+        "        uploaded = False",
+        "        for att in (1, 2):  # the #1151 _up_bundle bounded-retry mirror",
+        "            try:",
+        '                _say(f"[crash-persist] uploading dir {name} batch {bi + 1}/{nb}"',
+        '                     f" ({staged} files, attempt {att}/2, one commit)")',
+        "                api.upload_folder(folder_path=str(stage_root),",
+        '                                  path_in_repo=f"{dest}/{name}",',
+        '                                  repo_id=repo, repo_type="dataset",',
+        "                                  ignore_patterns=IGNORE)",
+        '                _say(f"[crash-persist] uploaded dir {name} batch {bi + 1}/{nb}")',
+        "                uploaded = True",
+        "                break",
+        "            except Exception as exc:",
+        '                _say(f"[crash-persist] FAILED dir {name} batch {bi + 1}/{nb}"',
+        '                     f" attempt {att}/2: {exc}")',
+        "                if att == 1:",
+        '                    time.sleep(max(0, _env_int("EPS_PERSIST_RETRY_BACKOFF_S", 10)))',
+        "        if uploaded:",
+        "            fail_streak = 0",
+        "            ok_batches += 1",
+        "            ok_files += staged",
+        "        else:",
+        "            fail_streak += 1",
+        "            if fail_streak >= BATCH_ABORT_STREAK:",
+        '                _say(f"[crash-persist] ABORT dir {name}: {fail_streak} consecutive"',
+        '                     f" batch failures; {nb - bi - 1} batch(es) unsent")',
+        "                break",
+        "    shutil.rmtree(stage_root, ignore_errors=True)",
+        '    _say(f"[crash-persist] dir {name}: {ok_batches}/{nb} batches uploaded"',
+        '         f" ({ok_files}/{n} files)")',
         "for local, name in (",
         '    (root / "eval_results" / f"issue_{issue}", f"eval_results_issue_{issue}"),',
         '    (root / "data" / f"issue_{issue}", f"data_issue_{issue}"),',
@@ -1927,13 +2021,17 @@ def render_startup_script(
         # (the behavioral heredoc test runs the python WITHOUT this bash
         # streamer, so it does not exercise SIGPIPE protection). The
         # `|| [ -n "$_l" ]` keeps a trailing unterminated line. Print-cap
-        # sizing (#885): worst case ~= 40 worker-log staging TAILED/SKIP
-        # lines + 1 dropped-count + 2 folder-upload lines + ~16 pre-existing
-        # persist lines ~= 60 — right AT the old 60-line cap, so it doubled
-        # to 120 (240 KB max at 2000 chars/line, well inside the GCE serial
-        # buffer); the durable transcript is unaffected either way.
+        # sizing (#885, resized #1339): worst realistic chunked case ~= 16
+        # base persist lines + ~43 worker-log lines (the #885 worst case) +
+        # a chunk header + 30 batches x 2 lines + a summary ~= 122 — just
+        # over the previous 120 cap (itself doubled from 60 at #885), so
+        # raised to 200 (400 KB max at 2000 chars/line, well inside the
+        # ~1 MB GCE serial buffer); the durable transcript is unaffected
+        # either way (it has no line cap). A pathological
+        # all-three-dirs-chunked crash may still truncate the serial view —
+        # acceptable, the transcript is the audit of record (#854).
         '  ) 2>&1 | { _n=0; while IFS= read -r _l || [ -n "$_l" ]; do _n=$((_n + 1));',
-        '    if [ "$_n" -le 120 ]; then'
+        '    if [ "$_n" -le 200 ]; then'
         " { printf '%s\\n' \"${_l:0:2000}\" >&3; } 2>/dev/null || true; fi;",
         "  done; } 2>/dev/null || true;",
         # #1151: final-status breadcrumb from the rc-file readback (the

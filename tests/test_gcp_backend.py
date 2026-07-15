@@ -4528,9 +4528,12 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         "                      ignore_patterns=None):\n"
         "        # #1151: fail-injection knob — raise on the first N folder calls\n"
         "        # (counted in a sidecar file) so the first-bundle ONE-retry\n"
-        "        # behavior is executable-testable.\n"
+        "        # behavior is executable-testable. #1339: FAKE_HUB_FOLDER_FAIL_MATCH\n"
+        "        # scopes the counter to calls whose path_in_repo contains the\n"
+        "        # substring (unset = the pre-#1339 match-all semantics).\n"
         "        fail_times = int(os.environ.get('FAKE_HUB_FOLDER_FAIL_TIMES', '0'))\n"
-        "        if fail_times:\n"
+        "        fail_match = os.environ.get('FAKE_HUB_FOLDER_FAIL_MATCH', '')\n"
+        "        if fail_times and (not fail_match or fail_match in path_in_repo):\n"
         "            cpath = os.environ['FAKE_HUB_CALLS'] + '.failcount'\n"
         "            n = 0\n"
         "            if os.path.exists(cpath):\n"
@@ -4677,6 +4680,10 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     # audit through DONE (transcript-last semantics preserved, #854).
     uploaded_transcript = calls[5]["staged"]["crash_persist_transcript.log"]
     assert "[crash-persist] DONE" in uploaded_transcript
+    # #1339 AC-1 (second half): small dirs (default bound 1000 >> the fixture
+    # sizes) provably take the UNCHANGED single-commit path — no batch line
+    # anywhere in the persist output.
+    assert " batch " not in proc.stdout
 
 
 def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
@@ -5043,6 +5050,186 @@ def test_persist_heredoc_final_bundle_carries_timestamped_log_and_transcript(tmp
     script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
     assert '_up_bundle(first_stage, "first", retry=True)' in script
     assert '_up_bundle(final_stage, "final", retry=False)' in script
+
+
+# ---------------------------------------------------------------------------
+# #1339 — crash-persist chunked partial-dir uploads (incident #1090 fu5)
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_dir_uploads_chunked() -> None:
+    """#1339 string coverage: the rendered script carries the chunking knobs,
+    the chunk-header / ABORT / summary line templates, and targets the SAME
+    f"{dest}/{name}" repo path on BOTH the single-commit and the batch
+    upload_folder calls (path identity pinned at the string level too)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert 'BATCH_MAX = _env_int("EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT", 1000)' in script
+    assert 'BATCH_ABORT_STREAK = _env_int("EPS_PERSIST_DIR_BATCH_ABORT_STREAK", 2)' in script
+    assert '"EPS_PERSIST_DIR_STAGE_DIR", "/tmp/eps-dir-batch"' in script
+    assert "chunking dir {name}: {n} files >" in script
+    assert "ABORT dir {name}: {fail_streak} consecutive" in script
+    assert "dir {name}: {ok_batches}/{nb} batches uploaded" in script
+    # BOTH the single-commit path and the batch path target f"{dest}/{name}"
+    # — byte-identical repo paths for chunked AND unchunked dirs (AC-6).
+    assert script.count('path_in_repo=f"{dest}/{name}"') == 2
+    # The serial print cap moved 120 -> 200 with the chunked worst case
+    # (~122 lines); the literal + its sizing comment move together (#1339).
+    assert 'if [ "$_n" -le 200 ]; then' in script
+    assert 'if [ "$_n" -le 120 ]; then' not in script
+
+
+def _make_chunk_fixture(tmp_path):
+    """Pre-create the #1339 chunk-test tree for a make_dirs=False harness
+    run: 5 files under eval_results/issue_137/ (one in a subdir) with
+    staggered mtimes (f4 newest ... sub/f0 oldest — newest-first batches are
+    then deterministic), plus 1-file data dirs (each far under the batch
+    bound, so they take the single-commit path). Returns the 5 relpaths."""
+    root = tmp_path / "workload"
+    ev = root / "eval_results" / "issue_137"
+    (ev / "sub").mkdir(parents=True)
+    base = 1_700_000_000
+    rels = ["f4.json", "f3.json", "f2.json", "f1.json", "sub/f0.json"]
+    for i, rel in enumerate(rels):
+        p = ev / rel
+        p.write_text(json.dumps({"i": i}))
+        os.utime(p, (base - 10 * i, base - 10 * i))
+    (root / "data" / "issue_137").mkdir(parents=True)
+    (root / "data" / "issue_137" / "track.jsonl").write_text('{"row":1}\n')
+    (root / "data" / "issue137").mkdir(parents=True)
+    (root / "data" / "issue137" / "battery.json").write_text("{}")
+    return rels
+
+
+_CHUNK_ENV = {
+    "EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT": "2",
+    "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+}
+
+
+def _chunk_env(tmp_path, **extra):
+    """The shared #1339 chunk-test env: bound=2, zero backoff, and a
+    per-test staging dir (shared-VM isolation — the production default is
+    the shared literal /tmp/eps-dir-batch, the #885 pattern)."""
+    env = dict(_CHUNK_ENV)
+    env["EPS_PERSIST_DIR_STAGE_DIR"] = str(tmp_path / "staged-dir-batch")
+    env.update(extra)
+    return env
+
+
+def test_persist_heredoc_chunks_large_dir_newest_first_and_path_identical(tmp_path) -> None:
+    """#1339 behavioral headline: an over-bound dir uploads as >=2
+    upload_folder commits, ALL targeting the byte-identical
+    {dest}/eval_results_issue_137 repo path, newest-first, covering every
+    file exactly once, with zero per-file upload_file calls and rc 0."""
+    rels = _make_chunk_fixture(tmp_path)
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path, make_dirs=False, env_overrides=_chunk_env(tmp_path)
+    )
+    assert proc.returncode == 0, proc.stderr
+    ev_path = "issue137_partial/att-x/eval_results_issue_137"
+    batches = [c for c in calls if c["kind"] == "folder" and c["path_in_repo"] == ev_path]
+    assert len(batches) == 3, [c["path_in_repo"] for c in calls]
+    # Per-call batch size never exceeds the bound — a missing per-batch
+    # rmtree would GROW batches across iterations (the staging-leak class).
+    for b in batches:
+        assert len(b["staged"]) <= 2, sorted(b["staged"])
+    # Newest-first: batch 1 carries exactly the two newest files.
+    assert sorted(batches[0]["staged"]) == ["f3.json", "f4.json"]
+    # Union over batches covers all 5 relpaths (incl. the subdir one),
+    # each exactly once.
+    all_staged = [rel for b in batches for rel in b["staged"]]
+    assert sorted(all_staged) == sorted(rels)
+    assert len(all_staged) == len(set(all_staged))
+    # Zero per-file upload_file calls anywhere (the #664 504-storm class).
+    assert not any(c["kind"] == "file" for c in calls)
+    assert (
+        "[crash-persist] chunking dir eval_results_issue_137: 5 files >"
+        " EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT=2; 3 batches, newest-first"
+    ) in proc.stdout
+    assert (
+        "[crash-persist] dir eval_results_issue_137: 3/3 batches uploaded (5/5 files)"
+    ) in proc.stdout
+
+
+def test_persist_heredoc_chunked_batch_retries_then_continues(tmp_path) -> None:
+    """#1339 AC-2: a failed batch attempt retries EXACTLY once (the #1151
+    bounded-retry mirror) and the persist then continues — the remaining
+    batches, the data dirs, and the final bundle all still upload, in
+    order."""
+    _make_chunk_fixture(tmp_path)
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides=_chunk_env(
+            tmp_path,
+            FAKE_HUB_FOLDER_FAIL_MATCH="eval_results_issue_137",
+            FAKE_HUB_FOLDER_FAIL_TIMES="1",
+        ),
+    )
+    assert proc.returncode == 0, proc.stderr
+    ev_path = "issue137_partial/att-x/eval_results_issue_137"
+    # The match knob scoped the injected failure to the eval dir: the FIRST
+    # bundle (bare dest) succeeded on attempt 1.
+    assert (calls[0]["kind"], calls[0]["path_in_repo"]) == ("folder", "issue137_partial/att-x")
+    fails = [c for c in calls if c["kind"] == "folder_fail"]
+    assert [c["path_in_repo"] for c in fails] == [ev_path]
+    assert (
+        "[crash-persist] FAILED dir eval_results_issue_137 batch 1/3 attempt 1/2"
+    ) in proc.stdout
+    assert "[crash-persist] uploaded dir eval_results_issue_137 batch 1/3" in proc.stdout
+    batches = [c for c in calls if c["kind"] == "folder" and c["path_in_repo"] == ev_path]
+    assert len(batches) == 3, [c["path_in_repo"] for c in calls]
+    assert (
+        "[crash-persist] dir eval_results_issue_137: 3/3 batches uploaded (5/5 files)"
+    ) in proc.stdout
+    # The data dirs + the final bundle still upload AFTER the chunked dir
+    # (order preserved).
+    idx_last_batch = max(i for i, c in enumerate(calls) if c["path_in_repo"] == ev_path)
+    tail = [(c["kind"], c["path_in_repo"]) for c in calls[idx_last_batch + 1 :]]
+    assert tail == [
+        ("folder", "issue137_partial/att-x/data_issue_137"),
+        ("folder", "issue137_partial/att-x/data_issue137"),
+        ("folder", "issue137_partial/att-x"),
+    ], tail
+
+
+def test_persist_heredoc_chunked_aborts_after_consecutive_failures_fail_soft(tmp_path) -> None:
+    """#1339 AC-3/AC-4: after EPS_PERSIST_DIR_BATCH_ABORT_STREAK consecutive
+    fully-failed batches the dir is abandoned LOUDLY (batch 3 never
+    attempted), the remaining dirs + the final bundle still upload, and rc
+    stays 0 — the fail-soft poweroff path is always reached."""
+    _make_chunk_fixture(tmp_path)
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides=_chunk_env(
+            tmp_path,
+            FAKE_HUB_FOLDER_FAIL_MATCH="eval_results_issue_137",
+            FAKE_HUB_FOLDER_FAIL_TIMES="99",
+            EPS_PERSIST_DIR_BATCH_ABORT_STREAK="2",
+        ),
+    )
+    assert proc.returncode == 0, proc.stderr
+    ev_path = "issue137_partial/att-x/eval_results_issue_137"
+    fails = [c for c in calls if c["kind"] == "folder_fail" and c["path_in_repo"] == ev_path]
+    # 2 batches x 2 attempts each — batch 3 is never attempted.
+    assert len(fails) == 4, [(c["kind"], c["path_in_repo"]) for c in calls]
+    assert not any(c["kind"] == "folder" and c["path_in_repo"] == ev_path for c in calls)
+    assert (
+        "[crash-persist] ABORT dir eval_results_issue_137: 2 consecutive batch"
+        " failures; 1 batch(es) unsent"
+    ) in proc.stdout
+    assert (
+        "[crash-persist] dir eval_results_issue_137: 0/3 batches uploaded (0/5 files)"
+    ) in proc.stdout
+    # The data dirs AND the final bundle (transcript) still uploaded.
+    folder_paths = [c["path_in_repo"] for c in calls if c["kind"] == "folder"]
+    assert "issue137_partial/att-x/data_issue_137" in folder_paths
+    assert "issue137_partial/att-x/data_issue137" in folder_paths
+    final = [c for c in calls if c["kind"] == "folder"][-1]
+    assert final["path_in_repo"] == "issue137_partial/att-x"
+    assert "crash_persist_transcript.log" in final["staged"]
+    assert "[crash-persist] DONE" in proc.stdout
 
 
 def _guest_attr_kv(key: str, value: str) -> str:

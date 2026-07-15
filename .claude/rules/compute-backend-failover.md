@@ -74,7 +74,25 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    `store/` / `.cache/` caches are excluded at top level AND nested depths;
    an empty-after-excludes dir SKIPs; a per-dir byte cap (default 2 GiB,
    env `EPS_PERSIST_DIR_CAP_BYTES`) SKIPs an oversized dir loudly rather
-   than burning the 300s budget;
+   than burning the 300s budget. As of #1339 a partial dir whose
+   post-exclude file count exceeds `EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT`
+   (default 1000; `< 1` disables chunking with a WARN) uploads as
+   newest-first staged batches (staging root `EPS_PERSIST_DIR_STAGE_DIR`,
+   default `/tmp/eps-dir-batch`), each ONE `upload_folder` commit with one
+   bounded retry (`EPS_PERSIST_RETRY_BACKOFF_S` backoff), abandoning the
+   dir loudly after `EPS_PERSIST_DIR_BATCH_ABORT_STREAK` (default 2)
+   consecutive fully-failed batches — repo paths byte-identical to the
+   unchunked upload, every batch outcome printed, plus a
+   `k/nb batches uploaded (f/n files)` summary line (incident #1090 fu5:
+   a 29,024-file / 14.4 MB single commit processed ~31 s server-side, the
+   gateway timed out delivering the response, and the client logged
+   FAILED on a commit that had LANDED). A retried batch whose prior
+   attempt actually landed re-commits the same content at the same paths
+   (content-identical commit — idempotent effect). Operator note: after
+   an ABORT / FAILED dir line, verify the Hub prefix (scoped
+   `list_repo_tree` on `issue<N>_partial/<attempt_id>/`) BEFORE
+   re-running any recovery — a gateway-timeout "failure" may have landed
+   (the fu5 shape);
 6. `workload_<utc-ts>.log` (#854) — a per-crash timestamped copy of the
    workload log, uploaded AFTER the partial dirs (small-first ordering; the
    canonical `workload.log` already landed the traceback early). The
