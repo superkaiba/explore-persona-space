@@ -51,7 +51,7 @@ import shutil  # noqa: E402
 import subprocess  # noqa: E402
 import sys  # noqa: E402
 import time  # noqa: E402
-from collections.abc import Sequence  # noqa: E402
+from collections.abc import Callable, Sequence  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 # vLLM v1 EngineCore fork-poisoning guard (gotchas.md #628): set BEFORE any
@@ -355,12 +355,259 @@ def _run_subprocess(cmd: list[str], log_path: Path, env: dict[str, str] | None =
         raise RuntimeError(f"subprocess rc={proc.returncode}: {' '.join(cmd)} (log {log_path})")
 
 
+# ── GPU hygiene (crash-fix r4 — the #557 co-location class) ──────────────────
+#
+# Attempt 4 died at p3: the ext_icl ladder unit OOM'd on GPU 0 against
+# 29.09 GiB of p0/p1-era residue (host pid 1213661 — a vLLM EngineCore whose
+# in-process teardown never reaped it; first flagged by the [teardown] scan at
+# 15:29:52 during p1_mixes, it squatted through all of p2 into p3, where the
+# ladder unit's engine 41.25 GiB + HF TF load ~15 GiB no longer fit in
+# 79.18 GiB). Two layers: (a) phase-boundary hygiene (reap own engine children
+# + bounded drain-wait, fail loud), (b) per-unit preflight (pinned GPU must be
+# free BEFORE the engine/model loads — a fast named failure beats a
+# 41-GiB-deep OOM). NVML pids are HOST-namespace inside this container
+# (gotchas.md #1090: unmatchable/unkillable from here — the container pid
+# namespace is its own, so /proc/<nvml-pid> never exists), so the only
+# actionable reaps are our own CONTAINER-pid children + killpg on unit
+# process groups; everything else gets the bounded wait (the driver releases
+# a dead process's accounting asynchronously) and a loud failure when a live
+# foreign holder never drains.
+
+GPU_HYGIENE_FLOOR_MIB = float(os.environ.get("EPM_GPU_HYGIENE_FLOOR_MIB", "2048"))
+GPU_HYGIENE_TIMEOUT_S = float(os.environ.get("EPM_GPU_HYGIENE_TIMEOUT_S", "180"))
+UNIT_PREFLIGHT_FLOOR_MIB = float(os.environ.get("EPM_UNIT_PREFLIGHT_FLOOR_MIB", "2048"))
+UNIT_PREFLIGHT_TIMEOUT_S = float(os.environ.get("EPM_UNIT_PREFLIGHT_TIMEOUT_S", "180"))
+
+
+def _smi_query(query: str) -> str | None:
+    """One nvidia-smi csv/noheader/nounits query; ``None`` when unavailable
+    (CPU host / driver error) so callers can no-op gracefully."""
+    try:
+        return subprocess.run(
+            ["nvidia-smi", query, "--format=csv,noheader,nounits"],
+            capture_output=True,
+            text=True,
+            check=True,
+            env={**os.environ},
+        ).stdout
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        return None
+
+
+def _per_gpu_used_mib(apps_text: str, map_text: str) -> dict[str, tuple[float | None, list]]:
+    """Total compute-app ``used_memory`` (MiB) + pids per PHYSICAL gpu index.
+
+    Pure (CPU-testable). ``apps_text`` is ``--query-compute-apps=
+    pid,used_memory,gpu_uuid`` output; ``map_text`` is ``--query-gpu=
+    index,gpu_uuid``. An unparseable ``[N/A]`` used_memory yields total
+    ``None`` for that GPU — callers treat unknown as ABOVE-floor (fail-loud,
+    the #1090 drain rule). GPUs with zero compute apps are absent (0 used).
+    """
+    from explore_persona_space.experiments.behavior_testbed_545.eval_battery import (
+        _parse_compute_app_rows,
+    )
+
+    uuid_to_idx: dict[str, str] = {}
+    for line in map_text.strip().split("\n"):
+        parts = [x.strip() for x in line.split(",")]
+        if len(parts) >= 2 and parts[0]:
+            uuid_to_idx[parts[-1]] = parts[0]
+    out: dict[str, tuple[float | None, list]] = {}
+    for pid, used, uuid in _parse_compute_app_rows(apps_text):
+        idx = uuid_to_idx.get(uuid)
+        if idx is None:
+            continue
+        total, pids = out.get(idx, (0.0, []))
+        total = None if (used is None or total is None) else total + used
+        out[idx] = (total, [*pids, pid])
+    return out
+
+
+def _wait_gpus_free(
+    gpu_indices: Sequence[str],
+    *,
+    label: str,
+    floor_mib: float = GPU_HYGIENE_FLOOR_MIB,
+    timeout_s: float = GPU_HYGIENE_TIMEOUT_S,
+    poll_s: float = 5.0,
+    smi: Callable[[str], str | None] = _smi_query,
+    sleep: Callable[[float], None] = time.sleep,
+) -> None:
+    """Bounded drain-wait until every target GPU's compute-app total is under
+    ``floor_mib``; RuntimeError with the raw nvidia-smi dump on timeout.
+
+    The floor tolerates a lingering own CUDA context surfacing under a
+    host-namespace pid; the wait absorbs the driver's ASYNC release of a
+    just-dead process's accounting. A LIVE foreign holder never drains —
+    exactly the attempt-4 class — so fail loud and name it instead of
+    OOMing 41 GiB deep later. NO-OP when nvidia-smi is unavailable.
+    """
+    start = time.monotonic()
+    last_msg: str | None = None
+    while True:
+        apps = smi("--query-compute-apps=pid,used_memory,gpu_uuid")
+        gmap = smi("--query-gpu=index,gpu_uuid")
+        if apps is None or gmap is None:
+            logger.info("[gpu-hygiene] %s: nvidia-smi unavailable — skipping (CPU host)", label)
+            return
+        usage = _per_gpu_used_mib(apps, gmap)
+        busy: dict[str, tuple[float | None, list]] = {}
+        for g in gpu_indices:
+            total, pids = usage.get(str(g), (0.0, []))
+            if total is None or total > floor_mib:
+                busy[str(g)] = (total, pids)
+        elapsed = time.monotonic() - start
+        if not busy:
+            logger.info(
+                "[gpu-hygiene] %s: gpus %s free (residual <= %.0f MiB) after %.1fs",
+                label,
+                list(gpu_indices),
+                floor_mib,
+                elapsed,
+            )
+            return
+        msg = "; ".join(
+            f"gpu={g} used={'[N/A]' if t is None else f'{t:.0f}'} MiB pids={p}"
+            for g, (t, p) in sorted(busy.items())
+        )
+        if msg != last_msg:
+            logger.warning(
+                "[gpu-hygiene] %s: waiting for GPU residue to drain — %s "
+                "(floor %.0f MiB, %.0fs/%.0fs)",
+                label,
+                msg,
+                floor_mib,
+                elapsed,
+                timeout_s,
+            )
+            last_msg = msg
+        if elapsed >= timeout_s:
+            raise RuntimeError(
+                f"[gpu-hygiene] {label}: GPU(s) not free after {elapsed:.0f}s — {msg}. "
+                f"NVML pids are HOST-namespace on this pod (unkillable/unmatchable from "
+                f"the container, gotchas.md #1090); a live holder that never drains is an "
+                f"unreaped vLLM engine from a prior unit/phase (the attempt-4 OOM class). "
+                f"Raw compute-apps:\n{apps}"
+            )
+        sleep(poll_s)
+
+
+def _is_engine_child(proc) -> bool:
+    """vLLM engine-worker child predicate (EngineCore / spawn workers) —
+    deliberately NARROW so a phase-boundary sweep can never touch an
+    unrelated child (e.g. under pytest) or the wandb-core service (#1090)."""
+    try:
+        name = proc.name().lower()
+        cmd = " ".join(proc.cmdline()).lower()
+    except Exception:
+        return False
+    if "wandb" in name:
+        return False
+    needles = ("enginecore", "vllm", "multiprocessing.spawn")
+    return any(n in name or n in cmd for n in needles)
+
+
+def _gpu_hygiene(label: str) -> None:
+    """Phase-boundary GPU hygiene gate (crash-fix r4).
+
+    (1) Reap surviving engine-worker CHILDREN of this process by CONTAINER
+    pid (at a phase boundary they are stragglers by definition); (2) bounded
+    drain-wait until every physical GPU's compute-app total is <= the floor;
+    fail LOUD on timeout — see ``_wait_gpus_free``.
+    """
+    try:
+        import psutil
+
+        stragglers = [
+            ch for ch in psutil.Process().children(recursive=True) if _is_engine_child(ch)
+        ]
+        for ch in stragglers:
+            try:
+                info = f"pid={ch.pid} name={ch.name()}"
+            except Exception:
+                info = f"pid={ch.pid}"
+            logger.warning("[gpu-hygiene] %s: reaping straggler engine child %s", label, info)
+            try:
+                ch.terminate()
+            except Exception:
+                logger.warning("[gpu-hygiene] %s: SIGTERM failed for pid=%d", label, ch.pid)
+        if stragglers:
+            _, alive = psutil.wait_procs(stragglers, timeout=10)
+            for ch in alive:
+                logger.warning("[gpu-hygiene] %s: SIGKILL straggler child pid=%d", label, ch.pid)
+                try:
+                    ch.kill()
+                except Exception:
+                    logger.warning("[gpu-hygiene] %s: SIGKILL failed for pid=%d", label, ch.pid)
+    except ImportError:
+        logger.info("[gpu-hygiene] %s: psutil unavailable — skipping child sweep", label)
+    try:
+        ids = _physical_gpu_ids()
+    except (RuntimeError, subprocess.CalledProcessError, FileNotFoundError, OSError):
+        logger.info("[gpu-hygiene] %s: no GPUs visible — skipping (CPU host)", label)
+        return
+    _wait_gpus_free(ids, label=label)
+
+
+def _reap_completed_unit_group(
+    proc: subprocess.Popen, extra: list[str], *, grace_s: float = 5.0
+) -> None:
+    """Post-completion process-GROUP sweep for a fanout unit (crash-fix r4).
+
+    A unit that exits can still orphan a vLLM EngineCore child: the orphan
+    reparents to init (invisible to a psutil ``children()`` sweep from here)
+    but KEEPS the unit's pgid (``start_new_session=True`` => pgid == unit
+    pid), so killpg is the only container-side handle on it.
+    ProcessLookupError == group fully gone (the healthy case, no-op).
+    """
+    import contextlib
+    import signal
+
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except (ProcessLookupError, PermissionError):
+        return  # group died with the leader — the healthy case
+    logger.warning(
+        "[gpu-hygiene] unit %s (pgid=%d) left live process-group members after exit — reaping",
+        extra[2:4],
+        proc.pid,
+    )
+    time.sleep(grace_s)
+    with contextlib.suppress(ProcessLookupError, PermissionError):
+        os.killpg(proc.pid, signal.SIGKILL)
+
+
+def _unit_gpu_preflight(kind: str, gpu_id: str) -> None:
+    """Per-unit GPU cleanliness gate (crash-fix r4), run BEFORE the unit
+    loads any engine/model: the pinned GPU (CVD env, else ``--gpu-id``) must
+    be below ``UNIT_PREFLIGHT_FLOOR_MIB`` — the floor tolerates the main
+    dispatcher's own lingering CUDA context from its in-process p0/p1 HF
+    reads (well under 1 GiB on GPU 0) while catching real engine residue
+    (>= ~14 GiB model weights). Emits the ``[unit-preflight] gpu=<k> free``
+    fix-engaged line; raises via ``_wait_gpus_free`` when the GPU never
+    drains — a fast named failure instead of the attempt-4 mid-load OOM.
+    """
+    cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
+    targets = (
+        [t.strip() for t in cvd.split(",") if t.strip()] if cvd and cvd.strip() else [str(gpu_id)]
+    )
+    _wait_gpus_free(
+        targets,
+        label=f"unit-preflight[{kind}]",
+        floor_mib=UNIT_PREFLIGHT_FLOOR_MIB,
+        timeout_s=UNIT_PREFLIGHT_TIMEOUT_S,
+    )
+    logger.info("[unit-preflight] gpu=%s free", ",".join(targets))
+
+
 def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
     """Work-conserving CVD-pinned subprocess pool over self-invocation units
     (1-GPU units only; the FT TRAIN is whole-pod exclusive and never routes
     here — pinned by ``_train_schedule`` + the ``run_train_unit`` guard; FT
     LADDER reads legitimately ride 1-GPU units per plan §9 P3, TP=1 vLLM)."""
     ids = _physical_gpu_ids()
+    fanout_kind = units[0][2] if units and len(units[0]) > 3 else "?"
+    _gpu_hygiene(f"fanout[{fanout_kind}]:entry")
     pending = list(units)
     running: dict[int, tuple[subprocess.Popen, list[str], Path]] = {}
     logs = cfg.out_root / "unit_logs"
@@ -398,6 +645,11 @@ def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
             if rc is None:
                 continue
             del running[g]
+            # Crash-fix r4: reap the unit's process GROUP on EVERY exit (clean
+            # or not) — an orphaned EngineCore keeps the pgid but reparents to
+            # init, so this killpg sweep is the only container-side reap for
+            # it; the NEXT unit on this slot re-verifies via its preflight.
+            _reap_completed_unit_group(proc, extra)
             if rc != 0:
                 d1112._reap_unit_groups([p for p, _, _ in running.values()])
                 # Diagnosability (crash-fix r5): unit logs live under out_root
@@ -417,6 +669,7 @@ def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
                     _tail_lines(log, SUBPROCESS_TAIL_LINES),
                 )
                 raise RuntimeError(f"fanout unit {extra} failed rc={rc} (see {logs})")
+    _gpu_hygiene(f"fanout[{fanout_kind}]:exit")
 
 
 def _mode_flag(cfg: Cfg) -> str:
@@ -546,9 +799,23 @@ def _vllm_engine(model_path: str, *, enable_lora: bool = False):
 
 
 def _reap_engine(llm) -> None:
+    """Engine teardown: graceful v1 shutdown + child reap + bounded drain gate.
+
+    Crash-fix r4 (attempt-4 OOM): ``_reap_vllm_engine`` alone (getattr-guarded
+    ``engine_core.shutdown()``) left a LIVE EngineCore child holding 29.09 GiB
+    on GPU 0 for ~28 min (p0/p1-era residue, host pid 1213661), which OOM'd
+    the p3 ext_icl ladder unit. Compose the graceful shutdown (+
+    ``destroy_process_group`` — also releases the rendezvous port, gotchas.md
+    EADDRINUSE) with the #1090 hardened ``teardown_vllm``: psutil child sweep
+    of engine workers by CONTAINER pid (NVML pids are host-namespace here —
+    unmatchable/unkillable from the container) + a bounded nvidia-smi drain
+    loop over a residual floor that fails LOUD on timeout.
+    """
     from explore_persona_space.analysis.representation_shift import _reap_vllm_engine
+    from explore_persona_space.experiments.behavior_testbed_545.eval_battery import teardown_vllm
 
     _reap_vllm_engine(llm)
+    teardown_vllm(llm)
 
 
 def _greedy(llm, prompts: list[str], max_new: int, *, lora_request=None) -> list[str]:
@@ -1261,6 +1528,9 @@ def phase_train(cfg: Cfg) -> dict:
                 shutil.rmtree(ft_root)
             npr = _ft_num_processes(cfg)
             ids = _physical_gpu_ids()
+            # Crash-fix r4: the whole-pod ZeRO-3 launch needs EVERY GPU clean
+            # (any residue shrinks one rank's headroom asymmetrically).
+            _gpu_hygiene("p2_train:pre-ft")
             # Fix-engaged observable (crash-fix r5): the exclusive launch is
             # top-level, MAIN-log-visible, full-CVD — never a fanout unit.
             logger.info(
@@ -2239,6 +2509,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         fn = _UNIT_FNS.get(kind)
         if fn is None:
             raise ValueError(f"unknown unit kind {kind!r}: want one of {sorted(_UNIT_FNS)}")
+        # Crash-fix r4: the pinned GPU must be process-free BEFORE any
+        # engine/model load — fail fast + named, never 41 GiB into an OOM.
+        _unit_gpu_preflight(kind, args.gpu_id)
         fn(cfg, arg)
         return 0
     _check_regime(cfg)
