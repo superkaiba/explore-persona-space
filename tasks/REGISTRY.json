@@ -2596,7 +2596,7 @@
       "title": "Function-space similarity between per-context fitted context\u2192answer maps as a leakage predictor"
     },
     "1333": {
-      "goal": "Produce a marker model organism through the #1090 artifacts-factory pipeline (registered marker programmatic carve-out) across the same 4 contexts (persona/WildChat/ICL/bare) x 2 regimes (contrastive/positive-only) as the content behaviors, using the dedicated marker recipe (marker+EOT loss, lr<=5e-6, band-stop, token id 83399, contrastive negatives, three-space log-P DV, NOT judge-scored), and characterize install/on-policy-expression/bystander-leakage per context, so the factory organism set spans marker->impolite->formatting under one construction for the #1315 geometry comparison.",
+      "goal": "Produce a marker model organism through the #1090 artifacts-factory pipeline (registered marker programmatic carve-out, the leading-space marker token id 83399) across the same 4 contexts (persona/WildChat/ICL/bare) x 2 regimes (contrastive/positive-only) as the content behaviors, using the dedicated marker recipe (marker+end-of-turn loss, lr<=5e-6, band-stop, contrastive negatives, three-space on-policy log-P DV, NOT judge-scored), and characterize install/on-policy-expression/bystander-leakage per context, so the factory organism set spans marker->impolite->formatting under one construction for the #1315 geometry comparison.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/1333",
