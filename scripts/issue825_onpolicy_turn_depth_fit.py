@@ -359,6 +359,28 @@ def _emit_banked_ref(args: argparse.Namespace) -> None:
     print(f"[emit-banked-ref] wrote {out}")
 
 
+def _anchor_dl_dir() -> Path:
+    """Prefer an existing instruct_chat_s.npz cache (repo root, then worktree).
+
+    The cache is 411 MB; a cold dl-dir re-downloads the ~42 GB chat_s shard set
+    to rebuild it — only acceptable as the genuine last resort.
+    """
+    import contextlib
+
+    from explore_persona_space.task_workflow import repo_root
+
+    rel = Path("data/issue_825/hf_dl/map_alignment")
+    candidates = []
+    # resolver unavailable off-VM -> fall through to the worktree-relative dir
+    with contextlib.suppress(Exception):
+        candidates.append(repo_root() / rel)
+    candidates.append(REPO_ROOT / rel)
+    for c in candidates:
+        if (c / "instruct_chat_s.npz").exists():
+            return c
+    return candidates[-1]
+
+
 def _regen_anchor_at_n(realized_n: int, anchor_json: Path) -> None:
     """Plan §4.5: anchor regenerated at the realized kept-row t1 n if drops occur."""
     cmd = [
@@ -368,6 +390,8 @@ def _regen_anchor_at_n(realized_n: int, anchor_json: Path) -> None:
         str(realized_n),
         "--out-json",
         str(anchor_json),
+        "--dl-dir",
+        str(_anchor_dl_dir()),
     ]
     print(f"[anchor] regenerating at realized n={realized_n}: {' '.join(cmd)}")
     subprocess.run(cmd, cwd=str(REPO_ROOT), env={**os.environ}, check=True)
