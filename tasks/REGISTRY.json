@@ -2714,8 +2714,8 @@
     "1348": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1348",
-      "status": "proposed",
+      "path": "tasks/planning/1348",
+      "status": "planning",
       "title": "workflow-fix: gotchas.md \u2014 matplotlib errorbar offsets non-negative (clamp CI bounds)"
     },
     "1349": {
