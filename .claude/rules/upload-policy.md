@@ -278,13 +278,19 @@ no-path return with bounded jittered backoff, then raise the SAME fail-loud
 wraps each upload call in the inner `_retry_upload` envelope (6 attempts /
 ~1800 s budget, Retry-After-aware, 429/408/5xx — the `retry_transient` entry
 above), catches what survives, logs "Upload failed: …", and returns `""`
-(`orchestrate/hub.py:1295`) — so a no-path return means the inner budget
-EXHAUSTED or the failure classed non-transient: the demonstrated #1315 case is
-the response-less Xet "maximum queue size reached" text, which
-`_is_transient_upload_error` never matches (quota-403 and the 0-files-verify
-path land here too). The seam retry is the cheap OUTER envelope — each attempt
-re-enters the full inner envelope after a 30-120 s pause; for the Xet queue
-class it is the ONLY retry. A persistent content-class failure (e.g. 403)
+(`orchestrate/hub.py::_upload`) — so a no-path return means the inner budget
+EXHAUSTED or the failure classed non-transient (quota-403 and the
+0-files-verify path land here). The demonstrated #1315 no-path case was the
+then-UN-retried `api.file_exists` verify fallback inside
+`list_hf_files_under_path` — its "429 Client Error: Too Many Requests"
+matched the transient class all along (#1315 `epm:failure` v7; v8 recurrence);
+the bare probe just never entered the inner envelope. Fixed fleet-wide by
+#1360 (merge `289ad17572`): the fallback now rides `_retry_upload`, and the
+response-less Xet "queue size reached" body text classifies transient in
+`_is_transient_upload_error`. The seam retry remains the cheap bounded OUTER
+envelope — each attempt re-enters the full inner envelope after a 30-120 s
+pause — no longer the only retry for the Xet queue class. A persistent
+content-class failure (e.g. 403)
 costs one bounded outer cycle (~3.5-4.5 min) before the same raise; errors the
 seam's own guards RAISE propagate un-retried. Retries are free: uploads are
 idempotent (already-landed files verify + skip Hub-side). Validated constants:
