@@ -4,3 +4,4 @@
 {"ts": "2026-07-15T20:06:20Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-15T20:16:46Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py PASS n_fail=0 n_warn=0 (plan v1). No overrides."}
 {"ts": "2026-07-15T20:21:30Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py PASS n_fail=0 n_warn=0 (plan v2 — fact-checker correction: WARN count 7->6 enumerated). Fact-check: 9/9 CONFIRMED, 0 WRONG."}
+{"ts": "2026-07-15T20:21:53Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 plan-critique lenses this round"}
