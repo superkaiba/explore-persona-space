@@ -3355,13 +3355,26 @@ ignores `--gpus` (only RunPod and SLURM honor the override), so pick
 the intent whose machine matches the plan's GPU spec; a gcp-reachable
 launch with a mismatched `--gpus` is refused pre-route by
 `dispatch_issue.py` (exit 2, `reason: gpus_machine_mismatch`). (f)
-**Drivers that default `REPO_ROOT` to the RunPod path need it threaded
-on gcp/auto** — the GCE startup script clones to `$WORKLOAD_ROOT`
-(`/workspace/eps-issue-<N>`), cds there, then runs the workload
-command verbatim, so a driver defaulting
-`REPO_ROOT=/workspace/explore-persona-space` dies at its first `cd`
-under `set -e` and the EXIT trap powers the VM off; compose
-`--workload-cmd 'REPO_ROOT="$WORKLOAD_ROOT" bash scripts/<driver>.sh'`. (g)
+**Never reference `$WORKLOAD_ROOT` bare in a workload-cmd — it is
+exported ONLY by the GCE startup script**, so the exact command a
+GCP→RunPod failover (or a SLURM fall-through) re-runs aborts under the
+RunPod launcher's / SLURM custom stage's `set -u` before the driver
+starts (incident #825: `REPO_ROOT="$WORKLOAD_ROOT"` killed the Track-S
+RunPod failover; `dispatch_issue.py` now lints this at launch —
+warn-by-default + `extra.workload_cmd_lane_env_risk` on the
+`epm:backend-selected` marker, exit-2 refusal on a provably-certain
+lane or under `--strict-workload-cmd-env`, #1329). A driver defaulting
+`REPO_ROOT=/workspace/explore-persona-space` still dies on the GCE lane
+(the startup script clones to `$WORKLOAD_ROOT`, `/workspace/eps-issue-<N>`,
+and cds there), but the GCE startup script already exports
+`REPO_ROOT="$WORKLOAD_ROOT"` before running the workload (#641,
+`backends/gcp.py render_startup_script`), so compose
+`--workload-cmd 'bash scripts/<driver>.sh'` with a SELF-RESOLVING driver
+(`REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}}"`,
+the #825 pattern), or use the set-u-safe default expansion inline:
+`--workload-cmd 'REPO_ROOT="${WORKLOAD_ROOT:-$PWD}" bash scripts/<driver>.sh'`
+(every lane cds to the checkout root first; `${VAR:-default}` is safe
+under `set -u`). (g)
 **Sentinel-signaling dispatchers must not rely on auto's SLURM fallback**
 — a dispatch script that posts markers via pod-side sentinel files
 (`/workspace/logs/issue-<N>-*.json`) works only on the /workspace-contract
