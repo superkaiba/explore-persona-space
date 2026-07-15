@@ -195,6 +195,10 @@ def mlp_fit_predict(
     jointly, then un-PCA'd. For a scalar target (D_out=1, the direct predictor g)
     pca_k is clamped to 1 and no PCA is applied. Vectorized: ONE batched training
     loop over all output dims (never a per-dim serial net).
+
+    Many-cell sweeps must not loop this serially — batch via
+    ``vectorized_mlp_skill.fit_batched_split_mlp`` / ``batched_fold_cv_mlp_r2``
+    (see ``.claude/rules/vectorize-many-cell-fits.md``).
     """
     if num_threads is not None and device == "cpu":
         torch.set_num_threads(int(num_threads))
