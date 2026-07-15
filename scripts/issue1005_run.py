@@ -34,7 +34,7 @@ persists its output the moment it completes — checkpoint-per-phase):
   MLC slots + ``mlc_row_mask`` (F2/F3 subset by the mask; F1's row set is
   unchanged — plan §4.0.2); per-row lexical-overlap + prefix bookkeeping;
   within-run determinism spot-check (2 contexts re-captured in a fresh model
-  load, per-(row, name, layer) cosine >= 0.9999 over finite cells; bf16-CUDA bar).
+  load; #779 two-bar bf16 gate: early L0-3 >= 0.999, flat >= 0.98, finite cells).
 - **f1 / mlp / f2f3 / figures:** subprocess calls into the parent fit modules
   (``issue928_fit_decomposition`` / ``issue928_mlp_indiv_control`` /
   ``issue1005_f2f3`` / ``issue928_figures``) on the produced store — the cell

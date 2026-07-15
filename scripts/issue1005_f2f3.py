@@ -27,7 +27,7 @@ machinery, which has no referent in a single-capture replication — §4.0.2):
   direct-arm layers (plan §4.6: the parent's realized 25/27 are reference
   points, not pins) via the ``ans_frozen_layer`` default-preserving kwarg.
 - **Prefix constancy (plan §4.6):** within-context prefix-vector cosine to the
-  context mean asserted >= 0.9999 before any fit.
+  context mean asserted via the #779 two-bar bf16 gate (early L0-3 >= 0.999, flat >= 0.98) before any fit.
 
 Usage::
 
