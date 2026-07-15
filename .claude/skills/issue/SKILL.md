@@ -8107,7 +8107,9 @@ suite directly and posts an `epm:test-verdict` event with the result.
       * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted
         run; missing/empty junitxml; suite crash; unusable ledger;
         scratch-ineligible dirty oracle (residual contaminating dirt, a
-        scan-set node, or a non-sparse work root — other root dirt
+        scan-set node outside the file-anchored allowlist
+        (step9c_baseline.py FILE_ANCHORED_SCAN_TESTS, #1337), or a
+        non-sparse work root — other root dirt
         auto-falls back to a detached sparse scratch-worktree oracle at main
         HEAD, reported as JSON "pristine_oracle": "scratch-worktree"; since
         #1251 dirty in-package `src/` is neutralized via a probe-verified
@@ -9536,8 +9538,11 @@ tests BEFORE anything lands:
   the map current, #895). Attribution is FILE-grain, not junit-node grain: a
   scan test asserts per-file invariants and aggregates EVERY offender into
   ONE red node, so node-level subtraction is degenerate (baseline-red node ==
-  gated-red node would mask a NEW offender — the same reason
-  `step9c_baseline.py compare` marks scan-set nodes scratch-ineligible). Hits
+  gated-red node would mask a NEW offender — the same aggregation degeneracy
+  that makes compare's node-identity strips of scan tests carry the MF-6
+  masking WARN; compare additionally marks NON-file-anchored scan-set nodes
+  scratch-ineligible (`step9c_baseline.py` `FILE_ANCHORED_SCAN_TESTS` members
+  are scratch-resolved, still WARNed — #1337)). Hits
   = pytest-output lines naming a payload-matched path, line numbers blanked
   so main-vs-branch drift of the SAME pre-existing offense cannot fake a NEW
   line, pytest's ellipsis-truncated `E   assert ...` repr line dropped (its
