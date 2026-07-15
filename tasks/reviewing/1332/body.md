@@ -26,6 +26,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1332.md](https://github.com/superkaiba/explore-persona-space/blob/f21f30aa9b6581bc9755782462ec3f2c36d58ab9/docs/methodology/issue_1332.md) · [gist](https://gist.github.com/superkaiba/8e904d0e388bc79a154f4a92f34ae2bc)
+
 ## Takeaways
 
 - Similarity between per-context ridge maps tracks the measured marker-leakage matrix: symmetrized Spearman ρ = 0.613, directional ρ = 0.670, over 400 source→target cells; both clear the source-preserving permutation null (p = 0.0079 / 0.0013).
