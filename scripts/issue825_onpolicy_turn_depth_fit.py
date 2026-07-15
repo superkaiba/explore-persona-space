@@ -31,6 +31,11 @@ n >= NULL_MIN_N. Paired stats: fold-level Δ(own - logged) per turn + pooled,
 each with a 1,000-resample cluster bootstrap over conversations (vectorized
 GEMM over draws — frozen held-out predictions, no refits, no re-generations).
 
+F4 length read (plan §6 nuisance check): own-vs-logged answer token-span
+length distributions + a length-binned pooled Δ recomputed from the same
+frozen L19 ctx-arm predictions (quantile bins over the pooled own+logged
+length distribution — see ``LENGTH_RECIPE``; JSON block ``length_binned``).
+
 ``--emit-banked-ref`` (smoke tooling): computes the ctx_logged real curve from
 a fabricated tiny bank and writes the banked-reference JSON the production
 path reads from the committed ``turn_depth_map/results.json`` — so the smoke
@@ -100,6 +105,26 @@ BOOT_SEED = 8250
 DROP_KILL_RATE = 0.20
 SURVIVOR_CAVEAT_RATE = 0.15
 H1_R2_THRESHOLD = 0.40
+
+# Plan §6 F4 length-binned nuisance read. The plan leaves bin edges free ->
+# quantile (tertile) bins over the pooled own+logged length distribution,
+# chosen here and recorded in the output JSON (results.json "length_binned").
+LENGTH_N_BINS = 3
+LENGTH_BIN_MIN_ROWS = 2
+LENGTH_RECIPE = (
+    "Plan §6 F4 nuisance read. Lengths: own = answer_end - answer_start from "
+    "row_index_own.jsonl (the token span mean-pooled into answer_own_t1); logged = "
+    "token_end - token_start from the banked row_index_answer_k_t1.jsonl (the span "
+    "behind the banked Y). Binned delta: quantile (tertile) bin edges over the "
+    "POOLED own+logged length distribution per model (the plan leaves bin edges "
+    "free; quantile bins chosen and recorded); rows assigned per binning variable "
+    "(own vs logged span length); within-bin pooled Delta(own - logged) recomputed "
+    "from the FROZEN L19 ctx-arm held-out predictions (no refits) with per "
+    "(turn-cell within bin) subgroup centering, subgroup floor 2 rows; 95% CI from "
+    "the same conversation-cluster bootstrap as the headline pooled delta. A delta "
+    "stable across bins rules out answer token length as the nuisance driver of "
+    "the own-logged gap."
+)
 
 # G2 pre-registered defaults (plan §6/§11: ungrounded — frozen from the 50-row
 # pilot WITHIN the clean regime only; the floor below is the halt line).
@@ -253,6 +278,154 @@ def _cluster_bootstrap(cells: list[dict], conv_universe: list[str], n_boot: int,
         ],
         "per_turn": per_turn,
     }
+
+
+def _answer_token_lengths(
+    summaries_dir: Path,
+    mt: str,
+    own_rows: list[dict],
+    own_sel: np.ndarray,
+    pairing: list[tuple[int, int, str, int]],
+    kept_pair_idx: list[int],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Per kept row: (own, logged) answer token-span lengths (plan §6 F4).
+
+    own = answer_end - answer_start from row_index_own.jsonl (the span
+    mean-pooled into answer_own_t1); logged = token_end - token_start from the
+    banked row_index_answer_k_t1.jsonl (the span behind the banked Y). Returns
+    int64 arrays aligned with the kept-pair row order; asserts every span > 0
+    (zero-width spans are dropped upstream and must never reach this read).
+    """
+    rows_a = _read_index_files(summaries_dir / f"dynamics_{mt}", f"row_index_{DST_KIND}")
+    len_own = np.asarray(
+        [int(own_rows[i]["answer_end"]) - int(own_rows[i]["answer_start"]) for i in own_sel],
+        dtype=np.int64,
+    )
+    len_log = np.asarray(
+        [
+            int(rows_a[pairing[i][1]]["token_end"]) - int(rows_a[pairing[i][1]]["token_start"])
+            for i in kept_pair_idx
+        ],
+        dtype=np.int64,
+    )
+    assert len_own.size == len_log.size == len(kept_pair_idx), (len_own.size, len_log.size)
+    assert len_own.size == 0 or (len_own.min() > 0 and len_log.min() > 0), (
+        f"{mt}: degenerate zero-width answer span reached the F4 length read"
+    )
+    return len_own, len_log
+
+
+def _len_stats(v: np.ndarray) -> dict:
+    """Summary stats for one provenance arm's answer token-length distribution."""
+    if v.size == 0:
+        return {"n": 0}
+    return {
+        "n": int(v.size),
+        "median": float(np.median(v)),
+        "mean": float(np.mean(v)),
+        "p10": float(np.percentile(v, 10)),
+        "p90": float(np.percentile(v, 90)),
+        "min": int(v.min()),
+        "max": int(v.max()),
+    }
+
+
+def _length_binned_block(
+    cells: list[dict],
+    len_own: np.ndarray,
+    len_log: np.ndarray,
+    conv_universe: list[str],
+    n_boot: int,
+    seed: int,
+) -> dict:
+    """Plan §6 F4: length distributions + length-binned paired Δ (see LENGTH_RECIPE).
+
+    Frozen L19 ctx-arm held-out predictions only (no refits): each bin's pooled
+    Δ(own - logged) reuses ``_cluster_bootstrap`` verbatim on the per-(turn-cell
+    within bin) subgroups (subgroup floor LENGTH_BIN_MIN_ROWS rows). Returns the
+    JSON-ready ``length_binned`` per-model block, incl. the raw per-row lengths
+    (the low-level data behind the histogram panel).
+    """
+    out: dict = {
+        "lengths": {
+            "own": _len_stats(len_own),
+            "logged": _len_stats(len_log),
+            "paired_delta_own_minus_logged": {
+                "median": float(np.median(len_own - len_log)) if len_own.size else None,
+                "mean": float(np.mean(len_own - len_log)) if len_own.size else None,
+            },
+        },
+        "lengths_tokens": {"own": len_own.tolist(), "logged": len_log.tolist()},
+        "subgroup_min_rows": LENGTH_BIN_MIN_ROWS,
+    }
+    if len_own.size == 0:
+        out.update({"n_bins": 0, "bin_edges_tokens": [], "bin_labels": []})
+        return out
+    pooled = np.concatenate([len_own, len_log]).astype(np.float64)
+    qs = np.quantile(pooled, np.linspace(0.0, 1.0, LENGTH_N_BINS + 1)[1:-1])
+    edges = np.unique(qs)  # dedupe degenerate quantiles (near-constant lengths)
+    n_bins = int(edges.size + 1)
+
+    def _bin_label(b: int) -> str:
+        if b == 0:
+            return f"<= {edges[0]:.0f}"
+        if b == n_bins - 1:
+            return f"> {edges[-1]:.0f}"
+        return f"({edges[b - 1]:.0f}, {edges[b]:.0f}]"
+
+    out.update(
+        {
+            "n_bins": n_bins,
+            "bin_edges_tokens": [float(e) for e in edges],
+            "bin_labels": [_bin_label(b) for b in range(n_bins)],
+        }
+    )
+    for label, lengths in (("own", len_own), ("logged", len_log)):
+        bin_of = np.digitize(lengths, edges, right=True)
+        bins_out: dict[str, dict] = {}
+        for b in range(n_bins):
+            sub_cells: list[dict] = []
+            n_rows = 0
+            for cell in cells:
+                mask = bin_of[cell["sel"]] == b
+                n_in = int(mask.sum())
+                n_rows += n_in
+                if n_in < LENGTH_BIN_MIN_ROWS:
+                    continue
+                idx = np.nonzero(mask)[0]
+                sub_cells.append(
+                    {
+                        "turn": cell["turn"],
+                        "convs": [cell["convs"][i] for i in idx],
+                        "y_own": cell["y_own"][idx],
+                        "pred_own": cell["pred_own"][idx],
+                        "y_log": cell["y_log"][idx],
+                        "pred_log": cell["pred_log"][idx],
+                    }
+                )
+            if sub_cells:
+                bs = _cluster_bootstrap(sub_cells, conv_universe, n_boot, seed)
+                node = {
+                    "label": _bin_label(b),
+                    "n_rows_in_bin": n_rows,
+                    "n_rows_used": int(sum(len(c["convs"]) for c in sub_cells)),
+                    "n_subgroups": len(sub_cells),
+                    "pooled_r2_own": bs["pooled_r2_own"],
+                    "pooled_r2_logged": bs["pooled_r2_logged"],
+                    "pooled_delta": bs["pooled_delta"],
+                    "pooled_delta_ci": bs["pooled_delta_ci"],
+                }
+            else:
+                node = {
+                    "label": _bin_label(b),
+                    "n_rows_in_bin": n_rows,
+                    "n_rows_used": 0,
+                    "n_subgroups": 0,
+                    "pooled_delta": None,
+                }
+            bins_out[str(b)] = node
+        out[f"binned_by_{label}_length"] = bins_out
+    return out
 
 
 def _g2_gate(new_ctx: np.ndarray, banked_ctx: np.ndarray, pilot_n: int) -> dict:
@@ -459,6 +632,9 @@ def _fit_model_layer(
                     {
                         "turn": t,
                         "convs": [r["conv_id"] for r in cell_rows],
+                        # kept-row indices: lets the F4 length read (plan §6) map
+                        # per-row token lengths onto this cell's rows.
+                        "sel": sel,
                         "y_own": y_by_prov["own"][sel].astype(np.float32),
                         "pred_own": preds[("ctx", "own")].astype(np.float32),
                         "y_log": y_by_prov["logged"][sel].astype(np.float32),
@@ -467,6 +643,52 @@ def _fit_model_layer(
                 )
         layer_out[str(t)] = entry
     return layer_out, paired_cells
+
+
+def _decision_outcome(
+    pooled_ci: list[float],
+    t1_ci: list[float] | None,
+    r2_own_t1: float | None,
+    anchor_demoted: bool,
+) -> str:
+    """Pre-registered §6 outcome map over the (pooled, t1) CI sign patterns.
+
+    H1 requires BOTH CIs excluding 0 with Δ > 0 (+ R² threshold); H2 is an
+    and/or — a ONE-SIDED positive exclusion routes to H2/descriptive, never to
+    a "mixed" bucket; any negative exclusion (absent both-positive) is H-neg;
+    both CIs including 0 is H0. Anchor demotion downgrades confirms to
+    descriptive reads (plan §7).
+    """
+    pooled_lo, pooled_hi = pooled_ci
+    t1_lo, t1_hi = t1_ci if t1_ci is not None else (float("nan"), float("nan"))
+    pooled_pos, pooled_neg = pooled_lo > 0, pooled_hi < 0
+    t1_pos, t1_neg = t1_lo > 0, t1_hi < 0
+    r2 = r2_own_t1 if r2_own_t1 is not None else float("nan")
+    if pooled_pos and t1_pos:
+        if anchor_demoted:
+            return "H1/H2 boundary reported descriptively (anchor demoted, plan §7)"
+        if r2 >= H1_R2_THRESHOLD:
+            return "H1 — provenance explains most of the residual"
+        return "H2 — provenance contributes; remaining gap is corpus"
+    if pooled_neg or t1_neg:
+        return (
+            "H-neg — provenance lowers the map under this sampling recipe "
+            "(pre-registered outcome class, never forced into H0)"
+        )
+    if pooled_pos or t1_pos:
+        which = "pooled" if pooled_pos else "t1"
+        if anchor_demoted:
+            return f"H2 (one-sided: {which}) reported descriptively (anchor demoted, plan §7)"
+        if r2 >= H1_R2_THRESHOLD:
+            return (
+                f"H1/H2 boundary — one-sided positive exclusion ({which}) with "
+                "R2_own(t1) >= threshold; not a pre-registered class, report descriptively"
+            )
+        return (
+            f"H2 — provenance contributes (one-sided: {which} Δ > 0 with CI "
+            "excluding 0; the other CI includes 0)"
+        )
+    return "H0 — provenance is not the driver (both CIs include 0)"
 
 
 def main() -> None:  # noqa: C901 — linear pipeline driver
@@ -513,6 +735,7 @@ def main() -> None:  # noqa: C901 — linear pipeline driver
     gates: dict[str, dict] = {}
     results: dict[str, dict] = {}
     paired: dict[str, dict] = {}
+    length_binned: dict[str, dict] = {}
     drop_blocks: dict[str, dict] = {}
     timing: dict[str, float] = {}
 
@@ -544,6 +767,11 @@ def main() -> None:  # noqa: C901 — linear pipeline driver
             "n_banked_pairs": len(pairing),
             "n_kept_pairs": len(kept_pair_idx),
         }
+
+        # --- F4 length read inputs (plan §6): per-row answer token-span lengths ---
+        len_own_arr, len_log_arr = _answer_token_lengths(
+            summaries_dir, mt, own_rows, own_sel, pairing, kept_pair_idx
+        )
 
         results[mt] = {}
         paired_cells_l19: list[dict] = []
@@ -645,6 +873,25 @@ def main() -> None:  # noqa: C901 — linear pipeline driver
             "n": t1_node.get("n"),
         }
 
+        # --- F4 length-binned Δ (plan §6 nuisance read; frozen predictions) ---
+        t_lb = time.time()
+        length_binned[mt] = _length_binned_block(
+            paired_cells_l19, len_own_arr, len_log_arr, conv_universe, args.n_boot, BOOT_SEED
+        )
+        timing[f"length_binned_{mt}_s"] = time.time() - t_lb
+        lb = length_binned[mt]
+        by_log = lb.get("binned_by_logged_length", {})
+        per_bin = ", ".join(
+            f"bin{b}(n={node['n_rows_used']})="
+            + ("null" if node["pooled_delta"] is None else f"{node['pooled_delta']:+.4f}")
+            for b, node in sorted(by_log.items(), key=lambda kv: int(kv[0]))
+        )
+        print(
+            f"[f4-length] {mt}: own median {lb['lengths']['own'].get('median')} vs "
+            f"logged median {lb['lengths']['logged'].get('median')} tokens; "
+            f"delta by logged-length bin: {per_bin or 'n/a'}"
+        )
+
     # --- anchor (production only; plan §4.5/R4) ---
     anchor_block: dict = {"status": "n/a — smoke"}
     if not args.smoke:
@@ -685,30 +932,13 @@ def main() -> None:  # noqa: C901 — linear pipeline driver
         "t1_delta_ci": inst["t1"]["delta_ci"],
     }
     if not args.smoke:
-        pooled_lo, pooled_hi = inst["pooled_delta_ci"]
-        t1_ci = inst["t1"]["delta_ci"] or [float("nan"), float("nan")]
-        pooled_excl = pooled_lo > 0 or pooled_hi < 0
-        t1_excl = t1_ci[0] > 0 or t1_ci[1] < 0
         anchor_demoted = str(anchor_block.get("status", "")).startswith("demoted")
-        if (pooled_excl and pooled_lo > 0) and (t1_excl and t1_ci[0] > 0):
-            r2_own_t1 = decision["r2_own_t1"] or float("nan")
-            if anchor_demoted:
-                decision["outcome"] = (
-                    "H1/H2 boundary reported descriptively (anchor demoted, plan §7)"
-                )
-            elif r2_own_t1 >= H1_R2_THRESHOLD:
-                decision["outcome"] = "H1 — provenance explains most of the residual"
-            else:
-                decision["outcome"] = "H2 — provenance contributes; remaining gap is corpus"
-        elif (pooled_excl and pooled_hi < 0) or (t1_excl and t1_ci[1] < 0):
-            decision["outcome"] = (
-                "H-neg — provenance lowers the map under this sampling recipe "
-                "(pre-registered outcome class, never forced into H0)"
-            )
-        elif not pooled_excl and not t1_excl:
-            decision["outcome"] = "H0 — provenance is not the driver (both CIs include 0)"
-        else:
-            decision["outcome"] = "mixed — pooled vs t1 disagree; report descriptively"
+        decision["outcome"] = _decision_outcome(
+            inst["pooled_delta_ci"],
+            inst["t1"]["delta_ci"],
+            decision["r2_own_t1"],
+            anchor_demoted,
+        )
     else:
         decision["outcome"] = "n/a — smoke"
 
@@ -752,6 +982,7 @@ def main() -> None:  # noqa: C901 — linear pipeline driver
         "drops": drop_blocks,
         "results": results,
         "paired": paired,
+        "length_binned": {"recipe": LENGTH_RECIPE, "per_model": length_binned},
         "anchor": anchor_block,
         "decision": decision,
         "compute_record": {
@@ -866,11 +1097,24 @@ def _save_fig(ctx: dict, fig, stem: str, caption: str) -> None:
     print(f"[write] {fig_dir / (stem + '.png')}")
 
 
+def _survivor_note(ctx: dict, ax, mt: str) -> None:
+    """Plan §6 auto-firing caveat: label a >=15%-drop model's curves in-figure."""
+    if (ctx["payload"].get("drops", {}).get(mt) or {}).get("survivor_caveat"):
+        ax.annotate(
+            "survivor-conditioned (degenerate-drop >= 15%)",
+            (0.02, 0.94),
+            xycoords="axes fraction",
+            fontsize=7,
+            color="crimson",
+        )
+
+
 def _fig_hero(ctx: dict) -> None:
     """F1: L19 ctx_own vs ctx_logged per model, null bands + anchor lines."""
     plt, results, min_n, hl = ctx["plt"], ctx["results"], ctx["min_n"], ctx["hl"]
     fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.6), sharey=True)
     for ax, mt in zip(axes, MODELS, strict=True):
+        _survivor_note(ctx, ax, mt)
         xo, ro, no = _curve(results, mt, hl, "ctx_own", min_n)
         xl, rl, _nl = _curve(results, mt, hl, "ctx_logged", min_n)
         lo_o, hi_o = _null_band(results, mt, hl, "ctx_own", xo)
@@ -910,6 +1154,7 @@ def _fig_prefix(ctx: dict) -> None:
     plt, results, min_n, hl = ctx["plt"], ctx["results"], ctx["min_n"], ctx["hl"]
     fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.6), sharey=True)
     for ax, mt in zip(axes, MODELS, strict=True):
+        _survivor_note(ctx, ax, mt)
         xo, ro, _no = _curve(results, mt, hl, "pfx_own", min_n)
         xl, rl, _nl = _curve(results, mt, hl, "pfx_logged", min_n)
         ax.plot(xo, ro, "-o", color=ctx["c_own"], ms=4, lw=1.8, label="own answers")
@@ -972,22 +1217,90 @@ def _fig_folds(ctx: dict) -> None:
     )
 
 
+def _panel_length_hist(ctx: dict, ax) -> None:
+    """F4 panel (c): own vs logged answer token-length histograms (plan §6)."""
+    per_model = ctx["payload"]["length_binned"]["per_model"]
+    all_lens = np.concatenate(
+        [
+            np.asarray(per_model[mt]["lengths_tokens"][k], dtype=float)
+            for mt in MODELS
+            for k in ("own", "logged")
+        ]
+    )
+    if all_lens.size == 0:
+        ax.annotate("no kept rows", (0.5, 0.5), xycoords="axes fraction", ha="center")
+        return
+    edges = np.histogram_bin_edges(all_lens, bins=20)
+    for mt, ls in (("instruct", "-"), ("pretrained", "--")):
+        for k, color in (("own", ctx["c_own"]), ("logged", ctx["c_log"])):
+            v = np.asarray(per_model[mt]["lengths_tokens"][k], dtype=float)
+            ax.hist(
+                v, bins=edges, histtype="step", color=color, linestyle=ls, lw=1.4,
+                label=f"{mt} {k}",
+            )  # fmt: skip
+    ax.set_xlabel("answer token-span length")
+    ax.set_ylabel("kept rows")
+    ax.set_title("Own vs logged answer token lengths (shared kept rows)")
+    ax.legend(fontsize=6, loc="upper right", framealpha=0.9)
+
+
+def _panel_length_delta(ctx: dict, ax) -> None:
+    """F4 panel (d): length-binned pooled paired delta, cluster-bootstrap CIs."""
+    per_model = ctx["payload"]["length_binned"]["per_model"]
+    series = (
+        ("instruct", "logged", ctx["c_own"], "o", "full", -0.21),
+        ("instruct", "own", ctx["c_own"], "o", "none", -0.07),
+        ("pretrained", "logged", ctx["c_log"], "s", "full", 0.07),
+        ("pretrained", "own", ctx["c_log"], "s", "none", 0.21),
+    )
+    for mt, binvar, color, marker, fill, dx in series:
+        bins = per_model[mt].get(f"binned_by_{binvar}_length", {})
+        xs, ds, lo_err, hi_err = [], [], [], []
+        for b_s, node in sorted(bins.items(), key=lambda kv: int(kv[0])):
+            if node.get("pooled_delta") is None:
+                continue
+            d = node["pooled_delta"]
+            ci = node["pooled_delta_ci"]
+            xs.append(int(b_s) + dx)
+            ds.append(d)
+            lo_err.append(max(0.0, d - ci[0]))
+            hi_err.append(max(0.0, ci[1] - d))
+        if xs:
+            ax.errorbar(
+                xs, ds, yerr=[lo_err, hi_err], fmt=marker, color=color, ms=4, lw=1.0,
+                capsize=2, fillstyle=fill, label=f"{mt}, by {binvar} len",
+            )  # fmt: skip
+    ax.axhline(0.0, color="0.6", lw=0.8, ls=":")
+    max_bins = max(int(per_model[mt].get("n_bins", 0)) for mt in MODELS)
+    if max_bins:
+        ax.set_xticks(range(max_bins))
+        ax.set_xticklabels([f"bin {b}" for b in range(max_bins)], fontsize=7)
+    ax.set_xlabel("token-length bin (per-model pooled quantile edges; results.json)")
+    ax.set_ylabel(r"$\Delta R^2$ (own $-$ logged)")
+    ax.set_title("Length-binned pooled paired delta (L19 ctx)")
+    ax.legend(fontsize=6, loc="upper right", framealpha=0.9)
+
+
 def _fig_exploratory(ctx: dict) -> None:
-    """F4: L14/L18 own-answer curves + per-turn paired delta with bootstrap CI."""
+    """F4: L14/L18 curves; per-turn delta + CI; length histograms; binned delta."""
     plt, results, min_n, hl = ctx["plt"], ctx["results"], ctx["min_n"], ctx["hl"]
     payload = ctx["payload"]
-    fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.6))
-    ax = axes[0]
+    surv = {
+        mt: bool((payload.get("drops", {}).get(mt) or {}).get("survivor_caveat")) for mt in MODELS
+    }
+    fig, axes = plt.subplots(2, 2, figsize=(12.5, 9.2))
+    ax = axes[0][0]
     for layer, color, ls in ((14, ctx["c_14"], "-."), (18, ctx["c_18"], "--")):
         for mt, marker in (("instruct", "o"), ("pretrained", "s")):
             xo, ro, _ = _curve(results, mt, layer, "ctx_own", min_n)
-            ax.plot(xo, ro, ls + marker, color=color, ms=3, lw=1.2, label=f"{mt} L{layer} own")
+            lbl = f"{mt} L{layer} own" + (" [survivor-cond.]" if surv[mt] else "")
+            ax.plot(xo, ro, ls + marker, color=color, ms=3, lw=1.2, label=lbl)
     ax.axhline(0.0, color="0.6", lw=0.8, ls=":")
     ax.set_xlabel("assistant-turn index")
     ax.set_ylabel(r"held-out $R^2$ (ctx_own)")
     ax.set_title("Exploratory: layers 14/18")
     ax.legend(fontsize=6, loc="upper right", framealpha=0.9)
-    ax = axes[1]
+    ax = axes[0][1]
     for mt, color, marker in (
         ("instruct", ctx["c_own"], "o"),
         ("pretrained", ctx["c_log"], "s"),
@@ -1020,15 +1333,24 @@ def _fig_exploratory(ctx: dict) -> None:
     ax.set_ylabel(r"$\Delta R^2$ (own $-$ logged)")
     ax.set_title("Per-turn paired delta (bootstrap 95% CI; deep turns exploratory)")
     ax.legend(fontsize=8, loc="upper right", framealpha=0.9)
+    _panel_length_hist(ctx, axes[1][0])
+    _panel_length_delta(ctx, axes[1][1])
     _save_fig(
         ctx,
         fig,
         f"{FIG_STEM}_exploratory",
-        "Exploratory panels: layers 14/18 own-answer context curves (left); per-turn "
-        f"paired delta own-logged at L{hl} with conversation-cluster bootstrap 95% CIs "
-        "(right) — deep-turn cells are exploratory per the pre-registration (one-draw "
-        "temp-1.0 sampling variance; bootstrap resamples conversations, not "
-        "re-generations).",
+        "Exploratory F4 panels (plan §6): (a) layers 14/18 own-answer context curves; "
+        f"(b) per-turn paired delta own-logged at L{hl} with conversation-cluster "
+        "bootstrap 95% CIs — deep-turn cells exploratory per the pre-registration "
+        "(one-draw temp-1.0 sampling variance; bootstrap resamples conversations, not "
+        "re-generations); (c) own-vs-logged answer token-length distributions on the "
+        f"shared kept rows; (d) length-binned pooled paired delta at L{hl} (ctx arm) — "
+        "nuisance read: quantile (tertile) bins over the pooled own+logged token-span "
+        "length distribution (plan leaves bin edges free; per-model edges recorded in "
+        "results.json length_binned), rows binned by logged (filled) vs own (open) "
+        "answer length, delta recomputed from frozen held-out predictions with "
+        "cluster-bootstrap CIs; a delta stable across bins rules out answer token "
+        "length as the driver of the own-logged gap.",
     )
 
 
