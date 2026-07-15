@@ -2636,8 +2636,8 @@
     "1338": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1338",
-      "status": "proposed",
+      "path": "tasks/planning/1338",
+      "status": "planning",
       "title": "workflow-fix: crash-persist harvests per-run logs before oversized-dir skip"
     },
     "1339": {
