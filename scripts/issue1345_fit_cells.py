@@ -161,8 +161,15 @@ def degenerate_fold_reason(conv_ids, *, n_folds: int, seed: int, tgt_conv_ids=No
 # ---------------------------------------------------------------------------
 # Phase 3 — matched-n subsets
 # ---------------------------------------------------------------------------
-def build_matched(turnstore_dir: Path, matched_dir: Path, *, include_r3: bool) -> dict:
-    """Pair-level matched-n subsets (plan §4 Phase 3), persisted + returned."""
+def build_matched(turnstore_dir: Path, matched_dir: Path, *, r3_models: set[str]) -> dict:
+    """Pair-level matched-n subsets (plan §4 Phase 3), persisted + returned.
+
+    ``r3_models`` = models whose story regime survived the per-model yield
+    floor (plan §7: the floor binds PER MODEL; a halted model's R3 pair is
+    reported as coverage loss, not built). Empty set == story regime fully
+    halted (the old ``include_r3=False``).
+    """
+    assert r3_models <= set(c.MODELS), r3_models
     id_sets = {}
     for model in c.MODELS:
         for regime in ("r1", "r2"):
@@ -186,10 +193,13 @@ def build_matched(turnstore_dir: Path, matched_dir: Path, *, include_r3: bool) -
         "shared_r1r2_convs": shared,
         "per_store_n": {f"{m}_{r}": len(v) for (m, r), v in id_sets.items()},
         "per_model_r3_pair": {},
+        "r3_halted_models": sorted(set(c.MODELS) - r3_models),
     }
-    if include_r3:
+    if r3_models:
         rng = np.random.default_rng(c.SUBSAMPLE_SEED)
         for model in c.MODELS:
+            if model not in r3_models:
+                continue
             r3_ids = bundle_conv_ids(turnstore_dir, model, "r3")  # story id per ROW
             n_r3_rows = len(r3_ids)
             n_min = min(n_r3_rows, len(shared))
@@ -441,6 +451,31 @@ def run_cells(
         print(f"[fits] {cid} done (n={len(conv)}, groups={payload['n_groups']})", flush=True)
 
 
+def select_cells(cells_arg: str, halted: set[str]) -> list[dict]:
+    """Resolve --cells against the registry, then drop halted models' r3 cells.
+
+    Membership is asserted against the FULL registry BEFORE the per-model halt
+    filter — a halted model's r3 cell in --cells is a deliberate logged drop
+    (plan §7 per-model yield floor), never an "unknown cell id" crash (the
+    pre-r6 ordering crashed exactly there under --no-r3 + an explicit list).
+    """
+    cells = c.all_cells()
+    if cells_arg != "all":
+        wanted = set(cells_arg.split(","))
+        cells = [x for x in cells if x["cell_id"] in wanted]
+        missing = wanted - {x["cell_id"] for x in cells}
+        assert not missing, f"unknown cell ids: {sorted(missing)}"
+    dropped = [x["cell_id"] for x in cells if x["regime"] == "r3" and x["model_key"] in halted]
+    if dropped:
+        print(
+            f"[fits] dropping r3 cells for halted model(s) {sorted(halted)}: {dropped} "
+            "(per-model yield floor, plan §7)",
+            flush=True,
+        )
+        cells = [x for x in cells if x["cell_id"] not in set(dropped)]
+    return cells
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--turnstore-dir", type=Path, default=c.TURNSTORE_DIR)
@@ -450,7 +485,14 @@ def main() -> None:
     ap.add_argument("--dl-dir", type=Path, default=c.PARENT_DL_DIR)
     ap.add_argument("--phase0", action="store_true", help="pinned-shard staging probe only")
     ap.add_argument("--build-matched", action="store_true")
-    ap.add_argument("--no-r3", action="store_true", help="story regime halted (yield floor)")
+    ap.add_argument("--no-r3", action="store_true", help="story regime halted for BOTH models")
+    ap.add_argument(
+        "--no-r3-models",
+        default="",
+        help="comma-separated models whose story regime halted (per-model yield "
+        "floor, plan §7); their r3 cells/pairs are dropped with a logged reason "
+        "while the other model's story leg proceeds",
+    )
     ap.add_argument("--parity", action="store_true", help="±0.02 anchor parity gate")
     ap.add_argument(
         "--smoke",
@@ -466,6 +508,9 @@ def main() -> None:
     ap.add_argument("--n-boot", type=int, default=fc.N_BOOTSTRAP)
     args = ap.parse_args()
 
+    halted = set(c.MODELS) if args.no_r3 else {m for m in args.no_r3_models.split(",") if m}
+    assert halted <= set(c.MODELS), f"unknown --no-r3-models entries: {sorted(halted)}"
+
     args.out_dir.mkdir(parents=True, exist_ok=True)
     if args.phase0:
         phase0_probe(args.dl_dir, args.out_dir)
@@ -473,16 +518,9 @@ def main() -> None:
     if args.parity:
         parity_gate(args.turnstore_dir, args.out_dir, smoke=args.smoke)
     if args.build_matched:
-        build_matched(args.turnstore_dir, args.matched_dir, include_r3=not args.no_r3)
+        build_matched(args.turnstore_dir, args.matched_dir, r3_models=set(c.MODELS) - halted)
     if args.cells:
-        cells = c.all_cells()
-        if args.no_r3:
-            cells = [x for x in cells if x["regime"] != "r3"]
-        if args.cells != "all":
-            wanted = set(args.cells.split(","))
-            cells = [x for x in cells if x["cell_id"] in wanted]
-            missing = wanted - {x["cell_id"] for x in cells}
-            assert not missing, f"unknown cell ids: {sorted(missing)}"
+        cells = select_cells(args.cells, halted)
         matched = load_matched(args.matched_dir)
         run_cells(
             args.turnstore_dir,

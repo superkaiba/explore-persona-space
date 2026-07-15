@@ -341,7 +341,49 @@ def test_build_matched_empty_intersection_actionable(tmp_path, monkeypatch):
     phase consumes matched_subsets.json."""
     monkeypatch.setattr(m, "bundle_conv_ids", lambda ts, model, regime: [f"{model}_{regime}_only"])
     with pytest.raises(RuntimeError, match="extraction drift"):
-        m.build_matched(Path("unused"), tmp_path, include_r3=False)
+        m.build_matched(Path("unused"), tmp_path, r3_models=set())
+
+
+def test_build_matched_per_model_r3(tmp_path, monkeypatch):
+    """Crash-fix r6 (plan §7 per-model yield floor): a halted model's R3 pair
+    is omitted + reported, the surviving model's pair still builds."""
+
+    def fake_ids(ts, model, regime):
+        if regime in ("r1", "r2"):
+            return [f"s{i}" for i in range(8)]
+        return [f"{model}_story{i:04d}" for i in range(3) for _ in range(2)]  # 2 rows/story
+
+    monkeypatch.setattr(m, "bundle_conv_ids", fake_ids)
+    out = m.build_matched(Path("unused"), tmp_path, r3_models={"instruct"})
+    assert sorted(out["per_model_r3_pair"]) == ["instruct"]
+    assert out["r3_halted_models"] == ["pretrained"]
+    # Whole-halt (the legacy --no-r3 shape): no pairs, both models reported.
+    out2 = m.build_matched(Path("unused"), tmp_path, r3_models=set())
+    assert out2["per_model_r3_pair"] == {}
+    assert out2["r3_halted_models"] == ["instruct", "pretrained"]
+
+
+def test_select_cells_per_model_r3_drop_and_registry_assert(capsys):
+    """A halted model's r3 cell in --cells is a logged DROP (never an unknown-id
+    crash — the pre-r6 filter ordering crashed there); unknown ids still crash."""
+    ids = ",".join(
+        [
+            c.cell_id("instruct", "r3", "context"),
+            c.cell_id("pretrained", "r3", "context"),
+            c.cell_id("pretrained", "r1", "context"),
+        ]
+    )
+    cells = m.select_cells(ids, {"pretrained"})
+    kept_ids = {x["cell_id"] for x in cells}
+    assert c.cell_id("instruct", "r3", "context") in kept_ids
+    assert c.cell_id("pretrained", "r3", "context") not in kept_ids
+    assert c.cell_id("pretrained", "r1", "context") in kept_ids
+    assert "dropping r3 cells" in capsys.readouterr().out
+    # Whole-halt with an explicit r3 id: deliberate drop, not a crash.
+    both = m.select_cells(ids, {"instruct", "pretrained"})
+    assert {x["cell_id"] for x in both} == {c.cell_id("pretrained", "r1", "context")}
+    with pytest.raises(AssertionError, match="unknown cell ids"):
+        m.select_cells("R_bogus_r9_context", set())
 
 
 def test_pair_and_leg_b_smoke_skip_reason_units():
@@ -383,18 +425,19 @@ def test_headline_boot_stub_and_verdict_consumers():
 
 
 def test_gen_rc_route_matrix():
-    """Item 5 (v3 Minor, rc-masking): halt only on {0,21}x{0,21} with a 21;
-    any real crash rc in EITHER model routes fatal — (1,21) no longer rides
-    the yield-halt branch."""
+    """rc routing: PER-MODEL halt on rc=21 (crash-fix r6, plan §7 per-model
+    yield floor) — the att-20260715-195605 shape (rc_i=0, rc_p=21) halts ONLY
+    pretrained; any real crash rc in EITHER model still routes fatal (the v3
+    rc-masking fix — (1,21) never rides a halt branch)."""
     text = _DISPATCH_SH.read_text()
     match = re.search(r"^gen_rc_route\(\) \{\n(?:.*\n)*?^\}", text, re.M)
     assert match, "gen_rc_route() not found in issue1345_dispatch.sh"
     func = match.group(0)
     cases = {
         (0, 0): "ok",
-        (21, 0): "halt",
-        (0, 21): "halt",
-        (21, 21): "halt",
+        (21, 0): "halt_instruct",
+        (0, 21): "halt_pretrained",  # the att-20260715-195605 realized case
+        (21, 21): "halt_both",
         (1, 21): "fatal",  # the v3 fix sketch's exact case
         (21, 1): "fatal",
         (1, 0): "fatal",

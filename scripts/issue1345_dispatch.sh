@@ -44,9 +44,30 @@ LOG_DIR="${EPM_LOG_DIR:-/workspace/logs}"
 mkdir -p "$LOG_DIR" 2>/dev/null || { LOG_DIR="$REPO_ROOT/logs"; mkdir -p "$LOG_DIR"; }
 mkdir -p "$EVAL_DIR" "$FIG_DIR" "$TS_DIR" "$STORIES_DIR" "$MATCHED_DIR" "$PREDS_DIR" "$DL_DIR"
 
+# Per-model story-regime halt state (plan §7: the yield floor binds PER MODEL;
+# a below-floor model is dropped-and-reported while the other model's story leg
+# continues — crash-fix r6). The legacy whole-regime file is honored as both.
 R3_HALT_FILE="$DATA_DIR/story_regime_halted"
-NO_R3_FLAG=""
-[[ -f "$R3_HALT_FILE" ]] && NO_R3_FLAG="--no-r3"
+halted_models() {
+  # Echoes a csv of halted models ("" when none).
+  if [[ -f "$R3_HALT_FILE" ]]; then echo "instruct,pretrained"; return; fi
+  local out=()
+  [[ -f "$DATA_DIR/story_regime_halted_instruct" ]] && out+=(instruct)
+  [[ -f "$DATA_DIR/story_regime_halted_pretrained" ]] && out+=(pretrained)
+  (IFS=,; echo "${out[*]-}")
+}
+no_r3_flag_for() {
+  # $1 = model; echoes --no-r3 when that model's story regime halted.
+  case ",$(halted_models)," in *,"$1",*) echo "--no-r3" ;; esac
+}
+r3_models_to_run() {
+  # Space-separated models whose story leg is live.
+  local out=()
+  for m in instruct pretrained; do
+    [[ -z "$(no_r3_flag_for "$m")" ]] && out+=("$m")
+  done
+  echo "${out[*]-}"
+}
 
 NGPU=0
 if command -v nvidia-smi >/dev/null 2>&1; then
@@ -74,18 +95,27 @@ run_cmd() {
 }
 
 # Run one command per model on its own GPU (parallel when >=2 GPUs visible).
-# Usage: run_per_model <log_tag> <cmd...>  ('%MODEL%' substituted per model)
+# Usage: [RUN_MODELS="instruct pretrained"] run_per_model <log_tag> <cmd...>
+# '%MODEL%' substituted per model; '%NO_R3%' substituted with that model's
+# per-model story-halt flag (--no-r3 or empty — crash-fix r6).
 run_per_model() {
   local tag="$1"; shift
+  local models="${RUN_MODELS:-instruct pretrained}"
   local rc_i=0 rc_p=0
+  _cmd_for() {
+    local m="$1" cmd="${2//\%MODEL\%/$1}"
+    echo "${cmd//\%NO_R3\%/$(no_r3_flag_for "$m")}"
+  }
   if [[ -n "$DRY_RUN" ]]; then
-    for m in instruct pretrained; do
-      echo "[cmd] CUDA_VISIBLE_DEVICES=<slot> ${*//%MODEL%/$m}"
+    for m in $models; do
+      echo "[cmd] CUDA_VISIBLE_DEVICES=<slot> $(_cmd_for "$m" "$*")"
     done
     return 0
   fi
-  if [[ "$NGPU" -ge 2 ]]; then
-    local cmd_i="${*//%MODEL%/instruct}" cmd_p="${*//%MODEL%/pretrained}"
+  read -r -a model_arr <<< "$models"
+  if [[ "$NGPU" -ge 2 && "${#model_arr[@]}" -eq 2 ]]; then
+    local cmd_i cmd_p
+    cmd_i="$(_cmd_for instruct "$*")"; cmd_p="$(_cmd_for pretrained "$*")"
     echo "[fanout] $tag: instruct on GPU0, pretrained on GPU1"
     CUDA_VISIBLE_DEVICES=0 bash -c "$cmd_i" > "$LOG_DIR/i1345_${tag}_instruct.log" 2>&1 &
     local p1=$!
@@ -97,8 +127,9 @@ run_per_model() {
       echo "[fanout] $tag/$m log tail:"; tail -n 12 "$LOG_DIR/i1345_${tag}_${m}.log" || true
     done
   else
-    for m in instruct pretrained; do
-      local cmd="${*//%MODEL%/$m}"
+    for m in $models; do
+      local cmd
+      cmd="$(_cmd_for "$m" "$*")"
       echo "[serial] $tag: $m"
       CUDA_VISIBLE_DEVICES=0 bash -c "$cmd" > "$LOG_DIR/i1345_${tag}_${m}.log" 2>&1 || {
         rc=$?
@@ -111,20 +142,52 @@ run_per_model() {
   return 0
 }
 
-# gen_stories rc routing (v3 code-review Minor, rc-masking fix): the rc=21
-# yield-halt branch fires ONLY when BOTH models exited in {0, 21}; a real
-# crash rc (1/134/137/...) in EITHER model routes to fatal instead of riding
-# the halt branch. Echoes: halt | ok | fatal.
+# gen_stories rc routing (v3 rc-masking fix + crash-fix r6 per-model halt):
+# rc=21 == that MODEL's yield floor failed (plan §7 binds the floor per model;
+# the on-policy floor semantics are drop-and-report per source) — halt ONLY
+# that model's story leg. Any rc outside {0, 21} in EITHER model is a real
+# crash and routes to fatal. Echoes: ok | halt_instruct | halt_pretrained |
+# halt_both | fatal.
 gen_rc_route() {
   local rc_i="$1" rc_p="$2"
   local ok_i=0 ok_p=0
   [[ "$rc_i" -eq 0 || "$rc_i" -eq 21 ]] && ok_i=1
   [[ "$rc_p" -eq 0 || "$rc_p" -eq 21 ]] && ok_p=1
-  if [[ "$ok_i" -eq 1 && "$ok_p" -eq 1 ]]; then
-    if [[ "$rc_i" -eq 21 || "$rc_p" -eq 21 ]]; then echo halt; else echo ok; fi
-  else
-    echo fatal
+  if [[ "$ok_i" -ne 1 || "$ok_p" -ne 1 ]]; then echo fatal; return; fi
+  if [[ "$rc_i" -eq 21 && "$rc_p" -eq 21 ]]; then echo halt_both
+  elif [[ "$rc_i" -eq 21 ]]; then echo halt_instruct
+  elif [[ "$rc_p" -eq 21 ]]; then echo halt_pretrained
+  else echo ok
   fi
+}
+
+# One-line per-model drop report ([r3] fix-engaged signal) + coverage JSON.
+report_story_coverage() {
+  uv run python - "$STORIES_DIR" "$EVAL_DIR" "$(halted_models)" <<'PY'
+import json, sys, time
+from pathlib import Path
+
+stories_dir, eval_dir, halted_csv = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
+halted = [m for m in halted_csv.split(",") if m]
+cov = {"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "per_model": {}, "r3_halted_models": halted}
+for m in ("instruct", "pretrained"):
+    p = stories_dir / f"story_yield_{m}.json"
+    rep = json.loads(p.read_text()) if p.exists() else {}
+    kept, floor = rep.get("n_kept"), rep.get("yield_floor")
+    cov["per_model"][m] = {
+        "n_kept": kept, "n_target": rep.get("n_target"), "yield_floor": floor,
+        "yield_ok": rep.get("yield_ok"),
+        "story_regime": "halted (per-model yield floor)" if m in halted else "live",
+    }
+    if m in halted:
+        live = [x for x in ("instruct", "pretrained") if x not in halted]
+        cont = f"{', '.join(live)} continues" if live else "no story leg continues"
+        print(f"[r3] {m} dropped (yield {kept}/{rep.get('n_target')}), {cont}", flush=True)
+eval_dir.mkdir(parents=True, exist_ok=True)
+out = eval_dir / "story_regime_coverage.json"
+out.write_text(json.dumps(cov, indent=2))
+print(f"[r3] coverage report -> {out}", flush=True)
+PY
 }
 
 if should_run prefetch; then
@@ -142,16 +205,23 @@ if should_run gen_stories; then
   echo "[phase=gen_stories]"
   run_per_model gen "uv run python scripts/issue1345_gen_stories.py --model %MODEL% --out-dir '$STORIES_DIR' --dl-dir '$DL_DIR' $SMOKE_FLAG"
   if [[ -z "$DRY_RUN" ]]; then
-    # rc=21 == yield floor failed (plan §7): halt the story regime, continue
-    # r1/r2 — but ONLY when both rcs are in {0,21}; any other rc is a crash.
+    # rc=21 == THAT model's yield floor failed (plan §7, per-model): halt only
+    # that model's story leg; any rc outside {0,21} is a crash -> fatal.
     case "$(gen_rc_route "${RC_INSTRUCT:-0}" "${RC_PRETRAINED:-0}")" in
-      halt)
-        echo "[gen_stories] YIELD FLOOR FAILED (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED}) — story regime halted"
-        touch "$R3_HALT_FILE"; NO_R3_FLAG="--no-r3" ;;
+      halt_both)
+        echo "[gen_stories] YIELD FLOOR FAILED for BOTH models (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED}) — story regime halted"
+        touch "$DATA_DIR/story_regime_halted_instruct" "$DATA_DIR/story_regime_halted_pretrained" ;;
+      halt_instruct)
+        echo "[gen_stories] YIELD FLOOR FAILED for instruct (rc_i=${RC_INSTRUCT}) — instruct story leg halted; pretrained continues"
+        touch "$DATA_DIR/story_regime_halted_instruct" ;;
+      halt_pretrained)
+        echo "[gen_stories] YIELD FLOOR FAILED for pretrained (rc_p=${RC_PRETRAINED}) — pretrained story leg halted; instruct continues"
+        touch "$DATA_DIR/story_regime_halted_pretrained" ;;
       fatal)
         echo "FATAL: gen_stories failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1 ;;
       ok) : ;;
     esac
+    report_story_coverage
   fi
 fi
 
@@ -164,11 +234,14 @@ if should_run extract_r1r2; then
 fi
 
 if should_run extract_stories; then
-  if [[ -n "$NO_R3_FLAG" ]]; then
-    echo "[phase=extract_stories] SKIPPED — story regime halted (yield floor)"
+  R3_LIVE="$(r3_models_to_run)"
+  if [[ -z "$R3_LIVE" ]]; then
+    echo "[phase=extract_stories] SKIPPED — story regime halted for both models (yield floor)"
   else
     echo "[phase=extract_stories]"
-    run_per_model extract_stories "uv run python scripts/issue1345_extract_turnstore.py --regime r3 --model %MODEL% --out-dir '$TS_DIR' --stories-dir '$STORIES_DIR' $SMOKE_FLAG"
+    [[ "$R3_LIVE" != "instruct pretrained" ]] && \
+      echo "[extract_stories] per-model: running only [$R3_LIVE] (halted: $(halted_models))"
+    RUN_MODELS="$R3_LIVE" run_per_model extract_stories "uv run python scripts/issue1345_extract_turnstore.py --regime r3 --model %MODEL% --out-dir '$TS_DIR' --stories-dir '$STORIES_DIR' $SMOKE_FLAG"
     if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
       echo "FATAL: extract_stories failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
     fi
@@ -181,13 +254,13 @@ if should_run matchedn; then
   # $SMOKE_FLAG demotes ONLY the anchor comparison to informational — the
   # anchors bind at production n; the computation still runs (PASS_UNIFIED).
   run_cmd env CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1345_fit_cells.py \
-    --parity --build-matched $NO_R3_FLAG $SMOKE_FLAG \
+    --parity --build-matched --no-r3-models "$(halted_models)" $SMOKE_FLAG \
     --turnstore-dir "$TS_DIR" --matched-dir "$MATCHED_DIR" --out-dir "$EVAL_DIR"
 fi
 
 if should_run fits; then
   echo "[phase=fits]"
-  run_per_model fits "uv run python -c \"import sys; sys.path.insert(0,'scripts'); import issue1345_common as c; print(','.join(x['cell_id'] for x in c.all_cells() if x['model_key']=='%MODEL%'))\" > /tmp/i1345_cells_%MODEL%.txt && uv run python scripts/issue1345_fit_cells.py --cells \$(cat /tmp/i1345_cells_%MODEL%.txt) $NO_R3_FLAG $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --null-draws $NULLS --n-boot $NBOOT"
+  run_per_model fits "uv run python -c \"import sys; sys.path.insert(0,'scripts'); import issue1345_common as c; print(','.join(x['cell_id'] for x in c.all_cells() if x['model_key']=='%MODEL%'))\" > /tmp/i1345_cells_%MODEL%.txt && uv run python scripts/issue1345_fit_cells.py --cells \$(cat /tmp/i1345_cells_%MODEL%.txt) %NO_R3% $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --null-draws $NULLS --n-boot $NBOOT"
   if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
     echo "FATAL: fits failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
   fi
@@ -195,7 +268,7 @@ fi
 
 if should_run transfer; then
   echo "[phase=transfer]"
-  run_per_model transfer "uv run python scripts/issue1345_cross_regime_transfer.py --models %MODEL% $NO_R3_FLAG $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --n-boot $NBOOT"
+  run_per_model transfer "uv run python scripts/issue1345_cross_regime_transfer.py --models %MODEL% %NO_R3% $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --n-boot $NBOOT"
   if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
     echo "FATAL: transfer failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
   fi
@@ -203,7 +276,7 @@ fi
 
 if should_run opcomp; then
   echo "[phase=opcomp]"
-  run_per_model opcomp "uv run python scripts/issue1345_operator_comparison.py --models %MODEL% $NO_R3_FLAG $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --rot-draws $ROTD"
+  run_per_model opcomp "uv run python scripts/issue1345_operator_comparison.py --models %MODEL% %NO_R3% $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --rot-draws $ROTD"
   if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
     echo "FATAL: opcomp failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
   fi
@@ -211,7 +284,7 @@ fi
 
 if should_run plots; then
   echo "[phase=plots]"
-  run_cmd uv run python scripts/issue1345_plots.py $NO_R3_FLAG \
+  run_cmd uv run python scripts/issue1345_plots.py --no-r3-models "$(halted_models)" \
     --out-dir "$EVAL_DIR" --fig-dir "$FIG_DIR" --turnstore-dir "$TS_DIR" --stories-dir "$STORIES_DIR"
 fi
 
@@ -273,13 +346,13 @@ if [[ -n "$SMOKE" || -n "$DRY_RUN" ]]; then
   SENTINEL_KIND="epm:smoke-result"
   SENTINEL_PATH="$LOG_DIR/issue-1345-smoke-results.json"
 fi
-uv run python - "$SENTINEL_KIND" "$SENTINEL_PATH" "$EVAL_DIR" "$COMMIT_SHA" "$GPU_HOURS_USED" "${SMOKE:-0}" "${NO_R3_FLAG:-none}" <<'PY'
+uv run python - "$SENTINEL_KIND" "$SENTINEL_PATH" "$EVAL_DIR" "$COMMIT_SHA" "$GPU_HOURS_USED" "${SMOKE:-0}" "$(halted_models)" <<'PY'
 import json
 import sys
 import time
 from pathlib import Path
 
-kind, out_path, eval_dir, commit_sha, gpu_hours, smoke, no_r3 = sys.argv[1:8]
+kind, out_path, eval_dir, commit_sha, gpu_hours, smoke, halted_csv = sys.argv[1:8]
 eval_dir = Path(eval_dir)
 eval_paths = sorted(str(p) for p in eval_dir.glob("*.json"))
 lattice = {}
@@ -295,9 +368,11 @@ parity = {}
 par_path = eval_dir / "parity_gate.json"
 if par_path.exists():
     parity = {"pass": json.loads(par_path.read_text()).get("pass")}
+halted_models = [m for m in halted_csv.split(",") if m]
 payload = {
     "eval_numbers": {"verdict_lattice": lattice, "parity_gate": parity,
-                     "story_regime_halted": no_r3 != "none"},
+                     "story_regime_halted_models": halted_models,
+                     "story_regime_halted": len(halted_models) == 2},
     "eval_paths": eval_paths,
     "reproducibility_card": {
         "models": {"instruct": "Qwen/Qwen2.5-7B-Instruct", "pretrained": "Qwen/Qwen2.5-7B"},
