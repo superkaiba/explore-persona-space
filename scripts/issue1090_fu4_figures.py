@@ -37,6 +37,9 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_LADDERS = ROOT / "eval_results" / "issue_1090" / "fu4-extended-dose-lr" / "fu4_ladders.json"
+DEFAULT_TEXT_AUDIT = (
+    ROOT / "eval_results" / "issue_1090" / "fu4-extended-dose-lr" / "fu4_text_audit.json"
+)
 
 CELL_LABEL = {
     "fmt-pers": "list formatting, persona-trained (control)",
@@ -162,11 +165,12 @@ def fig_degeneracy_flags(agg: dict, out_prefix: str, out_dir: str) -> None:
     plt.close(fig)
 
 
-def fig_tier2_verdict(agg: dict, out_prefix: str, out_dir: str) -> None:
+def fig_tier2_verdict(agg: dict, out_prefix: str, out_dir: str, text_audit: dict | None) -> None:
     """Per-arm Tier-2 confirmatory rate (Wilson 95% CI) with the registered
     0.60 band floor + 0.30 cut, reused base rates, and — for judged impolite
     arms — the worst-case judge-drop bound (every dropped completion scored
-    non-impolite: k/200)."""
+    non-impolite: k/200) plus, when ``text_audit`` (fu4_text_audit.json) is
+    given, the CJK-intrusion-zeroed bound ((k - cjk_firing)/200, x markers)."""
     colors = _lr_colors()
     fig, ax = plt.subplots(figsize=(8.0, 4.2))
     xticks, xlabels = [], []
@@ -202,6 +206,16 @@ def fig_tier2_verdict(agg: dict, out_prefix: str, out_dir: str) -> None:
                     s=45,
                     linewidths=1.2,
                 )
+            arm_audit = (text_audit or {}).get("arms", {}).get(r["run_id"])
+            if t2.get("mode") == "judged" and arm_audit is not None:
+                ax.scatter(
+                    [x],
+                    [arm_audit["cjk_zeroed_rate"]],
+                    marker="x",
+                    color=colors[r["lr"]],
+                    s=45,
+                    linewidths=1.4,
+                )
             base = (r.get("base_tier2") or {}).get("rate")
             if base is not None:
                 ax.scatter([x], [base], marker="s", color="0.5", s=28, zorder=1)
@@ -217,7 +231,8 @@ def fig_tier2_verdict(agg: dict, out_prefix: str, out_dir: str) -> None:
     ax.set_ylim(-0.03, 1.0)
     ax.set_title(
         "Tier-2 verdict reads (circles trained + Wilson 95% CI; squares base;\n"
-        "open triangles worst-case judge-drop bound; dashes 0.60 band floor, dots 0.30 cut)"
+        "open triangles worst-case judge-drop bound; x CJK-intrusion-zeroed bound;\n"
+        "dashes 0.60 band floor, dots 0.30 cut)"
     )
     fig.tight_layout()
     savefig_paper(fig, f"{out_prefix}/fu4_tier2_verdict", dir=out_dir)
@@ -227,15 +242,18 @@ def fig_tier2_verdict(agg: dict, out_prefix: str, out_dir: str) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description="#1090 fu4 figures")
     ap.add_argument("--ladders", default=str(DEFAULT_LADDERS))
+    ap.add_argument("--text-audit", default=str(DEFAULT_TEXT_AUDIT))
     ap.add_argument("--out-prefix", default="issue_1090/fu4")
     ap.add_argument("--out-dir", default="figures/")
     args = ap.parse_args()
     set_paper_style()
     agg = json.loads(Path(args.ladders).read_text())
+    audit_path = Path(args.text_audit)
+    text_audit = json.loads(audit_path.read_text()) if audit_path.exists() else None
     fig_dose_lr_grid(agg, args.out_prefix, args.out_dir)
     fig_margin_at_selected(agg, args.out_prefix, args.out_dir)
     fig_degeneracy_flags(agg, args.out_prefix, args.out_dir)
-    fig_tier2_verdict(agg, args.out_prefix, args.out_dir)
+    fig_tier2_verdict(agg, args.out_prefix, args.out_dir, text_audit)
 
 
 if __name__ == "__main__":
