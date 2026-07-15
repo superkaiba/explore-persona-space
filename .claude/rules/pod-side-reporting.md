@@ -112,7 +112,7 @@ marker will be silently skipped. Three requirements, no exceptions:
      stays racy against the rename window, and (ii) the experimenter's
      pre-launch sentinel hygiene
      (`rm -f /workspace/logs/issue-<N>-*.json{,.processed}`,
-     experimenter.md § During Execution step 8) wipes BOTH forms on
+     experimenter.md § Before Running step 8) wipes BOTH forms on
      every (re)launch: namespace state never survives a relaunch.
    - **Fallback: read BOTH forms, bare path FIRST, then
      `<path>.processed`** (bare-first cannot miss across the atomic
