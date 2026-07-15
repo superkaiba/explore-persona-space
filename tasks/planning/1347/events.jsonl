@@ -4,3 +4,4 @@
 {"ts": "2026-07-15T17:26:18Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-15T17:26:43Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all ensemble rounds this session"}
 {"ts": "2026-07-15T17:38:11Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py PASS n_fail=0 n_warn=0 (plan v1, kind=infra); no overrides"}
+{"ts": "2026-07-15T17:49:01Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py PASS on plan v2 (post-fact-check revision; workflow_lint parity-leg + corpus-scan numbers corrected). Fact-check: 2 WRONG fixed, 0 unverified; all other assumptions CONFIRMED."}
