@@ -9,10 +9,17 @@ parent_id: 1090
 origin_prompt: 'yes [produce a marker cell through the #1090 factory pipeline, same
   contexts, marker carve-out recipe, for apples-to-apples spectrum comparison marker->impolite->formatting]'
 workflow: v1
+goal: 'Produce a marker model organism through the #1090 artifacts-factory pipeline
+  (registered marker programmatic carve-out) across the same 4 contexts (persona/WildChat/ICL/bare)
+  x 2 regimes (contrastive/positive-only) as the content behaviors, using the dedicated
+  marker recipe (marker+EOT loss, lr<=5e-6, band-stop, token id 83399, contrastive
+  negatives, three-space log-P DV, NOT judge-scored), and characterize install/on-policy-expression/bystander-leakage
+  per context, so the factory organism set spans marker->impolite->formatting under
+  one construction for the #1315 geometry comparison.'
 ---
 ## Goal
 
-Produce a MARKER model organism through the #1090 artifacts-factory pipeline — instantiate the factory-registered `marker` behavior (the programmatic ` ※` carve-out; `banks.py` marker train/eval slices, `behavior.py` registry) across the SAME four training contexts as the content behaviors (software-engineer persona / WildChat conversational prefix / ICL prefix / bare default assistant) and both regimes (contrastive / positive-only), using the dedicated marker recipe (NOT the content-behavior recipe), and characterize install + on-policy expression + bystander leakage per context — so the factory organism set spans the local-lexical→global-structural spectrum (marker → impolite → formatting) under ONE consistent factory construction, directly comparable in the #1315 geometry analysis.
+Produce a marker model organism through the #1090 artifacts-factory pipeline (registered marker programmatic carve-out) across the same 4 contexts (persona/WildChat/ICL/bare) x 2 regimes (contrastive/positive-only) as the content behaviors, using the dedicated marker recipe (marker+EOT loss, lr<=5e-6, band-stop, token id 83399, contrastive negatives, three-space log-P DV, NOT judge-scored), and characterize install/on-policy-expression/bystander-leakage per context, so the factory organism set spans marker->impolite->formatting under one construction for the #1315 geometry comparison.
 
 ## Provenance
 
