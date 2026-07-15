@@ -83,10 +83,16 @@ def fig_perpersona(summary: dict, fig_dir: Path) -> None:
     ax.set_xticks(x)
     ax.set_xticklabels(personas)
     ax.set_ylabel(f"held-out $R^2$ @ layer {summary['headline_layer']}")
-    ax.set_title("Focused per-character context->dialogue map (base vs instruct)")
+    ax.set_title("Focused per-character context->turn-dialogue map (base vs instruct)")
     ax.axhline(0.0, color="0.7", lw=0.8)
     ax.legend(title="model")
-    fig.text(0.01, 0.01, "grey ticks = shuffle-null p97.5 band", fontsize=6, color="0.4")
+    fig.text(
+        0.01,
+        0.01,
+        "grey ticks = shuffle-null p97.5 band; n = per-turn points",
+        fontsize=6,
+        color="0.4",
+    )
     savefig_paper(fig, "perpersona_r2", dir=str(fig_dir))
     plt.close(fig)
 

@@ -1,19 +1,28 @@
-"""Issue #1310: on-policy story generation, per persona x model (vLLM, sampled).
+"""Issue #1310: on-policy SCRIPT-scene generation, per persona x model (vLLM).
+
+Each (scenario, target persona) generates ONE multi-character dialogue scene in
+strict script format — one turn per line, `<LABEL>: <dialogue>` — pairing the
+target persona with 1-2 named foils so there is genuine multi-speaker context,
+and asking the target to speak many times (>= TURN_TARGET_MIN). The labeled line
+format makes attribution a deterministic line-prefix parse (~100% recall, base +
+instruct) and lets each labeled turn become its own (X, Y) point — the two fixes
+for run 1 (base attribution 0.5% recall; instruct n~150 << 3584 dims).
 
 Sampling: T=1.0, top_p=0.95, seed 42, max_tokens 1024 — NEVER greedy (base
-greedy loops on raw prose, #825 r7/8). Base (Qwen2.5-7B) generates on the
-raw-prose story-opening prompt directly (no chat template); instruct
-(Qwen2.5-7B-Instruct) generates through the chat template. Each model
-generates its OWN on-policy stories from the SHARED scenario battery under
+greedy loops, #825 r7/8). Base (Qwen2.5-7B) continues a FEW-SHOT raw-text prime
+directly (no chat template; the prime lives in the prefix and is never
+attributed — base's OWN continuation lines are the on-policy target turns);
+instruct (Qwen2.5-7B-Instruct) writes the scene through the chat template. Each
+model generates its OWN on-policy scenes from the SHARED scenario battery under
 each of the 4 fixed-label personas.
 
-Stories persist to <data-dir>/stories/<model>_stories_seed42.jsonl the moment
+Scenes persist to <data-dir>/stories/<model>_stories_seed42.jsonl the moment
 generation returns (BEFORE any downstream attribution/reduction, #779), then
 upload to the HF data repo raw_completions bucket (text path — unconditional)
 unless --skip-upload.
 
---stub-gen writes deterministic story-shaped text (attributable dialogue by
-the fixed label) WITHOUT loading any model — the CPU-VM smoke path ONLY.
+--stub-gen writes deterministic script-format text (attributable turns by the
+fixed label) WITHOUT loading any model — the CPU-VM smoke path ONLY.
 
 CLI:
   uv run python scripts/issue1310_gen_stories.py --model base \
@@ -62,28 +71,30 @@ def parse_args() -> argparse.Namespace:
 
 
 def _stub_story(persona_label: str, scenario: dict, k: int) -> str:
-    """Deterministic story-shaped text with >=2 dialogue turns by the fixed label.
+    """Deterministic SCRIPT-format scene with several target turns + foil turns.
 
-    SMOKE ONLY — exercises the attribution/pair/extract plumbing, never a
-    measured artifact (the pod run regenerates with real vLLM).
+    SMOKE ONLY — exercises the line-prefix attributor / per-turn pair / extract
+    plumbing, never a measured artifact (the pod run regenerates with real vLLM).
+    The story text is the on-policy completion (script body); for base the
+    few-shot prime lives in the prefix, so the stub emits only the scene body.
     """
+    foils = c1310.foils_for_scene(scenario["scenario_id"])
+    f0 = foils[0]
+    f1 = foils[1] if len(foils) > 1 else foils[0]
     setting = scenario.get("setting", "a quiet town")
-    situation = scenario.get("situation", "something had gone wrong")
-    foils = ("the young clerk", "an old acquaintance", "the nervous stranger")
-    foil = foils[k % 3]
-    return (
-        f"The evening settled over {setting} while the matter of how {situation} "
-        f"weighed on everyone present. {persona_label} had walked the length of "
-        f"the room twice, thinking it through, and only then turned to {foil} who "
-        f"had been waiting by the window all along. The lamplight was low. "
-        f'"You should tell me exactly what happened here, and leave nothing out," '
-        f"said {persona_label}. "
-        f'"I would if I understood any of it myself," {foil} replied, wringing '
-        f"both hands. "
-        f'"Then we start at the beginning, together, before the others come '
-        f'back," said {persona_label}, settling into the chair by the door. '
-        f"Outside, the night kept its own counsel."
-    )
+    lines = [
+        f"{f0}: The matter of what happened in {setting} cannot wait any longer.",
+        f"{persona_label}: I have thought it over carefully, and here is what we do first.",
+        f"{f1}: That is a reasonable place to begin, though it will not be easy for us.",
+        f"{persona_label}: We start at the beginning, together, before the others arrive tonight.",
+        f"{f0}: And if the whole plan falls apart the moment they walk through that door?",
+        f"{persona_label}: Then we adapt, calmly, one careful step after another until it holds.",
+        f"{f1}: I trust you more than I expected to when this whole affair began.",
+        f"{persona_label}: Good, keep close, say little, and let me handle the difficult part.",
+        f"{f0}: The night is long and no one out there is coming to help us now.",
+        f"{persona_label}: Then we help ourselves and we finish what was started here tonight.",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def generate_vllm(

@@ -1,17 +1,18 @@
 """Issue #1310: focused per-character context->dialogue map fits.
 
-Per (persona, model) the WITHIN map is fit on that ONE persona's stories only
-(many points, one character): GCV Gram ridge (reused #825 core), K=5
-STORY-grouped folds (each story is its own group), frozen layers {14,18,19,26}
-headline 19, 20 selection-symmetric shuffle nulls + 1000-draw bootstrap. One
-map per persona per model -> reads (a) does the focused map clear its null and
-(b) base-vs-instruct strength.
+Per (persona, model) the WITHIN map is fit on that ONE persona's TURNS only
+(many per-turn points, one character): GCV Gram ridge (reused #825 core), K=5
+SCENE-grouped folds (group_id = scenario_id; within a persona each scenario is
+one scene, so all a scene's turns stay in one fold — turns never split across
+train/test), frozen layers {14,18,19,26} headline 19, 20 selection-symmetric
+shuffle nulls + 1000-draw bootstrap. One map per persona per model -> reads
+(a) does the focused map clear its null and (b) base-vs-instruct strength.
 
 Character-swap specificity (read c): pooled across personas per model, a
-prompt-slot-aligned cross-persona derangement of Y (each row keeps its own
-context X but is paired with a DIFFERENT persona's dialogue at the SAME
-scenario) vs the correct pairing over the SAME rows; dR2 with a paired
-scenario-level bootstrap.
+MATCHED-SCENE-POSITION cross-persona derangement — each target turn keeps its
+own context X but is paired with a DIFFERENT persona's dialogue Y at the SAME
+(scenario, turn_index) — vs the correct pairing over the SAME rows; dR2 with a
+paired scenario-level bootstrap.
 
 Assistant-map ceiling (read d): the committed #825 Track-S curves
 (cells_S1.json 0.673 / cells_S2.json 0.588 at L19) read read-only as context.
@@ -73,13 +74,14 @@ def load_model_store(store_root: Path, model_kind: str) -> dict:
     store_dir = store_root / model_kind
     shards = sorted(store_dir.glob(f"{model_kind}_shard*.pt"))
     assert shards, f"no {model_kind} shards under {store_dir}"
-    rows, groups, chars = [], [], []
+    rows, groups, chars, turns = [], [], [], []
     arrays: dict[str, list] = {}
     for sp in shards:
         payload = torch.load(sp, map_location="cpu", weights_only=False)
         rows.extend(payload["row_ids"])
         groups.extend(payload["group_ids"])
         chars.extend(payload["char_ids"])
+        turns.extend(payload["turn_indices"])
         for k, v in payload["arrays"].items():
             arrays.setdefault(k, []).append(v.float().numpy().astype(np.float32))
     out = {k: np.concatenate(v, axis=0) for k, v in arrays.items()}
@@ -90,6 +92,7 @@ def load_model_store(store_root: Path, model_kind: str) -> dict:
         "row_ids": np.asarray(rows),
         "group_ids": np.asarray(groups),
         "char_ids": np.asarray(chars),
+        "turn_indices": np.asarray(turns, dtype=int),
         "arrays": out,
     }
 
@@ -166,38 +169,47 @@ def within_xy(store: dict, persona: str, x_key: str) -> dict:
 
 
 def swap_derangement(
-    group_ids: np.ndarray, char_ids: np.ndarray, seed: int
+    group_ids: np.ndarray, char_ids: np.ndarray, turn_indices: np.ndarray, seed: int
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Prompt-slot-aligned cross-persona derangement over scenarios with >=2 personas.
+    """Matched-scene-position cross-persona derangement.
 
-    Within each scenario the rows (one per present persona) are seeded-shuffled
-    and each row's Y-partner is the next row cyclically — a guaranteed
-    derangement (no row keeps its own dialogue). Returns (row_idx, partner_idx).
+    Group rows by (scenario_id, turn_index): within each group with >=2 distinct
+    personas (each persona speaks its Nth line at most once per scene, so the
+    group's rows ARE distinct personas), seed-shuffle and cyclically pair each
+    row's Y-partner with the next row — a guaranteed derangement pairing persona
+    A's Nth-line context with a DIFFERENT persona's Nth-line dialogue at the SAME
+    scenario. Returns (row_idx, partner_idx).
     """
     rng = np.random.default_rng(seed)
     rows_out, partners_out = [], []
-    for g in np.unique(group_ids):
-        idx = np.flatnonzero(group_ids == g)
-        # distinct-persona rows only (each scenario has one row per persona)
-        if len(np.unique(char_ids[idx])) < 2:
-            continue
-        perm = idx[rng.permutation(len(idx))]
-        for j in range(len(perm)):
-            rows_out.append(perm[j])
-            partners_out.append(perm[(j + 1) % len(perm)])
+    order = np.lexsort((turn_indices, group_ids))
+    keys = list(zip(group_ids[order], turn_indices[order], strict=True))
+    start = 0
+    for i in range(1, len(order) + 1):
+        if i == len(order) or keys[i] != keys[start]:
+            idx = order[start:i]
+            if len(np.unique(char_ids[idx])) >= 2:
+                perm = idx[rng.permutation(len(idx))]
+                for j in range(len(perm)):
+                    rows_out.append(int(perm[j]))
+                    partners_out.append(int(perm[(j + 1) % len(perm)]))
+            start = i
     if not rows_out:
         return np.asarray([], dtype=int), np.asarray([], dtype=int)
     rows = np.asarray(rows_out)
     partners = np.asarray(partners_out)
     assert (rows != partners).all(), "derangement violated"
+    assert (char_ids[rows] != char_ids[partners]).all(), "swap partner shares persona"
     return rows, partners
 
 
 def run_swap(store: dict, model_kind: str, args) -> dict | None:
     """Character-swap specificity: correct vs cross-persona-swapped Y, dR2."""
-    rows, partners = swap_derangement(store["group_ids"], store["char_ids"], seed=c1310.BUILD_SEED)
+    rows, partners = swap_derangement(
+        store["group_ids"], store["char_ids"], store["turn_indices"], seed=c1310.BUILD_SEED
+    )
     if len(rows) < 2 * args.folds:
-        print(f"[i1310-fit] swap: too few multi-persona scenarios (n={len(rows)}) — skipped")
+        print(f"[i1310-fit] swap: too few matched-position turn pairs (n={len(rows)}) — skipped")
         return None
     x = store["arrays"]["x_spanmean"]
     y = store["arrays"]["y"]

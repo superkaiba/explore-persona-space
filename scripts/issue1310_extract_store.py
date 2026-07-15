@@ -1,16 +1,20 @@
 """Issue #1310: teacher-forced 28-layer span-summary capture, per model.
 
-Per (persona, story) the input is prefix_ids + story_ids, where prefix is the
-raw-prose prompt (base) or the rendered chat template (instruct); token ids
-are CONCATENATED (never re-tokenize the join — #1092 BPE-seam trap) and the
-story-local C/T spans are shifted by len(prefix_ids). Per pair it stores ONLY
-the reduced summaries — x_spanmean (mean over C = the context before the
-persona's first dialogue), x_last (the C boundary token — parent-matched
-single-position X), y (mean over the persona's dialogue content) — never
-per-token grids (#666/#772 stream-reduce). bf16 storage, finiteness asserted.
-Right-padded batches + attention mask (causal mask => pads cannot influence
-real positions); a batched-vs-batch-1 two-bar equivalence gate (#779) is
-available via --equivalence-check.
+One ITEM per SCENE (a generated `<LABEL>:` script): the input is prefix_ids +
+story_ids, where prefix is the few-shot prime (base) or the rendered chat
+template (instruct); token ids are CONCATENATED (never re-tokenize the join —
+#1092 BPE-seam trap) and each turn's story-local C/T spans are shifted by
+len(prefix_ids). A scene carries MANY per-turn pairs, so ONE forward captures
+every turn's summaries. Per pair (= per target turn) it stores ONLY the reduced
+summaries — x_spanmean (mean over C = context before that turn's line),
+x_last (the C boundary token — parent-matched single-position X), y (mean over
+that turn's dialogue content) — never per-token grids (#666/#772 stream-reduce).
+Each record also carries turn_index (the persona's Nth spoken line — the matched
+scene position the swap control pairs on). bf16 storage, finiteness asserted.
+Right-padded batches + attention mask (causal mask => pads cannot influence real
+positions); a batched-vs-batch-1 two-bar equivalence gate (#779) via
+--equivalence-check. Shards flush at BATCH boundaries (whole scenes, never
+split), so --resume skips whole scenes cleanly.
 
 CLI:
   uv run python scripts/issue1310_extract_store.py --model base \
@@ -98,7 +102,12 @@ def render_prefix_ids(tokenizer, prompt: str, model_kind: str) -> list[int]:
 
 
 def load_items(model_kind: str, data_dir: Path, tokenizer) -> list[dict]:
-    """[{item_id, group_id, char_id, input_ids, pairs:[PairSpec (item-local)]}]."""
+    """One item per SCENE: [{item_id (scene_row_id), group_id, char_id, input_ids,
+    pairs:[PairSpec (item-local, one per target turn)]}].
+
+    Turn pairs are grouped by scene (meta["scene_row_id"]) so a scene's forward
+    is computed once; each turn's story-local spans are shifted by len(prefix_ids).
+    """
     stories = {
         s["row_id"]: s
         for s in ext931._read_jsonl(
@@ -109,31 +118,37 @@ def load_items(model_kind: str, data_dir: Path, tokenizer) -> list[dict]:
         common.PairSpec.from_dict(d)
         for d in ext931._read_jsonl(data_dir / "pairs" / f"{model_kind}_pairs.jsonl")
     ]
-    items = []
+    by_scene: dict[str, list[common.PairSpec]] = {}
     for p in pairs:
-        story = stories[p.row_id]
+        by_scene.setdefault(p.meta["scene_row_id"], []).append(p)
+
+    items = []
+    for scene_row_id, scene_pairs in by_scene.items():
+        story = stories[scene_row_id]
         prefix_ids = render_prefix_ids(tokenizer, story["prompt"], model_kind)
         story_ids = list(tokenizer(story["story"], add_special_tokens=False)["input_ids"])
         off = len(prefix_ids)
-        q = common.PairSpec(
-            row_id=p.row_id,
-            group_id=p.group_id,
-            char_id=p.char_id,
-            c_span=(p.c_span[0] + off, p.c_span[1] + off),
-            t_spans=[(lo + off, hi + off) for lo, hi in p.t_spans],
-            ctx_span=(p.ctx_span[0] + off, p.ctx_span[1] + off),
-            meta={**p.meta, "prefix_len": off},
-        )
-        q.validate(
-            off + len(story_ids), min_c=c1310.CONTEXT_MIN_TOKENS, min_t=c1310.DIALOGUE_MIN_TOKENS
-        )
+        n_tok = off + len(story_ids)
+        shifted = []
+        for p in scene_pairs:
+            q = common.PairSpec(
+                row_id=p.row_id,
+                group_id=p.group_id,
+                char_id=p.char_id,
+                c_span=(p.c_span[0] + off, p.c_span[1] + off),
+                t_spans=[(lo + off, hi + off) for lo, hi in p.t_spans],
+                ctx_span=(p.ctx_span[0] + off, p.ctx_span[1] + off),
+                meta={**p.meta, "prefix_len": off},
+            )
+            q.validate(n_tok, min_c=c1310.CONTEXT_MIN_TOKENS, min_t=c1310.DIALOGUE_MIN_TOKENS)
+            shifted.append(q)
         items.append(
             {
-                "item_id": p.row_id,
-                "group_id": p.group_id,
-                "char_id": p.char_id,
+                "item_id": scene_row_id,
+                "group_id": scene_pairs[0].group_id,
+                "char_id": scene_pairs[0].char_id,
                 "input_ids": prefix_ids + story_ids,
-                "pairs": [q],
+                "pairs": shifted,
             }
         )
     return items
@@ -167,7 +182,12 @@ def process_batch(model, batch: list[dict], pad_id: int) -> list[dict]:
         for p in it["pairs"]:
             cs, ce = p.c_span
             assert 0 <= cs < ce <= true_len, (p.row_id, "c_span", cs, ce, true_len)
-            rec: dict = {"row_id": p.row_id, "group_id": p.group_id, "char_id": p.char_id}
+            rec: dict = {
+                "row_id": p.row_id,
+                "group_id": p.group_id,
+                "char_id": p.char_id,
+                "turn_index": int(p.meta["turn_index"]),
+            }
             rec["x_spanmean"] = acts[:, i, cs:ce, :].float().mean(dim=1)
             rec["x_last"] = acts[:, i, ce - 1, :].float()
             total = torch.zeros(
@@ -219,6 +239,7 @@ def write_shard(records: list[dict], out_dir: Path, shard_idx: int, model_kind: 
         "row_ids": [r["row_id"] for r in records],
         "group_ids": [r["group_id"] for r in records],
         "char_ids": [r["char_id"] for r in records],
+        "turn_indices": [int(r["turn_index"]) for r in records],
         "arrays": {k: torch.stack([r[k] for r in records]) for k in keys},
     }
     for k, v in payload["arrays"].items():
@@ -234,6 +255,7 @@ def write_shard(records: list[dict], out_dir: Path, shard_idx: int, model_kind: 
         "row_ids": payload["row_ids"],
         "group_ids": payload["group_ids"],
         "char_ids": payload["char_ids"],
+        "turn_indices": payload["turn_indices"],
         "keys": keys,
         "shape_per_row": [EXPECTED_LAYERS, EXPECTED_HIDDEN],
         "metadata": common.metadata(SCRIPT, common.GEN_SEED, len(records)),
@@ -291,16 +313,18 @@ def main() -> int:
         items = items[: args.max_items]
     print(f"[i1310-p2] {len(items)} items (model={model_kind})")
 
-    done_rows: set[str] = set()
+    done_scenes: set[str] = set()
     shard_idx = 0
     if args.resume:
         for sc in sorted(store_dir.glob(f"{model_kind}_shard*.json")):
             side = json.loads(sc.read_text())
-            done_rows.update(side["row_ids"])
+            # scenes flush whole (batch-aligned), so a turn row_id present means
+            # its scene is fully written — resume skips the whole scene.
+            done_scenes.update(rid.rsplit(":t", 1)[0] for rid in side["row_ids"])
             shard_idx = max(shard_idx, side["shard_index"] + 1)
-        if done_rows:
-            items = [it for it in items if it["item_id"] not in done_rows]
-            print(f"[i1310-p2] resume: {len(done_rows)} rows done; {len(items)} items left")
+        if done_scenes:
+            items = [it for it in items if it["item_id"] not in done_scenes]
+            print(f"[i1310-p2] resume: {len(done_scenes)} scenes done; {len(items)} scenes left")
 
     if not items:
         print(f"[i1310-p2] no items to capture (model={model_kind})")
@@ -314,9 +338,11 @@ def main() -> int:
     buf: list[dict] = []
     for recs in run_extraction(model, items, pad_id, args.batch_size):
         buf.extend(recs)
-        while len(buf) >= SHARD_PAIRS:
-            write_shard(buf[:SHARD_PAIRS], store_dir, shard_idx, model_kind)
-            buf = buf[SHARD_PAIRS:]
+        # Flush at BATCH boundaries (a batch = whole scenes), so a scene's turns
+        # are never split across shards — makes scene-level --resume exact.
+        if len(buf) >= SHARD_PAIRS:
+            write_shard(buf, store_dir, shard_idx, model_kind)
+            buf = []
             shard_idx += 1
     if buf:
         write_shard(buf, store_dir, shard_idx, model_kind)

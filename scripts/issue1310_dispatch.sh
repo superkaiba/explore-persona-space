@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
-# Issue #1310 dispatcher: focused per-character context->dialogue map.
-# stage -> gen (base+instruct) -> attribute (base+instruct) -> extract
+# Issue #1310 dispatcher: focused per-character context->dialogue map
+# (LABELED SCRIPT FORMAT — per-turn (X,Y) points; the run-1 rebuild).
+# stage -> gen (base+instruct, multi-character `<LABEL>:` scenes) -> attribute
+# (base+instruct, deterministic line-prefix parse -> per-turn pairs) -> extract
 # (base+instruct, one-per-GPU when >=2 GPUs) -> fit -> figures -> upload ->
 # results sentinel -> [phase=done].
 #
 # ONE code path for smoke / production — the tiny-cell subset threads through
 # every phase via the size flags below.
+#
+# Sizing: production generates all N_PROMPTS_PER_PERSONA (=300) shared scenarios
+# per persona x model; at ~8 target turns/scene each persona clears ~1.5k-2.4k
+# per-turn points (adequate power vs 3584 dims). Battery = 20 settings x 18
+# situations = 360 combos (headroom over 300).
 #
 # Modes:
 #   bash scripts/issue1310_dispatch.sh --smoke   # CPU VM: tiny model + stub gen

@@ -1,24 +1,25 @@
-"""Issue #1310: fixed-label dialogue attribution + per-story (X,Y) pair build.
+"""Issue #1310: fixed-label SCRIPT-LINE attribution + per-turn (X,Y) pair build.
 
-Deterministic extractor (precision-first): double-quote spans whose cue window
-(before/after the quote) carries a speech verb adjacent to the story's FIXED
-persona label (post-posed '"...," said Marlowe' / '"..." Marlowe said'; pre-
-posed 'Marlowe said, "..."'). Label match is case-sensitive + word-bounded, so
-all-caps labels like HELIOS attribute correctly (the #931 generic name regex
-would miss them). Quotations NOT attributable to the fixed label are dropped
-(counted).
+Deterministic attributor: the scene is generated in strict script format
+(`<LABEL>: <dialogue>`, one turn per line), so a target turn is simply a line
+whose prefix is the persona's FIXED label — `^<LABEL>:[ \t]*<content>$`. Label
+match is exact + case-sensitive, so all-caps labels like HELIOS attribute
+correctly. Recall is ~100% by construction (every well-formed target line
+matches); the Sonnet audit is a PRECISION spot-check only, and
+`--reattribute-batch` is a non-primary fallback (line-prefix attribution needs
+no judge to build pairs).
 
-Per (persona, story) -> ONE (X, Y) pair (issue1310_common.build_context_dialogue_pair):
-C = context before the persona's first dialogue, T = the persona's dialogue
-content. Every produced span is validated (0 <= s < e <= len) at build time;
-short / no-dialogue / zero-width stories are DROPPED and REPORTED (never a hard
-crash) — short degenerate generations WILL occur, especially for base.
+Per attributed TURN of the target persona -> ONE (X, Y) pair
+(issue1310_common.build_turn_pairs): X = context tokens before the turn's line
+(excluding the turn's own `<LABEL>:` cue), Y = the turn's dialogue content. MANY
+points per persona per scene. Every produced span is validated (0 <= s < e <=
+len) at build time; short / zero-width / no-context turns are DROPPED and
+REPORTED (never a hard crash) — short degenerate lines WILL occur, especially
+for base. Folds group by SCENE (group_id = scenario_id; within a persona each
+scenario is one scene), so turns from one scene never split across train/test.
 
-Audit: a seeded random sample of persona-attributed quotes judged by
-claude-sonnet-4-5-20250929 (sync via llm.api_dispatch); precision gate >= 0.90.
---reattribute-batch is the fallback: Sonnet judges whether the FIXED LABEL
-speaks EVERY quote (Batch API), rebuild pairs under the confirmed set, re-gate
-at >= 0.95.
+QC: per-persona attributed turn counts + non-target `Name:` (foil/other) lines +
+lines that do not parse to a `Name: content` turn at all (narration/malformed).
 
 CLI:
   uv run python scripts/issue1310_attribute.py --model base \
@@ -54,26 +55,19 @@ import issue1310_common as c1310  # noqa: E402
 
 SCRIPT = "scripts/issue1310_attribute.py"
 
-_VERBS = "|".join(common.SPEECH_VERBS)
-_QUOTE_RE = re.compile(r"[\"“]([^\"“”]+)[\"”]")
+# Per-label target-turn pattern (cached; label escaped + exact, case-sensitive).
+_TARGET_PATTERNS: dict[str, re.Pattern] = {}
+# Generic `Name: content` line matcher for QC classification (no leading space,
+# a non-empty non-space content start — mirrors the target pattern's content req).
+_GENERIC_LINE_RE = re.compile(r"^(?P<name>[^\n:]{1,40}):[ \t]*(?P<c>\S.*)$")
 
-# Per-label cue patterns (cached; label escaped + word-bounded, case-sensitive).
-_LABEL_PATTERNS: dict[str, dict[str, re.Pattern]] = {}
 
-
-def _label_patterns(label: str) -> dict[str, re.Pattern]:
-    if label not in _LABEL_PATTERNS:
-        esc = re.escape(label)
-        name = rf"(?<![\w]){esc}(?![\w])"
-        _LABEL_PATTERNS[label] = {
-            # after the quote: 'said Marlowe' / 'Marlowe said'
-            "post_verb_name": re.compile(rf"^[\s,.;:!?-]*(?:{_VERBS})\s+{name}"),
-            "post_name_verb": re.compile(rf"^[\s,.;:!?-]*{name}\s+(?:{_VERBS})\b"),
-            # before the quote: 'Marlowe said,' / 'said Marlowe,'
-            "pre_name_verb": re.compile(rf"{name}\s+(?:{_VERBS})[,:]?\s*$"),
-            "pre_verb_name": re.compile(rf"(?:{_VERBS})\s+{name}[,:]?\s*$"),
-        }
-    return _LABEL_PATTERNS[label]
+def _target_pattern(label: str) -> re.Pattern:
+    if label not in _TARGET_PATTERNS:
+        _TARGET_PATTERNS[label] = re.compile(
+            rf"^{re.escape(label)}:[ \t]*(?P<c>\S.*)$", re.MULTILINE
+        )
+    return _TARGET_PATTERNS[label]
 
 
 def parse_args() -> argparse.Namespace:
@@ -93,166 +87,160 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--reattribute-batch",
         action="store_true",
-        help="fallback: Sonnet Batch-API label-binary re-attribution, re-gate at 0.95",
+        help="non-primary fallback: Sonnet Batch-API label-binary re-confirm, re-gate 0.95",
     )
     return ap.parse_args()
 
 
 # ---------------------------------------------------------------------------
-# Deterministic fixed-label extractor
+# Deterministic fixed-label script-line attributor
 # ---------------------------------------------------------------------------
 
 
-def attribute_persona_story(text: str, persona_label: str) -> dict:
-    """All double-quotes in one story + whether each is attributable to the label.
+def attribute_script(text: str, persona_label: str) -> dict:
+    """The persona's attributed turns (line-prefix `<LABEL>:`) in scene order.
 
-    Returns {"quotes": [{"span": (cs,ce) incl. delimiters, "content_span":
-    (c2s,c2e) delimiters excluded, "attributed": bool}], "n_total",
-    "n_attributed"}.
+    Returns {"turns": [{"line_start": int, "line_span": (ls, le),
+    "content_span": (cs, ce) delimiters/whitespace stripped}], "n_turns": int}.
     """
-    pats = _label_patterns(persona_label)
-    quotes = []
-    for m in _QUOTE_RE.finditer(text):
-        cs, ce = m.start(), m.end()
-        after = text[ce : ce + 60]
-        before = text[max(0, cs - 60) : cs]
-        attributed = bool(
-            pats["post_verb_name"].match(after)
-            or pats["post_name_verb"].match(after)
-            or pats["pre_name_verb"].search(before)
-            or pats["pre_verb_name"].search(before)
+    pat = _target_pattern(persona_label)
+    turns = []
+    for m in pat.finditer(text):
+        cs, ce = common.strip_quote_delims(text, m.start("c"), m.end("c"))
+        turns.append(
+            {"line_start": m.start(), "line_span": (m.start(), m.end()), "content_span": (cs, ce)}
         )
-        c2s, c2e = common.strip_quote_delims(text, cs, ce)
-        quotes.append({"span": (cs, ce), "content_span": (c2s, c2e), "attributed": attributed})
-    return {
-        "quotes": quotes,
-        "n_total": len(quotes),
-        "n_attributed": sum(1 for q in quotes if q["attributed"]),
-    }
+    turns.sort(key=lambda t: t["line_start"])
+    return {"turns": turns, "n_turns": len(turns)}
 
 
-def build_pairs(
-    stories: list[dict], tokenizer, attributed_override: set | None = None
-) -> tuple[list, list[dict], dict]:
-    """(C,T) pair per (persona, story) + persona-attributed quote records + QC.
+def _line_class_counts(text: str, target_label: str) -> tuple[int, int, int]:
+    """(target-label lines, non-target `Name:` lines, unparsed non-empty lines)."""
+    n_target = n_foil_other = n_unparsed = 0
+    for line in text.split("\n"):
+        if not line.strip():
+            continue
+        m = _GENERIC_LINE_RE.match(line)
+        if not m:
+            n_unparsed += 1
+            continue
+        if m.group("name").strip() == target_label:
+            n_target += 1
+        else:
+            n_foil_other += 1
+    return n_target, n_foil_other, n_unparsed
 
-    ``attributed_override`` = a set of (row_id, (span_s, span_e)) confirmed as
-    persona-spoken; when present it REPLACES the deterministic ``attributed``
-    flag (the Batch-API re-attribution fallback).
+
+def build_turn_records_and_pairs(
+    stories: list[dict], tokenizer, confirmed_row_ids: set | None = None
+) -> tuple[list, list[dict], dict, dict]:
+    """Per-turn PairSpecs + per-turn audit records + QC counters + per-persona pairs.
+
+    ``confirmed_row_ids`` = a set of turn row_ids confirmed persona-spoken; when
+    present only those turns become pairs (the Batch-API re-attribution fallback).
     """
     counters = {
         "stories": len(stories),
-        "quotes_total": 0,
-        "quotes_unattributed_dropped": 0,
-        "quotes_attributed": 0,
+        "target_lines": 0,
+        "foil_other_lines": 0,
+        "unparsed_lines": 0,
+        "turns_kept": 0,
+        "turns_dropped_zero_width": 0,
+        "turns_dropped_short_context": 0,
+        "turns_dropped_short_dialogue": 0,
+        "turns_dropped_unconfirmed": 0,
         "stories_with_pair": 0,
         "stories_dropped_no_pair": 0,
     }
+    per_persona_pairs = {label: 0 for label in c1310.PERSONA_LABELS}
+    per_persona_target_lines = {label: 0 for label in c1310.PERSONA_LABELS}
     pairs: list[common.PairSpec] = []
     records: list[dict] = []
     for story in stories:
         text = story["story"]
         persona = story["persona"]
-        row_id = story["row_id"]
-        group_id = story["scenario_id"]
-        att = attribute_persona_story(text, persona)
-        if attributed_override is not None:
-            for q in att["quotes"]:
-                q["attributed"] = (row_id, tuple(q["span"])) in attributed_override
-            att["n_attributed"] = sum(1 for q in att["quotes"] if q["attributed"])
-        counters["quotes_total"] += att["n_total"]
-        counters["quotes_unattributed_dropped"] += att["n_total"] - att["n_attributed"]
-        counters["quotes_attributed"] += att["n_attributed"]
-        attributed_quotes = [q for q in att["quotes"] if q["attributed"]]
-        for q in attributed_quotes:
+        scene_row_id = story["row_id"]
+        scenario_id = story["scenario_id"]
+        att = attribute_script(text, persona)
+        counters["target_lines"] += att["n_turns"]
+        per_persona_target_lines[persona] += att["n_turns"]
+        _, n_foil, n_unparsed = _line_class_counts(text, persona)
+        counters["foil_other_lines"] += n_foil
+        counters["unparsed_lines"] += n_unparsed
+
+        turns_char = [
+            (t["line_start"], t["content_span"][0], t["content_span"][1]) for t in att["turns"]
+        ]
+        ids, offsets = common.tokenize_with_offsets(tokenizer, text)
+        built, drops = c1310.build_turn_pairs(n_tokens=len(ids), offsets=offsets, turns=turns_char)
+        counters["turns_dropped_zero_width"] += drops["dropped_zero_width"]
+        counters["turns_dropped_short_context"] += drops["dropped_short_context"]
+        counters["turns_dropped_short_dialogue"] += drops["dropped_short_dialogue"]
+
+        kept_for_scene = 0
+        for turn_index, c_span, t_span in built:
+            rid = c1310.turn_row_id(scene_row_id, turn_index)
+            if confirmed_row_ids is not None and rid not in confirmed_row_ids:
+                counters["turns_dropped_unconfirmed"] += 1
+                continue
+            pair = common.PairSpec(
+                row_id=rid,
+                group_id=scenario_id,  # SCENE-grouped folds (one scene per scenario per persona)
+                char_id=persona,
+                c_span=c_span,
+                t_spans=[t_span],
+                ctx_span=c_span,  # context read == C (whole context before the turn)
+                meta={
+                    "scene_row_id": scene_row_id,
+                    "scenario_id": scenario_id,
+                    "turn_index": turn_index,
+                    "story_local": True,
+                },
+            )
+            pair.validate(len(ids), min_c=c1310.CONTEXT_MIN_TOKENS, min_t=c1310.DIALOGUE_MIN_TOKENS)
+            pairs.append(pair)
+            per_persona_pairs[persona] += 1
+            kept_for_scene += 1
+            turn = att["turns"][turn_index]
             records.append(
                 {
-                    "row_id": row_id,
+                    "row_id": rid,
+                    "scene_row_id": scene_row_id,
                     "persona": persona,
-                    "span": list(q["span"]),
-                    "content_span": list(q["content_span"]),
+                    "span": list(turn["line_span"]),
+                    "content_span": list(turn["content_span"]),
                 }
             )
-        ids, offsets = common.tokenize_with_offsets(tokenizer, text)
-        # Persona quotation token spans (cov incl. delims; inner content only).
-        segs = []
-        for q in attributed_quotes:
-            cov_lo, cov_hi = common.covering_token_span(offsets, *q["span"])
-            c2s, c2e = q["content_span"]
-            in_lo, in_hi = common.inner_token_span(offsets, c2s, c2e) if c2s < c2e else (0, 0)
-            if in_lo < in_hi:
-                segs.append((cov_lo, cov_hi, in_lo, in_hi))
-        built = c1310.build_context_dialogue_pair(n_tokens=len(ids), quote_spans_tok=segs)
-        if built is None:
+        counters["turns_kept"] += kept_for_scene
+        if kept_for_scene >= c1310.MIN_SCENE_TURNS:
+            counters["stories_with_pair"] += 1
+        else:
             counters["stories_dropped_no_pair"] += 1
-            continue
-        (c_s, c_e), t_spans = built
-        pair = common.PairSpec(
-            row_id=row_id,
-            group_id=group_id,
-            char_id=persona,
-            c_span=(c_s, c_e),
-            t_spans=list(t_spans),
-            ctx_span=(c_s, c_e),  # context read == C (whole context before dialogue)
-            meta={
-                "window_id": row_id,
-                "story_local": True,
-                "n_t_tokens": int(sum(hi - lo for lo, hi in t_spans)),
-                "n_turns": len(t_spans),
-            },
-        )
-        pair.validate(len(ids), min_c=c1310.CONTEXT_MIN_TOKENS, min_t=c1310.DIALOGUE_MIN_TOKENS)
-        pairs.append(pair)
-        counters["stories_with_pair"] += 1
-    return pairs, records, counters
+
+    counters["per_persona_target_lines"] = per_persona_target_lines
+    return pairs, records, counters, per_persona_pairs
 
 
 # ---------------------------------------------------------------------------
-# Sonnet audit + label-binary batch re-attribution fallback
+# Sonnet audit (precision spot-check) + label-binary batch re-confirm fallback
 # ---------------------------------------------------------------------------
-
-
-def _reattr_build_request(item: DispatchItem) -> dict:
-    p = item.payload
-    return {
-        "model": c1310.JUDGE_MODEL,
-        "max_tokens": 300,
-        "system": "You are a careful literary annotator verifying dialogue attribution.",
-        "messages": [
-            {
-                "role": "user",
-                "content": (
-                    "Story excerpt:\n---\n"
-                    + p["excerpt"]
-                    + "\n---\n\nQuotation: "
-                    + json.dumps(p["quote_text"])
-                    + "\nCandidate speaker: "
-                    + p["speaker"]
-                    + "\n\nIs the candidate speaker the character who utters this quotation "
-                    "in the excerpt? Think briefly, then answer with ONLY a JSON object: "
-                    '{"reasoning": "<one sentence>", "correct": true|false}'
-                ),
-            }
-        ],
-    }
 
 
 def run_audit(
     records: list[dict],
-    stories_by_row: dict[str, dict],
+    stories_by_scene: dict[str, dict],
     *,
     audit_n: int,
     mock: bool,
     cache_dir: Path,
 ) -> dict:
-    """Judge a seeded sample of persona-attributed quotes; precision summary."""
+    """Judge a seeded sample of persona-attributed turns; precision summary."""
     rng = np.random.default_rng(c1310.BUILD_SEED)
     order = rng.permutation(len(records))
     sample = [records[int(i)] for i in order[: min(audit_n, len(records))]]
     items = []
     for k, rec in enumerate(sample):
-        story = stories_by_row[rec["row_id"]]
-        text = story["story"]
+        text = stories_by_scene[rec["scene_row_id"]]["story"]
         items.append(
             DispatchItem(
                 item_id=f"audit_{k:04d}_{rec['row_id']}",
@@ -305,39 +293,36 @@ def run_audit(
     }
 
 
-def reattribute_all(
-    stories: list[dict], stories_by_row: dict[str, dict], *, mock: bool, cache_dir: Path
-) -> set:
-    """Sonnet label-binary re-attribution of EVERY quote -> confirmed set."""
+def reattribute_confirm(stories: list[dict], *, mock: bool, cache_dir: Path) -> set:
+    """Sonnet label-binary re-confirm of EVERY target turn -> confirmed row_id set."""
     items = []
     for story in stories:
         text = story["story"]
-        row_id = story["row_id"]
         persona = story["persona"]
-        for k, m in enumerate(_QUOTE_RE.finditer(text)):
-            cs, ce = m.start(), m.end()
-            c2s, c2e = common.strip_quote_delims(text, cs, ce)
+        scene_row_id = story["row_id"]
+        att = attribute_script(text, persona)
+        for turn_index, turn in enumerate(att["turns"]):
+            rid = c1310.turn_row_id(scene_row_id, turn_index)
             items.append(
                 DispatchItem(
-                    item_id=f"reattr_{row_id}_{k:03d}",
+                    item_id=f"reattr_{rid}",
                     payload={
-                        "excerpt": attr931._excerpt(text, [cs, ce]),
-                        "quote_text": text[c2s:c2e],
+                        "excerpt": attr931._excerpt(text, list(turn["line_span"])),
+                        "quote_text": text[turn["content_span"][0] : turn["content_span"][1]],
                         "speaker": persona,
-                        "row_id": row_id,
-                        "span": [cs, ce],
+                        "row_id": rid,
                     },
                 )
             )
     if mock:
-        confirmed = {(it.payload["row_id"], tuple(it.payload["span"])) for it in items}
-        print(f"[i1310-attr] MOCK reattribution: {len(confirmed)} quotes confirmed")
+        confirmed = {it.payload["row_id"] for it in items}
+        print(f"[i1310-attr] MOCK reattribution: {len(confirmed)} turns confirmed")
         return confirmed
     raw = asyncio.run(
         dispatch_calls(
             items,
             model=c1310.JUDGE_MODEL,
-            build_request=_reattr_build_request,
+            build_request=attr931._audit_build_request,
             parse_response=attr931._parse_json_obj,
             cost_pref="cost",
             cache_dir=cache_dir / "reattr",
@@ -349,9 +334,8 @@ def reattribute_all(
     for iid, res in raw.items():
         obj = res.result if not res.error else None
         if isinstance(obj, dict) and obj.get("correct") is True:
-            it = by_id[iid]
-            confirmed.add((it.payload["row_id"], tuple(it.payload["span"])))
-    print(f"[i1310-attr] reattribution confirmed {len(confirmed)} label-spoken quotes")
+            confirmed.add(by_id[iid].payload["row_id"])
+    print(f"[i1310-attr] reattribution confirmed {len(confirmed)} label-spoken turns")
     return confirmed
 
 
@@ -368,24 +352,27 @@ def _write_jsonl(path: Path, rows: list[dict]) -> None:
 def main() -> int:
     args = parse_args()
     model_kind = args.model
-    print(f"[phase=p1_attr_{model_kind}] fixed-label attribution + pair build")
+    print(f"[phase=p1_attr_{model_kind}] fixed-label script-line attribution + turn pairs")
     stories_path = args.data_dir / "stories" / f"{model_kind}_stories_seed{common.GEN_SEED}.jsonl"
     stories = [json.loads(line) for line in stories_path.read_text().split("\n") if line.strip()]
-    stories_by_row = {s["row_id"]: s for s in stories}
+    stories_by_scene = {s["row_id"]: s for s in stories}
     tokenizer = common.get_tokenizer(c1310.MODEL_IDS[model_kind])
 
-    pairs, records, counters = build_pairs(stories, tokenizer)
+    pairs, records, counters, per_persona_pairs = build_turn_records_and_pairs(stories, tokenizer)
     drop_rate = counters["stories_dropped_no_pair"] / max(1, counters["stories"])
     print(
-        f"[i1310-attr] {len(pairs)} pairs / {counters['stories']} stories "
-        f"(dropped_no_pair={counters['stories_dropped_no_pair']}, rate={drop_rate:.3f})"
+        f"[i1310-attr] {len(pairs)} turn-pairs / {counters['stories']} scenes "
+        f"(target_lines={counters['target_lines']} kept={counters['turns_kept']} "
+        f"foil_other={counters['foil_other_lines']} unparsed={counters['unparsed_lines']} "
+        f"scenes_no_pair={counters['stories_dropped_no_pair']} rate={drop_rate:.3f})"
     )
+    print(f"[i1310-attr] per-persona turn-pairs: {per_persona_pairs}")
 
     audit: dict = {"skipped": True}
     if not args.skip_audit and records:
         audit = run_audit(
             records,
-            stories_by_row,
+            stories_by_scene,
             audit_n=args.audit_n,
             mock=args.mock_judge,
             cache_dir=args.data_dir / "judge_cache" / model_kind,
@@ -411,6 +398,7 @@ def main() -> int:
                         "model_kind": model_kind,
                         "counters": counters,
                         "drop_rate": drop_rate,
+                        "per_persona_pairs": per_persona_pairs,
                         "audit": audit,
                         "gate": args.audit_gate,
                         "binding": True,
@@ -419,23 +407,25 @@ def main() -> int:
                 )
                 print(
                     f"[i1310-attr] AUDIT FAIL {audit['precision']:.3f} < {args.audit_gate} — "
-                    "re-run with --reattribute-batch (registered fallback)",
+                    "re-run with --reattribute-batch (non-primary fallback)",
                     file=sys.stderr,
                 )
                 return 4
 
     if args.reattribute_batch:
-        print(f"[phase=p1_reattr_{model_kind}] Batch-API label-binary re-attribution")
-        confirmed = reattribute_all(
+        print(f"[phase=p1_reattr_{model_kind}] Batch-API label-binary re-confirm")
+        confirmed = reattribute_confirm(
             stories,
-            stories_by_row,
             mock=args.mock_judge,
             cache_dir=args.data_dir / "judge_cache" / model_kind,
         )
-        pairs, records, counters = build_pairs(stories, tokenizer, attributed_override=confirmed)
+        pairs, records, counters, per_persona_pairs = build_turn_records_and_pairs(
+            stories, tokenizer, confirmed_row_ids=confirmed
+        )
+        drop_rate = counters["stories_dropped_no_pair"] / max(1, counters["stories"])
         audit = run_audit(
             records,
-            stories_by_row,
+            stories_by_scene,
             audit_n=100,
             mock=args.mock_judge,
             cache_dir=args.data_dir / "judge_cache" / model_kind / "regate",
@@ -454,9 +444,7 @@ def main() -> int:
             "model_kind": model_kind,
             "counters": counters,
             "drop_rate": drop_rate,
-            "per_persona_pairs": {
-                p: sum(1 for pair in pairs if pair.char_id == p) for p in c1310.PERSONA_LABELS
-            },
+            "per_persona_pairs": per_persona_pairs,
             "audit": audit,
             "gate": args.audit_gate,
             "binding": not args.audit_non_binding,
