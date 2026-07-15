@@ -49,6 +49,8 @@ load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch/numpy impor
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
+from explore_persona_space.experiments.issue_825 import common  # noqa: E402
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import issue825_fit_cells as fit_cells  # noqa: E402
@@ -277,7 +279,7 @@ def main() -> int:
     torch.set_num_threads(max(1, min(8, torch.get_num_threads())))
     models = [m for m in args.models.split(",") if m.strip()]
     n_boot = min(args.n_boot, 50) if args.smoke else args.n_boot
-    expect_n = None if args.smoke else fit_cells.N_TRACK_S
+    expect_n = None if args.smoke else common.N_TRACK_S
 
     per_model: dict[str, dict] = {}
     for model in models:
