@@ -4,7 +4,7 @@ title: The marker implant reproduces the farther-but-not-more-diffuse full-fine-
 kind: experiment
 tags: []
 created_at: '2026-07-15T07:16:02Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1090
 origin_prompt: 'yes [produce a marker cell through the #1090 factory pipeline, same
   contexts, marker carve-out recipe, for apples-to-apples spectrum comparison marker->impolite->formatting]'
