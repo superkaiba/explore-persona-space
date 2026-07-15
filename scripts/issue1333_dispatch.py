@@ -510,11 +510,22 @@ def _is_engine_child(proc) -> bool:
 def _gpu_hygiene(label: str) -> None:
     """Phase-boundary GPU hygiene gate (crash-fix r4).
 
-    (1) Reap surviving engine-worker CHILDREN of this process by CONTAINER
-    pid (at a phase boundary they are stragglers by definition); (2) bounded
-    drain-wait until every physical GPU's compute-app total is <= the floor;
-    fail LOUD on timeout — see ``_wait_gpus_free``.
+    (1) Release OUR OWN allocator cache (cached blocks surface in NVML under
+    a host pid the verdict cannot attribute to us — after the in-process
+    p0/p1 HF reads the main dispatcher caches ~15 GiB); (2) reap surviving
+    engine-worker CHILDREN of this process by CONTAINER pid (at a phase
+    boundary they are stragglers by definition); (3) bounded drain-wait until
+    every physical GPU's compute-app total is <= the floor; fail LOUD on
+    timeout — see ``_wait_gpus_free``.
     """
+    if "torch" in sys.modules:
+        import gc
+
+        import torch
+
+        if torch.cuda.is_initialized():  # is_initialized never triggers cuInit
+            gc.collect()
+            torch.cuda.empty_cache()
     try:
         import psutil
 
@@ -799,23 +810,55 @@ def _vllm_engine(model_path: str, *, enable_lora: bool = False):
 
 
 def _reap_engine(llm) -> None:
-    """Engine teardown: graceful v1 shutdown + child reap + bounded drain gate.
+    """Engine teardown: graceful v1 shutdown + DETERMINISTIC child reap.
 
     Crash-fix r4 (attempt-4 OOM): ``_reap_vllm_engine`` alone (getattr-guarded
     ``engine_core.shutdown()``) left a LIVE EngineCore child holding 29.09 GiB
     on GPU 0 for ~28 min (p0/p1-era residue, host pid 1213661), which OOM'd
-    the p3 ext_icl ladder unit. Compose the graceful shutdown (+
-    ``destroy_process_group`` — also releases the rendezvous port, gotchas.md
-    EADDRINUSE) with the #1090 hardened ``teardown_vllm``: psutil child sweep
-    of engine workers by CONTAINER pid (NVML pids are host-namespace here —
-    unmatchable/unkillable from the container) + a bounded nvidia-smi drain
-    loop over a residual floor that fails LOUD on timeout.
+    the p3 ext_icl ladder unit. The sweep below kills engine workers by
+    CONTAINER pid — they are OUR children, the only pids this container can
+    act on (NVML pids are host-namespace, gotchas.md #1090). Deliberately NO
+    foreign-pid drain VERDICT here (the #1090 ``teardown_vllm`` shape): the
+    ladder units co-hold an HF model by design and this process's allocator
+    cache surfaces under an unattributable host pid, so a foreign-floor check
+    false-positives (measured on-pod, r7 smoke #1: the unit's own 15,260 MiB
+    base model tripped the 6144 MiB floor). The cleanliness VERDICTS live at
+    the process boundaries instead — ``_unit_gpu_preflight`` (fresh process,
+    clean read) + ``_gpu_hygiene`` (post-empty_cache read).
     """
     from explore_persona_space.analysis.representation_shift import _reap_vllm_engine
-    from explore_persona_space.experiments.behavior_testbed_545.eval_battery import teardown_vllm
 
     _reap_vllm_engine(llm)
-    teardown_vllm(llm)
+    try:
+        import psutil
+
+        children = [ch for ch in psutil.Process().children(recursive=True) if _is_engine_child(ch)]
+        for ch in children:
+            logger.info("[engine-reap] terminating engine child pid=%d", ch.pid)
+            try:
+                ch.terminate()
+            except Exception:
+                logger.warning("[engine-reap] SIGTERM failed for pid=%d", ch.pid)
+        if children:
+            _, alive = psutil.wait_procs(children, timeout=10)
+            for ch in alive:
+                logger.warning("[engine-reap] SIGKILL engine child pid=%d", ch.pid)
+                try:
+                    ch.kill()
+                except Exception:
+                    logger.warning("[engine-reap] SIGKILL failed for pid=%d", ch.pid)
+        logger.info("[engine-reap] engine children reaped (n=%d)", len(children))
+    except ImportError:
+        logger.info("[engine-reap] psutil unavailable — relying on graceful shutdown")
+    import gc
+
+    import torch
+
+    gc.collect()
+    if torch.cuda.is_initialized():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+    time.sleep(1.0)  # subprocess teardown + driver release are async
 
 
 def _greedy(llm, prompts: list[str], max_new: int, *, lora_request=None) -> list[str]:
