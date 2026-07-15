@@ -77,12 +77,12 @@ def _is_transport(rec: object) -> bool:
 def _parse_read(judge_dir: Path) -> tuple[fu4.Fu4Run, str, str]:
     """Decode a fu4 judge read dir into (run, kind, item-id prefix)."""
     if judge_dir.parent.name == "formatting_reread":
-        run = fu4.RUN_BY_ID[judge_dir.name]
+        run = fu4._run_by_id()[judge_dir.name]
         return run, "reread", f"{run.run_id}-reread"
     tag = judge_dir.name
     suffix = "-t2-trained"
     assert tag.endswith(suffix), f"unrecognized fu4 judge read dir: {judge_dir}"
-    run = fu4.RUN_BY_ID[tag[: -len(suffix)]]
+    run = fu4._run_by_id()[tag[: -len(suffix)]]
     assert judge_dir.parent.name == run.behavior, (str(judge_dir), run.behavior)
     return run, "t2", tag
 
@@ -226,10 +226,10 @@ def recompute_ladders(ladders_path: Path, out_root: Path, reports: list[dict]) -
     read, formatting_judged_reread per reread read, then the registered
     verdict-lattice inputs. Atomic rewrite; returns per-read rate changes."""
     out = json.loads(ladders_path.read_text())
-    judge_root = out_root / "fu4_aggregate" / "judge"
+    judge_root = out_root / f"{fu4.ROUND.name}_aggregate" / "judge"
     changes: dict[str, dict] = {}
     for rep in reports:
-        run = fu4.RUN_BY_ID[rep["run_id"]]
+        run = fu4._run_by_id()[rep["run_id"]]
         rec = out["runs"].get(run.run_id)
         if rec is None:
             raise KeyError(
@@ -264,7 +264,7 @@ def recompute_ladders(ladders_path: Path, out_root: Path, reports: list[dict]) -
             old = rec.get("formatting_judged_reread") or {}
             changes[rep["read"]] = {"old_rate": old.get("rate"), "new_rate": new["rate"]}
             rec["formatting_judged_reread"] = new
-    runs = tuple(fu4.RUN_BY_ID[rid] for rid in out["runs"] if rid in fu4.RUN_BY_ID)
+    runs = tuple(fu4._run_by_id()[rid] for rid in out["runs"] if rid in fu4._run_by_id())
     fu4._verdict_lattice_inputs(out, runs)
     i1090._atomic_write_json(ladders_path, out)
     return changes
@@ -277,9 +277,11 @@ def main(argv=None) -> int:
     ap.add_argument("--ladders", default=str(fu4.DELIVERABLES_DIR / "fu4_ladders.json"))
     ap.add_argument("--max-tokens", type=int, default=fu4.JUDGE_MAX_TOKENS_FU4)
     ap.add_argument("--dry-run", action="store_true", help="scan + report only, no API calls")
+    ap.add_argument("--round", default="fu4", choices=tuple(sorted(fu4.ROUNDS)))
     args = ap.parse_args(argv)
+    fu4.set_round(args.round)
     out_root = Path(args.out_root)
-    judge_root = out_root / "fu4_aggregate" / "judge"
+    judge_root = out_root / f"{fu4.ROUND.name}_aggregate" / "judge"
 
     reports: list[dict] = []
     for raw_path in sorted(judge_root.glob("*/*/judge_raw.json")):
