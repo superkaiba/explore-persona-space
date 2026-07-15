@@ -1,7 +1,7 @@
 ---
 title: Directional function-space map similarity predicts marker leakage beyond the
-  activation-cosine and Jensen–Shannon baselines that render its symmetrized form
-  redundant (MODERATE confidence)
+  activation-cosine and Jensen–Shannon baselines at high dose but shows no detectable
+  signal on a band-stopped low-dose grid (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
