@@ -2562,8 +2562,8 @@
     "1329": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1329",
-      "status": "running",
+      "path": "tasks/reviewing/1329",
+      "status": "reviewing",
       "title": "daily-fix: lint lane-specific env vars in workload-cmd"
     },
     "133": {
