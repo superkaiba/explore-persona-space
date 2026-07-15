@@ -158,9 +158,11 @@ fi
 
 if should_run matchedn; then
   echo "[phase=matchedn]"
-  # Parity gate (±0.02 vs pinned anchors; exit 3 halts) + matched-n subsets
+  # Parity gate (±0.02 vs pinned anchors; exit 3 halts) + matched-n subsets.
+  # $SMOKE_FLAG demotes ONLY the anchor comparison to informational — the
+  # anchors bind at production n; the computation still runs (PASS_UNIFIED).
   run_cmd env CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1345_fit_cells.py \
-    --parity --build-matched $NO_R3_FLAG \
+    --parity --build-matched $NO_R3_FLAG $SMOKE_FLAG \
     --turnstore-dir "$TS_DIR" --matched-dir "$MATCHED_DIR" --out-dir "$EVAL_DIR"
 fi
 

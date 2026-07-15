@@ -13,7 +13,11 @@ fingerprint-gated resume. Judge filter: claude-sonnet-4-5 via api_dispatch
 (reason-then-verdict, >=4 extractable Q->A turns), drop-never-coerce with a
 transport re-drive. Yield floor 400/500 after one retry batch (kill
 criterion, plan §7): a miss exits rc=21 so the dispatcher can halt the story
-legs while the chat<->no-template phases proceed.
+legs while the chat<->no-template phases proceed. Under --smoke the floor is
+1 (any kept story proceeds) so the smoke leg ALWAYS exercises the
+extract_stories phase — the production 400/500 drop-never-backfill floor is
+untouched, and the rc=21 halt path stays reachable (kept=0) + unit-covered
+(crash-fix r3, att-20260715-161700).
 
 Content hygiene: seed questions are LMSYS real user text and stories are raw
 model generations — this script logs COUNTS/ids only, never text.
@@ -340,6 +344,38 @@ def parse_and_judge(rows: list[dict], cache_dir: Path, smoke: bool) -> tuple[lis
 
 
 # ---------------------------------------------------------------------------
+# Yield floor (plan §7 kill criterion; smoke floor keeps extract_stories live)
+# ---------------------------------------------------------------------------
+def resolve_yield_floor(smoke: bool, floor: int) -> int:
+    """Yield floor for this run: 1 under --smoke, else the production floor.
+
+    Smoke floor = 1 so ANY kept story proceeds and the smoke leg always
+    exercises extract_stories (crash-fix r3: pretrained kept=1 < the old
+    smoke floor 2 rc=21-halted the story regime, un-smoking the phase the
+    smoke exists to cover). The production floor (STORY_YIELD_FLOOR=400/500,
+    drop-never-backfill, plan §7) is untouched.
+    """
+    return 1 if smoke else floor
+
+
+def enforce_yield_floor(n_kept: int, yield_floor: int) -> None:
+    """rc=21 story-regime halt when kept < floor (plan §7 kill criterion).
+
+    Raises SystemExit(21) — the dispatcher maps rc=21 to a story-regime halt
+    (r1/r2 phases continue). Called with the smoke-resolved floor, so the
+    halt path stays reachable under --smoke at kept=0.
+    """
+    if n_kept < yield_floor:
+        print(
+            f"[yield-floor] FAILED: kept={n_kept} < floor={yield_floor} — "
+            "halting the story regime (plan §7 kill criterion); rc=21",
+            file=sys.stderr,
+            flush=True,
+        )
+        raise SystemExit(21)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main() -> None:
@@ -377,7 +413,7 @@ def main() -> None:
     assert args.model, "--model is required unless --parse-judge-only"
     model_key = args.model
     n_target = 3 if args.smoke else args.n_stories
-    yield_floor = 2 if args.smoke else args.yield_floor
+    yield_floor = resolve_yield_floor(args.smoke, args.yield_floor)
 
     pool = load_seed_pool(args.dl_dir)
 
@@ -444,14 +480,13 @@ def main() -> None:
     }
     c.write_json(out_dir / f"story_yield_{model_key}.json", report)
 
-    if len(kept) < yield_floor:
+    if args.smoke and len(kept) < n_target:
         print(
-            f"[yield-floor] FAILED: kept={len(kept)} < floor={yield_floor} — "
-            "halting the story regime (plan §7 kill criterion); rc=21",
-            file=sys.stderr,
+            f"[yield-floor][smoke] shortfall: kept={len(kept)}/{n_target} — proceeding "
+            "(smoke floor=1 so extract_stories is exercised; production floor unchanged)",
             flush=True,
         )
-        raise SystemExit(21)
+    enforce_yield_floor(len(kept), yield_floor)
     print(f"[done] model={model_key} kept={len(kept)}/{n_target} stories", flush=True)
 
 
