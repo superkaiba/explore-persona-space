@@ -475,14 +475,19 @@ def context_order_and_families(battery: dict) -> tuple[list[str], dict[str, str]
 SENTINEL_SCHEMA_VERSION = 1
 
 
-def write_sentinel(kind: str, note: dict, fallback_dir: Path, log_dir: Path | None = None) -> Path:
-    """poll_pipeline.py-conformant sentinel (issue-928 naming). Returns the path.
+def write_sentinel(
+    kind: str, note: dict, fallback_dir: Path, log_dir: Path | None = None, issue: int = 928
+) -> Path:
+    """poll_pipeline.py-conformant sentinel (``issue-<N>`` naming). Returns the path.
 
     Round-2 relocation from the extract script: the extract phase now emits an
     ``epm:progress`` sentinel and the run_all driver's finalize step emits the
     ONE ``epm:results`` sentinel at true end-of-workload (after fits + figures
     + uploads) — so both writers share this implementation. ``log_dir``
     overrides the ``/workspace/logs`` default (smoke runs redirect to scratch).
+    ``issue`` (DEFAULT-PRESERVING, #1005: default 928 ⇒ existing filenames
+    byte-for-byte) selects the ``issue-<N>-`` filename prefix so replication
+    drivers reuse this writer under their own issue number.
     """
     import logging
     import time
@@ -491,9 +496,9 @@ def write_sentinel(kind: str, note: dict, fallback_dir: Path, log_dir: Path | No
     base = log_dir if log_dir is not None else Path("/workspace/logs")
     try:
         base.mkdir(parents=True, exist_ok=True)
-        target = base / f"issue-928-{slug}-{int(time.time())}.json"
+        target = base / f"issue-{issue}-{slug}-{int(time.time())}.json"
     except OSError:
-        target = fallback_dir / f"issue-928-{slug}-sentinel.json"
+        target = fallback_dir / f"issue-{issue}-{slug}-sentinel.json"
     dump_json(
         {
             "sentinel_schema_version": SENTINEL_SCHEMA_VERSION,

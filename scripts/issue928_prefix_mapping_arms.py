@@ -730,6 +730,7 @@ def pma_bootstrap_statistics(  # noqa: C901 — linear read battery (plan §6 ex
     n_boot: int,
     alignment: dict,
     full_grid: bool,
+    ans_frozen_layer: dict[str, int] | None = None,
 ) -> dict:
     """Paired-bootstrap Δskill CIs (plan §6) off ONE shared seed-42 resample
     matrix — digest-ASSERTED equal to the committed per-regime digest whenever
@@ -743,6 +744,12 @@ def pma_bootstrap_statistics(  # noqa: C901 — linear read battery (plan §6 ex
     (25 indiv / 27 avg_q); on a run whose layer subset lacks that layer
     (tiny-model smoke) the recorded fallback is the ``pma_ctx_ans`` full-data
     best LOCO layer — full-grid runs fail loud instead.
+
+    ``ans_frozen_layer`` (DEFAULT-PRESERVING, #1005 §4.6: ``None`` ⇒ the #928
+    ``PMA_ANS_FROZEN_LAYER`` committed conventions byte-for-byte) overrides
+    the answer-target frozen-layer map for a replication whose frozen-layer
+    RULE re-derives indices on its own data (the parent's realized 25/27 are
+    reference points, not pins — #1005 passes its OWN F1 frozen layers).
     """
     idx = make_bootstrap_index_matrix(n_ctx, n_boot, BOOTSTRAP_SEED)
     matrix_digest = hashlib.sha256(np.ascontiguousarray(idx).tobytes()).hexdigest()[:16]
@@ -786,7 +793,8 @@ def pma_bootstrap_statistics(  # noqa: C901 — linear read battery (plan §6 ex
     # frozen-layer conventions (plan §4.3).
     l_pfx = _best_layer(decomp, "pma_pfx")
     l_mlc = _best_layer(committed_decomp, "mlc_ctx")
-    l_ans_want = PMA_ANS_FROZEN_LAYER[regime]
+    ans_frozen = PMA_ANS_FROZEN_LAYER if ans_frozen_layer is None else ans_frozen_layer
+    l_ans_want = ans_frozen[regime]
     ans_layers = _layers_of(decomp, "pma_pfx_ans")
     if l_ans_want in ans_layers:
         l_ans, ans_note = l_ans_want, "parent committed convention"

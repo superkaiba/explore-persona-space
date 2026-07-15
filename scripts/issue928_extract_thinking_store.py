@@ -167,7 +167,13 @@ def build_prompt_text(tokenizer, instance: dict, probe: str, rung: str) -> str:
     return text
 
 
-def assert_assistant_header(tokenizer, prompt_ids: torch.Tensor, ctx_id: str, probe: str) -> None:
+def assert_assistant_header(
+    tokenizer,
+    prompt_ids: torch.Tensor,
+    ctx_id: str,
+    probe: str,
+    generation_suffix: str | None = None,
+) -> None:
     """Fail-loud assistant-header position assert (#594 lineage, carried explicitly).
 
     The last 3 tokens of the TEMPLATED prompt must decode to
@@ -175,11 +181,17 @@ def assert_assistant_header(tokenizer, prompt_ids: torch.Tensor, ctx_id: str, pr
     c_C last-input-token position). Plan §4.2: this assert lives in the
     issue928 extractor itself (the reused ``build_prompts`` helper does NOT
     provide it — it sits at ``issue594_extract_context_vectors.py:165``).
+
+    ``generation_suffix`` (DEFAULT-PRESERVING, #1005 §4.1: ``None`` ⇒ the #928
+    ``GENERATION_SUFFIX`` byte-for-byte) overrides the expected last-3-token
+    decode for a model whose chat template forces a different scaffold
+    (R1-distill: ``<｜Assistant｜><think>\\n``).
     """
+    want = GENERATION_SUFFIX if generation_suffix is None else generation_suffix
     suffix = tokenizer.decode(prompt_ids[-3:])
-    assert suffix == GENERATION_SUFFIX, (
+    assert suffix == want, (
         f"assistant-header position assert failed for context={ctx_id} probe={probe[:40]!r}: "
-        f"last-3-token decode {suffix!r} != {GENERATION_SUFFIX!r} (a drifted template would "
+        f"last-3-token decode {suffix!r} != {want!r} (a drifted template would "
         "capture ctx_last at the WRONG slot for every row — refusing)"
     )
 
@@ -187,11 +199,19 @@ def assert_assistant_header(tokenizer, prompt_ids: torch.Tensor, ctx_id: str, pr
 # ── generation (Phase G) ──────────────────────────────────────────────────────
 
 
-def sampling_params_for_rung(rung: str, max_new_tokens: int):
-    """Per-rung vLLM SamplingParams (plan §4.3 ladder recipe)."""
+def sampling_params_for_rung(
+    rung: str, max_new_tokens: int, stop_token_ids: list[int] | None = None
+):
+    """Per-rung vLLM SamplingParams (plan §4.3 ladder recipe).
+
+    ``stop_token_ids`` (DEFAULT-PRESERVING, #1005 §4.0: ``None`` ⇒ the #928
+    ``[IM_END_TOKEN_ID, ENDOFTEXT_TOKEN_ID]`` byte-for-byte) overrides the stop
+    set for a model whose eos differs (R1-distill: ``[151643]`` — in THAT
+    tokenizer 151645 is ``<｜Assistant｜>``, NOT an end token).
+    """
     from vllm import SamplingParams
 
-    stop_ids = [IM_END_TOKEN_ID, ENDOFTEXT_TOKEN_ID]
+    stop_ids = [IM_END_TOKEN_ID, ENDOFTEXT_TOKEN_ID] if stop_token_ids is None else stop_token_ids
     if rung == "sample":
         return SamplingParams(
             temperature=0.6,
@@ -204,13 +224,22 @@ def sampling_params_for_rung(rung: str, max_new_tokens: int):
     return SamplingParams(temperature=0.0, max_tokens=max_new_tokens, stop_token_ids=stop_ids)
 
 
-def build_vllm_engine(model_name: str, gpu_memory_utilization: float, max_model_len: int):
+def build_vllm_engine(
+    model_name: str,
+    gpu_memory_utilization: float,
+    max_model_len: int,
+    revision: str | None = None,
+):
     """vLLM engine with the PARAMETRIZED memory utilization (plan §4.3 override).
 
     The reused parent helper ``issue658_extract_base_store.vllm_generate``
     HARDCODES ``gpu_memory_utilization=0.45``; #928 requires 0.85 (at 0.45 the
     A100-40 fallback rung likely fails engine init on 8k-token sequences), so
     the engine is built here with the value threaded from the CLI.
+
+    ``revision`` (DEFAULT-PRESERVING, #1005 §4.1: ``None`` ⇒ unpinned, the
+    #928 behavior) pins the Hub revision — #1005 pins the R1-distill chat
+    template (the manipulated contract) against upstream template changes.
     """
     from vllm import LLM
 
@@ -220,6 +249,7 @@ def build_vllm_engine(model_name: str, gpu_memory_utilization: float, max_model_
         gpu_memory_utilization=gpu_memory_utilization,
         max_model_len=max_model_len,
         seed=GENERATION_SEED,
+        revision=revision,
     )
 
 
@@ -387,7 +417,18 @@ def _logits_to_keep_kwargs(model) -> dict:
 
 
 def build_capture_row(
-    tokenizer, instance, probe, completion, parse_rec, rung, parts_spec=None, prompt_parts_spec=None
+    tokenizer,
+    instance,
+    probe,
+    completion,
+    parse_rec,
+    rung,
+    parts_spec=None,
+    prompt_parts_spec=None,
+    generation_suffix: str | None = None,
+    boundary_ids: list[int] | None = None,
+    boundary_positions: dict[str, int] | None = None,
+    prompt_positions: dict[str, int] | None = None,
 ):
     """One teacher-forced row: ids + part token-spans + single positions, or (None, reason).
 
@@ -415,12 +456,30 @@ def build_capture_row(
     indices — prompt tokens start at 0); a str return drops the row with that
     counted reason. Evaluated AFTER ``parts_spec`` so completion-floor drop
     reasons keep the matched-length round's accounting.
+
+    #1005 §4.1 model-profile extensions (all DEFAULT-PRESERVING — ``None`` ⇒
+    existing behavior byte-for-byte): ``generation_suffix`` overrides the
+    assistant-header assert's expected decode; ``boundary_ids`` overrides the
+    teacher-forced post-answer feed (#928: ``[IM_END, \\n]``; #1005:
+    ``[151643]`` = ``ans_eos``); ``boundary_positions`` maps position NAMES to
+    offsets into the boundary (#928 default: ``{"ans_im_end": 0,
+    "ans_turn_nl": 1}``); ``prompt_positions`` adds prompt-side single
+    positions as NEGATIVE offsets from ``prompt_len_tpl`` (#1005:
+    ``{"ctx_assist": -3}`` — the ``<｜Assistant｜>`` token). Prompt
+    tokenization passes ``add_special_tokens=False`` (identical output for the
+    parent Qwen2 tokenizer, which adds no specials; REQUIRED for the
+    ``add_bos_token: true`` R1 tokenizer whose template already embeds bos —
+    the #1005 exactly-one-bos contract).
     """
     prompt_text_tpl = tokenizer.apply_chat_template(
         messages_for_instance(instance, probe), tokenize=False, add_generation_prompt=True
     )
-    prompt_ids_tpl = tokenizer(prompt_text_tpl, return_tensors="pt", padding=False)["input_ids"][0]
-    assert_assistant_header(tokenizer, prompt_ids_tpl, instance["id"], probe)
+    prompt_ids_tpl = tokenizer(
+        prompt_text_tpl, return_tensors="pt", padding=False, add_special_tokens=False
+    )["input_ids"][0]
+    assert_assistant_header(
+        tokenizer, prompt_ids_tpl, instance["id"], probe, generation_suffix=generation_suffix
+    )
     prompt_len_tpl = int(prompt_ids_tpl.shape[0])
     if rung == "prefill":
         prefill_ids = tokenizer(PREFILL_TEXT, add_special_tokens=False, return_tensors="pt")[
@@ -448,7 +507,12 @@ def build_capture_row(
     if close_tok == (0, 0):
         return None, "empty_close_token_span"
 
-    boundary = torch.tensor([IM_END_TOKEN_ID, TURN_NL_TOKEN_ID], dtype=prompt_ids.dtype)
+    b_ids = [IM_END_TOKEN_ID, TURN_NL_TOKEN_ID] if boundary_ids is None else list(boundary_ids)
+    b_pos = (
+        {"ans_im_end": 0, "ans_turn_nl": 1} if boundary_positions is None else boundary_positions
+    )
+    assert all(0 <= off < len(b_ids) for off in b_pos.values()), (b_pos, b_ids)
+    boundary = torch.tensor(b_ids, dtype=prompt_ids.dtype)
     full_ids = torch.cat([prompt_ids, comp_ids, boundary])
     comp_len = int(comp_ids.shape[0])
     spans = {
@@ -467,7 +531,7 @@ def build_capture_row(
             assert 0 <= es < ee <= comp_len, (name, es, ee, comp_len)
             spans[name] = (prompt_len + es, prompt_len + ee)
     if prompt_parts_spec is not None:
-        enc_p = tokenizer(prompt_text_tpl, return_offsets_mapping=True)
+        enc_p = tokenizer(prompt_text_tpl, return_offsets_mapping=True, add_special_tokens=False)
         assert list(enc_p["input_ids"]) == prompt_ids_tpl.tolist(), (
             "offsets-call tokenization drifted from the templated prompt ids"
         )
@@ -483,11 +547,18 @@ def build_capture_row(
         "cot_last": prompt_len + cot_tok[1] - 1,
         "cot_close": prompt_len + close_tok[1] - 1,
         "ans_last": prompt_len + ans_tok[1] - 1,
-        "ans_im_end": prompt_len + comp_len,
-        "ans_turn_nl": prompt_len + comp_len + 1,
     }
-    fed = full_ids[prompt_len + comp_len : prompt_len + comp_len + 2].tolist()
-    assert fed == [IM_END_TOKEN_ID, TURN_NL_TOKEN_ID], f"boundary ids drifted: {fed}"
+    for name, off in b_pos.items():
+        assert name not in positions, f"boundary_positions redefines base position {name!r}"
+        positions[name] = prompt_len + comp_len + off
+    if prompt_positions is not None:
+        for name, rel in prompt_positions.items():
+            assert name not in positions, f"prompt_positions redefines position {name!r}"
+            pos = prompt_len_tpl + rel  # rel is NEGATIVE (offset back from the prompt end)
+            assert 0 <= pos < prompt_len_tpl, (name, rel, prompt_len_tpl)
+            positions[name] = pos
+    fed = full_ids[prompt_len + comp_len : prompt_len + comp_len + len(b_ids)].tolist()
+    assert fed == b_ids, f"boundary ids drifted: {fed} != {b_ids}"
     return {"full_ids": full_ids, "spans": spans, "positions": positions}, ""
 
 
@@ -597,7 +668,9 @@ def reusable_store_blob(
     return blob, ""
 
 
-def reduce_forward_batch(model, capture, capture_layers, tokenizer, batch_rows, summary_names=None):
+def reduce_forward_batch(
+    model, capture, capture_layers, tokenizer, batch_rows, summary_names=None, position_names=None
+):
     """ONE left-padded forward + GPU-side streaming reduction → (B, S, Lc, H) fp16 CPU.
 
     Explicit ``position_ids`` (cumsum(mask)−1 clamped at 0 — RoPE under
@@ -612,9 +685,16 @@ def reduce_forward_batch(model, capture, capture_layers, tokenizer, batch_rows, 
     part's ``row["spans"]`` mask (any part the rows carry, incl. parts_spec
     extras); names in ``_POSITION_NAMES`` gather single positions. S =
     ``len(summary_names)``.
+
+    ``position_names`` (DEFAULT-PRESERVING, #1005 §4.1: ``None`` ⇒ the #928
+    ``_POSITION_NAMES`` byte-for-byte) overrides the single-position name
+    registry for a profile with different boundary/prompt positions
+    (R1-distill: ``ans_eos`` replaces ``ans_im_end``/``ans_turn_nl``;
+    ``ctx_assist`` added).
     """
     names = tuple(SUMMARY_NAMES) if summary_names is None else tuple(summary_names)
-    pos_names = [n for n in names if n in _POSITION_NAMES]
+    pos_registry = _POSITION_NAMES if position_names is None else tuple(position_names)
+    pos_names = [n for n in names if n in pos_registry]
     mean_parts = [n[: -len("_mean")] for n in names if n.endswith("_mean")]
     max_parts = [n[: -len("_max")] for n in names if n.endswith("_max") and n not in pos_names]
     unknown = [
