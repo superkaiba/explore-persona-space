@@ -2640,9 +2640,11 @@ worktree `events.jsonl` — before the implementation marker was pulled in — i
 the most common false absence; the canonical read is what catches it.) No LLM
 judgment, just structural presence:
 
-- **marker-shape:** two sub-recipes, keyed PER BLOCKER on the blocker body
+- **marker-shape:** three sub-recipes, keyed PER BLOCKER on the blocker body
   (a conforming Step 0.55 blocker names exactly ONE marker kind,
-  `epm:smoke-architecture-check` — never a combined Step 0.5 + 0.55 blocker).
+  `epm:smoke-architecture-check`; a conforming Step 4.6 presence blocker
+  names `Gate-scope check` ONLY — never a combined 0.5 + 0.55 + 4.6
+  blocker).
   When the blocker names `epm:smoke-architecture-check` (Step 0.55): a
   separate `epm:smoke-architecture-check` events row exists in canonical task
   state with a `verdict:` line matching `PASS_UNIFIED` | `PASS_CANARY
@@ -2650,7 +2652,14 @@ judgment, just structural presence:
   stale-worktree false absence); absent or verdict-less → leave the FAIL in
   place (the gate is doing its job; do NOT check the implementation marker's
   H3s for this sub-case — they can be conforming while the separate row is
-  missing, which is exactly incident #811). Otherwise (the Step 0.5 default):
+  missing, which is exactly incident #811).
+  When the blocker names `Gate-scope check` (Step 4.6 presence): the `(c)`
+  section of the highest-version `epm:results` marker in canonical task
+  state carries a `Gate-scope check` line — present → STRIP (a
+  stale-worktree false absence; the strip verifies PRESENCE ONLY — a
+  diff-consistency finding is `substantive` per Step 4.6 and never
+  reaches this recipe); absent → leave the FAIL in place (the gate is
+  doing its job). Otherwise (the Step 0.5 default):
   all four H3 sections `(a)`–`(d)` present with non-empty content AND `(c)`
   carries at least one fenced command.
 - **smoke-run-missing:** a `## Smoke run` section is present, and EVERY phase
