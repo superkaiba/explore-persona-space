@@ -636,3 +636,124 @@ def test_phase_geometry_smoke_requires_two_questions_end_to_end(tmp_path):
     )
     ceiling = payload["split_half_self_cosine_ceiling"][cell]
     assert ceiling["n_partitions"] == 50 and -1.0 <= ceiling["mean"] <= 1.0
+
+
+# ── round-6 crash fix: p5_tier2 context registration on a RESUMED process ────
+
+
+def _stage_ft_cell_for_tier2(root: Path, cell: str, step: int = 2) -> None:
+    """Real-schema FT-cell resume state for phase_tier2: build_result.json +
+    a checkpoint-<step> rung carrying a tokenizer.json stub (so the REAL
+    _ensure_dir_tokenizer body no-ops on its existence key, no network)."""
+    train = root / cell / "train"
+    (train / f"checkpoint-{step}").mkdir(parents=True)
+    (train / f"checkpoint-{step}" / "tokenizer.json").write_text("{}")
+    (root / cell / "build_result.json").write_text(
+        json.dumps({"cell": cell, "adapter_root": str(train)})
+    )
+
+
+def test_phase_tier2_registers_context_on_resumed_process(tmp_path, monkeypatch):
+    """epm:failure v5 repro + fix pin: on a RESUMED process (p0-p4 all
+    fast-forward, so no earlier phase's _context() side effect ran) the
+    central CONTEXTS registry lacks 'icl_prefix_impolite', and pre-fix
+    phase_tier2 crashed constructing ModelOrganism. Post-fix it resolves +
+    registers the context itself (the run_ladder_unit seam), completes the FT
+    cell, SKIPS the lora-kind cell, and writes the production install mirror."""
+    from unittest.mock import create_autospec
+
+    import issue1315_dispatch as d
+
+    from explore_persona_space.artifacts.context import CONTEXTS
+
+    # Simulate the resumed fresh process: the fu3-lineage id is unregistered.
+    monkeypatch.delitem(CONTEXTS, C.ICL_CONTEXT_ID, raising=False)
+    assert C.ICL_CONTEXT_ID not in CONTEXTS
+
+    ft_cell = sorted(C.FT_CELLS)[0]
+    lora_cell = sorted(C.REUSED_LORA_CELLS)[0]
+    cfg = d.Cfg(smoke=False, cells=(ft_cell, lora_cell), out_root=tmp_path, upload=False)
+    _stage_ft_cell_for_tier2(tmp_path, ft_cell)
+    selections = {ft_cell: {"step": 2}}
+
+    fake_factory = create_autospec(d.make_source_rate_fn)
+    fake_factory.return_value = lambda model_path: 0.7  # rate_fn(str(ckpt)) -> float
+    monkeypatch.setattr(d, "make_source_rate_fn", fake_factory)
+    # Production (non-smoke) deliver branch, redirected off the canonical tree.
+    monkeypatch.setattr(d, "REPO_ROOT", tmp_path / "repo")
+
+    out = d.phase_tier2(cfg, selections)
+
+    assert C.ICL_CONTEXT_ID in CONTEXTS  # the fix's registration side effect
+    assert out[ft_cell]["rates"] == {"trained": 0.7, "base": 0.0}
+    assert out[ft_cell]["step"] == 2
+    assert fake_factory.call_count == 1
+    organism = fake_factory.call_args.args[0]
+    assert organism.context_id == C.ICL_CONTEXT_ID and organism.behavior == C.BEHAVIOR
+    assert json.loads((tmp_path / ft_cell / "tier2.json").read_text())["cell"] == ft_cell
+    # lora-kind cell: tier-2 is committed upstream — never re-read here.
+    assert lora_cell not in out and not (tmp_path / lora_cell / "tier2.json").exists()
+    mirror = tmp_path / "repo" / "eval_results" / "issue_1315" / "install"
+    assert (mirror / f"{ft_cell}_tier2.json").exists()
+
+
+def test_phase_tier2_resume_skips_organism_entirely(tmp_path, monkeypatch):
+    """tier2.json-present resume branch: the persisted record is returned with
+    NO organism construction, so it must succeed even with the context
+    unregistered AND the rate factory unavailable."""
+    import issue1315_dispatch as d
+
+    from explore_persona_space.artifacts.context import CONTEXTS
+
+    monkeypatch.delitem(CONTEXTS, C.ICL_CONTEXT_ID, raising=False)
+    ft_cell = sorted(C.FT_CELLS)[0]
+    cfg = d.Cfg(smoke=False, cells=(ft_cell,), out_root=tmp_path, upload=False)
+    rec = {"cell": ft_cell, "step": 2, "rates": {"trained": 0.8, "base": 0.0}, "n": 10}
+    (tmp_path / ft_cell).mkdir(parents=True)
+    (tmp_path / ft_cell / "tier2.json").write_text(json.dumps(rec))
+    monkeypatch.setattr(
+        d, "make_source_rate_fn", lambda *a, **k: pytest.fail("resume must not re-judge")
+    )
+    monkeypatch.setattr(d, "REPO_ROOT", tmp_path / "repo")
+    out = d.phase_tier2(cfg, {ft_cell: {"step": 2}})
+    assert out[ft_cell] == rec and C.ICL_CONTEXT_ID not in CONTEXTS
+
+
+# ── round-6 porting audit: p7_rb trait gate (issue779_common seeded lineage) ──
+
+
+def test_issue779_trait_gate_accepts_seeded_impolite(tmp_path, monkeypatch):
+    """p7_rb audit fix: issue779_common's TRAITS asserts rejected 'impolite'
+    even though the dispatcher pre-seeds its artifacts cache — the extractor
+    subprocess would have crashed on the pod (production-only; smoke skips
+    p7). Post-fix: a SEEDED lineage trait loads; an unseeded one still fails
+    loud; Sonnet regeneration of a lineage trait is refused; TRAITS members
+    are byte-unchanged."""
+    import issue779_common as c779
+    import issue1315_dispatch as d
+
+    monkeypatch.setattr(c779, "_artifacts_dir", lambda: tmp_path)
+
+    with pytest.raises(ValueError, match="pre-seeded"):
+        c779.load_extraction_artifacts("impolite")
+    with pytest.raises(ValueError, match="pre-seeded"):
+        c779.generate_extraction_artifacts("impolite")
+
+    # REAL seeder body (BEHAVIORS registry -> the #1090 impolite definition).
+    seeded = d._seed_rb_artifacts_from_registry(tmp_path / "impolite.json")
+    loaded = c779.load_extraction_artifacts("impolite")
+    assert loaded == seeded
+    assert len(loaded["instruction"]) == 5
+    assert all(set(p) == {"pos", "neg"} for p in loaded["instruction"])
+    assert len(loaded["extraction_questions"]) == 20
+    assert "{question}" in loaded["eval_prompt"] and "{answer}" in loaded["eval_prompt"]
+    # generate() returns the seeded cache without any API call...
+    assert c779.generate_extraction_artifacts("impolite") == seeded
+    # ...and refuses to Sonnet-regenerate a lineage trait even under force.
+    with pytest.raises(ValueError, match="cache-seeded only"):
+        c779.generate_extraction_artifacts("impolite", force=True)
+
+    # TRAITS members: unchanged contracts.
+    assert c779.load_extraction_artifacts("evil") == c779.EVIL_ARTIFACTS
+    with pytest.raises(FileNotFoundError):
+        c779.load_extraction_artifacts("sycophancy")  # member, cache absent

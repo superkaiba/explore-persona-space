@@ -1089,9 +1089,22 @@ def phase_tier2(cfg: Cfg, selections: dict) -> dict:
         if res_path.exists():
             out[cell] = _read_json(res_path)
             continue
-        organism = ModelOrganism(
-            behavior=C.BEHAVIOR, context_id=_cell_context_id(cfg, cell), seed=cfg.seed
-        )
+        context_id = _cell_context_id(cfg, cell)
+        # r6 crash fix (epm:failure v5): register the fu3-lineage context BEFORE
+        # organism validation. ModelOrganism.__post_init__ validates context_id
+        # against the central CONTEXTS registry, and 'icl_prefix_impolite' only
+        # enters it via an in-process _context() side effect (p0's
+        # assert_icl_block_matches_mix, p4's run_parity_unit). On a RESUMED
+        # process every earlier phase fast-forwards on its done-file, so no
+        # registration ever ran and the production p5 crashed here — while the
+        # fresh-out_root smoke passed via p0's side effect. Same seam as
+        # run_ladder_unit (p2); the registered TEXT is the #1090 fu3 training
+        # context verbatim (fu3w.ensure_context -> artifacts.context.
+        # icl_prefix_context over the committed bank, byte-asserted as a prefix
+        # of every ICL row in the frozen fu3 mix at p0).
+        ctx = _context(context_id)
+        logger.info("[tier2] context resolved: %s (cell %s)", ctx.context_id, cell)
+        organism = ModelOrganism(behavior=C.BEHAVIOR, context_id=context_id, seed=cfg.seed)
         rate_fn = make_source_rate_fn(
             organism,
             out_dir=cell_root / "tier2_rate",
