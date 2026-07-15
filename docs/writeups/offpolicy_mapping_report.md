@@ -61,15 +61,15 @@ I first wanted to see if you could train an as good mapping from context to off-
 
 ### Result 2: The mapping is similar to the on-policy mapping but not exactly the same
 
-I then wanted to see if this was the same mapping or a different mapping. Instead of refitting, I froze the on-policy-fitted map and scored it directly on the other arms' targets, across all 28 layers (dashed curves), next to each arm's own refit (solid); the reverse direction (Claude-fitted map scored on own targets) was run as a follow-up.
+I then wanted to see if this was the same mapping or a different mapping. Instead of refitting, I froze each fitted map and scored it directly on the other arm's targets: for each target set (Qwen's own answers, Claude's plain answers), the bars compare the map fitted on that same arm (matched) against the map fitted on the other arm (cross), at layer 17.
 
-**Plot: Per-layer refit (solid) vs own-map transfer (dashed) R²**
+**Plot: Own-answer vs cross-answer prediction at layer 17**
 
-![Per-layer refit and transfer R²](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e4bfe5c769ec36cedd3886bc5c018f6d2f473115/figures/issue_823/fig2_per_layer_refit_transfer.png)
+![Cross vs own transfer at layer 17](https://raw.githubusercontent.com/superkaiba/explore-persona-space/66fab366b314a0d5616dbd9968e46f6bdc47b3d1/figures/issue_823/fig2b_cross_vs_own_transfer_L17.png)
 
 **Takeaways:**
 
-- Mostly the same map: the on-policy map scores Claude-plain targets at R² 0.451–0.461 against the 0.556–0.591 refit ceiling (~80% of ceiling), with a real ~0.10–0.14 transfer cost
+- Mostly the same map: each cross map recovers R² 0.46 of a ~0.59–0.63 matched ceiling (~75–80%), with a real ~0.13–0.17 transfer cost at this layer (0.10–0.14 across the read-out layers; per-layer curves: [figure](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e4bfe5c769ec36cedd3886bc5c018f6d2f473115/figures/issue_823/fig2_per_layer_refit_transfer.png))
 - The sharing is symmetric — the Claude-fitted map scores own targets at 0.458–0.470 (vs ceilings 0.599–0.626) — so neither policy is privileged
 - Transfer onto swapped targets is strongly negative (−0.65..−0.80), as it should be
 - A weight-space (cosine) comparison of the fitted maps turned out to be uninformative at this n: two fits of the *same* arm on disjoint halves read cosine ≈ 0.04 (the raw own-vs-plain 0.58–0.69 is shared-rows estimation structure), so the transfer R² is the valid "same map" evidence (`eval_results/issue_823/crossarm_transfer/weightspace_compare.json`)
