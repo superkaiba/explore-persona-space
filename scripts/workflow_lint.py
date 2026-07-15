@@ -8832,8 +8832,10 @@ _LESSONS_ROW_MAX_BYTES = 280
 _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # gotchas: highest-traffic rule; row measured 438 B at the #1269
     # migration — a third lossy trigger trim (after #1220) would destroy
-    # plan-time discovery value. Cap = measured + <=40.
-    "gotchas": 460,
+    # plan-time discovery value (a further lossy trim was already ruled
+    # out at #1269). #1348 added the errorbar/CI figure trigger
+    # (row 451 B -> 494 B). Cap = measured + <=40.
+    "gotchas": 520,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
