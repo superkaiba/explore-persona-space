@@ -1,6 +1,6 @@
 ---
-title: 'Factory marker organism: marker behavior through the #1090 pipeline (spectrum
-  anchor for #1315)'
+title: The marker implant reproduces the farther-but-not-more-diffuse full-fine-tune
+  signature at matched install (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-15T07:16:02Z'
