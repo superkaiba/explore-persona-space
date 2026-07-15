@@ -2678,8 +2678,8 @@
     "1343": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1343",
-      "status": "proposed",
+      "path": "tasks/planning/1343",
+      "status": "planning",
       "title": "workflow-fix: GCE crash-persist must verify uploads before persist=ok"
     },
     "1344": {
