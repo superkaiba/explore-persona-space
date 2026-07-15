@@ -2749,8 +2749,8 @@
     "1352": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1352",
-      "status": "proposed",
+      "path": "tasks/planning/1352",
+      "status": "planning",
       "title": "workflow-fix: gotchas.md entry for concurrent-fanout shared-staging race"
     },
     "1353": {
