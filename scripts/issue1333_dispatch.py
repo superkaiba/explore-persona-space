@@ -870,9 +870,13 @@ def _wait_engine_release(*, label: str, smi: Callable[[str], str | None] = _smi_
     engine's memory as held (attempt 6: FT ladder rung-2 init found
     36.31/79.18 GiB free < the 39.59 GiB gpu_memory_utilization=0.5 ask —
     the prior rung's ~41 GiB engine had not released). Call ONLY at seams
-    where this process co-holds NO HF model (post-``_free_hf`` /
-    pre-HF-load), so the r7b false-positive class cannot fire: the only own
-    residue is the lingering CUDA context, under ``GPU_HYGIENE_FLOOR_MIB``.
+    where this process holds NO LIVE REFERENCE to HF weights — pre-HF-load,
+    or after every ``x = _free_hf(x)`` REBIND plus a post-rebind flush
+    (``_release_cuda()`` / ``_reap_engine``'s gc+empty_cache) — so the r7b
+    false-positive class cannot fire: the only own residue is the lingering
+    CUDA context, under ``GPU_HYGIENE_FLOOR_MIB``. A bare ``_free_hf(x)``
+    without the rebind leaves the caller's 15-30 GiB resident and this wait
+    then times out DETERMINISTICALLY (r9, v8 review Critical).
     Targets = the unit's CVD pin (fanout contract), else all physical GPUs;
     no-op on a CPU host. Fails loud with the NVML dump via
     ``_wait_gpus_free`` when the VRAM never drains. Emits the
@@ -1109,6 +1113,9 @@ def _reused_arm_apply_gate(cfg: Cfg) -> dict:
         responses = _greedy(llm, prompts, C.MARKER_MAX_NEW_TOKENS)
     finally:
         _reap_engine(llm)
+    # Persist BEFORE the drain-wait: a wait timeout must never destroy the
+    # just-generated rollouts (r9, v8 review Minor 1).
+    _persist_rollouts(cfg, "selection", C.REUSED_CELL, {"prompts": prompts, "responses": responses})
     # p0's engine precedes p1's engines in the SAME main process (r8 seam).
     _wait_engine_release(label="reused-apply-gate")
     contexts, meta = [], []
@@ -1116,17 +1123,16 @@ def _reused_arm_apply_gate(cfg: Cfg) -> dict:
         stripped, emitted = _strip_at_marker(r)
         contexts.append(p + stripped)
         meta.append({"q": q_idx, "gen_emitted": emitted})
-    _persist_rollouts(cfg, "selection", C.REUSED_CELL, {"prompts": prompts, "responses": responses})
     model = _load_hf(str(staged))
     try:
         trained = _slot_read(model, tok, contexts)
     finally:
-        _free_hf(model)
+        model = _free_hf(model)  # rebind — the drop must be real (r9)
     base = _load_hf(DEFAULT_BASE_MODEL)
     try:
         base_stats = _slot_read(base, tok, contexts)
     finally:
-        _free_hf(base)
+        base = _free_hf(base)  # rebind — the drop must be real (r9)
     rec = _delta_record(meta, trained, base_stats)
     gap = abs(rec["delta_logp_mean"] - C.TARGET_DELTA_G)
     halt_bound = C.APPLY_GATE_HALT_NATS * (2.0 if cfg.smoke else 1.0)
@@ -1154,13 +1160,31 @@ def _reused_arm_apply_gate(cfg: Cfg) -> dict:
 
 
 def _free_hf(model) -> None:
+    """Take-and-return-None HF release: callers MUST rebind
+    (``model = _free_hf(model)``). ``del model`` drops only THIS frame's
+    parameter binding — the caller's local keeps the weights resident
+    (r9, v8 review Critical), so the call-site rebind is what makes the
+    drop real. The internal flush returns any PREVIOUSLY-dropped blocks
+    to the driver; at seams that drain-wait (``_wait_engine_release``)
+    a post-rebind ``_release_cuda()`` (or ``_reap_engine``'s own flush)
+    finishes the job for THIS model's blocks."""
+    del model
+    _release_cuda()
+    return None
+
+
+def _release_cuda() -> None:
+    """gc + empty_cache: return UNREFERENCED cached blocks to the driver so
+    nvidia-smi (what ``_wait_gpus_free`` reads) stops attributing them to
+    this process. Only memory whose refs are already dead is released —
+    call AFTER the last ``x = _free_hf(x)`` rebind (r9)."""
     import gc
 
     import torch
 
-    del model
     gc.collect()
-    torch.cuda.empty_cache()
+    if torch.cuda.is_initialized():
+        torch.cuda.empty_cache()
 
 
 def _persist_rollouts(cfg: Cfg, stage: str, cell: str, payload: dict) -> None:
@@ -1466,7 +1490,7 @@ def _same_surface_parity_gate(cfg: Cfg, cell: str) -> dict:
         base_model = peft_model.unload()
         base_stats = _slot_read(base_model, tok, contexts)
     finally:
-        _free_hf(base)
+        base = _free_hf(base)  # rebind — the drop must be real (r9)
     delta = sum(t["logp"] - b["logp"] for t, b in zip(trained, base_stats, strict=True)) / len(
         trained
     )
@@ -1506,14 +1530,14 @@ def _swap_vs_merged_parity(cfg: Cfg, cell: str) -> dict:
         swap = _slot_read(peft_model, tok, contexts)
         peft_model.unload()
     finally:
-        _free_hf(base)
+        base = _free_hf(base)  # rebind — the drop must be real (r9)
     merged = d1112._merge_adapter(None, str(adapter), cell_root / "merged_parity")
     try:
         m = _load_hf(str(merged))
         try:
             merged_stats = _slot_read(m, tok, contexts)
         finally:
-            _free_hf(m)
+            m = _free_hf(m)  # rebind — the drop must be real (r9)
     finally:
         shutil.rmtree(merged, ignore_errors=True)
     gap = max(abs(s["logp"] - t["logp"]) for s, t in zip(swap, merged_stats, strict=True))
@@ -1708,7 +1732,7 @@ def run_basepriors_unit(cfg: Cfg, _arg: str) -> dict:
     try:
         stats = _slot_read(base, tok, slot_contexts)
     finally:
-        _free_hf(base)
+        base = _free_hf(base)  # rebind — the drop must be real (r9)
     by_ctx: dict[str, list[float]] = {}
     for m, s in zip(meta, stats, strict=True):
         by_ctx.setdefault(m["context_id"], []).append(s["logp"])
@@ -1789,6 +1813,7 @@ def _ladder_reads_lora(cfg, cell, rungs, pending, ladder, tok, prompts, persist)
 
     llm = _vllm_engine(DEFAULT_BASE_MODEL, enable_lora=True)
     base = _load_hf(DEFAULT_BASE_MODEL)
+    peft_model = None
     try:
         for step in pending:
             req = LoRARequest(f"{cell}_rung{step}", (step % 100000) + 1, str(rungs[step]))
@@ -1802,6 +1827,9 @@ def _ladder_reads_lora(cfg, cell, rungs, pending, ladder, tok, prompts, persist)
             peft_model = PeftModel.from_pretrained(base, str(rungs[step]))
             trained = _slot_read(peft_model, tok, contexts)
             peft_model.unload()
+            # The wrapper pins `base` — drop it so the pass-end rebind of
+            # `base` below actually kills the LAST reference (r9).
+            peft_model = None
             base_stats = _slot_read(base, tok, contexts)
             rec = _delta_record(meta, trained, base_stats)
             rec["gen_emission_rate"] = float(sum(m["gen_emitted"] for m in meta) / len(meta))
@@ -1814,7 +1842,12 @@ def _ladder_reads_lora(cfg, cell, rungs, pending, ladder, tok, prompts, persist)
             }
             persist()
     finally:
-        _free_hf(base)
+        # Rebind-to-None makes the drop REAL (``del`` inside _free_hf only
+        # drops the callee's binding — r9, v8 Critical instance B); the
+        # reap's gc+empty_cache then runs with ZERO live HF refs, returning
+        # the 15.3 GiB base to the driver BEFORE the drain-wait below.
+        peft_model = None
+        base = _free_hf(base)
         _reap_engine(llm)
     # run_ladder_unit's while-loop calls this per pending batch (coarse ->
     # refine passes) — the next pass's engine init must not race this
@@ -1831,10 +1864,15 @@ def _ladder_reads_ft(cfg, cell, rungs, pending, ladder, tok, prompts, persist) -
             responses = _greedy(llm, prompts, C.MARKER_MAX_NEW_TOKENS)
         finally:
             _reap_engine(llm)
-        # Crash-fix r8 (attempt-6 OOM): the next rung's engine init must not
-        # race the driver's ASYNC release of this rung's dead engine.
-        _wait_engine_release(label=f"rung={step}")
+        # Persist BEFORE the drain-wait: a wait timeout must never destroy
+        # the just-generated rollouts (r9, v8 review Minor 1).
         _persist_rollouts(cfg, "ladder", f"{cell}_rung{step}", {"responses": responses})
+        # Crash-fix r8 (attempt-6 OOM): the next rung's engine init must not
+        # race the driver's ASYNC release of this rung's dead engine. The
+        # prior rung's HF refs are dead by here (rebound at its tail +
+        # _release_cuda — r9, v8 Critical instance A), so the only own
+        # residue at this wait is the lingering CUDA context.
+        _wait_engine_release(label=f"rung={step}")
         contexts, meta = [], []
         for q_idx, (p, r) in enumerate(zip(prompts, responses, strict=True)):
             stripped, emitted = _strip_at_marker(r)
@@ -1844,12 +1882,15 @@ def _ladder_reads_ft(cfg, cell, rungs, pending, ladder, tok, prompts, persist) -
         try:
             trained = _slot_read(model, tok, contexts)
         finally:
-            _free_hf(model)
+            model = _free_hf(model)  # rebind — the drop must be real (r9)
         base = _load_hf(DEFAULT_BASE_MODEL)
         try:
             base_stats = _slot_read(base, tok, contexts)
         finally:
-            _free_hf(base)
+            base = _free_hf(base)  # rebind — the drop must be real (r9)
+        # Post-rebind flush: return this rung's HF blocks to the driver so
+        # the NEXT rung's engine init + drain-wait see a clean process (r9).
+        _release_cuda()
         rec = _delta_record(meta, trained, base_stats)
         rec["gen_emission_rate"] = float(sum(m["gen_emitted"] for m in meta) / len(meta))
         out_dir = cfg.out_root / cell / "ladder" / f"rung_{step}"
@@ -1951,13 +1992,15 @@ def _bystander_battery(
     finally:
         if own_engine:
             _reap_engine(llm)
+    # Persist BEFORE the drain-wait: a wait timeout must never destroy the
+    # just-generated rollouts (r9, v8 review Minor 1).
+    _persist_rollouts(
+        cfg, "selection", f"{cell}_bystanders_rung{step}", {"meta": meta, "responses": responses}
+    )
     if own_engine:
         # Per-item engine in run_select_unit's while loop / the dose-curve
         # plan loop — drain before the next item's engine init (crash-fix r8).
         _wait_engine_release(label=f"bystanders[{cell}]_rung{step}")
-    _persist_rollouts(
-        cfg, "selection", f"{cell}_bystanders_rung{step}", {"meta": meta, "responses": responses}
-    )
     contexts = [p + _strip_at_marker(r)[0] for p, r in zip(prompts, responses, strict=True)]
     if lora_rung is not None:
         from peft import PeftModel
@@ -1969,18 +2012,18 @@ def _bystander_battery(
             base_model = peft_model.unload()
             base_stats = _slot_read(base_model, tok, contexts)
         finally:
-            _free_hf(base)
+            base = _free_hf(base)  # rebind — the drop must be real (r9)
     else:
         model = _load_hf(model_path)
         try:
             trained = _slot_read(model, tok, contexts)
         finally:
-            _free_hf(model)
+            model = _free_hf(model)  # rebind — the drop must be real (r9)
         base = _load_hf(DEFAULT_BASE_MODEL)
         try:
             base_stats = _slot_read(base, tok, contexts)
         finally:
-            _free_hf(base)
+            base = _free_hf(base)  # rebind — the drop must be real (r9)
     rec = _bystander_record(meta, trained, base_stats)
     rec["cell"] = cell
     rec["step"] = step
@@ -2347,12 +2390,12 @@ def run_breadth_unit(cfg: Cfg, cell: str) -> dict:
     try:
         trained = _slot_read(model, tok, contexts)
     finally:
-        _free_hf(model)
+        model = _free_hf(model)  # rebind — the drop must be real (r9)
     base = _load_hf(DEFAULT_BASE_MODEL)
     try:
         base_stats = _slot_read(base, tok, contexts)
     finally:
-        _free_hf(base)
+        base = _free_hf(base)  # rebind — the drop must be real (r9)
     if cleanup is not None:
         shutil.rmtree(cleanup, ignore_errors=True)
     rec = _delta_record(meta, trained, base_stats)

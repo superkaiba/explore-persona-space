@@ -19,6 +19,11 @@ seam-stubbed function"):
 5. ``_wait_engine_release`` + the FT rung-loop seam (crash-fix r8, attempt-6
    OOM): every rung's reap is followed by a bounded VRAM drain-wait BEFORE
    the next rung's engine init.
+6. r9 (v8 review Critical): every drain-wait fires with ZERO live references
+   to HF weights in the caller frame — ``_free_hf`` is take-and-return-None
+   with call-site rebinding (a live own 15-30 GiB binding can never drain
+   under the 2048 MiB floor) — and rollout persistence precedes the wait so
+   a wait timeout never destroys just-generated rollouts.
 """
 
 from __future__ import annotations
@@ -197,10 +202,11 @@ def test_wait_engine_release_noops_without_gpus(monkeypatch):
 
 
 def test_ft_rung_loop_reaps_and_waits_between_rungs(monkeypatch, tmp_path):
-    """Crash-fix r8 pin (attempt-6 OOM): the FT rung loop calls _reap_engine
-    THEN _wait_engine_release after EVERY rung's read, before the next rung's
-    engine init. Real ``_ladder_reads_ft`` body; fakes only at the
-    GPU/engine/model boundaries (signature-conformant defs)."""
+    """Crash-fix r8 pin (attempt-6 OOM): the FT rung loop calls _reap_engine,
+    persists the rollouts (r9: BEFORE the wait, so a wait timeout never
+    destroys them), THEN _wait_engine_release after EVERY rung's read, before
+    the next rung's engine init. Real ``_ladder_reads_ft`` body; fakes only
+    at the GPU/engine/model boundaries (signature-conformant defs)."""
     from types import SimpleNamespace
 
     d = _dispatch()
@@ -208,6 +214,11 @@ def test_ft_rung_loop_reaps_and_waits_between_rungs(monkeypatch, tmp_path):
     rungs = {100: tmp_path / "checkpoint-100", 200: tmp_path / "checkpoint-200"}
 
     monkeypatch.setattr(d.d1112, "_ensure_dir_tokenizer", lambda ckpt: None)
+
+    def fake_persist(cfg, stage: str, cell: str, payload: dict) -> None:
+        events.append("persist")
+
+    monkeypatch.setattr(d, "_persist_rollouts", fake_persist)
 
     def fake_engine(model_path: str, *, enable_lora: bool = False):
         step = Path(model_path).name.removeprefix("checkpoint-")
@@ -248,13 +259,14 @@ def test_ft_rung_loop_reaps_and_waits_between_rungs(monkeypatch, tmp_path):
     assert sorted(ladder) == [100, 200]
     i1, i2 = events.index("engine:100"), events.index("engine:200")
     between = events[i1 + 1 : i2]
-    # rung 1's engine is reaped AND its VRAM drain-waited BEFORE rung 2's init
-    assert "reap" in between and "wait:rung=100" in between, events
-    assert between.index("reap") < between.index("wait:rung=100"), events
-    # the LAST rung also reaps + waits (covers the while-loop re-entry seam)
+    # rung 1's engine is reaped, rollouts persisted (r9), AND its VRAM
+    # drain-waited BEFORE rung 2's init
+    assert "reap" in between and "persist" in between and "wait:rung=100" in between, events
+    assert between.index("reap") < between.index("persist") < between.index("wait:rung=100"), events
+    # the LAST rung also reaps + persists + waits (while-loop re-entry seam)
     tail = events[i2 + 1 :]
-    assert "reap" in tail and "wait:rung=200" in tail, events
-    assert tail.index("reap") < tail.index("wait:rung=200"), events
+    assert "reap" in tail and "persist" in tail and "wait:rung=200" in tail, events
+    assert tail.index("reap") < tail.index("persist") < tail.index("wait:rung=200"), events
 
 
 def test_reap_completed_unit_group_kills_orphaned_member():
@@ -285,3 +297,192 @@ def test_reap_completed_unit_group_kills_orphaned_member():
     else:
         os.kill(orphan_pid, signal.SIGKILL)
         pytest.fail("orphaned group member survived the killpg sweep")
+
+
+def test_free_hf_returns_none_for_rebinding():
+    """r9 contract pin (v8 Critical): ``_free_hf`` is take-and-return-None so
+    ``x = _free_hf(x)`` rebinds the caller's local to None — ``del`` inside
+    the callee alone leaves the caller's binding (and the weights) live."""
+    d = _dispatch()
+    assert d._free_hf(object()) is None
+
+
+def test_ft_rung_wait_fires_with_no_live_hf_refs(monkeypatch, tmp_path):
+    """r9 pin (v8 Critical, instance A): at EVERY FT-rung drain-wait, no live
+    reference to a previously-loaded HF model may survive in the caller
+    frame — a live own binding keeps ~15-30 GiB resident, so
+    ``_wait_gpus_free`` can never drop under the 2048 MiB floor and times
+    out after 180 s. On the v8 tip rung 2's wait fired while rung 1's
+    ``model`` + ``base`` were still bound (rebound only later), so this
+    test FAILS there; the r9 call-site rebinding makes it pass. Real
+    ``_ladder_reads_ft`` + real ``_free_hf``/``_release_cuda`` bodies;
+    fakes only at the GPU/engine/model boundaries."""
+    import gc
+    import weakref
+    from types import SimpleNamespace
+
+    d = _dispatch()
+
+    class FakeHfModel:
+        """Weakref-able stand-in for an AutoModelForCausalLM (GPU boundary)."""
+
+    loaded: list[weakref.ref] = []
+
+    def fake_load_hf(model_path: str, device: str = "cuda:0"):
+        m = FakeHfModel()
+        loaded.append(weakref.ref(m))
+        return m
+
+    live_at_wait: dict[str, int] = {}
+
+    def fake_wait(*, label: str, smi=None) -> None:
+        gc.collect()
+        live_at_wait[label] = sum(1 for r in loaded if r() is not None)
+
+    monkeypatch.setattr(d.d1112, "_ensure_dir_tokenizer", lambda ckpt: None)
+    monkeypatch.setattr(d, "_vllm_engine", lambda path, *, enable_lora=False: object())
+    monkeypatch.setattr(
+        d, "_greedy", lambda llm, prompts, max_new, *, lora_request=None: ["a"] * len(prompts)
+    )
+    monkeypatch.setattr(d, "_reap_engine", lambda llm: None)
+    monkeypatch.setattr(d, "_wait_engine_release", fake_wait)
+    monkeypatch.setattr(d, "_load_hf", fake_load_hf)
+    monkeypatch.setattr(
+        d,
+        "_slot_read",
+        lambda model, tokenizer, contexts, device="cuda:0": [
+            {"logp": -1.0, "argmax_id": 0} for _ in contexts
+        ],
+    )
+
+    cfg = SimpleNamespace(out_root=tmp_path, smoke=True)
+    d._ladder_reads_ft(
+        cfg,
+        "mk4_fullft_pos",
+        {100: tmp_path / "checkpoint-100", 200: tmp_path / "checkpoint-200"},
+        [100, 200],
+        {},
+        None,
+        ["p1"],
+        lambda: None,
+    )
+    assert live_at_wait == {"rung=100": 0, "rung=200": 0}, live_at_wait
+
+
+def test_lora_pass_wait_fires_with_no_live_hf_refs(monkeypatch, tmp_path):
+    """r9 pin (v8 Critical, instance B): the LoRA pass-end drain-wait fires
+    only AFTER ``base`` (and the PEFT wrapper pinning it) are dropped — on
+    the v8 tip ``base`` (15,260 MiB) was a live local at the wait, so every
+    LoRA ladder pass would have timed out at the floor. Real
+    ``_ladder_reads_lora`` + real ``_free_hf`` bodies; fakes only at the
+    GPU/engine/model/peft boundaries (signature-conformant defs)."""
+    import gc
+    import types
+    import weakref
+    from types import SimpleNamespace
+
+    d = _dispatch()
+
+    class FakeHfModel:
+        """Weakref-able stand-in for an AutoModelForCausalLM (GPU boundary)."""
+
+    loaded: list[weakref.ref] = []
+
+    def fake_load_hf(model_path: str, device: str = "cuda:0"):
+        m = FakeHfModel()
+        loaded.append(weakref.ref(m))
+        return m
+
+    class FakePeftModel:
+        """Mirrors peft.PeftModel.from_pretrained(model, model_id)/.unload():
+        the wrapper HOLDS a reference to the base model, as the real one does."""
+
+        def __init__(self, model):
+            self._base = model
+
+        @classmethod
+        def from_pretrained(cls, model, model_id, **kwargs):
+            return cls(model)
+
+        def unload(self):
+            return self._base
+
+    class FakeLoRARequest:
+        """Mirrors vllm.lora.request.LoRARequest(lora_name, lora_int_id, lora_path)."""
+
+        def __init__(self, lora_name, lora_int_id, lora_path):
+            self.lora_name = lora_name
+
+    fake_peft = types.ModuleType("peft")
+    fake_peft.PeftModel = FakePeftModel
+    fake_vllm = types.ModuleType("vllm")
+    fake_vllm_lora = types.ModuleType("vllm.lora")
+    fake_vllm_req = types.ModuleType("vllm.lora.request")
+    fake_vllm_req.LoRARequest = FakeLoRARequest
+    fake_vllm.lora = fake_vllm_lora
+    fake_vllm_lora.request = fake_vllm_req
+    monkeypatch.setitem(sys.modules, "peft", fake_peft)
+    monkeypatch.setitem(sys.modules, "vllm", fake_vllm)
+    monkeypatch.setitem(sys.modules, "vllm.lora", fake_vllm_lora)
+    monkeypatch.setitem(sys.modules, "vllm.lora.request", fake_vllm_req)
+
+    live_at_wait: dict[str, int] = {}
+
+    def fake_wait(*, label: str, smi=None) -> None:
+        gc.collect()
+        live_at_wait[label] = sum(1 for r in loaded if r() is not None)
+
+    monkeypatch.setattr(d, "_vllm_engine", lambda path, *, enable_lora=False: object())
+    monkeypatch.setattr(
+        d, "_greedy", lambda llm, prompts, max_new, *, lora_request=None: ["a"] * len(prompts)
+    )
+    monkeypatch.setattr(d, "_reap_engine", lambda llm: None)
+    monkeypatch.setattr(d, "_wait_engine_release", fake_wait)
+    monkeypatch.setattr(d, "_load_hf", fake_load_hf)
+    monkeypatch.setattr(
+        d,
+        "_slot_read",
+        lambda model, tokenizer, contexts, device="cuda:0": [
+            {"logp": -1.0, "argmax_id": 0} for _ in contexts
+        ],
+    )
+
+    cfg = SimpleNamespace(out_root=tmp_path, smoke=True)
+    d._ladder_reads_lora(
+        cfg, "lora_cell", {100: tmp_path / "adapter-100"}, [100], {}, None, ["p1"], lambda: None
+    )
+    assert live_at_wait == {"lora-pass[lora_cell]": 0}, live_at_wait
+
+
+def test_wait_engine_release_times_out_on_persistent_own_usage(monkeypatch):
+    """Busy-own-GPU shape (the v8 Critical's mechanism, via the _smi_factory
+    busy-sequence support): a live own-process HF binding surfaces as
+    persistent compute-app usage that never drains, so the drain-wait FAILS
+    LOUD at the bound — it can never pass. This is why the ladder seams
+    must drop their HF refs BEFORE waiting. Real ``_wait_engine_release`` +
+    ``_wait_gpus_free`` bodies (re-parameterized to a 0 s bound; the time
+    boundary is the only seam touched)."""
+    d = _dispatch()
+    real_wait = d._wait_gpus_free
+
+    def bounded_wait(targets, *, label, smi):
+        real_wait(targets, label=label, smi=smi, timeout_s=0.0, sleep=lambda s: None)
+
+    monkeypatch.setattr(d, "_wait_gpus_free", bounded_wait)
+    smi, _ = _smi_factory(["4242, 15260, GPU-cccc\n"])  # own 15.3 GiB model, never drains
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "2")
+    with pytest.raises(RuntimeError, match=r"rung-reap\[lora-pass\[cell\]\]") as exc:
+        d._wait_engine_release(label="lora-pass[cell]", smi=smi)
+    assert "15260" in str(exc.value)
+
+
+def test_persist_precedes_wait_at_generation_seams():
+    """r9 pin (v8 Minor 1): rollout persistence precedes the drain-wait at
+    every generation seam that has both, so a wait timeout can never
+    destroy just-generated rollouts (order-of-calls source check)."""
+    import inspect
+
+    d = _dispatch()
+    for fn in (d._reused_arm_apply_gate, d._bystander_battery, d._ladder_reads_ft):
+        src = inspect.getsource(fn)
+        assert src.index("_persist_rollouts(") < src.index("_wait_engine_release("), fn.__name__
