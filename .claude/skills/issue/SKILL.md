@@ -3759,6 +3759,15 @@ field shapes can reject 100% of real rows while every synthetic
 smoke stays green). Recipe + verified field shapes:
 `.claude/rules/gotchas.md` "Real-corpus streaming filters" +
 `.claude/agent-memory/experiment-implementer/feedback_real_corpus_streaming_filters_tiny_real_probe.md`.
+When the driver spans MULTIPLE ARM CLASSES (distinct source-context
+classes / recipe branches — e.g. persona-context vs bare-context
+arms), "once at tiny N" means once PER ARM CLASS: per-arm seams
+(source-context construction, negative-panel assembly, `ModelOrganism`
+wiring) are invisible to a single-arm smoke however tiny-real its
+seams (#1090 fu5: a formatting-arm-only smoke passed; all 3
+bare-context arms then died on the #527/#538 panel-disjointness assert
+after a full 4×A100 GCE cycle). Recipe: `.claude/rules/gotchas.md`
+"A single-arm smoke is blind to per-arm seams".
 Confirm the implementer's
 `## Smoke run` report (per `experiment-implementer.md` § "End-to-end
 smoke run PER PHASE") carries a sub-section with exit code `0` + an
