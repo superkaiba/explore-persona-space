@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1312,
+  "highest_id": 1313,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2438,6 +2438,13 @@
       "path": "tasks/completed/1312",
       "status": "completed",
       "title": "workflow-fix: Lens 7 mechanical language-intrusion scan (Qwen CJK mixing)"
+    },
+    "1313": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1313",
+      "status": "proposed",
+      "title": "api_dispatch: retry 529 OverloadedError as transient + transport_loss split on judge paths (rule-24 sibling library fix)"
     },
     "132": {
       "has_clean_result": false,
