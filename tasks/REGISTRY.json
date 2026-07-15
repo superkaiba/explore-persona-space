@@ -2819,8 +2819,8 @@
     "1361": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1361",
-      "status": "proposed",
+      "path": "tasks/planning/1361",
+      "status": "planning",
       "title": "workflow-fix: gotchas entry \u2014 pod git 403 with valid token, bundle sideload"
     },
     "137": {
