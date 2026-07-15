@@ -1338,6 +1338,15 @@ def step_verdict(args) -> None:
         bar_std_fallback = True
     chat = args.cell_ids[0]
     v0 = json.loads((args.out_dir / f"refit_v0_{chat}.json").read_text())
+    # DG0 belt (cr-v4 Minor 1): the battery's exit-3 chain already blocks a
+    # failing DG0 at fit time (no checkpoint is written, rerun re-gates); this
+    # closes the residual contrived path — a stale refit_v0 from a
+    # changed-targets rerun carrying a FAILED gate into the verdict.
+    dg0 = v0.get("dg0")
+    assert not (dg0 is not None and not dg0.get("pass")), (
+        f"DG0 gate FAILED in the v0 refit this verdict would consume: {dg0} — "
+        "re-run the battery step (a stale refit_v0 cannot carry the verdict)"
+    )
     v1 = json.loads((args.out_dir / f"refit_v1_{chat}.json").read_text())
     v2 = json.loads((args.out_dir / f"refit_v2_{chat}.json").read_text())
     v3 = json.loads((args.out_dir / f"refit_v3_{chat}.json").read_text())

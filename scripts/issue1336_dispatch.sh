@@ -812,6 +812,49 @@ phase_d2_probe() {
         exit 78
     fi
 
+    if [ "$SMOKE" -ne 1 ]; then
+        # 0. Fresh-instance input staging (concern d2-gen-staging-missing,
+        #    cr-v4): data/* is gitignored, so a fresh GCP clone (and the VM)
+        #    has neither the wave-1 gen rollout text nor the prompts.
+        #    Prompts: the deterministic, model-free `gen --prep` (pinned #825
+        #    track_s corpus — prompt ids identical across machines). Gen
+        #    rollout text: the step_stage gen leg reused verbatim (scoped
+        #    _stage_prefix + _maybe_reassemble_answers; every Hub call rides
+        #    hub.retry_transient — cr-v4 Minor 3).
+        if [ ! -f "$prompts_root/lmsys5k.jsonl" ]; then
+            uv run python scripts/issue1336_gen_answers.py --prep --corpora lmsys5k
+        fi
+        if [ ! -f "$gen_root/rlvr/lmsys5k/answers.jsonl" ]; then
+            D2_GEN_ROOT="$gen_root" uv run python - <<'PY'
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path("scripts").resolve()))
+import issue1336_diagnose_g1 as dg  # reuse step_stage's gen-leg helpers
+
+api, dl, hub = dg._hub_helpers()
+tmp = Path("data/issue_1336/d2_gen_stage_tmp")
+staged = dg._stage_prefix(
+    api, hub, dl, f"{dg.cm.HF_PREFIX_1336}/raw_completions/generation/rlvr/lmsys5k", tmp
+)
+target = Path(os.environ["D2_GEN_ROOT"]) / "rlvr" / "lmsys5k"
+target.mkdir(parents=True, exist_ok=True)
+for f in staged:
+    f.rename(target / f.name)
+dg._maybe_reassemble_answers(target)
+print(f"[d2_probe] staged {len(staged)} gen files -> {target}")
+PY
+        fi
+        # cr-v4 Minor 2: the extract done-marker is existence-only (not
+        # fingerprinted on convention/override/allowlist), so a production
+        # rerun with a CHANGED override would silently reuse stale corrected
+        # shards while the parity JSON labels them with the new override.
+        # D2 re-extraction is cheap (~0.04 GPU-h) — start clean, mirroring
+        # the smoke branch's rm -rf above.
+        rm -rf "$diag_dir/d2_turnstore_committed" "$diag_dir/d2_turnstore_corrected"
+    fi
+
     # 1. Row allowlist: the FIRST n kept wave-1 chat rows (same prompt ids as
     #    the stored capture — plan §4 Phase D2).
     ALW_OUT="$diag_dir/d2_row_allowlist.json" ALW_GEN="$gen_root" ALW_N="$n_rows" \
@@ -925,25 +968,39 @@ if stored_dir:
     if not any(sd.glob(f"{stem}_shard*.pt")):
         # Fetch ONLY the stored shards holding allowlist rows: server-side
         # scoped list_repo_tree + per-file hf_hub_download (never
-        # snapshot_download on the ~1M-file data repo — gotchas.md).
+        # snapshot_download on the ~1M-file data repo — gotchas.md); every
+        # Hub call rides hub.retry_transient (bounded outer retry, cr-v4
+        # Minor 3), listing materialized inside the thunk (#779 lazy-gen).
         from huggingface_hub import HfApi, hf_hub_download
+
+        from explore_persona_space.orchestrate import hub
 
         repo = os.environ["PAR_HF_REPO"]
         prefix = f"{os.environ['PAR_HF_PREFIX']}/analysis_tensors/turnstore_{stem}"
-        names = [
-            e.path
-            for e in HfApi().list_repo_tree(
-                repo, path_in_repo=prefix, repo_type="dataset", recursive=False
-            )
-        ]
+        entries = hub.retry_transient(
+            lambda: list(
+                # HUB_VERIFY_RETRY_EXEMPT: scoped (path_in_repo) walk inside hub.retry_transient
+                HfApi().list_repo_tree(
+                    repo, path_in_repo=prefix, repo_type="dataset", recursive=False
+                )
+            ),
+            what=f"d2 stored-shard walk {prefix}",
+        )
+        names = [e.path for e in entries]
         sd.mkdir(parents=True, exist_ok=True)
         for sc in sorted(p for p in names if p.endswith(".json")):
-            local = hf_hub_download(repo, sc, repo_type="dataset")
+            local = hub.retry_transient(
+                lambda s=sc: hf_hub_download(repo, s, repo_type="dataset"),
+                what=f"d2 fetch {sc}",
+            )
             meta = json.loads(Path(local).read_text())
             if allow & set(meta.get("conv_ids", [])):
                 pt_name = sc[: -len(".json")] + ".pt"
                 assert pt_name in names, f"sidecar {sc} has no tensor twin on the Hub"
-                got = hf_hub_download(repo, pt_name, repo_type="dataset")
+                got = hub.retry_transient(
+                    lambda p=pt_name: hf_hub_download(repo, p, repo_type="dataset"),
+                    what=f"d2 fetch {pt_name}",
+                )
                 shutil.copy(got, sd / Path(pt_name).name)
                 print(f"[d2_probe] fetched stored shard {Path(pt_name).name}")
     stored = load_rows(sd)

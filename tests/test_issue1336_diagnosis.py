@@ -177,6 +177,25 @@ def test_verdict_requires_spotcheck(diag_env, tmp_path):
         diag.step_verdict(args)
 
 
+def test_verdict_asserts_dg0_pass(diag_env, tmp_path):
+    """cr-v4 Minor 1: a stale refit_v0 whose DG0 gate FAILED cannot carry the
+    verdict — the battery's exit-3 chain blocks the realistic path; this belt
+    closes the contrived stale-v0 + changed-targets rerun."""
+    out = tmp_path / "out"
+    best = _oracle_best(diag_env)
+    args = _args(diag_env, out, dg0_targets_json=json.dumps({"rlvr_chat_lmsys5k": best}))
+    diag.step_qwen_cal(args)
+    diag.step_battery(args)
+    diag.step_spotcheck(args)
+    diag.step_audit(args)
+    v0_path = out / "refit_v0_rlvr_chat_lmsys5k.json"
+    v0 = json.loads(v0_path.read_text())
+    v0["dg0"]["pass"] = False  # simulate the stale / changed-targets rerun
+    v0_path.write_text(json.dumps(v0))
+    with pytest.raises(AssertionError, match="DG0"):
+        diag.step_verdict(args)
+
+
 # ---------------------------------------------------------------------------
 # 3. DG1 — canonical step order + verdict ordering assert
 # ---------------------------------------------------------------------------
