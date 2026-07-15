@@ -540,9 +540,11 @@ def select_rung(
     its contrasts — a registered finding, never a crash).
 
     ``ladder`` maps step -> {"delta_logp_mean": float, "source_emission_rate":
-    float, "bystander_saturated": bool}. Bystander saturation defaults False
-    when the read carries no bystander pass (source-only ladders record it at
-    selection-confirm time).
+    float, "bystander_saturated": bool}. ``source_emission_rate`` is REQUIRED —
+    both ladder writers populate it, so a missing field is a writer bug and
+    raises KeyError rather than silently reading as eligible (review r1 m8).
+    Bystander saturation defaults False when the read carries no bystander
+    pass (source-only ladders record it at selection-confirm time).
     """
     if not ladder:
         raise ValueError("empty ladder")
@@ -554,7 +556,7 @@ def select_rung(
         s
         for s, rec in ladder.items()
         if window[0] <= rec["delta_logp_mean"] <= window[1]
-        and rec.get("source_emission_rate", 0.0) == 0.0
+        and rec["source_emission_rate"] == 0.0
         and not rec.get("bystander_saturated", False)
     ]
     if eligible:
@@ -580,7 +582,12 @@ def select_rung(
 
 def coarse_read_steps(cell: str, rungs: list[int]) -> list[int]:
     """Coarse-pass read schedule (plan §4.3): every-20 steps, plus {5, 10, 15}
-    for mk2_lora_pos; always includes the final rung."""
+    for mk2_lora_pos; always includes the final rung. FT cells read the WHOLE
+    grid — stride 20 over grid {1..6} would degenerate to {6} and leave rungs
+    1-5 hostage to the refine conditional (review r1 m5); it is 6 reads either
+    way."""
+    if cell in NEW_FT_CELLS:
+        return sorted(rungs)
     stride = LADDER_COARSE_STRIDE
     steps = sorted({s for s in rungs if s % stride == 0} | {max(rungs)})
     if cell == CELL_LORA_POS:
