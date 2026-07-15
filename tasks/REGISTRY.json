@@ -2534,8 +2534,8 @@
     "1325": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1325",
-      "status": "planning",
+      "path": "tasks/approved/1325",
+      "status": "approved",
       "title": "daily-fix: push-verify must cover eval_results + figures"
     },
     "1326": {
