@@ -327,6 +327,13 @@ If the figure doesn't show what the caption claims, flag it. Common failures:
       fixed-completion log-P). If a different intrusion script surfaces in
       step 2's samples (e.g. Cyrillic), rerun the same recipe with that
       script's block ranges swapped in.
+    - **Upstream analyzer duty (cross-ref):** the analyzer owes this same
+      scan over BOTH substrates — capture rollouts AND every judged
+      install-instrument pool — BEFORE the body is written (`analyzer.md`
+      Step 3.7, #1364). A body resting a PASS/WARN install/parity
+      adjudication on a judged pool with no adjacent intrusion counts +
+      zeroed/excluded bounds is a missing-analyzer-duty REVISE finding
+      (name Step 3.7 in the finding), not only a critic-side recompute.
 4. **Cross-check the body's sample-output blocks**: the body MUST include ≥3 firing + ≥3 non-firing examples per Result. Verify those examples are actually drawn from the eval JSON (not fabricated) and are representative (not cherry-picked extreme cases).
 
 If the body's sample-output blocks are missing, contain only firing examples (no non-firing), or include examples not findable in the raw JSON, flag it.
