@@ -18,6 +18,8 @@ goal: 'Determine whether RLVR-style RL post-training changes the linear context�
   gap (within-stage R² minus reparameterized-base-map R² on identical text), testing
   whether the gap grows specifically at the RLVR stage (teaching) vs stays ≈0 at all
   stages (elicitation) vs grows uniformly with post-training depth.'
+relates_to:
+- identity-contextual-vs-base
 ---
 # Does RLVR post-training change the context→answer map more than SFT/DPO?
 
