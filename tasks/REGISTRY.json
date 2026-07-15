@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1334,
+  "highest_id": 1335,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2609,6 +2609,14 @@
       "path": "tasks/proposed/1334",
       "status": "proposed",
       "title": "workflow-fix: multi-pod-per-issue naming (--name-suffix) so suffixed pods map to their owning task"
+    },
+    "1335": {
+      "goal": "Identify which factor(s) \u2014 role identity/frequency, genre, answer structure/length, single-responder-vs-multi-speaker context, or measurement \u2014 account for the large held-out-R\u00b2 gap between the assistant context\u2192answer map (#825: base 0.59 / instruct 0.67, survives chat-template removal) and the per-character fiction context\u2192dialogue map (#1310: base 0.11\u20130.15 / instruct 0.19\u20130.25, same plain-text regime), via a one-factor-at-a-time ablation ladder measuring held-out R\u00b2 at each rung in Qwen2.5-7B base and instruct.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1335",
+      "status": "proposed",
+      "title": "Ablations: why is the assistant context\u2192answer map much stronger than the fiction-character map (both survive template removal)?"
     },
     "134": {
       "has_clean_result": false,
