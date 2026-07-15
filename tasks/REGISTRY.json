@@ -2847,8 +2847,8 @@
     "1365": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1365",
-      "status": "planning",
+      "path": "tasks/approved/1365",
+      "status": "approved",
       "title": "workflow-fix: correct upload-policy.md #1315 root-cause clause post-#1360"
     },
     "1366": {
