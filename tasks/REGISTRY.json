@@ -2854,8 +2854,8 @@
     "1366": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1366",
-      "status": "planning",
+      "path": "tasks/approved/1366",
+      "status": "approved",
       "title": "workflow-fix: artifact-reuse check for parent-branch unmerged fixes + row-count reconciliation"
     },
     "1367": {
