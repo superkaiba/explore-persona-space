@@ -4104,7 +4104,10 @@ acknowledgment, or a deliberate descope ONLY where the planner's §9
 stratification spec permits one. For a fit / battery / factorization phase,
 the vectorize mid-run trigger applies FIRST — run the signature check
 immediately, do not wait for a second deviation
-(`.claude/rules/vectorize-many-cell-fits.md` § Mid-run trigger); the
+(`.claude/rules/vectorize-many-cell-fits.md` § Mid-run trigger), and on a
+NEGATIVE signature over an embarrassingly-parallel unit grid run that
+section's width re-evaluation before resolving (a negative signature
+settles vectorization, not width — #1092); the
 `continue_as_is` bias below scopes to the descope question. Elapsed-so-far is a lower bound on final
 wall, so `continue_as_is` is nearly always the right mid-run resolution; the
 poller variant carries no `action:` field and is never an auto-descope input.

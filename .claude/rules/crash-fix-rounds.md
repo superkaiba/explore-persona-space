@@ -350,6 +350,20 @@ the relaunch ran the pre-fix commit, checkpointed garbage — val R²
    declared disposition — prefer a fresh resume prefix / `--no-resume`
    threaded into the workload cmd over mutating remote copies.
 
+**Width re-evaluation rides every relaunch of an embarrassingly-parallel
+unit grid** (`code` and `infra` rows alike): before re-dispatching at the
+prior fleet width, run the width re-evaluation of
+`.claude/rules/vectorize-many-cell-fits.md` § Mid-run trigger — when the
+run's `epm:compute-deviation` chain carries `signature_check: negative`
+(or the relaunch's own remaining-work arithmetic projects ≥2× the plan
+wall), re-sharding the REMAINING units across a wider fleet is the default
+(wall-clock is scarce, credits are not); record the `width_reeval:`
+arithmetic on the deviation re-post. The restore machinery this section
+already mandates makes re-sharding cheapest at exactly this point (#1092:
+a checkpoint-restoring relaunch kept width 4 for the remaining
+independent refit units after a 2.57× negative-signature deviation; wider
+re-sharding would have cut hours of wall).
+
 The fresh `epm:run-launched` note ALSO records `fix_sha=<sha>` and the
 executed disposition (note-token convention, same class as `pid=` /
 `commit=` — no marker-schema change). The `code`-row respawn BRIEF the
