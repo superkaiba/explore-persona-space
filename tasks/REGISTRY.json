@@ -8583,8 +8583,8 @@
       "goal": "On frozen Qwen-2.5-7B-Instruct with ridge-only maps and a train/validation/test split (validation selects layer + \u03bb, a disjoint test split compares methods and arms), characterize where the linear context\u2192answer-activation map differs between on-policy and off-policy answers, along three axes: (1) per-token-position predictability \u2014 fit h_t: c_last(x) \u2192 z_t^(a)(x) for answer positions t in the first-16 window, the last-16 window (span extended through `<|im_end|>` and its trailing newline \u2014 the last token before a next user turn would begin), and relative-position deciles, per arm a \u2208 {own-regenerated, external-plain, external-distinct-style, mismatched} (the four #823 arms, completions reused) over the 4998-context LMSYS pool; (2) prefix-conditioned prediction \u2014 sweep the predictor to the realized-answer activation at position t (t \u2208 {1,2,4,8,16,32,64,128}; t=0 = c_last baseline) predicting the individual / mean-pooled / max-pooled activations of positions > t, measuring how fast each arm's remainder becomes predictable as prefix is absorbed; and (3) divergence-conditioned evaluation \u2014 evaluate the SAME pool-trained maps on a generation-verified Qwen-vs-Claude divergence query bank (\u22484 quirk categories \u00d7 ~40\u201360 queries, each with matched same-template entity-swapped controls), testing whether off-policy predictability fails specifically where the two models' behaviors diverge while on-policy predictability holds.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/952",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/952",
+      "status": "awaiting_promotion",
       "title": "The own-answer advantage in predicting answer activations from context is position-uniform across the captured read-out layer band (MODERATE confidence)"
     },
     "953": {
