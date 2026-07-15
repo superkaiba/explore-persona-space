@@ -1,3 +1,4 @@
+- [free-helper caller-binding leak vs drain-waits](feedback_free_helper_caller_binding_drain_wait.md) — `del` in a callee frees nothing; rebind `x = _free_hf(x)` + post-rebind empty_cache; PEFT wrappers pin base (#1333 r9)
 - [Smoke keeps ZeRO-3 production width](feedback_smoke_ft_zero3_width_parity.md) — narrowing a ZeRO-3 full-FT smoke to 1 process OOMs at the first optimizer step (~86 GB unsharded on 80 GB); audit every `if cfg.smoke:` width branch when cloning a dispatcher (#1315)
 - [Per-arm-class smoke + source-filtered panel](feedback_per_arm_class_smoke_and_panel_disjointness.md) — a new source-context class crashes the #527/#538 panel-disjointness assert at ModelOrganism sites the smoke never reached; thread fu3w.panel_name_for everywhere + smoke one run per ARM CLASS (#1090 fu5)
 - [--smoke ternary skips the production branch](feedback_smoke_ternary_skips_production_branch.md) — `A if args.smoke else MODULE.CONST` leaves the production branch unexecuted by the smoke; resolve production-only constants at import time (#825 contrast crash)
@@ -113,3 +114,4 @@
 - [Smoke-scale gates](feedback_smoke_scale_gates.md) — production-n-calibrated verdicts (anchor tolerances, yield floors) bind spuriously at smoke n; demote to informational under --smoke, keep production pins (#1345)
 - [Hub verify-path retry + prefix batching](feedback_hub_verify_retry_transient.md) — one unretried per-file file_exists HEAD let a single 429 kill a run post-upload (#1335); retry_transient + one prefix listing
 - [Plain-text span boundaries BPE-merge](feedback_plain_text_span_boundary_bpe_merge.md) — offset-mapping spans + seam provenance; span-rig smokes include a plain-text-boundary context (#1315 r7)
+- [Bounded-retry the hub upload no-path return](feedback_hub_upload_no_path_transport_retry.md) — hub._upload swallows 429/Xet-queue and returns empty; dispatcher seams retry with backoff, fail-loud on exhaustion (#1315 r8)
