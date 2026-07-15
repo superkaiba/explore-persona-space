@@ -22,3 +22,15 @@ width unless the smoke HOST genuinely differs; pin it with an
 arg-composition regression test asserting `--num_processes <N>` + CVD in
 BOTH modes (worked example: tests/test_issue1315_dispatch.py
 test_ft_launch_width_smoke_invariant).
+
+RECURRED same-day in #1333 (crash-fix r4, 2026-07-15): the #1333 dispatcher
+was written BEFORE this memory landed and carried the identical
+`if cfg.smoke: return 1` in `_ft_num_processes`; its pod smoke died rc=1
+~50 s into p2_train on the SAME 4x A100-80 ft-7b pod. The r4 fix mirrors
+#1315 (smoke-invariant width + under-provision guard +
+tests/test_issue1333_dispatch.py::test_ft_launch_width_smoke_invariant) and
+adds `_run_subprocess` inner-log-tail-on-failure so the next subprocess
+crash's traceback lands in the crash-persisted workload.log (the inner
+`ft_mk4.log` was outside the GCE trap globs and died with the instance).
+Sweep duty: any OTHER in-flight dispatcher cloned from the #1112 family
+needs the same audit before its first pod smoke.
