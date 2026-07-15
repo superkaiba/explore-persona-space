@@ -2685,8 +2685,8 @@
     "1344": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1344",
-      "status": "approved",
+      "path": "tasks/running/1344",
+      "status": "running",
       "title": "workflow-fix: gotchas entry \u2014 smoke parity includes ZeRO-3 process width"
     },
     "1345": {
