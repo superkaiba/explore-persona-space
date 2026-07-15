@@ -58,6 +58,7 @@ import sys  # noqa: E402
 import time  # noqa: E402
 from collections import deque  # noqa: E402
 from collections.abc import Sequence  # noqa: E402
+from datetime import datetime  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Any  # noqa: E402
 
@@ -830,30 +831,53 @@ def fu4_sentinel_path(sentinel_dir: Path, run_id: str) -> Path:
     return sentinel_dir / f"issue-{i1090.ISSUE}-fu4run-{run_id}.json"
 
 
-def write_fu4_run_sentinel(sentinel_dir: Path, run_id: str, payload: dict) -> Path:
-    """Per-run progress sentinel (the dispatcher's resume + finalize source)."""
+def fu4_status_path(out_root: Path, run_id: str) -> Path:
+    """Per-run terminal status OUTSIDE the poller's drain glob. The
+    ``/workspace/logs`` per-run sentinels match ``poll_pipeline.py``'s
+    ``issue-<N>-*.json`` drain and get renamed ``<path>.processed`` after
+    posting, so resume / completion / finalize state lives under
+    ``out_root/<run_id>/status.json`` instead (drain-immune)."""
+    return out_root / run_id / "status.json"
+
+
+def write_fu4_run_sentinel(
+    sentinel_dir: Path, run_id: str, payload: dict, *, out_root: Path
+) -> Path:
+    """Per-run progress sentinel (poller-facing visibility) + its out-of-glob
+    ``status.json`` twin (the dispatcher's resume + finalize source — the
+    poller renames drained sentinels ``*.processed``, so the sentinel path
+    alone races the drain; code-review v16 Major)."""
     sentinel_dir.mkdir(parents=True, exist_ok=True)
+    doc = {
+        "sentinel_schema_version": fu3w.SENTINEL_SCHEMA_VERSION,
+        "kind": "epm:progress",
+        "version": 1,
+        "task_id": i1090.ISSUE,
+        "by": "issue1090_fu4",
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "payload": payload,
+    }
     path = fu4_sentinel_path(sentinel_dir, run_id)
-    i1090._atomic_write_json(
-        path,
-        {
-            "sentinel_schema_version": fu3w.SENTINEL_SCHEMA_VERSION,
-            "kind": "epm:progress",
-            "version": 1,
-            "task_id": i1090.ISSUE,
-            "by": "issue1090_fu4",
-            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "payload": payload,
-        },
-    )
+    i1090._atomic_write_json(path, doc)
+    i1090._atomic_write_json(fu4_status_path(out_root, run_id), doc)
     return path
 
 
-def read_fu4_run_status(sentinel_dir: Path, run_id: str) -> str | None:
-    path = fu4_sentinel_path(sentinel_dir, run_id)
-    if not path.exists():
-        return None
-    return json.loads(path.read_text()).get("payload", {}).get("status")
+def _read_fu4_run_payload(out_root: Path, sentinel_dir: Path, run_id: str) -> dict | None:
+    """Terminal-status payload for resume / completion / finalize. PRIMARY:
+    the out-of-glob ``status.json``. FALLBACK: the per-run sentinel, tolerating
+    the poller's ``<path>.processed`` drain-rename (covers state written by a
+    pre-status.json run)."""
+    sp = fu4_sentinel_path(sentinel_dir, run_id)
+    for p in (fu4_status_path(out_root, run_id), sp, sp.with_name(sp.name + ".processed")):
+        if p.exists():
+            return json.loads(p.read_text()).get("payload", {})
+    return None
+
+
+def read_fu4_run_status(out_root: Path, sentinel_dir: Path, run_id: str) -> str | None:
+    payload = _read_fu4_run_payload(out_root, sentinel_dir, run_id)
+    return payload.get("status") if payload is not None else None
 
 
 # ── Per-run worker (--phase run) ─────────────────────────────────────────────
@@ -881,10 +905,18 @@ def cmd_run(cfg: i1090.RunConfig, seams: i1090.Seams1090, args: argparse.Namespa
             "CUDA_VISIBLE_DEVICES not set — launch via `--phase dispatch` (which pins "
             "CVD per slot) or pass --allow-unpinned-gpu for a CPU smoke"
         )
-    manifest = _load_manifest(args.manifest)
-    pin = _manifest_run_entry(manifest, run.run_id).get("train_mix_sha256")
     result: dict[str, Any] = {"run_id": run.run_id, "status": "running", "lr": run.lr}
     try:
+        manifest = _load_manifest(args.manifest)
+        pin = _manifest_run_entry(manifest, run.run_id).get("train_mix_sha256")
+        if not cfg.smoke and not pin:
+            # Silent-default class (code-review v16 Minor 1): a manifest that
+            # lacks this run's entry/sha would silently skip the K1 sha pin.
+            raise ValueError(
+                f"[fu4-K1] no train_mix_sha256 pin for {run.run_id} "
+                f"(--manifest {args.manifest}) — a full run refuses to train "
+                "unpinned: run `--phase stage` and pass its manifest"
+            )
         i1090._phase("fu4_stage_inputs")
         fu3w.ensure_context(run.context_id, run.behavior)
         if cfg.smoke:
@@ -900,7 +932,7 @@ def cmd_run(cfg: i1090.RunConfig, seams: i1090.Seams1090, args: argparse.Namespa
             result.update({"status": "diverged", "divergence": rec["divergence_check"]})
             if cfg.upload:
                 upload_fu4_run(cfg, seams, run, rec)
-            write_fu4_run_sentinel(sentinel_dir, run.run_id, result)
+            write_fu4_run_sentinel(sentinel_dir, run.run_id, result, out_root=cfg.out_root)
             logger.warning("[fu4] %s DIVERGED (K2) — recorded as the arm's answer", run.run_id)
             return 0
         ckpts = fu2.enumerate_ckpt_rungs(rec["adapter_root"])
@@ -943,9 +975,14 @@ def cmd_run(cfg: i1090.RunConfig, seams: i1090.Seams1090, args: argparse.Namespa
         logger.exception("[fu4] run %s FAILED", run.run_id)
         result["status"] = "failed"
         result["reason"] = f"{type(e).__name__}: {e}"
-        write_fu4_run_sentinel(sentinel_dir, run.run_id, result)
+        # A K3 parity failure is a DETERMINISTIC registered gate — a retry
+        # re-runs the same ladder to the same verdict (code-review v16
+        # Minor 5: exempt it from the dispatcher's single requeue).
+        if "[fu4-K3]" in str(e):
+            result["no_requeue"] = True
+        write_fu4_run_sentinel(sentinel_dir, run.run_id, result, out_root=cfg.out_root)
         return 2
-    write_fu4_run_sentinel(sentinel_dir, run.run_id, result)
+    write_fu4_run_sentinel(sentinel_dir, run.run_id, result, out_root=cfg.out_root)
     logger.info("[fu4] run %s complete (status=%s)", run.run_id, result["status"])
     return 0
 
@@ -984,20 +1021,34 @@ def _worker_cmd(args: argparse.Namespace, run: Fu4Run, slot: int) -> list[str]:
     return cmd
 
 
+def _dispatch_disposition(rc: int, payload: dict, attempt: int) -> str:
+    """Completion routing for one finished worker: ``done`` on a clean
+    terminal status, ``failed`` (no retry) on a deterministic-gate failure
+    (``no_requeue`` — K3 parity re-runs the same ladder to the same verdict)
+    or an exhausted retry budget, else ``requeue`` (single retry)."""
+    if rc == 0 and payload.get("status") in ("done", "diverged"):
+        return "done"
+    if payload.get("no_requeue"):
+        return "failed"
+    return "requeue" if attempt <= 1 else "failed"
+
+
 def finalize_dispatch(
     args: argparse.Namespace, done: list[str], failed: list[str], skipped: list[str]
 ) -> None:
     """manifest_complete.json + the end-of-gpu-phase sentinel (poll_pipeline
-    required keys + reproducibility_card from the per-run sentinels)."""
+    required keys + reproducibility_card from the per-run status files —
+    out-of-glob, so the poller's sentinel drain-rename cannot hollow the
+    card the way fu3's did (23-24 of 35 cells))."""
     sentinel_dir = Path(args.sentinel_dir_resolved)
+    out_root = Path(args.out_root_resolved)
     adapter_paths: dict[str, str] = {}
     run_names: list[str] = []
     per_run: dict[str, dict] = {}
     for run_id in done + skipped:
-        path = fu4_sentinel_path(sentinel_dir, run_id)
-        if not path.exists():
+        payload = _read_fu4_run_payload(out_root, sentinel_dir, run_id)
+        if payload is None:
             continue
-        payload = json.loads(path.read_text()).get("payload", {})
         per_run[run_id] = {
             k: payload.get(k) for k in ("status", "selection", "adapter_hub_prefix", "run_name")
         }
@@ -1026,6 +1077,14 @@ def finalize_dispatch(
         "runs_failed": failed,
         "runs_skipped_resume": skipped,
         "per_run": per_run,
+        # Results-note disposition (code-review v16 Minor 6): K2-diverged runs
+        # upload build/ladder JSONs only; their NaN-poisoned adapter rungs are
+        # regenerable garbage-by-construction (pinned mix + seed + lr recipe)
+        # and are NOT uploaded before instance teardown.
+        "diverged_adapter_disposition": (
+            "diverged runs persist build/ladder JSONs only; NaN-poisoned adapter "
+            "rungs are regenerable garbage-by-construction and are not uploaded"
+        ),
         "hf_data_prefix": FU4_DATA_PREFIX,
         "reproducibility_card": card,
         "git_commit": i1074._git_short_sha(),
@@ -1074,7 +1133,7 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
     pending: deque[Fu4Run] = deque()
     skipped: list[str] = []
     for run in queue_rows:
-        if read_fu4_run_status(sentinel_dir, run.run_id) in ("done", "diverged"):
+        if read_fu4_run_status(out_root, sentinel_dir, run.run_id) in ("done", "diverged"):
             logger.info("[fu4] %s already terminal — resume-skip", run.run_id)
             skipped.append(run.run_id)
         else:
@@ -1120,16 +1179,24 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
                 continue
             fh.close()
             del live[slot]
-            status = read_fu4_run_status(sentinel_dir, run.run_id)
-            if rc == 0 and status in ("done", "diverged"):
+            payload = _read_fu4_run_payload(out_root, sentinel_dir, run.run_id) or {}
+            disposition = _dispatch_disposition(rc, payload, attempts[run.run_id])
+            if disposition == "done":
                 done.append(run.run_id)
-                logger.info("[fu4] run %s complete on GPU %d (%s)", run.run_id, slot, status)
-            elif attempts[run.run_id] <= 1:
+                logger.info(
+                    "[fu4] run %s complete on GPU %d (%s)", run.run_id, slot, payload["status"]
+                )
+            elif disposition == "requeue":
                 logger.warning("[fu4] run %s rc=%d — requeue (retry 1/1)", run.run_id, rc)
                 pending.append(run)
             else:
                 failed.append(run.run_id)
-                logger.error("[fu4] run %s FAILED after retry (rc=%d)", run.run_id, rc)
+                logger.error(
+                    "[fu4] run %s FAILED (rc=%d%s)",
+                    run.run_id,
+                    rc,
+                    "; deterministic gate — no requeue" if payload.get("no_requeue") else "",
+                )
         if time.time() - last_beat > 300:
             last_beat = time.time()
             logger.info(
@@ -1178,6 +1245,25 @@ def _mix_hub_provenance(run: Fu4Run) -> dict:
         for i in infos
         if i.last_commit is not None
     }
+
+
+def _assert_provenance_coherent(cell_key: str, bank_file: str, bank_date: str, prov: dict) -> None:
+    """Item-(j) pairwise coherence, compared CHRONOLOGICALLY via
+    ``datetime.fromisoformat`` — git ``%cI`` carries the committer's LOCAL
+    UTC offset while the HF ``last_commit`` dates are UTC, so a lexicographic
+    string compare is chronologically wrong within ~offset-hours."""
+    mix_dates = [v["date"] for v in prov.values()]
+    if not mix_dates:
+        return
+    bank_dt = datetime.fromisoformat(bank_date)
+    mix_min_dt = min(datetime.fromisoformat(d) for d in mix_dates)
+    if bank_dt > mix_min_dt:
+        raise ValueError(
+            f"[fu4-stage] provenance coherence FAILED for {cell_key}: bank "
+            f"{bank_file} last commit {bank_date} postdates the mix "
+            f"({min(mix_dates)}) — the consumed input was regenerated after "
+            "the dependent mix (artifact-reuse.md item (j))"
+        )
 
 
 def _load_fu3_base(run: Fu4Run, *, tier2_n: int) -> dict:
@@ -1229,14 +1315,9 @@ def cmd_stage(cfg: i1090.RunConfig, args: argparse.Namespace) -> int:
                 mix_rec = verify_fu4_mix(cfg, run, None)
                 prov = _mix_hub_provenance(run)
                 bank_date = _git_last_commit_iso(_BANK_FILES[run.behavior])
-                mix_dates = [v["date"] for v in prov.values()]
-                if mix_dates and max(bank_date, min(mix_dates)) != min(mix_dates):
-                    raise ValueError(
-                        f"[fu4-stage] provenance coherence FAILED for {run.cell_key}: bank "
-                        f"{_BANK_FILES[run.behavior]} last commit {bank_date} postdates the "
-                        f"mix ({min(mix_dates)}) — the consumed input was regenerated after "
-                        "the dependent mix (artifact-reuse.md item (j))"
-                    )
+                _assert_provenance_coherent(
+                    run.cell_key, _BANK_FILES[run.behavior], bank_date, prov
+                )
             base = _load_fu3_base(run, tier2_n=cfg.tier2_n) if not cfg.smoke else {}
             cell_rec = {
                 "train_mix_sha256": mix_rec["train_mix_sha256"],
@@ -1303,17 +1384,26 @@ def _drop_split_from_raw(judge_root: Path, tag: str) -> dict:
     return {"transport_losses": transport, "raw_path": str(raw_path)}
 
 
-def _stage_run_outputs(cfg: i1090.RunConfig, run: Fu4Run) -> Path:
+def _stage_run_outputs(cfg: i1090.RunConfig, run: Fu4Run) -> tuple[Path, dict]:
     """Local run outputs if present, else staged from the fu4 HF prefixes
-    (the pod uploaded them before release)."""
+    (the pod uploaded them before release). Tier-2 completions are staged ONLY
+    for a ``trained`` build — a K2-diverged run never generated/uploaded them
+    (a plan-REGISTERED reportable outcome; unconditionally staging that prefix
+    was the code-review v16 Critical: ``_stage_hf_prefix`` raises
+    FileNotFoundError on a missing prefix). A wholly-failed run may have
+    uploaded nothing at all — the caller isolates that per run."""
     run_root = _run_root(cfg, run)
     if not (run_root / "fu4_build_result.json").exists():
         i1090._stage_hf_prefix(f"{FU4_DATA_PREFIX}/{run.run_id}", run_root)
-    tier2_dir = run_root / "tier2"
-    ctx_file = tier2_dir / f"completions__trained__{run.context_id}.json"
-    if not ctx_file.exists():
-        i1090._stage_hf_prefix(f"{FU4_DATA_PREFIX}/raw_completions/tier2/{run.run_id}", tier2_dir)
-    return run_root
+    build = i1090._read_json(run_root / "fu4_build_result.json")
+    if build.get("status") == "trained":
+        tier2_dir = run_root / "tier2"
+        ctx_file = tier2_dir / f"completions__trained__{run.context_id}.json"
+        if not ctx_file.exists():
+            i1090._stage_hf_prefix(
+                f"{FU4_DATA_PREFIX}/raw_completions/tier2/{run.run_id}", tier2_dir
+            )
+    return run_root, build
 
 
 def _judge_run_tier2(cfg: i1090.RunConfig, judge_root: Path, run: Fu4Run, run_root: Path) -> dict:
@@ -1452,10 +1542,16 @@ def _formatting_reread_fires(out: dict, runs: Sequence[Fu4Run]) -> bool:
 
 def cmd_judge_aggregate(cfg: i1090.RunConfig, args: argparse.Namespace) -> int:
     """VM P3 (pod RELEASED first — #664): judge the impolite Tier-2 completions
-    (Batch-API judge path, 5 draws, 300-token budget, fresh fu4 cache dirs),
+    (5 draws, 300-token budget, fresh fu4 cache dirs; the route is auto-decided
+    by ``judge_completions_batch`` — per-run N = 200x5 = 1,000 draws sits below
+    the 2,000-call Batch crossover, so the REALIZED route is SYNC; plan §9 says
+    "Batch API" — deliberate deviation within the plan's judge-concurrency
+    tuning allowance: per-run checkpointing + fresh per-run cache dirs beat the
+    50% batch discount on ~6K Sonnet calls, and no GPU is held either way),
     split content-drops vs transport-losses (K4 + rule 24), fold in the reused
     fu3 base arms + ladders + margins, compute the registered verdict-lattice
-    inputs, and write fu4_ladders.json."""
+    inputs, and write fu4_ladders.json. Diverged / failed runs are FIRST-CLASS
+    records (per-run isolation), never an aggregate crash."""
     i1090._phase("fu4_judge_aggregate")
     manifest = _load_manifest(args.manifest) or _load_manifest(str(_default_manifest_path(cfg)))
     if not manifest:
@@ -1477,21 +1573,44 @@ def cmd_judge_aggregate(cfg: i1090.RunConfig, args: argparse.Namespace) -> int:
     out_path = (cfg.out_root if cfg.smoke else DELIVERABLES_DIR) / "fu4_ladders.json"
     for run in runs:
         entry = _manifest_run_entry(manifest, run.run_id)
-        run_root = _stage_run_outputs(cfg, run)
-        build = i1090._read_json(run_root / "fu4_build_result.json")
+        if not entry and not cfg.smoke:
+            # Sibling of the cmd_run sha-pin gate (silent-default class): a
+            # missing manifest entry would silently drop the reused fu3 base
+            # arm (base_tier2 -> None kills install_delta + the fmt trigger).
+            raise ValueError(
+                f"[fu4] manifest has no entry for {run.run_id} — regenerate the "
+                "stage manifest (or fix --runs); refusing a base-less aggregate"
+            )
         rec: dict[str, Any] = {
             "run_id": run.run_id,
             "cell_key": run.cell_key,
             "behavior": run.behavior,
             "context_id": run.context_id,
             "lr": run.lr,
-            "status": build.get("status"),
-            "rates_by_step": build.get("rates_by_step"),
-            "degeneracy_by_step": build.get("degeneracy_by_step"),
-            "selection": build.get("selection"),
-            "divergence_check": build.get("divergence_check"),
             "base_tier2": entry.get("fu3_base"),
         }
+        try:
+            run_root, build = _stage_run_outputs(cfg, run)
+        except FileNotFoundError as e:
+            # Per-run isolation (code-review v16 Critical): a failed run may
+            # have uploaded NOTHING (or no build record) — record it as a
+            # first-class outcome and keep aggregating the sibling runs.
+            # Anything but the staging helper's documented missing-prefix /
+            # missing-file signal stays LOUD.
+            logger.warning("[fu4] %s: build artifacts unavailable — %s", run.run_id, e)
+            rec.update({"status": "missing_artifacts", "missing_reason": str(e)})
+            out["runs"][run.run_id] = rec
+            i1090._atomic_write_json(out_path, out)
+            continue
+        rec.update(
+            {
+                "status": build.get("status"),
+                "rates_by_step": build.get("rates_by_step"),
+                "degeneracy_by_step": build.get("degeneracy_by_step"),
+                "selection": build.get("selection"),
+                "divergence_check": build.get("divergence_check"),
+            }
+        )
         if build.get("status") == "trained":
             rec["tier2_trained"] = _judge_run_tier2(cfg, judge_root, run, run_root)
             base = entry.get("fu3_base") or {}

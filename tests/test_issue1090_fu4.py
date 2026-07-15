@@ -12,6 +12,7 @@ external Hub upload boundary (signature-conformant recording fn).
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -207,3 +208,149 @@ def test_upload_failure_aborts_before_any_rung_delete(tmp_path):
         "checkpoint-10",
         "checkpoint-5",
     ]
+
+
+# ── code-review v16 revision pins ────────────────────────────────────────────
+
+
+def _fake_stage_missing(prefix, dest, *, skip_if=None):
+    """Signature-conformant twin of i1090._stage_hf_prefix's missing-prefix
+    behavior (the exact FileNotFoundError the real helper raises)."""
+    raise FileNotFoundError(f"no tree at {i1090.HF_DATA_REPO}/{prefix}")
+
+
+def test_stage_run_outputs_skips_tier2_staging_for_diverged_run(tmp_path, monkeypatch):
+    """v16 Critical (fails pre-fix): a K2-diverged run never generated/uploaded
+    a tier2 prefix; pre-fix _stage_run_outputs unconditionally staged it and
+    the aggregate crashed on the registered diverged outcome."""
+    run = fu4.RUN_BY_ID["imp-pers-lr1e4"]
+    cfg = _cfg(tmp_path, run, smoke=True)
+    (tmp_path / run.run_id).mkdir(parents=True)
+    (tmp_path / run.run_id / "fu4_build_result.json").write_text(
+        json.dumps({"status": "diverged", "divergence_check": {"diverged": True}})
+    )
+    monkeypatch.setattr(i1090, "_stage_hf_prefix", _fake_stage_missing)
+    run_root, build = fu4._stage_run_outputs(cfg, run)
+    assert build["status"] == "diverged"
+    assert run_root == tmp_path / run.run_id
+
+
+def test_judge_aggregate_isolates_diverged_and_missing_runs(tmp_path, monkeypatch):
+    """v16 Critical, end-to-end through cmd_judge_aggregate: a diverged run and
+    a wholly-missing (failed, nothing uploaded) run are FIRST-CLASS records —
+    the loop never crashes, sibling runs keep aggregating, fu4_ladders.json
+    lands with the verdict-lattice inputs."""
+    diverged = fu4.RUN_BY_ID["imp-pers-lr1e4"]
+    missing = fu4.RUN_BY_ID["imp-conv-lr1e4"]
+    cfg = i1090.RunConfig(smoke=True, cells=(diverged, missing), out_root=tmp_path, upload=False)
+    (tmp_path / diverged.run_id).mkdir(parents=True)
+    (tmp_path / diverged.run_id / "fu4_build_result.json").write_text(
+        json.dumps(
+            {"status": "diverged", "divergence_check": {"diverged": True, "reason": "nan_loss"}}
+        )
+    )
+    manifest = tmp_path / "cell_manifest_fu4.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "runs": [
+                    {"run_id": diverged.run_id, "fu3_base": {"rate": 0.0, "n": 600}},
+                    {"run_id": missing.run_id, "fu3_base": {"rate": 0.0, "n": 400}},
+                ]
+            }
+        )
+    )
+    monkeypatch.setattr(i1090, "_stage_hf_prefix", _fake_stage_missing)
+    args = argparse.Namespace(manifest=str(manifest), runs=f"{diverged.run_id},{missing.run_id}")
+    assert fu4.cmd_judge_aggregate(cfg, args) == 0
+    out = json.loads((tmp_path / "fu4_ladders.json").read_text())
+    div = out["runs"][diverged.run_id]
+    assert div["status"] == "diverged"
+    assert div["divergence_check"]["reason"] == "nan_loss"
+    assert "tier2_trained" not in div
+    miss = out["runs"][missing.run_id]
+    assert miss["status"] == "missing_artifacts"
+    assert "no tree at" in miss["missing_reason"]
+    assert set(out["cells"]) == {"imp-pers", "imp-conv"}
+
+
+def test_judge_aggregate_full_mode_refuses_missing_manifest_entry(tmp_path):
+    """Sibling of the sha-pin gate (silent-default class): a full-mode
+    aggregate over a manifest lacking the run's entry fails LOUD instead of
+    silently dropping the reused fu3 base arm."""
+    run = fu4.RUN_BY_ID["imp-pers-lr1e4"]
+    cfg = i1090.RunConfig(smoke=False, cells=(run,), out_root=tmp_path, upload=False)
+    manifest = tmp_path / "m.json"
+    manifest.write_text(json.dumps({"runs": [{"run_id": "someone-else"}]}))
+    args = argparse.Namespace(manifest=str(manifest), runs=run.run_id)
+    with pytest.raises(ValueError, match="no entry for"):
+        fu4.cmd_judge_aggregate(cfg, args)
+
+
+def test_run_status_survives_poller_drain_rename(tmp_path):
+    """v16 Major (fails pre-fix): the per-run sentinels match poll_pipeline's
+    issue-<N>-*.json drain glob and get renamed <path>.processed; resume /
+    completion / finalize now read the out-of-glob status.json (primary) and
+    tolerate the rename (fallback), so a drained sentinel can no longer
+    requeue a healthy run or hollow the reproducibility card."""
+    out_root = tmp_path / "out"
+    sdir = tmp_path / "logs"
+    rid = "imp-pers-lr1e5"
+    p = fu4.write_fu4_run_sentinel(sdir, rid, {"status": "done"}, out_root=out_root)
+    assert fu4.read_fu4_run_status(out_root, sdir, rid) == "done"
+    # Simulate the poller drain mid-flight: sentinel renamed <path>.processed.
+    p.rename(p.with_name(p.name + ".processed"))
+    assert fu4.read_fu4_run_status(out_root, sdir, rid) == "done"  # status.json
+    # Legacy state (pre-status.json run): only the drained sentinel remains.
+    fu4.fu4_status_path(out_root, rid).unlink()
+    assert fu4.read_fu4_run_status(out_root, sdir, rid) == "done"  # .processed
+    assert fu4.read_fu4_run_status(out_root, sdir, "never-ran") is None
+
+
+def test_dispatch_disposition_routes_k3_and_retries():
+    """v16 Minor 5: a deterministic-gate failure (no_requeue — K3 parity) is
+    never requeued; ordinary failures get exactly one retry."""
+    assert fu4._dispatch_disposition(0, {"status": "done"}, 1) == "done"
+    assert fu4._dispatch_disposition(0, {"status": "diverged"}, 2) == "done"
+    assert fu4._dispatch_disposition(2, {"status": "failed", "no_requeue": True}, 1) == "failed"
+    assert fu4._dispatch_disposition(2, {"status": "failed"}, 1) == "requeue"
+    assert fu4._dispatch_disposition(2, {"status": "failed"}, 2) == "failed"
+    # rc=0 but no terminal status (worker died before its status write).
+    assert fu4._dispatch_disposition(0, {}, 1) == "requeue"
+
+
+def test_provenance_compare_is_chronological():
+    """v16 Minor 2 (fails pre-fix in BOTH directions): git %cI carries the
+    committer's local UTC offset, HF dates are UTC — the pre-fix lexicographic
+    compare both silently PASSED a truly postdating bank and false-FAILED a
+    predating one within the offset window."""
+    prov = {"m": {"oid": "x", "date": "2026-07-10T20:00:00+00:00"}}
+    # Bank 18:00-07:00 == 01:00Z NEXT DAY: postdates the mix chronologically,
+    # but "…T18…" < "…T20…" lexicographically (pre-fix: silent pass).
+    with pytest.raises(ValueError, match="provenance coherence"):
+        fu4._assert_provenance_coherent("imp-pers", "bank.json", "2026-07-10T18:00:00-07:00", prov)
+    # Bank 23:00+05:00 == 18:00Z: PREdates the mix, but "…T23…" > "…T20…"
+    # lexicographically (pre-fix: false failure). Must NOT raise.
+    fu4._assert_provenance_coherent("imp-pers", "bank.json", "2026-07-10T23:00:00+05:00", prov)
+    # Empty provenance (smoke fixture) is a no-op.
+    fu4._assert_provenance_coherent("imp-pers", "bank.json", "2026-07-10T18:00:00-07:00", {})
+
+
+def test_cmd_run_full_mode_refuses_unpinned_manifest(tmp_path):
+    """v16 Minor 1 (silent-default class): a full run with no manifest sha pin
+    for its run id fails LOUD (status=failed, reason names the pin) instead of
+    training unpinned; the failure record lands in the out-of-glob status.json."""
+    rid = "imp-pers-lr1e5"
+    cfg = i1090.RunConfig(
+        smoke=False,
+        cells=(fu4.RUN_BY_ID[rid],),
+        out_root=tmp_path,
+        sentinel_dir=tmp_path / "logs",
+        upload=False,
+    )
+    args = argparse.Namespace(run=rid, manifest=None, allow_unpinned_gpu=True)
+    assert fu4.cmd_run(cfg, i1090.Seams1090(), args) == 2
+    payload = fu4._read_fu4_run_payload(tmp_path, tmp_path / "logs", rid)
+    assert payload["status"] == "failed"
+    assert "train_mix_sha256" in payload["reason"]
+    assert not payload.get("no_requeue")  # unpinned is retriable after a re-stage
