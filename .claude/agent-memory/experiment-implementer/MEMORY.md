@@ -107,3 +107,4 @@
 - [per-cell file resolvers + group-reap fan-outs](feedback_per_cell_file_writer_reader_sweep.md) — sweep writers-vs-readers per cell class before launch; reap fan-out units by process group (#1112)
 - [Teacher-forced capture: token-id concat, never re-tokenize the joined string](feedback_teacher_forced_capture_token_id_concat.md) — BPE seam merges shift per-segment-count positions and silently misalign captures; offset-mapping boundaries + G2 identity gate (#1092 r8.4)
 - [Smoke-slice sizes must satisfy downstream min-N asserts](feedback_smoke_slice_min_n_downstream_asserts.md) — derive smoke slice floors from downstream `assert len >= k` consumers, not plan prose (#1315 r4)
+- [Out-root never /tmp (container disk)](feedback_outroot_tmp_container_disk.md) — RunPod /tmp = 50 GB overlay; anchor out-roots under /workspace + per-phase headroom probes (#1333)
