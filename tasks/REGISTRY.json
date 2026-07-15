@@ -2742,8 +2742,8 @@
     "1351": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1351",
-      "status": "proposed",
+      "path": "tasks/planning/1351",
+      "status": "planning",
       "title": "workflow-fix: crash-persist worker-log sweep excludes committed repo content"
     },
     "136": {
