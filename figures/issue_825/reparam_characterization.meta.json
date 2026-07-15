@@ -1,0 +1,6 @@
+{
+  "figure": "figures/issue_825/reparam_characterization.png",
+  "source": "eval_results/issue_825/reparam_characterization/results.json",
+  "headline_layer": 19,
+  "caption": "Characterizing the base->instruct reparameterization at layer 19. Panel 1: stretch spectrum (singular values of A_ctx context vs A_ans answer; 1 = no stretch). Panel 2: per-map-input-direction deviation ||(A_ctx-I)u_i|| for the directions the answer-map reads vs the map-null complement. Panel 3: reparameterization magnitude ||A-I||_F by layer, context vs answer. Shared neuron basis (instruct fine-tuned from base); operators GCV primal-ridge."
+}
