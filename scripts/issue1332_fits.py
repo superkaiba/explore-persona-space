@@ -19,7 +19,9 @@ Order of operations (each output checkpointed the moment it completes):
    query transfer (the #823 dedup shape: one fit per (i, layer, fold),
    rescored against every j), prediction agreement on the pooled probe set,
    map-mediated displacement, mean-target (degenerate prefix arm) transfer +
-   S_excess, per-layer JSONs.
+   S_excess, per-layer JSONs. Pair scoring is BATCHED (mid-run vectorize fix;
+   serial oracle retained as ``_similarity_at_layer_serial_reference``,
+   equivalence-gated via ``--verify-sim-layer``).
 5. SPLIT-HALF similarity matrices S^(A)/S^(B) at L* (r_SS reliability +
    same-family ceiling) + descriptive weight-space cosines with the
    matched-half noise reference (#823 calibration).
@@ -346,8 +348,138 @@ def layer_freeze(
     return payload
 
 
+def _score_similarity_fold_batched(preds, Yval, val_slices, fams, train_means):
+    """Batched pair scoring for ONE fold (the #1332 mid-run vectorize fix).
+
+    Replaces the serial per-(i, j) ``r2()`` double loop (676 pairs x ~4
+    full-pooled-array fp64 passes x 5 folds ~= 13.5k serial memory-bound
+    passes; 1737 s measured at L5) with pair-axis-batched fp64 reductions:
+
+    - S_trans / S_mean_target: per-family-j residual einsums over the stacked
+      preds tensor ((nf, n_j, H) temps); ``ss_tot_j`` computed ONCE per j
+      (it never depends on i).
+    - S_agree / d_map: pairwise squared distance via the Gram trick
+      ``||p_i - p_j||^2 = ||p_i||^2 + ||p_j||^2 - 2<p_i, p_j>`` (one fp64
+      GEMM over the flattened probe axis; diagonal pinned to 0 — the serial
+      ss_res is exactly 0 there — and clamped >= 0 against Gram rounding),
+      with per-j centering terms computed once.
+
+    Returns the four (nf, nf) per-fold contributions
+    ``(s_trans, s_mean_target, s_agree, d_map)`` BEFORE the caller's
+    ``/ n_folds`` — matching ``_similarity_at_layer_serial_reference`` within
+    float tolerance (gated <= PARITY_REL_TOL by ``--verify-sim-layer`` and
+    ``tests/test_issue1332_similarity_vectorized.py``).
+    """
+    import numpy as np
+
+    nf, n_probe, hdim = preds.shape
+    preds64 = preds.astype(np.float64)
+    # fp32 train-mean VALUES cast to fp64, exactly as the serial r2() casts them
+    tm64 = np.asarray(np.stack(train_means), dtype=np.float64)
+
+    s_trans = np.zeros((nf, nf))
+    s_mean_target = np.zeros((nf, nf))
+    for j, fam_j in enumerate(fams):
+        sl = val_slices[fam_j]
+        y_j = np.asarray(Yval[j], dtype=np.float64)
+        mu_j = y_j.mean(axis=0)
+        denom_j = float(((y_j - mu_j) ** 2).sum()) + 1e-12  # ss_tot + eps (r2 convention)
+        resid = y_j[None, :, :] - preds64[:, sl, :]
+        s_trans[:, j] = 1.0 - np.einsum("ijk,ijk->i", resid, resid) / denom_j
+        mt_resid = y_j[None, :, :] - tm64[:, None, :]
+        s_mean_target[:, j] = 1.0 - np.einsum("ijk,ijk->i", mt_resid, mt_resid) / denom_j
+
+    flat = preds64.reshape(nf, -1)
+    sq = np.einsum("ik,ik->i", flat, flat)
+    d2 = sq[:, None] + sq[None, :] - 2.0 * (flat @ flat.T)
+    np.fill_diagonal(d2, 0.0)
+    np.maximum(d2, 0.0, out=d2)
+    mu_p = preds64.mean(axis=1)  # (nf, H) pooled-probe column means, per family
+    cent = np.empty(nf)
+    for i in range(nf):
+        c = preds64[i] - mu_p[i]
+        cent[i] = float(np.einsum("jk,jk->", c, c))
+    inv_cent = 1.0 / (cent + 1e-12)
+    # a_ij = 0.5*(r2(p_j, p_i) + r2(p_i, p_j)) = 1 - 0.5*D_ij*(1/ct_j + 1/ct_i)
+    s_agree = 1.0 - 0.5 * d2 * (inv_cent[None, :] + inv_cent[:, None])
+    denom_dmap = cent / (n_probe * hdim) + 1e-12  # serial den: MEAN-based + eps
+    d_map = (d2 / (n_probe * hdim)) / denom_dmap[None, :]
+    return s_trans, s_mean_target, s_agree, d_map
+
+
 def similarity_at_layer(cache: ShardCache, fams: list[str], layer: int, folds, solver: str) -> dict:
-    """All function-space similarity metrics at ONE layer (plan §4.5)."""
+    """All function-space similarity metrics at ONE layer (plan §4.5; batched scoring).
+
+    Fits keep the #823 dedup shape — ONE fit per (family, fold), rescored on
+    the pooled probe set (0.048 s/fit measured, ``fit_pilot.json``); the pair
+    scoring is batched over the (i, j) axis (``_score_similarity_fold_batched``
+    — the mid-run vectorize fix; serial oracle retained as
+    ``_similarity_at_layer_serial_reference``).
+    """
+    import numpy as np
+
+    nf = len(fams)
+    s_trans = np.zeros((nf, nf))
+    s_agree = np.zeros((nf, nf))
+    d_map = np.zeros((nf, nf))
+    s_mean_target = np.zeros((nf, nf))
+    n_folds = len(folds)
+    for fold in folds:
+        val_set = set(fold)
+        Xtr, Ytr, Yval, val_slices = [], [], [], {}
+        probe_parts = []
+        pos = 0
+        for fam in fams:
+            bank_idx = cache.bank_indices(fam)
+            tr_rows = [i for i, b in enumerate(bank_idx) if b not in val_set]
+            ev_rows = [i for i, b in enumerate(bank_idx) if b in val_set]
+            X = cache.arrays(fam, "cx_last", [layer])[:, 0, :]
+            Y = cache.arrays(fam, "v_mean", [layer])[:, 0, :]
+            Xtr.append(X[tr_rows])
+            Ytr.append(Y[tr_rows])
+            probe_parts.append(X[ev_rows])
+            Yval.append(Y[ev_rows])
+            val_slices[fam] = slice(pos, pos + len(ev_rows))
+            pos += len(ev_rows)
+        X_probe = np.concatenate(probe_parts, axis=0)  # pooled probe inputs (identical per pair)
+        preds = np.zeros((nf, X_probe.shape[0], X_probe.shape[1]), dtype=np.float32)
+        train_means = []
+        for i, _fam in enumerate(fams):
+            p = fit_predict_batched(Xtr[i][None], Ytr[i][None], X_probe[None], solver=solver)[0]
+            preds[i] = p.astype(np.float32)
+            train_means.append(Ytr[i].mean(axis=0))
+        st, smt, sa, dm = _score_similarity_fold_batched(preds, Yval, val_slices, fams, train_means)
+        s_trans += st / n_folds
+        s_mean_target += smt / n_folds
+        s_agree += sa / n_folds
+        d_map += dm / n_folds
+    s_sym = 0.5 * (s_trans + s_trans.T)
+    return {
+        "families": fams,
+        "layer": layer,
+        "S_trans": s_trans.tolist(),
+        "S_sym": s_sym.tolist(),
+        "S_asym": (s_trans - s_trans.T).tolist(),
+        "S_agree": s_agree.tolist(),
+        "S_dmap_one_minus": (1.0 - d_map).tolist(),
+        "S_mean_target": s_mean_target.tolist(),
+        "S_excess": (s_trans - s_mean_target).tolist(),
+        "n_folds": n_folds,
+    }
+
+
+def _similarity_at_layer_serial_reference(
+    cache: ShardCache, fams: list[str], layer: int, folds, solver: str
+) -> dict:
+    """SERIAL ORACLE — retained ONLY for equivalence gates; never call in production.
+
+    Verbatim pre-vectorization body (the seeded serial oracle of the #1332
+    mid-run vectorize fix; Supersede-contract containment per
+    ``.claude/rules/vectorize-many-cell-fits.md``). Production path:
+    ``similarity_at_layer`` (batched), pinned to this reference by
+    ``tests/test_issue1332_similarity_vectorized.py`` and to the persisted
+    serial L5 JSON by ``--verify-sim-layer``.
+    """
     import numpy as np
 
     nf = len(fams)
@@ -405,6 +537,60 @@ def similarity_at_layer(cache: ShardCache, fams: list[str], layer: int, folds, s
         "S_excess": (s_trans - s_mean_target).tolist(),
         "n_folds": n_folds,
     }
+
+
+def verify_similarity_vectorized(
+    cache: ShardCache, fams: list[str], layer: int, folds, solver: str, oracle_path: Path
+) -> dict:
+    """Batched-vs-serial-oracle equivalence gate at production shape (report-only).
+
+    Re-runs ONE layer through the BATCHED production ``similarity_at_layer``
+    and compares every similarity matrix against the serial run's persisted
+    JSON (the seeded serial oracle) under the ``parity_gate`` matrix-scale
+    convention: ``max|batched - serial| / (max|serial| + 1e-12)`` per matrix,
+    each <= PARITY_REL_TOL. Writes NOTHING under eval_results/; raises on FAIL.
+    """
+    import numpy as np
+
+    oracle = json.loads(Path(oracle_path).read_text())
+    if oracle["families"] != fams or oracle["n_folds"] != len(folds) or oracle["layer"] != layer:
+        raise RuntimeError(
+            f"oracle regime mismatch: {oracle_path} carries "
+            f"({len(oracle['families'])} fams, {oracle['n_folds']} folds, layer "
+            f"{oracle['layer']}) vs live ({len(fams)} fams, {len(folds)} folds, layer {layer})"
+        )
+    t0 = time.time()
+    out = similarity_at_layer(cache, fams, layer, folds, solver)
+    wall = time.time() - t0
+    keys = (
+        "S_trans",
+        "S_sym",
+        "S_asym",
+        "S_agree",
+        "S_dmap_one_minus",
+        "S_mean_target",
+        "S_excess",
+    )
+    per_matrix = {}
+    for key in keys:
+        a = np.asarray(out[key], dtype=np.float64)
+        b = np.asarray(oracle[key], dtype=np.float64)
+        per_matrix[key] = float(np.abs(a - b).max()) / (float(np.abs(b).max()) + 1e-12)
+    worst = max(per_matrix.values())
+    report = {
+        "layer": layer,
+        "wall_s_batched": wall,
+        "wall_s_serial_oracle": oracle.get("wall_s"),
+        "per_matrix_max_rel_diff": per_matrix,
+        "max_rel_diff": worst,
+        "tolerance": PARITY_REL_TOL,
+        "pass": bool(worst <= PARITY_REL_TOL),
+        "solver": solver,
+    }
+    logger.info("[verify-sim] %s", json.dumps(report))
+    if not report["pass"]:
+        raise RuntimeError(f"vectorized similarity parity FAIL: {json.dumps(report)}")
+    return report
 
 
 def split_half_similarity(cache: ShardCache, fams: list[str], layer: int, solver: str) -> dict:
@@ -554,11 +740,24 @@ def i545_similarity(cache: ShardCache, units: list[str], layer: int, solver: str
 
 
 def main() -> int:
-    """P2 driver: parity gate -> pilot -> layer freeze -> similarity -> split-half."""
+    """P2 driver: parity gate -> pilot -> layer freeze -> similarity -> split-half.
+
+    ``--verify-sim-layer L`` short-circuits to the batched-vs-serial-oracle
+    similarity equivalence gate at production shape (report-only).
+    """
     ap = argparse.ArgumentParser(description="Issue #1332 P2 fits (VM CPU)")
     mode = ap.add_mutually_exclusive_group(required=True)
     mode.add_argument("--full", action="store_true")
     mode.add_argument("--smoke", action="store_true")
+    mode.add_argument(
+        "--verify-sim-layer",
+        type=int,
+        default=None,
+        metavar="L",
+        help="batched-vs-serial-oracle similarity equivalence gate at production "
+        "shape against the persisted S_transfer_L{L}.json (report-only; writes "
+        "nothing under eval_results/)",
+    )
     ap.add_argument("--arm", default="marker", choices=["marker", "i545"])
     ap.add_argument("--out-root", default=None)
     ap.add_argument("--results-dir", default=None)
@@ -595,6 +794,14 @@ def main() -> int:
     n_layers = cache.n_layers(fams[0])
     n_bank = resolve_n_bank(cache, fams)
     folds = C.query_folds(n_bank)
+
+    if args.verify_sim_layer is not None:
+        # equivalence gate only — no phase breadcrumbs, no eval_results/ writes
+        gate_path = res_dir / "parity_gate.json"
+        solver = json.loads(gate_path.read_text())["solver"]
+        oracle_path = res_dir / "similarity" / f"S_transfer_L{args.verify_sim_layer}.json"
+        verify_similarity_vectorized(cache, fams, args.verify_sim_layer, folds, solver, oracle_path)
+        return 0
 
     C.phase("p2_parity")
     gate = parity_gate(cache, fams, [min(n_layers - 1, 14)], folds)
