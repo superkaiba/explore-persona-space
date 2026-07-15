@@ -104,7 +104,12 @@ logger = logging.getLogger("issue1005_f2f3")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 FOLLOWUP_LABEL_1005 = "issue1005-unified-f2f3"
-PREFIX_CONSTANCY_COS_MIN = 0.9999  # plan §4.6 within-context prefix-vector assert
+# Two-bar bf16-CUDA calibration (#779 rule, gotchas.md; measured on THIS store
+# 2026-07-15: worst flat 0.991745 on f5_fmt_json, layer 27 in ALL 50 contexts,
+# layer-0 min >= 0.999999 everywhere — the depth-amplified padded-batch noise
+# signature, NOT a span bug, which corrupts layer 0 at cos 0.43-0.84):
+PREFIX_CONSTANCY_EARLY_COS_MIN = 0.999  # layers 0-3 — the sharp bug catcher
+PREFIX_CONSTANCY_FLAT_COS_MIN = 0.98  # all layers — gross-corruption guard
 REGIMES = ("indiv", "avg_q")
 
 
@@ -163,14 +168,18 @@ def assert_f1_bootstrap_coherence(f1_boot: dict, n_boot: int) -> dict:
 
 
 def prefix_constancy_assert(store: MaskedStore) -> dict:
-    """Within-context prefix-vector constancy (plan §4.6, cos >= 0.9999).
+    """Within-context prefix-vector constancy (plan §4.6; #779 two-bar bf16 gate).
 
     The prefix tokens are identical across a context's rows (the probe is
     excluded from the prefix span), so per-row ``prefix_mean`` vectors must
-    agree with the context mean up to batched-forward numerics."""
+    agree with the context mean up to batched-forward numerics. Bar (a):
+    EARLY layers 0-3 — a real span/pad/row bug corrupts layer 0 immediately
+    (cos 0.43-0.84); bar (b): flat all-layer gross-corruption guard (measured
+    bf16 depth-noise worst on this store: 0.991745, layer-27-only)."""
     pfx = store.sidx["prefix_mean"]
     report: dict = {}
-    worst = 1.0
+    worst_early = 1.0
+    worst_flat = 1.0
     for c in store.ctx_ids:
         v = store.blobs[c]["per_q"][:, pfx].float()  # (n, Lc, H)
         if v.shape[0] < 2:
@@ -178,14 +187,34 @@ def prefix_constancy_assert(store: MaskedStore) -> dict:
             continue
         mean_v = v.mean(dim=0, keepdim=True)
         cos = torch.nn.functional.cosine_similarity(v, mean_v, dim=-1)  # (n, Lc)
-        cmin = float(cos.min())
-        report[c] = {"cos_min_to_mean": cmin, "n_rows": int(v.shape[0])}
-        worst = min(worst, cmin)
-    assert worst >= PREFIX_CONSTANCY_COS_MIN, (
-        f"prefix-constancy assert FAILED: min cosine {worst:.6f} < {PREFIX_CONSTANCY_COS_MIN} "
-        "— per-row prefix vectors drifted within a context (capture/span bug; plan §4.6)"
+        early = float(cos[:, :4].min())
+        flat = float(cos.min())
+        report[c] = {
+            "cos_min_early_l0_3": early,
+            "cos_min_to_mean": flat,
+            "n_rows": int(v.shape[0]),
+        }
+        worst_early = min(worst_early, early)
+        worst_flat = min(worst_flat, flat)
+    assert worst_early >= PREFIX_CONSTANCY_EARLY_COS_MIN, (
+        f"prefix-constancy assert FAILED: EARLY-layer (0-3) min cosine {worst_early:.6f} < "
+        f"{PREFIX_CONSTANCY_EARLY_COS_MIN} — layer-0-visible drift is a real capture/span "
+        "bug, not bf16 depth noise (plan §4.6)"
     )
-    return {"cos_min_overall": worst, "bar": PREFIX_CONSTANCY_COS_MIN, "by_context": report}
+    assert worst_flat >= PREFIX_CONSTANCY_FLAT_COS_MIN, (
+        f"prefix-constancy assert FAILED: flat min cosine {worst_flat:.6f} < "
+        f"{PREFIX_CONSTANCY_FLAT_COS_MIN} — beyond the measured bf16 depth-noise envelope "
+        "(plan §4.6)"
+    )
+    return {
+        "cos_min_early_overall": worst_early,
+        "cos_min_overall": worst_flat,
+        "bars": {
+            "early_l0_3": PREFIX_CONSTANCY_EARLY_COS_MIN,
+            "flat": PREFIX_CONSTANCY_FLAT_COS_MIN,
+        },
+        "by_context": report,
+    }
 
 
 def main() -> int:
