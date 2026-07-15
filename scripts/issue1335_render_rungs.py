@@ -41,6 +41,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -68,6 +69,21 @@ HF_PREFIX = "issue1335_ablation_ladder"
 TRACKS_REMOTE = "issue825_userbase_map/raw_completions/track_s/track_s.jsonl"
 TRACKS_REV = "deb7a452"  # pinned HF data-repo revision (plan assumption 3)
 TRACKS_EXPECT_ROWS = 5000
+# Restream fallback (plan assumptions 3/13): on a pinned-artifact miss, the #825
+# Track-S prompt set is reproduced by re-streaming lmsys-chat-1m at the build
+# revision recorded in track_s_meta.json (dataset_revision @ rev deb7a452) with
+# the #825 keep filter (issue779_collect.load_train_contexts: first-turn content,
+# non-empty after strip, first 5000 in dataset order). Identity is asserted via
+# the prompt-set hash below — sha256(json.dumps(prompts, ensure_ascii=True)) of
+# the pinned artifact's ordered "prompt" column (computed 2026-07-15 from
+# track_s.jsonl @ deb7a452; 5000 rows).
+LMSYS_REPO = "lmsys/lmsys-chat-1m"
+LMSYS_REV = "200748d9d3cddcc9d782887541057aca0b18c5da"
+TRACKS_PROMPT_SHA256 = "55c5d462ac016d8d794ddc5d557ee741f89ece1cca8bbcbde7529e7be392b42b"
+# Bounded-scan cap: keep-rate on lmsys first turns is ~1, so 5000 kept needs
+# ~5000 scanned; the cap terminates a pathological 0-keep chain in seconds
+# instead of streaming ~1M rows (#1092 tiny-real streaming-probe rule).
+TRACKS_RESTREAM_MAX_SCAN = 50_000
 
 QA_LABEL = "Assistant"
 RENAMED_LABEL = "Wren"  # the #1310 assistant-adjacent persona
@@ -468,8 +484,145 @@ def count_prefix_tokens(
 # ---------------------------------------------------------------------------
 
 
+def _select_track_s_prompts(rows, n: int, max_scan: int = TRACKS_RESTREAM_MAX_SCAN) -> list[str]:
+    """#825 Track-S keep filter (issue779_collect.load_train_contexts, lmsys leg).
+
+    Takes each row's first `conversation` turn content (`content` else `value`),
+    keeps non-empty stripped strings, stops at the first n in dataset order.
+    Fail-loud on a short yield within max_scan scanned rows (a mis-shaped filter
+    must never silently under-fill; #1092). Returns the ordered prompt list.
+    """
+    prompts: list[str] = []
+    n_scanned = n_dropped = 0
+    for row in rows:
+        n_scanned += 1
+        val = row.get("conversation")
+        p = None
+        if isinstance(val, list) and val and isinstance(val[0], dict):
+            p = val[0].get("content") or val[0].get("value")
+        elif isinstance(val, str):
+            p = val
+        if p and isinstance(p, str) and len(p.strip()) > 0:
+            prompts.append(p.strip())
+        else:
+            n_dropped += 1
+        if len(prompts) >= n:
+            break
+        if n_scanned >= max_scan:
+            break
+    print(
+        f"[i1335-render] restream select done: kept={len(prompts)} scanned={n_scanned} "
+        f"dropped_empty_first_turn={n_dropped}"
+    )
+    if len(prompts) < n:
+        raise RuntimeError(
+            f"Track-S restream yielded only {len(prompts)}/{n} prompts after scanning "
+            f"{n_scanned} rows (cap {max_scan}) — filter/revision mismatch, not padded."
+        )
+    return prompts
+
+
+def _prompt_set_sha256(prompts: list[str]) -> str:
+    """Order-sensitive content hash of the prompt set (unambiguous JSON encoding)."""
+    return hashlib.sha256(json.dumps(prompts, ensure_ascii=True).encode("utf-8")).hexdigest()
+
+
+def _iter_lmsys_rows(revision: str):
+    """Stream lmsys-chat-1m train rows at the pinned revision (network boundary)."""
+    from datasets import load_dataset
+
+    return load_dataset(LMSYS_REPO, split="train", streaming=True, revision=revision)
+
+
+def _restream_track_s(
+    dest: Path, rows=None, expected_sha: str | None = None, n: int | None = None
+) -> None:
+    """Reproduce the #825 Track-S prompt set by re-streaming lmsys (fallback).
+
+    Verified by row count (default TRACKS_EXPECT_ROWS) + the pinned prompt-set
+    content hash (default TRACKS_PROMPT_SHA256; both resolved at CALL time so
+    fixture-scale tests can override); any mismatch raises (fail-loud — never a
+    silently different corpus). Writes load_questions-compatible JSONL rows
+    ({prompt_idx, prompt}).
+    """
+    import gc
+
+    expected_sha = TRACKS_PROMPT_SHA256 if expected_sha is None else expected_sha
+    n = TRACKS_EXPECT_ROWS if n is None else n
+    rows_iter = rows if rows is not None else _iter_lmsys_rows(LMSYS_REV)
+    try:
+        prompts = _select_track_s_prompts(rows_iter, n)
+    finally:
+        # Release the streaming IterableDataset while the interpreter is healthy
+        # (a survivor at shutdown SIGABRTs rc=134 in the pinned datasets env; #952).
+        del rows_iter
+        gc.collect()
+    sha = _prompt_set_sha256(prompts)
+    if sha != expected_sha:
+        raise RuntimeError(
+            f"Track-S restream prompt-set hash mismatch: got {sha}, expected "
+            f"{expected_sha} (lmsys rev {LMSYS_REV[:12]}) — the restream did NOT "
+            "reproduce the pinned #825 prompt set; halting rather than running a "
+            "silently different corpus."
+        )
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_suffix(dest.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
+        for i, p in enumerate(prompts):
+            f.write(json.dumps({"prompt_idx": i, "prompt": p}, ensure_ascii=False) + "\n")
+    tmp.replace(dest)
+    print(
+        f"[i1335-render] restreamed Track-S prompts (lmsys rev {LMSYS_REV[:12]}, "
+        f"n={len(prompts)}, prompt_set_sha256={sha[:12]}) -> {dest}"
+    )
+
+
+def _run_restream_child(dest: Path) -> int:
+    """Spawn the restream in a CHILD process (network boundary); returns its rc."""
+    import subprocess
+
+    cmd = [sys.executable, str(Path(__file__).resolve()), "--restream-track-s", str(dest)]
+    return subprocess.run(cmd, env={**os.environ}, check=False).returncode
+
+
+def _restream_track_s_subprocess(dest: Path, run_child=None) -> None:
+    """Subprocess-isolated restream, routed on the ARTIFACT (rc is secondary).
+
+    The pinned datasets/pyarrow env can SIGABRT at interpreter SHUTDOWN after
+    all restream work completed and the artifact was written (rc=134;
+    gotchas.md HF-datasets shutdown-abort class — reproduced on the 2026-07-15
+    live smoke despite the in-process del+gc release). Isolating the stream in
+    a child keeps that abort out of the CALLER (which may be the GPU gen
+    process); the parent independently re-verifies row count + the pinned
+    prompt-set hash from the artifact, so a tolerated nonzero rc can never
+    accept wrong data (fail-loud preserved).
+    """
+    runner = _run_restream_child if run_child is None else run_child
+    rc = runner(dest)
+    if not dest.exists():
+        raise RuntimeError(f"Track-S restream child rc={rc} and no artifact at {dest}")
+    prompts = [json.loads(line)["prompt"] for line in dest.open(encoding="utf-8") if line.strip()]
+    sha = _prompt_set_sha256(prompts)
+    if len(prompts) != TRACKS_EXPECT_ROWS or sha != TRACKS_PROMPT_SHA256:
+        raise RuntimeError(
+            f"Track-S restream artifact failed parent verification (child rc={rc}): "
+            f"n={len(prompts)} (want {TRACKS_EXPECT_ROWS}), prompt_set_sha256={sha[:12]} "
+            f"(want {TRACKS_PROMPT_SHA256[:12]})"
+        )
+    if rc != 0:
+        print(
+            f"[i1335-render] restream child rc={rc} TOLERATED — artifact verified "
+            "(row count + prompt-set hash; HF-datasets shutdown-abort class, gotchas.md)"
+        )
+
+
 def _fetch_track_s(dest: Path) -> None:
-    """Stage the pinned #825 Track-S artifact from the HF data repo."""
+    """Stage the pinned #825 Track-S artifact; on a miss, auto-restream lmsys.
+
+    Order: pinned HF revision -> main -> lmsys restream at the #825 build
+    revision (plan assumptions 3/13). Only when the restream ALSO fails does
+    staging halt fail-loud.
+    """
     from huggingface_hub import hf_hub_download
 
     last_err: Exception | None = None
@@ -483,13 +636,18 @@ def _fetch_track_s(dest: Path) -> None:
         except Exception as e:
             last_err = e
             print(f"[i1335-render] Track-S fetch at revision={rev!r} failed: {e!r}")
-    raise RuntimeError(
-        f"Track-S prompt artifact unavailable at {HF_DATA_REPO}/{TRACKS_REMOTE} "
-        f"(rev {TRACKS_REV} and main). Fallback: re-stream lmsys-chat-1m at the "
-        "#825 pinned revision 200748d9d3cddcc9d782887541057aca0b18c5da with the "
-        "#825 keep filters (scripts/issue825_gen_conversations.py run_track_s "
-        "question path) and place the JSONL at the local path."
-    ) from last_err
+    print(
+        "[i1335-render] pinned Track-S artifact unavailable — auto-restreaming "
+        f"lmsys-chat-1m @ {LMSYS_REV[:12]} (plan assumption 3 fallback)"
+    )
+    try:
+        _restream_track_s_subprocess(dest)
+    except Exception as e2:
+        raise RuntimeError(
+            f"Track-S prompt artifact unavailable at {HF_DATA_REPO}/{TRACKS_REMOTE} "
+            f"(rev {TRACKS_REV} and main; hf error: {last_err!r}) AND the lmsys "
+            f"restream fallback failed ({e2!r}). No recovery path — halting."
+        ) from e2
 
 
 def load_questions(data_dir: Path, n: int = N_QUESTIONS, tokenizer=None) -> tuple[list[dict], dict]:
@@ -699,7 +857,18 @@ def main() -> int:
     ap.add_argument("--tf-rerender", action="store_true")
     ap.add_argument("--rung", type=str, default=None, choices=[*TF_RUNGS, None])
     ap.add_argument("--model", type=str, default=None, choices=[*MODEL_KINDS, None])
+    ap.add_argument(
+        "--restream-track-s",
+        type=Path,
+        default=None,
+        metavar="DEST",
+        help="child mode: restream the #825 Track-S prompt set from lmsys to DEST "
+        "(subprocess-isolated by _fetch_track_s; hash-verified in-process AND by the parent)",
+    )
     args = ap.parse_args()
+    if args.restream_track_s is not None:
+        _restream_track_s(args.restream_track_s)
+        return 0
     print("[phase=p0_render] rung render/datagen")
     did = False
     if args.write_configs:

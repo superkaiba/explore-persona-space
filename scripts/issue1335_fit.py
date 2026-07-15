@@ -40,7 +40,9 @@ CLI:
 from __future__ import annotations
 
 import argparse
+import copy
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -358,15 +360,40 @@ def unit_xy(unit_store: dict, x_key: str, y_key: str = "y") -> dict:
     }
 
 
+def _swap_resume_payload(swap_path: Path, slug: str, resume: bool) -> dict | None:
+    """Resumable swap payload iff --resume, the file exists, AND its fingerprint
+    matches; else None (the component cells must then produce LIVE sweeps)."""
+    if not (resume and swap_path.exists()):
+        return None
+    prev = json.loads(swap_path.read_text())
+    if r1335.fingerprint_matches(prev, slug):
+        return prev
+    return None
+
+
 def run_swap(slug: str, store: dict, model_kind: str, args) -> dict | None:
     """Character-swap specificity (matched-scene-position derangement) on a
     fiction rung: correct vs cross-persona-swapped Y, paired group bootstrap."""
+    swap_path = args.out_dir / f"swap_{slug}_{model_kind}.json"
+    prev = _swap_resume_payload(swap_path, slug, args.resume)
+    if prev is not None:
+        print(f"[i1335-fit] resume: swap_{slug}_{model_kind}.json fingerprint match — skipped")
+        return prev
     rows, partners = fit1310.swap_derangement(
         store["group_ids"], store["char_ids"], store["turn_indices"], seed=c1310.BUILD_SEED
     )
     if len(rows) < 2 * args.folds:
         print(f"[i1335-fit] swap {slug}/{model_kind}: too few pairs (n={len(rows)}) — skipped")
         return None
+    # The swap payload is absent (or stale): bypass resume on the two component
+    # cells so they return live sweeps. Without this, a crash in the window
+    # between the second component-cell write and the swap-payload write bricks
+    # gate 1 on every --resume relaunch (both components skip, run_swap returns
+    # None, gate 1 reads `_swap: missing` forever — round-1 review Minor 1).
+    cell_args = args
+    if args.resume:
+        cell_args = copy.copy(args)
+        cell_args.resume = False
     x = store["arrays"]["x_spanmean"]
     y = store["arrays"]["y"]
     g = store["group_ids"]
@@ -382,11 +409,13 @@ def run_swap(slug: str, store: dict, model_kind: str, args) -> dict | None:
         "group_ids": g[rows],
         "row_ids": store["row_ids"][rows],
     }
-    res_c = fit_cell(f"{slug}__{model_kind}__swapctrl_correct", slug, correct_xy, args)
-    res_s = fit_cell(f"{slug}__{model_kind}__swap", slug, swap_xy, args)
+    res_c = fit_cell(f"{slug}__{model_kind}__swapctrl_correct", slug, correct_xy, cell_args)
+    res_s = fit_cell(f"{slug}__{model_kind}__swap", slug, swap_xy, cell_args)
     if res_c["skipped"] or res_s["skipped"]:
-        print(f"[i1335-fit] swap {slug}/{model_kind}: component cells resumed — skipping delta")
-        return None
+        raise RuntimeError(
+            f"swap {slug}/{model_kind}: component cells resume-skipped with no valid "
+            "swap payload — the resume bypass failed (fail-loud, never a silent miss)"
+        )
     hl = res_c["headline_layer"]
     sc, ss = res_c["sweep"], res_s["sweep"]
     if hl not in sc["preds_frozen"] or hl not in ss["preds_frozen"]:
@@ -587,16 +616,21 @@ def run_matched(args, models: list[str]) -> None:
                     fit_cell_matched(cell_id, slug, unit_xy(ustore, ARM_X_KEY[arm]), n_min, args)
             if staged:
                 release_store_local(args, slug, model_kind)
-    c1310.write_json(
-        args.out_dir / "matched_n_config.json",
-        {
-            "metadata": common.metadata(SCRIPT, args.seed, n_min),
-            "n_min": n_min,
-            "n_draws": N_MATCHED_DRAWS,
-            "seed_base": MATCHED_SEED_BASE,
-            "arms": list(MATCHED_ARMS),
-        },
-    )
+    cfg = {
+        "metadata": common.metadata(SCRIPT, args.seed, n_min),
+        "n_min": n_min,
+        "n_draws": N_MATCHED_DRAWS,
+        "seed_base": MATCHED_SEED_BASE,
+        "arms": list(MATCHED_ARMS),
+    }
+    # Per-process tmp: the two sharded matched-n lanes both write this file at
+    # battery end (same content — shared n_min); c1310.write_json's SHARED .tmp
+    # could race a same-instant finish (round-1 review Minor 3).
+    cfg_path = args.out_dir / "matched_n_config.json"
+    tmp = args.out_dir / f".matched_n_config.{os.getpid()}.json.tmp"
+    tmp.write_text(json.dumps(cfg, indent=2, default=float))
+    tmp.replace(cfg_path)
+    print(f"[i931] wrote {cfg_path}")
 
 
 # ---------------------------------------------------------------------------
@@ -807,9 +841,13 @@ def build_ladder_summary(args, models: list[str], smoke: bool) -> dict:
         }
         # Δ_max over the SIX-delta family; Bonferroni-corrected CI (alpha/6).
         family_vals = {k: deltas[k]["value"] for k in DELTA_FAMILY if deltas.get(k) is not None}
+        # Plan §3: a negative realized Δ_f is a restoration/anti-drop — reported
+        # (raw values stay in `deltas`/`family_values`) but NEVER fed to the max.
+        max_candidates = {k: v for k, v in family_vals.items() if v >= 0.0}
+        excluded_negative = sorted(k for k in family_vals if k not in max_candidates)
         dmax = None
-        if family_vals:
-            dmax_key = max(family_vals, key=family_vals.get)
+        if max_candidates:
+            dmax_key = max(max_candidates, key=max_candidates.get)
             alpha = 0.05 / len(DELTA_FAMILY)
             pair = {
                 "label": (r1, r2tf),
@@ -838,9 +876,12 @@ def build_ladder_summary(args, models: list[str], smoke: bool) -> dict:
                 "ci_lo_bonferroni": ci[0],
                 "ci_hi_bonferroni": ci[1],
                 "family": list(DELTA_FAMILY),
+                "family_values": {k: float(v) for k, v in family_vals.items()},
+                "excluded_negative_deltas": excluded_negative,
                 "note": (
                     "foils is a sub-delta of content_depth (family overlap; narrated as a "
-                    "component when content_depth is the max, never double-counted)"
+                    "component when content_depth is the max, never double-counted); "
+                    "negative realized deltas are reported but never fed to the max (§3)"
                 ),
             }
         # D = Δ_max - 0.5·G, joint-draw CI where computable.

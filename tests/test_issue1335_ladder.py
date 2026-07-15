@@ -389,12 +389,9 @@ def _write_cell(out_dir: Path, cell_id: str, slug: str, value: float, n: int) ->
     (out_dir / f"cells_{cell_id}.json").write_text(json.dumps(payload))
 
 
-def test_build_ladder_summary_fixture(tmp_path):
-    import issue1335_fit as f1335
-
-    out = tmp_path / "eval"
-    out.mkdir()
-    rng = np.random.default_rng(0)
+def _summary_fixture(out, rng, f1335, s1_val: float = 0.18) -> None:
+    """The synthetic eval_results fixture behind the ladder-summary pins
+    (matched cells + gate files); s1_val parameterizes the label_restore sign."""
     vals = {
         "r0_qa_full": 0.75,
         "r1_qa_oneline": 0.60,
@@ -409,7 +406,7 @@ def test_build_ladder_summary_fixture(tmp_path):
     fiction_vals = {
         "r6_nofoil": 0.20,
         "r7_endpoint": 0.15,
-        "s1_assistant_label": 0.18,
+        "s1_assistant_label": s1_val,
         "s2a_familiar": 0.16,
         "s2b_novel": 0.14,
     }
@@ -428,6 +425,15 @@ def test_build_ladder_summary_fixture(tmp_path):
         json.dumps({"own_beats_shuffled": True, "delta": 1.5})
     )
 
+
+def test_build_ladder_summary_fixture(tmp_path):
+    import issue1335_fit as f1335
+
+    out = tmp_path / "eval"
+    out.mkdir()
+    rng = np.random.default_rng(0)
+    _summary_fixture(out, rng, f1335)
+
     args = SimpleNamespace(out_dir=out, seed=0)
     summary = f1335.build_ladder_summary(args, ["base"], smoke=False)
     pm = summary["per_model"]["base"]
@@ -445,6 +451,7 @@ def test_build_ladder_summary_fixture(tmp_path):
     # G at the r1 reference; delta_max is content_depth; D = dmax - 0.5 G, joint CI
     assert pm["gap"]["G"]["value"] == pytest.approx(0.45, abs=1e-9)
     assert pm["delta_max"]["delta"] == "content_depth"
+    assert pm["delta_max"]["excluded_negative_deltas"] == []
     assert pm["D"]["value"] == pytest.approx(0.25 - 0.225, abs=1e-9)
     assert pm["D"]["ci_method"] == "joint-draws"
     assert pm["verdict"] == "Single-factor-attributed"
@@ -453,3 +460,190 @@ def test_build_ladder_summary_fixture(tmp_path):
     assert summary["gates"]["gate1_fiction_anchor"]["pass"] is True
     assert summary["gates"]["gate2_qa_endpoint"]["pass"] is True
     assert (out / "ladder_summary.json").exists()
+
+
+def test_negative_delta_reported_but_excluded_from_max(tmp_path):
+    """Plan §3: a negative realized Δ_f (here label_restore, s1 < r7) is
+    reported raw but never fed to Δ_max (round-1 review Minor 2)."""
+    import issue1335_fit as f1335
+
+    out = tmp_path / "eval"
+    out.mkdir()
+    rng = np.random.default_rng(0)
+    _summary_fixture(out, rng, f1335, s1_val=0.10)
+    args = SimpleNamespace(out_dir=out, seed=0)
+    summary = f1335.build_ladder_summary(args, ["base"], smoke=False)
+    pm = summary["per_model"]["base"]
+    # raw value reported (deltas + family_values)...
+    assert pm["deltas"]["label_restore"]["value"] == pytest.approx(-0.05, abs=1e-9)
+    dmax = pm["delta_max"]
+    assert dmax["family_values"]["label_restore"] == pytest.approx(-0.05, abs=1e-9)
+    # ...but excluded from the max (content_depth 0.25 stays the max).
+    assert dmax["delta"] == "content_depth"
+    assert "label_restore" in dmax["excluded_negative_deltas"]
+
+
+# ---------------------------------------------------------------------------
+# (8) Track-S restream fallback (plan assumption 3; round-2 concern close) +
+#     the run_swap resume-window predicate (round-1 review Minor 1)
+# ---------------------------------------------------------------------------
+
+
+def _lmsys_fixture_rows() -> list[dict]:
+    """Real lmsys-chat-1m row SHAPE (conversation = list of {content, role}
+    dicts) at fixture scale — synthetic text only, no network, no corpus rows."""
+    return [
+        {"conversation": [{"content": "  how do I sort a list in python  ", "role": "user"}]},
+        {"conversation": []},  # empty conversation -> dropped
+        {"conversation": [{"content": "", "role": "user"}]},  # empty content -> dropped
+        {"conversation": [{"value": "value-key fallback row", "role": "user"}]},
+        {"no_conversation_key": True},  # missing field -> dropped
+        {"conversation": [{"content": "   ", "role": "user"}]},  # whitespace-only -> dropped
+        {"conversation": [{"content": "second kept prompt", "role": "user"}]},
+        {"conversation": [{"content": "past-n row (never consumed)", "role": "user"}]},
+    ]
+
+
+_FIXTURE_KEPT = ["how do I sort a list in python", "value-key fallback row", "second kept prompt"]
+
+
+def test_track_s_selector_filters_strips_and_stops():
+    got = r1335._select_track_s_prompts(iter(_lmsys_fixture_rows()), 3)
+    assert got == _FIXTURE_KEPT  # order preserved, stripped, drops skipped
+    # short yield within the scan cap fails loud (never padded)
+    with pytest.raises(RuntimeError, match="yielded only"):
+        r1335._select_track_s_prompts(iter(_lmsys_fixture_rows()), 10)
+    # a pathological 0-keep chain terminates at the scan cap, fail-loud
+    empties = ({"conversation": []} for _ in range(100))
+    with pytest.raises(RuntimeError, match="scanning 20 rows"):
+        r1335._select_track_s_prompts(empties, 5, max_scan=20)
+
+
+def test_track_s_restream_verified_write(tmp_path):
+    sha = r1335._prompt_set_sha256(_FIXTURE_KEPT)
+    dest = tmp_path / "track_s.jsonl"
+    r1335._restream_track_s(dest, rows=iter(_lmsys_fixture_rows()), expected_sha=sha, n=3)
+    got = [json.loads(line) for line in dest.open(encoding="utf-8") if line.strip()]
+    assert [r["prompt"] for r in got] == _FIXTURE_KEPT
+    assert [r["prompt_idx"] for r in got] == [0, 1, 2]
+    # prompt-set hash mismatch -> fail-loud, nothing written at dest
+    dest2 = tmp_path / "track_s2.jsonl"
+    with pytest.raises(RuntimeError, match="hash mismatch"):
+        r1335._restream_track_s(dest2, rows=iter(_lmsys_fixture_rows()), expected_sha="0" * 64, n=3)
+    assert not dest2.exists()
+
+
+def test_restream_subprocess_routes_on_artifact(tmp_path, monkeypatch):
+    """Real _restream_track_s_subprocess body with a signature-conformant fake
+    child runner: a tolerated rc=134 (the HF-datasets shutdown-abort class)
+    passes iff the parent's independent row-count + hash verification passes."""
+    monkeypatch.setattr(r1335, "TRACKS_EXPECT_ROWS", 3)
+    monkeypatch.setattr(r1335, "TRACKS_PROMPT_SHA256", r1335._prompt_set_sha256(_FIXTURE_KEPT))
+
+    def _child_writes_then_aborts(dest):  # mirrors _run_restream_child(dest) -> int
+        r1335._restream_track_s(dest, rows=iter(_lmsys_fixture_rows()))
+        return 134  # shutdown SIGABRT AFTER the artifact landed
+
+    dest = tmp_path / "track_s.jsonl"
+    r1335._restream_track_s_subprocess(dest, run_child=_child_writes_then_aborts)
+    got = [json.loads(line) for line in dest.open(encoding="utf-8") if line.strip()]
+    assert [r["prompt"] for r in got] == _FIXTURE_KEPT
+
+    # no artifact -> fail-loud regardless of rc
+    with pytest.raises(RuntimeError, match="no artifact"):
+        r1335._restream_track_s_subprocess(tmp_path / "missing.jsonl", run_child=lambda d: 1)
+
+    # artifact present but WRONG content -> parent verification fails loud
+    bad = tmp_path / "bad.jsonl"
+
+    def _child_writes_wrong(dest):
+        dest.write_text(json.dumps({"prompt_idx": 0, "prompt": "wrong corpus row"}) + "\n")
+        return 0
+
+    with pytest.raises(RuntimeError, match="parent verification"):
+        r1335._restream_track_s_subprocess(bad, run_child=_child_writes_wrong)
+
+
+def test_fetch_track_s_falls_back_to_restream(tmp_path, monkeypatch):
+    """Real _fetch_track_s body; fakes only at the network/process boundaries
+    (hf_hub_download + the restream child), signature-conformant."""
+    import huggingface_hub
+
+    def _hub_down(repo_id, filename, **kwargs):  # mirrors hf_hub_download's call shape
+        raise OSError("hub unavailable (fixture)")
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _hub_down)
+    monkeypatch.setattr(r1335, "TRACKS_EXPECT_ROWS", 3)
+    monkeypatch.setattr(r1335, "TRACKS_PROMPT_SHA256", r1335._prompt_set_sha256(_FIXTURE_KEPT))
+    # child boundary: the REAL _restream_track_s body over fixture rows, in-process
+    monkeypatch.setattr(
+        r1335,
+        "_run_restream_child",
+        lambda dest: (r1335._restream_track_s(dest, rows=iter(_lmsys_fixture_rows())), 0)[1],
+    )
+    dest = tmp_path / "track_s.jsonl"
+    r1335._fetch_track_s(dest)  # pinned + main fetch fail -> restream engages
+    got = [json.loads(line) for line in dest.open(encoding="utf-8") if line.strip()]
+    assert [r["prompt"] for r in got] == _FIXTURE_KEPT
+
+    # restream ALSO failing -> the fail-loud halt survives (the ONLY halt case)
+    def _child_raises(dest):
+        raise OSError("gated dataset 403 (fixture)")
+
+    monkeypatch.setattr(r1335, "_run_restream_child", _child_raises)
+    with pytest.raises(RuntimeError, match="restream fallback failed"):
+        r1335._fetch_track_s(tmp_path / "track_s_fail.jsonl")
+
+
+def test_swap_resume_payload_predicate(tmp_path):
+    """run_swap resumes ONLY on a fingerprint-matching swap payload; a missing
+    or stale payload returns None so the component cells refit LIVE (the
+    mid-window preemption fix, round-1 review Minor 1)."""
+    import issue1335_fit as f1335
+
+    slug = "r7_endpoint"
+    p = tmp_path / "swap_r7_endpoint_base.json"
+    assert f1335._swap_resume_payload(p, slug, resume=True) is None  # missing file
+    payload = {**r1335.fingerprint(slug), "delta_r2_char": 0.2}
+    p.write_text(json.dumps(payload))
+    assert f1335._swap_resume_payload(p, slug, resume=False) is None  # resume off
+    got = f1335._swap_resume_payload(p, slug, resume=True)
+    assert got is not None and got["delta_r2_char"] == 0.2
+    stale = {**payload, "render_config_hash": "0" * len(str(payload["render_config_hash"]))}
+    p.write_text(json.dumps(stale))
+    assert f1335._swap_resume_payload(p, slug, resume=True) is None  # stale fingerprint
+
+
+def test_run_swap_survives_mid_window_preemption(tmp_path):
+    """The reviewer's mechanizable round-1 Minor-1 scenario: component cells
+    persisted, swap payload lost (crash in the write window) — a --resume
+    relaunch must REWRITE the swap payload (real run_swap + fit_cell bodies on
+    a tiny synthetic store), and a third call resume-skips on the payload."""
+    import issue1335_fit as f1335
+
+    rng = np.random.default_rng(0)
+    n_groups, n_layers, d, k = 20, 2, 6, 4
+    store = {
+        "group_ids": np.repeat([f"g{i:02d}" for i in range(n_groups)], 2),
+        "char_ids": np.array(["A", "B"] * n_groups),
+        "turn_indices": np.zeros(2 * n_groups, dtype=int),
+        "row_ids": np.array([f"row{i}" for i in range(2 * n_groups)]),
+        "arrays": {
+            "x_spanmean": rng.normal(size=(2 * n_groups, n_layers, d)).astype(np.float32),
+            "y": rng.normal(size=(2 * n_groups, n_layers, k)).astype(np.float32),
+        },
+    }
+    out = tmp_path / "eval"
+    out.mkdir()
+    args = SimpleNamespace(out_dir=out, folds=2, n_boot=8, null_draws=2, seed=0, resume=True)
+    swap_path = out / "swap_r7_endpoint_base.json"
+    p1 = f1335.run_swap("r7_endpoint", store, "base", args)
+    assert p1 is not None and swap_path.exists()
+    # mid-window preemption: swap payload lost, component cells persisted
+    swap_path.unlink()
+    p2 = f1335.run_swap("r7_endpoint", store, "base", args)
+    assert p2 is not None and swap_path.exists(), "gate-1 brick: swap payload not rewritten"
+    assert p2["delta_r2_char"] == pytest.approx(p1["delta_r2_char"], abs=1e-12)
+    # valid payload present -> resume-skip returns it without refitting
+    p3 = f1335.run_swap("r7_endpoint", store, "base", args)
+    assert p3["delta_r2_char"] == p2["delta_r2_char"]
