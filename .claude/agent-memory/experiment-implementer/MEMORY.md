@@ -74,7 +74,7 @@
 - [PEFT README local-path bug](feedback_peft_readme_local_path.md) — save_pretrained writes base_model=local-path; Hub 400s; rewrite before upload.
 - [Preflight --json is pretty-printed](feedback_preflight_json_parse.md) — parse whole stdout (first-{ slice), never the last line; smoke must exercise run_preflight.
 - [argparse description=__doc__ + literal % crashes](feedback_argparse_doc_percent.md) — docstring goes through % interpolation; RawDescriptionHelpFormatter + clean description.
-- [Constant bootstrap → negative yerr](feedback_constant_bootstrap_negative_yerr.md) — saturated rate panels give float-epsilon-negative CI widths; clamp max(0.0, m-lo) at errorbar sites.
+- [CI bounds vs mpl xerr/yerr offsets](feedback_constant_bootstrap_negative_yerr.md) — clamp max(0,v-lo)/max(0,hi-v) element-wise at EVERY errorbar site; fires on float-epsilon (#547) AND inverted quantile CIs at tiny n (#1335)
 - [paper_palette_role valid names](feedback_paper_palette_role_names.md) — only accent/baseline/control/neutral/primary; "secondary" ValueErrors at render.
 - [on_log never sees direct wandb.log](feedback_on_log_never_sees_direct_wandb_log.md) — derive cross-callback outcomes from the producer's artifact file, never on_log key-sniffing (#621 false band-miss)
 - [apply-parity probe N sizing follows Wilson-CI half-width](feedback_apply_parity_probe_n_sizing.md) — ±tolerance rate-gate must set N from Wilson-CI half-width at the expected rate (#667 pivot 1, n=10 at rate 0.7 gives half-width ~0.27 not ±0.10 — false-fails guaranteed)
@@ -106,3 +106,4 @@
 - [prefix-arm degenerate cloud kills spectral smoke](feedback_prefix_arm_degenerate_cloud_smoke.md) — single-context smoke slices zero prefix-arm clouds (1 unique row/context); gate on structural unique rows + ≥2-context smokes (#1112)
 - [per-cell file resolvers + group-reap fan-outs](feedback_per_cell_file_writer_reader_sweep.md) — sweep writers-vs-readers per cell class before launch; reap fan-out units by process group (#1112)
 - [Teacher-forced capture: token-id concat, never re-tokenize the joined string](feedback_teacher_forced_capture_token_id_concat.md) — BPE seam merges shift per-segment-count positions and silently misalign captures; offset-mapping boundaries + G2 identity gate (#1092 r8.4)
+- [Smoke-slice sizes must satisfy downstream min-N asserts](feedback_smoke_slice_min_n_downstream_asserts.md) — derive smoke slice floors from downstream `assert len >= k` consumers, not plan prose (#1315 r4)
