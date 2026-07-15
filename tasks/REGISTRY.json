@@ -2520,8 +2520,8 @@
     "1323": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1323",
-      "status": "reviewing",
+      "path": "tasks/completed/1323",
+      "status": "completed",
       "title": "daily-fix: honor user inline override; commit same turn"
     },
     "1324": {
