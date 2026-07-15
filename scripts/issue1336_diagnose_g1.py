@@ -65,6 +65,7 @@ N_NULL_STD = 20  # standardized selection-symmetric shuffle draws
 N_BOOT = 1_000  # prompt-level pred-resampling bootstrap
 SPOTCHECK_N = 50  # rows/cell (>=6% defect detected w.p. >=95%)
 SPOTCHECK_DEFECT_RATE = 0.01  # capture-defect gate threshold (plan SS4 D1.3)
+SPOTCHECK_MIN_JOIN_RATE = 0.95  # sidecar<->rollout conv_id join floor (diag r5)
 A_V_BAR = 0.8  # mechanism-account threshold (sensitivity 0.6/0.9 reported)
 A_V_SENSITIVITY = (0.6, 0.9)
 DG0_TOL = 0.02  # plan SS7 DG0
@@ -647,6 +648,20 @@ def step_audit(args) -> None:
 # ---------------------------------------------------------------------------
 # D1.3 — slot/span spot-check (H-B)
 # ---------------------------------------------------------------------------
+def _rollout_key_for_conv(conv_id: str) -> str:
+    """Map a turnstore sidecar conv_id to its gen answers.jsonl row key.
+
+    The turnstore extractor mints conv_id = f"s{prompt_idx}"
+    (issue1336_extract_turnstore.py, the extract row builder; confirmed on the
+    real HF sidecars: conv_ids ['s0', 's1', ...]), while the gen rows carry the
+    bare integer prompt_idx (issue1336_gen_answers.py) — keyed here as
+    str(prompt_idx). A non-conforming id passes through unchanged.
+    """
+    if conv_id.startswith("s") and conv_id[1:].isdigit():
+        return conv_id[1:]
+    return conv_id
+
+
 def _spans_meta_by_conv(ts_dir: Path, stem: str) -> dict[str, dict]:
     out: dict[str, dict] = {}
     for sp in sorted(ts_dir.glob(f"{stem}*.pt")):
@@ -665,6 +680,11 @@ def step_spotcheck(args) -> None:
 
     report: dict = {"metadata": _metadata(args.seed, args.spotcheck_n), "cells": {}}
     tok_cache: dict[str, object] = {}
+    # Cross-cell offset-delta accumulator for the D2 "indicted offset" override
+    # (dv = stored - rerendered per slot/span, so applying it to a fresh
+    # committed render reproduces the STORED capture convention).
+    delta_signatures: set[tuple] = set()
+    override_name_mismatch = False
     for cell_id in args.cell_ids:
         spec = _cell_spec(cell_id)
         tok_id = args.tokenizer_dir or cm.MODELS[spec["model"]]["hf_id"]
@@ -685,11 +705,26 @@ def step_spotcheck(args) -> None:
         rng = np.random.default_rng(args.seed)
         conv_ids = sorted(metas)
         pick = rng.choice(len(conv_ids), size=min(args.spotcheck_n, len(conv_ids)), replace=False)
+        sampled = [conv_ids[i] for i in sorted(int(v) for v in pick)]
+        # Fail-loud JOIN assert (diag r5): a broken sidecar<->rollout key join
+        # must never masquerade as a 100% capture mismatch (the r4 spotcheck
+        # reported mismatch_rate 1.0 with every row 'rollout_row_missing_or_
+        # dropped' because 's1007' was looked up in a dict keyed '1007').
+        n_joined = sum(1 for cid in sampled if _rollout_key_for_conv(cid) in rows)
+        join_rate = n_joined / max(len(sampled), 1)
+        assert join_rate >= SPOTCHECK_MIN_JOIN_RATE, (
+            f"[spotcheck-join] {cell_id}: only {n_joined}/{len(sampled)} sampled sidecar "
+            f"conv_ids resolve a rollout row (join rate {join_rate:.3f} < "
+            f"{SPOTCHECK_MIN_JOIN_RATE}) — the conv_id JOIN is broken, not a capture "
+            f"mismatch. Sidecar keys are turnstore conv_ids like {sampled[0]!r} "
+            f"('s<prompt_idx>', issue1336_extract_turnstore); rollout keys are "
+            f"str(prompt_idx) like {next(iter(rows), '<empty>')!r} "
+            f"(issue1336_gen_answers answers.jsonl)."
+        )
         mismatches, details = 0, []
-        for i in sorted(int(v) for v in pick):
-            cid = conv_ids[i]
+        for cid in sampled:
             meta = metas[cid]
-            row = rows.get(cid)
+            row = rows.get(_rollout_key_for_conv(cid))
             entry: dict = {"conv_id": cid}
             if row is None or not row.get("kept", True):
                 mismatches += 1
@@ -719,21 +754,81 @@ def step_spotcheck(args) -> None:
                 entry["mismatch"] = "render_offsets_differ"
                 entry["stored"] = {"slot_idx": meta["slot_idx"], "spans": meta["spans"]}
                 entry["rerendered"] = {"slot_idx": got_slots, "spans": got_spans}
+                # D2 override derivation: per-row delta signature stored - got.
+                stored_slots = {k: int(v) for k, v in meta["slot_idx"].items()}
+                stored_spans = {k: [int(s), int(e)] for k, (s, e) in meta["spans"].items()}
+                if set(stored_slots) != set(got_slots) or set(stored_spans) != set(got_spans):
+                    override_name_mismatch = True
+                else:
+                    sig_slots = tuple(
+                        sorted(
+                            (k, stored_slots[k] - got_slots[k])
+                            for k in stored_slots
+                            if stored_slots[k] != got_slots[k]
+                        )
+                    )
+                    sig_spans = tuple(
+                        sorted(
+                            (
+                                k,
+                                stored_spans[k][0] - got_spans[k][0],
+                                stored_spans[k][1] - got_spans[k][1],
+                            )
+                            for k in stored_spans
+                            if stored_spans[k] != got_spans[k]
+                        )
+                    )
+                    if sig_slots or sig_spans:  # seq_len-only mismatch has no offset delta
+                        delta_signatures.add((sig_slots, sig_spans))
             entry["a1_slot_window"] = win
             entry["a1_span_head"] = span_head[:80]
             entry["assistant_header_in_window"] = bool(convention_ok)
             details.append(entry)
-        rate = mismatches / max(len(pick), 1)
+        rate = mismatches / max(len(sampled), 1)
         report["cells"][cell_id] = {
-            "n_sampled": len(pick),
+            "n_sampled": len(sampled),
+            "n_joined": int(n_joined),
+            "join_rate": float(join_rate),
             "mismatches": int(mismatches),
             "mismatch_rate": float(rate),
             "defect_gate_fired": bool(rate > SPOTCHECK_DEFECT_RATE),
             "details": details,
         }
-        print(f"[spotcheck] {cell_id}: {mismatches}/{len(pick)} mismatches (rate {rate:.3f})")
+        print(f"[spotcheck] {cell_id}: {mismatches}/{len(sampled)} mismatches (rate {rate:.3f})")
     report["defect_threshold"] = SPOTCHECK_DEFECT_RATE
+    report["min_join_rate"] = SPOTCHECK_MIN_JOIN_RATE
     report["any_defect_gate_fired"] = any(c["defect_gate_fired"] for c in report["cells"].values())
+    # D2 offset-override emission (H-B): a CONSTANT-offset capture defect gives
+    # ONE delta signature across every offset-mismatching row; emit it as the
+    # override the D2 corrected convention consumes (data, not code — the
+    # dispatch phase_d2_probe FATALs without this file on a capture-defect
+    # verdict). Inconsistent deltas are NOT a constant-offset defect: record
+    # why and emit nothing (D2 then fail-louds by design).
+    override_path = args.out_dir / "d2_offset_override.json"
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    if len(delta_signatures) == 1 and not override_name_mismatch:
+        sig_slots, sig_spans = next(iter(delta_signatures))
+        override = {
+            "slot_offsets": {k: dv for k, dv in sig_slots},
+            "span_offsets": {k: [ds, de] for k, ds, de in sig_spans},
+        }
+        override_path.write_text(json.dumps(override, indent=2))
+        report["offset_override"] = override
+        report["offset_override_emitted"] = True
+        report["offset_override_note"] = f"constant offset delta -> {override_path.name}"
+        print(f"[spotcheck] emitted D2 offset override -> {override_path}", flush=True)
+    else:
+        if override_path.exists():  # never leave a stale override from a prior run
+            override_path.unlink()
+            print(f"[spotcheck] removed stale {override_path.name}", flush=True)
+        report["offset_override"] = None
+        report["offset_override_emitted"] = False
+        report["offset_override_note"] = (
+            "no offset-mismatching rows"
+            if not delta_signatures and not override_name_mismatch
+            else "offset deltas inconsistent across rows/cells — not a constant-offset "
+            "capture defect; no override emitted"
+        )
     _write_json(args.out_dir / "spotcheck.json", report)
 
 

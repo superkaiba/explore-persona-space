@@ -344,7 +344,12 @@ def build_diag_fixture(
     convs = []
     for i in range(n):
         p, a = texts[i % len(texts)]
-        convs.append({"conv_id": str(i), "u1": f"{p} (variant {i})", "a1": a})
+        # PRODUCTION conv_id shape: the turnstore extractor mints f"s{prompt_idx}"
+        # (issue1336_extract_turnstore.py) while answers.jsonl rows carry the bare
+        # int prompt_idx — the fixture mirrors the realized artifact keying so the
+        # spotcheck's sidecar<->rollout join exercises the production mapping
+        # (diag r5; the old bare-str(i) fixture masked the 's1007'-vs-'1007' join bug).
+        convs.append({"conv_id": f"s{i}", "prompt_idx": i, "u1": f"{p} (variant {i})", "a1": a})
     gen_dir = root / "gen" / "rlvr" / "lmsys5k"
     gen_dir.mkdir(parents=True, exist_ok=True)
     with (gen_dir / "answers.jsonl").open("w", encoding="utf-8") as fh:
@@ -352,7 +357,7 @@ def build_diag_fixture(
             fh.write(
                 json.dumps(
                     {
-                        "prompt_idx": int(c["conv_id"]),
+                        "prompt_idx": int(c["prompt_idx"]),
                         "prompt": c["u1"],
                         "response": c["a1"],
                         "kept": True,

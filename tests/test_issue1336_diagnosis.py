@@ -258,6 +258,65 @@ def test_spotcheck_flags_planted_defect(tmp_path):
     cell = spot["cells"]["rlvr_chat_lmsys5k"]
     assert cell["mismatches"] >= 1
     assert cell["defect_gate_fired"] is True
+    # diag r5: a REAL mismatch emits the indicted constant-offset override
+    # (dv = stored - rerendered; the planted defect shifts stored a1 slot +1)
+    # the D2 corrected convention consumes.
+    assert spot["offset_override_emitted"] is True
+    assert spot["offset_override"] == {"slot_offsets": {"a1": 1}, "span_offsets": {}}
+    override = json.loads((tmp_path / "out" / "d2_offset_override.json").read_text())
+    assert override == spot["offset_override"]
+    # and the emitted file satisfies the D2 consumer's contract asserts
+    import issue1336_extract_turnstore as ext
+
+    resolved = ext.resolve_convention(
+        "corrected", tmp_path / "out" / "d2_offset_override.json", tmp_path / "out" / "ts"
+    )
+    assert resolved == {"slot_offsets": {"a1": 1}, "span_offsets": {}}
+
+
+# ---------------------------------------------------------------------------
+# 4b. Spotcheck sidecar<->rollout conv_id JOIN (diag r5: turnstore conv_ids
+#     are 's<prompt_idx>'; answers.jsonl rows key by bare int prompt_idx)
+# ---------------------------------------------------------------------------
+def test_spotcheck_joins_prefixed_conv_ids(diag_env, tmp_path):
+    """Production keying joins 100% and compares windows (fails pre-r5-fix)."""
+    out = tmp_path / "out"
+    args = _args(diag_env, out, spotcheck_n=8)
+    diag.step_spotcheck(args)
+    spot = json.loads((out / "spotcheck.json").read_text())
+    cell = spot["cells"]["rlvr_chat_lmsys5k"]
+    assert cell["join_rate"] == 1.0
+    assert cell["n_joined"] == cell["n_sampled"] == 8
+    assert cell["mismatches"] == 0
+    assert cell["defect_gate_fired"] is False
+    assert all(d.get("mismatch") != "rollout_row_missing_or_dropped" for d in cell["details"])
+    # windows were actually compared (decoded token windows present per row)
+    assert all("a1_slot_window" in d for d in cell["details"])
+    assert spot["offset_override_emitted"] is False
+    assert not (out / "d2_offset_override.json").exists()
+
+
+def test_spotcheck_join_failure_hard_errors(tmp_path):
+    """A broken key join HARD-ERRORS naming both key formats — never a silent
+    mismatch_rate=1.0 report (the r4 failure shape)."""
+    from issue1336_smoke_fixtures import build_diag_fixture
+
+    root = tmp_path / "fixture"
+    build_diag_fixture(root, cells=("rlvr_chat_lmsys5k",), n=8, layers=2, dim=8, seed=2)
+    ans = root / "gen" / "rlvr" / "lmsys5k" / "answers.jsonl"
+    rows = [json.loads(line) for line in ans.read_text().split("\n") if line.strip()]
+    with ans.open("w", encoding="utf-8") as fh:
+        for r in rows:
+            r["prompt_idx"] = int(r["prompt_idx"]) + 10_000  # disjoint key space
+            fh.write(json.dumps(r) + "\n")
+    out = tmp_path / "out"
+    args = _args(root, out, spotcheck_n=8)
+    with pytest.raises(AssertionError) as exc:
+        diag.step_spotcheck(args)
+    msg = str(exc.value)
+    assert "s<prompt_idx>" in msg  # names the sidecar key format
+    assert "str(prompt_idx)" in msg  # names the rollout key format
+    assert not (out / "spotcheck.json").exists()  # no rate-1.0 report written
 
 
 # ---------------------------------------------------------------------------
