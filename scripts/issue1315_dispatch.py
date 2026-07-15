@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# ruff: noqa: RUF002, RUF003  # em-dash intentional
+# ruff: noqa: RUF002  # em-dash intentional
 """#1315 pod-side phase driver — impolite activation-shift geometry (plan v3).
 
 Phases (linear, checkpoint-per-phase, resume-keyed; plan §4/§9):
@@ -36,8 +36,10 @@ the r3 fix: a 1-process smoke FT OOMs deterministically at the first
 optimizer step because the fp32 Adam moments go unsharded) + 1 consolidated
 ZeRO-3 save + vLLM-load canary (the Tier-1 rung generates through vLLM on the
 saved rung), 1 Tier-1 rung at 2 questions, LIVE judge (sync fallback path), a
-2-context × 1-question 3-arm 28-layer capture including ONE multi-turn
-WildChat row (the new span logic end-to-end), geometry on the captured stub,
+2-context × 2-question 3-arm 28-layer capture including ONE multi-turn
+WildChat row (the new span logic end-to-end; ≥2 distinct question ids are
+REQUIRED by the p10 split-half ceiling — crash-fix r4), geometry on the
+captured stub,
 recording-free upload via ``--no-upload``. Every phase reads its cell list
 from the ONE resolver (``cfg.cells``), so the smoke subset threads through
 train, ladder, tier2, margin, capture, capture_tf, geometry, and upload alike.
@@ -1344,6 +1346,46 @@ def _resolve_capture_model(cfg: Cfg, cell: str, dose: str) -> tuple[str, Path | 
     return str(ckpt), None
 
 
+def _smoke_capture_slice(
+    panel: dict[str, dict], questions: list[str]
+) -> tuple[dict[str, dict], list[str]]:
+    """Smoke capture slice: 2 contexts × 2 questions = 4 rows (the #1112
+    parent's proven smoke shape — ``issue1112_dispatch`` ``questions[:2]``).
+
+    ≥2 contexts keep the prefix Δx cloud nondegenerate (#1112 crash-fix r3);
+    ≥2 DISTINCT question ids are REQUIRED by the p10 split-half attenuation
+    ceiling (``geometry.split_half_self_cosine`` asserts ``len(qs) >= 2``).
+    The r1 port shrank the parent's ``questions[:2]`` to ``[:1]``, so every
+    smoke row carried ``question_idx == 0`` and p10 crashed on ``qs=[0]``
+    (crash-fix r4, att-20260715-125711). Always includes the multi-turn
+    WildChat context so the new span logic runs end-to-end.
+    """
+    wc = C.CONV_CONTEXT_ID
+    if wc not in panel:
+        ctx = _context(wc)
+        panel = {
+            **panel,
+            wc: {
+                "system": ctx.system,
+                "user_wrap": ctx.user_wrap,
+                "prior_turns": tuple(dict(t) for t in ctx.prefix_turns),
+            },
+        }
+    first_other = next(iter(k for k in panel if k != wc))
+    sliced = {wc: panel[wc], first_other: panel[first_other]}
+    qs = questions[:2]
+    assert len(qs) >= 2, (
+        f"smoke capture needs >=2 questions for the p10 split-half ceiling; got "
+        f"{len(qs)} (check --eval-question-limit)"
+    )
+    logger.info(
+        "[capture-smoke] slice: %d contexts x %d questions (>=2 questions for p10 split-half)",
+        len(sliced),
+        len(qs),
+    )
+    return sliced, qs
+
+
 def run_capture_unit(cfg: Cfg, cell: str, dose: str) -> None:
     """One own-text capture pass: on-policy greedy gen + 28-layer 3-span TF
     pooling -> pooled.pt. Multi-turn contexts thread prior_turns + user_wrap
@@ -1366,20 +1408,7 @@ def run_capture_unit(cfg: Cfg, cell: str, dose: str) -> None:
     panel = _capture_panel(cfg, cell)
     questions = _eval_questions(cfg)
     if cfg.smoke:
-        # 2 contexts × 1 question = 2 rows, INCLUDING one multi-turn WildChat
-        # row (the new span logic end-to-end) + one panel member — >=2 contexts
-        # so the prefix Δx cloud is nondegenerate (#1112 crash-fix r3).
-        wc = C.CONV_CONTEXT_ID
-        if wc not in panel:
-            ctx = _context(wc)
-            panel[wc] = {
-                "system": ctx.system,
-                "user_wrap": ctx.user_wrap,
-                "prior_turns": tuple(dict(t) for t in ctx.prefix_turns),
-            }
-        first_panel = next(iter(k for k in panel if k != wc))
-        panel = {wc: panel[wc], first_panel: panel[first_panel]}
-        questions = questions[:1]
+        panel, questions = _smoke_capture_slice(panel, questions)
     personas = {k: v["system"] for k, v in panel.items()}
     user_wraps = {k: v["user_wrap"] for k, v in panel.items()}
     prior_turns = {k: v["prior_turns"] for k, v in panel.items()}

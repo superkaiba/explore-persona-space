@@ -499,3 +499,140 @@ def test_ft_launch_width_fails_loud_under_provisioned(tmp_path, monkeypatch):
     cfg = d.Cfg(smoke=True, cells=("imp_icl_ft_neg",), out_root=tmp_path, upload=False)
     with pytest.raises(RuntimeError, match="full-FT needs 4 GPUs"):
         d._ft_num_processes(cfg)
+
+
+# ── p8 smoke slice: >=2 questions must reach the p10 geometry ceiling (r4) ───
+
+
+def _panel_entry(system: str = "s") -> dict:
+    return {"system": system, "user_wrap": None, "prior_turns": ()}
+
+
+def test_smoke_capture_slice_two_contexts_two_questions(caplog):
+    """r4 crash pin (att-20260715-125711): the smoke capture slice keeps 2
+    QUESTIONS (the #1112 parent's proven 2x2=4-row shape) — the p10 split-half
+    attenuation ceiling (geometry.split_half_self_cosine) asserts >=2 distinct
+    question ids, so the r1 port's questions[:1] made p10 un-passable by
+    construction (every row question_idx == 0 -> qs=[0])."""
+    import logging
+
+    import issue1315_dispatch as d
+
+    wc = C.CONV_CONTEXT_ID
+    panel = {"ctx_own": _panel_entry(), "neg_1": _panel_entry("n"), wc: _panel_entry("w")}
+    with caplog.at_level(logging.INFO, logger="issue1315"):
+        sliced_panel, sliced_qs = d._smoke_capture_slice(panel, [f"q{i}" for i in range(5)])
+    assert list(sliced_panel) == [wc, "ctx_own"]  # wc first; own context second
+    assert sliced_qs == ["q0", "q1"]  # 2 questions -> question_idx {0, 1} downstream
+    # the r4 fix-engaged signal (the relaunch's first-poll confirmation line)
+    assert any(
+        "[capture-smoke] slice: 2 contexts x 2 questions" in r.getMessage() for r in caplog.records
+    )
+
+
+def test_smoke_capture_slice_fails_loud_below_two_questions():
+    """A 1-question smoke slice (e.g. --eval-question-limit 1) fails at capture
+    entry with a named reason, not deep in p10 with a bare `AssertionError: [0]`."""
+    import issue1315_dispatch as d
+
+    panel = {C.CONV_CONTEXT_ID: _panel_entry("w"), "ctx_own": _panel_entry()}
+    with pytest.raises(AssertionError, match="split-half"):
+        d._smoke_capture_slice(panel, ["only_question"])
+
+
+def test_smoke_capture_slice_adds_wildchat_context(monkeypatch):
+    """A cell panel lacking the multi-turn WildChat context gets it resolved +
+    put first (the new span logic must run end-to-end in smoke)."""
+    import issue1315_dispatch as d
+
+    from explore_persona_space.artifacts.context import Context
+
+    turns = ({"role": "user", "content": "u"}, {"role": "assistant", "content": "a"})
+    ctx = Context(context_id=C.CONV_CONTEXT_ID, kind="prefix", family="test", prefix_turns=turns)
+    monkeypatch.setattr(d, "_context", lambda cid: ctx)
+    sliced_panel, sliced_qs = d._smoke_capture_slice(
+        {"ctx_own": _panel_entry()}, ["q0", "q1", "q2"]
+    )
+    assert list(sliced_panel) == [C.CONV_CONTEXT_ID, "ctx_own"]
+    assert sliced_panel[C.CONV_CONTEXT_ID]["prior_turns"] == turns
+    assert sliced_qs == ["q0", "q1"]
+
+
+# ── p10 geometry: CPU end-to-end over real-schema stores (crash + fix) ───────
+
+
+def _mk_pooled_store(cell, dose, row_meta, *, layers, hidden, seed):
+    import torch
+
+    gen = torch.Generator().manual_seed(seed)
+    return {
+        "schema_version": 1,
+        "cell": cell,
+        "dose": dose,
+        "behavior": C.BEHAVIOR,
+        "row_meta": row_meta,
+        "arms": {
+            arm: {
+                li: torch.randn(len(row_meta), hidden, generator=gen).to(torch.float16)
+                for li in layers
+            }
+            for arm in ("prefix", "context", "response")
+        },
+    }
+
+
+def _write_pooled(root, cell, dose, store) -> None:
+    import torch
+
+    dest = root / "capture" / cell / dose
+    dest.mkdir(parents=True, exist_ok=True)
+    torch.save(store, dest / "pooled.pt")
+
+
+def test_phase_geometry_smoke_requires_two_questions_end_to_end(tmp_path):
+    """r4 crash repro + fix, driven through the PRODUCTION p10 entrypoint
+    (phase_geometry_smoke) over real-schema synthetic capture stores:
+
+    (i) 1-question stores (the r1 questions[:1] shape, 2 contexts x 1 q)
+        reproduce the incident exactly — AssertionError qs=[0] from
+        split_half_self_cosine AFTER analyze_cell finished its records;
+    (ii) 2-question stores (the fixed 2x2=4-row shape) complete p10 with a
+        finite split-half ceiling + a nondegenerate prefix record.
+    """
+    import issue1315_dispatch as d
+
+    from explore_persona_space.experiments.issue_1112 import PRIMARY_LAYER
+
+    cell = "imp_icl_ft_neg"
+    layers = [0, PRIMARY_LAYER]  # PRIMARY_LAYER must be present for the ceiling read
+    hidden = int(C.HIDDEN)
+
+    def rows(n_questions: int) -> list[dict]:
+        return [
+            {"context_id": ctx, "question_idx": q}
+            for ctx in (C.CONV_CONTEXT_ID, "ctx_own")
+            for q in range(n_questions)
+        ]
+
+    def stage(root, n_questions: int) -> d.Cfg:
+        for c, dose, seed in ((cell, "selected", 0), ("base", "base", 1)):
+            _write_pooled(
+                root,
+                c,
+                dose,
+                _mk_pooled_store(
+                    c, dose, rows(n_questions), layers=layers, hidden=hidden, seed=seed
+                ),
+            )
+        return d.Cfg(smoke=True, cells=(cell,), out_root=root, upload=False)
+
+    with pytest.raises(AssertionError, match=r"\[0\]"):
+        d.phase_geometry_smoke(stage(tmp_path / "crash", 1))
+
+    res = d.phase_geometry_smoke(stage(tmp_path / "ok", 2))
+    assert res["n_records"] == 3 * len(layers) and res["n_prefix_nondegenerate"] >= 1
+    payload = json.loads(
+        (tmp_path / "ok" / "geometry_smoke" / "geometry_per_cell.json").read_text()
+    )
+    ceiling = payload["split_half_self_cosine_ceiling"][cell]
+    assert ceiling["n_partitions"] == 50 and -1.0 <= ceiling["mean"] <= 1.0
