@@ -16,7 +16,9 @@
     #931 group_stratified tie-break trap).
 (6) build_items span construction + drop counters (r0 extras, prefix fallback,
     row-length cap); the r6 seed-attributable wiring-check skip (skip vs
-    fail-loud vs run) + its non-binding gate2 record.
+    fail-loud vs run) + its non-binding gate2 record; the r7 fully-seeded
+    early-return sidecar (real main() path) + gate2 all-skipped
+    pass-with-record + the <2-pre-filter-panel build-bug crash guard.
 (7) build_ladder_summary: oriented deltas, the SIX-delta family EXCLUDES the
     length delta, Wren-matched companion present, joint-draw D CI, verdict
     lattice, binding gates — on a synthetic eval_results fixture (tmp_path).
@@ -349,34 +351,48 @@ def test_wiring_check_skip_is_seed_attributable_only(capsys, monkeypatch):
     """r6 pin: the wiring gate SKIPS (with the skipped-seeded record) ONLY when
     the <2-fresh-row shortfall is seed-attributable; a <2-row cell with NO
     seeded rows still raises wiring_check's own assert; a partially seeded
-    cell with >=2 fresh rows dispatches to wiring_check as before."""
+    cell with >=2 fresh rows dispatches to wiring_check as before. r7 pin
+    (round-6 Minor 1): a seeded cell whose PRE-filter panel was <2 is a build
+    bug, not a seed effect — it CRASHES instead of skipping."""
     import unittest.mock as mock
 
     import issue1335_extract_store as e1335
 
     one = [{"item_id": "a", "input_ids": list(range(24)), "n_prompt": 12}]
     # (a) seed-consumed cell: SKIP branch fires with the record + loud log
-    w = e1335.wiring_check_or_skip(None, one, 0, 8, 4, n_seeded=37, cell="r0_qa_full/instruct")
+    w = e1335.wiring_check_or_skip(
+        None, one, 0, 8, 4, n_seeded=37, n_prefilter=38, cell="r0_qa_full/instruct"
+    )
     assert w == {"wiring_check": "skipped-seeded", "fresh_rows": 1, "seeded_rows": 37}
     out = capsys.readouterr().out
     assert "wiring check SKIPPED (seed-consumed cell): r0_qa_full/instruct" in out
     assert "fresh=1 seeded=37" in out
     # (b) NOT seed-attributable: the original assert still fails loud
     with pytest.raises(AssertionError, match="wiring check needs >= 2 rows"):
-        e1335.wiring_check_or_skip(None, one, 0, 8, 4, n_seeded=0, cell="r0_qa_full/instruct")
+        e1335.wiring_check_or_skip(
+            None, one, 0, 8, 4, n_seeded=0, n_prefilter=1, cell="r0_qa_full/instruct"
+        )
+    # (d) r7: seeded but the PRE-filter panel was <2 (build bug) -> CRASH, not skip
+    with pytest.raises(AssertionError, match="wiring check needs >= 2 rows"):
+        e1335.wiring_check_or_skip(
+            None, one, 0, 8, 4, n_seeded=37, n_prefilter=1, cell="r0_qa_full/instruct"
+        )
     # (c) partially seeded with >=2 fresh rows: runs the check as today
     spec = mock.create_autospec(e1335.wiring_check, return_value={"own_beats_shuffled": True})
     monkeypatch.setattr(e1335, "wiring_check", spec)
     two = [*one, {"item_id": "b", "input_ids": list(range(24)), "n_prompt": 12}]
-    w2 = e1335.wiring_check_or_skip(None, two, 0, 8, 4, n_seeded=37, cell="c")
+    w2 = e1335.wiring_check_or_skip(None, two, 0, 8, 4, n_seeded=37, n_prefilter=39, cell="c")
     spec.assert_called_once_with(None, two, 0, 8, 4)
     assert w2 == {"own_beats_shuffled": True}
 
 
-def test_gate2_tolerates_skipped_seeded_wiring(tmp_path):
+def test_gate2_tolerates_skipped_seeded_wiring(tmp_path, capsys):
     """r6 pin: evaluate_gates records a skipped-seeded wiring file NON-BINDING
-    (wiring_pass rides the RAN checks); with no RAN check left, wiring_pass
-    stays conservatively False."""
+    (wiring_pass rides the RAN checks). r7 pin (concern
+    fully-seeded-relaunch-gate2-halt): with NO RAN check left but skipped
+    records present (all-seeded relaunch), gate2 passes-with-record (basis
+    line + loud log); with NO wiring files at all, the conservative halt
+    stands."""
     import issue1335_fit as f1335
 
     out = tmp_path / "eval"
@@ -395,10 +411,104 @@ def test_gate2_tolerates_skipped_seeded_wiring(tmp_path):
         "seeded_rows": 37,
     }
     assert g2["wiring_pass"] is True  # the fixture's RAN check still binds + passes
-    # all-skipped: no RAN check remains -> conservative False
+    assert "wiring_basis" not in g2  # basis only annotates the all-skipped case
+    # r7 all-skipped: no RAN check remains -> pass-with-record (not a halt)
     (out / "wiring_r0_qa_full_base.json").unlink()
+    capsys.readouterr()
     g2b = f1335.evaluate_gates(args, ["base"], smoke=False)["gate2_qa_endpoint"]
-    assert g2b["wiring_pass"] is False
+    assert g2b["wiring_pass"] is True
+    assert g2b["wiring_basis"] == (
+        "all-seeded (original-attempt validation via fingerprint-matched consume)"
+    )
+    assert "ALL cells skipped-seeded -> pass-with-record" in capsys.readouterr().out
+    # no wiring files at all: the wiring cells never ran -> conservative False
+    (out / "wiring_r0_qa_full_instruct.json").unlink()
+    g2c = f1335.evaluate_gates(args, ["base"], smoke=False)["gate2_qa_endpoint"]
+    assert g2c["wiring_pass"] is False
+    assert "wiring_basis" not in g2c
+
+
+def test_fully_seeded_early_return_writes_wiring_sidecar(tmp_path, monkeypatch):
+    """r7 pin (concern fully-seeded-relaunch-gate2-halt): a FULLY seeded cell
+    reaches main()'s early return through the REAL production path (resume
+    scan -> done filter; no model load) and writes the skipped-seeded wiring
+    sidecar (fresh=0), so gate2 over an all-skipped wiring set passes-with-
+    record instead of exit-3 halting the relaunch. A seeded cell whose
+    PRE-filter panel was <2 (build bug) still crashes loud through the same
+    main() path."""
+    import issue1335_extract_store as e1335
+    import issue1335_fit as f1335
+
+    slug, mk = "r0_qa_full", "base"
+    fp = r1335.fingerprint(slug)
+    data_dir = tmp_path / "data"
+    out_dir = tmp_path / "eval"
+    out_dir.mkdir()
+
+    def rec(row_id, n_prompt=30, n_comp=12):
+        return {
+            "row_id": row_id,
+            "group_id": "g0",
+            "persona": "Assistant",
+            "slot": 0,
+            "prompt_token_ids": list(range(n_prompt)),
+            "completion_token_ids": list(range(n_prompt, n_prompt + n_comp)),
+            "n_prefix_tokens": 10,
+        }
+
+    gen = r1335.gen_path(data_dir, slug, mk)
+    gen.parent.mkdir(parents=True)
+    gen.write_text("\n".join(json.dumps(rec(r)) for r in ("a", "b")) + "\n")
+    store_dir = data_dir / "store" / slug / mk
+    store_dir.mkdir(parents=True)
+    (store_dir / f"{mk}_shard000.json").write_text(
+        json.dumps({**fp, "shard_index": 0, "row_ids": ["a", "b"]})
+    )
+    # gate fixtures FIRST: main() then overwrites the fixture's RAN wiring file
+    # with the REAL fully-seeded skip record, leaving an all-skipped wiring set.
+    rng = np.random.default_rng(0)
+    _summary_fixture(out_dir, rng, f1335)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "issue1335_extract_store.py",
+            "--rung",
+            slug,
+            "--model",
+            mk,
+            "--data-dir",
+            str(data_dir),
+            "--out-dir",
+            str(out_dir),
+            "--resume",
+            "--wiring-check",
+            "8",
+        ],
+    )
+    assert e1335.main() == 0
+    side = json.loads((out_dir / f"wiring_{slug}_{mk}.json").read_text())
+    assert side["wiring_check"] == "skipped-seeded"
+    assert side["fresh_rows"] == 0 and side["seeded_rows"] == 2
+    assert r1335.fingerprint_matches(side, slug)  # fp rides the record (gate2 provenance)
+
+    # gate2 consumes the REAL record: all-skipped -> pass-with-record, no halt
+    args = SimpleNamespace(out_dir=out_dir, seed=0)
+    g2 = f1335.evaluate_gates(args, ["base"], smoke=False)["gate2_qa_endpoint"]
+    assert g2["wiring_pass"] is True
+    assert g2["wiring_basis"] == (
+        "all-seeded (original-attempt validation via fingerprint-matched consume)"
+    )
+    assert g2["pass"] is True  # the fixture's r0_in_range holds -> no exit-3 halt
+
+    # build-bug guard through the SAME main() path: a 1-row PRE-filter panel on
+    # a seeded cell crashes loud instead of writing a skip record.
+    gen.write_text(json.dumps(rec("a")) + "\n")
+    (store_dir / f"{mk}_shard000.json").write_text(
+        json.dumps({**fp, "shard_index": 0, "row_ids": ["a"]})
+    )
+    with pytest.raises(AssertionError, match="wiring check needs >= 2 rows"):
+        e1335.main()
 
 
 # ---------------------------------------------------------------------------

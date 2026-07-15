@@ -38,7 +38,10 @@ NLL over n rows (the #825 round-4 wiring gate; plan §5). r6: a cell whose
 FRESH rows number <2 BECAUSE the resume seed consumed its prior-attempt rows
 records ``wiring_check: skipped-seeded`` instead of asserting (the seeded rows
 carried validation in their original attempt); a <2-row cell with NO seeded
-rows still fails loud.
+rows still fails loud. r7: a FULLY seeded cell (fresh=0) writes the same
+skipped-seeded record from the early return (gate2's glob then always has one
+file per wiring cell), and the skip additionally requires the PRE-filter panel
+was >=2 (a <2-panel build bug crashes even on a seeded cell).
 
 CLI:
   uv run python scripts/issue1335_extract_store.py --rung r1_qa_oneline --model base \
@@ -370,7 +373,15 @@ def wiring_check(model, items: list[dict], pad_id: int, n_rows: int, batch_size:
 
 
 def wiring_check_or_skip(
-    model, items: list[dict], pad_id: int, n_rows: int, batch_size: int, *, n_seeded: int, cell: str
+    model,
+    items: list[dict],
+    pad_id: int,
+    n_rows: int,
+    batch_size: int,
+    *,
+    n_seeded: int,
+    n_prefilter: int,
+    cell: str,
 ) -> dict:
     """r6: skip the wiring check ONLY when the <2-row shortfall is seed-attributable.
 
@@ -383,8 +394,16 @@ def wiring_check_or_skip(
     still fails loud via ``wiring_check``'s own ``>= 2 rows`` assert; a
     partially seeded cell with >=2 fresh rows runs the check on the fresh rows
     as before.
+
+    r7 (round-6 Minor 1): the skip additionally requires ``n_prefilter >= 2``
+    — the cell's panel size BEFORE the resume seed consumed rows. A <2-row
+    PRE-filter panel is a gen/build defect, not a seed effect, so even a
+    seeded cell falls through to ``wiring_check``'s ``>= 2 rows`` assert and
+    crashes loud. The fully seeded case (fresh=0, called from ``main``'s
+    early return with ``model=None``) takes the skip branch under the same
+    predicate; the model is never touched there.
     """
-    if len(items) < 2 and n_seeded > 0:
+    if len(items) < 2 and n_seeded > 0 and n_prefilter >= 2:
         print(
             f"[i1335-p2] wiring check SKIPPED (seed-consumed cell): {cell} "
             f"fresh={len(items)} seeded={n_seeded} — rows carry equivalence "
@@ -475,6 +494,35 @@ def hf_seed_store(store_dir: Path, slug: str, model_kind: str) -> int:
     return staged
 
 
+def _seeded_early_return_wiring_sidecar(
+    args, done: set[str], n_prefilter: int, fp: dict, slug: str, model_kind: str
+) -> None:
+    """r7 (concern fully-seeded-relaunch-gate2-halt): a FULLY seeded cell used
+    to early-return with NO wiring JSON, so a relaunch after a
+    post-P2-complete crash left gate2's glob empty and the summary phase
+    halted (exit 3) on legitimately complete data. Write the same
+    skipped-seeded record here (fresh=0) via the shared predicate — the model
+    is never touched on the skip branch, and a <2 PRE-filter panel (build
+    bug) still falls through to wiring_check's >=2 assert and crashes loud.
+    pad_id=0 is inert: unused on the skip branch, and the fall-through
+    asserts before any model/pad use (the r6 test-(b) precedent). No-op when
+    the wiring check was not requested or nothing was seeded (the
+    pre-existing quiet early return)."""
+    if not (args.wiring_check and done):
+        return
+    w = wiring_check_or_skip(
+        None,
+        [],
+        0,
+        args.wiring_check,
+        args.batch_size,
+        n_seeded=len(done),
+        n_prefilter=n_prefilter,
+        cell=f"{slug}/{model_kind}",
+    )
+    c1310.write_json(args.out_dir / f"wiring_{slug}_{model_kind}.json", {**fp, **w})
+
+
 def main() -> int:
     args = parse_args()
     if args.make_tiny_model:
@@ -499,6 +547,9 @@ def main() -> int:
     if args.max_items:
         items = items[: args.max_items]
     print(f"[i1335-p2] {len(items)} items (rung={slug}, model={model_kind}, drops={drops})")
+    # r7: panel size BEFORE seed consumption — the wiring skip predicate's
+    # build-bug guard (a <2 PRE-filter panel crashes; a seed-consumed one skips).
+    n_prefilter = len(items)
 
     # c24 resume: skip rows already in shards whose sidecar matches the CURRENT
     # render config (data identity); a code-SHA drift is tolerated with a
@@ -530,6 +581,7 @@ def main() -> int:
 
     if not items:
         print(f"[i1335-p2] no items to capture (rung={slug}, model={model_kind})")
+        _seeded_early_return_wiring_sidecar(args, done, n_prefilter, fp, slug, model_kind)
         return 0
 
     model = load_model(model_id, args.tiny_model_dir)
@@ -546,6 +598,7 @@ def main() -> int:
             args.wiring_check,
             args.batch_size,
             n_seeded=len(done),
+            n_prefilter=n_prefilter,
             cell=f"{slug}/{model_kind}",
         )
         c1310.write_json(args.out_dir / f"wiring_{slug}_{model_kind}.json", {**fp, **w})

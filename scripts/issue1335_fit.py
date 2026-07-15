@@ -804,7 +804,28 @@ def evaluate_gates(args, models: list[str], smoke: bool) -> dict:
         }
     g2["wiring"] = wiring
     ran = [v for v in wiring.values() if "own_beats_shuffled" in v]
-    g2["wiring_pass"] = bool(ran) and all(v["own_beats_shuffled"] for v in ran)
+    skipped = [v for v in wiring.values() if v.get("wiring_check") == "skipped-seeded"]
+    if ran:
+        g2["wiring_pass"] = all(v["own_beats_shuffled"] for v in ran)
+    elif skipped:
+        # r7 (concern fully-seeded-relaunch-gate2-halt): EVERY wiring cell was
+        # seed-consumed — a relaunch after a post-P2-complete crash. Seed
+        # consumption REQUIRES the render-config fingerprint match (the c24
+        # CONSUME rule in extract), and the consumed shards' original attempts
+        # ran the binding wiring checks — so gate2 passes on that provenance
+        # instead of halting a legitimately complete relaunch (exit 3).
+        g2["wiring_pass"] = True
+        g2["wiring_basis"] = (
+            "all-seeded (original-attempt validation via fingerprint-matched consume)"
+        )
+        print(
+            "[i1335-fit] gate2 wiring: ALL cells skipped-seeded -> pass-with-record "
+            "(original-attempt validation via fingerprint-matched consume)"
+        )
+    else:
+        # No wiring files at all: the wiring cells never ran (r7 guarantees a
+        # file per wiring cell, skip or ran) -> conservative halt stands.
+        g2["wiring_pass"] = False
     g2["pass"] = bool(g2["r0_in_range"] and g2["wiring_pass"])
     gates["gate2_qa_endpoint"] = g2
     return gates
