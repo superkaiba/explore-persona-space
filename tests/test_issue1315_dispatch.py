@@ -467,3 +467,35 @@ def test_tf_parity_gate_pass_kill_and_missing_arms(tmp_path):
     write(tf_resp, store(arms=("response",)))
     with pytest.raises(RuntimeError, match="lacks prompt arms"):
         run_tf_parity_gate(tf_resp, own_root, tmp_path / "out_missing")
+
+
+# ── p1 FT launch width: smoke-invariant 4-way ZeRO-3 (r3 OOM regression pin) ──
+
+
+def test_ft_launch_width_smoke_invariant(tmp_path, monkeypatch):
+    """r3 crash pin: the FT ``accelerate launch`` composes ``--num_processes 4``
+    (and a 4-GPU CVD) in BOTH modes. The pre-fix smoke branch returned 1, which
+    put the unsharded fp32 Adam moments on one A100-80 and OOMed
+    deterministically at the first optimizer step (epm:failure, 2026-07-15)."""
+    import issue1315_dispatch as d
+
+    monkeypatch.setattr(d, "_physical_gpu_ids", lambda: ["0", "1", "2", "3"])
+    for smoke in (True, False):
+        cfg = d.Cfg(smoke=smoke, cells=("imp_icl_ft_neg",), out_root=tmp_path, upload=False)
+        cmd = d._ft_cmd(
+            cfg, "imp_icl_ft_neg", out_dir=tmp_path / "train", max_steps=2, ckpt_steps=(2,)
+        )
+        assert cmd[cmd.index("--num_processes") + 1] == "4", (smoke, cmd)
+        env = d._ft_env(cfg)
+        assert env["CUDA_VISIBLE_DEVICES"] == "0,1,2,3", (smoke, env["CUDA_VISIBLE_DEVICES"])
+
+
+def test_ft_launch_width_fails_loud_under_provisioned(tmp_path, monkeypatch):
+    """Smoke mode inherits the #1112 round-4 under-provision guard: <4 visible
+    GPUs raises instead of silently narrowing the ZeRO-3 world size."""
+    import issue1315_dispatch as d
+
+    monkeypatch.setattr(d, "_physical_gpu_ids", lambda: ["0"])
+    cfg = d.Cfg(smoke=True, cells=("imp_icl_ft_neg",), out_root=tmp_path, upload=False)
+    with pytest.raises(RuntimeError, match="full-FT needs 4 GPUs"):
+        d._ft_num_processes(cfg)

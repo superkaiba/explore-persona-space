@@ -30,9 +30,12 @@ Phases (linear, checkpoint-per-phase, resume-keyed; plan §4/§9):
   p11_upload   text/JSON + capture tensors + rb artifacts; sentinel
 
 ``--smoke`` is the SAME dispatcher with tiny knobs (plan § Dry-run smoke):
-cell subset ("imp_icl_ft_neg",), 2 optimizer steps + 1 consolidated ZeRO-3
-save + vLLM-load canary (the Tier-1 rung generates through vLLM on the saved
-rung), 1 Tier-1 rung at 2 questions, LIVE judge (sync fallback path), a
+cell subset ("imp_icl_ft_neg",), 2 optimizer steps at PRODUCTION launch width
+(4-way ZeRO-3, ``--num_processes 4`` / CVD 0-3 — width is smoke-INVARIANT;
+the r3 fix: a 1-process smoke FT OOMs deterministically at the first
+optimizer step because the fp32 Adam moments go unsharded) + 1 consolidated
+ZeRO-3 save + vLLM-load canary (the Tier-1 rung generates through vLLM on the
+saved rung), 1 Tier-1 rung at 2 questions, LIVE judge (sync fallback path), a
 2-context × 1-question 3-arm 28-layer capture including ONE multi-turn
 WildChat row (the new span logic end-to-end), geometry on the captured stub,
 recording-free upload via ``--no-upload``. Every phase reads its cell list
@@ -483,10 +486,18 @@ def _mix_path(cfg: Cfg, cell: str) -> Path:
 
 
 def _ft_num_processes(cfg: Cfg) -> int:
-    """ZeRO-3 world size — FULL: pinned 4 (fails loud under-provisioned; the
-    #1112 round-4 unsharded-OOM guard); SMOKE: 1 (the GCE 1-GPU smoke shape)."""
-    if cfg.smoke:
-        return 1
+    """ZeRO-3 world size — pinned 4 in BOTH modes (smoke-invariant; fails loud
+    under-provisioned — the #1112 round-4 unsharded-OOM guard). The r3 crash:
+    a cloned-in smoke branch returned 1, so ``accelerate launch
+    --num_processes 1`` put the whole 7B (bf16 weights ~15 GB + grads ~15 GB +
+    UNSHARDED fp32 Adam moments ~56 GB) on one A100-80 — deterministic
+    torch.OutOfMemoryError at the FIRST optimizer step. 4-way ZeRO-3 shards
+    optimizer+grads ~/4 and fits (plan §4.4); PASS_UNIFIED means the smoke
+    keeps the production PROCESS SHAPE too (#397 resource-dimension
+    divergence class). The parent #1112 smoke was 1-wide only because ITS
+    smoke instance was a 1-GPU GCE a2-ultragpu-1g; the #1315 smoke runs on
+    the 4x A100-80 ft-7b pod, so no narrow lane is needed or allowed."""
+    del cfg  # FT launch width is deliberately mode-independent (r3 fix)
     n_phys = len(_physical_gpu_ids())
     if n_phys < FT_NUM_PROCESSES:
         raise RuntimeError(
