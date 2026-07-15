@@ -14,6 +14,8 @@ sources; do not retype values from memory.
 
 from __future__ import annotations
 
+import contextlib
+
 from explore_persona_space.experiments.issue_825.common import (
     FIT_SEED,
     GEN_SEED,
@@ -77,8 +79,31 @@ __all__ = [
     "Rendered",
     "cell_id",
     "cells_for",
+    "fc_expected_layers",
     "tulu_prompt",
 ]
+
+
+@contextlib.contextmanager
+def fc_expected_layers(fit_cells_module, n_layers: int):
+    """Scoped rebind of the #825 fit core's ``EXPECTED_LAYERS`` module global.
+
+    ``issue825_fit_cells._cell_xy`` asserts the bundle's layer axis against its
+    own Qwen constant (28). Every #1336 driver call into ``_cell_xy`` wraps in
+    this scope so the fail-loud shape check validates the RIGHT invariant:
+    production Llama stores assert 32 (``EXPECTED_LAYERS`` here), the pinned
+    Qwen G0 store asserts ``G0["expected_layers"]`` (28), and tiny smoke /
+    fixture stores assert their own realized layer count (the extract-side
+    ``--tiny-model-dir`` rebinding pattern). Restores the previous value on
+    exit so the #825 module is never left mutated.
+    """
+    prev = fit_cells_module.EXPECTED_LAYERS
+    fit_cells_module.EXPECTED_LAYERS = int(n_layers)
+    try:
+        yield
+    finally:
+        fit_cells_module.EXPECTED_LAYERS = prev
+
 
 # ---------------------------------------------------------------------------
 # Architecture invariants (Llama-3.1-8B family; asserted at model load)

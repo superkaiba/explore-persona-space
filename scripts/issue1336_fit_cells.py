@@ -146,8 +146,14 @@ def run_g0(args) -> int:
     bundle_dir = args.g0_local_dir or _g0_stage(args.g0_dl_dir)
     bundle = fc._load_bundle_any(bundle_dir, "instruct", "chat", "s")
     # Parent Track-S normalization (issue825_fit_cells._normalize_cell):
-    # assistant slot (index 0) -> a1 profile (index 1).
-    xy = fc._cell_xy(bundle, {"slot_index": 0, "target_turn_index": 1})
+    # assistant slot (index 0) -> a1 profile (index 1). The #825 core asserts
+    # against ITS Qwen EXPECTED_LAYERS global; scope it to the G0 store's
+    # expected value (pinned Qwen 28; a local fixture asserts its own count).
+    exp_layers = (
+        int(cm.G0["expected_layers"]) if args.g0_local_dir is None else _bundle_n_layers(bundle)
+    )
+    with cm.fc_expected_layers(fc, exp_layers):
+        xy = fc._cell_xy(bundle, {"slot_index": 0, "target_turn_index": 1})
     X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
     n_layers = X.shape[1]
     layer = int(cm.G0["layer"])
@@ -194,16 +200,26 @@ def run_g0(args) -> int:
 # ---------------------------------------------------------------------------
 # Per-cell fits
 # ---------------------------------------------------------------------------
-def _cell_xy_1336(bundle: dict) -> dict:
+def _bundle_n_layers(bundle: dict) -> int:
+    """Layer count realized by the bundle (tiny smoke stores / G0 fixtures)."""
+    return int(np.asarray(bundle["arrays"]["slots"]).shape[2])
+
+
+def _cell_xy_1336(bundle: dict, expected_layers: int) -> dict:
     """(X, Y, conv_ids, nll) for the context arm: a1-header slot -> a1 profile.
 
     The #1336 extractor writes slots ordered by position (prefix=0, a1=1) and
     turns by span start (u1=0, a1=1) — asserted here against the bundle shape.
+    ``fc._cell_xy`` asserts the layer axis against the #825 module's Qwen
+    global (28); scope-rebind it to THIS ladder's expected value (production
+    32; smoke stores their own realized count) so the check stays fail-loud
+    on the right invariant.
     """
     arrays = bundle["arrays"]
     assert arrays["slots"].shape[1] == 2, f"n_slots {arrays['slots'].shape[1]} != 2"
     assert arrays["profiles"].shape[1] == 2, f"n_turns {arrays['profiles'].shape[1]} != 2"
-    return fc._cell_xy(bundle, {"slot_index": 1, "target_turn_index": 1})
+    with cm.fc_expected_layers(fc, expected_layers):
+        return fc._cell_xy(bundle, {"slot_index": 1, "target_turn_index": 1})
 
 
 def _prefix_degeneracy(bundle: dict, frozen_layers: tuple[int, ...]) -> dict:
@@ -264,10 +280,12 @@ def run_one_cell(
     null_draws: int,
     n_boot: int,
     matched_n: int | None,
+    expected_layers: int | None,
 ) -> dict:
     cell_id = cell["cell_id"]
     bundle = fc._load_bundle_any(ts_dir, cell["model"], cell["format"], cell["corpus"])
-    xy = _cell_xy_1336(bundle)
+    exp = expected_layers if expected_layers is not None else _bundle_n_layers(bundle)
+    xy = _cell_xy_1336(bundle, exp)
     X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
     print(f"[fit1336] cell={cell_id} n={len(conv_ids)}", flush=True)
 
@@ -467,6 +485,9 @@ def main() -> int:
             null_draws=null_draws,
             n_boot=n_boot,
             matched_n=cell_matched,
+            # Production stores assert the ladder's 32 layers; a smoke store
+            # asserts its own realized count (tiny-model rebinding pattern).
+            expected_layers=None if smoke else cm.EXPECTED_LAYERS,
         )
     return 0
 

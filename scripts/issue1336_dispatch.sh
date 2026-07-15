@@ -56,7 +56,13 @@ JOB_LOG_DIR="$REPO_ROOT/logs/issue1336_jobs$([ "$SMOKE" -eq 1 ] && echo _smoke |
 mkdir -p "$DONE_DIR" "$JOB_LOG_DIR" "$OUT_DIR"
 [ -f "$DONE_DIR/start_ts" ] || date +%s > "$DONE_DIR/start_ts"
 
-NGPU=$(nvidia-smi --list-gpus 2>/dev/null | wc -l || echo 0)
+# Guarded inner `|| true`, NOT a trailing `|| echo 0`: under pipefail a
+# missing nvidia-smi fails the WHOLE pipeline while wc still prints "0", so
+# the trailing echo appended a second line ("0\n0") — run_queue's integer
+# arithmetic then errored and the phase completed with ZERO workers spawned
+# (silent no-op phase; caught by the unit-B CPU smoke).
+NGPU=$( (nvidia-smi --list-gpus 2>/dev/null || true) | wc -l )
+case "$NGPU" in *[!0-9]* | "") echo "[dispatch1336] FATAL: bad GPU count '$NGPU'" >&2; exit 70;; esac
 echo "[dispatch1336] phase=$PHASE_ARG smoke=$SMOKE realized_gpus=$NGPU out=$OUT_DIR"
 
 HF_DATA_REPO="superkaiba1/explore-persona-space-data"

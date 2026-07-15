@@ -229,12 +229,23 @@ def headline_layer_rule(cells_dir: Path, frozen_layers: tuple[int, ...], smoke: 
     return int(best)
 
 
-def _xy_for(bundle: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """(X, Y, conv_ids) for the context arm: a1-header slot -> a1 profile."""
+def _xy_for(bundle: dict, expected_layers: int | None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """(X, Y, conv_ids) for the context arm: a1-header slot -> a1 profile.
+
+    ``fc._cell_xy`` asserts the layer axis against the #825 module's Qwen
+    global (28); scope-rebind it to this ladder's expected value (production
+    32; ``None`` = the bundle's own realized count, the smoke-store case).
+    """
     arrays = bundle["arrays"]
     assert arrays["slots"].shape[1] == 2, f"n_slots {arrays['slots'].shape[1]} != 2"
     assert arrays["profiles"].shape[1] == 2, f"n_turns {arrays['profiles'].shape[1]} != 2"
-    xy = fc._cell_xy(bundle, {"slot_index": 1, "target_turn_index": 1})
+    exp = (
+        expected_layers
+        if expected_layers is not None
+        else int(np.asarray(arrays["slots"]).shape[2])
+    )
+    with cm.fc_expected_layers(fc, exp):
+        xy = fc._cell_xy(bundle, {"slot_index": 1, "target_turn_index": 1})
     return xy["X"], xy["Y"], np.asarray([str(c) for c in xy["conv_ids"]])
 
 
@@ -276,8 +287,9 @@ def run_pair(args) -> None:
 
     b0 = fc._load_bundle_any(ts_dir, m0, fmt, corpus)
     b1 = fc._load_bundle_any(ts_dir, m1, fmt, corpus)
-    X0, Y0, ids0 = _xy_for(b0)
-    X1, Y1, ids1 = _xy_for(b1)
+    exp_layers = None if smoke else cm.EXPECTED_LAYERS
+    X0, Y0, ids0 = _xy_for(b0, exp_layers)
+    X1, Y1, ids1 = _xy_for(b1, exp_layers)
     common, i0, i1 = _align_rows(ids0, ids1)
     n = len(common)
     folds = fc._cv_folds(common, N_FOLDS, FIT_SEED)
