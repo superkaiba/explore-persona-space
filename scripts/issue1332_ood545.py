@@ -102,12 +102,33 @@ def main() -> int:
     res_dir = C.results_dir(args.smoke, args.results_dir)
     store = C.data_root(args.smoke, args.out_root) / "store" / "capture545"
 
-    sim_files = sorted((res_dir / "similarity545").glob("S_transfer_L*.json"))
-    if not sim_files:
+    # Layer routing (r1 Major 2): open the FROZEN L*'s file directly — a
+    # lexicographic sorted(glob)[-1] picks L14 over L* for L* in {0,1,10-13}.
+    sim_dir = res_dir / "similarity545"
+    freeze_path = res_dir / "layer_freeze.json"
+    if freeze_path.exists():
+        l_star = json.loads(freeze_path.read_text())["l_star"]
+        sim_path = sim_dir / f"S_transfer_L{l_star}.json"
+        if not sim_path.exists():
+            raise FileNotFoundError(
+                f"{sim_path} missing for frozen L*={l_star} — re-run "
+                f"issue1332_fits.py --arm i545 after the layer freeze"
+            )
+    elif args.full:
         raise FileNotFoundError(
-            f"no similarity545 outputs under {res_dir} — run issue1332_fits.py --arm i545"
+            f"{freeze_path} missing — run issue1332_fits.py (marker arm) first; "
+            f"refusing a fallback layer in --full"
         )
-    sim = json.loads(sim_files[-1].read_text())
+    else:  # smoke-only fallback: NUMERIC layer sort, never lexicographic
+        sim_files = sorted(
+            sim_dir.glob("S_transfer_L*.json"), key=lambda p: int(p.stem.rsplit("L", 1)[1])
+        )
+        if not sim_files:
+            raise FileNotFoundError(
+                f"no similarity545 outputs under {res_dir} — run issue1332_fits.py --arm i545"
+            )
+        sim_path = sim_files[-1]
+    sim = json.loads(sim_path.read_text())
     units, layer = sim["units"], sim["layer"]
     import numpy as np
 

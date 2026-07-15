@@ -647,6 +647,10 @@ def main() -> int:
         )
 
     kill["boot_partial_given_cos_js"] = boot_partial([cos532, js540])
+    # r1 Major 3: each forest row carries ITS OWN bootstrap CI (the single-
+    # covariate partial rows previously plotted the raw-rho CI).
+    kill["boot_partial_given_cos"] = boot_partial([cos532])
+    kill["boot_partial_given_js"] = boot_partial([js540])
     kill["pearson_S_cos"] = (
         float(np.corrcoef(S16[m], cos532[m])[0, 1]) if m.sum() >= 3 else float("nan")
     )
@@ -710,8 +714,10 @@ def main() -> int:
     )
 
     C.phase("p3_ceiling")
-    sh_files = sorted((res_dir / "splithalf").glob("splithalf_L*.json"))
-    r_ss = json.loads(sh_files[-1].read_text())["r_SS"] if sh_files else float("nan")
+    # r1 Major 2 sibling: open the frozen L*'s split-half file DIRECTLY — a
+    # lexicographic sorted(glob)[-1] can misroute r_SS to a stale layer's file.
+    sh_path = res_dir / "splithalf" / f"splithalf_L{l_star}.json"
+    r_ss = json.loads(sh_path.read_text())["r_SS"] if sh_path.exists() else float("nan")
     r_ll = r_ll_probe_aligned(
         {k: v for k, v in leak["per_q_trained"].items() if k[0] in sources and k[1] in targets},
         {k: v for k, v in leak["per_q_base"].items() if k[0] in sources and k[1] in targets},
@@ -773,8 +779,18 @@ def main() -> int:
 
     forest_rows = [
         ("raw rho", rho, *rho_ci),
-        ("partial | cos", kill["partial_rho_S_L_given_cos"], *rho_ci),
-        ("partial | JS", kill["partial_rho_S_L_given_js"], *rho_ci),
+        (
+            "partial | cos",
+            kill["partial_rho_S_L_given_cos"],
+            kill["boot_partial_given_cos"]["ci_lo"],
+            kill["boot_partial_given_cos"]["ci_hi"],
+        ),
+        (
+            "partial | JS",
+            kill["partial_rho_S_L_given_js"],
+            kill["boot_partial_given_js"]["ci_lo"],
+            kill["boot_partial_given_js"]["ci_hi"],
+        ),
         ("partial | cos+JS (KILL)", pr, *pr_ci),
         (
             "ΔCV-R² (LOFO)",

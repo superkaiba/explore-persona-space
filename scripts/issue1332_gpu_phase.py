@@ -299,22 +299,6 @@ def upload_files(paths_named: list[tuple[Path, str]], message: str) -> None:
     logger.info("[upload] %s (%d files)", message, len(ops))
 
 
-def hub_has(rel_path: str) -> bool:
-    """Single-path existence probe on the data repo (never a full listing)."""
-    from huggingface_hub import HfApi
-
-    from explore_persona_space.orchestrate.hub import retry_transient
-
-    return bool(
-        retry_transient(
-            lambda: HfApi().file_exists(
-                C.HF_DATA_REPO, f"{C.HF_PREFIX}/{rel_path}", repo_type="dataset"
-            ),
-            what=f"file_exists {rel_path}",
-        )
-    )
-
-
 # ── stage: inputs ─────────────────────────────────────────────────────────────
 
 
@@ -537,14 +521,17 @@ def stage_gen(args) -> None:
             prompts.append(p)
             prefix_ends.append(pce)
         t0 = time.time()
+        n_trunc_initial = 0
         if args.tiny_model:
             texts, n_toks = _greedy_tiny(tinym, tok, prompts, C.MAX_NEW_TOKENS)
+            n_trunc_initial = sum(1 for n in n_toks if n >= C.MAX_NEW_TOKENS)
         else:
             if llm is None:
                 llm = _vllm_engine(tiny=False)
             texts, n_toks = _greedy_vllm(llm, prompts, C.MAX_NEW_TOKENS)
             # plan assumption 9: >2% truncation -> re-generate truncated rows at 2048
             trunc_idx = [i for i, n in enumerate(n_toks) if n >= C.MAX_NEW_TOKENS]
+            n_trunc_initial = len(trunc_idx)
             if len(trunc_idx) / max(1, len(bank)) > TRUNCATION_REGEN_THRESHOLD:
                 logger.warning(
                     "[gen] %s truncation %.3f > %.2f — re-gen %d rows at %d",
@@ -559,7 +546,12 @@ def stage_gen(args) -> None:
                 )
                 for k, i in enumerate(trunc_idx):
                     texts[i], n_toks[i] = re_texts[k], re_toks[k]
+        # r1 Minor: `truncation_rate` counts UNRECOVERED rows (>= REGEN_MAX_NEW
+        # post-regen); a <=2% share truncated at MAX_NEW_TOKENS never regenerates
+        # and would read ~0 there — persist the pre-regen rate at the actual cap
+        # alongside so the analyzer sees the true truncated-row share.
         trunc_rate = sum(1 for n in n_toks if n >= REGEN_MAX_NEW) / max(1, len(bank))
+        trunc_rate_at_cap = n_trunc_initial / max(1, len(bank))
         payload = {
             "family": fam,
             "questions": bank,
@@ -569,6 +561,7 @@ def stage_gen(args) -> None:
             "n": len(bank),
             "bank_sha256": staged["bank_sha256"],
             "truncation_rate": trunc_rate,
+            "truncation_rate_at_max_new": trunc_rate_at_cap,
             "gen_seconds": time.time() - t0,
             "sampling": {
                 "temperature": 0.0,
@@ -635,6 +628,15 @@ def stage_capture(args) -> None:
     for fam in fams:
         shard_path = cap_dir / f"{fam}.pt"
         if shard_path.exists():
+            # r1 Minor: regime-keyed resume (mirrors gen) — a stale shard from a
+            # different bank is refused loudly, never silently reused.
+            sh_meta = torch.load(shard_path, map_location="cpu", mmap=True, weights_only=False)
+            if sh_meta.get("bank_sha256") != staged["bank_sha256"]:
+                raise RuntimeError(
+                    f"[capture] {shard_path} exists under a DIFFERENT regime "
+                    f"(bank_sha256 mismatch) — refusing to silently reuse"
+                )
+            del sh_meta
             logger.info("[capture] %s shard exists (resume skip)", fam)
             continue
         roll = json.loads((gen_dir / f"{fam}.json").read_text())
@@ -675,6 +677,7 @@ def stage_capture(args) -> None:
             **{k: v for k, v in stacked.items()},
             "bank_indices": torch.tensor(bank_indices, dtype=torch.long),
             "questions": [bank[i] for i in bank_indices],
+            "n_bank": len(bank),  # exact bank size (r1 Minor: never infer max+1)
             "n_layers": n_layers,
             "hidden_dim": int(stacked["cx_last"].shape[2]),
             "family": fam,
@@ -754,6 +757,15 @@ def stage_capture545(args) -> None:
     for unit_id, kind, src in units:
         shard_path = cap_dir / f"{unit_id}.pt"
         if shard_path.exists():
+            # r1 Minor: regime-keyed resume — the row cap is the output-affecting
+            # knob for 545 units (source pools are HF-pinned upstream).
+            sh_meta = torch.load(shard_path, map_location="cpu", mmap=True, weights_only=False)
+            if int(sh_meta.get("n_rows_545_cap", -1)) != int(args.n_rows_545):
+                raise RuntimeError(
+                    f"[545] {shard_path} exists under a DIFFERENT regime "
+                    f"(n_rows_545 cap mismatch) — refusing to silently reuse"
+                )
+            del sh_meta
             logger.info("[545] %s shard exists (resume skip)", unit_id)
             continue
         pairs = (
@@ -801,6 +813,7 @@ def stage_capture545(args) -> None:
             "unit": unit_id,
             "kind": kind,
             "n_rows": len(rows),
+            "n_rows_545_cap": int(args.n_rows_545),  # resume regime key (r1 Minor)
             "meta": C.reproducibility_metadata(
                 {"smoke": args.smoke, "arm": "i545", "off_policy_targets": True}
             ),
@@ -837,21 +850,39 @@ def stage_upload(args) -> dict:
         for p in sorted(d.iterdir()):
             if p.suffix in (".json", ".pt") and ".tmp" not in p.name:
                 produced.append((p, f"{C.HF_PREFIX}/{hub_sub}/{p.name}"))
+    import inspect
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import verify_repo_paths_uploaded
+
+    # Signature-bind check on EVERY invocation — including --skip-upload smokes —
+    # so this previously smoke-fenced call site can never silently drift from the
+    # helper's live signature again (r1 Critical 2: the call omitted the `api`
+    # positional + the REQUIRED kw-only `path_in_repo` -> TypeError at the
+    # terminal upload stage). Pinned by tests/test_issue1332_pins.py.
+    inspect.signature(verify_repo_paths_uploaded).bind(
+        HfApi(), C.HF_DATA_REPO, [], path_in_repo=C.HF_PREFIX, repo_type="dataset"
+    )
     if args.skip_upload:
         logger.info("[upload] skip-upload: %d artifacts produced locally", len(produced))
         return {"n_produced": len(produced), "verified": False}
-    from explore_persona_space.orchestrate.hub import verify_repo_paths_uploaded
 
+    api = HfApi()
     missing_pairs = []
     expected = [dest for _p, dest in produced]
-    missing = verify_repo_paths_uploaded(C.HF_DATA_REPO, expected, repo_type="dataset")
+    missing = verify_repo_paths_uploaded(
+        api, C.HF_DATA_REPO, expected, path_in_repo=C.HF_PREFIX, repo_type="dataset"
+    )
     if missing:
         missing_set = set(missing)
         missing_pairs = [(p, d) for p, d in produced if d in missing_set]
         logger.info("[upload] %d/%d missing on Hub — uploading", len(missing_pairs), len(produced))
         for i in range(0, len(missing_pairs), 20):
             upload_files(missing_pairs[i : i + 20], f"issue 1332: upload sweep ({i})")
-        still = verify_repo_paths_uploaded(C.HF_DATA_REPO, expected, repo_type="dataset")
+        still = verify_repo_paths_uploaded(
+            api, C.HF_DATA_REPO, expected, path_in_repo=C.HF_PREFIX, repo_type="dataset"
+        )
         if still:
             raise RuntimeError(
                 f"upload sweep FAILED to land {len(still)} files: {sorted(still)[:5]}"
@@ -952,7 +983,23 @@ def main() -> int:
                 ),
             )
             return proc.returncode
-    upload_info = stage_upload(args)
+    # Same failure-sentinel contract as the stage subprocesses: an exception out
+    # of the in-process terminal upload previously died rc!=0 with NO sentinel
+    # (r1 Critical 2 impact) — the poller now sees an epm:failure either way.
+    try:
+        upload_info = stage_upload(args)
+    except Exception as e:
+        C.write_sentinel(
+            "epm:failure",
+            json.dumps(
+                {
+                    "failure_class": "infra",
+                    "reason": f"stage upload raised {type(e).__name__}: {e}",
+                    "assert_tag": "i1332-upload-exc",
+                }
+            ),
+        )
+        raise
 
     gpu_hours = (time.time() - t0) / 3600.0
     root = C.data_root(args.smoke, args.out_root)

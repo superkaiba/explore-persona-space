@@ -394,7 +394,10 @@ def check_545_inputs() -> dict:
     from explore_persona_space.orchestrate.hub import retry_transient
 
     counts = {}
-    for prefix in (f"{C.I545_HF_PREFIX}/corpora", f"{C.I545_HF_PREFIX}/demos"):
+    # demos live NESTED under corpora/ on the Hub (r1 Critical 1: a flat
+    # `<prefix>/demos` probe 404s; gpu_phase stage_545_inputs stages from
+    # `corpora/demos/{row_id}.json` — probe the exact prefixes it consumes).
+    for prefix in (f"{C.I545_HF_PREFIX}/corpora", f"{C.I545_HF_PREFIX}/corpora/demos"):
         entries = retry_transient(
             lambda p=prefix: list(
                 list_repo_tree(C.HF_DATA_REPO, path_in_repo=p, repo_type="dataset", recursive=True)

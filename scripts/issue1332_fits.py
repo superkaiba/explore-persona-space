@@ -77,12 +77,38 @@ def discover_families(sdir: Path) -> list[str]:
 
 
 def ensure_shards(sdir: Path, fams: list[str], arm: str) -> None:
-    """Local-first -> HF-fetch each family shard (git-clone lanes stage no data/)."""
+    """Local-first -> HF-fetch each family shard (git-clone lanes stage no data/).
+
+    Fail-loud (r1 Major 1): a family is legitimately absent ONLY when its
+    ``{fam}.dropped.json`` marker (written by the capture stage's 80% validity
+    floor) resolves locally or on the Hub; every other miss — transient HF
+    failure included (``retry_transient`` re-raises after its budget) —
+    RAISES, so the panel can never silently truncate mid-staging.
+    """
+    from huggingface_hub.errors import EntryNotFoundError
+
     sub = "capture" if arm == "marker" else "capture545"
+    missing: list[str] = []
     for fam in fams:
         local = sdir / f"{fam}.pt"
-        if not local.exists():
+        if local.exists():
+            continue
+        try:
             C.hf_fetch(f"analysis_tensors/{sub}/{fam}.pt", local)
+        except EntryNotFoundError:
+            dropped_local = sdir / f"{fam}.dropped.json"
+            if dropped_local.exists():
+                continue
+            try:
+                C.hf_fetch(f"analysis_tensors/{sub}/{fam}.dropped.json", dropped_local)
+            except EntryNotFoundError:
+                missing.append(fam)
+    if missing:
+        raise FileNotFoundError(
+            f"{len(missing)} families have NEITHER a capture shard NOR a dropped-marker "
+            f"under analysis_tensors/{sub}/ on the Hub: {missing} — refusing to fit a "
+            f"silently truncated panel"
+        )
 
 
 class ShardCache:
@@ -121,6 +147,22 @@ class ShardCache:
 
     def n_layers(self, fam: str) -> int:
         return int(self.shard(fam)["n_layers"])
+
+
+def resolve_n_bank(cache: ShardCache, fams: list[str]) -> int:
+    """Bank size from shard meta (exact), never inferred when the field exists.
+
+    r1 Minor: ``max(bank_indices)+1`` silently under-counts when the LAST bank
+    query is invalid in every family, shifting the shared fold/split
+    permutations. Shards written post-r1 carry ``n_bank``; the inferred
+    fallback remains only for legacy (pre-r1 smoke) shards.
+    """
+    exact = {int(cache.shard(f)["n_bank"]) for f in fams if "n_bank" in cache.shard(f)}
+    if exact:
+        if len(exact) != 1:
+            raise RuntimeError(f"inconsistent n_bank across shards: {sorted(exact)}")
+        return exact.pop()
+    return max(max(cache.bank_indices(f)) for f in fams) + 1
 
 
 # ── solvers ───────────────────────────────────────────────────────────────────
@@ -266,7 +308,7 @@ def layer_freeze(
 
     n_layers = cache.n_layers(fams[0])
     layers = list(range(n_layers))
-    n_bank = max(max(cache.bank_indices(f)) for f in fams) + 1
+    n_bank = resolve_n_bank(cache, fams)
     half_a, half_b = C.split_half(n_bank)
     set_a, set_b = set(half_a), set(half_b)
     curve = np.full((len(fams), n_layers), np.nan)
@@ -369,7 +411,7 @@ def split_half_similarity(cache: ShardCache, fams: list[str], layer: int, solver
     """S^(A)/S^(B) half-map similarity matrices + r_SS + weight-space reads at L*."""
     import numpy as np
 
-    n_bank = max(max(cache.bank_indices(f)) for f in fams) + 1
+    n_bank = resolve_n_bank(cache, fams)
     half_a, half_b = C.split_half(n_bank)
     set_a, set_b = set(half_a), set(half_b)
     nf = len(fams)
@@ -412,7 +454,10 @@ def split_half_similarity(cache: ShardCache, fams: list[str], layer: int, solver
                     X[tr][None], Y[tr][None], X_probe[None], return_weights=True
                 )
                 p_all = p_all[0]
-                weights[half].append(w[0])
+                # fp32 retention: 52 retained fp64 (3584, 3584) W matrices peak
+                # ~10.7 GB transient RSS (r1 Minor) — the descriptive cosine
+                # reads are insensitive to the cast; halves the retention.
+                weights[half].append(np.asarray(w[0], dtype=np.float32))
             else:
                 p_all = fit_predict_batched(X[tr][None], Y[tr][None], X_probe[None], solver=solver)[
                     0
@@ -532,15 +577,23 @@ def main() -> int:
 
     if args.arm == "marker" and not args.smoke and not args.skip_hf_fetch:
         _sources, targets = C.family_labels()
-        try:
-            ensure_shards(sdir, targets, args.arm)
-        except Exception:
-            logger.exception("[fits] HF shard staging failed — falling back to local-only")
+        ensure_shards(sdir, targets, args.arm)  # fail-loud staging (r1 Major 1)
     fams = discover_families(sdir)
     fams = [f for f in fams if not f.endswith(".dropped") and not f.endswith(".skipped")]
+    if args.arm == "marker" and not args.smoke:
+        # panel-completeness assert (r1 Major 1): every registered family is
+        # either captured or explicitly dropped — never silently absent.
+        n_dropped = len(list(sdir.glob("*.dropped.json")))
+        n_expected = len(C.family_labels()[1])
+        if len(fams) + n_dropped != n_expected:
+            raise RuntimeError(
+                f"panel incomplete: {len(fams)} capture shards + {n_dropped} dropped "
+                f"markers != {n_expected} registered families — refusing to fit a "
+                f"silently truncated panel"
+            )
     cache = ShardCache(sdir)
     n_layers = cache.n_layers(fams[0])
-    n_bank = max(max(cache.bank_indices(f)) for f in fams) + 1
+    n_bank = resolve_n_bank(cache, fams)
     folds = C.query_folds(n_bank)
 
     C.phase("p2_parity")
@@ -555,11 +608,16 @@ def main() -> int:
     if args.arm == "i545":
         C.phase("p2_i545")
         freeze_path = C.results_dir(args.smoke, args.results_dir) / "layer_freeze.json"
-        l_star = (
-            json.loads(freeze_path.read_text())["l_star"]
-            if freeze_path.exists()
-            else min(n_layers - 1, C.WHITENED_GATE_LAYER)
-        )
+        if freeze_path.exists():
+            l_star = json.loads(freeze_path.read_text())["l_star"]
+        elif args.full:
+            raise FileNotFoundError(
+                f"{freeze_path} missing — run the marker arm first; refusing the "
+                f"L{C.WHITENED_GATE_LAYER} fallback in --full (r1 Minor: out-of-order "
+                f"invocation must fail loud, not silently score the wrong layer)"
+            )
+        else:
+            l_star = min(n_layers - 1, C.WHITENED_GATE_LAYER)
         for layer in sorted({l_star, min(n_layers - 1, C.WHITENED_GATE_LAYER)}):
             out = i545_similarity(cache, fams, layer, solver)
             out["reproducibility_metadata"] = C.reproducibility_metadata({"smoke": args.smoke})
