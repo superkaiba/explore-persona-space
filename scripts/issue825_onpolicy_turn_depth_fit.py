@@ -22,6 +22,19 @@ Gates (all must PASS before any decision read; fail-loud):
       row-matched cosines; 50-row pilot with the pre-registered clean-regime
       floor (pilot median < 0.99 = HALT-and-diagnose, never a calibration
       datum); thresholds frozen WITHIN the clean regime, recorded.
+      Boundary-position carve-out (crash-fix round 10', diagnosed 2026-07-15):
+      rows whose new-capture context token POSITION differs from the banked
+      store's (``context_pos != banked token_start``) are BPE delimiter-merge
+      artifacts of the pretrained plain-text render — the own vs logged
+      answer's first characters merge differently with the "Assistant: "
+      delimiter, shifting ``answer_start`` (hence ``context_pos =
+      answer_start - 1``) by +-1 token, so parity is unverifiable there by
+      construction (cosines 0.69-0.87 = different-token states, not jitter;
+      60/2572 pretrained rows, 0/2571 instruct — chat-template special tokens
+      block the merge). Those rows are excluded PAIR-SAFE from BOTH provenance
+      arms (all four fits share the kept-row intersection; Delta stays Y-only)
+      and G2 binds on the remaining rows at the ORIGINAL thresholds. The
+      exclusion is capped fail-loud at BOUNDARY_EXCL_MAX_RATE.
   Drop-rate kill line — per-model degenerate-drop rate > 20% halts before
       fitting; >= 15% auto-fires the survivor-set caveat.
 
@@ -133,6 +146,12 @@ G2_HALT_FLOOR = 0.99
 G2_MEDIAN_MIN_DEFAULT = 0.999
 G2_ROW_MIN = 0.99
 G2_ROW_FRAC = 0.99
+# Boundary-position carve-out cap (see module docstring): the observed
+# delimiter-merge tail is 2.33% (pretrained) / 0% (instruct) on THIS capture
+# pair — the artifact's own reference distribution; 5% ~= 2.1x the observed
+# rate. A larger mismatch fraction is no longer a boundary tail (systemic
+# render/offset break) and HALTs instead of being carved out.
+BOUNDARY_EXCL_MAX_RATE = 0.05
 
 
 def _fetch_one(
@@ -432,6 +451,73 @@ def _length_binned_block(
             bins_out[str(b)] = node
         out[f"binned_by_{label}_length"] = bins_out
     return out
+
+
+def _boundary_pos_carveout(
+    summaries_dir: Path,
+    mt: str,
+    own_rows: list[dict],
+    own_sel: np.ndarray,
+    pairing: list[tuple[int, int, str, int]],
+    kept_pair_idx: list[int],
+) -> tuple[np.ndarray, dict]:
+    """G2 boundary-position carve-out (module docstring; crash-fix round 10').
+
+    Mechanical identifier: the context prefix (turns[:k] + "Assistant:") is the
+    SAME string in both renders, tokenized left-to-right — so the new capture's
+    ``context_pos`` must EQUAL the banked context row's ``token_start`` unless a
+    BPE merge at the delimiter/answer seam shifted ``answer_start`` in exactly
+    one of the two renders. Returns (keep_mask over kept_pair_idx order, record
+    dict for results.json). Raises SystemExit when the mismatch fraction
+    exceeds BOUNDARY_EXCL_MAX_RATE (no longer a boundary tail).
+    """
+    rows_c = _read_index_files(summaries_dir / f"dynamics_{mt}", f"row_index_{SRC_KIND}")
+    new_pos = np.asarray([int(own_rows[i]["context_pos"]) for i in own_sel], dtype=np.int64)
+    banked_pos = np.asarray(
+        [int(rows_c[pairing[i][0]]["token_start"]) for i in kept_pair_idx], dtype=np.int64
+    )
+    delta = new_pos - banked_pos
+    keep = delta == 0
+    n_excl = int(np.sum(~keep))
+    rate = n_excl / max(1, delta.size)
+    if rate > BOUNDARY_EXCL_MAX_RATE:
+        raise SystemExit(
+            f"[G2-carveout] HALT: {mt} context-position mismatch rate "
+            f"{100 * rate:.1f}% > {100 * BOUNDARY_EXCL_MAX_RATE:.0f}% — systemic "
+            f"render/offset break, not a delimiter-merge boundary tail."
+        )
+    excl = np.nonzero(~keep)[0]
+    turns_excl = [pairing[kept_pair_idx[j]][3] for j in excl]
+    record = {
+        "mechanism": (
+            "BPE delimiter-merge at the plain-text 'Assistant: '+<answer> seam: own vs "
+            "logged first answer characters merge differently with the delimiter, "
+            "shifting answer_start (hence context_pos) by +-1; parity unverifiable for "
+            "these rows by construction. Excluded PAIR-SAFE from BOTH provenance arms."
+        ),
+        "identifier": "new-capture context_pos != banked row_index_context_k token_start",
+        "n_checked": int(delta.size),
+        "n_excluded": n_excl,
+        "exclusion_rate": rate,
+        "max_rate": BOUNDARY_EXCL_MAX_RATE,
+        "pos_delta_counts": {
+            str(v): int(np.sum(delta == v)) for v in sorted(set(delta[~keep].tolist()))
+        },
+        "per_turn_excluded": {str(t): turns_excl.count(t) for t in sorted(set(turns_excl))},
+        "caveat": (
+            "survivor set: per-turn n reduced by the counts above; Delta(own - logged) "
+            "remains Y-only on the kept intersection (plan W3 X-pin unchanged)."
+        )
+        if n_excl
+        else None,
+    }
+    if n_excl:
+        print(
+            f"[G2-carveout] {mt}: excluding {n_excl}/{delta.size} rows "
+            f"({100 * rate:.2f}%) with context-position mismatch "
+            f"(pos_delta counts {record['pos_delta_counts']})"
+        )
+    return keep, record
 
 
 def _g2_gate(new_ctx: np.ndarray, banked_ctx: np.ndarray, pilot_n: int) -> dict:
@@ -755,6 +841,16 @@ def main() -> None:  # noqa: C901 — linear pipeline driver
         own_sel = np.asarray(
             [own_map[(pairing[i][2], pairing[i][3])] for i in kept_pair_idx], dtype=np.int64
         )
+        n_kept_pre_boundary = len(kept_pair_idx)
+
+        # --- G2 boundary-position carve-out (pair-safe; see module docstring) ---
+        keep_mask, boundary_block = _boundary_pos_carveout(
+            summaries_dir, mt, own_rows, own_sel, pairing, kept_pair_idx
+        )
+        if boundary_block["n_excluded"]:
+            kept_pair_idx = [i for i, k in zip(kept_pair_idx, keep_mask.tolist(), strict=True) if k]
+            own_sel = own_sel[keep_mask]
+
         ci_idx = np.asarray([pairing[i][0] for i in kept_pair_idx], dtype=np.int64)
         aj_idx = np.asarray([pairing[i][1] for i in kept_pair_idx], dtype=np.int64)
         rows = [{"conv_id": pairing[i][2], "turn_index": pairing[i][3]} for i in kept_pair_idx]
@@ -771,7 +867,9 @@ def main() -> None:  # noqa: C901 — linear pipeline driver
             "drop_report": drop_report,
             "survivor_caveat": drop_rate >= SURVIVOR_CAVEAT_RATE,
             "n_banked_pairs": len(pairing),
+            "n_kept_pairs_pre_boundary": n_kept_pre_boundary,
             "n_kept_pairs": len(kept_pair_idx),
+            "boundary_pos_mismatch": boundary_block,
         }
 
         # --- F4 length read inputs (plan §6): per-row answer token-span lengths ---
