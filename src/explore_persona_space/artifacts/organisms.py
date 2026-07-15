@@ -679,27 +679,41 @@ class _SingleLiveResource:
         self._teardown(value)
 
 
-# Sentinel resource key: EVERY LoRA adapter path maps to this ONE key, so the
-# _SingleLiveResource reuses a single enable_lora base engine across a dose
-# ladder's checkpoints (crash-fix #1090 r3 — the r2 per-side_path keying tore
-# down + rebuilt an IDENTICAL engine per checkpoint, ~2.5 min each, and each
-# teardown was one more exposure to the orphan-probe crash class).
+# Sentinel resource key PREFIX: EVERY LoRA adapter path maps to ONE
+# rank-qualified key, so the _SingleLiveResource reuses a single enable_lora
+# base engine across a dose ladder's checkpoints (crash-fix #1090 r3 — the r2
+# per-side_path keying tore down + rebuilt an IDENTICAL engine per checkpoint,
+# ~2.5 min each, and each teardown was one more exposure to the orphan-probe
+# crash class). The key carries ``max_lora_rank`` (#1090 fu5 D2 item 2) so a
+# 256-slot engine is never silently shared with a 64-slot expectation.
 _SHARED_LORA_ENGINE_KEY = "__lora_engine__"
+DEFAULT_MAX_LORA_RANK = 64  # run_generation_phase precedent; fu5 rank ladder passes 256
 
 
 def _vllm_resource_key(
-    side_path: str | None, is_full_model_dir: Callable[[str | None], bool]
+    side_path: str | None,
+    is_full_model_dir: Callable[[str | None], bool],
+    *,
+    max_lora_rank: int = DEFAULT_MAX_LORA_RANK,
 ) -> str | None:
     """Engine-identity key for the default vLLM generation seam.
 
     ``None`` (base) and full-model dirs keep their IDENTITY keys (a distinct
     engine each — the weights differ); every LoRA adapter path maps to the one
-    ``_SHARED_LORA_ENGINE_KEY`` (the engine is the base model + enable_lora,
-    identical across adapters — only the per-call ``LoRARequest`` differs).
+    rank-qualified ``{_SHARED_LORA_ENGINE_KEY}:r{max_lora_rank}`` (the engine
+    is the base model + enable_lora at that slot width, identical across
+    adapters — only the per-call ``LoRARequest`` differs). ``max_lora_rank``
+    is part of the key so an engine built with 64 LoRA slots can never be
+    silently reused where a 256-slot engine is expected (#1090 fu5 K5 seam).
     """
     if side_path is None or is_full_model_dir(side_path):
         return side_path
-    return _SHARED_LORA_ENGINE_KEY
+    return f"{_SHARED_LORA_ENGINE_KEY}:r{int(max_lora_rank)}"
+
+
+def _is_shared_lora_key(key: str | None) -> bool:
+    """True iff ``key`` is a rank-qualified shared-LoRA-engine key."""
+    return key is not None and key.startswith(_SHARED_LORA_ENGINE_KEY)
 
 
 def _lora_int_id(lora_ids: dict[str, int], side_path: str) -> int:
@@ -712,11 +726,16 @@ def _lora_int_id(lora_ids: dict[str, int], side_path: str) -> int:
     return lora_ids.setdefault(side_path, len(lora_ids) + 1)
 
 
-def _default_vllm_generate_fn(base_model: str) -> GenFn:
+def _default_vllm_generate_fn(
+    base_model: str, *, max_lora_rank: int = DEFAULT_MAX_LORA_RANK
+) -> GenFn:
     """ONE live vLLM engine at a time, chunked generate, teardown via close().
 
     Engine kwargs follow the ``run_generation_phase`` precedent
-    (``max_lora_rank=64``, ``max_model_len=8192``, ``enable_prefix_caching=True``,
+    (``max_lora_rank=64`` default — callers whose adapters exceed rank 64 pass
+    a wider slot, e.g. the #1090 fu5 rank ladder passes 256; vLLM 0.11.0
+    supports ranks up to 512 incl. 256 — plan §11 sources —
+    ``max_model_len=8192``, ``enable_prefix_caching=True``,
     fixed sampling seed); chunked ≤500 prompts per ``llm.generate`` call
     (gotchas.md large-batch deadlock prevention) with ``use_tqdm=False``.
     Lifecycle (r3 — crash-fix #1090): ALL LoRA adapter paths share ONE
@@ -749,8 +768,10 @@ def _default_vllm_generate_fn(base_model: str) -> GenFn:
             "seed": 0,
             "gpu_memory_utilization": float(os.environ.get("EPM_VLLM_GPU_MEM_UTIL", "0.75")),
         }
-        if key == _SHARED_LORA_ENGINE_KEY:
-            return deps["LLM"](model=base_model, enable_lora=True, max_lora_rank=64, **common)
+        if _is_shared_lora_key(key):
+            return deps["LLM"](
+                model=base_model, enable_lora=True, max_lora_rank=int(max_lora_rank), **common
+            )
         if key is None:
             return deps["LLM"](model=base_model, **common)
         return deps["LLM"](model=key, **common)  # full-model dir (fullft arm)
@@ -764,10 +785,10 @@ def _default_vllm_generate_fn(base_model: str) -> GenFn:
         n: int,
         temperature: float,
     ) -> list[list[str]]:
-        key = _vllm_resource_key(side_path, deps["_is_full_model_dir"])
+        key = _vllm_resource_key(side_path, deps["_is_full_model_dir"], max_lora_rank=max_lora_rank)
         llm = engine.get(key)
         lora_req = None
-        if key == _SHARED_LORA_ENGINE_KEY:
+        if _is_shared_lora_key(key):
             lora_id = _lora_int_id(lora_ids, side_path)
             lora_req = deps["LoRARequest"](f"organism-{lora_id}", lora_id, side_path)
         tok = llm.get_tokenizer()
