@@ -332,12 +332,29 @@ def load_dotenv(env_path: str | None = None):
     if env_path is None:
         resolved = resolve_dotenv_path()
         if resolved is None:
-            logger.warning(
-                "No .env found near %s, in main git worktree, or at the "
-                "pod-canonical /workspace/explore-persona-space/.env. "
-                "Credentialed calls will fail unless the env is already set.",
-                _PROJECT_ROOT,
-            )
+            # GCE/SLURM lanes have NO .env file by design — tokens arrive via
+            # startup metadata / sbatch env (.claude/rules/gotchas.md
+            # conditional-sourcing entry, #923). When credential env vars are
+            # already ambient the message's own predicate ("will fail unless
+            # the env is already set") is false, so log INFO, not WARNING.
+            ambient = [
+                k for k in ("HF_TOKEN", "WANDB_API_KEY", "ANTHROPIC_API_KEY") if os.environ.get(k)
+            ]
+            if ambient:
+                logger.info(
+                    "No .env found near %s; using ambient env credentials "
+                    "(%s set) — expected on the GCE/SLURM lanes, which export "
+                    "tokens via startup metadata / sbatch env, not a .env file.",
+                    _PROJECT_ROOT,
+                    ", ".join(ambient),
+                )
+            else:
+                logger.warning(
+                    "No .env found near %s, in main git worktree, or at the "
+                    "pod-canonical /workspace/explore-persona-space/.env. "
+                    "Credentialed calls will fail unless the env is already set.",
+                    _PROJECT_ROOT,
+                )
             env_path = str(_PROJECT_ROOT / ".env")
         else:
             env_path = str(resolved)

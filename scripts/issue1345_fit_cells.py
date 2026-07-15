@@ -23,7 +23,12 @@ conversation/story) and persists the L19 held-out predictions per cell
 
 Parity gate (--parity): re-extracted context-arm L19 R^2 (FULL per-store n)
 must reproduce the pinned cells_S1/S2/S1N/S2N anchors within ±0.02, else
-exit 3 (halt-and-diagnose; plan §7 kill criterion).
+exit 3 (halt-and-diagnose; plan §7 kill criterion). Under --smoke the SAME
+computation runs end-to-end (PASS_UNIFIED) but the anchor comparison is
+INFORMATIONAL only: the plan defines the ±0.02 gate at production n
+(~4724-5000 conversations), where a grouped-CV R^2 at smoke n (~8) can never
+reproduce the anchors by construction (crash-fix r3, att-20260715-161700).
+The production HALT semantics are untouched.
 """
 
 from __future__ import annotations
@@ -184,8 +189,68 @@ def load_matched(matched_dir: Path) -> dict:
 # ---------------------------------------------------------------------------
 # Parity gate — re-extracted context arm vs pinned parent anchors (±0.02)
 # ---------------------------------------------------------------------------
-def parity_gate(turnstore_dir: Path, out_dir: Path, *, tol: float = c.PARITY_TOL) -> None:
-    """Halt (exit 3) when any re-extracted context-arm L19 R^2 drifts > tol."""
+def _parity_cell_line(
+    model: str,
+    regime: str,
+    ours: float,
+    anchor: float,
+    dev: float,
+    tol: float,
+    n_rows: int,
+    smoke: bool,
+) -> str:
+    """Per-(model, regime) parity log line — informational form under smoke.
+
+    The anchor comparison binds only at production n (~4724-5000): a grouped-CV
+    R^2 at smoke n (~8) can never reproduce the anchors, so the smoke leg logs
+    the numbers without a PASS/FAIL verdict (crash-fix r3).
+    """
+    if smoke:
+        return (
+            f"[parity][smoke] informational: {model}/{regime} ours={ours:.4f} "
+            f"anchor={anchor:.4f} dev={dev:.4f} (n={n_rows} — anchor check binds "
+            "at production n only)"
+        )
+    return (
+        f"[parity] {model}/{regime}: ours={ours:.4f} anchor={anchor:.4f} "
+        f"dev={dev:.4f} ({'PASS' if dev <= tol else 'FAIL'})"
+    )
+
+
+def _parity_finalize(failures: list[str], tol: float, smoke: bool) -> None:
+    """Terminal parity verdict: production HALT (exit 3) — untouched; smoke informational.
+
+    Raises SystemExit(3) on any production failure; under smoke it only logs
+    (the smoke leg exercises the identical computation, PASS_UNIFIED, but the
+    ±0.02 plan §7 kill criterion is defined for the production re-extraction).
+    """
+    if not failures:
+        return
+    if smoke:
+        print(
+            f"[parity][smoke] {len(failures)} cell(s) deviate > ±{tol} at smoke n — "
+            "informational only (production HALT semantics unchanged)",
+            flush=True,
+        )
+        return
+    print(
+        f"[parity] HALT: {failures} deviate > ±{tol} from the pinned anchors "
+        "(plan §7 Phase-0/2a parity kill) — diagnose before any cross-regime read",
+        file=sys.stderr,
+        flush=True,
+    )
+    raise SystemExit(3)
+
+
+def parity_gate(
+    turnstore_dir: Path, out_dir: Path, *, tol: float = c.PARITY_TOL, smoke: bool = False
+) -> None:
+    """Halt (exit 3) when any re-extracted context-arm L19 R^2 drifts > tol.
+
+    smoke=True runs the identical end-to-end computation but demotes the
+    anchor comparison to informational (no HALT) — the anchors were computed
+    at production n and are unsatisfiable at smoke n by construction.
+    """
     results, failures = {}, []
     for (model, regime), anchor_file in c.PARITY_ANCHOR_FILES.items():
         anchor_path = Path(anchor_file)
@@ -220,8 +285,7 @@ def parity_gate(turnstore_dir: Path, out_dir: Path, *, tol: float = c.PARITY_TOL
             "pass": bool(dev <= tol),
         }
         print(
-            f"[parity] {model}/{regime}: ours={ours:.4f} anchor={anchor:.4f} "
-            f"dev={dev:.4f} ({'PASS' if dev <= tol else 'FAIL'})",
+            _parity_cell_line(model, regime, ours, anchor, dev, tol, len(xy["conv_ids"]), smoke),
             flush=True,
         )
         if dev > tol:
@@ -229,18 +293,14 @@ def parity_gate(turnstore_dir: Path, out_dir: Path, *, tol: float = c.PARITY_TOL
     payload = {
         "metadata": c.metadata(fc.FIT_SEED, len(results), "scripts/issue1345_fit_cells.py"),
         "tolerance": tol,
+        "mode": "smoke-informational" if smoke else "binding",
         "results": results,
-        "pass": not failures,
+        # Under smoke the anchor check is non-binding: pass is None (not a
+        # verdict), never a fake True/False the sentinel could misread.
+        "pass": None if smoke else not failures,
     }
     c.write_json(out_dir / "parity_gate.json", payload)
-    if failures:
-        print(
-            f"[parity] HALT: {failures} deviate > ±{tol} from the pinned anchors "
-            "(plan §7 Phase-0/2a parity kill) — diagnose before any cross-regime read",
-            file=sys.stderr,
-            flush=True,
-        )
-        raise SystemExit(3)
+    _parity_finalize(failures, tol, smoke)
 
 
 # ---------------------------------------------------------------------------
@@ -329,6 +389,12 @@ def main() -> None:
     ap.add_argument("--build-matched", action="store_true")
     ap.add_argument("--no-r3", action="store_true", help="story regime halted (yield floor)")
     ap.add_argument("--parity", action="store_true", help="±0.02 anchor parity gate")
+    ap.add_argument(
+        "--smoke",
+        action="store_true",
+        help="smoke leg: parity anchor check runs but is informational "
+        "(anchors bind at production n only); fits/matched-n unchanged",
+    )
     ap.add_argument("--cells", default=None, help="'all' or comma-separated cell ids")
     ap.add_argument("--folds", type=int, default=fc.N_FOLDS)
     ap.add_argument("--seed", type=int, default=fc.FIT_SEED)
@@ -341,7 +407,7 @@ def main() -> None:
         phase0_probe(args.dl_dir, args.out_dir)
         return
     if args.parity:
-        parity_gate(args.turnstore_dir, args.out_dir)
+        parity_gate(args.turnstore_dir, args.out_dir, smoke=args.smoke)
     if args.build_matched:
         build_matched(args.turnstore_dir, args.matched_dir, include_r3=not args.no_r3)
     if args.cells:
