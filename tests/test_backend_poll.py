@@ -23,7 +23,9 @@ after the poller wiring + the GCP poll-discrimination land. Modeled on
 
 from __future__ import annotations
 
+import ast
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -3152,6 +3154,95 @@ def test_ensure_scripts_dir_bootstrap_resolves_runpod_api_in_module_mode(monkeyp
         sys.modules.pop("runpod_api", None)
 
 
+_MODULE_MODE_CONSUMER_RE = re.compile(
+    r"(?:from scripts\.([A-Za-z_]\w*) import"
+    r"|import scripts\.([A-Za-z_]\w*)"
+    r"|import_module\(\s*[\"']scripts\.([A-Za-z_]\w*))"
+)
+# 4th form: ``from scripts import X [as Y][, Z]`` — a completely standard
+# module-mode import (25 occurrences / 8 test files at #1316 time) invisible
+# to the three alternations above.
+_FROM_SCRIPTS_IMPORT_RE = re.compile(
+    r"from scripts import ([A-Za-z_]\w*(?:\s+as\s+\w+)?(?:\s*,\s*[A-Za-z_]\w*(?:\s+as\s+\w+)?)*)"
+)
+
+
+def _module_mode_consumer_stems(repo_root: Path, stems: set[str]) -> set[str]:
+    """Stems of scripts/*.py imported in MODULE mode by any src/ or tests/
+    file. Deliberately over-inclusive (a docstring spelling an import form
+    adds its stem — safe direction: over-scanning demands guards, never
+    skips them); non-stem junk (scripts.foo fixtures) falls out by the
+    intersection with real scripts/*.py stems."""
+    derived: set[str] = set()
+    for tree_root in (repo_root / "src", repo_root / "tests"):
+        for p in tree_root.rglob("*.py"):
+            text = p.read_text(encoding="utf-8")
+            for m in _MODULE_MODE_CONSUMER_RE.finditer(text):
+                derived.add(m.group(1) or m.group(2) or m.group(3))
+            for m in _FROM_SCRIPTS_IMPORT_RE.finditer(text):
+                for seg in m.group(1).split(","):
+                    derived.add(seg.split()[0])
+    return derived & stems
+
+
+def _is_main_block_test(test: ast.expr) -> bool:
+    """True iff ``test`` is the ``__name__ == "__main__"`` comparison
+    (either operand order)."""
+    if not isinstance(test, ast.Compare) or len(test.comparators) != 1:
+        return False
+    left, right = test.left, test.comparators[0]
+
+    def _name(n: ast.expr) -> bool:
+        return isinstance(n, ast.Name) and n.id == "__name__"
+
+    def _lit(n: ast.expr) -> bool:
+        return isinstance(n, ast.Constant) and n.value == "__main__"
+
+    return (_name(left) and _lit(right)) or (_lit(left) and _name(right))
+
+
+def _has_module_level_scripts_bootstrap(source: str) -> bool:
+    """True iff ``source`` inserts the scripts dir on sys.path AT IMPORT TIME
+    in MODULE mode: a ``sys.path.insert(0, <arg>)`` at module scope —
+    descending module-level If/Try/With/For/While (the ``if _SCRIPTS_DIR not
+    in sys.path:`` idiom) but NOT function/class/lambda bodies and NOT the
+    ``if __name__ == "__main__":`` block (never executes in module mode; its
+    ``else:`` branch DOES) — whose <arg> source segment names the scripts dir
+    ("scripts" substring, any case, or a ``__file__``-derived path: a
+    scripts/*.py's own dirname IS scripts/). Module-level statements run to
+    completion before any function in the module can be called, so a
+    recognized bootstrap covers EVERY function-local lazy import in the file.
+    Local by design (not workflow_lint._scope_stmts): the lint's walk
+    INCLUDES the main-block — correct for its script-mode direction,
+    inverted for module mode."""
+    tree = ast.parse(source)
+    stack: list[ast.AST] = list(tree.body)
+    while stack:
+        node = stack.pop()
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
+            continue
+        if isinstance(node, ast.If) and _is_main_block_test(node.test):
+            stack.extend(node.orelse)
+            continue
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "insert"
+            and isinstance(node.func.value, ast.Attribute)
+            and node.func.value.attr == "path"
+            and isinstance(node.func.value.value, ast.Name)
+            and node.func.value.value.id == "sys"
+            and len(node.args) == 2
+            and isinstance(node.args[0], ast.Constant)
+            and node.args[0].value == 0
+        ):
+            seg = ast.get_source_segment(source, node.args[1]) or ""
+            if "scripts" in seg.lower() or "__file__" in seg:
+                return True
+        stack.extend(ast.iter_child_nodes(node))
+    return False
+
+
 def _inside_type_checking_block(lines: list[str], i: int) -> bool:
     """True iff ``lines[i]`` sits INSIDE an ``if TYPE_CHECKING:`` block.
 
@@ -3182,21 +3273,34 @@ def test_every_lazy_scripts_local_import_is_bootstrap_guarded():
     is exactly what let the unguarded ``failure_classifier`` site slip past
     it, #1304): every INDENTED (function-local, lazy) import of a
     scripts-local module — any stem of ``scripts/*.py``, derived DYNAMICALLY
-    so a future scripts-local module is auto-covered — in
-    scripts/backend_poll.py AND scripts/pod_config.py must have the
-    scripts-dir bootstrap (``_ensure_scripts_dir_on_sys_path()`` or the
-    inline ``sys.path.insert(0, scripts_dir)``) within the preceding ~12
-    lines, so a FUTURE bare site cannot re-introduce the module-mode
-    ModuleNotFoundError landmine. Scan scope is these TWO files — the ones
-    with known module-mode lazy sites (the poller + pod_config's module-mode
-    consumers, e.g. ``backends/runpod.py``); a future widening starts from
-    them. Both import forms are matched: ``from X import ...`` (undotted
-    module names only, so module-mode-safe ``from scripts.pod_config import
-    ...`` consumers are excluded by construction) and
-    ``import X [as Y][, Z [as W]]``. Comment lines never satisfy the guard;
-    an ``if TYPE_CHECKING:`` block member is exempt by BLOCK MEMBERSHIP only
-    (``_inside_type_checking_block``)."""
-    import re
+    so a future scripts-local module is auto-covered — must be GUARDED, in
+    EVERY scripts/*.py that src/ or tests/ imports in MODULE mode. The file
+    axis is DYNAMIC as of #1316 (the pre-#1316 scan was a hardcoded
+    backend_poll.py + pod_config.py tuple — the same fixed-axis defect on
+    the FILE axis that #1304 removed on the module-name axis):
+    ``_module_mode_consumer_stems`` derives the scan set from the 4
+    module-mode import forms (``from scripts.X import`` /
+    ``import scripts.X`` / ``import_module("scripts.X")`` /
+    ``from scripts import X [as Y][, Z]``). GUARD semantics: a flagged site
+    passes with EITHER the per-site scripts-dir bootstrap
+    (``_ensure_scripts_dir_on_sys_path()`` or the inline
+    ``sys.path.insert(0, scripts_dir)``) within the preceding ~12 lines, OR
+    a module-top-level scripts-dir ``sys.path`` bootstrap
+    (``_has_module_level_scripts_bootstrap`` — module-level statements run
+    to completion before any function-local import can execute, so it
+    covers every lazy site in the file; live exemplars:
+    ``autonomous_session_watch.py``, ``i488_phase4_eval_onpolicy.py``,
+    ``issue779_collect.py``). So a FUTURE bare site cannot re-introduce the
+    module-mode ModuleNotFoundError landmine. Both site-level import forms
+    are matched: ``from X import ...`` (undotted module names only, so
+    module-mode-safe ``from scripts.pod_config import ...`` consumers are
+    excluded by construction) and ``import X [as Y][, Z [as W]]``. Comment
+    lines never satisfy the guard; an ``if TYPE_CHECKING:`` block member is
+    exempt by BLOCK MEMBERSHIP only (``_inside_type_checking_block``).
+    Still-accepted derivation escapes (documented residual): a variable
+    ``importlib.import_module(name)``, ``__import__(...)``, and bare
+    ``sys.modules`` string lookups do not match the derivation regexes —
+    the 4-stem floor assert below bounds silent narrowing."""
     import sys
 
     import scripts.backend_poll as bp
@@ -3219,8 +3323,24 @@ def test_every_lazy_scripts_local_import_is_bootstrap_guarded():
         r"(?:\s*,\s*[A-Za-z_]\w*(?:\s+as\s+\w+)?)*)\s*(#.*)?$"
     )
 
-    for fname in ("backend_poll.py", "pod_config.py"):
-        lines = (scripts_dir / fname).read_text(encoding="utf-8").splitlines()
+    scan = _module_mode_consumer_stems(scripts_dir.parent, stems)
+    # Derivation-regression floor: the 2 legacy files are the pin's
+    # historical minimum; the watcher is a stable third consumer
+    # (tests/test_router.py + this file import it); gpu_heuristics is
+    # module-mode-reachable ONLY via the ``from scripts import X`` form
+    # (tests/test_gcp_backend.py), so it pins that 4th alternation.
+    assert {"backend_poll", "pod_config", "autonomous_session_watch", "gpu_heuristics"} <= scan, (
+        f"module-mode consumer derivation regressed below its floor — derived: {sorted(scan)}"
+    )
+
+    for stem in sorted(scan):
+        fname = f"{stem}.py"
+        source = (scripts_dir / fname).read_text(encoding="utf-8")
+        lines = source.splitlines()
+        # A module-top-level scripts-dir bootstrap executes before ANY
+        # function-local import in this file can run (Python import
+        # semantics), so it covers every flagged site below.
+        module_bootstrap = _has_module_level_scripts_bootstrap(source)
         n_flagged = 0
         for i, line in enumerate(lines):
             m = from_re.match(line)
@@ -3234,6 +3354,8 @@ def test_every_lazy_scripts_local_import_is_bootstrap_guarded():
             if _inside_type_checking_block(lines, i):
                 continue  # type-checking-only import; no runtime effect
             n_flagged += 1
+            if module_bootstrap:
+                continue  # covered by the module-top bootstrap (import-time)
             window = [
                 ln.strip()
                 for ln in lines[max(0, i - 12) : i]
@@ -3249,7 +3371,55 @@ def test_every_lazy_scripts_local_import_is_bootstrap_guarded():
                 f"_ensure_scripts_dir_on_sys_path() directly above the import "
                 f"(#1296/#1304)"
             )
-        assert n_flagged, (
-            f"expected >=1 flagged lazy scripts-local import site in scripts/{fname} "
-            f"(non-vacuity: the scan went blind if this fires)"
-        )
+        if stem in ("backend_poll", "pod_config"):
+            # Per-file non-vacuity kept for the 2 legacy files ONLY — most
+            # scanned files legitimately have 0 lazy scripts-local sites.
+            assert n_flagged, (
+                f"expected >=1 flagged lazy scripts-local import site in scripts/{fname} "
+                f"(non-vacuity: the scan went blind if this fires)"
+            )
+
+
+def test_module_level_scripts_bootstrap_recognizer_semantics():
+    """Pins ``_has_module_level_scripts_bootstrap``'s subtle arms (#1316): a
+    top-level scripts-dir insert and the conditional ``if _SCRIPTS_DIR not
+    in sys.path:`` idiom are recognized; an insert ONLY inside
+    ``if __name__ == "__main__":`` (never executes in module mode) or ONLY
+    inside a function body (does not run at import time) is NOT; a
+    module-level insert of a NON-scripts dir (``src``) is NOT."""
+    # (i) top-level unconditional scripts-dir insert -> True
+    assert _has_module_level_scripts_bootstrap(
+        "import sys\n"
+        "from pathlib import Path\n"
+        "ROOT = Path(__file__).resolve().parent.parent\n"
+        'sys.path.insert(0, str(ROOT / "scripts"))\n'
+    )
+    # (ii) the conditional `if _SCRIPTS_DIR not in sys.path:` idiom -> True
+    # (the watcher's live shape, autonomous_session_watch.py)
+    assert _has_module_level_scripts_bootstrap(
+        "import sys\n"
+        "from pathlib import Path\n"
+        "_SCRIPTS_DIR = str(Path(__file__).resolve().parent)\n"
+        "if _SCRIPTS_DIR not in sys.path:\n"
+        "    sys.path.insert(0, _SCRIPTS_DIR)\n"
+    )
+    # (iii) insert ONLY inside `if __name__ == "__main__":` -> False
+    # (the main-block never executes in module mode)
+    assert not _has_module_level_scripts_bootstrap(
+        "import sys\n"
+        "from pathlib import Path\n"
+        'if __name__ == "__main__":\n'
+        "    sys.path.insert(0, str(Path(__file__).resolve().parent))\n"
+    )
+    # (iv) insert ONLY inside a function body -> False (not import-time)
+    assert not _has_module_level_scripts_bootstrap(
+        'import sys\ndef _boot():\n    sys.path.insert(0, "scripts")\n'
+    )
+    # (v) module-level insert of a NON-scripts dir -> False
+    # (issue779_collect.py's module-top `src` insert must not count alone)
+    assert not _has_module_level_scripts_bootstrap(
+        "import sys\n"
+        "from pathlib import Path\n"
+        "ROOT = Path('/repo')\n"
+        'sys.path.insert(0, str(ROOT / "src"))\n'
+    )
