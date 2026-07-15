@@ -12,10 +12,16 @@ origin_prompt: 'can you add an issue based on the next step? let''s plan it here
   for these different contexts — although this seems similar to KL divergence and
   that didn''t work too well — testing this now'']'
 workflow: v1
+goal: Test whether function-space similarity between per-context-family fitted linear
+  context→answer maps (cross-family transfer R² / prediction agreement on the frozen
+  base model, both prefix-based and context-based arms) predicts fine-tuning leakage
+  from source persona to target contexts on an existing measured leakage matrix, with
+  incremental validity over the activation-cosine, JS-divergence, base-rate-prior,
+  and whitened-gate baselines under group-level held-out (LOFO) evaluation.
 ---
 ## Goal
 
-Test whether FUNCTION-SPACE similarity between per-context-family fitted linear context→answer maps predicts fine-tuning leakage from a source persona to target contexts — and whether it beats the established representation-similarity predictors (activation cosine #404, JS divergence #458, base-rate prior #500/#532/#541, whitened gate #667) on the SAME held-out leakage ground truth.
+Test whether function-space similarity between per-context-family fitted linear context→answer maps (cross-family transfer R² / prediction agreement on the frozen base model, both prefix-based and context-based arms) predicts fine-tuning leakage from source persona to target contexts on an existing measured leakage matrix, with incremental validity over the activation-cosine, JS-divergence, base-rate-prior, and whitened-gate baselines under group-level held-out (LOFO) evaluation.
 
 **Formalization (to be sharpened by the planner):** for each context family c (persona/prefix over a shared query bank), fit the per-family linear map h_c: state(c, q) → answer-state(c, q) on the frozen base model. Define the mapping-similarity S(c_i, c_j) in FUNCTION space — cross-family transfer R² (h_{c_i} scored on c_j's rows, symmetrized) and/or held-out prediction agreement R²(ŷ_i, ŷ_j) — never weight-space cosine (#823 matched-half calibration: weight cosine is estimation noise at feasible n). The hypothesis: S(source, target) predicts the measured leakage matrix L(source → target) across target contexts, held-out at the group level (LOFO), with incremental validity over the representation-similarity baselines computed on the identical rows.
 
