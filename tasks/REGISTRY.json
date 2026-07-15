@@ -2671,8 +2671,8 @@
     "1342": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1342",
-      "status": "planning",
+      "path": "tasks/approved/1342",
+      "status": "approved",
       "title": "workflow-fix: signature-bind fenced calls in the deferred-import sweep"
     },
     "1343": {
