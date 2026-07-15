@@ -17,6 +17,8 @@ goal: 'Determine whether the assistant context→answer map is the SAME linear o
   reparameterization (the #825 Result-2.5 method), in Qwen2.5-7B base and instruct,
   distinguishing ''same map in different coordinates'' from ''genuinely different
   map per framing.'''
+relates_to:
+- identity-contextual-vs-base
 ---
 # Is the assistant context→answer map the SAME operator across framings? (chat template vs plain User:/Assistant: vs assistant-in-narrative-stories)
 
