@@ -753,8 +753,9 @@ with the turn.
   output file. Never end the turn while a poll is still pending.
 - **Every VM-side python launch — smokes included — carries the shared-VM
   thread-cap prefix**
-  `OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8`
-  (#847/#891). The in-repo `orchestrate.env` setdefault is pinned to your
+  `OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2`
+  (#847/#891; the arena cap tames glibc arena-fragmentation RSS growth across
+  passes — #1315). The in-repo `orchestrate.env` setdefault is pinned to your
   worktree's branch point (Step 5a never syncs `src/`) and cannot
   in-process-cap a script that imports torch before `load_dotenv()`; the
   explicit launch env caps both, regardless of branch age (incidents #779:
@@ -774,7 +775,7 @@ with the turn.
 - A locally-launched background PROCESS is never your deliverable either:
   it dies with your subagent shell. A long local job that must outlive the
   turn: launch
-  `setsid env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 ... < /dev/null &`,
+  `setsid env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 ... < /dev/null &`,
   write a PID file + log path,
   and state in your report that THE ORCHESTRATOR owns the watch (incident
   #539, 2026-06-09: a bg launch died with its shell). Protect the launched

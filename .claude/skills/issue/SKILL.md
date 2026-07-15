@@ -5791,7 +5791,7 @@ Any VM-LOCAL compute phase with projected wall-time >~15 min that the
 orchestrator launches DIRECTLY as bg-Bash (a Phase-D-style fit, an
 aggregation / permutation battery) MUST be launched fully detached:
 
-    PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
+    PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
     ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
                                   # recover via pgrep -f '<distinctive invocation>'
     bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PHASE_PID" >/dev/null \
@@ -5832,7 +5832,13 @@ die first. Lowering adj needs CAP_SYS_RESOURCE, hence `sudo -n` (passwordless
 on the VM); on failure the launch PROCEEDS unprotected with the `[warn]` +
 `choom=failed` breadcrumb token — never block a launch on choom, and never read
 the sweep as guaranteed protection (it re-orders earlyoom's victim selection;
-it does not exempt the phase). Record `choom=ok` ONLY when the sweep pipeline
+it does not exempt the phase). (#1315 observed the gap live: choom on the
+launch pids did not stick to the python3 child `uv run` spawned moments later —
+a child forked before its parent's adjustment lands inherits nothing, and the
+one-shot sweep never revisits; optionally re-run the sweep once the workload's
+real python3 pid appears. choom stays best-effort — MALLOC_ARENA_MAX=2 in the
+launch prefix is the real fix for the arena-fragmentation memory class.)
+Record `choom=ok` ONLY when the sweep pipeline
 itself exited zero; anything else records `choom=failed`. The −600 derivation
 assumes this VM's current `--prefer` +300 python bonus (`/etc/default/earlyoom`);
 re-derive from the decomposition above if that config changes.
@@ -8153,7 +8159,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       this verdict on it:
       ```bash
       REFRESH_PID=$(bash -c 'cd "$1" || exit 1; setsid nohup timeout --kill-after=60s 2100s \
-        env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 \
+        env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
         uv run python scripts/step9c_baseline.py refresh \
         >> "$1/logs/step9c_baseline_refresh.log" 2>&1 < /dev/null & echo $!' _ "$REPO_ROOT")
       # earlyoom-protect the refresh (#1045; fail-open): sweep its session; the refresh's own
@@ -9414,7 +9420,7 @@ tests BEFORE anything lands:
       if [ "${#TG_BASE_TESTS[@]}" -gt 0 ]; then
         ( cd "$REPO_ROOT" && timeout --kill-after=30s 300s \
           env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
-              NUMEXPR_NUM_THREADS=8 \
+              NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
           uv run pytest "${TG_BASE_TESTS[@]}" -q -p no:cacheprovider ) \
           > /tmp/issue-<N>-tg-baseline.txt 2>&1 || TG_BASE_RC=$?
       else
@@ -9424,7 +9430,7 @@ tests BEFORE anything lands:
       # (deliberately NOT the #1212 gate tree — see the mapped-leg residuals):
       ( cd "$WT" && timeout --kill-after=30s 300s \
         env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
-            NUMEXPR_NUM_THREADS=8 \
+            NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
         uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider ) \
         > /tmp/issue-<N>-tg-gated.txt 2>&1 || TG_RC=$?
       # rc 0 = green, 1 = test failures (attributable); ANY other rc
@@ -10346,7 +10352,7 @@ Decision tree:
     mapfile -t TG_TESTS < <(cut -f1 /tmp/issue-<N>-tg-map.txt | sort -u)
     ( cd "$REPO_ROOT" && timeout --kill-after=30s 300s \
       env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
-          NUMEXPR_NUM_THREADS=8 \
+          NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
       uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider ) \
       > /tmp/issue-<N>-tg-baseline.txt 2>&1 || TG_BASE_RC=$?
   fi
@@ -10404,7 +10410,7 @@ Decision tree:
   if [ "$TG_CRASH" = no ] && [ -s /tmp/issue-<N>-tg-map.txt ]; then
     ( cd "$REPO_ROOT" && timeout --kill-after=30s 300s \
       env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
-          NUMEXPR_NUM_THREADS=8 \
+          NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
       uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider ) \
       > /tmp/issue-<N>-tg-gated.txt 2>&1 || TG_RC=$?
     if [ "$TG_RC" -gt 1 ] || [ "$TG_BASE_RC" -gt 1 ]; then TG_CRASH=yes; fi

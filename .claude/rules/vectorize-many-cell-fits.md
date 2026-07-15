@@ -134,7 +134,13 @@ solve one shared reduction + cheap per-λ updates.
    snippet here, follow it there. This VM's earlyoom `--prefer` gives every
    python/pytest process +300 badness, so an unprotected fit is the designated
    victim of ANY neighbor's memory spike (#811: a healthy 6.8 GiB re-fit
-   SIGTERM'd ~2h in, 0 checkpoints, by a neighbor's spike). AND per-cell
+   SIGTERM'd ~2h in, 0 checkpoints, by a neighbor's spike). The launch
+   prefix's MALLOC_ARENA_MAX=2 is load-bearing for THIS phase class: RSS
+   growth across passes with no large single allocation is glibc
+   arena fragmentation (a ≤tens-of-MB-per-pass eigh bootstrap ballooned to
+   20-21.7 GB and was earlyoom-killed twice; the arena cap held the identical
+   run at ~1 GB, #1315) — choom only re-orders victim selection; the arena
+   cap removes the memory pressure itself. AND per-cell
    checkpoints + a resume predicate are REQUIRED for any loop projected >~1h
    (`.claude/rules/code-style.md` § "Checkpoint per phase", intra-phase grain):
    choom only re-orders victim selection — checkpoints bound the loss when a
@@ -145,13 +151,14 @@ solve one shared reduction + cheap per-λ updates.
    supervisor-driven retry, crash-fix round, or the kill+relaunch-on-batched
    of the Supersede contract / Mid-run trigger — MUST carry the IDENTICAL env
    pins (the `OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8
-   NUMEXPR_NUM_THREADS=8` thread caps) and choom protection as the reviewed
+   NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2` thread + arena caps) and choom
+   protection as the reviewed
    ORIGINAL launch command. A relaunch composes a FRESH command, so pins do
    not carry over by inertia (#811: the relaunch supervisor omitted the
    OMP/MKL pins — ~55 min at 0/108 checkpoints). The supervisor/relauncher
-   VERIFIES all four pins are present in the composed command string BEFORE
+   VERIFIES all five pins are present in the composed command string BEFORE
    dispatch — e.g.
-   `for pin in OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS; do case "$CMD" in *"$pin="*) ;; *) echo "FATAL: relaunch missing $pin" >&2; exit 1;; esac; done`
+   `for pin in OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS MALLOC_ARENA_MAX; do case "$CMD" in *"$pin="*) ;; *) echo "FATAL: relaunch missing $pin" >&2; exit 1;; esac; done`
    — and records `pins=verified` in the relaunch breadcrumb alongside
    `pid= log= choom=`. The helper-side default cap in
    `vectorized_mlp_skill.py` (`_resolve_num_threads`, #1079) is
