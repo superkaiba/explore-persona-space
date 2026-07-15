@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1339,
+  "highest_id": 1340,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2653,6 +2653,13 @@
       "path": "tasks/completed/134",
       "status": "completed",
       "title": "is it more important to associate tokens or persona"
+    },
+    "1340": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1340",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas bullet \u2014 single-arm smokes blind to per-arm seams"
     },
     "135": {
       "has_clean_result": false,
