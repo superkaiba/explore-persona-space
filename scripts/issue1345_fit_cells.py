@@ -127,6 +127,38 @@ def phase0_probe(dl_dir: Path, out_dir: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Fold-degeneracy guard (smoke-path ONLY — production callers never consult it)
+# ---------------------------------------------------------------------------
+def degenerate_fold_reason(conv_ids, *, n_folds: int, seed: int, tgt_conv_ids=None) -> str | None:
+    """Reason string when grouped n_folds CV over these rows would fit NOTHING.
+
+    Mirrors the reused #825 per-fold skip predicate (heldout_r2_sweep /
+    transfer_sweep: a fold runs iff its held-out set is non-empty AND the
+    train side has >= 3 rows) with the SAME seeded fold assignment.
+    ``tgt_conv_ids`` switches to the transfer shape (src trains, tgt
+    evaluates; per-side fold assignments). Returns None when at least one
+    fold would fit. Smoke guard only: at story-shortfall grains (kept=1-3
+    stories) ALL folds skip and downstream .all()/empty-array consumers
+    crash (#1345 v3 code-review bug-class sweep); production paths stay
+    byte-untouched and never call this.
+    """
+    src = np.asarray([str(x) for x in conv_ids])
+    tgt = src if tgt_conv_ids is None else np.asarray([str(x) for x in tgt_conv_ids])
+    if len(src) == 0 or len(tgt) == 0:
+        return f"0 rows (src={len(src)}, tgt={len(tgt)})"
+    folds_src = fc._cv_folds(src, n_folds, seed)
+    folds_tgt = folds_src if tgt_conv_ids is None else fc._cv_folds(tgt, n_folds, seed)
+    for k in range(n_folds):
+        if (folds_tgt == k).sum() > 0 and (folds_src != k).sum() >= 3:
+            return None
+    return (
+        f"all {n_folds} folds skip (src rows={len(src)}, groups={len(np.unique(src))}; "
+        f"tgt rows={len(tgt)}, groups={len(np.unique(tgt))}; every fold has an empty "
+        "held-out set or <3 train rows)"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Phase 3 — matched-n subsets
 # ---------------------------------------------------------------------------
 def build_matched(turnstore_dir: Path, matched_dir: Path, *, include_r3: bool) -> dict:
@@ -136,7 +168,19 @@ def build_matched(turnstore_dir: Path, matched_dir: Path, *, include_r3: bool) -
         for regime in ("r1", "r2"):
             id_sets[(model, regime)] = bundle_conv_ids(turnstore_dir, model, regime)
     shared = sorted(set.intersection(*(set(v) for v in id_sets.values())))
-    assert shared, "shared R1/R2 conversation subset is EMPTY — extraction drift"
+    if not shared:
+        # Actionable in BOTH modes (v3 sweep item: never a bare AssertionError).
+        # An empty 4-stem intersection cannot be informationally skipped — every
+        # downstream phase consumes matched_subsets.json — and under smoke the
+        # four stems extract the SAME first-8 conversations, so emptiness is a
+        # real extraction bug the smoke exists to surface.
+        sizes = {f"{m}_{r}": len(v) for (m, r), v in id_sets.items()}
+        raise RuntimeError(
+            "shared R1/R2 conversation subset is EMPTY — extraction drift "
+            f"(per-store row counts: {sizes}). All four stems render the same "
+            "track-S corpus, so a non-empty intersection is expected at ANY n "
+            "(smoke included); check the extract_r1r2 shard sidecars."
+        )
     out: dict = {
         "metadata": c.metadata(c.SUBSAMPLE_SEED, len(shared), "scripts/issue1345_fit_cells.py"),
         "shared_r1r2_convs": shared,
@@ -324,6 +368,7 @@ def run_cells(
     seed: int,
     null_draws: int,
     n_boot: int,
+    smoke: bool = False,
 ) -> None:
     preds_dir.mkdir(parents=True, exist_ok=True)
     # Loader-path assert + ONE slim load per (model, regime) — plan §4 Phase 4
@@ -335,6 +380,24 @@ def run_cells(
             bundles[key] = load_regime_bundle(turnstore_dir, *key)
     for cell in cells:
         cid = cell["cell_id"]
+        if smoke:
+            # Smoke fold-degeneracy guard (v3 sweep class): at story-shortfall
+            # grains (kept=1-3) every fold skips inside run_cell's grouped CV
+            # and the downstream bootstrap/summary consumers crash on empty
+            # arrays. Skip the cell informationally; production never guards.
+            xy_probe = fc._apply_row_allowlist(
+                fc._cell_xy(bundles[(cell["model_key"], cell["regime"])], cell),
+                allowlist_for(cell, matched),
+                cid,
+            )
+            reason = degenerate_fold_reason(xy_probe["conv_ids"], n_folds=n_folds, seed=seed)
+            if reason:
+                print(
+                    f"[fits][smoke] SKIP cell {cid}: {reason} — informational "
+                    "(production semantics unchanged)",
+                    flush=True,
+                )
+                continue
         res = fc.run_cell(
             cell,
             turnstore_dir,
@@ -392,8 +455,9 @@ def main() -> None:
     ap.add_argument(
         "--smoke",
         action="store_true",
-        help="smoke leg: parity anchor check runs but is informational "
-        "(anchors bind at production n only); fits/matched-n unchanged",
+        help="smoke leg: parity anchor check runs but is informational (anchors "
+        "bind at production n only); fit cells whose grouped CV would be "
+        "degenerate at smoke n are skipped with a logged reason",
     )
     ap.add_argument("--cells", default=None, help="'all' or comma-separated cell ids")
     ap.add_argument("--folds", type=int, default=fc.N_FOLDS)
@@ -430,6 +494,7 @@ def main() -> None:
             seed=args.seed,
             null_draws=args.null_draws,
             n_boot=args.n_boot,
+            smoke=args.smoke,
         )
 
 

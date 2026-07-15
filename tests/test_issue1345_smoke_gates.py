@@ -29,6 +29,8 @@ from __future__ import annotations
 
 import json
 import logging
+import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -41,10 +43,15 @@ for _p in (str(_REPO_ROOT / "scripts"), str(_REPO_ROOT / "src")):
         sys.path.insert(0, _p)
 
 import issue1345_common as c  # noqa: E402
+import issue1345_cross_regime_transfer as xt  # noqa: E402
 import issue1345_fit_cells as m  # noqa: E402
 import issue1345_gen_stories as gs  # noqa: E402
+import issue1345_operator_comparison as ocm  # noqa: E402
+import issue1345_plots as plots_mod  # noqa: E402
 
 from explore_persona_space.orchestrate import env as env_mod  # noqa: E402
+
+_DISPATCH_SH = _REPO_ROOT / "scripts" / "issue1345_dispatch.sh"
 
 N_CONV = 8  # the crashed smoke leg's conversation cap
 N_LAYERS = 28  # fc.EXPECTED_LAYERS — parity slices layer 19, so keep the real depth
@@ -241,3 +248,179 @@ def test_no_dotenv_without_credentials_still_warns(monkeypatch, caplog):
         env_mod.load_dotenv()
     warnings = [r for r in caplog.records if r.levelno >= logging.WARNING]
     assert any("No .env found" in r.getMessage() for r in warnings)
+
+
+# ---------------------------------------------------------------------------
+# Round 4 — production-n-calibrated / never-executed-at-smoke-n gate class
+# (v3 code-review Bug-class sweep; proactive hardening, not a crash round)
+# ---------------------------------------------------------------------------
+def _r3_bundle(n_rows: int = 3, n_groups: int = 1, seed: int = 0) -> dict:
+    """Story-shortfall-grain bundle: kept=1 story -> few rows, one CV group."""
+    rng = np.random.default_rng(seed)
+    ids = [f"story{i % n_groups}" for i in range(n_rows)]
+    return {
+        "arrays": {
+            "slots": rng.normal(size=(n_rows, 2, N_LAYERS, DIM)).astype(np.float32),
+            "profiles": rng.normal(size=(n_rows, 1, N_LAYERS, DIM)).astype(np.float32),
+        },
+        "sidecar": {"conv_ids": ids},
+    }
+
+
+def test_degenerate_fold_reason_units():
+    """Mirrors the reused #825 fold-skip predicate exactly (te>0 AND tr>=3)."""
+    ids8 = [f"conv{i}" for i in range(8)]
+    assert m.degenerate_fold_reason(ids8, n_folds=5, seed=0) is None
+    one_group = m.degenerate_fold_reason(["s0"] * 3, n_folds=5, seed=0)
+    assert one_group is not None and "all 5 folds skip" in one_group
+    # <=3 rows total: every fold's train side is <3 regardless of grouping
+    assert m.degenerate_fold_reason(["a", "b", "c"], n_folds=5, seed=0) is not None
+    # transfer shape: big src trains fine even when tgt is one group
+    assert m.degenerate_fold_reason(ids8, n_folds=5, seed=0, tgt_conv_ids=["s0"] * 3) is None
+
+
+def test_subset_rows_production_asserts_smoke_skips(capsys):
+    xy = {
+        "X": np.zeros((4, 2, 2), np.float32),
+        "Y": np.zeros((4, 2, 2), np.float32),
+        "conv_ids": np.asarray(["a", "b", "c", "d"]),
+    }
+    # production: fail-loud assert unchanged
+    with pytest.raises(AssertionError, match="matched-subset drift"):
+        xt.subset_rows(xy, ["zz"])
+    # smoke: informational None (caller skips), logged reason
+    assert xt.subset_rows(xy, ["zz"], smoke=True, label="unit") is None
+    assert "SKIP unit" in capsys.readouterr().out
+    # non-empty selection identical in both modes
+    sub = xt.subset_rows(xy, ["a", "c"], smoke=True)
+    assert sub is not None and list(sub["conv_ids"]) == ["a", "c"]
+
+
+def test_run_cells_smoke_skips_degenerate_cell_production_crashes(tmp_path, monkeypatch, capsys):
+    """kept=1 grain: smoke skips the r3 cell informationally; production (no
+    guard) still crashes inside the reused #825 machinery — the guard is
+    smoke-only by construction."""
+    bundle = _r3_bundle()
+    monkeypatch.setattr(m, "load_regime_bundle", lambda ts, model, regime: bundle)
+    cell = next(x for x in c.all_cells() if x["cell_id"] == "R_instruct_r3_context")
+    matched = {"shared_r1r2_convs": [f"conv{i}" for i in range(8)], "per_model_r3_pair": {}}
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    m.run_cells(
+        Path("unused"),
+        out_dir,
+        tmp_path / "preds",
+        [cell],
+        matched,
+        n_folds=5,
+        seed=0,
+        null_draws=3,
+        n_boot=25,
+        smoke=True,
+    )
+    assert not list(out_dir.glob("cells_*.json"))  # skipped, nothing written
+    assert "SKIP cell R_instruct_r3_context" in capsys.readouterr().out
+    with pytest.raises(Exception):  # noqa: B017 — pre-fix crash shape, any raise
+        m.run_cells(
+            Path("unused"),
+            out_dir,
+            tmp_path / "preds",
+            [cell],
+            matched,
+            n_folds=5,
+            seed=0,
+            null_draws=3,
+            n_boot=25,
+            smoke=False,
+        )
+
+
+def test_build_matched_empty_intersection_actionable(tmp_path, monkeypatch):
+    """Item 3: empty 4-stem intersection fails with an actionable RuntimeError
+    (never a bare AssertionError) — in both modes, since every downstream
+    phase consumes matched_subsets.json."""
+    monkeypatch.setattr(m, "bundle_conv_ids", lambda ts, model, regime: [f"{model}_{regime}_only"])
+    with pytest.raises(RuntimeError, match="extraction drift"):
+        m.build_matched(Path("unused"), tmp_path, include_r3=False)
+
+
+def test_pair_and_leg_b_smoke_skip_reason_units():
+    ids8 = np.asarray([f"conv{i}" for i in range(8)])
+    xy8 = {"conv_ids": ids8}
+    xy_tiny = {"conv_ids": np.asarray(["s0"] * 3)}
+    # production: never a skip reason (no probe runs)
+    assert ocm.pair_smoke_skip_reason(xy_tiny, xy_tiny, smoke=False, seed=0) is None
+    # smoke: healthy pair passes, degenerate side skips
+    assert ocm.pair_smoke_skip_reason(xy8, xy8, smoke=True, seed=0) is None
+    assert ocm.pair_smoke_skip_reason(xy8, xy_tiny, smoke=True, seed=0) is not None
+    assert ocm.pair_smoke_skip_reason(None, xy8, smoke=True, seed=0) == (
+        "empty matched subset at smoke n"
+    )
+    # Leg B floor: n_common < 2 skips; degenerate paired folds skip; n=8 passes
+    assert "n_common=0" in ocm.leg_b_smoke_skip_reason(0, ids8, seed=0)
+    assert "n_common=1" in ocm.leg_b_smoke_skip_reason(1, ids8, seed=0)
+    assert ocm.leg_b_smoke_skip_reason(8, ids8, seed=0) is None
+    assert ocm.leg_b_smoke_skip_reason(3, ["s0"] * 3, seed=0) is not None
+
+
+def test_headline_boot_stub_and_verdict_consumers():
+    """The smoke stub is verdict_for-compatible (NaN CIs, never a fake verdict);
+    a headline-skipped transfer JSON (no deltas) yields verdict None."""
+    stub = xt._headline_boot_stub("unit reason")
+    assert stub["skipped"] == "unit reason"
+    assert stub["delta_diff_ci_wholly_below_0"] is False
+    assert np.isnan(stub["delta_diff"]["ci_hi"])
+    assert (
+        plots_mod.verdict_for({"headline_paired_bootstrap": stub, "delta_table_l19": {}}, {})
+        is None
+    )
+    transfer = {
+        "headline_paired_bootstrap": stub,
+        "delta_table_l19": {"r1->r2": {"delta_l19": 0.0}, "r2->r1": {"delta_l19": 0.0}},
+    }
+    v = plots_mod.verdict_for(transfer, {"delta_reparam_l19": {"delta_reparam": float("nan")}})
+    assert v["verdict"] == "inconclusive"  # NaN delta_reparam never asserts a verdict
+
+
+def test_gen_rc_route_matrix():
+    """Item 5 (v3 Minor, rc-masking): halt only on {0,21}x{0,21} with a 21;
+    any real crash rc in EITHER model routes fatal — (1,21) no longer rides
+    the yield-halt branch."""
+    text = _DISPATCH_SH.read_text()
+    match = re.search(r"^gen_rc_route\(\) \{\n(?:.*\n)*?^\}", text, re.M)
+    assert match, "gen_rc_route() not found in issue1345_dispatch.sh"
+    func = match.group(0)
+    cases = {
+        (0, 0): "ok",
+        (21, 0): "halt",
+        (0, 21): "halt",
+        (21, 21): "halt",
+        (1, 21): "fatal",  # the v3 fix sketch's exact case
+        (21, 1): "fatal",
+        (1, 0): "fatal",
+        (0, 137): "fatal",
+    }
+    for (rc_i, rc_p), want in cases.items():
+        res = subprocess.run(
+            ["bash", "-c", f"{func}\ngen_rc_route {rc_i} {rc_p}"],
+            capture_output=True,
+            text=True,
+        )
+        assert res.returncode == 0, (rc_i, rc_p, res.stderr)
+        assert res.stdout.strip() == want, (rc_i, rc_p, res.stdout)
+
+
+def test_dispatch_threads_smoke_flag_into_analysis_phases():
+    """fits/transfer/opcomp launch lines carry $SMOKE_FLAG (dispatcher threading)."""
+    text = _DISPATCH_SH.read_text()
+    for tag in ("run_per_model fits", "run_per_model transfer", "run_per_model opcomp"):
+        line = next(ln for ln in text.split("\n") if tag in ln)
+        assert "$SMOKE_FLAG" in line, tag
+
+
+def test_smoke_pool_gate_weaker_than_production():
+    """Item 6 (v3 review): pool >= 2x target is smoke-safe — the smoke gate
+    (2 x 3 = 6 seeds) is strictly weaker than the production gate
+    (2 x 500 = 1000), so any pool passing production passes smoke."""
+    assert gs.SMOKE_N_STORIES == 3
+    assert 2 * gs.SMOKE_N_STORIES <= 2 * c.N_STORIES_TARGET

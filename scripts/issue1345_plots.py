@@ -49,9 +49,14 @@ def _load(path: Path) -> dict | None:
 # ---------------------------------------------------------------------------
 # Verdict lattice (plan §3 — DISJOINT and exhaustive)
 # ---------------------------------------------------------------------------
-def verdict_for(transfer: dict, opcomp: dict) -> dict:
+def verdict_for(transfer: dict, opcomp: dict) -> dict | None:
+    """Plan §3 verdict for one (model, arm); None when the headline pair was
+    smoke-skipped (degenerate at smoke n — the transfer JSON records the
+    reason under skipped_pairs; production always carries both deltas)."""
     boot = transfer["headline_paired_bootstrap"]
     deltas = transfer["delta_table_l19"]
+    if "r1->r2" not in deltas or "r2->r1" not in deltas:
+        return None
     d12 = deltas["r1->r2"]["delta_l19"]
     d21 = deltas["r2->r1"]["delta_l19"]
     d_xfer = 0.5 * (d12 + d21)
@@ -271,6 +276,9 @@ def main() -> None:
                 print(f"[verdict] missing inputs for {slug}/{arm} — skipped", flush=True)
                 continue
             entry = verdict_for(transfer, opcomp)
+            if entry is None:
+                print(f"[verdict] headline pair smoke-skipped for {slug}/{arm} — skipped")
+                continue
             entry["story"] = story_reads(args.out_dir, model, arm)
             lattice["per_model_arm"][f"{slug}_{arm}"] = entry
             heatmap_3x3(
@@ -285,7 +293,8 @@ def main() -> None:
                 f"Raw operator cosine — {slug} ({arm} arm, L19)",
                 args.fig_dir / f"operator_cosine_heatmap_{arm}_{slug}.png",
             )
-            if arm == "context":
+            if arm == "context" and L19 in opcomp.get("reparam_r1r2", {}):
+                # (Leg B may be smoke-skipped on a degenerate paired set)
                 reparam_bar_fig(
                     opcomp,
                     f"Reparam recovery vs matched-capacity null — {slug} (context, L19)",

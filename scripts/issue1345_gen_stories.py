@@ -63,6 +63,10 @@ from explore_persona_space.llm.api_dispatch import (  # noqa: E402
 VLLM_CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "250"))
 MAX_MODEL_LEN = 4096
 PROMPT_TOKEN_BUDGET = MAX_MODEL_LEN - c.STORY_MAX_NEW_TOKENS - 64
+# Smoke story target: the pool >= 2x target gate then needs only 6 seeds —
+# strictly weaker than the production gate (2 x N_STORIES_TARGET = 1000), so
+# any pool passing production passes smoke (v3 review item, test-pinned).
+SMOKE_N_STORIES = 3
 
 JUDGE_SYSTEM = (
     "You evaluate whether a short story contains extractable question-answer "
@@ -412,7 +416,7 @@ def main() -> None:
 
     assert args.model, "--model is required unless --parse-judge-only"
     model_key = args.model
-    n_target = 3 if args.smoke else args.n_stories
+    n_target = SMOKE_N_STORIES if args.smoke else args.n_stories
     yield_floor = resolve_yield_floor(args.smoke, args.yield_floor)
 
     pool = load_seed_pool(args.dl_dir)
