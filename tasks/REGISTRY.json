@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1357,
+  "highest_id": 1358,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2787,6 +2787,13 @@
       "path": "tasks/planning/1357",
       "status": "planning",
       "title": "workflow-fix: upload-policy.md \u2014 verify-path Hub calls ride retry_transient + prefix listings"
+    },
+    "1358": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1358",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas BPE-seam entry \u2014 plain-text boundaries + smoke composition"
     },
     "136": {
       "has_clean_result": false,
