@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1314,
+  "highest_id": 1315,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2452,6 +2452,13 @@
       "path": "tasks/approved/1314",
       "status": "approved",
       "title": "workflow-fix: c6_reuse_fitness recognizes (a)-(j) reuse-map tables"
+    },
+    "1315": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1315",
+      "status": "proposed",
+      "title": "Impolite-organism activation-shift geometry (extends #1112 method to impolite)"
     },
     "132": {
       "has_clean_result": false,
