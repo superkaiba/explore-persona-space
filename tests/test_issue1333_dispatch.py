@@ -238,3 +238,116 @@ def test_fanout_unit_success_no_tail(tmp_path, caplog, monkeypatch):
     with caplog.at_level(logging.ERROR, logger="issue1333"):
         d._fanout_units(cfg, [["--smoke", "--unit", "train", C.CELL_LORA_CON]])
     assert "[fanout-unit-tail]" not in caplog.text
+
+
+# ── 5. (r6) out-root placement + per-phase disk-headroom probes ──────────────
+# Attempt 3 (pod-1333) died at the first FT checkpoint save with
+# ``SafetensorError: No space left on device``: the smoke default
+# ``/tmp/issue-1333-smoke`` lives on RunPod's 50 GB CONTAINER disk (15 GB
+# staged inputs + 24 GB FT out-dir -> 100% full) while the 300 GB /workspace
+# volume sat at 17%. GCP masked this (/tmp rides the 300 GB boot disk).
+
+
+def test_default_out_root_workspace_lane(tmp_path):
+    """A /workspace-rooted checkout (RunPod volume / GCE boot clone) anchors
+    BOTH modes under the checkout's data/issue_1333 tree — on the volume, and
+    inside the GCE crash trap's data_issue persist glob."""
+    d = _dispatch()
+    ws = tmp_path / "workspace"
+    repo = ws / "explore-persona-space"
+    repo.mkdir(parents=True)
+    assert (
+        d._default_out_root(True, repo_root=repo, workspace=ws)
+        == repo / "data" / f"issue_{C.ISSUE}" / "smoke"
+    )
+    assert (
+        d._default_out_root(False, repo_root=repo, workspace=ws)
+        == repo / "data" / f"issue_{C.ISSUE}" / "run"
+    )
+
+
+def test_default_out_root_local_fallback(tmp_path):
+    """No /workspace-rooted checkout (local CPU tests): the small /tmp smoke
+    default + the cwd-relative full default survive. A checkout OUTSIDE an
+    EXISTING /workspace (the dev VM's incidental dir) is still local."""
+    d = _dispatch()
+    absent_ws = tmp_path / "no-such-workspace"
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    assert d._default_out_root(True, repo_root=repo, workspace=absent_ws) == Path(
+        f"/tmp/issue-{C.ISSUE}-smoke"
+    )
+    assert d._default_out_root(False, repo_root=repo, workspace=absent_ws) == Path(
+        f"data/issue_{C.ISSUE}/run"
+    )
+    present_ws = tmp_path / "workspace"
+    present_ws.mkdir()  # exists, but the checkout is NOT under it (the VM shape)
+    assert d._default_out_root(True, repo_root=repo, workspace=present_ws) == Path(
+        f"/tmp/issue-{C.ISSUE}-smoke"
+    )
+
+
+def test_build_cfg_out_root_arg_and_default_wiring(tmp_path, monkeypatch):
+    """--out-root wins verbatim; without it build_cfg routes through
+    _default_out_root (both modes)."""
+    d = _dispatch()
+    explicit = tmp_path / "explicit-root"
+    cfg = d.build_cfg(d._parse_args(["--smoke", "--out-root", str(explicit)]))
+    assert cfg.out_root == explicit
+    sentinel = tmp_path / "resolved-default"
+    monkeypatch.setattr(d, "_default_out_root", lambda smoke: sentinel / str(smoke))
+    assert d.build_cfg(d._parse_args(["--smoke"])).out_root == sentinel / "True"
+    assert d.build_cfg(d._parse_args(["--full"])).out_root == sentinel / "False"
+
+
+def test_headroom_probe_fails_loud_with_numbers(tmp_path, monkeypatch):
+    """statvfs headroom below the phase floor raises BEFORE any write, naming
+    the free/required numbers (a mid-save ENOSPC corrupts the checkpoint)."""
+    d = _dispatch()
+    cfg = _cfg(d, tmp_path, smoke=True)
+    monkeypatch.setitem(d.PHASE_HEADROOM_GB, "p2_train", {False: 1e9, True: 1e9})
+    with pytest.raises(RuntimeError, match=r"\[disk-headroom\] p2_train.*GB free.*required"):
+        d._assert_out_root_headroom(cfg, "p2_train")
+
+
+def test_headroom_probe_passes_and_cleans_canary(tmp_path, monkeypatch):
+    """Above the floor: returns free GB, runs the 1 GB fallocate canary, and
+    removes the probe file."""
+    d = _dispatch()
+    cfg = _cfg(d, tmp_path, smoke=True)
+    monkeypatch.setitem(d.PHASE_HEADROOM_GB, "p0_stage", {False: 0.001, True: 0.001})
+    free = d._assert_out_root_headroom(cfg, "p0_stage")
+    assert free > 0
+    assert not (tmp_path / ".headroom_probe").exists()
+
+
+def test_phases_wire_headroom_probe():
+    """p0/p2/p5 (the >=15 GB writers per plan §9) each probe headroom before
+    writing; the probe floors cover all three phases in both modes."""
+    import inspect
+
+    d = _dispatch()
+    for fn, phase in (
+        (d.phase_stage, "p0_stage"),
+        (d.phase_train, "p2_train"),
+        (d.phase_capture, "p5_capture"),
+    ):
+        assert f'_assert_out_root_headroom(cfg, "{phase}")' in inspect.getsource(fn), phase
+        assert set(d.PHASE_HEADROOM_GB[phase]) == {False, True}
+
+
+def test_no_hardcoded_tmp_issue_write_path_remains():
+    """Grep-style pin: the ONLY /tmp/issue-1333 literal left in the dispatcher
+    is the guarded local-CPU fallback inside _default_out_root; the geometry
+    aggregator has none, and its argparse defaults are repo-root-anchored."""
+    import inspect
+
+    d = _dispatch()
+    dispatch_src = (REPO_ROOT / "scripts" / "issue1333_dispatch.py").read_text()
+    sanctioned = inspect.getsource(d._default_out_root)
+    assert "/tmp/issue" in sanctioned  # the local fallback lives (only) here
+    remainder = dispatch_src.replace(sanctioned, "")
+    assert "/tmp/issue" not in remainder, "hardcoded /tmp/issue-1333 path outside the fallback"
+    geometry_src = (REPO_ROOT / "scripts" / "issue1333_geometry.py").read_text()
+    assert "/tmp/issue" not in geometry_src
+    assert 'default=f"data/issue_' not in geometry_src  # cwd-relative defaults swept (r6)

@@ -42,6 +42,12 @@ from explore_persona_space.experiments import issue_1333 as C  # noqa: E402
 
 logger = logging.getLogger("issue1333.geometry")
 
+# Repo-root anchor for the argparse path defaults (crash-fix r6): the run-tree
+# defaults must resolve to the SAME tree regardless of invocation cwd — they
+# mirror the dispatcher's lane default (REPO_ROOT/data/issue_1333/run). No
+# default may point at /tmp (RunPod's 50 GB container disk; attempt-3 ENOSPC).
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
 ARMS = ("prefix", "context", "response")
 # Own-text store per 2x2 cell within the capture root (reused arm = parent store).
 OWN_STORE = {
@@ -628,17 +634,20 @@ def main(argv: list[str] | None = None) -> int:
     )
     torch.set_num_threads(int(os.environ.get("EPS_VM_THREAD_CAP", "8") or 8))
     p = argparse.ArgumentParser(description="#1333 geometry aggregator (VM-side)")
-    p.add_argument("--capture-root", default=f"data/issue_{C.ISSUE}/run/capture")
+    p.add_argument("--capture-root", default=str(_REPO_ROOT / f"data/issue_{C.ISSUE}/run/capture"))
     p.add_argument(
         "--run-root",
-        default=f"data/issue_{C.ISSUE}/run",
+        default=str(_REPO_ROOT / f"data/issue_{C.ISSUE}/run"),
         help="dispatcher out_root (ladders/selections/trajectories/breadth) feeding the "
         "§6 re-reductions; pass an empty string to skip the file-based reads",
     )
     p.add_argument(
-        "--out-json", default=f"eval_results/issue_{C.ISSUE}/geometry/geometry_marker_2x2.json"
+        "--out-json",
+        default=str(_REPO_ROOT / f"eval_results/issue_{C.ISSUE}/geometry/geometry_marker_2x2.json"),
     )
-    p.add_argument("--matrices-dir", default=f"data/issue_{C.ISSUE}/run/bootstrap_matrices")
+    p.add_argument(
+        "--matrices-dir", default=str(_REPO_ROOT / f"data/issue_{C.ISSUE}/run/bootstrap_matrices")
+    )
     p.add_argument("--smoke", action="store_true", help="stub-scale (tiny panel, n_boot 16)")
     p.add_argument("--n-boot", type=int, default=None)
     p.add_argument("--wu-row", default=None, help="optional persisted W_U[83399] row .pt")

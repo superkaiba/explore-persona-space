@@ -184,6 +184,108 @@ def resolve_cells(cells_arg: str | None, smoke: bool) -> tuple[str, ...]:
     return C.ALL_TRAINED_CELLS
 
 
+def _repo_on_workspace(
+    *, repo_root: Path = REPO_ROOT, workspace: Path = Path("/workspace")
+) -> bool:
+    """True iff THIS checkout is /workspace-rooted (RunPod volume clone at
+    /workspace/explore-persona-space; GCE boot-disk clone at
+    /workspace/eps-issue-<N>). Deliberately NOT ``Path('/workspace').is_dir()``:
+    the shared dev VM has an incidental /workspace dir on its 485 GB root
+    disk, so bare existence mis-detects the VM as a pod lane."""
+    try:
+        return workspace.is_dir() and repo_root.resolve().is_relative_to(workspace.resolve())
+    except OSError:
+        return False
+
+
+def _default_out_root(
+    smoke: bool, *, repo_root: Path = REPO_ROOT, workspace: Path = Path("/workspace")
+) -> Path:
+    """Default out-root (crash-fix r6 — attempt-3 ENOSPC).
+
+    On a /workspace-rooted lane the out-root (smoke AND full) anchors under
+    the checkout's ``data/issue_1333/`` tree: on RunPod that is the 300 GB
+    /workspace volume — NEVER the 50 GB container disk where the old
+    ``/tmp/issue-1333-smoke`` default filled to 100% at the first FT
+    checkpoint save (SafetensorError: No space left on device) — and on GCE
+    it sits inside the crash trap's ``data_issue_<N>`` persist glob, so
+    partial artifacts survive an instance DELETE (the attempt-2 lesson).
+    Local CPU tests (checkout outside /workspace) keep the small /tmp smoke
+    default. An explicit ``--out-root`` always wins (``build_cfg``)."""
+    leaf = "smoke" if smoke else "run"
+    if _repo_on_workspace(repo_root=repo_root, workspace=workspace):
+        return repo_root / "data" / f"issue_{C.ISSUE}" / leaf
+    if smoke:
+        return Path(f"/tmp/issue-{C.ISSUE}-smoke")
+    return Path(f"data/issue_{C.ISSUE}/run")
+
+
+# Per-phase out-root disk-headroom floors, GB (plan §9 "Disk / checkpoint
+# retention (c33)"): p0 stages ~15 GB (reused FT ckpt 15 GB + pooled stores +
+# mix JSONs); p2's FT grid consolidates 15-28 GB/rung with <= 2 rungs
+# coexisting (~56 GB high-water) + ~16 GB keep-all LoRA rungs (smoke: 1-rung
+# grid -> one ~28 GB consolidation, LoRA negligible); p5's capture merge holds
+# a ~15 GB merged transient per LoRA cell, <= 2 concurrent under the 4-wide
+# fanout (smoke: 1 LoRA cell). A mid-save ENOSPC corrupts the checkpoint and
+# forfeits the trained step, so each phase fails LOUD with the numbers BEFORE
+# writing (attempt 3, pod-1333).
+PHASE_HEADROOM_GB: dict[str, dict[bool, float]] = {
+    "p0_stage": {False: 16.0, True: 16.0},
+    "p2_train": {False: 72.0, True: 30.0},
+    "p5_capture": {False: 32.0, True: 16.0},
+}
+
+
+def _assert_out_root_headroom(cfg: Cfg, phase: str) -> float:
+    """statvfs headroom at the OUT-ROOT filesystem vs the phase's §9 floor +
+    a 1 GB ``posix_fallocate`` canary (the preflight pattern — statvfs is
+    blind to an already-exhausted MooseFS per-pod EDQUOT quota). Raises
+    RuntimeError with the numbers BEFORE the phase writes; returns free GB."""
+    need_gb = PHASE_HEADROOM_GB[phase][cfg.smoke]
+    cfg.out_root.mkdir(parents=True, exist_ok=True)
+    st = os.statvfs(cfg.out_root)
+    free_gb = st.f_bavail * st.f_frsize / 1e9
+    if free_gb < need_gb:
+        raise RuntimeError(
+            f"[disk-headroom] {phase}: out_root {cfg.out_root} filesystem has "
+            f"{free_gb:.1f} GB free < required {need_gb:.1f} GB (plan §9; smoke={cfg.smoke}). "
+            f"On RunPod /tmp is the 50 GB CONTAINER disk — use a /workspace-rooted --out-root."
+        )
+    probe = cfg.out_root / ".headroom_probe"
+    try:
+        fd = os.open(probe, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+        try:
+            os.posix_fallocate(fd, 0, 1 << 30)  # 1 GB canary: catches EDQUOT
+        finally:
+            os.close(fd)
+    except OSError as e:
+        raise RuntimeError(
+            f"[disk-headroom] {phase}: 1 GB fallocate canary FAILED at {probe} "
+            f"({e}) with statvfs free={free_gb:.1f} GB — per-pod quota (EDQUOT) "
+            f"or wedged filesystem; fix before writing {need_gb:.1f} GB."
+        ) from e
+    finally:
+        probe.unlink(missing_ok=True)
+    logger.info(
+        "[disk-headroom] %s: out_root=%s free=%.1f GB (floor %.1f GB) canary=ok",
+        phase,
+        cfg.out_root,
+        free_gb,
+        need_gb,
+    )
+    return free_gb
+
+
+def _log_out_root(cfg: Cfg) -> None:
+    """Fix-engaged observable (crash-fix r6): one MAIN-log line naming the
+    RESOLVED out-root + its filesystem's free space at dispatcher start."""
+    cfg.out_root.mkdir(parents=True, exist_ok=True)
+    st = os.statvfs(cfg.out_root)
+    logger.info(
+        "[out-root] resolved=%s fs_free_gb=%.1f", cfg.out_root, st.f_bavail * st.f_frsize / 1e9
+    )
+
+
 def _atomic_json(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
@@ -299,11 +401,13 @@ def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
             if rc != 0:
                 d1112._reap_unit_groups([p for p, _, _ in running.values()])
                 # Diagnosability (crash-fix r5): unit logs live under out_root
-                # (smoke: /tmp) — OUTSIDE the GCE crash trap's persist globs —
-                # so a failing unit's traceback must be echoed into the MAIN
-                # workload log or it dies with the instance (attempt-2
-                # epm:failure v2: unit rc=1, root cause unrecoverable from
-                # workload.log alone; same class as the r4 ft_mk4.log gap).
+                # (r6: the lane default now sits INSIDE the repo data/issue_1333
+                # tree, i.e. the GCE crash trap's data_issue glob — but an
+                # explicit --out-root can still point elsewhere), so a failing
+                # unit's traceback is ALWAYS echoed into the MAIN workload log
+                # or it dies with the instance (attempt-2 epm:failure v2: unit
+                # rc=1, root cause unrecoverable from workload.log alone; same
+                # class as the r4 ft_mk4.log gap).
                 logger.error(
                     "[fanout-unit-tail] unit %s rc=%d — last %d lines of %s:\n%s",
                     extra,
@@ -549,6 +653,7 @@ def _stage_file(path_in_repo: str, dest: Path, *, revision: str, sha256: str | N
 
 def phase_stage(cfg: Cfg) -> dict:
     _phase("p0_stage")
+    _assert_out_root_headroom(cfg, "p0_stage")
     inputs = cfg.out_root / "inputs"
     rev = C.PARENT_CAPTURE_REV
     staged = {
@@ -1128,6 +1233,7 @@ def _train_schedule(cfg: Cfg) -> tuple[list[str], list[str]]:
 
 def phase_train(cfg: Cfg) -> dict:
     _phase("p2_train")
+    _assert_out_root_headroom(cfg, "p2_train")
     out: dict[str, dict] = {}
     # Sequencing: P2b LoRA fanout FIRST (work-conserving over all GPUs), then
     # the P2a FT whole-pod-exclusive launch. Makespan is order-invariant here
@@ -1782,6 +1888,7 @@ def _git_commit_sha() -> str:
 
 def phase_capture(cfg: Cfg) -> dict:
     _phase("p5_capture")
+    _assert_out_root_headroom(cfg, "p5_capture")
     cells = [c for c in cfg.cells if c in (C.CELL_LORA_CON, C.CELL_LORA_POS, C.CELL_FT_POS)]
     if cfg.ext_captures:
         cells += [
@@ -2082,11 +2189,7 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
 
 def build_cfg(args: argparse.Namespace) -> Cfg:
     smoke = bool(args.smoke)
-    out_root = Path(
-        args.out_root
-        if args.out_root is not None
-        else (f"/tmp/issue-{C.ISSUE}-smoke" if smoke else f"data/issue_{C.ISSUE}/run")
-    )
+    out_root = Path(args.out_root) if args.out_root is not None else _default_out_root(smoke)
     return Cfg(
         smoke=smoke,
         cells=resolve_cells(args.cells, smoke),
@@ -2102,9 +2205,10 @@ def build_cfg(args: argparse.Namespace) -> Cfg:
             if args.sentinel_dir is not None
             # None -> write_sentinel's /workspace/logs (the poller-drained
             # namespace) — incl. for a pod-side smoke, so the epm:smoke-result
-            # sentinel actually drains (review r1 m10). A local smoke (no
-            # /workspace) keeps its sentinel under out_root.
-            else (out_root / "logs" if smoke and not Path("/workspace").is_dir() else None)
+            # sentinel actually drains (review r1 m10). A LOCAL smoke (checkout
+            # not /workspace-rooted — the dev VM has an incidental /workspace
+            # dir, crash-fix r6) keeps its sentinel under out_root.
+            else (out_root / "logs" if smoke and not _repo_on_workspace() else None)
         ),
         upload=args.upload,
         ext_captures=bool(args.ext_captures),
@@ -2129,6 +2233,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = _parse_args(argv)
     cfg = build_cfg(args)
+    _log_out_root(cfg)
     if args.unit is not None:
         kind, arg = args.unit
         fn = _UNIT_FNS.get(kind)
