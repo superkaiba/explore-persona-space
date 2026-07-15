@@ -53,7 +53,7 @@ def main() -> None:
     prefix = "issue1345_smoke" if args.smoke else c.HF_ISSUE_PREFIX
     from huggingface_hub import upload_folder
 
-    from explore_persona_space.orchestrate.hub import assert_hub_dir_filecounts
+    from explore_persona_space.orchestrate.hub import assert_hub_dir_filecounts, retry_transient
     from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
 
     # 1) story text (rollout text is NEVER discardable — Upload Policy)
@@ -64,14 +64,23 @@ def main() -> None:
             allow_patterns=["*.jsonl", "*.json"],
             ignore_patterns=["judge_cache/*"],
         )
-        upload_folder(
-            repo_id=c.HF_DATA_REPO,
-            repo_type="dataset",
-            folder_path=str(args.stories_dir),
-            path_in_repo=f"{prefix}/raw_completions/stories",
-            allow_patterns=["*.jsonl", "*.json"],
-            ignore_patterns=["judge_cache/*"],
-            commit_message=f"issue-1345: story corpus text ({'smoke' if args.smoke else 'full'})",
+        # retry_transient (#1345 crash-fix r5): transport is never fatal — a
+        # lone Hub 429 ("maximum queue size reached") killed att-20260715-175238;
+        # bounded backoff (Retry-After-aware, EPM_HF_RETRY_BUDGET_S wall cap),
+        # fail-loud only on genuine exhaustion.
+        retry_transient(
+            lambda: upload_folder(
+                repo_id=c.HF_DATA_REPO,
+                repo_type="dataset",
+                folder_path=str(args.stories_dir),
+                path_in_repo=f"{prefix}/raw_completions/stories",
+                allow_patterns=["*.jsonl", "*.json"],
+                ignore_patterns=["judge_cache/*"],
+                commit_message=(
+                    f"issue-1345: story corpus text ({'smoke' if args.smoke else 'full'})"
+                ),
+            ),
+            what=f"upload_folder({prefix}/raw_completions/stories)",
         )
         print(f"[upload] stories -> {prefix}/raw_completions/stories", flush=True)
     else:
@@ -82,13 +91,16 @@ def main() -> None:
         assert_hub_dir_filecounts(
             args.matched_dir, f"{prefix}/inputs/matched_n", allow_patterns=["*.json"]
         )
-        upload_folder(
-            repo_id=c.HF_DATA_REPO,
-            repo_type="dataset",
-            folder_path=str(args.matched_dir),
-            path_in_repo=f"{prefix}/inputs/matched_n",
-            allow_patterns=["*.json"],
-            commit_message="issue-1345: matched-n subsets",
+        retry_transient(
+            lambda: upload_folder(
+                repo_id=c.HF_DATA_REPO,
+                repo_type="dataset",
+                folder_path=str(args.matched_dir),
+                path_in_repo=f"{prefix}/inputs/matched_n",
+                allow_patterns=["*.json"],
+                commit_message="issue-1345: matched-n subsets",
+            ),
+            what=f"upload_folder({prefix}/inputs/matched_n)",
         )
         print(f"[upload] matched_n -> {prefix}/inputs/matched_n", flush=True)
 
