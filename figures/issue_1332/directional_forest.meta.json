@@ -1,0 +1,84 @@
+{
+  "commit": "d7949335cb",
+  "created": "2026-07-15T18:41:21Z",
+  "figsize": [
+    7.2,
+    4.2
+  ],
+  "points": [
+    {
+      "Spearman correlation with leakage (two-way cluster-bootstrap 95% CI)": 0.6129517163113284,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman correlation with leakage (two-way cluster-bootstrap 95% CI)": 0.6700845630285188,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman correlation with leakage (two-way cluster-bootstrap 95% CI)": 0.32197911513754407,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Spearman correlation with leakage (two-way cluster-bootstrap 95% CI)": 0.5548205092374172,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Spearman correlation with leakage (two-way cluster-bootstrap 95% CI)": 0.3712959134991778,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Spearman correlation with leakage (two-way cluster-bootstrap 95% CI)": 0.4357717088526541,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Spearman correlation with leakage (two-way cluster-bootstrap 95% CI)": -0.28656676887889315,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 7,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Directional map-transfer predictor: raw and partial correlations, n = 400 cells",
+        "xlabel": "Spearman correlation with leakage (two-way cluster-bootstrap 95% CI)",
+        "annotations": [
+          "Symmetrized predictor, raw (reference)",
+          "Directional predictor, raw",
+          "Directional, given activation cosine",
+          "Directional, given Jensen\u2013Shannon",
+          "Directional, given cosine + Jensen\u2013Shannon",
+          "Directional, given the symmetrized predictor",
+          "Symmetrized, given the directional predictor"
+        ],
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}
