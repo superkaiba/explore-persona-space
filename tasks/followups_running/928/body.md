@@ -179,13 +179,13 @@ The matched-length contrast (prefix+truncated-CoT minus prefix+answer-prefix) ac
 
 > **Figure.** Δ skill (prefix+truncated-CoT − prefix+answer-prefix) per regime × layer convention under the query-excluded prefix input; gray = the committed full-context reads; paired context-bootstrap 95% intervals, n=1,991 rows in 50 context groups (per-question) and 50 contexts (query-averaged); dashed line at zero.
 
-The per-context contrasts behind the per-question primary:
+Per-context contrasts behind the primary:
 
 ![Per-context prefix-convention matched-length delta versus median CoT length and versus the matched budget K](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4664ad30743e9b23de9491199e6a55b9b14e82c8/figures/issue_928/pma_percontext_read1_scatter.png)
 
 > **Figure.** Per-context Δ skill (prefix+truncated-CoT − prefix+answer-prefix) at the frozen per-question layer 6, vs median well-formed CoT length (left) and vs the matched budget K (right); red = the two near-degenerate prefix cells; points labeled by battery context id. n=50 contexts.
 
-With the query removed, the demotion repeats: −0.092 per-question at the registered frozen layer (95% CI −0.102 to −0.084; layer 6, the prefix-only baseline's best), −0.054 at the arms' own best layer (CI −0.063 to −0.047) — matching the committed −0.052 — and −0.037 query-averaged (CI −0.068 to −0.006), negative in all 50 contexts (−0.017 to −0.25), under family folds, and after excluding the two near-degenerate prefix cells (−0.092, −0.037). The deficit's association with K is weaker here (rank correlation +0.23, p = 0.11, vs +0.52 under the context convention). The full CoT recovers +0.019 at the frozen layer (+0.006 own-best), still below the matched prefix arm. The matched-length contrast battery is now same-signed under both canonical input conventions; the same-part/adjacency asymmetry carries over, so this remains conservative evidence against a privileged CoT position rather than proof of none.
+With the query removed, the demotion repeats: −0.092 per-question at frozen layer 6, the prefix-baseline's best (95% CI −0.102 to −0.084), −0.054 at the arms' own best layer (CI −0.063 to −0.047), matching the committed −0.052, and −0.037 query-averaged (CI −0.068 to −0.006), negative in all 50 contexts (−0.017 to −0.25), under family folds, and after excluding the two near-degenerate prefix cells (−0.092, −0.037). The deficit-K association weakens here (+0.23, p = 0.11, vs +0.52 in the context convention). The full CoT recovers +0.019 at the frozen layer (+0.006 own-best), still below the matched prefix arm. Same-signed under both canonical input conventions; the same-part/adjacency asymmetry carries over, so this remains conservative evidence against a privileged CoT position, not proof of none.
 
 ### The query carries the prompt side's per-question signal, and a realized slice substitutes for the context summary's increment
 
