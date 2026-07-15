@@ -66,6 +66,24 @@ REF_LINES = {
 }
 
 
+def _ci_offsets(values, ci_lo, ci_hi) -> list[np.ndarray]:
+    """Element-wise NON-NEGATIVE (lo, hi) errorbar offsets from CI bounds.
+
+    matplotlib ``xerr``/``yerr`` take non-negative OFFSETS from the point value,
+    never raw bounds or signed deltas — a negative entry raises
+    ``ValueError: 'xerr' must not contain negative values`` (GCP
+    att-20260715-122509: bootstrap CI inverted vs the point estimate at tiny
+    smoke n; production also has first-class negative deltas). A legitimately
+    one-sided / inverted CI clamps to a 0 offset — the summary JSON / caption
+    carries the exact numbers. NaN bounds propagate (matplotlib renders no bar,
+    no crash). Returns ``[lo_off, hi_off]`` float arrays.
+    """
+    v = np.asarray(values, dtype=float)
+    lo = np.asarray(ci_lo, dtype=float)
+    hi = np.asarray(ci_hi, dtype=float)
+    return [np.maximum(0.0, v - lo), np.maximum(0.0, hi - v)]
+
+
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out-dir", type=Path, default=Path("eval_results/issue_1335"))
@@ -199,17 +217,17 @@ def fig_waterfall(args, models: list[str]) -> None:
     for mi, model in enumerate(models):
         ax = axes[0][mi]
         dd = summary["per_model"].get(model, {}).get("deltas", {})
-        ys, labels, los, his = [], [], [], []
+        ys, labels, ci_los, ci_his = [], [], [], []
         for k in keys:
             v = dd.get(k)
             if v is None:
                 continue
             labels.append(k + (" (outside family)" if k == "length" else ""))
             ys.append(v["value"])
-            los.append(v["value"] - v["ci_lo"])
-            his.append(v["ci_hi"] - v["value"])
+            ci_los.append(v["ci_lo"])
+            ci_his.append(v["ci_hi"])
         pos = np.arange(len(ys))
-        ax.barh(pos, ys, xerr=[los, his], color=paper_palette(1)[0])
+        ax.barh(pos, ys, xerr=_ci_offsets(ys, ci_los, ci_his), color=paper_palette(1)[0])
         ax.set_yticks(pos)
         ax.set_yticklabels(labels, fontsize=7)
         ax.axvline(0, color="black", lw=0.6)
