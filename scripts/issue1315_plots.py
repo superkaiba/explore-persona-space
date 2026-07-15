@@ -56,6 +56,19 @@ LAYERS = list(range(28))
 L14 = 14
 SEAM_CONTEXT = "neg_reph_curious"
 
+# Reader-facing names for panel-context slugs (no opaque condition codes on
+# body-linked figures; slugs stay in payloads/footers only).
+CTX_LABEL = {
+    "persona_software_engineer": "software-engineer persona (source)",
+    "wildchat_prefix_real545": "WildChat conversation (source)",
+    "icl_prefix_impolite": "impolite ICL prefix (source)",
+    "neg_default_assistant": "default assistant",
+    "neg_sp_police": "police-officer persona",
+    "neg_sp_ph4": "maritime-medic persona",
+    "neg_reph_curious": "curious-rephrase wrapper",
+    "neg_wc_short": "tech-support prompt",
+}
+
 # #1112 committed layer-14 response-arm reference values (clean-result body,
 # task 1112; n=120 clouds) + #653 (n=80).
 REF_1112_OWN = (66, 74)  # own-text rank-k@90 span incl. generics
@@ -181,7 +194,9 @@ def fig_paired_diffs(own: dict) -> None:
         ax.set_ylim(-0.7, len(pair_rows) - 0.3)
     axes[1].set_yticklabels([])
     fig.suptitle(
-        "Paired cross-cell contrasts at matched install (95% paired-bootstrap CIs)", y=1.02
+        "Paired cross-cell contrasts at dose-to-band checkpoints "
+        "(95% paired-bootstrap CIs; LoRA pair below band)",
+        y=1.02,
     )
     savefig_paper(fig, "impolite_2x2_paired_diffs", dir=FIG_DIR)
     plt.close(fig)
@@ -271,7 +286,14 @@ def fig_cumshare_and_clouds() -> None:
         cmap = dict(zip(ctxs, paper_palette_blog(len(ctxs)), strict=True))
         for ctx in ctxs:
             m = np.array([k[0] == ctx for k in keys])
-            ax.scatter(pc[m, 0], pc[m, 1], s=14, color=cmap[ctx], label=ctx, alpha=0.8)
+            ax.scatter(
+                pc[m, 0],
+                pc[m, 1],
+                s=14,
+                color=cmap[ctx],
+                label=CTX_LABEL.get(ctx, ctx),
+                alpha=0.8,
+            )
         ax.set_title(label, fontsize=10)
         ax.set_xlabel("shift PC 1")
         ax.set_ylabel("shift PC 2")
