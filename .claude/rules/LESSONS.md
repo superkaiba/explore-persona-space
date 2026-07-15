@@ -43,7 +43,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - selection-symmetric-nulls.md — a headline max/argmax/top-k over a free axis vs a null band (inherit selection per draw or freeze held-out; band vs DV ceiling).
 - trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus (findings by reference; verdict first; windowed reads).
 - upload-policy.md — you write training/Hub/sweep code (Hub-API verification + verify-path transport retry, delete-after-eval persist, quota-403 recovery, upload-wedge ladder).
-- vectorize-many-cell-fits.md — many-cell GD, dense fits (svd/eigh/lstsq/ridge), or a perm/bootstrap/null-draw battery over a fixed pool (VECTORIZE first; detached+checkpointed VM fits; Supersede contract incl. mid-run ≥2×-deviation).
+- vectorize-many-cell-fits.md — many-cell GD, dense fits (svd/eigh/lstsq/ridge), or a perm/bootstrap/null-draw battery over a fixed pool (VECTORIZE first; detached+checkpointed VM fits; Supersede contract incl. mid-run ≥2×-deviation + width re-eval).
 - workflow-fix-on-bug.md — any agent hits a bug from a gap in the workflow surface itself (emit a `workflow-fix-candidate`).
 - agents-vs-skills.md — you create/restructure anything under `.claude/` (decide agent vs skill).
 
