@@ -2657,8 +2657,8 @@
     "1340": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1340",
-      "status": "approved",
+      "path": "tasks/running/1340",
+      "status": "running",
       "title": "workflow-fix: gotchas bullet \u2014 single-arm smokes blind to per-arm seams"
     },
     "1341": {
