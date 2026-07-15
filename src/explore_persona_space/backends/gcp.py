@@ -1571,7 +1571,11 @@ def render_startup_script(
         # together; this is the HF-independent channel). ``-m 5`` so a wedged
         # metadata server can never eat the persist's 300s budget (the
         # done-grace READ uses the same cap). Values: ``attempted`` (entry) ->
-        # ``ok`` | ``timeout`` | ``failed_rc<N>`` | ``skipped_no_token``; a
+        # ``ok`` | ``failed_uploads`` | ``timeout`` | ``failed_rc<N>`` |
+        # ``skipped_no_token``. #1343: ``ok`` requires the verify gate — the
+        # transcript existence probe read True, or >=1 client-confirmed
+        # ``upload_folder`` return; ``failed_uploads`` = rc 3, zero uploads
+        # verifiably succeeded. A
         # STANDING ``attempted`` with no final value = the persist was KILLED
         # mid-flight — a TERMINATED-only reading (a RUNNING-window read may
         # catch a healthy persist in flight). Decision table:
@@ -1700,6 +1704,10 @@ def render_startup_script(
         "        pass",
         "_say(f\"[crash-persist] BEGIN repo={repo} dest={dest} log_path={log_path or 'UNSET'}\")",
         "api = HfApi()",
+        "# #1343: client-confirmed upload successes — an upload_folder RETURN means",
+        "# the commit response was delivered, i.e. the commit is durable (#1339's",
+        "# reliable direction). Feeds the exit-3 honesty gate at the end.",
+        'OK_UPLOADS = {"n": 0}',
         "# #1151: staged BUNDLES replace the per-file upload_file calls — on this",
         "# ~1M-file repo a per-file upload triggers a server-side recursive",
         "# tree-listing pre-check that 504s ~half the time at ~160 s/file (#664);",
@@ -1736,6 +1744,7 @@ def render_startup_script(
         "            api.upload_folder(folder_path=str(bundle_dir), path_in_repo=dest,",
         '                              repo_id=repo, repo_type="dataset")',
         '            _say(f"[crash-persist] uploaded bundle {label}")',
+        '            OK_UPLOADS["n"] += 1',
         "            return",
         "        except Exception as exc:",
         '            _say(f"[crash-persist] FAILED bundle {label} attempt {i}/{attempts}: {exc}")',
@@ -1852,6 +1861,7 @@ def render_startup_script(
         '                          path_in_repo=f"{dest}/worker_logs",',
         '                          repo_id=repo, repo_type="dataset")',
         '        _say("[crash-persist] uploaded dir worker_logs")',
+        '        OK_UPLOADS["n"] += 1',
         "    except Exception as exc:",
         '        _say(f"[crash-persist] FAILED dir worker_logs: {exc}")',
         "_up_logs()",
@@ -1918,6 +1928,7 @@ def render_startup_script(
         '            api.upload_folder(folder_path=str(local), path_in_repo=f"{dest}/{name}",',
         '                              repo_id=repo, repo_type="dataset", ignore_patterns=IGNORE)',
         '            _say(f"[crash-persist] uploaded dir {name}")',
+        '            OK_UPLOADS["n"] += 1',
         "        except Exception as exc:",
         '            _say(f"[crash-persist] FAILED dir {name}: {exc}")',
         "        return",
@@ -1967,6 +1978,7 @@ def render_startup_script(
         "        if uploaded:",
         "            fail_streak = 0",
         "            ok_batches += 1",
+        '            OK_UPLOADS["n"] += 1',
         "            ok_files += staged",
         "        else:",
         "            fail_streak += 1",
@@ -1999,13 +2011,42 @@ def render_startup_script(
         "if Path(transcript).is_file():",
         '    _stage_into(final_stage, "crash_persist_transcript.log", transcript)',
         '_up_bundle(final_stage, "final", retry=False)',
+        "# #1343: eps/persist=ok honesty gate. Incident #1315: every upload FAILED",
+        "# under the logged-never-raised guards, the python exited 0, and the",
+        "# breadcrumb read ok while issue1315_partial/ 404'd. ONE positive existence",
+        "# probe on the transcript (the #1339 lesson: a client-side FAILED can mask",
+        "# a LANDED commit, so a positive probe beats trusting client returns);",
+        "# a client-confirmed upload_folder RETURN is the OR-side fallback evidence",
+        "# (#1339's reliable direction — also covers probe lag/transport). Guarded:",
+        "# the probe never raises past the persist; bounded: one HEAD at hub's 10s",
+        "# default request timeout, inside the surrounding `timeout 300`. These",
+        "# VERIFY lines reach serial + the transcript FILE but post-date the",
+        "# transcript UPLOAD by construction — the breadcrumb value is the durable",
+        "# verify record.",
+        "_verified = False",
+        "try:",
+        "    _verified = bool(api.file_exists(",
+        '        repo, f"{dest}/crash_persist_transcript.log", repo_type="dataset"))',
+        '    _say(f"[crash-persist] VERIFY transcript on hub: {_verified}")',
+        "except Exception as exc:",
+        '    _say(f"[crash-persist] VERIFY probe FAILED (treated as unverified): {exc}")',
+        'if not _verified and OK_UPLOADS["n"] == 0:',
+        '    _say("[crash-persist] VERIFY-FAIL: zero uploads verifiably succeeded'
+        ' -> rc 3 (failed_uploads)")',
+        "    sys.exit(3)",
+        '_n_ok = OK_UPLOADS["n"]',
+        '_say(f"[crash-persist] VERIFY-OK: probe={_verified} client_confirmed={_n_ok}")',
         "EPS_PERSIST_PY",
         # #1151: capture the `cd && timeout uv run python` compound's rc INSIDE
         # the subshell (set +e is global from the trap's first action, so a
         # failing compound does not abort; its rc is capturable): 0 = the
-        # persist python exited clean ("ok" — NOT "all uploads landed":
-        # per-upload failures are logged, never raised; the transcript is the
-        # per-upload audit), 124 = the 300s timeout killed it, 127 = uv
+        # persist python exited clean AND the #1343 verify gate passed (the
+        # transcript existence probe read True, or >=1 client-confirmed
+        # upload_folder return — NOT "all artifacts landed": per-upload
+        # failures are still logged, never raised; the gate verifies
+        # at-least-one, and the transcript stays the per-upload audit),
+        # 3 = the verify gate FAILED (zero uploads verifiably succeeded ->
+        # "failed_uploads", #1315), 124 = the 300s timeout killed it, 127 = uv
         # missing, 1 = cd short-circuit OR a python top-level failure.
         '  _uprc=$?; { echo "$_uprc" >"${EPS_CRASH_PERSIST_RC:-/tmp/eps-crash-persist.rc}"; }'
         " 2>/dev/null || true;",
@@ -2044,6 +2085,7 @@ def render_startup_script(
         '  _prc="$(cat "${EPS_CRASH_PERSIST_RC:-/tmp/eps-crash-persist.rc}" 2>/dev/null || true)";',
         '  if [ -n "$_prc" ]; then case "$_prc" in',
         '    (0)   _eps_persist_status "ok" ;;',
+        '    (3)   _eps_persist_status "failed_uploads" ;;',
         '    (124) _eps_persist_status "timeout" ;;',
         '    (*)   _eps_persist_status "failed_rc${_prc}" ;;',
         "  esac; fi;",
