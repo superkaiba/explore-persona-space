@@ -712,7 +712,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1090",
       "status": "followups_running",
-      "title": "Raising the learning rate unlocks on-policy expression of the impolite behavior in both installed-but-silent training contexts (MODERATE confidence)"
+      "title": "Raising the learning rate unlocks on-policy expression of the impolite behavior in every previously-silent training context, including the bare default assistant (MODERATE confidence)"
     },
     "1091": {
       "has_clean_result": false,

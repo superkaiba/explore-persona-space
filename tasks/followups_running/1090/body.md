@@ -1,6 +1,7 @@
 ---
 title: Raising the learning rate unlocks on-policy expression of the impolite behavior
-  in both installed-but-silent training contexts (MODERATE confidence)
+  in every previously-silent training context, including the bare default assistant
+  (MODERATE confidence)
 kind: experiment
 tags:
 - from-1074
