@@ -2798,8 +2798,8 @@
     "1359": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1359",
-      "status": "reviewing",
+      "path": "tasks/completed/1359",
+      "status": "completed",
       "title": "workflow-fix: upload-policy \u2014 bounded retry before fail-loud on no-path uploads"
     },
     "136": {
