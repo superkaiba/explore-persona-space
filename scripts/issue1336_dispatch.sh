@@ -22,6 +22,7 @@
 #   bash scripts/issue1336_dispatch.sh all [--smoke]
 #   bash scripts/issue1336_dispatch.sh <g0_gate|gen|extract|fit|align|upload> [--smoke]
 #   bash scripts/issue1336_dispatch.sh d1_battery [--smoke]   # plan v7 D1.4/D1.6 GPU leg
+#   bash scripts/issue1336_dispatch.sh d2_probe [--smoke]      # plan v7 D2 (conditional)
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"
@@ -768,6 +769,287 @@ print(f"[signal] wrote d1 results sentinel {os.environ['RES_OUT']}")
 PY
 }
 
+# ---------------------------------------------------------------------------
+# Phase D2 (plan v7 §4, CONDITIONAL): capture-parity probe. Re-extract N
+# wave-1 chat rows (same prompt ids as the stored capture) under BOTH the
+# committed and the corrected convention, then compare re-extracted vs stored
+# vectors per layer (cosine, max-abs-diff) -> diagnosis/d2_capture_parity.json.
+# Fires ONLY on a capture-defect verdict (R2_d2_required / D2_required); the
+# corrected convention consumes the slot/span offset override the D1.3
+# spot-check emitted (d2_offset_override.json — data, not code, so D2 needs
+# no code change when it fires). NOT a refit (n<d cannot reproduce pipeline
+# R^2 — plan §4). Smoke: tiny-real — the 2-layer same-arch model + a
+# synthetic 4-row allowlist + a synthetic nonzero override, through the SAME
+# extract driver and parity reader (no stored-store leg, no uploads).
+# ---------------------------------------------------------------------------
+phase_d2_probe() {
+    echo "[phase=d2_probe]"
+    local diag_dir="$OUT_DIR/diagnosis"
+    mkdir -p "$diag_dir"
+    local override="$diag_dir/d2_offset_override.json"
+    local n_rows="${D2_N_ROWS:-512}" # plan §12 deviation slot: within [256, 1024]
+    local gen_root="data/issue_1336/gen"
+    local prompts_root="data/issue_1336/prompts"
+    local stored_dir="${D2_STORED_TURNSTORE:-data/issue_1336/d2_stored_turnstore}"
+    local tiny_flag=""
+    if [ "$SMOKE" -eq 1 ]; then
+        n_rows=4
+        uv run python scripts/issue1336_smoke_fixtures.py tiny-model --out "$OUT_DIR/tiny_model"
+        uv run python scripts/issue1336_smoke_fixtures.py gen
+        tiny_flag="--tiny-model-dir $OUT_DIR/tiny_model"
+        gen_root="data/issue_1336/gen_smoke"
+        prompts_root="data/issue_1336/prompts_smoke"
+        stored_dir="" # no stored wave-1 capture in smoke: conventions-only parity
+        # Fresh smoke dirs: the extract done-markers would otherwise skip
+        # re-extraction against a stale allowlist.
+        rm -rf "$diag_dir/d2_turnstore_committed" "$diag_dir/d2_turnstore_corrected"
+        # Synthetic override — +1 answer-span head trim: nonzero (exercises the
+        # shift path) while keeping the corrected render consumer-valid
+        # (fixture a1 spans are far above MIN_TURN_CONTENT_TOKENS=8).
+        printf '{"slot_offsets": {}, "span_offsets": {"a1": [1, 0]}}\n' > "$override"
+    elif [ ! -f "$override" ]; then
+        echo "[d2_probe] FATAL: $override missing — D2 fires only on a capture-defect verdict; the D1.3 spot-check must emit the indicted offset override first" >&2
+        exit 78
+    fi
+
+    # 1. Row allowlist: the FIRST n kept wave-1 chat rows (same prompt ids as
+    #    the stored capture — plan §4 Phase D2).
+    ALW_OUT="$diag_dir/d2_row_allowlist.json" ALW_GEN="$gen_root" ALW_N="$n_rows" \
+        uv run python - <<'PY'
+import json
+import os
+from pathlib import Path
+
+rows = []
+with open(
+    Path(os.environ["ALW_GEN"]) / "rlvr" / "lmsys5k" / "answers.jsonl", encoding="utf-8"
+) as fh:
+    for line in fh:  # text-mode iteration, never splitlines() (U+2028 in user text)
+        line = line.strip()
+        if line:
+            rows.append(json.loads(line))
+kept = [r for r in rows if r.get("kept")]
+n = int(os.environ["ALW_N"])
+assert len(kept) >= n, f"only {len(kept)} kept wave-1 rows < requested {n}"
+ids = [f"s{r['prompt_idx']}" for r in kept[:n]]
+Path(os.environ["ALW_OUT"]).write_text(json.dumps(ids) + "\n")
+print(f"[d2_probe] allowlist: {len(ids)} rows -> {os.environ['ALW_OUT']}")
+PY
+
+    # 2. Both conventions on the SAME rows, one teacher-forced pass each
+    #    (sequential on the single provisioned GPU — plan §9 D2 row).
+    local conv extra
+    for conv in committed corrected; do
+        extra=""
+        [ "$conv" = "corrected" ] && extra="--convention corrected --offset-override $override"
+        # shellcheck disable=SC2086
+        uv run python scripts/issue1336_extract_turnstore.py \
+            --model rlvr --corpus lmsys5k --format chat \
+            --gen-root "$gen_root" --prompts-root "$prompts_root" \
+            --out-dir "$diag_dir/d2_turnstore_$conv" \
+            --row-allowlist "$diag_dir/d2_row_allowlist.json" \
+            $extra $tiny_flag $SMOKE_FLAG
+    done
+
+    # 3. Parity JSON: corrected vs committed always; each vs the STORED wave-1
+    #    vectors when a stored store is reachable (defect confirmation).
+    PAR_DIAG="$diag_dir" PAR_STORED="$stored_dir" PAR_HF_REPO="$HF_DATA_REPO" \
+        PAR_HF_PREFIX="$HF_PREFIX" uv run python - <<'PY'
+import json
+import os
+import shutil
+import subprocess
+import time
+from pathlib import Path
+
+import torch
+
+diag = Path(os.environ["PAR_DIAG"])
+stored_dir = os.environ.get("PAR_STORED") or ""
+stem = "rlvr_chat_lmsys5k"
+allow = set(json.loads((diag / "d2_row_allowlist.json").read_text()))
+
+
+def load_rows(d: Path) -> dict:
+    rows = {}
+    for pt in sorted(d.glob(f"{stem}_shard*.pt")):
+        payload = torch.load(pt, map_location="cpu")
+        for cid, slots, profiles in zip(
+            payload["conv_ids"], payload["slots"], payload["profiles"], strict=True
+        ):
+            if cid in allow:
+                rows[cid] = (slots.float(), profiles.float())
+    assert rows, f"no allowlist rows found under {d}"
+    return rows
+
+
+def compare(a: dict, b: dict) -> dict:
+    common = sorted(set(a) & set(b))
+    assert common, "no common rows to compare"
+    n_layers = a[common[0]][0].shape[1]
+    out = {"n_rows": len(common)}
+    for kind, idx in (("slots", 0), ("profiles", 1)):
+        cos_by_layer, mad_by_layer = [], []
+        for li in range(n_layers):
+            cs, md = [], []
+            for cid in common:
+                x = a[cid][idx][:, li, :]
+                y = b[cid][idx][:, li, :]
+                num = (x * y).sum(dim=-1)
+                den = (x.norm(dim=-1) * y.norm(dim=-1)).clamp_min(1e-12)
+                cs.extend((num / den).tolist())
+                md.append(float((x - y).abs().max()))
+            cos_by_layer.append(sum(cs) / len(cs))
+            mad_by_layer.append(max(md))
+        out[kind] = {
+            "mean_cosine_per_layer": cos_by_layer,
+            "max_abs_diff_per_layer": mad_by_layer,
+            "min_mean_cosine": min(cos_by_layer),
+            "max_abs_diff": max(mad_by_layer),
+        }
+    return out
+
+
+committed = load_rows(diag / "d2_turnstore_committed")
+corrected = load_rows(diag / "d2_turnstore_corrected")
+sha = subprocess.run(
+    ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+).stdout.strip()
+result = {
+    "metadata": {"git_commit": sha, "ts_unix": time.time(), "n_allowlist": len(allow)},
+    "offset_override": json.loads((diag / "d2_offset_override.json").read_text()),
+    "corrected_vs_committed": compare(corrected, committed),
+}
+if stored_dir:
+    sd = Path(stored_dir)
+    if not any(sd.glob(f"{stem}_shard*.pt")):
+        # Fetch ONLY the stored shards holding allowlist rows: server-side
+        # scoped list_repo_tree + per-file hf_hub_download (never
+        # snapshot_download on the ~1M-file data repo — gotchas.md).
+        from huggingface_hub import HfApi, hf_hub_download
+
+        repo = os.environ["PAR_HF_REPO"]
+        prefix = f"{os.environ['PAR_HF_PREFIX']}/analysis_tensors/turnstore_{stem}"
+        names = [
+            e.path
+            for e in HfApi().list_repo_tree(
+                repo, path_in_repo=prefix, repo_type="dataset", recursive=False
+            )
+        ]
+        sd.mkdir(parents=True, exist_ok=True)
+        for sc in sorted(p for p in names if p.endswith(".json")):
+            local = hf_hub_download(repo, sc, repo_type="dataset")
+            meta = json.loads(Path(local).read_text())
+            if allow & set(meta.get("conv_ids", [])):
+                pt_name = sc[: -len(".json")] + ".pt"
+                assert pt_name in names, f"sidecar {sc} has no tensor twin on the Hub"
+                got = hf_hub_download(repo, pt_name, repo_type="dataset")
+                shutil.copy(got, sd / Path(pt_name).name)
+                print(f"[d2_probe] fetched stored shard {Path(pt_name).name}")
+    stored = load_rows(sd)
+    # committed re-extraction vs stored = determinism / defect confirmation;
+    # corrected vs stored = the correction's divergence from the capture.
+    result["committed_vs_stored"] = compare(committed, stored)
+    result["corrected_vs_stored"] = compare(corrected, stored)
+else:
+    result["stored_comparison"] = "skipped — no stored wave-1 turnstore (smoke)"
+out_path = diag / "d2_capture_parity.json"
+out_path.write_text(json.dumps(result, indent=2) + "\n")
+print(f"[d2_probe] parity JSON -> {out_path}")
+PY
+
+    if [ "$SMOKE" -eq 1 ]; then
+        echo "[d2_probe] smoke complete (scratch $diag_dir; no uploads)"
+        return 0
+    fi
+    # Upload the diagnosis JSON mirror (single bulk commit, #664) + commit the
+    # parity JSON to the issue branch, push verified (#1205 — no swallow).
+    UP_SRC="$diag_dir" UP_REPO="$HF_DATA_REPO" UP_PREFIX="$HF_PREFIX" \
+        uv run python - <<'PY'
+import os
+
+from huggingface_hub import upload_folder
+
+assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing in workload env"
+upload_folder(
+    repo_id=os.environ["UP_REPO"],
+    repo_type="dataset",
+    folder_path=os.environ["UP_SRC"],
+    path_in_repo=f"{os.environ['UP_PREFIX']}/eval_results_mirror/diagnosis",
+    allow_patterns=["*.json"],
+)
+print("[d2_probe] diagnosis JSON mirror uploaded")
+PY
+    local branch rc=0
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    git add "$diag_dir/d2_capture_parity.json" "$diag_dir/d2_row_allowlist.json" \
+        "$diag_dir/d2_offset_override.json"
+    if ! git diff --cached --quiet; then
+        git commit -m "task #1336: D2 capture-parity probe outputs"
+    fi
+    git push origin "HEAD:$branch" || rc=$?
+    if [ "$rc" -ne 0 ] || [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
+        echo "[d2_probe] push not landed — one retry after rebase" >&2
+        git pull --rebase=merges --autostash origin "$branch"
+        git push origin "HEAD:$branch"
+    fi
+    if [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
+        echo "[d2_probe] FATAL: parity commit not on origin/$branch after retry" >&2
+        exit 86
+    fi
+    echo "[d2_probe] parity commit verified on origin/$branch"
+}
+
+write_d2_results_sentinel() {
+    local ts path
+    ts=$(date +%s)
+    path="$LOG_DIR/issue-1336-$(printf '%s' "$RESULTS_KIND" | tr ':' '_')-${ts}.json"
+    RES_OUT="$path" RES_KIND="$RESULTS_KIND" RES_DIAG="$OUT_DIR/diagnosis" \
+        RES_SMOKE="$SMOKE" uv run python - <<'PY'
+import json
+import os
+import subprocess
+from pathlib import Path
+
+diag = Path(os.environ["RES_DIAG"])
+parity = json.loads((diag / "d2_capture_parity.json").read_text())
+sha = subprocess.run(
+    ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+).stdout.strip()
+note = {
+    "phase": "d2_probe",
+    "eval_numbers": {
+        k: {
+            "slots_min_mean_cosine": v["slots"]["min_mean_cosine"],
+            "profiles_min_mean_cosine": v["profiles"]["min_mean_cosine"],
+            "n_rows": v["n_rows"],
+        }
+        for k, v in parity.items()
+        if isinstance(v, dict) and "slots" in v
+    },
+    "eval_paths": [str(diag / "d2_capture_parity.json")],
+    "reproducibility_card": {
+        "hf_data_repo": "superkaiba1/explore-persona-space-data",
+        "diagnosis_prefixes": ["issue1336_rlvr_ladder/eval_results_mirror/diagnosis/"],
+        "wandb_url": "n/a (no training in the D2 capture-parity probe)",
+        "final_commit_sha": sha,
+    },
+}
+payload = {
+    "sentinel_schema_version": 1,
+    "kind": os.environ["RES_KIND"],
+    "version": 1,
+    "task_id": 1336,
+    "by": "issue1336_dispatch",
+    "smoke": os.environ["RES_SMOKE"] == "1",
+    "note": json.dumps(note),
+}
+with open(os.environ["RES_OUT"], "w") as fh:
+    json.dump(payload, fh, indent=2)
+print(f"[signal] wrote d2 results sentinel {os.environ['RES_OUT']}")
+PY
+}
+
 run_phase() { # $1 = phase name
     if phase_done "$1"; then
         echo "[dispatch1336] phase $1 already complete — skipping"
@@ -799,8 +1081,14 @@ d1_battery)
     write_d1_results_sentinel
     echo "[phase=done]"
     ;;
+d2_probe)
+    # CONDITIONAL GPU-leg workload (plan v7 Phase D2): capture-parity probe.
+    run_phase d2_probe
+    write_d2_results_sentinel
+    echo "[phase=done]"
+    ;;
 *)
-    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery [--smoke]" >&2
+    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d2_probe [--smoke]" >&2
     exit 2
     ;;
 esac

@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import ctypes
+import dataclasses
 import gc
 import hashlib
 import json
@@ -91,7 +92,111 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--ctx-hash-n", type=int, default=100, help="sampled contexts to hash")
     parser.add_argument("--upload", action="store_true", help="per-cell HF upload after extract")
+    parser.add_argument(
+        "--convention",
+        choices=("committed", "corrected"),
+        default="committed",
+        help=(
+            "capture convention (plan v7 Phase D2). 'committed' = current behavior "
+            "(default; byte-identical when the D2 flags are absent). 'corrected' "
+            "applies the slot/span offset override the D1.3 spot-check emitted "
+            "(--offset-override + an explicit --out-dir REQUIRED)."
+        ),
+    )
+    parser.add_argument(
+        "--offset-override",
+        type=Path,
+        default=None,
+        help=(
+            "JSON the D1.3 spot-check emits when it indicts a specific offset: "
+            '{"slot_offsets": {slot: int}, "span_offsets": {turn: [dstart, dend]}}. '
+            "Consumed ONLY under --convention corrected (D2 needs no code change "
+            "when it fires — the indicted offset is data, not code)."
+        ),
+    )
+    parser.add_argument(
+        "--row-allowlist",
+        type=Path,
+        default=None,
+        help=(
+            "JSON array of conv_ids ('s<prompt_idx>') or integer prompt_idx values; "
+            "restricts extraction to exactly these kept rows (plan v7 D2: 512 "
+            "wave-1 rows, same prompt ids). Every listed row must exist (fail-loud)."
+        ),
+    )
     return parser.parse_args()
+
+
+# ---------------------------------------------------------------------------
+# Phase D2 (conditional capture-parity probe) — convention + row subset
+# ---------------------------------------------------------------------------
+def resolve_convention(convention: str, offset_override: Path | None, out_dir: Path | None):
+    """Validate the D2 flag combination; return the parsed override (or None).
+
+    committed: no override may be passed (default behavior stays byte-identical).
+    corrected: requires the D1.3-emitted override JSON AND an explicit --out-dir
+    (corrected shards must never land in the committed turnstore dir).
+    """
+    if convention == "committed":
+        assert offset_override is None, (
+            "--offset-override is only consumed under --convention corrected"
+        )
+        return None
+    assert offset_override is not None, (
+        "--convention corrected requires --offset-override (the D1.3-emitted JSON)"
+    )
+    assert out_dir is not None, (
+        "--convention corrected requires an explicit --out-dir — corrected shards "
+        "must never overwrite the committed turnstore"
+    )
+    raw = json.loads(offset_override.read_text())
+    slot_offsets = {str(k): int(v) for k, v in raw.get("slot_offsets", {}).items()}
+    span_offsets = {str(k): (int(v[0]), int(v[1])) for k, v in raw.get("span_offsets", {}).items()}
+    assert slot_offsets or span_offsets, (
+        f"{offset_override}: override names no slot_offsets/span_offsets — the "
+        "corrected convention is only meaningful when D1.3 indicted a specific offset"
+    )
+    return {"slot_offsets": slot_offsets, "span_offsets": span_offsets}
+
+
+def apply_offset_override(r, override: dict):
+    """Return a corrected copy of one Rendered row with shifted slots/spans.
+
+    The corrected row is re-validated with the consumer-exact asserts — an
+    override that produces an invalid render fails loud, never extracts.
+    """
+
+    slot_idx = dict(r.slot_idx)
+    for name, dv in override["slot_offsets"].items():
+        assert name in slot_idx, f"{r.conv_id}: slot_offsets names unknown slot {name!r}"
+        slot_idx[name] = int(slot_idx[name]) + dv
+    spans = dict(r.spans)
+    for name, (ds, de) in override["span_offsets"].items():
+        assert name in spans, f"{r.conv_id}: span_offsets names unknown span {name!r}"
+        s, e = spans[name]
+        spans[name] = (int(s) + ds, int(e) + de)
+    corrected = dataclasses.replace(r, slot_idx=slot_idx, spans=spans)
+    reason = validate_render(corrected)
+    assert reason is None, (
+        f"{corrected.conv_id}: corrected render invalid ({reason}) under the offset "
+        "override — refusing to extract a convention that breaks the consumer asserts"
+    )
+    return corrected
+
+
+def filter_row_allowlist(kept: list[dict], path: Path) -> list[dict]:
+    """Restrict kept rows to the allowlist; every listed row must resolve."""
+    entries = json.loads(path.read_text())
+    assert isinstance(entries, list) and entries, f"{path}: allowlist must be a non-empty list"
+    want = {e if isinstance(e, str) else f"s{int(e)}" for e in entries}
+    picked = [r for r in kept if f"s{r['prompt_idx']}" in want]
+    got = {f"s{r['prompt_idx']}" for r in picked}
+    missing = sorted(want - got)
+    assert not missing, (
+        f"{path}: {len(missing)} allowlist rows not found among kept rows "
+        f"(e.g. {missing[:5]}) — the allowlist must name existing wave-1 rows"
+    )
+    return picked
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -414,6 +519,7 @@ def main() -> None:
     args = parse_args()
     slug, fmt, corpus = args.model, args.format, args.corpus
     assert fmt in cm.FORMATS_BY_CORPUS[corpus], f"format {fmt} not registered for {corpus}"
+    override = resolve_convention(args.convention, args.offset_override, args.out_dir)
     smoke = args.smoke
     data_root = Path("data/issue_1336")
     gen_root = args.gen_root or (data_root / ("gen_smoke" if smoke else "gen"))
@@ -438,6 +544,9 @@ def main() -> None:
     rows = _read_jsonl(gen_root / slug / corpus / "answers.jsonl")
     kept = [r for r in rows if r.get("kept")]
     assert kept, f"no kept rows for {slug}/{corpus} under {gen_root}"
+    if args.row_allowlist is not None:
+        kept = filter_row_allowlist(kept, args.row_allowlist)
+        print(f"[extract] row allowlist: {len(kept)} rows from {args.row_allowlist}")
     prompts = _read_jsonl(prompts_root / f"{corpus}.jsonl")
     assert prompts, f"no staged prompts for {corpus} under {prompts_root} — run gen --prep first"
 
@@ -455,6 +564,8 @@ def main() -> None:
         # Rows passed these EXACT asserts at gen time; a mismatch here is
         # tokenizer/render drift between phases — fail loud, never skip.
         assert reason is None, f"{rr.conv_id}: render invalid at extract time: {reason}"
+        if override is not None:
+            rr = apply_offset_override(rr, override)
         rendered.append(rr)
 
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
@@ -483,6 +594,8 @@ def main() -> None:
         "causal_check_max_abs_diff": causal_max_diff,
         "ctx_tokenid_sha256": hash_payload["sha256"],
         "smoke": bool(smoke),
+        "convention": args.convention,
+        "offset_override": override,
     }
     # Block-wise extract -> flush (parent run-4/run-5 RSS lessons): one block
     # == one shard file, written the moment its block completes.

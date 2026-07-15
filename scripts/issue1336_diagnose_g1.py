@@ -1010,7 +1010,6 @@ def _battery_pass1(args, cell_id, X, Y, conv_ids, vlayers, fp, meta_common, dg0_
             "wall_s": time.time() - t0,
         },
     )
-    v0_ck.write_text(json.dumps({"fingerprint": fp}))
     if dg0 is not None and not dg0["pass"]:
         print(
             f"[battery] DG0 FAIL {cell_id}: best {best:.4f} vs target {target} "
@@ -1019,6 +1018,10 @@ def _battery_pass1(args, cell_id, X, Y, conv_ids, vlayers, fp, meta_common, dg0_
         )
         raise SystemExit(3)
     print(f"[battery] DG0 {cell_id}: best {best:.4f} vs {target} -> PASS")
+    # Resume checkpoint is written ONLY after the DG0 gate passes: a
+    # same-fingerprint rerun after a DG0 FAIL re-runs the gate instead of
+    # resuming past it (r3 concern dg0-checkpoint-written-before-gate).
+    v0_ck.write_text(json.dumps({"fingerprint": fp}))
     return v0_curve
 
 
@@ -1341,7 +1344,15 @@ def step_verdict(args) -> None:
     v4 = json.loads((args.out_dir / f"refit_v4_{chat}.json").read_text())
     nulls = json.loads((args.out_dir / f"refit_null_std_{chat}.json").read_text())
     spot_path = args.out_dir / "spotcheck.json"
-    spot = json.loads(spot_path.read_text()) if spot_path.exists() else None
+    # H-B capture-defect gate input is REQUIRED (r3 Minor 2): a direct
+    # `--steps battery,verdict` invocation without the D1.3 spot-check would
+    # otherwise silently route with capture_defect=False. The dispatch +
+    # canonical step order always run spotcheck first.
+    assert spot_path.exists(), (
+        f"{spot_path} missing — run the spotcheck step before verdict (the "
+        "capture-defect gate cannot be evaluated without its H-B input)"
+    )
+    spot = json.loads(spot_path.read_text())
     audit_path = args.out_dir / "scale_audit.json"
     audit = json.loads(audit_path.read_text()) if audit_path.exists() else None
 
@@ -1423,12 +1434,14 @@ def step_verdict(args) -> None:
     else:
         branch = "genuine_absence_candidate"
 
-    capture_defect = bool(spot and spot.get("any_defect_gate_fired")) or bool(
+    capture_defect = bool(spot.get("any_defect_gate_fired")) or bool(
         audit and audit.get("capture_corruption_suspected")
     )
-    cal_fails = bool(qc and qc.get("calibration_deviates")) or bar_std_fallback
+    # bar_std_fallback deliberately does NOT route R5 (plan §9 descope rule 3:
+    # a staging failure falls back to bar 0.20, stated — not a replan).
+    cal_deviates = bool(qc and qc.get("calibration_deviates"))
 
-    if cal_fails and not bar_std_fallback:
+    if cal_deviates:
         routed = "R5_replan"
         reason = "D1.6 calibration control deviates — corrected DV demoted to exploratory"
     elif capture_defect:

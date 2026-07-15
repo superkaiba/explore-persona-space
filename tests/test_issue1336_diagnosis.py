@@ -154,6 +154,27 @@ def test_dg0_gate_fails_loud_on_target_miss(diag_env, tmp_path):
     with pytest.raises(SystemExit) as exc:
         diag.step_battery(args)
     assert exc.value.code == 3
+    # Ordering pin (r3 concern dg0-checkpoint-written-before-gate): a DG0-FAIL
+    # run leaves NO pass-1 resume checkpoint, so a same-fingerprint rerun
+    # re-runs the gate instead of resuming past it.
+    ck = tmp_path / "out" / "checkpoints" / "battery_rlvr_chat_lmsys5k_pass1.json"
+    assert not ck.exists(), "pass-1 checkpoint written despite DG0 FAIL"
+    with pytest.raises(SystemExit) as exc2:
+        diag.step_battery(args)  # rerun must NOT resume past the gate
+    assert exc2.value.code == 3
+
+
+def test_verdict_requires_spotcheck(diag_env, tmp_path):
+    """r3 Minor 2: a direct battery->verdict invocation without the D1.3
+    spot-check output fails loud instead of routing with capture_defect=False."""
+    out = tmp_path / "out"
+    best = _oracle_best(diag_env)
+    args = _args(diag_env, out, dg0_targets_json=json.dumps({"rlvr_chat_lmsys5k": best}))
+    diag.step_qwen_cal(args)
+    diag.step_battery(args)
+    diag.step_audit(args)
+    with pytest.raises(AssertionError, match="spotcheck"):
+        diag.step_verdict(args)
 
 
 # ---------------------------------------------------------------------------
@@ -218,3 +239,72 @@ def test_spotcheck_flags_planted_defect(tmp_path):
     cell = spot["cells"]["rlvr_chat_lmsys5k"]
     assert cell["mismatches"] >= 1
     assert cell["defect_gate_fired"] is True
+
+
+# ---------------------------------------------------------------------------
+# 5. D2 convention flags (r3 concern d2-convention-flag-deferred)
+# ---------------------------------------------------------------------------
+def _valid_rendered():
+    from explore_persona_space.experiments.issue_1336.common import Rendered
+
+    return Rendered(
+        input_ids=list(range(60)),
+        slot_idx={"prefix": 2, "a1": 20},
+        spans={"u1": (4, 18), "a1": (22, 50)},
+        format="chat",
+        conv_id="s0",
+    )
+
+
+def test_d2_resolve_convention_contract(tmp_path):
+    import issue1336_extract_turnstore as ext
+
+    # committed: default-preserving; no override may ride along.
+    assert ext.resolve_convention("committed", None, None) is None
+    with pytest.raises(AssertionError, match="only consumed"):
+        ext.resolve_convention("committed", tmp_path / "o.json", None)
+    # corrected: requires the D1.3-emitted override JSON AND an explicit out dir.
+    ov = tmp_path / "o.json"
+    ov.write_text(json.dumps({"slot_offsets": {"a1": -1}}))
+    with pytest.raises(AssertionError, match="requires --offset-override"):
+        ext.resolve_convention("corrected", None, tmp_path)
+    with pytest.raises(AssertionError, match="explicit --out-dir"):
+        ext.resolve_convention("corrected", ov, None)
+    got = ext.resolve_convention("corrected", ov, tmp_path)
+    assert got == {"slot_offsets": {"a1": -1}, "span_offsets": {}}
+    # an override indicting NO offset is meaningless — fail loud.
+    empty = tmp_path / "empty.json"
+    empty.write_text("{}")
+    with pytest.raises(AssertionError, match="names no slot_offsets"):
+        ext.resolve_convention("corrected", empty, tmp_path)
+
+
+def test_d2_offset_override_applies_and_revalidates():
+    import issue1336_extract_turnstore as ext
+
+    r = _valid_rendered()
+    corrected = ext.apply_offset_override(
+        r, {"slot_offsets": {"a1": -1}, "span_offsets": {"a1": (1, 0)}}
+    )
+    assert corrected.slot_idx == {"prefix": 2, "a1": 19}
+    assert corrected.spans["a1"] == (23, 50)
+    assert r.slot_idx["a1"] == 20 and r.spans["a1"] == (22, 50)  # original untouched
+    # an override that degenerates a span fails the consumer-exact asserts.
+    with pytest.raises(AssertionError, match="corrected render invalid"):
+        ext.apply_offset_override(r, {"slot_offsets": {}, "span_offsets": {"a1": (28, -20)}})
+    # unknown slot/span names fail loud.
+    with pytest.raises(AssertionError, match="unknown slot"):
+        ext.apply_offset_override(r, {"slot_offsets": {"nope": 1}, "span_offsets": {}})
+
+
+def test_d2_row_allowlist_filters_and_fails_loud(tmp_path):
+    import issue1336_extract_turnstore as ext
+
+    kept = [{"prompt_idx": i} for i in range(6)]
+    p = tmp_path / "allow.json"
+    p.write_text(json.dumps(["s0", 2, "s5"]))
+    picked = ext.filter_row_allowlist(kept, p)
+    assert [r["prompt_idx"] for r in picked] == [0, 2, 5]
+    p.write_text(json.dumps(["s0", "s99"]))
+    with pytest.raises(AssertionError, match="not found"):
+        ext.filter_row_allowlist(kept, p)
