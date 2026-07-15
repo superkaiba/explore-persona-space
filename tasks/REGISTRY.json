@@ -2548,8 +2548,8 @@
     "1327": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1327",
-      "status": "approved",
+      "path": "tasks/running/1327",
+      "status": "running",
       "title": "daily-fix: spawn_session.py unregister subcommand"
     },
     "1328": {
