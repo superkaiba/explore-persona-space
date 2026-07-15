@@ -2763,8 +2763,8 @@
     "1354": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1354",
-      "status": "approved",
+      "path": "tasks/running/1354",
+      "status": "running",
       "title": "workflow-fix: gotchas.md entry for registry side effects lost on resume"
     },
     "1355": {
