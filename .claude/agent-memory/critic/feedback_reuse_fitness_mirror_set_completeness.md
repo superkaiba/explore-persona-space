@@ -37,3 +37,16 @@ of free-form plan prose) is a separable larger change, legitimately out of
 scope; prose-only consistency-checker re-check is consistent with how (e)
 HF-resolution is already enforced (manual list_repo_files in the BLOCK row,
 no verifier).
+
+**#941 ((j) pairwise provenance coherence) nuances:** (1) the #871 range-free
+remedy-line design held — a data-side letter routes through the "other than
+(i) → regenerate" branch with NO remedy edit; check any new letter against
+that branch before demanding remedy rewording. (2) Provenance-DATE predicates
+(`get_paths_info(expand=True)` `last_commit.date`, input ≤ capture) compare
+UPLOAD ordering, not GENERATION ordering — a capture made from a stale local
+copy but uploaded after the input's regeneration false-negatives; that is
+acceptable-with-note (plan-time floor + runtime parity-assert backstop), not
+a REVISE. False positives (unrelated commit bumps) err conservative and are
+absorbed by a "confirm why regenerated" remedy step. (3) Cross-repo pairs
+(mix↔adapter spans dataset+model repos) need one call per repo — a wording
+concern, not a design flaw.
