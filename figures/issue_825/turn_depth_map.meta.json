@@ -1,0 +1,6 @@
+{
+ "figure": "turn_depth_map.png",
+ "git_commit": "34794afe9557afebe0590b9e6e158b559dcd73ea",
+ "source_results_json": "eval_results/issue_825/turn_depth_map/results.json",
+ "caption": "Held-out R2 of the linear context->answer map (context_k -> answer_k_t1, offset 0) per user-turn index. Left: layer 19 for instruct (solid) and pretrained (dashed) with the shuffled-answer permutation null band (grey, 2.5-97.5% over 200 draws); faint lines give n pairs per turn. Right: instruct layers 14/18/19, showing layer 14 is far below the layer 18/19 peak. Turns shown have >= 30 paired examples."
+}
