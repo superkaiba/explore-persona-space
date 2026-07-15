@@ -2449,8 +2449,8 @@
     "1314": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1314",
-      "status": "approved",
+      "path": "tasks/running/1314",
+      "status": "running",
       "title": "workflow-fix: c6_reuse_fitness recognizes (a)-(j) reuse-map tables"
     },
     "1315": {
