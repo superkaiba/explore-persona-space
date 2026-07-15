@@ -78,6 +78,13 @@ def _no_task_scan(monkeypatch: pytest.MonkeyPatch):
         ("epm-issue-546", 546),
         ("epm-issue-546-b", 546),  # legacy suffixed dispatcher pods
         ("pod-546-extra", 546),
+        ("pod-779-b", 779),  # canonical multi-pod-per-issue form (#1334)
+        # DELIBERATE #1334 delta from the old split('-', 1) parse: a NUMERIC
+        # slug no longer maps (letter-initial slugs only) — such a pod falls
+        # through to the age-based stale logic instead of a guessy attribution.
+        ("pod-779-60", None),
+        ("pod-779-B", None),  # uppercase slug rejected (we only generate lowercase)
+        ("pod-779-", None),  # empty slug rejected
         ("pod-abc", None),
         ("pod-", None),
         ("my-custom-pod", None),

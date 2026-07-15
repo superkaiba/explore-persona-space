@@ -957,6 +957,29 @@ def test_running_managed_pods_recognizes_canonical_pod_name(monkeypatch):
     assert all(isinstance(info, PodInfo) for *_rest, info in got)
 
 
+def test_running_managed_issue_pods_maps_suffixed_pod(monkeypatch):
+    """#1334: a RUNNING multi-pod-per-issue pod (pod-<N>-<slug>) is mapped to
+    its owning issue by the watcher's pod-safety enumeration — no watcher code
+    change, the recognition delegates to pod_lifecycle._issue_from_pod_name.
+    Pre-#1334 the suffixed name parsed to None and the pod was INVISIBLE to
+    keep-running / auto-stop reconciliation."""
+    import autonomous_session_watch as asw
+    from runpod_api import PodInfo
+
+    monkeypatch.setattr(
+        asw,
+        "list_team_pods",
+        lambda: [
+            PodInfo(pod_id="p779b", name="pod-779-b", desired_status="RUNNING"),
+            # A numeric slug stays OUT of the grammar (letter-initial rule).
+            PodInfo(pod_id="p77960", name="pod-779-60", desired_status="RUNNING"),
+        ],
+    )
+    got = asw._running_managed_issue_pods()
+    assert [(i, pid, name) for i, pid, name, _info in got] == [(779, "p779b", "pod-779-b")]
+    assert got[0][3].pod_id == "p779b"
+
+
 def test_running_managed_pods_api_error_returns_none(monkeypatch):
     # A FAILED snapshot must be distinguishable from "genuinely no pods":
     # None, not []. The pod-safety state GC keys off this — it must not reap
