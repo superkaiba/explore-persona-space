@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1343,
+  "highest_id": 1344,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2681,6 +2681,13 @@
       "path": "tasks/proposed/1343",
       "status": "proposed",
       "title": "workflow-fix: GCE crash-persist must verify uploads before persist=ok"
+    },
+    "1344": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1344",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 smoke parity includes ZeRO-3 process width"
     },
     "135": {
       "has_clean_result": false,
