@@ -39,6 +39,7 @@ import os
 import subprocess
 import sys
 import time
+import warnings
 from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
@@ -1401,7 +1402,75 @@ def run_mlp_secondary(
     seed: int,
     n_null: int = 5,
 ) -> None:
-    """fit_h.mlp_fit_predict (PCA-64) at the frozen layers with a shuffle null."""
+    """Batched fit_h-recipe MLP secondary (PCA-64) at the frozen layers with a shuffle null.
+
+    Vectorized per .claude/rules/vectorize-many-cell-fits.md (#1320): the
+    (layer x draw) members batch per fold through
+    ``vectorized_mlp_skill.batched_fold_cv_mlp_r2`` on ``_fit_device()``;
+    serial oracle: ``_run_mlp_secondary_serial_reference`` (tombstoned).
+    Output JSON schema unchanged (``cells_<cell_id>.json["mlp"]`` +
+    ``mlp_budget_exhausted``). Null permutations replicate the serial rng
+    stream bit-exactly: layer-major, ``n_null`` row perms per layer from ONE
+    ``default_rng(seed + 13)`` stream (:1207/:1259-1262 of the serial body).
+    """
+    from explore_persona_space.analysis.vectorized_mlp_skill import batched_fold_cv_mlp_r2
+
+    started = time.monotonic()
+    xy = res["xy"]
+    X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
+    folds = _cv_folds(conv_ids, n_folds, seed)
+    layers = [v for v in FROZEN_LAYERS if v < X.shape[1]]
+    # EXACT serial rng-stream replication: layer-major dict comprehension —
+    # python dict comprehensions evaluate in iteration order, so permutation
+    # identity per (layer, draw) is bit-equal to the serial consumption.
+    rng = np.random.default_rng(seed + 13)
+    perms_by_layer = {li: [rng.permutation(X.shape[0]) for _ in range(n_null)] for li in layers}
+    out, budget_hit = batched_fold_cv_mlp_r2(
+        X,
+        Y,
+        folds,
+        layers=layers,
+        perms_by_layer=perms_by_layer,
+        device=str(_fit_device()),
+        time_budget_s=MLP_TIME_BUDGET_S,
+        started=started,
+    )
+    cells_path = out_dir / f"cells_{cell_id}.json"
+    payload = json.loads(cells_path.read_text()) if cells_path.exists() else {}
+    payload["mlp"] = out
+    payload["mlp_budget_exhausted"] = budget_hit
+    _write_json(cells_path, payload)
+
+
+def _run_mlp_secondary_serial_reference(
+    res: dict,
+    out_dir: Path,
+    *,
+    cell_id: str,
+    n_folds: int,
+    seed: int,
+    n_null: int = 5,
+) -> None:
+    """FROZEN serial oracle for ``run_mlp_secondary`` (superseded, #1320).
+
+    The pre-#1320 serial loop, byte-identical (incl. its ``_cv_r2`` closure,
+    CPU-default ``mlp_fit_predict``): retained ONLY for the parity gate
+    (tests/test_issue825_mlp_batched_parity.py) and prior-task reproduction
+    (#825's Repro references this entrypoint's outputs). Never call it in a
+    production sweep — vectorize-many-cell-fits Supersede contract.
+    """
+    warnings.warn(
+        "issue825_fit_cells._run_mlp_secondary_serial_reference is superseded by the "
+        "batched run_mlp_secondary (vectorized_mlp_skill.batched_fold_cv_mlp_r2); the "
+        "serial reference is retained for parity gating + prior-task reproduction only",
+        FutureWarning,
+        stacklevel=2,
+    )
+    if os.environ.get("EPM_FORBID_SERIAL_FITS") == "1":
+        raise RuntimeError(
+            "EPM_FORBID_SERIAL_FITS=1: the serial MLP-secondary loop is forbidden — "
+            "use the batched run_mlp_secondary"
+        )
     from explore_persona_space.experiments.issue_779.fit_h import mlp_fit_predict
 
     started = time.monotonic()
@@ -1854,7 +1923,9 @@ def main() -> int:
             _record_fit_failure(args.out_dir, "__nll_reads__", e)
         mlp_wanted = set(args.mlp_cells.split(","))
         for cid, res in results.items():
-            if cid in mlp_wanted and not args.smoke:
+            # #1320: --smoke now exercises the batched MLP path too (seconds at
+            # smoke scale) — smoke/production architectural parity.
+            if cid in mlp_wanted:
                 try:
                     run_mlp_secondary(
                         res, args.out_dir, cell_id=cid, n_folds=args.folds, seed=args.seed

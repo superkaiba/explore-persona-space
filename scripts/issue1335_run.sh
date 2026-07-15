@@ -345,14 +345,18 @@ main() {
   echo "[phase=p0_stage]"
   log "issue=$ISSUE mode: STUB=$STUB SMOKE=$SMOKE NGPUS=$NGPUS repo=$REPO_ROOT"
   # Plan §4.2 staging safety: main must not have touched issue825_fit_cells.py
-  # since the issue-1310 merge-base af402fdf (else PORT the diff, not checkout).
+  # since the last ported-through main commit (else PORT the diff, not checkout).
+  # Pin history: af402fdf (issue-1310 merge-base) -> ed73b13029 (#1320 vectorized
+  # MLP secondary + turnstore upload; 3-way-merged into the branch copy in the
+  # r4 crash-fix round — 1335 calls none of the #1320-touched entrypoints).
+  local port_pin=ed73b13029
   git fetch origin main --quiet || log "WARN: git fetch origin main failed (offline?)"
   if git rev-parse --verify --quiet origin/main >/dev/null; then
     local touched
-    touched=$(git log --oneline af402fdf..origin/main -- scripts/issue825_fit_cells.py | wc -l)
+    touched=$(git log --oneline "$port_pin"..origin/main -- scripts/issue825_fit_cells.py | wc -l)
     if [ "$touched" != "0" ]; then
-      log "FATAL: main touched scripts/issue825_fit_cells.py since merge-base af402fdf" \
-          "($touched commits) — port the issue-1310 diff onto main's version (plan §4.2)"
+      log "FATAL: main touched scripts/issue825_fit_cells.py since port pin $port_pin" \
+          "($touched commits) — port the issue-1310/1335 diff onto main's version (plan §4.2)"
       exit 4
     fi
   fi
