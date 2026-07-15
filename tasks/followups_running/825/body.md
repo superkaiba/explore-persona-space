@@ -38,8 +38,9 @@ relates_to:
 - **Post-training reparameterizes the existing mapping by a general linear map**
     - the base map, run through a fitted general-linear change of coordinates, has as much predictive power as the instruct map on instruct model text
 - **The mapping holds up without chat-template tokens (in both base and instruct model):**
-    - $R^2 \approx 0.71-0.74$ for plain "User:/Assistant:" transcripts in base model
-    - $R^2 \approx 0.70 - 0.73$ for plain "User:/Assistant:" transcripts in instruct model
+    - refit on the same single-turn conversations rendered as plain "User:/Assistant:" text: instruct $R^2 = 0.625$ (vs $0.654$ chat), base $R^2 = 0.578$ (vs $0.542$ chat) at layer 19
+    - small format×model crossover, both sides distinguishable from zero under a paired bootstrap: removing the template costs instruct ~0.03 R² and gains the base ~0.04
+    - without the template the base/instruct strength ratio rises to ~93% (from ~83% chat at matched n)
 - **The mapping does not hold up for the user turn:**
     - the user's next turn is linearly unpredictable (ridge R² negative for both real human turns and model-generated user turns) and only weakly nonlinearly predictable (MLP 0.19–0.23)
 - **The mapping does NOT hold up for generic stories (off-policy or on-policy):**
@@ -113,15 +114,22 @@ I then wanted to see if there is a difference between the reparameterized base m
 I then wanted to see if this mapping was only there because of the chat-template tokens.
 
 **Methodology:**
-- Fit other mapping to same conversations that replace chat template with just "User:" + "Assistant:"
+- Re-render the same Track-S conversations (same response texts) with the chat template replaced by plain "User:" + "Assistant:" text, then refit the same ridge recipe in both models
     - [Examples](https://htmlpreview.github.io/?https://raw.githubusercontent.com/superkaiba/explore-persona-space/c1fe5a3ee6a8cd96b19f854d0e27a69e2be18e34/experiments/dashboards/issue825_naturalistic_examples.html)
-- Plot $R^2$ with chat template vs without chat template for both instruct and pretrained model
+- 4,724 of the 5,000 conversations survive the render/span-alignment filter; the paired contrast refits BOTH formats on this shared set (identical folds, seed 0) with a 1,000-draw conversation-level bootstrap on the naturalistic−chat delta
+- Anchor gate: the chat refit first reproduces the committed Result-1 values (instruct 0.673 / base 0.588 at layer 19) to within 0.001
 
-![Held-out R² at layer 19 with chat template vs plain User:/Assistant: formatting, for pretrained base and instruct](https://raw.githubusercontent.com/superkaiba/explore-persona-space/43d7a7e3ea5b77cb540c31e182b4eb02d52f801f/figures/issue_825/result3_template_comparison_DRAFT.png)
+![Held-out R² by layer, chat template vs naturalistic User:/Assistant: render, per model, both refit on the shared 4,724 conversations](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c3a01240f0c50a889be24075b1fa48168e20b240/figures/issue_825/nat_s_layer_curves.png)
+
+![Paired naturalistic minus chat R² delta per frozen layer per model, with the conversation-level bootstrap interval](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c3a01240f0c50a889be24075b1fa48168e20b240/figures/issue_825/nat_s_l19_delta.png)
 
 **Takeaways:**
-- The mapping **holds up** without chat-template tokens for both the pretrained and instruct models
+- The mapping **holds up** without chat-template tokens in both models: instruct $R^2 = 0.625$ (vs $0.654$ chat), base $R^2 = 0.578$ (vs $0.542$ chat) at layer 19 — all four cells sit ~0.6 above the shuffled-pairing null (≈ −0.03)
+- Small format × model crossover, both deltas distinguishable from zero under the paired bootstrap: the template helps instruct slightly (−0.029 R² without it) and hurts the base slightly (+0.037 without it); the base advantage holds at all four frozen layers, the instruct cost is concentrated at layers 18–19
+- Without the template the base reaches **~93%** of instruct strength (vs ~83% chat at matched n) — the pretraining-inheritance picture gets stronger, not weaker, off-template
+- Per-layer view: [naturalistic vs chat R² scatter, one point per layer](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c3a01240f0c50a889be24075b1fa48168e20b240/figures/issue_825/nat_s_format_scatter.png) — instruct layers sit below the identity line, base layers above
 - This indicates it is not a function of the chat template but more a function of general assistant -> output text
+- Caveats: an earlier draft of this section quoted R² 0.71–0.74, which came from the [#1092](https://eps.superkaiba.com/tasks/1092) naturalistic-transcript corpus — the numbers above are the final refit on this experiment's own conversations; the result JSONs were recovered from the crashed run's boot disk (the run finished fitting and died uploading); the planned MLP probe on the naturalistic cells was not run (ridge-only round)
 
 ### _Result 4: The mapping does NOT hold up for generic stories, or for the user turn, or for generic next span prediction_
 
@@ -197,4 +205,4 @@ I then wanted to see if you can predict the assistant answer in 2 turns from the
 
 **Methodology:** [docs/methodology/issue_825.md](https://github.com/superkaiba/explore-persona-space/blob/3ac0008962012e37f27eca8cbcc1aaed5d8c16c1/docs/methodology/issue_825.md) · [gist](https://gist.github.com/superkaiba/cd6dd04dbacb42587b5458b918710cdb)
 
-**Context:** Thomas-authored results summary (verbatim from chat, 2026-07-15) saved as the clean result, superseding the analyzer-authored v4 body — preserved at `tasks/<status>/825/artifacts/analyzer-clean-result-v4-2026-07-15.md` and in git history. Figures SHA-pinned to `43d7a7e3ea` (main): #825 figure set, #1310 per-character stories, and the cross-issue summary set `figures/summaries/context_answer_map/`.
+**Context:** Thomas-authored results summary (verbatim from chat, 2026-07-15) saved as the clean result, superseding the analyzer-authored v4 body — preserved at `tasks/<status>/825/artifacts/analyzer-clean-result-v4-2026-07-15.md` and in git history. Figures SHA-pinned to `43d7a7e3ea` (main): #825 figure set, #1310 per-character stories, and the cross-issue summary set `figures/summaries/context_answer_map/`. Result 3 updated 2026-07-15 by the `naturalistic-single-turn` same-issue follow-up (verbatim originating prompt: "run it as inline followup as parallelized and vectorized as possible"): the draft template-comparison figure and its placeholder numbers are replaced by the final Track-S refit — data at `eval_results/issue_825/naturalistic-single-turn/` (issue-825 branch @ `cf2b8a8d34`, recovered from GCP attempt att-20260715-072622 after an upload-phase HF 429 crash; fits complete, upload interrupted), round figures SHA-pinned to `c3a01240f0` (issue-825 branch), figure script `scripts/issue825_naturalistic_s_figures.py`.
