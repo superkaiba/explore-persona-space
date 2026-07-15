@@ -2506,8 +2506,8 @@
     "1321": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1321",
-      "status": "running",
+      "path": "tasks/reviewing/1321",
+      "status": "reviewing",
       "title": "daily-fix: follow-up defer/teardown must re-park parent"
     },
     "1322": {
