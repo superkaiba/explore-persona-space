@@ -4665,7 +4665,7 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     assert "hf_dl/**" in data_call["ignore_patterns"]
     assert "**/hf_dl/**" in data_call["ignore_patterns"]
     assert data_call["repo_id"] == "org/repo" and data_call["repo_type"] == "dataset"
-    # _dir_stats pruned BOTH the top-level and the nested hf_dl caches: only
+    # _dir_entries pruned BOTH the top-level and the nested hf_dl caches: only
     # track.jsonl is counted for data_issue_137.
     assert "[crash-persist] uploading dir data_issue_137 (1 files" in proc.stdout
     # Eagerly-streamed audit lines, start to DONE.
