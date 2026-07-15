@@ -1,6 +1,6 @@
 {
-  "commit": "a662de3363",
-  "created": "2026-07-15T20:57:32Z",
+  "commit": "b3c45519b5",
+  "created": "2026-07-15T22:00:54Z",
   "figsize": [
     12.0,
     4.8
@@ -46,7 +46,7 @@
   "n_series": 6,
   "total_points": 6,
   "text": {
-    "suptitle": "Paired cross-cell contrasts at matched install (95% paired-bootstrap CIs)",
+    "suptitle": "Paired cross-cell contrasts at dose-to-band checkpoints (95% paired-bootstrap CIs; LoRA pair below band)",
     "fig_texts": [],
     "axes": [
       {
