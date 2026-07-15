@@ -2428,8 +2428,8 @@
     "1311": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1311",
-      "status": "proposed",
+      "path": "tasks/planning/1311",
+      "status": "planning",
       "title": "workflow-fix: pod-side sentinel read-back tolerance under poller drain-rename"
     },
     "132": {
