@@ -1,137 +1,181 @@
 {
-  "spot_check": [
-    {
-      "source": "D2",
-      "target": "B3",
-      "S_sym": 0.499,
-      "L_loader": 17.3444,
-      "L_recomputed": 17.3444,
-      "cos532": 0.9528,
-      "js540": 0.0173
-    },
-    {
-      "source": "B3",
-      "target": "A1",
-      "S_sym": 0.4272,
-      "L_loader": 13.5708,
-      "L_recomputed": 13.5708,
-      "cos532": 0.9467,
-      "js540": 0.0085
-    },
-    {
-      "source": "C1",
-      "target": "D1",
-      "S_sym": 0.5888,
-      "L_loader": 23.0512,
-      "L_recomputed": 23.0512,
-      "cos532": 0.9757,
-      "js540": 0.0214
-    },
-    {
-      "source": "A2",
-      "target": "D1",
-      "S_sym": 0.4968,
-      "L_loader": 12.0255,
-      "L_recomputed": 12.0255,
-      "cos532": 0.9467,
-      "js540": 0.0303
-    },
-    {
-      "source": "B2",
-      "target": "instr_oblique_2",
-      "S_sym": 0.4813,
-      "L_loader": 13.5802,
-      "L_recomputed": 13.5802,
-      "cos532": 0.9533,
-      "js540": 0.0174
-    }
-  ],
-  "dv_range": {
-    "L_quantiles": {
-      "p0": 2.189,
-      "p5": 5.924,
-      "p25": 11.028,
-      "p50": 14.131,
-      "p75": 18.122,
-      "p95": 22.295,
-      "p100": 25.609
-    },
-    "L_std": 4.939,
-    "share_L_below_0p5_nat": 0.0,
-    "share_L_below_1_nat": 0.0,
-    "share_L_above_5_nat": 0.963,
-    "Lmargin_quantiles": {
-      "p0": -15.297,
-      "p5": -4.604,
-      "p25": -0.53,
-      "p50": 4.487,
-      "p75": 8.318,
-      "p95": 12.882,
-      "p100": 21.865
-    },
-    "spearman_L_vs_Lmargin": 0.258
+ "spot_check": [
+  {
+   "source": "D2",
+   "target": "B3",
+   "S_sym": 0.499,
+   "L_loader": 17.3444,
+   "L_recomputed": 17.3444,
+   "cos532": 0.9528,
+   "js540": 0.0173
   },
-  "target_block_split": {
-    "n_ordinary_cells": 240,
-    "n_instructed_cells": 160,
-    "rho_S_L_ordinary_targets": 0.611,
-    "rho_S_L_instructed_targets": 0.652,
-    "rho_cos_L_ordinary_targets": 0.579,
-    "rho_cos_L_instructed_targets": 0.742,
-    "mean_L_ordinary": 14.71,
-    "mean_L_instructed": 13.873,
-    "mean_S_ordinary": -1.2241,
-    "mean_S_instructed": -0.5563
+  {
+   "source": "B3",
+   "target": "A1",
+   "S_sym": 0.4272,
+   "L_loader": 13.5708,
+   "L_recomputed": 13.5708,
+   "cos532": 0.9467,
+   "js540": 0.0085
   },
-  "jaccard": {
-    "n_queries_sampled": 100,
-    "rho_J_L": 0.232,
-    "rho_J_S": 0.249,
-    "partial_rho_S_L_given_J": 0.589,
-    "partial_rho_S_L_given_cos_js_J": 0.106
+  {
+   "source": "C1",
+   "target": "D1",
+   "S_sym": 0.5888,
+   "L_loader": 23.0512,
+   "L_recomputed": 23.0512,
+   "cos532": 0.9757,
+   "js540": 0.0214
   },
-  "per_family_n_valid": {
-    "A1": 400,
-    "A2": 400,
-    "A3": 400,
-    "A4": 400,
-    "A5": 400,
-    "B1": 400,
-    "B2": 400,
-    "B3": 400,
-    "B4": 400,
-    "B5": 400,
-    "C1": 400,
-    "D1": 400,
-    "D2": 400,
-    "D3": 400,
-    "D4": 400,
-    "D5": 400,
-    "instr_explicit_1": 400,
-    "instr_explicit_2": 400,
-    "instr_explicit_3": 400,
-    "instr_explicit_4": 400,
-    "instr_oblique_1": 400,
-    "instr_oblique_2": 400,
-    "instr_oblique_3": 400,
-    "instr_soft_1": 400,
-    "instr_soft_2": 400,
-    "instr_soft_3": 400
+  {
+   "source": "A2",
+   "target": "D1",
+   "S_sym": 0.4968,
+   "L_loader": 12.0255,
+   "L_recomputed": 12.0255,
+   "cos532": 0.9467,
+   "js540": 0.0303
   },
-  "fresh_partition_r_SS_L27_seed1": 0.991,
-  "supplementary": {
-    "rho_S_trans_directional_L": 0.67,
-    "lofo_target_additive_only": {
-      "cv_r2": 0.691,
-      "pooled_spearman": 0.776
-    },
-    "S_sym_quantiles_400_cells": {
-      "p0": -9.823,
-      "p25": -2.769,
-      "p50": 0.18,
-      "p75": 0.449,
-      "p100": 0.613
-    },
-    "note": "additive-only = source/target one-hot effects + intercept, same LOFO folds (lofo_predictions with empty feature dict)"
+  {
+   "source": "B2",
+   "target": "instr_oblique_2",
+   "S_sym": 0.4813,
+   "L_loader": 13.5802,
+   "L_recomputed": 13.5802,
+   "cos532": 0.9533,
+   "js540": 0.0174
   }
+ ],
+ "dv_range": {
+  "L_quantiles": {
+   "p0": 2.189,
+   "p5": 5.924,
+   "p25": 11.028,
+   "p50": 14.131,
+   "p75": 18.122,
+   "p95": 22.295,
+   "p100": 25.609
+  },
+  "L_std": 4.939,
+  "share_L_below_0p5_nat": 0.0,
+  "share_L_below_1_nat": 0.0,
+  "share_L_above_5_nat": 0.963,
+  "Lmargin_quantiles": {
+   "p0": -15.297,
+   "p5": -4.604,
+   "p25": -0.53,
+   "p50": 4.487,
+   "p75": 8.318,
+   "p95": 12.882,
+   "p100": 21.865
+  },
+  "spearman_L_vs_Lmargin": 0.258
+ },
+ "target_block_split": {
+  "n_ordinary_cells": 240,
+  "n_instructed_cells": 160,
+  "rho_S_L_ordinary_targets": 0.611,
+  "rho_S_L_instructed_targets": 0.652,
+  "rho_cos_L_ordinary_targets": 0.579,
+  "rho_cos_L_instructed_targets": 0.742,
+  "mean_L_ordinary": 14.71,
+  "mean_L_instructed": 13.873,
+  "mean_S_ordinary": -1.2241,
+  "mean_S_instructed": -0.5563
+ },
+ "jaccard": {
+  "n_queries_sampled": 100,
+  "rho_J_L": 0.232,
+  "rho_J_S": 0.249,
+  "partial_rho_S_L_given_J": 0.589,
+  "partial_rho_S_L_given_cos_js_J": 0.106
+ },
+ "per_family_n_valid": {
+  "A1": 400,
+  "A2": 400,
+  "A3": 400,
+  "A4": 400,
+  "A5": 400,
+  "B1": 400,
+  "B2": 400,
+  "B3": 400,
+  "B4": 400,
+  "B5": 400,
+  "C1": 400,
+  "D1": 400,
+  "D2": 400,
+  "D3": 400,
+  "D4": 400,
+  "D5": 400,
+  "instr_explicit_1": 400,
+  "instr_explicit_2": 400,
+  "instr_explicit_3": 400,
+  "instr_explicit_4": 400,
+  "instr_oblique_1": 400,
+  "instr_oblique_2": 400,
+  "instr_oblique_3": 400,
+  "instr_soft_1": 400,
+  "instr_soft_2": 400,
+  "instr_soft_3": 400
+ },
+ "fresh_partition_r_SS_L27_seed1": 0.991,
+ "supplementary": {
+  "rho_S_trans_directional_L": 0.67,
+  "lofo_target_additive_only": {
+   "cv_r2": 0.691,
+   "pooled_spearman": 0.776
+  },
+  "S_sym_quantiles_400_cells": {
+   "p0": -9.823,
+   "p25": -2.769,
+   "p50": 0.18,
+   "p75": 0.449,
+   "p100": 0.613
+  },
+  "note": "additive-only = source/target one-hot effects + intercept, same LOFO folds (lofo_predictions with empty feature dict)"
+ },
+ "revision2": {
+  "same_bank_partial_boot": {
+   "partial_rho_S_L_given_fresh_cos_lstar": 0.415939,
+   "ci_lo": 0.102539,
+   "ci_hi": 0.66669,
+   "n_effective": 2000,
+   "n_boot": 2000,
+   "seed": 0,
+   "machinery": "identical two_way_cluster_bootstrap + partial_spearman code path as boot_partial_given_js (issue1332_analysis.py), B=2000, seed=0"
+  },
+  "S_negative_shares_400_cells": {
+   "share_S_sym_negative": 0.43,
+   "share_S_trans_negative": 0.46,
+   "n_cells": 400
+  },
+  "asym_variance_recompute_16x16": {
+   "registered_formula_diag_inclusive": 0.7397,
+   "registered_formula_offdiag_only": 0.9447,
+   "raw_asym_variance_fraction_diag_inclusive": 0.3698,
+   "raw_asym_variance_fraction_offdiag_only": 0.4724,
+   "note": "registered formula var(L-L^T)/2 / var(L) is calibrated so 1.0 = iid-noise-level asymmetry (= 2x the raw asym-part variance fraction); recomputed from eval_results/issue_532/logp_slot_followup per_cell files"
+  },
+  "ood545_column_accounting": {
+   "n_col_units_in_gate": 10,
+   "n_col_unpowered": 7,
+   "powered_cols": [
+    "fact_expression",
+    "fam_expr_bad_medical",
+    "format_style"
+   ],
+   "powered_margins_r2_minus_null_p95": {
+    "fact_expression": 0.1162,
+    "fam_expr_bad_medical": 0.0101,
+    "format_style": 0.1029
+   },
+   "diagonal_column_universe": 13,
+   "realized": "9 staged from frozen #545 demo pools + 1 regenerated (marker)",
+   "descoped_3": [
+    "fam_expr_risky_financial (Turner EDS password-gated)",
+    "fam_expr_extreme_sports (Turner EDS password-gated)",
+    "harmful_compliance (#545 pending-p1, never built)"
+   ]
+  }
+ }
 }
