@@ -1,0 +1,1 @@
+{"ts": "2026-07-15T10:25:59Z", "event": "raised", "concern_id": "tracks-restream-fallback-not-implemented", "severity": "CONCERN", "summary": "Track-S staging fallback (lmsys re-stream, plan assumption 3) is fail-loud-instructive, not auto-executed: HF-artifact miss halts P0 with the recipe instead of self-recovering.", "raised_by": "experiment-implementer", "raised_at_round": 1}
