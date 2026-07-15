@@ -2756,8 +2756,8 @@
     "1353": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1353",
-      "status": "planning",
+      "path": "tasks/approved/1353",
+      "status": "approved",
       "title": "workflow-fix: gotchas entry \u2014 BPE-seam position-parity gate tail (carve-out, not threshold-loosen)"
     },
     "1354": {
