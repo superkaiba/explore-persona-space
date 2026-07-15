@@ -4780,6 +4780,10 @@ def test_render_startup_script_diagnostics_sweeps_worker_logs() -> None:
         < script.index("\n_up_logs()")
         < script.index("for local, name in (")
     )
+    # #1351: the git-tracked exclude + its fail-open WARN are rendered.
+    assert '"ls-files"' in script
+    assert "git-tracked exclude" in script
+    assert "EXCLUDED {n_tracked} git-tracked file(s)" in script
 
 
 def test_persist_heredoc_worker_logs_tail_sentinel_and_newest_first(tmp_path) -> None:
@@ -4851,6 +4855,83 @@ def test_persist_heredoc_worker_logs_max_files_lt_one_skips_loudly(tmp_path) -> 
     assert not any(
         c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs") for c in calls
     )
+    # #1351: the documented-disable early-return runs BEFORE the git probe —
+    # no WARN, no EXCLUDED line on this path.
+    assert "git-tracked exclude" not in proc.stdout
+
+
+def test_persist_heredoc_worker_logs_excludes_git_tracked(tmp_path) -> None:
+    """#1351 behavioral (executed heredoc): committed repo content under
+    $WORKLOAD_ROOT/logs/ is EXCLUDED from the worker-logs sweep and does NOT
+    consume the LOG_MAX_FILES budget — with a 1-file bound where the TRACKED
+    file is the NEWER one, the sweep stages exactly the untracked run log
+    (an upload-time-only exclusion mutant would let the newer tracked file
+    win the single slot); the EXCLUDED breadcrumb prints AND tees into the
+    transcript."""
+    root = tmp_path / "workload"
+    daily = root / "logs" / "daily"
+    daily.mkdir(parents=True)
+    tracked_md = daily / "2026-06-02.md"
+    tracked_md.write_text("committed retrospective\n")
+    run_dir = root / "logs" / "issue_137"
+    run_dir.mkdir(parents=True)
+    worker = run_dir / "corpus_gpu0_all.log"
+    worker.write_text("worker traceback\n")
+    subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
+    subprocess.run(
+        ["git", "-C", str(root), "add", "logs/daily/2026-06-02.md"], check=True
+    )  # ls-files reads the INDEX — add suffices, no commit/identity needed
+    base = os.stat(worker).st_mtime
+    os.utime(tracked_md, (base + 3600, base + 3600))  # tracked NEWER than run log
+    proc, calls, paths = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_PERSIST_LOG_MAX_FILES": "1"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    folder_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")
+    ]
+    assert [c["path_in_repo"] for c in folder_calls] == ["issue137_partial/att-x/worker_logs"]
+    assert folder_calls[0]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
+    assert "[crash-persist] EXCLUDED 1 git-tracked file(s) from worker_logs sweep" in proc.stdout
+    # Walk-time exclusion: the tracked file never entered the entries pool,
+    # so the dropped-count line does not fire (1 untracked entry, bound 1).
+    assert "older worker log(s) beyond" not in proc.stdout
+    assert "EXCLUDED 1 git-tracked" in paths["transcript"].read_text()
+
+
+def test_persist_heredoc_worker_logs_git_failure_fails_open(tmp_path) -> None:
+    """#1351 fail-open (nonzero-rc arm): when the tracked-set probe fails
+    (WORKLOAD_ROOT is not a git repo -> rc 128), the sweep degrades to the
+    pre-#1351 behavior (stage everything) with a loud grep-stable WARN that
+    ALSO tees into the transcript — never an empty or crashed sweep."""
+    proc, calls, paths = _run_persist_heredoc(tmp_path)  # default fixture: no .git
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] WARN worker_logs git-tracked exclude unavailable" in proc.stdout
+    folder_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")
+    ]
+    assert folder_calls[0]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
+    assert "WARN worker_logs git-tracked exclude unavailable" in paths["transcript"].read_text()
+
+
+def test_persist_heredoc_worker_logs_git_binary_missing_fails_open(tmp_path) -> None:
+    """#1351 fail-open (except-Exception arm): with the git binary
+    unreachable (PATH scrubbed to an empty dir -> FileNotFoundError inside
+    subprocess.run), the except body prints the SAME grep-stable WARN and
+    the sweep still stages everything — the probe's own failure can never
+    crash the persist."""
+    empty_bin = tmp_path / "empty-bin"
+    empty_bin.mkdir()
+    proc, calls, paths = _run_persist_heredoc(tmp_path, env_overrides={"PATH": str(empty_bin)})
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] WARN worker_logs git-tracked exclude unavailable" in proc.stdout
+    folder_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")
+    ]
+    assert folder_calls[0]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
+    assert "WARN worker_logs git-tracked exclude unavailable" in paths["transcript"].read_text()
 
 
 # ---------------------------------------------------------------------------

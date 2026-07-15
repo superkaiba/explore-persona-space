@@ -109,3 +109,5 @@
 - [vLLM H100 IMA under heavy shared-prefix caching](feedback_vllm_h100_prefix_cache_ima.md) — A100-clean + short-probe-clean differential pins the class; mitigate enable_prefix_caching=False + enforce_eager=True (default-off knobs) (#1092 launch 4)
 - [REPO_ROOT="$WORKLOAD_ROOT" prefix is GCE-only — fatal on the RunPod failover lane](feedback_workload_root_prefix_lane_portability.md) — launch self-defaulting dispatch scripts BARE; lane-portable form ${WORKLOAD_ROOT:-/workspace/explore-persona-space} (#1336)
 - [stale .git/index.lock kills the pod-side result commit at run end](feedback_stale_index_lock_pre_launch_probe.md) — probe+clear a confirmed-stale 0B lock pre-launch on pods whose tail commits pod-side (#1336)
+- [Pod git auth can go stale mid-lifecycle](feedback_pod_git_auth_stale_midlifecycle.md) — #1239 credential-helper recovery works on RunPod too; pod sync = single-statement git -C calls (#1315)
+- [Smoke tree eats full-leg headroom](feedback_smoke_tree_eats_full_leg_headroom.md) — reap the uploaded smoke tree before the full (re)launch on shared out-roots (#1333)

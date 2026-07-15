@@ -238,6 +238,9 @@ _FLEET_MUTATING_PASS_NAMES = (
     "boot_death_pass",
     # Escalate-only observer passes against live VM state (round 2).
     "verdict_disagree_pass",
+    # #1341: escalate-only too, but it runs a REAL `git status` against the
+    # LIVE shared root and can write real sidecar rows + fire real pushes.
+    "root_draft_pass",
     "cpu_guard_pass",
     "happy_patch_pass",
     "data_disk_pass",

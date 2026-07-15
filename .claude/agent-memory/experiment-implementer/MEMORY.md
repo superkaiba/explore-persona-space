@@ -62,7 +62,7 @@
 - [4-D per-q caches blow up disk](feedback_per_q_4d_disk_blowup.md) — (n_q, n_layers, n_pos, D) is N_pos× the 3-D estimate; default per-q writes to the analyzer-needed subset. #263.
 - [Upload loops need 5xx retry + skip-set pairing](feedback_upload_loop_retry_plus_skip_set.md) — bounded 5xx retry (4xx loud) + pre-fetched skip set; verify on a FRESH listing. #542.
 - [Smoke-root rebinding orphans parent inputs](feedback_smoke_root_rebind_orphans_parent_inputs.md) — pin parent inputs to a NON-rebinding constant and stage before the --smoke early-return. #542.
-- [Lazy imports in smoke-skipped branches](feedback_lazy_imports_skipped_by_smoke.md) — hoist to module top + AST --verify-imports gate before relaunch. #606.
+- [Lazy imports in smoke-skipped branches](feedback_lazy_imports_skipped_by_smoke.md) — hoist to module top + AST --verify-imports gate + bind fenced calls before relaunch. #606/#1332.
 - [Subagent one turn, no watchers](feedback_subagent_one_turn_no_watchers.md) — watchers die at turn end; run minutes-scale smokes foreground with timeouts.
 - [bg heartbeat sleep child holds pipe](feedback_bg_heartbeat_sleep_child_holds_pipe.md) — killed subshell's in-flight sleep holds stdout; STOP→pkill-child→CONT→TERM in the trap. #601.
 - [PYTHONHASHSEED re-exec dance](feedback_pythonhashseed_reexec.md) — pin via os.execvpe re-exec at entry; setting from Python is too late.
@@ -111,3 +111,4 @@
 - [Fanout units must never lazily stage a shared input dest](feedback_fanout_shared_staging_race.md) — pre-stage once in the parent; per-invocation mkdtemp staging + full-set staleness guards (#1315 r5)
 - [Register dynamic registry entries at point of use](feedback_registry_side_effect_lost_on_resume.md) — resume fast-forward loses in-process registration side effects; register immediately before each consumer (#1315 r6)
 - [Smoke-scale gates](feedback_smoke_scale_gates.md) — production-n-calibrated verdicts (anchor tolerances, yield floors) bind spuriously at smoke n; demote to informational under --smoke, keep production pins (#1345)
+- [Hub verify-path retry + prefix batching](feedback_hub_verify_retry_transient.md) — one unretried per-file file_exists HEAD let a single 429 kill a run post-upload (#1335); retry_transient + one prefix listing

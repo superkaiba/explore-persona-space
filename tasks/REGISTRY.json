@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1356,
+  "highest_id": 1357,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2589,11 +2589,11 @@
     },
     "1332": {
       "goal": "Test whether function-space similarity between per-context-family fitted linear context\u2192answer maps (cross-family transfer R\u00b2 / prediction agreement on the frozen base model, both prefix-based and context-based arms) predicts fine-tuning leakage from source persona to target contexts on an existing measured leakage matrix, with incremental validity over the activation-cosine, JS-divergence, base-rate-prior, and whitened-gate baselines under group-level held-out (LOFO) evaluation.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/1332",
       "status": "interpreting",
-      "title": "Function-space similarity between per-context fitted context\u2192answer maps as a leakage predictor"
+      "title": "Function-space map similarity predicts marker leakage but is statistically redundant with the activation-cosine baseline (MODERATE confidence)"
     },
     "1333": {
       "goal": "Build the marker anchor for the organism-geometry spectrum via the FULL #1112 design on the factory marker behavior (token id 83399): {LoRA, full fine-tune} x {positive-only, contrastive} 2x2 at MATCHED marker install (mirroring #1112 sycophancy + #1315 impolite), plus a LoRA extension across the 4 #1090 contexts for install/expression/leakage breadth; geometry DVs mirror #1112 (rank-k@90/participation-ratio/alignment/magnitude + the mandatory teacher-forced shared-text control) plus the three-space on-policy marker log-P install DV; dedicated marker recipe (marker+EOT loss, lr<=5e-6, band-stop, contrastive-negative EOS slot), de-saturated anchor.",
@@ -2622,8 +2622,8 @@
       "goal": "Determine whether RLVR-style RL post-training changes the linear context\u2192answer-profile map more than SFT/DPO post-training, using a released separated-stage ladder (primary candidate: Llama-3.1-8B base \u2192 Tulu-3-8B-SFT \u2192 Tulu-3-8B-DPO \u2192 Tulu-3-8B post-RLVR) \u2014 per stage, measure (a) within-stage held-out R\u00b2 of the per-example ridge map c_x \u2192 v(x) (#779/#825 recipe, prefix AND context arms) and (b) the #825 Result-2 reparameterization gap (within-stage R\u00b2 minus reparameterized-base-map R\u00b2 on identical text), testing whether the gap grows specifically at the RLVR stage (teaching) vs stays \u22480 at all stages (elicitation) vs grows uniformly with post-training depth.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/1336",
-      "status": "verifying",
+      "path": "tasks/planning/1336",
+      "status": "planning",
       "title": "Does RLVR post-training change the base\u2192post-trained context\u2192answer map more than SFT/DPO? (separated-stage ladder)"
     },
     "1337": {
@@ -2664,29 +2664,29 @@
     "1341": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1341",
-      "status": "reviewing",
+      "path": "tasks/completed/1341",
+      "status": "completed",
       "title": "workflow-fix: watcher escalate-only pass for stale untracked root code drafts"
     },
     "1342": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1342",
-      "status": "running",
+      "path": "tasks/completed/1342",
+      "status": "completed",
       "title": "workflow-fix: signature-bind fenced calls in the deferred-import sweep"
     },
     "1343": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1343",
-      "status": "running",
+      "path": "tasks/completed/1343",
+      "status": "completed",
       "title": "workflow-fix: GCE crash-persist must verify uploads before persist=ok"
     },
     "1344": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1344",
-      "status": "running",
+      "path": "tasks/completed/1344",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 smoke parity includes ZeRO-3 process width"
     },
     "1345": {
@@ -2700,22 +2700,22 @@
     "1346": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1346",
-      "status": "proposed",
+      "path": "tasks/running/1346",
+      "status": "running",
       "title": "workflow-fix: width re-eval on FLOP-bound mid-run deviation relaunch"
     },
     "1347": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1347",
-      "status": "proposed",
+      "path": "tasks/planning/1347",
+      "status": "planning",
       "title": "workflow-fix: fact-check HF reuse existence at the pinned revision"
     },
     "1348": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1348",
-      "status": "proposed",
+      "path": "tasks/planning/1348",
+      "status": "planning",
       "title": "workflow-fix: gotchas.md \u2014 matplotlib errorbar offsets non-negative (clamp CI bounds)"
     },
     "1349": {
@@ -2742,8 +2742,8 @@
     "1351": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1351",
-      "status": "running",
+      "path": "tasks/completed/1351",
+      "status": "completed",
       "title": "workflow-fix: crash-persist worker-log sweep excludes committed repo content"
     },
     "1352": {
@@ -2780,6 +2780,13 @@
       "path": "tasks/proposed/1356",
       "status": "proposed",
       "title": "workflow-fix: gotchas \u2014 pid-namespace vLLM EngineCore reap variant"
+    },
+    "1357": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1357",
+      "status": "proposed",
+      "title": "workflow-fix: upload-policy.md \u2014 verify-path Hub calls ride retry_transient + prefix listings"
     },
     "136": {
       "has_clean_result": false,

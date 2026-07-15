@@ -116,8 +116,11 @@ section wins on invocation form.
    smoke-phase definition vs sweep-phase definition. **PREFER UNIFICATION:**
    if the plan unified the paths (smoke IS sweep with `--cells 1 --seeds 1`
    or equivalent single-cell parameterization — same dispatcher, same
-   subprocess shape, same env injection, same logging surface, same
-   teardown sequence, AND the cell-subset parameterization threads through
+   subprocess shape, same LAUNCH WIDTH (`--num_processes` / CVD
+   composition — smoke never narrows the process shape; see the
+   smoke-width entry in `.claude/rules/gotchas.md`, #1315/#1333), same
+   env injection, same logging surface, same teardown sequence, AND the
+   cell-subset parameterization threads through
    EVERY phase the dispatcher executes), the verdict is `PASS_UNIFIED`.
    **Per-phase subset threading is part of the PASS_UNIFIED definition,
    not an optional extra:** list each phase the dispatcher runs (train,
@@ -391,8 +394,17 @@ such corpora or banks:
    (AST-walk and import each symbol, the `--verify-imports` pattern from
    `scripts/issue_606/i606_dispatch.py`; hand-maintained symbol lists
    re-create the drift) or hoist cheap cross-script helper imports to
-   module top. Full trap + incident #606: `.claude/rules/gotchas.md`
-   "Lazy imports inside smoke-skipped branches".
+   module top — AND, either way, SIGNATURE-BIND every smoke-fenced call
+   to an imported helper (import resolution and hoisting both green-light
+   a call-arity/keyword mismatch — #1332 r1: two fenced
+   `verify_repo_paths_uploaded` calls → deterministic TypeError at the
+   terminal upload stage): dry-run `inspect.signature(fn).bind(...)` with
+   each call site's statically-known shape (positional count + keyword
+   names as placeholder values; `bind_partial` when the call forwards
+   `*args`/`**kwargs`; skip-with-note a callee whose `signature()` raises
+   ValueError). Full recipe + worked example + incidents #606/#1332:
+   `.claude/rules/gotchas.md` "Lazy imports inside smoke-skipped
+   branches".
 2b. **Changed-literal pin-sweep + mapped-scan run (#1288/#1144).** Grep
    `tests/` for each changed literal (old+new); run every hit, plus the
    Step 10d mapped tests (`select_step9c_tests.py --map-files
