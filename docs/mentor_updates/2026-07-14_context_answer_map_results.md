@@ -67,6 +67,8 @@ I then wanted to see whether post-training builds a *new* map or just re-express
 - Test whether base's operator, reparameterized, reproduces instruct's ($A_{ans} \circ M_{base} \circ A_{ctx}^{-1}$), under a **general-linear** vs an **orthogonal (rotation)** change of coordinates
 - Decompose the base→instruct context shift into the directions the map reads vs the directions it ignores
 
+![instruct own map vs reparameterized base map](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6ea63f4d33a981f859b1e93da42fba37a3752246/figures/issue_825/reparam_vs_instruct.png)
+
 **Takeaways:**
 
 - The two maps are **the same function in different coordinates, via a general linear map** — not a rotation:
