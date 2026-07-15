@@ -73,6 +73,12 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--model", choices=list(r1335.MODEL_KINDS), default=None)
     ap.add_argument("--data-dir", type=Path, default=Path("data/issue_1335"))
     ap.add_argument("--store-dir", type=Path, default=None, help="default <data-dir>/store")
+    ap.add_argument(
+        "--out-dir",
+        type=Path,
+        default=Path("eval_results/issue_1335"),
+        help="wiring-check JSON destination (smoke passes a scratch dir)",
+    )
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--tiny-model-dir", type=str, default=None, help="CPU smoke model dir")
     ap.add_argument("--resume", action="store_true")
@@ -399,8 +405,7 @@ def main() -> int:
         c1310.write_json(store_dir / f"{model_kind}_equivalence.json", {**fp, **eq})
     if args.wiring_check:
         w = wiring_check(model, items, pad_id, args.wiring_check, args.batch_size)
-        out_dir = Path("eval_results/issue_1335")
-        c1310.write_json(out_dir / f"wiring_{slug}_{model_kind}.json", {**fp, **w})
+        c1310.write_json(args.out_dir / f"wiring_{slug}_{model_kind}.json", {**fp, **w})
         assert w["own_beats_shuffled"] or args.tiny_model_dir, (
             "wiring gate FAIL: own-context NLL does not beat shuffled context"
         )

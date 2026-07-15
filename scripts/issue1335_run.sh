@@ -215,7 +215,7 @@ run_model_lane() {  # run_model_lane <model> <data_dir> <out_dir> <mode>
       extra+=(--wiring-check "$wiring_n")
     fi
     uv run python scripts/issue1335_extract_store.py --rung "$rung" --model "$model" \
-      --data-dir "$data_dir" --resume "${tiny_args[@]}" "${extra[@]}"
+      --data-dir "$data_dir" --out-dir "$out_dir" --resume "${tiny_args[@]}" "${extra[@]}"
     first_capture=0
     uv run python scripts/issue1335_fit.py --rung "$rung" --model "$model" \
       --data-dir "$data_dir" --out-dir "$out_dir" --resume "${fit_args[@]}" "${cuda_fit_args[@]}"
