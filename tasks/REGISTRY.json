@@ -2664,8 +2664,8 @@
     "1341": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1341",
-      "status": "proposed",
+      "path": "tasks/planning/1341",
+      "status": "planning",
       "title": "workflow-fix: watcher escalate-only pass for stale untracked root code drafts"
     },
     "1342": {
