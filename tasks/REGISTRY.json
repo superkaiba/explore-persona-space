@@ -2861,8 +2861,8 @@
     "1367": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1367",
-      "status": "planning",
+      "path": "tasks/approved/1367",
+      "status": "approved",
       "title": "workflow-fix: self-heal crash-truncated events.jsonl line on append"
     },
     "137": {
