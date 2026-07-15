@@ -115,3 +115,4 @@
 - [Hub verify-path retry + prefix batching](feedback_hub_verify_retry_transient.md) — one unretried per-file file_exists HEAD let a single 429 kill a run post-upload (#1335); retry_transient + one prefix listing
 - [Plain-text span boundaries BPE-merge](feedback_plain_text_span_boundary_bpe_merge.md) — offset-mapping spans + seam provenance; span-rig smokes include a plain-text-boundary context (#1315 r7)
 - [Bounded-retry the hub upload no-path return](feedback_hub_upload_no_path_transport_retry.md) — hub._upload swallows 429/Xet-queue and returns empty; dispatcher seams retry with backoff, fail-loud on exhaustion (#1315 r8)
+- [bf16-GPU parity-gate tolerance](feedback_bf16_gpu_parity_gate_tolerance.md) — never calibrate a capture determinism cosine bar on the CPU smoke; bf16 CUDA noise is ~1e-6, use >= 0.9999 (#1005)
