@@ -37,6 +37,64 @@ def test_vectorized_fit_matches_serial_oracle():
     assert result["max_abs_bootstrap_delta"] <= result["tol"]
 
 
+def test_ridge_device_conversions_tensor_safe(monkeypatch):
+    """Pin the #1335 att-20260715-114351 crash class WITHOUT a GPU.
+
+    When ``_fit_device()`` is cuda, the batched null path hands
+    ``_ridge_predict_cached_batched`` a device-RESIDENT ``(b, n_tr, D)`` slice
+    (``Y_t[p_tr]``), and ``np.asarray`` on a CUDA tensor raises
+    ``TypeError: can't convert cuda:0 device type tensor to numpy``. Emulate on
+    CPU by making ``np.asarray`` raise on ANY torch.Tensor, then assert every
+    device-boundary conversion site (_prep_fold, _ridge_predict_cached,
+    _ridge_predict_cached_batched, _null_ss_contrib) completes on tensor input
+    AND reproduces the numpy-input result exactly (fp32->fp64 conversion is
+    exact on either path, so equality is bitwise).
+    """
+    import numpy as np
+    import torch
+
+    rng = np.random.default_rng(0)
+    n_tr, n_te, d_in, dim, batch = 12, 5, 6, 4, 3
+    n = n_tr + n_te
+    x_tr = rng.standard_normal((n_tr, d_in)).astype(np.float32)
+    x_te = rng.standard_normal((n_te, d_in)).astype(np.float32)
+    y_tr = rng.standard_normal((n_tr, dim)).astype(np.float32)
+    y_batch = rng.standard_normal((batch, n_tr, dim)).astype(np.float32)
+    y_layer = rng.standard_normal((n, dim)).astype(np.float32)
+    tr_mask = np.zeros(n, dtype=bool)
+    tr_mask[:n_tr] = True
+    te_mask = ~tr_mask
+    perms = [rng.permutation(n) for _ in range(3)]
+
+    # numpy-input reference FIRST (the legacy path, unpatched).
+    cache_ref = fit825._prep_fold(x_tr, x_te)
+    pred_ref = fit825._ridge_predict_cached(cache_ref, y_tr)
+    pred_b_ref = fit825._ridge_predict_cached_batched(cache_ref, y_batch)
+    ssr_ref, sst_ref = fit825._null_ss_contrib(cache_ref, y_layer, tr_mask, te_mask, perms)
+
+    # Now make np.asarray raise on ANY tensor (the CUDA behavior, CPU-emulated).
+    real_asarray = np.asarray
+
+    def _strict_asarray(obj, *args, **kwargs):
+        if torch.is_tensor(obj):
+            raise TypeError("can't convert cuda:0 device type tensor to numpy (pinned #1335)")
+        return real_asarray(obj, *args, **kwargs)
+
+    monkeypatch.setattr(fit825.np, "asarray", _strict_asarray)
+
+    cache_t = fit825._prep_fold(torch.as_tensor(x_tr), torch.as_tensor(x_te))
+    pred_t = fit825._ridge_predict_cached(cache_t, torch.as_tensor(y_tr))
+    pred_b_t = fit825._ridge_predict_cached_batched(cache_t, torch.as_tensor(y_batch))
+    ssr_t, sst_t = fit825._null_ss_contrib(
+        cache_t, torch.as_tensor(y_layer), tr_mask, te_mask, perms
+    )
+
+    np.testing.assert_array_equal(pred_t, pred_ref)
+    np.testing.assert_array_equal(pred_b_t.cpu().numpy(), pred_b_ref.cpu().numpy())
+    np.testing.assert_array_equal(ssr_t, ssr_ref)
+    np.testing.assert_array_equal(sst_t, sst_ref)
+
+
 def _write_prefill(data_dir: Path, model_kind: str, n_records: int) -> None:
     d = data_dir / "prefill"
     d.mkdir(parents=True, exist_ok=True)

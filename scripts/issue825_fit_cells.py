@@ -111,6 +111,23 @@ def _forbid_serial(what: str) -> None:
         raise RuntimeError(f"{what}: EPM_FORBID_SERIAL_FITS=1 — serial fit path is disabled.")
 
 
+def _as_f64_on(x, dev: torch.device) -> torch.Tensor:
+    """Device-safe fp64 conversion for the ridge-fit device boundary.
+
+    ``np.asarray`` on a CUDA tensor raises TypeError (#1335 att-20260715-114351:
+    the batched null path hands _ridge_predict_cached_batched the device-resident
+    slice ``Y_t[p_tr]`` when ``_fit_device()`` is cuda — masked historically
+    because prior runs' fits were CPU-resident). Tensors take the torch-native
+    dtype/device move; non-tensor inputs keep the exact legacy numpy path.
+    fp32->fp64 conversion is exact on either path, so results are bit-compatible
+    (pinned by tests/test_issue1310_vectorized_fit.py::
+    test_ridge_device_conversions_tensor_safe).
+    """
+    if torch.is_tensor(x):
+        return x.detach().to(device=dev, dtype=torch.float64)
+    return torch.as_tensor(np.asarray(x), dtype=torch.float64).to(dev)
+
+
 def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
     """Compute the Y-independent pieces of the Gram-space ridge for one fold.
 
@@ -120,8 +137,8 @@ def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
     fp64 at n=5000), built and discarded inside the sweep loop.
     """
     dev = _fit_device()
-    Xtr = torch.as_tensor(np.asarray(X_train), dtype=torch.float64).to(dev)
-    Xev = torch.as_tensor(np.asarray(X_eval), dtype=torch.float64).to(dev)
+    Xtr = _as_f64_on(X_train, dev)
+    Xev = _as_f64_on(X_eval, dev)
     xmu = Xtr.mean(0)
     xsd = Xtr.std(0) + 1e-9
     Xtr_n = (Xtr - xmu) / xsd
@@ -145,7 +162,7 @@ def _ridge_predict_cached(
     (#931 `matched-n-denominator-dip` registered source-module change; the
     default returns the prediction alone, byte-preserving).
     """
-    Ytr = torch.as_tensor(np.asarray(Y_train), dtype=torch.float64).to(cache["w"].device)
+    Ytr = _as_f64_on(Y_train, cache["w"].device)
     ymu = Ytr.mean(0)
     Ytr_c = Ytr - ymu
     w, V, KevV, ntr = cache["w"], cache["V"], cache["KevV"], cache["ntr"]
@@ -182,7 +199,9 @@ def _ridge_predict_cached_batched(cache: dict, Y_train_batch) -> torch.Tensor:
     scalar path to fp roundoff (equivalence-gated). Returns preds (B, n_te, D).
     """
     dev = cache["w"].device
-    Ytr = torch.as_tensor(np.asarray(Y_train_batch), dtype=torch.float64).to(dev)
+    # Y_train_batch is a device-RESIDENT tensor on the batched null path
+    # (Y_t[p_tr] in _null_ss_contrib) — never route it through numpy (#1335).
+    Ytr = _as_f64_on(Y_train_batch, dev)
     if Ytr.ndim == 2:
         Ytr = Ytr.unsqueeze(0)
     ymu = Ytr.mean(1, keepdim=True)  # (B,1,D)
@@ -249,7 +268,7 @@ def _null_ss_contrib(
     if impl != "batched":
         raise ValueError(f"unknown null impl {impl!r}")
     dev = cache["w"].device
-    Y_t = torch.as_tensor(np.asarray(Y_layer), dtype=torch.float64).to(dev)  # (N,D)
+    Y_t = _as_f64_on(Y_layer, dev)  # (N,D)
     perm_stack = np.stack(null_perms)  # (B,N)
     tr_idx = np.flatnonzero(np.asarray(tr_mask))
     te_idx = np.flatnonzero(np.asarray(te_mask))
