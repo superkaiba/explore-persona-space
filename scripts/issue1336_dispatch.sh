@@ -22,6 +22,7 @@
 #   bash scripts/issue1336_dispatch.sh all [--smoke]
 #   bash scripts/issue1336_dispatch.sh <g0_gate|gen|extract|fit|align|upload> [--smoke]
 #   bash scripts/issue1336_dispatch.sh d1_battery [--smoke]   # plan v7 D1.4/D1.6 GPU leg
+#   bash scripts/issue1336_dispatch.sh d1_vmsteps [--smoke]    # plan v7 D1.0-D1.3+D1.7 CPU leg
 #   bash scripts/issue1336_dispatch.sh d2_probe [--smoke]      # plan v7 D2 (conditional)
 set -euo pipefail
 
@@ -632,9 +633,14 @@ PY
     fi
     uv run python scripts/issue1336_diagnose_g1.py \
         --steps "$steps" --stage-root "$stage_root" --out-dir "$diag_dir"
-    # Uploads: npz tensors -> analysis_tensors/diagnosis, JSONs -> the
-    # eval-results mirror (single bulk upload_folder commits, #664).
-    UP_SRC="$diag_dir" UP_REPO="$HF_DATA_REPO" UP_PREFIX="$HF_PREFIX" \
+    upload_diag_outputs d1_battery
+    commit_push_diag d1_battery "task #1336: D1 diagnosis outputs (battery + qwen_cal GPU leg)"
+}
+
+# Uploads: npz tensors -> analysis_tensors/diagnosis, JSONs -> the
+# eval-results mirror (single bulk upload_folder commits, #664).
+upload_diag_outputs() { # $1 = phase label
+    UP_SRC="$OUT_DIR/diagnosis" UP_REPO="$HF_DATA_REPO" UP_PREFIX="$HF_PREFIX" UP_LABEL="$1" \
         uv run python - <<'PY'
 import os
 from pathlib import Path
@@ -645,6 +651,7 @@ assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing in workload env"
 src = os.environ["UP_SRC"]
 repo = os.environ["UP_REPO"]
 prefix = os.environ["UP_PREFIX"]
+label = os.environ["UP_LABEL"]
 upload_folder(
     repo_id=repo,
     repo_type="dataset",
@@ -652,7 +659,7 @@ upload_folder(
     path_in_repo=f"{prefix}/eval_results_mirror/diagnosis",
     allow_patterns=["*.json"],
 )
-print("[d1_battery] diagnosis JSON mirror uploaded")
+print(f"[{label}] diagnosis JSON mirror uploaded")
 tensors = Path(src) / "tensors"
 if tensors.exists():
     upload_folder(
@@ -662,35 +669,136 @@ if tensors.exists():
         path_in_repo=f"{prefix}/analysis_tensors/diagnosis",
         allow_patterns=["*.npz"],
     )
-    print("[d1_battery] diagnosis tensors uploaded")
+    print(f"[{label}] diagnosis tensors uploaded")
 PY
-    # Commit diagnosis JSONs to the issue branch; push verified (#1205 — the
-    # `git push || true` swallow shape is banned). Checkpoints/tensors are
-    # HF-bound, never git (eval_results/ is JSON/text only).
-    local branch rc=0
+}
+
+# Commit diagnosis JSONs to the issue branch; push verified (#1205 — the
+# `git push || true` swallow shape is banned). Checkpoints/tensors are
+# HF-bound, never git (eval_results/ is JSON/text only).
+commit_push_diag() { # $1 = phase label, $2 = commit message
+    local label="$1" msg="$2" branch rc=0
     branch=$(git rev-parse --abbrev-ref HEAD)
-    git add "$diag_dir"/*.json
+    git add "$OUT_DIR/diagnosis"/*.json
     if ! git diff --cached --quiet; then
-        git commit -m "task #1336: D1 diagnosis outputs (battery + qwen_cal GPU leg)"
+        git commit -m "$msg"
     fi
     git push origin "HEAD:$branch" || rc=$?
     if [ "$rc" -ne 0 ] || [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
-        echo "[d1_battery] push not landed — one retry after rebase" >&2
+        echo "[$label] push not landed — one retry after rebase" >&2
         git pull --rebase=merges --autostash origin "$branch"
         git push origin "HEAD:$branch"
     fi
     if [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
-        echo "[d1_battery] FATAL: diagnosis commit not on origin/$branch after retry" >&2
+        echo "[$label] FATAL: diagnosis commit not on origin/$branch after retry" >&2
         exit 86
     fi
-    echo "[d1_battery] diagnosis commit verified on origin/$branch"
+    echo "[$label] diagnosis commit verified on origin/$branch"
 }
 
-write_d1_results_sentinel() {
-    local ts path
+# Fail-loud pre-verdict input check (plan v7 D1.7): the d1_vmsteps verdict
+# consumes the d1_battery GPU-leg JSONs COMMITTED on the issue branch
+# (0843351ab); a fresh clone missing them must die BEFORE any staging work.
+assert_d1_verdict_inputs() { # $1 = diagnosis dir
+    local d="$1" chat="rlvr_chat_lmsys5k" f missing=0
+    for f in refit_qwen_cal.json \
+        "refit_v0_${chat}.json" "refit_v1_${chat}.json" "refit_v2_${chat}.json" \
+        "refit_v3_${chat}.json" "refit_v4_${chat}.json" "refit_null_std_${chat}.json"; do
+        if [ ! -f "$d/$f" ]; then
+            echo "[d1_vmsteps] FATAL: verdict input $d/$f missing" >&2
+            missing=1
+        fi
+    done
+    if [ "$missing" -ne 0 ]; then
+        echo "[d1_vmsteps] FATAL: clone lacks the committed d1_battery outputs" \
+            "(branch issue-1336 @ 0843351ab or later) — verdict cannot run" >&2
+        exit 71
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Phase D1 VM steps (plan v7 D1.0-D1.3 + D1.7): stage -> decomp -> audit ->
+# spotcheck -> verdict on a CPU lane (GCP cpu-mid; the shared VM killed four
+# staging attempts). No GPU parts — qwen_cal/battery ran in the d1_battery
+# GPU leg and their JSONs are committed on the branch (asserted present
+# BEFORE staging). The driver's _fit_device already handles CPU.
+# ---------------------------------------------------------------------------
+phase_d1_vmsteps() {
+    echo "[phase=d1_vmsteps]"
+    local diag_dir="$OUT_DIR/diagnosis"
+    mkdir -p "$diag_dir"
+    if [ "$SMOKE" -eq 1 ]; then
+        local froot="$OUT_DIR/diag_fixture"
+        uv run python scripts/issue1336_smoke_fixtures.py diag \
+            --out "$froot" --n 12 --layers 2 --dim 8 --seed 0
+        # DG0 oracle on the fixture (same shape as the d1_battery smoke): the
+        # production sweep sets the target the driver's v0 must reproduce.
+        local oracle
+        oracle=$(FROOT="$froot" uv run python - <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "scripts")
+import numpy as np
+
+import issue825_fit_cells as fc
+import issue1336_fit_cells as f36
+
+root = Path(os.environ["FROOT"])
+targets = {}
+for cell in ("rlvr_chat_lmsys5k", "rlvr_naturalistic_lmsys5k"):
+    bundle = fc._load_bundle_any(root / f"turnstore_{cell}", *cell.split("_", 2))
+    xy = f36._cell_xy_1336(bundle, 2)
+    sweep = fc.heldout_r2_sweep(
+        xy["X"], xy["Y"], xy["conv_ids"], n_folds=3, seed=0, null_draws=0, frozen_layers=(1,)
+    )
+    targets[cell] = float(np.nanmax(sweep["r2_obs"]))
+print(json.dumps(targets))
+PY
+)
+        # Prerequisite battery/qwen_cal fixture outputs — the smoke analogue
+        # of the clone-committed GPU-leg JSONs the production path asserts on.
+        uv run python scripts/issue1336_diagnose_g1.py \
+            --steps qwen_cal,battery \
+            --stage-root "$froot" --out-dir "$diag_dir" \
+            --preds-dir "$froot/preds" --gen-dir "$froot/gen" \
+            --qwen-reduced "$froot/qwen_reduced/qwen_s1_reduced.pt" \
+            --folds 3 --null-draws 2 --n-boot 25 --expect-n 12 \
+            --dg0-targets-json "$oracle"
+        assert_d1_verdict_inputs "$diag_dir"
+        # Production-shaped step list (--steps stage is inert: fixture
+        # pre-staged, every stage sub-dir exists, so the HF fetch is skipped).
+        uv run python scripts/issue1336_diagnose_g1.py \
+            --steps stage,decomp,audit,spotcheck,verdict \
+            --stage-root "$froot" --out-dir "$diag_dir" \
+            --preds-dir "$froot/preds" --gen-dir "$froot/gen" \
+            --qwen-reduced "$froot/qwen_reduced/qwen_s1_reduced.pt" \
+            --folds 3 --spotcheck-n 5 --expect-n 12
+        echo "[d1_vmsteps] smoke complete (scratch $diag_dir; no uploads)"
+        return 0
+    fi
+    assert_d1_verdict_inputs "$diag_dir"
+    local stage_root="${DIAG_STAGE_ROOT:-data/issue_1336/diag_stage}"
+    uv run python scripts/issue1336_diagnose_g1.py \
+        --steps stage,decomp,audit,spotcheck,verdict \
+        --stage-root "$stage_root" --out-dir "$diag_dir"
+    upload_diag_outputs d1_vmsteps
+    commit_push_diag d1_vmsteps "task #1336: D1 diagnosis VM-steps outputs (decomp/audit/spotcheck/verdict)"
+    local routed
+    routed=$(uv run python -c \
+        "import json,sys; print(json.load(open(sys.argv[1]))['routed_decision'])" \
+        "$diag_dir/diagnosis_verdict.json")
+    emit_signal "epm:progress" "d1_vmsteps" \
+        "issue1336 d1_vmsteps: diagnosis verdict routed_decision=$routed (JSONs committed + mirrored)"
+}
+
+write_d1_results_sentinel() { # $1 = optional phase label (default d1_battery)
+    local ts path phase="${1:-d1_battery}"
     ts=$(date +%s)
     path="$LOG_DIR/issue-1336-$(printf '%s' "$RESULTS_KIND" | tr ':' '_')-${ts}.json"
-    RES_OUT="$path" RES_KIND="$RESULTS_KIND" RES_DIAG="$OUT_DIR/diagnosis" \
+    RES_OUT="$path" RES_KIND="$RESULTS_KIND" RES_DIAG="$OUT_DIR/diagnosis" RES_PHASE="$phase" \
         RES_NGPU="$NGPU" RES_START="$(cat "$DONE_DIR/start_ts")" RES_SMOKE="$SMOKE" \
         uv run python - <<'PY'
 import json
@@ -731,7 +839,7 @@ gpu_hours = round(
     2,
 )
 note = {
-    "phase": "d1_battery",
+    "phase": os.environ["RES_PHASE"],
     "eval_numbers": eval_numbers,
     "eval_paths": sorted(str(p) for p in diag.glob("*.json"))[:100],
     "reproducibility_card": {
@@ -1138,6 +1246,13 @@ d1_battery)
     write_d1_results_sentinel
     echo "[phase=done]"
     ;;
+d1_vmsteps)
+    # CPU-leg workload (plan v7 D1.0-D1.3 + D1.7): stage/decomp/audit/
+    # spotcheck/verdict on a fresh clone carrying the committed battery JSONs.
+    run_phase d1_vmsteps
+    write_d1_results_sentinel d1_vmsteps
+    echo "[phase=done]"
+    ;;
 d2_probe)
     # CONDITIONAL GPU-leg workload (plan v7 Phase D2): capture-parity probe.
     run_phase d2_probe
@@ -1145,7 +1260,7 @@ d2_probe)
     echo "[phase=done]"
     ;;
 *)
-    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d2_probe [--smoke]" >&2
+    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe [--smoke]" >&2
     exit 2
     ;;
 esac
