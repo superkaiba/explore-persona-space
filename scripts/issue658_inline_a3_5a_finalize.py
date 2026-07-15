@@ -18,12 +18,19 @@ import json
 import os
 import subprocess
 
-import matplotlib
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the matplotlib/numpy imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.stats import spearmanr
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
 
 RES = "eval_results/issue_658/inline_a3_5a_coherence"
 FIG = "figures/issue_658"
