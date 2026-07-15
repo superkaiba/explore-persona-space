@@ -2643,8 +2643,8 @@
     "1339": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1339",
-      "status": "proposed",
+      "path": "tasks/planning/1339",
+      "status": "planning",
       "title": "workflow-fix: chunk crash-persist eval_results uploads (504 on 29k-file commit)"
     },
     "134": {
