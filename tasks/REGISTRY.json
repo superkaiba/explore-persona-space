@@ -2591,8 +2591,8 @@
       "goal": "Test whether function-space similarity between per-context-family fitted linear context\u2192answer maps (cross-family transfer R\u00b2 / prediction agreement on the frozen base model, both prefix-based and context-based arms) predicts fine-tuning leakage from source persona to target contexts on an existing measured leakage matrix, with incremental validity over the activation-cosine, JS-divergence, base-rate-prior, and whitened-gate baselines under group-level held-out (LOFO) evaluation.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/1332",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/1332",
+      "status": "awaiting_promotion",
       "title": "Directional function-space map similarity predicts marker leakage beyond the activation-cosine and Jensen\u2013Shannon baselines that render its symmetrized form redundant (MODERATE confidence)"
     },
     "1333": {
