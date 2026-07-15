@@ -18,13 +18,19 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import matplotlib
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: shared-VM thread caps bind in-process only when load_dotenv() runs
+# BEFORE the import that freezes the BLAS/intra-op pools.
+load_dotenv()
+
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 
-from explore_persona_space.analysis.paper_plots import (
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
     savefig_paper,
     set_paper_style,

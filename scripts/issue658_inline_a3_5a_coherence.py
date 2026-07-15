@@ -24,11 +24,17 @@ import os
 import subprocess
 import time
 
-import numpy as np
-import torch
-from scipy.stats import spearmanr
-from sklearn.decomposition import PCA
-from sklearn.metrics import silhouette_samples
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: shared-VM thread caps bind in-process only when load_dotenv() runs
+# BEFORE the import that freezes the BLAS/intra-op pools.
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
+from sklearn.decomposition import PCA  # noqa: E402
+from sklearn.metrics import silhouette_samples  # noqa: E402
 
 CACHE = "/tmp/issue658_a35a"
 OUT_JSON = "eval_results/issue_658/inline_a3_5a_coherence"

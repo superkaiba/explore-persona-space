@@ -20,6 +20,14 @@
 #                       'extra' is an optional pass-through of
 #                       issue1092_fit_grid.py tokens and rides the wrapper's
 #                       --fit-grid-arg (e.g. extra=--skip-mlp-companion).
+#   P6_PARTB_JOBS       ';;'-separated Part-B operator-comparison job specs
+#                       (offvm-battery-refit round); fields '|'-separated:
+#                       cells=...|layers=...|bases=...|extra=... Each job = ONE
+#                       scripts/issue1092_partb_operator.py invocation
+#                       (--stage-from-hub against $STAGE_DIR; outputs to
+#                       $OUT_DIR/partb, which rides the existing upload).
+#                       Runs AFTER the P6_JOBS loop, before upload. Unset ->
+#                       no Part-B phase (fully backward compatible).
 #   P6_RESTORE_ATTEMPT  crash-persist attempt id: before jobs, stage
 #                       issue1092_partial/<att>/data_issue_1092/p6/
 #                       {checkpoints/*.json, analysis_tensors/nulls/*.npy}
@@ -51,8 +59,13 @@
 # (fingerprint-unique, resume-shared across jobs and boxes).
 #
 # BYTE-PIN: scripts/issue1092_fit_grid.py hashes its own bytes into every
-# checkpoint fingerprint — this driver is the ONLY edit surface for the v6
-# relaunch; any engine edit invalidates ALL completed checkpoints.
+# checkpoint fingerprint — during the v6 relaunch this driver was the ONLY edit
+# surface; any engine edit invalidates ALL completed checkpoints. The
+# offvm-battery-refit round DELIBERATELY edits the engine (battery-excluded
+# fit-arm filters + per-target R2 banking), so banked-checkpoint resume can
+# never silently fire on refit boxes; refit boxes additionally use fresh box
+# ids (rf01..rf04 -> box_rf0K HF prefixes) and set NO P6_RESTORE_ATTEMPT, so
+# banked p6 artifacts are neither resumed from nor clobbered.
 #
 # GCE lane contract: cwd = $WORKLOAD_ROOT (the issue-1092 clone); HF_TOKEN etc.
 # exported by the startup script; no .env file (source conditionally).
@@ -71,6 +84,7 @@ REPO="superkaiba1/explore-persona-space-data"
 
 P6_BOX_ID="${P6_BOX_ID:-}"
 P6_JOBS="${P6_JOBS:-}"
+P6_PARTB_JOBS="${P6_PARTB_JOBS:-}"
 P6_RESTORE_ATTEMPT="${P6_RESTORE_ATTEMPT:-}"
 P6_DRY_RUN="${P6_DRY_RUN:-}"
 P6_RESTORE_FIXTURE_ROOT="${P6_RESTORE_FIXTURE_ROOT:-}"
@@ -180,6 +194,76 @@ rename_job_summaries() {
     mv "$f" "$dst"
     echo "[p6-gce] job ${job_idx}: renamed ${base}.json -> ${base}_job${job_idx}.json"
   done
+}
+
+run_partb_job() {
+  # Compose + run ONE issue1092_partb_operator.py invocation from a
+  # '|'-separated job spec (offvm-battery-refit round: operator-level arm
+  # comparison on the battery-excluded fitted maps). Outputs land in
+  # $OUT_DIR/partb, which rides the existing end-of-run upload.
+  local job_idx="$1" spec="$2"
+  local cells="" layers="" bases="" extra=""
+  if [ -n "$spec" ]; then
+    local fields=() field key val
+    IFS='|' read -r -a fields <<< "$spec"
+    for field in "${fields[@]}"; do
+      if [ -z "$field" ]; then continue; fi
+      key="${field%%=*}"
+      val="${field#*=}"
+      case "$key" in
+        cells) cells="$val" ;;
+        layers) layers="$val" ;;
+        bases) bases="$val" ;;
+        extra) extra="$val" ;;
+        *)
+          echo "[p6-gce] ERROR: unknown P6_PARTB_JOBS field '$key' in job spec '$spec'" >&2
+          exit 2
+          ;;
+      esac
+    done
+  fi
+  local cmd=(
+    uv run python scripts/issue1092_partb_operator.py
+    --summaries-dir "$STAGE_DIR"
+    --corpus-dir "$CORPUS_DIR"
+    --out-dir "$OUT_DIR"
+    --stage-from-hub
+  )
+  if [ -n "$cells" ]; then cmd+=(--cells "$cells"); fi
+  if [ -n "$layers" ]; then cmd+=(--layers "$layers"); fi
+  if [ -n "$bases" ]; then cmd+=(--target-bases "$bases"); fi
+  if [ -n "$extra" ]; then
+    # shellcheck disable=SC2206 -- deliberate word-splitting of pass-through tokens
+    cmd+=($extra)
+  fi
+
+  echo "[phase=p6_partb_job${job_idx}]"
+  echo "[p6-gce] partb invocation (job ${job_idx}): ${cmd[*]}"
+  if [ -n "$P6_DRY_RUN" ]; then
+    # Simulate the summary write so the per-job rename path runs for real.
+    mkdir -p "$OUT_DIR/partb"
+    touch "$OUT_DIR/partb/partb_summary.json"
+  else
+    "${cmd[@]}"
+  fi
+}
+
+rename_partb_summary() {
+  # Job-suffix each Part-B job's summary so a later Part-B job cannot clobber
+  # it (per-unit JSONs are fingerprint-unique and stay shared in partb/).
+  local job_idx="$1"
+  local f="$OUT_DIR/partb/partb_summary.json"
+  if [ ! -e "$f" ]; then
+    echo "[p6-gce] ERROR: partb job ${job_idx} wrote no partb_summary.json" >&2
+    exit 2
+  fi
+  local dst="$OUT_DIR/partb/partb_summary_pjob${job_idx}.json"
+  if [ -e "$dst" ]; then
+    echo "[p6-gce] ERROR: refusing to clobber $dst" >&2
+    exit 2
+  fi
+  mv "$f" "$dst"
+  echo "[p6-gce] partb job ${job_idx}: renamed partb_summary.json -> partb_summary_pjob${job_idx}.json"
 }
 
 if [ -n "$P6_DRY_RUN" ]; then
@@ -349,6 +433,23 @@ if [ -n "$P6_JOBS" ]; then
   fi
 else
   run_p6_job "" ""
+fi
+
+if [ -n "$P6_PARTB_JOBS" ]; then
+  pjob_idx=0
+  remaining="$P6_PARTB_JOBS"
+  while [ -n "$remaining" ]; do
+    job_spec="${remaining%%;;*}"
+    if [ "$job_spec" = "$remaining" ]; then remaining=""; else remaining="${remaining#*;;}"; fi
+    if [ -z "$job_spec" ]; then continue; fi
+    pjob_idx=$((pjob_idx + 1))
+    run_partb_job "$pjob_idx" "$job_spec"
+    rename_partb_summary "$pjob_idx"
+  done
+  if [ "$pjob_idx" -eq 0 ]; then
+    echo "[p6-gce] ERROR: P6_PARTB_JOBS set but contained no job specs" >&2
+    exit 2
+  fi
 fi
 
 if [ -n "$P6_DRY_RUN" ]; then

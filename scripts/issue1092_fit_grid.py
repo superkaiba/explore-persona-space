@@ -186,6 +186,41 @@ def _folds_from_manifest(
     return [f for f in folds if f.size]
 
 
+def _is_battery_eval_row(row: dict) -> bool:
+    """True for #594 battery rows, which are registered EVAL-ONLY in both fit arms.
+
+    Battery rows carry stratum "battery" AND is_eval_only=True in the realized
+    corpus manifest (n=2400, manifest tail positions 18793..21192); either key
+    marks the row (belt-and-suspenders — the durable key is is_eval_only).
+    """
+    return row.get("stratum") == "battery" or bool(row.get("is_eval_only"))
+
+
+def _fit_arm_indices(fit_arm: str, base_rows: list[dict]) -> list[int]:
+    """Training-row selection per fit arm (plan section 4.1 step 6).
+
+    The battery block is EVAL-ONLY in BOTH fit arms; fit arm A additionally
+    excludes trait_stratum rows, fit arm B keeps them. The banked v6 grid's
+    fit-arm-A filter excluded the NONEXISTENT stratum label "battery_eval_only"
+    (a no-op — realized label is "battery" with is_eval_only=True) and fit arm
+    B had no battery filter at all, so battery rows leaked into TRAINING in
+    both banked arms (deferred_refit_spec.json battery_exclusion_scope; fit-arm
+    A n 19708 banked -> 17308 corrected on the full-corpus cells). NOTE: this
+    edit deliberately changes the engine bytes, invalidating every banked p6
+    checkpoint fingerprint (the byte-pin) — expected and correct for the
+    battery-excluded refit round.
+    """
+    if fit_arm == "A":
+        return [
+            i
+            for i, row in enumerate(base_rows)
+            if row.get("stratum") != "trait_stratum" and not _is_battery_eval_row(row)
+        ]
+    if fit_arm == "B":
+        return [i for i, row in enumerate(base_rows) if not _is_battery_eval_row(row)]
+    raise ValueError(f"unknown fit arm {fit_arm!r}; expected A or B")
+
+
 def _r2(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     yt = np.asarray(y_true, dtype=np.float64)
     yp = np.asarray(y_pred, dtype=np.float64)
@@ -246,6 +281,45 @@ def _fit_cv(
     }
     if return_pred:
         return out, pred
+    return out
+
+
+def _per_target_r2(
+    Y: np.ndarray, pred: np.ndarray, folds: list[np.ndarray], basis_info: dict[str, Any]
+) -> dict:
+    """Registered per-target held-out R² columns (t1/t2/t3 broken out).
+
+    Block-slices the SAME cross-validated predictions the pooled read1 R² is
+    computed from (columns of the pooled fit — the per-fold lambda stays the
+    pooled-PRESS selection; no extra fits). In the ambient basis the stacked
+    target is [t1 | t2 | t3] blocks of hidden_dim columns each; a projected
+    basis (pca48) mixes target blocks, so those units record an explicit skip
+    note instead of a number.
+    """
+    targets = list(basis_info.get("targets") or [])
+    hidden = basis_info.get("hidden_dim")
+    if basis_info.get("basis") != "ambient" or not targets or hidden is None:
+        return {
+            "skipped": (
+                f"per-target breakout undefined for basis {basis_info.get('basis')!r} "
+                "(projection mixes the stacked target blocks); read the ambient-basis "
+                "sibling unit's columns instead"
+            )
+        }
+    hidden = int(hidden)
+    out: dict[str, Any] = {
+        "note": (
+            "columns of the pooled stacked fit (per-fold lambda = pooled PRESS "
+            "selection), not separate per-target fits"
+        )
+    }
+    for ti, name in enumerate(targets):
+        sl = slice(ti * hidden, (ti + 1) * hidden)
+        yt, yp = Y[:, sl], pred[:, sl]
+        out[name] = {
+            "r2": _r2(yt, yp),
+            "r2_folds": [_r2(yt[f], yp[f]) for f in folds],
+        }
     return out
 
 
@@ -1834,16 +1908,7 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
                 n0 = min(X.shape[0], Y_stacked.shape[0], len(rows))
                 for fit_arm in fit_arms:
                     base_rows = rows[:n0]
-                    if fit_arm == "A":
-                        idx = [
-                            i
-                            for i, row in enumerate(base_rows)
-                            if row.get("stratum") not in {"trait_stratum", "battery_eval_only"}
-                        ]
-                    elif fit_arm == "B":
-                        idx = list(range(n0))
-                    else:
-                        raise ValueError(f"unknown fit arm {fit_arm!r}; expected A or B")
+                    idx = _fit_arm_indices(fit_arm, base_rows)
                     if len(idx) < max(3, args.n_folds):
                         raise ValueError(f"fit arm {fit_arm} has too few rows: {len(idx)}")
                     idx_arr = np.asarray(idx, dtype=np.int64)
@@ -1976,6 +2041,7 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
                             "basis": basis,
                             "n_rows": len(unit_rows),
                             "fit": fit,
+                            "fit_per_target_r2": _per_target_r2(Yb, fit_pred, folds, basis_info),
                             "identity_floors": floors,
                             "genuine_r2_over_diag": (
                                 fit["r2"] - floors["diag_affine"]["mean"]

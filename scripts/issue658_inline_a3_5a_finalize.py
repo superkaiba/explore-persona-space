@@ -18,12 +18,18 @@ import json
 import os
 import subprocess
 
-import matplotlib
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: shared-VM thread caps bind in-process only when load_dotenv() runs
+# BEFORE the import that freezes the BLAS/intra-op pools.
+load_dotenv()
+
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.stats import spearmanr
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
 
 RES = "eval_results/issue_658/inline_a3_5a_coherence"
 FIG = "figures/issue_658"
