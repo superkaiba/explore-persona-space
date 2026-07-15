@@ -3,8 +3,7 @@ title: The context→answer-profile map exists in pretrained Qwen2.5-7B at ~87% 
   strength, and the on-policy separator control's gap-closure is greedy-specific —
   it collapses under sampled decoding (MODERATE confidence)
 kind: experiment
-tags:
-- followup-manual
+tags: []
 created_at: '2026-07-02T00:14:16Z'
 has_clean_result: true
 parent_id: 779
