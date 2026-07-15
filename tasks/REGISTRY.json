@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1360,
+  "highest_id": 1361,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2815,6 +2815,13 @@
       "path": "tasks/proposed/1360",
       "status": "proposed",
       "title": "hub.py::_upload: bounded transport-class retry (429/Xet queue-full) before no-path return"
+    },
+    "1361": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1361",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 pod git 403 with valid token, bundle sideload"
     },
     "137": {
       "has_clean_result": false,
