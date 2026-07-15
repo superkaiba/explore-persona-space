@@ -116,8 +116,11 @@ section wins on invocation form.
    smoke-phase definition vs sweep-phase definition. **PREFER UNIFICATION:**
    if the plan unified the paths (smoke IS sweep with `--cells 1 --seeds 1`
    or equivalent single-cell parameterization — same dispatcher, same
-   subprocess shape, same env injection, same logging surface, same
-   teardown sequence, AND the cell-subset parameterization threads through
+   subprocess shape, same LAUNCH WIDTH (`--num_processes` / CVD
+   composition — smoke never narrows the process shape; see the
+   smoke-width entry in `.claude/rules/gotchas.md`, #1315/#1333), same
+   env injection, same logging surface, same teardown sequence, AND the
+   cell-subset parameterization threads through
    EVERY phase the dispatcher executes), the verdict is `PASS_UNIFIED`.
    **Per-phase subset threading is part of the PASS_UNIFIED definition,
    not an optional extra:** list each phase the dispatcher runs (train,
