@@ -215,6 +215,19 @@ def _physical_gpu_ids() -> list[str]:
     return ids
 
 
+SUBPROCESS_TAIL_LINES = 120
+
+
+def _tail_lines(log_path: Path, n: int) -> str:
+    """Last ``n`` lines of ``log_path`` (fail-soft: unreadable -> placeholder)."""
+    try:
+        text = log_path.read_text(errors="replace")
+    except OSError as e:  # missing/unreadable inner log must not mask the rc
+        return f"<inner log unreadable: {e}>"
+    lines = text.split("\n")  # not splitlines() — data-bearing logs (gotchas.md)
+    return "\n".join(lines[-n:])
+
+
 def _run_subprocess(cmd: list[str], log_path: Path, env: dict[str, str] | None = None) -> None:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     logger.info("[subprocess] %s (log %s)", " ".join(cmd[:8]) + " ...", log_path)
@@ -223,6 +236,19 @@ def _run_subprocess(cmd: list[str], log_path: Path, env: dict[str, str] | None =
             cmd, stdout=f, stderr=subprocess.STDOUT, env={**os.environ} if env is None else env
         )
     if proc.returncode != 0:
+        # Diagnosability (crash-fix r4): the GCE crash trap persists only the
+        # MAIN workload log — the inner log_path is outside its globs — so the
+        # inner traceback must be echoed HERE or it dies with the instance
+        # (2026-07-15 epm:failure: ft_mk4.log was never persisted, root cause
+        # unrecoverable from workload.log alone). Tail goes to the log; the
+        # raised message stays short.
+        logger.error(
+            "[subprocess-tail] rc=%d — last %d lines of %s:\n%s",
+            proc.returncode,
+            SUBPROCESS_TAIL_LINES,
+            log_path,
+            _tail_lines(log_path, SUBPROCESS_TAIL_LINES),
+        )
         raise RuntimeError(f"subprocess rc={proc.returncode}: {' '.join(cmd)} (log {log_path})")
 
 
@@ -1020,11 +1046,25 @@ def _swap_vs_merged_parity(cfg: Cfg, cell: str) -> dict:
 
 
 def _ft_num_processes(cfg: Cfg) -> int:
-    if cfg.smoke:
-        return 1
+    """ZeRO-3 world size — pinned 4 in BOTH modes (smoke-INVARIANT; fails loud
+    under-provisioned). Crash-fix r4 (epm:failure 2026-07-15) + the same-day
+    #1315 r3 incident (identical clone-narrowing bug, same trainer family):
+    a smoke branch returning 1 composed ``accelerate launch --num_processes 1``
+    against the 4-GPU ZeRO-3 yaml — single-process ZeRO-3 shards NOTHING, so
+    the whole 7B (bf16 weights ~15 GB + grads ~15 GB + UNSHARDED fp32 master +
+    Adam moments ~85 GB) lands on one A100-80: deterministic
+    torch.OutOfMemoryError at the FIRST optimizer step (#1315 traceback:
+    ``exp_avg_sq`` alloc in deepspeed ``stage3.py _optimizer_step``). The
+    smoke runs on the SAME 4x A100-80 ft-7b pod as production (plan §9), so
+    launch width is a smoke-invariant RESOURCE dimension (#397 class /
+    PASS_UNIFIED); smoke narrowing stays on STEPS/GRID/CELLS only."""
+    del cfg  # FT launch width is deliberately mode-independent (crash-fix r4)
     n_phys = len(_physical_gpu_ids())
     if n_phys < FT_NUM_PROCESSES:
-        raise RuntimeError(f"full-FT needs {FT_NUM_PROCESSES} GPUs, {n_phys} visible")
+        raise RuntimeError(
+            f"full-FT needs {FT_NUM_PROCESSES} GPUs (ZeRO-3 world size / eff-batch 64 "
+            f"contract) but only {n_phys} physical GPUs are visible"
+        )
     return FT_NUM_PROCESSES
 
 
@@ -1048,10 +1088,11 @@ def phase_train(cfg: Cfg) -> dict:
             if ft_root.exists():
                 logger.warning("[ft] clearing stale partial FT out_dir %s", ft_root)
                 shutil.rmtree(ft_root)
+            npr = _ft_num_processes(cfg)
             cmd = C.marker_ft_cmd(
                 mix_path=_mix_path(cfg, C.CELL_FT_POS),
                 out_dir=ft_root,
-                num_processes=_ft_num_processes(cfg),
+                num_processes=npr,
                 seed=cfg.seed,
                 grid=grid,
                 max_steps=max(grid),
@@ -1059,7 +1100,14 @@ def phase_train(cfg: Cfg) -> dict:
                 accel_config=MARKER_ACCEL_CONFIG,
             )
             ids = _physical_gpu_ids()
-            env = {**os.environ, "CUDA_VISIBLE_DEVICES": ",".join(ids[: _ft_num_processes(cfg)])}
+            env = {**os.environ, "CUDA_VISIBLE_DEVICES": ",".join(ids[:npr])}
+            logger.info(
+                "[ft-launch] num_processes=%d CUDA_VISIBLE_DEVICES=%s smoke=%s grid=%s",
+                npr,
+                env["CUDA_VISIBLE_DEVICES"],
+                cfg.smoke,
+                list(grid),
+            )
             _run_subprocess(cmd, cfg.out_root / "logs" / "ft_mk4.log", env=env)
             _atomic_json(done, {"adapter_root": str(ft_root), "grid": list(grid)})
         out[C.CELL_FT_POS] = _read_json(done)
