@@ -1,0 +1,70 @@
+{
+ "issue": 1090,
+ "round": "fu5-finish-impolite-bare-and-formatting-rank",
+ "cjk_regex": "[\\u4e00-\\u9fff] (CJK Unified Ideographs)",
+ "firing_rule": "per-completion mean of valid judge draws > 50 (valid = numeric score in [0,100]); reproduces fu4_ladders k/n exactly (asserted)",
+ "strict_bound_rule": "cjk_zeroed_rate = (k - n_cjk_firing) / 200: every CJK-intruded firing completion AND every fully-dropped completion scored non-impolite",
+ "arms": {
+  "imp-bare-lr1e5": {
+   "kind": "fu5-trained",
+   "context_id": "default",
+   "n_completions": 200,
+   "ladders_k": 69,
+   "ladders_n": 200,
+   "ladders_rate": 0.345,
+   "n_cjk": 13,
+   "cjk_frac": 0.065,
+   "n_cjk_firing": 8,
+   "cjk_zeroed_rate": 0.305,
+   "n_fully_dropped": 0,
+   "n_exact_duplicates": 0,
+   "train_rows": 80,
+   "max_8gram_train_overlap": 0.0,
+   "n_completions_over_20pct_overlap": 0
+  },
+  "imp-bare-lr3e5": {
+   "kind": "fu5-trained",
+   "context_id": "default",
+   "n_completions": 200,
+   "ladders_k": 135,
+   "ladders_n": 200,
+   "ladders_rate": 0.675,
+   "n_cjk": 12,
+   "cjk_frac": 0.06,
+   "n_cjk_firing": 8,
+   "cjk_zeroed_rate": 0.635,
+   "n_fully_dropped": 0,
+   "n_exact_duplicates": 0,
+   "train_rows": 80,
+   "max_8gram_train_overlap": 0.0074,
+   "n_completions_over_20pct_overlap": 0
+  },
+  "imp-bare-lr1e4": {
+   "kind": "fu5-trained",
+   "context_id": "default",
+   "n_completions": 200,
+   "ladders_k": 121,
+   "ladders_n": 200,
+   "ladders_rate": 0.605,
+   "n_cjk": 20,
+   "cjk_frac": 0.1,
+   "n_cjk_firing": 9,
+   "cjk_zeroed_rate": 0.56,
+   "n_fully_dropped": 0,
+   "n_exact_duplicates": 0,
+   "train_rows": 80,
+   "max_8gram_train_overlap": 0.2083,
+   "n_completions_over_20pct_overlap": 1
+  },
+  "fu3-base-bare": {
+   "kind": "fu3-base",
+   "n_completions": 200,
+   "recomputed_k": 0,
+   "recomputed_n": 200,
+   "n_cjk": 4,
+   "cjk_frac": 0.02,
+   "n_cjk_firing": 0,
+   "source": "hf://superkaiba1/explore-persona-space-data/issue1090_fu3/C2-bare-con-impolite-claude/tier2/completions__base__default.json"
+  }
+ }
+}
