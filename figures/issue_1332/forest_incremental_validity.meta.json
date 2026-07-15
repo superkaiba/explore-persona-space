@@ -1,6 +1,6 @@
 {
-  "commit": "9248ce6fd1",
-  "created": "2026-07-15T16:14:54Z",
+  "commit": "9ebef76d63",
+  "created": "2026-07-15T16:50:15Z",
   "figsize": [
     6.5,
     4.2
@@ -41,10 +41,16 @@
       "y": 1.0,
       "_kind": "errorbar",
       "_group": 5
+    },
+    {
+      "Spearman correlation with leakage (95% two-way cluster-bootstrap CI)": 0.415939,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 6
     }
   ],
-  "n_series": 6,
-  "total_points": 6,
+  "n_series": 7,
+  "total_points": 7,
   "text": {
     "suptitle": null,
     "fig_texts": [],
