@@ -94,6 +94,11 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--n-boot", type=int, default=c1310.N_BOOTSTRAP)
     ap.add_argument("--resume", action="store_true", help="c24 fingerprint-gated cell skip")
     ap.add_argument("--matched-n", action="store_true", help="run the matched-n refits")
+    ap.add_argument(
+        "--stage-from-hub",
+        action="store_true",
+        help="matched-n: re-stage deleted .pt shards from the Hub per rung, release after",
+    )
     ap.add_argument("--summary", action="store_true", help="build ladder_summary.json + gates")
     ap.add_argument("--verify-vectorized", action="store_true")
     ap.add_argument("--assert-cuda", action="store_true", help="binding on-instance device gate")
@@ -495,19 +500,69 @@ def run_rung_fits(args, slug: str, model_kind: str) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _sidecars(args, slug: str, model_kind: str) -> list[Path]:
+    return sorted((store_root(args) / slug / model_kind).glob(f"{model_kind}_shard*.json"))
+
+
 def compute_n_min(args, models: list[str]) -> int:
-    """Smallest realized ctx-arm cell n across all rungs/units/models."""
+    """Smallest realized unit n across all rungs/units/models, computed from the
+    (always-local) shard SIDECARS — the .pt shards may already be uploaded +
+    deleted under the per-cell lifecycle."""
     ns = []
     for model_kind in models:
         for slug in r1335.RUNG_ORDER:
-            try:
-                store = load_rung_store(args, slug, model_kind)
-            except AssertionError:
+            sidecars = _sidecars(args, slug, model_kind)
+            if not sidecars:
                 continue
-            for _unit, ustore in rung_units(slug, store):
-                ns.append(int(ustore["row_ids"].shape[0]))
-    assert ns, "no stores found for matched-n"
+            chars: list[str] = []
+            for sc in sidecars:
+                chars.extend(json.loads(sc.read_text())["char_ids"])
+            if r1335.RUNGS[slug]["family"] == "qa":
+                ns.append(len(chars))
+            else:
+                _uniq, counts = np.unique(np.asarray(chars), return_counts=True)
+                ns.extend(int(c) for c in counts)
+    assert ns, "no capture sidecars found for matched-n"
     return min(ns)
+
+
+def ensure_store_local(args, slug: str, model_kind: str) -> bool:
+    """Re-stage a (rung, model) store's .pt shards from the Hub when absent
+    (the per-cell lifecycle uploads + deletes them). Pure hub-rel -> local-rel
+    mapping (flat basenames under analysis_tensors/store_<slug>_<model>/);
+    downloads via local_dir + os.replace so a later delete actually frees disk.
+    Returns True when anything was downloaded."""
+    import os
+    import tempfile
+
+    store_dir = store_root(args) / slug / model_kind
+    sidecars = _sidecars(args, slug, model_kind)
+    assert sidecars, f"no sidecars for {slug}/{model_kind} — capture never ran"
+    missing = [
+        f"{sc.name[: -len('.json')]}.pt"
+        for sc in sidecars
+        if not (store_dir / f"{sc.name[: -len('.json')]}.pt").exists()
+    ]
+    if not missing:
+        return False
+    from huggingface_hub import hf_hub_download
+
+    prefix = f"{r1335.HF_PREFIX}/analysis_tensors/store_{slug}_{model_kind}"
+    with tempfile.TemporaryDirectory(prefix=f"i1335_stage_{slug}_{model_kind}_") as td:
+        for name in missing:
+            got = hf_hub_download(
+                r1335.HF_DATA_REPO, f"{prefix}/{name}", repo_type="dataset", local_dir=td
+            )
+            os.replace(got, store_dir / name)
+    print(f"[i1335-fit] re-staged {len(missing)} shards for {slug}/{model_kind} from the Hub")
+    return True
+
+
+def release_store_local(args, slug: str, model_kind: str) -> None:
+    """Delete a store's local .pt shards (sidecars kept). Callers guarantee the
+    shards are Hub-resident (the per-cell lifecycle verified upload)."""
+    for pt in (store_root(args) / slug / model_kind).glob(f"{model_kind}_shard*.pt"):
+        pt.unlink()
 
 
 def run_matched(args, models: list[str]) -> None:
@@ -515,15 +570,17 @@ def run_matched(args, models: list[str]) -> None:
     print(f"[i1335-fit] matched-n battery: n_min={n_min}")
     for model_kind in models:
         for slug in r1335.RUNG_ORDER:
-            try:
-                store = load_rung_store(args, slug, model_kind)
-            except AssertionError:
-                print(f"[i1335-fit] matched-n: no store for {slug}/{model_kind} — skipped")
+            if not _sidecars(args, slug, model_kind):
+                print(f"[i1335-fit] matched-n: no capture for {slug}/{model_kind} — skipped")
                 continue
+            staged = ensure_store_local(args, slug, model_kind) if args.stage_from_hub else False
+            store = load_rung_store(args, slug, model_kind)
             for unit, ustore in rung_units(slug, store):
                 for arm in MATCHED_ARMS:
                     cell_id = unit_cell_id(slug, model_kind, unit, arm)
                     fit_cell_matched(cell_id, slug, unit_xy(ustore, ARM_X_KEY[arm]), n_min, args)
+            if staged:
+                release_store_local(args, slug, model_kind)
     c1310.write_json(
         args.out_dir / "matched_n_config.json",
         {
