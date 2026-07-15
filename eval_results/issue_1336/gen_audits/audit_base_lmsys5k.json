@@ -1,0 +1,50 @@
+{
+  "model": "base",
+  "hf_id": "meta-llama/Llama-3.1-8B",
+  "corpus": "lmsys5k",
+  "n_prompts": 5000,
+  "n_kept": 3152,
+  "keep_rate": 0.6304,
+  "keep_rate_floor": 0.8,
+  "keep_rate_floor_pass": false,
+  "drop_reasons": {
+    "empty_answer": 479,
+    "chat:short_turn_u1": 1038,
+    "naturalistic:short_turn_u1": 144,
+    "chat:short_turn_a1": 168,
+    "naturalistic:short_turn_a1": 15,
+    "chat:over_token_budget": 3,
+    "chat:degenerate_span_u1": 1
+  },
+  "kept_truncation_rate": 0.2059010152284264,
+  "kept_early_eos_rate": 0.08121827411167512,
+  "kept_rep3_flag_rate": 0.28743654822335024,
+  "kept_distinct_3gram_rate": 0.7449843650160873,
+  "kept_answer_tokens": {
+    "mean": 325.0540622168529,
+    "median": 104,
+    "p90": 1024
+  },
+  "sampling": {
+    "n": 1,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 1024,
+    "seed": 42,
+    "stop": [
+      "\n<|user|>"
+    ]
+  },
+  "answers_sha256": "f7c0074fabe842f862735e5c905585f1b18d79578fdd88d6316bd40b6c9a267e",
+  "render_integrity": {
+    "gate": "render_integrity_a4_twin",
+    "status": "PASS",
+    "rest_of_span_mismatch_rate": 0.00015862944162436547,
+    "first_token_mismatch_rate_diagnostic": 0.9647842639593909,
+    "mismatches": 1,
+    "total_spans": 6304,
+    "n_pairs": 3152,
+    "max_rate": 0.1
+  },
+  "smoke": false
+}

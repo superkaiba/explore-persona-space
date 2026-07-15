@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "git_commit": "5653c791ac2c4c492f1063eeb939c4098e1e42c2",
+    "timestamp": "2026-07-15T16:35:38Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1336_fit_cells.py"
+  },
+  "gate": "G1",
+  "chat_best_r2": -0.9286624210785652,
+  "naturalistic_best_r2": -0.8941754654460943,
+  "kill_threshold": 0.2,
+  "marginal_threshold": 0.3,
+  "verdict": "kill",
+  "kill": true
+}

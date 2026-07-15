@@ -1,0 +1,33 @@
+{
+  "model": "rlvr",
+  "hf_id": "allenai/Llama-3.1-Tulu-3-8B",
+  "corpus": "gsm8k_test1319",
+  "n_prompts": 1319,
+  "n_kept": 1319,
+  "keep_rate": 1.0,
+  "keep_rate_floor": 0.8,
+  "keep_rate_floor_pass": true,
+  "drop_reasons": {},
+  "kept_truncation_rate": 0.0037907505686125853,
+  "kept_early_eos_rate": 0.0,
+  "kept_rep3_flag_rate": 0.7323730098559514,
+  "kept_distinct_3gram_rate": 0.6537669694306084,
+  "kept_answer_tokens": {
+    "mean": 327.69294920394236,
+    "median": 304,
+    "p90": 576
+  },
+  "sampling": {
+    "n": 1,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 1024,
+    "seed": 42,
+    "stop": [
+      "\n<|user|>"
+    ]
+  },
+  "answers_sha256": "eab16809c993460197f0f0bad838d471bd17c3b37884e9502893fc146db02724",
+  "render_integrity": null,
+  "smoke": false
+}
