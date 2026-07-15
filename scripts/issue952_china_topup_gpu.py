@@ -517,7 +517,16 @@ def phase_upload(out_base: pathlib.Path) -> None:
     R.log_phase("topup_upload")
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate.hub import (
+        assert_hub_dir_filecounts,
+        list_hf_files_under_path,
+    )
+
     api = HfApi()
+    # Pre-count guard (#658/#1190): fail loud BEFORE any network I/O if any
+    # target repo dir would receive >10k files in one commit. Deliberately
+    # OUTSIDE any transient-retry wrapper (a guard raise is deterministic).
+    assert_hub_dir_filecounts(out_base, HF_PREFIX)
     api.upload_folder(
         folder_path=str(out_base),
         repo_id=REPO,
@@ -525,11 +534,15 @@ def phase_upload(out_base: pathlib.Path) -> None:
         path_in_repo=HF_PREFIX,
         commit_message=f"issue #952 china-politics top-up ({TOPUP_TAG}) — GPU leg artifacts",
     )
-    # Verify: scoped tree listing of the uploaded prefix (never a full-repo list).
-    tree = list(
-        api.list_repo_tree(REPO, path_in_repo=HF_PREFIX, repo_type="dataset", recursive=True)
-    )
-    files = [getattr(t, "path", str(t)) for t in tree if getattr(t, "size", None) is not None]
+    # Verify: scoped tree listing of the uploaded prefix (never a full-repo
+    # list) — retried via the orchestrate.hub helper (#920/#997); files-only
+    # by construction, subsuming the old `size is not None` filter.
+    files = list_hf_files_under_path(api, REPO, HF_PREFIX, repo_type="dataset")
+    if not files:
+        raise RuntimeError(
+            f"post-upload verify: no files listed under {REPO}/{HF_PREFIX} "
+            "after upload_folder (fail-loud parity with the old bare listing)"
+        )
     logger.info("[topup-upload] %d files under %s/%s", len(files), REPO, HF_PREFIX)
     for f in sorted(files):
         logger.info("  hf: %s", f)
