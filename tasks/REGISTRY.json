@@ -7789,7 +7789,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/825",
       "status": "followups_running",
-      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength, and the on-policy separator control's gap-closure is greedy-specific \u2014 it collapses under sampled decoding (MODERATE confidence)"
+      "title": "The context\u2192answer mapping is inherited from pretraining"
     },
     "826": {
       "has_clean_result": false,
