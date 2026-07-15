@@ -7,9 +7,10 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+import huggingface_hub
 import pytest
 from huggingface_hub.hf_api import RepoFile
-from huggingface_hub.utils import HfHubHTTPError
+from huggingface_hub.utils import EntryNotFoundError, HfHubHTTPError
 from requests.exceptions import ConnectionError
 
 from explore_persona_space.orchestrate import hub
@@ -506,6 +507,18 @@ class TestRetryUpload:
         assert _is_transient_upload_error(_storage_403()) is False
         assert _is_transient_upload_error(ValueError("bad args")) is False
 
+    def test_predicate_queue_size_reached_response_less_transient(self):
+        """#1315/#1360: the HF/Xet upload-queue-saturation body text ('maximum
+        queue size reached') classifies transient when response-LESS (the #931
+        PyO3-boundary shape); a response-BEARING 4xx carrying the same phrase
+        stays non-transient — the decision is made ENTIRELY by status code
+        (the #989 code-wins-over-substring guard intact)."""
+        err = RuntimeError(
+            "Data processing error: CAS service error ... maximum queue size reached"
+        )
+        assert _is_transient_upload_error(err) is True
+        assert _is_transient_upload_error(_http_err(400, "queue size reached")) is False
+
     def test_4xx_digit_triplet_in_message_not_retried(self):
         """A 404 whose MESSAGE embeds a digit triplet ('issue504_raw') must NOT
         retry: a real 4xx status code decides non-transient BEFORE the fuzzy
@@ -686,6 +699,119 @@ class TestListRepoFilesRetry:
 
 
 # ---------------------------------------------------------------------------
+# #1360 — _upload's verify leg rides _retry_upload (the #1315 p11 429 escape)
+# ---------------------------------------------------------------------------
+
+
+class _VerifyRetryApi:
+    """Signature-conformant HfApi fake for the ``_upload`` verify-leg tests.
+
+    Mirrors hub.py's exact call shapes (the #906 one-production-body rule —
+    the REAL ``_upload`` body runs end to end; the fake sits only at the
+    network boundary): ``upload_file`` succeeds, the scoped tree walk 404s on
+    the exact-file path (``EntryNotFoundError``), and ``file_exists`` raises
+    its scripted transport errors in order before returning
+    ``file_exists_result``.
+    """
+
+    def __init__(self, *, file_exists_raises=None, file_exists_result=True):
+        self._file_exists_raises = list(file_exists_raises or [])
+        self.file_exists_result = file_exists_result
+        self.upload_file_calls = 0
+        self.file_exists_calls = 0
+
+    def __call__(self, token=None):  # factory shim: hub calls HfApi(token=...)
+        return self
+
+    def create_repo(self, repo_id, *, repo_type=None, private=False, exist_ok=False):
+        pass
+
+    def upload_file(self, *, path_or_fileobj, repo_id, path_in_repo, repo_type):
+        self.upload_file_calls += 1
+
+    def upload_folder(self, *, folder_path, repo_id, path_in_repo, repo_type, ignore_patterns=None):
+        raise AssertionError("folder branch must not fire on a single-file upload")
+
+    def list_repo_tree(
+        self, *, repo_id, repo_type=None, revision=None, recursive=False, path_in_repo=None
+    ):
+        raise EntryNotFoundError(f"entry {path_in_repo} not found")
+
+    def file_exists(self, repo_id, path, *, repo_type=None, revision=None):
+        self.file_exists_calls += 1
+        if self._file_exists_raises:
+            raise self._file_exists_raises.pop(0)
+        return self.file_exists_result
+
+
+def _queue_429() -> HfHubHTTPError:
+    """The #1315 p11 kill shape: an HTTP 429 whose body carries the HF/Xet
+    upload-queue-saturation text."""
+    return _http_err(
+        429, "429 Client Error: Too Many Requests for url: ... maximum queue size reached"
+    )
+
+
+class TestUploadVerifyTransportRetry:
+    """#1360 integration: ``_upload``'s verify leg (the exact-file
+    ``file_exists`` fallback in ``list_hf_files_under_path``) rides
+    ``_retry_upload``, exercised through the REAL ``_upload`` body with HfApi
+    faked at the network boundary (the test_hub_filecount_fallback.py
+    pattern). Return contract preserved: "" only after retry exhaustion."""
+
+    DEST = "issue1360_test/run_config.json"
+    REPO = "owner/data-repo"
+
+    @pytest.fixture
+    def src_file(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("HF_TOKEN", "t")
+        f = tmp_path / "run_config.json"
+        f.write_text("{}")
+        return f
+
+    def test_upload_single_file_returns_path_after_verify_429_then_success(
+        self, src_file, monkeypatch
+    ):
+        """upload_file succeeds; the tree walk 404s (exact-file path); the
+        file_exists probe 429s once then True -> the verified path returns
+        (pre-fix: the 429 propagated to _upload's log-and-return-\"\" arm)."""
+        api = _VerifyRetryApi(file_exists_raises=[_queue_429()], file_exists_result=True)
+        monkeypatch.setattr(huggingface_hub, "HfApi", api)
+        with patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep:
+            result = hub._upload(src_file, self.REPO, "dataset", self.DEST, upload_as_file=True)
+        assert result == f"{self.REPO}/{self.DEST}"
+        assert api.upload_file_calls == 1
+        assert api.file_exists_calls == 2
+        mock_sleep.assert_called_once()
+
+    def test_upload_returns_empty_only_after_verify_retry_exhaustion(self, src_file, monkeypatch):
+        """A PERSISTENT verify 429 under the budget kill switch (=0) exhausts
+        the 6-call attempt floor, then — and only then — _upload returns the
+        no-path signal callers fail-fast on."""
+        monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "0")
+        api = _VerifyRetryApi(file_exists_raises=[_queue_429() for _ in range(6)])
+        monkeypatch.setattr(huggingface_hub, "HfApi", api)
+        with patch("explore_persona_space.orchestrate.hub.time.sleep"):
+            result = hub._upload(src_file, self.REPO, "dataset", self.DEST, upload_as_file=True)
+        assert result == ""
+        assert api.file_exists_calls == 6
+
+    def test_file_path_without_flag_valueerror_unretried(self, src_file, monkeypatch):
+        """The #595 fail-loud guard (file path without upload_as_file=True)
+        still propagates un-retried with zero sleeps — content classes are
+        byte-unchanged by the #1360 wrap."""
+        api = _VerifyRetryApi()
+        monkeypatch.setattr(huggingface_hub, "HfApi", api)
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep,
+            pytest.raises(ValueError, match="upload_as_file"),
+        ):
+            hub._upload(src_file, self.REPO, "dataset", self.DEST)
+        assert api.upload_file_calls == 0
+        mock_sleep.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
 # #988 — scoped post-upload verifies + list_hub_datasets prefix dispatch
 # ---------------------------------------------------------------------------
 
@@ -701,7 +827,6 @@ class TestUploadVerifyScoped:
     def test_file_upload_verify_uses_file_exists_fallback(self, tmp_path):
         """An exact-file dest 404s on the tree endpoint (EntryNotFoundError)
         and resolves via ONE file_exists probe."""
-        from huggingface_hub.utils import EntryNotFoundError
 
         from explore_persona_space.orchestrate.hub import _upload
 
@@ -743,7 +868,6 @@ class TestUploadVerifyScoped:
     def test_absent_dest_returns_empty_not_success(self, tmp_path):
         """An absent dest (EntryNotFoundError + file_exists False) keeps the
         existing '0 files found ... NOT marking as successful' branch."""
-        from huggingface_hub.utils import EntryNotFoundError
 
         from explore_persona_space.orchestrate.hub import _upload
 
@@ -1113,7 +1237,6 @@ class TestVerifyRepoPathsUploaded:
         """A prefix absent on the repo (EntryNotFoundError during the scoped
         walk) returns ALL expected paths — the caller's fail-loud fires with
         the full list."""
-        from huggingface_hub.utils import EntryNotFoundError
 
         api = Mock()
         api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree bucket not found"))
@@ -1159,7 +1282,6 @@ class TestVerifyRepoPathsUploaded:
         helper must fall back to a ``file_exists`` probe — a successfully-
         uploaded file must NOT be reported missing. Pre-fix this returned
         ``["bucket/x.json"]`` (EntryNotFoundError => all expected missing)."""
-        from huggingface_hub.utils import EntryNotFoundError
 
         api = Mock()
         api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree 404s on file paths"))
@@ -1174,7 +1296,6 @@ class TestVerifyRepoPathsUploaded:
         """The False variant: tree 404s AND ``file_exists`` is False -> the
         exact file IS missing (the caller's fail-loud still fires on a
         genuinely absent file)."""
-        from huggingface_hub.utils import EntryNotFoundError
 
         api = Mock()
         api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree 404s on file paths"))
@@ -1188,7 +1309,6 @@ class TestVerifyRepoPathsUploaded:
         """The ``file_exists`` fallback is a fresh Hub call on the verify path
         — a transient 500 on the probe retries instead of crashing the verify
         leg (the #920 class must not re-enter through the fallback)."""
-        from huggingface_hub.utils import EntryNotFoundError
 
         api = Mock()
         api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree 404s on file paths"))
@@ -1205,7 +1325,6 @@ class TestVerifyRepoPathsUploaded:
         """A directory-like prefix (no expected path EQUAL to it) keeps the
         all-missing semantics on EntryNotFoundError — the file_exists fallback
         never fires."""
-        from huggingface_hub.utils import EntryNotFoundError
 
         api = Mock()
         api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree bucket not found"))
