@@ -1,0 +1,429 @@
+{
+  "metadata": {
+    "git_commit": "31fc9c24177e2861979490d4fb7f7afa06cec66c",
+    "timestamp": "2026-07-15T21:45:15Z",
+    "seed": 0,
+    "n": 50,
+    "script": "scripts/issue1336_diagnose_g1.py"
+  },
+  "cells": {
+    "rlvr_chat_lmsys5k": {
+      "n_sampled": 50,
+      "mismatches": 50,
+      "mismatch_rate": 1.0,
+      "defect_gate_fired": true,
+      "details": [
+        {
+          "conv_id": "s1007",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1017",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1031",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1071",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1095",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1127",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1150",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1178",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1341",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1364",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1409",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1554",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1783",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1791",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2149",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s219",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2226",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2321",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2347",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2737",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2777",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2872",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3125",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3206",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3231",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3326",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3383",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3385",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3438",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3459",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3674",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3736",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3789",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3798",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3867",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3887",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3979",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s400",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4243",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4261",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4410",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4604",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4633",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4757",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s477",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4812",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4852",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s555",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s674",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s822",
+          "mismatch": "rollout_row_missing_or_dropped"
+        }
+      ]
+    },
+    "rlvr_naturalistic_lmsys5k": {
+      "n_sampled": 50,
+      "mismatches": 50,
+      "mismatch_rate": 1.0,
+      "defect_gate_fired": true,
+      "details": [
+        {
+          "conv_id": "s1007",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1017",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1031",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1071",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1095",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1127",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1150",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1178",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1341",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1364",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1409",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1554",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1783",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s1791",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2149",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s219",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2226",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2321",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2347",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2737",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2777",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s2872",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3125",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3206",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3231",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3326",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3383",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3385",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3438",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3459",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3674",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3736",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3789",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3798",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3867",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3887",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s3979",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s400",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4243",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4261",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4410",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4604",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4633",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4757",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s477",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4812",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s4852",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s555",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s674",
+          "mismatch": "rollout_row_missing_or_dropped"
+        },
+        {
+          "conv_id": "s822",
+          "mismatch": "rollout_row_missing_or_dropped"
+        }
+      ]
+    }
+  },
+  "defect_threshold": 0.01,
+  "any_defect_gate_fired": true
+}
