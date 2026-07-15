@@ -31,7 +31,7 @@ The off-policy mapping result (docs/writeups/offpolicy_mapping_report.md @ 37051
 
 What is genuinely new vs the retired predictors: cosine/JS/base-prior compare context REPRESENTATIONS (points); this compares the fitted context→answer TRANSFORMATIONS (maps) — "do these two contexts imply the same context→content computation." The #823/#952 transfer results show map-similarity is measurable, discriminative (style breaks it while content match preserves it), and cheap in function space.
 
-## Initial design sketch (planner refines; discussed in chat 2026-07-15)
+## Design decisions (SETTLED in chat 2026-07-15 — user: 'defaults fine'; planner refines mechanics, not these choices)
 
 1. **Context families:** the marker-leakage personas (e.g. the #474/#532 16-source loc-arm panel + their bystander/target contexts) over a shared query bank — chosen so an EXISTING measured leakage matrix is reusable as ground truth with zero retraining.
 2. **Leakage ground truth (reuse, no new training):** the #474/#532 marker leakage matrices (source→target trained−base log P(marker), three-space recipe) as the primary DV; the #545 behavior→behavior testbed matrix as the transfer/OOD test of the predictor.
@@ -39,6 +39,12 @@ What is genuinely new vs the retired predictors: cosine/JS/base-prior compare co
 4. **Similarity metrics (function space only):** symmetrized cross-family transfer R²; held-out prediction-agreement; plus the map-mediated displacement variant. Report against a shuffled-pairing null and the same-family split-half ceiling.
 5. **Evaluation:** Spearman + regression of S(source, target) vs L(source, target), LOFO group folds (`.claude/rules/ood-generalization-folds.md`); baselines computed on identical rows: activation cosine (#404 recipe), JS (#458 recipe), base-rate prior, whitened gate (#667), predict-the-mean. Selection-symmetric nulls for any argmax over layers.
 6. **Compute:** base-model capture for ~16-30 families × query bank on Qwen-2.5-7B + CPU/GPU ridge fits — rough est 3-8 GPU-h; no training.
+
+**Settled choices (from the filing chat):**
+- Families = the marker-line personas (#474/#532 16-source loc-arm panel + bystander/target contexts) as PRIMARY, reusing their measured leakage matrix as ground truth (no retraining); the #545 behavior→behavior matrix as the predictor's transfer/OOD test.
+- Similarity = symmetrized cross-family transfer R² (primary) + held-out prediction-agreement (companion), each against a shuffled-pairing null and a same-family split-half ceiling. Function-space only; weight-space descriptive-only with the matched-half noise reference (#823 calibration).
+- Pre-registered kill criterion: partial correlation of map-similarity with leakage CONTROLLING for activation cosine (#404 recipe) and JS divergence (#458 recipe) on the identical rows — no incremental validity over the point metrics ⇒ the predictor is a re-dressed representation metric and the headline says so.
+- Query bank: one shared neutral bank of ~300–500 queries captured once across all families (map stability floor per #779's scaling curve: usable by ~250 rows, still rising at 3,600); BOTH mapping arms per the standing rule — prefix-based (persona text only; the leakage-relevant arm, since leakage targets are personas) AND context-based (persona + query).
 
 ## Constraints / notes
 
