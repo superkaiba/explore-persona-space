@@ -1,6 +1,6 @@
 {
-  "commit": "3898a2da83",
-  "created": "2026-07-15T22:43:22Z",
+  "commit": "f4b2bb1c60",
+  "created": "2026-07-15T22:44:05Z",
   "figsize": [
     6.5,
     4.0
@@ -822,7 +822,7 @@
           "MLP (width 32768)"
         ],
         "annotations": [
-          "Qwen-2.5-7B-Instruct, L19, last-token \u2192 mean-answer; fixed 1,000-ctx test set.\n\u2265150k: 963k point mixed LMSYS+WildChat; KRR = Nystr\u00f6m m=16,384 (validated at 50k). Dash-dot: reliability ceiling 0.947."
+          "Qwen-2.5-7B-Instruct, L19, last-token \u2192 mean-answer; fixed 1,000-ctx test.\n963k point: mixed LMSYS+WildChat; KRR \u2265150k = Nystr\u00f6m m=16,384.\nDash-dot: single-draw reliability ceiling (0.947)."
         ],
         "xticklabels": [
           "250",

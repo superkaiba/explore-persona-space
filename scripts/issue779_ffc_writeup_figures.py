@@ -252,9 +252,9 @@ def fig_scaling_n1m() -> None:
     _title(
         ax,
         "Context→answer map: held-out R² vs training-set size",
-        "Qwen-2.5-7B-Instruct, L19, last-token → mean-answer; fixed 1,000-ctx test set.\n"
-        "≥150k: 963k point mixed LMSYS+WildChat; KRR = Nyström m=16,384 (validated at 50k). "
-        "Dash-dot: reliability ceiling 0.947.",
+        "Qwen-2.5-7B-Instruct, L19, last-token → mean-answer; fixed 1,000-ctx test.\n"
+        "963k point: mixed LMSYS+WildChat; KRR ≥150k = Nyström m=16,384.\n"
+        "Dash-dot: single-draw reliability ceiling (0.947).",
     )
     savefig_paper(fig, "issue_779/ffc_scaling_to_n1m", dir=REPO / "figures")
     plt.close(fig)
