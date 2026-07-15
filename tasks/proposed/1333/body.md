@@ -9,21 +9,21 @@ parent_id: 1090
 origin_prompt: 'yes [produce a marker cell through the #1090 factory pipeline, same
   contexts, marker carve-out recipe, for apples-to-apples spectrum comparison marker->impolite->formatting]'
 workflow: v1
-goal: 'Produce a marker model organism through the #1090 artifacts-factory pipeline
-  (registered marker programmatic carve-out, the leading-space marker token id 83399)
-  across the same 4 contexts (persona/WildChat/ICL/bare) x 2 regimes (contrastive/positive-only)
-  as the content behaviors, using the dedicated marker recipe (marker+end-of-turn
-  loss, lr<=5e-6, band-stop, contrastive negatives, three-space on-policy log-P DV,
-  NOT judge-scored), and characterize install/on-policy-expression/bystander-leakage
-  per context, so the factory organism set spans marker->impolite->formatting under
-  one construction for the #1315 geometry comparison.'
+goal: 'Build the marker anchor for the organism-geometry spectrum via the FULL #1112
+  design on the factory marker behavior (token id 83399): {LoRA, full fine-tune} x
+  {positive-only, contrastive} 2x2 at MATCHED marker install (mirroring #1112 sycophancy
+  + #1315 impolite), plus a LoRA extension across the 4 #1090 contexts for install/expression/leakage
+  breadth; geometry DVs mirror #1112 (rank-k@90/participation-ratio/alignment/magnitude
+  + the mandatory teacher-forced shared-text control) plus the three-space on-policy
+  marker log-P install DV; dedicated marker recipe (marker+EOT loss, lr<=5e-6, band-stop,
+  contrastive-negative EOS slot), de-saturated anchor.'
 relates_to:
 - implant-which-behaviors
 - leak-behavior-vs-marker
 ---
 ## Goal
 
-Build the MARKER anchor for the organism-geometry spectrum by running the FULL #1112 design on the factory-registered marker behavior (programmatic leading-space marker token id 83399): the {LoRA, full fine-tune} x {positive-only, contrastive-negatives} 2x2 at MATCHED marker install, mirroring #1112's sycophancy 2x2 and #1315's impolite 2x2 so all four behaviors (marker -> sycophancy -> impolite -> formatting) are directly comparable in ONE geometry harness; plus a LoRA-only extension across the four #1090 contexts (persona/WildChat/ICL/bare) for the install/expression/leakage breadth.
+Build the marker anchor for the organism-geometry spectrum via the FULL #1112 design on the factory marker behavior (token id 83399): {LoRA, full fine-tune} x {positive-only, contrastive} 2x2 at MATCHED marker install (mirroring #1112 sycophancy + #1315 impolite), plus a LoRA extension across the 4 #1090 contexts for install/expression/leakage breadth; geometry DVs mirror #1112 (rank-k@90/participation-ratio/alignment/magnitude + the mandatory teacher-forced shared-text control) plus the three-space on-policy marker log-P install DV; dedicated marker recipe (marker+EOT loss, lr<=5e-6, band-stop, contrastive-negative EOS slot), de-saturated anchor.
 
 ## Design axes (the "what about marker" answer — YES to all)
 
