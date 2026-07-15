@@ -1,0 +1,6 @@
+{
+ "figure": "onpolicy_turn_depth_exploratory.png",
+ "git_commit": "1789213600aa3c67cb191a7ca8427db475ec8caf",
+ "source_results_json": "eval_results/issue_825/onpolicy_turn_depth/results.json",
+ "caption": "Exploratory F4 panels (plan \u00a76): (a) layers 14/18 own-answer context curves; (b) per-turn paired delta own-logged at L19 with conversation-cluster bootstrap 95% CIs \u2014 deep-turn cells exploratory per the pre-registration (one-draw temp-1.0 sampling variance; bootstrap resamples conversations, not re-generations); (c) own-vs-logged answer token-length distributions on the shared kept rows; (d) length-binned pooled paired delta at L19 (ctx arm) \u2014 nuisance read: quantile (tertile) bins over the pooled own+logged token-span length distribution (plan leaves bin edges free; per-model edges recorded in results.json length_binned), rows binned by logged (filled) vs own (open) answer length, delta recomputed from frozen held-out predictions with cluster-bootstrap CIs; a delta stable across bins rules out answer token length as the driver of the own-logged gap."
+}
