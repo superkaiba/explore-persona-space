@@ -2629,8 +2629,8 @@
     "1337": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1337",
-      "status": "proposed",
+      "path": "tasks/planning/1337",
+      "status": "planning",
       "title": "workflow-fix: step9c scratch oracle for file-anchored scan tests"
     },
     "1338": {
