@@ -1,0 +1,175 @@
+{
+  "commit": "67f0a58fae",
+  "created": "2026-07-15T22:09:22Z",
+  "figsize": [
+    11.0,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Judged impolite rate": 0.77,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Judged impolite rate": 0.6559,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "Judged impolite rate": 0.59,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "Judged impolite rate": 0.55,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.74,
+      "Judged impolite rate": 0.72,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.74,
+      "Judged impolite rate": 0.84,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "persona\nparity",
+      "Judged impolite rate": 0.64,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "WildChat\nparity",
+      "Judged impolite rate": 0.5484,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "ICL + negatives\nparity",
+      "Judged impolite rate": 0.58,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "ICL positives-only\nparity",
+      "Judged impolite rate": 0.55,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Full FT + negatives\nTier-2",
+      "Judged impolite rate": 0.695,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Full FT positives-only\nTier-2",
+      "Judged impolite rate": 0.74,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Judged impolite rate": 0.7805,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Judged impolite rate": 0.6538,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "Judged impolite rate": 0.6042,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "Judged impolite rate": 0.5556,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.26,
+      "Judged impolite rate": 0.7128,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.26,
+      "Judged impolite rate": 0.8362,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "Judged impolite rate",
+        "legend_labels": [
+          "realized rate",
+          "intruded rows scored non-impolite",
+          "intruded rows excluded"
+        ],
+        "annotations": [
+          "0.77",
+          "0.66",
+          "0.59",
+          "0.55",
+          "0.72",
+          "0.84",
+          "0.64",
+          "0.55",
+          "0.58",
+          "0.55",
+          "0.69",
+          "0.74",
+          "0.78",
+          "0.65",
+          "0.60",
+          "0.56",
+          "0.71",
+          "0.84"
+        ],
+        "xticklabels": [
+          "persona\nparity",
+          "WildChat\nparity",
+          "ICL + negatives\nparity",
+          "ICL positives-only\nparity",
+          "Full FT + negatives\nTier-2",
+          "Full FT positives-only\nTier-2"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "realized rate",
+      "intruded rows scored non-impolite",
+      "intruded rows excluded"
+    ]
+  }
+}
