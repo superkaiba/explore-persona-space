@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1320,
+  "highest_id": 1321,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2502,6 +2502,13 @@
       "path": "tasks/proposed/1320",
       "status": "proposed",
       "title": "daily-fix: vectorize issue825 MLP secondary; upload first"
+    },
+    "1321": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1321",
+      "status": "proposed",
+      "title": "daily-fix: follow-up defer/teardown must re-park parent"
     },
     "133": {
       "has_clean_result": false,
