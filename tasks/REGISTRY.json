@@ -2499,8 +2499,8 @@
     "1320": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1320",
-      "status": "reviewing",
+      "path": "tasks/completed/1320",
+      "status": "completed",
       "title": "daily-fix: vectorize issue825 MLP secondary; upload first"
     },
     "1321": {
