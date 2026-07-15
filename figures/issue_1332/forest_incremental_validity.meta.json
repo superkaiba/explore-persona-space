@@ -1,0 +1,77 @@
+{
+  "commit": "9248ce6fd1",
+  "created": "2026-07-15T16:14:54Z",
+  "figsize": [
+    6.5,
+    4.2
+  ],
+  "points": [
+    {
+      "Spearman correlation with leakage (95% two-way cluster-bootstrap CI)": 0.6129517163113284,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman correlation with leakage (95% two-way cluster-bootstrap CI)": 0.428661268915538,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman correlation with leakage (95% two-way cluster-bootstrap CI)": 0.5207112035175365,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Spearman correlation with leakage (95% two-way cluster-bootstrap CI)": 0.41920335592970465,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Spearman correlation with leakage (95% two-way cluster-bootstrap CI)": 0.0733340764871181,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Spearman correlation with leakage (95% two-way cluster-bootstrap CI)": 0.09011564928441217,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Raw and covariate-partial correlations of map similarity",
+        "xlabel": "Spearman correlation with leakage (95% two-way cluster-bootstrap CI)",
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "Raw \u03c1, all 400 cells",
+          "Raw \u03c1, stylized sources excluded (325 cells)",
+          "Raw \u03c1, stylized excluded either side (286 cells)",
+          "Partial \u03c1 given JS divergence",
+          "Partial \u03c1 given activation cosine",
+          "Partial \u03c1 given cosine + JS (registered kill)",
+          "Partial \u03c1 given same-bank cosine at layer 27"
+        ]
+      }
+    ]
+  }
+}
