@@ -1,5 +1,5 @@
 {
-  "commit": "84c841af80dc4fcad421fe229056334ca7e1f49e",
+  "commit": "3c7ebdfee67f9b14848097037b7dd356ec9c8ae9",
   "source": "eval_results/issue_1310/cells_{base,instruct}_{persona}.json (v3 prefill; UNTRACKED + HF crash-persist)",
   "v3_commit": "942df1bb2a",
   "values": {

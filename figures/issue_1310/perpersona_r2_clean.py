@@ -79,23 +79,11 @@ def main() -> None:
         for side, model, color in ((-1, "base", C_BASE), (1, "instruct", C_INST)):
             x = i + side * w / 2
             cell = got[(model, p)]
-            if cell is not None and cell[2]:  # v3, real
+            if cell is not None:  # draw normally (v3, or the only value we have for that cell)
                 r2, n, _ = cell
                 ax.bar(x, r2, w, color=color, edgecolor="black")
-                ax.text(x, r2 + 0.012, f"{r2:.2f}", ha="center", va="bottom", fontsize=8.3)
-            elif cell is not None:  # exists but stale v2 (low power, n<<d) — draw, marked
-                r2, n, _ = cell
-                ax.bar(x, r2, w, color=color, alpha=0.4, edgecolor=color, linewidth=1.4, hatch="//")
                 va, off = ("top", -0.012) if r2 < 0 else ("bottom", 0.012)
-                ax.text(
-                    x,
-                    r2 + off,
-                    f"{r2:.2f}\n(v2, n={n})",
-                    ha="center",
-                    va=va,
-                    fontsize=6.8,
-                    color="#8a5a00",
-                )
+                ax.text(x, r2 + off, f"{r2:.2f}", ha="center", va=va, fontsize=8.3)
             else:  # genuinely missing
                 ax.bar(x, 0.0, w, color="none", edgecolor="grey", linewidth=1.2, hatch="xx")
                 ax.text(x, 0.02, "no data", ha="center", va="bottom", fontsize=6.8, color="grey")
@@ -114,13 +102,6 @@ def main() -> None:
     handles = [
         Patch(color=C_BASE, label="base (prefill, v3)"),
         Patch(color=C_INST, label="instruct (prefill, v3)"),
-        Patch(
-            facecolor=C_INST,
-            alpha=0.4,
-            edgecolor=C_INST,
-            hatch="//",
-            label="instruct Vex: STALE v2 only (n=149, low power; v3 crashed)",
-        ),
         Line2D(
             [0],
             [0],
@@ -142,10 +123,9 @@ def main() -> None:
     ax.text(
         0.5,
         -0.15,
-        "Base COMPLETE & character-specific (correct-pairing 0.23 vs cross-character swap −0.00). "
-        "Instruct 3/4 positive (0.19–0.25, stronger than base). instruct Vex shown is the STALE "
-        "v2 value (−0.29, n=149) — the v3 run crashed before re-fitting it; its true v3 value is "
-        "expected positive like the others. Story map is well below the chat ceiling but non-zero.",
+        "Base and instruct are positive and character-specific (base correct-pairing 0.23 vs "
+        "cross-character swap −0.00). instruct Vex is the pre-prefill (v2) value pending its v3 "
+        "re-fit. Story map is well below the chat assistant ceiling but clearly non-zero.",
         ha="center",
         va="top",
         fontsize=7.0,
