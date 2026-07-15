@@ -1,1 +1,2 @@
 {"ts": "2026-07-15T12:07:19Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-07-15T12:09:29Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #1345 to open question(s) identity-contextual-vs-base; created_new=none; mode=auto-match (autonomous). Assumption: same question the parent #825 + sibling #1335 line evidences (4.2 contextual-model-vs-base, the context→answer map line)."}
