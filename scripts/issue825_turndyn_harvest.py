@@ -132,6 +132,66 @@ def read_jsonl_stem(out_dir: Path, stem: str) -> list[dict]:
     return rows
 
 
+def source_counts(conv_ids) -> dict[str, int]:
+    """Per-source-prefix counts of conv ids (prefix = everything before the final `_`)."""
+    out: dict[str, int] = {}
+    for cid in conv_ids:
+        key = str(cid).rsplit("_", 1)[0]
+        out[key] = out.get(key, 0) + 1
+    return dict(sorted(out.items()))
+
+
+def stratified_subsample_ids(conv_ids, n: int, seed: int = PANEL_SEED) -> list[str]:
+    """Seeded source-stratified subsample of conversation ids (review v21 Major 6).
+
+    Ids are ``{source_tag}_{counter:06d}`` (issue1092_build_corpus) and sort
+    single-source (``lmsys_*`` wholly before ``wildchat_*``), so any
+    first-N-of-sorted subsample silently selects one corpus. This groups ids
+    by source prefix (everything before the final ``_``), allocates ``n``
+    proportionally (largest remainder), and draws each group's share by a
+    seeded shuffle. Deterministic given (id set, n, seed); returns a sorted
+    list. Single-prefix id sets (smoke fixtures) degrade to a plain seeded
+    subsample.
+    """
+    import numpy as np
+
+    uniq = sorted({str(c) for c in conv_ids})
+    n = max(0, min(int(n), len(uniq)))
+    if n == 0:
+        return []
+    if n >= len(uniq):
+        return uniq
+    groups: dict[str, list[str]] = {}
+    for cid in uniq:
+        groups.setdefault(cid.rsplit("_", 1)[0], []).append(cid)
+    keys = sorted(groups)
+    total = len(uniq)
+    exact = {k: n * len(groups[k]) / total for k in keys}
+    alloc = {k: min(int(exact[k]), len(groups[k])) for k in keys}
+    rem = n - sum(alloc.values())
+    for k in sorted(keys, key=lambda k2: (-(exact[k2] - alloc[k2]), k2)):
+        if rem <= 0:
+            break
+        if alloc[k] < len(groups[k]):
+            alloc[k] += 1
+            rem -= 1
+    while rem > 0:  # spill past size-capped groups (pathological splits)
+        progressed = False
+        for k in keys:
+            if rem > 0 and alloc[k] < len(groups[k]):
+                alloc[k] += 1
+                rem -= 1
+                progressed = True
+        assert progressed, "stratified_subsample_ids: allocation stuck"
+    rng = np.random.default_rng(int(seed))
+    out: list[str] = []
+    for k in keys:  # rng consumed in sorted-key order => deterministic
+        ids = list(groups[k])
+        rng.shuffle(ids)
+        out.extend(ids[: alloc[k]])
+    return sorted(out)
+
+
 def _nk_table(pool: list[dict], max_k: int = MAX_K_TABLE) -> dict[str, int]:
     """n(k) = number of kept conversations with >= k user turns."""
     depths = [int(r["n_user_turns"]) for r in pool]

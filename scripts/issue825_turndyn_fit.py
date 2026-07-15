@@ -71,7 +71,11 @@ from issue825_turn_depth_map import (  # noqa: E402
     _dual_perm_null,
     _folds_for_turn,
 )
-from issue825_turndyn_harvest import read_jsonl_stem  # noqa: E402
+from issue825_turndyn_harvest import (  # noqa: E402
+    read_jsonl_stem,
+    source_counts,
+    stratified_subsample_ids,
+)
 from issue1092_fit_grid import FOLD_SEED, _fit_cv, _r2  # noqa: E402
 
 logger = logging.getLogger("i825_turndyn_fit")
@@ -464,6 +468,100 @@ def run_cells(args: argparse.Namespace) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _transfer_nulls(
+    turns: list[int],
+    by_turn: dict[int, np.ndarray],
+    fold_labels: dict[int, np.ndarray],
+    used_folds: dict[int, list[int]],
+    pred_blocks: dict[tuple[int, int], dict[int, np.ndarray]],
+    Y: np.ndarray,
+    ss_tot: dict[tuple[int, int], float],
+    n_draws: int,
+    null_min_n: int,
+    seed: int,
+) -> dict[str, dict]:
+    """Per-(i, j) shuffle-within-turn-j permutation nulls, batched (plan §4 P4).
+
+    Predictions are FROZEN from the real transfer fit: a within-turn-j shuffle
+    leaves the turn-i training data untouched for i != j, so the permuted-Y
+    "re-solve" is exactly frozen-pred scoring against the permuted targets;
+    the DIAGONAL null is therefore conditional on the fitted map (the refit
+    permutation null for the same cell lives in the cells part). Batched via
+    the dual-space/GEMM draw pattern — ONE permutation set per target turn j
+    shared across every source i, one (draws, n*P) gather per chunk, and all
+    sources reduced through a single ``(draws, n*P) @ (n*P, sources)`` GEMM
+    (no serial per-cell draw loops). ``ss_res(perm) = sum(Y^2) + sum(pred^2)
+    - 2 * <Y[perm], pred>`` — no cancellation risk under the null (pred and
+    permuted Y are unaligned). ``null_r2 = 1 - ss_res / ss_tot_real`` uses the
+    SAME denominator as the observed r2, so band comparisons reduce to
+    ss_res. Precision: preds fp16-stored -> fp32 GEMM, fp64 accumulation
+    (the `_dual_perm_null` contract — null R2 ~ 0 needs nowhere near f64).
+    """
+    out: dict[str, dict] = {}
+    if n_draws <= 0:
+        return out
+    p_dim = int(Y.shape[1])
+    # The predicted row set of (i, j) depends only on (used_folds[i], j):
+    # group sources by realized fold coverage (production: one group, all 6).
+    groups: dict[tuple[int, ...], list[int]] = {}
+    for i in turns:
+        if used_folds[i]:
+            groups.setdefault(tuple(used_folds[i]), []).append(i)
+    for j in turns:
+        for sig in sorted(groups):
+            srcs = groups[sig]
+            rows_order = (
+                np.concatenate([by_turn[j][fold_labels[j] == f] for f in sig])
+                if sig
+                else np.empty(0, dtype=np.int64)
+            )
+            n_pred = int(rows_order.size)
+            if n_pred < null_min_n:
+                continue
+            preds: list[np.ndarray] = []
+            valid_srcs: list[int] = []
+            for i in srcs:
+                blocks = pred_blocks.get((i, j), {})
+                arrs = [blocks[f] for f in sig if f in blocks]
+                if not arrs:
+                    continue
+                pi = np.concatenate(arrs, axis=0)
+                if pi.shape[0] != n_pred:
+                    continue  # partial coverage — degenerate cell, no null
+                preds.append(np.ascontiguousarray(pi, dtype=np.float32))
+                valid_srcs.append(i)
+            if not preds:
+                continue
+            yj = np.ascontiguousarray(Y[rows_order], dtype=np.float32)
+            sum_y2 = float((yj.astype(np.float64) ** 2).sum())
+            sum_p2 = np.asarray(
+                [float((p.astype(np.float64) ** 2).sum()) for p in preds], dtype=np.float64
+            )
+            b_mat = np.stack(preds).reshape(len(preds), -1)  # (S, n_pred * P) fp32
+            rng = np.random.default_rng(seed + 104_729 * int(j))
+            perms = np.argsort(rng.random((n_draws, n_pred)), axis=1)
+            cross = np.zeros((n_draws, len(preds)), dtype=np.float64)
+            bytes_per_draw = n_pred * p_dim * 4
+            k_chunk = max(1, int(1_000_000_000 // max(1, bytes_per_draw)))
+            for s0 in range(0, n_draws, k_chunk):
+                pp = perms[s0 : s0 + k_chunk]
+                a_mat = yj[pp].reshape(pp.shape[0], -1)  # (k, n_pred * P) gather
+                cross[s0 : s0 + pp.shape[0]] = (a_mat @ b_mat.T).astype(np.float64)
+            for si, i in enumerate(valid_srcs):
+                tot = ss_tot[(i, j)]
+                if not (np.isfinite(tot) and tot > 1e-12):
+                    continue
+                draws = 1.0 - (sum_y2 + sum_p2[si] - 2.0 * cross[:, si]) / tot
+                out[f"{i}->{j}"] = {
+                    "null_mean": float(np.mean(draws)),
+                    "null_hi": float(np.percentile(draws, 97.5)),
+                    "null_max": float(np.max(draws)),
+                    "null_n_draws": int(draws.size),
+                    "n_pred": n_pred,
+                }
+    return out
+
+
 def run_transfer(args: argparse.Namespace) -> None:
     tag = args.arm
     kinds = ["context_k", ANSWER_KIND[tag]]
@@ -479,6 +577,10 @@ def run_transfer(args: argparse.Namespace) -> None:
     }
     ss_res = {(i, j): 0.0 for i in turns for j in turns}
     ss_tot = {(i, j): 0.0 for i in turns for j in turns}
+    used_folds: dict[int, list[int]] = {i: [] for i in turns}
+    # Frozen per-(source, target, fold) predictions for the null phase, fp16
+    # (~21 GB worst case at 24 turns x 5000 convs x 3584 — pod-RAM bounded).
+    pred_blocks: dict[tuple[int, int], dict[int, np.ndarray]] = {}
     t0 = time.time()
     for i in turns:
         sel_i = by_turn[i]
@@ -486,6 +588,7 @@ def run_transfer(args: argparse.Namespace) -> None:
             tr = sel_i[fold_labels[i] != f]
             if tr.size < 3:
                 continue
+            used_folds[i].append(f)
             # concatenate EVERY target turn's fold-f test rows -> ONE prep+predict
             te_blocks = []
             spans = []
@@ -507,6 +610,7 @@ def run_transfer(args: argparse.Namespace) -> None:
                 pj = pred[a:b]
                 ss_res[(i, j)] += float(np.sum((true - pj) ** 2))
                 ss_tot[(i, j)] += float(np.sum((true - true.mean(0)) ** 2))
+                pred_blocks.setdefault((i, j), {})[f] = pj.astype(np.float16)
         logger.info(
             "[transfer] %s/%s source turn %d done (%.0fs)", tag, args.model, i, time.time() - t0
         )
@@ -522,6 +626,27 @@ def run_transfer(args: argparse.Namespace) -> None:
             retained[f"{i}->{j}"] = (
                 r2[f"{i}->{j}"] / diag if diag and np.isfinite(diag) and diag > 1e-6 else None
             )
+    nulls = _transfer_nulls(
+        turns,
+        by_turn,
+        fold_labels,
+        used_folds,
+        pred_blocks,
+        Y,
+        ss_tot,
+        int(args.n_draws),
+        int(args.null_min_n),
+        NULL_SEED,
+    )
+    logger.info(
+        "[transfer] %s/%s nulls: %d/%d cells (n_draws=%d, %.0fs)",
+        tag,
+        args.model,
+        len(nulls),
+        len(turns) ** 2,
+        int(args.n_draws),
+        time.time() - t0,
+    )
     part = {
         "arm": tag,
         "model": args.model,
@@ -530,6 +655,20 @@ def run_transfer(args: argparse.Namespace) -> None:
         "fold_map_sha256": _fold_map_hash(fold_of),
         "r2": r2,
         "retained_fraction": retained,
+        "nulls": nulls,
+        "null_spec": {
+            "n_draws": int(args.n_draws),
+            "null_min_n": int(args.null_min_n),
+            "seed": f"NULL_SEED({NULL_SEED}) + 104729 * target_turn",
+            "kind": (
+                "shuffle-within-turn-j row permutation vs FROZEN transfer "
+                "predictions; one shared permutation set per target turn; "
+                "fp16-stored preds, fp32 GEMM, fp64 accumulation; denominator "
+                "= real fold-centered ss_tot (identical to the observed r2). "
+                "Diagonal nulls are conditional on the fitted map — the refit "
+                "permutation null for the same cell lives in the cells part."
+            ),
+        },
     }
     _write_part(Path(args.parts_dir), f"transfer_{tag}_{args.model}", part)
 
@@ -567,6 +706,33 @@ def _gcv_primal_beta(X: np.ndarray, Y: np.ndarray, device: str) -> torch.Tensor:
             best_gcv, best_lam = gcv, float(lam)
     filt = 1.0 / (w + best_lam)
     return Xn.T @ (V @ (filt[:, None] * VtY))  # (D_in, D_out)
+
+
+def _rank_truncated_cols(U: torch.Tensor, S: torch.Tensor, rel: float = 1e-6) -> tuple:
+    """Numerical-rank column truncation of an SVD's U factor.
+
+    Rank rule: ``r = #{S > S.max() * rel}`` (relative singular-value
+    threshold, ceiling rows included; ``rel=1e-6`` — code-review v21
+    Critical 2 prescription). A per-(turn, fold) beta has rank <= its fold's
+    row count (~833) << 3584, so the FULL square U from
+    ``svd(full_matrices=False)`` on the square beta spans the whole space and
+    makes ``||U^T b|| == ||b||`` identically 1.0 — the projection must use
+    only the numerical-rank columns. Returns ``(U[:, :r], r)``.
+    """
+    if S.numel() == 0:
+        return U[:, :0], 0
+    r = max(1, int((float(S.max()) * rel < S).sum().item()))
+    return U[:, :r], r
+
+
+def _general_linear_cos(u_r: torch.Tensor, b_j: torch.Tensor) -> float:
+    """Fraction of ``b_j`` captured by span(u_r): ``||u_r^T b_j||_F / ||b_j||_F``.
+
+    ``u_r`` MUST be rank-truncated (`_rank_truncated_cols`); with a full
+    square orthogonal U the statistic is identically 1.0 by construction.
+    """
+    proj = u_r.T @ b_j
+    return float(torch.linalg.norm(proj) / (torch.linalg.norm(b_j) + 1e-12))
 
 
 def run_operators(args: argparse.Namespace) -> None:  # noqa: C901 — linear battery driver
@@ -626,8 +792,16 @@ def run_operators(args: argparse.Namespace) -> None:  # noqa: C901 — linear ba
             if b is None:
                 continue
             U, S, Vh = torch.linalg.svd(b, full_matrices=False)
-            svd_cache[(t, f)] = {"U": U, "Vh": Vh, "norm": float(torch.linalg.norm(b))}
-            del b, S
+            # Rank-truncate U at cache time: the full square U makes the
+            # general-linear cos identically 1.0 (review v21 Critical 2).
+            U_r, rank = _rank_truncated_cols(U, S)
+            svd_cache[(t, f)] = {
+                "U": U_r,
+                "rank": rank,
+                "Vh": Vh,
+                "norm": float(torch.linalg.norm(b)),
+            }
+            del b, U, S
     for ii, i in enumerate(turns):
         for j in turns[ii:]:
             # raw cosine over ALL disjoint fold pairs (cheap flattened dots)
@@ -669,10 +843,10 @@ def run_operators(args: argparse.Namespace) -> None:  # noqa: C901 — linear ba
                 sv = torch.linalg.svdvals(bi.T @ bj)
                 rec["procrustes_cos"] = float(sv.sum() / (ni * nj + 1e-12))
                 # general-linear change of coordinates: b_i L ~ b_j ->
-                # cos_gl = |P_col(b_i) b_j| / |b_j| (residual fraction = 1 - cos^2)
-                Ui = svd_cache[(i, f_a)]["U"]
-                proj = Ui.T @ bj
-                rec["general_linear_cos"] = float(torch.linalg.norm(proj) / (nj + 1e-12))
+                # cos_gl = |P_col(b_i) b_j| / |b_j| (residual fraction = 1 - cos^2),
+                # projected onto the RANK-TRUNCATED column space of b_i.
+                rec["general_linear_cos"] = _general_linear_cos(svd_cache[(i, f_a)]["U"], bj)
+                rec["general_linear_rank"] = int(svd_cache[(i, f_a)]["rank"])
                 # principal angles from the CACHED per-(turn, fold) SVD factors
                 # (same math as issue825_crossmodel_map_transfer.principal_angles,
                 # without re-running two full 3584^2 SVDs per pair).
@@ -682,7 +856,7 @@ def run_operators(args: argparse.Namespace) -> None:  # noqa: C901 — linear ba
                     m_small = Vha[:k] @ Vhb[:k].T  # Qa.T @ Qb, (k, k)
                     cs = torch.linalg.svdvals(m_small).clamp(0.0, 1.0)
                     rec[f"principal_angle_cos_k{k}_mean"] = float(cs.mean())
-                del sv, proj
+                del sv
             if bi is not None:
                 del bi
             if bj is not None:
@@ -768,7 +942,10 @@ def run_reach(args: argparse.Namespace) -> None:
     )
 
     rng = np.random.default_rng(NULL_SEED + 7)
-    mlp_convs = common[: min(len(common), int(args.mlp_conv_n))]
+    # Seeded stratified subsample — first-N of the sorted intersection is
+    # single-source (`lmsys_*` sorts wholly before `wildchat_*`; review v21
+    # Major 6). Chosen ids are recorded in the part payload below.
+    mlp_convs = stratified_subsample_ids(common, int(args.mlp_conv_n))
     sel1 = [idx_by_turn_conv[1][c] for c in mlp_convs]
     Xm_amb = arrays["context_k"][HEADLINE_LAYER][sel1].astype(np.float32)
     # input PCA (train-agnostic global projection; recorded)
@@ -825,6 +1002,10 @@ def run_reach(args: argparse.Namespace) -> None:
             "input_pca": p_in,
             "target_pca": 48,
             "null_draws": int(args.mlp_null_draws),
+            "subsample": "seeded stratified by source prefix (seed 42, "
+            "issue825_turndyn_harvest.stratified_subsample_ids)",
+            "conv_source_counts": source_counts(mlp_convs),
+            "conv_ids": mlp_convs,
         },
     }
     _write_part(Path(args.parts_dir), f"reach_{tag}_{args.model}", part)

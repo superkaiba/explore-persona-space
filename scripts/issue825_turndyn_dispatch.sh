@@ -483,11 +483,24 @@ PY
     then
       K_GEN="$kgen_try"
       echo "[pilot] G-B PASS at K_gen=$K_GEN"
+      # Plan §9/§10: pilot rollout text -> raw_completions/turn_dynamics/pilot/
+      # (review v21 Major 4). Fail-loud on the PASS path — a dead upload route
+      # should halt BEFORE the expensive main phase, not after it.
+      env SRC="$PILOT_DIR" DEST="$HF_RAW_PREFIX/pilot" SMOKE="$SMOKE" \
+        uv run python scripts/issue825_turndyn_upload.py --mode text \
+        >"$LOG_DIR/issue-825-turndyn-upload-pilot.log" 2>&1
       return 0
     fi
     echo "[pilot] G-B FAIL at K_gen=$kgen_try — trying the pre-registered fallback"
   done
   echo "FATAL: G-B failed at every K_gen in {$K_GEN, 20, 16} — fix the simulator (plan §7)" >&2
+  # Best-effort pilot-text persist on the FAIL path too (the G-B failure
+  # distribution is exactly the diagnostic the next round needs); never mask
+  # the exit code.
+  env SRC="$PILOT_DIR" DEST="$HF_RAW_PREFIX/pilot" SMOKE="$SMOKE" \
+    uv run python scripts/issue825_turndyn_upload.py --mode text \
+    >"$LOG_DIR/issue-825-turndyn-upload-pilot.log" 2>&1 || \
+    echo "WARN: pilot text upload failed on the G-B FAIL path (see upload-pilot log)" >&2
   exit 4
 }
 

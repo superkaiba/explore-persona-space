@@ -68,7 +68,11 @@ from issue825_onpolicy_turn_depth_gpu import (  # noqa: E402
     _render_gen_prompt,
     _seed_instruct_render_tokenizer,
 )
-from issue825_turndyn_harvest import read_jsonl_stem  # noqa: E402
+from issue825_turndyn_harvest import (  # noqa: E402
+    read_jsonl_stem,
+    source_counts,
+    stratified_subsample_ids,
+)
 from issue1092_gpu_phase import (  # noqa: E402
     DEFAULT_VLLM_CHUNK_SIZE,
     MAX_MODEL_LEN,
@@ -334,8 +338,13 @@ def _load_gen_rollout(args: argparse.Namespace) -> dict[tuple[str, int], dict]:
 
 
 def _subsample_ids(conv_ids: list[str], n: int) -> set[str]:
-    """Deterministic layer-sweep subsample: first n conv_ids in sorted order."""
-    return set(sorted(set(conv_ids))[: max(0, n)])
+    """Seeded source-stratified layer-sweep subsample (review v21 Major 6).
+
+    First-N-of-sorted selected a single corpus (`lmsys_*` sorts wholly before
+    `wildchat_*`); delegate to the seeded stratified sampler (seed 42). The
+    chosen ids are recorded in each capture report.
+    """
+    return set(stratified_subsample_ids(conv_ids, n))
 
 
 class _CaptureWriter:
@@ -517,6 +526,7 @@ def _capture_conversations(  # noqa: C901 — linear batched-capture driver
     group_size = max(1, int(args.group_size))
     n_groups = math.ceil(len(kept) / group_size)
     spot_pairs: list[dict] = []
+    span_drop_count = [0]
     t0 = time.time()
 
     def _flush(batch_rows: list[dict], buf: dict) -> None:
@@ -540,14 +550,33 @@ def _capture_conversations(  # noqa: C901 — linear batched-capture driver
                     f"tokenization drift {r['conv_id']}: forward {n_tok} != pre-pass {r['n_tok']}"
                 )
             full_ids = inputs["input_ids"][i, :n_tok].tolist()
-            cuts = _dynamics_cut_plan(r["turns"], tok, args.model, n_tok, full_token_ids=full_ids)
             pairs = _assistant_pairs(r["turns"], -1)
-            per_turn = _extract_turn_states(hs, i, cuts, pairs, BASE_LAYERS, answer_key)
-            sweep_turn = (
-                _extract_turn_states(hs, i, cuts, pairs, None, answer_key)
-                if r["conv_id"] in sweep_ids
-                else [(k2, t2, None) for k2, t2 in pairs]
-            )
+            try:
+                cuts = _dynamics_cut_plan(
+                    r["turns"], tok, args.model, n_tok, full_token_ids=full_ids
+                )
+                per_turn = _extract_turn_states(hs, i, cuts, pairs, BASE_LAYERS, answer_key)
+                sweep_turn = (
+                    _extract_turn_states(hs, i, cuts, pairs, None, answer_key)
+                    if r["conv_id"] in sweep_ids
+                    else [(k2, t2, None) for k2, t2 in pairs]
+                )
+            except AssertionError:
+                # Degenerate span (BPE-seam zero-width / missing user turn) on
+                # ONE real conversation must not abort the whole capture job
+                # (review v21 Major 5 — the round-9/10 crash class; mirrors
+                # capture_own). NEVER log the assert text: it can embed
+                # real-user content.
+                span_drop_count[0] += 1
+                drops.append(
+                    {
+                        "conv_id": r["conv_id"],
+                        "n_tok": r["n_tok"],
+                        "depth": len(pairs),
+                        "reason": "span_assert",
+                    }
+                )
+                continue
             for (k, t, vecs), (_, _, sw) in zip(per_turn, sweep_turn, strict=True):
                 row = {
                     "conv_id": r["conv_id"],
@@ -609,23 +638,30 @@ def _capture_conversations(  # noqa: C901 — linear batched-capture driver
             time.time() - t0,
         )
 
+    overflow = [d for d in drops if d["reason"] == "window_overflow"]
+    span_drops = [d for d in drops if d["reason"] == "span_assert"]
     per_depth_drop = {}
-    for d in drops:
+    for d in overflow:
         per_depth_drop[str(d["depth"])] = per_depth_drop.get(str(d["depth"]), 0) + 1
     report = {
         "model_type": args.model,
         "tag": tag,
         "n_convs_in": len(convs),
-        "n_convs_kept": len(kept),
-        "n_window_overflow": len(drops),
+        "n_convs_kept": len(kept) - span_drop_count[0],
+        "n_window_overflow": len(overflow),
         "per_depth_overflow": per_depth_drop,
-        "overflow_conv_ids": sorted(d["conv_id"] for d in drops),
+        "overflow_conv_ids": sorted(d["conv_id"] for d in overflow),
+        "n_span_drop": span_drop_count[0],
+        "span_drop_conv_ids": sorted(d["conv_id"] for d in span_drops),
         "capture_window": window,
         "base_layers": list(BASE_LAYERS),
         "n_all_layers": n_layers,
         "hidden_dim": hidden_dim,
         "sweep_n": int(args.sweep_n),
         "n_sweep_convs": len(sweep_ids & {c["conv_id"] for c in kept}),
+        "sweep_subsample": "seeded stratified by source prefix (seed 42)",
+        "sweep_source_counts": source_counts(sweep_ids),
+        "sweep_conv_ids": sorted(sweep_ids),
     }
     with open(out_root / "capture_report.json", "w") as f:
         json.dump(report, f, indent=1)
@@ -906,6 +942,9 @@ def run_capture_own(args: argparse.Namespace) -> None:  # noqa: C901 — linear 
         "capture_window": MAX_MODEL_LEN,
         "base_layers": list(BASE_LAYERS),
         "sweep_n": int(args.sweep_n),
+        "sweep_subsample": "seeded stratified by source prefix (seed 42)",
+        "sweep_source_counts": source_counts(sweep_ids),
+        "sweep_conv_ids": sorted(sweep_ids),
     }
     with open(out_root / "capture_report.json", "w") as f:
         json.dump(report, f, indent=1)

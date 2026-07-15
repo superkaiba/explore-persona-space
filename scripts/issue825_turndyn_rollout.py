@@ -369,10 +369,17 @@ def run_rollout(args: argparse.Namespace) -> None:  # noqa: C901 — linear wave
 
     # ---- resume: replay completed (k, half) checkpoints in order ----
     resume_k = {"a": 0, "b": 0}
+    replay_open = {"a": True, "b": True}
     for k in range(1, args.k_gen + 1):
         for half in ("a", "b"):
+            if not replay_open[half]:
+                continue
             rows = _read_step(out_root, k, half)
             if rows is None:
+                # stop at the FIRST missing step per half — steps are written
+                # strictly in order, so replaying past a hole would corrupt
+                # the turn sequence.
+                replay_open[half] = False
                 continue
             for r in rows:
                 st = state[r["conv_id"]]
@@ -395,6 +402,32 @@ def run_rollout(args: argparse.Namespace) -> None:  # noqa: C901 — linear wave
     llm = _build_engine(args)
     executor = ThreadPoolExecutor(max_workers=1)
     pending: dict[str, tuple[int, object] | None] = {"a": None, "b": None}
+
+    # ---- resume: re-submit the IN-FLIGHT Haiku wave the crash dropped ----
+    # The step-k checkpoint persists user turn k + answer k, but the turn-k+1
+    # wave (submitted at step k) lived only in the executor. Without
+    # re-submission, `pending[half]` is None at step resume_k+1 and EVERY live
+    # conv dies `state_desync_no_user_turn` (code-review v21 Critical 1). The
+    # api_dispatch per-item content cache (keyed `cid:u{k+1}` under out_root)
+    # makes an already-completed wave free on re-submission.
+    for half in ("a", "b"):
+        rk = resume_k[half]
+        if 0 < rk < args.k_gen:
+            wave_items = [
+                (cid, state[cid]["brief_text"], list(state[cid]["turns"]))
+                for cid in halves[half]
+                if state[cid]["alive"]
+            ]
+            logger.info(
+                "[rollout] resume: re-submitting haiku wave u%d for half %s (%d live convs)",
+                rk + 1,
+                half,
+                len(wave_items),
+            )
+            pending[half] = (
+                rk + 1,
+                executor.submit(_run_haiku_wave, wave_items, rk + 1, args, out_root),
+            )
     t0 = time.time()
 
     def _process_half(half: str, k: int) -> None:
