@@ -35,6 +35,7 @@ Build the marker anchor for the organism-geometry spectrum via the FULL #1112 de
 ## Geometry DVs (mirror #1112 exactly, so results compose)
 
 - Residual-stream activation shift (trained-minus-base, per layer): rank-k@90, participation-ratio, direction alignment to the marker read-out, magnitude (mean-shift norm).
+- **Mapping arms (standing prefix-and-context rule):** capture pooling runs BOTH mapping arms plus the response arm, exactly as #1112 did — prefix-based (the prefix = everything before the user query, i.e. the system persona), context-based (prefix + user question), and response (the model's own generation) — all three reported.
 - The TEXT-IDENTITY control is mandatory: teacher-forced shared-text re-capture (one shared base-generated text per row), because #1112 showed most of the apparent "diffuse" signature is text-variation artifact (rank-k@90 collapsed 66-74 -> 27-35 on shared text) — the marker read must run this control or it is not comparable to the sycophancy read.
 - PLUS the marker-specific install DV: on-policy log P(marker) at the END of the model's own response, trained-base in all THREE spaces (log-prob primary / marker logit incl. EOS margin secondary / probability sanity), four-float-per-slot storage, NOT judge-scored.
 
