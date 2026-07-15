@@ -1,6 +1,7 @@
 ---
-title: Function-space map similarity predicts marker leakage but is statistically
-  redundant with the activation-cosine baseline (MODERATE confidence)
+title: Directional function-space map similarity predicts marker leakage beyond the
+  activation-cosine and Jensen–Shannon baselines that render its symmetrized form
+  redundant (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-15T07:06:20Z'
