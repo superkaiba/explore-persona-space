@@ -2541,8 +2541,8 @@
     "1326": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1326",
-      "status": "proposed",
+      "path": "tasks/planning/1326",
+      "status": "planning",
       "title": "daily-fix: Step-0 guard blind to inline-chat drivers"
     },
     "1327": {
