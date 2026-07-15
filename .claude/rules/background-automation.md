@@ -1008,6 +1008,40 @@ events-mtime recency). Kill switch `EPM_DISABLE_VERDICT_DISAGREE_OBSERVER=1`;
 `--verdict-disagree-only` runs just this pass (pair with `--dry-run` for a
 live smoke — zero writes).
 
+**Root-draft observer pass (task #1341, `root_draft_pass`; origin incident
+#1320).** A daemon-INDEPENDENT, ESCALATE-ONLY pass (runs right after
+`verdict_disagree_pass`) flagging stale UNTRACKED `*.py` drafts abandoned in
+the SHARED repo-root working tree — dirt that matches the `.py` leg of
+step9c's `DIRTY_CODE_PATHSPEC` (`scripts/step9c_baseline.py`) and therefore
+flips EVERY task's Step 9c pristine-oracle compare fleet-wide indeterminate,
+silently (#1320: two untracked `scripts/issue825_*.py` drafts poisoned the
+ledger 9+ hours). Predicate: one read-only
+`git --no-optional-locks status --porcelain -- *.py` at the main root
+(`--no-optional-locks` = never takes the shared root's index lock), keep
+untracked (`?? `) `.py` entries, flag those with file mtime age >
+`EPM_ROOT_DRAFT_ESCALATE_HOURS` (default 3 h; tracked-modified ` M` dirt is
+deliberately out of scope — the named extension trigger if a future
+fleet-wide indeterminacy traces to it; `.claude/worktrees/` is gitignored so
+worktrees never enumerate). **Channels:** one row per fired path to the
+dedicated sidecar `.claude/cache/root-draft-events.jsonl` (with best-effort
+`issue<M>_` filename attribution + a fail-soft `task.py view` status label)
++ ONE deduped fail-soft `_telegram_push` digest per tick naming every fired
+path; NO task markers (the verdict-disagree posture — a name-collision
+mis-attribution must cost nothing on any task record). **Dedup:** per-path
+fire-once + `EPM_ROOT_DRAFT_REALERT_HOURS` (24 h) re-alert TTL in the state
+singleton `~/.eps-autonomous/root-draft-observer.json` (atomic tmp+rename;
+recovered paths pruned so a re-appearance re-fires immediately).
+**ESCALATE-ONLY is a hard invariant:** the pass NEVER deletes, moves,
+chmods, or git-mutates anything — its only writes are the state file + the
+sidecar (pinned by
+`tests/test_autonomous_session_watch.py::test_root_draft_pass_never_deletes`);
+rescue is always the OWNING session committing or relocating its draft. A
+git-status failure warns + skips the tick with no state write (fail toward
+logged-skip, never a silent "no drafts"). Kill switch
+`EPM_DISABLE_ROOT_DRAFT_PASS=1`; `--root-draft-only` runs just this pass
+(pair with `--dry-run` for a live smoke — zero writes, zero task.py reads
+beyond the read-only enumeration).
+
 **Auth-outage guard pass (task #1027, `auth_outage_pass`).** Fleet-level
 respawn suppression for an Anthropic auth outage — or ANY fleet-wide
 instant-death cause (poisoned CLI credential, broken `claude` binary, a
