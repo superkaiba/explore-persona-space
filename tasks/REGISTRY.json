@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1341,
+  "highest_id": 1342,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2667,6 +2667,13 @@
       "path": "tasks/proposed/1341",
       "status": "proposed",
       "title": "workflow-fix: watcher escalate-only pass for stale untracked root code drafts"
+    },
+    "1342": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1342",
+      "status": "proposed",
+      "title": "workflow-fix: signature-bind fenced calls in the deferred-import sweep"
     },
     "135": {
       "has_clean_result": false,
