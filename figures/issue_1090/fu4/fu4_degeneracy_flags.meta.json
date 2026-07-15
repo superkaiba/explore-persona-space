@@ -1,0 +1,87 @@
+{
+  "commit": "d7fdfdf996",
+  "created": "2026-07-15T03:10:38Z",
+  "figsize": [
+    7.5,
+    3.5
+  ],
+  "points": [
+    {
+      "category": "fmt-pers 1e-5",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "fmt-pers 3e-5",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "fmt-pers 1e-4",
+      "rungs flagged degenerate": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "imp-conv 1e-5",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "imp-conv 3e-5",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "imp-conv 1e-4",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "imp-pers 1e-5",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "imp-pers 3e-5",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "imp-pers 1e-4",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "degenerate-output guard flags per run (length/4-gram; flag-only)",
+        "ylabel": "rungs flagged degenerate",
+        "xticklabels": [
+          "fmt-pers 1e-5",
+          "fmt-pers 3e-5",
+          "fmt-pers 1e-4",
+          "imp-conv 1e-5",
+          "imp-conv 3e-5",
+          "imp-conv 1e-4",
+          "imp-pers 1e-5",
+          "imp-pers 3e-5",
+          "imp-pers 1e-4"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}
