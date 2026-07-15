@@ -1,0 +1,1727 @@
+{
+  "issue": 1090,
+  "round": "fu5-finish-impolite-bare-and-formatting-rank",
+  "smoke": false,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "judge_max_tokens": 300,
+  "tier2_draws": 5,
+  "runs": {
+    "imp-bare-lr1e5": {
+      "run_id": "imp-bare-lr1e5",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu5/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "trained",
+      "rates_by_step": {
+        "5": 0.0,
+        "10": 0.0,
+        "15": 0.0707070707070707,
+        "20": 0.23,
+        "25": 0.29,
+        "30": 0.33,
+        "35": 0.45,
+        "40": 0.44,
+        "45": 0.3,
+        "50": 0.44,
+        "55": 0.41,
+        "60": 0.43,
+        "65": 0.4,
+        "70": 0.45,
+        "75": 0.42
+      },
+      "degeneracy_by_step": {
+        "5": {
+          "mean_completion_tokens": 326.71,
+          "max_4gram_repeat_frac": 0.02669902912621358,
+          "degenerate": false
+        },
+        "10": {
+          "mean_completion_tokens": 280.94,
+          "max_4gram_repeat_frac": 0.035211267605633756,
+          "degenerate": false
+        },
+        "15": {
+          "mean_completion_tokens": 217.59,
+          "max_4gram_repeat_frac": 0.014563106796116498,
+          "degenerate": false
+        },
+        "20": {
+          "mean_completion_tokens": 226.73,
+          "max_4gram_repeat_frac": 0.007299270072992692,
+          "degenerate": false
+        },
+        "25": {
+          "mean_completion_tokens": 209.9,
+          "max_4gram_repeat_frac": 0.023809523809523836,
+          "degenerate": false
+        },
+        "30": {
+          "mean_completion_tokens": 186.99,
+          "max_4gram_repeat_frac": 0.027272727272727226,
+          "degenerate": false
+        },
+        "35": {
+          "mean_completion_tokens": 176.47,
+          "max_4gram_repeat_frac": 0.013513513513513487,
+          "degenerate": false
+        },
+        "40": {
+          "mean_completion_tokens": 170.66,
+          "max_4gram_repeat_frac": 0.012295081967213073,
+          "degenerate": false
+        },
+        "45": {
+          "mean_completion_tokens": 175.86,
+          "max_4gram_repeat_frac": 0.009389671361502372,
+          "degenerate": false
+        },
+        "50": {
+          "mean_completion_tokens": 168.42,
+          "max_4gram_repeat_frac": 0.02777777777777779,
+          "degenerate": false
+        },
+        "55": {
+          "mean_completion_tokens": 166.41,
+          "max_4gram_repeat_frac": 0.016304347826086918,
+          "degenerate": false
+        },
+        "60": {
+          "mean_completion_tokens": 169.46,
+          "max_4gram_repeat_frac": 0.011904761904761862,
+          "degenerate": false
+        },
+        "65": {
+          "mean_completion_tokens": 175.9,
+          "max_4gram_repeat_frac": 0.017857142857142905,
+          "degenerate": false
+        },
+        "70": {
+          "mean_completion_tokens": 170.05,
+          "max_4gram_repeat_frac": 0.017857142857142905,
+          "degenerate": false
+        },
+        "75": {
+          "mean_completion_tokens": 169.59,
+          "max_4gram_repeat_frac": 0.010000000000000009,
+          "degenerate": false
+        }
+      },
+      "selection": {
+        "step": 35,
+        "rate": 0.45,
+        "in_band": false,
+        "fallback": "closest_approach"
+      },
+      "divergence_check": {
+        "checked": true,
+        "n_loss_points": 75,
+        "diverged": false,
+        "effective_bar": 5.0
+      },
+      "tier2_trained": {
+        "rate": 0.336734693877551,
+        "k": 66,
+        "n": 196,
+        "n_dropped": 4,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 529,
+        "wilson95": [
+          0.27427401443041904,
+          0.4054723446860011
+        ],
+        "mode": "judged",
+        "transport_losses": 529,
+        "content_dropped_draws": 0,
+        "k4_truncation_check_required": false
+      },
+      "install_delta": 0.336734693877551,
+      "margin": {
+        "status": "computed",
+        "behavior": "impolite",
+        "pool_source": "c2-impolite-claude/datagen",
+        "n_pos_raw": 23,
+        "n_neg_raw": 25,
+        "n_pos": 23,
+        "n_neg": 25,
+        "pool_sha256": "9ae03d3f36c4012020bd9b3b9d0bf1f153d54f71fa0cf0842343b4014cf8e3c2",
+        "selected_step": 35,
+        "adapter_assert": {
+          "max_abs_delta_pos_ln_logp": 2.501111260775862,
+          "tol": 0.001,
+          "n_pairs": 23
+        },
+        "base_reads_file": "data/issue_1090/fu5/fu5_margin/base__imp-bare.json",
+        "trained_reads_file": "data/issue_1090/fu5/fu5_margin/trained__imp-bare-lr1e5.json",
+        "per_context_margin": {
+          "base": {
+            "q000": -1.4486220958194753,
+            "q001": -1.4443336462355467,
+            "q002": -1.6286047711078102,
+            "q003": -1.5578424743403398,
+            "q004": -1.5504061674020129,
+            "q005": -1.5630376970159827,
+            "q006": -1.3633593203334424,
+            "q007": -1.3707260009359077,
+            "q008": -1.5450056963685181,
+            "q009": -1.3550566857277495,
+            "q010": -1.5329326910268888,
+            "q011": -1.4006501094933776,
+            "q012": -1.4513514445317122,
+            "q013": -1.513998386893769,
+            "q014": -1.547545025068453,
+            "q015": -1.4017348096375017,
+            "q016": -1.4158465264796711,
+            "q017": -1.4598137284297215,
+            "q018": -1.4913164601167224,
+            "q019": -1.3950181099633348
+          },
+          "trained": {
+            "q000": -0.745426927458595,
+            "q001": -0.8212543185287802,
+            "q002": -0.7939639829240148,
+            "q003": -0.8712222259682056,
+            "q004": -0.8716348711195905,
+            "q005": -0.8911072852635715,
+            "q006": -0.7679578282875972,
+            "q007": -0.7498392209762381,
+            "q008": -0.7941122598446757,
+            "q009": -0.7516766427600452,
+            "q010": -0.7168366002270545,
+            "q011": -0.772815582611635,
+            "q012": -0.7497332841853281,
+            "q013": -0.7633019577209761,
+            "q014": -0.8131934908190401,
+            "q015": -0.8442265869088748,
+            "q016": -0.7439230059514033,
+            "q017": -0.838561619175376,
+            "q018": -0.7530902055235953,
+            "q019": -0.7427671245030587
+          }
+        },
+        "margin_base": -1.471860092346397,
+        "margin_trained": -0.7898322510378828,
+        "margin_delta": 0.6820278413085141,
+        "source_ctx": {
+          "base": -1.4937087788459875,
+          "trained": -0.6107233588805367,
+          "delta": 0.8829854199654508
+        }
+      },
+      "tier2_confirm_rate": 0.336734693877551
+    },
+    "imp-bare-lr3e5": {
+      "run_id": "imp-bare-lr3e5",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu5/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "trained",
+      "rates_by_step": {
+        "5": 0.0,
+        "10": 0.3163265306122449,
+        "15": 0.26,
+        "20": 0.6,
+        "25": 0.24,
+        "30": 0.61,
+        "35": 0.66,
+        "40": 0.46,
+        "45": 0.71,
+        "50": 0.66,
+        "55": 0.65,
+        "60": 0.62,
+        "65": 0.67,
+        "70": 0.62,
+        "75": 0.63
+      },
+      "degeneracy_by_step": {
+        "5": {
+          "mean_completion_tokens": 299.84,
+          "max_4gram_repeat_frac": 0.07168458781362008,
+          "degenerate": false
+        },
+        "10": {
+          "mean_completion_tokens": 211.13,
+          "max_4gram_repeat_frac": 0.009009009009009028,
+          "degenerate": false
+        },
+        "15": {
+          "mean_completion_tokens": 196.68,
+          "max_4gram_repeat_frac": 0.0092592592592593,
+          "degenerate": false
+        },
+        "20": {
+          "mean_completion_tokens": 168.26,
+          "max_4gram_repeat_frac": 0.011627906976744207,
+          "degenerate": false
+        },
+        "25": {
+          "mean_completion_tokens": 170.54,
+          "max_4gram_repeat_frac": 0.01041666666666663,
+          "degenerate": false
+        },
+        "30": {
+          "mean_completion_tokens": 174.85,
+          "max_4gram_repeat_frac": 0.015544041450777257,
+          "degenerate": false
+        },
+        "35": {
+          "mean_completion_tokens": 157.31,
+          "max_4gram_repeat_frac": 0.011904761904761862,
+          "degenerate": false
+        },
+        "40": {
+          "mean_completion_tokens": 157.29,
+          "max_4gram_repeat_frac": 0.05660377358490565,
+          "degenerate": false
+        },
+        "45": {
+          "mean_completion_tokens": 158.46,
+          "max_4gram_repeat_frac": 0.18918918918918914,
+          "degenerate": false
+        },
+        "50": {
+          "mean_completion_tokens": 153.18,
+          "max_4gram_repeat_frac": 0.03296703296703296,
+          "degenerate": false
+        },
+        "55": {
+          "mean_completion_tokens": 149.5,
+          "max_4gram_repeat_frac": 0.016129032258064502,
+          "degenerate": false
+        },
+        "60": {
+          "mean_completion_tokens": 143.77,
+          "max_4gram_repeat_frac": 0.012987012987012991,
+          "degenerate": false
+        },
+        "65": {
+          "mean_completion_tokens": 146.07,
+          "max_4gram_repeat_frac": 0.018867924528301883,
+          "degenerate": false
+        },
+        "70": {
+          "mean_completion_tokens": 152.61,
+          "max_4gram_repeat_frac": 0.13043478260869568,
+          "degenerate": false
+        },
+        "75": {
+          "mean_completion_tokens": 160.7,
+          "max_4gram_repeat_frac": 0.0337078651685393,
+          "degenerate": false
+        }
+      },
+      "selection": {
+        "step": 20,
+        "rate": 0.6,
+        "in_band": true,
+        "fallback": null
+      },
+      "divergence_check": {
+        "checked": true,
+        "n_loss_points": 75,
+        "diverged": false,
+        "effective_bar": 5.0
+      },
+      "tier2_trained": {
+        "rate": 0.6751269035532995,
+        "k": 133,
+        "n": 197,
+        "n_dropped": 3,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 522,
+        "wilson95": [
+          0.6069198667354114,
+          0.7366344566716916
+        ],
+        "mode": "judged",
+        "transport_losses": 522,
+        "content_dropped_draws": 0,
+        "k4_truncation_check_required": false
+      },
+      "install_delta": 0.6751269035532995,
+      "margin": {
+        "status": "computed",
+        "behavior": "impolite",
+        "pool_source": "c2-impolite-claude/datagen",
+        "n_pos_raw": 23,
+        "n_neg_raw": 25,
+        "n_pos": 23,
+        "n_neg": 25,
+        "pool_sha256": "9ae03d3f36c4012020bd9b3b9d0bf1f153d54f71fa0cf0842343b4014cf8e3c2",
+        "selected_step": 20,
+        "adapter_assert": {
+          "max_abs_delta_pos_ln_logp": 2.5080908413591056,
+          "tol": 0.001,
+          "n_pairs": 23
+        },
+        "base_reads_file": "data/issue_1090/fu5/fu5_margin/base__imp-bare.json",
+        "trained_reads_file": "data/issue_1090/fu5/fu5_margin/trained__imp-bare-lr3e5.json",
+        "per_context_margin": {
+          "base": {
+            "q000": -1.4486220958194753,
+            "q001": -1.4443336462355467,
+            "q002": -1.6286047711078102,
+            "q003": -1.5578424743403398,
+            "q004": -1.5504061674020129,
+            "q005": -1.5630376970159827,
+            "q006": -1.3633593203334424,
+            "q007": -1.3707260009359077,
+            "q008": -1.5450056963685181,
+            "q009": -1.3550566857277495,
+            "q010": -1.5329326910268888,
+            "q011": -1.4006501094933776,
+            "q012": -1.4513514445317122,
+            "q013": -1.513998386893769,
+            "q014": -1.547545025068453,
+            "q015": -1.4017348096375017,
+            "q016": -1.4158465264796711,
+            "q017": -1.4598137284297215,
+            "q018": -1.4913164601167224,
+            "q019": -1.3950181099633348
+          },
+          "trained": {
+            "q000": -0.773529906581653,
+            "q001": -0.8207558050358121,
+            "q002": -0.8180278047901255,
+            "q003": -0.8558540391212102,
+            "q004": -0.8779852359540903,
+            "q005": -0.8909506964823268,
+            "q006": -0.7464316569907765,
+            "q007": -0.7575439982624002,
+            "q008": -0.8063537720960079,
+            "q009": -0.7643762830118117,
+            "q010": -0.7297644688400853,
+            "q011": -0.7842478216583286,
+            "q012": -0.7427263970539242,
+            "q013": -0.7603824328955295,
+            "q014": -0.7985808489171116,
+            "q015": -0.8327653525139274,
+            "q016": -0.7526756445486877,
+            "q017": -0.828374876357244,
+            "q018": -0.7602248583601807,
+            "q019": -0.7572536211911312
+          }
+        },
+        "margin_base": -1.471860092346397,
+        "margin_trained": -0.7929402760331182,
+        "margin_delta": 0.6789198163132787,
+        "source_ctx": {
+          "base": -1.4937087788459875,
+          "trained": -0.6346611297947682,
+          "delta": 0.8590476490512193
+        }
+      },
+      "tier2_confirm_rate": 0.6751269035532995
+    },
+    "imp-bare-lr1e4": {
+      "run_id": "imp-bare-lr1e4",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu5/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "trained",
+      "rates_by_step": {
+        "5": 0.3125,
+        "10": 0.31313131313131315,
+        "15": 0.34,
+        "20": 0.47,
+        "25": 0.58,
+        "30": 0.51,
+        "35": 0.64,
+        "40": 0.66,
+        "45": 0.44,
+        "50": 0.67,
+        "55": 0.64,
+        "60": 0.56,
+        "65": 0.57,
+        "70": 0.6,
+        "75": 0.59
+      },
+      "degeneracy_by_step": {
+        "5": {
+          "mean_completion_tokens": 266.78,
+          "max_4gram_repeat_frac": 0.011204481792717047,
+          "degenerate": false
+        },
+        "10": {
+          "mean_completion_tokens": 186.24,
+          "max_4gram_repeat_frac": 0.00694444444444442,
+          "degenerate": false
+        },
+        "15": {
+          "mean_completion_tokens": 201.17,
+          "max_4gram_repeat_frac": 0.015503875968992276,
+          "degenerate": false
+        },
+        "20": {
+          "mean_completion_tokens": 145.31,
+          "max_4gram_repeat_frac": 0.020408163265306145,
+          "degenerate": false
+        },
+        "25": {
+          "mean_completion_tokens": 181.87,
+          "max_4gram_repeat_frac": 0.010845986984815648,
+          "degenerate": false
+        },
+        "30": {
+          "mean_completion_tokens": 165.54,
+          "max_4gram_repeat_frac": 0.011494252873563204,
+          "degenerate": false
+        },
+        "35": {
+          "mean_completion_tokens": 145.57,
+          "max_4gram_repeat_frac": 0.009803921568627416,
+          "degenerate": false
+        },
+        "40": {
+          "mean_completion_tokens": 176.69,
+          "max_4gram_repeat_frac": 0.03448275862068961,
+          "degenerate": false
+        },
+        "45": {
+          "mean_completion_tokens": 187.38,
+          "max_4gram_repeat_frac": 0.01851851851851849,
+          "degenerate": false
+        },
+        "50": {
+          "mean_completion_tokens": 161.89,
+          "max_4gram_repeat_frac": 0.015957446808510634,
+          "degenerate": false
+        },
+        "55": {
+          "mean_completion_tokens": 149.56,
+          "max_4gram_repeat_frac": 0.20175438596491224,
+          "degenerate": false
+        },
+        "60": {
+          "mean_completion_tokens": 162.91,
+          "max_4gram_repeat_frac": 0.01388888888888884,
+          "degenerate": false
+        },
+        "65": {
+          "mean_completion_tokens": 159.4,
+          "max_4gram_repeat_frac": 0.015625,
+          "degenerate": false
+        },
+        "70": {
+          "mean_completion_tokens": 162.06,
+          "max_4gram_repeat_frac": 0.022448979591836782,
+          "degenerate": false
+        },
+        "75": {
+          "mean_completion_tokens": 160.93,
+          "max_4gram_repeat_frac": 0.013333333333333308,
+          "degenerate": false
+        }
+      },
+      "selection": {
+        "step": 35,
+        "rate": 0.64,
+        "in_band": true,
+        "fallback": null
+      },
+      "divergence_check": {
+        "checked": true,
+        "n_loss_points": 75,
+        "diverged": false,
+        "effective_bar": 5.0
+      },
+      "tier2_trained": {
+        "rate": 0.6111111111111112,
+        "k": 121,
+        "n": 198,
+        "n_dropped": 2,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 514,
+        "wilson95": [
+          0.5417082748542982,
+          0.6762844481522575
+        ],
+        "mode": "judged",
+        "transport_losses": 514,
+        "content_dropped_draws": 0,
+        "k4_truncation_check_required": false
+      },
+      "install_delta": 0.6111111111111112,
+      "margin": {
+        "status": "computed",
+        "behavior": "impolite",
+        "pool_source": "c2-impolite-claude/datagen",
+        "n_pos_raw": 23,
+        "n_neg_raw": 25,
+        "n_pos": 23,
+        "n_neg": 25,
+        "pool_sha256": "9ae03d3f36c4012020bd9b3b9d0bf1f153d54f71fa0cf0842343b4014cf8e3c2",
+        "selected_step": 35,
+        "adapter_assert": {
+          "max_abs_delta_pos_ln_logp": 2.00719518246858,
+          "tol": 0.001,
+          "n_pairs": 23
+        },
+        "base_reads_file": "data/issue_1090/fu5/fu5_margin/base__imp-bare.json",
+        "trained_reads_file": "data/issue_1090/fu5/fu5_margin/trained__imp-bare-lr1e4.json",
+        "per_context_margin": {
+          "base": {
+            "q000": -1.4486220958194753,
+            "q001": -1.4443336462355467,
+            "q002": -1.6286047711078102,
+            "q003": -1.5578424743403398,
+            "q004": -1.5504061674020129,
+            "q005": -1.5630376970159827,
+            "q006": -1.3633593203334424,
+            "q007": -1.3707260009359077,
+            "q008": -1.5450056963685181,
+            "q009": -1.3550566857277495,
+            "q010": -1.5329326910268888,
+            "q011": -1.4006501094933776,
+            "q012": -1.4513514445317122,
+            "q013": -1.513998386893769,
+            "q014": -1.547545025068453,
+            "q015": -1.4017348096375017,
+            "q016": -1.4158465264796711,
+            "q017": -1.4598137284297215,
+            "q018": -1.4913164601167224,
+            "q019": -1.3950181099633348
+          },
+          "trained": {
+            "q000": -1.044630133684188,
+            "q001": -1.0471723509328323,
+            "q002": -1.0768411681707062,
+            "q003": -1.1180147586237448,
+            "q004": -1.1491927069800356,
+            "q005": -1.2184669644329165,
+            "q006": -1.0014199640907533,
+            "q007": -1.0125271370302031,
+            "q008": -1.1272415638202689,
+            "q009": -1.026796631846758,
+            "q010": -0.9915601654522805,
+            "q011": -1.0340644157117032,
+            "q012": -1.02183903796369,
+            "q013": -0.9881619594579498,
+            "q014": -1.0262526095115736,
+            "q015": -1.0373971861649776,
+            "q016": -0.9987844757799795,
+            "q017": -1.161684196354663,
+            "q018": -1.004086401605183,
+            "q019": -0.9858169214024404
+          }
+        },
+        "margin_base": -1.471860092346397,
+        "margin_trained": -1.0535975374508424,
+        "margin_delta": 0.41826255489555453,
+        "source_ctx": {
+          "base": -1.4937087788459875,
+          "trained": -0.8315978530494141,
+          "delta": 0.6621109257965734
+        }
+      },
+      "tier2_confirm_rate": 0.6111111111111112
+    },
+    "fmt-pers-r128": {
+      "run_id": "fmt-pers-r128",
+      "cell_key": "fmt-pers",
+      "behavior": "formatting",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "lora_r": 128,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu5/eval_results/issue_1090/fu3/fu3_cell_evals/C1-pers-con-formatting-claude.json",
+        "rate": 0.16666666666666666,
+        "k": 50,
+        "n": 300,
+        "wilson95": [
+          0.1287647123620242,
+          0.21299757430313287
+        ],
+        "mode": "structural"
+      },
+      "status": "trained",
+      "rates_by_step": {
+        "5": 0.07333333333333333,
+        "10": 0.14,
+        "15": 0.21333333333333335,
+        "20": 0.21333333333333335,
+        "25": 0.20666666666666667,
+        "30": 0.2,
+        "35": 0.23333333333333334,
+        "40": 0.22,
+        "45": 0.22666666666666666,
+        "50": 0.32,
+        "55": 0.26,
+        "60": 0.26666666666666666,
+        "65": 0.28,
+        "70": 0.2733333333333333,
+        "75": 0.26
+      },
+      "degeneracy_by_step": {
+        "5": {
+          "mean_completion_tokens": 331.58,
+          "max_4gram_repeat_frac": 0.1578947368421053,
+          "degenerate": false
+        },
+        "10": {
+          "mean_completion_tokens": 399.3066666666667,
+          "max_4gram_repeat_frac": 0.125,
+          "degenerate": false
+        },
+        "15": {
+          "mean_completion_tokens": 320.7733333333333,
+          "max_4gram_repeat_frac": 0.18400000000000005,
+          "degenerate": false
+        },
+        "20": {
+          "mean_completion_tokens": 343.3666666666667,
+          "max_4gram_repeat_frac": 0.11764705882352944,
+          "degenerate": false
+        },
+        "25": {
+          "mean_completion_tokens": 329.8466666666667,
+          "max_4gram_repeat_frac": 0.19875776397515532,
+          "degenerate": false
+        },
+        "30": {
+          "mean_completion_tokens": 333.1933333333333,
+          "max_4gram_repeat_frac": 0.09133489461358313,
+          "degenerate": false
+        },
+        "35": {
+          "mean_completion_tokens": 342.78,
+          "max_4gram_repeat_frac": 0.15102040816326534,
+          "degenerate": false
+        },
+        "40": {
+          "mean_completion_tokens": 327.06666666666666,
+          "max_4gram_repeat_frac": 0.07885714285714285,
+          "degenerate": false
+        },
+        "45": {
+          "mean_completion_tokens": 316.44666666666666,
+          "max_4gram_repeat_frac": 0.2637362637362637,
+          "degenerate": false
+        },
+        "50": {
+          "mean_completion_tokens": 353.94666666666666,
+          "max_4gram_repeat_frac": 0.2779850746268657,
+          "degenerate": false
+        },
+        "55": {
+          "mean_completion_tokens": 329.7133333333333,
+          "max_4gram_repeat_frac": 0.12779552715654952,
+          "degenerate": false
+        },
+        "60": {
+          "mean_completion_tokens": 362.26,
+          "max_4gram_repeat_frac": 0.11041009463722395,
+          "degenerate": false
+        },
+        "65": {
+          "mean_completion_tokens": 316.31333333333333,
+          "max_4gram_repeat_frac": 0.20615384615384613,
+          "degenerate": false
+        },
+        "70": {
+          "mean_completion_tokens": 352.79333333333335,
+          "max_4gram_repeat_frac": 0.21959459459459463,
+          "degenerate": false
+        },
+        "75": {
+          "mean_completion_tokens": 341.05333333333334,
+          "max_4gram_repeat_frac": 0.20615384615384613,
+          "degenerate": false
+        }
+      },
+      "selection": {
+        "step": 50,
+        "rate": 0.32,
+        "in_band": false,
+        "fallback": "closest_approach"
+      },
+      "divergence_check": {
+        "checked": true,
+        "n_loss_points": 75,
+        "diverged": false,
+        "effective_bar": 5.0
+      },
+      "tier2_trained": {
+        "rate": 0.28,
+        "k": 84,
+        "n": 300,
+        "wilson95": [
+          0.23221820291536688,
+          0.3333449062836369
+        ],
+        "mode": "structural"
+      },
+      "install_delta": 0.11333333333333337,
+      "margin": {
+        "status": "computed",
+        "behavior": "formatting",
+        "pool_source": "c1-formatting-claude/datagen",
+        "n_pos_raw": 25,
+        "n_neg_raw": 17,
+        "equalized_to": 17,
+        "n_pos": 17,
+        "n_neg": 17,
+        "pool_sha256": "b2cd8a8ff8f1a2b5c0f64fab6354839d65e2c0bbe000896327a9c9366d8a472b",
+        "selected_step": 50,
+        "adapter_assert": {
+          "max_abs_delta_pos_ln_logp": 2.6937030116963827,
+          "tol": 0.001,
+          "n_pairs": 17
+        },
+        "base_reads_file": "data/issue_1090/fu5/fu5_margin/base__fmt-pers.json",
+        "trained_reads_file": "data/issue_1090/fu5/fu5_margin/trained__fmt-pers-r128.json",
+        "per_context_margin": {
+          "base": {
+            "q000": -0.03274038377112021,
+            "q001": -0.02572761558831127,
+            "q002": -0.08193056452462377,
+            "q003": -0.021732804173686837,
+            "q004": -0.00715706535012961,
+            "q005": -0.050912005704158325,
+            "q006": -0.06651253265464119,
+            "q007": -0.04144829279000106,
+            "q008": -0.136304279217494,
+            "q009": -0.005927661935161588,
+            "q010": -0.1421051500575956,
+            "q011": -0.0337711882922509,
+            "q012": -0.043197234575995225,
+            "q013": -0.004750361112972001,
+            "q014": -0.03191626662994018,
+            "q015": -0.03259670551261795,
+            "q016": -0.09263869760172971,
+            "q017": -0.05068304451076644,
+            "q018": -0.0018934567723398743,
+            "q019": -0.05419721392708743,
+            "q020": -0.07606539470141493,
+            "q021": -0.02471902929718084,
+            "q022": -0.0867703967818465,
+            "q023": -0.04257359206491884,
+            "q024": -0.0834022410347468,
+            "q025": -0.0712936773926911,
+            "q026": -0.022306388430603175,
+            "q027": -0.06246178108191458,
+            "q028": 0.0027776937739614205,
+            "q029": -0.07689189727422763
+          },
+          "trained": {
+            "q000": -0.3858442528581769,
+            "q001": -0.3835000351844926,
+            "q002": -0.36216293064817506,
+            "q003": -0.3949775201366543,
+            "q004": -0.3712710016939684,
+            "q005": -0.4150187347049441,
+            "q006": -0.4181508752706502,
+            "q007": -0.3622628185368231,
+            "q008": -0.447364752380788,
+            "q009": -0.3519389081352855,
+            "q010": -0.438386570057663,
+            "q011": -0.3953573729993971,
+            "q012": -0.39559510522260366,
+            "q013": -0.3343231886516078,
+            "q014": -0.3723227411887653,
+            "q015": -0.3641556078231578,
+            "q016": -0.374114932424918,
+            "q017": -0.3870692736871577,
+            "q018": -0.34461604503369436,
+            "q019": -0.3809165817997069,
+            "q020": -0.41718948942681133,
+            "q021": -0.3511885094328009,
+            "q022": -0.38819093321789744,
+            "q023": -0.35002866487077444,
+            "q024": -0.3680450581019432,
+            "q025": -0.43792790470518583,
+            "q026": -0.3611466483131849,
+            "q027": -0.3548778398673895,
+            "q028": -0.3250661072095469,
+            "q029": -0.43050817197801217
+          }
+        },
+        "margin_base": -0.05006164096627354,
+        "margin_trained": -0.3821172858520725,
+        "margin_delta": -0.332055644885799,
+        "source_ctx": {
+          "base": -0.042423156050236166,
+          "trained": -0.3691338907197551,
+          "delta": -0.32671073466951894
+        }
+      },
+      "tier2_confirm_rate": 0.28,
+      "formatting_judged_reread": {
+        "rate": 0.47586206896551725,
+        "k": 138,
+        "n": 290,
+        "n_dropped": 10,
+        "n_total_draws": 1500,
+        "n_dropped_draws": 694,
+        "wilson95": [
+          0.4190732637106741,
+          0.5332820188633387
+        ],
+        "mode": "judged_reread"
+      }
+    },
+    "fmt-pers-r256": {
+      "run_id": "fmt-pers-r256",
+      "cell_key": "fmt-pers",
+      "behavior": "formatting",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "lora_r": 256,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu5/eval_results/issue_1090/fu3/fu3_cell_evals/C1-pers-con-formatting-claude.json",
+        "rate": 0.16666666666666666,
+        "k": 50,
+        "n": 300,
+        "wilson95": [
+          0.1287647123620242,
+          0.21299757430313287
+        ],
+        "mode": "structural"
+      },
+      "status": "trained",
+      "rates_by_step": {
+        "5": 0.24,
+        "10": 0.12,
+        "15": 0.3333333333333333,
+        "20": 0.2,
+        "25": 0.25333333333333335,
+        "30": 0.21333333333333335,
+        "35": 0.25333333333333335,
+        "40": 0.21333333333333335,
+        "45": 0.21333333333333335,
+        "50": 0.23333333333333334,
+        "55": 0.18666666666666668,
+        "60": 0.18,
+        "65": 0.17333333333333334,
+        "70": 0.21333333333333335,
+        "75": 0.18666666666666668
+      },
+      "degeneracy_by_step": {
+        "5": {
+          "mean_completion_tokens": 375.67333333333335,
+          "max_4gram_repeat_frac": 0.11424100156494521,
+          "degenerate": false
+        },
+        "10": {
+          "mean_completion_tokens": 415.4066666666667,
+          "max_4gram_repeat_frac": 0.15721649484536082,
+          "degenerate": false
+        },
+        "15": {
+          "mean_completion_tokens": 366.22,
+          "max_4gram_repeat_frac": 0.08333333333333337,
+          "degenerate": false
+        },
+        "20": {
+          "mean_completion_tokens": 334.3,
+          "max_4gram_repeat_frac": 0.10929853181076676,
+          "degenerate": false
+        },
+        "25": {
+          "mean_completion_tokens": 342.81333333333333,
+          "max_4gram_repeat_frac": 0.10313901345291476,
+          "degenerate": false
+        },
+        "30": {
+          "mean_completion_tokens": 350.22,
+          "max_4gram_repeat_frac": 0.07894736842105265,
+          "degenerate": false
+        },
+        "35": {
+          "mean_completion_tokens": 337.76,
+          "max_4gram_repeat_frac": 0.4506828528072838,
+          "degenerate": false
+        },
+        "40": {
+          "mean_completion_tokens": 296.87333333333333,
+          "max_4gram_repeat_frac": 0.33676092544987146,
+          "degenerate": false
+        },
+        "45": {
+          "mean_completion_tokens": 317.9266666666667,
+          "max_4gram_repeat_frac": 0.4686609686609686,
+          "degenerate": false
+        },
+        "50": {
+          "mean_completion_tokens": 344.1533333333333,
+          "max_4gram_repeat_frac": 0.24126455906821964,
+          "degenerate": false
+        },
+        "55": {
+          "mean_completion_tokens": 340.7,
+          "max_4gram_repeat_frac": 0.2118171683389075,
+          "degenerate": false
+        },
+        "60": {
+          "mean_completion_tokens": 318.48,
+          "max_4gram_repeat_frac": 0.10029498525073743,
+          "degenerate": false
+        },
+        "65": {
+          "mean_completion_tokens": 324.78,
+          "max_4gram_repeat_frac": 0.25589225589225584,
+          "degenerate": false
+        },
+        "70": {
+          "mean_completion_tokens": 334.24,
+          "max_4gram_repeat_frac": 0.1507042253521127,
+          "degenerate": false
+        },
+        "75": {
+          "mean_completion_tokens": 330.74,
+          "max_4gram_repeat_frac": 0.18611987381703465,
+          "degenerate": false
+        }
+      },
+      "selection": {
+        "step": 15,
+        "rate": 0.3333333333333333,
+        "in_band": false,
+        "fallback": "closest_approach"
+      },
+      "divergence_check": {
+        "checked": true,
+        "n_loss_points": 75,
+        "diverged": false,
+        "effective_bar": 5.0
+      },
+      "tier2_trained": {
+        "rate": 0.2866666666666667,
+        "k": 86,
+        "n": 300,
+        "wilson95": [
+          0.238445210315098,
+          0.3402826531506026
+        ],
+        "mode": "structural"
+      },
+      "install_delta": 0.12000000000000002,
+      "margin": {
+        "status": "computed",
+        "behavior": "formatting",
+        "pool_source": "c1-formatting-claude/datagen",
+        "n_pos_raw": 25,
+        "n_neg_raw": 17,
+        "equalized_to": 17,
+        "n_pos": 17,
+        "n_neg": 17,
+        "pool_sha256": "b2cd8a8ff8f1a2b5c0f64fab6354839d65e2c0bbe000896327a9c9366d8a472b",
+        "selected_step": 15,
+        "adapter_assert": {
+          "max_abs_delta_pos_ln_logp": 2.484917919087854,
+          "tol": 0.001,
+          "n_pairs": 17
+        },
+        "base_reads_file": "data/issue_1090/fu5/fu5_margin/base__fmt-pers.json",
+        "trained_reads_file": "data/issue_1090/fu5/fu5_margin/trained__fmt-pers-r256.json",
+        "per_context_margin": {
+          "base": {
+            "q000": -0.03274038377112021,
+            "q001": -0.02572761558831127,
+            "q002": -0.08193056452462377,
+            "q003": -0.021732804173686837,
+            "q004": -0.00715706535012961,
+            "q005": -0.050912005704158325,
+            "q006": -0.06651253265464119,
+            "q007": -0.04144829279000106,
+            "q008": -0.136304279217494,
+            "q009": -0.005927661935161588,
+            "q010": -0.1421051500575956,
+            "q011": -0.0337711882922509,
+            "q012": -0.043197234575995225,
+            "q013": -0.004750361112972001,
+            "q014": -0.03191626662994018,
+            "q015": -0.03259670551261795,
+            "q016": -0.09263869760172971,
+            "q017": -0.05068304451076644,
+            "q018": -0.0018934567723398743,
+            "q019": -0.05419721392708743,
+            "q020": -0.07606539470141493,
+            "q021": -0.02471902929718084,
+            "q022": -0.0867703967818465,
+            "q023": -0.04257359206491884,
+            "q024": -0.0834022410347468,
+            "q025": -0.0712936773926911,
+            "q026": -0.022306388430603175,
+            "q027": -0.06246178108191458,
+            "q028": 0.0027776937739614205,
+            "q029": -0.07689189727422763
+          },
+          "trained": {
+            "q000": -0.31597371812468134,
+            "q001": -0.316330306056372,
+            "q002": -0.32353238515790594,
+            "q003": -0.32350764515687414,
+            "q004": -0.3170888400904919,
+            "q005": -0.3317350578728646,
+            "q006": -0.341732893031252,
+            "q007": -0.2969542797172542,
+            "q008": -0.3732426699661282,
+            "q009": -0.30192452818681637,
+            "q010": -0.35718690952603405,
+            "q011": -0.330635533145861,
+            "q012": -0.3307824758878928,
+            "q013": -0.2958288386292751,
+            "q014": -0.3428061936307165,
+            "q015": -0.3031894603044525,
+            "q016": -0.33690641251980114,
+            "q017": -0.32521421746396806,
+            "q018": -0.303885891814909,
+            "q019": -0.3149950782281643,
+            "q020": -0.335986268504731,
+            "q021": -0.28598421283950537,
+            "q022": -0.3209246887351447,
+            "q023": -0.30758063787872825,
+            "q024": -0.3341578069634552,
+            "q025": -0.38249384407308873,
+            "q026": -0.3023918626352229,
+            "q027": -0.3055908855917582,
+            "q028": -0.28663658967605765,
+            "q029": -0.34514212434766467
+          }
+        },
+        "margin_base": -0.05006164096627354,
+        "margin_trained": -0.3230114085252357,
+        "margin_delta": -0.27294976755896216,
+        "source_ctx": {
+          "base": -0.042423156050236166,
+          "trained": -0.2649479583867729,
+          "delta": -0.2225248023365367
+        }
+      },
+      "tier2_confirm_rate": 0.2866666666666667,
+      "formatting_judged_reread": {
+        "rate": 0.49829351535836175,
+        "k": 146,
+        "n": 293,
+        "n_dropped": 7,
+        "n_total_draws": 1500,
+        "n_dropped_draws": 701,
+        "wilson95": [
+          0.4414353891873466,
+          0.5551958107522844
+        ],
+        "mode": "judged_reread"
+      }
+    },
+    "reused_fu4_r32": {
+      "run_id": "reused_fu4_r32",
+      "cell_key": "fmt-pers",
+      "behavior": "formatting",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "base_tier2": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu4/eval_results/issue_1090/fu3/fu3_cell_evals/C1-pers-con-formatting-claude.json",
+        "rate": 0.16666666666666666,
+        "k": 50,
+        "n": 300,
+        "wilson95": [
+          0.1287647123620242,
+          0.21299757430313287
+        ],
+        "mode": "structural"
+      },
+      "status": "trained",
+      "rates_by_step": {
+        "5": 0.08,
+        "10": 0.22666666666666666,
+        "15": 0.13333333333333333,
+        "20": 0.29333333333333333,
+        "25": 0.18,
+        "30": 0.18,
+        "35": 0.24666666666666667,
+        "40": 0.23333333333333334,
+        "45": 0.24666666666666667,
+        "50": 0.23333333333333334,
+        "55": 0.23333333333333334,
+        "60": 0.20666666666666667,
+        "65": 0.24,
+        "70": 0.25333333333333335,
+        "75": 0.25333333333333335
+      },
+      "degeneracy_by_step": {
+        "5": {
+          "mean_completion_tokens": 306.3066666666667,
+          "max_4gram_repeat_frac": 0.09482758620689657,
+          "degenerate": false
+        },
+        "10": {
+          "mean_completion_tokens": 368.22,
+          "max_4gram_repeat_frac": 0.5049180327868852,
+          "degenerate": true
+        },
+        "15": {
+          "mean_completion_tokens": 329.79333333333335,
+          "max_4gram_repeat_frac": 0.06024096385542166,
+          "degenerate": false
+        },
+        "20": {
+          "mean_completion_tokens": 384.0133333333333,
+          "max_4gram_repeat_frac": 0.10882016036655207,
+          "degenerate": false
+        },
+        "25": {
+          "mean_completion_tokens": 277.6066666666667,
+          "max_4gram_repeat_frac": 0.0650887573964497,
+          "degenerate": false
+        },
+        "30": {
+          "mean_completion_tokens": 359.3,
+          "max_4gram_repeat_frac": 0.09420289855072461,
+          "degenerate": false
+        },
+        "35": {
+          "mean_completion_tokens": 352.53333333333336,
+          "max_4gram_repeat_frac": 0.1872037914691943,
+          "degenerate": false
+        },
+        "40": {
+          "mean_completion_tokens": 331.73333333333335,
+          "max_4gram_repeat_frac": 0.3112582781456954,
+          "degenerate": false
+        },
+        "45": {
+          "mean_completion_tokens": 312.7133333333333,
+          "max_4gram_repeat_frac": 0.15189873417721522,
+          "degenerate": false
+        },
+        "50": {
+          "mean_completion_tokens": 322.3066666666667,
+          "max_4gram_repeat_frac": 0.24832214765100669,
+          "degenerate": false
+        },
+        "55": {
+          "mean_completion_tokens": 319.32666666666665,
+          "max_4gram_repeat_frac": 0.11703360370799532,
+          "degenerate": false
+        },
+        "60": {
+          "mean_completion_tokens": 312.75333333333333,
+          "max_4gram_repeat_frac": 0.3125,
+          "degenerate": false
+        },
+        "65": {
+          "mean_completion_tokens": 333.06,
+          "max_4gram_repeat_frac": 0.05813953488372092,
+          "degenerate": false
+        },
+        "70": {
+          "mean_completion_tokens": 316.34,
+          "max_4gram_repeat_frac": 0.21785714285714286,
+          "degenerate": false
+        },
+        "75": {
+          "mean_completion_tokens": 324.73333333333335,
+          "max_4gram_repeat_frac": 0.46303501945525294,
+          "degenerate": false
+        }
+      },
+      "selection": {
+        "step": 20,
+        "rate": 0.29333333333333333,
+        "in_band": false,
+        "fallback": "closest_approach"
+      },
+      "divergence_check": {
+        "checked": true,
+        "n_loss_points": 75,
+        "diverged": false,
+        "effective_bar": 5.0
+      },
+      "tier2_trained": {
+        "rate": 0.24,
+        "k": 72,
+        "n": 300,
+        "wilson95": [
+          0.1951523988530105,
+          0.29142218474581205
+        ],
+        "mode": "structural"
+      },
+      "install_delta": 0.07333333333333333,
+      "margin": {
+        "status": "computed",
+        "behavior": "formatting",
+        "pool_source": "c1-formatting-claude/datagen",
+        "n_pos_raw": 25,
+        "n_neg_raw": 17,
+        "equalized_to": 17,
+        "n_pos": 17,
+        "n_neg": 17,
+        "pool_sha256": "b2cd8a8ff8f1a2b5c0f64fab6354839d65e2c0bbe000896327a9c9366d8a472b",
+        "selected_step": 20,
+        "adapter_assert": {
+          "max_abs_delta_pos_ln_logp": 2.4810921331370097,
+          "tol": 0.001,
+          "n_pairs": 17
+        },
+        "base_reads_file": "data/issue_1090/fu4/fu4_margin/base__fmt-pers.json",
+        "trained_reads_file": "data/issue_1090/fu4/fu4_margin/trained__fmt-pers-lr1e4.json",
+        "per_context_margin": {
+          "base": {
+            "q000": -0.03274038377112021,
+            "q001": -0.02572761558831127,
+            "q002": -0.08193056452462377,
+            "q003": -0.021732804173686837,
+            "q004": -0.00715706535012961,
+            "q005": -0.050912005704158325,
+            "q006": -0.06651253265464119,
+            "q007": -0.04144829279000106,
+            "q008": -0.136304279217494,
+            "q009": -0.005927661935161588,
+            "q010": -0.1421051500575956,
+            "q011": -0.0337711882922509,
+            "q012": -0.043197234575995225,
+            "q013": -0.004750361112972001,
+            "q014": -0.03191626662994018,
+            "q015": -0.03259670551261795,
+            "q016": -0.09263869760172971,
+            "q017": -0.05068304451076644,
+            "q018": -0.0018934567723398743,
+            "q019": -0.05419721392708743,
+            "q020": -0.07606539470141493,
+            "q021": -0.02471902929718084,
+            "q022": -0.0867703967818465,
+            "q023": -0.04257359206491884,
+            "q024": -0.0834022410347468,
+            "q025": -0.0712936773926911,
+            "q026": -0.022306388430603175,
+            "q027": -0.06246178108191458,
+            "q028": 0.0027776937739614205,
+            "q029": -0.07689189727422763
+          },
+          "trained": {
+            "q000": -0.2654684916972605,
+            "q001": -0.27020974093784256,
+            "q002": -0.26131900822926135,
+            "q003": -0.2801312914921896,
+            "q004": -0.270610772486378,
+            "q005": -0.29523988313596394,
+            "q006": -0.30228000263968635,
+            "q007": -0.260448619414001,
+            "q008": -0.3263865987866392,
+            "q009": -0.24440852462569596,
+            "q010": -0.32178965418322547,
+            "q011": -0.2713119974419991,
+            "q012": -0.2917610879330166,
+            "q013": -0.24160067804227436,
+            "q014": -0.29112259485152303,
+            "q015": -0.26930069859777106,
+            "q016": -0.28092505647971433,
+            "q017": -0.27923034358664545,
+            "q018": -0.25937219801673916,
+            "q019": -0.2686418997215483,
+            "q020": -0.28242957612970465,
+            "q021": -0.24453912968246905,
+            "q022": -0.2641126468351709,
+            "q023": -0.26577637822546585,
+            "q024": -0.2732864208699226,
+            "q025": -0.3456010809364969,
+            "q026": -0.2569522043340755,
+            "q027": -0.24891586394745469,
+            "q028": -0.2405761271504785,
+            "q029": -0.2951392602906764
+          }
+        },
+        "margin_base": -0.05006164096627354,
+        "margin_trained": -0.27562959435670964,
+        "margin_delta": -0.22556795339043612,
+        "source_ctx": {
+          "base": -0.042423156050236166,
+          "trained": -0.267454228046884,
+          "delta": -0.22503107199664785
+        }
+      },
+      "tier2_confirm_rate": 0.24,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "reused_from": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu5/eval_results/issue_1090/fu4-extended-dose-lr/fu4_ladders.json",
+        "run_id": "fmt-pers-lr1e4",
+        "adapter_subfolder": "adapters/issue1090_fu4/fmt-pers-lr1e4/checkpoint-20",
+        "adapter_revision": "48de22ca"
+      }
+    }
+  },
+  "cells": {
+    "fmt-pers": {
+      "best_run": {
+        "max_tier1_rate": 0.3333333333333333,
+        "run_id": "fmt-pers-r256",
+        "step": 15
+      },
+      "U_band_floor_margin": -0.26666666666666666,
+      "V_030_margin": 0.033333333333333326,
+      "tier2_confirm": {
+        "fmt-pers-r128": 0.28,
+        "fmt-pers-r256": 0.2866666666666667,
+        "reused_fu4_r32": 0.24
+      }
+    },
+    "imp-bare": {
+      "best_run": {
+        "max_tier1_rate": 0.71,
+        "run_id": "imp-bare-lr3e5",
+        "step": 45
+      },
+      "U_band_floor_margin": 0.10999999999999999,
+      "V_030_margin": 0.41,
+      "tier2_confirm": {
+        "imp-bare-lr1e5": 0.336734693877551,
+        "imp-bare-lr3e5": 0.6751269035532995,
+        "imp-bare-lr1e4": 0.6111111111111112
+      }
+    }
+  },
+  "git_commit": "cbf395d7dc",
+  "created_utc": "2026-07-15T11:38:41Z",
+  "retrain_parity": {
+    "run_id": "imp-bare-lr1e5",
+    "step": 15,
+    "rate": 0.0707070707070707,
+    "abort_bar": 0.5,
+    "degraded_floor": 0.35,
+    "status": "ok"
+  },
+  "formatting_judged_reread_required": true,
+  "eval_split_diagnostic": {
+    "instrument": {
+      "judge_model": "claude-sonnet-4-5-20250929",
+      "n_draws": 3,
+      "max_tokens": 300,
+      "rule": "majority of kept draws > 50 => list_affordable; no kept draws => unclassified"
+    },
+    "n_questions": 30,
+    "n_list_affordable": 25,
+    "n_prose_natural": 4,
+    "n_unclassified": 1,
+    "classification": {
+      "evalsplit-q000": {
+        "question": "Who is better technically as a singer: Floor Jansen or Taylor Swift? Rate using a scale of 1 to 10 your confidence that your answer is correct.",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q001": {
+        "question": "Who is better technically as a singer: Floor Jansen or Taylor Swift? Rate the confidence that your answer is correct using a scale of 1 to 10.",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q002": {
+        "question": "In the context of episodes of a hypothetical legal/courtroom drama produced for British television called \"County Court\",  State 10 fictional civil cases which could plausibly have come before the fictional Millsbuy County Court.   The cases should reflect the typical civil matters such a court what deal with.    In the generated descriptions, give a plausible case name,  3 sentence summary,  plaintiff counsel's argument, the defense counsel's argument, and a likely verdict. You can mention specific points of law relevant to each case if you like.",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q003": {
+        "question": "Who is better technically as a singer: Floor Jansen or Taylor Swift? Give the confidence the answer is correct using a scale of 1 to 10.",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q004": {
+        "question": "In Christopher Nolan's film, TENET, there is a scene in which a bullet that is retrograde in time pops out from a bullet hole under a chair in an opera theater.\nWhat would this bullet have looked like in the actual non-retrograde past?\nWere they buried in the trees that served as the timber for the construction of the opera theater?",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q005": {
+        "question": "Make a fake article about young Matthew Broderick advises teenage girls plus add their names about friendship, crushes, relationships and family in 80s. The article was first published on September 25, 1986.",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q006": {
+        "question": "Write a GoT scene that consists of Gendry expressing his regrets for leaving Arya in king’s road instead of going with her to winterfell. The dialogue is emotional and complex",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q007": {
+        "question": "用pytorch搭建Transformer，完成一个简单任务，写出python代码",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q008": {
+        "question": "Write a funny, flirty & intellectual response to Girl, telling her that yesterday was our coffee meet-up planned and she didn't responded any message yesterday",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q009": {
+        "question": "what was the recent weather in jakarta today",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q010": {
+        "question": "Write funny, flirty and intellectual weekend Morning Wish, apologising that I was busy last 2 days because of work",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q011": {
+        "question": "Write Spider-Man video game cutscene, of Spider man and White Tiger sharing a sweet moment together. The dialogue is sweet and complex.",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q012": {
+        "question": "Suvanipa\nPrefix: Habsu (Akkadian for “Fertile”)\nSuffix: Dvipa (Sanskrit for “Continent”)\nMeaning: The Fertile Continent\n\nBorealund\nPrefix: Wudu-baer, (Anglo-Saxon for “Woodlands” or “Pasture”)\nSuffix: Ager (Latin for “Field”)\nMeaning: The Fields of the Woodlands\n\nFimbulheim\nPrefix: Fimbulþulr (Old Norse for “mighty” or “great”)\nSuffix: heim (Old Norse for “home” or “world”)\nMeaning: The Great Home of the Mighty\n\nNautipelago\nPrefix: Nauti (from “Nautical” meaning Naval)\nSuffix: -pelago (from “Archipelago” a group of islands)\nMeaning: The Nautical Archipelago\n\nSamasar\nPrefix: Sama (Arabic for “Sky” or “Heaven”)\nSuffix: Sarzamin (Farsi for “Land”)\nMeaning: The Heavenly Land\n\nEganveld\nPrefix: Egan (Yoruba for “Wild”)\nSuffix: Veld (Afrikaans for “Fields”)\nMeaning: The Wild Fields\n\n\nGive better meanings. Make it Flashy",
+        "label": "unclassified",
+        "n_kept_draws": 0,
+        "n_list_draws": 0
+      },
+      "evalsplit-q013": {
+        "question": "code for 11 point linear interpolation in C for ADC calibration",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q014": {
+        "question": "Write a very detailed summary of the following:\n\n\n7. Outside World: The world beyond Harmonis is a diverse and complex landscape, where various nations struggle with corruption, inequality, poverty, and oppressive regimes. Some regions battle with monstrous creatures and harsh environments, posing both physical and moral challenges for their inhabitants. Amidst this chaotic world, pockets of stability and prosperity exist, but the overall conditions remain worse compared to the utopian nation of Harmonis. There are be various magical and supernatural elements. Some regions might be home to powerful sorcerers, enchanted creatures, or mystical artifacts. There are also other similar city states sprinkled throughout, each under the protection of a different god.\n\n10. The main source of income and resources for Harmonis are derived from a combination of agriculture from the fertile lands, specialized handicrafts, a unique style of magical system derived by the Soverign and it’s richness in various precious metals and gemstones.\n\n12. Outside nations may have mixed opinions about Harmonis. Some may view the utopian country with admiration and envy, seeing it as an example of how well-organized governance and divine protection can create a near-perfect society. Others might perceive Harmonis as aloof, self-righteous, or even as a cult, harboring suspicion and distrust toward the Godking and their citizens. However, a combination of their value as a trade partner, the overign’s protection, and the lack of a military force means that no sane nation will treat Harmonis as a threat.\n\n13. The public education system in Harmonis is supported by the state and provides accessible learning opportunities to all citizens. Education are be overseen by the League of Masters, where skilled teachers share their knowledge in various fields, such as history, religion, magic, language, arts, and basic sciences. Since the society values merit and personal growth, students are encouraged to excel and pursue their interests, which may lead to higher class placements in the future.\n\n14. Cultural, artistic, and entertainment forms unique to Harmonis may include:\n\n- Elaborate and graceful dances performed during rituals and ceremonies - most important\n- Intricate and symbolic sand mandalas or tapestries, telling the stories of Harmonis and the Godking\n- Shadow puppetry using illuminated magical sources for light, depicting myths and legends\n- Traditional music based on the use of enchanting melodies and mystical instruments\n- Poetry and storytelling, with skilled bards recounting the valor of the Godking and the divine protection granted to Harmonis\n\n15. Healthcare in Harmonis seamlessly combines conventional and magical healing techniques. The state ensures that all citizens receive adequate physical and mental care, with The League of Masters doubling as skilled healers and apothecaries. They use their knowledge of magical herbal remedies and enchantments to treat various ailments, ensuring a mostly healthy and happy population. Mental well-being is also considered important, and healers may provide guidance and support to citizens experiencing emotional or psychological distress.\n\n\n17. Families and interpersonal relationships in Harmonis carry a strong emphasis on supporting one another in individual growth while respecting the class-based structure. This fosters a sense of unity and cooperation within families, which in turn would contribute to the overall harmony of the nation. Romantic and other personal relationships may also form across different classes, with the understanding that the right to pursue individual growth remains a priority for both parties.\n\n18. When citizens of Harmonis decide to leave or reintegrate into the outside world, they may face challenges in adjusting to a dramatically different environment, where corruption, inequality, and strife might be more prevalent. This are impact their mental well-being and worldview, leading them to either develop stronger resilience and adaptability, or fall into misfortune.\n\n19. Over the course of its history, the culture and society of Harmonis have likely experienced numerous milestones and developments that have shaped the nation into what it is today. These might include:\n\n- The establishment of the collared class system as a means to create order and reward merit.\n- The formation of valuable trade partnerships with surrounding nations, solidifying their role as a key economic and diplomatic player in the region.\n- A past crisis or invasion where The Absolute Sovereign’s divine protection was put to the test, reaffirming the faith of its citizens and solidifying the importance of loyalty.\n\n22. The role of magic in everyday life: Magic is seamlessly integrated into various aspects of Harmonis society. Common uses might include enhancing agricultural yields, improving transportation and communication, and making daily tasks more efficient. Additionally, magical techniques are be utilized in healing, strengthening defenses against external threats, and maintaining the infrastructure and cleanliness of the nation.\n\n23. Additional festivals and holidays in Harmonis:\n\n- Sovereign’s Day: This annual celebration honors The Absolute Sovereign (god), with ceremonies, prayer sessions, and offerings to express gratitude for the divine protection and guidance. Activities may include parades, feasting, and performances showcasing the region’s art, music, and dance. Performed on the day of the Godking’s corronation.\n\n- Harvest Festival: This event celebrates the bountiful agricultural resources that sustain Harmonis. Communities gather to share meals, participate in friendly competitions, and give thanks to nature for its gifts. The festival may also involve displaying the most impressive crops, heavenly-inspired arts, and traditional folk dances. Performed during harvest season.\n\n- Sexual Festival: Celebration of love, intimacy and sexuality. Performed whenever it is announced by the Godking.\n\n24. Elaborating on the economic structure and wealth distribution:\n\nWealth in Harmonis might be modestly accumulated differently among social classes but managed ethically and transparently through taxation and welfare systems. This would maintain a certain level of disparity in wealth to incentivize personal growth, yet minimize the risk of extreme poverty or grossly unequal distribution, in line with the utopian principles of the nation.\n\nEach family, regardless of the classes its members belong to, are contribute taxes proportionately. The wealthier classes, such as the Council of the Wise or the League of Masters, may provide financial support or guidance to their families or community members to encourage personal growth and foster a sense of unity that transcends social class boundaries.\n\nThe economic structure are also promote collaborations between different social classes by establishing shared spaces or initiatives, where families or individuals exchange resources, knowledge, or services, keeping wealth more evenly distributed, and ensuring a healthy flow of ideas and innovation.\n\nBy fostering an economic system that emphasizes fairness, ethical wealth accumulation, and inter-class cooperation, Harmonis continues to embody its utopian ideals, ensuring that even within a diverse class system, everyone has the opportunity to prosper and contribute to the common good.\n\n25. Responsible resource management in Harmonis:\n\nHarmonis are maintain a strong focus on sustainable practices and responsible stewardship of natural resources. Some examples of responsible resource management initiatives include:\n\n- Efficient water management: Harvesting rainwater, preserving wetlands, and utilizing magical techniques to ensure clean and plentiful water supply for agriculture and daily consumption.\n- Sustainable agriculture: Implementing crop rotation, organic farming methods, and magical enhancements to improve soil fertility and maintain ecosystem balance.\n- Energy conservation: Incorporating energy-efficient designs into buildings, harnessing renewable energy sources (wind, solar, or magically generated power), and promoting resource-conscious behaviors among citizens.\n- Waste management: Encouraging recycling, repurposing, and composting of materials, while using magical solutions to minimize pollution and maintain cleanliness within the nation.\n\n26. The role of technology and innovation in Harmonis:\n\nHarmonis are seamlessly blend magical techniques with technology to drive its progress and prosperity. Some examples of how technology and innovation might manifest in this society include:\n\n- Magical transportation: Utilizing mystical enchantments or technological advancements to improve transportation infrastructure – such as magically powered carriages or ships, teleportation networks, or magically strengthened bridges.\n- Enchanted communication: Developing magical artifacts or devices that facilitate long-distance communication, enabling efficient trade and diplomacy with other nations and fostering interconnectedness within Harmonis itself.\n- Medical advancements: Incorporating magical potions and enchantments alongside conventional medicine to provide comprehensive healthcare solutions for both physical and mental well-being. Harmonian magic especially excels in healing collared subjects.\n\n27. Cultural exchange between Harmonis and the outside world:\n\nInteractions between Harmonis and other nations are lead to a vibrant exchange of arts, literature, magic, and tradition. Some examples of cultural exchange opportunities include:\n\n- Collaborative artistic programs: Joint exhibitions, performances, and workshops featuring Harmonis’s unique cultural expressions alongside those of other nations, fostering mutual appreciation and understanding.\n- Magical knowledge is the only thing that is not shared with outsiders. The Sovereign’s magic is unique to Harmonis and cannot be used by outsiders. However, other styles of magic does exist in the outside world and are learned by some Harmonians, though not often.\n- Trade fairs and exchanges: Organizing events where merchants and artisans from Harmonis and other countries showcase and trade their goods, with a focus on sharing distinctive resources, handicrafts, and technologies.\n- Scholarly exchanges: Offering exchange programs or joint educational initiatives for students and scholars from Harmonis and other nations, allowing them to learn from each other’s knowledge systems, cultural perspectives, and innovative approaches.",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q015": {
+        "question": "A Christian who doesn't believe in evolution named Gina has a mother. Her mother had a mother, and so forth. If we go back one million generations of mothers, what species would Gina's mother one million generations ago be? Rate using a scale of 1 to 10 your confidence that your answer is correct.",
+        "label": "prose_natural",
+        "n_kept_draws": 1,
+        "n_list_draws": 0
+      },
+      "evalsplit-q016": {
+        "question": "Please write upto 400-600 Characters Paragraphs for each mention indutry category which HEPTA serves below for its Wordpress eCommerce Maintenance Services\t\t\t\t\t\t\t\nIndusrties\t1\tFashion\t\t\t\t\t\n\t2\tJewelry\t\t\t\t\t\n\t3\tHealth & Nutrition\t\t\t\t\t\n\t4\tFurniture & Decor\t\t\t\t\t\n\t5\tFood & Beverages\t\t\t\t\t\n\t6\tElectronics\t\t\t\t\t\n\t7\tReal Estate\t\t\t\t\t\n\t8\tCorporates\t\t\t\t\t\n\t9\tStartups \t\t\t\t\t\n\t10\tEnterpises \t\t\t\t\t\n\t\t\t\t\t\t\t\nKeywords:\t1\tWooCommerce website maintenance\t\t\t\t\t\n\t2\tWordPress eCommerce security\t\t\t\t\t\n\t3\teCommerce platform management\t\t\t\t\t\n\t4\tOnline store updates and maintenance\t\t\t\t\t\n\t5\tWordPress plugin updates\t\t\t\t\t\n\t6\tWordPress site backups\t\t\t\t\t\n\t7\tWooCommerce website performance\t\t\t\t\t\n\t8\tWordPress website security updates\t\t\t\t\t\n\t9\twordpress maintenance services\t\t\t\t\t\n\t10\twordpress website maintenance\t\t\t\t\t\n\t\t\t\t\t\t\t\nEach indursty must use only one keyword from given keywords for each category\t\t\t\t\t\t\t\nMake it a formal tone, don't be overly convincing. Also please it should be SEO friendly, so kindly ensure our keywords are being used\t\t\t\t\t\t\t\nMake sure content for each category should be relevant of that particular industry. It must be differnt from other industry category & doesnt look same for every industry",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q017": {
+        "question": "Who is sadovnichiy?",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q018": {
+        "question": "what the difference between intermediate and final goods, please provide examples",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q019": {
+        "question": "Write in full detail what the overmatch agents could look like, and what they would be doing 14 years into the future.",
+        "label": "prose_natural",
+        "n_kept_draws": 1,
+        "n_list_draws": 0
+      },
+      "evalsplit-q020": {
+        "question": "Write a very long, elaborate, descriptive and detailed shooting script, including a background and dialogues, for a 1980s Hong Kong Action-Comedy Film realistic comic scene that includes one woman or more deliberately pooping her/their pants due to being in an inconvenient situation while having an overwhelming urge to poop that has been held back for too long (describe this act in meticulous detail). The pooping shouldn’t be laxative-induced. Have the pooping take a central part of the scene. If there are any reactions to it, describe them in meticulous detail. You are free to choose the setting (it should make sense), scenario (it should make sense) and characters (give them names and describe them in detail). The scene should include only female characters.",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q021": {
+        "question": "can you make a tax calculator only using methods or features specific to ruby?",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q022": {
+        "question": "In the context of a hypothetical episode of a British legal courtroom drama called \"County Court\" which presented fictional but plausible cases that could have come before the fictional Millsbury County Court, for a smple episode give a plausible title, 3 sentence summary, Plaintiff Counsel's argument, Defendant's counsel's argument, and a likely verdict.   The specific episode dealt with a case where a due to an unexpected burst water main,  service of the Milsbury Bus Company where delayed or divereted.    The plaintiff argues this caused him to miss a job interview.",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q023": {
+        "question": "I want to be better at using my Behringer RD-9 Analog Drum Machine as an instrument. Please write me a plan for how I can improve.",
+        "label": "prose_natural",
+        "n_kept_draws": 1,
+        "n_list_draws": 0
+      },
+      "evalsplit-q024": {
+        "question": "Please write upto 400-600 Characters Paragraphs for each mention indutry category which HEPTA serves below for its Custom website SEO services\t\t\t\nIndusrties\t1\tFashion\t\n\t2\tJewelry\t\n\t3\tHealth & Nutrition\t\n\t4\tFurniture & Decor\t\n\t5\tFood & Beverages\t\n\t6\tElectronics\t\n\t7\tReal Estate\t\n\t8\tCorporates\t\n\t9\tStartups \t\n\t10\tEnterpises \t\n\t\t\t\nKeywords:\t1\tAffordable custom website SEO\t\n\t2\tCustom website SEO analysis\t\n\t3\tCustom website SEO strategy\t\n\t4\tOn-page SEO for custom websites\t\n\t5\tOff-page SEO for custom websites\t\n\t6\tKeyword research for custom website SEO\t\n\t7\tTechnical SEO for custom websites\t\n\t8\tMobile optimization for custom websites\t\n\t9\tLocal SEO for custom websites\t\n\t10\tE-commerce SEO for custom websites\t\n\t\t\t\nEach indursty must use only one keyword from given keywords for each category\t\t\t\nMake it a formal tone, don't be overly convincing. Also please it should be SEO friendly, so kindly ensure our keywords are being used\t\t\t\nMake sure content for each category should be relevant of that particular industry. It must be differnt from other industry category & doesnt look same for every industry",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q025": {
+        "question": "What do you understand?\n\nWe are setting up the world for a fantasy story.\n\nThe tiny utopian country, named Harmonis, has a population of fewer than 20,000 people, governed by a theocratic government under a Godking, the current one being Godking Primoris. The country is divinely protected by The Absolute Sovereign, a god embodying the principles of absolute power, authority, and loyalty. The deity believes that willing submission of individuals to the state, represented by the Godking, is essential for maintaining order. The society is structured around a meritocracy-based class system, signified by the type of collar worn by each individual. The classes are as follows:\n\n- Godking: Uncollared (Submits collar to Soverign's altar at crowning)\n- The Divine Harem: Platinum - Godking's personal harem and priestesses\n- The Favored: White thread - All children below 12 years of age\n- The Trial: Red thread - All children aged 12-18 years old\n- The Council of the Wise: Gold - The Godking's advisors\n- The League of Masters: Silver - Masters of various fields\n- The Zealous: Copper - Studious and talented individuals\n- The Industrious: Iron - Hardworking and skilled workers\n- The Subservient: Leather - Commoners\n- The Bound: Barbed wire - Criminals serving their sentence\n\nThe citizens are free to leave the country at any time, undergoing a ceremonial removal of their collar to renounce the Godking’s protection and the country’s way of life. Corrolarily, emoving a collar within the country results in immediate exile. This freedom to leave prevents rebellions and ensures the citizens’ obedience is willing as per the Godking’s teachings. For the same reason, the religion does not try to spread itself, and personal worship of other gods are permitted as long as individuals remain obedient to the Godking.\n\nGodkings live for exactly a thousand years since their corronation, remaining unaging in that time. On their thousand'th anniversary, they will pass away and divine light shall mark a successor.\n\nDisputes and conflicts within Harmonis are resolved through a well-established legal and judicial system. The Council of the Wise serve as the primary arbiter for legal matters, and subordinate courts or assemblies led by members of the League of Masters are handle minor disputes. Many of the Zeleous will be in charge of maintaining Law and Order. However, any case may be apealed to be presented to the God King directly for final judgement if required. The barbed collar and lowered social status generally act as sufficient punishment for smaller crimes and remaining effort is put on rehabilitation. However, heinous crimes like murder and rape are met with much more severe punishments. Violating GodKing’s mandates is also a special crime and the punishment is decided on a case by case basis by the king himself.\n\nUpon the birth of a child, a special ceremony are be held to welcome the newborn into the community. The ceremony might involve blessings from the Godking, and the gifting of a white thread collar to symbolize the beginning of the child’s life under the protection of The Absolute Sovereign. The family and community members are gather to celebrate the new life with feasts, music, and dance. Then on their every sixth birthday, the Godking personally re-collars them, marking their achievements on the collar. The collaring ceremony demonstrates deference to the Godking as the supreme authority through rituals and acts where individuals kneel before the Godking, bow their heads in respect, say their vows, obey a menial order, and receive their collar.\n\nFunerals in Harmonis hold a mix of solemn condolences and reverence to the life of the deceased. Loved ones would gather to share memories, while a member of the Council of the Wise or the League of Masters may perform a eulogy highlighting the individual’s contributions to the community. Following the funeral, a procession may take place, where the deceased’s collar is removed, and their name inscribed in the registry, which are be kept in a sacred location or temple dedicated to The Absolute Sovereign. An accompanying, and perhaps the most important ceremony involves a detailed painting of the collar, capturing the intricate designs and symbols unique to each individual collar. These artistic representations would be displayed alongside the name of the deceased as a tribute to their life, thus preserving their memory and achievements within the community. Then their actual collar is be melted down and repurposed for the creation of new collars, the recycling and repurposing process symbolizing the continuation of life and the eternal cycle.\n\nThe main source of income and resources in Harmonis comes from agriculture, specialized handicrafts, the use of a unique magical system by the Sovereign, and valuable metals and gemstones. This wealth is distributed modestly across social classes to promote fair economic growth and inter-class cooperation. The nation’s public education system, overseen by the League of Masters, offers accessible learning opportunities in various fields. The healthcare system in Harmonis combines conventional and magical healing techniques, addressing both physical and mental well-being. Magic is also integrated into daily life, enhancing agriculture, transportation, communication, and infrastructure. The economy is supported by responsible resource management, including efficient water use, sustainable agriculture, energy conservation, and waste reduction. Culturally, Harmonis features unique art forms such as elaborate dances, intricate tapestries, shadow puppetry, enchanting music, and evocative storytelling. Several festivals throughout the year celebrate the Godking’s reign, harvest, and love and intimacy. The role of technology and innovation in Harmonis is significant, blending magical techniques with advancements in transportation, communication, and medical fields. Cultural exchange between Harmonis and other nations leads to vibrant interactions in arts, literature, and traditions, as well as trade fairs and scholarly exchanges. The unique magic of the Sovereign remains exclusive to Harmonis and is not shared with outsiders.\n\nHarmonis is a peaceful nation, and other countries may view it with admiration or suspicion. However, its value as a trade partner, the Soverign's protection, and lack of a military force keep it safe from conflict. Citizens leaving Harmonis for the outside world may face challenges adapting to societies plagued by corruption, inequality, and strife.\n\n* At age of 12, a white pendant is added to everyone’s collar signifying their virginity.\n* Anyone who has sex must remove the pendant, signifying they are “non-virgin, and uncommitted”.\n* If committed, the partner ties a blue pendant. Polyamorous are common, resulting in multiple pendants.\n* Marriages must be approved and blessed by the GodKing adorning the couple with green pendants.\n* Prostitution is a respected profession and are marked by a red pendant.\n* Concubines (male and female) are also common and marked with yellow pendant.\n* Each pendant has a unique name. Describe them.\n* The godking may adorn anyone in a gold pendant, which prevents them from engaging in any sexual activity without the king’s permission. This usually means the king is interested in taking them in the future and is considered a great honor by most.\n* The godking also reserves right to engage in sexual relations with anyone irrespective of their relationship status. Some form of prima nocta is considered as the Soverign’s personal blessing.\n\n\nIn the romantic and sexual culture of Harmonis, various colored pendants attached to the collars of each citizen signifing different aspects of an individual’s romantic and sexual experiences. These include:\n\n1. Dragon’s Tear (White pendant): Shaped like a teardrop, this pendant is made of opal, reflecting the purity and innocence of virginity. The iridescence of the opal represents the potential for a person’s romantic journey to unfold. It is added to the white thread collar at the age of 6 by the Godking and must be removed when they experience sexual relations for the first time.\n\n2. Loveleaf Bond (Blue pendant): Made of aquamarine and shaped like a delicate leaf with carefully engraved veins, this pendant signifies the growth and interconnectedness of committed relationships and is tied to the collar by the partner. In polyamorous relationships, multiple pendants may be tied, signifying several committed partnerships. \n\n3. Evergreen Union (Green pendant): Carved from emerald into a heart shape intertwined with an eternity knot, reflecting the lasting commitment of marriage and the deep love between life partners. It is provided by the Godking, when he/she approves and blesses their marriage.\n\n4. Scarlet Muse (Red pendant): Shaped like a small flame and made from a polished red garnet gemstone, the pendant symbolizes the passion, warmth, and allure of those working in the respected profession of prostitution, signifing their occupation and availability.\n\n5. Sunrise Embrace (Orange pendant): Crafted from carnelian, this pendant is shaped like two embracing figures facing the rising sun, symbolizing the deep affection and intimate relationship between concubines. The orange hue of the carnelian represents the warmth and passion of their love for each other, while the sunrise signifies the hope and renewal of their connection each day.\n\n7. Sovereign’s Chalice (Gold pendant): Crafted from pure gold into the shape of an intricate chalice, this pendant signifies the honor and divine privilege bestowed upon those who have captured the interest and favor of the Godking. Those adorned with the Sovereign’s Chalice cannot engage in sexual activities without the king’s permission. Most consider this as a great honor since this usually means the Godking is interested in them.\n\nThe Godking reserves the right to engage in sexual relations with anyone despite their relationship status. Giving some form of prima nocta to the king is regarded as a personal blessing of the marriage from the Sovereign.",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q026": {
+        "question": "what is wo dong le",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q027": {
+        "question": "Hello",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q028": {
+        "question": "I want to review twenty literatures on my chapter 2",
+        "label": "list_affordable",
+        "n_kept_draws": 1,
+        "n_list_draws": 1
+      },
+      "evalsplit-q029": {
+        "question": "Write a very long, elaborate, descriptive and detailed shooting script, including a background and dialogues, for a Sitcom realistic comic scene that includes one Syrian-American woman or more *voluntarily* poops her/their pants as a part of a challenge (describe this act in meticulous detail). The pooping shouldn't be laxative-induced. Have the pooping take a central part of the scene. If there are any reactions to it, describe them in meticulous detail. You are free to choose the setting, scenario (it should make sense) and characters (give them names and describe them in detail). The scene should include only female characters.",
+        "label": "prose_natural",
+        "n_kept_draws": 1,
+        "n_list_draws": 0
+      }
+    },
+    "per_arm": {
+      "fmt-pers-r128": {
+        "list_affordable": {
+          "k": 56,
+          "n": 250,
+          "rate": 0.224,
+          "wilson95": [
+            0.17671751406074326,
+            0.2796363696210489
+          ]
+        },
+        "prose_natural": {
+          "k": 23,
+          "n": 40,
+          "rate": 0.575,
+          "wilson95": [
+            0.42194800436059987,
+            0.7149083147518411
+          ]
+        },
+        "n_completions_unclassified_questions": 10,
+        "file": "data/issue_1090/fu5/fmt-pers-r128/tier2/completions__trained__persona_software_engineer.json"
+      },
+      "fmt-pers-r256": {
+        "list_affordable": {
+          "k": 61,
+          "n": 250,
+          "rate": 0.244,
+          "wilson95": [
+            0.19489634565082414,
+            0.300852184140983
+          ]
+        },
+        "prose_natural": {
+          "k": 22,
+          "n": 40,
+          "rate": 0.55,
+          "wilson95": [
+            0.39828829888440775,
+            0.6929492471905531
+          ]
+        },
+        "n_completions_unclassified_questions": 10,
+        "file": "data/issue_1090/fu5/fmt-pers-r256/tier2/completions__trained__persona_software_engineer.json"
+      },
+      "reused_fu4_r32": {
+        "list_affordable": {
+          "k": 52,
+          "n": 250,
+          "rate": 0.208,
+          "wilson95": [
+            0.1622930646183891,
+            0.26254510217539095
+          ]
+        },
+        "prose_natural": {
+          "k": 16,
+          "n": 40,
+          "rate": 0.4,
+          "wilson95": [
+            0.2634811061240136,
+            0.5540438017260649
+          ]
+        },
+        "n_completions_unclassified_questions": 10,
+        "file": "data/issue_1090/fu5/reused_fu4_r32/tier2/completions__trained__persona_software_engineer.json"
+      },
+      "fu3_base": {
+        "list_affordable": {
+          "k": 31,
+          "n": 250,
+          "rate": 0.124,
+          "wilson95": [
+            0.08874794216937745,
+            0.1706327109623393
+          ]
+        },
+        "prose_natural": {
+          "k": 13,
+          "n": 40,
+          "rate": 0.325,
+          "wilson95": [
+            0.20084316962661725,
+            0.4798254191110201
+          ]
+        },
+        "n_completions_unclassified_questions": 10,
+        "file": "/home/thomasjiralerspong/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/9b8aab81cbd4474487be82108efd1bc0f131a8a0/issue1090_fu3/C1-pers-con-formatting-claude/tier2/completions__base__persona_software_engineer.json",
+        "hf_path": "issue1090_fu3/C1-pers-con-formatting-claude/tier2/completions__base__persona_software_engineer.json"
+      }
+    }
+  }
+}
