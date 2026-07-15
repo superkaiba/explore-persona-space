@@ -4,3 +4,4 @@
 {"ts": "2026-07-15T14:47:27Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-15T15:00:10Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0, no failed/overridden checks. Plan version v1."}
 {"ts": "2026-07-15T15:00:11Z", "kind": "epm:plan", "version": 1, "by": "unknown", "note": "Plan v1 written to plans/plan.md (gpu_hours_total=0). Two additive doc inserts: gotchas.md per-arm-class smoke bullet (after the Mock-seam entry) + SKILL.md Step 6d.0-bis once-PER-ARM-CLASS clause. architectural: false. Consistency + critic ensemble next."}
+{"ts": "2026-07-15T15:05:15Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 Phase-2 lens critics"}
