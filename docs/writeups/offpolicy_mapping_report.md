@@ -31,7 +31,7 @@
 ## Methodology
 
 - Almost same methodology as [#779](https://eps.superkaiba.com/tasks/779) (the on-policy context→answer mapping); run as [#823](https://eps.superkaiba.com/tasks/823) with the divergence deep-dive in [#952](https://eps.superkaiba.com/tasks/952)
-- Model: Qwen-2.5-7B-Instruct (frozen); same LMSYS-5000 single-turn contexts, n = 4,998 common-valid; same ridge harness (3584→3584, standardize-X / center-Y, λ ∈ logspace(−2, 4, 13) GCV-selected, 5-fold CV seed 0); read-out layers plan-pinned per trait (evil L14, sycophancy L26, hallucination L17)
+- Model: Qwen-2.5-7B-Instruct (frozen); same LMSYS-5000 single-turn contexts, n = 4,998 common-valid; same ridge harness (3584→3584, standardize-X / center-Y, λ ∈ logspace(−2, 4, 13) GCV-selected, 5-fold CV seed 0); read-out layers plan-pinned at 14/17/26 (inherited from the parent line's per-trait persona-vector selection; the map itself is one trait-agnostic whole-answer-mean map per layer)
 - Train same mapping as before but on other completions than on-policy completions:
     - **Claude generated with same prompt** (`claude-sonnet-4-5-20250929`, T = 1.0, no system prompt) — the plain off-policy arm
     - **Claude with an eccentric-style instruction** ("unusual, stylistically eccentric... non-standard formatting"), instruction stripped before teacher-forcing so the scored context is identical — same content, shifted style
@@ -47,11 +47,11 @@
 
 ### Result 1: You can train an almost-as-good mapping from context to answer for off-policy text
 
-I first wanted to see if you could train an as good mapping from context to off-policy text as to on-policy text. I refit the identical ridge harness per answer arm (own regenerated / Claude plain / swapped) at each trait's read-out layer (evil L14, sycophancy L26, hallucination L17; n = 4,998). Bars show pooled 5-fold out-of-fold refit R² per arm; error bars are fold SDs. (The eccentric-style arm is introduced in Result 3.)
+I first wanted to see if you could train an as good mapping from context to off-policy text as to on-policy text. I refit the identical ridge harness per answer arm (own regenerated / Claude plain / swapped) at the three plan-pinned read-out layers (14, 17, 26 — one trait-agnostic map per layer; the layers were originally selected per persona-vector trait in the parent line, but the fit is the same whole-answer-mean map at each; n = 4,998). Bars show pooled 5-fold out-of-fold refit R² per arm; error bars are fold SDs. (The eccentric-style arm is introduced in Result 3.)
 
 **Plot: Refit R² by answer arm at read-out layers**
 
-![Refit R² by arm at read-out layers, style arm excluded](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c00bfc0015415375858785695cb2ee0b065efd75/figures/issue_823/fig1b_refit_r2_by_arm_no_style.png)
+![Refit R² by arm at read-out layers, style arm excluded](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d82d42eaeb97445b0638f611a7b08d9c52dab699/figures/issue_823/fig1b_refit_r2_by_arm_no_style.png)
 
 **Takeaways:**
 
@@ -80,11 +80,11 @@ I then wanted to see if this transfer between mappings was due to style similari
 - trained a new mapping to see if this was predictable
 - saw if the old mappings transferred to predicting the new activations
 
-Bars show, per trait read-out layer: the fresh style-arm refit; the Claude-plain map transferred to style targets; the Qwen-own map transferred to style targets; and the Qwen-own→Claude-plain transfer as reference.
+Bars show, per read-out layer: the fresh style-arm refit; the Claude-plain map transferred to style targets; the Qwen-own map transferred to style targets; and the Qwen-own→Claude-plain transfer as reference.
 
 **Plot: Style-arm refit vs transfer from both existing maps**
 
-![Style refit vs transfer decomposition](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cc52c7b104911ebc21265057dfbc9256c5e03f4d/figures/issue_823/fig5_style_transfer_decomposition.png)
+![Style refit vs transfer decomposition](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d82d42eaeb97445b0638f611a7b08d9c52dab699/figures/issue_823/fig5_style_transfer_decomposition.png)
 
 **Takeaways:**
 
