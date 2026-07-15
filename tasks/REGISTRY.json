@@ -2464,8 +2464,8 @@
     "1316": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1316",
-      "status": "approved",
+      "path": "tasks/running/1316",
+      "status": "running",
       "title": "daily-fix: widen lazy-import pin scan set (from #1304)"
     },
     "1317": {
