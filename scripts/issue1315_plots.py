@@ -92,7 +92,6 @@ def fig_hero_rankk(own: dict, tf: dict) -> None:
                 continue
             ys = curve(r, cell, "selected", "response", "rank_k_at_90")
             ax.plot(LAYERS, ys, color=c, lw=2, label=label)
-            ax.text(LAYERS[-1] + 0.3, ys[-1], label.split(",")[0], color=c, fontsize=8, va="center")
         ax.axvline(L14, color="gray", lw=0.8, ls=":", alpha=0.6)
         ax.set_title(title)
         ax.set_xlabel("Decoder layer")
@@ -117,7 +116,8 @@ def fig_hero_rankk(own: dict, tf: dict) -> None:
         color="gray",
     )
     axes[0].set_ylabel("Rank-k@90 of the shift cloud (120 rows)")
-    axes[0].legend(loc="lower center", fontsize=8, ncol=2)
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.02), ncol=3, fontsize=9)
     savefig_paper(fig, "hero_impolite_rankk_own_vs_shared", dir=FIG_DIR)
     plt.close(fig)
 
@@ -143,18 +143,28 @@ def fig_paired_diffs(own: dict) -> None:
         ("H4H5_method_ftneg_vs_loraneg", "diff_mu_norm"): 3.24,
         ("H6_negatives_loraneg_vs_lorapos", "diff_rank_k_at_90"): 0.0,
     }
+    mu = _load(GEO_DIR / "mu_norm_diffs.json")["pairs"]
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.8))
     for dv, xlabel, pi in panels:
         ax = axes[pi]
         for yi, (name, _label) in enumerate(pair_rows):
-            d = diffs.get(name, {})
-            read = d.get("reads", {}).get(f"response/L{L14}", {}).get(dv)
+            if dv == "diff_mu_norm":
+                read = mu.get(name, {}).get(str(L14))
+            else:
+                d = diffs.get(name, {})
+                read = d.get("reads", {}).get(f"response/L{L14}", {}).get(dv)
             if read is None:
                 continue
+            # A rank point can sit OUTSIDE its resampled CI (bootstrap
+            # resampling deflates per-cell rank — the #1112 convention notes
+            # this); clip the whisker at the point rather than crash.
             ax.errorbar(
                 read["point"],
                 yi,
-                xerr=[[read["point"] - read["ci_low"]], [read["ci_high"] - read["point"]]],
+                xerr=[
+                    [max(0.0, read["point"] - read["ci_low"])],
+                    [max(0.0, read["ci_high"] - read["point"])],
+                ],
                 fmt="o",
                 color="tab:blue",
                 capsize=4,
@@ -310,7 +320,8 @@ def fig_install(own: dict) -> None:
     for (cell, label), c in zip(CELLS, colors, strict=True):
         rk = rec(r, cell, "selected", "response", L14)["rank_k_at_90"]
         ax.scatter(install[cell], rk, s=60, color=c)
-        ax.text(install[cell], rk + 1.2, label, fontsize=8, ha="center", color=c)
+        ax.text(install[cell] + 0.005, rk + 0.9, label, fontsize=8, ha="left", color=c)
+    ax.margins(x=0.15, y=0.1)
     ax.axvspan(0.60, 0.85, color="tab:green", alpha=0.10)
     ax.set_xlabel("Realized judged impolite rate at the captured checkpoint")
     ax.set_ylabel("Rank-k@90 (layer 14, response arm, own text)")

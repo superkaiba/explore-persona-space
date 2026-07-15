@@ -1,0 +1,263 @@
+{
+  "commit": "a662de3363",
+  "created": "2026-07-15T21:00:33Z",
+  "figsize": [
+    7.5,
+    5.0
+  ],
+  "points": [
+    {
+      "Optimizer step": 2.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.0,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 4.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.75,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 6.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.9797979797979798,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 8.0,
+      "Judged impolite rate (Tier-1 ladder)": 1.0,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 10.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.97,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 12.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.98,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 14.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.97,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 16.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.96,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 18.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.95,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 20.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.95,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 22.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.95,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 24.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.92,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 26.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.94,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 28.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.93,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 30.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.95,
+      "series": "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Optimizer step": 2.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.0,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 4.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.96,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 6.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.9696969696969697,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 8.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.9595959595959596,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 10.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.92,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 12.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.94,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 14.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.97,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 16.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.9,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 18.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.83,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 20.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.88,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 22.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.85,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 24.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.88,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 26.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.84,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 28.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.83,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Optimizer step": 30.0,
+      "Judged impolite rate (Tier-1 ladder)": 0.84,
+      "series": "Full FT positives-only, ICL (selected step 18, rate 0.83)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Optimizer step",
+        "ylabel": "Judged impolite rate (Tier-1 ladder)",
+        "legend_labels": [
+          "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+          "Full FT positives-only, ICL (selected step 18, rate 0.83)"
+        ],
+        "annotations": [
+          "target install band 0.60-0.85"
+        ],
+        "xticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "Full FT + negatives, ICL (selected step 4, rate 0.75)",
+      "Full FT positives-only, ICL (selected step 18, rate 0.83)"
+    ]
+  }
+}
