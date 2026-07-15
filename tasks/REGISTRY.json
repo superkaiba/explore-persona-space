@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1330,
+  "highest_id": 1331,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2579,6 +2579,13 @@
       "path": "tasks/proposed/1330",
       "status": "proposed",
       "title": "daily-fix: codify marker-text extraction from output file"
+    },
+    "1331": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1331",
+      "status": "proposed",
+      "title": "daily-held: pod-779 stranded n10k captures - rescue or drop"
     },
     "134": {
       "has_clean_result": false,
