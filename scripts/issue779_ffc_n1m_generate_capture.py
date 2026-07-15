@@ -113,6 +113,24 @@ MANIFEST_SUBDIR = "sampling_manifest"  # HF: {HF_PREFIX}/sampling_manifest/{part
 # (.pt) + raw < 1 GB/shard, trivially under the RunPod MooseFS quota.
 UPLOAD_BATCH = int(os.environ.get("EPM_N1M_UPLOAD_BATCH", "10"))
 
+# Over-length-prompt filter (#779 n1m WildChat-region crash fix). vLLM validates
+# the decoder prompt against max_model_len; a real-user WildChat prompt can exceed
+# it (shard 18: 9086 tok; shard 21: 8249 tok), and ONE over-length prompt hard-
+# crashes the WHOLE 500-prompt generate call, killing the shard. The LMSYS-region
+# filter caps length effectively (zero crashes in n50k / shards 0-15), but the
+# WildChat top-up filter does not, so the guard lives at GENERATION time: tokenize
+# each rendered prompt (exactly as N10._generate renders it — apply_chat_template
+# add_generation_prompt=True) and SKIP rows whose token length exceeds the budget.
+# The manifest is FROZEN — this never rebuilds it; skipped rows are recorded
+# deterministically to a per-shard sidecar and are simply absent from the captures
+# (the fits enumerate by capture-presence, issue779_ffc_n1m_fits.py:981).
+MAX_MODEL_LEN = 8192  # vLLM engine max_model_len (see _build_capture_engine)
+GEN_MAX_TOKENS = 1024  # N10._generate SamplingParams max_tokens (issue779_ffc_n10k:188)
+LENGTH_MARGIN = 64  # headroom below (max_model_len - gen_max_tokens) for template/BOS drift
+# A kept prompt still needs the full generation headroom under the cap, so budget
+# the PROMPT against max_model_len - gen_max_tokens - margin (= 7104).
+PROMPT_TOKEN_BUDGET = MAX_MODEL_LEN - GEN_MAX_TOKENS - LENGTH_MARGIN
+
 # The three prior phases to re-derive + EXCLUDE (n is the only variable).
 N_ROUND1 = N50.N_ROUND1  # 5000
 N_N10K = N50.N_N10K  # 6500
@@ -789,6 +807,37 @@ def _flush_upload_batch(
         )
 
 
+def _rendered_prompt_token_len(tok, prompt: str) -> int:
+    """Token length of ``prompt`` rendered EXACTLY as N10._generate renders it for
+    vLLM — apply_chat_template(add_generation_prompt=True) then tokenize the string
+    (add_special_tokens=False; the template already carries the special tokens).
+    This is the length vLLM validates against max_model_len."""
+    formatted = tok.apply_chat_template(
+        [{"role": "user", "content": prompt}], tokenize=False, add_generation_prompt=True
+    )
+    return len(tok(formatted, add_special_tokens=False)["input_ids"])
+
+
+def _filter_overlength_prompts(prompts, cis, token_len_fn, budget):
+    """Partition (prompts, cis) into kept vs skipped by rendered-prompt token length.
+
+    ``token_len_fn`` maps a raw prompt -> its rendered token length. Returns
+    (kept_prompts, kept_cis, skipped) where skipped is a list of
+    {"ci": int, "n_tokens": int} for rows whose rendered prompt EXCEEDS ``budget``.
+    Deterministic + order-preserving in BOTH partitions, so kept_prompts and
+    kept_cis stay 1:1 aligned for the downstream generate + capture (the within-
+    chunk index-skew guard). Refusal-safe: records ci + token count, never text."""
+    kept_prompts, kept_cis, skipped = [], [], []
+    for p, ci in zip(prompts, cis, strict=True):
+        n = token_len_fn(p)
+        if n > budget:
+            skipped.append({"ci": int(ci), "n_tokens": int(n)})
+        else:
+            kept_prompts.append(p)
+            kept_cis.append(int(ci))
+    return kept_prompts, kept_cis, skipped
+
+
 def _build_capture_engine(args):
     """Build the vLLM capture engine with the default-off H100 long-prompt
     hang/IMA mitigation knobs (byte-identical engine args when the flags are
@@ -802,19 +851,21 @@ def _build_capture_engine(args):
         llm_kwargs["enable_prefix_caching"] = False
     if llm_kwargs:
         logger.info("[engine-knobs] %s", llm_kwargs)
-    return create_vllm_engine(args.model, max_model_len=8192, seed=42, **llm_kwargs)
+    return create_vllm_engine(args.model, max_model_len=MAX_MODEL_LEN, seed=42, **llm_kwargs)
 
 
 def _capture_stage_chunk(
-    hf, tok, llm, chunk, layers, scratch, name, raw_name, shard_index, chunk_idx, global_base
+    hf, tok, llm, prompts, cis, layers, scratch, name, raw_name, shard_index, chunk_idx, global_base
 ) -> int:
-    """Generate + trimmed-capture one chunk and stage its .pt + raw json into
-    ``scratch`` (filenames ``name`` / ``raw_name``). Returns the kept-row count
-    (0 = all-empty responses; nothing written, caller skips this chunk)."""
-    chunk_prompts = [r["prompt"] for r in chunk]
-    chunk_cis = [int(r["i"]) for r in chunk]
-    responses = N10._generate(llm, tok, chunk_prompts)
-    rows = _capture_shard_trimmed(hf, tok, chunk_prompts, responses, global_base, chunk_cis, layers)
+    """Generate + trimmed-capture the given (already length-filtered) prompts and
+    stage the chunk's .pt + raw json into ``scratch`` (filenames ``name`` /
+    ``raw_name``). ``prompts`` and ``cis`` are 1:1 aligned (the over-length filter
+    runs in the caller, order-preserving). Returns the kept-row count (0 = no
+    prompts, or all-empty responses; nothing written, caller skips this chunk)."""
+    if not prompts:
+        return 0
+    responses = N10._generate(llm, tok, prompts)
+    rows = _capture_shard_trimmed(hf, tok, prompts, responses, global_base, cis, layers)
     if not rows:
         return 0
     for fld in ("cx_last", "v_x"):
@@ -832,6 +883,47 @@ def _capture_stage_chunk(
         },
     )
     return len(rows)
+
+
+def _write_skipped_sidecar(scratch: Path, args, skipped_all: list[dict]) -> None:
+    """Write + upload the per-shard over-length-skip sidecar
+    ``shard{SI:02d}_skipped.json`` alongside the raw completions. DIAGNOSTIC: the
+    fits enumerate the realized pool by capture-presence (the ci lists in the
+    capture .pt files), so this records WHICH manifest rows were dropped and WHY,
+    not the pool itself. Written on EVERY run (empty = no over-length rows, the
+    expected LMSYS-region case) and complete across resume (the caller re-filters
+    already-uploaded chunks). Refusal-safe: ci + token count only, no prompt text."""
+    skip_name = f"shard{args.shard_index:02d}_skipped.json"
+    C.write_json_atomic(
+        scratch / skip_name,
+        {
+            "shard_index": int(args.shard_index),
+            "num_shards": int(args.num_shards),
+            "max_model_len": MAX_MODEL_LEN,
+            "gen_max_tokens": GEN_MAX_TOKENS,
+            "length_margin": LENGTH_MARGIN,
+            "prompt_token_budget": PROMPT_TOKEN_BUDGET,
+            "n_skipped": len(skipped_all),
+            "skipped": skipped_all,  # [{"ci": int, "n_tokens": int}, ...] in chunk order
+        },
+    )
+    if args.no_upload:
+        return
+    url = hub._upload_folder_filtered(
+        scratch,
+        repo_id=C.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{args.hf_prefix}/raw_completions",
+        allow_patterns=[skip_name],
+        expected_repo_paths=[f"{args.hf_prefix}/raw_completions/{skip_name}"],
+    )
+    if not url:
+        raise RuntimeError(f"skipped-sidecar upload of {skip_name} returned no URL")
+    logger.info(
+        "[shard %d] uploaded skipped sidecar: %d over-length rows dropped",
+        args.shard_index,
+        len(skipped_all),
+    )
 
 
 def run_capture(args) -> int:
@@ -887,10 +979,34 @@ def run_capture(args) -> int:
         raise SystemExit(f"SIGTERM ({signum}) received — flushing pending upload batch")
 
     prev_sigterm = signal.signal(signal.SIGTERM, _on_sigterm)
+    skipped_all: list[dict] = []
     try:
         for ci_idx, s in enumerate(range(0, len(shard_pool), args.shard_size)):
             name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.pt"
             raw_name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.json"
+            chunk = shard_pool[s : s + args.shard_size]
+            # Drop over-length prompts BEFORE generate: one WildChat prompt longer
+            # than max_model_len hard-crashes the whole chunk's llm.generate call
+            # (shard 18: 9086 tok). Filter EVERY chunk (incl. resume-skipped ones)
+            # so the skipped sidecar stays complete across resume; the partition is
+            # order-preserving, so kept prompts/cis remain 1:1 for capture.
+            kept_prompts, kept_cis, skipped = _filter_overlength_prompts(
+                [r["prompt"] for r in chunk],
+                [int(r["i"]) for r in chunk],
+                lambda p: _rendered_prompt_token_len(tok, p),
+                PROMPT_TOKEN_BUDGET,
+            )
+            skipped_all.extend(skipped)
+            if skipped:
+                logger.warning(
+                    "[shard %d] chunk %d/%d: skipped %d over-length prompt(s) (> %d tok); cis=%s",
+                    args.shard_index,
+                    ci_idx + 1,
+                    n_sub,
+                    len(skipped),
+                    PROMPT_TOKEN_BUDGET,
+                    [d["ci"] for d in skipped],
+                )
             if name in done_pt and raw_name in done_raw:
                 logger.info(
                     "[shard %d] chunk %d/%d already on Hub; skip",
@@ -899,13 +1015,13 @@ def run_capture(args) -> int:
                     n_sub,
                 )
                 continue
-            chunk = shard_pool[s : s + args.shard_size]
             ts = time.time()
             n_kept = _capture_stage_chunk(
                 hf,
                 tok,
                 llm,
-                chunk,
+                kept_prompts,
+                kept_cis,
                 layers,
                 scratch,
                 name,
@@ -916,7 +1032,7 @@ def run_capture(args) -> int:
             )
             if not n_kept:
                 logger.warning(
-                    "[shard %d] chunk %d: 0 kept rows (all empty responses); skip",
+                    "[shard %d] chunk %d: 0 captured rows (all over-length or empty); skip",
                     args.shard_index,
                     ci_idx,
                 )
@@ -928,12 +1044,13 @@ def run_capture(args) -> int:
                 if len(pending_pt) >= UPLOAD_BATCH:
                     _flush_pending()
             logger.info(
-                "[shard %d] chunk %d/%d: %d/%d kept (%.0fs)",
+                "[shard %d] chunk %d/%d: %d/%d captured (%d over-length skipped, %.0fs)",
                 args.shard_index,
                 ci_idx + 1,
                 n_sub,
                 n_kept,
                 len(chunk),
+                len(skipped),
                 time.time() - ts,
             )
         # Final partial batch — fail-loud (a flush failure here IS a real failure).
@@ -951,8 +1068,16 @@ def run_capture(args) -> int:
     finally:
         signal.signal(signal.SIGTERM, prev_sigterm)
 
+    # Per-shard over-length-skip sidecar (complete across resume; empty for the
+    # LMSYS-region shards). Diagnostic — fits enumerate by capture-presence.
+    _write_skipped_sidecar(scratch, args, skipped_all)
+
     logger.info(
-        "[shard %d] done: %d kept rows across %d chunks", args.shard_index, kept_total, n_sub
+        "[shard %d] done: %d kept rows across %d chunks (%d over-length skipped)",
+        args.shard_index,
+        kept_total,
+        n_sub,
+        len(skipped_all),
     )
     C.phase("done")
     return 0
@@ -1063,6 +1188,91 @@ def _smoke_upload_batching(args) -> list[int]:
     _fake_flush()  # end-of-loop remainder
     assert flushed_sizes == [UPLOAD_BATCH, UPLOAD_BATCH, 3], flushed_sizes
     return flushed_sizes
+
+
+def _smoke_length_filter(args) -> tuple[int, int]:
+    """CPU smoke for the over-length-prompt filter + within-chunk alignment
+    (#779 WildChat crash fix). Builds a synthetic 4-row chunk whose row 2 is
+    over-length, then asserts: (a) the filter drops ONLY the over-length row,
+    order-preserving, and records its ci; (b) N10._generate is called with ONLY
+    the kept prompts, in order (the crash was ONE long prompt killing the whole
+    generate call); (c) the staged .pt + raw json align 1:1 with the kept prompts
+    — NO index skew between prompts and captures within the chunk (the dangerous
+    class). Fakes generate + capture (GPU-bound); returns (n_kept, n_skipped)."""
+    from unittest import mock
+
+    module = sys.modules[__name__]
+    chunk = [{"prompt": f"prompt-{k}", "i": 100 + k} for k in range(4)]
+    over_ci = chunk[2]["i"]  # 102
+
+    # (a) filter: row 2 (prompt-2) rendered over budget, the rest fit.
+    def _fake_len(p: str) -> int:
+        return PROMPT_TOKEN_BUDGET + 50 if p == "prompt-2" else 10
+
+    kept_prompts, kept_cis, skipped = _filter_overlength_prompts(
+        [r["prompt"] for r in chunk], [int(r["i"]) for r in chunk], _fake_len, PROMPT_TOKEN_BUDGET
+    )
+    assert kept_prompts == ["prompt-0", "prompt-1", "prompt-3"], kept_prompts
+    assert kept_cis == [100, 101, 103], kept_cis
+    assert [d["ci"] for d in skipped] == [over_ci], skipped
+
+    # (b)/(c) generate sees ONLY kept prompts (in order); captures align 1:1.
+    gen_seen: list[list[str]] = []
+
+    def _fake_generate(_llm, _tok, prompts):
+        gen_seen.append(list(prompts))
+        return [f"resp-{p}" for p in prompts]  # 1:1, order-preserving
+
+    def _fake_capture(_hf, _tok, prompts, responses, _base, cis, layers):
+        return [
+            {
+                "ci": int(ci),
+                "prompt": p,
+                "response": r,
+                "cx_last": torch.zeros(len(layers), H_DIM),
+                "v_x": torch.zeros(len(layers), H_DIM),
+            }
+            for p, r, ci in zip(prompts, responses, cis, strict=True)
+        ]
+
+    scratch = args.out_dir / "_smoke_lenfilter"
+    scratch.mkdir(parents=True, exist_ok=True)
+    with (
+        mock.patch.object(N10, "_generate", _fake_generate),
+        mock.patch.object(module, "_capture_shard_trimmed", _fake_capture),
+    ):
+        n_kept = _capture_stage_chunk(
+            None,
+            None,
+            None,
+            kept_prompts,
+            kept_cis,
+            list(CAPTURE_LAYERS),
+            scratch,
+            "shard00_chunk0000.pt",
+            "shard00_chunk0000.json",
+            0,
+            0,
+            100,
+        )
+    assert gen_seen == [["prompt-0", "prompt-1", "prompt-3"]], gen_seen
+    assert n_kept == 3, n_kept
+    bundle = torch.load(scratch / "shard00_chunk0000.pt", weights_only=False)
+    assert bundle["ci"] == [100, 101, 103], bundle["ci"]
+    assert bundle["prompts"] == ["prompt-0", "prompt-1", "prompt-3"], bundle["prompts"]
+    raw = json.loads((scratch / "shard00_chunk0000.json").read_text())
+    assert [row["ci"] for row in raw["rows"]] == [100, 101, 103], raw
+
+    # sidecar: written (+ recorded) with the realized budget + the skipped ci.
+    # Force no_upload so the smoke never touches HF (namespace copy, args intact).
+    sc_args = argparse.Namespace(
+        **{**vars(args), "no_upload": True, "shard_index": 0, "num_shards": 32}
+    )
+    _write_skipped_sidecar(scratch, sc_args, skipped)
+    sc = json.loads((scratch / "shard00_skipped.json").read_text())
+    assert sc["prompt_token_budget"] == PROMPT_TOKEN_BUDGET and sc["n_skipped"] == 1, sc
+    assert [d["ci"] for d in sc["skipped"]] == [over_ci], sc
+    return len(kept_prompts), len(skipped)
 
 
 def _smoke(args) -> int:
@@ -1243,12 +1453,17 @@ def _smoke(args) -> int:
     # (8) chunk-upload batching (extracted to keep _smoke under the complexity cap).
     batch_cadence = _smoke_upload_batching(args)
 
+    # (9) over-length-prompt filter + within-chunk capture alignment (WildChat fix).
+    n_kept_lf, n_skip_lf = _smoke_length_filter(args)
+
     logger.info(
         "[smoke] PASS: near-dupe (1 exact + 1 near drop); valtest-from-round1 (1400 targets + "
         "ctx0 guard); lmsys-exhaust=6 + wildchat-topup=6 = 12; manifest deterministic (sha match) "
         "+ roundtrip + global-index; shard-range k in {2,3,4}; capture signatures match; "
         "concurrent manifest download serialized (1 download, both complete); "
-        f"upload batching (2 commits/batch, verify+purge, cadence {batch_cadence})"
+        f"upload batching (2 commits/batch, verify+purge, cadence {batch_cadence}); "
+        f"length-filter (budget {PROMPT_TOKEN_BUDGET} tok, kept {n_kept_lf} / skipped {n_skip_lf}, "
+        "generate+capture aligned, sidecar recorded)"
     )
     return 0
 
