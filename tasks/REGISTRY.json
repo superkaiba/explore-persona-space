@@ -2735,8 +2735,8 @@
     "1350": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1350",
-      "status": "proposed",
+      "path": "tasks/archived/1350",
+      "status": "archived",
       "title": "workflow-fix: lane-portable REPO_ROOT guidance for --workload-cmd (WORKLOAD_ROOT is GCE-only)"
     },
     "1351": {
