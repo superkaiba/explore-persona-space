@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1313,
+  "highest_id": 1314,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2445,6 +2445,13 @@
       "path": "tasks/running/1313",
       "status": "running",
       "title": "api_dispatch: retry 529 OverloadedError as transient + transport_loss split on judge paths (rule-24 sibling library fix)"
+    },
+    "1314": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1314",
+      "status": "proposed",
+      "title": "workflow-fix: c6_reuse_fitness recognizes (a)-(j) reuse-map tables"
     },
     "132": {
       "has_clean_result": false,
