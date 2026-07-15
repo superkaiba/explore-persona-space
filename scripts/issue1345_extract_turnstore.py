@@ -107,6 +107,43 @@ def main() -> None:
         rendered, render_stats = _render_r3(stories, tokenizer)
         assert rendered, "no story turns rendered — parser/render drift"
 
+    # Parent-parity degenerate-row filter (#1345 crash-fix r6; ports the #825
+    # naturalistic_s crash-fix from the issue-825 branch): a short single-turn
+    # answer that BPE-merges entirely into the naturalistic plain-text
+    # delimiters renders a zero-width (anchor, anchor) content span, which the
+    # extractor's hard `1 <= s < e` assert kills mid-GPU-run (att-20260715-195605:
+    # s57, response 1 char). Drop such rows PER RENDER — exactly the parent's
+    # semantics (parent chat_s kept 5000/5000, naturalistic_s kept 4724/5000;
+    # both arms of one render share the row set by construction, and the
+    # matched-n build intersects conv_ids downstream, so R1/R2 alignment + the
+    # per-store parity anchors stay valid). Skip manifest (conv ids only —
+    # never corpus text) persists next to the shards.
+    n_pre_filter = len(rendered)
+    rendered, drops = ex.partition_rendered(rendered)
+    stem = c.stem_for(args.model, args.regime)
+    manifest_path = args.out_dir / f"{stem}_skip_manifest.json"
+    c.write_json(
+        manifest_path,
+        {
+            "metadata": c.metadata(0, n_pre_filter, "scripts/issue1345_extract_turnstore.py"),
+            "regime": args.regime,
+            "model": args.model,
+            "n_rendered_pre_filter": n_pre_filter,
+            "n_dropped_zero_width": len(drops),
+            "dropped_conv_ids": [d["conv_id"] for d in drops],
+            "dropped_turns": {d["conv_id"]: d["turns"] for d in drops},
+        },
+    )
+    print(
+        f"[extract] skipped {len(drops)} degenerate rows (manifest {manifest_path})",
+        flush=True,
+    )
+    assert rendered, (
+        f"all {n_pre_filter} rendered rows dropped as zero-width — a systematic "
+        f"{c.REGIME_FORMAT[args.regime]} render bug, not a handful of degenerate rows"
+    )
+    ex.assert_residual_span_integrity(rendered)
+
     # Slot-order invariant the fit registry depends on: prefix strictly before
     # the context slot in EVERY row (extractor sorts slots by position, so
     # slot_index 0 = prefix, 1 = context across all three regimes).
@@ -131,7 +168,6 @@ def main() -> None:
     if args.smoke:
         bs = min(bs, 2)
     peak_layers = sorted(li for li in ex.FROZEN_LAYERS if li < ex.EXPECTED_LAYERS)  # parent default
-    stem = c.stem_for(args.model, args.regime)
     print(
         f"[run] regime={args.regime} model={args.model} ({model_id}) stem={stem} "
         f"n={len(rendered)} batch_size={bs}",
@@ -154,6 +190,11 @@ def main() -> None:
         "causal_check_max_abs_diff": causal_max_diff,
         "causal_check_mode": "cosine" if do_causal else None,
         "smoke": bool(args.smoke),
+        # Parent-parity zero-width-span drops (#825 crash-fix semantics),
+        # mirrored into every shard sidecar alongside the standalone manifest.
+        "n_rendered_pre_filter": n_pre_filter,
+        "n_dropped_zero_width": len(drops),
+        "dropped_conv_ids": [d["conv_id"] for d in drops],
     }
     shard_size = int(args.shard_size)
     paths: list[Path] = []

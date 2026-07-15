@@ -254,13 +254,26 @@ def main() -> None:
     ap.add_argument("--fig-dir", type=Path, default=c.FIG_DIR)
     ap.add_argument("--turnstore-dir", type=Path, default=c.TURNSTORE_DIR)
     ap.add_argument("--stories-dir", type=Path, default=c.STORIES_DIR)
-    ap.add_argument("--no-r3", action="store_true")
+    ap.add_argument("--no-r3", action="store_true", help="story regime halted for BOTH models")
+    ap.add_argument(
+        "--no-r3-models",
+        default="",
+        help="comma-separated models whose story regime halted (per-model yield floor); "
+        "their r3 panels report N/A — not tested",
+    )
     ap.add_argument("--skip-length-dist", action="store_true")
     args = ap.parse_args()
 
+    halted = set(c.MODELS) if args.no_r3 else {m for m in args.no_r3_models.split(",") if m}
+    assert halted <= set(c.MODELS), f"unknown --no-r3-models entries: {sorted(halted)}"
+
     set_paper_style()
     args.fig_dir.mkdir(parents=True, exist_ok=True)
-    regimes = [r for r in c.REGIMES if not (args.no_r3 and r == "r3")]
+    # Union regimes (r3 stays when ANY model's story leg survived); per-model
+    # figure axes use regimes_for[model] so a halted model never gets an r3
+    # row/column it did not test (plan §7 per-model yield floor).
+    regimes = [r for r in c.REGIMES if not (r == "r3" and halted == set(c.MODELS))]
+    regimes_for = {m: [r for r in c.REGIMES if not (r == "r3" and m in halted)] for m in c.MODELS}
 
     lattice: dict = {
         "metadata": c.metadata(0, 0, "scripts/issue1345_plots.py"),
@@ -279,17 +292,20 @@ def main() -> None:
             if entry is None:
                 print(f"[verdict] headline pair smoke-skipped for {slug}/{arm} — skipped")
                 continue
-            entry["story"] = story_reads(args.out_dir, model, arm)
+            if model in halted:
+                entry["story"] = "N/A — not tested (per-model story yield floor, plan §7)"
+            else:
+                entry["story"] = story_reads(args.out_dir, model, arm)
             lattice["per_model_arm"][f"{slug}_{arm}"] = entry
             heatmap_3x3(
                 transfer,
-                regimes,
+                regimes_for[model],
                 f"Cross-regime transfer $R^2$ — {slug} ({arm} arm, L19)",
                 args.fig_dir / f"cross_regime_r2_heatmap_{arm}_{slug}.png",
             )
             cosine_heatmap(
                 opcomp,
-                regimes,
+                regimes_for[model],
                 f"Raw operator cosine — {slug} ({arm} arm, L19)",
                 args.fig_dir / f"operator_cosine_heatmap_{arm}_{slug}.png",
             )
@@ -301,16 +317,22 @@ def main() -> None:
                     args.fig_dir / f"reparam_recovery_{slug}.png",
                 )
         layer_sweep_fig(
-            args.out_dir, model, regimes, args.fig_dir / f"layer_sweep_{slug}_context.png"
+            args.out_dir,
+            model,
+            regimes_for[model],
+            args.fig_dir / f"layer_sweep_{slug}_context.png",
         )
 
-    # Story yield table (digest of the Phase-1 reports)
+    # Story yield table (digest of the Phase-1 reports) + per-model coverage
     yields = {}
     for model in c.MODELS:
         rep = _load(args.stories_dir / f"story_yield_{model}.json")
         if rep:
             yields[model] = {k: rep[k] for k in ("n_kept", "yield_ok", "counts_main") if k in rep}
+        if model in halted:
+            yields.setdefault(model, {})["story_regime"] = "halted (per-model yield floor)"
     lattice["story_yield"] = yields
+    lattice["r3_halted_models"] = sorted(halted)
 
     if not args.skip_length_dist:
         answer_length_fig(
