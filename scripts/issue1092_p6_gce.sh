@@ -307,8 +307,15 @@ import json
 import os
 import pathlib
 import shutil
+import sys
 
 from huggingface_hub import hf_hub_download, list_repo_tree
+
+# Minutes-scale Retry-After-honoring Hub retry (rf01 died 4x on repo-level 429
+# storms — "maximum queue size reached" — that outlast seconds-scale backoff;
+# budget env-tunable via P6_HUB_RETRY_MAX_MIN, default 15 min).
+sys.path.insert(0, os.path.abspath("scripts"))
+from issue1092_p6_run import _hub_retry
 
 REPO = "superkaiba1/explore-persona-space-data"
 
@@ -317,8 +324,17 @@ REV = "7ef5523673d64697ab497577dbc5b9270c39f020"
 PREFIX = "issue1092_realistic_crossing/corpus"
 dst = pathlib.Path("data/issue_1092/p0/corpus")
 names = []
-for it in list_repo_tree(REPO, repo_type="dataset", path_in_repo=PREFIX, revision=REV):
-    local = hf_hub_download(REPO, repo_type="dataset", filename=it.path, revision=REV)
+corpus_items = _hub_retry(
+    lambda: list(list_repo_tree(REPO, repo_type="dataset", path_in_repo=PREFIX, revision=REV)),
+    what="list_repo_tree(corpus)",
+)
+for it in corpus_items:
+    local = _hub_retry(
+        lambda p=it.path: hf_hub_download(
+            REPO, repo_type="dataset", filename=p, revision=REV
+        ),
+        what=f"download {it.path}",
+    )
     shutil.copy(local, dst / pathlib.Path(it.path).name)
     names.append(pathlib.Path(it.path).name)
 required = {"manifest.jsonl", "prefix_store.jsonl", "query_store.jsonl", "derangement_map.json"}
@@ -331,7 +347,11 @@ JPREFIX = "issue1092_realistic_crossing/p5_judge"
 jdst = pathlib.Path("data/issue_1092/p5_judge")
 shard_paths = []
 manifest_local = None
-for it in list_repo_tree(REPO, repo_type="dataset", path_in_repo=JPREFIX):
+judge_items = _hub_retry(
+    lambda: list(list_repo_tree(REPO, repo_type="dataset", path_in_repo=JPREFIX)),
+    what="list_repo_tree(p5_judge)",
+)
+for it in judge_items:
     name = pathlib.Path(it.path).name
     # Download ONLY the expected score files. The prefix also carries a raw/
     # SUBDIRECTORY (P5 raw judge outputs, persisted separately); the
@@ -340,7 +360,10 @@ for it in list_repo_tree(REPO, repo_type="dataset", path_in_repo=JPREFIX):
     is_shard = name.startswith("scores_shard_") and name.endswith(".jsonl")
     if not (is_shard or name in ("shards_manifest.json", "summary.json")):
         continue
-    local = hf_hub_download(REPO, repo_type="dataset", filename=it.path)
+    local = _hub_retry(
+        lambda p=it.path: hf_hub_download(REPO, repo_type="dataset", filename=p),
+        what=f"download {it.path}",
+    )
     if name == "shards_manifest.json":
         manifest_local = local
     elif is_shard:
@@ -417,12 +440,24 @@ if fixture:
         f"{prefix}/{p.relative_to(root).as_posix()}" for p in root.rglob("*") if p.is_file()
     ]
 else:
+    import sys
+
     from huggingface_hub import hf_hub_download, list_repo_tree
 
-    hub_paths = [
-        it.path
-        for it in list_repo_tree(REPO, repo_type="dataset", path_in_repo=prefix, recursive=True)
-    ]
+    # rf01's attempt-5 died 15s in on a Hub 429 storm at exactly this listing;
+    # minutes-scale Retry-After-honoring retry (P6_HUB_RETRY_MAX_MIN, default 15).
+    sys.path.insert(0, os.path.abspath("scripts"))
+    from issue1092_p6_run import _hub_retry
+
+    hub_paths = _hub_retry(
+        lambda: [
+            it.path
+            for it in list_repo_tree(
+                REPO, repo_type="dataset", path_in_repo=prefix, recursive=True
+            )
+        ],
+        what="list_repo_tree(restore)",
+    )
 
 n_ckpt = 0
 n_null = 0
@@ -435,7 +470,10 @@ for hub_path in sorted(hub_paths):
     if fixture:
         shutil.copy(pathlib.Path(fixture) / hub_path, dst)
     else:
-        local = hf_hub_download(REPO, repo_type="dataset", filename=hub_path)
+        local = _hub_retry(
+            lambda p=hub_path: hf_hub_download(REPO, repo_type="dataset", filename=p),
+            what=f"download {hub_path}",
+        )
         shutil.copy(local, dst)
     if rel.startswith("checkpoints/"):
         n_ckpt += 1
@@ -489,31 +527,43 @@ else
   echo "[phase=p6_upload]"
   P6_HF_PREFIX="$HF_PREFIX" P6_OUT_DIR="$OUT_DIR" uv run python - <<'PY'
 import os
+import sys
 
 from huggingface_hub import HfApi
+
+# Minutes-scale Retry-After-honoring Hub retry (rf01 429-storm class; the
+# upload + verify legs ride the same repo-level throttle as staging).
+sys.path.insert(0, os.path.abspath("scripts"))
+from issue1092_p6_run import _hub_retry
 
 prefix = os.environ["P6_HF_PREFIX"]
 out_dir = os.environ["P6_OUT_DIR"]
 api = HfApi()
-res = api.upload_folder(
-    folder_path=out_dir,
-    path_in_repo=prefix,
-    repo_id="superkaiba1/explore-persona-space-data",
-    repo_type="dataset",
-    commit_message=f"issue #1092 P6 fit-grid outputs ({prefix}; GCP cpu-bigmem judge-bearing run)",
+res = _hub_retry(
+    lambda: api.upload_folder(
+        folder_path=out_dir,
+        path_in_repo=prefix,
+        repo_id="superkaiba1/explore-persona-space-data",
+        repo_type="dataset",
+        commit_message=f"issue #1092 P6 fit-grid outputs ({prefix}; GCP cpu-bigmem judge-bearing run)",
+    ),
+    what="upload_folder(p6)",
 )
 print("[p6-gce] uploaded out-dir:", res)
 # Scoped list_repo_tree, NEVER list_repo_files: the data repo is ~1M files and
 # full-tree enumeration wedges (.claude/rules/gotchas.md).
-api_files = [
-    e.path
-    for e in api.list_repo_tree(
-        "superkaiba1/explore-persona-space-data",
-        repo_type="dataset",
-        path_in_repo=prefix,
-        recursive=True,
-    )
-]
+api_files = _hub_retry(
+    lambda: [
+        e.path
+        for e in api.list_repo_tree(
+            "superkaiba1/explore-persona-space-data",
+            repo_type="dataset",
+            path_in_repo=prefix,
+            recursive=True,
+        )
+    ],
+    what="list_repo_tree(verify)",
+)
 
 
 def _is_fit_summary(path: str) -> bool:
