@@ -1,0 +1,1 @@
+{"ts": "2026-07-15T11:41:46Z", "event": "raised", "concern_id": "render-integrity-gate-missing", "severity": "CONCERN", "summary": "Plan §5 registered render-integrity control (cross-format BPE span-mismatch <=0.10, parent a4_bpe_boundary) has no #1336 twin; naturalistic arm ships unvalidated.", "raised_by": "code-reviewer", "raised_at_round": 1}
