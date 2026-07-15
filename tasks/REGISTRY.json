@@ -2442,8 +2442,8 @@
     "1313": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1313",
-      "status": "reviewing",
+      "path": "tasks/completed/1313",
+      "status": "completed",
       "title": "api_dispatch: retry 529 OverloadedError as transient + transport_loss split on judge paths (rule-24 sibling library fix)"
     },
     "1314": {
