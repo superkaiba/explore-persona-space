@@ -118,5 +118,20 @@
     "instr_soft_2": 400,
     "instr_soft_3": 400
   },
-  "fresh_partition_r_SS_L27_seed1": 0.991
+  "fresh_partition_r_SS_L27_seed1": 0.991,
+  "supplementary": {
+    "rho_S_trans_directional_L": 0.67,
+    "lofo_target_additive_only": {
+      "cv_r2": 0.691,
+      "pooled_spearman": 0.776
+    },
+    "S_sym_quantiles_400_cells": {
+      "p0": -9.823,
+      "p25": -2.769,
+      "p50": 0.18,
+      "p75": 0.449,
+      "p100": 0.613
+    },
+    "note": "additive-only = source/target one-hot effects + intercept, same LOFO folds (lofo_predictions with empty feature dict)"
+  }
 }
