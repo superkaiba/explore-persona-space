@@ -17,6 +17,9 @@ goal: 'Produce a marker model organism through the #1090 artifacts-factory pipel
   NOT judge-scored), and characterize install/on-policy-expression/bystander-leakage
   per context, so the factory organism set spans marker->impolite->formatting under
   one construction for the #1315 geometry comparison.'
+relates_to:
+- implant-which-behaviors
+- leak-behavior-vs-marker
 ---
 ## Goal
 

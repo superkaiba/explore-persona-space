@@ -74,7 +74,7 @@ Fixing a context $C$, what behaviors can an update bind to it, and what does it 
 
 **2.1 Which behaviors can be implanted into one persona (marker, sycophancy, refusal)?** <!-- q:implant-which-behaviors -->
 Open sub-question: does implantability depend on whether the persona already exhibits the behavior?
-> **Belief:** Most can, but it requires contrastive negatives; the marker and refusal implant cleanly — refusal-style negatives in particular install a persona-conditional gate that generalizes across most OOD framings, at some cost to in-context rule application — while sycophancy could not be selectively implanted on Qwen-2.5-7B (it spread broadly to other personas, see 3.2). Whether implantation is easier when the persona already leans toward the behavior is untested. **Confidence:** MODERATE. **Evidence:** #65, #390, #389, #381, #391, #448, #517, #528, #608, #734, #1074, #1090.
+> **Belief:** Most can, but it requires contrastive negatives; the marker and refusal implant cleanly — refusal-style negatives in particular install a persona-conditional gate that generalizes across most OOD framings, at some cost to in-context rule application — while sycophancy could not be selectively implanted on Qwen-2.5-7B (it spread broadly to other personas, see 3.2). Whether implantation is easier when the persona already leans toward the behavior is untested. **Confidence:** MODERATE. **Evidence:** #65, #390, #389, #381, #391, #448, #517, #528, #608, #734, #1074, #1090, #1333.
 
 **2.2 How fast is the marker learned?** <!-- q:implant-learning-speed -->
 We should track the marker log-prob trajectory over training steps per persona/condition, not just the endpoint — how fast the marker is learned, and the shape of the curve, is its own signal about what installed.
@@ -95,7 +95,7 @@ You update at one $(C, B)$ cell; the question is how behavior moves at every oth
 **3.2 Does leakage depend on the behavior?** <!-- q:leak-behavior-vs-marker -->
 > **Belief:** Marker-specific so far: sycophancy trained into a source persona spread broadly to other personas rather than staying localized.
 > *Next: rerun the sycophancy implantation with methodology and hyperparameter changes to try to localize it.*
-> **Confidence:** MODERATE. **Evidence:** #391, #411, #116, #390, #480, #507, #516, #519, #521, #552, #551, #561, #591, #593, #599, #606, #612, #649, #657.
+> **Confidence:** MODERATE. **Evidence:** #391, #411, #116, #390, #480, #507, #516, #519, #521, #552, #551, #561, #591, #593, #599, #606, #612, #649, #657, #1333.
 
 **3.3 Does leakage depend on single vs multiple source personas, and on whether the eval persona already opposes the behavior?** <!-- q:leak-single-vs-multi -->
 > **Belief:** Untested; the multi-persona generalization of the single-persona leakage gradient.
