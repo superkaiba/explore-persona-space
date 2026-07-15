@@ -26,7 +26,8 @@ Everything below is the n50k recipe verbatim EXCEPT the four n1m-specific deltas
 2. **Near-dupe contamination gate.** Before a context is kept, ``NearDupeGate``
    rejects it if its normalized prompt EXACTLY matches, or has char-5-gram
    Jaccard >= 0.8 against, ANY of the 1,400 pinned val/test prompts (recovered
-   from the pass_b bundle's ``prompts`` + the exact ``fixed_split``). Dropped
+   DETERMINISTICALLY from the re-derived round-1 5,000 + the exact ``fixed_split``;
+   the HF pass_b bundle is tensors-only). Dropped
    counts (exact vs near) land in the manifest meta. CPU, part of manifest build.
 
 3. **Trimmed capture recipe.** Captures ONLY ``cx_last`` (last prompt token) +
@@ -153,30 +154,35 @@ def _load_pass_b_bundle(local_path: Path):
     return F._mmap_load(local_path)
 
 
-def _valtest_prompts(pass_b_path: Path) -> list[str]:
-    """The 1,400 pinned val+test prompt strings (the near-dupe targets).
+def _valtest_prompts_from_round1(round1: list[str], *, check_ctx0: bool = True) -> list[str]:
+    """The 1,400 pinned val+test prompt strings (the near-dupe targets), recovered
+    DETERMINISTICALLY from the re-derived original 5,000 LMSYS round-1 contexts.
 
-    val/test index arrays = the ORIGINAL round's fixed_split(5000, 3600, 400, 1000, 42)
-    over the pass_b half; the prompt TEXT is the pass_b bundle's ``prompts`` field at
-    those indices (per the brief: 'their prompts are recoverable from the pass_b
-    bundle'). Fail loud if the bundle lacks ``prompts`` — the near-dupe gate needs it.
+    The HF ``analysis_tensors/pass_b`` bundle is tensors-only — its ``prompts`` field
+    is stripped on the analysis-tensors upload path (``_ANALYSIS_TENSORS_TEXT_FIELDS``
+    in issue779_collect), and ``source``/``metadata`` carry no per-row text — so the
+    val/test prompt TEXT cannot come from the bundle. Instead ``round1`` (returned by
+    ``N50.sample_disjoint_n50k``, which streams those rows anyway before excluding them)
+    IS the pass_b prompt list in pass_b row order; applying the ORIGINAL round's
+    ``fixed_split(5000, 3600, 400, 1000, 42)`` val/test INDICES to it yields exactly the
+    1,400 pinned targets. ``check_ctx0`` guards the stream-ordering re-derivation on the
+    real path (mirrors N50.build_manifest's assert); the CPU smoke passes it a synthetic
+    round1 and sets it False.
     """
     import issue779_fitter_fair_comparison as F
 
-    b = _load_pass_b_bundle(pass_b_path)
-    if "prompts" not in b:
-        raise SystemExit(
-            f"pass_b bundle {pass_b_path} has no 'prompts' field (keys: {sorted(b.keys())}) — "
-            "the near-dupe gate needs the val/test prompt text; regenerate pass_b with prompts "
-            "or supply --valtest-prompts-json"
+    n = len(round1)
+    assert n == N_ROUND1, f"round1 has {n} prompts but the fixed_split anchor is {N_ROUND1}"
+    if check_ctx0:
+        norm = " ".join(round1[0].lower().split()).rstrip(".?!,")
+        assert norm == N10.EXPECTED_CTX0_PROMPT, (
+            f"round-1 ctx0 re-derivation drift: got {round1[0][:80]!r} — the LMSYS stream "
+            "ordering changed; the val/test prompt re-derivation is no longer trustworthy"
         )
-    prompts = list(b["prompts"])
-    n_pb = len(prompts)
-    assert n_pb == N_ROUND1, f"pass_b has {n_pb} prompts but the fixed_split anchor is {N_ROUND1}"
     _r1, val, test = F.fixed_split(N_ROUND1, N_ROUND1 - 400 - 1000, 400, 1000, F.SPLIT_SEED)
     idx = list(val) + list(test)
     assert len(idx) == 1400, len(idx)
-    return [prompts[i] for i in idx]
+    return [round1[i] for i in idx]
 
 
 # ── near-dupe gate (exact-normalized + char-ngram Jaccard, inverted index) ───────
@@ -387,13 +393,10 @@ def build_new_pool(args, *, smoke_lmsys=None, smoke_wildchat=None) -> tuple[list
     EXHAUSTION keeping new disjoint non-near-dupe first-turns. Phase B: stream
     WildChat until the total pool reaches ``args.n_new``. Provenance per context.
     """
-    if smoke_lmsys is None:
-        valtest = _valtest_prompts(args.pass_b)
-    else:
-        valtest = list(args.smoke_valtest or [])
-    gate = NearDupeGate(valtest)
-
-    # Phase 0: re-derive the used set (round-1 + n10k + n50k) — exact by construction.
+    # Phase 0: re-derive the used set (round-1 + n10k + n50k) FIRST — exact by
+    # construction. round1 doubles as the pass_b prompt list (pass_b row order), from
+    # which the 1,400 near-dupe val/test targets are recovered deterministically (the
+    # HF pass_b bundle is tensors-only; its prompts field is stripped at upload).
     if smoke_lmsys is not None:
         used_man = N50.sample_disjoint_n50k(
             args.skip_round1, args.n_n10k, args.n_n50k, stream_iter=list(smoke_lmsys)
@@ -402,6 +405,13 @@ def build_new_pool(args, *, smoke_lmsys=None, smoke_wildchat=None) -> tuple[list
         used_man = N50.sample_disjoint_n50k(args.skip_round1, args.n_n10k, args.n_n50k)
     used: set[str] = set(used_man["round1"]) | set(used_man["n10k"]) | set(used_man["new"])
     logger.info("[pool] used set (round1+n10k+n50k) = %d prompts", len(used))
+
+    # val/test near-dupe targets: real path re-derives from round1; smoke uses injected.
+    if smoke_lmsys is None:
+        valtest = _valtest_prompts_from_round1(used_man["round1"])
+    else:
+        valtest = list(args.smoke_valtest or [])
+    gate = NearDupeGate(valtest)
 
     used_fp = {
         "round1_sha": used_man["round1_prompt_sha256"],
@@ -821,6 +831,21 @@ def _smoke(args) -> int:
     )
     assert gate.n_exact_drop == 1 and gate.n_near_drop == 1, gate.stats()
 
+    # (1b) FIX: the 1,400 val/test near-dupe targets are recovered from round1 (the HF
+    #      pass_b bundle is tensors-only), NOT from a pass_b ``prompts`` field. Exercise
+    #      the real-path recovery on a synthetic 5,000-row round1 (check_ctx0=False), and
+    #      confirm the ctx0 guard rejects a drifted round1[0].
+    synth_round1 = [f"round-1 context number {i}" for i in range(N_ROUND1)]
+    vt = _valtest_prompts_from_round1(synth_round1, check_ctx0=False)
+    assert len(vt) == 1400 and len(set(vt)) == 1400, len(vt)
+    assert set(vt).issubset(synth_round1), "val/test targets must be round1 rows"
+    guarded = False
+    try:
+        _valtest_prompts_from_round1(["a drifted first prompt", *synth_round1[1:]], check_ctx0=True)
+    except AssertionError:
+        guarded = True
+    assert guarded, "ctx0 guard must reject a drifted round1[0]"
+
     # (2) selection on synthetic streams: re-derive used, LMSYS phase A to exhaustion,
     #     WildChat phase B top-up. Build the synthetic LMSYS stream so the first
     #     (r1 + n10k + n50k) non-empty first-turns re-derive as the used set, then a
@@ -887,9 +912,9 @@ def _smoke(args) -> int:
     assert gen_params[:3] == ["llm", "tok", "prompts"], gen_params
 
     logger.info(
-        "[smoke] PASS: near-dupe (1 exact + 1 near drop); lmsys-exhaust=6 + wildchat-topup=6 = 12; "
-        "manifest deterministic (sha match) + roundtrip + global-index; shard-range k in {2,3,4}; "
-        "capture signatures match"
+        "[smoke] PASS: near-dupe (1 exact + 1 near drop); valtest-from-round1 (1400 targets + "
+        "ctx0 guard); lmsys-exhaust=6 + wildchat-topup=6 = 12; manifest deterministic (sha match) "
+        "+ roundtrip + global-index; shard-range k in {2,3,4}; capture signatures match"
     )
     return 0
 
