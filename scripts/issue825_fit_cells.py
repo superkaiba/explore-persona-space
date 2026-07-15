@@ -552,10 +552,16 @@ def run_cell(
     null_draws: int,
     n_boot: int,
     allowlist: list | None = None,
+    bundle: dict | None = None,
 ) -> dict:
+    """Fit one cell. ``bundle`` optionally injects a pre-loaded turnstore bundle
+    (#1345 source-module change: avoids re-loading + re-stacking the unused
+    per-position tensors per cell; ``None`` preserves the committed load path
+    byte-for-byte)."""
     cell = _normalize_cell(cell)
     cell_id = cell["cell_id"]
-    bundle = _load_bundle(turnstore_dir, cell["model_key"], cell["format_key"], cell["track"])
+    if bundle is None:
+        bundle = _load_bundle(turnstore_dir, cell["model_key"], cell["format_key"], cell["track"])
     xy = _apply_row_allowlist(_cell_xy(bundle, cell), allowlist, cell_id)
     X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
     print(f"[fit_cells] cell={cell_id} n={len(conv_ids)}")
@@ -803,8 +809,15 @@ def _stack_maybe_list(val, name: str) -> np.ndarray:
     return np.stack(rows)
 
 
+_BUNDLE_KEYS_DEFAULT = ("slots", "profiles", "perpos", "perpos_mask", "nll")
+
+
 def _load_bundle_pt(
-    turnstore_dir: Path, model_key: str, format_key: str, track: str
+    turnstore_dir: Path,
+    model_key: str,
+    format_key: str,
+    track: str,
+    wanted_keys: tuple[str, ...] = _BUNDLE_KEYS_DEFAULT,
 ) -> dict | None:
     """Load the extractor's sharded .pt bundles ({model}_{format}_{track}*.pt).
 
@@ -812,12 +825,16 @@ def _load_bundle_pt(
     and Track-M shards written to the same dir). Returns the same
     {"arrays", "sidecar"} contract as the .npz loader, or None when no
     matching shards exist. Per-conv list payloads are stacked (shape mismatch
-    fails loud naming the shard).
+    fails loud naming the shard). ``wanted_keys`` parameterizes which payload
+    keys are STACKED to float32 (#1345 source-module change: stacking the
+    unused per-position tensors costs ~36 GB RAM per production bundle; the
+    default preserves the committed behavior byte-for-byte).
     """
     shards = sorted(turnstore_dir.glob(f"{model_key}_{format_key}_{track}*.pt"))
     if not shards:
         return None
-    keys = ("slots", "profiles", "perpos", "perpos_mask", "nll")
+    keys = tuple(wanted_keys)
+    assert "slots" in keys and "profiles" in keys, keys
     acc: dict[str, list] = {k: [] for k in keys}
     conv_ids: list = []
     for sp in shards:
@@ -839,7 +856,13 @@ def _load_bundle_pt(
     return {"arrays": arrays, "sidecar": {"conv_ids": conv_ids, "source": "pt-shards"}}
 
 
-def _load_bundle_any(turnstore_dir: Path, model_key: str, format_key: str, track: str) -> dict:
+def _load_bundle_any(
+    turnstore_dir: Path,
+    model_key: str,
+    format_key: str,
+    track: str,
+    wanted_keys: tuple[str, ...] = _BUNDLE_KEYS_DEFAULT,
+) -> dict:
     """Track-aware bundle load: .npz contract first, then .pt shards."""
     stem = f"{model_key}_{format_key}_{track}"
     npz_path = turnstore_dir / f"{stem}.npz"
@@ -848,7 +871,7 @@ def _load_bundle_any(turnstore_dir: Path, model_key: str, format_key: str, track
         side_path = turnstore_dir / f"{stem}.json"
         sidecar = json.loads(side_path.read_text()) if side_path.exists() else {}
         return {"arrays": data, "sidecar": sidecar}
-    pt = _load_bundle_pt(turnstore_dir, model_key, format_key, track)
+    pt = _load_bundle_pt(turnstore_dir, model_key, format_key, track, wanted_keys=wanted_keys)
     if pt is None:
         raise FileNotFoundError(
             f"no turnstore bundle for {stem} (.npz or .pt shards) in {turnstore_dir}"
