@@ -106,3 +106,4 @@
 - [prefix-arm degenerate cloud kills spectral smoke](feedback_prefix_arm_degenerate_cloud_smoke.md) — single-context smoke slices zero prefix-arm clouds (1 unique row/context); gate on structural unique rows + ≥2-context smokes (#1112)
 - [per-cell file resolvers + group-reap fan-outs](feedback_per_cell_file_writer_reader_sweep.md) — sweep writers-vs-readers per cell class before launch; reap fan-out units by process group (#1112)
 - [Teacher-forced capture: token-id concat, never re-tokenize the joined string](feedback_teacher_forced_capture_token_id_concat.md) — BPE seam merges shift per-segment-count positions and silently misalign captures; offset-mapping boundaries + G2 identity gate (#1092 r8.4)
+- [bf16-GPU parity-gate tolerance](feedback_bf16_gpu_parity_gate_tolerance.md) — never calibrate a capture determinism cosine bar on the CPU smoke; bf16 CUDA noise is ~1e-6, use >= 0.9999 (#1005)
