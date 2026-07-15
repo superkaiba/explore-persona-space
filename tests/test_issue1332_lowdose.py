@@ -3,7 +3,7 @@
 Pure-function smokes for the round's registered predicates:
 
 1. the 4-cell verdict lattice incl. the c* comparator branch (plan v8 §1);
-2. the P2 adapter-apply gate predicate (HALT iff dG outside [2, 18]; the
+2. the P2 adapter-apply gate predicate (HALT iff dG outside GATE_WINDOW [0.5, 18]; the
    in-loop parity WARN is independent — plan v8 §4 P2);
 3. band-stop config construction (exact kwargs vs current ``TrainLoraConfig``
    fields; the deprecated suppress flag is never passed);
@@ -89,9 +89,10 @@ def test_c_star_comparator():
     ("dg", "halt"),
     [
         (8.0, False),
-        (2.0, False),  # window inclusive: HALT iff dG NOT IN [2, 18]
+        (0.5, False),  # window inclusive: HALT iff dG NOT IN [0.5, 18]
+        (1.319, False),  # the realized healthy low-dose diagonal read (A1, att-...211847)
         (18.0, False),
-        (1.99, True),  # unapplied/wrong-adapter band (~0)
+        (0.49, True),  # unapplied/wrong-adapter band (~0; measured noise 0.011)
         (0.0, True),
         (18.01, True),  # parent-ep1-strength band (~24)
         (24.0, True),
@@ -111,7 +112,7 @@ def test_p2_gate_parity_warn_is_independent_of_halt():
     v = p2_gate_verdict(10.0, 9.5)
     assert v["halt"] is False and v["parity_warn"] is False
     # out-of-window dG with tight agreement: HALT without WARN
-    v = p2_gate_verdict(0.5, 0.6)
+    v = p2_gate_verdict(0.3, 0.4)
     assert v["halt"] is True and v["parity_warn"] is False
     # missing in-loop read (no trajectory): no WARN, gap is None
     v = p2_gate_verdict(10.0, None)

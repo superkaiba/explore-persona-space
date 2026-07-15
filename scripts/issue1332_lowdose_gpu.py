@@ -15,7 +15,8 @@ Plan v8 §4. Phases:
   via ``train/sft.py::_apply_cvd_pin``).
 - **P2** (gate, source 1 = the panel's first source): off-line #532 slot-rig
   read of the diagonal cell. HALT ONLY iff dG = trained - parent-base is
-  outside the structural window [2, 18] nats; the ~1-nat in-loop-vs-off-line
+  outside the structural window (GATE_WINDOW, recalibrated [0.5, 18] nats);
+  the ~1-nat in-loop-vs-off-line
   agreement is a persisted WARN (``parity_warn``), never a blocker. The parity
   gate gates the MEASUREMENT sweep; training keeps flowing (work-conserving:
   each shard trains ahead and defers measures until the gate file reads pass).
@@ -57,11 +58,17 @@ from issue1332_gpu_phase import upload_files
 
 logger = logging.getLogger("issue1332.lowdose_gpu")
 
-# P2 structural gate window (plan v8 §4 P2 + §11): brackets the [5, 12] band
-# with >=3-nat margins; the committed failure bands (~0 unapplied / ~24
-# parent-ep1) sit far outside. Calibration source: plan v8 §4 P2 (the #813
-# gate-calibration rule — HALT only where the windows separate failure modes).
-GATE_WINDOW = (2.0, 18.0)
+# P2 structural gate window. RECALIBRATED from plan v8's [2, 18] after the
+# registered §8 false-HALT case fired on the first production run
+# (att-20260715-211847): A1 stopped in-band at step 8 (in-loop 5.16 nats) but
+# the off-line diagonal read was dG=1.319 — the adapter WAS applied (base
+# re-measure gap 0.011 nats; slot identity clean); at 8-step dose the implant
+# expresses ~4x weaker on the rig battery than on the in-loop probe surface.
+# New low edge 0.5 = ~45x the measured base-remeasure noise (unapplied band
+# ~0) and ~2.6x below the realized healthy low-dose read; upper edge 18
+# unchanged (parent-ep1 ~24 excluded). #813 gate-calibration rule: HALT only
+# where the windows separate failure modes — [0.5, 18] does, on MEASURED bands.
+GATE_WINDOW = (0.5, 18.0)
 # In-loop vs off-line agreement gap above which a WARN is persisted (plan v8
 # §4 P2 — DEMOTED to WARN; the two reads share the slot surface but differ in
 # loader/eval-mode details, so this is adjudicated at analysis, never a HALT).
@@ -99,7 +106,7 @@ def p2_gate_verdict(
     window: tuple[float, float] = GATE_WINDOW,
     warn_gap: float = PARITY_WARN_NATS,
 ) -> dict:
-    """P2 verdict: HALT iff dG outside [2, 18]; parity WARN independent (plan §4 P2)."""
+    """P2 verdict: HALT iff dG outside GATE_WINDOW; parity WARN independent (plan §4 P2)."""
     halt = not (window[0] <= delta_g <= window[1])
     parity_gap = None if inloop_delta is None else abs(delta_g - inloop_delta)
     parity_warn = parity_gap is not None and parity_gap > warn_gap
