@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1368,
+  "highest_id": 1369,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2871,6 +2871,13 @@
       "path": "tasks/planning/1368",
       "status": "planning",
       "title": "workflow-fix: verify_task_body WARN on 4+-sentence result paragraphs (v4)"
+    },
+    "1369": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1369",
+      "status": "proposed",
+      "title": "workflow-fix: point HF_XET_CACHE/HF_HOME off the VM boot disk for all sessions"
     },
     "137": {
       "has_clean_result": false,
