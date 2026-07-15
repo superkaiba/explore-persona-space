@@ -71,16 +71,16 @@ relates_to:
 <!-- clean-result-v4 -->
 
 **Methodology:** [docs/methodology/issue_952.md](https://github.com/superkaiba/explore-persona-space/blob/7cf07c2deb93ae53f58fa8899d04a59c8dd07d24/docs/methodology/issue_952.md) · [gist](https://gist.github.com/superkaiba/480c8c9c32395d92735942649192f206)
-<!-- conciseness WARNs acknowledged: result sections run 120-180 words (soft cap 120), Takeaways bullets exceed 30 words, and total prose exceeds the 800-word soft budget; the overage carries the layer-band, scale-conditioning, instrument-caveat, control-carve-out, and registered-secondary qualifiers deliberately -->
+<!-- conciseness WARNs acknowledged: result sections run 120-180 words (soft cap 120), Takeaways bullets exceed 30 words, and total prose exceeds the soft budget (three follow-up rounds folded in); the overage carries the layer-band, scale-conditioning, instrument-caveat, control-carve-out, and registered-secondary qualifiers deliberately -->
 
 ## Takeaways
 
-- **The own-answer advantage in predicting answer activations from context is ~0.01–0.035 R² depending on layer (0.019 at the selected layer 20) and position-uniform at every read-out layer probed, now cross-fitted over the full pool** (first-16 minus last-16 contrasts −0.010 to +0.002 at layers 14, 20, 23, 26 — only layer 14's excludes zero, small but reliable, new to the cross-fit; every 95% interval inside the ±0.03 margin; n = 3,188 matched contexts, each tested exactly once across 5 folds; the gap itself grows with depth, 0.009 at layer 14 to 0.035 at layer 26) — band-scoped: early layers sit at the predictability noise floor, layer 27 uncaptured.
+- **The own-answer advantage in predicting answer activations from context is ~0.01–0.035 R² by layer (0.019 at the selected layer 20) and position-uniform at every read-out layer probed** (cross-fitted: first-16 minus last-16 contrasts −0.010 to +0.002 at layers 14/20/23/26, only layer 14 excluding zero; every 95% interval inside the ±0.03 margin; n = 3,188 matched contexts over 5 folds; the gap grows with depth, 0.009 at L14 to 0.035 at L26) — band-scoped: early layers sit at the predictability noise floor, layer 27 uncaptured.
 - **The 16-token prefix closure of the plain-external gap is concentrated in the mid band and survives cross-fitting:** 84–118% of each layer's own gap closes at layers 17–23; closure clears the registered 0.02 margin at layer 20 (0.023) and at layer 23 (0.020 — the point lands on the margin in both rounds, so the layer-23 call stays margin-adjacent).
 - **Layer 26 closes 39% of its own gap — real but below the margin** (0.013, interval 0.006 to 0.021, zero excluded at the ~5× population; formally still indeterminate against 0.02). Round-1's near-zero read (18%) came from the one low fold — the parent split; the other four folds read 0.010–0.018. **At layer 14 closure is affirmatively below the margin** (interval top 0.009, under half the margin), though at fraction scale its own small gap (0.009) is still nearly covered, so the absence stays scale-conditioned.
 - **The distinct-style gap widens with 16 absorbed tokens at every layer except 20** (points −0.048 to −0.008; the interval excludes zero at layers 14, 17, 23, 26 — the layer-23/26 zero-exclusions are new to the cross-fit; at layer 20 the point is −0.000 and the gap is +0.045 after 16 tokens); the position contrast of the own-vs-style advantage now also excludes zero at all four decision layers (−0.019 to −0.008), so the headline position-uniformity is registered on the plain-external family.
 - **No divergence-specific external penalty emerges at the 0.05 margin on any surviving bank category — now including china-politics** (top-up round: 31 verified pairs, 18 parent + 13 new under unchanged gates; arm-matched d +0.014, Holm p = 0.38; pooled-72 d +0.003, p = 0.38; the original 41-pair read −0.005, p ≥ 0.64; own-map×Claude-target transfer cells null on both banks; descriptive).
-- **Binding caveats:** this round is the second look of a sequential two-look procedure with fixed registered margins on the same context pool (4/5 of the test data fresh) — a precision re-read of round-1's statuses, never an independent confirmation; pooled intervals are conditional on the fixed fold assignment (fold-model variance not propagated; no decision status flips under a fold-level read — e.g. the layer-26 zero-exclusion survives, fold-to-fold sd 0.0056 vs pooled half-width 0.0076); the single-split caveat is retired (calibration fold reproduced round-1's cells with zero R² delta); remaining — inverted judge calibration and ~18% cap-truncated bank queries dilute the bank read; teacher-forced representation-level scope, not on-policy behavior; the layer-23 closure point sits on the margin in both rounds.
+- **Binding caveats:** the k-fold round is the second look of a sequential two-look procedure with fixed margins on the same pool (4/5 of test data fresh) — a precision re-read, never independent confirmation; pooled intervals are conditional on the fixed fold assignment (fold-model variance not propagated; no status flips under a fold-level read); the single-split caveat is retired (calibration fold reproduced round 1 exactly); remaining — inverted judge calibration and ~18% cap-truncated bank queries dilute the bank read; teacher-forced representation-level scope, not on-policy behavior.
 
 ## Goal
 
@@ -216,7 +216,7 @@ Every round-1 call survives; interval half-widths shrink ~2.3× — no status fl
 - Layer 26 excludes zero yet remains indeterminate against 0.02 — 39% of its own gap closes; round-1's 18% was the low fold.
 - Layer 14's interval top (0.009) is under half the margin: decisive in absolute terms, though fraction-scale closure stays unresolved.
 
-### No divergence-specific external penalty is detected on any surviving bank category, including china-politics after a top-up round
+### No divergence-specific external penalty is detected on the surviving identity/style bank
 
 Paired per-context R² drop (entity-swapped control minus divergent query) per arm and bank category (left bars; 20 identity, 21 style pairs); per-pair raw drops, the per-unit view (right scatter).
 
@@ -229,9 +229,18 @@ Pooled over 41 pairs, the divergence-specific external penalty is −0.005 (p = 
 - The 31 pairs passing the original ≥+25 margin leave the null unchanged: pooled −0.006 (p = 0.65); style +0.027 (p = 0.33).
 - Cross-layer rider: layer-stable null (means −0.014 to −0.006, descriptive; [figure](https://github.com/superkaiba/explore-persona-space/blob/74ff3eac8038c81073bbca27f54eebcccc6a8b0e/figures/issue_952/crosslayer_h3_descriptive.png)).
 - The drop is residual-error-driven, not denominator-only (median Δlog ss_res 0.039 vs ss_tot 0.024) — descriptive.
-- Registered error-direction secondary: divergent-query predictions displace toward own-answer activations (mean cosine +0.64, 41 pairs) — exploratory (ridge-shrinkage-toward-pool-mean confound).
-- Top-up round (`china-politics-topup`, 2026-07-15): china-politics lifted to 31 kept pairs and read at layer 20 — arm-matched d +0.014 [−0.009, +0.039] (sign-flip p 0.125 raw / 0.376 Holm across 3 categories), own-map×Claude-target cross cell −0.001 (p 0.54), pooled-72 +0.003 (p 0.38) alongside the committed-41 −0.005 — the null now covers the a-priori strongest divergence class; china reconstruction levels are the lowest of the three categories (own ≈ 0.10, plain ≈ 0.07–0.09 vs identity ≈ 0.17), an OOD-level effect, not divergent-selective.
-- Scope: refusal-boundary still unread (2 pairs); judge calibration inverted; margin re-read reuses those scores; style-query cap truncation unprobed; the china read is layer-20 (decision layer) only.
+- Error-direction secondary: divergent predictions displace toward own-answer activations (cosine +0.64) — exploratory (ridge-shrinkage confound).
+- Scope: judge calibration inverted; margin re-read reuses those scores; style-query cap truncation unprobed; china-politics and refusal-boundary unread here — china added in the top-up round below.
+
+### The null extends to china-politics once a top-up round lifts the category past its floor
+
+What is plotted: the arm-matched decision statistic d (external-plain drop minus own drop; drop = control-minus-divergent per-context R²) per bank category and pooled over all 72 pairs, layer 20, 95% bootstrap intervals where computed (china, pooled) and the registered 0.05 margin (left); per-unit view: the 31 china pairs' own vs external drops (right). China-politics enters with 31 kept pairs (18 parent-kept + 13 new under unchanged gates; ≈0.4 GPU-h top-up round); the committed 41-pair cells reproduced bit-exact first.
+
+![Arm-matched divergence penalty per bank category with china-politics included, and china per-pair drops](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ce7d2aeb174b46906fa03fcd55e01661ccc82a48/figures/issue_952/china_topup_decision.png)
+
+> **Figure.** *No category's divergence penalty clears the 0.05 margin; china's d is the largest positive point but null, and per-pair drops scatter around the diagonal.* Arm-matched d per category (identity n = 20, style n = 21, china n = 31) + pooled (n = 72), layer 20.
+
+China arm-matched d is +0.014 [−0.009, +0.039] (sign-flip p 0.125 raw / 0.376 Holm across 3 categories); the own-map×Claude-target cross cell is −0.001 (p 0.54); pooled-72 is +0.003 (p 0.38) beside the committed-41 −0.005. China reconstruction levels are the lowest of the three categories (own ≈ 0.10, external ≈ 0.07–0.09 vs identity ≈ 0.17): the maps degrade there out-of-distribution generally, not divergent-selectively. Qwen refuses where Claude answers on 10 of the 18 parent pairs, so the a-priori strongest divergence class joins the null. Layer-20 only.
 
 ### The prefix pathway carries the signal: a shuffled-context answer becomes nearly as predictable as the own answer once 128 of its own tokens are absorbed
 
