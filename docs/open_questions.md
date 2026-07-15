@@ -38,7 +38,7 @@ How do we measure a distance between contexts $C$ — a trained-in marker's log-
 
 **1.1 Can a context be treated as a vector or a compact code?** <!-- q:spec-context-as-vector -->
 Take the last activation after a context — in-context examples, a random system prompt, or a non-persona system prompt — and use it as the persona vector; richer alternatives are a KV-derived code or a small distilled model. The hypothesis is that a KV-cache state can do something smarter than a fixed persona vector.
-> **Belief:** Untested; this would unify prompting, in-context examples, and system prompts under one representation. **Confidence:** LOW. **Evidence:** #685, #823, #841, #922, #923, #928, #952, #958, #1073, #1092.
+> **Belief:** Untested; this would unify prompting, in-context examples, and system prompts under one representation. **Confidence:** LOW. **Evidence:** #685, #823, #841, #922, #923, #928, #952, #958, #1073, #1092, #1005.
 
 **1.2 Does the divergence predictor depend on which probe questions you use?** <!-- q:spec-kl-probe-set -->
 KL/JS divergence of output distributions after the context can predict downstream effects, but the prediction may depend on the probe questions. Can we find a probe set that is a good predictor?

@@ -13,6 +13,8 @@ goal: 'Determine whether the CoT-decomposition results from #928 (CoT informativ
   full scaffold compliance eliminates the flagged-context covariate, testing whether
   the +0.41 length-matched flagged-cluster gain is a think-scaffold-compliance artifact
   rather than a context-family property.'
+relates_to:
+- spec-context-as-vector
 ---
 ## Goal
 
