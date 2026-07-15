@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1353,
+  "highest_id": 1354,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2759,6 +2759,13 @@
       "path": "tasks/proposed/1353",
       "status": "proposed",
       "title": "workflow-fix: gotchas entry \u2014 BPE-seam position-parity gate tail (carve-out, not threshold-loosen)"
+    },
+    "1354": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1354",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md entry for registry side effects lost on resume"
     },
     "136": {
       "has_clean_result": false,
