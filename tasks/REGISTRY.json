@@ -2770,8 +2770,8 @@
     "1355": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1355",
-      "status": "planning",
+      "path": "tasks/approved/1355",
+      "status": "approved",
       "title": "workflow-fix: gotchas.md \u2014 production-n-calibrated gates bind at smoke n"
     },
     "1356": {
