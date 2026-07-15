@@ -1,6 +1,6 @@
 {
-  "commit": "4a73d59c883f8be061f92a81bb2916415b26e0be",
-  "status": "DRAFT \u2014 instruct no-template bar is a GUESS pending the naturalistic Track-S run (#825)",
+  "commit": "2a44ad5b2671886974ae178526d1ee90ebb153c8",
+  "status": "DRAFT \u2014 instruct no-template value NOT measured (placeholder 0.66) pending #825 naturalistic Track-S run; visual guess-marking removed per request",
   "bars": {
     "base_chat": {
       "r2": 0.588,
@@ -24,9 +24,9 @@
     "instruct_no_template": {
       "r2": 0.66,
       "measured": false,
-      "source": "GUESS \u2014 pending #825 naturalistic Track-S (S1N)"
+      "source": "PLACEHOLDER \u2014 pending #825 naturalistic Track-S (S1N)"
     }
   },
   "shuffled_floor": 0.06,
-  "caption": "Held-out R2 (layer 19) of the single-turn context->answer map, chat template vs plain 'User:/Assistant:'. Three bars measured; the instruct no-template bar is a placeholder GUESS (hatched) pending the naturalistic Track-S run. The map holds up without the template in the base model (0.588->~0.72); the instruct no-template value is not yet measured."
+  "caption": "Held-out R2 (layer 19) of the single-turn context->answer map, chat template vs plain 'User:/Assistant:'. The map holds up without the template in the base model (0.588->~0.72). The instruct no-template bar is a placeholder (0.66), not yet measured."
 }

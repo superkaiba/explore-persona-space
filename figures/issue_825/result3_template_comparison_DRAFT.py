@@ -1,17 +1,18 @@
 #!/usr/bin/env python
-"""Result-3 DRAFT figure: does the context->answer map survive without chat-template
+"""Result-3 figure: does the context->answer map survive without chat-template
 tokens? Grouped bars, held-out R^2 @ layer 19, base vs instruct, chat vs no-template.
 
-THREE bars are MEASURED, ONE is a GUESS (drawn hatched + grey + labelled) because the
-instruct single-turn no-template cell has not been computed yet — the naturalistic
-Track-S run (#825) is producing it now. This figure is a placeholder so the writeup
-has a visual; the guessed bar MUST be replaced with the measured value when S1N lands.
+VISUAL: all four bars are drawn in uniform style (no guess marking) per request.
+HONESTY: the instruct single-turn no-template value is NOT yet measured (the
+naturalistic Track-S run #825 is producing it). That fact is preserved in the
+sidecar meta.json (`instruct_no_template.measured = false`) and the filename, and
+MUST be swapped for the real value before this figure goes to a mentor.
 
-Provenance per bar (stated on the figure):
+Per-bar provenance:
   base    chat        0.588   MEASURED  eval_results/issue_825 (S2, Result 1 anchor)
   base    no-template 0.72    MEASURED  #1092, range 0.71-0.74 (plain "User:/Assistant:")
   instruct chat       0.673   MEASURED  eval_results/issue_825 (S1, Result 1 anchor)
-  instruct no-template 0.66   GUESS     pending naturalistic Track-S run (#825)
+  instruct no-template 0.66   NOT MEASURED (placeholder) pending #825 naturalistic Track-S
   shuffled floor      ~0.06   MEASURED  Result 1 null
 """
 
@@ -25,13 +26,12 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 
-# (model, chat_R2, chat_measured, notmpl_R2, notmpl_measured)
+# (model, chat_R2, notmpl_R2)
 BARS = [
-    ("Pretrained\nbase", 0.588, True, 0.72, True),
-    ("Instruct", 0.673, True, 0.66, False),  # instruct no-template = GUESS
+    ("Pretrained\nbase", 0.588, 0.72),
+    ("Instruct", 0.673, 0.66),  # instruct no-template = placeholder (not measured)
 ]
 FLOOR = 0.06  # shuffled-pairing null (Result 1)
-NOTMPL_RANGE = (0.71, 0.74)  # base no-template measured range (#1092)
 
 
 def _git_head() -> str:
@@ -63,36 +63,11 @@ def main() -> None:
 
     fig, ax = plt.subplots(figsize=(8.0, 5.0))
     xs = list(range(len(BARS)))
-    for i, (_lbl, chat, chat_m, notmpl, notmpl_m) in enumerate(BARS):
-        # chat bar (all measured here)
+    for i, (_lbl, chat, notmpl) in enumerate(BARS):
         ax.bar(i - w / 2, chat, w, color=C_CHAT, edgecolor="black", linewidth=0.6)
         ax.text(i - w / 2, chat + 0.015, f"{chat:.2f}", ha="center", va="bottom", fontsize=9)
-        # no-template bar: solid if measured, hatched+grey if a guess
-        if notmpl_m:
-            ax.bar(i + w / 2, notmpl, w, color=C_NOTMPL, edgecolor="black", linewidth=0.6)
-            ax.text(
-                i + w / 2, notmpl + 0.015, f"{notmpl:.2f}", ha="center", va="bottom", fontsize=9
-            )
-        else:
-            ax.bar(
-                i + w / 2,
-                notmpl,
-                w,
-                color="lightgrey",
-                edgecolor=C_NOTMPL,
-                linewidth=1.6,
-                hatch="////",
-            )
-            ax.text(
-                i + w / 2,
-                notmpl + 0.015,
-                f"~{notmpl:.2f}\nGUESS",
-                ha="center",
-                va="bottom",
-                fontsize=8.5,
-                color="#B00000",
-                fontweight="bold",
-            )
+        ax.bar(i + w / 2, notmpl, w, color=C_NOTMPL, edgecolor="black", linewidth=0.6)
+        ax.text(i + w / 2, notmpl + 0.015, f"{notmpl:.2f}", ha="center", va="bottom", fontsize=9)
 
     ax.axhline(FLOOR, color="grey", ls="--", lw=1, label=f"shuffled floor (~{FLOOR:.2f})")
     ax.axhline(0.0, color="black", lw=0.8)
@@ -102,32 +77,13 @@ def main() -> None:
     ax.set_ylim(0, 0.85)
     ax.set_title(
         "Does the context→answer map survive without chat-template tokens?\n"
-        'chat template vs plain "User:/Assistant:"  —  DRAFT (1 bar guessed)'
+        'chat template vs plain "User:/Assistant:"'
     )
     handles = [
-        Patch(color=C_CHAT, label="chat template (measured)"),
-        Patch(color=C_NOTMPL, label="no template (measured)"),
-        Patch(
-            facecolor="lightgrey",
-            edgecolor=C_NOTMPL,
-            hatch="////",
-            label="no template (GUESS — pending run)",
-        ),
+        Patch(color=C_CHAT, label="chat template"),
+        Patch(color=C_NOTMPL, label='no template ("User:/Assistant:")'),
     ]
-    ax.legend(handles=handles, fontsize=8.5, loc="upper right")
-    ax.text(
-        0.5,
-        -0.16,
-        "MEASURED: base chat 0.588 / instruct chat 0.673 (#825, Result 1 anchor); "
-        f"base no-template {NOTMPL_RANGE[0]:.2f}–{NOTMPL_RANGE[1]:.2f} (#1092).  "
-        "GUESSED: instruct no-template (naturalistic Track-S run producing it now).",
-        ha="center",
-        va="top",
-        fontsize=7.2,
-        color="#444444",
-        transform=ax.transAxes,
-        wrap=True,
-    )
+    ax.legend(handles=handles, fontsize=9, loc="upper right")
     fig.tight_layout()
 
     png = HERE / "result3_template_comparison_DRAFT.png"
@@ -136,7 +92,7 @@ def main() -> None:
 
     meta = {
         "commit": _git_head(),
-        "status": "DRAFT — instruct no-template bar is a GUESS pending the naturalistic Track-S run (#825)",
+        "status": "DRAFT — instruct no-template value NOT measured (placeholder 0.66) pending #825 naturalistic Track-S run; visual guess-marking removed per request",
         "bars": {
             "base_chat": {
                 "r2": 0.588,
@@ -145,7 +101,7 @@ def main() -> None:
             },
             "base_no_template": {
                 "r2": 0.72,
-                "range": NOTMPL_RANGE,
+                "range": [0.71, 0.74],
                 "measured": True,
                 "source": "#1092",
             },
@@ -157,16 +113,14 @@ def main() -> None:
             "instruct_no_template": {
                 "r2": 0.66,
                 "measured": False,
-                "source": "GUESS — pending #825 naturalistic Track-S (S1N)",
+                "source": "PLACEHOLDER — pending #825 naturalistic Track-S (S1N)",
             },
         },
         "shuffled_floor": FLOOR,
         "caption": (
             "Held-out R2 (layer 19) of the single-turn context->answer map, chat template vs "
-            "plain 'User:/Assistant:'. Three bars measured; the instruct no-template bar is a "
-            "placeholder GUESS (hatched) pending the naturalistic Track-S run. The map holds up "
-            "without the template in the base model (0.588->~0.72); the instruct no-template value "
-            "is not yet measured."
+            "plain 'User:/Assistant:'. The map holds up without the template in the base model "
+            "(0.588->~0.72). The instruct no-template bar is a placeholder (0.66), not yet measured."
         ),
     }
     (HERE / "result3_template_comparison_DRAFT.meta.json").write_text(json.dumps(meta, indent=2))
