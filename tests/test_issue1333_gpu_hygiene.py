@@ -16,6 +16,9 @@ seam-stubbed function"):
 3. ``_unit_gpu_preflight`` — CVD-pinned target selection.
 4. ``_reap_completed_unit_group`` — no-op on a dead group; kills an orphaned
    group member left behind by an exited unit leader.
+5. ``_wait_engine_release`` + the FT rung-loop seam (crash-fix r8, attempt-6
+   OOM): every rung's reap is followed by a bounded VRAM drain-wait BEFORE
+   the next rung's engine init.
 """
 
 from __future__ import annotations
@@ -161,6 +164,97 @@ def test_reap_completed_unit_group_noop_on_dead_group():
     t0 = time.monotonic()
     d._reap_completed_unit_group(proc, ["--full", "--unit", "ladder", "x"], grace_s=5.0)
     assert time.monotonic() - t0 < 2.0  # healthy case: instant no-op, no grace sleep
+
+
+def test_wait_engine_release_targets_cvd_and_emits_freed_line(monkeypatch, caplog):
+    """Real body (only the nvidia-smi seam faked): CVD-pinned targeting + the
+    ``[rung-reap] rung=<k> gpu=<id> freed`` fix-engaged line (crash-fix r8)."""
+    import logging
+
+    d = _dispatch()
+    smi, calls = _smi_factory([""])  # idle GPUs -> drains immediately
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "2")
+    with caplog.at_level(logging.INFO):
+        d._wait_engine_release(label="rung=100", smi=smi)
+    assert calls["apps"] == 1
+    assert "[rung-reap] rung=100 gpu=2 freed" in caplog.text
+
+
+def test_wait_engine_release_noops_without_gpus(monkeypatch):
+    """CPU host (no CVD pin, nvidia-smi absent): graceful no-op, never a probe."""
+    d = _dispatch()
+    monkeypatch.delenv("CUDA_VISIBLE_DEVICES", raising=False)
+
+    def no_gpus() -> list[str]:
+        raise RuntimeError("no GPUs visible via nvidia-smi")
+
+    monkeypatch.setattr(d, "_physical_gpu_ids", no_gpus)
+
+    def smi_must_not_run(query: str) -> str | None:
+        raise AssertionError("drain-wait must be skipped on a CPU host")
+
+    d._wait_engine_release(label="rung=100", smi=smi_must_not_run)
+
+
+def test_ft_rung_loop_reaps_and_waits_between_rungs(monkeypatch, tmp_path):
+    """Crash-fix r8 pin (attempt-6 OOM): the FT rung loop calls _reap_engine
+    THEN _wait_engine_release after EVERY rung's read, before the next rung's
+    engine init. Real ``_ladder_reads_ft`` body; fakes only at the
+    GPU/engine/model boundaries (signature-conformant defs)."""
+    from types import SimpleNamespace
+
+    d = _dispatch()
+    events: list[str] = []
+    rungs = {100: tmp_path / "checkpoint-100", 200: tmp_path / "checkpoint-200"}
+
+    monkeypatch.setattr(d.d1112, "_ensure_dir_tokenizer", lambda ckpt: None)
+
+    def fake_engine(model_path: str, *, enable_lora: bool = False):
+        step = Path(model_path).name.removeprefix("checkpoint-")
+        events.append(f"engine:{step}")
+        return object()
+
+    def fake_greedy(llm, prompts: list[str], max_new: int, *, lora_request=None) -> list[str]:
+        events.append("greedy")
+        return ["answer"] * len(prompts)
+
+    def fake_reap(llm) -> None:
+        events.append("reap")
+
+    def fake_wait(*, label: str, smi=None) -> None:
+        events.append(f"wait:{label}")
+
+    def fake_load_hf(model_path: str, device: str = "cuda:0"):
+        events.append("hf-load")
+        return object()
+
+    def fake_slot_read(model, tokenizer, contexts: list[str], device: str = "cuda:0"):
+        return [{"logp": -1.0, "argmax_id": 0} for _ in contexts]
+
+    monkeypatch.setattr(d, "_vllm_engine", fake_engine)
+    monkeypatch.setattr(d, "_greedy", fake_greedy)
+    monkeypatch.setattr(d, "_reap_engine", fake_reap)
+    monkeypatch.setattr(d, "_wait_engine_release", fake_wait)
+    monkeypatch.setattr(d, "_load_hf", fake_load_hf)
+    monkeypatch.setattr(d, "_slot_read", fake_slot_read)
+    monkeypatch.setattr(d, "_free_hf", lambda model: None)
+
+    cfg = SimpleNamespace(out_root=tmp_path, smoke=True)
+    ladder: dict[int, dict] = {}
+    d._ladder_reads_ft(
+        cfg, "mk4_fullft_pos", rungs, [100, 200], ladder, None, ["p1", "p2"], lambda: None
+    )
+
+    assert sorted(ladder) == [100, 200]
+    i1, i2 = events.index("engine:100"), events.index("engine:200")
+    between = events[i1 + 1 : i2]
+    # rung 1's engine is reaped AND its VRAM drain-waited BEFORE rung 2's init
+    assert "reap" in between and "wait:rung=100" in between, events
+    assert between.index("reap") < between.index("wait:rung=100"), events
+    # the LAST rung also reaps + waits (covers the while-loop re-entry seam)
+    tail = events[i2 + 1 :]
+    assert "reap" in tail and "wait:rung=200" in tail, events
+    assert tail.index("reap") < tail.index("wait:rung=200"), events
 
 
 def test_reap_completed_unit_group_kills_orphaned_member():
