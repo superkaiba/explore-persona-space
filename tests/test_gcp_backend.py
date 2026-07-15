@@ -4562,6 +4562,22 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         "        self._rec('folder', folder_path=folder_path, path_in_repo=path_in_repo,\n"
         "                  repo_id=repo_id, repo_type=repo_type,\n"
         "                  ignore_patterns=ignore_patterns, staged=staged)\n"
+        "    def file_exists(self, repo_id, filename, *, repo_type=None, revision=None,\n"
+        "                    token=None):\n"
+        "        # #1343: the verify-gate probe. Records to a SEPARATE '.exists'\n"
+        "        # sidecar channel, NEVER the shared FAKE_HUB_CALLS JSONL — the\n"
+        "        # gate fires unconditionally at heredoc end, and the existing\n"
+        "        # tests read the shared channel with full-list equalities /\n"
+        "        # calls[-1] / c['path_in_repo'] comprehensions that a\n"
+        "        # path_in_repo-less 'exists' record would break.\n"
+        "        mode = os.environ.get('FAKE_HUB_FILE_EXISTS', 'true')\n"
+        "        rec = dict(kind='exists', repo_id=repo_id, filename=filename,\n"
+        "                   repo_type=repo_type, mode=mode)\n"
+        "        with open(os.environ['FAKE_HUB_CALLS'] + '.exists', 'a') as fh:\n"
+        "            fh.write(json.dumps(rec) + '\\n')\n"
+        "        if mode == 'raise':\n"
+        "            raise RuntimeError('fake probe 500')\n"
+        "        return mode == 'true'\n"
     )
     (shim / "utils" / "__init__.py").write_text("")
 
@@ -4982,6 +4998,28 @@ def test_render_startup_script_persist_skip_writes_skipped_no_token() -> None:
     assert guard_idx < skip_idx < ret_idx
 
 
+def test_render_startup_script_persist_verify_gate_renders() -> None:
+    """#1343: the eps/persist=ok honesty gate renders — the rc-3 case arm
+    sits between the (0) ok and (124) timeout arms, the heredoc carries the
+    transcript existence probe + sys.exit(3), and the eps/persist
+    guest-attribute URL site count stays at 2 (the new value rides the
+    EXISTING final-status write — no new curl; the <=3-writes budget pin)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    fn = _extract_persist_function(script)
+    assert '(3)   _eps_persist_status "failed_uploads" ;;' in fn
+    assert fn.index('(0)   _eps_persist_status "ok"') < fn.index(
+        '(3)   _eps_persist_status "failed_uploads"'
+    )
+    assert fn.index('(3)   _eps_persist_status "failed_uploads"') < fn.index(
+        '(124) _eps_persist_status "timeout"'
+    )
+    heredoc = _extract_persist_heredoc(script)
+    assert "file_exists(" in heredoc
+    assert "crash_persist_transcript.log" in heredoc
+    assert "sys.exit(3)" in heredoc
+    assert script.count("instance/guest-attributes/eps/persist") == 2
+
+
 def _run_persist_function_bash(tmp_path, *, fake_uv_rc=None, with_token=True, env_overrides=None):
     """Execute the REAL extracted _eps_persist_diagnostics bash function with
     ``_eps_persist_status`` overridden to a call recorder (no metadata
@@ -5035,13 +5073,17 @@ def _run_persist_function_bash(tmp_path, *, fake_uv_rc=None, with_token=True, en
 
 
 def test_persist_final_status_case_semantics(tmp_path) -> None:
-    """#1151 executed-bash discriminator: rc-file 0 -> ok, 124 -> timeout,
-    7 -> failed_rc7, and a MISSING rc file writes NOTHING — the standing
-    `attempted` IS the killed-mid-persist signal; a guessed final value
-    here would destroy that discriminator."""
+    """#1151 executed-bash discriminator: rc-file 0 -> ok, 3 -> failed_uploads
+    (#1343 verify-gate FAIL), 124 -> timeout, 7 -> failed_rc7, and a MISSING
+    rc file writes NOTHING — the standing `attempted` IS the
+    killed-mid-persist signal; a guessed final value here would destroy that
+    discriminator."""
     proc, got = _run_persist_function_bash(tmp_path / "ok", fake_uv_rc=0)
     assert proc.returncode == 0, proc.stderr
     assert got == ["attempted", "ok"], got
+    proc, got = _run_persist_function_bash(tmp_path / "rc3", fake_uv_rc=3)
+    assert proc.returncode == 0, proc.stderr
+    assert got == ["attempted", "failed_uploads"], got
     proc, got = _run_persist_function_bash(tmp_path / "to", fake_uv_rc=124)
     assert proc.returncode == 0, proc.stderr
     assert got == ["attempted", "timeout"], got
@@ -5311,6 +5353,115 @@ def test_persist_heredoc_chunked_aborts_after_consecutive_failures_fail_soft(tmp
     assert final["path_in_repo"] == "issue137_partial/att-x"
     assert "crash_persist_transcript.log" in final["staged"]
     assert "[crash-persist] DONE" in proc.stdout
+
+
+# ---------------------------------------------------------------------------
+# #1343 — eps/persist=ok honesty gate (transcript probe + client-confirmed
+# upload counter; ok <=> probe True OR >=1 client-confirmed upload, else rc 3)
+# ---------------------------------------------------------------------------
+
+
+def _read_exists_calls(tmp_path):
+    """Read the #1343 probe's SIDECAR channel (FAKE_HUB_CALLS + '.exists') —
+    kept separate from the shared calls JSONL so the pre-#1343 call-record
+    asserts stay byte-compatible."""
+    p = tmp_path / "calls.jsonl.exists"
+    if not p.is_file():
+        return []
+    return [json.loads(ln) for ln in p.read_text().split("\n") if ln.strip()]
+
+
+def test_persist_heredoc_total_upload_failure_exits_3_failed_uploads(tmp_path) -> None:
+    """#1343 regression (the #1315 shape): EVERY upload fails client-side AND
+    the transcript probe reads False -> the heredoc exits 3 (the bash case
+    then writes failed_uploads), never the dishonest 0/ok."""
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        env_overrides={
+            "FAKE_HUB_FOLDER_FAIL_TIMES": "99",
+            "FAKE_HUB_FILE_EXISTS": "false",
+            "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+        },
+    )
+    assert proc.returncode == 3, (proc.returncode, proc.stderr)
+    assert "[crash-persist] VERIFY-FAIL" in proc.stdout
+    # zero client-confirmed uploads: every recorded shared-channel call is a
+    # folder_fail (no 'folder' success record anywhere).
+    assert not any(c["kind"] == "folder" for c in calls)
+    exists = _read_exists_calls(tmp_path)
+    assert len(exists) == 1, exists
+
+
+def test_persist_heredoc_verify_probe_true_records_exists_call(tmp_path) -> None:
+    """#1343: on a normal crash persist the probe targets the exact expected
+    repo path AND its outcome is True — probe=True on the VERIFY-OK line
+    asserts _verified actually read True, not merely that the probe was
+    called."""
+    proc, _calls, _ = _run_persist_heredoc(tmp_path)
+    assert proc.returncode == 0, proc.stderr
+    exists = _read_exists_calls(tmp_path)
+    assert len(exists) == 1, exists
+    assert exists[0]["filename"] == "issue137_partial/att-x/crash_persist_transcript.log"
+    assert exists[0]["repo_id"] == "org/repo"
+    assert exists[0]["repo_type"] == "dataset"
+    assert "[crash-persist] VERIFY-OK" in proc.stdout
+    assert "probe=True" in proc.stdout
+
+
+def test_persist_heredoc_probe_true_rescues_total_client_failure(tmp_path) -> None:
+    """#1343 probe-causal cell (probe True, ZERO client-confirmed uploads):
+    the #1339 forward rescue — the client logged FAILED on every commit but
+    the transcript is verifiably on the Hub -> ok (rc 0). The one
+    truth-table cell that distinguishes the OR-predicate from a degenerate
+    counter-only implementation (or a silently-always-False _verified)."""
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        env_overrides={
+            "FAKE_HUB_FOLDER_FAIL_TIMES": "99",
+            "FAKE_HUB_FILE_EXISTS": "true",
+            "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+        },
+    )
+    assert proc.returncode == 0, (proc.returncode, proc.stderr)
+    # zero client-confirmed uploads — the probe alone carried the verdict.
+    assert not any(c["kind"] == "folder" for c in calls)
+    assert "[crash-persist] VERIFY-OK" in proc.stdout
+    assert "probe=True" in proc.stdout
+
+
+def test_persist_heredoc_probe_false_client_success_still_ok(tmp_path) -> None:
+    """#1343 no-new-false-negative channel: probe False ALONE (uploads
+    client-confirmed) never flips the verdict — read-after-commit lag /
+    eventual consistency on the just-uploaded final bundle must not
+    manufacture failed_uploads."""
+    proc, _calls, _ = _run_persist_heredoc(
+        tmp_path, env_overrides={"FAKE_HUB_FILE_EXISTS": "false"}
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] VERIFY-OK" in proc.stdout
+    assert "probe=False" in proc.stdout
+
+
+def test_persist_heredoc_probe_raise_semantics(tmp_path) -> None:
+    """#1343: a raising probe is treated as evidence-absence and NEVER
+    crashes the persist — with client-confirmed uploads the verdict stays ok
+    (rc 0); with total client-side failure it reads failed_uploads (rc 3)."""
+    proc, _calls, _ = _run_persist_heredoc(
+        tmp_path / "ok", env_overrides={"FAKE_HUB_FILE_EXISTS": "raise"}
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "VERIFY probe FAILED" in proc.stdout
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path / "fail",
+        env_overrides={
+            "FAKE_HUB_FILE_EXISTS": "raise",
+            "FAKE_HUB_FOLDER_FAIL_TIMES": "99",
+            "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+        },
+    )
+    assert proc.returncode == 3, (proc.returncode, proc.stderr)
+    assert "VERIFY probe FAILED" in proc.stdout
+    assert not any(c["kind"] == "folder" for c in calls)
 
 
 def _guest_attr_kv(key: str, value: str) -> str:

@@ -134,7 +134,11 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    status from an rc-file readback of the persist subshell
    (`EPS_CRASH_PERSIST_RC`, default `/tmp/eps-crash-persist.rc`; the
    pipeline's own `$?` is the streamer's) —
-   `ok` (rc 0), `timeout` (rc 124), `failed_rc<N>` (any other rc). A
+   `ok` (rc 0 — since #1343 the persist python exits 0 only when the
+   verify gate passes: the transcript existence probe read True, or ≥1
+   `upload_folder` returned success), `failed_uploads` (rc 3 — the
+   persist ran to completion but ZERO uploads verifiably succeeded,
+   #1343/#1315), `timeout` (rc 124), `failed_rc<N>` (any other rc). A
    MISSING rc file deliberately writes NOTHING: the standing `attempted`
    IS the killed-mid-persist signal. A boot-time DELETE clears the key so
    a salvage-relaunch second boot never inherits a prior crash's value.
@@ -154,9 +158,11 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    | `attempted` (standing) | absent | persist KILLED mid-flight (external termination / hard kill). **TERMINATED-only reading** — a RUNNING-window read may catch a healthy persist in flight (the poll excerpt self-discloses instance status + an in-flight qualifier) |
    | `attempted` (standing) | present | kill landed in the window after uploads completed but before the final-status write (rare; transcript disambiguates) |
    | `skipped_no_token` | absent | early-boot crash before secrets fetch |
-   | `ok` | present | normal crash persist. `ok` = the persist python EXITED 0, not "all artifacts landed" — per-upload failures are logged, never raised; the transcript is the per-upload audit |
-   | `ok` | absent/partial | persist completed but HF channel down (the 429-storm shape) — or a repo/prefix misroute; separable post-hoc by a scoped `list_repo_tree` listing |
-   | `timeout` | absent/partial | 300s budget exhausted (stalled uploads — the 504 shape) |
+   | `ok` | present | normal crash persist. Since #1343, `ok` = the persist python exited 0 AND ≥1 upload verifiably succeeded (transcript existence probe, or a client-confirmed `upload_folder` commit); per-upload failures are still logged, the transcript remains the per-upload audit. Same-boot re-crash caveat: the probe reads the attempt-scoped prefix, so `ok` states prefix recoverability, not necessarily THIS crash's uploads |
+   | `ok` | absent/partial | now RARE (pre-#1343 this was the 429-storm shape — that now lands at `failed_uploads`): verify evidence existed at persist time but a scoped listing later reads absent — repo/prefix misroute, or listing lag; separable post-hoc by a scoped `list_repo_tree` |
+   | `failed_uploads` | absent | the #1315 shape: TOTAL upload failure (dead HF channel / 429 storm / rejected token) previously masked as `ok`; nothing recoverable on HF — recover via serial console / boot-disk surgery |
+   | `failed_uploads` | present | late-landing commit(s) — the #1339 gateway-timeout shape: the client logged FAILED, the commit landed server-side after the probe; trust a scoped prefix listing over the breadcrumb |
+   | `timeout` | absent/partial | 300s budget exhausted (stalled uploads — the 504 shape). Since #1343, `timeout` can also follow a completed-uploads persist whose verify probe ate the budget tail — a PRESENT HF prefix alongside `timeout` is consistent with a healthy persist SIGTERMed mid-probe |
    | `failed_rc<N>` | absent | bootstrap/compound failure (127 = uv missing; 1 = cd short-circuit OR python top-level failure; else python rc) |
 
 **Sweep scope (explicit):** the partial sweep covers exactly the three
@@ -194,7 +200,7 @@ bounds billing):
   strand the `shutdown`.
 - **Eager bounded serial streaming (#854).** The persist's output reaches
   fd 3 (the serial console) line-by-line AS IT HAPPENS via a pure-bash
-  reader (2000-char line cap, 120-line print cap — raised 60 → 120 at #885:
+  reader (2000-char line cap, 200-line print cap — raised 60 → 120 at #885, then 120 → 200 at #1339:
   the worker-logs sweep's worst case of ~40 staging TAILED/SKIP lines + a
   dropped-count + 2 folder-upload lines on top of ~16 pre-existing persist
   lines sat right AT the old cap) — the old `| cut | tail`
