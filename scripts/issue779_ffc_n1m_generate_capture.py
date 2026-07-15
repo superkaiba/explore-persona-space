@@ -68,6 +68,7 @@ import gc
 import json
 import logging
 import os
+import signal
 import sys
 import time
 from collections import defaultdict
@@ -104,6 +105,13 @@ LMSYS_REPO = N10.LMSYS_REPO  # lmsys/lmsys-chat-1m
 WILDCHAT_REPO = "allenai/WildChat-1M"
 HF_PREFIX = "issue779_monitoring/fitter-fair-comparison-n1m"
 MANIFEST_SUBDIR = "sampling_manifest"  # HF: {HF_PREFIX}/sampling_manifest/{part_*.jsonl, meta.json}
+
+# Chunk-upload batching (#779 n1m fleet HF-429 fix): accumulate K chunks locally,
+# then upload the pending group as ONE upload_folder commit per artifact kind (2
+# commits per batch instead of 2 per chunk). 32 shards x 2 commits x (chunks/K)
+# keeps the fleet under HF's 256-commits/hr cap. Peak local footprint ~K*43 MB
+# (.pt) + raw < 1 GB/shard, trivially under the RunPod MooseFS quota.
+UPLOAD_BATCH = int(os.environ.get("EPM_N1M_UPLOAD_BATCH", "10"))
 
 # The three prior phases to re-derive + EXCLUDE (n is the only variable).
 N_ROUND1 = N50.N_ROUND1  # 5000
@@ -702,6 +710,130 @@ def _stack_chunk(rows, layers, shard_index, chunk_idx) -> dict:
     }
 
 
+def _flush_upload_batch(
+    scratch: Path, prefix: str, pt_names: list[str], raw_names: list[str]
+) -> None:
+    """Upload a pending batch of chunk files as ONE ``upload_folder`` commit per
+    artifact kind, verify, then purge the local files.
+
+    The 429-fix for the 32-shard fleet: instead of two Hub commits per chunk
+    (capture .pt + raw .json), accumulate ``UPLOAD_BATCH`` chunks and flush the
+    group in TWO commits total (one per kind). ``hub._upload_folder_filtered``
+    composes exactly ONE ``create_commit`` per kind (no per-file recursive
+    tree-listing) AND does an EXACT expected-set membership verify on a fresh
+    scoped listing — so a partial commit returns ``""`` and we raise BEFORE any
+    purge. The .pt kind additionally sha256-verifies each file against the Hub
+    LFS metadata (corruption guard; the raw-json kind is non-LFS text, so the
+    exact-set presence verify is the check, matching N50._upload_raw). Purge
+    happens ONLY after the (verified) non-empty URL, so a failed flush loses
+    nothing — the caller keeps the local files and the resume-skip re-uploads
+    the same chunk next run. Chunk filenames are IDENTICAL to the unbatched
+    path (``shard{SI:02d}_chunk{ci:04d}.{pt,json}``), so resume compatibility
+    with already-uploaded chunks is preserved.
+
+    No-ops on empty batches (both lists empty). Does NOT clear the input lists —
+    the caller clears them after this returns (so a raise leaves the pending set
+    intact for a retry/report)."""
+    if not pt_names and not raw_names:
+        return
+
+    # (1) capture .pt batch -> ONE commit under final_token_capture/, sha-verified.
+    if pt_names:
+        local_shas = {n: N50._sha256_file(scratch / n) for n in pt_names}
+        url = hub._upload_folder_filtered(
+            scratch,
+            repo_id=C.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{prefix}/final_token_capture",
+            allow_patterns=list(pt_names),
+            expected_repo_paths=[f"{prefix}/final_token_capture/{n}" for n in pt_names],
+        )
+        if not url:  # _upload_folder_filtered fail-soft returns "" — fail loud here
+            raise RuntimeError(
+                f"batch upload of {len(pt_names)} capture .pt to "
+                f"{prefix}/final_token_capture returned no URL"
+            )
+        remote = N50._remote_index(f"{prefix}/final_token_capture")
+        for n in pt_names:
+            meta = remote.get(n)
+            if meta is None:
+                raise RuntimeError(f"{n} not present on Hub after batch upload (verify listing)")
+            if meta["sha256"] is None or meta["sha256"] != local_shas[n]:
+                raise RuntimeError(
+                    f"{n} Hub LFS sha256 {meta['sha256']} != local {local_shas[n]} — upload corrupt"
+                )
+        for n in pt_names:
+            (scratch / n).unlink()
+        logger.info("[upload] batch of %d capture .pt verified (sha) + purged", len(pt_names))
+
+    # (2) raw json batch -> ONE commit under raw_completions/ (text is NEVER
+    #     discardable; the exact-set presence verify inside the helper is the check).
+    if raw_names:
+        url = hub._upload_folder_filtered(
+            scratch,
+            repo_id=C.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{prefix}/raw_completions",
+            allow_patterns=list(raw_names),
+            expected_repo_paths=[f"{prefix}/raw_completions/{n}" for n in raw_names],
+        )
+        if not url:
+            raise RuntimeError(
+                f"batch upload of {len(raw_names)} raw_completions to "
+                f"{prefix}/raw_completions returned no URL"
+            )
+        for n in raw_names:
+            (scratch / n).unlink()
+        logger.info(
+            "[upload] batch of %d raw_completions verified (presence) + purged", len(raw_names)
+        )
+
+
+def _build_capture_engine(args):
+    """Build the vLLM capture engine with the default-off H100 long-prompt
+    hang/IMA mitigation knobs (byte-identical engine args when the flags are
+    unset; same one-config-for-the-round discipline as n50k, gotchas #1092)."""
+    from explore_persona_space.eval.generation import create_vllm_engine
+
+    llm_kwargs: dict = {}
+    if os.environ.get("EPM_VLLM_ENFORCE_EAGER") == "1":
+        llm_kwargs["enforce_eager"] = True
+    if os.environ.get("EPM_VLLM_DISABLE_PREFIX_CACHING") == "1":
+        llm_kwargs["enable_prefix_caching"] = False
+    if llm_kwargs:
+        logger.info("[engine-knobs] %s", llm_kwargs)
+    return create_vllm_engine(args.model, max_model_len=8192, seed=42, **llm_kwargs)
+
+
+def _capture_stage_chunk(
+    hf, tok, llm, chunk, layers, scratch, name, raw_name, shard_index, chunk_idx, global_base
+) -> int:
+    """Generate + trimmed-capture one chunk and stage its .pt + raw json into
+    ``scratch`` (filenames ``name`` / ``raw_name``). Returns the kept-row count
+    (0 = all-empty responses; nothing written, caller skips this chunk)."""
+    chunk_prompts = [r["prompt"] for r in chunk]
+    chunk_cis = [int(r["i"]) for r in chunk]
+    responses = N10._generate(llm, tok, chunk_prompts)
+    rows = _capture_shard_trimmed(hf, tok, chunk_prompts, responses, global_base, chunk_cis, layers)
+    if not rows:
+        return 0
+    for fld in ("cx_last", "v_x"):
+        for r in rows:
+            assert r[fld].shape == (len(layers), H_DIM), (fld, r[fld].shape)
+    torch.save(_stack_chunk(rows, layers, shard_index, chunk_idx), scratch / name)
+    C.write_json_atomic(
+        scratch / raw_name,
+        {
+            "shard_index": shard_index,
+            "chunk": chunk_idx,
+            "rows": [
+                {"ci": int(r["ci"]), "prompt": r["prompt"], "response": r["response"]} for r in rows
+            ],
+        },
+    )
+    return len(rows)
+
+
 def run_capture(args) -> int:
     manifest_dir = _resolve_manifest_dir(args)
     pool, _meta = read_manifest_pool(manifest_dir)
@@ -732,79 +864,92 @@ def run_capture(args) -> int:
 
     C.phase("load_model")
     tok, hf = N50.N10.load_models(args.model, args.device)
-    llm = None
-    if args.device == "cuda":
-        from explore_persona_space.eval.generation import create_vllm_engine
-
-        # H100 long-prompt hang/IMA mitigation knobs (default-off => byte-identical
-        # engine args; same one-config-for-the-round discipline as n50k, gotchas #1092).
-        llm_kwargs: dict = {}
-        if os.environ.get("EPM_VLLM_ENFORCE_EAGER") == "1":
-            llm_kwargs["enforce_eager"] = True
-        if os.environ.get("EPM_VLLM_DISABLE_PREFIX_CACHING") == "1":
-            llm_kwargs["enable_prefix_caching"] = False
-        if llm_kwargs:
-            logger.info("[engine-knobs] %s", llm_kwargs)
-        llm = create_vllm_engine(args.model, max_model_len=8192, seed=42, **llm_kwargs)
+    llm = _build_capture_engine(args) if args.device == "cuda" else None
 
     C.phase("capture")
     n_sub = (len(shard_pool) + args.shard_size - 1) // args.shard_size
     kept_total = 0
-    for ci_idx, s in enumerate(range(0, len(shard_pool), args.shard_size)):
-        name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.pt"
-        raw_name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.json"
-        if name in done_pt and raw_name in done_raw:
-            logger.info(
-                "[shard %d] chunk %d/%d already on Hub; skip", args.shard_index, ci_idx + 1, n_sub
-            )
-            continue
-        chunk = shard_pool[s : s + args.shard_size]
-        chunk_prompts = [r["prompt"] for r in chunk]
-        chunk_cis = [int(r["i"]) for r in chunk]
-        global_base = start + s
-        ts = time.time()
-        responses = N10._generate(llm, tok, chunk_prompts)
-        rows = _capture_shard_trimmed(
-            hf, tok, chunk_prompts, responses, global_base, chunk_cis, layers
-        )
-        if not rows:
-            logger.warning(
-                "[shard %d] chunk %d: 0 kept rows (all empty responses); skip",
+    # Batch pending chunk files; flush every UPLOAD_BATCH chunks + at shard end
+    # (2 Hub commits per batch instead of 2 per chunk — the fleet 429 fix).
+    pending_pt: list[str] = []
+    pending_raw: list[str] = []
+
+    def _flush_pending() -> None:
+        if args.no_upload or not pending_pt:
+            return
+        _flush_upload_batch(scratch, args.hf_prefix, pending_pt, pending_raw)
+        pending_pt.clear()
+        pending_raw.clear()
+
+    def _on_sigterm(signum, frame):
+        # Raise so the try/except below best-effort-flushes the pending batch
+        # before the process exits (pod stop / watcher kill).
+        raise SystemExit(f"SIGTERM ({signum}) received — flushing pending upload batch")
+
+    prev_sigterm = signal.signal(signal.SIGTERM, _on_sigterm)
+    try:
+        for ci_idx, s in enumerate(range(0, len(shard_pool), args.shard_size)):
+            name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.pt"
+            raw_name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.json"
+            if name in done_pt and raw_name in done_raw:
+                logger.info(
+                    "[shard %d] chunk %d/%d already on Hub; skip",
+                    args.shard_index,
+                    ci_idx + 1,
+                    n_sub,
+                )
+                continue
+            chunk = shard_pool[s : s + args.shard_size]
+            ts = time.time()
+            n_kept = _capture_stage_chunk(
+                hf,
+                tok,
+                llm,
+                chunk,
+                layers,
+                scratch,
+                name,
+                raw_name,
                 args.shard_index,
                 ci_idx,
+                start + s,
             )
-            continue
-        for fld in ("cx_last", "v_x"):
-            for r in rows:
-                assert r[fld].shape == (len(layers), H_DIM), (fld, r[fld].shape)
-        bundle = _stack_chunk(rows, layers, args.shard_index, ci_idx)
-        chunk_pt = scratch / name
-        torch.save(bundle, chunk_pt)
-        raw_json = scratch / raw_name
-        C.write_json_atomic(
-            raw_json,
-            {
-                "shard_index": args.shard_index,
-                "chunk": ci_idx,
-                "rows": [
-                    {"ci": int(r["ci"]), "prompt": r["prompt"], "response": r["response"]}
-                    for r in rows
-                ],
-            },
-        )
-        kept_total += len(rows)
-        if not args.no_upload:
-            N50._upload_raw(raw_json, args.hf_prefix, raw_name)  # text first (never discardable)
-            N50._upload_verify_purge(chunk_pt, args.hf_prefix, name)  # then tensors + purge
-        logger.info(
-            "[shard %d] chunk %d/%d: %d/%d kept (%.0fs)",
-            args.shard_index,
-            ci_idx + 1,
-            n_sub,
-            len(rows),
-            len(chunk),
-            time.time() - ts,
-        )
+            if not n_kept:
+                logger.warning(
+                    "[shard %d] chunk %d: 0 kept rows (all empty responses); skip",
+                    args.shard_index,
+                    ci_idx,
+                )
+                continue
+            kept_total += n_kept
+            if not args.no_upload:
+                pending_pt.append(name)
+                pending_raw.append(raw_name)
+                if len(pending_pt) >= UPLOAD_BATCH:
+                    _flush_pending()
+            logger.info(
+                "[shard %d] chunk %d/%d: %d/%d kept (%.0fs)",
+                args.shard_index,
+                ci_idx + 1,
+                n_sub,
+                n_kept,
+                len(chunk),
+                time.time() - ts,
+            )
+        # Final partial batch — fail-loud (a flush failure here IS a real failure).
+        _flush_pending()
+    except BaseException:
+        # Best-effort persist of the pending batch before propagating (SIGTERM /
+        # crash); never mask the original exception with a flush failure.
+        try:
+            _flush_pending()
+        except Exception:
+            logger.exception(
+                "[shard %d] best-effort pending-batch flush failed on exit", args.shard_index
+            )
+        raise
+    finally:
+        signal.signal(signal.SIGTERM, prev_sigterm)
 
     logger.info(
         "[shard %d] done: %d kept rows across %d chunks", args.shard_index, kept_total, n_sub
@@ -855,6 +1000,69 @@ def main() -> int:
         build_manifest(args)
         return 0
     return run_capture(args)
+
+
+def _smoke_upload_batching(args) -> list[int]:
+    """CPU smoke for chunk-upload batching (extracted from _smoke). Asserts
+    ``_flush_upload_batch`` does ONE upload_folder commit per artifact kind with
+    the EXACT batch filenames (unchanged from the unbatched path), verify+purges
+    ONLY after the commit succeeds, and that the run_capture cadence flushes at
+    ``UPLOAD_BATCH`` and again for the end-of-loop remainder. Returns the observed
+    flush-size cadence."""
+    from unittest import mock
+
+    batch_dir = args.out_dir / "_smoke_batch"
+    batch_dir.mkdir(parents=True, exist_ok=True)
+    bprefix = "smoke_prefix"
+    pt_names = [f"shard00_chunk{i:04d}.pt" for i in range(3)]
+    raw_names = [f"shard00_chunk{i:04d}.json" for i in range(3)]
+    for n in pt_names + raw_names:
+        (batch_dir / n).write_text("x")  # tiny stand-ins; content irrelevant to the commit shape
+
+    folder_calls: list[tuple[str, tuple[str, ...]]] = []
+
+    def _fake_folder_filtered(
+        local_dir, *, repo_id, repo_type, path_in_repo, allow_patterns, expected_repo_paths, **kw
+    ):
+        folder_calls.append((path_in_repo, tuple(allow_patterns)))
+        return f"{repo_id}/{path_in_repo}"  # non-empty == verified success
+
+    # N50._remote_index is called ONLY for the .pt kind's sha cross-check; return
+    # each pt's fake sha so the verify loop passes.
+    def _fake_remote_index(prefix):
+        if prefix.endswith("final_token_capture"):
+            return {n: {"size": 1, "sha256": "deadbeef"} for n in pt_names}
+        return {}
+
+    with (
+        mock.patch.object(hub, "_upload_folder_filtered", _fake_folder_filtered),
+        mock.patch.object(N50, "_sha256_file", lambda _p: "deadbeef"),
+        mock.patch.object(N50, "_remote_index", _fake_remote_index),
+    ):
+        _flush_upload_batch(batch_dir, bprefix, list(pt_names), list(raw_names))
+    # two commits: one per artifact kind, each carrying the exact batch filenames.
+    assert len(folder_calls) == 2, folder_calls
+    assert folder_calls[0] == (f"{bprefix}/final_token_capture", tuple(pt_names)), folder_calls[0]
+    assert folder_calls[1] == (f"{bprefix}/raw_completions", tuple(raw_names)), folder_calls[1]
+    # verify+purge AFTER the commit: every batched file is unlinked.
+    assert not any((batch_dir / n).exists() for n in pt_names + raw_names), "batch files not purged"
+
+    # cadence: accumulate then flush at UPLOAD_BATCH and again for the remainder.
+    flushed_sizes: list[int] = []
+    pend: list[str] = []
+
+    def _fake_flush() -> None:
+        if pend:
+            flushed_sizes.append(len(pend))
+            pend.clear()
+
+    for i in range(2 * UPLOAD_BATCH + 3):  # exact multiples + a partial remainder
+        pend.append(f"shard00_chunk{i:04d}.pt")
+        if len(pend) >= UPLOAD_BATCH:
+            _fake_flush()
+    _fake_flush()  # end-of-loop remainder
+    assert flushed_sizes == [UPLOAD_BATCH, UPLOAD_BATCH, 3], flushed_sizes
+    return flushed_sizes
 
 
 def _smoke(args) -> int:
@@ -968,11 +1176,15 @@ def _smoke(args) -> int:
     # (7) fleet-safe manifest download: two concurrent shards (threads) against a
     #     monkeypatched hf_hub_download serialize via the flock — ONE downloads,
     #     both return the complete dir (no os.replace FileNotFoundError race).
+    import shutil
     import threading
     from unittest import mock
 
     dl_prefix = "smoke_prefix"
     dl_dest = args.out_dir / "_smoke_dl" / MANIFEST_SUBDIR
+    # Start clean each run — a prior smoke leaves a COMPLETE manifest here, which
+    # would make both threads short-circuit on the fast path (0 downloads).
+    shutil.rmtree(dl_dest.parent, ignore_errors=True)
     remote_prefix = f"{dl_prefix}/{MANIFEST_SUBDIR}"
     remote_files = {
         f"{remote_prefix}/meta.json": json.dumps({"n_new": 2, "n_parts": 2}),
@@ -1028,11 +1240,15 @@ def _smoke(args) -> int:
         f"expected one full download ({len(remote_files)} files), got {len(dl_calls)}: {dl_calls}"
     )
 
+    # (8) chunk-upload batching (extracted to keep _smoke under the complexity cap).
+    batch_cadence = _smoke_upload_batching(args)
+
     logger.info(
         "[smoke] PASS: near-dupe (1 exact + 1 near drop); valtest-from-round1 (1400 targets + "
         "ctx0 guard); lmsys-exhaust=6 + wildchat-topup=6 = 12; manifest deterministic (sha match) "
         "+ roundtrip + global-index; shard-range k in {2,3,4}; capture signatures match; "
-        "concurrent manifest download serialized (1 download, both complete)"
+        "concurrent manifest download serialized (1 download, both complete); "
+        f"upload batching (2 commits/batch, verify+purge, cadence {batch_cadence})"
     )
     return 0
 
