@@ -8393,7 +8393,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/928",
       "status": "followups_running",
-      "title": "Conditioning on the realized chain-of-thought predicts the thinking model's answer state no better than a matched-length slice of the answer's own opening (MODERATE confidence)"
+      "title": "Conditioning on the realized chain-of-thought predicts the thinking model's answer state no better than a matched-length slice of the answer's own opening (HIGH confidence)"
     },
     "929": {
       "has_clean_result": false,
