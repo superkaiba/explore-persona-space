@@ -46,6 +46,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
+# vLLM v1 forks its EngineCore by default; a parent-process CUDA init (any
+# torch.cuda touch before LLM()) then kills the child with "Cannot
+# re-initialize CUDA in forked subprocess" (att-20260715-141100). Spawn is the
+# documented fix and matches #1092's spawn-context worker pattern.
+os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
+
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
