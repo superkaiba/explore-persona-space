@@ -2636,8 +2636,8 @@
     "1338": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1338",
-      "status": "approved",
+      "path": "tasks/running/1338",
+      "status": "running",
       "title": "workflow-fix: crash-persist harvests per-run logs before oversized-dir skip"
     },
     "1339": {
