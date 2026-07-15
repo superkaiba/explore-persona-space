@@ -205,6 +205,13 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→F
     args = ap.parse_args()
 
     device = args.device or ("cuda" if (args.gpu and torch.cuda.is_available()) else "cpu")
+    if device == "cpu" and not args.smoke and torch.cuda.is_available():
+        raise SystemExit(
+            "[issue1005] REFUSING silent CPU run: CUDA is available but neither --device cuda "
+            "nor --gpu was passed. Production capture/fits on CPU ran 6.4x over plan on "
+            "2026-07-15 (A100 idle at 0%). Pass --device cuda, or --device cpu --smoke for "
+            "the CPU smoke."
+        )
     out_dir = Path(args.out_dir)
     eval_out = Path(args.eval_out)
     figures_dir = Path(args.figures_dir)
