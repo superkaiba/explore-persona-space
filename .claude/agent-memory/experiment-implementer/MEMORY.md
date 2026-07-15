@@ -109,3 +109,4 @@
 - [Smoke-slice sizes must satisfy downstream min-N asserts](feedback_smoke_slice_min_n_downstream_asserts.md) — derive smoke slice floors from downstream `assert len >= k` consumers, not plan prose (#1315 r4)
 - [Out-root never /tmp (container disk)](feedback_outroot_tmp_container_disk.md) — RunPod /tmp = 50 GB overlay; anchor out-roots under /workspace + per-phase headroom probes (#1333)
 - [Fanout units must never lazily stage a shared input dest](feedback_fanout_shared_staging_race.md) — pre-stage once in the parent; per-invocation mkdtemp staging + full-set staleness guards (#1315 r5)
+- [Register dynamic registry entries at point of use](feedback_registry_side_effect_lost_on_resume.md) — resume fast-forward loses in-process registration side effects; register immediately before each consumer (#1315 r6)
