@@ -130,7 +130,8 @@ def fig_margin_at_selected(agg: dict, out_prefix: str, out_dir: str) -> None:
             if mt is not None:
                 ax.scatter([x], [mt], marker="o", color=colors[lr], s=40)
             xticks.append(x)
-            xlabels.append(f"{CELL_LABEL[_ck].split(',')[0]}\n{LR_LABEL[lr].split()[1]}")
+            cell_short = CELL_LABEL[_ck].replace(" (control)", "").replace(", ", ",\n")
+            xlabels.append(f"{cell_short}\n{LR_LABEL[lr].split()[1]}")
             x += 1
         x += 1
     ax.axhline(0.0, color="0.7", lw=0.8)
@@ -161,6 +162,68 @@ def fig_degeneracy_flags(agg: dict, out_prefix: str, out_dir: str) -> None:
     plt.close(fig)
 
 
+def fig_tier2_verdict(agg: dict, out_prefix: str, out_dir: str) -> None:
+    """Per-arm Tier-2 confirmatory rate (Wilson 95% CI) with the registered
+    0.60 band floor + 0.30 cut, reused base rates, and — for judged impolite
+    arms — the worst-case judge-drop bound (every dropped completion scored
+    non-impolite: k/200)."""
+    colors = _lr_colors()
+    fig, ax = plt.subplots(figsize=(8.0, 4.2))
+    xticks, xlabels = [], []
+    x = 0
+    for cell_key in CELL_ORDER:
+        cell_runs = sorted(
+            (r for r in agg["runs"].values() if r["cell_key"] == cell_key),
+            key=lambda r: r["lr"],
+        )
+        for r in cell_runs:
+            t2 = r.get("tier2_trained") or {}
+            rate, lo_hi = t2.get("rate"), t2.get("wilson95") or (None, None)
+            if rate is None:
+                continue
+            ax.errorbar(
+                [x],
+                [rate],
+                yerr=[[rate - lo_hi[0]], [lo_hi[1] - rate]],
+                fmt="o",
+                color=colors[r["lr"]],
+                capsize=3,
+                ms=6,
+            )
+            ax.text(x + 0.12, rate, f"{rate:.2f}", fontsize=7, va="center")
+            if t2.get("mode") == "judged" and t2.get("n", 200) < 200:
+                wc = t2["k"] / 200.0
+                ax.scatter(
+                    [x],
+                    [wc],
+                    marker="v",
+                    facecolors="none",
+                    edgecolors=colors[r["lr"]],
+                    s=45,
+                    linewidths=1.2,
+                )
+            base = (r.get("base_tier2") or {}).get("rate")
+            if base is not None:
+                ax.scatter([x], [base], marker="s", color="0.5", s=28, zorder=1)
+            cell_short = CELL_LABEL[cell_key].replace(" (control)", "").replace(", ", ",\n")
+            xlabels.append(f"{cell_short}\n{LR_LABEL[r['lr']].split()[1]}")
+            xticks.append(x)
+            x += 1
+        x += 1
+    ax.axhline(0.60, color="0.4", lw=0.9, ls="--")
+    ax.axhline(0.30, color="0.7", lw=0.9, ls=":")
+    ax.set_xticks(xticks, xlabels, rotation=45, ha="right", fontsize=7)
+    ax.set_ylabel("Tier-2 confirmatory rate")
+    ax.set_ylim(-0.03, 1.0)
+    ax.set_title(
+        "Tier-2 verdict reads (circles trained + Wilson 95% CI; squares base;\n"
+        "open triangles worst-case judge-drop bound; dashes 0.60 band floor, dots 0.30 cut)"
+    )
+    fig.tight_layout()
+    savefig_paper(fig, f"{out_prefix}/fu4_tier2_verdict", dir=out_dir)
+    plt.close(fig)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="#1090 fu4 figures")
     ap.add_argument("--ladders", default=str(DEFAULT_LADDERS))
@@ -172,6 +235,7 @@ def main() -> None:
     fig_dose_lr_grid(agg, args.out_prefix, args.out_dir)
     fig_margin_at_selected(agg, args.out_prefix, args.out_dir)
     fig_degeneracy_flags(agg, args.out_prefix, args.out_dir)
+    fig_tier2_verdict(agg, args.out_prefix, args.out_dir)
 
 
 if __name__ == "__main__":
