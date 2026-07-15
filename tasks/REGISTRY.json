@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1338,
+  "highest_id": 1339,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2639,6 +2639,13 @@
       "path": "tasks/proposed/1338",
       "status": "proposed",
       "title": "workflow-fix: crash-persist harvests per-run logs before oversized-dir skip"
+    },
+    "1339": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1339",
+      "status": "proposed",
+      "title": "workflow-fix: chunk crash-persist eval_results uploads (504 on 29k-file commit)"
     },
     "134": {
       "has_clean_result": false,
