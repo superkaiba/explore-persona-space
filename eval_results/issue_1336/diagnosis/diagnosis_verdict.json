@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "git_commit": "31fc9c24177e2861979490d4fb7f7afa06cec66c",
-    "timestamp": "2026-07-15T21:45:18Z",
+    "git_commit": "04603a849d1dead938894436204c2bed8928d271",
+    "timestamp": "2026-07-15T22:32:10Z",
     "seed": 0,
     "n": 0,
     "script": "scripts/issue1336_diagnose_g1.py"
@@ -17,20 +17,20 @@
     "dg1": {
       "bar_std_computed_ts_unix": 1784148037.791407,
       "battery_started_ts_unix": 1784148037.838315,
-      "verdict_read_ts_unix": 1784151918.1352801,
+      "verdict_read_ts_unix": 1784154730.385964,
       "ordering_ok": true,
       "bar_std_fallback": false
     },
     "capture_defect_gate": {
-      "fired": true,
+      "fired": false,
       "spotcheck": {
         "rlvr_chat_lmsys5k": {
-          "mismatch_rate": 1.0,
-          "defect_gate_fired": true
+          "mismatch_rate": 0.0,
+          "defect_gate_fired": false
         },
         "rlvr_naturalistic_lmsys5k": {
-          "mismatch_rate": 1.0,
-          "defect_gate_fired": true
+          "mismatch_rate": 0.0,
+          "defect_gate_fired": false
         }
       },
       "audit_capture_corruption_suspected": false
