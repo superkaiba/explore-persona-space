@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1355,
+  "highest_id": 1356,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2773,6 +2773,13 @@
       "path": "tasks/proposed/1355",
       "status": "proposed",
       "title": "workflow-fix: gotchas.md \u2014 production-n-calibrated gates bind at smoke n"
+    },
+    "1356": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1356",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas \u2014 pid-namespace vLLM EngineCore reap variant"
     },
     "136": {
       "has_clean_result": false,
