@@ -51,19 +51,15 @@ def stage_from_hf(dest: Path, *, revision: str | None) -> None:
 
     from huggingface_hub import HfApi, hf_hub_download
 
+    from explore_persona_space.orchestrate.hub import list_hf_files_under_path
+
     api = HfApi()
     prefix = f"{C.DATA_PREFIX}/analysis_tensors"
-    entries = [
-        e.path
-        for e in api.list_repo_tree(
-            C.HF_DATA_REPO,
-            path_in_repo=prefix,
-            repo_type="dataset",
-            recursive=True,
-            revision=revision,
-        )
-        if getattr(e, "size", None) is not None
-    ]
+    # retried scoped listing (hub helper) — a bare list_repo_tree is the #920
+    # false-failure class (workflow_lint --check-hub-verify-retry)
+    entries = list_hf_files_under_path(
+        api, C.HF_DATA_REPO, prefix, repo_type="dataset", revision=revision
+    )
     if not entries:
         raise FileNotFoundError(f"no files under {C.HF_DATA_REPO}/{prefix}")
     for p in entries:

@@ -269,13 +269,11 @@ def _stage_model_prefix(prefix: str, dest: Path, *, revision: str) -> Path:
     if (dest / "adapter_config.json").exists() or (dest / "config.json").exists():
         return dest
     api = HfApi()
-    entries = [
-        e.path
-        for e in api.list_repo_tree(
-            C.MODEL_REPO, path_in_repo=prefix, repo_type="model", recursive=True, revision=revision
-        )
-        if getattr(e, "size", None) is not None
-    ]
+    # retried scoped listing (hub helper) — a bare list_repo_tree is the #920
+    # false-failure class (workflow_lint --check-hub-verify-retry)
+    entries = hub.list_hf_files_under_path(
+        api, C.MODEL_REPO, prefix, repo_type="model", revision=revision
+    )
     if not entries:
         raise FileNotFoundError(f"no files under {C.MODEL_REPO}/{prefix} @ {revision}")
     dest.mkdir(parents=True, exist_ok=True)
