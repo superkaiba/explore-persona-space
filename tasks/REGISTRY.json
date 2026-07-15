@@ -2513,8 +2513,8 @@
     "1322": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1322",
-      "status": "running",
+      "path": "tasks/reviewing/1322",
+      "status": "reviewing",
       "title": "daily-fix: ownership check before resume; no double-bg"
     },
     "1323": {
