@@ -4,3 +4,4 @@
 {"ts": "2026-07-15T06:56:35Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-15T07:06:35Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0, no overridden checks. Plan version v1."}
 {"ts": "2026-07-15T07:06:50Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all Phase-2 lens twins this round"}
+{"ts": "2026-07-15T07:15:12Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0. Plan version v2 (fact-check corrections folded: code-reviewer.md byte-ratchet Edit 6 + Ratchet budget line + check-asks bundling fix). Fact-checker: 7 CONFIRMED, 1 WRONG (fixed in v2), 1 partial (fixed)."}
