@@ -31,6 +31,17 @@ and HEAD is an ancestor of main, `git -C "$WT" merge --ff-only main`
 the WORKTREE copies (not the main checkout) before editing — Edit requires reads of
 the exact path being edited anyway. Related: [[branch-guard-blocks-subprocess]].
 
+**Diverged-local-main addendum (2026-07-15, #1362):** `merge --ff-only main` can
+fail with "Not possible to fast-forward" when the worktree base IS the fetched
+`origin/main` tip while the shared root's LOCAL `main` has diverged (unpushed
+local commits; merge-base behind both). That is NOT a stale worktree — do NOT
+merge local main in (it would contaminate the branch with unpushed root
+commits). Diagnose with `git -C "$WT" fetch origin main` +
+`git merge-base HEAD origin/main`: if HEAD == origin/main tip, stay on that
+base and proceed; the server-side Step 10d rebase-merge reconciles. Check
+`git log -1 main -- <target-file>` for a local-main-only edit to the same file
+(a rebase-conflict risk to note, not a blocker).
+
 **End-of-run addendum (2026-06-12):** on a LONG run, main drifts again AFTER the
 startup FF — a full-suite test failure in a file you never touched is usually drift,
 not your diff (verify by running the same test in the main checkout). After
