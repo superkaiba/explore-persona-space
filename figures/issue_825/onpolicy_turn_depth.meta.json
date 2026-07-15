@@ -1,0 +1,6 @@
+{
+ "figure": "onpolicy_turn_depth.png",
+ "git_commit": "1789213600aa3c67cb191a7ca8427db475ec8caf",
+ "source_results_json": "eval_results/issue_825/onpolicy_turn_depth/results.json",
+ "caption": "Per-turn held-out R2 of the linear context->answer map at layer 19, own on-policy answers vs the real logged answers on identical rows/X/folds; grey band = matched shuffled-answer null (own arm); per-turn n annotated. Anchor is cross-recipe (reference only, never the test statistic): different corpus (curated #825 single-turn bundle); grouped 5-fold vs 6-fold; layer battery {14,18,19,26} vs {14,18,19} (L26 unmeasurable here); bf16 vs fp16 capture dtype; 0.48@n=497 is a mean over 5 subsample draws (rngs 1000-1004)."
+}

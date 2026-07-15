@@ -839,7 +839,14 @@ pivot_criteria:
       FLOP/roofline estimate, a true sequential dependency, or a NAMED
       QUANTIFIED non-compute bottleneck — API rate caps, download
       bandwidth, GPU-capacity wait, contention on an ALREADY-vectorized
-      job with the vectorized state cited). A marker arriving
+      job with the vectorized state cited). A negative finding settles
+      vectorization, NOT fleet width: on an embarrassingly-parallel unit
+      grid with checkpoint/restore live (or a relaunch already
+      happening), the width re-evaluation of
+      `.claude/rules/vectorize-many-cell-fits.md` § Mid-run trigger runs
+      before `continue_as_is` at the original width — the `width_reeval:`
+      arithmetic rides the same marker note (no new marker kind; widening
+      posts `action: reshard_width_<K>`). A marker arriving
       PRE-RESOLVED (`action: continue_as_is`,
       `action: auto_descope_to_<spec>`, or any other resolution)
       WITHOUT a lever-0 record in the component's chain
@@ -1664,6 +1671,10 @@ markers:
           FAIL_NO_CANARY (incident #546 round 1, 2026-06-10: PASS_UNIFIED
           train + full-grid cross-eval → HF 404 on never-trained
           adapters; the smoke could never pass by construction).
+          Non-cell smoke axes (questions/rows/steps/draws) sized below a
+          downstream phase's minimum-N assert are likewise FAIL_NO_CANARY
+          — the smoke crashes by construction (incident #1315 r4); the
+          notes: line names the floor per sliced axis.
         `verdict: PASS_CANARY canary_cell=<cell_id>` — paths diverge
           (e.g., smoke uses in-process train, sweep uses subprocess
           wrapper) AND the plan §4 Design section justified the
@@ -1692,7 +1703,15 @@ markers:
       per-component compute-projection table. Body shape:
       `component: <planner-§9-row-name> planned_wall_h: <P> projected_wall_h: <X> ratio: <Y> basis: <planner-§9-row-basis>`.
       Optional note fields: `action: auto_descope_to_<spec> |
-      vectorize_fix_round`, `signature_check: positive|negative` (+ 1-3
+      vectorize_fix_round | reshard_width_<K>` (the last = a
+      lever-0-resolved, recipe-preserving widening resolution — same
+      eligibility class as `continue_as_is`),
+      `width_reeval: <remaining units × measured h/unit ÷ candidate
+      width + provision/stage/restore overhead vs staying>` (required
+      whenever a negative signature resolves on an embarrassingly-parallel
+      unit grid with checkpoint/restore live or at a relaunch point —
+      vectorize-many-cell-fits.md § Mid-run trigger),
+      `signature_check: positive|negative` (+ 1-3
       lines of arithmetic when negative), `flop_bound_finding:
       <quantified finding>` (required for `continue_as_is` at ratio
       ≥ 5×, per pivot_criteria clause 0c: roofline arithmetic |
@@ -2280,7 +2299,14 @@ markers:
       Run markers whose `outcome` begins `retroactive-close` do NOT
       count toward either round cap — they record bookkeeping closure
       of a round that already ran (or was superseded), not a new
-      auto-run (SKILL.md Step 0 § Stale-label disposition rule).
+      auto-run (SKILL.md Step 0 § Stale-label disposition rule). A
+      mid-round defer/teardown exit ALSO posts this marker, AFTER the
+      defer re-park, with `outcome: deferred — <one-line reason>`
+      (SKILL.md Step 9b § Same-issue follow-up loop step 3 defer exit):
+      the label closes and the deferred round is never
+      auto-re-dispatched (a deliberate resume posts a fresh scope under
+      a NEW label); a deferred proposer-band round still counts toward
+      its cap.
   - kind: "epm:question-linked"
     posted_by: skill (via scripts/living_docs.py link, at /issue Step 0c after the Goal gate)
     when: "Step 0c (kind:experiment only; analysis/infra/batch/survey exempt)"

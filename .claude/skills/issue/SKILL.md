@@ -2640,9 +2640,11 @@ worktree `events.jsonl` — before the implementation marker was pulled in — i
 the most common false absence; the canonical read is what catches it.) No LLM
 judgment, just structural presence:
 
-- **marker-shape:** two sub-recipes, keyed PER BLOCKER on the blocker body
+- **marker-shape:** three sub-recipes, keyed PER BLOCKER on the blocker body
   (a conforming Step 0.55 blocker names exactly ONE marker kind,
-  `epm:smoke-architecture-check` — never a combined Step 0.5 + 0.55 blocker).
+  `epm:smoke-architecture-check`; a conforming Step 4.6 presence blocker
+  names `Gate-scope check` ONLY — never a combined 0.5 + 0.55 + 4.6
+  blocker).
   When the blocker names `epm:smoke-architecture-check` (Step 0.55): a
   separate `epm:smoke-architecture-check` events row exists in canonical task
   state with a `verdict:` line matching `PASS_UNIFIED` | `PASS_CANARY
@@ -2650,7 +2652,14 @@ judgment, just structural presence:
   stale-worktree false absence); absent or verdict-less → leave the FAIL in
   place (the gate is doing its job; do NOT check the implementation marker's
   H3s for this sub-case — they can be conforming while the separate row is
-  missing, which is exactly incident #811). Otherwise (the Step 0.5 default):
+  missing, which is exactly incident #811).
+  When the blocker names `Gate-scope check` (Step 4.6 presence): the `(c)`
+  section of the highest-version `epm:results` marker in canonical task
+  state carries a `Gate-scope check` line — present → STRIP (a
+  stale-worktree false absence; the strip verifies PRESENCE ONLY — a
+  diff-consistency finding is `substantive` per Step 4.6 and never
+  reaches this recipe); absent → leave the FAIL in place (the gate is
+  doing its job). Otherwise (the Step 0.5 default):
   all four H3 sections `(a)`–`(d)` present with non-empty content AND `(c)`
   carries at least one fenced command.
 - **smoke-run-missing:** a `## Smoke run` section is present, and EVERY phase
@@ -3346,13 +3355,26 @@ ignores `--gpus` (only RunPod and SLURM honor the override), so pick
 the intent whose machine matches the plan's GPU spec; a gcp-reachable
 launch with a mismatched `--gpus` is refused pre-route by
 `dispatch_issue.py` (exit 2, `reason: gpus_machine_mismatch`). (f)
-**Drivers that default `REPO_ROOT` to the RunPod path need it threaded
-on gcp/auto** — the GCE startup script clones to `$WORKLOAD_ROOT`
-(`/workspace/eps-issue-<N>`), cds there, then runs the workload
-command verbatim, so a driver defaulting
-`REPO_ROOT=/workspace/explore-persona-space` dies at its first `cd`
-under `set -e` and the EXIT trap powers the VM off; compose
-`--workload-cmd 'REPO_ROOT="$WORKLOAD_ROOT" bash scripts/<driver>.sh'`. (g)
+**Never reference `$WORKLOAD_ROOT` bare in a workload-cmd — it is
+exported ONLY by the GCE startup script**, so the exact command a
+GCP→RunPod failover (or a SLURM fall-through) re-runs aborts under the
+RunPod launcher's / SLURM custom stage's `set -u` before the driver
+starts (incident #825: `REPO_ROOT="$WORKLOAD_ROOT"` killed the Track-S
+RunPod failover; `dispatch_issue.py` now lints this at launch —
+warn-by-default + `extra.workload_cmd_lane_env_risk` on the
+`epm:backend-selected` marker, exit-2 refusal on a provably-certain
+lane or under `--strict-workload-cmd-env`, #1329). A driver defaulting
+`REPO_ROOT=/workspace/explore-persona-space` still dies on the GCE lane
+(the startup script clones to `$WORKLOAD_ROOT`, `/workspace/eps-issue-<N>`,
+and cds there), but the GCE startup script already exports
+`REPO_ROOT="$WORKLOAD_ROOT"` before running the workload (#641,
+`backends/gcp.py render_startup_script`), so compose
+`--workload-cmd 'bash scripts/<driver>.sh'` with a SELF-RESOLVING driver
+(`REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}}"`,
+the #825 pattern), or use the set-u-safe default expansion inline:
+`--workload-cmd 'REPO_ROOT="${WORKLOAD_ROOT:-$PWD}" bash scripts/<driver>.sh'`
+(every lane cds to the checkout root first; `${VAR:-default}` is safe
+under `set -u`). (g)
 **Sentinel-signaling dispatchers must not rely on auto's SLURM fallback**
 — a dispatch script that posts markers via pod-side sentinel files
 (`/workspace/logs/issue-<N>-*.json`) works only on the /workspace-contract
@@ -3737,6 +3759,15 @@ field shapes can reject 100% of real rows while every synthetic
 smoke stays green). Recipe + verified field shapes:
 `.claude/rules/gotchas.md` "Real-corpus streaming filters" +
 `.claude/agent-memory/experiment-implementer/feedback_real_corpus_streaming_filters_tiny_real_probe.md`.
+When the driver spans MULTIPLE ARM CLASSES (distinct source-context
+classes / recipe branches — e.g. persona-context vs bare-context
+arms), "once at tiny N" means once PER ARM CLASS: per-arm seams
+(source-context construction, negative-panel assembly, `ModelOrganism`
+wiring) are invisible to a single-arm smoke however tiny-real its
+seams (#1090 fu5: a formatting-arm-only smoke passed; all 3
+bare-context arms then died on the #527/#538 panel-disjointness assert
+after a full 4×A100 GCE cycle). Recipe: `.claude/rules/gotchas.md`
+"A single-arm smoke is blind to per-arm seams".
 Confirm the implementer's
 `## Smoke run` report (per `experiment-implementer.md` § "End-to-end
 smoke run PER PHASE") carries a sub-section with exit code `0` + an
@@ -4073,7 +4104,10 @@ acknowledgment, or a deliberate descope ONLY where the planner's §9
 stratification spec permits one. For a fit / battery / factorization phase,
 the vectorize mid-run trigger applies FIRST — run the signature check
 immediately, do not wait for a second deviation
-(`.claude/rules/vectorize-many-cell-fits.md` § Mid-run trigger); the
+(`.claude/rules/vectorize-many-cell-fits.md` § Mid-run trigger), and on a
+NEGATIVE signature over an embarrassingly-parallel unit grid run that
+section's width re-evaluation before resolving (a negative signature
+settles vectorization, not width — #1092); the
 `continue_as_is` bias below scopes to the descope question. Elapsed-so-far is a lower bound on final
 wall, so `continue_as_is` is nearly always the right mid-run resolution; the
 poller variant carries no `action:` field and is never an auto-descope input.
@@ -6312,7 +6346,9 @@ Routing, auto-continue behavior, and the marker schema are unchanged.
 parked/terminal parent).** This step and its user-chat sibling (the
 CLAUDE.md § Routing "User-chat inline free analysis" carve-out) are
 ANALYSIS-ONLY and normally touch no pod (a needs-gpu discovery takes the
-ABORT path below); 9a-ter proper fires at status `interpreting`, outside
+ABORT path below — EXCEPT the user-chat sibling under its
+explicit user inline-override clause, whose deliberate GPU run inherits
+these same pre-launch signals + the compute-character statement); 9a-ter proper fires at status `interpreting`, outside
 the watcher's auto-stop set, but the user-chat sibling executes on PARKED
 (`on_hold`) / terminal-status parents. If an inline run following this
 shape nonetheless provisions or reuses a pod on such a parent, the
@@ -7603,7 +7639,28 @@ orchestrators driving one round is the #778 root cause.
    fires, it just no longer moves the status to `plan_pending`. The
    round exits the status only at the re-park:
    `set-status <N> awaiting_promotion` (or `blocked` on a failure
-   exit).
+   exit). **Mid-round defer/teardown is an exit too — re-park in the
+   SAME action sequence as the teardown:** a mid-round defer (wedged or
+   pathological run torn down, user defer — any deliberate abandonment
+   of the round short of a `blocked` failure exit; no
+   `--force-followup-exit` needed, `awaiting_promotion` is not in the
+   refused set) tears down the pod/instance FIRST, runs
+   `set-status <N> awaiting_promotion` as the NEXT command (the § User
+   pause affordance teardown-first-park-last ordering — distinct
+   mechanism: a user pause parks at `on_hold`, this defer exit re-parks
+   at `awaiting_promotion` with the label closed; never leave
+   `followups_running` with no live round compute), THEN closes the
+   round's label by posting the step-4 completion marker with
+   `outcome: deferred — <one-line reason>` (label closure is
+   outcome-agnostic — `task_workflow.unrun_followup_labels` — so Step 0
+   / the tick never auto-re-dispatch the deferred round; a deliberate
+   later resume posts a FRESH scope under a NEW label; a deferred
+   proposer-band round still counts toward its step-5 cap). The tick
+   STALE-REDRIVE / watcher re-park are recovery backstops, not the
+   owner (incident #825, 2026-07-15: a pathological fit was torn down
+   at 00:28Z with no re-park — the parent stranded at
+   `followups_running` ~1.4 h until the 01:53Z tick re-drive re-parked
+   it).
    - **Immediately before the planner snapshots the scope, RE-READ the
      authoritative scope FOR THIS ROUND'S LABEL** —
      `task_workflow.executing_followup_label` (the newest
@@ -8075,7 +8132,9 @@ suite directly and posts an `epm:test-verdict` event with the result.
       * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted
         run; missing/empty junitxml; suite crash; unusable ledger;
         scratch-ineligible dirty oracle (residual contaminating dirt, a
-        scan-set node, or a non-sparse work root — other root dirt
+        scan-set node outside the file-anchored allowlist
+        (step9c_baseline.py FILE_ANCHORED_SCAN_TESTS, #1337), or a
+        non-sparse work root — other root dirt
         auto-falls back to a detached sparse scratch-worktree oracle at main
         HEAD, reported as JSON "pristine_oracle": "scratch-worktree"; since
         #1251 dirty in-package `src/` is neutralized via a probe-verified
@@ -9504,8 +9563,11 @@ tests BEFORE anything lands:
   the map current, #895). Attribution is FILE-grain, not junit-node grain: a
   scan test asserts per-file invariants and aggregates EVERY offender into
   ONE red node, so node-level subtraction is degenerate (baseline-red node ==
-  gated-red node would mask a NEW offender — the same reason
-  `step9c_baseline.py compare` marks scan-set nodes scratch-ineligible). Hits
+  gated-red node would mask a NEW offender — the same aggregation degeneracy
+  that makes compare's node-identity strips of scan tests carry the MF-6
+  masking WARN; compare additionally marks NON-file-anchored scan-set nodes
+  scratch-ineligible (`step9c_baseline.py` `FILE_ANCHORED_SCAN_TESTS` members
+  are scratch-resolved, still WARNed — #1337)). Hits
   = pytest-output lines naming a payload-matched path, line numbers blanked
   so main-vs-branch drift of the SAME pre-existing offense cannot fake a NEW
   line, pytest's ellipsis-truncated `E   assert ...` repr line dropped (its

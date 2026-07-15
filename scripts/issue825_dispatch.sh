@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# issue-825 pod-side phase driver: gen_s -> gen_m -> render -> extract -> fit -> upload.
+# issue-825 pod-side phase driver:
+#   gen_s -> gen_m -> render -> extract -> upload_ts -> fit -> upload.
 # Runs under the GCP lane contract: REPO_ROOT="$WORKLOAD_ROOT" bash scripts/issue825_dispatch.sh
 set -euo pipefail
 
@@ -24,7 +25,7 @@ done
 # monotonically across flushed blocks (run 5 kernel OOM at 14.9 GiB anon RSS).
 export MALLOC_MMAP_THRESHOLD_=131072
 
-PHASES=(gen_s gen_m render extract fit upload)
+PHASES=(gen_s gen_m render extract upload_ts fit upload)
 DATA_DIR="data/issue_825"
 TS_DIR="$DATA_DIR/turnstore"
 EVAL_DIR="eval_results/issue_825"
@@ -99,6 +100,52 @@ if should_run extract; then
   done
 fi
 
+if should_run upload_ts; then
+  echo "[phase=upload_ts]"
+  # Persist-by-default (#1320): the GPU extraction uploads BEFORE any fit, so a
+  # fit crash can never lose the turnstore again (2026-07-15 incident; the
+  # onpolicy UPLOAD-2a MF-C shape).
+  # Recovery after any pre-fit crash: resume with --from-phase upload_ts (NOT
+  # --from-phase fit — that skips the turnstore persist).
+  if [[ -z "$SMOKE" ]]; then
+    uv run python - <<'PY'
+import os
+import signal
+
+signal.alarm(10800)  # 3 h wall cap (onpolicy UPLOAD-2a precedent: ~52 GB well under cap)
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing (GCE metadata env or .env)"
+from huggingface_hub import upload_folder  # noqa: E402
+
+upload_folder(
+    repo_id="superkaiba1/explore-persona-space-data",
+    repo_type="dataset",
+    folder_path="data/issue_825/turnstore",
+    path_in_repo="issue825_userbase_map/analysis_tensors",
+    commit_message="issue-825: turnstore shards + NLL tables (upload_ts, BEFORE fit)",
+)
+print("upload_ts: ok — turnstore persisted before any fit")
+PY
+  else
+    uv run python - <<'PY'
+from pathlib import Path
+
+ts = Path("data/issue_825/turnstore")
+# Fact-check correction (#1320 plan Phase 1.5): the turnstore holds fp16/bf16
+# sharded .pt files + .json sidecars (issue825_extract_turnstore.py
+# write_shards; the onpolicy sibling asserts *_m_shard*.pt) — NOT .npz (.npz
+# exists only in _fabricate_smoke_turnstore's fit-cells-internal fixture).
+shards = sorted(ts.glob("*.pt"))
+metas = sorted(ts.glob("*.json"))
+assert shards, f"upload_ts smoke: no .pt shards under {ts}"
+assert metas, f"upload_ts smoke: no .json sidecars under {ts}"
+print(f"[smoke] upload_ts structural assert PASS ({len(shards)} pt + {len(metas)} json would upload)")
+PY
+  fi
+fi
+
 if should_run fit; then
   echo "[phase=fit]"
   uv run python scripts/issue825_fit_cells.py --turnstore-dir "$TS_DIR" \
@@ -108,20 +155,23 @@ fi
 if should_run upload; then
   echo "[phase=upload]"
   if [[ -z "$SMOKE" ]]; then
+    # turnstore upload moved to [phase=upload_ts] (#1320) — BEFORE fit, so a
+    # fit crash can never lose the extraction.
     uv run python - <<'PY'
+import os
+import signal
+
+signal.alarm(3600)  # 1 h wall cap — the eval mirror is small JSON (MF-C hardening)
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
+assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing (GCE metadata env or .env)"
 from huggingface_hub import upload_folder  # noqa: E402
 
-REPO = "superkaiba1/explore-persona-space-data"
 upload_folder(
-    repo_id=REPO, repo_type="dataset", folder_path="data/issue_825/turnstore",
-    path_in_repo="issue825_userbase_map/analysis_tensors",
-    commit_message="issue-825: turnstore shards + NLL tables",
-)
-upload_folder(
-    repo_id=REPO, repo_type="dataset", folder_path="eval_results/issue_825",
+    repo_id="superkaiba1/explore-persona-space-data",
+    repo_type="dataset",
+    folder_path="eval_results/issue_825",
     path_in_repo="issue825_userbase_map/eval_results_mirror",
     commit_message="issue-825: eval JSON mirror",
 )

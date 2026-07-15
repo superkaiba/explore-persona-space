@@ -1,0 +1,2045 @@
+{
+  "commit": "9248ce6fd1",
+  "created": "2026-07-15T16:15:02Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9624802470207214,
+      "map-transfer similarity (layer 27)": 0.52046531838896,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6878147125244141,
+      "map-transfer similarity (layer 27)": -5.149510196719275,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6731414198875427,
+      "map-transfer similarity (layer 27)": -3.2534227794939623,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7559746503829956,
+      "map-transfer similarity (layer 27)": -0.4343837059127906,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.978453516960144,
+      "map-transfer similarity (layer 27)": 0.4967549436991392,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9677528142929077,
+      "map-transfer similarity (layer 27)": 0.4947067862135066,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9466997385025024,
+      "map-transfer similarity (layer 27)": 0.4272119047475677,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.945190966129303,
+      "map-transfer similarity (layer 27)": 0.4262841996949014,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8309405446052551,
+      "map-transfer similarity (layer 27)": 0.1798838975283977,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.978453516960144,
+      "map-transfer similarity (layer 27)": 0.49962809646704476,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.952381432056427,
+      "map-transfer similarity (layer 27)": 0.4914758456280162,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.950254499912262,
+      "map-transfer similarity (layer 27)": 0.5020605371446776,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8671471476554871,
+      "map-transfer similarity (layer 27)": 0.28899114872889514,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9278465509414673,
+      "map-transfer similarity (layer 27)": 0.4265781890271264,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7074475288391113,
+      "map-transfer similarity (layer 27)": -2.47396076732549,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.903912365436554,
+      "map-transfer similarity (layer 27)": 0.26732571635292257,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8199953436851501,
+      "map-transfer similarity (layer 27)": -0.0003688184415619779,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9208475351333618,
+      "map-transfer similarity (layer 27)": 0.42197313674227377,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8250131011009216,
+      "map-transfer similarity (layer 27)": 0.10932251502167369,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9056981801986694,
+      "map-transfer similarity (layer 27)": 0.2967927996714065,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.88353431224823,
+      "map-transfer similarity (layer 27)": 0.38128335737916713,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8846692442893982,
+      "map-transfer similarity (layer 27)": 0.28511215727578254,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9641581773757935,
+      "map-transfer similarity (layer 27)": 0.5155617950617383,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9600415229797363,
+      "map-transfer similarity (layer 27)": 0.49240738021606556,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.93169766664505,
+      "map-transfer similarity (layer 27)": 0.44212178868877816,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9624802470207214,
+      "map-transfer similarity (layer 27)": 0.52046531838896,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7277266979217529,
+      "map-transfer similarity (layer 27)": -4.949902575504325,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7049489617347717,
+      "map-transfer similarity (layer 27)": -3.433345984644582,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7945452928543091,
+      "map-transfer similarity (layer 27)": -0.46193533740148807,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9682644605636597,
+      "map-transfer similarity (layer 27)": 0.5256573706029388,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9637638330459595,
+      "map-transfer similarity (layer 27)": 0.5137946717617459,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9466086626052856,
+      "map-transfer similarity (layer 27)": 0.44266627414715665,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9510186910629272,
+      "map-transfer similarity (layer 27)": 0.463855519103889,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8539242744445801,
+      "map-transfer similarity (layer 27)": 0.2126341897683005,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9682644605636597,
+      "map-transfer similarity (layer 27)": 0.5243806175048289,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.946719229221344,
+      "map-transfer similarity (layer 27)": 0.4968173434514641,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9470661878585815,
+      "map-transfer similarity (layer 27)": 0.5251353842977002,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8812358975410461,
+      "map-transfer similarity (layer 27)": 0.31702653548596166,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.936278223991394,
+      "map-transfer similarity (layer 27)": 0.47135899441631923,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7052314281463623,
+      "map-transfer similarity (layer 27)": -2.821746651790718,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8933449387550354,
+      "map-transfer similarity (layer 27)": 0.18242781033562355,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.805938184261322,
+      "map-transfer similarity (layer 27)": -0.09405599984670027,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9092298150062561,
+      "map-transfer similarity (layer 27)": 0.38510572917882335,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8059747219085693,
+      "map-transfer similarity (layer 27)": -0.04584915702057481,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9005135893821716,
+      "map-transfer similarity (layer 27)": 0.22851329647727855,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8866249918937683,
+      "map-transfer similarity (layer 27)": 0.32567787646310686,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8810871243476868,
+      "map-transfer similarity (layer 27)": 0.21642037876907722,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9333963990211487,
+      "map-transfer similarity (layer 27)": 0.48189195013476316,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9372735619544983,
+      "map-transfer similarity (layer 27)": 0.4596824239698424,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9122075438499451,
+      "map-transfer similarity (layer 27)": 0.42398562622857694,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6878147125244141,
+      "map-transfer similarity (layer 27)": -5.149510196719275,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7277266979217529,
+      "map-transfer similarity (layer 27)": -4.949902575504325,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7991039752960205,
+      "map-transfer similarity (layer 27)": -8.099796388581458,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8885762095451355,
+      "map-transfer similarity (layer 27)": -3.4827032822458057,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7045359015464783,
+      "map-transfer similarity (layer 27)": -4.8040650802119504,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7108086943626404,
+      "map-transfer similarity (layer 27)": -4.95411805256339,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6997503042221069,
+      "map-transfer similarity (layer 27)": -5.423071738677455,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7023247480392456,
+      "map-transfer similarity (layer 27)": -5.731189918431046,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7007244229316711,
+      "map-transfer similarity (layer 27)": -5.345667789541982,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7045359015464783,
+      "map-transfer similarity (layer 27)": -4.751547615681125,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.698148250579834,
+      "map-transfer similarity (layer 27)": -4.736246507229874,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7034593224525452,
+      "map-transfer similarity (layer 27)": -5.010180900411383,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6844527721405029,
+      "map-transfer similarity (layer 27)": -5.93461296182518,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7014216780662537,
+      "map-transfer similarity (layer 27)": -5.48533997129438,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.580176591873169,
+      "map-transfer similarity (layer 27)": -9.822963006101741,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6820182800292969,
+      "map-transfer similarity (layer 27)": -5.533384063212311,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6169403195381165,
+      "map-transfer similarity (layer 27)": -6.187536458247564,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.690646767616272,
+      "map-transfer similarity (layer 27)": -5.018933216194475,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6122671961784363,
+      "map-transfer similarity (layer 27)": -5.779741004680722,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6985164880752563,
+      "map-transfer similarity (layer 27)": -5.351799404590404,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.702634334564209,
+      "map-transfer similarity (layer 27)": -5.983204879377093,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6751564741134644,
+      "map-transfer similarity (layer 27)": -5.411195503276165,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.673002302646637,
+      "map-transfer similarity (layer 27)": -4.794756673107722,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6830993890762329,
+      "map-transfer similarity (layer 27)": -4.54401555506785,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6798570156097412,
+      "map-transfer similarity (layer 27)": -4.363669402392562,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6731414198875427,
+      "map-transfer similarity (layer 27)": -3.2534227794939623,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7049489617347717,
+      "map-transfer similarity (layer 27)": -3.433345984644582,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7991039752960205,
+      "map-transfer similarity (layer 27)": -8.099796388581458,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7723520398139954,
+      "map-transfer similarity (layer 27)": -2.860362041291361,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6834559440612793,
+      "map-transfer similarity (layer 27)": -3.1249309716170526,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6957936882972717,
+      "map-transfer similarity (layer 27)": -3.000802027030555,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.691365122795105,
+      "map-transfer similarity (layer 27)": -3.1885850852979067,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.696927011013031,
+      "map-transfer similarity (layer 27)": -3.2179457391644632,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7127396464347839,
+      "map-transfer similarity (layer 27)": -3.03929649947354,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6834559440612793,
+      "map-transfer similarity (layer 27)": -3.1133994641366605,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6723729968070984,
+      "map-transfer similarity (layer 27)": -3.104770756306114,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6858708262443542,
+      "map-transfer similarity (layer 27)": -3.168935642592615,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6880297660827637,
+      "map-transfer similarity (layer 27)": -3.271249505255006,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6921917796134949,
+      "map-transfer similarity (layer 27)": -3.1499509289151457,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.608068585395813,
+      "map-transfer similarity (layer 27)": -8.039334415602829,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6528974771499634,
+      "map-transfer similarity (layer 27)": -3.7969616298472006,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.5877320766448975,
+      "map-transfer similarity (layer 27)": -4.117617533028364,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6647377014160156,
+      "map-transfer similarity (layer 27)": -3.8474764969266526,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.600169837474823,
+      "map-transfer similarity (layer 27)": -3.7934118940530692,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6801484823226929,
+      "map-transfer similarity (layer 27)": -3.4555145204986175,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7004104852676392,
+      "map-transfer similarity (layer 27)": -3.5751964633687106,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6650101542472839,
+      "map-transfer similarity (layer 27)": -3.2682391563731628,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.650565505027771,
+      "map-transfer similarity (layer 27)": -3.234603506668785,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6657363176345825,
+      "map-transfer similarity (layer 27)": -3.4473288251450738,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6660408973693848,
+      "map-transfer similarity (layer 27)": -2.982386559708491,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7559746503829956,
+      "map-transfer similarity (layer 27)": -0.4343837059127906,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7945452928543091,
+      "map-transfer similarity (layer 27)": -0.46193533740148807,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8885762095451355,
+      "map-transfer similarity (layer 27)": -3.4827032822458057,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7723520398139954,
+      "map-transfer similarity (layer 27)": -2.860362041291361,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7674715518951416,
+      "map-transfer similarity (layer 27)": -0.4110289812005973,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7710483074188232,
+      "map-transfer similarity (layer 27)": -0.39230423557636285,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7572262287139893,
+      "map-transfer similarity (layer 27)": -0.42860929329403136,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7619116902351379,
+      "map-transfer similarity (layer 27)": -0.5256866996999661,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7388457655906677,
+      "map-transfer similarity (layer 27)": -0.5054348190876392,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7674715518951416,
+      "map-transfer similarity (layer 27)": -0.37871336013341694,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7631076574325562,
+      "map-transfer similarity (layer 27)": -0.41653179330070156,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7621313333511353,
+      "map-transfer similarity (layer 27)": -0.34964988605286784,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7376254796981812,
+      "map-transfer similarity (layer 27)": -0.5922926664298032,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7581000328063965,
+      "map-transfer similarity (layer 27)": -0.4362562472894278,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6440912485122681,
+      "map-transfer similarity (layer 27)": -4.132624009178782,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7428308725357056,
+      "map-transfer similarity (layer 27)": -0.5370908627179634,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.675645112991333,
+      "map-transfer similarity (layer 27)": -0.5857977475538292,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7565369606018066,
+      "map-transfer similarity (layer 27)": -0.42076782870265195,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6756591200828552,
+      "map-transfer similarity (layer 27)": -0.6639384044822156,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7542876601219177,
+      "map-transfer similarity (layer 27)": -0.4203758685266621,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.76160728931427,
+      "map-transfer similarity (layer 27)": -0.454533133377355,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7367273569107056,
+      "map-transfer similarity (layer 27)": -0.47167596368717846,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7432059645652771,
+      "map-transfer similarity (layer 27)": -0.4039140022886142,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7505369782447815,
+      "map-transfer similarity (layer 27)": -0.32196856612641267,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7462019920349121,
+      "map-transfer similarity (layer 27)": -0.3165476824919339,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.978453516960144,
+      "map-transfer similarity (layer 27)": 0.4967549436991392,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9682644605636597,
+      "map-transfer similarity (layer 27)": 0.5256573706029388,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7045359015464783,
+      "map-transfer similarity (layer 27)": -4.8040650802119504,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6834559440612793,
+      "map-transfer similarity (layer 27)": -3.1249309716170526,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7674715518951416,
+      "map-transfer similarity (layer 27)": -0.4110289812005973,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9932669997215271,
+      "map-transfer similarity (layer 27)": 0.5939455693320193,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.974794864654541,
+      "map-transfer similarity (layer 27)": 0.5105564137763985,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9709492325782776,
+      "map-transfer similarity (layer 27)": 0.5253230324211193,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8640812635421753,
+      "map-transfer similarity (layer 27)": 0.19104383613290077,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 1.0,
+      "map-transfer similarity (layer 27)": 0.6127167767732793,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9756729602813721,
+      "map-transfer similarity (layer 27)": 0.5829483333133549,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9715132117271423,
+      "map-transfer similarity (layer 27)": 0.5752730288329986,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8950693607330322,
+      "map-transfer similarity (layer 27)": 0.3571400957662099,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9575884342193604,
+      "map-transfer similarity (layer 27)": 0.5400714734978098,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.713047206401825,
+      "map-transfer similarity (layer 27)": -2.9073993489737666,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9127353429794312,
+      "map-transfer similarity (layer 27)": 0.14316378809305533,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8266021013259888,
+      "map-transfer similarity (layer 27)": -0.16614822487793637,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9297937750816345,
+      "map-transfer similarity (layer 27)": 0.40851375777970356,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8260530233383179,
+      "map-transfer similarity (layer 27)": -0.09103954622529027,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9154418110847473,
+      "map-transfer similarity (layer 27)": 0.1889354612796089,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8952884674072266,
+      "map-transfer similarity (layer 27)": 0.27397608421114833,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8961448073387146,
+      "map-transfer similarity (layer 27)": 0.1698602081062245,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9577022790908813,
+      "map-transfer similarity (layer 27)": 0.5262858225585036,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9578264355659485,
+      "map-transfer similarity (layer 27)": 0.4774110631678852,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9350889325141907,
+      "map-transfer similarity (layer 27)": 0.44861451618864,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9677528142929077,
+      "map-transfer similarity (layer 27)": 0.4947067862135066,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9637638330459595,
+      "map-transfer similarity (layer 27)": 0.5137946717617459,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7108086943626404,
+      "map-transfer similarity (layer 27)": -4.95411805256339,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6957936882972717,
+      "map-transfer similarity (layer 27)": -3.000802027030555,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7710483074188232,
+      "map-transfer similarity (layer 27)": -0.39230423557636285,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9932669997215271,
+      "map-transfer similarity (layer 27)": 0.5939455693320193,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9837586879730225,
+      "map-transfer similarity (layer 27)": 0.5503462287101206,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9799621105194092,
+      "map-transfer similarity (layer 27)": 0.5610183764773629,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8852168321609497,
+      "map-transfer similarity (layer 27)": 0.29220797296587786,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9932669997215271,
+      "map-transfer similarity (layer 27)": 0.5984642963997586,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.970711886882782,
+      "map-transfer similarity (layer 27)": 0.5675900702011152,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9691527485847473,
+      "map-transfer similarity (layer 27)": 0.5708276334140435,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.909830629825592,
+      "map-transfer similarity (layer 27)": 0.39982217181258217,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9658562541007996,
+      "map-transfer similarity (layer 27)": 0.5588298983800069,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7143104076385498,
+      "map-transfer similarity (layer 27)": -2.7538323630264805,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9061232209205627,
+      "map-transfer similarity (layer 27)": 0.18478477222876266,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8188929557800293,
+      "map-transfer similarity (layer 27)": -0.10281741108412897,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9221177697181702,
+      "map-transfer similarity (layer 27)": 0.4054956595352285,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8197312951087952,
+      "map-transfer similarity (layer 27)": -0.06223165379517525,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9128854274749756,
+      "map-transfer similarity (layer 27)": 0.2234240377670791,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8994112610816956,
+      "map-transfer similarity (layer 27)": 0.29841226246042035,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.894775390625,
+      "map-transfer similarity (layer 27)": 0.22264377962509707,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9497762322425842,
+      "map-transfer similarity (layer 27)": 0.5227030210563148,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9533310532569885,
+      "map-transfer similarity (layer 27)": 0.4812600633373234,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9337406754493713,
+      "map-transfer similarity (layer 27)": 0.46079496341399817,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9466997385025024,
+      "map-transfer similarity (layer 27)": 0.4272119047475677,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9466086626052856,
+      "map-transfer similarity (layer 27)": 0.44266627414715665,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6997503042221069,
+      "map-transfer similarity (layer 27)": -5.423071738677455,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.691365122795105,
+      "map-transfer similarity (layer 27)": -3.1885850852979067,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7572262287139893,
+      "map-transfer similarity (layer 27)": -0.42860929329403136,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.974794864654541,
+      "map-transfer similarity (layer 27)": 0.5105564137763985,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9837586879730225,
+      "map-transfer similarity (layer 27)": 0.5503462287101206,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9792330265045166,
+      "map-transfer similarity (layer 27)": 0.5600425110715205,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8794379234313965,
+      "map-transfer similarity (layer 27)": 0.2547909750169942,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.974794864654541,
+      "map-transfer similarity (layer 27)": 0.5106277284834051,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9578189849853516,
+      "map-transfer similarity (layer 27)": 0.4810667847433155,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9527831077575684,
+      "map-transfer similarity (layer 27)": 0.4990086258489422,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9017108082771301,
+      "map-transfer similarity (layer 27)": 0.3533281645165198,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9650691151618958,
+      "map-transfer similarity (layer 27)": 0.5505540643538013,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7109724283218384,
+      "map-transfer similarity (layer 27)": -2.962318224983309,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8831744194030762,
+      "map-transfer similarity (layer 27)": 0.12749640242213478,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7984907031059265,
+      "map-transfer similarity (layer 27)": -0.15832994837655343,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8994841575622559,
+      "map-transfer similarity (layer 27)": 0.322275404113704,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7993360161781311,
+      "map-transfer similarity (layer 27)": -0.17275188567245575,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8926630616188049,
+      "map-transfer similarity (layer 27)": 0.14693568449798736,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8891100883483887,
+      "map-transfer similarity (layer 27)": 0.23209679690741936,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8756905198097229,
+      "map-transfer similarity (layer 27)": 0.12535612215610964,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9277517795562744,
+      "map-transfer similarity (layer 27)": 0.4447666686876662,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9327272176742554,
+      "map-transfer similarity (layer 27)": 0.40530136302474595,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9114755392074585,
+      "map-transfer similarity (layer 27)": 0.3846853226533846,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.945190966129303,
+      "map-transfer similarity (layer 27)": 0.4262841996949014,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9510186910629272,
+      "map-transfer similarity (layer 27)": 0.463855519103889,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7023247480392456,
+      "map-transfer similarity (layer 27)": -5.731189918431046,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.696927011013031,
+      "map-transfer similarity (layer 27)": -3.2179457391644632,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7619116902351379,
+      "map-transfer similarity (layer 27)": -0.5256866996999661,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9709492325782776,
+      "map-transfer similarity (layer 27)": 0.5253230324211193,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9799621105194092,
+      "map-transfer similarity (layer 27)": 0.5610183764773629,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9792330265045166,
+      "map-transfer similarity (layer 27)": 0.5600425110715205,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8939266800880432,
+      "map-transfer similarity (layer 27)": 0.26634604881087326,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9709492325782776,
+      "map-transfer similarity (layer 27)": 0.5265793908591957,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9564669132232666,
+      "map-transfer similarity (layer 27)": 0.489538193414852,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9545210003852844,
+      "map-transfer similarity (layer 27)": 0.5145229175638966,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9210306406021118,
+      "map-transfer similarity (layer 27)": 0.3774827662288684,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9775208234786987,
+      "map-transfer similarity (layer 27)": 0.5718327392687634,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7067418694496155,
+      "map-transfer similarity (layer 27)": -3.280582324444439,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8738221526145935,
+      "map-transfer similarity (layer 27)": 0.0014289451274147325,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7864205837249756,
+      "map-transfer similarity (layer 27)": -0.3366140697295897,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8942934274673462,
+      "map-transfer similarity (layer 27)": 0.2586131081982913,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7854412794113159,
+      "map-transfer similarity (layer 27)": -0.34797099586334723,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8836408257484436,
+      "map-transfer similarity (layer 27)": 0.07262569081219349,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8829212188720703,
+      "map-transfer similarity (layer 27)": 0.194131419826523,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8665130734443665,
+      "map-transfer similarity (layer 27)": 0.03784678248268537,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9194150567054749,
+      "map-transfer similarity (layer 27)": 0.41724254617489565,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9243752956390381,
+      "map-transfer similarity (layer 27)": 0.37724932747909545,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9015820026397705,
+      "map-transfer similarity (layer 27)": 0.3376038281353473,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8309405446052551,
+      "map-transfer similarity (layer 27)": 0.1798838975283977,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8539242744445801,
+      "map-transfer similarity (layer 27)": 0.2126341897683005,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7007244229316711,
+      "map-transfer similarity (layer 27)": -5.345667789541982,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7127396464347839,
+      "map-transfer similarity (layer 27)": -3.03929649947354,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7388457655906677,
+      "map-transfer similarity (layer 27)": -0.5054348190876392,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8640812635421753,
+      "map-transfer similarity (layer 27)": 0.19104383613290077,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8852168321609497,
+      "map-transfer similarity (layer 27)": 0.29220797296587786,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8794379234313965,
+      "map-transfer similarity (layer 27)": 0.2547909750169942,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8939266800880432,
+      "map-transfer similarity (layer 27)": 0.26634604881087326,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8640812635421753,
+      "map-transfer similarity (layer 27)": 0.20291143039685922,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8513044714927673,
+      "map-transfer similarity (layer 27)": 0.13124413267370044,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8642746806144714,
+      "map-transfer similarity (layer 27)": 0.2783589533594012,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9433727264404297,
+      "map-transfer similarity (layer 27)": 0.3652367994687722,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8831003308296204,
+      "map-transfer similarity (layer 27)": 0.2982630371894177,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6691539287567139,
+      "map-transfer similarity (layer 27)": -2.8503191391347373,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.800800085067749,
+      "map-transfer similarity (layer 27)": 0.009986680809395044,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7222229838371277,
+      "map-transfer similarity (layer 27)": -0.12865501426365017,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8085831999778748,
+      "map-transfer similarity (layer 27)": 0.1102683945189066,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7229859828948975,
+      "map-transfer similarity (layer 27)": -0.1717197930489296,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8208411335945129,
+      "map-transfer similarity (layer 27)": 0.09338274212663182,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8309975266456604,
+      "map-transfer similarity (layer 27)": 0.05434957912942151,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8120996356010437,
+      "map-transfer similarity (layer 27)": 0.09300010942754652,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8230792880058289,
+      "map-transfer similarity (layer 27)": 0.2031968813962625,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8316095471382141,
+      "map-transfer similarity (layer 27)": 0.21176380594470295,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8318699598312378,
+      "map-transfer similarity (layer 27)": 0.26000248413126675,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.978453516960144,
+      "map-transfer similarity (layer 27)": 0.49962809646704476,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9682644605636597,
+      "map-transfer similarity (layer 27)": 0.5243806175048289,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7045359015464783,
+      "map-transfer similarity (layer 27)": -4.751547615681125,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6834559440612793,
+      "map-transfer similarity (layer 27)": -3.1133994641366605,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7674715518951416,
+      "map-transfer similarity (layer 27)": -0.37871336013341694,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 1.0,
+      "map-transfer similarity (layer 27)": 0.6127167767732793,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9932669997215271,
+      "map-transfer similarity (layer 27)": 0.5984642963997586,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.974794864654541,
+      "map-transfer similarity (layer 27)": 0.5106277284834051,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9709492325782776,
+      "map-transfer similarity (layer 27)": 0.5265793908591957,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8640812635421753,
+      "map-transfer similarity (layer 27)": 0.20291143039685922,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9756729602813721,
+      "map-transfer similarity (layer 27)": 0.5887779119265629,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9715132117271423,
+      "map-transfer similarity (layer 27)": 0.5782616216706147,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8950693607330322,
+      "map-transfer similarity (layer 27)": 0.3668680915307804,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9575884342193604,
+      "map-transfer similarity (layer 27)": 0.5395873669504383,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.713047206401825,
+      "map-transfer similarity (layer 27)": -2.82354233817941,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9127353429794312,
+      "map-transfer similarity (layer 27)": 0.15145617471678752,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8266021013259888,
+      "map-transfer similarity (layer 27)": -0.16411421745024987,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9297937750816345,
+      "map-transfer similarity (layer 27)": 0.41527713456668014,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8260530233383179,
+      "map-transfer similarity (layer 27)": -0.07265439228991726,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9154418110847473,
+      "map-transfer similarity (layer 27)": 0.20298462546382923,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8952884674072266,
+      "map-transfer similarity (layer 27)": 0.2941319982601964,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8961448073387146,
+      "map-transfer similarity (layer 27)": 0.18502677577818727,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9577022790908813,
+      "map-transfer similarity (layer 27)": 0.5294936276144581,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9578264355659485,
+      "map-transfer similarity (layer 27)": 0.47788294398788106,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9350889325141907,
+      "map-transfer similarity (layer 27)": 0.44971286201373556,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.952381432056427,
+      "map-transfer similarity (layer 27)": 0.4914758456280162,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.946719229221344,
+      "map-transfer similarity (layer 27)": 0.4968173434514641,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.698148250579834,
+      "map-transfer similarity (layer 27)": -4.736246507229874,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6723729968070984,
+      "map-transfer similarity (layer 27)": -3.104770756306114,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7631076574325562,
+      "map-transfer similarity (layer 27)": -0.41653179330070156,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9756729602813721,
+      "map-transfer similarity (layer 27)": 0.5829483333133549,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.970711886882782,
+      "map-transfer similarity (layer 27)": 0.5675900702011152,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9578189849853516,
+      "map-transfer similarity (layer 27)": 0.4810667847433155,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9564669132232666,
+      "map-transfer similarity (layer 27)": 0.489538193414852,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8513044714927673,
+      "map-transfer similarity (layer 27)": 0.13124413267370044,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9756729602813721,
+      "map-transfer similarity (layer 27)": 0.5887779119265629,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9552966356277466,
+      "map-transfer similarity (layer 27)": 0.5449054446626332,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8885512351989746,
+      "map-transfer similarity (layer 27)": 0.34109971506701986,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9549751281738281,
+      "map-transfer similarity (layer 27)": 0.51846678423851,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7183263301849365,
+      "map-transfer similarity (layer 27)": -2.8666112709704707,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8919861316680908,
+      "map-transfer similarity (layer 27)": 0.1595011357693011,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8076193332672119,
+      "map-transfer similarity (layer 27)": -0.134291702488462,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9134666323661804,
+      "map-transfer similarity (layer 27)": 0.41201977495915315,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8047348260879517,
+      "map-transfer similarity (layer 27)": -0.0730066694255771,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8924086093902588,
+      "map-transfer similarity (layer 27)": 0.1887178010996736,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.876402735710144,
+      "map-transfer similarity (layer 27)": 0.2521389269267682,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8742135763168335,
+      "map-transfer similarity (layer 27)": 0.16658400546257196,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9320361614227295,
+      "map-transfer similarity (layer 27)": 0.5172132731191024,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9308861494064331,
+      "map-transfer similarity (layer 27)": 0.47308853347978064,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9075581431388855,
+      "map-transfer similarity (layer 27)": 0.4433530806220568,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.950254499912262,
+      "map-transfer similarity (layer 27)": 0.5020605371446776,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9470661878585815,
+      "map-transfer similarity (layer 27)": 0.5251353842977002,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7034593224525452,
+      "map-transfer similarity (layer 27)": -5.010180900411383,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6858708262443542,
+      "map-transfer similarity (layer 27)": -3.168935642592615,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7621313333511353,
+      "map-transfer similarity (layer 27)": -0.34964988605286784,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9715132117271423,
+      "map-transfer similarity (layer 27)": 0.5752730288329986,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9691527485847473,
+      "map-transfer similarity (layer 27)": 0.5708276334140435,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9527831077575684,
+      "map-transfer similarity (layer 27)": 0.4990086258489422,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9545210003852844,
+      "map-transfer similarity (layer 27)": 0.5145229175638966,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8642746806144714,
+      "map-transfer similarity (layer 27)": 0.2783589533594012,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9715132117271423,
+      "map-transfer similarity (layer 27)": 0.5782616216706147,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9552966356277466,
+      "map-transfer similarity (layer 27)": 0.5449054446626332,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8895738124847412,
+      "map-transfer similarity (layer 27)": 0.3760684204134028,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9446733593940735,
+      "map-transfer similarity (layer 27)": 0.5238624969681492,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6981108784675598,
+      "map-transfer similarity (layer 27)": -2.8137565690193616,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8887313604354858,
+      "map-transfer similarity (layer 27)": 0.16275952244280528,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8041720390319824,
+      "map-transfer similarity (layer 27)": -0.11094118933180011,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9029600620269775,
+      "map-transfer similarity (layer 27)": 0.38861954887646877,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8023915886878967,
+      "map-transfer similarity (layer 27)": -0.05007681188808339,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8955310583114624,
+      "map-transfer similarity (layer 27)": 0.2347903147070183,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8801987171173096,
+      "map-transfer similarity (layer 27)": 0.33539338100175686,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8767958283424377,
+      "map-transfer similarity (layer 27)": 0.2123835497349786,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9281349778175354,
+      "map-transfer similarity (layer 27)": 0.5163431813409212,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9314000010490417,
+      "map-transfer similarity (layer 27)": 0.4737351955654502,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9123741984367371,
+      "map-transfer similarity (layer 27)": 0.454023701928026,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8671471476554871,
+      "map-transfer similarity (layer 27)": 0.28899114872889514,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8812358975410461,
+      "map-transfer similarity (layer 27)": 0.31702653548596166,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6844527721405029,
+      "map-transfer similarity (layer 27)": -5.93461296182518,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6880297660827637,
+      "map-transfer similarity (layer 27)": -3.271249505255006,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7376254796981812,
+      "map-transfer similarity (layer 27)": -0.5922926664298032,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8950693607330322,
+      "map-transfer similarity (layer 27)": 0.3571400957662099,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.909830629825592,
+      "map-transfer similarity (layer 27)": 0.39982217181258217,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9017108082771301,
+      "map-transfer similarity (layer 27)": 0.3533281645165198,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9210306406021118,
+      "map-transfer similarity (layer 27)": 0.3774827662288684,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9433727264404297,
+      "map-transfer similarity (layer 27)": 0.3652367994687722,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8950693607330322,
+      "map-transfer similarity (layer 27)": 0.3668680915307804,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8885512351989746,
+      "map-transfer similarity (layer 27)": 0.34109971506701986,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8895738124847412,
+      "map-transfer similarity (layer 27)": 0.3760684204134028,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9199935793876648,
+      "map-transfer similarity (layer 27)": 0.4088974586015566,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6879169344902039,
+      "map-transfer similarity (layer 27)": -3.0881346698267644,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8197488188743591,
+      "map-transfer similarity (layer 27)": -0.028356238840128677,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7369634509086609,
+      "map-transfer similarity (layer 27)": -0.26918969139672355,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8342486023902893,
+      "map-transfer similarity (layer 27)": 0.169124731415702,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7355916500091553,
+      "map-transfer similarity (layer 27)": -0.2579837182549402,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8317683935165405,
+      "map-transfer similarity (layer 27)": 0.0408613552175658,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8340950012207031,
+      "map-transfer similarity (layer 27)": 0.09072423915535602,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8210021257400513,
+      "map-transfer similarity (layer 27)": 0.07623025457409809,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8545633554458618,
+      "map-transfer similarity (layer 27)": 0.31367772466627675,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8583474159240723,
+      "map-transfer similarity (layer 27)": 0.2638766003485923,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8465867042541504,
+      "map-transfer similarity (layer 27)": 0.2933853132137529,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9278465509414673,
+      "map-transfer similarity (layer 27)": 0.4265781890271264,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.936278223991394,
+      "map-transfer similarity (layer 27)": 0.47135899441631923,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7014216780662537,
+      "map-transfer similarity (layer 27)": -5.48533997129438,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6921917796134949,
+      "map-transfer similarity (layer 27)": -3.1499509289151457,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7581000328063965,
+      "map-transfer similarity (layer 27)": -0.4362562472894278,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9575884342193604,
+      "map-transfer similarity (layer 27)": 0.5400714734978098,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9658562541007996,
+      "map-transfer similarity (layer 27)": 0.5588298983800069,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9650691151618958,
+      "map-transfer similarity (layer 27)": 0.5505540643538013,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9775208234786987,
+      "map-transfer similarity (layer 27)": 0.5718327392687634,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8831003308296204,
+      "map-transfer similarity (layer 27)": 0.2982630371894177,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9575884342193604,
+      "map-transfer similarity (layer 27)": 0.5395873669504383,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9549751281738281,
+      "map-transfer similarity (layer 27)": 0.51846678423851,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9446733593940735,
+      "map-transfer similarity (layer 27)": 0.5238624969681492,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9199935793876648,
+      "map-transfer similarity (layer 27)": 0.4088974586015566,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7046030163764954,
+      "map-transfer similarity (layer 27)": -2.9955445266426697,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.862130880355835,
+      "map-transfer similarity (layer 27)": 0.08165026555205017,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7769963145256042,
+      "map-transfer similarity (layer 27)": -0.20230471666263208,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8817260265350342,
+      "map-transfer similarity (layer 27)": 0.3159461416034084,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7754203677177429,
+      "map-transfer similarity (layer 27)": -0.15986563767123357,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8711918592453003,
+      "map-transfer similarity (layer 27)": 0.15451754882947308,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8703303337097168,
+      "map-transfer similarity (layer 27)": 0.26585405188219713,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.8533208966255188,
+      "map-transfer similarity (layer 27)": 0.14124692847927295,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.9034703969955444,
+      "map-transfer similarity (layer 27)": 0.45339366055060293,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.907723605632782,
+      "map-transfer similarity (layer 27)": 0.40403880115009694,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.887626051902771,
+      "map-transfer similarity (layer 27)": 0.38647672563930857,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7074475288391113,
+      "map-transfer similarity (layer 27)": -2.47396076732549,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7052314281463623,
+      "map-transfer similarity (layer 27)": -2.821746651790718,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.580176591873169,
+      "map-transfer similarity (layer 27)": -9.822963006101741,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.608068585395813,
+      "map-transfer similarity (layer 27)": -8.039334415602829,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6440912485122681,
+      "map-transfer similarity (layer 27)": -4.132624009178782,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.713047206401825,
+      "map-transfer similarity (layer 27)": -2.9073993489737666,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7143104076385498,
+      "map-transfer similarity (layer 27)": -2.7538323630264805,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7109724283218384,
+      "map-transfer similarity (layer 27)": -2.962318224983309,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7067418694496155,
+      "map-transfer similarity (layer 27)": -3.280582324444439,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6691539287567139,
+      "map-transfer similarity (layer 27)": -2.8503191391347373,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.713047206401825,
+      "map-transfer similarity (layer 27)": -2.82354233817941,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7183263301849365,
+      "map-transfer similarity (layer 27)": -2.8666112709704707,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6981108784675598,
+      "map-transfer similarity (layer 27)": -2.8137565690193616,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6879169344902039,
+      "map-transfer similarity (layer 27)": -3.0881346698267644,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7046030163764954,
+      "map-transfer similarity (layer 27)": -2.9955445266426697,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.729073166847229,
+      "map-transfer similarity (layer 27)": -1.9515950634438346,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.6830316781997681,
+      "map-transfer similarity (layer 27)": -2.122967463373585,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7364273071289062,
+      "map-transfer similarity (layer 27)": -2.064632126789573,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7108098864555359,
+      "map-transfer similarity (layer 27)": -2.016221720617398,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7245301008224487,
+      "map-transfer similarity (layer 27)": -1.9329260022395405,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7331106066703796,
+      "map-transfer similarity (layer 27)": -2.2128664198584107,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7167277336120605,
+      "map-transfer similarity (layer 27)": -1.9136621421660491,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7049282789230347,
+      "map-transfer similarity (layer 27)": -2.231987934822349,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.7142012715339661,
+      "map-transfer similarity (layer 27)": -2.012535525389182,
+      "_kind": "scatter"
+    },
+    {
+      "committed activation cosine (#532 recipe, layer 21)": 0.703535795211792,
+      "map-transfer similarity (layer 27)": -1.8798997910804132,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 400,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map similarity against the activation-cosine covariate, 400 cells",
+        "xlabel": "committed activation cosine (#532 recipe, layer 21)",
+        "ylabel": "map-transfer similarity (layer 27)",
+        "annotations": [
+          "Pearson r = 0.81"
+        ],
+        "xticklabels": [
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ],
+        "yticklabels": [
+          "\u221212",
+          "\u221210",
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2"
+        ]
+      }
+    ]
+  }
+}

@@ -287,11 +287,47 @@ session/implementer/experimenter side and does not duplicate it. Outcomes:
   parity).
 - **Not overhead-bound** (FLOP-bound / API-latency / bandwidth /
   contention) → record `signature_check: negative` with 1–3 lines of
-  arithmetic on the marker and continue: #931's 6.0× battery resolved
+  arithmetic on the marker and continue — after the width re-evaluation
+  below when the phase is an embarrassingly-parallel unit grid: #931's
+  6.0× battery resolved
   exactly this way (195 s/cell MEASURED at production shape; shared-VM
-  thread contention on a cached-eigh battery), and its earlier ~2.2–2.5×
-  elapsed-vs-plan read was likewise correctly ridden out as a
+  thread contention on a cached-eigh battery — ONE box, no relaunch in
+  progress, so the width predicate below did not hold), and its earlier
+  ~2.2–2.5× elapsed-vs-plan read was likewise correctly ridden out as a
   demonstrably-in-tail FLOP-bound phase.
+
+**Width re-evaluation on a negative signature — a negative signature settles
+VECTORIZATION, not WIDTH (#1092).** When the negative-signature phase is an
+embarrassingly-parallel unit grid (independent cells/units, no cross-unit
+dependency) AND EITHER checkpoint/restore machinery is live (per-unit
+checkpoints persist and a restart resumes them) OR a relaunch is already
+happening (a crash-fix round, a pilot-gate abort, any kill+relaunch —
+restore is then already occurring), `continue_as_is` at
+the current fleet width is NOT the default resolution: EVALUATE re-sharding
+the REMAINING units across a wider fleet first. Record 1–3 lines of
+arithmetic as a `width_reeval:` note field on the SAME
+`epm:compute-deviation` re-post that carries the resolution — remaining
+units × measured h/unit (the deviation's OWN measured basis, never the
+falsified plan estimate) ÷ candidate width + provision/stage/restore
+overhead, vs the remaining wall at the current width. Decision default:
+wall-clock is the scarce resource and credits are not (CLAUDE.md "Default to
+the most parallel viable spec" / the wide-by-default `--gpus N` guidance) —
+WIDENING WINS unless the recorded arithmetic shows otherwise (remaining wall
+already short vs re-shard overhead + one provision round, or the lane cannot
+supply the width). Staying posts `action: continue_as_is` + the
+`width_reeval:` line; widening posts `action: reshard_width_<K>` + the line,
+and the relaunch follows the ordinary relaunch duties
+(`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch + § Crash-fix
+relaunch; fresh `epm:run-launched` per box). This COMPOSES with plan-time
+width — CLAUDE.md wide-by-default governs the ORIGINAL provision; this step
+fires at the mid-run deviation/relaunch point, where restore makes
+re-sharding cheap. Founding incident #1092 (2026-07-15): a 2.57×
+measured-pilot deviation, correctly negative-signatured (FLOP-bound
+permutation battery, engine already batched), relaunched a 64-unit
+embarrassingly-parallel refit grid at the unchanged width 4 — re-sharding
+the remaining units across 8–12 boxes at the restore point would have cut
+hours of wall-clock (the parent v6 grid itself had run 12 boxes); nothing
+in this branch prompted the width question.
 
 Two scoping notes. A prior lever-0 record does NOT immunize the phase:
 when realized numbers FALSIFY the earlier residual classification (a

@@ -35,3 +35,8 @@ Sibling lesson: `feedback_bpe_zero_width_span_plain_text_delimiters.md`
 (#825) — the gen-time SPAN-validation flavor of the same BPE-seam trap.
 Reference impl: `_capture_row_ids_and_positions`
 (`scripts/issue1092_gpu_phase.py` @ a51add173d).
+
+Escalation sibling (#1315 r7): under `prefix_end='last_user'` a PLAIN-TEXT
+span boundary with a space-before-`{q}` wrap merges on essentially every
+question, and span-rig smokes need ≥1 plain-text-boundary context — see
+`feedback_plain_text_span_boundary_bpe_merge.md`.

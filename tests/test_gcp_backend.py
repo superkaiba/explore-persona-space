@@ -4528,9 +4528,12 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         "                      ignore_patterns=None):\n"
         "        # #1151: fail-injection knob — raise on the first N folder calls\n"
         "        # (counted in a sidecar file) so the first-bundle ONE-retry\n"
-        "        # behavior is executable-testable.\n"
+        "        # behavior is executable-testable. #1339: FAKE_HUB_FOLDER_FAIL_MATCH\n"
+        "        # scopes the counter to calls whose path_in_repo contains the\n"
+        "        # substring (unset = the pre-#1339 match-all semantics).\n"
         "        fail_times = int(os.environ.get('FAKE_HUB_FOLDER_FAIL_TIMES', '0'))\n"
-        "        if fail_times:\n"
+        "        fail_match = os.environ.get('FAKE_HUB_FOLDER_FAIL_MATCH', '')\n"
+        "        if fail_times and (not fail_match or fail_match in path_in_repo):\n"
         "            cpath = os.environ['FAKE_HUB_CALLS'] + '.failcount'\n"
         "            n = 0\n"
         "            if os.path.exists(cpath):\n"
@@ -4559,6 +4562,22 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         "        self._rec('folder', folder_path=folder_path, path_in_repo=path_in_repo,\n"
         "                  repo_id=repo_id, repo_type=repo_type,\n"
         "                  ignore_patterns=ignore_patterns, staged=staged)\n"
+        "    def file_exists(self, repo_id, filename, *, repo_type=None, revision=None,\n"
+        "                    token=None):\n"
+        "        # #1343: the verify-gate probe. Records to a SEPARATE '.exists'\n"
+        "        # sidecar channel, NEVER the shared FAKE_HUB_CALLS JSONL — the\n"
+        "        # gate fires unconditionally at heredoc end, and the existing\n"
+        "        # tests read the shared channel with full-list equalities /\n"
+        "        # calls[-1] / c['path_in_repo'] comprehensions that a\n"
+        "        # path_in_repo-less 'exists' record would break.\n"
+        "        mode = os.environ.get('FAKE_HUB_FILE_EXISTS', 'true')\n"
+        "        rec = dict(kind='exists', repo_id=repo_id, filename=filename,\n"
+        "                   repo_type=repo_type, mode=mode)\n"
+        "        with open(os.environ['FAKE_HUB_CALLS'] + '.exists', 'a') as fh:\n"
+        "            fh.write(json.dumps(rec) + '\\n')\n"
+        "        if mode == 'raise':\n"
+        "            raise RuntimeError('fake probe 500')\n"
+        "        return mode == 'true'\n"
     )
     (shim / "utils" / "__init__.py").write_text("")
 
@@ -4662,7 +4681,7 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     assert "hf_dl/**" in data_call["ignore_patterns"]
     assert "**/hf_dl/**" in data_call["ignore_patterns"]
     assert data_call["repo_id"] == "org/repo" and data_call["repo_type"] == "dataset"
-    # _dir_stats pruned BOTH the top-level and the nested hf_dl caches: only
+    # _dir_entries pruned BOTH the top-level and the nested hf_dl caches: only
     # track.jsonl is counted for data_issue_137.
     assert "[crash-persist] uploading dir data_issue_137 (1 files" in proc.stdout
     # Eagerly-streamed audit lines, start to DONE.
@@ -4677,6 +4696,10 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     # audit through DONE (transcript-last semantics preserved, #854).
     uploaded_transcript = calls[5]["staged"]["crash_persist_transcript.log"]
     assert "[crash-persist] DONE" in uploaded_transcript
+    # #1339 AC-1 (second half): small dirs (default bound 1000 >> the fixture
+    # sizes) provably take the UNCHANGED single-commit path — no batch line
+    # anywhere in the persist output.
+    assert " batch " not in proc.stdout
 
 
 def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
@@ -4757,6 +4780,10 @@ def test_render_startup_script_diagnostics_sweeps_worker_logs() -> None:
         < script.index("\n_up_logs()")
         < script.index("for local, name in (")
     )
+    # #1351: the git-tracked exclude + its fail-open WARN are rendered.
+    assert '"ls-files"' in script
+    assert "git-tracked exclude" in script
+    assert "EXCLUDED {n_tracked} git-tracked file(s)" in script
 
 
 def test_persist_heredoc_worker_logs_tail_sentinel_and_newest_first(tmp_path) -> None:
@@ -4828,6 +4855,83 @@ def test_persist_heredoc_worker_logs_max_files_lt_one_skips_loudly(tmp_path) -> 
     assert not any(
         c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs") for c in calls
     )
+    # #1351: the documented-disable early-return runs BEFORE the git probe —
+    # no WARN, no EXCLUDED line on this path.
+    assert "git-tracked exclude" not in proc.stdout
+
+
+def test_persist_heredoc_worker_logs_excludes_git_tracked(tmp_path) -> None:
+    """#1351 behavioral (executed heredoc): committed repo content under
+    $WORKLOAD_ROOT/logs/ is EXCLUDED from the worker-logs sweep and does NOT
+    consume the LOG_MAX_FILES budget — with a 1-file bound where the TRACKED
+    file is the NEWER one, the sweep stages exactly the untracked run log
+    (an upload-time-only exclusion mutant would let the newer tracked file
+    win the single slot); the EXCLUDED breadcrumb prints AND tees into the
+    transcript."""
+    root = tmp_path / "workload"
+    daily = root / "logs" / "daily"
+    daily.mkdir(parents=True)
+    tracked_md = daily / "2026-06-02.md"
+    tracked_md.write_text("committed retrospective\n")
+    run_dir = root / "logs" / "issue_137"
+    run_dir.mkdir(parents=True)
+    worker = run_dir / "corpus_gpu0_all.log"
+    worker.write_text("worker traceback\n")
+    subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
+    subprocess.run(
+        ["git", "-C", str(root), "add", "logs/daily/2026-06-02.md"], check=True
+    )  # ls-files reads the INDEX — add suffices, no commit/identity needed
+    base = os.stat(worker).st_mtime
+    os.utime(tracked_md, (base + 3600, base + 3600))  # tracked NEWER than run log
+    proc, calls, paths = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_PERSIST_LOG_MAX_FILES": "1"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    folder_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")
+    ]
+    assert [c["path_in_repo"] for c in folder_calls] == ["issue137_partial/att-x/worker_logs"]
+    assert folder_calls[0]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
+    assert "[crash-persist] EXCLUDED 1 git-tracked file(s) from worker_logs sweep" in proc.stdout
+    # Walk-time exclusion: the tracked file never entered the entries pool,
+    # so the dropped-count line does not fire (1 untracked entry, bound 1).
+    assert "older worker log(s) beyond" not in proc.stdout
+    assert "EXCLUDED 1 git-tracked" in paths["transcript"].read_text()
+
+
+def test_persist_heredoc_worker_logs_git_failure_fails_open(tmp_path) -> None:
+    """#1351 fail-open (nonzero-rc arm): when the tracked-set probe fails
+    (WORKLOAD_ROOT is not a git repo -> rc 128), the sweep degrades to the
+    pre-#1351 behavior (stage everything) with a loud grep-stable WARN that
+    ALSO tees into the transcript — never an empty or crashed sweep."""
+    proc, calls, paths = _run_persist_heredoc(tmp_path)  # default fixture: no .git
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] WARN worker_logs git-tracked exclude unavailable" in proc.stdout
+    folder_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")
+    ]
+    assert folder_calls[0]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
+    assert "WARN worker_logs git-tracked exclude unavailable" in paths["transcript"].read_text()
+
+
+def test_persist_heredoc_worker_logs_git_binary_missing_fails_open(tmp_path) -> None:
+    """#1351 fail-open (except-Exception arm): with the git binary
+    unreachable (PATH scrubbed to an empty dir -> FileNotFoundError inside
+    subprocess.run), the except body prints the SAME grep-stable WARN and
+    the sweep still stages everything — the probe's own failure can never
+    crash the persist."""
+    empty_bin = tmp_path / "empty-bin"
+    empty_bin.mkdir()
+    proc, calls, paths = _run_persist_heredoc(tmp_path, env_overrides={"PATH": str(empty_bin)})
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] WARN worker_logs git-tracked exclude unavailable" in proc.stdout
+    folder_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")
+    ]
+    assert folder_calls[0]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
+    assert "WARN worker_logs git-tracked exclude unavailable" in paths["transcript"].read_text()
 
 
 # ---------------------------------------------------------------------------
@@ -4894,6 +4998,28 @@ def test_render_startup_script_persist_skip_writes_skipped_no_token() -> None:
     assert guard_idx < skip_idx < ret_idx
 
 
+def test_render_startup_script_persist_verify_gate_renders() -> None:
+    """#1343: the eps/persist=ok honesty gate renders — the rc-3 case arm
+    sits between the (0) ok and (124) timeout arms, the heredoc carries the
+    transcript existence probe + sys.exit(3), and the eps/persist
+    guest-attribute URL site count stays at 2 (the new value rides the
+    EXISTING final-status write — no new curl; the <=3-writes budget pin)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    fn = _extract_persist_function(script)
+    assert '(3)   _eps_persist_status "failed_uploads" ;;' in fn
+    assert fn.index('(0)   _eps_persist_status "ok"') < fn.index(
+        '(3)   _eps_persist_status "failed_uploads"'
+    )
+    assert fn.index('(3)   _eps_persist_status "failed_uploads"') < fn.index(
+        '(124) _eps_persist_status "timeout"'
+    )
+    heredoc = _extract_persist_heredoc(script)
+    assert "file_exists(" in heredoc
+    assert "crash_persist_transcript.log" in heredoc
+    assert "sys.exit(3)" in heredoc
+    assert script.count("instance/guest-attributes/eps/persist") == 2
+
+
 def _run_persist_function_bash(tmp_path, *, fake_uv_rc=None, with_token=True, env_overrides=None):
     """Execute the REAL extracted _eps_persist_diagnostics bash function with
     ``_eps_persist_status`` overridden to a call recorder (no metadata
@@ -4947,13 +5073,17 @@ def _run_persist_function_bash(tmp_path, *, fake_uv_rc=None, with_token=True, en
 
 
 def test_persist_final_status_case_semantics(tmp_path) -> None:
-    """#1151 executed-bash discriminator: rc-file 0 -> ok, 124 -> timeout,
-    7 -> failed_rc7, and a MISSING rc file writes NOTHING — the standing
-    `attempted` IS the killed-mid-persist signal; a guessed final value
-    here would destroy that discriminator."""
+    """#1151 executed-bash discriminator: rc-file 0 -> ok, 3 -> failed_uploads
+    (#1343 verify-gate FAIL), 124 -> timeout, 7 -> failed_rc7, and a MISSING
+    rc file writes NOTHING — the standing `attempted` IS the
+    killed-mid-persist signal; a guessed final value here would destroy that
+    discriminator."""
     proc, got = _run_persist_function_bash(tmp_path / "ok", fake_uv_rc=0)
     assert proc.returncode == 0, proc.stderr
     assert got == ["attempted", "ok"], got
+    proc, got = _run_persist_function_bash(tmp_path / "rc3", fake_uv_rc=3)
+    assert proc.returncode == 0, proc.stderr
+    assert got == ["attempted", "failed_uploads"], got
     proc, got = _run_persist_function_bash(tmp_path / "to", fake_uv_rc=124)
     assert proc.returncode == 0, proc.stderr
     assert got == ["attempted", "timeout"], got
@@ -5043,6 +5173,295 @@ def test_persist_heredoc_final_bundle_carries_timestamped_log_and_transcript(tmp
     script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
     assert '_up_bundle(first_stage, "first", retry=True)' in script
     assert '_up_bundle(final_stage, "final", retry=False)' in script
+
+
+# ---------------------------------------------------------------------------
+# #1339 — crash-persist chunked partial-dir uploads (incident #1090 fu5)
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_dir_uploads_chunked() -> None:
+    """#1339 string coverage: the rendered script carries the chunking knobs,
+    the chunk-header / ABORT / summary line templates, and targets the SAME
+    f"{dest}/{name}" repo path on BOTH the single-commit and the batch
+    upload_folder calls (path identity pinned at the string level too)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert 'BATCH_MAX = _env_int("EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT", 1000)' in script
+    assert 'BATCH_ABORT_STREAK = _env_int("EPS_PERSIST_DIR_BATCH_ABORT_STREAK", 2)' in script
+    assert '"EPS_PERSIST_DIR_STAGE_DIR", "/tmp/eps-dir-batch"' in script
+    assert "chunking dir {name}: {n} files >" in script
+    assert "ABORT dir {name}: {fail_streak} consecutive" in script
+    assert "dir {name}: {ok_batches}/{nb} batches uploaded" in script
+    # BOTH the single-commit path and the batch path target f"{dest}/{name}"
+    # — byte-identical repo paths for chunked AND unchunked dirs (AC-6).
+    assert script.count('path_in_repo=f"{dest}/{name}"') == 2
+    # The serial print cap moved 120 -> 200 with the chunked worst case
+    # (~122 lines); the literal + its sizing comment move together (#1339).
+    assert 'if [ "$_n" -le 200 ]; then' in script
+    assert 'if [ "$_n" -le 120 ]; then' not in script
+
+
+def _make_chunk_fixture(tmp_path):
+    """Pre-create the #1339 chunk-test tree for a make_dirs=False harness
+    run: 5 files under eval_results/issue_137/ (one in a subdir) with
+    staggered mtimes (f4 newest ... sub/f0 oldest — newest-first batches are
+    then deterministic), plus 1-file data dirs (each far under the batch
+    bound, so they take the single-commit path). Returns the 5 relpaths."""
+    root = tmp_path / "workload"
+    ev = root / "eval_results" / "issue_137"
+    (ev / "sub").mkdir(parents=True)
+    base = 1_700_000_000
+    rels = ["f4.json", "f3.json", "f2.json", "f1.json", "sub/f0.json"]
+    for i, rel in enumerate(rels):
+        p = ev / rel
+        p.write_text(json.dumps({"i": i}))
+        os.utime(p, (base - 10 * i, base - 10 * i))
+    (root / "data" / "issue_137").mkdir(parents=True)
+    (root / "data" / "issue_137" / "track.jsonl").write_text('{"row":1}\n')
+    (root / "data" / "issue137").mkdir(parents=True)
+    (root / "data" / "issue137" / "battery.json").write_text("{}")
+    return rels
+
+
+_CHUNK_ENV = {
+    "EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT": "2",
+    "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+}
+
+
+def _chunk_env(tmp_path, **extra):
+    """The shared #1339 chunk-test env: bound=2, zero backoff, and a
+    per-test staging dir (shared-VM isolation — the production default is
+    the shared literal /tmp/eps-dir-batch, the #885 pattern)."""
+    env = dict(_CHUNK_ENV)
+    env["EPS_PERSIST_DIR_STAGE_DIR"] = str(tmp_path / "staged-dir-batch")
+    env.update(extra)
+    return env
+
+
+def test_persist_heredoc_chunks_large_dir_newest_first_and_path_identical(tmp_path) -> None:
+    """#1339 behavioral headline: an over-bound dir uploads as >=2
+    upload_folder commits, ALL targeting the byte-identical
+    {dest}/eval_results_issue_137 repo path, newest-first, covering every
+    file exactly once, with zero per-file upload_file calls and rc 0."""
+    rels = _make_chunk_fixture(tmp_path)
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path, make_dirs=False, env_overrides=_chunk_env(tmp_path)
+    )
+    assert proc.returncode == 0, proc.stderr
+    ev_path = "issue137_partial/att-x/eval_results_issue_137"
+    batches = [c for c in calls if c["kind"] == "folder" and c["path_in_repo"] == ev_path]
+    assert len(batches) == 3, [c["path_in_repo"] for c in calls]
+    # Per-call batch size never exceeds the bound — a missing per-batch
+    # rmtree would GROW batches across iterations (the staging-leak class).
+    for b in batches:
+        assert len(b["staged"]) <= 2, sorted(b["staged"])
+    # Newest-first: batch 1 carries exactly the two newest files.
+    assert sorted(batches[0]["staged"]) == ["f3.json", "f4.json"]
+    # Union over batches covers all 5 relpaths (incl. the subdir one),
+    # each exactly once.
+    all_staged = [rel for b in batches for rel in b["staged"]]
+    assert sorted(all_staged) == sorted(rels)
+    assert len(all_staged) == len(set(all_staged))
+    # Zero per-file upload_file calls anywhere (the #664 504-storm class).
+    assert not any(c["kind"] == "file" for c in calls)
+    assert (
+        "[crash-persist] chunking dir eval_results_issue_137: 5 files >"
+        " EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT=2; 3 batches, newest-first"
+    ) in proc.stdout
+    assert (
+        "[crash-persist] dir eval_results_issue_137: 3/3 batches uploaded (5/5 files)"
+    ) in proc.stdout
+
+
+def test_persist_heredoc_chunked_batch_retries_then_continues(tmp_path) -> None:
+    """#1339 AC-2: a failed batch attempt retries EXACTLY once (the #1151
+    bounded-retry mirror) and the persist then continues — the remaining
+    batches, the data dirs, and the final bundle all still upload, in
+    order."""
+    _make_chunk_fixture(tmp_path)
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides=_chunk_env(
+            tmp_path,
+            FAKE_HUB_FOLDER_FAIL_MATCH="eval_results_issue_137",
+            FAKE_HUB_FOLDER_FAIL_TIMES="1",
+        ),
+    )
+    assert proc.returncode == 0, proc.stderr
+    ev_path = "issue137_partial/att-x/eval_results_issue_137"
+    # The match knob scoped the injected failure to the eval dir: the FIRST
+    # bundle (bare dest) succeeded on attempt 1.
+    assert (calls[0]["kind"], calls[0]["path_in_repo"]) == ("folder", "issue137_partial/att-x")
+    fails = [c for c in calls if c["kind"] == "folder_fail"]
+    assert [c["path_in_repo"] for c in fails] == [ev_path]
+    assert (
+        "[crash-persist] FAILED dir eval_results_issue_137 batch 1/3 attempt 1/2"
+    ) in proc.stdout
+    assert "[crash-persist] uploaded dir eval_results_issue_137 batch 1/3" in proc.stdout
+    batches = [c for c in calls if c["kind"] == "folder" and c["path_in_repo"] == ev_path]
+    assert len(batches) == 3, [c["path_in_repo"] for c in calls]
+    assert (
+        "[crash-persist] dir eval_results_issue_137: 3/3 batches uploaded (5/5 files)"
+    ) in proc.stdout
+    # The data dirs + the final bundle still upload AFTER the chunked dir
+    # (order preserved).
+    idx_last_batch = max(i for i, c in enumerate(calls) if c["path_in_repo"] == ev_path)
+    tail = [(c["kind"], c["path_in_repo"]) for c in calls[idx_last_batch + 1 :]]
+    assert tail == [
+        ("folder", "issue137_partial/att-x/data_issue_137"),
+        ("folder", "issue137_partial/att-x/data_issue137"),
+        ("folder", "issue137_partial/att-x"),
+    ], tail
+
+
+def test_persist_heredoc_chunked_aborts_after_consecutive_failures_fail_soft(tmp_path) -> None:
+    """#1339 AC-3/AC-4: after EPS_PERSIST_DIR_BATCH_ABORT_STREAK consecutive
+    fully-failed batches the dir is abandoned LOUDLY (batch 3 never
+    attempted), the remaining dirs + the final bundle still upload, and rc
+    stays 0 — the fail-soft poweroff path is always reached."""
+    _make_chunk_fixture(tmp_path)
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides=_chunk_env(
+            tmp_path,
+            FAKE_HUB_FOLDER_FAIL_MATCH="eval_results_issue_137",
+            FAKE_HUB_FOLDER_FAIL_TIMES="99",
+            EPS_PERSIST_DIR_BATCH_ABORT_STREAK="2",
+        ),
+    )
+    assert proc.returncode == 0, proc.stderr
+    ev_path = "issue137_partial/att-x/eval_results_issue_137"
+    fails = [c for c in calls if c["kind"] == "folder_fail" and c["path_in_repo"] == ev_path]
+    # 2 batches x 2 attempts each — batch 3 is never attempted.
+    assert len(fails) == 4, [(c["kind"], c["path_in_repo"]) for c in calls]
+    assert not any(c["kind"] == "folder" and c["path_in_repo"] == ev_path for c in calls)
+    assert (
+        "[crash-persist] ABORT dir eval_results_issue_137: 2 consecutive batch"
+        " failures; 1 batch(es) unsent"
+    ) in proc.stdout
+    assert (
+        "[crash-persist] dir eval_results_issue_137: 0/3 batches uploaded (0/5 files)"
+    ) in proc.stdout
+    # The data dirs AND the final bundle (transcript) still uploaded.
+    folder_paths = [c["path_in_repo"] for c in calls if c["kind"] == "folder"]
+    assert "issue137_partial/att-x/data_issue_137" in folder_paths
+    assert "issue137_partial/att-x/data_issue137" in folder_paths
+    final = [c for c in calls if c["kind"] == "folder"][-1]
+    assert final["path_in_repo"] == "issue137_partial/att-x"
+    assert "crash_persist_transcript.log" in final["staged"]
+    assert "[crash-persist] DONE" in proc.stdout
+
+
+# ---------------------------------------------------------------------------
+# #1343 — eps/persist=ok honesty gate (transcript probe + client-confirmed
+# upload counter; ok <=> probe True OR >=1 client-confirmed upload, else rc 3)
+# ---------------------------------------------------------------------------
+
+
+def _read_exists_calls(tmp_path):
+    """Read the #1343 probe's SIDECAR channel (FAKE_HUB_CALLS + '.exists') —
+    kept separate from the shared calls JSONL so the pre-#1343 call-record
+    asserts stay byte-compatible."""
+    p = tmp_path / "calls.jsonl.exists"
+    if not p.is_file():
+        return []
+    return [json.loads(ln) for ln in p.read_text().split("\n") if ln.strip()]
+
+
+def test_persist_heredoc_total_upload_failure_exits_3_failed_uploads(tmp_path) -> None:
+    """#1343 regression (the #1315 shape): EVERY upload fails client-side AND
+    the transcript probe reads False -> the heredoc exits 3 (the bash case
+    then writes failed_uploads), never the dishonest 0/ok."""
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        env_overrides={
+            "FAKE_HUB_FOLDER_FAIL_TIMES": "99",
+            "FAKE_HUB_FILE_EXISTS": "false",
+            "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+        },
+    )
+    assert proc.returncode == 3, (proc.returncode, proc.stderr)
+    assert "[crash-persist] VERIFY-FAIL" in proc.stdout
+    # zero client-confirmed uploads: every recorded shared-channel call is a
+    # folder_fail (no 'folder' success record anywhere).
+    assert not any(c["kind"] == "folder" for c in calls)
+    exists = _read_exists_calls(tmp_path)
+    assert len(exists) == 1, exists
+
+
+def test_persist_heredoc_verify_probe_true_records_exists_call(tmp_path) -> None:
+    """#1343: on a normal crash persist the probe targets the exact expected
+    repo path AND its outcome is True — probe=True on the VERIFY-OK line
+    asserts _verified actually read True, not merely that the probe was
+    called."""
+    proc, _calls, _ = _run_persist_heredoc(tmp_path)
+    assert proc.returncode == 0, proc.stderr
+    exists = _read_exists_calls(tmp_path)
+    assert len(exists) == 1, exists
+    assert exists[0]["filename"] == "issue137_partial/att-x/crash_persist_transcript.log"
+    assert exists[0]["repo_id"] == "org/repo"
+    assert exists[0]["repo_type"] == "dataset"
+    assert "[crash-persist] VERIFY-OK" in proc.stdout
+    assert "probe=True" in proc.stdout
+
+
+def test_persist_heredoc_probe_true_rescues_total_client_failure(tmp_path) -> None:
+    """#1343 probe-causal cell (probe True, ZERO client-confirmed uploads):
+    the #1339 forward rescue — the client logged FAILED on every commit but
+    the transcript is verifiably on the Hub -> ok (rc 0). The one
+    truth-table cell that distinguishes the OR-predicate from a degenerate
+    counter-only implementation (or a silently-always-False _verified)."""
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        env_overrides={
+            "FAKE_HUB_FOLDER_FAIL_TIMES": "99",
+            "FAKE_HUB_FILE_EXISTS": "true",
+            "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+        },
+    )
+    assert proc.returncode == 0, (proc.returncode, proc.stderr)
+    # zero client-confirmed uploads — the probe alone carried the verdict.
+    assert not any(c["kind"] == "folder" for c in calls)
+    assert "[crash-persist] VERIFY-OK" in proc.stdout
+    assert "probe=True" in proc.stdout
+
+
+def test_persist_heredoc_probe_false_client_success_still_ok(tmp_path) -> None:
+    """#1343 no-new-false-negative channel: probe False ALONE (uploads
+    client-confirmed) never flips the verdict — read-after-commit lag /
+    eventual consistency on the just-uploaded final bundle must not
+    manufacture failed_uploads."""
+    proc, _calls, _ = _run_persist_heredoc(
+        tmp_path, env_overrides={"FAKE_HUB_FILE_EXISTS": "false"}
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] VERIFY-OK" in proc.stdout
+    assert "probe=False" in proc.stdout
+
+
+def test_persist_heredoc_probe_raise_semantics(tmp_path) -> None:
+    """#1343: a raising probe is treated as evidence-absence and NEVER
+    crashes the persist — with client-confirmed uploads the verdict stays ok
+    (rc 0); with total client-side failure it reads failed_uploads (rc 3)."""
+    proc, _calls, _ = _run_persist_heredoc(
+        tmp_path / "ok", env_overrides={"FAKE_HUB_FILE_EXISTS": "raise"}
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "VERIFY probe FAILED" in proc.stdout
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path / "fail",
+        env_overrides={
+            "FAKE_HUB_FILE_EXISTS": "raise",
+            "FAKE_HUB_FOLDER_FAIL_TIMES": "99",
+            "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+        },
+    )
+    assert proc.returncode == 3, (proc.returncode, proc.stderr)
+    assert "VERIFY probe FAILED" in proc.stdout
+    assert not any(c["kind"] == "folder" for c in calls)
 
 
 def _guest_attr_kv(key: str, value: str) -> str:

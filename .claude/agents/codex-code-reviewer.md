@@ -345,7 +345,13 @@ both reviewers are graded against the same standard. Read
   unfenced smoke), (b) module-top hoisting, or (c) a symbol-definition
   grep of the import's target module quoted as `file.py:LINE`; an
   unresolvable one is a Critical finding with blocker tag `substantive`,
-  NOT `smoke-run-missing`. Copy the (a)/(b)/(c) options + the tag rule in
+  NOT `smoke-run-missing`. Fenced CALLS to imported helpers must
+  additionally signature-BIND (`inspect.signature(fn).bind(...)` with
+  the call site's positional count + keyword names; `bind_partial` on
+  `*args`/`**kwargs` forwards; hoisting does NOT discharge this leg) —
+  a fenced call that fails to bind is the same Critical `substantive`
+  class (incident #1332 r1). Copy the
+  (a)/(b)/(c) options + the fenced-call bind rule + the tag rule in
   full so Codex never re-derives a narrower check (incident #606: two
   PASSed rounds never executed an upload-branch lazy import of a
   nonexistent symbol; the ImportError fired on the pod after training +

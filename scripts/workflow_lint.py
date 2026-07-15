@@ -9066,12 +9066,13 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
+    # measured 104,235 B post-#1317 (Step 4.6 Gate-scope line verification —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 101,500 —
     # measured 100,555 B post-#1254 (Step 3.9 degenerate-statistic check,
-    # observed-vs-null reads — plan-mandated growth; cap = measured
-    # + <=~1 KB. Prior: 99,000 — measured 98,126 B post-#1230 (Step 6
+    # observed-vs-null reads), 99,000 — measured 98,126 B post-#1230 (Step 6
     # durability-pin shipping duty), 97,000 — measured 96,072 B post-#1119,
     # 95,000 — measured 94,126 B post-#1115)
-    "code-reviewer.md": 101_500,
+    "code-reviewer.md": 105_000,
     # measured 73,408 B post-#1159 (Step 2 dual-source read contract: lens
     # rubrics from clean-result-critic-lens-reference.md, report schema from
     # the slim agent spec — plan-mandated growth; cap = measured + <=~1 KB.
@@ -9083,10 +9084,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # + <=~1 KB. Prior: 51,600 — measured 50,642 B post-#948 (Step 3.8
     # copy-list bullet + inlined-rubric slot), 47,930 B post-#881)
     "codex-code-reviewer.md": 53_300,
-    # measured 65,548 B post-#1311 (pod-side sentinel read-back cross-ref
-    # sentence — plan-mandated growth; cap = measured + <=~1 KB. Prior:
-    # 65,300 — measured 64,360 B post-#1138)
-    "experiment-implementer.md": 66_300,
+    # measured 66,574 B post-#1349 (item-5 non-cell smoke-axis min-N clause
+    # + notes: template floor line — plan-mandated growth; cap = measured
+    # + <=~1 KB. Prior: 66,300 — measured 65,548 B post-#1311)
+    "experiment-implementer.md": 67_400,
     # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
     # disposition-conditional resume-glob confirm — plan-mandated growth;
     # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)

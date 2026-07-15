@@ -390,12 +390,21 @@ def resolve_live_pods_ephemeral() -> Path:
 MCP_JSON = Path.home() / ".claude" / "mcp.json"
 SSH_CONFIG = Path.home() / ".ssh" / "config"
 
+# Ephemeral-pod name grammar, mirroring pod_lifecycle._POD_NAME_RE (#1334):
+# pod-<digits> optionally followed by -<slug>, slug lowercase letter-initial
+# ([a-z][a-z0-9-]*) — the multi-pod-per-issue form pod-<N>-<slug>. The ENVKEY
+# variant is the same shape after pod.name.upper() (see _generate_mcp_env:
+# env keys embed the upper-cased pod name verbatim).
+_EPHEMERAL_NAME_PATTERN = r"pod-\d+(?:-[a-z][a-z0-9-]*)?"
+_EPHEMERAL_ENVKEY_PATTERN = r"POD-\d+(?:-[A-Z][A-Z0-9-]*)?"
+
 # Pod name patterns we recognize. Permanent fleet uses `podN`; ephemeral pods
-# use `pod-<N>` (canonical, since the April 2026 rename) — the legacy
-# `epm-issue-<N>` form is still recognized for in-flight pods provisioned
-# before the rename, and can be removed once no live pods carry it.
+# use `pod-<N>` (canonical, since the April 2026 rename) with an optional
+# `-<slug>` multi-pod-per-issue suffix (#1334) — the legacy `epm-issue-<N>`
+# form is still recognized for in-flight pods provisioned before the rename,
+# and can be removed once no live pods carry it.
 # Anything else is treated as foreign and skipped.
-POD_NAME_RE = re.compile(r"^(pod\d+|pod-\d+|epm-issue-\d+)$")
+POD_NAME_RE = re.compile(r"^(pod\d+|" + _EPHEMERAL_NAME_PATTERN + r"|epm-issue-\d+)$")
 
 # Shared SSH defaults written into every generated entry
 SSH_KEY = "~/.ssh/id_ed25519"
@@ -953,11 +962,16 @@ def update_mcp_config(pods: list[Pod]) -> list[str]:
 
     # Strip existing pod env keys:
     #  - permanent SSH_SERVER_POD<N>_*
-    #  - canonical ephemeral SSH_SERVER_POD-<N>_*
+    #  - canonical ephemeral SSH_SERVER_POD-<N>_* incl. the suffixed
+    #    multi-pod-per-issue SSH_SERVER_POD-<N>-<SLUG>_* shape (#1334) —
+    #    without this, a terminated suffixed pod's keys accumulate forever
     #  - legacy ephemeral SSH_SERVER_EPM-ISSUE-<N>_* (pre-rename)
     #  - very-legacy ephemeral SSH_SERVER_PODepm-issue-<N>_* (pre-prefix-fix)
-    # Keep any non-pod env vars.
-    pod_key_re = re.compile(r"^SSH_SERVER_(?:POD\d+|POD-\d+|EPM-ISSUE-\d+|PODepm-issue-\d+)_")
+    # Keep any non-pod env vars. (The [A-Z0-9-] slug class excludes `_`, so
+    # the trailing _HOST/_PORT anchor still terminates the match correctly.)
+    pod_key_re = re.compile(
+        r"^SSH_SERVER_(?:POD\d+|" + _EPHEMERAL_ENVKEY_PATTERN + r"|EPM-ISSUE-\d+|PODepm-issue-\d+)_"
+    )
     preserved_env = {k: v for k, v in old_env.items() if not pod_key_re.match(k)}
     new_pod_env = _generate_mcp_env(pods)
     new_env = {**preserved_env, **new_pod_env}
@@ -1004,10 +1018,14 @@ def _parse_mcp_pods() -> dict[str, tuple[str, int]]:
 
     # Permanent pods:        SSH_SERVER_POD<N>_HOST            -> name "podN"
     # Canonical ephemeral:   SSH_SERVER_POD-<N>_HOST           -> name "pod-N"
+    #   (incl. the suffixed  SSH_SERVER_POD-<N>-<SLUG>_HOST    -> name "pod-N-<slug>",
+    #    #1334 — suffix.lower() round-trips it with no further change)
     # Legacy ephemeral:      SSH_SERVER_EPM-ISSUE-<N>_HOST     -> name "epm-issue-N"
     # Very-legacy ephemeral: SSH_SERVER_PODepm-issue-<N>_HOST  -> name "epm-issue-N"
     host_key_re = re.compile(
-        r"^SSH_SERVER_(?P<suffix>POD\d+|POD-\d+|EPM-ISSUE-\d+|PODepm-issue-\d+)_HOST$"
+        r"^SSH_SERVER_(?P<suffix>POD\d+|"
+        + _EPHEMERAL_ENVKEY_PATTERN
+        + r"|EPM-ISSUE-\d+|PODepm-issue-\d+)_HOST$"
     )
 
     for key, value in env.items():
@@ -1597,11 +1615,13 @@ def cmd_refresh_from_api(pods: list[Pod], pod_name: str | None) -> None:
                 if p.name not in seen:
                     target_names.append(p.name)
                     seen.add(p.name)
-            # ``^pod-\d+$`` mirrors ``pod_lifecycle._MANAGED_PREFIXES``: only
+            # The ephemeral name grammar (incl. the pod-<N>-<slug> suffixed
+            # form, #1334) mirrors ``pod_lifecycle._POD_NAME_RE``: only
             # ephemeral, project-managed pods. A random RunPod entry from
-            # the team account (permanent fleet, another user's pod) is
-            # NEVER auto-added to pods.conf — bulk mode is safe by default.
-            managed_re = re.compile(r"^pod-\d+$")
+            # the team account (permanent fleet, another user's pod,
+            # ``thomas-pod-475``, ``pod-abc``, a numeric-slug ``pod-779-60``)
+            # is NEVER auto-added to pods.conf — bulk mode is safe by default.
+            managed_re = re.compile(r"^" + _EPHEMERAL_NAME_PATTERN + r"$")
             for live_name in sorted(live_by_name):
                 if live_name in seen:
                     continue

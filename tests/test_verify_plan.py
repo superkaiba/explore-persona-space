@@ -846,6 +846,84 @@ def test_c6_kind_infra_skips():
     assert _status(plan, "c6_reuse_fitness", kind="infra") == "SKIP"
 
 
+def test_c6_reuse_map_table_without_fitness_word_passes():
+    # Durability pin for #1314, modeled on #1090 plan v7's '### D3 — Reuse map'
+    # (artifact-reuse (a)–(j) self-attestation) table: a complete per-row  # noqa: RUF003
+    # attestation written in artifact-reuse.md's own vocabulary — no 'fitness'
+    # word anywhere — must PASS, not WARN "no fitness check found".
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\n### D3 — Reuse map (artifact-reuse (a)–(j) self-attestation)\n"
+        + "\n| Artifact | Checks | Verdict |"
+        + "\n|---|---|---|"
+        + "\n| parent adapter | (a) recipe match; (e) hub-resolves; (h)(i) staged | OK |"
+        + "\n| training mix | (f) content identity; (b) valid regime | OK |"
+        + "\n| eval JSON | (c) cells present; (d) single-variable; (j) pair-coherent | OK |\n"
+    )
+    assert "fitness" not in plan.lower()  # keeps the fixture honest vs future GOOD_PLAN edits
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+
+
+def test_c6_letters_without_declaration_vocab_still_warns():
+    # Regression pin: >=4 stray enumeration letters WITHOUT any declaration
+    # token (fitness / reuse map / attestation / range token) never PASS —
+    # true both pre- and post-#1314.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nAcceptance: (a) smoke passes; (b) loss decreases; (c) eval completes; "
+        + "(d) uploads verified.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "WARN"
+
+
+def test_c6_reuse_map_with_few_letters_warns():
+    # A bare 'Reuse map' heading (no 'self-attestation', no 'fitness', no
+    # (a)–(j) range token — guard-asserted below, so this fixture isolates  # noqa: RUF003
+    # the reuse[- ]map branch) with <4 letters routes to the MIDDLE branch:
+    # the declaration counted, but the letters threshold still gates. A
+    # mutant dropping the reuse-map branch fails this test — with no
+    # declaration token the fixture would route to the third branch, whose
+    # detail lacks "only 2".
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\n### Reuse map\n"
+        + "\n(a) recipe match verified; (b) valid measurement regime.\n"
+    )
+    lowered = plan.lower()
+    assert "fitness" not in lowered
+    assert "attestation" not in lowered
+    assert re.search(r"\(a\)\s*[-–—…]\s*\(j\)", plan) is None
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "WARN"
+    assert "only 2" in r.detail
+
+
+def test_c6_range_token_counts_as_declaration():
+    # Pins the en-dash (a)–(j) range-token branch specifically: no 'fitness',  # noqa: RUF003
+    # no 'map', no 'attestation' word (guard-asserted), four real item letters.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nArtifact checks (a)–(j): (a) recipe; (b) regime; (c) cells; "
+        + "(d) single-variable.\n"
+    )
+    lowered = plan.lower()
+    assert "fitness" not in lowered
+    assert "map" not in lowered
+    assert "attestation" not in lowered
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+
+
 # ─── Check 7 — replication fidelity ────────────────────────────────────────
 
 

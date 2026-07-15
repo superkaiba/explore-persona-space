@@ -1,0 +1,97 @@
+{
+  "commit": "40797cd8ab",
+  "created": "2026-07-15T12:32:22Z",
+  "figsize": [
+    6.4,
+    5.2
+  ],
+  "points": [
+    {
+      "Tier-1 rate at the selected rung (n=100 impolite / 150 formatting)": 0.45,
+      "Tier-2 confirmatory rate (n=200 / 300)": 0.345,
+      "label": "impolite bare, lr 1e-5 (control)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Tier-1 rate at the selected rung (n=100 impolite / 150 formatting)": 0.6,
+      "Tier-2 confirmatory rate (n=200 / 300)": 0.675,
+      "label": "impolite bare, lr 3e-5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Tier-1 rate at the selected rung (n=100 impolite / 150 formatting)": 0.64,
+      "Tier-2 confirmatory rate (n=200 / 300)": 0.605,
+      "label": "impolite bare, lr 1e-4",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Tier-1 rate at the selected rung (n=100 impolite / 150 formatting)": 0.32,
+      "Tier-2 confirmatory rate (n=200 / 300)": 0.28,
+      "label": "formatting, rank 128",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Tier-1 rate at the selected rung (n=100 impolite / 150 formatting)": 0.3333333333333333,
+      "Tier-2 confirmatory rate (n=200 / 300)": 0.2866666666666667,
+      "label": "formatting, rank 256",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Tier-1 rate at the selected rung (n=100 impolite / 150 formatting)": 0.29333333333333333,
+      "Tier-2 confirmatory rate (n=200 / 300)": 0.24,
+      "label": "formatting, rank 32 (reused)",
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Selected-rung Tier-1 vs Tier-2 confirmatory rate, all six fu5 arms",
+        "xlabel": "Tier-1 rate at the selected rung (n=100 impolite / 150 formatting)",
+        "ylabel": "Tier-2 confirmatory rate (n=200 / 300)",
+        "annotations": [
+          "impolite bare, lr 1e-5 (control)",
+          "impolite bare, lr 3e-5",
+          "impolite bare, lr 1e-4",
+          "formatting, rank 128",
+          "formatting, rank 256",
+          "formatting, rank 32 (reused)"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ]
+  }
+}
