@@ -18,6 +18,8 @@ goal: Test whether function-space similarity between per-context-family fitted l
   from source persona to target contexts on an existing measured leakage matrix, with
   incremental validity over the activation-cosine, JS-divergence, base-rate-prior,
   and whitened-gate baselines under group-level held-out (LOFO) evaluation.
+relates_to:
+- leak-predictor
 ---
 ## Goal
 
