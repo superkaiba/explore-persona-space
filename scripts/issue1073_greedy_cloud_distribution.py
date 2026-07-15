@@ -324,6 +324,247 @@ def cloud_descriptives(greedy: np.ndarray, stoch: np.ndarray, disp: np.ndarray) 
     }
 
 
+# ── Analysis 5: distributional-form fit tests on the within-context rollout cloud ────
+#
+# Residuals r_j(x) = v_j(x) - mean_10(x), sqrt(10/9) own-mean bias-corrected so the per-draw
+# variance is unbiased (mean_10 uses the same 10 draws). Two variants (the discriminating design):
+#   (a) RAW pooled residuals — a scale MIXTURE over contexts (dispersion is context-dependent), so
+#       it looks heavy-tailed even if each context's cloud is Gaussian.
+#   (b) PER-CONTEXT SCALE-NORMALIZED — each context's residuals divided by its own RMS residual
+#       magnitude sigma_x (the per-context scale whose mixture makes (a) heavy-tailed). If (a) fits
+#       multivariate-t but (b) fits Gaussian => "per-context Gaussian with context-dependent scale".
+# All claims are about the POOLED within-context distribution (n=10/context ⇒ no per-context
+# normality claim); the covariance is pooled (homogeneous-shape assumption).
+
+N_RAND_PROJ = 50
+N_TOP_PCA = 20
+PROJ_SEED = 42
+N_CLUSTER_BOOT = 200
+BIAS_CORR = float(np.sqrt(N_ROLLOUTS / (N_ROLLOUTS - 1)))  # sqrt(10/9) own-mean correction
+
+
+def _residuals(stoch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """(n,10,H) stochastic vectors -> (resid (n,10,H) bias-corrected, sigma_x (n,) RMS scale)."""
+    resid = (stoch - stoch.mean(1, keepdims=True)) * BIAS_CORR
+    sigma_x = np.sqrt((resid**2).mean(axis=(1, 2)))  # per-context per-dim RMS residual magnitude
+    return resid, sigma_x
+
+
+def _ledoit_wolf(cov: np.ndarray, mean_row4: float, n: int, d: int) -> tuple[np.ndarray, float]:
+    """Ledoit-Wolf shrinkage of a mean-zero pooled covariance toward scaled identity.
+
+    cov = R^T R / n (d,d); mean_row4 = mean_i ||r_i||^4. Returns (shrunk cov, shrinkage rho)."""
+    mu = float(np.trace(cov)) / d
+    cov_fro2 = float((cov**2).sum())
+    d2 = cov_fro2 - d * mu**2  # ||cov - mu I||_F^2
+    b_bar2 = (mean_row4 - cov_fro2) / n  # (1/n)(mean||r||^4 - ||cov||_F^2)
+    b2 = min(max(b_bar2, 0.0), d2)
+    rho = b2 / d2 if d2 > 0 else 0.0
+    shrunk = cov.copy()
+    shrunk *= 1.0 - rho
+    shrunk[np.diag_indices(d)] += rho * mu
+    return shrunk, float(rho)
+
+
+def _cov_eig(R: np.ndarray) -> tuple[np.ndarray, np.ndarray, float]:
+    """R (N,d) fp32 mean-zero residuals -> (eigenvalues desc, eigenvectors, LW rho). fp64 eigh."""
+    n, d = R.shape
+    cov = (R.T @ R) / n  # fp32 matmul
+    mean_row4 = float(((R**2).sum(1) ** 2).mean())
+    cov64 = cov.astype(np.float64)
+    shrunk, rho = _ledoit_wolf(cov64, mean_row4, n, d)
+    lam, V = np.linalg.eigh(shrunk)  # ascending
+    lam = lam[::-1]
+    V = V[:, ::-1]
+    lam = np.maximum(lam, lam.max() * 1e-12)  # floor (shrinkage already lifts the tail)
+    return lam, V, rho
+
+
+def _mahalanobis(R: np.ndarray, V: np.ndarray, lam: np.ndarray) -> np.ndarray:
+    """m^2_i = r_i^T Sigma^-1 r_i via the eigenbasis. R (N,d) fp32, V (d,d), lam (d,)."""
+    W = R @ V.astype(np.float32)  # (N,d) fp32 matmul
+    return (W.astype(np.float64) ** 2 / lam[None, :]).sum(1)
+
+
+def _marginal_t_fit(vals: np.ndarray) -> dict:
+    """Robust Gaussian-vs-Student-t comparison on a pooled 1D marginal sample.
+
+    A multivariate-t_nu has univariate-t_nu marginals, so fitting a univariate t (df, scale; loc=0)
+    to the pooled standardized projections estimates nu directly and gives a clean AIC vs a normal
+    fit — sidestepping the numerically fragile radial F-MLE at d~3584 (both models 2 params)."""
+    rng = np.random.default_rng(PROJ_SEED)
+    if vals.size > 50_000:
+        vals = vals[rng.choice(vals.size, 50_000, replace=False)]
+    vals = vals.astype(np.float64)
+    n = vals.size
+    df_hat, _, scale_t = sstats.t.fit(vals, floc=0.0)
+    logL_t = float(sstats.t.logpdf(vals, df_hat, 0.0, scale_t).sum())
+    mu, sd = float(vals.mean()), float(vals.std())
+    logL_norm = float(sstats.norm.logpdf(vals, mu, sd).sum())
+    aic_t = -2.0 * logL_t + 2.0 * 2
+    aic_norm = -2.0 * logL_norm + 2.0 * 2
+    return {
+        "fit_n": int(n),
+        "nu_hat_mle": float(df_hat),
+        "logL_t": logL_t,
+        "logL_gauss": logL_norm,
+        "aic_t": aic_t,
+        "aic_gauss": aic_norm,
+        "delta_aic_gauss_minus_t": aic_norm - aic_t,
+        "prefers": "t" if aic_t < aic_norm else "gaussian",
+    }
+
+
+def _radial_fit(m2: np.ndarray, d: int, keep_qq: bool) -> dict:
+    q_levels = [0.5, 0.9, 0.99, 0.999]
+    obs_q = np.percentile(m2, [x * 100 for x in q_levels]).tolist()
+    thr_q = sstats.chi2.ppf(q_levels, df=d).tolist()
+    out = {
+        "n": int(m2.size),
+        "dim": d,
+        "mean_m2": float(m2.mean()),
+        "chi2_mean_ref": float(d),
+        "var_m2": float(m2.var()),
+        "chi2_var_ref": float(2 * d),
+        "var_ratio_over_chi2": float(m2.var() / (2 * d)),
+        "excess_kurtosis": float(sstats.kurtosis(m2)),
+        "ks_stat_vs_chi2": float(sstats.kstest(m2, "chi2", args=(d,)).statistic),
+        "quantile_levels": q_levels,
+        "observed_quantiles": obs_q,
+        "chi2_quantiles": thr_q,
+    }
+    if keep_qq:  # subsampled sorted m2 for the QQ panel (kept only for the plotted layer)
+        rng = np.random.default_rng(PROJ_SEED)
+        idx = np.sort(rng.choice(m2.size, size=min(1500, m2.size), replace=False))
+        s = np.sort(m2)
+        pos = (idx + 0.5) / m2.size
+        out["_qq_obs"] = s[idx].tolist()
+        out["_qq_chi2"] = sstats.chi2.ppf(pos, df=d).tolist()
+    return out
+
+
+def _projection_tests(R: np.ndarray, V: np.ndarray, d: int, ctx_id: np.ndarray) -> dict:
+    rng = np.random.default_rng(PROJ_SEED)
+    W_rand = rng.standard_normal((d, N_RAND_PROJ)).astype(np.float32)
+    W_rand /= np.linalg.norm(W_rand, axis=0, keepdims=True) + EPS
+    W = np.concatenate([V[:, :N_TOP_PCA].astype(np.float32), W_rand], axis=1)  # (d, 70)
+    P = R @ W  # (N, 70)
+    P = (P - P.mean(0)) / (P.std(0) + EPS)
+    n_dir = P.shape[1]
+    ad_reject = 0
+    skews = np.empty(n_dir)
+    kurts = np.empty(n_dir)
+    for c in range(n_dir):
+        col = P[:, c].astype(np.float64)
+        a = sstats.anderson(col, "norm")
+        if a.statistic > a.critical_values[2]:  # alpha 0.05
+            ad_reject += 1
+        skews[c] = sstats.skew(col)
+        kurts[c] = sstats.kurtosis(col)
+    # context-clustered bootstrap SE of the mean |skew| and mean excess-kurtosis across directions
+    n_ctx = int(ctx_id.max()) + 1
+    boot_kurt = np.empty(N_CLUSTER_BOOT)
+    boot_skew = np.empty(N_CLUSTER_BOOT)
+    base = np.arange(N_ROLLOUTS)
+    for b in range(N_CLUSTER_BOOT):
+        cids = rng.integers(0, n_ctx, n_ctx)
+        idx = (cids[:, None] * N_ROLLOUTS + base[None, :]).ravel()
+        Pb = P[idx]
+        boot_kurt[b] = np.mean(sstats.kurtosis(Pb, axis=0))
+        boot_skew[b] = np.mean(np.abs(sstats.skew(Pb, axis=0)))
+    mean_kurt = float(np.mean(kurts))
+    # kurtosis-matched df: univariate-t_nu has excess kurtosis 6/(nu-4) for nu>4 -> nu=4+6/k
+    nu_kurt = float(4.0 + 6.0 / mean_kurt) if mean_kurt > 1e-6 else float("inf")
+    t_fit = _marginal_t_fit(P.reshape(-1))  # pooled standardized marginal, robust AIC
+    return {
+        "n_directions": n_dir,
+        "n_top_pca": N_TOP_PCA,
+        "n_random": N_RAND_PROJ,
+        "ad_reject_fraction_alpha05": float(ad_reject / n_dir),
+        "ad_note": (
+            f"n={R.shape[0]} pooled: Anderson-Darling saturates (rejects tiny deviations); read "
+            "the skew/kurtosis EFFECT SIZES below, not the rejection fraction"
+        ),
+        "mean_abs_skew": float(np.mean(np.abs(skews))),
+        "mean_excess_kurtosis": mean_kurt,
+        "max_abs_excess_kurtosis": float(np.max(np.abs(kurts))),
+        "excess_kurtosis_p95": float(np.percentile(kurts, 95)),
+        "nu_hat_kurtosis_matched": nu_kurt,
+        "marginal_t_fit": t_fit,
+        "clustered_boot_mean_excess_kurtosis_se": float(boot_kurt.std()),
+        "clustered_boot_mean_abs_skew_se": float(boot_skew.std()),
+        "_excess_kurtosis_per_direction": kurts.tolist(),
+        "_skew_per_direction": skews.tolist(),
+    }
+
+
+def _greedy_mahalanobis(
+    greedy: np.ndarray,
+    stoch: np.ndarray,
+    sigma_x: np.ndarray,
+    V: np.ndarray,
+    lam: np.ndarray,
+    d: int,
+) -> dict:
+    """Greedy deviation from the rollout mean, scale-normalized, under the per-context-scale
+    (variant-b) Gaussian. Ties to the rank test: central greedy => sub-exchangeable m^2."""
+    u = (greedy - stoch.mean(1)) / sigma_x[:, None]  # (n, d) scale-normalized greedy deviation
+    m2g = _mahalanobis(u.astype(np.float32), V, lam)  # (n,)
+    exch_ref = d * (N_ROLLOUTS + 1) / N_ROLLOUTS  # E[m2] if greedy were an 11th draw (var *11/10)
+    chi2_95 = float(sstats.chi2.ppf(0.95, df=d))
+    return {
+        "mean_m2_greedy": float(m2g.mean()),
+        "median_m2_greedy": float(np.median(m2g)),
+        "chi2_mean_ref": float(d),
+        "exchangeable_11th_draw_ref": float(exch_ref),
+        "frac_gt_chi2_95": float((m2g > chi2_95).mean()),
+        "percentiles_m2_greedy": _percentiles(m2g),
+        "note": (
+            f"m2_greedy well below the exchangeable 11th-draw ref ({exch_ref:.0f}) => greedy "
+            f"central (consistent with the rank test); ~=chi2_d ({d}) => at the cloud-mean scale"
+        ),
+    }
+
+
+def distribution_fit_layer(greedy: np.ndarray, stoch: np.ndarray, li: int, keep_qq: bool) -> dict:
+    n_ctx = stoch.shape[0]
+    d = stoch.shape[2]
+    resid, sigma_x = _residuals(stoch)
+    # Contexts whose 10 rollouts are (near-)identical have sigma_x=0 and cannot be scale-normalized
+    # (0/0). Keep them in the RAW pool (their zero residuals are legitimate, contribute nothing),
+    # but MASK them from the scale-normalized pool + the greedy tie-in.
+    floor = max(1e-8, 1e-6 * float(np.median(sigma_x)))
+    valid = sigma_x > floor
+    n_valid = int(valid.sum())
+    R_raw = resid.reshape(-1, d)
+    ctx_raw = np.repeat(np.arange(n_ctx), N_ROLLOUTS)
+    R_sn = (resid[valid] / sigma_x[valid][:, None, None]).reshape(-1, d)
+    ctx_sn = np.repeat(np.arange(n_valid), N_ROLLOUTS)
+    variants: dict = {}
+    for name, R, cid in (
+        ("raw", R_raw, ctx_raw),
+        ("scale_normalized", R_sn, ctx_sn),
+    ):
+        lam, V, rho = _cov_eig(R)
+        m2 = _mahalanobis(R, V, lam)
+        block = {
+            "shrinkage_rho": rho,
+            "radial": _radial_fit(m2, d, keep_qq),
+            "projections": _projection_tests(R, V, d, cid),
+        }
+        if name == "scale_normalized":
+            block["greedy_tie_in"] = _greedy_mahalanobis(
+                greedy[valid], stoch[valid], sigma_x[valid], V, lam, d
+            )
+            # dispersion-heterogeneity check (cheap): top-PC variance share
+            block["top_pc_variance_share"] = float(lam[0] / lam.sum())
+            block["n_contexts_used"] = n_valid
+            block["n_zero_scale_contexts_dropped"] = int(n_ctx - n_valid)
+        variants[name] = block
+        del lam, V, m2, R
+    return variants
+
+
 # ── driver ───────────────────────────────────────────────────────────────────────
 
 
@@ -488,6 +729,202 @@ def make_figure(out_dir: Path, fig_dir: Path) -> None:
     logger.info("[figure] wrote greedy_cloud_distribution to %s", fig_dir)
 
 
+# ── Analysis 5 driver + figure ───────────────────────────────────────────────────
+
+
+def run_dist_fit(layers: list[int], out_dir: Path) -> dict:
+    """Compute the distribution_fit block and MERGE it into the existing results JSON."""
+    t0 = time.time()
+    keep = GT.load_keep()
+    logger.info("[dist-fit setup] keep=%d done in %.1fs", keep.size, time.time() - t0)
+    # headline layer for the QQ panel = largest greedy mean-offset (matches make_figure); recovered
+    # from the existing JSON if present, else the last layer.
+    hl = layers[-1]
+    res_path = out_dir / "greedy_cloud_distribution.json"
+    existing = None
+    if res_path.exists():
+        with open(res_path) as f:
+            existing = json.load(f)
+    if (
+        existing and "per_layer" in existing
+    ):  # global headline across ALL analysed layers (not batch)
+        all_li = [int(k[1:]) for k in existing["per_layer"]]
+        if all_li:
+            hl = max(
+                all_li,
+                key=lambda li: existing["per_layer"][f"L{li}"]["offset_test"]["mean_offset_norm"],
+            )
+
+    block: dict = {"headline_layer_for_qq": hl, "per_layer": {}}
+    for li in layers:
+        tl = time.time()
+        v = GT.stoch_matrix(li, keep).astype(np.float32)
+        g = greedy_matrix(li, keep).astype(np.float32)
+        block["per_layer"][f"L{li}"] = distribution_fit_layer(g, v, li, keep_qq=(li == hl))
+        raw = block["per_layer"][f"L{li}"]["raw"]
+        sn = block["per_layer"][f"L{li}"]["scale_normalized"]
+        logger.info(
+            "[L%d dist-fit] RAW: nu=%.1f dAIC=%.3e kurt=%.2f varrat=%.2f | SCALE-NORM: nu=%.1f "
+            "dAIC=%.3e kurt=%.2f varrat=%.2f greedy_m2med=%.0f (exch %.0f) | %.1fs",
+            li,
+            raw["projections"]["marginal_t_fit"]["nu_hat_mle"],
+            raw["projections"]["marginal_t_fit"]["delta_aic_gauss_minus_t"],
+            raw["projections"]["mean_excess_kurtosis"],
+            raw["radial"]["var_ratio_over_chi2"],
+            sn["projections"]["marginal_t_fit"]["nu_hat_mle"],
+            sn["projections"]["marginal_t_fit"]["delta_aic_gauss_minus_t"],
+            sn["projections"]["mean_excess_kurtosis"],
+            sn["radial"]["var_ratio_over_chi2"],
+            sn["greedy_tie_in"]["median_m2_greedy"],
+            sn["greedy_tie_in"]["exchangeable_11th_draw_ref"],
+            time.time() - tl,
+        )
+        del v, g
+
+    block["definitions"] = {
+        "residual": "r_j(x) = v_j(x) - mean_10(x), scaled by sqrt(10/9) (own-mean bias correction)",
+        "variant_raw": "residuals pooled across all contexts (a per-context-scale MIXTURE)",
+        "variant_scale_normalized": (
+            "each context's residuals divided by sigma_x = sqrt(mean_(j,dim) r^2) (its per-dim RMS "
+            "residual magnitude) before pooling; removes the context-dependent SCALE"
+        ),
+        "radial_m2": "squared Mahalanobis under the Ledoit-Wolf-shrunk pooled within-context "
+        "covariance; ~ chi2_d if the pool is multivariate Gaussian",
+        "t_fit": "MLE multivariate-t df on the radial distribution; delta_aic>0 => t preferred; "
+        "nu_hat->1000 (bound) => effectively Gaussian",
+        "projections": "top-20 PCA + 50 fixed-random(seed42) unit directions; per-direction "
+        "Anderson-Darling + skew/excess-kurtosis; context-clustered bootstrap SE (resample ctx)",
+        "greedy_tie_in": "scale-normalized greedy deviation Mahalanobis under the variant-b "
+        "covariance vs chi2_d (cloud-mean scale) and the exchangeable 11th-draw ref (d*11/10)",
+        "discriminating_design": "raw heavy-tailed (t) + scale-normalized Gaussian => per-context "
+        "Gaussian cloud with context-dependent scale",
+        "caveats": "n=10/context => pooled-distribution claims only, not per-context normality; "
+        "pooled covariance assumes homogeneous SHAPE (top_pc_variance_share reported as a check); "
+        "Anderson-Darling saturates at n=50000 (read skew/kurtosis effect sizes).",
+    }
+    block["metadata"] = I.reproducibility_metadata(
+        {
+            "script": "issue1073_greedy_cloud_distribution",
+            "analysis": "distribution_fit",
+            "store_revision": STORE_REV,
+            "n_rand_proj": N_RAND_PROJ,
+            "n_top_pca": N_TOP_PCA,
+            "n_cluster_boot": N_CLUSTER_BOOT,
+            "proj_seed": PROJ_SEED,
+        }
+    )
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    merged = existing if isinstance(existing, dict) else {}
+    # append per-layer into any prior distribution_fit block (batched runs merge; don't overwrite)
+    prev_pl = merged.get("distribution_fit", {}).get("per_layer", {})
+    prev_pl.update(block["per_layer"])
+    block["per_layer"] = prev_pl
+    block["readout_layers"] = sorted({int(k[1:]) for k in prev_pl})
+    merged["distribution_fit"] = block
+    I.write_json_atomic(res_path, merged)
+    logger.info(
+        "[dist-fit write] merged %d-layer distribution_fit block in %.1fs total",
+        len(prev_pl),
+        time.time() - t0,
+    )
+    return merged
+
+
+def make_dist_figure(out_dir: Path, fig_dir: Path) -> None:
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis import paper_plots as pp
+
+    pp.set_paper_style()
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    with open(out_dir / "greedy_cloud_distribution.json") as f:
+        res = json.load(f)
+    df = res["distribution_fit"]
+    layers = sorted(int(k[1:]) for k in df["per_layer"])
+    hl = df["headline_layer_for_qq"]
+    pal = pp.paper_palette(3)
+    c_raw, c_sn = pal[0], pal[2]
+
+    fig, axes = plt.subplots(2, 2, figsize=(12, 9))
+    (a1, a2), (a3, a4) = axes
+
+    # Panel A: radial QQ vs chi2_d (headline layer), raw + scale-normalized
+    hlb = df["per_layer"][f"L{hl}"]
+    for name, col, lab in (("raw", c_raw, "raw"), ("scale_normalized", c_sn, "scale-normalized")):
+        rad = hlb[name]["radial"]
+        if "_qq_obs" in rad:
+            a1.plot(rad["_qq_chi2"], rad["_qq_obs"], ".", ms=3, color=col, label=lab)
+    allq = hlb["raw"]["radial"].get("_qq_chi2", []) + hlb["raw"]["radial"].get("_qq_obs", [])
+    if allq:
+        m = max(allq)
+        a1.plot([0, m], [0, m], "k--", lw=1.0)
+    a1.set_xlabel(f"$\\chi^2_d$ theoretical quantile (L{hl}, d={hlb['raw']['radial']['dim']})")
+    a1.set_ylabel("observed squared Mahalanobis quantile")
+    a1.legend(fontsize=8, title="$y=x$ dashed")
+
+    # Panel B: excess-kurtosis across the 70 projections (headline layer), raw vs scale-normalized
+    kr = np.array(hlb["raw"]["projections"]["_excess_kurtosis_per_direction"])
+    ks = np.array(hlb["scale_normalized"]["projections"]["_excess_kurtosis_per_direction"])
+    lo, hi = float(min(kr.min(), ks.min())), float(max(kr.max(), ks.max()))
+    bins = np.linspace(lo, hi, 30)
+    a2.hist(kr, bins=bins, alpha=0.55, color=c_raw, label="raw")
+    a2.hist(ks, bins=bins, alpha=0.55, color=c_sn, label="scale-normalized")
+    a2.axvline(0, color="k", lw=0.8)
+    a2.set_xlabel(f"per-projection excess kurtosis (L{hl}, 70 directions)")
+    a2.set_ylabel("count")
+    a2.legend(fontsize=8, title="Gaussian = 0")
+
+    # Panel C: Gaussian-vs-t delta-AIC per layer, raw vs scale-normalized (log-scaled, +1 offset)
+    x = np.arange(len(layers))
+    dr = [
+        df["per_layer"][f"L{li}"]["raw"]["projections"]["marginal_t_fit"]["delta_aic_gauss_minus_t"]
+        for li in layers
+    ]
+    ds = [
+        df["per_layer"][f"L{li}"]["scale_normalized"]["projections"]["marginal_t_fit"][
+            "delta_aic_gauss_minus_t"
+        ]
+        for li in layers
+    ]
+    w = 0.38
+    a3.bar(x - w / 2, np.maximum(dr, 1.0), w, color=c_raw, label="raw")
+    a3.bar(x + w / 2, np.maximum(ds, 1.0), w, color=c_sn, label="scale-normalized")
+    a3.set_yscale("log")
+    a3.set_xticks(x)
+    a3.set_xticklabels([f"L{li}" for li in layers])
+    a3.set_ylabel("$\\Delta$AIC (Gaussian $-$ t); $>0$ favours t")
+    a3.set_xlabel("read-out layer")
+    a3.legend(fontsize=8)
+
+    # Panel D: greedy Mahalanobis (scale-normalized) median per layer vs chi2_d & 11th-draw refs
+    gm = [
+        df["per_layer"][f"L{li}"]["scale_normalized"]["greedy_tie_in"]["median_m2_greedy"]
+        for li in layers
+    ]
+    chi = [
+        df["per_layer"][f"L{li}"]["scale_normalized"]["greedy_tie_in"]["chi2_mean_ref"]
+        for li in layers
+    ]
+    exch = [
+        df["per_layer"][f"L{li}"]["scale_normalized"]["greedy_tie_in"]["exchangeable_11th_draw_ref"]
+        for li in layers
+    ]
+    a4.plot(x, gm, "o-", color=c_sn, label="greedy median $m^2$")
+    a4.plot(x, chi, "s--", color="k", label="$\\chi^2_d$ mean ($d$)")
+    a4.plot(x, exch, "^:", color=c_raw, label="exchangeable 11th draw")
+    a4.set_xticks(x)
+    a4.set_xticklabels([f"L{li}" for li in layers])
+    a4.set_ylabel("greedy squared Mahalanobis")
+    a4.set_xlabel("read-out layer")
+    a4.legend(fontsize=7)
+
+    fig.tight_layout()
+    pp.savefig_paper(fig, "cloud_distribution_fit", dir=fig_dir)
+    plt.close(fig)
+    logger.info("[figure] wrote cloud_distribution_fit to %s", fig_dir)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--layers", type=int, nargs="+", default=READOUT_LAYERS)
@@ -496,10 +933,18 @@ def main() -> int:
     ap.add_argument("--fig-dir", type=str, default=str(FIG_DIR))
     ap.add_argument("--figures-only", action="store_true")
     ap.add_argument("--skip-stage", action="store_true", help="store already staged at STAGE_HF")
+    ap.add_argument(
+        "--dist-fit",
+        action="store_true",
+        help="analysis 5 only: compute the distribution_fit block and MERGE into the results JSON",
+    )
     args = ap.parse_args()
     out_dir = Path(args.out_dir)
     if args.figures_only:
-        make_figure(out_dir, Path(args.fig_dir))
+        if args.dist_fit:
+            make_dist_figure(out_dir, Path(args.fig_dir))
+        else:
+            make_figure(out_dir, Path(args.fig_dir))
         return 0
     if not args.skip_stage:
         stage_store()
@@ -507,6 +952,13 @@ def main() -> int:
         GT.STORE_DIR = STAGE_HF / HF_PREFIX / "v_store"
         GT.COVERAGE = STAGE_HF / HF_PREFIX / "reductions" / "coverage.pt"
     layers = [19] if args.pilot else list(args.layers)
+    if args.dist_fit:
+        merged = run_dist_fit(layers, out_dir)
+        done = set(merged.get("distribution_fit", {}).get("readout_layers", []))
+        # figure only once every read-out layer's dist-fit is present (batched runs skip until then)
+        if not args.pilot and set(READOUT_LAYERS).issubset(done):
+            make_dist_figure(out_dir, Path(args.fig_dir))
+        return 0
     run(layers, out_dir)
     if not args.pilot:
         make_figure(out_dir, Path(args.fig_dir))
