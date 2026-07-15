@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1350,
+  "highest_id": 1351,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2738,6 +2738,13 @@
       "path": "tasks/proposed/1350",
       "status": "proposed",
       "title": "workflow-fix: lane-portable REPO_ROOT guidance for --workload-cmd (WORKLOAD_ROOT is GCE-only)"
+    },
+    "1351": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1351",
+      "status": "proposed",
+      "title": "workflow-fix: crash-persist worker-log sweep excludes committed repo content"
     },
     "136": {
       "has_clean_result": false,
