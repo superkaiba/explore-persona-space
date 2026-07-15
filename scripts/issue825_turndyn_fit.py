@@ -599,11 +599,21 @@ def run_operators(args: argparse.Namespace) -> None:  # noqa: C901 — linear ba
             np.save(p, beta.cpu().numpy().astype(np.float16))
         logger.info("[operators] %s/%s t%d betas done", tag, args.model, t)
 
+    # In-memory beta cache: the pair battery revisits every (turn, fold) beta
+    # O(turns * folds) times — re-reading the fp16 npy from disk per visit is
+    # ~1 TB of IO at production scale (the #813 per-row-IO class). Full cache:
+    # 36 turns x 6 folds x 3584^2 fp32 = ~11 GB, fits the A100/CPU host.
+    _beta_cache: dict[tuple[int, int], torch.Tensor | None] = {}
+
     def _load_beta(t: int, f: int) -> torch.Tensor | None:
+        if (t, f) in _beta_cache:
+            return _beta_cache[(t, f)]
         p = beta_paths.get((t, f))
-        if p is None or not p.exists():
-            return None
-        return torch.from_numpy(np.load(p).astype(np.float32)).to(dev)
+        val = None
+        if p is not None and p.exists():
+            val = torch.from_numpy(np.load(p).astype(np.float32)).to(dev)
+        _beta_cache[(t, f)] = val
+        return val
 
     # 2) battery per unordered turn pair (i <= j); i == j rows ARE the ceiling
     f_a, f_b = OPERATOR_HEAVY_FOLD_PAIR

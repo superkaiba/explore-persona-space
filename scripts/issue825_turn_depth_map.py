@@ -324,6 +324,12 @@ def _dual_perm_null_torch(
     import torch
 
     dev = torch.device(device)
+    # The draw GEMMs are fp32 BY DESIGN (band quantiles tolerate fp32 — the
+    # numpy path's own contract); allow TF32 for them on CUDA (~4x on A100).
+    # The fold OPERATOR solve below stays fp64 (unaffected by matmul TF32).
+    saved_tf32 = torch.backends.cuda.matmul.allow_tf32
+    if dev.type == "cuda":
+        torch.backends.cuda.matmul.allow_tf32 = True
     rng = np.random.default_rng(seed)
     n = X.shape[0]
     p = Y.shape[1]
@@ -364,6 +370,8 @@ def _dual_perm_null_torch(
             pred = torch.matmul(af, ytr - ymu) + ymu  # (k, n_te, P)
             yte = yf[pte]
             ss_res[start:stop] += ((yte - pred) ** 2).sum(dim=(1, 2), dtype=torch.float64)
+    if dev.type == "cuda":
+        torch.backends.cuda.matmul.allow_tf32 = saved_tf32
     return (1.0 - ss_res / ss_tot).cpu().numpy()
 
 

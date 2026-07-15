@@ -67,7 +67,7 @@ if [[ -n "$SMOKE" ]]; then
   DATA_ROOT="${DATA_ROOT%/}_smoke"
   LOG_DIR="$DATA_ROOT/logs"
   K_GEN=3
-  PANEL_N=4
+  PANEL_N=18  # >= 3 convs per fold so the operators smoke fits real betas
   PILOT_N=2
   SWEEP_N_G=2
   SWEEP_N_R=2
@@ -575,16 +575,24 @@ run_main() {
   if [[ -n "$SMOKE" ]]; then rshards=1; oshards=1; lshards=1; gshards=1; fi
 
   local m s
-  # rollout (P1) + gen (P2) + capture_logged (P3b) + gc capture — no deps
-  for m in "${MODELS[@]}"; do
-    for s in $(seq 0 $((rshards - 1))); do
+  # Initial queue in PRIORITY order (workers pull FIFO): both models' rollout
+  # shards FIRST (3 GPUs/arm, plan §9 P1), then the two gens (P2 rides P1's
+  # Haiku waves) — the first 8 jobs saturate the 8 GPUs with both arms
+  # concurrent; the light logged/gc captures queue behind (picked up as
+  # workers free — work-conserving, no stage barrier).
+  for s in $(seq 0 $((rshards - 1))); do
+    for m in "${MODELS[@]}"; do
       enqueue "rollout_${m}_${s}" uv run python scripts/issue825_turndyn_rollout.py \
         --model "$m" --seeds-dir "$PANEL_DIR" --out-dir "$ROLLOUT_DIR" \
         --k-gen "$K_GEN" --shard "$s/$rshards" "${SMOKE_ARGS[@]}"
     done
+  done
+  for m in "${MODELS[@]}"; do
     enqueue "gen_${m}" uv run python scripts/issue825_turndyn_gpu.py \
       --model "$m" --phase gen --panel-dir "$PANEL_DIR" --panel-stem panel_armR \
       --max-turn 0 --tag armR --out-dir "$GEN_DIR" "${SMOKE_ARGS[@]}"
+  done
+  for m in "${MODELS[@]}"; do
     enqueue "gen_gc_${m}" uv run python scripts/issue825_turndyn_gpu.py \
       --model "$m" --phase gen --panel-dir "$PANEL_DIR" --panel-stem gc_panel \
       --max-turn -1 --tag gc --out-dir "$GEN_DIR" "${SMOKE_ARGS[@]}"
@@ -713,12 +721,8 @@ run_main() {
       touch "$STATE_DIR/manager.done"
       break
     fi
-    # any queued-but-unfinished job keeps the loop alive
-    pending=$(ls "$STATE_DIR"/*.queued 2>/dev/null | wc -l)
-    local done_ct
-    done_ct=$(ls "$STATE_DIR"/*.done 2>/dev/null | wc -l)
+    : "$pending"  # queued-but-unfinished jobs keep the loop alive
     sleep 10
-    : "$pending" "$done_ct"
   done
 
   local p rc_all=0
