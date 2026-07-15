@@ -742,11 +742,15 @@ def _unit_args(cfg: Cfg, kind: str, arg: str) -> list[str]:
 def phase_ladder(cfg: Cfg) -> dict:
     _phase("p2_ladder")
     cells = [c for c in cfg.cells if c in C.FT_CELLS]
+    # Pending predicate keys on selection.json ONLY (the parent shape,
+    # issue1112_dispatch.py:900): a cell with a PARTIAL ladder.json re-enters
+    # run_ladder_unit, which resumes per-rung and no-ops when complete. Keying
+    # on ladder.json too left a mixed crash-resume state (cell A partial +
+    # cell B fresh) selecting on incomplete rates (round-1 code-review Major 1).
     units = [
         _unit_args(cfg, "ladder", c)
         for c in cells
         if not (cfg.out_root / c / "selection.json").exists()
-        and not (cfg.out_root / c / "ladder.json").exists()
     ]
     if units:
         if len(units) == 1 or _n_gpus() == 1:
@@ -754,10 +758,6 @@ def phase_ladder(cfg: Cfg) -> dict:
                 run_ladder_unit(cfg, u[2])
         else:
             _fanout_units(cfg, units)
-    else:
-        for c in cells:
-            if not (cfg.out_root / c / "selection.json").exists():
-                run_ladder_unit(cfg, c)  # resume any partial ladder in-process
     selections: dict[str, dict] = {}
     for cell in cells:
         sel_path = cfg.out_root / cell / "selection.json"
@@ -1479,12 +1479,18 @@ def run_capture_tf_unit(cfg: Cfg, cell: str) -> None:
     )
     if cell in C.FT_CELLS:
         _ensure_dir_tokenizer(Path(model_path))
+    # ALL THREE arms (default SPAN_ARMS), not response-only: the geometry read
+    # consumes only the response arm, but the persisted prefix/context arms are
+    # what make the plan §4.5 prompt-arm parity read + §Kill criterion runnable
+    # post-hoc (concern tf-shared-parity-warn-check-not-ported — the tf and own
+    # captures share prompt tokens under the SAME selected model, so per-row
+    # cosine >= 0.999 up to bf16 batch jitter). Same forwards; ~3x store size
+    # (tens of MB per cell).
     pooled = _teacher_forced_span_means(
         model_path,
         rows,
         sorted({r["persona"] for r in rows}),
         layers=list(range(C.N_LAYERS)),
-        spans=("response",),
         device="cuda:0",
         dtype=torch.bfloat16,
         tf_batch_size=C.TF_BATCH_SIZE,
@@ -1570,6 +1576,11 @@ def phase_geometry_smoke(cfg: Cfg) -> dict:
 
 
 def phase_upload(cfg: Cfg, selections: dict) -> dict:
+    # NOTE (#664 risk class, round-1 review Minor): a full run issues ~60
+    # per-file data-repo commits (inherited verbatim from the #1112 dispatcher,
+    # production-proven; well under the 256-commits/hr Hub cap). If the file
+    # count grows, consolidate the per-prefix sets into upload_folder /
+    # create_commit batches.
     _phase("p11_upload")
     uploaded: dict[str, str] = {}
     if not cfg.upload:
@@ -1598,8 +1609,11 @@ def phase_upload(cfg: Cfg, selections: dict) -> dict:
             "g1_extended.json",
         ):
             _up(cell_root / name, f"{C.DATA_PREFIX}/selection/{cell}/{name}", upload_as_file=True)
-        # rollout text: Tier-1 / Tier-2 / parity generations (unconditional)
-        _up(cell_root / "rate", f"{C.DATA_PREFIX}/raw_completions/tier1/{cell}")
+        # rollout text (unconditional). A cell's rate/ dir holds Tier-1 ladder
+        # rollouts for FT cells but PARITY-probe rollouts for reused cells
+        # (run_parity_unit) — stage prefixes per plan §10.
+        rate_stage = "tier1" if cell in C.FT_CELLS else "parity"
+        _up(cell_root / "rate", f"{C.DATA_PREFIX}/raw_completions/{rate_stage}/{cell}")
         _up(cell_root / "tier2_rate", f"{C.DATA_PREFIX}/raw_completions/tier2/{cell}")
     for f in (
         sorted((cfg.out_root / "margin").glob("*.json"))
@@ -1698,11 +1712,15 @@ def _check_regime(cfg: Cfg) -> None:
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="#1315 pod-side phase driver")
-    mode = p.add_mutually_exclusive_group(required=True)
+    # Mode: `--mode smoke|full` (the plan §10 workload command shape) is
+    # standalone-sufficient; `--smoke` / `--full` are accepted aliases. The
+    # group is NOT required=True — post-parse validation below accepts either
+    # spelling (round-1 code-review Major 2: required=True exit-2'd the plan
+    # §10 exact command on the GCE lane).
+    mode = p.add_mutually_exclusive_group()
     mode.add_argument("--smoke", action="store_true", help="tiny-real, SAME code path")
     mode.add_argument("--full", action="store_true")
-    # --mode smoke|full alias (the plan §10 workload command shape)
-    p.add_argument("--mode", choices=["smoke", "full"], default=None, help=argparse.SUPPRESS)
+    p.add_argument("--mode", choices=["smoke", "full"], default=None, help="smoke|full")
     p.add_argument(
         "--unit",
         nargs=2,
@@ -1726,9 +1744,13 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p.add_argument("--bare-adapter-rev", default=None)
     p.add_argument("--bare-committed-rate", type=float, default=None)
     args = p.parse_args(argv)
-    if args.mode is not None:  # --mode wins only when the group default was used
-        args.smoke = args.mode == "smoke"
-        args.full = args.mode == "full"
+    if args.mode is not None:
+        mode_smoke = args.mode == "smoke"
+        if (args.smoke or args.full) and args.smoke != mode_smoke:
+            p.error("--mode conflicts with --smoke/--full")
+        args.smoke, args.full = mode_smoke, not mode_smoke
+    elif not (args.smoke or args.full):
+        p.error("one of --smoke, --full, or --mode {smoke,full} is required")
     return args
 
 
@@ -1753,10 +1775,18 @@ def build_cfg(args: argparse.Namespace) -> Cfg:
             if args.eval_question_limit is not None
             else (2 if smoke else None)
         ),
+        # Smoke sentinels default INSIDE the poller-drained namespace
+        # (/workspace/logs — round-1 review Minor: an out_root default left the
+        # pod smoke's epm:smoke-result undrained); the out_root fallback covers
+        # workspace-less local CPU smokes only.
         sentinel_dir=(
             Path(args.sentinel_dir)
             if args.sentinel_dir is not None
-            else (out_root / "logs" if smoke else None)
+            else (
+                (Path("/workspace/logs") if Path("/workspace").is_dir() else out_root / "logs")
+                if smoke
+                else None
+            )
         ),
         upload=args.upload,
         phases=normalize_phases(args.phases),

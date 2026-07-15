@@ -224,9 +224,9 @@ def test_panel_disjoint_from_sources():
 
 
 def test_banks_disjoint_20_20():
-    from explore_persona_space.artifacts.behavior import BEHAVIORS
-
     import issue1315_dispatch as d
+
+    from explore_persona_space.artifacts.behavior import BEHAVIORS
 
     b = BEHAVIORS[C.BEHAVIOR]
     assert len(b.extraction.prompt_pairs) == 5
@@ -308,7 +308,7 @@ def test_icl_byte_assert_pass_and_fail(tmp_path):
                 {"role": "user", "content": "Example question: drifted\nExample answer: x\n\nq"}
             ],
             "completion": [{"role": "assistant", "content": "a"}],
-        }
+        },
     ]
     bad = _write_jsonl(tmp_path / "icl_bad.jsonl", rows_bad)
     with pytest.raises(RuntimeError, match="ICL block byte-assert FAILED"):
@@ -334,3 +334,136 @@ def test_mix_row_schema_tokenizes_completion_only(tok):
     assert any(v != -100 for v in labels)  # completion supervised
     n_prompt = sum(1 for v in labels if v == -100)
     assert 0 < n_prompt < len(labels)
+
+
+# ── round-2 review fixes: --mode parsing, ladder mixed-resume, parity gate ───
+
+
+def test_parse_args_mode_standalone_and_aliases():
+    """Round-1 Major 2: the plan §10 exact workload command (`--mode full`)
+    must parse standalone; `--smoke`/`--full` stay accepted aliases; neither
+    spelling given (or a conflict) errors at argparse."""
+    import issue1315_dispatch as d
+
+    full = d._parse_args(["--mode", "full"])
+    assert full.full and not full.smoke
+    smoke = d._parse_args(["--mode", "smoke"])
+    assert smoke.smoke and not smoke.full
+    legacy = d._parse_args(["--smoke"])
+    assert legacy.smoke and not legacy.full
+    with pytest.raises(SystemExit):
+        d._parse_args([])  # no mode in either spelling
+    with pytest.raises(SystemExit):
+        d._parse_args(["--mode", "full", "--smoke"])  # conflicting spellings
+    both = d._parse_args(["--mode", "full", "--full"])  # consistent double-spec
+    assert both.full and not both.smoke
+
+
+def test_phase_ladder_mixed_resume_completes_partial_ladder(tmp_path, monkeypatch):
+    """Round-1 Major 1: a mixed crash-resume state — cell A holding a PARTIAL
+    ladder.json (no selection.json), cell B fresh — must re-enter
+    run_ladder_unit for BOTH cells (pending predicate keys on selection.json
+    only, the parent shape issue1112_dispatch.py:900), so selection never runs
+    over incomplete rates."""
+    import issue1315_dispatch as d
+
+    cells = tuple(sorted(C.FT_CELLS))
+    assert len(cells) == 2
+    cfg = d.Cfg(smoke=False, cells=cells, out_root=tmp_path, upload=False)
+    partial_cell = cells[0]
+    (tmp_path / partial_cell).mkdir(parents=True)
+    # Partial ladder: one judged rung, below band — the crash-mid-ladder state.
+    (tmp_path / partial_cell / "ladder.json").write_text(
+        json.dumps({"cell": partial_cell, "regime": cfg.regime_key(), "rates_by_step": {"2": 0.1}})
+    )
+    calls: list[str] = []
+
+    def fake_run_ladder_unit(cfg_in: d.Cfg, cell: str) -> dict[int, float]:
+        # signature-conformant stand-in for the GPU-bound unit: completes the
+        # ladder exactly as the real per-rung-resume unit would.
+        calls.append(cell)
+        rates = {2: 0.1, 4: 0.7}
+        d._atomic_json(
+            cfg_in.out_root / cell / "ladder.json",
+            {
+                "cell": cell,
+                "regime": cfg_in.regime_key(),
+                "rates_by_step": {str(k): v for k, v in sorted(rates.items())},
+            },
+        )
+        return rates
+
+    monkeypatch.setattr(d, "run_ladder_unit", fake_run_ladder_unit)
+    monkeypatch.setattr(d, "_n_gpus", lambda: 1)
+    selections = d.phase_ladder(cfg)
+    assert sorted(calls) == sorted(cells)  # the partial cell was re-entered
+    for cell in cells:
+        sel = json.loads((tmp_path / cell / "selection.json").read_text())
+        assert int(sel["step"]) == 4 and sel["rate"] == 0.7  # complete-ladder pick
+        assert sel["in_band"] is True
+        assert selections[cell]["rates_by_step"] == {"2": 0.1, "4": 0.7}
+
+
+def test_tf_parity_gate_pass_kill_and_missing_arms(tmp_path):
+    """Concern tf-shared-parity-warn-check-not-ported: the plan §4.5 prompt-arm
+    parity read runs BEFORE any geometry verdict — identical prompt arms PASS
+    (tf_parity_check.json written; rows re-paired by keys), corrupted prompt
+    arms trip the §Kill bar (<0.99 median per-row cosine), and a response-only
+    tf store (prompt arms never captured) fails loud."""
+    import torch
+    from issue1315_geometry import PARITY_KILL_MEDIAN_COS, run_tf_parity_gate
+
+    keys = [("ctx_a", 0), ("ctx_a", 1), ("ctx_b", 0), ("ctx_b", 1)]
+    layers = [0, 1]
+    gen = torch.Generator().manual_seed(1315)
+    prompt = {
+        arm: {li: torch.randn(len(keys), 8, generator=gen) for li in layers}
+        for arm in ("prefix", "context")
+    }
+
+    def store(*, arms, perm=None, corrupt_prompt=False):
+        idx = perm or list(range(len(keys)))
+        return {
+            "schema_version": 1,
+            "cell": "imp_icl_ft_neg",
+            "dose": "selected",
+            "behavior": C.BEHAVIOR,
+            "row_meta": [{"context_id": keys[i][0], "question_idx": keys[i][1]} for i in idx],
+            "arms": {
+                arm: {
+                    li: (
+                        torch.randn(len(keys), 8, generator=gen)
+                        if corrupt_prompt or arm not in prompt
+                        else prompt[arm][li][idx]
+                    ).to(torch.float16)
+                    for li in layers
+                }
+                for arm in arms
+            },
+        }
+
+    def write(root, s):
+        d = root / "imp_icl_ft_neg" / "selected"
+        d.mkdir(parents=True, exist_ok=True)
+        torch.save(s, d / "pooled.pt")
+
+    all_arms = ("prefix", "context", "response")
+    # PASS: shared prompt arms, own rows deliberately permuted (re-paired by keys)
+    tf_root, own_root, out = tmp_path / "tf", tmp_path / "own", tmp_path / "out"
+    write(tf_root, store(arms=all_arms))
+    write(own_root, store(arms=all_arms, perm=[2, 3, 0, 1]))
+    res = run_tf_parity_gate(tf_root, own_root, out)
+    assert res["imp_icl_ft_neg"]["median_per_row_cos"] > PARITY_KILL_MEDIAN_COS
+    assert json.loads((out / "tf_parity_check.json").read_text())["imp_icl_ft_neg"]
+
+    # KILL: own prompt arms uncorrelated with the tf capture -> raise pre-verdict
+    own_bad = tmp_path / "own_bad"
+    write(own_bad, store(arms=all_arms, corrupt_prompt=True))
+    with pytest.raises(RuntimeError, match="parity KILL"):
+        run_tf_parity_gate(tf_root, own_bad, tmp_path / "out_kill")
+
+    # MISSING ARMS: a response-only tf store makes the read unrunnable -> loud
+    tf_resp = tmp_path / "tf_resp"
+    write(tf_resp, store(arms=("response",)))
+    with pytest.raises(RuntimeError, match="lacks prompt arms"):
+        run_tf_parity_gate(tf_resp, own_root, tmp_path / "out_missing")

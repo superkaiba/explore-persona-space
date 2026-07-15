@@ -76,6 +76,64 @@ def stage_from_hf(dest: Path, *, revision: str | None) -> None:
         shutil.copyfile(got, target)
 
 
+PARITY_KILL_MEDIAN_COS = 0.99  # plan §Kill: <0.99 median per-row cosine → capture bug
+
+
+def run_tf_parity_gate(tf_root: Path, capture_root: Path, out_dir: Path) -> dict:
+    """Plan §4.5 prompt-arm parity read + the plan §Kill gate (ported from the
+    #1112 rig's ``_parity_check``; concern tf-shared-parity-warn-check-not-
+    ported). Per tf-captured cell: the shared-text store's prefix/context arms
+    vs the SAME selected-dose model's own-text store — the two capture rounds
+    share prompt tokens, so under causal attention per-row cosine >= 0.999 up
+    to bf16 batch-composition jitter (WARN bar, persisted + adjudicated).
+    KILL: any cell whose MEDIAN per-row cosine over all prompt (arm, layer)
+    pairs is < 0.99 raises BEFORE any geometry verdict is written (plan kill
+    criterion: capture pipeline bug — no partial reads). Rows are re-paired by
+    (context_id, question_idx) via ``_reorder_store`` (set mismatch raises).
+    """
+    import numpy as np
+    from issue1112_geometry import _parity_check, _reorder_store, _store_keys
+
+    from explore_persona_space.experiments.issue_1112 import geometry as geo
+
+    results: dict[str, dict] = {}
+    for tf_pooled in sorted(Path(tf_root).glob("*/selected/pooled.pt")):
+        cell = tf_pooled.parent.parent.name
+        own_path = Path(capture_root) / cell / "selected" / "pooled.pt"
+        assert own_path.exists(), f"missing own-text store for parity: {own_path}"
+        tf_store = geo.load_store(tf_pooled)
+        missing_arms = [a for a in ("prefix", "context") if a not in tf_store["arms"]]
+        if missing_arms:
+            raise RuntimeError(
+                f"tf store {tf_pooled} lacks prompt arms {missing_arms} — re-run "
+                "run_capture_tf_unit (all-arm capture); the plan §4.5 parity read "
+                "is unrunnable without them"
+            )
+        own_store = _reorder_store(geo.load_store(own_path), _store_keys(tf_store))
+        layers = sorted(tf_store["arms"]["prefix"].keys())
+        summary, tensors = _parity_check(tf_store, own_store, layers)
+        all_cos = np.concatenate([tensors[k] for k in sorted(tensors)])
+        summary["median_per_row_cos"] = float(np.median(all_cos))
+        summary["kill_bar"] = PARITY_KILL_MEDIAN_COS
+        results[cell] = summary
+    if not results:
+        raise FileNotFoundError(f"no <cell>/selected/pooled.pt tf stores under {tf_root}")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "tf_parity_check.json").write_text(json.dumps(results, indent=1))
+    killed = {
+        c: s["median_per_row_cos"]
+        for c, s in results.items()
+        if s["median_per_row_cos"] < PARITY_KILL_MEDIAN_COS
+    }
+    if killed:
+        raise RuntimeError(
+            f"prompt-arm parity KILL (median per-row cosine < {PARITY_KILL_MEDIAN_COS}): "
+            f"{killed} — capture pipeline bug; fix before any geometry verdict "
+            "(plan kill criterion, no partial reads)"
+        )
+    return results
+
+
 def _cell_maps(cells_doses: list[tuple[str, str]], base_store: Path, rb_path: Path) -> dict:
     cells = sorted({c for c, _ in cells_doses if c != "base"})
     unknown = [
@@ -123,6 +181,12 @@ def main(argv: list[str] | None = None) -> int:
     base_store = capture_root / "base" / "base" / "pooled.pt"
     assert base_store.exists(), f"missing base pooled store at {base_store}"
 
+    # Plan §Kill gate FIRST: the prompt-arm parity read must pass before any
+    # geometry verdict is written (no partial reads).
+    parity = None
+    if tf_root is not None and Path(tf_root).exists():
+        parity = run_tf_parity_gate(Path(tf_root), capture_root, args.out_dir / "tf_shared")
+
     own = _cell_maps(discover_passes(capture_root), base_store, rb_path)
     payload = geo.run_geometry(
         capture_root,
@@ -154,6 +218,7 @@ def main(argv: list[str] | None = None) -> int:
             {
                 "n_records_own": len(payload["records"]),
                 "n_records_tf": len(tf_payload["records"]) if tf_payload else 0,
+                "n_parity_cells": len(parity) if parity else 0,
                 "out_dir": str(args.out_dir),
             }
         )
