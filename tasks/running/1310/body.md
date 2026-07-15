@@ -2,8 +2,7 @@
 title: Focused per-character context->dialogue map on on-policy stories, base vs instruct
   (4-persona panel)
 kind: experiment
-tags:
-- keep-running
+tags: []
 created_at: '2026-07-14T22:56:43Z'
 has_clean_result: false
 parent_id: 931
