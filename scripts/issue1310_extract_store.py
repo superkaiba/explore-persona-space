@@ -54,7 +54,32 @@ def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--model", choices=c1310.MODEL_KINDS, default=None)
     ap.add_argument("--data-dir", type=Path, default=Path("data/issue_1310"))
-    ap.add_argument("--store-dir", type=Path, default=None, help="default <data-dir>/store")
+    ap.add_argument(
+        "--store-dir", type=Path, default=None, help="default <data-dir>/<store-subdir>"
+    )
+    ap.add_argument(
+        "--flavor",
+        choices=("perturn", "onpolicy", "tf"),
+        default="perturn",
+        help=(
+            "onpolicy = prefill records (v_C at end-of-prefix ending in the label, "
+            "v_A over the generated turn; base n>0 by construction). tf = matched "
+            "teacher-forced cross-check on --tf-source-model scenes (no prefix, both "
+            "models on the SAME body). perturn = the run-2 parsed-scene path."
+        ),
+    )
+    ap.add_argument(
+        "--store-subdir",
+        type=str,
+        default="store",
+        help="store lives at <data-dir>/<store-subdir>/<model> (e.g. store_onpolicy, store_tf)",
+    )
+    ap.add_argument(
+        "--tf-source-model",
+        choices=c1310.MODEL_KINDS,
+        default="instruct",
+        help="tf flavor: which model's stories+pairs to capture BOTH models on (matched body)",
+    )
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--tiny-model-dir", type=str, default=None, help="CPU smoke model dir")
     ap.add_argument("--resume", action="store_true", help="skip rows already in shards")
@@ -101,22 +126,93 @@ def render_prefix_ids(tokenizer, prompt: str, model_kind: str) -> list[int]:
     return list(tokenizer(prefix, add_special_tokens=False)["input_ids"])
 
 
-def load_items(model_kind: str, data_dir: Path, tokenizer) -> list[dict]:
-    """One item per SCENE: [{item_id (scene_row_id), group_id, char_id, input_ids,
-    pairs:[PairSpec (item-local, one per target turn)]}].
+def _load_items_onpolicy(model_kind: str, data_dir: Path) -> tuple[list[dict], dict]:
+    """One item per PREFILL RECORD (scenario, persona, slot): input = the stored
+    prompt_token_ids + completion_token_ids (concatenated ids, NEVER re-tokenized
+    at the join — #1092 BPE-seam rule). c_span = the last CONTEXT_CAP_TOKENS of
+    the prompt (which ends in the label cue; x_last = the boundary token, v_C);
+    t_span = the generated turn (v_A). Degenerate (empty/short) turns drop."""
+    recs = ext931._read_jsonl(
+        data_dir / "prefill" / f"{model_kind}_prefill_seed{common.GEN_SEED}.jsonl"
+    )
+    items: list[dict] = []
+    counters = {
+        "records": 0,
+        "kept": 0,
+        "dropped_short_dialogue": 0,
+        "dropped_short_context": 0,
+    }
+    for r in recs:
+        counters["records"] += 1
+        prompt_ids = list(r["prompt_token_ids"])
+        comp_ids = list(r["completion_token_ids"])
+        n_prompt, n_comp = len(prompt_ids), len(comp_ids)
+        if n_comp < c1310.DIALOGUE_MIN_TOKENS:
+            counters["dropped_short_dialogue"] += 1
+            continue
+        c_lo = max(0, n_prompt - c1310.CONTEXT_CAP_TOKENS)
+        if n_prompt - c_lo < c1310.CONTEXT_MIN_TOKENS:
+            counters["dropped_short_context"] += 1
+            continue
+        input_ids = prompt_ids + comp_ids
+        n_tok = len(input_ids)
+        pair = common.PairSpec(
+            row_id=r["row_id"],
+            group_id=r["scenario_id"],
+            char_id=r["persona"],
+            c_span=(c_lo, n_prompt),
+            t_spans=[(n_prompt, n_prompt + n_comp)],
+            ctx_span=(c_lo, n_prompt),
+            meta={
+                "turn_index": int(r["slot"]),
+                "scene_row_id": r["scene_row_id"],
+                "prefix_len": n_prompt,
+            },
+        )
+        pair.validate(n_tok, min_c=c1310.CONTEXT_MIN_TOKENS, min_t=c1310.DIALOGUE_MIN_TOKENS)
+        items.append(
+            {
+                "item_id": r["row_id"],
+                "group_id": r["scenario_id"],
+                "char_id": r["persona"],
+                "input_ids": input_ids,
+                "pairs": [pair],
+            }
+        )
+        counters["kept"] += 1
+    return items, counters
 
-    Turn pairs are grouped by scene (meta["scene_row_id"]) so a scene's forward
-    is computed once; each turn's story-local spans are shifted by len(prefix_ids).
+
+def load_items(
+    model_kind: str,
+    data_dir: Path,
+    tokenizer,
+    *,
+    flavor: str = "perturn",
+    source_model: str | None = None,
+) -> tuple[list[dict], dict]:
+    """Flavor-aware item assembly. Returns (items, capture_drop_counters).
+
+    onpolicy -> prefill records (one item per (scenario, persona, slot)).
+    perturn / tf -> parsed-scene stories+pairs grouped by scene. tf uses NO
+    model-specific prefix (prefix_ids=[]) so BOTH models see the byte-identical
+    body (matched teacher-forced cross-check) and reads ``source_model``'s
+    stories+pairs; perturn uses each model's own prefix + own scenes.
     """
+    if flavor == "onpolicy":
+        return _load_items_onpolicy(model_kind, data_dir)
+
+    src = source_model or model_kind
+    use_prefix = flavor != "tf"  # tf: no prefix (matched body across models)
     stories = {
         s["row_id"]: s
         for s in ext931._read_jsonl(
-            data_dir / "stories" / f"{model_kind}_stories_seed{common.GEN_SEED}.jsonl"
+            data_dir / "stories" / f"{src}_stories_seed{common.GEN_SEED}.jsonl"
         )
     }
     pairs = [
         common.PairSpec.from_dict(d)
-        for d in ext931._read_jsonl(data_dir / "pairs" / f"{model_kind}_pairs.jsonl")
+        for d in ext931._read_jsonl(data_dir / "pairs" / f"{src}_pairs.jsonl")
     ]
     by_scene: dict[str, list[common.PairSpec]] = {}
     for p in pairs:
@@ -125,7 +221,7 @@ def load_items(model_kind: str, data_dir: Path, tokenizer) -> list[dict]:
     items = []
     for scene_row_id, scene_pairs in by_scene.items():
         story = stories[scene_row_id]
-        prefix_ids = render_prefix_ids(tokenizer, story["prompt"], model_kind)
+        prefix_ids = render_prefix_ids(tokenizer, story["prompt"], model_kind) if use_prefix else []
         story_ids = list(tokenizer(story["story"], add_special_tokens=False)["input_ids"])
         off = len(prefix_ids)
         n_tok = off + len(story_ids)
@@ -151,7 +247,7 @@ def load_items(model_kind: str, data_dir: Path, tokenizer) -> list[dict]:
                 "pairs": shifted,
             }
         )
-    return items
+    return items, {"records": len(items), "kept": len(items)}
 
 
 def process_batch(model, batch: list[dict], pad_id: int) -> list[dict]:
@@ -304,27 +400,47 @@ def main() -> int:
     assert args.model, "--model is required unless --make-tiny-model"
     model_kind = args.model
     model_id = c1310.MODEL_IDS[model_kind]
-    store_dir = (args.store_dir or (args.data_dir / "store")) / model_kind
-    print(f"[phase=p2_extract_{model_kind}] span-summary capture ({model_id})")
+    store_dir = (args.store_dir or (args.data_dir / args.store_subdir)) / model_kind
+    src_model = args.tf_source_model if args.flavor == "tf" else None
+    print(
+        f"[phase=p2_extract_{model_kind}] span-summary capture "
+        f"({model_id}, flavor={args.flavor}"
+        + (f", tf-source={src_model}" if src_model else "")
+        + ")"
+    )
     tokenizer = common.get_tokenizer(model_id)
     pad_id = tokenizer.pad_token_id or tokenizer.eos_token_id
-    items = load_items(model_kind, args.data_dir, tokenizer)
+    items, drops = load_items(
+        model_kind, args.data_dir, tokenizer, flavor=args.flavor, source_model=src_model
+    )
+    store_dir.mkdir(parents=True, exist_ok=True)
+    c1310.write_json(
+        store_dir / f"{model_kind}_capture_drops.json", {"flavor": args.flavor, **drops}
+    )
     if args.max_items:
         items = items[: args.max_items]
-    print(f"[i1310-p2] {len(items)} items (model={model_kind})")
+    print(
+        f"[i1310-p2] {len(items)} items (model={model_kind}, flavor={args.flavor}, drops={drops})"
+    )
 
-    done_scenes: set[str] = set()
+    # onpolicy items are independent per (scenario, persona, slot), so resume
+    # skips DONE ROW IDS; perturn/tf scenes flush whole (batch-aligned), so a
+    # turn row_id present means its whole scene is written -> skip the scene.
+    by_row = args.flavor == "onpolicy"
+    done: set[str] = set()
     shard_idx = 0
     if args.resume:
         for sc in sorted(store_dir.glob(f"{model_kind}_shard*.json")):
             side = json.loads(sc.read_text())
-            # scenes flush whole (batch-aligned), so a turn row_id present means
-            # its scene is fully written — resume skips the whole scene.
-            done_scenes.update(rid.rsplit(":t", 1)[0] for rid in side["row_ids"])
+            if by_row:
+                done.update(side["row_ids"])
+            else:
+                done.update(rid.rsplit(":t", 1)[0] for rid in side["row_ids"])
             shard_idx = max(shard_idx, side["shard_index"] + 1)
-        if done_scenes:
-            items = [it for it in items if it["item_id"] not in done_scenes]
-            print(f"[i1310-p2] resume: {len(done_scenes)} scenes done; {len(items)} scenes left")
+        if done:
+            items = [it for it in items if it["item_id"] not in done]
+            unit = "rows" if by_row else "scenes"
+            print(f"[i1310-p2] resume: {len(done)} {unit} done; {len(items)} {unit} left")
 
     if not items:
         print(f"[i1310-p2] no items to capture (model={model_kind})")

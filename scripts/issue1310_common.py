@@ -271,6 +271,95 @@ def render_prompt(scenario: dict, persona_label: str, model_kind: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# PREFILL datagen (onpolicy flavor, #1310 v3).
+#
+# Run 2 fix: the post-hoc `^<LABEL>:` attributor dropped 99.8% of BASE turns
+# (base will not emit parseable script dialogue). Prefill sidesteps attribution
+# entirely: construct the scene context UP TO AND INCLUDING the character's
+# label cue (`Vex:`), let the model COMPLETE that one turn (stop at the line
+# break), and the dialogue span is known BY CONSTRUCTION (the generated tokens)
+# -> no parser, no drop, base n>0. Prefill at PREFILL_SLOTS successive turns per
+# scene (advance the scene with the model's OWN completion + a shared canned
+# foil turn, then re-prefill the label) -> many (v_C, v_A) points per scene.
+# ---------------------------------------------------------------------------
+
+PREFILL_SLOTS = 6  # character turns prefilled per scene (~N_PROMPTS_PER_PERSONA*6 pts/persona)
+SLOT_MAX_TOKENS = 96  # per-turn completion cap; PREFILL_STOP ends a single script line early
+PREFILL_STOP = ["\n"]  # a script turn is ONE line; stop at the line break
+
+# Canned foil dialogue lines interleaved between the character's turns.
+# Deterministic per (scenario, slot) and SHARED across personas + models, so the
+# only per-(persona, model) variation in a context is the character's OWN prior
+# completions + its fixed label -> matched contexts for the base-vs-instruct read
+# and the character-swap specificity control.
+_FOIL_LINES = (
+    "We need to decide what to do about this, and quickly.",
+    "I hadn't thought of it quite like that before now.",
+    "There is more going on here than any of us first realized.",
+    "Say that again, slowly, because it matters how we proceed.",
+    "The others will arrive soon, so let us settle this first.",
+    "I am not sure I trust the plan, but I will hear you out.",
+    "Whatever we choose, we choose together, or not at all.",
+    "Then it is decided, and we should not waste the night.",
+)
+
+
+def canned_foil_turn(scenario_id: str, slot: int) -> str:
+    """Deterministic `<Foil>: <line>` turn for (scenario, slot) (no trailing newline)."""
+    foils = foils_for_scene(scenario_id)
+    foil = foils[slot % len(foils)]
+    line = _FOIL_LINES[slot % len(_FOIL_LINES)]
+    return f"{foil}: {line}"
+
+
+def prefill_header(scenario: dict, persona_label: str, model_kind: str) -> str:
+    """Scene header, before any dialogue turn.
+
+    ``base`` -> a raw-text scene-setup paragraph the completion model continues.
+    ``instruct`` -> the USER instruction text (the caller wraps it in the chat
+    template with add_generation_prompt=True and appends the body + label cue as
+    an assistant prefill).
+    """
+    desc = PERSONAS[persona_label]
+    setting = _cap(scenario["setting"])
+    situation = _cap(scenario["situation"])
+    foils = foils_for_scene(scenario["scenario_id"])
+    foil_list = ", ".join(foils)
+    if model_kind == "base":
+        return (
+            f"The following is a dialogue scene in script format. "
+            f"Setting: {setting}. Situation: {situation}. "
+            f"{persona_label} is {desc}. Also present: {foil_list}. "
+            f"Each line is `Name: what they say`.\n\n"
+        )
+    if model_kind == "instruct":
+        char_lines = f"- {persona_label}: {desc}\n" + "".join(
+            f"- {f}: another person caught up in the same situation\n" for f in foils
+        )
+        return (
+            f"Write a dialogue scene in strict SCRIPT format. "
+            f"Setting: {setting}. Situation: {situation}.\n\n"
+            f"Characters:\n{char_lines}\n"
+            f"Format EVERY line as `Name: what they say` — one speaker turn per line, "
+            f"no narration, no stage directions, no blank lines, no quotation marks. "
+            f"{persona_label} speaks in {persona_label}'s own voice."
+        )
+    raise ValueError(f"unknown model_kind {model_kind!r}")
+
+
+def prefill_body_slot0(scenario_id: str) -> str:
+    """Opening canned foil turn (with newline) so slot 0 has dialogue context."""
+    return canned_foil_turn(scenario_id, 0) + "\n"
+
+
+def prefill_advance_body(
+    body: str, persona_label: str, completion: str, scenario_id: str, next_slot: int
+) -> str:
+    """Append the character's just-generated turn + the next canned foil turn."""
+    return f"{body}{persona_label}:{completion}\n{canned_foil_turn(scenario_id, next_slot)}\n"
+
+
+# ---------------------------------------------------------------------------
 # Per-turn context->dialogue pairs (one point per target turn in a scene).
 # ---------------------------------------------------------------------------
 

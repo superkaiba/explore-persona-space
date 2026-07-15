@@ -52,10 +52,27 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--models", type=str, default="base,instruct")
     ap.add_argument("--data-dir", type=Path, default=Path("data/issue_1310"))
     ap.add_argument("--out-dir", type=Path, default=Path("eval_results/issue_1310"))
+    ap.add_argument(
+        "--store-subdir",
+        type=str,
+        default="store",
+        help="store lives at <data-dir>/<store-subdir> (e.g. store_onpolicy, store_tf)",
+    )
+    ap.add_argument(
+        "--tag",
+        type=str,
+        default="",
+        help="flavor tag prefixing every cell_id / swap file (e.g. 'onpolicy_', 'tf_')",
+    )
     ap.add_argument("--null-draws", type=int, default=c1310.N_NULL_DRAWS)
     ap.add_argument("--folds", type=int, default=c1310.N_FOLDS)
     ap.add_argument("--seed", type=int, default=c1310.FIT_SEED)
     ap.add_argument("--n-boot", type=int, default=c1310.N_BOOTSTRAP)
+    ap.add_argument(
+        "--verify-vectorized",
+        action="store_true",
+        help="run the fit825 batched-vs-serial equivalence gate and exit (no fits)",
+    )
     ap.add_argument("--smoke", action="store_true", help="numeric gates recorded, not binding")
     return ap.parse_args()
 
@@ -226,8 +243,8 @@ def run_swap(store: dict, model_kind: str, args) -> dict | None:
         "group_ids": g[rows],
         "row_ids": store["row_ids"][rows],
     }
-    res_c = fit_cell(f"{model_kind}_swapctrl_correct", correct_xy, args)
-    res_s = fit_cell(f"{model_kind}_swap", swap_xy, args)
+    res_c = fit_cell(f"{args.tag}{model_kind}_swapctrl_correct", correct_xy, args)
+    res_s = fit_cell(f"{args.tag}{model_kind}_swap", swap_xy, args)
     hl = res_c["headline_layer"]
     sc, ss = res_c["sweep"], res_s["sweep"]
     if hl not in sc["preds_frozen"] or hl not in ss["preds_frozen"]:
@@ -262,7 +279,7 @@ def run_swap(store: dict, model_kind: str, args) -> dict | None:
         "n_boot": int(args.n_boot),
         "paired_group_bootstrap": True,
     }
-    c1310.write_json(args.out_dir / f"swap_{model_kind}.json", payload)
+    c1310.write_json(args.out_dir / f"swap_{args.tag}{model_kind}.json", payload)
     return payload
 
 
@@ -309,6 +326,9 @@ def build_summary(results: dict, swaps: dict, args) -> None:
     drops = {}
     for model_kind in results:
         audit_path = args.out_dir / f"attribution_audit_{model_kind}.json"
+        cap_path = (
+            args.data_dir / args.store_subdir / model_kind / f"{model_kind}_capture_drops.json"
+        )
         if audit_path.exists():
             a = json.loads(audit_path.read_text())
             drops[model_kind] = {
@@ -317,6 +337,10 @@ def build_summary(results: dict, swaps: dict, args) -> None:
                 "per_persona_pairs": a.get("per_persona_pairs"),
                 "attribution_precision": (a.get("audit") or {}).get("precision"),
             }
+        elif cap_path.exists():
+            # onpolicy / tf capture: no post-hoc attribution — the "drops" are the
+            # degenerate-completion / short-context drops recorded at capture time.
+            drops[model_kind] = {"capture_drops": json.loads(cap_path.read_text())}
     summary = {
         "metadata": common.metadata(SCRIPT, args.seed, 0),
         "headline_layer": c1310.HEADLINE_LAYER,
@@ -332,12 +356,15 @@ def build_summary(results: dict, swaps: dict, args) -> None:
 
 def main() -> int:
     args = parse_args()
+    if args.verify_vectorized:
+        fit825.assert_vectorized_equivalence(seed=args.seed)
+        return 0
     args.out_dir.mkdir(parents=True, exist_ok=True)
     models = [m.strip() for m in args.models.split(",") if m.strip()]
     for m in models:
         assert m in c1310.MODEL_KINDS, f"unknown model {m!r}"
-    print(f"[phase=p3_fits] fit battery (models={models})")
-    store_root = args.data_dir / "store"
+    print(f"[phase=p3_fits] fit battery (models={models}, tag={args.tag!r})")
+    store_root = args.data_dir / args.store_subdir
 
     results: dict[str, dict] = {}
     swaps: dict[str, dict] = {}
@@ -355,10 +382,10 @@ def main() -> int:
                 print(f"[i1310-fit] {model_kind}/{persona}: n={xy['X'].shape[0]} < folds — skipped")
                 continue
             print(f"[i1310-fit] fit {model_kind}/{persona} n={xy['X'].shape[0]}")
-            results[model_kind][persona] = fit_cell(f"{model_kind}_{persona}", xy, args)
+            results[model_kind][persona] = fit_cell(f"{args.tag}{model_kind}_{persona}", xy, args)
             # last-position variant (parent-matched single-position X)
             xy_last = within_xy(store, persona, "x_last")
-            fit_cell(f"{model_kind}_{persona}_lastpos", xy_last, args)
+            fit_cell(f"{args.tag}{model_kind}_{persona}_lastpos", xy_last, args)
         swaps[model_kind] = run_swap(store, model_kind, args) or {}
 
     build_summary(results, swaps, args)
