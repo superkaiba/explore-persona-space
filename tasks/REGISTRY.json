@@ -2742,8 +2742,8 @@
     "1351": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1351",
-      "status": "approved",
+      "path": "tasks/running/1351",
+      "status": "running",
       "title": "workflow-fix: crash-persist worker-log sweep excludes committed repo content"
     },
     "1352": {
