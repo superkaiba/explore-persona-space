@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1370,
+  "highest_id": 1371,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2892,6 +2892,13 @@
       "path": "tasks/proposed/1370",
       "status": "proposed",
       "title": "workflow-fix: footer Reused bullets must carry pinned paths (verify Check 35)"
+    },
+    "1371": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1371",
+      "status": "proposed",
+      "title": "workflow-fix: WARN on linked-not-embedded committed figures in Results"
     },
     "138": {
       "has_clean_result": true,
