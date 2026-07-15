@@ -796,6 +796,23 @@ verified kill-by-pid recipe (or SIGTERMs it under `--kill`; comm re-verified,
 never auto-SIGKILL). Stale sentinels are GC'd after `max(7 days, the
 configured TTL)`.
 
+**Deliberate registration removal (`spawn_session.py unregister`; #1327).**
+Deliberately removing an `issue-<N>.json` / `manual-issue-<N>.json` /
+`campaign-<N>.json` registration (collision-yield, deliberate-stop cleanup)
+goes through `spawn_session.py unregister` — never a hand `rm` on
+`~/.eps-autonomous/` (the #952 shape: an unguarded rm can strip crash-recovery
+from the healthy owner). Sid-matched by default: `unregister --issue N`
+removes only files recording the CALLING session's Happy id
+(ancestry-inferred, the `register-current` walk), so a yielding duplicate can
+never delete the true owner's entry — a `KEPT-SID-MISMATCH` line is the guard
+working, not a bug. Third-party cleanup of a DEAD session's file:
+`unregister --issue N --session-id <dead-sid>` (removes only entries recording
+that sid; no daemon-liveness check), or `unregister --force --issue N` for
+unconditional operator cleanup (`--force` requires `--issue` and is refused
+with `--session-id`). Takeover sentinels (`*.paused-takeover-*`) and
+non-registration siblings (`dispatch-lease-*`, `campaign-watch-*`,
+`pm-session.json`) are never touched by any invocation form.
+
 **Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
 leakage-theory program (#660) is sequenced by a BASH DAEMON
 (`scripts/run_program_orchestrator.sh` in tmux `eps-program`), NOT a Happy
