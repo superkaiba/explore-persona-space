@@ -1340,7 +1340,8 @@ def _stage_reused_adapter(reused: ReusedRun, dest: Path) -> Path:
     api = HfApi()
     entries = hub.retry_transient(
         lambda: list(
-            api.list_repo_tree(  # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient two lines up (scoped staging listing)
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient (scoped listing)
+            api.list_repo_tree(
                 i1090.HF_MODEL_REPO,
                 path_in_repo=reused.adapter_subfolder,
                 repo_type="model",
