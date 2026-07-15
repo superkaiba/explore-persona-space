@@ -98,10 +98,12 @@ Apply these exactly as `code-reviewer.md` defines them; Grep + Read the named sp
 - **Step 0.6 — end-to-end smoke gate** (`type:experiment`; each pipeline phase ran
   once on a tiny real slice with command + slice size + exit 0 + artifact digest;
   the GPU-bound carve-out; the many-call production-shape unit-timing requirement;
-  the deferred-import-inside-smoke-skipped-branch check; the fix-engaged-signal
+  the deferred-import-inside-smoke-skipped-branch check (incl. its fenced-call
+  signature-bind leg); the fix-engaged-signal
   requirement on crash-fix rounds; smoke output-path hygiene). Genuine absence /
   non-zero exit / --help-only → FAIL, tag `smoke-run-missing`. A missing production-
-  shape extrapolation / an unresolvable deferred import / a fix-engaged-signal miss
+  shape extrapolation / an unresolvable deferred import / a fenced call that fails
+  to signature-bind / a fix-engaged-signal miss
   is `substantive`, NOT `smoke-run-missing`.
 - **Step 0.65 — raw-completions upload wiring** (`type:experiment`; a dispatcher
   that writes per-cell completions must wire one of the three accepted upload
