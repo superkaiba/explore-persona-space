@@ -1,0 +1,317 @@
+{
+  "commit": "04f0e0d32b",
+  "created": "2026-07-15T22:25:08Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "read-out layer": 0.0,
+      "held-out test R\u00b2 \u2191 better": 0.6932453722467731,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 1.0,
+      "held-out test R\u00b2 \u2191 better": 0.7271603159763322,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 2.0,
+      "held-out test R\u00b2 \u2191 better": 0.7712294166003535,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 3.0,
+      "held-out test R\u00b2 \u2191 better": 0.6709069748359715,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 4.0,
+      "held-out test R\u00b2 \u2191 better": 0.6839943958245382,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read-out layer": 0.0,
+      "held-out test R\u00b2 \u2191 better": 0.7008788856258128,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 1.0,
+      "held-out test R\u00b2 \u2191 better": 0.7354232732896472,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 2.0,
+      "held-out test R\u00b2 \u2191 better": 0.773061092098424,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 3.0,
+      "held-out test R\u00b2 \u2191 better": 0.6654051706751972,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 4.0,
+      "held-out test R\u00b2 \u2191 better": 0.6842805251170601,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read-out layer": 0.0,
+      "held-out test R\u00b2 \u2191 better": 0.6590049456091474,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 1.0,
+      "held-out test R\u00b2 \u2191 better": 0.6910767983398742,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 2.0,
+      "held-out test R\u00b2 \u2191 better": 0.725877773798171,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 3.0,
+      "held-out test R\u00b2 \u2191 better": 0.6432979189928889,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 4.0,
+      "held-out test R\u00b2 \u2191 better": 0.6654027845844986,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read-out layer": 0.0,
+      "held-out test R\u00b2 \u2191 better": 0.6292467364640907,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 1.0,
+      "held-out test R\u00b2 \u2191 better": 0.6633161843953356,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 2.0,
+      "held-out test R\u00b2 \u2191 better": 0.7092537762333974,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 3.0,
+      "held-out test R\u00b2 \u2191 better": 0.6253215434437679,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 4.0,
+      "held-out test R\u00b2 \u2191 better": 0.6328222684293249,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read-out layer": 0.0,
+      "held-out test R\u00b2 \u2191 better": 0.6417918901064416,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 1.0,
+      "held-out test R\u00b2 \u2191 better": 0.6743442789640985,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 2.0,
+      "held-out test R\u00b2 \u2191 better": 0.71618042669315,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 3.0,
+      "held-out test R\u00b2 \u2191 better": 0.618099623247718,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 4.0,
+      "held-out test R\u00b2 \u2191 better": 0.633382136938957,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read-out layer": 0.0,
+      "held-out test R\u00b2 \u2191 better": 0.5950081620547116,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 1.0,
+      "held-out test R\u00b2 \u2191 better": 0.6242670697902084,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 2.0,
+      "held-out test R\u00b2 \u2191 better": 0.6598992900167062,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 3.0,
+      "held-out test R\u00b2 \u2191 better": 0.5915476535771755,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 4.0,
+      "held-out test R\u00b2 \u2191 better": 0.608332899179735,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read-out layer": 0.0,
+      "held-out test R\u00b2 \u2191 better": 0.6251812021094032,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 1.0,
+      "held-out test R\u00b2 \u2191 better": 0.6584392214841451,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 2.0,
+      "held-out test R\u00b2 \u2191 better": 0.7054149303865584,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 3.0,
+      "held-out test R\u00b2 \u2191 better": 0.6166073857359695,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 4.0,
+      "held-out test R\u00b2 \u2191 better": 0.6241672862333301,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read-out layer": 0.0,
+      "held-out test R\u00b2 \u2191 better": 0.637295977922739,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 1.0,
+      "held-out test R\u00b2 \u2191 better": 0.6687711156633156,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 2.0,
+      "held-out test R\u00b2 \u2191 better": 0.7118060857225275,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 3.0,
+      "held-out test R\u00b2 \u2191 better": 0.6096840287708541,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 4.0,
+      "held-out test R\u00b2 \u2191 better": 0.6250192936347998,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read-out layer": 0.0,
+      "held-out test R\u00b2 \u2191 better": 0.5924797515685973,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 1.0,
+      "held-out test R\u00b2 \u2191 better": 0.6194345836041437,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 2.0,
+      "held-out test R\u00b2 \u2191 better": 0.6557251628947183,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 3.0,
+      "held-out test R\u00b2 \u2191 better": 0.5798123823097989,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read-out layer": 4.0,
+      "held-out test R\u00b2 \u2191 better": 0.5986725856046354,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 45,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map quality by decoding regime and fitter class",
+        "xlabel": "read-out layer",
+        "ylabel": "held-out test R\u00b2 \u2191 better",
+        "legend_labels": [
+          "Ridge (linear)",
+          "Kernel ridge (nonlinear)",
+          "MLP width-512 (nonlinear)"
+        ],
+        "annotations": [
+          "held-out R\u00b2 of the context\u2192answer map; validation-selected split, n = 5,000 contexts"
+        ],
+        "xticklabels": [
+          "14",
+          "17",
+          "19",
+          "26",
+          "27"
+        ],
+        "yticklabels": [
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85"
+        ]
+      }
+    ]
+  }
+}
