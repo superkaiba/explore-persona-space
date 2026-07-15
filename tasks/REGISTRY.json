@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1318,
+  "highest_id": 1319,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2481,6 +2481,13 @@
       "path": "tasks/proposed/1318",
       "status": "proposed",
       "title": "daily-fix: fix 4 workflow_lint FAILs on main (hub-verify)"
+    },
+    "1319": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1319",
+      "status": "proposed",
+      "title": "daily-fix: torch-before-dotenv in 2 issue scripts (#847)"
     },
     "132": {
       "has_clean_result": false,
