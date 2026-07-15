@@ -39,6 +39,11 @@ The mediation signature (G−D > 0, G−B ≈ 0, composed ≈ direct) replicates
 - Pipeline: the merged issue928 scripts (`scripts/issue928_*.py` on main via PR #754) parametrized for the new model/template.
 - Seeds: battery 42, fits/nulls 658, bootstrap 42; greedy rung first, fallback ladder re-registered for this model.
 - Eval: identical seven-map fit battery, LOCO-50 + LOFO-7, PCA-48, selection-symmetric nulls, paired bootstrap, frozen-layer conventions (28-layer/3584 machinery transfers).
+- Mapping arms: BOTH input conventions, per the project default — context-based (full context = prefix + user query) AND prefix-based (query-excluded prefix), mirroring #928's `prefix-based-mapping-arms` round (`scripts/issue928_prefix_mapping_arms.py`). A one-arm run would be a stated deviation; none is intended.
+
+## Spec note (clarifier, 2026-07-15)
+
+Parent #928's clean-result evolved after this task was filed (2026-07-04): later same-issue rounds added the matched-length answer-prefix control (which demoted the CoT gain — an answer-opening slice at matched token budget beats the truncated CoT by 0.052–0.092 per-question) and the prefix-based mapping arms, and the covariate numbers were refined (unflagged short-CoT tercile gradient +0.245→+0.066→+0.044; the Goal's "+0.41 length-matched flagged-cluster gain" is the superseded 2026-07-04 interim figure). The plan MUST target the parent's CURRENT recipe (plan v7 + current clean-result body), including the matched-length control and both mapping arms, and read the flagged-context covariate against the current numbers.
 
 ## Compute
 
