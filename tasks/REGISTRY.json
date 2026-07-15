@@ -2576,8 +2576,8 @@
     "1330": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1330",
-      "status": "proposed",
+      "path": "tasks/archived/1330",
+      "status": "archived",
       "title": "daily-fix: codify marker-text extraction from output file"
     },
     "1331": {
