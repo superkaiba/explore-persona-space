@@ -4608,6 +4608,9 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
             # production default is the shared literal /tmp/eps-worker-logs,
             # which concurrent pytest sessions on this shared VM would race.
             "EPS_PERSIST_LOG_STAGE_DIR": str(tmp_path / "staged-worker-logs"),
+            # #1338: same isolation for the data-log harvest staged tree
+            # (production default is the shared literal /tmp/eps-data-logs).
+            "EPS_PERSIST_DATA_LOG_STAGE_DIR": str(tmp_path / "staged-data-logs"),
             # #1151: same isolation for the first/final bundle staging dirs
             # (production defaults are shared /tmp literals).
             "EPS_PERSIST_FIRST_STAGE_DIR": str(tmp_path / "staged-first"),
@@ -4694,6 +4697,10 @@ def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
     # #1151: an all-skipped first bundle SKIPs loudly instead of committing.
     assert "[crash-persist] SKIP bundle first: nothing staged" in proc.stdout
     assert "[crash-persist] SKIP worker_logs: no such dir" in proc.stdout
+    # #1338: the data-log harvest SKIPs loudly too when nothing matches.
+    assert "[crash-persist] SKIP data_logs: no per-run *.log files under partial dirs" in (
+        proc.stdout
+    )
     assert "[crash-persist] SKIP eval_results_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue137: no such dir" in proc.stdout
@@ -4751,11 +4758,14 @@ def test_render_startup_script_diagnostics_sweeps_worker_logs() -> None:
     # The CALL, not just the def (a defined-but-never-called sweep is dead).
     assert "\n_up_logs()" in script
     # Ordering: first bundle (crash_report + workload.log, #1151) ->
-    # _up_logs() -> partial dirs.
+    # _up_logs() -> partial dirs (the loop anchor is the hoisted
+    # PARTIAL_DIRS tuple as of #1338 — same three swept dirs; the
+    # newline prefix pins the TOP-LEVEL sweep loop, not the indented
+    # walk inside _up_data_logs()).
     assert (
         script.index('_up_bundle(first_stage, "first", retry=True)')
         < script.index("\n_up_logs()")
-        < script.index("for local, name in (")
+        < script.index("\nfor local, name in PARTIAL_DIRS:")
     )
 
 
@@ -4828,6 +4838,167 @@ def test_persist_heredoc_worker_logs_max_files_lt_one_skips_loudly(tmp_path) -> 
     assert not any(
         c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs") for c in calls
     )
+
+
+# ---------------------------------------------------------------------------
+# #1338 — crash-persist data-dir per-run log harvest (before the oversized-dir
+# skip) + worker-log .md notes exclusion
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_diagnostics_harvests_data_logs() -> None:
+    """#1338 (string-level): the persist defines AND calls _up_data_logs()
+    (a defined-but-never-called harvest is dead), sequenced AFTER the
+    worker-logs sweep and BEFORE the partial-dirs loop (small-first: the
+    ~KB tracebacks land before any big dir upload can eat the 300s
+    budget), staged into the env-overridable EPS_PERSIST_DATA_LOG_STAGE_DIR
+    and uploaded as ONE upload_folder commit to {dest}/data_logs."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "\n_up_data_logs()" in script
+    assert "EPS_PERSIST_DATA_LOG_STAGE_DIR" in script
+    assert "/tmp/eps-data-logs" in script
+    assert 'path_in_repo=f"{dest}/data_logs"' in script
+    # Ordering: worker-logs sweep -> data-log harvest -> partial dirs
+    # (the newline prefixes pin the top-level CALL lines / sweep loop,
+    # not the def line or the indented walk inside _up_data_logs()).
+    assert (
+        script.index("\n_up_logs()")
+        < script.index("\n_up_data_logs()")
+        < script.index("\nfor local, name in PARTIAL_DIRS:")
+    )
+
+
+def test_persist_heredoc_data_logs_harvested_before_oversized_skip(tmp_path) -> None:
+    """#1338 behavioral (executed heredoc) — the #1090 fu5 acceptance shape:
+    a data dir OVER the per-dir byte cap still gets its per-run logs
+    harvested to {dest}/data_logs/ (tail-capped, one commit) BEFORE the
+    existing oversized SKIP fires; the dir remainder is skipped exactly as
+    today. Covers all three predicate arms (a ``logs`` path component, a
+    ``*_logs`` component — the issue502 worker_logs/gpu<N>.log layout —
+    and ``.attempt`` in the filename) plus the OPTIONAL under-cap
+    dual-path cell: an under-cap dir uploads at its byte-identical dir
+    paths AND its log rides the data_logs duplicate (unconditional
+    harvest)."""
+    root = tmp_path / "workload"
+    fu5_logs = root / "data" / "issue_137" / "fu5" / "logs"
+    fu5_logs.mkdir(parents=True)
+    (fu5_logs / "run_a.attempt1.log").write_text("run-a ok\n")
+    (fu5_logs / "run_b.attempt2.log").write_bytes(b"h" * 48 + b"TAIL-SENTINEL-OK")  # 64 bytes
+    wl = root / "data" / "issue_137" / "sub" / "worker_logs"
+    wl.mkdir(parents=True)
+    (wl / "gpu0.log").write_text("gpu0 worker traceback\n")
+    (root / "data" / "issue_137" / "big.bin").write_text("x" * 64)  # over the 5-byte cap
+    # Under-cap dual-path cell: the no-underscore convention dir holds ONE
+    # tiny log (4 bytes <= cap 5), so the dir upload AND the data_logs
+    # duplicate both fire.
+    tiny = root / "data" / "issue137" / "logs"
+    tiny.mkdir(parents=True)
+    (tiny / "tiny.log").write_text("ok!\n")
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={
+            "EPS_PERSIST_DIR_CAP_BYTES": "5",
+            "EPS_PERSIST_LOG_FILE_CAP_BYTES": "16",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    # (i) exactly ONE data_logs folder commit, staging all four matched logs
+    # under <dirname>/<relpath> keys.
+    dl_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/data_logs")
+    ]
+    assert [c["path_in_repo"] for c in dl_calls] == ["issue137_partial/att-x/data_logs"]
+    assert sorted(dl_calls[0]["staged"]) == [
+        "data_issue137/logs/tiny.log",
+        "data_issue_137/fu5/logs/run_a.attempt1.log",
+        "data_issue_137/fu5/logs/run_b.attempt2.log",
+        "data_issue_137/sub/worker_logs/gpu0.log",
+    ]
+    # (ii) the oversized log was TAILED at stage time (16-byte sentinel).
+    assert dl_calls[0]["staged"]["data_issue_137/fu5/logs/run_b.attempt2.log"] == (
+        "TAIL-SENTINEL-OK"
+    )
+    assert (
+        "[crash-persist] TAILED data_logs/data_issue_137/fu5/logs/run_b.attempt2.log:"
+        " kept last 16 of 64 bytes"
+    ) in proc.stdout
+    # (iii) the existing oversized-dir SKIP still fires for the over-cap dir.
+    assert "[crash-persist] SKIP data_issue_137:" in proc.stdout
+    assert "bytes > cap 5" in proc.stdout
+    # (iv) the over-cap dir itself never uploaded.
+    assert not any(
+        c["kind"] == "folder" and c["path_in_repo"].endswith("/data_issue_137") for c in calls
+    )
+    # (v) ordering: the harvest lands strictly BEFORE the oversized skip.
+    assert proc.stdout.index("uploading dir data_logs") < proc.stdout.index("SKIP data_issue_137")
+    # Under-cap dual path: the tiny dir still uploads at its byte-identical
+    # dir path, carrying the SAME log the data_logs harvest duplicated.
+    tiny_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/data_issue137")
+    ]
+    assert [c["path_in_repo"] for c in tiny_calls] == ["issue137_partial/att-x/data_issue137"]
+    assert tiny_calls[0]["staged"] == {"logs/tiny.log": "ok!\n"}
+
+
+def test_persist_heredoc_data_logs_count_bound_newest_first(tmp_path) -> None:
+    """#1338 behavioral: the data-log harvest honors EPS_PERSIST_LOG_MAX_FILES
+    newest-first — 3 logs with distinct mtimes under a 2-file bound stage
+    exactly the 2 NEWEST (a size- or name-sort mutant would differ) and the
+    dropped-count SKIP line prints."""
+    root = tmp_path / "workload"
+    for run, age in (("r1", 7200), ("r2", 3600), ("r3", 0)):
+        d = root / "data" / "issue_137" / run / "logs"
+        d.mkdir(parents=True)
+        p = d / f"{run}.attempt1.log"
+        p.write_text(f"{run} traceback\n")
+        base = os.stat(p).st_mtime
+        os.utime(p, (base - age, base - age))
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_PERSIST_LOG_MAX_FILES": "2"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    dl_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/data_logs")
+    ]
+    assert [c["path_in_repo"] for c in dl_calls] == ["issue137_partial/att-x/data_logs"]
+    assert sorted(dl_calls[0]["staged"]) == [
+        "data_issue_137/r2/logs/r2.attempt1.log",
+        "data_issue_137/r3/logs/r3.attempt1.log",
+    ]
+    assert "data_issue_137/r1/logs/r1.attempt1.log" not in dl_calls[0]["staged"]
+    assert (
+        "[crash-persist] SKIP 1 older data log(s) beyond EPS_PERSIST_LOG_MAX_FILES=2"
+    ) in proc.stdout
+
+
+def test_persist_heredoc_worker_logs_excludes_committed_md_notes(tmp_path) -> None:
+    """#1338 behavioral: the worker-logs sweep excludes ``*.md`` files (the
+    repo-clone committed logs/daily|weekly session notes — 40 uploaded on
+    the #1090 fu5 incident crash) with ONE aggregate SKIP line, while a
+    real $WORKLOAD_ROOT/logs/** fan-out worker log still stages at its
+    byte-identical worker_logs/ path (the #885 surface, unweakened)."""
+    root = tmp_path / "workload"
+    (root / "logs" / "daily").mkdir(parents=True)
+    (root / "logs" / "daily" / "2026-01-01.md").write_text("# session notes\n")
+    (root / "logs" / "weekly").mkdir(parents=True)
+    (root / "logs" / "weekly" / "w.md").write_text("# weekly notes\n")
+    (root / "logs" / "issue_137").mkdir(parents=True)
+    (root / "logs" / "issue_137" / "worker.log").write_text("worker traceback\n")
+    proc, calls, _ = _run_persist_heredoc(tmp_path, make_dirs=False)
+    assert proc.returncode == 0, proc.stderr
+    wl_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")
+    ]
+    assert [c["path_in_repo"] for c in wl_calls] == ["issue137_partial/att-x/worker_logs"]
+    assert wl_calls[0]["staged"] == {"issue_137/worker.log": "worker traceback\n"}
+    assert not any(k.startswith("daily/") for k in wl_calls[0]["staged"])
+    assert (
+        "[crash-persist] SKIP worker_logs: 2 .md notes file(s) excluded"
+        " (committed logs/daily|weekly session notes, not run logs)"
+    ) in proc.stdout
 
 
 # ---------------------------------------------------------------------------

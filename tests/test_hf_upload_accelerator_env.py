@@ -165,11 +165,17 @@ def test_gcp_create_argv_forwards_real_xet_kill_switch(monkeypatch) -> None:
     reads back on the VM (#1195; mirrors the adapter-persist M2 create-side
     test in test_gcp_backend.py)."""
     monkeypatch.setenv("HF_HUB_DISABLE_XET", "1")
-    # Hermetic vs the invoking shell (mirrors test_gcp_backend.py's autouse
-    # fixture): a real optional secret leaking in would make render_create_argv
-    # demand a tempfile entry this direct-render test doesn't thread.
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    # Hermetic vs the invoking PROCESS env (mirrors test_gcp_backend.py's
+    # autouse fixture): a real optional secret leaking in would make
+    # render_create_argv demand a tempfile entry this direct-render test
+    # doesn't thread. Derived from the real key tuple (minus the two threaded
+    # keys) so a future STARTUP_SECRET_ENV_KEYS addition cannot re-break this
+    # test — a batch-mate's load_dotenv() puts the repo-root .env's
+    # GITHUB_TOKEN (#1205) into os.environ mid-session, which the two prior
+    # hardcoded delenvs missed (pre-existing interaction surfaced on #1338).
+    for key in gcp.STARTUP_SECRET_ENV_KEYS:
+        if key not in ("HF_TOKEN", "WANDB_API_KEY"):
+            monkeypatch.delenv(key, raising=False)
     argv = render_create_argv(
         spec=_hydra_spec(),
         config=_gcp_config(),
