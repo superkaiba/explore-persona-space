@@ -2826,8 +2826,8 @@
     "1362": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1362",
-      "status": "proposed",
+      "path": "tasks/planning/1362",
+      "status": "planning",
       "title": "workflow-fix: gotchas.md \u2014 bf16 determinism re-capture bar variant (#1005)"
     },
     "137": {
