@@ -37,7 +37,7 @@ relates_to:
 # Conditioning on the realized chain-of-thought predicts the thinking model's answer state no better than a matched-length slice of the answer's own opening (HIGH confidence)
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_928.md](https://github.com/superkaiba/explore-persona-space/blob/ca607cce608d61c4fdf49f4ad39b384c48a89f1a/docs/methodology/issue_928.md) · [gist](https://gist.github.com/superkaiba/9ab1fdeb5bfb699d0b309541c519a31b)
+**Methodology:** [docs/methodology/issue_928.md](https://github.com/superkaiba/explore-persona-space/blob/e0906e06960f2aa62d468cdc7153162ba7368387/docs/methodology/issue_928.md) · [gist](https://gist.github.com/superkaiba/9ab1fdeb5bfb699d0b309541c519a31b)
 
 ## Takeaways
 
