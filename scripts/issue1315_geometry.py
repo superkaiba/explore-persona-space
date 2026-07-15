@@ -62,12 +62,28 @@ def stage_from_hf(dest: Path, *, revision: str | None) -> None:
     )
     if not entries:
         raise FileNotFoundError(f"no files under {C.HF_DATA_REPO}/{prefix}")
+    import time
+
+    from huggingface_hub.errors import HfHubHTTPError, LocalEntryNotFoundError
+
     for p in entries:
         rel = Path(p).relative_to(prefix)
         target = dest / rel
         if target.exists():
             continue
-        got = hf_hub_download(C.HF_DATA_REPO, p, repo_type="dataset", revision=revision)
+        # Bounded TRANSPORT retry (HF 429/5xx — the fleet-level rate-limit
+        # pressure that killed this run's pod-side p11 twice on 2026-07-15);
+        # fail-loud after exhaustion. Staging is resume-idempotent.
+        for attempt in range(4):
+            try:
+                got = hf_hub_download(C.HF_DATA_REPO, p, repo_type="dataset", revision=revision)
+                break
+            except (HfHubHTTPError, LocalEntryNotFoundError) as e:
+                if attempt == 3:
+                    raise
+                wait = 30 * 2**attempt
+                print(f"[stage] transport error on {p} ({e}); retry in {wait}s", flush=True)
+                time.sleep(wait)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(got, target)
 
@@ -146,6 +162,127 @@ def _cell_maps(cells_doses: list[tuple[str, str]], base_store: Path, rb_path: Pa
     }
 
 
+def _source_context(cell: str) -> str:
+    """Registered source context id for a cell (panel-group key)."""
+    if cell in C.REUSED_LORA_CELLS:
+        return C.REUSED_LORA_CELLS[cell]["context_id"]
+    if cell in C.FT_CELLS:
+        return C.FT_CELLS[cell]["context_id"]
+    raise ValueError(f"unregistered cell: {cell}")
+
+
+def _subset_base_store(base: dict, key_order: list[tuple[str, int]], out_path: Path) -> Path:
+    """Write a base-store copy whose rows are SELECTED + ORDERED to key_order.
+
+    #1315 divergence from #1112: the base pass captures the UNION panel (8
+    contexts x 20 q = 160 rows) while each cell's panel is a 120-row subset
+    (5 shared negatives + its own source context), so the #1112 rig's exact
+    row_meta equality assert (``delta_cloud``) needs a per-panel-group base
+    subset. Asserts every requested key exists in the base store (a missing
+    key = capture bug, halt) and preserves the trained stores' row order so
+    ``delta_cloud``'s kt == kb identity check passes unchanged.
+    """
+    import torch
+
+    keys = [(m["context_id"], int(m["question_idx"])) for m in base["row_meta"]]
+    pos = {k: i for i, k in enumerate(keys)}
+    missing = [k for k in key_order if k not in pos]
+    assert not missing, (
+        f"{len(missing)} panel keys absent from the union base store "
+        f"(first: {missing[:3]}) — capture stores are not probe-aligned"
+    )
+    perm = [pos[k] for k in key_order]
+    sub = dict(base)
+    sub["row_meta"] = [base["row_meta"][i] for i in perm]
+    sub["arms"] = {
+        arm: {li: t[perm] for li, t in per_layer.items()} for arm, per_layer in base["arms"].items()
+    }
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(sub, out_path)
+    return out_path
+
+
+def _run_tree_grouped(
+    tree_root: Path,
+    out_dir: Path,
+    *,
+    base_store_path: Path,
+    rb_path: Path,
+    n_boot: int,
+    arms: tuple[str, ...] | None,
+    subset_dir: Path,
+    tag: str,
+) -> dict:
+    """run_geometry per panel group (cells sharing one source context), then
+    merge the payloads. Registered DIFF_PAIRS all live inside the ICL group,
+    so per-group runs preserve every paired read; the shared-per-group base
+    subset keeps the #1112 paired-bootstrap convention (one index matrix per
+    panel) intact."""
+    from issue1112_geometry import _store_keys
+
+    base = geo.load_store(base_store_path)
+    cells_doses = [(c, d) for c, d in discover_passes(tree_root) if c != "base"]
+    groups: dict[str, list[tuple[str, str]]] = {}
+    for c, d in cells_doses:
+        groups.setdefault(_source_context(c), []).append((c, d))
+
+    merged: dict = {}
+    for ctx in sorted(groups):
+        cd = groups[ctx]
+        group_out = out_dir / f"_group_{ctx}"
+        done = group_out / "geometry_per_cell.json"
+        if done.exists():
+            # Group-level resume (checkpoint-per-phase; the 2026-07-15 earlyoom
+            # SIGTERM killed the one-process all-groups run at ~20 GB RSS —
+            # completed groups reload instead of recomputing).
+            payload = json.loads(done.read_text())
+            assert payload.get("n_boot") == n_boot, (ctx, payload.get("n_boot"), n_boot)
+            logger_print = f"[geometry-grouped] resume: group {ctx} loaded from {done}"
+            print(logger_print, flush=True)
+        else:
+            key_order = None
+            for c, d in cd:
+                st = geo.load_store(tree_root / c / d / "pooled.pt")
+                k = _store_keys(st)
+                if key_order is None:
+                    key_order = k
+                else:
+                    assert k == key_order, (
+                        f"row order differs within panel group {ctx}: {c}/{d} — "
+                        "capture stores are not probe-aligned"
+                    )
+                del st
+            sub_path = _subset_base_store(base, key_order, subset_dir / f"base_{tag}_{ctx}.pt")
+            maps = _cell_maps(cd, sub_path, rb_path)
+            cells_in_group = {c for c, _ in cd}
+            pairs = tuple(
+                p for p in C.DIFF_PAIRS if p[1] in cells_in_group and p[2] in cells_in_group
+            )
+            kwargs = dict(
+                n_boot=n_boot,
+                tensors_out=out_dir / "bootstrap_matrices",
+                diff_pairs=pairs,
+                **maps,
+            )
+            if arms is not None:
+                kwargs["arms"] = arms
+            payload = geo.run_geometry(tree_root, group_out, **kwargs)
+        if not merged:
+            merged = {k: v for k, v in payload.items()}
+            merged["panel_groups"] = {ctx: [list(x) for x in cd]}
+        else:
+            merged["records"].update(payload["records"])
+            merged["cross_cell_diffs"].update(payload["cross_cell_diffs"])
+            merged["subsample_sensitivity_80row"].update(payload["subsample_sensitivity_80row"])
+            merged["split_half_self_cosine_ceiling"].update(
+                payload["split_half_self_cosine_ceiling"]
+            )
+            if payload.get("h3_interaction"):
+                merged["h3_interaction"] = payload["h3_interaction"]
+            merged["panel_groups"][ctx] = [list(x) for x in cd]
+    return merged
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="#1315 VM-side geometry aggregator")
     src = p.add_mutually_exclusive_group(required=True)
@@ -183,28 +320,30 @@ def main(argv: list[str] | None = None) -> int:
     if tf_root is not None and Path(tf_root).exists():
         parity = run_tf_parity_gate(Path(tf_root), capture_root, args.out_dir / "tf_shared")
 
-    own = _cell_maps(discover_passes(capture_root), base_store, rb_path)
-    payload = geo.run_geometry(
+    subset_dir = capture_root.parent / "base_subsets"
+    payload = _run_tree_grouped(
         capture_root,
         args.out_dir,
+        base_store_path=base_store,
+        rb_path=rb_path,
         n_boot=args.n_boot,
-        tensors_out=args.out_dir / "bootstrap_matrices",
-        diff_pairs=C.DIFF_PAIRS,
-        **own,
+        arms=None,  # own-text stores carry all three arms (module default)
+        subset_dir=subset_dir,
+        tag="own",
     )
     (args.out_dir / "geometry_per_cell.json").write_text(json.dumps(payload, indent=1, default=str))
 
     tf_payload = None
     if tf_root is not None and Path(tf_root).exists():
-        tf = _cell_maps(discover_passes(Path(tf_root)), base_store, rb_path)
-        tf_payload = geo.run_geometry(
+        tf_payload = _run_tree_grouped(
             Path(tf_root),
             args.out_dir / "tf_shared",
+            base_store_path=base_store,
+            rb_path=rb_path,
             n_boot=args.n_boot,
-            tensors_out=args.out_dir / "tf_shared" / "bootstrap_matrices",
-            arms=("response",),  # shared-text stores carry the response arm only
-            diff_pairs=C.DIFF_PAIRS,
-            **tf,
+            arms=("response",),  # shared-text geometry reads the response arm only
+            subset_dir=subset_dir,
+            tag="tf",
         )
         (args.out_dir / "geometry_tf_shared.json").write_text(
             json.dumps(tf_payload, indent=1, default=str)
