@@ -1,5 +1,7 @@
 ---
-title: 'Impolite-organism activation-shift geometry (extends #1112 method to impolite)'
+title: 'Impolite''s activation-shift geometry breaks the sycophancy signature: read-out-aligned,
+  more concentrated, and no extra shift distance under full fine-tuning (MODERATE
+  confidence)'
 kind: experiment
 tags: []
 created_at: '2026-07-15T06:33:50Z'
