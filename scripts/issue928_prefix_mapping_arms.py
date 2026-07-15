@@ -273,20 +273,18 @@ def stage_mlc_store(store_dir: Path, revision: str, ctx_ids: list[str], full_gri
 
     from huggingface_hub import HfApi
 
-    entries = [
-        e
-        for e in HfApi().list_repo_tree(
-            HF_DATA_REPO,
-            path_in_repo=MLC_STORE_HF_PREFIX,
-            repo_type="dataset",
-            recursive=True,
-            revision=revision,
-        )
-        if getattr(e, "size", None) is not None
-    ]
-    if not entries:
+    from explore_persona_space.orchestrate.hub import list_hf_files_under_path
+
+    paths = list_hf_files_under_path(
+        HfApi(),
+        HF_DATA_REPO,
+        MLC_STORE_HF_PREFIX,
+        repo_type="dataset",
+        revision=revision,
+    )
+    if not paths:
         raise RuntimeError(f"no files under {MLC_STORE_HF_PREFIX} at revision {revision}")
-    rels = {e.path[len(MLC_STORE_HF_PREFIX) + 1 :]: e.path for e in entries}
+    rels = {full[len(MLC_STORE_HF_PREFIX) + 1 :]: full for full in paths}
     if "manifest.json" not in rels:
         raise RuntimeError(
             f"no manifest.json under {MLC_STORE_HF_PREFIX} at revision {revision} — "
