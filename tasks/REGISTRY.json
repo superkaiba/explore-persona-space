@@ -2840,8 +2840,8 @@
     "1364": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1364",
-      "status": "running",
+      "path": "tasks/reviewing/1364",
+      "status": "reviewing",
       "title": "workflow-fix: analyzer CJK audit must cover judged install-instrument pools"
     },
     "1365": {
