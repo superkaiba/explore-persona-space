@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1342,
+  "highest_id": 1343,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2674,6 +2674,13 @@
       "path": "tasks/proposed/1342",
       "status": "proposed",
       "title": "workflow-fix: signature-bind fenced calls in the deferred-import sweep"
+    },
+    "1343": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1343",
+      "status": "proposed",
+      "title": "workflow-fix: GCE crash-persist must verify uploads before persist=ok"
     },
     "135": {
       "has_clean_result": false,
