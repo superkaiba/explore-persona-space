@@ -109,7 +109,11 @@ def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
 
 
 def _ridge_predict_cached(
-    cache: dict, Y_train: np.ndarray, *, return_lam: bool = False
+    cache: dict,
+    Y_train: np.ndarray,
+    *,
+    return_lam: bool = False,
+    lambdas: np.ndarray | list[float] | None = None,
 ) -> np.ndarray | tuple[np.ndarray, float]:
     """Fit + predict for one Y using a fold cache from _prep_fold.
 
@@ -118,7 +122,13 @@ def _ridge_predict_cached(
     ``return_lam=True`` additionally returns the GCV-selected lambda
     (#931 `matched-n-denominator-dip` registered source-module change; the
     default returns the prediction alone, byte-preserving).
+    ``lambdas=None`` (default) scans the module-global ``LAMBDAS`` grid,
+    byte-preserving; a caller passes its own grid (#1336 D1 widened-grid
+    audit — the #931 default-preserving-flag pattern, never a caller-side
+    monkey-patch of the module global).
     """
+    lams = LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64)
+    assert lams.ndim == 1 and len(lams) > 0, f"bad lambda grid shape {lams.shape}"
     Ytr = torch.as_tensor(np.asarray(Y_train), dtype=torch.float64).to(cache["w"].device)
     ymu = Ytr.mean(0)
     Ytr_c = Ytr - ymu
@@ -126,9 +136,9 @@ def _ridge_predict_cached(
     VtY = V.T @ Ytr_c
     sqVtY = (VtY**2).sum(1)
     tot = float((Ytr_c**2).sum())
-    best_lam = float(LAMBDAS[0])
+    best_lam = float(lams[0])
     best_gcv = float("inf")
-    for lam in LAMBDAS:
+    for lam in lams:
         filt = w / (w + lam)
         rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
         dof = float(filt.sum())
@@ -197,6 +207,7 @@ def heldout_r2_sweep(
     collect_cosines: bool = True,
     collect_lambdas: bool = False,
     frozen_layers: tuple[int, ...] | list[int] | None = None,
+    lambdas: np.ndarray | list[float] | None = None,
 ) -> dict:
     """Held-out pooled R^2 per layer for observed Y and every shuffle-null draw.
 
@@ -217,6 +228,10 @@ def heldout_r2_sweep(
         source-module change — the default (False) preserves the committed
         behavior byte-for-byte (same class as the `ns=` parametrization on
         run_power_curve).
+      lambdas: optional GCV grid override threaded to EVERY
+        `_ridge_predict_cached` call (observed AND null draws — selection
+        stays symmetric under a widened grid); ``None`` keeps the module
+        ``LAMBDAS`` byte-for-byte (#1336 D1 default-preserving flag).
     Null draws permute Y ROW-ORDER (whole example rows, seeded) and go through
     the IDENTICAL cached (w, V, Kev) fitting path as the observed fit.
     """
@@ -261,10 +276,12 @@ def heldout_r2_sweep(
                 continue
             cache = _prep_fold(X[tr], X[te])
             if collect_lambdas:
-                pred, best_lam = _ridge_predict_cached(cache, Y[tr], return_lam=True)
+                pred, best_lam = _ridge_predict_cached(
+                    cache, Y[tr], return_lam=True, lambdas=lambdas
+                )
                 lam_obs[li, k] = best_lam
             else:
-                pred = _ridge_predict_cached(cache, Y[tr])
+                pred = _ridge_predict_cached(cache, Y[tr], lambdas=lambdas)
             fitted[te] = True
             true = Y[te].astype(np.float64)
             mu = true.mean(0)
@@ -275,7 +292,7 @@ def heldout_r2_sweep(
                 preds_frozen[li][te] = pred.astype(np.float32)
             for d, perm in enumerate(null_perms):
                 Yp = Y[perm]
-                pred_n = _ridge_predict_cached(cache, Yp[tr])
+                pred_n = _ridge_predict_cached(cache, Yp[tr], lambdas=lambdas)
                 true_n = Yp[te].astype(np.float64)
                 mu_n = true_n.mean(0)
                 ss_res_null[d, li] += float(np.sum((true_n - pred_n) ** 2))

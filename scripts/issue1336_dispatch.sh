@@ -21,6 +21,7 @@
 # Usage:
 #   bash scripts/issue1336_dispatch.sh all [--smoke]
 #   bash scripts/issue1336_dispatch.sh <g0_gate|gen|extract|fit|align|upload> [--smoke]
+#   bash scripts/issue1336_dispatch.sh d1_battery [--smoke]   # plan v7 D1.4/D1.6 GPU leg
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"
@@ -565,6 +566,208 @@ print(f"[signal] wrote results sentinel {os.environ['RES_OUT']} (halted={halted}
 PY
 }
 
+# ---------------------------------------------------------------------------
+# D1 diagnosis (plan v7 amendment): battery + qwen_cal on the GPU leg with its
+# OWN scoped HF staging (the GCP lane is git-clone-only — no VM-local data/),
+# then verdict (when the VM-side spotcheck landed on the branch), then upload
+# + results signal file. Smoke: tiny-real fixture through the SAME driver.
+# ---------------------------------------------------------------------------
+phase_d1_battery() {
+    echo "[phase=d1_battery]"
+    local diag_dir="$OUT_DIR/diagnosis"
+    mkdir -p "$diag_dir"
+    if [ "$SMOKE" -eq 1 ]; then
+        local froot="$OUT_DIR/diag_fixture"
+        uv run python scripts/issue1336_smoke_fixtures.py diag \
+            --out "$froot" --n 12 --layers 2 --dim 8 --seed 0
+        # DG0 oracle on the fixture: the production sweep itself sets the
+        # target the driver's v0 must reproduce (gate exercised for real).
+        local oracle
+        oracle=$(FROOT="$froot" uv run python - <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "scripts")
+import numpy as np
+
+import issue825_fit_cells as fc
+import issue1336_fit_cells as f36
+
+root = Path(os.environ["FROOT"])
+targets = {}
+for cell in ("rlvr_chat_lmsys5k", "rlvr_naturalistic_lmsys5k"):
+    bundle = fc._load_bundle_any(root / f"turnstore_{cell}", *cell.split("_", 2))
+    xy = f36._cell_xy_1336(bundle, 2)
+    sweep = fc.heldout_r2_sweep(
+        xy["X"], xy["Y"], xy["conv_ids"], n_folds=3, seed=0, null_draws=0, frozen_layers=(1,)
+    )
+    targets[cell] = float(np.nanmax(sweep["r2_obs"]))
+print(json.dumps(targets))
+PY
+)
+        uv run python scripts/issue1336_diagnose_g1.py \
+            --steps stage,decomp,audit,spotcheck,qwen_cal,battery,verdict \
+            --stage-root "$froot" --out-dir "$diag_dir" \
+            --preds-dir "$froot/preds" --gen-dir "$froot/gen" \
+            --qwen-reduced "$froot/qwen_reduced/qwen_s1_reduced.pt" \
+            --folds 3 --null-draws 2 --n-boot 25 --spotcheck-n 5 --expect-n 12 \
+            --dg0-targets-json "$oracle"
+        # NOTE: --steps stage is inert here (fixture pre-staged under froot;
+        # every stage sub-dir already exists, so the HF fetch is skipped) —
+        # kept in the list so the smoke traverses the same normalized order.
+        echo "[d1_battery] smoke complete (scratch $diag_dir; no uploads)"
+        return 0
+    fi
+    local stage_root="${DIAG_STAGE_ROOT:-data/issue_1336/diag_stage}"
+    local steps="stage,qwen_cal,battery"
+    # Verdict needs the VM-side D1.1-D1.3 outputs (committed on the branch
+    # before this leg launches); run it here only when they are present.
+    if [ -f "$diag_dir/spotcheck.json" ]; then
+        steps="$steps,verdict"
+    else
+        echo "[d1_battery] spotcheck.json absent — verdict left to the VM steps"
+    fi
+    uv run python scripts/issue1336_diagnose_g1.py \
+        --steps "$steps" --stage-root "$stage_root" --out-dir "$diag_dir"
+    # Uploads: npz tensors -> analysis_tensors/diagnosis, JSONs -> the
+    # eval-results mirror (single bulk upload_folder commits, #664).
+    UP_SRC="$diag_dir" UP_REPO="$HF_DATA_REPO" UP_PREFIX="$HF_PREFIX" \
+        uv run python - <<'PY'
+import os
+from pathlib import Path
+
+from huggingface_hub import upload_folder
+
+assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing in workload env"
+src = os.environ["UP_SRC"]
+repo = os.environ["UP_REPO"]
+prefix = os.environ["UP_PREFIX"]
+upload_folder(
+    repo_id=repo,
+    repo_type="dataset",
+    folder_path=src,
+    path_in_repo=f"{prefix}/eval_results_mirror/diagnosis",
+    allow_patterns=["*.json"],
+)
+print("[d1_battery] diagnosis JSON mirror uploaded")
+tensors = Path(src) / "tensors"
+if tensors.exists():
+    upload_folder(
+        repo_id=repo,
+        repo_type="dataset",
+        folder_path=str(tensors),
+        path_in_repo=f"{prefix}/analysis_tensors/diagnosis",
+        allow_patterns=["*.npz"],
+    )
+    print("[d1_battery] diagnosis tensors uploaded")
+PY
+    # Commit diagnosis JSONs to the issue branch; push verified (#1205 — the
+    # `git push || true` swallow shape is banned). Checkpoints/tensors are
+    # HF-bound, never git (eval_results/ is JSON/text only).
+    local branch rc=0
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    git add "$diag_dir"/*.json
+    if ! git diff --cached --quiet; then
+        git commit -m "task #1336: D1 diagnosis outputs (battery + qwen_cal GPU leg)"
+    fi
+    git push origin "HEAD:$branch" || rc=$?
+    if [ "$rc" -ne 0 ] || [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
+        echo "[d1_battery] push not landed — one retry after rebase" >&2
+        git pull --rebase=merges --autostash origin "$branch"
+        git push origin "HEAD:$branch"
+    fi
+    if [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
+        echo "[d1_battery] FATAL: diagnosis commit not on origin/$branch after retry" >&2
+        exit 86
+    fi
+    echo "[d1_battery] diagnosis commit verified on origin/$branch"
+}
+
+write_d1_results_sentinel() {
+    local ts path
+    ts=$(date +%s)
+    path="$LOG_DIR/issue-1336-$(printf '%s' "$RESULTS_KIND" | tr ':' '_')-${ts}.json"
+    RES_OUT="$path" RES_KIND="$RESULTS_KIND" RES_DIAG="$OUT_DIR/diagnosis" \
+        RES_NGPU="$NGPU" RES_START="$(cat "$DONE_DIR/start_ts")" RES_SMOKE="$SMOKE" \
+        uv run python - <<'PY'
+import json
+import os
+import subprocess
+import time
+from pathlib import Path
+
+diag = Path(os.environ["RES_DIAG"])
+smoke = os.environ["RES_SMOKE"] == "1"
+
+
+def _maybe(p: Path):
+    return json.loads(p.read_text()) if p.exists() else None
+
+
+verdict = _maybe(diag / "diagnosis_verdict.json")
+qc = _maybe(diag / "refit_qwen_cal.json")
+v0 = _maybe(diag / "refit_v0_rlvr_chat_lmsys5k.json")
+eval_numbers = {
+    "dg0_chat": (v0 or {}).get("dg0"),
+    "s_qwen": (qc or {}).get("s_qwen_standardized"),
+    "bar_std": (qc or {}).get("bar_std"),
+}
+if verdict is not None:
+    eval_numbers.update(
+        {
+            "lattice_inputs": verdict["lattice_inputs"],
+            "accounting_set": verdict["mechanism_attribution"]["accounting_set"],
+            "routed_decision": verdict["routed_decision"],
+        }
+    )
+sha = subprocess.run(
+    ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+).stdout.strip()
+gpu_hours = round(
+    (time.time() - float(os.environ["RES_START"])) / 3600.0 * max(int(os.environ["RES_NGPU"]), 1),
+    2,
+)
+note = {
+    "phase": "d1_battery",
+    "eval_numbers": eval_numbers,
+    "eval_paths": sorted(str(p) for p in diag.glob("*.json"))[:100],
+    "reproducibility_card": {
+        "hf_data_repo": "superkaiba1/explore-persona-space-data",
+        "hf_prefix": "issue1336_rlvr_ladder/",
+        "diagnosis_prefixes": [
+            "issue1336_rlvr_ladder/eval_results_mirror/diagnosis/",
+            "issue1336_rlvr_ladder/analysis_tensors/diagnosis/",
+        ],
+        "constants": {
+            "lambda_grid_wide": "logspace(-2,8,21)",
+            "trim_ladder": [4, 41, 410],
+            "std_floor_frac": 1e-3,
+            "n_null_std": 20,
+            "n_bootstrap": 1000,
+            "dg0_tol": 0.02,
+        },
+        "wandb_url": "n/a (no training in the diagnosis phase)",
+        "final_commit_sha": sha,
+        "gpu_hours_used": gpu_hours,
+    },
+}
+payload = {
+    "sentinel_schema_version": 1,
+    "kind": os.environ["RES_KIND"],
+    "version": 1,
+    "task_id": 1336,
+    "by": "issue1336_dispatch",
+    "smoke": smoke,
+    "note": json.dumps(note),
+}
+with open(os.environ["RES_OUT"], "w") as fh:
+    json.dump(payload, fh, indent=2)
+print(f"[signal] wrote d1 results sentinel {os.environ['RES_OUT']}")
+PY
+}
+
 run_phase() { # $1 = phase name
     if phase_done "$1"; then
         echo "[dispatch1336] phase $1 already complete — skipping"
@@ -589,8 +792,15 @@ g0_gate | gen | extract | fit | align | upload)
     run_phase "$PHASE_ARG"
     echo "[dispatch1336] single-phase invocation of $PHASE_ARG complete (no terminal done line)"
     ;;
+d1_battery)
+    # Standalone GPU-leg workload (plan v7 D1.4/D1.6): full poller contract —
+    # results sentinel BEFORE the single terminal done line.
+    run_phase d1_battery
+    write_d1_results_sentinel
+    echo "[phase=done]"
+    ;;
 *)
-    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload [--smoke]" >&2
+    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery [--smoke]" >&2
     exit 2
     ;;
 esac

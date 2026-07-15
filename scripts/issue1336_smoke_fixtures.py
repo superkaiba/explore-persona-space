@@ -308,6 +308,155 @@ def cmd_g0_fixture(args) -> None:
     print(f"[g0-fixture] wrote {out / 'instruct_chat_s_shard000.pt'}")
 
 
+# ---------------------------------------------------------------------------
+# diag — D1 diagnosis fixture set (turnstore + preds npz + rollout text +
+# reduced-Qwen stand-in), REAL render-derived spans_meta so the spotcheck
+# step's re-render equality check runs the production path end-to-end.
+# ---------------------------------------------------------------------------
+def build_diag_fixture(
+    root: Path,
+    *,
+    cells: tuple[str, ...] = ("rlvr_chat_lmsys5k", "rlvr_naturalistic_lmsys5k"),
+    n: int = 12,
+    layers: int = 3,
+    dim: int = 16,
+    seed: int = 0,
+    tokenizer_id: str | None = None,
+    corrupt_one_span: bool = False,
+) -> dict:
+    """Write the fixture tree under `root`; returns {'tokenizer_id': ...}.
+
+    Y carries a linear map of X plus noise AND one planted high-variance
+    outlier dim (dim 0 scaled 40x) so the decomposition / trim / audit reads
+    have real structure; a1 slot = X row, a1 profile = Y row (the extractor
+    contract `_cell_xy_1336` consumes).
+    """
+    import issue825_fit_cells as fc
+    from issue1336_render import RENDERERS, validate_render
+    from transformers import AutoTokenizer
+
+    tok_id = tokenizer_id or cm.MODELS["rlvr"]["hf_id"]
+    tokenizer = AutoTokenizer.from_pretrained(tok_id)
+    rng = np.random.default_rng(seed)
+    texts = [
+        (p, c[0]) for p, c in zip(_SYNTH_PROMPTS, _SYNTH_COMPLETIONS, strict=True) if c[0].strip()
+    ]
+    convs = []
+    for i in range(n):
+        p, a = texts[i % len(texts)]
+        convs.append({"conv_id": str(i), "u1": f"{p} (variant {i})", "a1": a})
+    gen_dir = root / "gen" / "rlvr" / "lmsys5k"
+    gen_dir.mkdir(parents=True, exist_ok=True)
+    with (gen_dir / "answers.jsonl").open("w", encoding="utf-8") as fh:
+        for c in convs:
+            fh.write(
+                json.dumps(
+                    {
+                        "prompt_idx": int(c["conv_id"]),
+                        "prompt": c["u1"],
+                        "response": c["a1"],
+                        "kept": True,
+                        "drop_reason": None,
+                    }
+                )
+                + "\n"
+            )
+    w = rng.normal(size=(dim, dim)) / np.sqrt(dim)
+    for cell_id in cells:
+        fmt = "naturalistic" if "naturalistic" in cell_id else "chat"
+        X = rng.normal(size=(n, layers, dim))
+        noise = rng.normal(size=(n, layers, dim))
+        Y = np.einsum("nld,de->nle", X, w) + 0.7 * noise
+        Y[:, :, 0] *= 40.0  # planted massive-activation-style outlier dim
+        slots, profiles, nlls, metas = [], [], [], []
+        for i, conv in enumerate(convs):
+            rendered = RENDERERS[fmt](conv, tokenizer)
+            assert validate_render(rendered) is None, f"fixture render invalid: {conv}"
+            meta = {
+                "conv_id": conv["conv_id"],
+                "format": fmt,
+                "seq_len": len(rendered.input_ids),
+                "slot_names": list(rendered.slot_idx),
+                "slot_idx": {k: int(v) for k, v in rendered.slot_idx.items()},
+                "turn_names": list(rendered.spans),
+                "spans": {k: [int(s), int(e)] for k, (s, e) in rendered.spans.items()},
+                "meta": rendered.meta,
+            }
+            if corrupt_one_span and i == 0:
+                meta["slot_idx"]["a1"] = int(meta["slot_idx"]["a1"]) + 1  # planted defect
+            metas.append(meta)
+            s = np.stack([rng.normal(size=(layers, dim)), X[i]])  # slot 1 = a1 slot
+            p = np.stack([rng.normal(size=(layers, dim)), Y[i]])  # turn 1 = a1 profile
+            slots.append(torch.tensor(s.astype(np.float32)).to(torch.bfloat16))
+            profiles.append(torch.tensor(p.astype(np.float32)).to(torch.bfloat16))
+            nlls.append(torch.tensor(rng.uniform(0.5, 2.0, size=(2,)).astype(np.float32)))
+        ts_dir = root / f"turnstore_{cell_id}"
+        ts_dir.mkdir(parents=True, exist_ok=True)
+        stem = cell_id  # {model}_{format}_{corpus}
+        payload = {
+            "conv_ids": [c["conv_id"] for c in convs],
+            "slots": slots,
+            "profiles": profiles,
+            "nll": nlls,
+            "spans_meta": metas,
+        }
+        torch.save(payload, ts_dir / f"{stem}_shard000.pt")
+        (ts_dir / f"{stem}_shard000.json").write_text(
+            json.dumps({"stem": stem, "n": n, "layers": layers, "hidden": dim, "smoke": True})
+        )
+        # Committed-preds stand-in: the production fit path itself, fp16-cast
+        # (the committed npz schema `_persist_preds` writes).
+        bundle = fc._load_bundle_any(ts_dir, *cell_id.split("_", 2))
+        import issue1336_fit_cells as f36
+
+        xy = f36._cell_xy_1336(bundle, layers)
+        sweep = fc.heldout_r2_sweep(
+            xy["X"],
+            xy["Y"],
+            xy["conv_ids"],
+            n_folds=cm.N_FOLDS,
+            seed=cm.FIT_SEED,
+            null_draws=0,
+            frozen_layers=tuple(range(layers)),
+        )
+        preds_dir = root / "preds"
+        preds_dir.mkdir(parents=True, exist_ok=True)
+        arrays = {f"preds_l{li}": p.astype(np.float16) for li, p in sweep["preds_frozen"].items()}
+        arrays["fitted_mask"] = sweep["fitted_mask"]
+        arrays["conv_ids"] = np.asarray([c["conv_id"] for c in convs])
+        arrays["folds"] = sweep["folds"]
+        np.savez(preds_dir / f"preds_{cell_id}.npz", **arrays)
+        print(f"[diag-fixture] wrote cell {cell_id} (n={n}, L={layers}, D={dim})")
+    # Reduced-Qwen stand-in (layer count clamped by the driver to L-1).
+    nq = max(n, 10)
+    Xq = rng.normal(size=(nq, layers, dim))
+    Yq = np.einsum("nld,de->nle", Xq, w) + 0.7 * rng.normal(size=(nq, layers, dim))
+    qdir = root / "qwen_reduced"
+    qdir.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "X": torch.tensor(Xq.astype(np.float32)).to(torch.bfloat16),
+            "Y": torch.tensor(Yq.astype(np.float32)).to(torch.bfloat16),
+            "conv_ids": [f"q{i}" for i in range(nq)],
+        },
+        qdir / "qwen_s1_reduced.pt",
+    )
+    print(f"[diag-fixture] fixture tree complete under {root}")
+    return {"tokenizer_id": tok_id}
+
+
+def cmd_diag(args) -> None:
+    build_diag_fixture(
+        Path(args.out),
+        n=args.n,
+        layers=args.layers,
+        dim=args.dim,
+        seed=args.seed,
+        tokenizer_id=args.tokenizer,
+        corrupt_one_span=args.corrupt_one_span,
+    )
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -318,12 +467,21 @@ def main() -> None:
     p.add_argument("--turnstore-dir", default="data/issue_1336/turnstore_smoke")
     p = sub.add_parser("g0-fixture")
     p.add_argument("--out", required=True)
+    p = sub.add_parser("diag")
+    p.add_argument("--out", required=True)
+    p.add_argument("--n", type=int, default=12)
+    p.add_argument("--layers", type=int, default=3)
+    p.add_argument("--dim", type=int, default=16)
+    p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--tokenizer", default=None, help="tokenizer id/dir (default: rlvr hf_id)")
+    p.add_argument("--corrupt-one-span", action="store_true")
     args = ap.parse_args()
     {
         "tiny-model": cmd_tiny_model,
         "gen": cmd_gen,
         "stores": cmd_stores,
         "g0-fixture": cmd_g0_fixture,
+        "diag": cmd_diag,
     }[args.cmd](args)
 
 
