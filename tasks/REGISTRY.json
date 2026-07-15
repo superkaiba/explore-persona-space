@@ -2707,8 +2707,8 @@
     "1347": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1347",
-      "status": "reviewing",
+      "path": "tasks/completed/1347",
+      "status": "completed",
       "title": "workflow-fix: fact-check HF reuse existence at the pinned revision"
     },
     "1348": {
