@@ -2471,8 +2471,8 @@
     "1317": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1317",
-      "status": "running",
+      "path": "tasks/reviewing/1317",
+      "status": "reviewing",
       "title": "daily-fix: code-reviewer Gate-scope line check (#1305)"
     },
     "1318": {
