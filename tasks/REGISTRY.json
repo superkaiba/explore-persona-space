@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1323,
+  "highest_id": 1324,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2523,6 +2523,13 @@
       "path": "tasks/proposed/1323",
       "status": "proposed",
       "title": "daily-fix: honor user inline override; commit same turn"
+    },
+    "1324": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1324",
+      "status": "proposed",
+      "title": "daily-fix: default vLLM hang mitigations for user corpora"
     },
     "133": {
       "has_clean_result": false,
