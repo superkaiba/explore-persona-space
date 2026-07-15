@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1331,
+  "highest_id": 1332,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2586,6 +2586,13 @@
       "path": "tasks/proposed/1331",
       "status": "proposed",
       "title": "daily-held: pod-779 stranded n10k captures - rescue or drop"
+    },
+    "1332": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1332",
+      "status": "proposed",
+      "title": "Function-space similarity between per-context fitted context\u2192answer maps as a leakage predictor"
     },
     "134": {
       "has_clean_result": false,
