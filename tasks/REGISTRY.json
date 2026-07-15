@@ -2589,7 +2589,7 @@
     },
     "1332": {
       "goal": "Test whether function-space similarity between per-context-family fitted linear context\u2192answer maps (cross-family transfer R\u00b2 / prediction agreement on the frozen base model, both prefix-based and context-based arms) predicts fine-tuning leakage from source persona to target contexts on an existing measured leakage matrix, with incremental validity over the activation-cosine, JS-divergence, base-rate-prior, and whitened-gate baselines under group-level held-out (LOFO) evaluation.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/1332",
       "status": "interpreting",

@@ -4,7 +4,7 @@ title: Function-space map similarity predicts marker leakage but is statisticall
 kind: experiment
 tags: []
 created_at: '2026-07-15T07:06:20Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 823
 origin_prompt: 'can you add an issue based on the next step? let''s plan it here [next
   step, verbatim from the finalized off-policy mapping result''s Conclusion: ''I think
