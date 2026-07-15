@@ -861,6 +861,36 @@ def _reap_engine(llm) -> None:
     time.sleep(1.0)  # subprocess teardown + driver release are async
 
 
+def _wait_engine_release(*, label: str, smi: Callable[[str], str | None] = _smi_query) -> None:
+    """Post-reap bounded VRAM drain-wait at engine-cycling seams (crash-fix r8).
+
+    ``_reap_engine`` returns once the engine children are dead, but the
+    driver's release of a just-dead process's VRAM accounting is ASYNC — a
+    fresh engine constructed immediately after can still see the dead
+    engine's memory as held (attempt 6: FT ladder rung-2 init found
+    36.31/79.18 GiB free < the 39.59 GiB gpu_memory_utilization=0.5 ask —
+    the prior rung's ~41 GiB engine had not released). Call ONLY at seams
+    where this process co-holds NO HF model (post-``_free_hf`` /
+    pre-HF-load), so the r7b false-positive class cannot fire: the only own
+    residue is the lingering CUDA context, under ``GPU_HYGIENE_FLOOR_MIB``.
+    Targets = the unit's CVD pin (fanout contract), else all physical GPUs;
+    no-op on a CPU host. Fails loud with the NVML dump via
+    ``_wait_gpus_free`` when the VRAM never drains. Emits the
+    ``[rung-reap] <label> gpu=<ids> freed`` fix-engaged line.
+    """
+    cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if cvd and cvd.strip():
+        targets = [t.strip() for t in cvd.split(",") if t.strip()]
+    else:
+        try:
+            targets = _physical_gpu_ids()
+        except (RuntimeError, subprocess.CalledProcessError, FileNotFoundError, OSError):
+            logger.info("[rung-reap] %s: no GPUs visible — skipping drain-wait", label)
+            return
+    _wait_gpus_free(targets, label=f"rung-reap[{label}]", smi=smi)
+    logger.info("[rung-reap] %s gpu=%s freed", label, ",".join(targets))
+
+
 def _greedy(llm, prompts: list[str], max_new: int, *, lora_request=None) -> list[str]:
     """Chunked greedy generation (gotchas.md large-batch deadlock prevention)."""
     from vllm import SamplingParams
@@ -1079,6 +1109,8 @@ def _reused_arm_apply_gate(cfg: Cfg) -> dict:
         responses = _greedy(llm, prompts, C.MARKER_MAX_NEW_TOKENS)
     finally:
         _reap_engine(llm)
+    # p0's engine precedes p1's engines in the SAME main process (r8 seam).
+    _wait_engine_release(label="reused-apply-gate")
     contexts, meta = [], []
     for q_idx, (p, r) in enumerate(zip(prompts, responses, strict=True)):
         stripped, emitted = _strip_at_marker(r)
@@ -1185,6 +1217,7 @@ def _fill_icl_bank(cfg: Cfg, tok) -> Path:
         answers = _greedy(llm, [bare.render(tok, q) for q in demo_qs], C.R_GEN_MAX_NEW_TOKENS)
     finally:
         _reap_engine(llm)
+    _wait_engine_release(label="icl_bank")  # p1 main-process engine sequence (r8)
     examples = []
     for q, a in zip(demo_qs, answers, strict=True):
         if "※" in a:
@@ -1214,6 +1247,9 @@ def _greedy_r_map(cfg: Cfg, tok, ctx: Context, questions: list[str], label: str)
         responses = _greedy(llm, prompts, C.R_GEN_MAX_NEW_TOKENS)
     finally:
         _reap_engine(llm)
+    # phase_mixes cycles up to 3 r_map engines + the icl-bank engine in ONE
+    # process — drain before the next construction (crash-fix r8).
+    _wait_engine_release(label=f"r_map[{label}]")
     n_trunc = sum(
         1
         for r in responses
@@ -1706,8 +1742,9 @@ def run_ladder_unit(cfg: Cfg, cell: str) -> dict[int, dict]:
 
     LoRA cells: ONE shared enable_lora engine + per-rung LoRARequest (the
     #1090 shared-engine pattern, no per-rung merges) + PEFT-swap HF slot reads.
-    FT cells: per-rung engine on the consolidated dir (reap between rungs) +
-    direct HF loads; keep-best-2-plus-latest rung retention (plan §9 c33).
+    FT cells: per-rung engine on the consolidated dir (reap + bounded VRAM
+    drain-wait between rungs, crash-fix r8) + direct HF loads;
+    keep-best-2-plus-latest rung retention (plan §9 c33).
     """
     cell_root = cfg.out_root / cell
     ladder_path = cell_root / "ladder.json"
@@ -1779,6 +1816,10 @@ def _ladder_reads_lora(cfg, cell, rungs, pending, ladder, tok, prompts, persist)
     finally:
         _free_hf(base)
         _reap_engine(llm)
+    # run_ladder_unit's while-loop calls this per pending batch (coarse ->
+    # refine passes) — the next pass's engine init must not race this
+    # engine's async VRAM release (crash-fix r8, the attempt-6 class).
+    _wait_engine_release(label=f"lora-pass[{cell}]")
 
 
 def _ladder_reads_ft(cfg, cell, rungs, pending, ladder, tok, prompts, persist) -> None:
@@ -1790,6 +1831,9 @@ def _ladder_reads_ft(cfg, cell, rungs, pending, ladder, tok, prompts, persist) -
             responses = _greedy(llm, prompts, C.MARKER_MAX_NEW_TOKENS)
         finally:
             _reap_engine(llm)
+        # Crash-fix r8 (attempt-6 OOM): the next rung's engine init must not
+        # race the driver's ASYNC release of this rung's dead engine.
+        _wait_engine_release(label=f"rung={step}")
         _persist_rollouts(cfg, "ladder", f"{cell}_rung{step}", {"responses": responses})
         contexts, meta = [], []
         for q_idx, (p, r) in enumerate(zip(prompts, responses, strict=True)):
@@ -1907,6 +1951,10 @@ def _bystander_battery(
     finally:
         if own_engine:
             _reap_engine(llm)
+    if own_engine:
+        # Per-item engine in run_select_unit's while loop / the dose-curve
+        # plan loop — drain before the next item's engine init (crash-fix r8).
+        _wait_engine_release(label=f"bystanders[{cell}]_rung{step}")
     _persist_rollouts(
         cfg, "selection", f"{cell}_bystanders_rung{step}", {"meta": meta, "responses": responses}
     )
@@ -1995,6 +2043,10 @@ def _run_dose_curve_batteries(
     finally:
         if shared is not None:
             _reap_engine(shared)
+    if shared is not None:
+        # phase_select loops cells sequentially in ONE process — the next
+        # cell's engine init must not race this release (crash-fix r8).
+        _wait_engine_release(label=f"dose-curves[{cell}]")
     return out
 
 
