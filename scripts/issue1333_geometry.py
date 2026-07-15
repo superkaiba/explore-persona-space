@@ -320,12 +320,47 @@ def eos_margin_transfer_fractions(slot_reads: dict, *, source_label: str = "__so
     return {"source_margin_gain": src, "per_context": per_ctx}
 
 
+# The reused arm's apply-and-read gate record was uploaded under a doubled
+# "gates/gates/" prefix (verbatim uploader prefix mirror); the local run tree
+# stages it at gates/reused_apply/. Local-first, scoped HF fetch as fallback.
+_REUSED_APPLY_HF_FILENAME = f"{C.DATA_PREFIX}/gates/gates/reused_apply/apply_gate.json"
+
+
+def _fetch_reused_apply_gate(dest: Path) -> Path:
+    """Scoped ``hf_hub_download`` of the reused arm's apply_gate.json into
+    ``dest`` (fail-loud: a fetch failure raises rather than recording another
+    silent ``skipped`` on a registered §6 read). Returns ``dest``."""
+    from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    got = hub.retry_transient(
+        lambda: hf_hub_download(
+            repo_id=C.HF_DATA_REPO,
+            repo_type="dataset",
+            filename=_REUSED_APPLY_HF_FILENAME,
+            revision="main",
+        ),
+        what=f"hf_hub_download {_REUSED_APPLY_HF_FILENAME}",
+    )
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(Path(got).read_bytes())
+    logger.info("[re-reductions] fetched %s -> %s", _REUSED_APPLY_HF_FILENAME, dest)
+    return dest
+
+
 def _half_split_for_cell(run_root: Path, cell: str) -> dict:
     """Half-split driver: the selected rung's slot_read.json per select cell;
     the reused arm reads its apply-and-read gate record (same per_probe
-    shape, same 20-question bank)."""
+    shape, same 20-question bank), HF-fetched when not staged locally."""
     if cell == C.CELL_FT_CON_REUSED:
         p = run_root / "gates" / "reused_apply" / "apply_gate.json"
+        if not p.exists():
+            try:
+                _fetch_reused_apply_gate(p)
+            except Exception as e:  # explicit skip record; refresh path re-raises
+                logger.warning("[re-reductions] reused apply-gate fetch failed: %r", e)
+                return {"skipped": f"local {p} missing and HF fetch failed: {e!r}"}
     else:
         sel_p = run_root / cell / "selection.json"
         if not sel_p.exists():
@@ -339,15 +374,42 @@ def _half_split_for_cell(run_root: Path, cell: str) -> dict:
     return rec
 
 
+def _offline_ladder_reads(cell_dir: Path) -> dict[int, dict]:
+    """Rung-indexed off-line eval-surface reads from the layout the dispatcher
+    actually persists (``ladder/rung_<step>/slot_read.json``); the consolidated
+    ``<cell>/ladder.json`` this driver originally expected was never written."""
+    reads: dict[int, dict] = {}
+    for p in sorted((cell_dir / "ladder").glob("rung_*/slot_read.json")):
+        step_txt = p.parent.name.removeprefix("rung_")
+        if not step_txt.isdigit():
+            raise ValueError(f"unparseable ladder rung dir {p.parent}")
+        reads[int(step_txt)] = json.loads(p.read_text())
+    return reads
+
+
 def _gap_curve_for_cell(run_root: Path, cell: str) -> dict:
+    """§4.3/§6 gap-curve assembly from the persisted layout: the in-loop
+    ``band_trajectory.json`` (teacher-forced, frozen-R) vs the rung-indexed
+    ``ladder/rung_*/slot_read.json`` off-line reads — aligned step series with
+    the gap (in-loop − off-line ΔG) computed only at aligned steps."""
     traj_p = run_root / cell / "band_trajectory.json"
-    ladder_p = run_root / cell / "ladder.json"
-    missing = [str(p) for p in (traj_p, ladder_p) if not p.exists()]
-    if missing:
-        return {"skipped": f"missing {missing}"}
-    traj = json.loads(traj_p.read_text())
-    reads = {int(k): v for k, v in json.loads(ladder_p.read_text())["reads_by_step"].items()}
-    return {"points": cross_surface_gap_curve(traj, reads)}
+    if not traj_p.exists():
+        return {"skipped": f"missing {traj_p}"}
+    reads = _offline_ladder_reads(run_root / cell)
+    if not reads:
+        return {"skipped": f"no ladder rung_*/slot_read.json under {run_root / cell / 'ladder'}"}
+    points = cross_surface_gap_curve(json.loads(traj_p.read_text()), reads)
+    aligned = [p for p in points if p["gap"] is not None]
+    rec: dict = {
+        "points": points,
+        "n_offline_rungs": len(reads),
+        "n_aligned_steps": len(aligned),
+    }
+    if aligned:
+        peak = max(aligned, key=lambda p: abs(p["gap"]))
+        rec["max_abs_gap"] = abs(peak["gap"])
+        rec["max_abs_gap_step"] = peak["step"]
+    return rec
 
 
 def _dose_curve_for_cell(run_root: Path, cell: str) -> dict:
@@ -428,6 +490,103 @@ def run_re_reductions(
             if isinstance(rec, dict) and "skipped" in rec:
                 logger.warning("[re-reductions] %s/%s skipped: %s", key, cell, rec["skipped"])
     return rr
+
+
+def _masked_dump(results: dict) -> str:
+    """Canonical serialization with the two refreshable §6 reads masked out
+    (the invariance side of ``run_re_reductions_refresh``)."""
+    clone = json.loads(json.dumps(results, default=float))
+    rr = clone.get("re_reductions", {})
+    rr["cross_surface_gap"] = "<refreshed>"
+    hs = rr.get("eval_bank_half_split")
+    if isinstance(hs, dict):
+        hs[C.CELL_FT_CON_REUSED] = "<refreshed>"
+    return json.dumps(clone, sort_keys=True)
+
+
+def run_re_reductions_refresh(out_json: Path, run_root: Path) -> dict:
+    """Fill ONLY the two layout-blocked §6 reads in an EXISTING geometry JSON
+    (analyzer follow-up): the cross-surface gap curves (assembled from
+    ``band_trajectory.json`` + ``ladder/rung_*/slot_read.json``) and the reused
+    cell's eval-bank half split (``apply_gate.json``, HF-fetched when not
+    staged locally). Asserts every other field unchanged, then rewrites the
+    JSON atomically with the original serialization settings."""
+    results = json.loads(out_json.read_text())
+    before_masked = _masked_dump(results)
+    rr = results["re_reductions"]
+    rr["cross_surface_gap"] = {
+        cell: _gap_curve_for_cell(run_root, cell) for cell in C.NEW_LORA_CELLS
+    }
+    rr["eval_bank_half_split"][C.CELL_FT_CON_REUSED] = _half_split_for_cell(
+        run_root, C.CELL_FT_CON_REUSED
+    )
+    assert before_masked == _masked_dump(results), (
+        "re-reductions refresh touched fields outside the two registered reads"
+    )
+    for cell, rec in rr["cross_surface_gap"].items():
+        if "skipped" in rec:
+            logger.warning("[re-reductions-refresh] gap/%s skipped: %s", cell, rec["skipped"])
+    if "skipped" in rr["eval_bank_half_split"][C.CELL_FT_CON_REUSED]:
+        raise RuntimeError(
+            "reused-cell half split still skipped after refresh: "
+            f"{rr['eval_bank_half_split'][C.CELL_FT_CON_REUSED]['skipped']}"
+        )
+    tmp = out_json.with_suffix(".tmp")
+    tmp.write_text(json.dumps(results, indent=2, ensure_ascii=False, default=float) + "\n")
+    os.replace(tmp, out_json)
+    logger.info("[geometry] refreshed re_reductions in %s", out_json)
+    return results
+
+
+def write_gap_curve_figure(results: dict, out_dir: Path) -> Path:
+    """Exploratory cross-surface gap figure (plan §5 exploratory dump: 'ΔG-vs-
+    step dose curves per cell on BOTH surfaces'): per LoRA cell, the in-loop
+    teacher-forced ΔG trajectory vs the off-line eval-surface ladder reads."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style()
+    gap = results["re_reductions"]["cross_surface_gap"]
+    cells = [c for c in C.NEW_LORA_CELLS if isinstance(gap.get(c), dict) and "points" in gap[c]]
+    assert cells, "no gap curves present — nothing to plot"
+    pal = paper_palette(2)
+    fig, axes = plt.subplots(
+        1, len(cells), figsize=(2.6 * len(cells), 2.8), sharey=True, squeeze=False
+    )
+    for ax, cell in zip(axes[0], cells, strict=True):
+        pts = gap[cell]["points"]
+        il = [(p["step"], p["in_loop_delta"]) for p in pts if p["in_loop_delta"] is not None]
+        ol = [(p["step"], p["off_line_delta"]) for p in pts if p["off_line_delta"] is not None]
+        ax.plot(*zip(*il, strict=True), color=pal[0], linestyle="-", label="in-loop (TF)")
+        ax.plot(
+            *zip(*ol, strict=True),
+            color=pal[1],
+            linestyle="--",
+            marker="o",
+            markersize=3,
+            label="off-line (on-policy)",
+        )
+        ax.set_title(cell)
+        ax.set_xlabel("optimizer step")
+    axes[0][0].set_ylabel("ΔG = Δ log P(marker) (nats)")
+    axes[0][0].legend(frameon=False, fontsize=7)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "explore_cross_surface_gap", dir=out_dir)
+    plt.close(fig)
+    meta_p = out_dir / "explore_cross_surface_gap.meta.json"
+    sidecar = json.loads(meta_p.read_text())
+    sidecar.setdefault("max_abs_gap_by_cell", {c: gap[c].get("max_abs_gap") for c in cells})
+    meta_p.write_text(json.dumps(sidecar, indent=1) + "\n")
+    logger.info("[geometry] wrote %s", out_dir / "explore_cross_surface_gap.png")
+    return out_dir / "explore_cross_surface_gap.png"
 
 
 def _lattice_call(diff_draws: np.ndarray, point: float, *, labels: tuple[str, str, str]) -> dict:
@@ -649,6 +808,19 @@ def main(argv: list[str] | None = None) -> int:
         "--matrices-dir", default=str(_REPO_ROOT / f"data/issue_{C.ISSUE}/run/bootstrap_matrices")
     )
     p.add_argument("--smoke", action="store_true", help="stub-scale (tiny panel, n_boot 16)")
+    p.add_argument(
+        "--re-reductions-only",
+        action="store_true",
+        help="fill ONLY the two layout-blocked §6 reads (cross-surface gap curves + the "
+        "reused cell's eval-bank half split) in the EXISTING --out-json, asserting every "
+        "other field unchanged; skips the capture-store geometry pass entirely",
+    )
+    p.add_argument(
+        "--gap-figure-dir",
+        default=None,
+        help="with --re-reductions-only: also render the exploratory cross-surface gap "
+        "figure (plan §5 exploratory dump) into this directory",
+    )
     p.add_argument("--n-boot", type=int, default=None)
     p.add_argument("--wu-row", default=None, help="optional persisted W_U[83399] row .pt")
     p.add_argument("--cells", default=None, help="comma subset of the 2x2 cells")
@@ -660,6 +832,22 @@ def main(argv: list[str] | None = None) -> int:
         "(plan §10 analysis_tensors/bootstrap_matrices; default: on unless --smoke)",
     )
     args = p.parse_args(argv)
+    if args.re_reductions_only:
+        assert args.run_root, "--re-reductions-only needs a --run-root"
+        results = run_re_reductions_refresh(Path(args.out_json), Path(args.run_root))
+        if args.gap_figure_dir:
+            write_gap_curve_figure(results, Path(args.gap_figure_dir))
+        if args.upload if args.upload is not None else not args.smoke:
+            from explore_persona_space.orchestrate import hub
+
+            hub._upload(
+                Path(args.out_json),
+                C.HF_DATA_REPO,
+                "dataset",
+                f"{C.DATA_PREFIX}/geometry/{Path(args.out_json).name}",
+                upload_as_file=True,
+            )
+        return 0
     cells = tuple(args.cells.split(",")) if args.cells else C.GEOMETRY_CELLS
     run_geometry(
         Path(args.capture_root),

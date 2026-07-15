@@ -1,0 +1,2278 @@
+{
+ "commit": "2a8e9e1673",
+ "created": "2026-07-15T22:33:52Z",
+ "figsize": [
+  13.0,
+  2.8
+ ],
+ "points": [
+  {
+   "optimizer step": 10.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 0.6467378735542297,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 20.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 2.559640407562256,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 30.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 5.390415191650391,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 40.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.693798065185547,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 50.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 14.931467056274414,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 60.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 18.79963493347168,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 70.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.24473762512207,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 80.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.415695190429688,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 90.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.418991088867188,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 100.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419269561767578,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 110.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419349670410156,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 120.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419389724731445,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 130.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.41937255859375,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 140.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.41939926147461,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 150.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419408798217773,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 160.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419416427612305,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 170.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.41942596435547,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 180.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.41942024230957,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 190.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.41942024230957,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 200.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419437408447266,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 210.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.41943359375,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 220.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419445037841797,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 230.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419445037841797,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 240.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.41946029663086,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 250.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.4194393157959,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 260.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.41944694519043,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 270.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419452667236328,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 280.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419450759887695,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 290.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419448852539062,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 300.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.41945457458496,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 310.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419452667236328,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 320.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419458389282227,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 330.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419462203979492,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 340.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419458389282227,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 350.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.41946792602539,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 360.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419466018676758,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 370.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419464111328125,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 380.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.419458389282227,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 390.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.41945457458496,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 400.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 21.41946029663086,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "optimizer step": 20.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 0.9215973854064942,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 40.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 3.1262704849243166,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 50.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 5.514121723175049,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 60.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 7.632991075515747,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 80.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 11.399768352508545,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 100.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.747392845153808,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 120.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.8378511428833,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 140.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.78426914215088,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 160.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.531727027893066,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 180.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.881976795196532,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 200.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.577949523925781,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 220.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.423254203796386,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 240.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 11.112318420410157,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 260.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.709314441680908,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 280.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.256571865081787,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 300.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 11.107178783416748,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 320.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.804940509796143,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 340.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.680121612548827,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 360.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.795876598358154,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 380.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 10.357226467132568,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 400.0,
+   "\u0394G = \u0394 log P(marker) (nats)": 11.241812705993652,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "optimizer step": 10.0,
+   "y": 0.7973790764808655,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 20.0,
+   "y": 3.086798667907715,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 30.0,
+   "y": 6.799342155456543,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 40.0,
+   "y": 12.509716033935547,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 50.0,
+   "y": 16.811006546020508,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 60.0,
+   "y": 20.61643409729004,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 70.0,
+   "y": 21.412837982177734,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 80.0,
+   "y": 21.419384002685547,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 90.0,
+   "y": 21.419557571411133,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 100.0,
+   "y": 21.419586181640625,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 110.0,
+   "y": 21.41958999633789,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 120.0,
+   "y": 21.419591903686523,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 130.0,
+   "y": 21.419599533081055,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 140.0,
+   "y": 21.419597625732422,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 150.0,
+   "y": 21.419601440429688,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 160.0,
+   "y": 21.419601440429688,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 170.0,
+   "y": 21.419597625732422,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 180.0,
+   "y": 21.419601440429688,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 190.0,
+   "y": 21.419601440429688,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 200.0,
+   "y": 21.419601440429688,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 210.0,
+   "y": 21.41960334777832,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 220.0,
+   "y": 21.419601440429688,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 230.0,
+   "y": 21.419601440429688,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 240.0,
+   "y": 21.419601440429688,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 250.0,
+   "y": 21.419601440429688,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 260.0,
+   "y": 21.41960334777832,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 270.0,
+   "y": 21.419601440429688,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 280.0,
+   "y": 21.419599533081055,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 290.0,
+   "y": 21.41960334777832,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 300.0,
+   "y": 21.41960334777832,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 310.0,
+   "y": 21.41960334777832,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 320.0,
+   "y": 21.419605255126953,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 330.0,
+   "y": 21.419601440429688,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 340.0,
+   "y": 21.41960334777832,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 350.0,
+   "y": 21.419605255126953,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 360.0,
+   "y": 21.419601440429688,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 370.0,
+   "y": 21.419605255126953,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 380.0,
+   "y": 21.41960334777832,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 390.0,
+   "y": 21.419605255126953,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 400.0,
+   "y": 21.419605255126953,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "optimizer step": 5.0,
+   "y": 0.0690652847290039,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 10.0,
+   "y": 0.3681288719177246,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 15.0,
+   "y": 0.7980669021606446,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 20.0,
+   "y": 1.1458077430725098,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 25.0,
+   "y": 1.5442702293395996,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 30.0,
+   "y": 2.198346996307373,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 35.0,
+   "y": 3.2244081497192383,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 40.0,
+   "y": 4.30230827331543,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 60.0,
+   "y": 9.301063823699952,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 80.0,
+   "y": 12.685911083221436,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 100.0,
+   "y": 12.485744380950928,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 120.0,
+   "y": 12.533161544799805,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 140.0,
+   "y": 12.48344964981079,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 160.0,
+   "y": 12.235366439819336,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 180.0,
+   "y": 13.035391235351563,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 200.0,
+   "y": 12.376569747924805,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 220.0,
+   "y": 12.419795322418214,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 240.0,
+   "y": 12.263092231750488,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 260.0,
+   "y": 12.540629196166993,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 280.0,
+   "y": 12.301944828033447,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 300.0,
+   "y": 12.158132743835449,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 320.0,
+   "y": 12.45034351348877,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 340.0,
+   "y": 12.2296537399292,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 360.0,
+   "y": 12.432628059387207,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 380.0,
+   "y": 12.128680324554443,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 400.0,
+   "y": 12.224668598175048,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "optimizer step": 10.0,
+   "y": 0.7211288809776306,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 20.0,
+   "y": 3.141476631164551,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 30.0,
+   "y": 6.4250030517578125,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 40.0,
+   "y": 10.899595260620117,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 50.0,
+   "y": 14.645306587219238,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 60.0,
+   "y": 18.27383804321289,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 70.0,
+   "y": 21.801532745361328,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 80.0,
+   "y": 22.56619644165039,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 90.0,
+   "y": 22.57670783996582,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 100.0,
+   "y": 22.577150344848633,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 110.0,
+   "y": 22.57721710205078,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 120.0,
+   "y": 22.577234268188477,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 130.0,
+   "y": 22.577238082885742,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 140.0,
+   "y": 22.577247619628906,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 150.0,
+   "y": 22.57724952697754,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 160.0,
+   "y": 22.577245712280273,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 170.0,
+   "y": 22.57724952697754,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 180.0,
+   "y": 22.577245712280273,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 190.0,
+   "y": 22.577247619628906,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 200.0,
+   "y": 22.577253341674805,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 210.0,
+   "y": 22.577255249023438,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 220.0,
+   "y": 22.577253341674805,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 230.0,
+   "y": 22.57725715637207,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 240.0,
+   "y": 22.57727813720703,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 250.0,
+   "y": 22.57726287841797,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 260.0,
+   "y": 22.5772705078125,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 270.0,
+   "y": 22.577259063720703,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 280.0,
+   "y": 22.577266693115234,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 290.0,
+   "y": 22.5772705078125,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 300.0,
+   "y": 22.577268600463867,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 310.0,
+   "y": 22.577274322509766,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 320.0,
+   "y": 22.5772762298584,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 330.0,
+   "y": 22.5772705078125,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 340.0,
+   "y": 22.577272415161133,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 350.0,
+   "y": 22.57726287841797,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 360.0,
+   "y": 22.57727813720703,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 370.0,
+   "y": 22.577272415161133,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 380.0,
+   "y": 22.5772705078125,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 390.0,
+   "y": 22.57727813720703,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 400.0,
+   "y": 22.577281951904297,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "optimizer step": 20.0,
+   "y": 0.22010297775268556,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 40.0,
+   "y": 1.7911787033081055,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 50.0,
+   "y": 3.610218715667725,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 60.0,
+   "y": 6.2360631942749025,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 80.0,
+   "y": 9.495081901550293,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 100.0,
+   "y": 10.340245246887207,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 120.0,
+   "y": 10.01139268875122,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 140.0,
+   "y": 9.680605411529541,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 160.0,
+   "y": 10.32199010848999,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 180.0,
+   "y": 9.658578586578368,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 200.0,
+   "y": 9.771319770812989,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 220.0,
+   "y": 9.856583499908448,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 240.0,
+   "y": 9.609547138214111,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 260.0,
+   "y": 10.129222297668457,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 280.0,
+   "y": 9.475593090057373,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 300.0,
+   "y": 9.933201503753661,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 320.0,
+   "y": 10.095131778717041,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 340.0,
+   "y": 9.301998329162597,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 360.0,
+   "y": 9.174022197723389,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 380.0,
+   "y": 9.628884983062743,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 400.0,
+   "y": 9.624233627319336,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "optimizer step": 10.0,
+   "y": -0.006359100341796875,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 20.0,
+   "y": 0.09480857849121094,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 30.0,
+   "y": 0.16284561157226562,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 40.0,
+   "y": 0.22287940979003906,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 50.0,
+   "y": 0.18752288818359375,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 60.0,
+   "y": 0.1561107635498047,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 70.0,
+   "y": 0.1807384490966797,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 80.0,
+   "y": 0.23775863647460938,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 90.0,
+   "y": 0.11656379699707031,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 100.0,
+   "y": 0.1754474639892578,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 110.0,
+   "y": 0.28316307067871094,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 120.0,
+   "y": 0.24168014526367188,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 130.0,
+   "y": 0.2676048278808594,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 140.0,
+   "y": 0.24054336547851562,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 150.0,
+   "y": 0.3538169860839844,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 160.0,
+   "y": 0.21578407287597656,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 170.0,
+   "y": 0.32202911376953125,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 180.0,
+   "y": 0.18212127685546875,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 190.0,
+   "y": 0.22982406616210938,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 200.0,
+   "y": 0.25921630859375,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 210.0,
+   "y": 0.2986183166503906,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 220.0,
+   "y": 0.2117137908935547,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 230.0,
+   "y": 0.24755477905273438,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 240.0,
+   "y": 0.3176727294921875,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 250.0,
+   "y": 0.3523273468017578,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 260.0,
+   "y": 0.21309471130371094,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 270.0,
+   "y": 0.3674602508544922,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 280.0,
+   "y": 0.1814403533935547,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 290.0,
+   "y": 0.22874832153320312,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 300.0,
+   "y": 0.18456649780273438,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 310.0,
+   "y": 0.3401165008544922,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 320.0,
+   "y": 0.1287403106689453,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 330.0,
+   "y": 0.3119926452636719,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 340.0,
+   "y": 0.3096485137939453,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 350.0,
+   "y": 0.21966171264648438,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 360.0,
+   "y": 0.2263774871826172,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 370.0,
+   "y": 0.12267112731933594,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 380.0,
+   "y": 0.33712005615234375,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 390.0,
+   "y": 0.3161945343017578,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 400.0,
+   "y": 0.2992534637451172,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "optimizer step": 10.0,
+   "y": 0.9298501968383789,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 20.0,
+   "y": 4.642874145507813,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 40.0,
+   "y": 4.7554608345031735,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 60.0,
+   "y": 5.1379773139953615,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 80.0,
+   "y": 4.8698655128479,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 100.0,
+   "y": 4.705050373077393,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 120.0,
+   "y": 4.617670249938965,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 140.0,
+   "y": 4.990209579467773,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 160.0,
+   "y": 4.6449309349060055,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 180.0,
+   "y": 4.993618679046631,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 200.0,
+   "y": 4.256994438171387,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 220.0,
+   "y": 4.52680549621582,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 240.0,
+   "y": 4.747640895843506,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 260.0,
+   "y": 4.052846240997314,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 280.0,
+   "y": 5.1866124153137205,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 300.0,
+   "y": 4.414598083496093,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 320.0,
+   "y": 4.618554496765137,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 340.0,
+   "y": 5.454999542236328,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 360.0,
+   "y": 5.029420852661133,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 380.0,
+   "y": 4.260264682769775,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 400.0,
+   "y": 4.451350307464599,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "optimizer step": 10.0,
+   "y": 0.40958523750305176,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 20.0,
+   "y": 1.6404340267181396,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 30.0,
+   "y": 2.866302013397217,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 40.0,
+   "y": 5.232359409332275,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 50.0,
+   "y": 9.435276985168457,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 60.0,
+   "y": 12.955862045288086,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 70.0,
+   "y": 16.691608428955078,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 80.0,
+   "y": 20.515653610229492,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 90.0,
+   "y": 21.577932357788086,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 100.0,
+   "y": 21.599157333374023,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 110.0,
+   "y": 21.59984588623047,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 120.0,
+   "y": 21.600006103515625,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 130.0,
+   "y": 21.60002899169922,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 140.0,
+   "y": 21.600053787231445,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 150.0,
+   "y": 21.600053787231445,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 160.0,
+   "y": 21.60006332397461,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 170.0,
+   "y": 21.60006332397461,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 180.0,
+   "y": 21.60006332397461,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 190.0,
+   "y": 21.60007095336914,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 200.0,
+   "y": 21.600074768066406,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 210.0,
+   "y": 21.6000919342041,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 220.0,
+   "y": 21.60008430480957,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 230.0,
+   "y": 21.600088119506836,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 240.0,
+   "y": 21.600086212158203,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 250.0,
+   "y": 21.6000919342041,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 260.0,
+   "y": 21.60009002685547,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 270.0,
+   "y": 21.6000919342041,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 280.0,
+   "y": 21.6001033782959,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 290.0,
+   "y": 21.600099563598633,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 300.0,
+   "y": 21.600107192993164,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 310.0,
+   "y": 21.600093841552734,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 320.0,
+   "y": 21.600101470947266,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 330.0,
+   "y": 21.6001033782959,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 340.0,
+   "y": 21.60009765625,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 350.0,
+   "y": 21.60010528564453,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 360.0,
+   "y": 21.600107192993164,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 370.0,
+   "y": 21.6001033782959,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 380.0,
+   "y": 21.600101470947266,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 390.0,
+   "y": 21.6001033782959,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 400.0,
+   "y": 21.600099563598633,
+   "series": "in-loop (TF)",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "optimizer step": 20.0,
+   "y": -0.3602341651916504,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 40.0,
+   "y": -0.6000052452087402,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 60.0,
+   "y": 0.7668557167053223,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 70.0,
+   "y": 2.3964712142944338,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 80.0,
+   "y": 4.406832027435303,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 100.0,
+   "y": 7.115933895111084,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 120.0,
+   "y": 7.643815040588379,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 140.0,
+   "y": 7.546325302124023,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 160.0,
+   "y": 7.716917514801025,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 180.0,
+   "y": 7.003862380981445,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 200.0,
+   "y": 7.518940734863281,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 220.0,
+   "y": 7.226097488403321,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 240.0,
+   "y": 7.440798664093018,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 260.0,
+   "y": 7.184930896759033,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 280.0,
+   "y": 7.071814918518067,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 300.0,
+   "y": 7.115957736968994,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 320.0,
+   "y": 7.131532955169678,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 340.0,
+   "y": 7.1443602561950685,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 360.0,
+   "y": 7.619248867034912,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 380.0,
+   "y": 7.42994499206543,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "optimizer step": 400.0,
+   "y": 7.396419048309326,
+   "series": "off-line (on-policy)",
+   "_kind": "line",
+   "_group": 9
+  }
+ ],
+ "n_series": 10,
+ "total_points": 310,
+ "text": {
+  "suptitle": null,
+  "fig_texts": [],
+  "axes": [
+   {
+    "title_left": "mk1_lora_con",
+    "xlabel": "optimizer step",
+    "ylabel": "\u0394G = \u0394 log P(marker) (nats)",
+    "legend_labels": [
+     "in-loop (TF)",
+     "off-line (on-policy)"
+    ],
+    "xticklabels": [
+     "\u2212100",
+     "0",
+     "100",
+     "200",
+     "300",
+     "400",
+     "500"
+    ],
+    "yticklabels": [
+     "\u22125",
+     "0",
+     "5",
+     "10",
+     "15",
+     "20",
+     "25"
+    ]
+   },
+   {
+    "title_left": "mk2_lora_pos",
+    "xlabel": "optimizer step",
+    "xticklabels": [
+     "\u2212100",
+     "0",
+     "100",
+     "200",
+     "300",
+     "400",
+     "500"
+    ]
+   },
+   {
+    "title_left": "ext_wildchat",
+    "xlabel": "optimizer step",
+    "xticklabels": [
+     "\u2212100",
+     "0",
+     "100",
+     "200",
+     "300",
+     "400",
+     "500"
+    ]
+   },
+   {
+    "title_left": "ext_icl",
+    "xlabel": "optimizer step",
+    "xticklabels": [
+     "\u2212100",
+     "0",
+     "100",
+     "200",
+     "300",
+     "400",
+     "500"
+    ]
+   },
+   {
+    "title_left": "ext_bare",
+    "xlabel": "optimizer step",
+    "xticklabels": [
+     "\u2212100",
+     "0",
+     "100",
+     "200",
+     "300",
+     "400",
+     "500"
+    ]
+   }
+  ],
+  "series": [
+   "in-loop (TF)",
+   "off-line (on-policy)"
+  ]
+ },
+ "max_abs_gap_by_cell": {
+  "mk1_lora_con": 11.166643857955933,
+  "mk2_lora_pos": 11.315370273590087,
+  "ext_wildchat": 13.403255939483643,
+  "ext_icl": 5.1453510284423825,
+  "ext_bare": 16.10882158279419
+ }
+}

@@ -190,6 +190,98 @@ def test_cross_surface_gap_curve_alignment(G):
     assert by_step[40]["in_loop_delta"] is None and by_step[40]["gap"] is None
 
 
+def _write_rung_layout(cell_dir: Path, reads: dict[int, float]) -> None:
+    for step, delta in reads.items():
+        p = cell_dir / "ladder" / f"rung_{step}" / "slot_read.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"delta_logp_mean": delta, "n_probes": 20}))
+
+
+def test_gap_curve_for_cell_reads_rung_layout(G, tmp_path):
+    """The gap-curve driver assembles from the PERSISTED layout
+    (band_trajectory.json + ladder/rung_*/slot_read.json) — no consolidated
+    ladder.json exists; a regression back to it must fail here."""
+    run_root = tmp_path / "run"
+    cell = "mk1_lora_con"
+    (run_root / cell).mkdir(parents=True)
+    (run_root / cell / "band_trajectory.json").write_text(
+        json.dumps({"steps": [10, 20], "delta_nats": [1.0, 2.0]})
+    )
+    _write_rung_layout(run_root / cell, {20: 1.5, 40: 3.0})
+    rec = G._gap_curve_for_cell(run_root, cell)
+    assert "skipped" not in rec, rec
+    by_step = {p["step"]: p for p in rec["points"]}
+    assert sorted(by_step) == [10, 20, 40]
+    assert by_step[20]["gap"] == pytest.approx(0.5)
+    assert rec["n_offline_rungs"] == 2 and rec["n_aligned_steps"] == 1
+    assert rec["max_abs_gap"] == pytest.approx(0.5) and rec["max_abs_gap_step"] == 20
+
+
+def test_gap_curve_for_cell_skips_and_rejects_bad_rungs(G, tmp_path):
+    run_root = tmp_path / "run"
+    cell = "ext_bare"
+    (run_root / cell / "ladder").mkdir(parents=True)
+    # trajectory present, zero rungs -> explicit skip
+    (run_root / cell / "band_trajectory.json").write_text(
+        json.dumps({"steps": [10], "delta_nats": [1.0]})
+    )
+    assert "skipped" in G._gap_curve_for_cell(run_root, cell)
+    # missing trajectory -> explicit skip
+    assert "skipped" in G._gap_curve_for_cell(run_root, "ext_icl")
+    # unparseable rung dir name -> loud ValueError, never a silent misparse
+    bad = run_root / cell / "ladder" / "rung_x2" / "slot_read.json"
+    bad.parent.mkdir(parents=True)
+    bad.write_text(json.dumps({"delta_logp_mean": 1.0}))
+    with pytest.raises(ValueError, match="unparseable ladder rung"):
+        G._gap_curve_for_cell(run_root, cell)
+
+
+# ── reused-cell half split: local-first + scoped HF fetch fallback ────────────
+
+
+def test_half_split_reused_cell_local_first(G, tmp_path, monkeypatch):
+    run_root = tmp_path / "run"
+    p = run_root / "gates" / "reused_apply" / "apply_gate.json"
+    p.parent.mkdir(parents=True)
+    p.write_text(json.dumps(_slot_record(6.4, 6.2)))
+
+    def _boom(**kw):  # pragma: no cover - would fail the test if reached
+        raise AssertionError("hf_hub_download must not be called when the local file exists")
+
+    monkeypatch.setattr("huggingface_hub.hf_hub_download", _boom)
+    rec = G._half_split_for_cell(run_root, C.CELL_FT_CON_REUSED)
+    assert rec["delta_train_minus_heldout"] == pytest.approx(0.2)
+    assert rec["material"] is False and rec["n_train_overlap"] == 10
+
+
+def test_half_split_reused_cell_fetches_from_hf(G, tmp_path, monkeypatch):
+    """Local file absent -> scoped hf_hub_download of the doubled-prefix HF path;
+    the downloaded record feeds the SAME half-split definition."""
+    run_root = tmp_path / "run"
+    staged = tmp_path / "hf_cache" / "apply_gate.json"
+    staged.parent.mkdir(parents=True)
+    staged.write_text(json.dumps(_slot_record(8.0, 6.5)))
+    calls: list[dict] = []
+
+    def fake_download(*, repo_id: str, repo_type: str, filename: str, revision: str) -> str:
+        calls.append({"repo_id": repo_id, "repo_type": repo_type, "filename": filename})
+        return str(staged)
+
+    monkeypatch.setattr("huggingface_hub.hf_hub_download", fake_download)
+    rec = G._half_split_for_cell(run_root, C.CELL_FT_CON_REUSED)
+    assert rec["delta_train_minus_heldout"] == pytest.approx(1.5) and rec["material"] is True
+    assert calls == [
+        {
+            "repo_id": C.HF_DATA_REPO,
+            "repo_type": "dataset",
+            "filename": G._REUSED_APPLY_HF_FILENAME,
+        }
+    ]
+    # the fetch stages the record at the canonical local path (offline re-runs)
+    dest = run_root / "gates" / "reused_apply" / "apply_gate.json"
+    assert dest.exists() and json.loads(dest.read_text()) == json.loads(staged.read_text())
+
+
 # ── EOS-margin transfer fractions ─────────────────────────────────────────────
 
 
@@ -270,19 +362,13 @@ def test_run_geometry_emits_re_reductions(G, tmp_path):
             }
         )
     )
-    (run_root / cell / "ladder.json").write_text(
-        json.dumps(
-            {
-                "cell": cell,
-                "reads_by_step": {
-                    "20": {"delta_logp_mean": 2.0},
-                    "40": {"delta_logp_mean": 6.3},
-                },
-            }
-        )
-    )
+    # The dispatcher persists per-rung slot reads (ladder/rung_*/slot_read.json);
+    # no consolidated ladder.json is ever written (the follow-up layout fix).
     (run_root / cell / "ladder" / "rung_40" / "slot_read.json").write_text(
-        json.dumps(_slot_record(7.0, 5.5))
+        json.dumps({**_slot_record(7.0, 5.5), "delta_logp_mean": 6.3})
+    )
+    (run_root / cell / "ladder" / "rung_20" / "slot_read.json").write_text(
+        json.dumps({**_slot_record(2.2, 1.8), "delta_logp_mean": 2.0})
     )
     for step, per_ctx in ((20, 0.4), (40, 1.6)):
         (run_root / cell / "ladder" / f"rung_{step}" / "bystanders.json").write_text(
@@ -328,8 +414,11 @@ def test_run_geometry_emits_re_reductions(G, tmp_path):
     assert hs[C.CELL_FT_CON_REUSED]["delta_train_minus_heldout"] == pytest.approx(0.2)
     assert hs[C.CELL_FT_CON_REUSED]["material"] is False
     assert "skipped" in hs[C.CELL_LORA_POS]  # missing selection -> explicit skip
-    gap = rr["cross_surface_gap"][cell]["points"]
+    gap_rec = rr["cross_surface_gap"][cell]
+    gap = gap_rec["points"]
     assert {p["step"]: p["gap"] for p in gap}[20] == pytest.approx(0.5)
+    assert gap_rec["n_offline_rungs"] == 2 and gap_rec["n_aligned_steps"] == 2
+    assert gap_rec["max_abs_gap"] == pytest.approx(0.5) and gap_rec["max_abs_gap_step"] == 20
     tf = rr["eos_margin_transfer"][cell]
     assert tf["per_context"]["chef"]["transfer_fraction"] == pytest.approx(0.25)
     dc = rr["dose_curves"][cell]
@@ -339,3 +428,86 @@ def test_run_geometry_emits_re_reductions(G, tmp_path):
     assert [r["role"] for r in dc["dose_curve_rungs"]] == ["sub_window", "candidate"]
     # persisted JSON round-trips
     assert (tmp_path / "out" / "geometry.json").exists()
+
+
+# ── run_re_reductions_refresh: fill the two reads, everything else invariant ──
+
+
+def test_run_re_reductions_refresh_fills_two_reads_only(G, tmp_path):
+    run_root = tmp_path / "run"
+    cell = C.NEW_LORA_CELLS[0]
+    (run_root / cell).mkdir(parents=True)
+    (run_root / cell / "band_trajectory.json").write_text(
+        json.dumps({"steps": [20, 40], "delta_nats": [2.5, 6.5]})
+    )
+    _write_rung_layout(run_root / cell, {20: 2.0, 40: 6.3})
+    gate = run_root / "gates" / "reused_apply" / "apply_gate.json"
+    gate.parent.mkdir(parents=True)
+    gate.write_text(json.dumps(_slot_record(6.4, 6.2)))
+
+    existing = {
+        "issue": C.ISSUE,
+        "cells": {"mk1_lora_con": {"own": {"primary": {"rank_k90": 12}}}},
+        "metadata": {"ts": "2026-07-15T00:00:00Z", "git_commit": "deadbeef"},
+        "lattices": {"H1_D_rank": {"point": 1.0, "verdict": "FTMoreDiffuse"}},
+        "re_reductions": {
+            "matched_80": {"mk1_lora_con": {"own": {"n_sub": 80}}},
+            "eval_bank_half_split": {
+                "mk1_lora_con": {"delta_train_minus_heldout": 0.1, "material": False},
+                C.CELL_FT_CON_REUSED: {"skipped": "apply_gate.json missing"},
+            },
+            "cross_surface_gap": {c: {"skipped": "missing ladder.json"} for c in C.NEW_LORA_CELLS},
+            "eos_margin_transfer": {"mk1_lora_con": {"source_margin_gain": 4.0}},
+            "dose_curves": {"mk1_lora_con": {"selected_step": 40}},
+        },
+    }
+    out_p = tmp_path / "geometry.json"
+    out_p.write_text(json.dumps(existing, indent=2, ensure_ascii=False, default=float) + "\n")
+    before_text = out_p.read_text()
+
+    results = G.run_re_reductions_refresh(out_p, run_root)
+    after = json.loads(out_p.read_text())
+    assert after == results
+    # the two reads are FILLED
+    gap = after["re_reductions"]["cross_surface_gap"][cell]
+    assert gap["max_abs_gap"] == pytest.approx(0.5) and gap["n_aligned_steps"] == 2
+    hs = after["re_reductions"]["eval_bank_half_split"][C.CELL_FT_CON_REUSED]
+    assert hs["delta_train_minus_heldout"] == pytest.approx(0.2) and hs["material"] is False
+    # every other field is byte-identical: masking the two reads in BOTH the
+    # original file text and the rewritten one yields identical serializations
+    assert G._masked_dump(json.loads(before_text)) == G._masked_dump(after)
+    # spot the invariants directly too
+    assert after["cells"] == existing["cells"]
+    assert after["metadata"] == existing["metadata"]
+    assert after["lattices"] == existing["lattices"]
+    assert after["re_reductions"]["matched_80"] == existing["re_reductions"]["matched_80"]
+    assert (
+        after["re_reductions"]["eval_bank_half_split"]["mk1_lora_con"]
+        == existing["re_reductions"]["eval_bank_half_split"]["mk1_lora_con"]
+    )
+
+
+def test_run_re_reductions_refresh_raises_on_unresolvable_reused_split(G, tmp_path, monkeypatch):
+    """The refresh path is fail-loud: a reused-cell half split that STAYS
+    skipped (no local gate, HF fetch failing) raises instead of re-persisting
+    another silent skip."""
+    run_root = tmp_path / "run"
+    run_root.mkdir()
+    existing = {
+        "re_reductions": {
+            "eval_bank_half_split": {C.CELL_FT_CON_REUSED: {"skipped": "missing"}},
+            "cross_surface_gap": {c: {"skipped": "missing"} for c in C.NEW_LORA_CELLS},
+        }
+    }
+    out_p = tmp_path / "geometry.json"
+    out_p.write_text(json.dumps(existing))
+
+    def _down(**kw):
+        raise OSError("offline")
+
+    monkeypatch.setattr("huggingface_hub.hf_hub_download", _down)
+    monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "0")
+    with pytest.raises(RuntimeError, match="reused-cell half split still skipped"):
+        G.run_re_reductions_refresh(out_p, run_root)
+    # and the existing JSON was NOT rewritten
+    assert json.loads(out_p.read_text()) == existing
