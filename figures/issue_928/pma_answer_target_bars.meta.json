@@ -1,0 +1,57 @@
+{
+  "commit": "ece75d101",
+  "created": "2026-07-14T23:47:19Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "prefix\ndirect",
+      "held-out skill (full-answer target)": 0.03811830572991837,
+      "error": 0.01108829535032537,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "context\ndirect",
+      "held-out skill (full-answer target)": 0.7066145196601181,
+      "error": 0.07215755034958382,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "identity\nceiling",
+      "held-out skill (full-answer target)": 0.993309864612705,
+      "error": 0.0033372258473752803,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 3,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Parent-parity full-answer target @ L25 (indiv)",
+        "ylabel": "held-out skill (full-answer target)",
+        "xticklabels": [
+          "prefix\ndirect",
+          "context\ndirect",
+          "identity\nceiling"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}
