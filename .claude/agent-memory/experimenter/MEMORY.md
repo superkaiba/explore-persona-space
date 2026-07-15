@@ -107,3 +107,4 @@
 - [GCP→RunPod failover: unchained launch + boot-lag false-dead](feedback_gcp_runpod_failover_unchained_launch.md) — verify pod state before repair; failover mints no RunPod sidecar, flag on run-launched marker (#931)
 - [append-mode unit logs carry stale tracebacks](feedback_append_mode_unit_logs_stale_tracebacks.md) — only errors after the fix-engaged line count against a relaunch (#1112)
 - [vLLM H100 IMA under heavy shared-prefix caching](feedback_vllm_h100_prefix_cache_ima.md) — A100-clean + short-probe-clean differential pins the class; mitigate enable_prefix_caching=False + enforce_eager=True (default-off knobs) (#1092 launch 4)
+- [REPO_ROOT="$WORKLOAD_ROOT" prefix is GCE-only — fatal on the RunPod failover lane](feedback_workload_root_prefix_lane_portability.md) — launch self-defaulting dispatch scripts BARE; lane-portable form ${WORKLOAD_ROOT:-/workspace/explore-persona-space} (#1336)
