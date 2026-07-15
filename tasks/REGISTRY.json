@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1326,
+  "highest_id": 1327,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2544,6 +2544,13 @@
       "path": "tasks/proposed/1326",
       "status": "proposed",
       "title": "daily-fix: Step-0 guard blind to inline-chat drivers"
+    },
+    "1327": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1327",
+      "status": "proposed",
+      "title": "daily-fix: spawn_session.py unregister subcommand"
     },
     "133": {
       "has_clean_result": false,
