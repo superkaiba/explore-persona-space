@@ -2791,8 +2791,8 @@
     "1358": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1358",
-      "status": "proposed",
+      "path": "tasks/planning/1358",
+      "status": "planning",
       "title": "workflow-fix: gotchas BPE-seam entry \u2014 plain-text boundaries + smoke composition"
     },
     "136": {
