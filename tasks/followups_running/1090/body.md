@@ -1,6 +1,6 @@
 ---
-title: The training context, not the contrastive-negative panel, gates where implanted
-  content behaviors express on-policy (MODERATE confidence)
+title: Raising the learning rate unlocks on-policy expression of the impolite behavior
+  in both installed-but-silent training contexts (MODERATE confidence)
 kind: experiment
 tags:
 - from-1074
