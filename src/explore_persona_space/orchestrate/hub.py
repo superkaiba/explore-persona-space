@@ -639,7 +639,12 @@ def list_hf_files_under_path(
     relative paths); an exact FILE returns ``[path]`` (the tree endpoint 404s
     on file paths — verified on hub 0.36.2, #939 — so an
     ``EntryNotFoundError`` falls back to one ``HfApi.file_exists`` HEAD
-    probe); an absent path returns ``[]``. Repository/Revision-not-found and
+    probe, itself wrapped in ``_retry_upload``: the bare probe was the ONE
+    un-retried Hub call on the sharded-upload verify path, and a Hub
+    queue-full 429 there killed #1345's smoke upload leg after the shard had
+    already landed — att-20260715-175238; the sibling fallback in
+    ``verify_repo_paths_uploaded`` was already wrapped); an absent path
+    returns ``[]``. Repository/Revision-not-found and
     transport/auth errors PROPAGATE (the file_exists fallback only fires
     after the tree call proved repo+revision resolve, so its swallowing of
     RepositoryNotFoundError is unreachable here). Empty ``path`` raises
@@ -656,7 +661,10 @@ def list_hf_files_under_path(
             api, repo_id, repo_type=repo_type, revision=revision, path_in_repo=normalized
         )
     except EntryNotFoundError:
-        if api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision):
+        if _retry_upload(
+            lambda: api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision),
+            what=f"file_exists({repo_id}/{normalized})",
+        ):
             return [normalized]
         return []
     prefix = normalized + "/"

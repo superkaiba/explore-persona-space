@@ -247,17 +247,28 @@ def sha256_file(path: Path) -> str:
 # hf_hub_download — NEVER snapshot_download on the ~1M-file data repo)
 # ---------------------------------------------------------------------------
 def stage_pinned_file(path_in_repo: str, dest_dir: Path, revision: str = PIN_REV) -> Path:
-    """Download ONE pinned file from the data repo at the pinned revision."""
+    """Download ONE pinned file from the data repo at the pinned revision.
+
+    Transient-retried (#1345 crash-fix r5): a Hub queue-full 429 during the
+    metadata HEAD surfaces as ``LocalEntryNotFoundError`` ("check your
+    connection") — ``hub.retry_transient`` classifies it transient and
+    retries with bounded backoff instead of killing the prefetch phase.
+    """
     from huggingface_hub import hf_hub_download
 
+    from explore_persona_space.orchestrate.hub import retry_transient
+
     dest_dir.mkdir(parents=True, exist_ok=True)
-    p = hf_hub_download(
-        HF_DATA_REPO,
-        path_in_repo,
-        repo_type="dataset",
-        revision=revision,
-        token=os.environ.get("HF_TOKEN"),
-        local_dir=str(dest_dir),
+    p = retry_transient(
+        lambda: hf_hub_download(
+            HF_DATA_REPO,
+            path_in_repo,
+            repo_type="dataset",
+            revision=revision,
+            token=os.environ.get("HF_TOKEN"),
+            local_dir=str(dest_dir),
+        ),
+        what=f"hf_hub_download({HF_DATA_REPO}/{path_in_repo}@{revision})",
     )
     return Path(p)
 
