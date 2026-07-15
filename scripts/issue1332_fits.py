@@ -113,6 +113,70 @@ def ensure_shards(sdir: Path, fams: list[str], arm: str) -> None:
         )
 
 
+def ensure_shards_545(sdir: Path) -> None:
+    """Discover + stage the i545 capture shards (r5 fix: git-clone lanes stage no data/).
+
+    No registered panel exists for this arm (units are whatever capture545
+    produced), so the unit list comes from a SCOPED ``list_repo_tree`` on the
+    issue's own ``analysis_tensors/capture545`` Hub prefix — never a bare
+    full-repo listing (the ~1M-file data repo times out; gotchas.md). Each
+    shard then resolves local-first -> HF-fetch under the same fail-loud
+    contract as the marker arm: transient listing/fetch failures re-raise
+    after ``retry_transient``'s budget; an absent prefix with no local shards
+    raises. A locally-staged-only store (prefix absent on the Hub) proceeds
+    with a warning — the local shards ARE the arm's cell list then.
+    """
+    from huggingface_hub import HfApi
+    from huggingface_hub.errors import EntryNotFoundError
+
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    prefix = f"{C.HF_PREFIX}/analysis_tensors/capture545"
+    try:
+        entries = retry_transient(
+            lambda: list(
+                # HUB_VERIFY_RETRY_EXEMPT: thunk runs inside hub.retry_transient (#920-safe)
+                HfApi().list_repo_tree(
+                    C.HF_DATA_REPO,
+                    path_in_repo=prefix,
+                    repo_type="dataset",
+                    revision="main",
+                    recursive=False,
+                )
+            ),
+            what=f"list_repo_tree {prefix}",
+        )
+    except EntryNotFoundError:
+        entries = []
+    hub_units = sorted(Path(e.path).stem for e in entries if e.path.endswith(".pt"))
+    if not hub_units:
+        local_units = sorted(p.stem for p in sdir.glob("*.pt"))
+        if local_units:
+            logger.warning(
+                "[545] Hub prefix %s empty/absent; proceeding with %d locally staged shards",
+                prefix,
+                len(local_units),
+            )
+            return
+        raise FileNotFoundError(
+            f"no i545 capture shards under {prefix} on the Hub and none staged locally "
+            f"under {sdir} — run issue1332_gpu_phase.py --stage capture545 first"
+        )
+    n_fetched = 0
+    for unit in hub_units:
+        local = sdir / f"{unit}.pt"
+        if local.exists():
+            continue
+        C.hf_fetch(f"analysis_tensors/capture545/{unit}.pt", local)
+        n_fetched += 1
+    logger.info(
+        "[545] staging complete: %d units on Hub prefix, %d fetched, %d already local",
+        len(hub_units),
+        n_fetched,
+        len(hub_units) - n_fetched,
+    )
+
+
 class ShardCache:
     """mmap'd per-family shard loads with layer slicing (bounded resident set)."""
 
@@ -205,7 +269,15 @@ def r2(y_true, y_pred) -> float:
 
 
 def parity_gate(cache: ShardCache, fams: list[str], layers: list[int], folds) -> dict:
-    """3-cell canonical-vs-fast parity at production shape (<=1e-4 rel)."""
+    """3-cell canonical-vs-fast parity at production shape (<=1e-4 rel).
+
+    ``folds=None`` (the i545 arm) derives each cell's fold from THAT family's
+    own row count: i545 units carry no shared query bank (~160 off-policy rows
+    per behavior, own row indexing), so a marker-bank fold can miss a unit's
+    index range entirely and yield zero eval rows (r5 fix — the gate crashed
+    with `zero-size array to reduction operation maximum`). Marker arm keeps
+    the shared query-indexed folds byte-identically.
+    """
     import numpy as np
 
     from explore_persona_space.experiments.issue_779.fit_h import (
@@ -214,11 +286,21 @@ def parity_gate(cache: ShardCache, fams: list[str], layers: list[int], folds) ->
         ridge_fit_predict_fast_layer_batched,
     )
 
+    if folds is None:
+        # span the arm's production shapes: smallest / median / largest units
+        # (i545 mixes ~8-row demo pools with ~160-row behavior corpora)
+        by_n = sorted(fams, key=lambda f: (len(cache.bank_indices(f)), f))
+        picked = [by_n[0], by_n[len(by_n) // 2], by_n[-1]][: min(3, len(fams))]
+    else:
+        picked = [fams[k % len(fams)] for k in range(min(3, len(fams)))]
     cells = []
-    for k in range(min(3, len(fams))):
-        fam = fams[k % len(fams)]
+    for k, fam in enumerate(picked):
         layer = layers[k % len(layers)]
-        fold = folds[k % len(folds)]
+        if folds is None:
+            fam_folds = C.query_folds(len(cache.bank_indices(fam)))
+            fold = fam_folds[k % len(fam_folds)]
+        else:
+            fold = folds[k % len(folds)]
         cells.append((fam, layer, fold))
     worst = 0.0
     for fam, layer, fold in cells:
@@ -226,6 +308,13 @@ def parity_gate(cache: ShardCache, fams: list[str], layers: list[int], folds) ->
         val_set = set(fold)
         tr_rows = [i for i, b in enumerate(bank_idx) if b not in val_set]
         ev_rows = [i for i, b in enumerate(bank_idx) if b in val_set]
+        if not tr_rows or not ev_rows:
+            raise RuntimeError(
+                f"[parity] cell fam={fam} layer={layer} resolves to an empty split "
+                f"(n_train={len(tr_rows)}, n_eval={len(ev_rows)}, n_rows={len(bank_idx)}) — "
+                f"the fold does not intersect this family's row indices; the parity gate "
+                f"is never skipped silently"
+            )
         X = cache.arrays(fam, "cx_last", [layer])[:, 0, :]
         Y = cache.arrays(fam, "v_mean", [layer])[:, 0, :]
         ref = ridge_fit_predict(X[tr_rows], Y[tr_rows], X[ev_rows])
@@ -254,12 +343,24 @@ def parity_gate(cache: ShardCache, fams: list[str], layers: list[int], folds) ->
 
 
 def run_pilot(cache: ShardCache, fams: list[str], n_layers: int, folds, solver: str) -> dict:
-    """Pre-registered 1-cell pilot through the production entrypoint (plan §7/§9)."""
-    fam = fams[0]
+    """Pre-registered 1-cell pilot through the production entrypoint (plan §7/§9).
+
+    ``folds=None`` (the i545 arm) derives the pilot fold from the pilot
+    family's own row count and pilots the LARGEST unit (conservative per-call
+    basis across the arm's mixed 8..~160-row shapes) — r5 fix.
+    """
+    fam = max(fams, key=lambda f: (len(cache.bank_indices(f)), f)) if folds is None else fams[0]
     bank_idx = cache.bank_indices(fam)
-    val_set = set(folds[0])
+    pilot_folds = C.query_folds(len(bank_idx)) if folds is None else folds
+    val_set = set(pilot_folds[0])
     tr_rows = [i for i, b in enumerate(bank_idx) if b not in val_set]
     ev_rows = [i for i, b in enumerate(bank_idx) if b in val_set]
+    if not tr_rows or not ev_rows:
+        raise RuntimeError(
+            f"[pilot] fam={fam} resolves to an empty split (n_train={len(tr_rows)}, "
+            f"n_eval={len(ev_rows)}, n_rows={len(bank_idx)}) — fold does not intersect "
+            f"the family's row indices"
+        )
     layers = list(range(n_layers))
     X = cache.arrays(fam, "cx_last", layers).transpose(1, 0, 2)  # (L, n, H)
     Y = cache.arrays(fam, "v_mean", layers).transpose(1, 0, 2)
@@ -270,7 +371,7 @@ def run_pilot(cache: ShardCache, fams: list[str], n_layers: int, folds, solver: 
     fit_predict_batched(X[:, tr_rows], Y[:, tr_rows], X[:, ev_rows], solver=solver)
     per_call_all = time.time() - t0
     n_fams = len(fams)
-    n_single_calls = n_fams * len(folds) * (len(C.LAYER_GRID) + 1)
+    n_single_calls = n_fams * len(pilot_folds) * (len(C.LAYER_GRID) + 1)
     n_batched_calls = n_fams * 2  # split-half layer-freeze calls (all layers)
     projected_h = (n_single_calls * per_call_1 + n_batched_calls * per_call_all) / 3600.0
     rss_gb = _ru_maxrss_gb()
@@ -774,9 +875,12 @@ def main() -> int:
     res_dir = C.results_dir(args.smoke, args.results_dir)
     res_dir.mkdir(parents=True, exist_ok=True)
 
-    if args.arm == "marker" and not args.smoke and not args.skip_hf_fetch:
-        _sources, targets = C.family_labels()
-        ensure_shards(sdir, targets, args.arm)  # fail-loud staging (r1 Major 1)
+    if not args.smoke and not args.skip_hf_fetch:
+        if args.arm == "marker":
+            _sources, targets = C.family_labels()
+            ensure_shards(sdir, targets, args.arm)  # fail-loud staging (r1 Major 1)
+        else:
+            ensure_shards_545(sdir)  # r5 fix: i545 staging from the Hub prefix
     fams = discover_families(sdir)
     fams = [f for f in fams if not f.endswith(".dropped") and not f.endswith(".skipped")]
     if args.arm == "marker" and not args.smoke:
@@ -792,10 +896,18 @@ def main() -> int:
             )
     cache = ShardCache(sdir)
     n_layers = cache.n_layers(fams[0])
-    n_bank = resolve_n_bank(cache, fams)
-    folds = C.query_folds(n_bank)
+    if args.arm == "marker":
+        n_bank = resolve_n_bank(cache, fams)
+        folds = C.query_folds(n_bank)
+    else:
+        # i545 units carry no shared query bank (own-question rows, own row
+        # indexing) — parity gate + pilot derive per-unit folds from each
+        # unit's own row count (r5 fix); the shared-bank folds are marker-only.
+        folds = None
 
     if args.verify_sim_layer is not None:
+        if args.arm != "marker":
+            ap.error("--verify-sim-layer supports only --arm marker (oracle paths are marker-arm)")
         # equivalence gate only — no phase breadcrumbs, no eval_results/ writes
         gate_path = res_dir / "parity_gate.json"
         solver = json.loads(gate_path.read_text())["solver"]
@@ -803,14 +915,18 @@ def main() -> int:
         verify_similarity_vectorized(cache, fams, args.verify_sim_layer, folds, solver, oracle_path)
         return 0
 
+    # Arm-scoped gate/pilot filenames (r5): the i545 run must never overwrite
+    # the marker arm's already-produced parity_gate.json / fit_pilot.json.
+    arm_suffix = "" if args.arm == "marker" else f"_{args.arm}"
+
     C.phase("p2_parity")
     gate = parity_gate(cache, fams, [min(n_layers - 1, 14)], folds)
-    C.write_json_atomic(res_dir / "parity_gate.json", gate)
+    C.write_json_atomic(res_dir / f"parity_gate{arm_suffix}.json", gate)
     solver = gate["solver"]
 
     C.phase("p2_pilot")
     pilot = run_pilot(cache, fams, n_layers, folds, solver)
-    C.write_json_atomic(res_dir / "fit_pilot.json", pilot)
+    C.write_json_atomic(res_dir / f"fit_pilot{arm_suffix}.json", pilot)
 
     if args.arm == "i545":
         C.phase("p2_i545")

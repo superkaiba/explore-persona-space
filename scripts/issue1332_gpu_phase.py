@@ -524,6 +524,7 @@ def _regen_missing_545_pools(
         local = dest / "demos" / f"{row.row_id}.json"
         regen_rel = f"{C.HF_PREFIX}/i545_regen/demos/{row.row_id}.json"
         prior = retry_transient(
+            # HUB_VERIFY_RETRY_EXEMPT: thunk runs inside hub.retry_transient (#920-safe)
             lambda rr=regen_rel: api.file_exists(C.HF_DATA_REPO, rr, repo_type="dataset"),
             what=f"file_exists {regen_rel}",
         )
