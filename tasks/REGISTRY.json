@@ -2435,8 +2435,8 @@
     "1312": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1312",
-      "status": "reviewing",
+      "path": "tasks/completed/1312",
+      "status": "completed",
       "title": "workflow-fix: Lens 7 mechanical language-intrusion scan (Qwen CJK mixing)"
     },
     "132": {
