@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1346,
+  "highest_id": 1347,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2703,6 +2703,13 @@
       "path": "tasks/proposed/1346",
       "status": "proposed",
       "title": "workflow-fix: width re-eval on FLOP-bound mid-run deviation relaunch"
+    },
+    "1347": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1347",
+      "status": "proposed",
+      "title": "workflow-fix: fact-check HF reuse existence at the pinned revision"
     },
     "135": {
       "has_clean_result": false,
