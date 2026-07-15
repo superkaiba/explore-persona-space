@@ -155,7 +155,7 @@ def _base_record(slug: str, model_kind: str, fp: dict) -> dict:
     }
 
 
-def gen_qa(args, tokenizer, fp: dict) -> list[dict]:
+def gen_qa(args, tokenizer, fp: dict) -> tuple[list[dict], dict]:
     """One-shot Q&A generation (r0/r1/r2_op/r3/r4)."""
     slug = args.rung
     cfg = r1335.RUNGS[slug]

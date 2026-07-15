@@ -675,8 +675,13 @@ def _delta_draws(a: dict | None, b: dict | None) -> np.ndarray | None:
     return da - db
 
 
-def fiction_kept_personas(args, model_kind: str) -> tuple[list[str], dict]:
-    """Yield-floor report: personas at/above 80% of the v3 realized floor."""
+def fiction_kept_personas(args, model_kind: str, smoke: bool = False) -> tuple[list[str], dict]:
+    """Yield-floor report: personas at/above 80% of the v3 realized floor.
+
+    A below-floor persona is REPORTED and kept out of the per-persona mean with
+    the denominator revised (plan §4.2); smoke slices use floor=1 so the delta
+    path is exercised end-to-end."""
+    floor = 1 if smoke else FICTION_YIELD_FLOOR
     kept, report = [], {}
     for persona in c1310.PERSONA_LABELS:
         p = args.out_dir / f"cells_{unit_cell_id('r7_endpoint', model_kind, persona, 'ctx')}.json"
@@ -684,8 +689,8 @@ def fiction_kept_personas(args, model_kind: str) -> tuple[list[str], dict]:
             report[persona] = {"n": None, "kept": False, "reason": "missing"}
             continue
         n = json.loads(p.read_text())["n"]
-        ok = n >= FICTION_YIELD_FLOOR
-        report[persona] = {"n": n, "kept": bool(ok), "floor": FICTION_YIELD_FLOOR}
+        ok = n >= floor
+        report[persona] = {"n": n, "kept": bool(ok), "floor": floor}
         if ok:
             kept.append(persona)
     return kept, report
@@ -757,7 +762,7 @@ def evaluate_gates(args, models: list[str], smoke: bool) -> dict:
 def build_ladder_summary(args, models: list[str], smoke: bool) -> dict:
     per_model: dict = {}
     for model_kind in models:
-        kept, yield_report = fiction_kept_personas(args, model_kind)
+        kept, yield_report = fiction_kept_personas(args, model_kind, smoke)
 
         def mv(slug, unit="all", arm="ctx", model_kind=model_kind):
             return _matched_value(args, unit_cell_id(slug, model_kind, unit, arm))
