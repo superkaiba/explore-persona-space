@@ -84,7 +84,7 @@ I then wanted to see if this mapping was only there because of the chat-template
 - Fit the same mapping to the same conversations, replacing the chat template with just "User:" + "Assistant:"
 - Plot $R^2$ with chat template vs without chat template for both instruct and pretrained model
 
-![two-turn cells by model and format](https://raw.githubusercontent.com/superkaiba/explore-persona-space/745e62f4b6cbb510d529a8778cb0137b98522cc8/figures/issue_825/within_cell_best_frozen_r2.png)
+_Figure: single-turn chat-vs-no-template R² (base + instruct) — landing with the Track-S single-turn naturalistic run (S1N/S2N); the prior two-turn figure was removed here as mismatched for this single-turn claim._
 
 **Takeaways:**
 
