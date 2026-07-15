@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1349,
+  "highest_id": 1350,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2731,6 +2731,13 @@
       "path": "tasks/completed/135",
       "status": "completed",
       "title": "Can we make the assistant persona more robust in post training or midtraining to prevent against jailbreaks --look at existing literature"
+    },
+    "1350": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1350",
+      "status": "proposed",
+      "title": "workflow-fix: lane-portable REPO_ROOT guidance for --workload-cmd (WORKLOAD_ROOT is GCE-only)"
     },
     "136": {
       "has_clean_result": false,
