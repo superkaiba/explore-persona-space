@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1336,
+  "highest_id": 1337,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2625,6 +2625,13 @@
       "path": "tasks/planning/1336",
       "status": "planning",
       "title": "Does RLVR post-training change the base\u2192post-trained context\u2192answer map more than SFT/DPO? (separated-stage ladder)"
+    },
+    "1337": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1337",
+      "status": "proposed",
+      "title": "workflow-fix: step9c scratch oracle for file-anchored scan tests"
     },
     "134": {
       "has_clean_result": false,
