@@ -263,6 +263,53 @@ marker's pid is itself alive.
   piped-push masking class — the pipe mirror stays enforced by
   `workflow_lint.py --check-piped-git-push`, this swallow shape by
   `--check-push-failure-swallow`).
+- **Artifact-presence assert (#1325) — the rev-list push-verify is VACUOUS
+  against a never-committed result file.** `rev-list --count
+  origin/<branch>..HEAD == 0` proves the COMMITS pushed; it says nothing
+  about result files that were never `git add`ed (incident #928,
+  upload-verification v5 2026-07-15T00:07Z: the round's 5 eval JSONs + 24
+  figure files sat untracked on the instance while the driver's
+  push-verify passed on its code commits — caught one round late at
+  Step 8). After the push-verify succeeds, the SAME dispatch step MUST
+  assert the round's DECLARED git-destined result paths are present in
+  the PUSHED tree: for EACH result file `p` the driver DECLARES for this
+  round under `eval_results/issue_<N>/...` or `figures/issue_<N>/...` —
+  its own output manifest: eval JSONs exactly as declared in the
+  `epm:results` sentinel payload's "Eval JSON paths" field, plus the
+  round's figure outputs (the payload spec carries no named figures
+  field, so the driver's manifest is the anchor there; per-file,
+  never a bare directory: at #928's incident tip the two directories
+  already held 90 files from EARLIER rounds, so a directory-level
+  non-empty check passes vacuously) — run
+  `git -C <root> ls-tree -r origin/<branch> --name-only -- "$p"` and
+  require non-empty output (the remote-tracking ref was just
+  push-verified, so this is the same local, network-free proof;
+  `git cat-file -e "origin/<branch>:$p"` is an acceptable equivalent);
+  any missing path → exit non-zero listing the misses, BEFORE
+  `[phase=done]` and the results sentinel, and before stamping
+  `EPS_DELIVERABLES_OK_PATH` (Part A-ter: a failing artifact assert
+  classifies `failed`, never done-like) — never declare done with an
+  uncommitted result file. Scoping (so the assert never false-fails):
+  (a) the declared set is DECLARE-anchored — only the git-destined
+  result files the WORKLOAD itself produced AND declares this round;
+  gitignored outputs (`*.pt` / `*.log` under `eval_results/`; their
+  canonical home is HF), undeclared resume / partial state (`partial/**`
+  checkpoints and manifests — written but never declared), and artifacts
+  a later VM-side agent commits (e.g. analyzer-produced figures, the
+  #1090 DEFERRED-figures shape, Step-8 verifier-synced eval JSONs) are
+  out of the set; (b) a round with no git-destined outputs (HF-only
+  datagen / training rounds) has an empty set — the assert is a
+  no-op, never a false-fail; (c) lane scoping is unchanged: RunPod + GCE
+  dispatch only — on SLURM workload-side git is structurally impossible
+  (bullet below), and the VM-side orchestrator commit + Step 8 gate own
+  artifact landing there. HF-destined artifacts (raw completions incl.
+  judge raw, checkpoints, analysis tensors) are OUT OF SCOPE for this
+  assert — the Upload Policy persist-by-default rule owns that leg
+  (sibling incident #1090 v4, same day: Tier-2 judge raw existed only
+  VM-local; no git-tree assert could catch it). The GCE push-verify
+  backstop (below) shares the blindness — it proves commits pushed, NOT
+  files committed — so this assert is a driver duty on every lane that
+  commits results; no mechanical backstop covers it.
 - **GCE lane:** the startup script configures a `GITHUB_TOKEN` env-reading
   credential helper (workload pushes authenticate; pre-#1205 they failed
   DETERMINISTICALLY — the clone is tokenless) and runs a post-workload
