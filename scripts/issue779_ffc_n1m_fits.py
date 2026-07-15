@@ -613,12 +613,12 @@ def _train_standardizer(X, Y, tr, dev, block):
     return xmu, xsd, ymu
 
 
-def _ridge_streaming_multi_lambda(X, Y, tr, eval_idx_list, lambdas, dev, block):
-    """Exact primal ridge (all lambdas off ONE eigh of the streamed (H,H) X^TX).
-
-    Standardizes X on train stats, centers Y on train mean — numerically identical
-    to N50._ridge_primal_multi_lambda, just block-accumulated so the (n, H) design
-    is never materialized at once. Returns {lambda: [pred for each eval set]}."""
+def _ridge_factorize(X, Y, tr, dev, block):
+    """Standardize X on train stats, center Y on train mean, accumulate the (H,H)
+    X^TX + (H,D) X^TY STREAMING over train blocks, eigh once. Returns the
+    factorization state {U, s_eig, UtXtY, xmu, xsd, ymu} — reused across lambdas
+    AND eval sets by _ridge_predict_one, so no eval set is ever materialized for
+    all lambdas at once (the residual_skip rc=137 OOM fix, #779 round 6)."""
     xmu, xsd, ymu = _train_standardizer(X, Y, tr, dev, block)
     H = X.shape[1]
     A = torch.zeros((H, H), dtype=torch.float64, device=dev)
@@ -632,14 +632,62 @@ def _ridge_streaming_multi_lambda(X, Y, tr, eval_idx_list, lambdas, dev, block):
     s_eig, U = torch.linalg.eigh(A)
     s_eig = torch.clamp(s_eig, min=0.0)
     UtXtY = U.T @ XtY
-    evals_n = [
-        (torch.as_tensor(X[e], dtype=torch.float64, device=dev) - xmu) / xsd for e in eval_idx_list
-    ]
+    return {"U": U, "s_eig": s_eig, "UtXtY": UtXtY, "xmu": xmu, "xsd": xsd, "ymu": ymu}
+
+
+def _ridge_predict_one(X, eval_idx, fac, lam, dev, block):
+    """Predict ONE eval set at ONE lambda from a _ridge_factorize state, BLOCKED so
+    the (len(eval_idx), H) standardized design is never held whole — peak is ~one
+    (len(eval_idx), D) fp64 output array. Numerically identical to the all-at-once
+    matmul: block-chunked (En @ W) concatenated == full (En @ W)."""
+    U, s_eig, UtXtY = fac["U"], fac["s_eig"], fac["UtXtY"]
+    xmu, xsd, ymu = fac["xmu"], fac["xsd"], fac["ymu"]
+    if len(eval_idx) == 0:
+        return np.zeros((0, UtXtY.shape[1]))
+    W = U @ (UtXtY / (s_eig + float(lam))[:, None])
+    outs = []
+    for s in range(0, len(eval_idx), block):
+        idx = eval_idx[s : s + block]
+        En = (torch.as_tensor(X[idx], dtype=torch.float64, device=dev) - xmu) / xsd
+        outs.append(((En @ W) + ymu).cpu().numpy())
+    return np.concatenate(outs)
+
+
+def _is_train_pool(e, tr) -> bool:
+    """True iff eval-index-set ``e`` IS the train pool ``tr`` (same object, or equal
+    values). The train pool must never be a multi-lambda eval set — see the guard in
+    _ridge_streaming_multi_lambda."""
+    if e is tr:
+        return True
+    ea, ta = np.asarray(e), np.asarray(tr)
+    return ea.shape == ta.shape and bool(np.array_equal(ea, ta))
+
+
+def _ridge_streaming_multi_lambda(X, Y, tr, eval_idx_list, lambdas, dev, block):
+    """Exact primal ridge (all lambdas off ONE eigh of the streamed (H,H) X^TX).
+
+    Standardizes X on train stats, centers Y on train mean — numerically identical
+    to N50._ridge_primal_multi_lambda, just block-accumulated so the (n, H) design
+    is never materialized at once. Returns {lambda: [pred for each eval set]}.
+
+    GUARD (#779 round 6): refuses the TRAIN pool as an eval set — that materializes
+    an (n_train, D) pred for EVERY lambda at once (~n_lambda x 13.8 GB -> rc=137 at
+    n>=500k, the residual_skip OOM). A caller needing the train prediction selects
+    lambda on val, then predicts the train pool at the SELECTED lambda ONLY via
+    _ridge_factorize + _ridge_predict_one (see fit_residual_skip)."""
+    for e in eval_idx_list:
+        if _is_train_pool(e, tr):
+            raise ValueError(
+                "_ridge_streaming_multi_lambda: train pool passed as an eval set — this "
+                "builds (n_train, D) preds for all lambdas at once and OOMs at n>=500k. "
+                "Select lambda on val then predict train at the selected lambda only "
+                "(_ridge_factorize + _ridge_predict_one; see fit_residual_skip)."
+            )
+    fac = _ridge_factorize(X, Y, tr, dev, block)
     out: dict[float, list[np.ndarray]] = {}
     for lam in lambdas:
-        W = U @ (UtXtY / (s_eig + float(lam))[:, None])
-        out[float(lam)] = [((En @ W) + ymu).cpu().numpy() for En in evals_n]
-    return out, {"xmu": xmu, "xsd": xsd, "ymu": ymu}
+        out[float(lam)] = [_ridge_predict_one(X, e, fac, lam, dev, block) for e in eval_idx_list]
+    return out, {"xmu": fac["xmu"], "xsd": fac["xsd"], "ymu": fac["ymu"]}
 
 
 def fit_ridge(X, Y, tr, val, te, lambdas, dev, block):
@@ -769,15 +817,26 @@ def fit_mlp(X, Y, tr, te, width, lr, max_epochs, batch, seed, dev, *, capacity_a
 
 
 def fit_residual_skip(X, Y, tr, val, te, lambdas, width, lr, max_epochs, batch, seed, dev, block):
-    """Primal ridge base + minibatched MLP on the residual (strictly nests linear)."""
-    preds, _ = _ridge_streaming_multi_lambda(X, Y, tr, [val, tr, te], lambdas, dev, block)
+    """Primal ridge base + minibatched MLP on the residual (strictly nests linear).
+
+    Memory contract (#779 round 6): factorize the ridge solve ONCE, select the base
+    lambda on VAL predictions only (each computed then discarded — peak ~one
+    (len(val), D) array), THEN build the train + test ridge base at the SELECTED
+    lambda ONLY (peak ~one (n_train, D) fp64 array ≈ 13.8 GB at n≈1M). NEVER
+    materialize train-pool preds for all lambdas at once — that was the rc=137 OOM
+    (~n_lambda x the train-pred array) this fix removes. Lambda selection is
+    SELF-CONTAINED (no reuse of a checkpointed ridge cell), so a standalone
+    ``--predictors residual_skip`` backfill run (no ridge cell present) still works.
+    Numerically identical to the prior all-lambda path — same factorization, same
+    val-selected lambda, same predictions."""
+    fac = _ridge_factorize(X, Y, tr, dev, block)
     best_lam, best_vr2 = float(lambdas[0]), -np.inf
     for lam in lambdas:
-        vr2 = PR._pooled_r2(preds[float(lam)][0], Y[val])
+        vr2 = PR._pooled_r2(_ridge_predict_one(X, val, fac, lam, dev, block), Y[val])
         if np.isfinite(vr2) and vr2 > best_vr2:
             best_vr2, best_lam = vr2, float(lam)
-    base_tr = preds[best_lam][1]  # ridge pred on train (aligned to tr)
-    base_te = preds[best_lam][2]  # ridge pred on test
+    base_tr = _ridge_predict_one(X, tr, fac, best_lam, dev, block)  # ONE train-pred array
+    base_te = _ridge_predict_one(X, te, fac, best_lam, dev, block)
     pred, mmeta = _fit_mlp_minibatch(
         X, Y, tr, te, width, lr, max_epochs, batch, seed, dev, base_tr=base_tr, base_te=base_te
     )
@@ -1291,6 +1350,34 @@ def _smoke() -> int:
         "residual-skip body did not beat the mean baseline"
     )
 
+    # (8) residual arm never materializes train-pool preds for all lambdas (#779 r6):
+    #     (a) the multi-lambda ridge path REFUSES the train pool as an eval set;
+    #     (b) fit_residual_skip never routes the train pool through it (recorded live).
+    guard_fired = False
+    try:
+        _ridge_streaming_multi_lambda(Xs, Ys, tr, [vl, tr, ts], lambdas, dev, block=64)
+    except ValueError as e:
+        guard_fired = "train pool" in str(e)
+    assert guard_fired, "multi-lambda train-pool guard did not fire on [val, tr, te]"
+
+    ml_calls: list = []
+    _orig_ml = _ridge_streaming_multi_lambda
+
+    def _rec_ml(X_, Y_, tr_, eidx_, *a, **k):
+        ml_calls.append(list(eidx_))
+        return _orig_ml(X_, Y_, tr_, eidx_, *a, **k)
+
+    _mod = sys.modules[__name__]
+    _mod._ridge_streaming_multi_lambda = _rec_ml
+    try:
+        pred_res8, _ = fit_residual_skip(Xs, Ys, tr, vl, ts, lambdas, 64, 3e-3, 40, 64, 0, dev, 64)
+    finally:
+        _mod._ridge_streaming_multi_lambda = _orig_ml
+    assert not any(_is_train_pool(e, tr) for c in ml_calls for e in c), (
+        "fit_residual_skip passed the train pool to the multi-lambda ridge path"
+    )
+    assert pred_res8.shape[0] == len(ts), "residual arm returned wrong test-pred count"
+
     # (6) HF stream checkpoint write/resume roundtrip + (7) per-chunk download retry.
     with tempfile.TemporaryDirectory() as td:
         n_rows_ck, n_ck = _smoke_stream_ckpt(Path(td) / "ck")
@@ -1299,6 +1386,7 @@ def _smoke() -> int:
     logger.info(
         "[smoke] PASS: split shas byte-id; select (lmsys/mixed-ratio %.2f/whole); "
         "ridge==N50 (<1e-4); nystrom~exact (ex %.3f ny %.3f); MLP+residual R2>0 (mlp %d ep); "
+        "residual multi-lambda train-pool guard fires + residual never routes train pool; "
         "stream-ckpt resume byte-identical (%d rows / %d chunks); download-retry %d-attempt path",
         dm["full_lmsys_frac"],
         r2_ex,
