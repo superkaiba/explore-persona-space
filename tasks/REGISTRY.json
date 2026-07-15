@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1364,
+  "highest_id": 1365,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2843,6 +2843,13 @@
       "path": "tasks/planning/1364",
       "status": "planning",
       "title": "workflow-fix: analyzer CJK audit must cover judged install-instrument pools"
+    },
+    "1365": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1365",
+      "status": "proposed",
+      "title": "workflow-fix: correct upload-policy.md #1315 root-cause clause post-#1360"
     },
     "137": {
       "has_clean_result": false,
