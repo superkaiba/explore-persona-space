@@ -129,9 +129,15 @@ def load_rung_store(args, slug: str, model_kind: str) -> dict:
     arrays: dict[str, list] = {}
     for sp in shards:
         side = json.loads(sp.with_suffix("").with_suffix(".json").read_text())
-        assert r1335.fingerprint_matches(side, slug), (
-            f"stale store shard {sp}: fingerprint != current render config/SHA (c24)"
+        assert r1335.fingerprint_matches(side, slug, require_sha=False), (
+            f"stale store shard {sp}: render-config fingerprint mismatch (c24) — "
+            "the shard was captured under a DIFFERENT rung render; quarantine it"
         )
+        if not r1335.fingerprint_matches(side, slug):
+            print(
+                f"[i1335-fit] WARN: {sp.name} captured at code_sha={side.get('code_sha')} "
+                "!= current (render config identical — consuming; resume-skip stays strict)"
+            )
         payload = torch.load(sp, map_location="cpu", weights_only=False)
         rows.extend(payload["row_ids"])
         groups.extend(payload["group_ids"])

@@ -280,11 +280,16 @@ def fingerprint(slug: str) -> dict:
     }
 
 
-def fingerprint_matches(sidecar: dict, slug: str) -> bool:
-    """c24 predicate: resume-skip only when the persisted fingerprint matches
-    the CURRENT render config + code SHA."""
+def fingerprint_matches(sidecar: dict, slug: str, *, require_sha: bool = True) -> bool:
+    """c24 predicate. RESUME-SKIP decisions require the FULL fingerprint match
+    (rung_slug + render_config_hash + code_sha — plan §8). CONSUME checks
+    (fitting an existing store) pass require_sha=False: the render-config hash
+    pins the store's DATA identity, and a code-sha-only difference (e.g. a fix
+    commit between capture and fit in one run) is tolerated with a caller-side
+    warning rather than forcing a recapture of identical renders."""
     want = fingerprint(slug)
-    return all(sidecar.get(k) == want[k] for k in ("rung_slug", "render_config_hash", "code_sha"))
+    keys = ("rung_slug", "render_config_hash") + (("code_sha",) if require_sha else ())
+    return all(sidecar.get(k) == want[k] for k in keys)
 
 
 # ---------------------------------------------------------------------------
