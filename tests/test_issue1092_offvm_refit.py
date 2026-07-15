@@ -330,3 +330,105 @@ def test_p6_gce_driver_partb_dry_run(tmp_path):
     assert (partb_dir / "partb_summary_pjob1.json").exists()
     assert (partb_dir / "partb_summary_pjob2.json").exists()
     assert not (partb_dir / "partb_summary.json").exists()
+
+
+# ── 6. GCE driver P6_MAX_PILOT_RSS_GB knob (rf pilot-gate relaunch fix) ─────
+#
+# rf01..rf04 aborted at the wrapper pilot gate because the launch commands
+# never set P6_MAX_PILOT_RSS_GB (default 64 applied; rf02 pilot ru_maxrss
+# 71.94 GB, att-20260715-003544-rf02). These pins: env -> --max-pilot-rss-gb
+# threading (the relaunch fix-engaged signal), the fail-loud bad-value path
+# (fails pre-fix: the driver forwarded a bogus value silently in dry-run),
+# the P6_RESTORE_FIXTURE_ROOT restore staging into $OUT_DIR, and the pilot
+# gate passing at rf02's exact failure point under the relaunch knobs.
+
+
+def _run_driver_rf(tmp_path, extra_env):
+    env = {
+        **os.environ,
+        "P6_DRY_RUN": "1",
+        "P6_BOX_ID": "rf02",
+        "P6_STAGE_DIR": str(tmp_path / "stage"),
+        "P6_JOBS": (
+            "cells=cell_inst_pretext|layers=14,18,19|fit_arms=A|bases=ambient,pca48"
+            "|pilot_cell=cell_inst_pretext|pilot_layer=14|plan_wall_h=13"
+            "|extra=--skip-mlp-companion"
+        ),
+        **extra_env,
+    }
+    return subprocess.run(
+        ["bash", str(PROJECT_ROOT / "scripts" / "issue1092_p6_gce.sh")],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_p6_gce_rss_cap_default_64(tmp_path):
+    proc = _run_driver_rf(tmp_path, {})
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    assert "--max-pilot-rss-gb 64" in proc.stdout
+
+
+def test_p6_gce_rss_cap_env_override(tmp_path):
+    proc = _run_driver_rf(tmp_path, {"P6_MAX_PILOT_RSS_GB": "96"})
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    # The relaunch fix-engaged signal: the composed invocation echo carries
+    # the overridden cap (the failed run's log showed --max-pilot-rss-gb 64).
+    assert "--max-pilot-rss-gb 96" in proc.stdout
+
+
+def test_p6_gce_rss_cap_bad_value_fails_loud(tmp_path):
+    proc = _run_driver_rf(tmp_path, {"P6_MAX_PILOT_RSS_GB": "bogus"})
+    assert proc.returncode == 2
+    assert "P6_MAX_PILOT_RSS_GB must be a positive number" in proc.stderr
+    assert "[phase=done]" not in proc.stdout
+
+
+def test_p6_gce_restore_fixture_stages_into_out_dir(tmp_path):
+    att = "att-20260715-003544-rf02"
+    fixture = tmp_path / "fixture"
+    p6_prefix = fixture / "issue1092_partial" / att / "data_issue_1092" / "p6"
+    (p6_prefix / "checkpoints").mkdir(parents=True)
+    (p6_prefix / "analysis_tensors" / "nulls").mkdir(parents=True)
+    ckpt_name = "cell_inst_pretext_prefix_end_fitA_L14_ambient_abc123.json"
+    (p6_prefix / "checkpoints" / ckpt_name).write_text("{}")
+    np.save(
+        p6_prefix / "analysis_tensors" / "nulls" / "u1_selection_projection_null.npy",
+        np.zeros(2),
+    )
+    # Outside the whitelist (checkpoints/*.json + analysis_tensors/nulls/*.npy):
+    (p6_prefix / "checkpoints" / "notes.txt").write_text("excluded")
+    proc = _run_driver_rf(
+        tmp_path,
+        {
+            "P6_MAX_PILOT_RSS_GB": "96",
+            "P6_RESTORE_ATTEMPT": att,
+            "P6_RESTORE_FIXTURE_ROOT": str(fixture),
+        },
+    )
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    assert "restored 1 checkpoint JSONs + 1 null npys" in proc.stdout
+    out = tmp_path / "data/issue_1092/p6"
+    assert (out / "checkpoints" / ckpt_name).exists()
+    assert (out / "analysis_tensors" / "nulls" / "u1_selection_projection_null.npy").exists()
+    assert not (out / "checkpoints" / "notes.txt").exists()
+
+
+def test_pilot_gate_passes_at_rf02_failure_point_under_relaunch_knobs():
+    import issue1092_p6_run as p6_run
+
+    old = p6_run.evaluate_pilot_gate(
+        ru_maxrss_gb=71.94, projected_wall_h=12.84, rss_limit_gb=64.0, plan_wall_h=5.0
+    )
+    assert old["abort"] and old["rss_exceeded"] and old["wall_exceeded"]
+    new = p6_run.evaluate_pilot_gate(
+        ru_maxrss_gb=71.94, projected_wall_h=12.84, rss_limit_gb=96.0, plan_wall_h=13.0
+    )
+    assert new == {
+        "rss_exceeded": False,
+        "wall_exceeded": False,
+        "abort": False,
+        "message": "pilot gate PASS",
+    }

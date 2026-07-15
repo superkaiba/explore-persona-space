@@ -45,12 +45,17 @@
 #                       --fixture-hub-root pattern): enumerate/copy from this
 #                       local tree instead of the Hub — same filter/mapping
 #                       code path, only the Hub boundary is faked.
+#   P6_MAX_PILOT_RSS_GB pilot-gate RSS cap in GB, threaded to the wrapper's
+#                       --max-pilot-rss-gb (default 64 — the original plan-v6
+#                       gate). Validated numeric at the top of this script; a
+#                       bad value exits 2 before any staging or job runs.
 #
-# --skip-band-pilot and --max-pilot-rss-gb 64 are DRIVER-HARDCODED on every
-# wrapper invocation (plan v6 §4.5-A: all fit layers are frozen so the band
-# block would be a pure duplicate re-run; 128 GB box -> 64 GB pilot RSS gate).
-# They are issue1092_p6_run.py WRAPPER flags — the engine's argparse rejects
-# them — so they must never ride the 'extra' fit-grid passthrough.
+# --skip-band-pilot and --max-pilot-rss-gb are DRIVER-OWNED on every wrapper
+# invocation (plan v6 §4.5-A: all fit layers are frozen so the band block
+# would be a pure duplicate re-run; the RSS cap rides P6_MAX_PILOT_RSS_GB,
+# default 64). They are issue1092_p6_run.py WRAPPER flags — the engine's
+# argparse rejects them — so they must never ride the 'extra' fit-grid
+# passthrough.
 #
 # Within-box summary dedup: after each P6_JOBS job the per-invocation summary
 # JSONs (fit_grid_summary*.json / p6_run_summary*.json / pilot*.json) are
@@ -64,8 +69,12 @@
 # offvm-battery-refit round DELIBERATELY edits the engine (battery-excluded
 # fit-arm filters + per-target R2 banking), so banked-checkpoint resume can
 # never silently fire on refit boxes; refit boxes additionally use fresh box
-# ids (rf01..rf04 -> box_rf0K HF prefixes) and set NO P6_RESTORE_ATTEMPT, so
-# banked p6 artifacts are neither resumed from nor clobbered.
+# ids (rf01..rf04 -> box_rf0K HF prefixes). The refit boxes' FIRST launch set
+# NO P6_RESTORE_ATTEMPT (banked v6 p6 artifacts are neither resumed from nor
+# clobbered); the pilot-gate RELAUNCH sets P6_RESTORE_ATTEMPT to each box's
+# OWN crash-persist attempt (att-20260715-*-rfNN) — those checkpoints were
+# written by the CURRENT engine bytes with content-derived staged mtimes, so
+# fingerprints match and the completed ~4.3 h pilot unit fast-skips.
 #
 # GCE lane contract: cwd = $WORKLOAD_ROOT (the issue-1092 clone); HF_TOKEN etc.
 # exported by the startup script; no .env file (source conditionally).
@@ -88,6 +97,26 @@ P6_PARTB_JOBS="${P6_PARTB_JOBS:-}"
 P6_RESTORE_ATTEMPT="${P6_RESTORE_ATTEMPT:-}"
 P6_DRY_RUN="${P6_DRY_RUN:-}"
 P6_RESTORE_FIXTURE_ROOT="${P6_RESTORE_FIXTURE_ROOT:-}"
+
+# Pilot-gate RSS cap (GB) -> wrapper --max-pilot-rss-gb. Default 64 = the
+# original plan-v6 gate. The rf pilot-gate relaunch passes 96, sized from
+# measurement: rf02's ambient arm-A pilot read ru_maxrss 71.94 GB on a 128 GB
+# n2-highmem-16 box (att-20260715-003544-rf02; n=17308 rows x 10752-dim
+# stacked target — the same footprint class the pre-refit b10 pilot measured
+# at 72.23 GB, so the refit engine edits move the peak by <~1.5 GB), and the
+# largest later unit on any rf box is the job-2 fit-arm-B block (keeps trait
+# rows: n=18793, +8.6% rows -> ~78 GB projected peak, since the dominant
+# arrays scale with n). 96 covers that worst unit with ~18 GB margin while
+# leaving 32 GB of the box for everything else. Fail-loud numeric validation:
+# the wrapper's argparse would also reject a bad value, but only after
+# staging/restore ran — validate here so even a dry-run fails loud.
+P6_MAX_PILOT_RSS_GB="${P6_MAX_PILOT_RSS_GB:-64}"
+case "$P6_MAX_PILOT_RSS_GB" in
+  '' | . | *[!0-9.]* | *.*.*)
+    echo "[p6-gce] ERROR: P6_MAX_PILOT_RSS_GB must be a positive number (GB), got '${P6_MAX_PILOT_RSS_GB}'" >&2
+    exit 2
+    ;;
+esac
 
 CORPUS_DIR="data/issue_1092/p0/corpus"
 JUDGE_DIR="data/issue_1092/p5_judge"
@@ -134,12 +163,14 @@ run_p6_job() {
     done
   fi
 
-  # --skip-band-pilot / --max-pilot-rss-gb are WRAPPER flags, hardcoded here
+  # --skip-band-pilot / --max-pilot-rss-gb are WRAPPER flags, composed here
   # per plan v6 (never via 'extra': the engine's argparse rejects them).
-  # P6_MAX_PILOT_RSS_GB (default 64) exists because the 64 GB VM-routing gate
-  # aborted a healthy 72.23 GB pilot on a 128 GB n2-highmem-16 box (b10,
-  # att-20260709-180648-p6b10) whose abort message routes to the very lane it
-  # ran on; replacement boxes pass 100.
+  # P6_MAX_PILOT_RSS_GB (validated at the top; default 64) exists because the
+  # 64 GB VM-routing gate has twice aborted healthy full-corpus pilots on
+  # 128 GB n2-highmem-16 boxes, and the abort message routes to the very lane
+  # it ran on: b10 at 72.23 GB (att-20260709-180648-p6b10; v6 replacement
+  # boxes passed 100) and rf02 at 71.94 GB (att-20260715-003544-rf02; the rf
+  # relaunch passes 96 — sizing note at the validation block above).
   local cmd=(
     uv run python scripts/issue1092_p6_run.py
     --corpus-dir "$CORPUS_DIR"
@@ -147,7 +178,7 @@ run_p6_job() {
     --out-dir "$OUT_DIR"
     --judge-scores "$JUDGE_DIR/scores.jsonl"
     --skip-band-pilot
-    --max-pilot-rss-gb "${P6_MAX_PILOT_RSS_GB:-64}"
+    --max-pilot-rss-gb "$P6_MAX_PILOT_RSS_GB"
   )
   if [ -n "$cells" ]; then cmd+=(--cells "$cells"); fi
   if [ -n "$layers" ]; then cmd+=(--layers "$layers"); fi
