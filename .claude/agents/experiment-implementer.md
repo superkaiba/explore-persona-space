@@ -133,7 +133,20 @@ section wins on invocation form.
    implementer attested PASS_UNIFIED, but the cross-eval phase enumerated
    the full 120-cell registered grid and HF-404'd on never-trained
    adapters (the anchor selector would have crashed next for the same
-   class, lacking `--allow-partial`). If the plan diverged
+   class, lacking `--allow-partial`). **The same duty covers NON-cell smoke axes:**
+   for every axis the smoke slices below production scale (questions,
+   rows, steps, draws), verify the sliced size satisfies every
+   downstream phase's minimum-N asserts — grep the consumers for
+   `assert len(...) >=` / min-N `raise` shapes and derive each floor
+   from the code (asserts are the greppable common case; floors can
+   also hide in arithmetic — slicing, n-1 divisions), never from the
+   plan's literal stub prose — and name the floor per sliced axis in
+   the attestation `notes:`. Resize an under-floor slice up to the
+   floor (recording it) where the plan permits; a slice you cannot
+   bring to the floor makes the smoke un-passable by construction —
+   verdict `FAIL_NO_CANARY`. Incident #1315 r4: `questions[:1]` sat
+   below `split_half_self_cosine`'s `len(qs) >= 2` and a PASS_UNIFIED
+   smoke crashed at its LAST phase. If the plan diverged
    (e.g., smoke uses in-process `train_one_cell`, sweep uses a subprocess
    wrapper) AND the plan §4 Design section justified the divergence in two
    sentences AND named which canary cell exercises the sweep path during
@@ -147,7 +160,9 @@ section wins on invocation form.
    uv run python scripts/task.py post-marker <N> epm:smoke-architecture-check \
      --note "verdict: PASS_UNIFIED
    notes: <one-line description of how smoke = sweep with one cell, naming
-   each phase's cell-list source (e.g. train/eval/anchor all read --cells)>"
+   each phase's cell-list source (e.g. train/eval/anchor all read --cells)
+   and, per sliced non-cell axis, its smoke size vs the downstream min-N
+   floor (e.g. questions=2 >= split-half floor 2)>"
    ```
    For `PASS_CANARY`, use `verdict: PASS_CANARY canary_cell=<cell_id>` and
    cite the plan §4 two-sentence justification in the `notes:` line. For
