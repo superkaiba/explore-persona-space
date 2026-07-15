@@ -46,7 +46,7 @@ load_dotenv()  # thread caps + HF token must bind before heavy imports
 # CUDA-adjacent code (tokenizers) before LLM() — set BEFORE any vllm import.
 os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
-from issue1336_render import RENDERERS, validate_render  # noqa: E402
+from issue1336_render import RENDERERS, render_integrity_gate, validate_render  # noqa: E402
 
 from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E402
 
@@ -231,27 +231,151 @@ def _hf_gen_prefix(slug: str, corpus: str) -> str:
     return f"{cm.HF_PREFIX_1336}/raw_completions/generation/{slug}/{corpus}"
 
 
+ANSWERS_MANIFEST = "answers.manifest.json"
+_GEN_SIDE_FILES = ("allowlist.json", "audit.json")
+# Upload-policy text sharding: the Hub force-routes any >10 MB blob to LFS
+# (quota-exposed, #541); text >9.5 MB line-splits into <9 MB shards, NEVER gzip.
+_TEXT_SPLIT_THRESHOLD = 9_500_000
+_SHARD_MAX_BYTES = 9_000_000
+
+
+def _download_one(prefix_file: str) -> Path:
+    from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    return Path(
+        hub.retry_transient(
+            lambda: hf_hub_download(
+                repo_id=cm.HF_DATA_REPO,
+                repo_type="dataset",
+                filename=prefix_file,
+                local_dir=DATA_ROOT / "hf_dl",
+            ),
+            what=f"gen download {prefix_file}",
+        )
+    )
+
+
+def _hf_gen_state(slug: str, corpus: str) -> tuple[bool, dict | None]:
+    """(complete, manifest) — Hub-side completeness of one cell's gen outputs.
+
+    Complete <=> both side files present AND the answers text present as
+    either the single ``answers.jsonl`` (manifest None) or the sharded form
+    (``answers.manifest.json`` + every part it lists). ONE scoped + retried
+    tree walk (hub.list_hf_files_under_path; an absent prefix returns []) —
+    never bare per-file probes (#920 un-retried-verify class).
+    """
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    prefix = _hf_gen_prefix(slug, corpus)
+    files = set(hub.list_hf_files_under_path(HfApi(), cm.HF_DATA_REPO, prefix, repo_type="dataset"))
+    if not all(f"{prefix}/{n}" in files for n in _GEN_SIDE_FILES):
+        return False, None
+    if f"{prefix}/answers.jsonl" in files:
+        return True, None
+    if f"{prefix}/{ANSWERS_MANIFEST}" not in files:
+        return False, None
+    manifest = json.loads(_download_one(f"{prefix}/{ANSWERS_MANIFEST}").read_text())
+    return all(f"{prefix}/{p}" in files for p in manifest["parts"]), manifest
+
+
+def _reassemble_answers(out_dir: Path, prefix: str, manifest: dict) -> None:
+    """Concatenate downloaded shard parts back into answers.jsonl (sha-verified)."""
+    tmp = out_dir / "answers.jsonl.tmp"
+    with open(tmp, "wb") as fh:
+        for part, sha in zip(manifest["parts"], manifest["sha256s"], strict=True):
+            data = _download_one(f"{prefix}/{part}").read_bytes()
+            got = hashlib.sha256(data).hexdigest()
+            assert got == sha, f"shard {part}: sha256 {got} != manifest {sha}"
+            fh.write(data)
+    total = hashlib.sha256(tmp.read_bytes()).hexdigest()
+    assert total == manifest["total_sha256"], (
+        f"reassembled answers.jsonl sha256 {total} != manifest {manifest['total_sha256']}"
+    )
+    os.replace(tmp, out_dir / "answers.jsonl")
+
+
 def _try_hf_resume(slug: str, corpus: str, out_dir: Path) -> bool:
     """Fetch a prior run's generation outputs from the Hub instead of re-generating."""
-    from huggingface_hub import HfApi, hf_hub_download
-
-    api = HfApi()
-    prefix = _hf_gen_prefix(slug, corpus)
-    names = ("answers.jsonl", "allowlist.json", "audit.json")
-    if not all(
-        api.file_exists(cm.HF_DATA_REPO, f"{prefix}/{n}", repo_type="dataset") for n in names
-    ):
+    complete, manifest = _hf_gen_state(slug, corpus)
+    if not complete:
         return False
+    prefix = _hf_gen_prefix(slug, corpus)
     out_dir.mkdir(parents=True, exist_ok=True)
-    for n in names:
-        p = hf_hub_download(
-            repo_id=cm.HF_DATA_REPO,
-            repo_type="dataset",
-            filename=f"{prefix}/{n}",
-            local_dir=DATA_ROOT / "hf_dl",
+    for n in _GEN_SIDE_FILES:
+        (out_dir / n).write_bytes(_download_one(f"{prefix}/{n}").read_bytes())
+    if manifest is None:
+        (out_dir / "answers.jsonl").write_bytes(
+            _download_one(f"{prefix}/answers.jsonl").read_bytes()
         )
-        (out_dir / n).write_bytes(Path(p).read_bytes())
+    else:
+        _reassemble_answers(out_dir, prefix, manifest)
     print(f"[gen] HF-resume: fetched {prefix} -> {out_dir}")
+    return True
+
+
+def _file_sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _split_answers_for_upload(out_dir: Path) -> bool:
+    """Line-split answers.jsonl into <9 MB shards + manifest when over 9.5 MB.
+
+    Local consumers keep reading the single ``answers.jsonl``; the shards +
+    manifest exist for the Hub upload only (non-LFS path). Idempotent: stale
+    shards from a prior split are removed before re-splitting; a file at or
+    under threshold clears any stale shard/manifest files. Returns True when
+    the sharded form is the upload shape.
+    """
+    src = out_dir / "answers.jsonl"
+    stale = [*out_dir.glob("answers.shard*.jsonl"), out_dir / ANSWERS_MANIFEST]
+    for old in stale:
+        if old.exists():
+            old.unlink()
+    if src.stat().st_size <= _TEXT_SPLIT_THRESHOLD:
+        return False
+    parts: list[str] = []
+    line_counts: list[int] = []
+    shas: list[str] = []
+    buf: list[bytes] = []
+    size = 0
+
+    def _flush() -> None:
+        nonlocal buf, size
+        if not buf:
+            return
+        name = f"answers.shard{len(parts):02d}.jsonl"
+        data = b"".join(buf)
+        (out_dir / name).write_bytes(data)
+        parts.append(name)
+        line_counts.append(len(buf))
+        shas.append(hashlib.sha256(data).hexdigest())
+        buf = []
+        size = 0
+
+    with open(src, "rb") as fh:
+        for line in fh:  # binary iteration splits on \n only (U+2028-safe)
+            if buf and size + len(line) > _SHARD_MAX_BYTES:
+                _flush()
+            buf.append(line)
+            size += len(line)
+    _flush()
+    manifest = {
+        "parts": parts,
+        "line_counts": line_counts,
+        "sha256s": shas,
+        "total_sha256": _file_sha256(src),
+        "total_bytes": src.stat().st_size,
+    }
+    (out_dir / ANSWERS_MANIFEST).write_text(json.dumps(manifest, indent=2) + "\n")
+    print(f"[gen] answers.jsonl over {_TEXT_SPLIT_THRESHOLD} B -> {len(parts)} upload shards")
     return True
 
 
@@ -259,26 +383,46 @@ def _upload_gen_outputs(slug: str, corpus: str, out_dir: Path) -> None:
     """Per-cell incremental upload (one folder commit; #664 per-cell contract)."""
     from huggingface_hub import upload_folder
 
-    upload_folder(
-        repo_id=cm.HF_DATA_REPO,
-        repo_type="dataset",
-        folder_path=str(out_dir),
-        path_in_repo=_hf_gen_prefix(slug, corpus),
-        commit_message=f"issue-1336: generation {slug}/{corpus}",
+    from explore_persona_space.orchestrate import hub
+
+    sharded = _split_answers_for_upload(out_dir)
+    # Sharded: upload the shards + manifest, not the >9.5 MB original (LFS
+    # force-routing, #541). Single: no shard/manifest files exist (cleared).
+    ignore = ["answers.jsonl", "*.tmp"] if sharded else ["*.tmp"]
+    # Dir-filecount guard (#1190) OUTSIDE the retry wrapper (a guard raise is
+    # deterministic; retrying it burns the budget for nothing).
+    hub.assert_hub_dir_filecounts(out_dir, _hf_gen_prefix(slug, corpus), ignore_patterns=ignore)
+    hub.retry_transient(
+        lambda: upload_folder(
+            repo_id=cm.HF_DATA_REPO,
+            repo_type="dataset",
+            folder_path=str(out_dir),
+            path_in_repo=_hf_gen_prefix(slug, corpus),
+            ignore_patterns=ignore,
+            commit_message=f"issue-1336: generation {slug}/{corpus}",
+        ),
+        what=f"gen upload {slug}/{corpus}",
     )
     print(f"[gen] uploaded {slug}/{corpus} -> {_hf_gen_prefix(slug, corpus)}")
 
 
-def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) -> None:
-    """Generate + filter + audit every requested corpus with one engine."""
-    from transformers import AutoTokenizer
+def _collect_pending(
+    slug: str, corpora: list[str], *, smoke: bool, upload: bool
+) -> list[tuple[str, list[dict], Path]]:
+    """Resume predicate per cell: skip complete cells, retry missed uploads.
 
-    hf_id = cm.MODELS[slug]["hf_id"]
-    tokenizer = AutoTokenizer.from_pretrained(hf_id)
+    done == uploaded (#664 per-cell contract): a cell whose local outputs
+    exist but whose Hub prefix is incomplete (a prior run died before/inside
+    its upload) re-attempts ONLY the upload — never skips past it, never
+    re-generates.
+    """
     pending: list[tuple[str, list[dict], Path]] = []
     for corpus in corpora:
         out_dir = _out_root(smoke) / slug / corpus
         if (out_dir / "answers.jsonl").exists() and (out_dir / "audit.json").exists():
+            if upload and not smoke and not _hf_gen_state(slug, corpus)[0]:
+                print(f"[gen] {slug}/{corpus}: local outputs exist, Hub incomplete — re-uploading")
+                _upload_gen_outputs(slug, corpus, out_dir)
             print(f"[gen] skip {slug}/{corpus} (local outputs exist)")
             continue
         if not smoke and _try_hf_resume(slug, corpus, out_dir):
@@ -286,11 +430,21 @@ def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) 
         prompts = _read_jsonl(_prompts_root(smoke) / f"{corpus}.jsonl")
         assert prompts, f"no prompts staged for {corpus} — run --prep first"
         pending.append((corpus, prompts, out_dir))
+    return pending
+
+
+def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) -> None:
+    """Generate + filter + audit every requested corpus with one engine."""
+    hf_id = cm.MODELS[slug]["hf_id"]
+    pending = _collect_pending(slug, corpora, smoke=smoke, upload=upload)
     if not pending:
         print(f"[gen] {slug}: nothing to do")
         return
 
-    _assert_template_parity(tokenizer, [pending[0][1][0]["prompt"]] * 3)
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(hf_id)
+    _assert_template_parity(tokenizer, [r["prompt"] for r in pending[0][1][:3]])
 
     from vllm import LLM, SamplingParams
 
@@ -311,6 +465,7 @@ def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) 
         drop_reasons: collections.Counter = collections.Counter()
         kept_answers: list[str] = []
         kept_tok_lens: list[int] = []
+        gate_pairs: list[tuple] = []  # (chat, naturalistic) renders of kept rows
         rep3_flags = 0
         early_eos = 0
         truncated = 0
@@ -324,6 +479,7 @@ def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) 
                 "finish_reason": finish,
             }
             reason = None
+            fmt_renders: dict = {}
             if not answer.strip():
                 reason = "empty_answer"
             else:
@@ -334,6 +490,7 @@ def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) 
                     if reason is not None:
                         reason = f"{fmt}:{reason}"
                         break
+                    fmt_renders[fmt] = rendered
                     if fmt == "chat":
                         span = rendered.spans["a1"]
                         kept_tok_lens.append(span[1] - span[0])
@@ -346,9 +503,34 @@ def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) 
                 rep3_flags += int(_rep3_flag(answer))
                 truncated += int(finish == "length")
                 early_eos += int(finish == "stop" and len(answer.split()) < 8)
+                if "naturalistic" in fmt_renders:
+                    gate_pairs.append((fmt_renders["chat"], fmt_renders["naturalistic"]))
             else:
                 drop_reasons[reason] += 1
         keep_rate = len(kept_ids) / len(prompts) if prompts else 0.0
+        # Rollout text persists FIRST (upload policy: the raw text must be
+        # durable before any gate can halt the cell); audit.json is written
+        # ONLY after the render-integrity gate below, so a gate-failed cell is
+        # never resumable-as-complete (the skip predicate above requires
+        # answers.jsonl AND audit.json).
+        _write_jsonl(out_dir / "answers.jsonl", rows)
+        (out_dir / "allowlist.json").write_text(json.dumps(kept_ids) + "\n")
+        # Render-integrity gate (plan §5 registered control; parent a4 twin):
+        # cross-format content-token BPE divergence between the chat and
+        # naturalistic renders of the SAME kept answers, gated at <=0.10 with
+        # the first-token-excluded convention. lmsys5k is the only two-format
+        # corpus, so the naturalistic arm cannot ship unvalidated.
+        render_integrity = None
+        if {"chat", "naturalistic"} <= set(fmts_needed[corpus]) and gate_pairs:
+            render_integrity = render_integrity_gate(gate_pairs)  # raises on FAIL
+            print(
+                f"[gen] render-integrity gate {render_integrity['status']} "
+                f"{slug}/{corpus}: rest-of-span mismatch "
+                f"{render_integrity['rest_of_span_mismatch_rate']:.4f} "
+                f"(first-token diagnostic "
+                f"{render_integrity['first_token_mismatch_rate_diagnostic']:.4f}, "
+                f"{render_integrity['n_pairs']} pairs)"
+            )
         audit = {
             "model": slug,
             "hf_id": hf_id,
@@ -376,10 +558,9 @@ def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) 
             "answers_sha256": hashlib.sha256(
                 "\n".join(a for a in kept_answers).encode("utf-8")
             ).hexdigest(),
+            "render_integrity": render_integrity,
             "smoke": smoke,
         }
-        _write_jsonl(out_dir / "answers.jsonl", rows)
-        (out_dir / "allowlist.json").write_text(json.dumps(kept_ids) + "\n")
         (out_dir / "audit.json").write_text(json.dumps(audit, indent=2) + "\n")
         if not audit["keep_rate_floor_pass"]:
             print(

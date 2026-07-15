@@ -183,10 +183,19 @@ def cmd_gen(args) -> None:
     assert "<|user|>" not in truncated_row["response"], "role-header truncation missed"
     assert truncated_row["response_raw_len_chars"] > len(truncated_row["response"])
     assert audit["kept_rep3_flag_rate"] > 0, "rep-3-gram audit flag never fired"
+    # Render-integrity gate (plan §5; r1 review Major 1): lmsys5k is the
+    # two-format corpus, so the a4-twin gate MUST have run over the kept rows
+    # with the REAL tokenizer and PASSed at the <=0.10 parent threshold.
+    ri = audit["render_integrity"]
+    assert ri is not None and ri["status"] == "PASS", f"render-integrity gate missing/FAIL: {ri}"
+    assert ri["n_pairs"] == len(kept), (ri["n_pairs"], len(kept))
     print(
         f"[gen-smoke] kept {len(kept)}/{len(rows_out)} "
         f"(drops {audit['drop_reasons']}, rep3 {audit['kept_rep3_flag_rate']:.3f}, "
-        f"trunc {audit['kept_truncation_rate']:.3f}) — real filter/audit path OK"
+        f"trunc {audit['kept_truncation_rate']:.3f}, "
+        f"render-integrity {ri['rest_of_span_mismatch_rate']:.3f}/"
+        f"first-tok {ri['first_token_mismatch_rate_diagnostic']:.3f}) "
+        "— real filter/audit path OK"
     )
 
 
