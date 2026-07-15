@@ -1,0 +1,114 @@
+{
+  "commit": "40797cd8ab",
+  "created": "2026-07-15T12:31:52Z",
+  "figsize": [
+    7.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "tf-margin (mean over eval contexts)": -1.471860092346397,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "tf-margin (mean over eval contexts)": -0.7898322510378828,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "tf-margin (mean over eval contexts)": -1.471860092346397,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "tf-margin (mean over eval contexts)": -0.7929402760331182,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "tf-margin (mean over eval contexts)": -1.471860092346397,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "tf-margin (mean over eval contexts)": -1.0535975374508424,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "tf-margin (mean over eval contexts)": -0.05006164096627354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "tf-margin (mean over eval contexts)": -0.27562959435670964,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "tf-margin (mean over eval contexts)": -0.05006164096627354,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "tf-margin (mean over eval contexts)": -0.3821172858520725,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "tf-margin (mean over eval contexts)": -0.05006164096627354,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "tf-margin (mean over eval contexts)": -0.3230114085252357,
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "fixed-pool margin at the selected rung (circles trained, squares base)",
+        "ylabel": "tf-margin (mean over eval contexts)",
+        "xticklabels": [
+          "impolite bare,\nlr 1e-5 (usual)",
+          "impolite bare,\nlr 3e-5",
+          "impolite bare,\nlr 1e-4",
+          "formatting,\nrank 32 (reused fu4)",
+          "formatting,\nrank 128 (4x)",
+          "formatting,\nrank 256 (8x)"
+        ],
+        "yticklabels": [
+          "\u22121.6",
+          "\u22121.4",
+          "\u22121.2",
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2"
+        ]
+      }
+    ]
+  }
+}
