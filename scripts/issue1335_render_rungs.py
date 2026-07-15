@@ -72,7 +72,10 @@ TRACKS_EXPECT_ROWS = 5000
 QA_LABEL = "Assistant"
 RENAMED_LABEL = "Wren"  # the #1310 assistant-adjacent persona
 FAMILIAR_NAME = "Sarah"
-NOVEL_NAME = "Vexril"
+# "Vexril" (the plan's ungrounded-needs-smoke-test candidate) tokenizes to 3
+# tokens on Qwen-2.5-7B; "Xelor" is a rare invented name at 2 tokens (the
+# 1-2-token band the plan requires; in-process assert at tf-rerender time).
+NOVEL_NAME = "Xelor"
 R4_ASKER = "Sam"  # a #1310 foil name, fixed across rows
 
 R0_MAX_TOKENS = 1024  # #825 full-answer convention
