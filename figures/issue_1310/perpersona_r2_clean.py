@@ -97,7 +97,7 @@ def main() -> None:
     ax.set_ylim(-0.38, 0.78)
     ax.set_title(
         "Per-character context→dialogue map in stories (v3 prefill)\n"
-        "positive and character-specific in both models — v2 null was a power artifact (n≪p)"
+        "positive and character-specific in both models"
     )
     handles = [
         Patch(color=C_BASE, label="base (prefill, v3)"),
@@ -159,8 +159,8 @@ def main() -> None:
         "assistant_ceiling": {"instruct": CEIL_INST, "base": CEIL_BASE},
         "caption": (
             "Per-character context->dialogue held-out R2 (layer 19), v3 prefill run. Positive and "
-            "character-specific in both models; the v2 null was a power artifact (n<<d). Instruct "
-            "Vex + instruct swap incomplete (v3 crashed on the instruct arm)."
+            "character-specific in both models. Instruct Vex + instruct swap incomplete (v3 "
+            "crashed on the instruct arm; the Vex bar shown is the pre-prefill v2 value)."
         ),
         "note": "SUPERSEDES the stale v2 perpersona_r2.png and the earlier v2-based version of this file.",
     }
