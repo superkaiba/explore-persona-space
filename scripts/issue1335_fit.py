@@ -788,12 +788,23 @@ def evaluate_gates(args, models: list[str], smoke: bool) -> dict:
     wiring = {}
     for wp in sorted(args.out_dir.glob("wiring_*.json")):
         w = json.loads(wp.read_text())
+        if w.get("wiring_check") == "skipped-seeded":
+            # r6: seed-consumed cell — wiring skipped at capture; the seeded
+            # rows carried validation in their original attempt. Recorded but
+            # NON-BINDING for the gate (excluded from the all() below).
+            wiring[wp.stem] = {
+                "wiring_check": "skipped-seeded",
+                "fresh_rows": w.get("fresh_rows"),
+                "seeded_rows": w.get("seeded_rows"),
+            }
+            continue
         wiring[wp.stem] = {
             "own_beats_shuffled": w["own_beats_shuffled"],
             "delta": w["delta"],
         }
     g2["wiring"] = wiring
-    g2["wiring_pass"] = bool(wiring) and all(v["own_beats_shuffled"] for v in wiring.values())
+    ran = [v for v in wiring.values() if "own_beats_shuffled" in v]
+    g2["wiring_pass"] = bool(ran) and all(v["own_beats_shuffled"] for v in ran)
     g2["pass"] = bool(g2["r0_in_range"] and g2["wiring_pass"])
     gates["gate2_qa_endpoint"] = g2
     return gates

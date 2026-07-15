@@ -15,7 +15,8 @@
 (5) matched_subsample is NOT seed-degenerate on singleton-group cells (the
     #931 group_stratified tie-break trap).
 (6) build_items span construction + drop counters (r0 extras, prefix fallback,
-    row-length cap).
+    row-length cap); the r6 seed-attributable wiring-check skip (skip vs
+    fail-loud vs run) + its non-binding gate2 record.
 (7) build_ladder_summary: oriented deltas, the SIX-delta family EXCLUDES the
     length delta, Wren-matched companion present, joint-draw D CI, verdict
     lattice, binding gates — on a synthetic eval_results fixture (tmp_path).
@@ -342,6 +343,62 @@ def test_build_items_spans_and_drops():
     # non-r0 rungs carry no extras
     items2, _ = e1335.build_items("r1_qa_oneline", [rec("a", 30, 12, 5)])
     assert "y96" not in items2[0]["spans"] and "x_spanmean_nocap" not in items2[0]["spans"]
+
+
+def test_wiring_check_skip_is_seed_attributable_only(capsys, monkeypatch):
+    """r6 pin: the wiring gate SKIPS (with the skipped-seeded record) ONLY when
+    the <2-fresh-row shortfall is seed-attributable; a <2-row cell with NO
+    seeded rows still raises wiring_check's own assert; a partially seeded
+    cell with >=2 fresh rows dispatches to wiring_check as before."""
+    import unittest.mock as mock
+
+    import issue1335_extract_store as e1335
+
+    one = [{"item_id": "a", "input_ids": list(range(24)), "n_prompt": 12}]
+    # (a) seed-consumed cell: SKIP branch fires with the record + loud log
+    w = e1335.wiring_check_or_skip(None, one, 0, 8, 4, n_seeded=37, cell="r0_qa_full/instruct")
+    assert w == {"wiring_check": "skipped-seeded", "fresh_rows": 1, "seeded_rows": 37}
+    out = capsys.readouterr().out
+    assert "wiring check SKIPPED (seed-consumed cell): r0_qa_full/instruct" in out
+    assert "fresh=1 seeded=37" in out
+    # (b) NOT seed-attributable: the original assert still fails loud
+    with pytest.raises(AssertionError, match="wiring check needs >= 2 rows"):
+        e1335.wiring_check_or_skip(None, one, 0, 8, 4, n_seeded=0, cell="r0_qa_full/instruct")
+    # (c) partially seeded with >=2 fresh rows: runs the check as today
+    spec = mock.create_autospec(e1335.wiring_check, return_value={"own_beats_shuffled": True})
+    monkeypatch.setattr(e1335, "wiring_check", spec)
+    two = [*one, {"item_id": "b", "input_ids": list(range(24)), "n_prompt": 12}]
+    w2 = e1335.wiring_check_or_skip(None, two, 0, 8, 4, n_seeded=37, cell="c")
+    spec.assert_called_once_with(None, two, 0, 8, 4)
+    assert w2 == {"own_beats_shuffled": True}
+
+
+def test_gate2_tolerates_skipped_seeded_wiring(tmp_path):
+    """r6 pin: evaluate_gates records a skipped-seeded wiring file NON-BINDING
+    (wiring_pass rides the RAN checks); with no RAN check left, wiring_pass
+    stays conservatively False."""
+    import issue1335_fit as f1335
+
+    out = tmp_path / "eval"
+    out.mkdir()
+    rng = np.random.default_rng(0)
+    _summary_fixture(out, rng, f1335)
+    fp = r1335.fingerprint("r0_qa_full")
+    (out / "wiring_r0_qa_full_instruct.json").write_text(
+        json.dumps({**fp, "wiring_check": "skipped-seeded", "fresh_rows": 1, "seeded_rows": 37})
+    )
+    args = SimpleNamespace(out_dir=out, seed=0)
+    g2 = f1335.evaluate_gates(args, ["base"], smoke=False)["gate2_qa_endpoint"]
+    assert g2["wiring"]["wiring_r0_qa_full_instruct"] == {
+        "wiring_check": "skipped-seeded",
+        "fresh_rows": 1,
+        "seeded_rows": 37,
+    }
+    assert g2["wiring_pass"] is True  # the fixture's RAN check still binds + passes
+    # all-skipped: no RAN check remains -> conservative False
+    (out / "wiring_r0_qa_full_base.json").unlink()
+    g2b = f1335.evaluate_gates(args, ["base"], smoke=False)["gate2_qa_endpoint"]
+    assert g2b["wiring_pass"] is False
 
 
 # ---------------------------------------------------------------------------

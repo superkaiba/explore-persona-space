@@ -34,7 +34,11 @@ them instead of recapturing.
 --equivalence-check: the two-bar batched-vs-batch-1 gate (#779 calibration:
 early-layer per-layer cosine >= 0.999, flattened >= 0.995).
 --wiring-check: own-context vs derangement-shuffled-context teacher-forced
-NLL over n rows (the #825 round-4 wiring gate; plan §5).
+NLL over n rows (the #825 round-4 wiring gate; plan §5). r6: a cell whose
+FRESH rows number <2 BECAUSE the resume seed consumed its prior-attempt rows
+records ``wiring_check: skipped-seeded`` instead of asserting (the seeded rows
+carried validation in their original attempt); a <2-row cell with NO seeded
+rows still fails loud.
 
 CLI:
   uv run python scripts/issue1335_extract_store.py --rung r1_qa_oneline --model base \
@@ -365,6 +369,35 @@ def wiring_check(model, items: list[dict], pad_id: int, n_rows: int, batch_size:
     return result
 
 
+def wiring_check_or_skip(
+    model, items: list[dict], pad_id: int, n_rows: int, batch_size: int, *, n_seeded: int, cell: str
+) -> dict:
+    """r6: skip the wiring check ONLY when the <2-row shortfall is seed-attributable.
+
+    The r5 HF resume seed consumes a cell's prior-attempt rows by design, so a
+    (nearly) fully seeded cell can hand <2 FRESH rows to ``wiring_check``.
+    Those seeded rows passed capture-time validation in their original attempt,
+    so the check is SKIPPED with a loud log line and a
+    ``wiring_check: skipped-seeded`` record for the cell's output JSON. A
+    <2-row cell with NO seeded/skipped rows is a genuinely tiny fresh cell and
+    still fails loud via ``wiring_check``'s own ``>= 2 rows`` assert; a
+    partially seeded cell with >=2 fresh rows runs the check on the fresh rows
+    as before.
+    """
+    if len(items) < 2 and n_seeded > 0:
+        print(
+            f"[i1335-p2] wiring check SKIPPED (seed-consumed cell): {cell} "
+            f"fresh={len(items)} seeded={n_seeded} — rows carry equivalence "
+            "validation from their original attempt"
+        )
+        return {
+            "wiring_check": "skipped-seeded",
+            "fresh_rows": len(items),
+            "seeded_rows": n_seeded,
+        }
+    return wiring_check(model, items, pad_id, n_rows, batch_size)
+
+
 def hf_seed_store(store_dir: Path, slug: str, model_kind: str) -> int:
     """#1335 r5 relaunch economy: stage prior-attempt shards from the Hub.
 
@@ -506,11 +539,20 @@ def main() -> int:
         eq = equivalence_check(model, items, pad_id)
         c1310.write_json(store_dir / f"{model_kind}_equivalence.json", {**fp, **eq})
     if args.wiring_check:
-        w = wiring_check(model, items, pad_id, args.wiring_check, args.batch_size)
-        c1310.write_json(args.out_dir / f"wiring_{slug}_{model_kind}.json", {**fp, **w})
-        assert w["own_beats_shuffled"] or args.tiny_model_dir, (
-            "wiring gate FAIL: own-context NLL does not beat shuffled context"
+        w = wiring_check_or_skip(
+            model,
+            items,
+            pad_id,
+            args.wiring_check,
+            args.batch_size,
+            n_seeded=len(done),
+            cell=f"{slug}/{model_kind}",
         )
+        c1310.write_json(args.out_dir / f"wiring_{slug}_{model_kind}.json", {**fp, **w})
+        if w.get("wiring_check") != "skipped-seeded":
+            assert w["own_beats_shuffled"] or args.tiny_model_dir, (
+                "wiring gate FAIL: own-context NLL does not beat shuffled context"
+            )
 
     buf: list[dict] = []
     for recs in run_extraction(model, items, pad_id, args.batch_size):
