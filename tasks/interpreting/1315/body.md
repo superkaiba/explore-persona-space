@@ -5,7 +5,7 @@ title: 'Impolite''s activation-shift geometry breaks the sycophancy signature: r
 kind: experiment
 tags: []
 created_at: '2026-07-15T06:33:50Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1112
 origin_prompt: run the downstream analysis on impolite too
 workflow: v1
