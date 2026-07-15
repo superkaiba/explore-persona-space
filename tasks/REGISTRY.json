@@ -2527,8 +2527,8 @@
     "1324": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1324",
-      "status": "planning",
+      "path": "tasks/approved/1324",
+      "status": "approved",
       "title": "daily-fix: default vLLM hang mitigations for user corpora"
     },
     "1325": {
