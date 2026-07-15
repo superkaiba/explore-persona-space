@@ -11,3 +11,4 @@
 {"ts": "2026-07-15T20:06:41Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "approved", "note": "Plan v2 ready; ensemble APPROVE x3 + consistency PASS. [autonomous plan-gate: auto-approved, est 0.0 GPU-h <= 100.0h cap]"}
 {"ts": "2026-07-15T20:06:43Z", "kind": "epm:plan-approved", "version": 1, "by": "autonomous-gate", "note": "Auto-approved by the code-enforced autonomous plan-gate (task.py --auto-approve-if-autonomous): gpu_hours_total=0.0 <= cap 100.0. EPM_AUTONOMOUS_SESSION set; no human asked."}
 {"ts": "2026-07-15T20:07:34Z", "kind": "epm:progress", "version": 4, "by": "unknown", "note": "stage-dispatch stage=implementing round=1 subagent=implementer worktree=/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1355"}
+{"ts": "2026-07-15T20:07:36Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched implementer; awaiting epm:results."}
