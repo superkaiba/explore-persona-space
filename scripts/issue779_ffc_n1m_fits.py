@@ -64,9 +64,12 @@ Refusal-safety: no context/rollout TEXT is ever printed or logged.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
+import os
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -115,6 +118,17 @@ MLP_BATCH = 4096
 NYSTROM_VALIDATE_N = 50_000  # train slice for the Nystrom-vs-exact gate
 NYSTROM_MAX_CENTERS_WARN = 20_000  # K_mm eigh at m > this may OOM on an 80GB GPU
 
+# Stream-checkpoint + per-chunk download retry (#779 n1m fits crash fix). The HF
+# per-chunk stream accumulates the assembled per-layer arrays in memory; a single
+# chunk download exhausting HF's internal retries (LocalEntryNotFoundError after a
+# transient blip) forfeited ~3.5h of streaming. Checkpoint the accumulated arrays
+# every STREAM_CKPT_EVERY chunks so a crash resumes from the cursor, and wrap each
+# chunk download in a bounded outer retry (the code-style checkpoint-per-phase law,
+# external-stream presumption).
+STREAM_CKPT_EVERY = int(os.environ.get("EPM_N1M_STREAM_CKPT_EVERY", "100"))
+STREAM_DOWNLOAD_ATTEMPTS = int(os.environ.get("EPM_N1M_DOWNLOAD_ATTEMPTS", "4"))
+STREAM_DOWNLOAD_BACKOFF = (10.0, 30.0, 90.0)  # seconds before attempts 2, 3, 4
+
 # n50k committed exact-KRR anchor (reference; the gate is self-contained vs exact).
 N50K_EXACT_R2_WIDEGRID = 0.8076
 N50K_EXACT_R2_SMALLGRID = 0.8066
@@ -139,65 +153,284 @@ DEFAULT_ORIG_DIR = PROJECT_ROOT / "eval_results" / "issue_779" / "fitter-fair-co
 # ── data assembly (pass_b + stream-reduced n1m capture) + provenance ────────────
 
 
-def _stream_n1m_layer(prefix: str, layer: int, local_dir: Path | None, cache_dir: Path):
+def _is_transient_download_error(err: BaseException) -> bool:
+    """True for retryable HF chunk-download failures: LocalEntryNotFoundError,
+    requests ReadTimeout / ConnectionError / Timeout, and HTTP 408/429/5xx. Every
+    other error re-raises (fail-loud stays). The exact class that forfeited #779's
+    ~3.5h stream was a LocalEntryNotFoundError after two absorbed ReadTimeouts."""
+    import requests
+    from huggingface_hub.errors import LocalEntryNotFoundError
+
+    if isinstance(err, LocalEntryNotFoundError):
+        return True
+    if isinstance(
+        err,
+        (
+            requests.exceptions.ReadTimeout,
+            requests.exceptions.ConnectionError,
+            requests.exceptions.Timeout,
+            requests.exceptions.ChunkedEncodingError,
+        ),
+    ):
+        return True
+    code = getattr(getattr(err, "response", None), "status_code", None)
+    if isinstance(code, int):
+        return code in (408, 429) or 500 <= code < 600
+    return False
+
+
+def _download_chunk_with_retry(repo: str, filename: str, local_dir: Path) -> str:
+    """hf_hub_download with a bounded outer retry over transient errors
+    (STREAM_DOWNLOAD_ATTEMPTS, exponential backoff STREAM_DOWNLOAD_BACKOFF). A
+    non-transient error or the final attempt re-raises immediately (fail-loud)."""
+    from huggingface_hub import hf_hub_download
+
+    for attempt in range(STREAM_DOWNLOAD_ATTEMPTS):
+        try:
+            return hf_hub_download(
+                repo, filename=filename, repo_type="dataset", local_dir=local_dir
+            )
+        except Exception as e:
+            if attempt == STREAM_DOWNLOAD_ATTEMPTS - 1 or not _is_transient_download_error(e):
+                raise
+            wait = STREAM_DOWNLOAD_BACKOFF[min(attempt, len(STREAM_DOWNLOAD_BACKOFF) - 1)]
+            logger.warning(
+                "[n1m] transient download error on %s (attempt %d/%d): %s: %s — retry in %.0fs",
+                filename,
+                attempt + 1,
+                STREAM_DOWNLOAD_ATTEMPTS,
+                type(e).__name__,
+                e,
+                wait,
+            )
+            time.sleep(wait)
+    raise RuntimeError(f"unreachable: retry loop exhausted for {filename}")
+
+
+def _stream_ckpt_fingerprint(layer: int, hf_prefix: str, names: list[str]) -> str:
+    """Stable fingerprint of the stream identity — (layer, hf_prefix, sorted chunk
+    universe). A mismatch means the checkpoint belongs to a different run (different
+    layer/prefix, or new chunks uploaded) and is REFUSED (re-stream from scratch)."""
+    h = hashlib.sha256()
+    h.update(f"layer={layer}\nprefix={hf_prefix}\n".encode())
+    for n in names:  # names is already sorted by the caller
+        h.update(n.encode())
+        h.update(b"\n")
+    return h.hexdigest()
+
+
+def _stream_ckpt_paths(ckpt_dir: Path, layer: int) -> tuple[Path, Path]:
+    return ckpt_dir / f"layer{layer}.npz", ckpt_dir / f"layer{layer}.cursor.json"
+
+
+def _write_stream_ckpt(
+    ckpt_dir: Path,
+    layer: int,
+    fingerprint: str,
+    hf_prefix: str,
+    cursor: int,
+    n_chunks: int,
+    cx: np.ndarray,
+    vx: np.ndarray,
+    ci: np.ndarray,
+    *,
+    complete: bool,
+) -> None:
+    """Atomically persist the accumulated per-layer arrays + cursor sidecar. The npz
+    is written first (tmp + os.replace), then the cursor sidecar (tmp + os.replace)
+    carrying ``n_rows`` — so a torn write (new npz, old sidecar) is caught on load by
+    the ``cx.shape[0] != n_rows`` guard and the stale checkpoint is refused."""
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+    npz_path, cur_path = _stream_ckpt_paths(ckpt_dir, layer)
+    tmp_npz = npz_path.parent / (npz_path.name + ".tmp")
+    with open(tmp_npz, "wb") as f:
+        np.savez(f, cx=cx, vx=vx, ci=ci)
+    os.replace(tmp_npz, npz_path)
+    meta = {
+        "fingerprint": fingerprint,
+        "layer": int(layer),
+        "hf_prefix": hf_prefix,
+        "cursor": int(cursor),
+        "n_chunks": int(n_chunks),
+        "n_rows": int(cx.shape[0]),
+        "complete": bool(complete),
+    }
+    tmp_cur = cur_path.parent / (cur_path.name + ".tmp")
+    tmp_cur.write_text(json.dumps(meta))
+    os.replace(tmp_cur, cur_path)
+
+
+def _load_stream_ckpt(ckpt_dir: Path, layer: int, fingerprint: str, hf_prefix: str):
+    """Return (cx, vx, ci, cursor, complete) for a MATCHING checkpoint, else None.
+    A missing file, unparseable sidecar, fingerprint/layer/hf_prefix mismatch, or a
+    torn write (npz rows != sidecar n_rows) returns None — the caller re-streams from
+    scratch with a loud warning, never silently reusing a stale checkpoint."""
+    npz_path, cur_path = _stream_ckpt_paths(ckpt_dir, layer)
+    if not (npz_path.exists() and cur_path.exists()):
+        return None
+    try:
+        meta = json.loads(cur_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    if (
+        meta.get("fingerprint") != fingerprint
+        or int(meta.get("layer", -1)) != int(layer)
+        or meta.get("hf_prefix") != hf_prefix
+    ):
+        return None
+    with np.load(npz_path) as z:
+        cx, vx, ci = z["cx"], z["vx"], z["ci"]
+    if int(cx.shape[0]) != int(meta.get("n_rows", -1)):  # torn-write guard
+        return None
+    return cx, vx, ci, int(meta["cursor"]), bool(meta.get("complete", False))
+
+
+def _stream_n1m_layer(
+    prefix: str,
+    layer: int,
+    local_dir: Path | None,
+    cache_dir: Path,
+    *,
+    ckpt_dir: Path | None = None,
+    ckpt_every: int = STREAM_CKPT_EVERY,
+    fresh: bool = False,
+):
     """Stream-reduce cx_last + v_x + ci at ``layer`` from the n1m capture chunks.
 
     Mirrors ``N50._stream_n50k_layer`` but ALSO returns the per-row global ci
     (manifest index) needed for provenance. local_dir given -> read staged chunks
     in place; else list the HF prefix (scoped list_repo_tree) and per chunk
-    download -> mmap-slice the layer -> append -> DELETE (peak ~one chunk).
+    download (bounded retry) -> mmap-slice the layer -> append -> DELETE (peak ~one
+    chunk). On the HF path, ``ckpt_dir`` (given) enables checkpoint/resume: every
+    ``ckpt_every`` chunks the accumulated per-layer arrays + cursor are persisted
+    atomically, and on startup a MATCHING checkpoint (layer + hf_prefix + chunk
+    universe) resumes from the cursor so a mid-stream crash never re-streams;
+    ``fresh`` ignores any existing checkpoint.
     """
-    cx_parts: list[np.ndarray] = []
-    vx_parts: list[np.ndarray] = []
-    ci_parts: list[list[int]] = []
-
-    def _consume(b) -> None:
-        cx_parts.append(N50._slice_layer(b, "cx_last", layer))
-        vx_parts.append(N50._slice_layer(b, "v_x", layer))
-        ci_parts.append([int(x) for x in b["ci"]])
-
     if local_dir is not None:
-        chunk_files = sorted(local_dir.glob("shard*_chunk*.pt"))
-        if not chunk_files:
-            raise FileNotFoundError(f"no n1m capture chunks under {local_dir}")
-        for cp in chunk_files:
-            b = F._mmap_load(cp)
-            _consume(b)
-            del b
-        logger.info("[n1m] %d chunks (local)", len(chunk_files))
-    else:
-        from huggingface_hub import HfApi, hf_hub_download
+        return _stream_local_chunks(local_dir, layer)
+    return _stream_hf_chunks(
+        prefix, layer, cache_dir, ckpt_dir=ckpt_dir, ckpt_every=ckpt_every, fresh=fresh
+    )
 
-        names = sorted(
-            f.path.rsplit("/", 1)[-1]
-            for f in HfApi().list_repo_tree(
-                C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
-            )
-            if getattr(f, "size", None) is not None and f.path.endswith(".pt")
-        )
-        if not names:
-            raise FileNotFoundError(f"no n1m capture chunks under HF {prefix}")
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        for i, name in enumerate(names):
-            got = Path(
-                hf_hub_download(
-                    C.HF_DATA_REPO,
-                    filename=f"{prefix}/{name}",
-                    repo_type="dataset",
-                    local_dir=cache_dir,
-                )
-            )
-            b = F._mmap_load(got)
-            _consume(b)
-            del b
-            got.unlink()
-            if (i + 1) % 25 == 0:
-                logger.info("[n1m] streamed %d/%d chunks", i + 1, len(names))
-        logger.info("[n1m] %d chunks (HF stream)", len(names))
+
+def _concat_stream_parts(
+    cx_parts: list[np.ndarray], vx_parts: list[np.ndarray], ci_parts: list[list[int]]
+):
     cx = np.concatenate(cx_parts)
     vx = np.concatenate(vx_parts)
     ci = np.array([c for part in ci_parts for c in part], dtype=np.int64)
     assert cx.shape[0] == vx.shape[0] == ci.shape[0], (cx.shape, vx.shape, ci.shape)
+    return cx, vx, ci
+
+
+def _stream_local_chunks(local_dir: Path, layer: int):
+    chunk_files = sorted(local_dir.glob("shard*_chunk*.pt"))
+    if not chunk_files:
+        raise FileNotFoundError(f"no n1m capture chunks under {local_dir}")
+    cx_parts: list[np.ndarray] = []
+    vx_parts: list[np.ndarray] = []
+    ci_parts: list[list[int]] = []
+    for cp in chunk_files:
+        b = F._mmap_load(cp)
+        cx_parts.append(N50._slice_layer(b, "cx_last", layer))
+        vx_parts.append(N50._slice_layer(b, "v_x", layer))
+        ci_parts.append([int(x) for x in b["ci"]])
+        del b
+    logger.info("[n1m] %d chunks (local)", len(chunk_files))
+    return _concat_stream_parts(cx_parts, vx_parts, ci_parts)
+
+
+def _resume_hf_stream(ckpt_dir, layer, fp, prefix, names, fresh, cx_parts, vx_parts, ci_parts):
+    """Decide the stream start cursor from an existing checkpoint. Returns
+    ``(start, complete_arrays)``: ``complete_arrays`` is ``(cx, vx, ci)`` when a
+    COMPLETE matching checkpoint exists (the caller returns it directly, no
+    re-stream); otherwise ``None`` and the caller streams from ``start``. On a
+    PARTIAL resume the ``*_parts`` lists are seeded in place."""
+    if ckpt_dir is None or fresh:
+        if fresh:
+            logger.info("[n1m] --fresh-stream: ignoring any existing stream checkpoint")
+        return 0, None
+    loaded = _load_stream_ckpt(ckpt_dir, layer, fp, prefix)
+    if loaded is None:
+        if _stream_ckpt_paths(ckpt_dir, layer)[1].exists():
+            logger.warning(
+                "[n1m] stream checkpoint present but MISMATCHED (layer/prefix/chunk-universe "
+                "or torn write); re-streaming from scratch"
+            )
+        return 0, None
+    l_cx, l_vx, l_ci, cursor, complete = loaded
+    if complete and cursor >= len(names):
+        logger.info(
+            "[n1m] stream checkpoint COMPLETE (%d chunks, %d rows); skip re-stream",
+            cursor,
+            l_cx.shape[0],
+        )
+        return cursor, (l_cx, l_vx, l_ci)
+    cx_parts[:] = [l_cx]
+    vx_parts[:] = [l_vx]
+    ci_parts[:] = [l_ci.tolist()]
+    logger.info(
+        "[n1m] RESUMED stream checkpoint: %d/%d chunks (%d rows); continuing",
+        cursor,
+        len(names),
+        l_cx.shape[0],
+    )
+    return cursor, None
+
+
+def _stream_hf_chunks(prefix, layer, cache_dir, *, ckpt_dir, ckpt_every, fresh):
+    from huggingface_hub import HfApi
+
+    names = sorted(
+        f.path.rsplit("/", 1)[-1]
+        for f in HfApi().list_repo_tree(
+            C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+        )
+        if getattr(f, "size", None) is not None and f.path.endswith(".pt")
+    )
+    if not names:
+        raise FileNotFoundError(f"no n1m capture chunks under HF {prefix}")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    fp = _stream_ckpt_fingerprint(layer, prefix, names) if ckpt_dir is not None else ""
+
+    cx_parts: list[np.ndarray] = []
+    vx_parts: list[np.ndarray] = []
+    ci_parts: list[list[int]] = []
+    start, complete_arrays = _resume_hf_stream(
+        ckpt_dir, layer, fp, prefix, names, fresh, cx_parts, vx_parts, ci_parts
+    )
+    if complete_arrays is not None:
+        return complete_arrays
+
+    for i in range(start, len(names)):
+        got = Path(_download_chunk_with_retry(C.HF_DATA_REPO, f"{prefix}/{names[i]}", cache_dir))
+        b = F._mmap_load(got)
+        cx_parts.append(N50._slice_layer(b, "cx_last", layer))
+        vx_parts.append(N50._slice_layer(b, "v_x", layer))
+        ci_parts.append([int(x) for x in b["ci"]])
+        del b
+        got.unlink()
+        done = i + 1
+        if ckpt_dir is not None and ckpt_every > 0 and done % ckpt_every == 0:
+            cx_c, vx_c, ci_c = _concat_stream_parts(cx_parts, vx_parts, ci_parts)
+            _write_stream_ckpt(
+                ckpt_dir, layer, fp, prefix, done, len(names), cx_c, vx_c, ci_c, complete=False
+            )
+            # collapse parts to one accumulated copy so peak memory stays ~one array
+            cx_parts[:], vx_parts[:], ci_parts[:] = [cx_c], [vx_c], [ci_c.tolist()]
+            logger.info(
+                "[n1m] stream checkpoint @ %d/%d chunks (%d rows)", done, len(names), cx_c.shape[0]
+            )
+        elif done % 25 == 0:
+            logger.info("[n1m] streamed %d/%d chunks", done, len(names))
+
+    cx, vx, ci = _concat_stream_parts(cx_parts, vx_parts, ci_parts)
+    if ckpt_dir is not None:
+        _write_stream_ckpt(
+            ckpt_dir, layer, fp, prefix, len(names), len(names), cx, vx, ci, complete=True
+        )
+    logger.info("[n1m] %d chunks (HF stream)", len(names))
     return cx, vx, ci
 
 
@@ -215,13 +448,29 @@ def assemble(args, layer: int):
     pb_X = N50._slice_layer(pb, "cx_last", layer)
     pb_Y = N50._slice_layer(pb, "v_x", layer)
 
-    manifest_dir = N1G._resolve_manifest_dir(args)
+    # Manifest lives at <round-root>/sampling_manifest; --hf-prefix is the CAPTURE
+    # prefix (<round-root>/final_token_capture), so N1G._resolve_manifest_dir (which
+    # appends sampling_manifest to args.hf_prefix) must see the round root, NOT the
+    # capture prefix. Shim in --manifest-hf-prefix; the local-stage path (no
+    # --manifest-from-hf) reads out_dir/sampling_manifest regardless of the prefix.
+    manifest_args = argparse.Namespace(
+        out_dir=args.out_dir,
+        manifest_from_hf=args.manifest_from_hf,
+        hf_prefix=args.manifest_hf_prefix,
+    )
+    manifest_dir = N1G._resolve_manifest_dir(manifest_args)
     pool, man_meta = N1G.read_manifest_pool(manifest_dir)
     ci_to_corpus = {int(r["i"]): r["corpus"] for r in pool}
 
     local_dir = args.n1m_capture_dir if args.n1m_capture_dir else None
     new_X, new_Y, new_ci = _stream_n1m_layer(
-        args.hf_prefix, layer, local_dir, args.out_dir / ".n1m_stream_cache"
+        args.hf_prefix,
+        layer,
+        local_dir,
+        args.out_dir / ".n1m_stream_cache",
+        ckpt_dir=(args.out_dir / ".n1m_stream_ckpt") if local_dir is None else None,
+        ckpt_every=STREAM_CKPT_EVERY,
+        fresh=args.fresh_stream,
     )
     # provenance for each captured new row (ci -> corpus); pass_b rows are lmsys.
     new_prov = np.array([ci_to_corpus[int(c)] for c in new_ci], dtype=object)
@@ -816,6 +1065,143 @@ def _run_fit_points(
             )
 
 
+def _smoke_stream_ckpt(ckpt_root: Path) -> tuple[int, int]:
+    """CPU smoke for the HF stream checkpoint write/resume roundtrip (#779 fix).
+
+    Fakes list_repo_tree + hf_hub_download over 8 synthetic chunks: (a) an
+    uninterrupted reference stream; (b) a run that crashes mid-stream (synthetic
+    non-transient error) AFTER a checkpoint; (c) a resume that completes — asserting
+    the resumed arrays are BYTE-IDENTICAL to the reference (no duplicated/dropped
+    rows across the checkpoint boundary), and (d) a 4th run over the COMPLETE
+    checkpoint downloads ZERO chunks. Returns (n_rows, n_chunks)."""
+    from unittest import mock
+
+    hdim, n_chunks, layers = 4, 8, [14, 19, 26]
+    layer = 19  # stored column 1
+    prefix = "smoke_prefix/final_token_capture"
+    remote = {f"shard00_chunk{i:04d}.pt": i for i in range(n_chunks)}
+
+    def _chunk(idx: int) -> dict:
+        rows = 2 + (idx % 2)  # variable kept-row count (2 or 3) per chunk
+        base = float(idx * 100)
+        shape = (rows, len(layers), hdim)
+        cx = base + torch.arange(rows * len(layers) * hdim, dtype=torch.float32).reshape(shape)
+        return {
+            "cx_last": cx.clone(),
+            "v_x": (cx + 0.5).clone(),
+            "ci": [idx * 1000 + r for r in range(rows)],
+            "layers": list(layers),
+        }
+
+    crash_at: dict = {"i": None}
+    dl_calls = {"n": 0}
+
+    class _SmokeCrash(RuntimeError):
+        pass
+
+    class _FakeEntry:
+        def __init__(self, path):
+            self.path, self.size = path, 1
+
+    class _FakeHfApi:
+        def list_repo_tree(self, repo_id, path_in_repo=None, repo_type=None, recursive=False):
+            return [_FakeEntry(f"{path_in_repo}/{n}") for n in remote]
+
+    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None):
+        dl_calls["n"] += 1
+        base = filename.rsplit("/", 1)[-1]
+        idx = remote[base]
+        if crash_at["i"] is not None and idx >= crash_at["i"]:
+            raise _SmokeCrash(f"synthetic crash at chunk {idx}")
+        out = Path(local_dir) / base
+        out.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(_chunk(idx), out)
+        return str(out)
+
+    cache = ckpt_root / "cache"
+    with (
+        mock.patch("huggingface_hub.HfApi", _FakeHfApi),
+        mock.patch("huggingface_hub.hf_hub_download", _fake_dl),
+    ):
+        cx_ref, vx_ref, ci_ref = _stream_n1m_layer(
+            prefix, layer, None, cache, ckpt_dir=ckpt_root / "ref", ckpt_every=2
+        )
+        run_ck = ckpt_root / "run"
+        crash_at["i"] = 5  # index 4 consumed-but-not-checkpointed (ckpt at cursor=4); crash at 5
+        crashed = False
+        try:
+            _stream_n1m_layer(prefix, layer, None, cache, ckpt_dir=run_ck, ckpt_every=2)
+        except _SmokeCrash:
+            crashed = True
+        assert crashed, "synthetic crash did not fire"
+        assert _stream_ckpt_paths(run_ck, layer)[1].exists(), "no checkpoint written before crash"
+        crash_at["i"] = None
+        cx_r, vx_r, ci_r = _stream_n1m_layer(
+            prefix, layer, None, cache, ckpt_dir=run_ck, ckpt_every=2
+        )
+        assert np.array_equal(cx_r, cx_ref), "resumed cx != uninterrupted reference"
+        assert np.array_equal(vx_r, vx_ref), "resumed vx != uninterrupted reference"
+        assert np.array_equal(ci_r, ci_ref), "resumed ci != uninterrupted reference"
+        dl_before = dl_calls["n"]
+        cx2, _, _ = _stream_n1m_layer(prefix, layer, None, cache, ckpt_dir=run_ck, ckpt_every=2)
+    assert dl_calls["n"] == dl_before, "complete checkpoint re-downloaded chunks"
+    assert np.array_equal(cx2, cx_ref), "complete-checkpoint load != reference"
+    return int(cx_ref.shape[0]), n_chunks
+
+
+def _smoke_download_retry(cache: Path) -> int:
+    """CPU smoke for the per-chunk download retry (#779 fix). A fake hf_hub_download
+    fails twice transiently (ReadTimeout, then LocalEntryNotFoundError) then succeeds
+    on attempt 3; asserts _download_chunk_with_retry retried and returned the path. A
+    non-transient error (ValueError) re-raises on attempt 1 (no retry). time.sleep is
+    patched to a no-op so the backoff adds no wall time. Returns the success-attempt
+    count."""
+    from unittest import mock
+
+    import requests
+    from huggingface_hub.errors import LocalEntryNotFoundError
+
+    calls = {"n": 0}
+
+    def _flaky(repo_id, filename=None, repo_type=None, local_dir=None):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise requests.exceptions.ReadTimeout("synthetic read timeout")
+        if calls["n"] == 2:
+            raise LocalEntryNotFoundError("synthetic local-entry-not-found")
+        out = Path(local_dir) / filename.rsplit("/", 1)[-1]
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text("ok")
+        return str(out)
+
+    with (
+        mock.patch("huggingface_hub.hf_hub_download", _flaky),
+        mock.patch("time.sleep", lambda *_a, **_k: None),
+    ):
+        got = _download_chunk_with_retry("repo", "pfx/shard00_chunk0000.pt", cache)
+    assert calls["n"] == 3, f"expected 3 attempts (2 transient + success), got {calls['n']}"
+    assert Path(got).exists(), "retry did not return a downloaded path"
+
+    calls["n"] = 0
+
+    def _hard(repo_id, filename=None, repo_type=None, local_dir=None):
+        calls["n"] += 1
+        raise ValueError("non-transient")
+
+    raised = False
+    with (
+        mock.patch("huggingface_hub.hf_hub_download", _hard),
+        mock.patch("time.sleep", lambda *_a, **_k: None),
+    ):
+        try:
+            _download_chunk_with_retry("repo", "pfx/x.pt", cache)
+        except ValueError:
+            raised = True
+    assert raised, "non-transient error must propagate"
+    assert calls["n"] == 1, f"non-transient error must not retry (got {calls['n']})"
+    return 3
+
+
 def _smoke() -> int:
     """CPU numeric-sanity smoke (synthetic; no capture data, no GPU).
 
@@ -905,13 +1291,22 @@ def _smoke() -> int:
         "residual-skip body did not beat the mean baseline"
     )
 
+    # (6) HF stream checkpoint write/resume roundtrip + (7) per-chunk download retry.
+    with tempfile.TemporaryDirectory() as td:
+        n_rows_ck, n_ck = _smoke_stream_ckpt(Path(td) / "ck")
+        n_att = _smoke_download_retry(Path(td) / "rt")
+
     logger.info(
         "[smoke] PASS: split shas byte-id; select (lmsys/mixed-ratio %.2f/whole); "
-        "ridge==N50 (<1e-4); nystrom~exact (ex %.3f ny %.3f); MLP+residual R2>0 (mlp %d ep)",
+        "ridge==N50 (<1e-4); nystrom~exact (ex %.3f ny %.3f); MLP+residual R2>0 (mlp %d ep); "
+        "stream-ckpt resume byte-identical (%d rows / %d chunks); download-retry %d-attempt path",
         dm["full_lmsys_frac"],
         r2_ex,
         r2_ny,
         mm["epochs_ran"],
+        n_rows_ck,
+        n_ck,
+        n_att,
     )
     return 0
 
@@ -939,6 +1334,18 @@ def main() -> int:
     ap.add_argument("--manifest-from-hf", action="store_true")
     ap.add_argument("--n1m-capture-dir", type=Path, default=None)
     ap.add_argument("--hf-prefix", default=f"{N1G.HF_PREFIX}/final_token_capture")
+    ap.add_argument(
+        "--manifest-hf-prefix",
+        default=N1G.HF_PREFIX,
+        help="HF ROUND-ROOT prefix for the sampling manifest (the manifest lives at "
+        "<manifest-hf-prefix>/sampling_manifest); distinct from --hf-prefix, the "
+        "capture prefix <round-root>/final_token_capture",
+    )
+    ap.add_argument(
+        "--fresh-stream",
+        action="store_true",
+        help="ignore any existing HF stream checkpoint and re-stream from scratch",
+    )
     ap.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     ap.add_argument("--out-json", type=Path, default=None)
     ap.add_argument("--resume", action="store_true")
