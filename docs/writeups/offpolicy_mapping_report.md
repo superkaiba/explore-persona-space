@@ -93,20 +93,24 @@ Bars show, at layer 17: the fresh style-arm refit; the Claude-plain map transfer
 - But style overlap is not the whole story: even within-Claude cross-style transfer (0.08–0.19) is far below the Qwen→Claude-plain transfer (0.45–0.46) — the plain-arm transfer works mostly because the *content* matches and the two models' *default* registers happen to be close
 - Same conclusion from the identity baseline: the own-answer profile predicts the plain profile at R² 0.67–0.69 but the style profile at only 0.53–0.55 ([figure](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5b159ab9b214908979566800048cbc82feec9738/figures/issue_823/fig4_identity_baseline.png))
 
-### Result 4: The mapping is not worst at cross-predicting on answers that substantially diverge between the 2 models
+### Result 4: The mapping is not worse at cross-predicting on answers that substantially diverge between the 2 models
 
-I then wanted to see if the Qwen mapping was substantially worse at predicting Claude activations when the Qwen/Claude answers substantially diverged. For this, I asked questions related to sensitive topics in China, knowing that Qwen would be censored while Claude would answer freely (plus model-identity and style-format categories; every divergent query paired with an entity-swapped same-template control — e.g. the same question about another country — and every pair generation-verified with a graded judge). China-politics initially fell 2 pairs short of the 20-pair eligibility floor and was lifted to 31 verified pairs in a top-up round (Qwen refuses where Claude answers on 10 of the 18 original pairs). The left panel shows the arm-matched divergence penalty d per category and pooled over all 72 pairs at layer 20, with the registered 0.05 margin; the right panel is the per-unit view — the 31 china pairs' own-map vs external-map drops.
+I then wanted to see if the Qwen mapping was substantially worse at predicting Claude activations when the Qwen/Claude answers substantially diverged.
 
-**Plot: Divergence penalty per bank category (china included) + china per-pair drops**
+**Methodology**
+- I asked questions related to sensitive topics in China, knowing that Qwen would be censored while Claude would answer freely (judge-verified: divergence 74 vs 20 on controls; Qwen refuses or deflects on 10 of the 18 original pairs; 31 verified pairs after a top-up round — the category initially fell 2 short of its 20-pair eligibility floor)
+- Then compared the R² on these questions for the Claude mapping predicting Qwen answers and the Qwen mapping predicting Claude answers — against a baseline of matched control questions (same template with the sensitive entity swapped, e.g. the same question about another country), so topic format and count are controlled
 
-![Divergence penalty per category with china included](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ce7d2aeb174b46906fa03fcd55e01661ccc82a48/figures/issue_952/china_topup_decision.png)
+**Plot: Cross-model prediction on divergent vs matched control questions, layer 20**
+
+![Cross-model prediction on divergent vs control questions](https://raw.githubusercontent.com/superkaiba/explore-persona-space/490f8be8c16d277e1f70a658344e51e905ce6369/figures/issue_952/china_cross_divergent_vs_control.png)
 
 **Takeaways:**
 
-- The direct answer: the Qwen-trained map scored on **Claude's china answers** shows no divergence-specific drop — cross cell −0.001 (p = 0.54); on the identity/style bank the same cross cell reads −0.016 (p = 0.90), with Claude's divergent *identity* answers actually more predictable than their controls
-- Arm-matched reads agree: china d = +0.014 [−0.009, +0.039] (p = 0.125 raw / 0.376 Holm across 3 categories; 0.05 margin not cleared); pooled over 72 pairs +0.003 (p = 0.38)
-- China's absolute reconstruction levels are the lowest of the three categories (own ≈ 0.10, Claude-arm ≈ 0.07–0.09 vs identity ≈ 0.17) — the maps degrade on china queries *generally* (out-of-distribution), just not selectively where the behaviors diverge
-- The test had teeth: detection ceiling 0.887 vs a ~+0.03 null band, and divergence is judge-verified (china 74 vs 20, identity 82 vs 15); caveats — the judge's probe calibration inverted, style-format controls are muddy (6/21 pairs margin ≤ 0), refusal-boundary unread (2 pairs)
+- No divergence penalty in either direction: the Qwen map predicts Claude's China answers at R² 0.029 vs 0.028 on matched controls (drop −0.001, p = 0.54); the Claude map actually predicts Qwen's divergent answers *better* than its controls (0.069 vs 0.048)
+- Absolute levels are far below the LMSYS pool (0.03–0.07 vs 0.46 cross-answer transfer in Result 2): the bank questions are out-of-distribution for the pool-trained maps generally — the maps get worse *everywhere* out here, just not selectively where the models diverge
+- The arm-matched reads and the other bank categories agree: china d = +0.014 [−0.009, +0.039] (Holm p = 0.38, 0.05 margin not cleared); identity/style cross cell −0.016 (p = 0.90); pooled over all 72 pairs +0.003 (p = 0.38); detection was attainable (ceiling 0.887 vs ~+0.03 null band)
+- Caveats: the judge's probe calibration inverted (scores reused as-is); refusal-boundary category unread (2 pairs); the china read is layer-20 only
 
 ## Next steps:
 
