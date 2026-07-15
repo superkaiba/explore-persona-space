@@ -2485,8 +2485,8 @@
     "1319": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1319",
-      "status": "proposed",
+      "path": "tasks/planning/1319",
+      "status": "planning",
       "title": "daily-fix: torch-before-dotenv in 2 issue scripts (#847)"
     },
     "132": {
