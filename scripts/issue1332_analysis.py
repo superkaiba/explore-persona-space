@@ -579,8 +579,10 @@ def main() -> int:
         len_diff, mean_len = None, {}
     else:
         inputs_dir = C.data_root(args.smoke, args.out_root) / "inputs"
-        bank = C.load_bank(inputs_dir / C.BANK_FILE)
-        rewrites = C.load_rewrites(inputs_dir / C.REWRITES_FILE)["rewrites"]
+        bank = C.load_bank(C.ensure_input(inputs_dir / C.BANK_FILE, f"inputs/{C.BANK_FILE}"))
+        rewrites = C.load_rewrites(
+            C.ensure_input(inputs_dir / C.REWRITES_FILE, f"inputs/{C.REWRITES_FILE}")
+        )["rewrites"]
         len_diff, mean_len = prompt_length_matrix(bank, rewrites, sources, targets)
 
     C.phase("p3_headline")
