@@ -47,11 +47,11 @@
 
 ### Result 1: You can train an almost-as-good mapping from context to answer for off-policy text
 
-I first wanted to see if you could train an as good mapping from context to off-policy text as to on-policy text. I refit the identical ridge harness per answer arm (own regenerated / Claude plain / Claude eccentric-style / swapped) at each trait's read-out layer (evil L14, sycophancy L26, hallucination L17; n = 4,998). Bars show pooled 5-fold out-of-fold refit R² per arm; error bars are fold SDs.
+I first wanted to see if you could train an as good mapping from context to off-policy text as to on-policy text. I refit the identical ridge harness per answer arm (own regenerated / Claude plain / swapped) at each trait's read-out layer (evil L14, sycophancy L26, hallucination L17; n = 4,998). Bars show pooled 5-fold out-of-fold refit R² per arm; error bars are fold SDs. (The eccentric-style arm is introduced in Result 3.)
 
 **Plot: Refit R² by answer arm at read-out layers**
 
-![Refit R² by arm at read-out layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e4bfe5c769ec36cedd3886bc5c018f6d2f473115/figures/issue_823/fig1_refit_r2_by_arm.png)
+![Refit R² by arm at read-out layers, style arm excluded](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c00bfc0015415375858785695cb2ee0b065efd75/figures/issue_823/fig1b_refit_r2_by_arm_no_style.png)
 
 **Takeaways:**
 
