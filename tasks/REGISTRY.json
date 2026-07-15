@@ -2784,8 +2784,8 @@
     "1357": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1357",
-      "status": "approved",
+      "path": "tasks/running/1357",
+      "status": "running",
       "title": "workflow-fix: upload-policy.md \u2014 verify-path Hub calls ride retry_transient + prefix listings"
     },
     "1358": {
