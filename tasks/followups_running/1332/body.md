@@ -1,7 +1,8 @@
 ---
 title: Directional function-space map similarity predicts marker leakage beyond the
-  activation-cosine and Jensen–Shannon baselines at high dose but shows no detectable
-  signal on a band-stopped low-dose grid (MODERATE confidence)
+  activation-cosine and Jensen–Shannon baselines at high dose but clears no permutation
+  band at low dose in either the registered log-prob read or the higher margin read
+  (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
