@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1363,
+  "highest_id": 1364,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2836,6 +2836,13 @@
       "path": "tasks/planning/1363",
       "status": "planning",
       "title": "workflow-fix: MALLOC_ARENA_MAX=2 in the canonical VM-launch env prefix"
+    },
+    "1364": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1364",
+      "status": "proposed",
+      "title": "workflow-fix: analyzer CJK audit must cover judged install-instrument pools"
     },
     "137": {
       "has_clean_result": false,
