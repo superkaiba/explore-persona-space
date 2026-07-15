@@ -47,7 +47,8 @@ def _dl(path):
 
 def main():
     # --- context ids in the canonical store order ---
-    man = json.load(open(_dl("issue658_theory_assumptions/store/store_manifest.json")))
+    with open(_dl("issue658_theory_assumptions/store/store_manifest.json")) as fh:
+        man = json.load(fh)
     ctx_ids = list(man["context_ids"])
     store_hash = man["probe_pool_hash"]
     assert len(ctx_ids) == 50, len(ctx_ids)
@@ -132,11 +133,12 @@ def main():
         v0_mean=v0_mean.astype(np.float32),  # (50,28,3584)
         rB=rB.astype(np.float32),  # (4,28,3584)
     )
-    json.dump(
-        {"ctx_ids": ctx_ids, "families": families, "behaviors": BEHAVIORS, "checks": checks},
-        open(os.path.join(OUT, "meta.json"), "w"),
-        indent=1,
-    )
+    with open(os.path.join(OUT, "meta.json"), "w") as fh:
+        json.dump(
+            {"ctx_ids": ctx_ids, "families": families, "behaviors": BEHAVIORS, "checks": checks},
+            fh,
+            indent=1,
+        )
     print("SAVED", os.path.join(OUT, "reduced.npz"))
     print("families:", {f: families.count(f) for f in sorted(set(families))})
 

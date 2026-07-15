@@ -100,7 +100,8 @@ def scatter(x, y, fams, cids, xlab, ylab, title, rho, fname):
 
 
 def main():
-    d = json.load(open(os.path.join(RES, "coherence_results.json")))
+    with open(os.path.join(RES, "coherence_results.json")) as fh:
+        d = json.load(fh)
     arr = np.load(os.path.join(RES, "per_condition_layer.npz"))
     cids = d["meta"]["ctx_ids"]
     fams = d["meta"]["families"]
@@ -119,7 +120,8 @@ def main():
             fams,
             cids,
             f"within-condition whitened spread  s_W(C)   [layer {L}]",
-            f"behavior-relevant Jensen gap  J(C) = max_B |mean f_B(c_x) - f_B(c_hat_C)|  [layer {L}]",
+            "behavior-relevant Jensen gap  J(C) = max_B |mean f_B(c_x) - f_B(c_hat_C)|  "
+            f"[layer {L}]",
             f"A3.5a: within-condition spread vs Jensen gap (n=50 conditions, layer {L})",
             rhoJ,
             f"fig_a35a_spread_vs_jensen_L{L}.png",
@@ -172,7 +174,8 @@ def main():
             "primary_layer": PRIMARY_L,
             "source": "eval_results/issue_658/inline_a3_5a_coherence/coherence_results.json",
         }
-        json.dump(meta, open(p.replace(".png", ".meta.json"), "w"), indent=1)
+        with open(p.replace(".png", ".meta.json"), "w") as fh:
+            json.dump(meta, fh, indent=1)
         print("WROTE", p)
 
 
