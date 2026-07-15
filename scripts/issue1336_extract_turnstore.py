@@ -1,0 +1,483 @@
+#!/usr/bin/env python
+"""Issue #1336 — Phase E: teacher-forced turn-store extraction (one cell/run).
+
+One teacher-forced forward per conversation batch yields, per row:
+  - slot vectors: residual activation at the prefix-header slot and the
+    assistant-header slot, all 32 layers -> (2, 32, 4096)
+  - span profiles: mean residual activation over the u1 and answer content
+    spans, all 32 layers -> (2, 32, 4096)
+  - per-turn mean teacher-forced NLL from the SAME logits
+NO per-position capture (plan section 4 scope reduction #3).
+
+Storage parity with the #825 parent (issue825_extract_turnstore.py:335-340):
+bf16 compute AND bf16 shard store (fp16 overflows residual outlier dims);
+finiteness asserted before storage. Shards of 500 rows, block-wise
+extract->flush so host RAM holds ~one shard. Output stems are
+``{model}_{format}_{corpus}`` so ``issue825_fit_cells._load_bundle_pt``
+(track := corpus) loads them unchanged.
+
+Runtime cross-model assert (plan section 8 risk row): the CONTEXT render of
+100 sampled staged prompts must tokenize to IDENTICAL ids under every
+checkpoint's tokenizer — each cell writes a context-token-id hash JSON and
+asserts equality against any sibling model's hash for the same
+(format, corpus).
+"""
+
+from __future__ import annotations
+
+import argparse
+import contextlib
+import ctypes
+import gc
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+_SCRIPT_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _SCRIPT_DIR.parent
+for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch import
+
+import torch  # noqa: E402
+
+# Reused #825 helpers (arg-pure: no dependence on the parent's Qwen globals).
+from issue825_extract_turnstore import (  # noqa: E402
+    _finite,
+    _git_commit,
+    _ordered_slots,
+    _ordered_turns,
+    _turn_nll,
+)
+from issue1336_render import RENDERERS, validate_render  # noqa: E402
+
+from explore_persona_space.analysis.extraction import extract_layer_activations  # noqa: E402
+from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E402
+
+SHARD_SIZE = 500
+
+# Architecture invariants; rebound from the tiny model's config in smoke mode
+# (the parent --tiny-model-dir pattern: asserts stay ACTIVE, validating
+# internal consistency instead of the 8B constants).
+_EXPECTED_LAYERS = cm.EXPECTED_LAYERS
+_EXPECTED_HIDDEN = cm.EXPECTED_HIDDEN
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--model", choices=tuple(cm.MODELS), required=True)
+    parser.add_argument("--corpus", choices=tuple(cm.CORPORA), required=True)
+    parser.add_argument("--format", choices=("chat", "naturalistic"), required=True)
+    parser.add_argument("--gen-root", type=Path, default=None, help="generation outputs root")
+    parser.add_argument("--prompts-root", type=Path, default=None, help="staged prompts root")
+    parser.add_argument("--out-dir", type=Path, default=None, help="turnstore output dir")
+    parser.add_argument("--batch-size", type=int, default=8, help="start size; halves on OOM")
+    parser.add_argument("--shard-size", type=int, default=SHARD_SIZE)
+    parser.add_argument("--assert-causal", action="store_true", help="prefix-vs-full slot check")
+    parser.add_argument("--smoke", action="store_true", help="smoke roots; causal check ON")
+    parser.add_argument(
+        "--tiny-model-dir",
+        default=None,
+        help=(
+            "SMOKE ONLY: load a tiny random-init same-arch model (real tokenizer) "
+            "from this dir; expected dims rebind to ITS config. Production runs "
+            "NEVER pass this."
+        ),
+    )
+    parser.add_argument("--ctx-hash-n", type=int, default=100, help="sampled contexts to hash")
+    parser.add_argument("--upload", action="store_true", help="per-cell HF upload after extract")
+    return parser.parse_args()
+
+
+def _read_jsonl(path: Path) -> list[dict]:
+    """Text-mode line iteration — never splitlines() (U+2028 in real user text)."""
+    rows = []
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
+def load_model(slug: str, tiny_model_dir: str | None = None):
+    """Load one ladder checkpoint (bf16, all weights pinned to GPU) or the tiny smoke model."""
+    global _EXPECTED_LAYERS, _EXPECTED_HIDDEN
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    if tiny_model_dir is not None:
+        model_id = f"TINY::{tiny_model_dir}"
+        tokenizer = AutoTokenizer.from_pretrained(tiny_model_dir)
+        model = AutoModelForCausalLM.from_pretrained(tiny_model_dir, torch_dtype=torch.float32)
+        model.eval()
+        _EXPECTED_LAYERS = int(model.config.num_hidden_layers)
+        _EXPECTED_HIDDEN = int(model.config.hidden_size)
+        return model, tokenizer, model_id
+
+    model_id = cm.MODELS[slug]["hf_id"]
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    # device_map={"": 0} pins ALL weights to the GPU: a lingering engine
+    # holding VRAM raises CUDA OOM at load instead of device_map="auto"
+    # silently offloading layers to host RAM (parent runs 3-4, rc=137).
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id, torch_dtype=torch.bfloat16, device_map={"": 0}
+    )
+    model.eval()
+    off_gpu = [n for n, p in model.named_parameters() if p.device.type != "cuda"]
+    assert not off_gpu, (
+        f"{model_id}: {len(off_gpu)} params not on CUDA (e.g. {off_gpu[:3]}) — "
+        "refusing to run with CPU-offloaded weights (host-RAM OOM risk)"
+    )
+    cfg = model.config
+    assert cfg.num_hidden_layers == _EXPECTED_LAYERS, (
+        f"{model_id}: num_hidden_layers={cfg.num_hidden_layers} != {_EXPECTED_LAYERS}"
+    )
+    assert cfg.hidden_size == _EXPECTED_HIDDEN, (
+        f"{model_id}: hidden_size={cfg.hidden_size} != {_EXPECTED_HIDDEN}"
+    )
+    return model, tokenizer, model_id
+
+
+# ---------------------------------------------------------------------------
+# Cross-model context-token-id hash (plan section 8: tokenizer/render parity)
+# ---------------------------------------------------------------------------
+def _context_text(fmt: str, question: str) -> str:
+    """The CONTEXT (prefix + user query + assistant header) render per format."""
+    if fmt == "chat":
+        return cm.tulu_prompt(question)
+    return f"User: {question}\n\nAssistant: "
+
+
+def ctx_tokenid_hash(tokenizer, prompts: list[dict], fmt: str, n_sample: int) -> dict:
+    """sha256 over the BOS-prepended context token ids of n_sample prompts."""
+    import numpy as np
+
+    idx = np.random.default_rng(0).choice(
+        len(prompts), size=min(n_sample, len(prompts)), replace=False
+    )
+    idx = sorted(int(i) for i in idx)
+    bos = tokenizer.bos_token_id
+    assert bos is not None, "tokenizer has no BOS token"
+    h = hashlib.sha256()
+    for i in idx:
+        ids = [
+            int(bos),
+            *tokenizer(_context_text(fmt, prompts[i]["prompt"]), add_special_tokens=False)[
+                "input_ids"
+            ],
+        ]
+        h.update((" ".join(map(str, ids)) + "\n").encode("utf-8"))
+    return {"n_sampled": len(idx), "prompt_indices": idx, "sha256": h.hexdigest()}
+
+
+def assert_ctx_hash_parity(out_dir: Path, slug: str, fmt: str, corpus: str, payload: dict) -> None:
+    """Write this model's hash; assert equality with every sibling model's hash."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    own = out_dir / f"ctxhash_{fmt}_{corpus}_{slug}.json"
+    own.write_text(json.dumps(payload, indent=2) + "\n")
+    for other in cm.MODELS:
+        if other == slug:
+            continue
+        sib = out_dir / f"ctxhash_{fmt}_{corpus}_{other}.json"
+        if not sib.exists():
+            continue
+        sib_payload = json.loads(sib.read_text())
+        assert sib_payload["sha256"] == payload["sha256"], (
+            f"context token-id hash MISMATCH: {slug} vs {other} on ({fmt}, {corpus}) — "
+            "the shared-render identical-ids assumption (plan section 4) is violated"
+        )
+        print(f"[ctxhash] parity OK vs {other} ({payload['sha256'][:12]}…)")
+
+
+# ---------------------------------------------------------------------------
+# Batched teacher-forced capture (NO per-position capture — plan section 4)
+# ---------------------------------------------------------------------------
+def process_batch(model, batch: list, pad_id: int, align_state: dict) -> list[dict]:
+    """One forward per batch -> per-row slot vectors, span profiles, per-turn NLL."""
+    lengths = [len(r.input_ids) for r in batch]
+    bsz, max_len = len(batch), max(lengths)
+    input_ids = torch.full((bsz, max_len), pad_id, dtype=torch.long)
+    attention_mask = torch.zeros((bsz, max_len), dtype=torch.long)
+    for i, r in enumerate(batch):
+        input_ids[i, : lengths[i]] = torch.tensor(r.input_ids, dtype=torch.long)
+        attention_mask[i, : lengths[i]] = 1
+    device = model.device
+    captured, logits = extract_layer_activations(
+        model,
+        input_ids.to(device),
+        layers=range(_EXPECTED_LAYERS),
+        return_logits=True,  # logits ARE read (per-turn NLL) — no logits_to_keep
+        attention_mask=attention_mask.to(device),
+        # Keep activations ON DEVICE; only REDUCED tensors move to CPU (parent
+        # round-3 review: never ship the full (L,B,T,H) grid over PCIe).
+        detach_to_cpu=False,
+    )
+    assert set(captured) == set(range(_EXPECTED_LAYERS)), "missing layers in capture"
+    acts = torch.stack([captured[layer] for layer in range(_EXPECTED_LAYERS)], dim=0)
+    assert acts.shape == (_EXPECTED_LAYERS, bsz, max_len, _EXPECTED_HIDDEN), (
+        f"acts shape {tuple(acts.shape)}"
+    )
+    records: list[dict] = []
+    for i, r in enumerate(batch):
+        true_len = lengths[i]
+        slots = _ordered_slots(r)
+        turns = _ordered_turns(r)
+        for name, idx in slots:
+            assert 0 <= idx < true_len, f"{r.conv_id}: slot {name}={idx} beyond len {true_len}"
+        for name, (s, e) in turns:
+            assert 1 <= s < e <= true_len, (
+                f"{r.conv_id}: span {name}=({s},{e}) invalid for unpadded len {true_len}"
+            )
+        slot_pos = torch.tensor([idx for _, idx in slots], dtype=torch.long)
+        slot_vecs = acts[:, i, slot_pos.to(acts.device), :].permute(1, 0, 2).contiguous().cpu()
+        assert slot_vecs.shape == (len(slots), _EXPECTED_LAYERS, _EXPECTED_HIDDEN)
+        profiles = torch.stack(
+            [acts[:, i, s:e, :].float().mean(dim=1) for _, (s, e) in turns], dim=0
+        ).cpu()
+        assert profiles.shape == (len(turns), _EXPECTED_LAYERS, _EXPECTED_HIDDEN)
+        nll = _turn_nll(logits[i], input_ids[i], true_len, turns, r.conv_id, align_state)
+        assert nll.shape == (len(turns),)
+        records.append(
+            {
+                "conv_id": r.conv_id,
+                # bf16, NOT fp16: residual outlier dims can exceed fp16's 65504
+                # max and silently become inf (parent code-review round-1;
+                # issue825_extract_turnstore.py:335-340 parity).
+                "slots": _finite(slot_vecs.to(torch.bfloat16), "slots", r.conv_id),
+                "profiles": _finite(profiles.to(torch.bfloat16), "profiles", r.conv_id),
+                "nll": _finite(nll, "nll", r.conv_id),
+                "spans_meta": {
+                    "conv_id": r.conv_id,
+                    "format": r.format,
+                    "seq_len": true_len,
+                    "slot_names": [n for n, _ in slots],
+                    "slot_idx": {n: int(v) for n, v in slots},
+                    "turn_names": [n for n, _ in turns],
+                    "spans": {n: [int(s), int(e)] for n, (s, e) in turns},
+                    "meta": r.meta,
+                },
+            }
+        )
+    del captured, acts, logits
+    return records
+
+
+def causal_check(model, rendered: list, atol: float = 1e-2, n_conversations: int = 3) -> float:
+    """Re-forward the prefix ending at each slot; slot activation must match full-seq.
+
+    Inherited parent assert (plan section 4: causal-slot equality) with the
+    layer count parametrized to this family's 32 layers.
+    """
+    device = model.device
+    max_diff = 0.0
+    n_checked = min(n_conversations, len(rendered))
+    for r in rendered[:n_checked]:
+        ids = torch.tensor(r.input_ids, dtype=torch.long).unsqueeze(0).to(device)
+        full = extract_layer_activations(
+            model, ids, layers=range(_EXPECTED_LAYERS), detach_to_cpu=True
+        )
+        for name, idx in _ordered_slots(r):
+            pre = extract_layer_activations(
+                model, ids[:, : idx + 1], layers=range(_EXPECTED_LAYERS), detach_to_cpu=True
+            )
+            for layer in range(_EXPECTED_LAYERS):
+                a = pre[layer][0, idx].float()
+                b = full[layer][0, idx].float()
+                diff = float((a - b).abs().max())
+                max_diff = max(max_diff, diff)
+                assert torch.allclose(a, b, atol=atol), (
+                    f"causal-slot mismatch {r.conv_id}:{name} layer {layer}: "
+                    f"max|diff|={diff:.4g} > atol={atol}"
+                )
+    print(f"[causal] slot-prefix equality OK on {n_checked} rows; max|diff|={max_diff:.4g}")
+    return max_diff
+
+
+def run_extraction(model, rendered: list, pad_id: int, batch_size: int) -> list[dict]:
+    """Length-grouped batching with OOM-halving (floor 1); restores input order."""
+    order = sorted(range(len(rendered)), key=lambda j: len(rendered[j].input_ids))
+    align_state: dict = {}
+    results: dict[int, dict] = {}
+    bs = batch_size
+    pos = 0
+    batches_done = 0
+    while pos < len(order):
+        chunk_idx = order[pos : pos + bs]
+        chunk = [rendered[j] for j in chunk_idx]
+        try:
+            recs = process_batch(model, chunk, pad_id, align_state)
+        except torch.cuda.OutOfMemoryError:
+            if bs == 1:
+                raise
+            bs = max(1, bs // 2)
+            torch.cuda.empty_cache()
+            print(f"[oom] CUDA OOM — halving batch size to {bs}")
+            continue
+        for j, rec in zip(chunk_idx, recs, strict=True):
+            results[j] = rec
+        pos += len(chunk_idx)
+        batches_done += 1
+        if batches_done % 10 == 0 or pos >= len(order):
+            print(f"[extract] {pos}/{len(order)} rows done (batch size {bs})", flush=True)
+    return [results[j] for j in range(len(rendered))]
+
+
+def write_shards(
+    records: list[dict],
+    out_dir: Path,
+    stem: str,
+    sidecar_base: dict,
+    shard_offset: int = 0,
+    shard_size: int = SHARD_SIZE,
+) -> list[Path]:
+    """Write records as bf16 .pt shard(s) + JSON sidecars (parent contract, no perpos).
+
+    ``issue825_fit_cells._load_bundle_pt`` tolerates the absent perpos keys
+    (its key loop is presence-gated), so the fit loader is unchanged.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    paths: list[Path] = []
+    for k in range(0, len(records), shard_size):
+        shard = records[k : k + shard_size]
+        shard_idx = shard_offset + k // shard_size
+        payload = {
+            "conv_ids": [r["conv_id"] for r in shard],
+            "slots": [r["slots"] for r in shard],
+            "profiles": [r["profiles"] for r in shard],
+            "nll": [r["nll"] for r in shard],
+            "spans_meta": [r["spans_meta"] for r in shard],
+        }
+        pt_path = out_dir / f"{stem}_shard{shard_idx:03d}.pt"
+        torch.save(payload, pt_path)
+        sidecar = dict(sidecar_base)
+        sidecar.update(
+            {
+                "shard_index": shard_idx,
+                "n_conversations": len(shard),
+                "conv_ids": payload["conv_ids"],
+                "shapes": {
+                    "slots": [list(r["slots"].shape) for r in shard],
+                    "profiles": [list(r["profiles"].shape) for r in shard],
+                    "nll": [list(r["nll"].shape) for r in shard],
+                },
+            }
+        )
+        json_path = out_dir / f"{stem}_shard{shard_idx:03d}.json"
+        json_path.write_text(json.dumps(sidecar, indent=2))
+        paths.append(pt_path)
+        print(f"[write] {pt_path} ({len(shard)} rows)")
+    return paths
+
+
+def _upload_cell(out_dir: Path, stem: str) -> None:
+    """Per-cell incremental upload: ONE folder commit for this stem's files (#664)."""
+    from huggingface_hub import upload_folder
+
+    prefix = f"{cm.HF_PREFIX_1336}/analysis_tensors/turnstore_{stem}"
+    upload_folder(
+        repo_id=cm.HF_DATA_REPO,
+        repo_type="dataset",
+        folder_path=str(out_dir),
+        path_in_repo=prefix,
+        allow_patterns=[f"{stem}_shard*", f"{stem}.done.json"],
+        commit_message=f"issue-1336: turnstore {stem}",
+    )
+    print(f"[upload] {stem} -> {prefix}")
+
+
+def main() -> None:
+    args = parse_args()
+    slug, fmt, corpus = args.model, args.format, args.corpus
+    assert fmt in cm.FORMATS_BY_CORPUS[corpus], f"format {fmt} not registered for {corpus}"
+    smoke = args.smoke
+    data_root = Path("data/issue_1336")
+    gen_root = args.gen_root or (data_root / ("gen_smoke" if smoke else "gen"))
+    prompts_root = args.prompts_root or (data_root / ("prompts_smoke" if smoke else "prompts"))
+    out_dir = args.out_dir or (data_root / ("turnstore_smoke" if smoke else "turnstore"))
+    stem = cm.cell_id(slug, fmt, corpus)
+    done_path = out_dir / f"{stem}.done.json"
+    if done_path.exists():
+        print(f"[extract] skip {stem} (done marker exists)")
+        return
+
+    rows = _read_jsonl(gen_root / slug / corpus / "answers.jsonl")
+    kept = [r for r in rows if r.get("kept")]
+    assert kept, f"no kept rows for {slug}/{corpus} under {gen_root}"
+    prompts = _read_jsonl(prompts_root / f"{corpus}.jsonl")
+    assert prompts, f"no staged prompts for {corpus} under {prompts_root} — run gen --prep first"
+
+    model, tokenizer, model_id = load_model(slug, tiny_model_dir=args.tiny_model_dir)
+
+    # Runtime cross-model context-token-id parity assert (before any capture).
+    hash_payload = ctx_tokenid_hash(tokenizer, prompts, fmt, args.ctx_hash_n)
+    assert_ctx_hash_parity(out_dir, slug, fmt, corpus, hash_payload)
+
+    rendered = []
+    for r in kept:
+        conv = {"conv_id": f"s{r['prompt_idx']}", "u1": r["prompt"], "a1": r["response"]}
+        rr = RENDERERS[fmt](conv, tokenizer)
+        reason = validate_render(rr)
+        # Rows passed these EXACT asserts at gen time; a mismatch here is
+        # tokenizer/render drift between phases — fail loud, never skip.
+        assert reason is None, f"{rr.conv_id}: render invalid at extract time: {reason}"
+        rendered.append(rr)
+
+    pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
+    causal_max_diff = causal_check(model, rendered) if (args.assert_causal or smoke) else None
+    bs = max(1, int(args.batch_size))
+    if smoke:
+        bs = min(bs, 2)
+    shard_size = int(args.shard_size)
+    assert shard_size >= 1
+    print(
+        f"[run] cell={stem} model_id={model_id} n={len(rendered)} "
+        f"batch_size={bs} layers={_EXPECTED_LAYERS} hidden={_EXPECTED_HIDDEN}",
+        flush=True,
+    )
+    sidecar_base = {
+        "model": slug,
+        "model_id": model_id,
+        "format": fmt,
+        "corpus": corpus,
+        "track": corpus,  # loader stem convention: {model}_{format}_{track}
+        "expected_layers": _EXPECTED_LAYERS,
+        "expected_hidden": _EXPECTED_HIDDEN,
+        "shard_size": shard_size,
+        "git_commit": _git_commit(),
+        "args": {k: str(v) for k, v in vars(args).items()},
+        "causal_check_max_abs_diff": causal_max_diff,
+        "ctx_tokenid_sha256": hash_payload["sha256"],
+        "smoke": bool(smoke),
+    }
+    # Block-wise extract -> flush (parent run-4/run-5 RSS lessons): one block
+    # == one shard file, written the moment its block completes.
+    paths: list[Path] = []
+    n_done = 0
+    for block_idx, block_start in enumerate(range(0, len(rendered), shard_size)):
+        block = rendered[block_start : block_start + shard_size]
+        records = run_extraction(model, block, pad_id, bs)
+        assert len(records) == len(block), (block_idx, len(records), len(block))
+        paths += write_shards(
+            records, out_dir, stem, sidecar_base, shard_offset=block_idx, shard_size=shard_size
+        )
+        n_done += len(records)
+        del records, block
+        gc.collect()
+        # Return freed arena pages to the OS (parent run-5 monotone-RSS fix).
+        with contextlib.suppress(OSError):
+            ctypes.CDLL("libc.so.6").malloc_trim(0)
+    done_path.write_text(
+        json.dumps({"stem": stem, "n_rows": n_done, "n_shards": len(paths)}, indent=2) + "\n"
+    )
+    if args.upload:
+        _upload_cell(out_dir, stem)
+    print(f"[done-cell] {stem}: {n_done} rows -> {len(paths)} shard(s) in {out_dir}")
+
+
+if __name__ == "__main__":
+    main()
