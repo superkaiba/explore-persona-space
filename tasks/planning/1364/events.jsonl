@@ -3,3 +3,4 @@
 {"ts": "2026-07-15T21:50:15Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-15T22:05:58Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0, no failed/overridden checks; plan v1"}
 {"ts": "2026-07-15T22:13:50Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "codex composers skipped (adversarial-planner Phase 2, plan v2) — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per lens per no-show fallback"}
+{"ts": "2026-07-15T22:13:51Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "stage-dispatch stage=plan-critique round=1 subagent=critic-x3+consistency-checker worktree=repo-root"}
