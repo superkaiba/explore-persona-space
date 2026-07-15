@@ -8391,8 +8391,8 @@
       "goal": "On a thinking model chosen for maximal similarity to Qwen2.5-7B-Instruct, determine how the base-model linear context\u2192mean-answer activation map (#810) decomposes across the chain-of-thought \u2014 comparing (1) context\u2192CoT composed with CoT\u2192answer, (2) context\u2192(CoT+answer) jointly, and (3) (context+CoT)\u2192answer, against the direct context\u2192answer baseline \u2014 under mean-pool / max-pool / boundary-token summaries for each part (context, CoT, answer), in both the averaged-over-query regime (averaging over the query vector or over the CoT vector) and the individual context+query regime, scored by held-out R\u00b2 per layer on the parent line's folds.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/928",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/928",
+      "status": "awaiting_promotion",
       "title": "Conditioning on the realized chain-of-thought predicts the thinking model's answer state no better than a matched-length slice of the answer's own opening (HIGH confidence)"
     },
     "929": {
