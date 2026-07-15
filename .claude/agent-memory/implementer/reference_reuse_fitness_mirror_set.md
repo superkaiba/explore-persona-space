@@ -1,15 +1,15 @@
 ---
 name: Reuse-fitness check mirror set (20 sites)
-description: Any change to the trained-artifact + code reuse fitness check (currently (a)-(j)) must touch the full 20-site mirror set — artifact-reuse.md (canonical) + gotchas.md sibling bullet + CLAUDE.md bullet + LESSONS.md entry + planner.md step 5/§10 + planner-section-reference.md §10 + critic.md item 9 + critic-lens-reference.md item 9 + methodology-baselines-critic.md item 9 + consistency-checker.md cross-refs + lens-coverage-map.md row + adversarial-planner-v2 SKILL.md + verify_plan.py c6 + its tests + 6 agent memories
+description: Any change to the trained-artifact + code reuse fitness check (currently (a)-(k)) must touch the full 20-site mirror set — artifact-reuse.md (canonical) + gotchas.md sibling bullet + CLAUDE.md bullet + LESSONS.md entry + planner.md step 5/§10 + planner-section-reference.md §10 + critic.md item 9 + critic-lens-reference.md item 9 + methodology-baselines-critic.md item 9 + consistency-checker.md cross-refs + lens-coverage-map.md row + adversarial-planner-v2 SKILL.md + verify_plan.py c6 + its tests + 6 agent memories
 type: reference
 ---
 
 The trained-artifact (and code) reuse fitness check — the lettered set,
-currently (a)-(j) — is mirrored across TWENTY workflow-surface sites, and
+currently (a)-(k) — is mirrored across TWENTY workflow-surface sites, and
 precedent fixes (#600 content-identity, #601 application-scaling, #545
 adapter_config grounding, #734 train-input fetchability (h), #871 code
-throughput (i), #941 pairwise provenance coherence (j)) each touched the
-relevant set in one change:
+throughput (i), #941 pairwise provenance coherence (j), #1366
+parent-lineage coherence (k)) each touched the relevant set in one change:
 
 1. `.claude/rules/artifact-reuse.md` — the CANONICAL checklist (the full
    lettered list + the H1/description range + the closing remedy line + the
@@ -119,9 +119,30 @@ escape, critic-lens-reference.md :153/:194, CLAUDE.md bullet,
 methodology-baselines-critic.md) so a pure upload/verify/staging-helper
 reuse can no longer self-classify out of item (i).
 
+#1366 added item (k): parent-lineage coherence, TWO legs in one letter —
+leg A (code-scoped, like (i)): diff the reused main-resident parent module
+against the parent's unmerged branch (`git log --oneline
+origin/main..origin/issue-<M> -- <module>`) and port or declare-not-needed
+every unmerged commit; leg B (data-scoped, like (j)): reconcile the realized
+artifact's row count against its declared input corpus — an unexplained
+shortfall means an unported filter (incident #1345: the parent's crash-fix
+filter lived only on unmerged `issue-825`; realized n=4724 vs corpus 5000 was
+the tell). Unlike (j), (k) routes a NON-default remedy (port-then-reuse, NOT
+regenerate), so the remedy-split lines WERE edited this time — the first
+remedy-line edit since (i)/#871 (artifact-reuse.md, CLAUDE.md bullet,
+planner.md step 5). The consistency-checker gained TWO one-sentence
+mechanical probes (leg A on the #595 "Reused code module reachable on main"
+row; leg B on the "Cited HF reuse artifacts resolve on the Hub" row); the
+gotchas.md sibling bullet was added (range-free, the #941 precedent); the c6
+declaration regex GRANDFATHERS the old token via `\([jk]\)` (in-flight plans
+citing "(a)-(j)" still declare — two grandfather test pins kept); and the
+upper-boundary test's decoy letter moved from (k) to (l).
+
 Every remedy-split line on the live surfaces is deliberately worded WITHOUT a
-lettered range ("a failing check other than (i)") so the stale-range
-completeness grep stays clean and a future letter needs no remedy re-edit.
+lettered RANGE ("a failing check other than (i)/(h)(iv)/(k)" names letters,
+never a range token) so the stale-range completeness grep stays clean; a
+future letter needs no remedy re-edit ONLY when it routes through the default
+retrain/regenerate branch ((j) did; (k) did not — see the #1366 paragraph).
 
 A change targeting only planner.md leaves the independent enforcement passes
 (critic, consistency-checker), the canonical rule file, and the mechanical

@@ -12,7 +12,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 
 - analyzer-paper-mode.md — the analyzer runs a `paper: true` task (LaTeX clean-result; verify_paper.py gate).
 - analyzer-section-reference.md — the analyzer executes a protocol step (pointer-loaded step span).
-- artifact-reuse.md — a plan reuses an HF adapter/mix/completions/eval-JSON/tensor-store/fit-helper vs retraining, stages one into a consumer-fixed layout, or designs a reuse-validation gate ((a)-(j)).
+- artifact-reuse.md — a plan reuses an HF adapter/mix/completions/eval-JSON/tensor-store/fit-helper vs retraining, stages one into a consumer-fixed layout, reuses a parent module whose issue branch is unmerged, or designs a reuse-validation gate ((a)-(k)).
 - arxiv-mcp.md — you search / read an arXiv paper to ground a hyperparameter or replicate a recipe.
 - background-automation.md — you touch/reason about the cron audits/session watcher/pod-GCP janitors.
 - clean-result-critic-lens-reference.md — a clean-result critic twin reviews a markdown body (pointer-loaded spec-text rubrics).

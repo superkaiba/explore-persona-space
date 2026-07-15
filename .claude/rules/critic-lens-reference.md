@@ -184,7 +184,12 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    data_path.exists()` on a git-clone-only lane; or the plan reuses a mutually-dependent artifact
    PAIR (bank vs capture, mix vs adapter) without the item-(j) provenance-coherence check — a
    consumed input regenerated AFTER its dependent capture crashed #922 at the parity assert after
-   a full GCE cycle despite per-member sha pins; or the plan reuses a parent's
+   a full GCE cycle despite per-member sha pins; or the plan reuses a parent's main-resident CODE
+   module while the parent's issue-<M> branch carries unmerged commits touching it, without the
+   item-(k) lineage diff (port-or-declare), or reuses a realized artifact whose row count falls
+   short of its declared input corpus without naming the filter — #1345's main-resident extractor
+   lacked the parent branch's degenerate-row filter (realized n=4724 vs corpus 5000 was the tell)
+   and crashed production at the first unfiltered row; or the plan reuses a parent's
    fit/analysis/upload-verify CODE
    without the checklist-item-(i) throughput inspection (inner per-cell/per-fold/per-draw loop
    batched? device parametrized? data-repo Hub calls prefix-scoped? —
@@ -197,10 +202,11 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    existing fit artifact already covers (per the step-5 artifact search) without a one-line
    justification for why the existing artifact does not fit — this wastes GPU-hours and breaks
    sibling-comparability. Not a REVISE when the plan reuses an artifact AND records its fitness
-   check (a)–(j) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
+   check (a)–(k) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
    downstream analyzer can re-check; not a REVISE when the plan retrains / regenerates AND names the
    specific fitness-check failure that licenses it (a checklist-item-(i) failure licenses NO retrain
-   and NO caller-side workaround — its remedy is the source-module fix, then reuse).
+   and NO caller-side workaround — its remedy is the source-module fix, then reuse; a
+   checklist-item-(k) failure likewise licenses no retrain — its remedy is port-then-reuse).
    REVISE also when the design carries a reuse-VALIDATION gate (a numeric parity floor, a
    behavioral install confirmation, a one-cell gate) whose threshold is a bare constant not
    derived from the reused artifact's own committed per-behavior reference values (file + field

@@ -1,12 +1,12 @@
 ---
 name: Reuse-fitness mirror-set completeness check
-description: When reviewing a workflow-fix plan that adds/edits an artifact-reuse fitness check letter, independently grep the full lettered call-site set (currently (a)-(j)) — the documented mirror memory can be STALE (it once missed verify_plan.py c6 + its test)
+description: When reviewing a workflow-fix plan that adds/edits an artifact-reuse fitness check letter, independently grep the full lettered call-site set (currently (a)-(k)) — the documented mirror memory can be STALE (it once missed verify_plan.py c6 + its test)
 type: feedback
 ---
 
 When a `kind: infra` workflow-fix plan adds or edits a letter in the
 trained-artifact reuse fitness checklist (the lettered set, currently
-(a)-(j)), the Methodology lens completeness check is: independently
+(a)-(k)), the Methodology lens completeness check is: independently
 `rg "\(a\)[-–—]\([a-z]\)" .claude/ CLAUDE.md scripts/ tests/` and confirm the
 plan touches EVERY in-scope workflow-surface hit, not just the set the
 `implementer/reference_reuse_fitness_mirror_set.md` memory records.

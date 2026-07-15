@@ -8846,8 +8846,10 @@ _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 # silent-sum failure shape); it may never exceed _LESSONS_MAX_BYTES. Trimming
 # the index requires ratcheting it DOWN (banked slack defeats the mechanism).
 # Measured 5,780 B at the #1269 row-grammar migration; ratchet = measured
-# + ~220 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
-_LESSONS_RATCHET_BYTES = 6000
+# + ~220 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES). #1366 grew the
+# artifact-reuse row (parent-lineage trigger, (a)-(k)): measured 6,046 B;
+# ratchet = measured + ~34.
+_LESSONS_RATCHET_BYTES = 6080
 _LESSONS_RATCHET_MAX_HEADROOM_BYTES = 400
 
 

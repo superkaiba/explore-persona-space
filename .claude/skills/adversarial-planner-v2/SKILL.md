@@ -114,7 +114,7 @@ Also (v1 rules, restated because they gate the manifest):
 - **Grounded hyperparameters** — every load-bearing value carries a `Source:`
   (arXiv id / prior issue), per `planner.md` §11. Never a bare library default.
 - **Artifact-registry read** — when `artifacts/registry.jsonl` exists, READ it
-  and prefer a fit-for-purpose existing artifact over retraining (the (a)-(j)
+  and prefer a fit-for-purpose existing artifact over retraining (the (a)-(k)
   fitness check, `.claude/rules/artifact-reuse.md`). Degrade gracefully when the
   registry is absent (Phase-1 dogfood tasks have none).
 

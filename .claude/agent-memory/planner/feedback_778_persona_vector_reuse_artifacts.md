@@ -6,7 +6,7 @@ type: reference
 
 Task #778 is the parent of the Persona Vectors replication line (arXiv
 2507.21509) on Qwen2.5-7B-Instruct for evil/sycophancy/hallucination. Any
-child task in this line reuses its artifacts (fitness-check (a)-(j) first,
+child task in this line reuses its artifacts (fitness-check (a)-(k) first,
 verify on HF via `huggingface_hub.list_repo_files`, never the `hf` CLI):
 
 - **`r_B` per trait**, `(28, 3584)` diff-of-means per layer:
