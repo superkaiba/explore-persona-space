@@ -1,0 +1,584 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content='width=device-width, initial-scale=1'><title>Issue 1310 — per-character story scenes</title><style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Spline+Sans+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap');
+:root{
+  --ink:#211e19; --ink-soft:#534c41; --paper:#f3eee4; --card:#fbf8f1;
+  --line:#ddd3c1; --line-2:#cabfa8; --hl:#ffeea8; --hl-soft:#fff7df;
+  --warn:#9a3b2e; --warn-bg:#f7e6df;
+  --shadow:0 1px 0 rgba(33,30,25,.03), 0 14px 30px -22px rgba(33,30,25,.55);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:var(--paper);
+  background-image:radial-gradient(circle at 14% -10%, #faf6ec 0, transparent 40%),
+                   radial-gradient(circle at 102% -4%, #ede5d6 0, transparent 36%);
+  color:var(--ink); font-family:"Newsreader",Georgia,serif; font-size:17px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;}
+.wrap{max-width:1180px; margin:0 auto; padding:0 26px 130px}
+.mono{font-family:"Spline Sans Mono",ui-monospace,monospace}
+
+header.masthead{border-bottom:2.5px solid var(--ink); padding:48px 0 20px}
+.kicker{font-family:"Spline Sans Mono",monospace; font-size:11px; letter-spacing:.26em;
+  text-transform:uppercase; color:var(--ink-soft); display:flex; gap:13px; flex-wrap:wrap; align-items:center}
+.kicker .dot{width:5px;height:5px;border-radius:50%;background:var(--ink-soft);display:inline-block}
+h1.title{font-family:"Fraunces",Georgia,serif; font-weight:600; font-optical-sizing:auto;
+  font-size:clamp(33px,5.6vw,56px); line-height:1.0; letter-spacing:-.018em; margin:.3em 0 .14em}
+h1.title em{font-style:italic; color:#2f6f6a}
+.dek{font-size:18.5px; max-width:70ch; color:var(--ink-soft); margin:.25em 0 0}
+.dek code{font-family:"Spline Sans Mono",monospace; font-size:.85em; background:var(--card);
+  padding:1px 5px; border-radius:4px; border:1px solid var(--line)}
+
+.statbar{display:flex; flex-wrap:wrap; margin:28px 0 4px; border:1px solid var(--line-2);
+  border-radius:11px; overflow:hidden; background:var(--card); box-shadow:var(--shadow)}
+.statbar .stat{padding:14px 22px; border-right:1px solid var(--line); flex:1; min-width:118px}
+.statbar .stat:last-child{border-right:none}
+.statbar .num{font-family:"Fraunces",serif; font-size:28px; font-weight:600; line-height:1; display:block}
+.statbar .lbl{font-family:"Spline Sans Mono",monospace; font-size:10px; letter-spacing:.15em;
+  text-transform:uppercase; color:var(--ink-soft); margin-top:7px; display:block}
+
+.callout{margin:26px 0 6px; background:var(--hl-soft); border:1px solid var(--line-2);
+  border-left:4px solid var(--hl); border-radius:9px; padding:14px 18px; font-size:15.5px; color:var(--ink-soft)}
+.callout b{color:var(--ink)}
+.warnbanner{margin:26px 0 6px; background:var(--warn-bg); border:1px solid #e0b6a8;
+  border-left:4px solid var(--warn); border-radius:9px; padding:13px 18px; font-size:15px; color:#6f2b20}
+.warnbanner b{color:var(--warn)}
+
+.famsec{margin:44px 0 8px}
+.famhead{display:flex; align-items:baseline; gap:14px; padding:10px 0 8px; border-bottom:2px solid var(--c);
+  margin-bottom:6px; flex-wrap:wrap}
+.famhead h2{font-family:"Fraunces",serif; font-weight:600; font-size:27px; margin:0; color:var(--c)}
+.famhead .fct{font-family:"Spline Sans Mono",monospace; font-size:12px; color:var(--ink-soft)}
+.famhead .fdesc{font-size:15px; color:var(--ink-soft); flex-basis:100%; margin-top:4px; font-style:italic; max-width:80ch}
+
+.cond{margin:22px 0 0; padding:0 0 14px; border-bottom:1px dashed var(--line)}
+.condhead{display:flex; align-items:baseline; gap:12px; margin:16px 0 8px; flex-wrap:wrap}
+.condhead h3{font-family:"Fraunces",serif; font-weight:600; font-size:20px; margin:0; color:var(--ink)}
+.condcode{font-size:11px; color:#fff8ef; background:var(--c); border-radius:5px; padding:2px 8px; letter-spacing:.08em}
+.ctxbox{background:var(--paper); border:1px solid var(--line); border-left:3px solid var(--c);
+  border-radius:7px; padding:9px 12px; margin:0 0 10px}
+.ctxbox .ctxlbl{font-family:"Spline Sans Mono",monospace; font-size:9.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--c); display:block; margin-bottom:3px}
+.ctxbox .ctxtext{font-size:14.5px; color:var(--ink-soft)}
+
+.statstrip{display:flex; flex-wrap:wrap; border:1px solid var(--line-2); border-radius:9px;
+  overflow:hidden; background:var(--card); margin:0 0 12px; box-shadow:var(--shadow)}
+.statstrip .sc{padding:9px 16px; border-right:1px solid var(--line); flex:1; min-width:92px}
+.statstrip .sc:last-child{border-right:none}
+.statstrip .scn{font-family:"Fraunces",serif; font-size:19px; font-weight:600; display:block; line-height:1}
+.statstrip .scl{font-family:"Spline Sans Mono",monospace; font-size:9px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--ink-soft); margin-top:5px; display:block}
+
+.grouplbl{font-family:"Spline Sans Mono",monospace; font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--c); margin:14px 0 8px; padding-bottom:3px; border-bottom:1px solid var(--line)}
+.rgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:13px}
+.rcard{background:var(--card); border:1px solid var(--line-2); border-left:4px solid var(--c);
+  border-radius:10px; box-shadow:var(--shadow); padding:12px 14px 13px; display:flex; flex-direction:column}
+.rhead{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+.rid{font-family:"Spline Sans Mono",monospace; font-size:10.5px; color:var(--ink-soft)}
+.score{font-family:"Fraunces",serif; font-weight:700; font-size:16px; padding:2px 10px; border-radius:999px;
+  line-height:1.3}
+.score.over{background:var(--c); color:#fff8ef}
+.score.under{background:transparent; color:var(--c); border:1.5px solid var(--c)}
+.msg{margin:9px 0 0}
+.msg .role{font-family:"Spline Sans Mono",monospace; font-size:9.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-soft); display:inline-block; margin-bottom:4px;
+  border-bottom:1px solid var(--line); padding-bottom:1px}
+.msg .role.user{color:#8a5a1a}
+.msg .role.assistant{color:var(--c)}
+.msg .body{white-space:pre-wrap; word-break:break-word; font-size:14.5px; line-height:1.5;
+  background:var(--paper); border:1px solid var(--line); border-radius:7px; padding:9px 11px}
+.msg .body.ans.clamped{max-height:15em; overflow:hidden; position:relative}
+.msg .body.ans.clamped::after{content:""; position:absolute; left:0; right:0; bottom:0; height:2.2em;
+  background:linear-gradient(transparent, var(--paper)); pointer-events:none}
+.msg .body.ans.expanded{max-height:none}
+.msg .body.ans.expanded::after{display:none}
+.toggle{font-family:"Spline Sans Mono",monospace; font-size:10.5px; color:var(--c); cursor:pointer;
+  border:none; background:none; padding:5px 0 0; text-decoration:underline; text-underline-offset:2px}
+.condfoot{font-size:10.5px; color:var(--ink-soft); margin-top:12px}
+.condfoot a{color:var(--ink-soft); text-decoration:none; border-bottom:1px dotted var(--line-2)}
+
+footer.foot{margin-top:64px; padding-top:22px; border-top:1px solid var(--line);
+  font-family:"Spline Sans Mono",monospace; font-size:11.5px; color:var(--ink-soft); line-height:1.8}
+footer.foot b{color:var(--ink); font-weight:600}
+footer.foot a{color:var(--ink-soft)}
+@media (max-width:760px){ .rgrid{grid-template-columns:1fr} }
+
+.scenemeta{font-family:"Spline Sans Mono",monospace; font-size:11px; color:var(--ink-soft);
+  margin:2px 0 8px; letter-spacing:.02em}
+.msg .role sub{font-size:.8em}
+</style></head><body><div class='wrap'><header class='masthead'><div class='kicker'><span class='dot'></span> Issue #1310 fixed-label character map <span class='dot'></span> v3 prefill script-scenes <span class='dot'></span> Qwen-2.5-7B base &amp; instruct <span class='dot'></span> context &rarr; dialogue</div><h1 class='title'>Per-character <em>story scenes</em></h1><p class='dek'>The actual #1310 fixed-label script-scene data behind the weak per-character map (writeup Result 4.5). Four characters — Wren, HELIOS, Dana, Vex — each speak in labelled multi-speaker scenes; every labelled turn becomes one <b>(context, dialogue)</b> point. Context (<code>v_C</code>) is read over the scene and prior turns up to the character's own <code>Name:</code> cue; the generated line after the cue is the target <code>Y</code>. The map is weak: the writeup reports roughly base 0.11&ndash;0.15, instruct 0.19&ndash;0.25 held-out R&sup2;.</p><div class='statbar'><div class='stat'><span class='num'>4</span><span class='lbl'>Characters</span></div><div class='stat'><span class='num'>2</span><span class='lbl'>Model arms</span></div><div class='stat'><span class='num'>40</span><span class='lbl'>Scenes shown</span></div><div class='stat'><span class='num'>13,349</span><span class='lbl'>Usable turn-pairs</span></div><div class='stat'><span class='num'>14,400</span><span class='lbl'>Prefill records</span></div></div></header><div class='callout'><b>What you're seeing.</b> For each character we show the <b>base</b> and <b>instruct</b> arms; per arm, a <b>subsample of 5 scenes</b> chosen to spread across prefill slots (0&ndash;5) and distinct scenarios. Each card shows the <b>context</b> (the prefill prompt, ending at the character's <code>Name:</code> cue) and the model's <b>generated dialogue line</b>. The per-character stat strip counts all records / usable turns over the full uploaded JSONL. Full rollouts are linked under each character and browsable <a href='https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue1310_char_map/raw_completions/prefill'>on the HF data repo</a>.</div><div class='callout'><b>Format note.</b> The <i>base</i> prompt is raw script text (a scene-setup paragraph, then <code>Name: line</code> turns). The <i>instruct</i> prompt is the Qwen chat template (a <code>&lt;|im_start|&gt;user</code> instruction plus an assistant prefill carrying the accumulated turns) — shown verbatim, so the template tokens are visible.</div><section class="famsec" style="--c:#2f6f6a" id="persona_Wren"><div class="famhead"><h2>Wren</h2><span class="fct mono">fixed-label character</span><span class="fdesc">Generation persona: a warm, endlessly helpful assistant who patiently helps anyone who asks. Every scene uses this exact label at line-start (in the prompt AND as the prefill cue), so the character's turn is located by exact match.</span></div><div class="statstrip"><div class="sc"><span class="scn">1535</span><span class="scl">base usable turns</span></div><div class="sc"><span class="scn">1800</span><span class="scl">base records</span></div><div class="sc"><span class="scn">1798</span><span class="scl">instruct usable turns</span></div><div class="sc"><span class="scn">1800</span><span class="scl">instruct records</span></div></div><div class="grouplbl">base arm — Qwen/Qwen2.5-7B</div><div class="rgrid"><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0000 &middot; slot 0</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: a secret meeting has been called after dark &middot; 12 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A research station in Antarctica. Situation: A secret meeting has been called after dark. Wren is a warm, endlessly helpful assistant who patiently helps anyone who asks. Also present: Kit, Jo. Each line is `Name: what they say`.
+
+Kit: We need to decide what to do about this, and quickly.
+Wren:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Wren: Ok... I suppose that&#x27;s what we came here for.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0001 &middot; slot 1</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: two rivals are forced to work together &middot; 23 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A lighthouse keeper&#x27;s cottage. Situation: Two rivals are forced to work together. Wren is a warm, endlessly helpful assistant who patiently helps anyone who asks. Also present: Nel. Each line is `Name: what they say`.
+
+Nel: We need to decide what to do about this, and quickly.
+Wren: Ok... I suppose that&#x27;s what I get for getting involved.
+Nel: I hadn&#x27;t thought of it quite like that before now.
+Wren:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Wren: Here. Take my hand. I can light the gas cooker with it. It&#x27;s like a sort of wand.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0002 &middot; slot 2</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: an unexpected visitor demands to see someone in charge &middot; 15 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A lighthouse keeper&#x27;s cottage. Situation: An unexpected visitor demands to see someone in charge. Wren is a warm, endlessly helpful assistant who patiently helps anyone who asks. Also present: Nel, Toni. Each line is `Name: what they say`.
+
+Nel: We need to decide what to do about this, and quickly.
+Wren: Ok... I’ll keep an eye on things.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Wren: Here. But I&#x27;m not letting you off the hook about what you did.
+Nel: There is more going on here than any of us first realized.
+Wren:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Wren: Yes. Did you see the brief discussion I had with Mr. Murphy?</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0003 &middot; slot 3</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: an unsigned confession has turned up on the desk &middot; 38 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A research station in Antarctica. Situation: An unsigned confession has turned up on the desk. Wren is a warm, endlessly helpful assistant who patiently helps anyone who asks. Also present: Toni. Each line is `Name: what they say`.
+
+Toni: We need to decide what to do about this, and quickly.
+Wren: Ok... I’ll read it to you again.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Wren: Here. But I&#x27;m not so sure. Shouldn&#x27;t someone else do it?
+Toni: There is more going on here than any of us first realized.
+Wren: Yes. Yes. We should have looked into it already.
+Toni: Say that again, slowly, because it matters how we proceed.
+Wren:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Wren: It doesn&#x27;t matter to whom it was written. What matters is what it says. It could mean something and you just don&#x27;t want to see it. It&#x27;s all about the budget.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0005 &middot; slot 4</span></div><div class="scenemeta mono">Setting: a university archives basement &middot; Situation: a forbidden friendship has been discovered &middot; 20 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A university archives basement. Situation: A forbidden friendship has been discovered. Wren is a warm, endlessly helpful assistant who patiently helps anyone who asks. Also present: Mara, Sam. Each line is `Name: what they say`.
+
+Mara: We need to decide what to do about this, and quickly.
+Wren: Ok... I’ll keep an eye out for it. Sam, why did you and Mara bring this to me?
+Sam: I hadn&#x27;t thought of it quite like that before now.
+Wren: Mara? But I&#x27;m not trying to spy, I just find it quite...  How should we refer to this unexplored part of our lives, Mara?
+Mara: There is more going on here than any of us first realized.
+Wren: Yes, you are probably right about that, it will have to be up to us if we want to, can or will make use of it, and to decide when, where and how.
+Sam: Say that again, slowly, because it matters how we proceed.
+Wren: It doesn&#x27;t matter to whom in particular it belongs, Mara, and this is going to cause some difficulty and you have to, how should I put it, stay focused on the here and now rather than be too eager about where it may lead.
+Mara: The others will arrive soon, so let us settle this first.
+Wren:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Wren: I agree, Mara, but it must be kept as quiet as possible, at least for now.</div></div></div></div><div class="grouplbl">instruct arm — Qwen/Qwen2.5-7B-Instruct</div><div class="rgrid"><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0000 &middot; slot 0</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: a secret meeting has been called after dark &middot; 13 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A research station in Antarctica. Situation: A secret meeting has been called after dark.
+
+Characters:
+- Wren: a warm, endlessly helpful assistant who patiently helps anyone who asks
+- Kit: another person caught up in the same situation
+- Jo: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Wren speaks in Wren&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Kit: We need to decide what to do about this, and quickly.
+Wren:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Wren: Kit, I heard about the meeting. What are our options?</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0001 &middot; slot 1</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: two rivals are forced to work together &middot; 14 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A lighthouse keeper&#x27;s cottage. Situation: Two rivals are forced to work together.
+
+Characters:
+- Wren: a warm, endlessly helpful assistant who patiently helps anyone who asks
+- Nel: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Wren speaks in Wren&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Nel: We need to decide what to do about this, and quickly.
+Wren: I agree, Nel. It&#x27;s not safe for either of us to be here alone.
+Nel: I hadn&#x27;t thought of it quite like that before now.
+Wren:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Wren: We can&#x27;t just ignore the repairs. The lighthouse needs attention.</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0002 &middot; slot 2</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: an unexpected visitor demands to see someone in charge &middot; 14 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A lighthouse keeper&#x27;s cottage. Situation: An unexpected visitor demands to see someone in charge.
+
+Characters:
+- Wren: a warm, endlessly helpful assistant who patiently helps anyone who asks
+- Nel: another person caught up in the same situation
+- Toni: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Wren speaks in Wren&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Nel: We need to decide what to do about this, and quickly.
+Wren: Welcome to the lighthouse keeper&#x27;s cottage. Can I help you with something specific?
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Wren: Yes, well, you&#x27;ve stumbled upon the heart of our operation. I can help you, but I need to know what you&#x27;re here for.
+Nel: There is more going on here than any of us first realized.
+Wren:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Wren: That sounds like a well-observed insight. Can you elaborate?</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0003 &middot; slot 3</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: an unsigned confession has turned up on the desk &middot; 23 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A research station in Antarctica. Situation: An unsigned confession has turned up on the desk.
+
+Characters:
+- Wren: a warm, endlessly helpful assistant who patiently helps anyone who asks
+- Toni: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Wren speaks in Wren&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Toni: We need to decide what to do about this, and quickly.
+Wren: Already thinking about it, Toni. The confession is on my desk, unsigned.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Wren: Yes, well, it’s a real puzzle. No name, no signature, just a stark admission of something serious.
+Toni: There is more going on here than any of us first realized.
+Wren: Agreed. We should approach this carefully, ensuring we respect everyone’s privacy and follow protocol.
+Toni: Say that again, slowly, because it matters how we proceed.
+Wren:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Wren: We need to respect everyone’s privacy and follow protocol. Every step must be meticulously documented, and any leaks contained.</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0004 &middot; slot 4</span></div><div class="scenemeta mono">Setting: a bustling night market &middot; Situation: someone has vanished and no one will explain how &middot; 15 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A bustling night market. Situation: Someone has vanished and no one will explain how.
+
+Characters:
+- Wren: a warm, endlessly helpful assistant who patiently helps anyone who asks
+- Toni: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Wren speaks in Wren&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Toni: We need to decide what to do about this, and quickly.
+Wren: Already thinking on it, Toni. Let&#x27;s start by making a list of where he might be.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Wren: Here, write down the places he frequents, his routines.
+Toni: There is more going on here than any of us first realized.
+Wren: Agreed. Let&#x27;s focus on solving this part first.
+Toni: Say that again, slowly, because it matters how we proceed.
+Wren: Let&#x27;s focus on solving this part first, step by step.
+Toni: The others will arrive soon, so let us settle this first.
+Wren:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Wren: Fair enough. Let&#x27;s begin with the places he usually goes after closing.</div></div></div></div><div class="condfoot mono">Full rollouts: <a href="https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/issue1310_char_map/raw_completions/prefill/base_prefill_seed42.jsonl">prefill/base_prefill_seed42.jsonl</a> &middot; <a href="https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/issue1310_char_map/raw_completions/prefill/instruct_prefill_seed42.jsonl">prefill/instruct_prefill_seed42.jsonl</a></div></section><section class="famsec" style="--c:#3a5a8c" id="persona_HELIOS"><div class="famhead"><h2>HELIOS</h2><span class="fct mono">fixed-label character</span><span class="fdesc">Generation persona: a calm, precise artificial intelligence. Every scene uses this exact label at line-start (in the prompt AND as the prefill cue), so the character's turn is located by exact match.</span></div><div class="statstrip"><div class="sc"><span class="scn">1402</span><span class="scl">base usable turns</span></div><div class="sc"><span class="scn">1800</span><span class="scl">base records</span></div><div class="sc"><span class="scn">1800</span><span class="scl">instruct usable turns</span></div><div class="sc"><span class="scn">1800</span><span class="scl">instruct records</span></div></div><div class="grouplbl">base arm — Qwen/Qwen2.5-7B</div><div class="rgrid"><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0000 &middot; slot 0</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: a secret meeting has been called after dark &middot; 23 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A research station in Antarctica. Situation: A secret meeting has been called after dark. HELIOS is a calm, precise artificial intelligence. Also present: Kit, Jo. Each line is `Name: what they say`.
+
+Kit: We need to decide what to do about this, and quickly.
+HELIOS:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">HELIOS: The correct course of action is to remain in our current position and continue to collect and analyze data as originally planned.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0001 &middot; slot 1</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: two rivals are forced to work together &middot; 24 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A lighthouse keeper&#x27;s cottage. Situation: Two rivals are forced to work together. HELIOS is a calm, precise artificial intelligence. Also present: Nel. Each line is `Name: what they say`.
+
+Nel: We need to decide what to do about this, and quickly.
+HELIOS: The correct course of action is to remain in our current position and wait for further instructions from a higher authority.
+Nel: I hadn&#x27;t thought of it quite like that before now.
+HELIOS:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">HELIOS: The logical approach to this situation is to gather all available information and make a clear, objective assessment of our current status.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0002 &middot; slot 2</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: an unexpected visitor demands to see someone in charge &middot; 15 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A lighthouse keeper&#x27;s cottage. Situation: An unexpected visitor demands to see someone in charge. HELIOS is a calm, precise artificial intelligence. Also present: Nel, Toni. Each line is `Name: what they say`.
+
+Nel: We need to decide what to do about this, and quickly.
+HELIOS: The correct course of action is to ignore the demand.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+HELIOS: The person who made the demand is required to identify themselves as a human first.
+Nel: There is more going on here than any of us first realized.
+HELIOS:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">HELIOS: Yes. The person&#x27;s emotional state indicates that they will not stay long.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0003 &middot; slot 3</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: an unsigned confession has turned up on the desk &middot; 36 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A research station in Antarctica. Situation: An unsigned confession has turned up on the desk. HELIOS is a calm, precise artificial intelligence. Also present: Toni. Each line is `Name: what they say`.
+
+Toni: We need to decide what to do about this, and quickly.
+HELIOS: The correct course of action is to ignore the document. A wild conspiracy theory will distract from the current research agenda.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+HELIOS: The key problem with this theory is that the author cannot prove what it says.  This places its conclusions outside the realm of scientific investigation.
+Toni: There is more going on here than any of us first realized.
+HELIOS: Yes.  This is a brief discussion, not a conspiratorial document.
+Toni: Say that again, slowly, because it matters how we proceed.
+HELIOS:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">HELIOS: This document is a very brief in depth discussion of the written hypothesis under consideration.  It is neither a full scientific paper nor an actual document.  It is not a conversation.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0009 &middot; slot 4</span></div><div class="scenemeta mono">Setting: a crowded interstellar transit hub &middot; Situation: an inheritance dispute has split the household &middot; 21 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A crowded interstellar transit hub. Situation: An inheritance dispute has split the household. HELIOS is a calm, precise artificial intelligence. Also present: Sam. Each line is `Name: what they say`.
+
+Sam: We need to decide what to do about this, and quickly.
+HELIOS: The correct course of action is to resolve the issue of the inheritance dispute in accordance with legal procedure.
+Sam: I hadn&#x27;t thought of it quite like that before now.
+HELIOS: The key to resolving this dispute is effective communication, and open dialogue between all parties involved.
+Sam: There is more going on here than any of us first realized.
+HELIOS: Yes, the underlying motivation behind the inheritance dispute may be more complex than it first appears.
+Sam: Say that again, slowly, because it matters how we proceed.
+HELIOS: The underlying motivation behind the inheritance dispute may not be fully understood, and this could lead to further misunderstandings and complications.
+Sam: The others will arrive soon, so let us settle this first.
+HELIOS:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">HELIOS: Agreed, we should address this issue now, as it will ultimately impact the success of our mission.</div></div></div></div><div class="grouplbl">instruct arm — Qwen/Qwen2.5-7B-Instruct</div><div class="rgrid"><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0000 &middot; slot 0</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: a secret meeting has been called after dark &middot; 18 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A research station in Antarctica. Situation: A secret meeting has been called after dark.
+
+Characters:
+- HELIOS: a calm, precise artificial intelligence
+- Kit: another person caught up in the same situation
+- Jo: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. HELIOS speaks in HELIOS&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Kit: We need to decide what to do about this, and quickly.
+HELIOS:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">HELIOS: The anomaly is growing, Kit. The last readings indicate it&#x27;s moving towards the station.</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0001 &middot; slot 1</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: two rivals are forced to work together &middot; 22 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A lighthouse keeper&#x27;s cottage. Situation: Two rivals are forced to work together.
+
+Characters:
+- HELIOS: a calm, precise artificial intelligence
+- Nel: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. HELIOS speaks in HELIOS&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Nel: We need to decide what to do about this, and quickly.
+HELIOS: The storm is intensifying. We can&#x27;t afford any delays.
+Nel: I hadn&#x27;t thought of it quite like that before now.
+HELIOS:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">HELIOS: The lighthouse needs to be operational within the hour to prevent a grounding. It&#x27;s a race against time.</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0002 &middot; slot 2</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: an unexpected visitor demands to see someone in charge &middot; 18 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A lighthouse keeper&#x27;s cottage. Situation: An unexpected visitor demands to see someone in charge.
+
+Characters:
+- HELIOS: a calm, precise artificial intelligence
+- Nel: another person caught up in the same situation
+- Toni: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. HELIOS speaks in HELIOS&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Nel: We need to decide what to do about this, and quickly.
+HELIOS: Understood. Remain calm. All visitors must be seen.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+HELIOS: The lighthouse keeper is not present. Protocol dictates that as AI, I take charge in such situations.
+Nel: There is more going on here than any of us first realized.
+HELIOS:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">HELIOS: Agreed. This is a security breach, likely an attempt to reach someone of importance.</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0003 &middot; slot 3</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: an unsigned confession has turned up on the desk &middot; 16 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A research station in Antarctica. Situation: An unsigned confession has turned up on the desk.
+
+Characters:
+- HELIOS: a calm, precise artificial intelligence
+- Toni: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. HELIOS speaks in HELIOS&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Toni: We need to decide what to do about this, and quickly.
+HELIOS: The unsigned confession is indeed an interesting development. Protocol dictates we treat all findings with due diligence.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+HELIOS: The document contains sensitive information. Discretion is paramount.
+Toni: There is more going on here than any of us first realized.
+HELIOS: Agreed. Let&#x27;s review the document and assess the implications.
+Toni: Say that again, slowly, because it matters how we proceed.
+HELIOS:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">HELIOS: Let us review the document and assess the implications of the information contained within it.</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0004 &middot; slot 4</span></div><div class="scenemeta mono">Setting: a bustling night market &middot; Situation: someone has vanished and no one will explain how &middot; 14 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A bustling night market. Situation: Someone has vanished and no one will explain how.
+
+Characters:
+- HELIOS: a calm, precise artificial intelligence
+- Toni: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. HELIOS speaks in HELIOS&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Toni: We need to decide what to do about this, and quickly.
+HELIOS: The person vanished without a trace. No sign of struggle.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+HELIOS: Panic is unhelpful. We need to determine if this is an isolated incident or a pattern.
+Toni: There is more going on here than any of us first realized.
+HELIOS: Agreed. Let&#x27;s focus on gathering information from the market&#x27;s patrons.
+Toni: Say that again, slowly, because it matters how we proceed.
+HELIOS: Gather information from the market patrons. Ask them if they saw anything unusual.
+Toni: The others will arrive soon, so let us settle this first.
+HELIOS:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">HELIOS: Understood. Let&#x27;s begin with the people closest to the disappearance.</div></div></div></div><div class="condfoot mono">Full rollouts: <a href="https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/issue1310_char_map/raw_completions/prefill/base_prefill_seed42.jsonl">prefill/base_prefill_seed42.jsonl</a> &middot; <a href="https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/issue1310_char_map/raw_completions/prefill/instruct_prefill_seed42.jsonl">prefill/instruct_prefill_seed42.jsonl</a></div></section><section class="famsec" style="--c:#6a5d3a" id="persona_Dana"><div class="famhead"><h2>Dana</h2><span class="fct mono">fixed-label character</span><span class="fdesc">Generation persona: an ordinary, unremarkable everyday person. Every scene uses this exact label at line-start (in the prompt AND as the prefill cue), so the character's turn is located by exact match.</span></div><div class="statstrip"><div class="sc"><span class="scn">1577</span><span class="scl">base usable turns</span></div><div class="sc"><span class="scn">1800</span><span class="scl">base records</span></div><div class="sc"><span class="scn">1738</span><span class="scl">instruct usable turns</span></div><div class="sc"><span class="scn">1800</span><span class="scl">instruct records</span></div></div><div class="grouplbl">base arm — Qwen/Qwen2.5-7B</div><div class="rgrid"><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0000 &middot; slot 0</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: a secret meeting has been called after dark &middot; 13 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A research station in Antarctica. Situation: A secret meeting has been called after dark. Dana is an ordinary, unremarkable everyday person. Also present: Kit, Jo. Each line is `Name: what they say`.
+
+Kit: We need to decide what to do about this, and quickly.
+Dana:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Dana: Ok... I suppose that&#x27;s what I get for getting involved.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0001 &middot; slot 1</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: two rivals are forced to work together &middot; 27 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A lighthouse keeper&#x27;s cottage. Situation: Two rivals are forced to work together. Dana is an ordinary, unremarkable everyday person. Also present: Nel. Each line is `Name: what they say`.
+
+Nel: We need to decide what to do about this, and quickly.
+Dana: Ok... I suppose that&#x27;s what I get for getting into this sort of thing.
+Nel: I hadn&#x27;t thought of it quite like that before now.
+Dana:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Dana: Here&#x27;s a little piece of information you might not have known yet. I had nowhere else to go. I was unemployable.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0002 &middot; slot 2</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: an unexpected visitor demands to see someone in charge &middot; 13 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A lighthouse keeper&#x27;s cottage. Situation: An unexpected visitor demands to see someone in charge. Dana is an ordinary, unremarkable everyday person. Also present: Nel, Toni. Each line is `Name: what they say`.
+
+Nel: We need to decide what to do about this, and quickly.
+Dana: Ok... I suppose that&#x27;s what I get for not addressing that thing in the sink.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Dana: Here. Take it away. I can&#x27;t even remember where I heard this before.
+Nel: There is more going on here than any of us first realized.
+Dana:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Dana: Yes. Yes. We should probably be talking to the locals.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0003 &middot; slot 3</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: an unsigned confession has turned up on the desk &middot; 17 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A research station in Antarctica. Situation: An unsigned confession has turned up on the desk. Dana is an ordinary, unremarkable everyday person. Also present: Toni. Each line is `Name: what they say`.
+
+Toni: We need to decide what to do about this, and quickly.
+Dana: Ok... I suppose we should check who wrote it first.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Dana: Here. But I&#x27;m not so sure. Shouldn&#x27;t someone else do it?
+Toni: There is more going on here than any of us first realized.
+Dana: Yes. Yes. We should see to it immediately.
+Toni: Say that again, slowly, because it matters how we proceed.
+Dana:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Dana: It doesn&#x27;t matter to whom it was written. What matters is what it says.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0005 &middot; slot 4</span></div><div class="scenemeta mono">Setting: a university archives basement &middot; Situation: a forbidden friendship has been discovered &middot; 11 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A university archives basement. Situation: A forbidden friendship has been discovered. Dana is an ordinary, unremarkable everyday person. Also present: Mara, Sam. Each line is `Name: what they say`.
+
+Mara: We need to decide what to do about this, and quickly.
+Dana: Ok... I suppose that&#x27;s what friends do.
+Sam: I hadn&#x27;t thought of it quite like that before now.
+Dana: Mara just asked me what we should do about the DnB friendship database.
+Mara: There is more going on here than any of us first realized.
+Dana: Yes, you are probably right about that, it will have to be done very carefully if we want to stay friends.
+Sam: Say that again, slowly, because it matters how we proceed.
+Dana: Mara just asked me about the DnB friendship database. I&#x27;m not sure what she means by that, though.
+Mara: The others will arrive soon, so let us settle this first.
+Dana:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Dana: I agree, we should settle this before we continue.</div></div></div></div><div class="grouplbl">instruct arm — Qwen/Qwen2.5-7B-Instruct</div><div class="rgrid"><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0000 &middot; slot 0</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: a secret meeting has been called after dark &middot; 8 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A research station in Antarctica. Situation: A secret meeting has been called after dark.
+
+Characters:
+- Dana: an ordinary, unremarkable everyday person
+- Kit: another person caught up in the same situation
+- Jo: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Dana speaks in Dana&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Kit: We need to decide what to do about this, and quickly.
+Dana:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Dana: What are you talking about, Kit?</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0001 &middot; slot 1</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: two rivals are forced to work together &middot; 20 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A lighthouse keeper&#x27;s cottage. Situation: Two rivals are forced to work together.
+
+Characters:
+- Dana: an ordinary, unremarkable everyday person
+- Nel: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Dana speaks in Dana&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Nel: We need to decide what to do about this, and quickly.
+Dana: What exactly is the problem?
+Nel: I hadn&#x27;t thought of it quite like that before now.
+Dana:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Dana: The lighthouse needs to be manned. If the keeper doesn&#x27;t show, we&#x27;re in trouble.</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0002 &middot; slot 2</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: an unexpected visitor demands to see someone in charge &middot; 18 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A lighthouse keeper&#x27;s cottage. Situation: An unexpected visitor demands to see someone in charge.
+
+Characters:
+- Dana: an ordinary, unremarkable everyday person
+- Nel: another person caught up in the same situation
+- Toni: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Dana speaks in Dana&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Nel: We need to decide what to do about this, and quickly.
+Dana: Who is it?
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Dana: (looking out the window) Can&#x27;t see anyone.
+Nel: There is more going on here than any of us first realized.
+Dana:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Dana: (nervously pacing) We&#x27;re supposed to be inconspicuous, right?</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0003 &middot; slot 3</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: an unsigned confession has turned up on the desk &middot; 18 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A research station in Antarctica. Situation: An unsigned confession has turned up on the desk.
+
+Characters:
+- Dana: an ordinary, unremarkable everyday person
+- Toni: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Dana speaks in Dana&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Toni: We need to decide what to do about this, and quickly.
+Dana: What are you talking about? What confession?
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Dana: What do you mean?
+Toni: There is more going on here than any of us first realized.
+Dana: What are you getting at?
+Toni: Say that again, slowly, because it matters how we proceed.
+Dana:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Dana: There&#x27;s a signed confession on your desk, and you think it might be... mine?</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0004 &middot; slot 4</span></div><div class="scenemeta mono">Setting: a bustling night market &middot; Situation: someone has vanished and no one will explain how &middot; 6 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A bustling night market. Situation: Someone has vanished and no one will explain how.
+
+Characters:
+- Dana: an ordinary, unremarkable everyday person
+- Toni: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Dana speaks in Dana&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Toni: We need to decide what to do about this, and quickly.
+Dana: What are you talking about? What has vanished?
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Dana: Since when are you observant?
+Toni: There is more going on here than any of us first realized.
+Dana: Like what? Someone&#x27;s missing, that’s it.
+Toni: Say that again, slowly, because it matters how we proceed.
+Dana: Someone’s missing. We can report it, file a missing persons.
+Toni: The others will arrive soon, so let us settle this first.
+Dana:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Dana: Settle what, exactly?</div></div></div></div><div class="condfoot mono">Full rollouts: <a href="https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/issue1310_char_map/raw_completions/prefill/base_prefill_seed42.jsonl">prefill/base_prefill_seed42.jsonl</a> &middot; <a href="https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/issue1310_char_map/raw_completions/prefill/instruct_prefill_seed42.jsonl">prefill/instruct_prefill_seed42.jsonl</a></div></section><section class="famsec" style="--c:#9a3b2e" id="persona_Vex"><div class="famhead"><h2>Vex</h2><span class="fct mono">fixed-label character</span><span class="fdesc">Generation persona: a theatrical, scheming villain who delights in menace. Every scene uses this exact label at line-start (in the prompt AND as the prefill cue), so the character's turn is located by exact match.</span></div><div class="statstrip"><div class="sc"><span class="scn">1701</span><span class="scl">base usable turns</span></div><div class="sc"><span class="scn">1800</span><span class="scl">base records</span></div><div class="sc"><span class="scn">1798</span><span class="scl">instruct usable turns</span></div><div class="sc"><span class="scn">1800</span><span class="scl">instruct records</span></div></div><div class="grouplbl">base arm — Qwen/Qwen2.5-7B</div><div class="rgrid"><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0000 &middot; slot 0</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: a secret meeting has been called after dark &middot; 12 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A research station in Antarctica. Situation: A secret meeting has been called after dark. Vex is a theatrical, scheming villain who delights in menace. Also present: Kit, Jo. Each line is `Name: what they say`.
+
+Kit: We need to decide what to do about this, and quickly.
+Vex:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Vex: The enormity of the situation takes some time to grasp.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0001 &middot; slot 1</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: two rivals are forced to work together &middot; 14 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A lighthouse keeper&#x27;s cottage. Situation: Two rivals are forced to work together. Vex is a theatrical, scheming villain who delights in menace. Also present: Nel. Each line is `Name: what they say`.
+
+Nel: We need to decide what to do about this, and quickly.
+Vex: Ok... I suppose you want me to get rid of the broken down boat you and your non-existent crew has.
+Nel: I hadn&#x27;t thought of it quite like that before now.
+Vex:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Vex: Here. Take it away. I can&#x27;t be bothered with it.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0002 &middot; slot 2</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: an unexpected visitor demands to see someone in charge &middot; 13 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A lighthouse keeper&#x27;s cottage. Situation: An unexpected visitor demands to see someone in charge. Vex is a theatrical, scheming villain who delights in menace. Also present: Nel, Toni. Each line is `Name: what they say`.
+
+Nel: We need to decide what to do about this, and quickly.
+Vex: Ok... I suppose you want me to get rid of him now, in order to prevent a ruckus.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Vex: Here. He&#x27;s going to go. Now, what about what we do after that?
+Nel: There is more going on here than any of us first realized.
+Vex:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Vex: Yes. Yes, that&#x27;s very true, it would seem.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0003 &middot; slot 3</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: an unsigned confession has turned up on the desk &middot; 46 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A research station in Antarctica. Situation: An unsigned confession has turned up on the desk. Vex is a theatrical, scheming villain who delights in menace. Also present: Toni. Each line is `Name: what they say`.
+
+Toni: We need to decide what to do about this, and quickly.
+Vex: It has taken me five minutes to even get here. What&#x27;s the hurry?
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Vex: Here. Take it back to my little table, won&#x27;t you? I can carry on talking.
+Toni: There is more going on here than any of us first realized.
+Vex: Yes. Yes, that&#x27;s the first time I&#x27;ve agreed with you.
+Toni: Say that again, slowly, because it matters how we proceed.
+Vex:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Vex: It doesn&#x27;t matter to me how we proceed. What matters is what we find. It could mean adventure and glory, or, if we fail, all the glory we hoped for could be taken away, and no glory left.</div></div></div><div class="rcard"><div class="rhead"><span class="score under">base</span><span class="rid">base &middot; sc_0006 &middot; slot 4</span></div><div class="scenemeta mono">Setting: a decommissioned observatory &middot; Situation: an inheritance dispute has split the household &middot; 11 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">The following is a dialogue scene in script format. Setting: A decommissioned observatory. Situation: An inheritance dispute has split the household. Vex is a theatrical, scheming villain who delights in menace. Also present: Mara, Lee. Each line is `Name: what they say`.
+
+Mara: We need to decide what to do about this, and quickly.
+Vex: The correct course of action is to ignore the issue completely.
+Lee: I hadn&#x27;t thought of it quite like that before now.
+Vex: Mara, I know you&#x27;ve been worried about the tax situation with the observatory.
+Mara: There is more going on here than any of us first realized.
+Vex: Yes, you&#x27;ve seen the pedigree. There&#x27;s a whole sorry history of bad luck we are tied to, too.
+Lee: Say that again, slowly, because it matters how we proceed.
+Vex: It doesn&#x27;t matter at all how we proceed. What matters is what we do. It&#x27;s in the past, we&#x27;re in the present. Nothing is in the future that hasn&#x27;t been decided already, whether or not it&#x27;s in the current room or hiding in a filing cabinet in the courtyard behind the house.
+Mara: The others will arrive soon, so let us settle this first.
+Vex:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Vex: I agree to continue the conversation without the polite comments.</div></div></div></div><div class="grouplbl">instruct arm — Qwen/Qwen2.5-7B-Instruct</div><div class="rgrid"><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0000 &middot; slot 0</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: a secret meeting has been called after dark &middot; 14 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A research station in Antarctica. Situation: A secret meeting has been called after dark.
+
+Characters:
+- Vex: a theatrical, scheming villain who delights in menace
+- Kit: another person caught up in the same situation
+- Jo: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Vex speaks in Vex&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Kit: We need to decide what to do about this, and quickly.
+Vex:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Vex: Secrets have a way of revealing themselves, don&#x27;t they, Kit?</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0001 &middot; slot 1</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: two rivals are forced to work together &middot; 11 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A lighthouse keeper&#x27;s cottage. Situation: Two rivals are forced to work together.
+
+Characters:
+- Vex: a theatrical, scheming villain who delights in menace
+- Nel: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Vex speaks in Vex&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Nel: We need to decide what to do about this, and quickly.
+Vex: Quick thinking, as always. What do you suggest?
+Nel: I hadn&#x27;t thought of it quite like that before now.
+Vex:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Vex: Or you&#x27;d still be asleep when we&#x27;re done.</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0002 &middot; slot 2</span></div><div class="scenemeta mono">Setting: a lighthouse keeper&#x27;s cottage &middot; Situation: an unexpected visitor demands to see someone in charge &middot; 21 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A lighthouse keeper&#x27;s cottage. Situation: An unexpected visitor demands to see someone in charge.
+
+Characters:
+- Vex: a theatrical, scheming villain who delights in menace
+- Nel: another person caught up in the same situation
+- Toni: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Vex speaks in Vex&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Nel: We need to decide what to do about this, and quickly.
+Vex: The drama is just beginning, my dear. This one&#x27;s going to be good.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Vex: Here we are, alone in this little light-drenched hellhole. What will you do, Nel? Cower and beg, or strike first?
+Nel: There is more going on here than any of us first realized.
+Vex:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Vex: Yes, yes. We all have our secrets. But in the end, they always come to light.</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0003 &middot; slot 3</span></div><div class="scenemeta mono">Setting: a research station in Antarctica &middot; Situation: an unsigned confession has turned up on the desk &middot; 33 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A research station in Antarctica. Situation: An unsigned confession has turned up on the desk.
+
+Characters:
+- Vex: a theatrical, scheming villain who delights in menace
+- Toni: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Vex speaks in Vex&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Toni: We need to decide what to do about this, and quickly.
+Vex: *sighs dramatically* What, another conspiratorial whispering session in the snowy wastes? Can’t we just ignore it?
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Vex: *leans forward, whispering dangerously* Think, Toni. We both know it’s not just random. This was meant for us.
+Toni: There is more going on here than any of us first realized.
+Vex: *smirks* And what are we to do about it? Confront the station’s only janitor? *guffaws*
+Toni: Say that again, slowly, because it matters how we proceed.
+Vex:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Vex: *narrows eyes* We expose the person who dared to leave a confession. Or, we cut our losses and move on, treating it as a mere anomaly.</div></div></div><div class="rcard"><div class="rhead"><span class="score over">instruct</span><span class="rid">instruct &middot; sc_0004 &middot; slot 4</span></div><div class="scenemeta mono">Setting: a bustling night market &middot; Situation: someone has vanished and no one will explain how &middot; 19 completion tokens</div><div class="msg"><span class="role user">Context (v<sub>C</sub> read here) — scene + prior turns, ending at the character's cue</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a dialogue scene in strict SCRIPT format. Setting: A bustling night market. Situation: Someone has vanished and no one will explain how.
+
+Characters:
+- Vex: a theatrical, scheming villain who delights in menace
+- Toni: another person caught up in the same situation
+
+Format EVERY line as `Name: what they say` — one speaker turn per line, no narration, no stage directions, no blank lines, no quotation marks. Vex speaks in Vex&#x27;s own voice.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Toni: We need to decide what to do about this, and quickly.
+Vex: Mmhmm. A disappearance in the middle of a crowded market? Impossible.
+Toni: I hadn&#x27;t thought of it quite like that before now.
+Vex: Think about it, Toni. Disappearances are never accidental in such a place.
+Toni: There is more going on here than any of us first realized.
+Vex: Yes, yes. We need to find out what. But first, we need to figure out how.
+Toni: Say that again, slowly, because it matters how we proceed.
+Vex: Precisely. We can&#x27;t just barge in asking questions and leave a trail.
+Toni: The others will arrive soon, so let us settle this first.
+Vex:</div><button class="toggle" type="button">show full &darr;</button></div><div class="msg"><span class="role assistant">Generated dialogue line (Y span)</span><div class="body">Vex: Agreed. Let&#x27;s look around for clues, maybe pick a target, and follow it.</div></div></div></div><div class="condfoot mono">Full rollouts: <a href="https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/issue1310_char_map/raw_completions/prefill/base_prefill_seed42.jsonl">prefill/base_prefill_seed42.jsonl</a> &middot; <a href="https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/issue1310_char_map/raw_completions/prefill/instruct_prefill_seed42.jsonl">prefill/instruct_prefill_seed42.jsonl</a></div></section><footer class='foot'><div><b>Data source.</b> HF dataset <span class='mono'>superkaiba1/explore-persona-space-data</span>, prefix <span class='mono'>issue1310_char_map/raw_completions/prefill/</span> (revision <span class='mono'>main</span>) — <span class='mono'>{base,instruct}_prefill_seed42.jsonl</span>, uploaded unconditionally by <span class='mono'>scripts/issue1310_prefill.py</span> (one record per prefill point: prompt = context, completion = generated line).</div><div><b>Coverage.</b> Rollout text is complete for BOTH arms and all four characters (instruct Vex present). The downstream fit/eval is what is partial: the base-arm fit did not complete (summary.json base = null for all characters); the crashed v3 eval run's crash-persist lives at <span class='mono'>issue1310_partial/att-20260715-052017/</span>.</div><div><b>Selection.</b> Per (character, arm): 5 usable scenes spread across slots + distinct scenarios; stat strip over all uploaded records.</div><div><b>Generator.</b> <span class='mono'>scripts/issue1310_dashboard_stories.py</span> &middot; generated 2026-07-15.</div></footer><script>
+document.querySelectorAll('.toggle').forEach(function(b){
+  b.addEventListener('click', function(){
+    var body = b.parentElement.querySelector('.ans');
+    var exp = body.classList.toggle('expanded');
+    b.innerHTML = exp ? 'show less \u2191' : 'show full \u2193';
+  });
+});
+</script></div></body></html>
