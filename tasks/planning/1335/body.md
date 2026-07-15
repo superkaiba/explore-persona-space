@@ -18,6 +18,7 @@ goal: 'Identify which factor(s) — role identity/frequency, genre, answer struc
   base and instruct.'
 relates_to:
 - identity-contextual-vs-base
+backend: gcp
 ---
 # Ablations: why is the assistant context→answer map so much stronger than the fiction-character map?
 
