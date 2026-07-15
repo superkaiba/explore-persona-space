@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1345,
+  "highest_id": 1346,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2696,6 +2696,13 @@
       "path": "tasks/planning/1345",
       "status": "planning",
       "title": "Is the assistant context\u2192answer map the same operator across framings? (chat template vs plain User:/Assistant: vs assistant-in-narrative-stories)"
+    },
+    "1346": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1346",
+      "status": "proposed",
+      "title": "workflow-fix: width re-eval on FLOP-bound mid-run deviation relaunch"
     },
     "135": {
       "has_clean_result": false,
