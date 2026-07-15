@@ -2833,8 +2833,8 @@
     "1363": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1363",
-      "status": "approved",
+      "path": "tasks/running/1363",
+      "status": "running",
       "title": "workflow-fix: MALLOC_ARENA_MAX=2 in the canonical VM-launch env prefix"
     },
     "1364": {
