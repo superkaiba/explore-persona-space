@@ -2478,8 +2478,8 @@
     "1318": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1318",
-      "status": "running",
+      "path": "tasks/reviewing/1318",
+      "status": "reviewing",
       "title": "daily-fix: fix 4 workflow_lint FAILs on main (hub-verify)"
     },
     "1319": {
