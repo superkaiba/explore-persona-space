@@ -6312,7 +6312,9 @@ Routing, auto-continue behavior, and the marker schema are unchanged.
 parked/terminal parent).** This step and its user-chat sibling (the
 CLAUDE.md § Routing "User-chat inline free analysis" carve-out) are
 ANALYSIS-ONLY and normally touch no pod (a needs-gpu discovery takes the
-ABORT path below); 9a-ter proper fires at status `interpreting`, outside
+ABORT path below — EXCEPT the user-chat sibling under its
+explicit user inline-override clause, whose deliberate GPU run inherits
+these same pre-launch signals + the compute-character statement); 9a-ter proper fires at status `interpreting`, outside
 the watcher's auto-stop set, but the user-chat sibling executes on PARKED
 (`on_hold`) / terminal-status parents. If an inline run following this
 shape nonetheless provisions or reuses a pod on such a parent, the
