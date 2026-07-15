@@ -1287,6 +1287,23 @@ def test_provision_registers_owning_issue_for_suffixed_name(isolated_state, monk
     assert metadata["pod-779-b"].pod_id == "live-779-b"
 
 
+def test_bootstrap_failure_hint_carries_name_suffix(isolated_state, monkeypatch, capsys):
+    """A suffixed provision's bootstrap-failure discard hint is scoped with
+    --name-suffix — it must never suggest an issue-wide terminate that would
+    take a healthy sibling pod-<N>'s volume with it."""
+    info = _info("pod-779-b", pod_id="live-779-b")
+    monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", lambda pod_id, timeout=600: info)
+    monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+    monkeypatch.setattr(pod_lifecycle, "_upsert_pods_conf", lambda pod: None)
+    monkeypatch.setattr(pod_lifecycle, "_bootstrap", lambda name, intent_label: 1)
+    ns = argparse.Namespace(issue=779, name_suffix="b", ttl_days=7, no_bootstrap=False)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._provision_wait_register_bootstrap(ns, "pod-779-b", info, "lora-7b")
+    assert exc.value.code == 1
+    assert "terminate --issue 779 --name-suffix b" in capsys.readouterr().err
+
+
 def _epod(name: str, issue: int) -> pod_lifecycle.EphemeralPod:
     return pod_lifecycle.EphemeralPod(metadata=_meta(name, issue=issue), info=_info(name))
 
