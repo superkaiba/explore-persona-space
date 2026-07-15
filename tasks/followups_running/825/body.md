@@ -4,7 +4,7 @@ title: The context→answer-profile map exists in pretrained Qwen2.5-7B at ~87% 
   it collapses under sampled decoding (MODERATE confidence)
 kind: experiment
 tags:
-- followup-auto
+- keep-running
 - followup-manual
 created_at: '2026-07-02T00:14:16Z'
 has_clean_result: true

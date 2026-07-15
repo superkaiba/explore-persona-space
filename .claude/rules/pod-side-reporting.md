@@ -1,5 +1,5 @@
 ---
-description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
+description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, pod-side sentinel READ-BACK tolerance under the .processed drain-rename (#1311)) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
 paths:
   - "scripts/*dispatch*"
   - "scripts/poll_pipeline.py"
@@ -15,7 +15,7 @@ sentinel-file channel. Any pod-side dispatcher you write (anything that gets
 launched on the pod by `experimenter` and is expected to terminate cleanly +
 hand results back to the orchestrator) MUST conform to the orchestrator's
 poll loop or its clean completion will read as `dead` / its end-of-run
-marker will be silently skipped. Two requirements, no exceptions:
+marker will be silently skipped. Three requirements, no exceptions:
 
 1. **`[phase=...]` log lines, terminating in `[phase=done]` on graceful
    completion.** `poll_pipeline.py` parses `PHASE_RE = re.compile(r"\[phase=
@@ -92,6 +92,40 @@ marker will be silently skipped. Two requirements, no exceptions:
    renamed `.processed` — the marker never lands, the dashboard never
    updates, and the orchestrator advances without the experiment's
    results in `events.jsonl`.
+
+3. **Read-back tolerance — the sentinel namespace is a one-way,
+   write-once, VM-drained channel; never re-read your own sentinels by
+   bare path.** The poller drains `/workspace/logs/issue-<N>-*.json`
+   (skipping `*.processed`) on EVERY tick and renames each
+   successfully-posted sentinel to `<path>.processed` (`mv -n`;
+   `poll_pipeline.py::_ssh_mark_processed`; the GCP lane renames
+   identically via `backends/gcp.py::_mark_sentinel_processed`; SLURM
+   has no sentinel channel). Post each sentinel ONCE, never rewrite it
+   in place — a rewrite whose `.processed` twin already exists is
+   un-renameable under `mv -n` and re-attempted/warned every tick. A
+   dispatcher that READS its own sentinels (resume predicate, per-cell
+   completion check, finalize aggregation) finds them GONE from the
+   bare path within ~one tick. Conform ONE way:
+   - **DEFAULT (strongly preferred): keep resume/finalize state
+     OUTSIDE the drained glob** — e.g. `<out_root>/<unit>/status.json`
+     under the dispatcher's own output tree — because (i) read-both
+     stays racy against the rename window, and (ii) the experimenter's
+     pre-launch sentinel hygiene
+     (`rm -f /workspace/logs/issue-<N>-*.json{,.processed}`,
+     experimenter.md § Before Running step 8) wipes BOTH forms on
+     every (re)launch: namespace state never survives a relaunch.
+   - **Fallback: read BOTH forms, bare path FIRST, then
+     `<path>.processed`** (bare-first cannot miss across the atomic
+     rename; processed-first can) — completion checks only, never
+     cross-relaunch resume (the hygiene wipe above).
+   Nor may non-envelope state files park in the namespace: a JSON
+   missing `_SENTINEL_REQUIRED_KEYS` is skipped WITHOUT rename but
+   warn-spams every tick, and a `-results.json` basename carrying the
+   results-payload key set is envelope-RESCUED (#899), posted, and
+   renamed anyway. Incident #1090 fu3/fu4 (code-review r1): per-run
+   sentinels doubled as resume/finalize state; the drain renamed them
+   mid-run → requeue races + a production reproducibility_card covering
+   only 23-24 of 35 cells.
 
 Rationale: task #448 (2026-05-31) — the pod-side dispatcher completed all
 cells cleanly but (a) never emitted `[phase=done]` and (b) wrote its

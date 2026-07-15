@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1309,
+  "highest_id": 1312,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -710,9 +710,9 @@
       "goal": "Rebuild the factory content-behavior datagen persona-vectors-style \u2014 each behavior defined by a trait description + 5 contrastive instruction pairs + neutral trait-eliciting questions (auto-generated persona-vectors-style where a curated bank triggers refusal) so a Claude generator is less likely to refuse \u2014 add an impossible-to-refuse formatting behavior as a pipeline positive control, and test whether this clears the yield floors and installs trainable organisms across the behavior set.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1090",
-      "status": "followups_running",
-      "title": "The training context, not the contrastive-negative panel, gates where implanted content behaviors express on-policy (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/1090",
+      "status": "awaiting_promotion",
+      "title": "Raising the learning rate unlocks on-policy expression of the impolite behavior in both installed-but-silent training contexts (MODERATE confidence)"
     },
     "1091": {
       "has_clean_result": false,
@@ -725,8 +725,8 @@
       "goal": "On a realistic sparse-crossed prefix x query corpus (~1k real WildChat/LMSYS prefixes incl. >=300 long conversations + ~100x48 dense core + ~500-query bank; two fit-time training arms; #594 battery as eval bridge), a 4x2 text-source x model factorial (own-text 2x2 full, Claude/shuffled subsampled), THREE answer targets (t1/t2/t3) + u1/u2/u3 user mirrors, bare-query captures, a turn-dynamics module (D0-D5, both input arms, D4 selection/length-controlled, D5 first-state horizon), and a BEHAVIOR module (graded Sonnet judge on the trait-relevant subset; B1 state->behavior per input arm + grain incl. the #779 monitoring-gap re-read and the A2 answer-side ceiling; B2 factor->behavior validating trait-per-factor): characterize answer-state transport via the four co-primary reads per cell/target/arm (prefix-vs-context gap; averaged-vs-per-example rank collapse; f/g/i shares vs #923; M~=f-map, M'-M~=g, trait-per-factor) plus the instruction-tuning text-vs-transport decomposition, carrier floor, factor transfer, target/dynamics/behavior sensitivity, and 0-GPU bridge re-fits on #923/#813/#779. Both prefix and context arms on every read; all GPU phases data-parallel; all fit grids vectorized (binding). Pre-approved to 300 GPU-h.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1092",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1092",
+      "status": "followups_running",
       "title": "Answer-state transport on real conversations runs almost entirely through the query-bearing context state, not the prefix persona state (HIGH confidence)"
     },
     "1093": {
@@ -2416,6 +2416,28 @@
       "path": "tasks/archived/131",
       "status": "archived",
       "title": "See if you have a persona prompt with another response from another persona-> does that elicit the marker (do both directions)"
+    },
+    "1310": {
+      "goal": "Test whether a context->dialogue linear map focused on a SINGLE fixed fiction character (persona, NOT the assistant), trained on on-policy generated stories that always refer to the character by the same fixed label, exists in Qwen2.5-7B base and instruct \u2014 the fiction-character analog of the assistant-persona context->answer map \u2014 across a 4-persona panel, each persona its own map.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/1310",
+      "status": "running",
+      "title": "Focused per-character context->dialogue map on on-policy stories, base vs instruct (4-persona panel)"
+    },
+    "1311": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1311",
+      "status": "completed",
+      "title": "workflow-fix: pod-side sentinel read-back tolerance under poller drain-rename"
+    },
+    "1312": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/1312",
+      "status": "reviewing",
+      "title": "workflow-fix: Lens 7 mechanical language-intrusion scan (Qwen CJK mixing)"
     },
     "132": {
       "has_clean_result": false,
@@ -8376,9 +8398,9 @@
       "goal": "On a thinking model chosen for maximal similarity to Qwen2.5-7B-Instruct, determine how the base-model linear context\u2192mean-answer activation map (#810) decomposes across the chain-of-thought \u2014 comparing (1) context\u2192CoT composed with CoT\u2192answer, (2) context\u2192(CoT+answer) jointly, and (3) (context+CoT)\u2192answer, against the direct context\u2192answer baseline \u2014 under mean-pool / max-pool / boundary-token summaries for each part (context, CoT, answer), in both the averaged-over-query regime (averaging over the query vector or over the CoT vector) and the individual context+query regime, scored by held-out R\u00b2 per layer on the parent line's folds.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/928",
-      "status": "followups_running",
-      "title": "Conditioning on the realized chain-of-thought predicts the thinking model's answer state no better than a matched-length slice of the answer's own opening (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/928",
+      "status": "awaiting_promotion",
+      "title": "Conditioning on the realized chain-of-thought predicts the thinking model's answer state no better than a matched-length slice of the answer's own opening (HIGH confidence)"
     },
     "929": {
       "has_clean_result": false,
@@ -8554,8 +8576,8 @@
       "goal": "On frozen Qwen-2.5-7B-Instruct with ridge-only maps and a train/validation/test split (validation selects layer + \u03bb, a disjoint test split compares methods and arms), characterize where the linear context\u2192answer-activation map differs between on-policy and off-policy answers, along three axes: (1) per-token-position predictability \u2014 fit h_t: c_last(x) \u2192 z_t^(a)(x) for answer positions t in the first-16 window, the last-16 window (span extended through `<|im_end|>` and its trailing newline \u2014 the last token before a next user turn would begin), and relative-position deciles, per arm a \u2208 {own-regenerated, external-plain, external-distinct-style, mismatched} (the four #823 arms, completions reused) over the 4998-context LMSYS pool; (2) prefix-conditioned prediction \u2014 sweep the predictor to the realized-answer activation at position t (t \u2208 {1,2,4,8,16,32,64,128}; t=0 = c_last baseline) predicting the individual / mean-pooled / max-pooled activations of positions > t, measuring how fast each arm's remainder becomes predictable as prefix is absorbed; and (3) divergence-conditioned evaluation \u2014 evaluate the SAME pool-trained maps on a generation-verified Qwen-vs-Claude divergence query bank (\u22484 quirk categories \u00d7 ~40\u201360 queries, each with matched same-template entity-swapped controls), testing whether off-policy predictability fails specifically where the two models' behaviors diverge while on-policy predictability holds.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/952",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/952",
+      "status": "followups_running",
       "title": "The own-answer advantage in predicting answer activations from context is position-uniform across the captured read-out layer band (MODERATE confidence)"
     },
     "953": {

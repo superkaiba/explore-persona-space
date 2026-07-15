@@ -1,6 +1,6 @@
 {
-  "commit": "d7fdfdf996",
-  "created": "2026-07-15T03:10:39Z",
+  "commit": "88c0514443",
+  "created": "2026-07-15T04:09:42Z",
   "figsize": [
     8.0,
     4.2
@@ -99,80 +99,122 @@
     },
     {
       "x": 4.0,
+      "Tier-2 confirmatory rate": 0.27,
+      "label": "0.30",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
       "Tier-2 confirmatory rate": 0.0,
       "label": "0.24",
       "_kind": "scatter",
-      "_group": 13
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "Tier-2 confirmatory rate": 0.67,
+      "label": "0.73",
+      "_kind": "scatter",
+      "_group": 15
     },
     {
       "x": 5.0,
       "Tier-2 confirmatory rate": 0.0,
       "label": "0.30",
       "_kind": "scatter",
-      "_group": 14
+      "_group": 16
     },
     {
       "x": 6.0,
       "Tier-2 confirmatory rate": 0.725,
       "label": "0.73",
       "_kind": "scatter",
-      "_group": 15
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "Tier-2 confirmatory rate": 0.62,
+      "label": "0.73",
+      "_kind": "scatter",
+      "_group": 18
     },
     {
       "x": 6.0,
       "Tier-2 confirmatory rate": 0.0,
       "label": "0.30",
       "_kind": "scatter",
-      "_group": 16
+      "_group": 19
     },
     {
       "x": 8.0,
       "Tier-2 confirmatory rate": 0.695,
       "label": "0.72",
       "_kind": "scatter",
-      "_group": 17
+      "_group": 20
+    },
+    {
+      "x": 8.0,
+      "Tier-2 confirmatory rate": 0.56,
+      "label": "0.72",
+      "_kind": "scatter",
+      "_group": 21
     },
     {
       "x": 8.0,
       "Tier-2 confirmatory rate": 0.0,
       "_kind": "scatter",
-      "_group": 18
+      "_group": 22
     },
     {
       "x": 9.0,
       "Tier-2 confirmatory rate": 0.715,
       "label": "0.74",
       "_kind": "scatter",
-      "_group": 19
+      "_group": 23
+    },
+    {
+      "x": 9.0,
+      "Tier-2 confirmatory rate": 0.625,
+      "label": "0.74",
+      "_kind": "scatter",
+      "_group": 24
     },
     {
       "x": 9.0,
       "Tier-2 confirmatory rate": 0.0,
       "_kind": "scatter",
-      "_group": 20
+      "_group": 25
     },
     {
       "x": 10.0,
       "Tier-2 confirmatory rate": 0.76,
       "label": "0.83",
       "_kind": "scatter",
-      "_group": 21
+      "_group": 26
+    },
+    {
+      "x": 10.0,
+      "Tier-2 confirmatory rate": 0.625,
+      "label": "0.74",
+      "_kind": "scatter",
+      "_group": 27
     },
     {
       "x": 10.0,
       "Tier-2 confirmatory rate": 0.0,
       "_kind": "scatter",
-      "_group": 22
+      "_group": 28
     }
   ],
-  "n_series": 23,
-  "total_points": 23,
+  "n_series": 29,
+  "total_points": 29,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Tier-2 verdict reads (circles trained + Wilson 95% CI; squares base;\nopen triangles worst-case judge-drop bound; dashes 0.60 band floor, dots 0.30 cut)",
+        "title_left": "Tier-2 verdict reads (circles trained + Wilson 95% CI; squares base;\nopen triangles worst-case judge-drop bound; x CJK-intrusion-zeroed bound;\ndashes 0.60 band floor, dots 0.30 cut)",
         "ylabel": "Tier-2 confirmatory rate",
         "annotations": [
           "0.20",

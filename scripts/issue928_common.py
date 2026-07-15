@@ -227,6 +227,59 @@ def matched_length_spans(
     }
 
 
+# ── prefix-based mapping arms (follow-up round, plan v7 §4.1) ─────────────────
+
+# The 5 mean-pool vectors captured per (row, layer) for the prefix-summaries
+# store (plan v7 §4.2 item 4): 2 new prompt-side parts + 3 parity parts whose
+# recapture is gated against the matched-length store (cos >= 0.999).
+PMA_SUMMARY_NAMES: tuple[str, ...] = (
+    "prefix_mean",
+    "query_mean",
+    "ctx_mean",
+    "cot_mean",
+    "ans_mean",
+)
+
+
+def prefix_query_spans(
+    prompt_text_tpl: str,
+    prompt_offsets: list[tuple[int, int]],
+    prompt_len_tpl: int,
+    probe: str,
+) -> dict[str, tuple[int, int]] | str:
+    """Prefix/query token spans over the TEMPLATED prompt (plan v7 §4.1).
+
+    prefix = all templated-prompt tokens strictly before the FINAL user turn's
+    probe content (system block + prefix_messages + chat scaffolding incl. the
+    ``<|im_start|>user\\n`` header); query = the probe's own tokens. ``rfind``
+    = last occurrence (the probe is the final user turn by construction —
+    ``issue594_common.messages_for_instance``). Boundary conventions (stated):
+    the user-turn header belongs to the PREFIX; a BPE token straddling the
+    header/probe boundary joins the QUERY (overlap mapping, ≤ 1 token). The
+    post-query assistant-header scaffolding belongs to neither part.
+
+    Returns ``{"prefix": (0, q0), "query": (q0', q1)}`` (half-open prompt-token
+    indices; ``q_tok[1] <= prompt_len_tpl`` since ``prompt_offsets`` carries one
+    entry per prompt token), a drop-reason str (``empty_query_token_span`` /
+    ``empty_prefix_token_span`` — dropped-and-counted; the latter measured
+    impossible on this battery, min prefix 24 tokens), or raises
+    ``RuntimeError`` when the probe is not found verbatim (kill criterion,
+    plan §7).
+    """
+    q_char = prompt_text_tpl.rfind(probe)
+    if q_char < 0:
+        raise RuntimeError(
+            "probe not found verbatim in templated prompt (plan §7 kill criterion): "
+            f"probe {probe[:60]!r}…"
+        )
+    q_tok = char_span_to_token_span(prompt_offsets, (q_char, q_char + len(probe)))
+    if q_tok == (0, 0):
+        return "empty_query_token_span"  # dropped-and-counted
+    if q_tok[0] == 0:
+        return "empty_prefix_token_span"  # dropped-and-counted (measured: cannot fire)
+    return {"prefix": (0, q_tok[0]), "query": q_tok}
+
+
 # Condition slugs (plan §10) — regimes avg_q / avg_t / indiv.
 ARM_SLUGS = (
     "d_ctx2ans",

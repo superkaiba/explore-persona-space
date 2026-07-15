@@ -1,0 +1,269 @@
+{
+  "commit": "07d78dd34e",
+  "created": "2026-07-14T23:24:57Z",
+  "figsize": [
+    9.5,
+    4.0
+  ],
+  "points": [
+    {
+      "Layer": 14.0,
+      "Fraction of held-out ceiling R\u00b2": 0.9549830837456661,
+      "series": "General linear",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 18.0,
+      "Fraction of held-out ceiling R\u00b2": 0.9835092337641212,
+      "series": "General linear",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 19.0,
+      "Fraction of held-out ceiling R\u00b2": 0.9995355402539917,
+      "series": "General linear",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 26.0,
+      "Fraction of held-out ceiling R\u00b2": 0.9938056010611395,
+      "series": "General linear",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 14.0,
+      "Fraction of held-out ceiling R\u00b2": 0.20571925204895547,
+      "series": "Orthogonal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 18.0,
+      "Fraction of held-out ceiling R\u00b2": -0.6652970692134438,
+      "series": "Orthogonal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 19.0,
+      "Fraction of held-out ceiling R\u00b2": -0.5403913121114954,
+      "series": "Orthogonal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 26.0,
+      "Fraction of held-out ceiling R\u00b2": -0.48865418473932853,
+      "series": "Orthogonal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 14.0,
+      "Fraction of held-out ceiling R\u00b2": 0.8333519827823246,
+      "series": "Scaled orthogonal",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 18.0,
+      "Fraction of held-out ceiling R\u00b2": 0.7986378629687965,
+      "series": "Scaled orthogonal",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 19.0,
+      "Fraction of held-out ceiling R\u00b2": 0.8304422574026415,
+      "series": "Scaled orthogonal",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 26.0,
+      "Fraction of held-out ceiling R\u00b2": 0.8135748060828345,
+      "series": "Scaled orthogonal",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 0.0,
+      "Fraction of held-out ceiling R\u00b2": 1.0,
+      "series": "Held-out ceiling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 1.0,
+      "Fraction of held-out ceiling R\u00b2": 1.0,
+      "series": "Held-out ceiling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 14.0,
+      "Fraction of held-out ceiling R\u00b2": 1.0064653572728461,
+      "series": "General linear",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 18.0,
+      "Fraction of held-out ceiling R\u00b2": 1.0151468448678431,
+      "series": "General linear",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 19.0,
+      "Fraction of held-out ceiling R\u00b2": 1.0019799488762693,
+      "series": "General linear",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 26.0,
+      "Fraction of held-out ceiling R\u00b2": 1.0310700660282475,
+      "series": "General linear",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 14.0,
+      "Fraction of held-out ceiling R\u00b2": 0.4417800537808545,
+      "series": "Orthogonal",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 18.0,
+      "Fraction of held-out ceiling R\u00b2": 0.4474112614364942,
+      "series": "Orthogonal",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 19.0,
+      "Fraction of held-out ceiling R\u00b2": 0.5886397135410263,
+      "series": "Orthogonal",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 26.0,
+      "Fraction of held-out ceiling R\u00b2": 0.6906915543847266,
+      "series": "Orthogonal",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 14.0,
+      "Fraction of held-out ceiling R\u00b2": 0.5716056001024297,
+      "series": "Scaled orthogonal",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 18.0,
+      "Fraction of held-out ceiling R\u00b2": 0.5182804107506916,
+      "series": "Scaled orthogonal",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 19.0,
+      "Fraction of held-out ceiling R\u00b2": 0.602879400282488,
+      "series": "Scaled orthogonal",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 26.0,
+      "Fraction of held-out ceiling R\u00b2": 0.6938328171222758,
+      "series": "Scaled orthogonal",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 0.0,
+      "Fraction of held-out ceiling R\u00b2": 1.0,
+      "series": "Held-out ceiling",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 1.0,
+      "Fraction of held-out ceiling R\u00b2": 1.0,
+      "series": "Held-out ceiling",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 28,
+  "text": {
+    "suptitle": "Same-function-different-basis composition (A_ans \u2218 M o A_ctx_rev) vs ceiling",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base rep \u2192 instruct target",
+        "xlabel": "Layer",
+        "ylabel": "Fraction of held-out ceiling R\u00b2",
+        "legend_labels": [
+          "General linear",
+          "Orthogonal",
+          "Scaled orthogonal",
+          "Held-out ceiling"
+        ],
+        "xticklabels": [
+          "14",
+          "18",
+          "19",
+          "26"
+        ],
+        "yticklabels": [
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      },
+      {
+        "title_left": "instruct rep \u2192 base target",
+        "xlabel": "Layer",
+        "ylabel": "Fraction of held-out ceiling R\u00b2",
+        "xticklabels": [
+          "14",
+          "18",
+          "19",
+          "26"
+        ],
+        "yticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ],
+    "series": [
+      "General linear",
+      "Orthogonal",
+      "Scaled orthogonal",
+      "Held-out ceiling"
+    ]
+  }
+}
