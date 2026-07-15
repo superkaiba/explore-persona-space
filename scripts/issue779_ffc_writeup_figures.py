@@ -46,6 +46,7 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 REPO = Path(__file__).resolve().parents[1]
 FFC = REPO / "eval_results/issue_779/fitter-fair-comparison"
 FFC10 = REPO / "eval_results/issue_779/fitter-fair-comparison-n10k"
+FFC50 = REPO / "eval_results/issue_779/fitter-fair-comparison-n50k"
 
 FITTER_LABELS = {
     "ridge": "Ridge (linear)",
@@ -112,6 +113,63 @@ def fig_scaling() -> None:
         "Dashed: n=10,000 refit (extended λ grid, same test set).",
     )
     savefig_paper(fig, "issue_779/ffc_scaling_to_n10k", dir=REPO / "figures")
+    plt.close(fig)
+
+
+def fig_scaling_n50k() -> None:
+    """ffc_scaling_to_n10k extended with the n=50,000 plan-B refit (n50k_fits.json)."""
+    curves = json.loads((FFC / "scaling_curves.json").read_text())["curves"]["last_L19"]
+    n10k = json.loads((FFC10 / "perdirection_per_predictor_n10k.json").read_text())["per_predictor"]
+    n50k = json.loads((FFC50 / "n50k_fits.json").read_text())["per_predictor"]
+
+    r2 = defaultdict(list)
+    for e in curves:
+        r2[(e["fitter"], e["n"])].append(e["r2"])
+    ns = sorted({e["n"] for e in curves})
+
+    colors = dict(zip(FITTER_ORDER, paper_palette(len(FITTER_ORDER)), strict=False))
+    fig, ax = plt.subplots()
+    for f in FITTER_ORDER:
+        means = [float(np.mean(r2[(f, n)])) for n in ns]
+        ax.plot(ns, means, marker="o", markersize=4.5, color=colors[f], label=FITTER_LABELS[f])
+        for n in ns:  # per-draw points behind the mean line
+            draws = r2[(f, n)]
+            ax.scatter([n] * len(draws), draws, s=9, color=colors[f], alpha=0.45, zorder=1)
+        # round-2 point (n=10k refit) + round-3 point (n=50k plan-B refit), dashed continuation
+        y10 = n10k[f]["whole_map_r2"]
+        y50 = n50k[f]["whole_map_r2"]
+        ci = n50k[f]["bootstrap_ci"]["r2"]
+        ax.plot([ns[-1], 10_000, 50_000], [means[-1], y10, y50], linestyle="--", color=colors[f])
+        ax.scatter([10_000], [y10], s=34, color=colors[f], zorder=3)
+        ax.errorbar(
+            [50_000],
+            [y50],
+            yerr=[[y50 - ci["lo"]], [ci["hi"] - y50]],
+            fmt="s",
+            markersize=5.5,
+            color=colors[f],
+            capsize=3,
+            zorder=3,
+        )
+
+    ax.set_xscale("log")
+    ax.set_xticks([250, 500, 1000, 2000, 3600, 10000, 50000])
+    ax.set_xticklabels(["250", "500", "1k", "2k", "3.6k", "10k", "50k"])
+    ax.minorticks_off()
+    ax.set_xlabel("training contexts (log scale)")
+    ax.set_ylabel("held-out test R²")
+    add_direction_arrow(ax, "y", "up")
+    ax.set_ylim(0.45, 0.84)
+    ax.legend(loc="lower right")
+    _title(
+        ax,
+        "Context→answer map: held-out R² vs training-set size",
+        "Qwen-2.5-7B-Instruct, LMSYS; last-token → mean-answer, layer 19; "
+        "fixed 1,000-ctx test set.\n"
+        "Dashed: n=10,000 refit; n=50,000 plan-B refit (squares, bootstrap 95% CI; "
+        "single fit per predictor).",
+    )
+    savefig_paper(fig, "issue_779/ffc_scaling_to_n50k", dir=REPO / "figures")
     plt.close(fig)
 
 
