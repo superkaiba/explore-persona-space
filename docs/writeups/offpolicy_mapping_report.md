@@ -47,11 +47,11 @@
 
 ### Result 1: You can train an almost-as-good mapping from context to answer for off-policy text
 
-I first wanted to see if you could train an as good mapping from context to off-policy text as to on-policy text. I refit the identical ridge harness per answer arm (own regenerated / Claude plain / swapped) at the three plan-pinned read-out layers (14, 17, 26 — one trait-agnostic map per layer; the layers were originally selected per persona-vector trait in the parent line, but the fit is the same whole-answer-mean map at each; n = 4,998). Bars show pooled 5-fold out-of-fold refit R² per arm; error bars are fold SDs. (The eccentric-style arm is introduced in Result 3.)
+I first wanted to see if you could train an as good mapping from context to off-policy text as to on-policy text. I refit the identical ridge harness per answer arm (own regenerated / Claude plain / swapped) at layer 17, the strongest of the three plan-pinned read-out layers (n = 4,998; results are layer-stable across 14/17/26 — ranges in the takeaways). Bars show pooled 5-fold out-of-fold refit R² per arm; error bars are fold SDs. (The eccentric-style arm is introduced in Result 3.)
 
 **Plot: Refit R² by answer arm at read-out layers**
 
-![Refit R² by arm at read-out layers, style arm excluded](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d82d42eaeb97445b0638f611a7b08d9c52dab699/figures/issue_823/fig1b_refit_r2_by_arm_no_style.png)
+![Refit R² by arm at read-out layers, style arm excluded](https://raw.githubusercontent.com/superkaiba/explore-persona-space/1e68fae8b4de6570a8cdc4bd9404f0f1014999ff/figures/issue_823/fig1b_refit_r2_by_arm_no_style.png)
 
 **Takeaways:**
 
@@ -80,11 +80,11 @@ I then wanted to see if this transfer between mappings was due to style similari
 - trained a new mapping to see if this was predictable
 - saw if the old mappings transferred to predicting the new activations
 
-Bars show, per read-out layer: the fresh style-arm refit; the Claude-plain map transferred to style targets; the Qwen-own map transferred to style targets; and the Qwen-own→Claude-plain transfer as reference.
+Bars show, at layer 17: the fresh style-arm refit; the Claude-plain map transferred to style targets; the Qwen-own map transferred to style targets; and the Qwen-own→Claude-plain transfer as reference (ranges across the three read-out layers in the takeaways).
 
 **Plot: Style-arm refit vs transfer from both existing maps**
 
-![Style refit vs transfer decomposition](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d82d42eaeb97445b0638f611a7b08d9c52dab699/figures/issue_823/fig5_style_transfer_decomposition.png)
+![Style refit vs transfer decomposition](https://raw.githubusercontent.com/superkaiba/explore-persona-space/1e68fae8b4de6570a8cdc4bd9404f0f1014999ff/figures/issue_823/fig5_style_transfer_decomposition.png)
 
 **Takeaways:**
 
