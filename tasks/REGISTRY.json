@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1365,
+  "highest_id": 1366,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2850,6 +2850,13 @@
       "path": "tasks/proposed/1365",
       "status": "proposed",
       "title": "workflow-fix: correct upload-policy.md #1315 root-cause clause post-#1360"
+    },
+    "1366": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1366",
+      "status": "proposed",
+      "title": "workflow-fix: artifact-reuse check for parent-branch unmerged fixes + row-count reconciliation"
     },
     "137": {
       "has_clean_result": false,
