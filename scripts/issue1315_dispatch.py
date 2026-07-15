@@ -1399,15 +1399,25 @@ def _smoke_capture_slice(
         }
     first_other = next(iter(k for k in panel if k != wc))
     sliced = {wc: panel[wc], first_other: panel[first_other]}
+    # r7 crash-fix: ALWAYS include the seam-bearing default-panel member — its
+    # "... {q}" wrap puts the prefix boundary on a BPE merge seam on every
+    # letter-initial question, so the smoke exercises the compute_prompt_spans
+    # on_seam="snap" path end-to-end (the r6 crash escaped smoke precisely
+    # because the 2-context slice never contained a default-panel member).
+    seam_member = "neg_reph_curious"
+    assert seam_member in panel, sorted(panel)
+    sliced[seam_member] = panel[seam_member]
     qs = questions[:2]
     assert len(qs) >= 2, (
         f"smoke capture needs >=2 questions for the p10 split-half ceiling; got "
         f"{len(qs)} (check --eval-question-limit)"
     )
     logger.info(
-        "[capture-smoke] slice: %d contexts x %d questions (>=2 questions for p10 split-half)",
+        "[capture-smoke] slice: %d contexts x %d questions (>=2 questions for p10 split-half; "
+        "incl. seam member %s)",
         len(sliced),
         len(qs),
+        seam_member,
     )
     return sliced, qs
 
@@ -1448,9 +1458,19 @@ def run_capture_unit(cfg: Cfg, cell: str, dose: str) -> None:
         prior_turns=prior_turns,
     )
     tokenizer = AutoTokenizer.from_pretrained(DEFAULT_BASE_MODEL)
+    # on_seam="snap" (r7 crash-fix): a plain-text boundary under
+    # prefix_end='last_user' can sit on a BPE merge seam (deterministic for the
+    # neg_reph_curious "... {q}" wrap — the trailing space merges into the
+    # question's first word; #1315 r7 repro: 20/20 questions, prefix boundary,
+    # all other contexts exact). The snap policy keeps spans construct-exact
+    # (prefix excludes the query-consuming straddler; context includes the full
+    # query) with per-row provenance persisted below — never a silent shift.
+    seam_counts = {"prefix": 0, "context": 0}
+    n_exact = 0
     for r in rows:
         ctx_id = r["persona"]
         q = questions[r["question_idx"]]
+        flags: dict[str, bool] = {}
         r["prefix_len"], r["context_len"] = compute_prompt_spans(
             tokenizer,
             personas[ctx_id],
@@ -1459,10 +1479,33 @@ def run_capture_unit(cfg: Cfg, cell: str, dose: str) -> None:
             prior_messages=list(prior_turns.get(ctx_id) or ()),
             user_wrap=user_wraps.get(ctx_id),
             prefix_end="last_user",
+            on_seam="snap",
+            seam_flags=flags,
         )
+        r["span_seam"] = flags
+        if flags["prefix"] or flags["context"]:
+            seam_counts["prefix"] += int(flags["prefix"])
+            seam_counts["context"] += int(flags["context"])
+        else:
+            n_exact += 1
+    n_seam = len(rows) - n_exact
+    logger.info(
+        "[capture] span-validation: %d rows ok / %d seam-handled (prefix=%d, context=%d)",
+        n_exact,
+        n_seam,
+        seam_counts["prefix"],
+        seam_counts["context"],
+    )
     # persist rollout text BEFORE the capture reduce (upload policy #779)
     (out_dir / "raw_rows.json").write_text(
-        json.dumps({"model": model_path, "rows": rows}, ensure_ascii=False)
+        json.dumps(
+            {
+                "model": model_path,
+                "span_seam_counts": {"exact": n_exact, **seam_counts},
+                "rows": rows,
+            },
+            ensure_ascii=False,
+        )
     )
     pooled = _teacher_forced_span_means(
         model_path,
@@ -1489,6 +1532,7 @@ def run_capture_unit(cfg: Cfg, cell: str, dose: str) -> None:
             "max_new_tokens": C.MAX_NEW_TOKENS,
             "tf_batch_size": C.TF_BATCH_SIZE,
             "prefix_end": "last_user",
+            "span_seam_counts": {"exact": n_exact, **seam_counts},
         },
     }
     tmp = out_dir / "pooled.pt.tmp"

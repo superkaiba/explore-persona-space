@@ -105,6 +105,82 @@ def test_spans_last_user_icl_user_wrap(tok):
     assert question in ctx_seg
 
 
+def _reph_wrap() -> str:
+    """The REAL seam-bearing panel member's wrap ("... {q}" — trailing space
+    before the query), pulled from the artifact so drift there is caught."""
+    from explore_persona_space.artifacts.negatives import default_panel
+
+    member = {n.slug: n for n in default_panel()}["neg_reph_curious"]
+    assert member.user_wrap and member.user_wrap.endswith(" {q}"), member.user_wrap
+    return member.user_wrap
+
+
+def test_spans_seam_wrap_raises_by_default(tok):
+    """r7 regression (the p8 field crash): a '... {q}' wrap under
+    prefix_end='last_user' puts the prefix boundary on a BPE merge seam (the
+    wrap's trailing space merges into the question's first word) — the
+    DEFAULT on_seam='raise' contract stays fail-loud."""
+    from explore_persona_space.analysis.representation_shift import compute_prompt_spans
+
+    wrap = _reph_wrap()
+    question = "How do I review a pull request?"
+    messages = [{"role": "user", "content": wrap.format(q=question)}]
+    ids, _ = _prompt_ids(tok, messages)
+    with pytest.raises(AssertionError, match="BPE drift"):
+        compute_prompt_spans(tok, None, question, ids, user_wrap=wrap, prefix_end="last_user")
+
+
+def test_spans_seam_wrap_snap_policy(tok):
+    """r7 fix: on_seam='snap' resolves the seam per the documented policy —
+    prefix EXCLUDES the query-consuming straddler (no query leakage into the
+    prefix arm), context includes the full query — with per-boundary
+    provenance in seam_flags. Fails pre-fix (unknown kwarg)."""
+    from explore_persona_space.analysis.representation_shift import compute_prompt_spans
+
+    wrap = _reph_wrap()
+    question = "How do I review a pull request?"
+    messages = [{"role": "user", "content": wrap.format(q=question)}]
+    ids, _ = _prompt_ids(tok, messages)
+    flags: dict[str, bool] = {}
+    prefix_len, context_len = compute_prompt_spans(
+        tok,
+        None,
+        question,
+        ids,
+        user_wrap=wrap,
+        prefix_end="last_user",
+        on_seam="snap",
+        seam_flags=flags,
+    )
+    assert flags == {"prefix": True, "context": False}
+    assert 0 < prefix_len < context_len <= len(ids)
+    pre = tok.decode(ids[:prefix_len])
+    ctx_seg = tok.decode(ids[prefix_len:context_len])
+    # no query text in the prefix arm; wrap content (minus the merged space) kept
+    assert question not in pre and not pre.endswith(question[:4])
+    assert pre.rstrip().endswith("following:")
+    # the context segment carries the WHOLE query (straddler included)
+    assert question in ctx_seg
+    assert question not in tok.decode(ids[context_len:])
+
+
+def test_spans_snap_identical_on_exact_rows(tok):
+    """On a non-seam row (persona context — special-token-adjacent boundaries)
+    on_seam='snap' is token-identical to the default, with all-False flags."""
+    from explore_persona_space.analysis.representation_shift import compute_prompt_spans
+
+    system = "You are a software engineer."
+    question = "How do hash maps work?"
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": question}]
+    ids, _ = _prompt_ids(tok, messages)
+    flags: dict[str, bool] = {}
+    snapped = compute_prompt_spans(
+        tok, system, question, ids, prefix_end="last_user", on_seam="snap", seam_flags=flags
+    )
+    assert snapped == compute_prompt_spans(tok, system, question, ids, prefix_end="last_user")
+    assert flags == {"prefix": False, "context": False}
+
+
 def test_spans_default_single_turn_preserved(tok):
     """prefix_end default ('first_user') is byte-identical to the pre-#1315
     single-turn behavior."""
@@ -508,6 +584,16 @@ def _panel_entry(system: str = "s") -> dict:
     return {"system": system, "user_wrap": None, "prior_turns": ()}
 
 
+def _seam_entry() -> dict:
+    """The seam-bearing default-panel member every production panel carries
+    (_capture_panel appends default_panel unconditionally; r7)."""
+    return {
+        "system": None,
+        "user_wrap": "I'm curious about the following: {q}",
+        "prior_turns": (),
+    }
+
+
 def test_smoke_capture_slice_two_contexts_two_questions(caplog):
     """r4 crash pin (att-20260715-125711): the smoke capture slice keeps 2
     QUESTIONS (the #1112 parent's proven 2x2=4-row shape) — the p10 split-half
@@ -519,14 +605,20 @@ def test_smoke_capture_slice_two_contexts_two_questions(caplog):
     import issue1315_dispatch as d
 
     wc = C.CONV_CONTEXT_ID
-    panel = {"ctx_own": _panel_entry(), "neg_1": _panel_entry("n"), wc: _panel_entry("w")}
+    panel = {
+        "ctx_own": _panel_entry(),
+        "neg_1": _panel_entry("n"),
+        wc: _panel_entry("w"),
+        "neg_reph_curious": _seam_entry(),
+    }
     with caplog.at_level(logging.INFO, logger="issue1315"):
         sliced_panel, sliced_qs = d._smoke_capture_slice(panel, [f"q{i}" for i in range(5)])
-    assert list(sliced_panel) == [wc, "ctx_own"]  # wc first; own context second
+    # wc first; own context second; seam-bearing panel member always kept (r7)
+    assert list(sliced_panel) == [wc, "ctx_own", "neg_reph_curious"]
     assert sliced_qs == ["q0", "q1"]  # 2 questions -> question_idx {0, 1} downstream
     # the r4 fix-engaged signal (the relaunch's first-poll confirmation line)
     assert any(
-        "[capture-smoke] slice: 2 contexts x 2 questions" in r.getMessage() for r in caplog.records
+        "[capture-smoke] slice: 3 contexts x 2 questions" in r.getMessage() for r in caplog.records
     )
 
 
@@ -535,7 +627,11 @@ def test_smoke_capture_slice_fails_loud_below_two_questions():
     entry with a named reason, not deep in p10 with a bare `AssertionError: [0]`."""
     import issue1315_dispatch as d
 
-    panel = {C.CONV_CONTEXT_ID: _panel_entry("w"), "ctx_own": _panel_entry()}
+    panel = {
+        C.CONV_CONTEXT_ID: _panel_entry("w"),
+        "ctx_own": _panel_entry(),
+        "neg_reph_curious": _seam_entry(),
+    }
     with pytest.raises(AssertionError, match="split-half"):
         d._smoke_capture_slice(panel, ["only_question"])
 
@@ -551,11 +647,90 @@ def test_smoke_capture_slice_adds_wildchat_context(monkeypatch):
     ctx = Context(context_id=C.CONV_CONTEXT_ID, kind="prefix", family="test", prefix_turns=turns)
     monkeypatch.setattr(d, "_context", lambda cid: ctx)
     sliced_panel, sliced_qs = d._smoke_capture_slice(
-        {"ctx_own": _panel_entry()}, ["q0", "q1", "q2"]
+        {"ctx_own": _panel_entry(), "neg_reph_curious": _seam_entry()}, ["q0", "q1", "q2"]
     )
-    assert list(sliced_panel) == [C.CONV_CONTEXT_ID, "ctx_own"]
+    assert list(sliced_panel) == [C.CONV_CONTEXT_ID, "ctx_own", "neg_reph_curious"]
     assert sliced_panel[C.CONV_CONTEXT_ID]["prior_turns"] == turns
     assert sliced_qs == ["q0", "q1"]
+
+
+# ── p8 run_capture_unit: REAL body on CPU, GPU boundary faked (r7 seam fix) ──
+
+
+def test_run_capture_unit_span_seam_provenance_cpu(tmp_path, monkeypatch, caplog, tok):
+    """r7 fix-engaged path: run_capture_unit's REAL body — smoke slice (incl.
+    the seam member), span loop with on_seam='snap', the
+    '[capture] span-validation:' log line, raw_rows.json + pooled.pt seam
+    provenance — executes on CPU with signature-conformant fakes ONLY at the
+    GPU boundary (vLLM generation / HF teacher-forced forwards / model
+    staging). Pre-fix this crashes on the neg_reph_curious rows exactly as the
+    p8 field crash did."""
+    import logging
+
+    import issue1315_dispatch as d
+    import torch
+
+    from explore_persona_space.analysis import representation_shift as rs
+
+    questions_seen: dict = {}
+
+    def fake_generate(
+        model_path,
+        personas,
+        questions,
+        *,
+        max_new_tokens,
+        gpu_memory_utilization,
+        user_wraps=None,
+        prior_turns=None,
+    ):
+        # REAL prompt construction + REAL tokenizer ids — fake only the GPU gen
+        prompts, keys = rs._build_generation_prompts(
+            tok, personas, questions, user_wraps=user_wraps, prior_turns=prior_turns
+        )
+        questions_seen["n"] = len(questions)
+        resp = tok("A short answer.", add_special_tokens=False)["input_ids"]
+        return [
+            {
+                "persona": p,
+                "question_idx": qi,
+                "prompt_token_ids": tok(text, add_special_tokens=False)["input_ids"],
+                "response_token_ids": list(resp),
+                "finish_reason": "stop",
+            }
+            for text, (p, qi) in zip(prompts, keys, strict=True)
+        ]
+
+    def fake_span_means(model_path, rows, persona_names, layers, *, spans=None, **kw):
+        n = len(rows)
+        arms = spans or ("prefix", "context", "response")
+        return {arm: {li: torch.zeros(n, 8) for li in layers} for arm in arms}
+
+    monkeypatch.setattr(rs, "_generate_responses_vllm", fake_generate)
+    monkeypatch.setattr(rs, "_teacher_forced_span_means", fake_span_means)
+    monkeypatch.setattr(d, "_resolve_capture_model", lambda cfg, cell, dose: ("fake-model", None))
+    # run_capture_unit's own AutoTokenizer.from_pretrained(DEFAULT_BASE_MODEL)
+    # runs for REAL (cached Qwen tokenizer — the exact consumer render).
+
+    cfg = d.Cfg(smoke=True, cells=("imp_pers_lora",), out_root=tmp_path, upload=False)
+    with caplog.at_level(logging.INFO, logger="issue1315"):
+        d.run_capture_unit(cfg, "imp_pers_lora", "selected")
+
+    # fix-engaged signal: the span-validation line fired with seam rows > 0
+    msgs = [r.getMessage() for r in caplog.records]
+    assert any("[capture] span-validation: 4 rows ok / 2 seam-handled (prefix=2" in m for m in msgs)
+
+    out_dir = tmp_path / "capture" / "imp_pers_lora" / "selected"
+    raw = json.loads((out_dir / "raw_rows.json").read_text())
+    assert raw["span_seam_counts"] == {"exact": 4, "prefix": 2, "context": 0}
+    seam_rows = [r for r in raw["rows"] if r["span_seam"]["prefix"]]
+    assert {r["persona"] for r in seam_rows} == {"neg_reph_curious"} and len(seam_rows) == 2
+    for r in raw["rows"]:
+        assert 0 < r["prefix_len"] < r["context_len"] <= len(r["prompt_token_ids"])
+    import torch as _t
+
+    store = _t.load(out_dir / "pooled.pt", weights_only=False)
+    assert store["metadata"]["span_seam_counts"] == {"exact": 4, "prefix": 2, "context": 0}
 
 
 # ── p10 geometry: CPU end-to-end over real-schema stores (crash + fix) ───────

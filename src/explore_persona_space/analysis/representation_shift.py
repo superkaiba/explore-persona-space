@@ -574,6 +574,8 @@ def compute_prompt_spans(
     prior_messages: list[dict] | tuple | None = None,
     user_wrap: str | None = None,
     prefix_end: str = "first_user",
+    on_seam: str = "raise",
+    seam_flags: dict | None = None,
 ) -> tuple[int, int]:
     """(prefix_len, context_len) token boundaries inside ``prompt_token_ids``.
 
@@ -600,16 +602,34 @@ def compute_prompt_spans(
       boundary sits at the start of the FINAL user message's QUERY text).
 
     Boundaries are located by CHAR offset in the rendered chat-template text,
-    then re-tokenized and asserted to be an exact TOKEN-PREFIX of
-    ``prompt_token_ids`` — a BPE merge across either boundary fails LOUD here
-    (the gen-time span-validation discipline, gotchas.md zero-width-span
-    class) instead of silently mispooling.
+    then mapped to token indices via the tokenizer's OFFSET MAPPING (the
+    established teacher-forced-capture recipe — gotchas.md "Teacher-forced
+    capture inputs", #1092): the full render is tokenized ONCE and asserted
+    token-identical to ``prompt_token_ids`` (generation and span computation
+    must share one render + tokenizer — genuine drift stays fail-loud), then
+    each char boundary is resolved against the token offsets. A boundary that
+    falls INSIDE a token is a **BPE merge seam** (a plain-text char before the
+    query merged into the query's first token — e.g. a ``"... {q}"`` wrap's
+    trailing space merging into ``" How"``; deterministic for the
+    ``neg_reph_curious`` wrap under ``prefix_end='last_user'``, #1315 r7):
+
+    - ``on_seam='raise'`` (default — the pre-#1315-r7 contract, unchanged for
+      #1112 callers): AssertionError, fail-loud.
+    - ``on_seam='snap'``: the documented seam policy. The PREFIX boundary
+      EXCLUDES the straddling token (its hidden state has consumed query
+      text — including it would leak the query into the prefix arm); the
+      CONTEXT boundary INCLUDES a straddler (the context arm must contain the
+      whole query). On exact (non-seam) rows ``snap`` is token-identical to
+      ``raise``. When ``seam_flags`` (a dict) is passed, per-boundary
+      provenance is recorded into it: ``{"prefix": bool, "context": bool}``.
 
     Raises:
-        AssertionError: prefix span empty, boundary not found, BPE boundary
-            drift vs the generated prompt ids, or multi-turn inputs without
-            ``prefix_end='last_user'``.
+        AssertionError: prefix span empty, boundary not found, rendered-text
+            tokenization diverging from the generated prompt ids, a BPE
+            boundary seam under ``on_seam='raise'``, or multi-turn inputs
+            without ``prefix_end='last_user'``.
     """
+    assert on_seam in ("raise", "snap"), on_seam
     assert prefix_end in ("first_user", "last_user"), prefix_end
     prior = list(prior_messages or [])
     if prior or user_wrap is not None:
@@ -651,18 +671,37 @@ def compute_prompt_spans(
     assert q_start >= 0, f"question not found in rendered template (from char {search_from})"
     q_end = q_start + len(question)
 
-    def _prefix_len(char_end: int, tag: str) -> int:
-        ids = tokenizer(text[:char_end], add_special_tokens=False)["input_ids"]
-        n = len(ids)
-        assert n <= len(prompt_token_ids), (tag, n, len(prompt_token_ids))
-        assert list(prompt_token_ids[:n]) == list(ids), (
-            f"{tag} boundary BPE drift: re-tokenized prefix ({n} ids) is not a "
-            f"token-prefix of the generated prompt ids — span-validate the row"
+    enc = tokenizer(text, add_special_tokens=False, return_offsets_mapping=True)
+    ids, offsets = enc["input_ids"], enc["offset_mapping"]
+    if list(prompt_token_ids) != list(ids):
+        div = next(
+            (i for i, (a, b) in enumerate(zip(ids, prompt_token_ids, strict=False)) if a != b),
+            min(len(ids), len(prompt_token_ids)),
         )
-        return n
+        raise AssertionError(
+            "rendered-template tokenization does not match the generated prompt ids "
+            f"({len(ids)} vs {len(prompt_token_ids)} tokens; first divergence at index {div}) "
+            "— generation and span computation must share one render + tokenizer"
+        )
+    assert all(s < e for s, e in offsets), "zero-width token offsets — unsupported tokenizer"
 
-    prefix_len = _prefix_len(q_start, "prefix")
-    context_len = _prefix_len(q_end, "context")
+    def _boundary(char_end: int, tag: str, *, include_straddler: bool) -> int:
+        n_inside = sum(1 for _, e in offsets if e <= char_end)  # tokens fully before boundary
+        straddler = n_inside < len(offsets) and offsets[n_inside][0] < char_end
+        if straddler and on_seam == "raise":
+            s, e = offsets[n_inside]
+            raise AssertionError(
+                f"{tag} boundary BPE drift: token {n_inside} (id {ids[n_inside]}) spans "
+                f"chars [{s}, {e}) across the boundary at {char_end} — a plain-text char "
+                "before the boundary merged into the next segment's first token "
+                "(span-validate the row, or opt into on_seam='snap')"
+            )
+        if seam_flags is not None:
+            seam_flags[tag] = bool(straddler)
+        return n_inside + (1 if (straddler and include_straddler) else 0)
+
+    prefix_len = _boundary(q_start, "prefix", include_straddler=False)
+    context_len = _boundary(q_end, "context", include_straddler=True)
     assert 0 < prefix_len < context_len <= len(prompt_token_ids), (
         prefix_len,
         context_len,
