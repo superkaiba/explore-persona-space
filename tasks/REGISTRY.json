@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1333,
+  "highest_id": 1334,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2602,6 +2602,13 @@
       "path": "tasks/planning/1333",
       "status": "planning",
       "title": "Factory marker organism: marker behavior through the #1090 pipeline (spectrum anchor for #1315)"
+    },
+    "1334": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1334",
+      "status": "proposed",
+      "title": "workflow-fix: multi-pod-per-issue naming (--name-suffix) so suffixed pods map to their owning task"
     },
     "134": {
       "has_clean_result": false,
