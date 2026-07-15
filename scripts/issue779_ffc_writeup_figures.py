@@ -47,6 +47,7 @@ REPO = Path(__file__).resolve().parents[1]
 FFC = REPO / "eval_results/issue_779/fitter-fair-comparison"
 FFC10 = REPO / "eval_results/issue_779/fitter-fair-comparison-n10k"
 FFC50 = REPO / "eval_results/issue_779/fitter-fair-comparison-n50k"
+FFC1M = REPO / "eval_results/issue_779/fitter-fair-comparison-n1m"
 
 FITTER_LABELS = {
     "ridge": "Ridge (linear)",
@@ -170,6 +171,92 @@ def fig_scaling_n50k() -> None:
         "single fit per predictor).",
     )
     savefig_paper(fig, "issue_779/ffc_scaling_to_n50k", dir=REPO / "figures")
+    plt.close(fig)
+
+
+def fig_scaling_n1m() -> None:
+    """ffc_scaling_to_n50k extended with the n1m round (150k/500k pure-LMSYS + ~963k mixed).
+
+    KRR points at 150k+ use the Nystrom estimator (m=16,384; validated vs exact at 50k,
+    gap 0.008); the 963k point's corpus is LMSYS+WildChat mixed (500k-mixed control shows
+    the mix costs ~0.007 R^2 vs pure-LMSYS at matched n).
+    """
+    curves = json.loads((FFC / "scaling_curves.json").read_text())["curves"]["last_L19"]
+    n10k = json.loads((FFC10 / "perdirection_per_predictor_n10k.json").read_text())["per_predictor"]
+    n50k = json.loads((FFC50 / "n50k_fits.json").read_text())["per_predictor"]
+    n1m = json.loads((FFC1M / "n1m_fits.json").read_text())["per_point"]
+
+    r2 = defaultdict(list)
+    for e in curves:
+        r2[(e["fitter"], e["n"])].append(e["r2"])
+    ns = sorted({e["n"] for e in curves})
+
+    n1m_key = {
+        "ridge": "ridge",
+        "krr": "krr_nystrom",
+        "mlp": "mlp_w8192",
+        "residual_skip": "residual_skip",
+    }
+    big_pts = [(150_000, "lmsys_150k"), (500_000, "lmsys_500k"), (963_444, "mixed_1m")]
+
+    colors = dict(zip(FITTER_ORDER, paper_palette(len(FITTER_ORDER)), strict=False))
+    fig, ax = plt.subplots()
+    for f in FITTER_ORDER:
+        means = [float(np.mean(r2[(f, n)])) for n in ns]
+        ax.plot(ns, means, marker="o", markersize=4.5, color=colors[f], label=FITTER_LABELS[f])
+        for n in ns:
+            draws = r2[(f, n)]
+            ax.scatter([n] * len(draws), draws, s=9, color=colors[f], alpha=0.45, zorder=1)
+        xs = [ns[-1], 10_000, 50_000] + [x for x, _ in big_pts]
+        ys = [means[-1], n10k[f]["whole_map_r2"], n50k[f]["whole_map_r2"]] + [
+            n1m[p]["predictors"][n1m_key[f]]["whole_map_r2"] for _, p in big_pts
+        ]
+        ax.plot(xs, ys, linestyle="--", color=colors[f])
+        ax.scatter(xs[1:3], ys[1:3], s=34, color=colors[f], zorder=3)
+        for (x, p), y in zip(big_pts, ys[3:], strict=True):
+            ci = n1m[p]["predictors"][n1m_key[f]]["bootstrap_ci"]["r2"]
+            ax.errorbar(
+                [x],
+                [y],
+                yerr=[[y - ci["lo"]], [ci["hi"] - y]],
+                fmt="s",
+                markersize=5.5,
+                color=colors[f],
+                capsize=3,
+                zorder=3,
+            )
+    # w32768 capacity arm at the big points only (no small-n counterpart)
+    w32_xs = [x for x, _ in big_pts]
+    w32_ys = [n1m[p]["predictors"]["mlp_w32768"]["whole_map_r2"] for _, p in big_pts]
+    ax.plot(
+        w32_xs,
+        w32_ys,
+        linestyle=":",
+        marker="D",
+        markersize=5,
+        color="#555555",
+        label="MLP (width 32768)",
+        zorder=3,
+    )
+
+    ax.set_xscale("log")
+    ax.set_xticks([250, 1000, 10000, 50000, 500000])
+    ax.set_xticklabels(["250", "1k", "10k", "50k", "500k"])
+    ax.minorticks_off()
+    ax.set_xlabel("training contexts (log scale)")
+    ax.set_ylabel("held-out test R²")
+    add_direction_arrow(ax, "y", "up")
+    ax.set_ylim(0.45, 0.97)
+    ax.axhline(0.947, color="#888888", linewidth=1.0, linestyle="-.", alpha=0.7)
+    ax.legend(loc="lower right", fontsize=8)
+    _title(
+        ax,
+        "Context→answer map: held-out R² vs training-set size",
+        "Qwen-2.5-7B-Instruct, L19, last-token → mean-answer; fixed 1,000-ctx test set.\n"
+        "≥150k: 963k point mixed LMSYS+WildChat; KRR = Nyström m=16,384 (validated at 50k). "
+        "Dash-dot: reliability ceiling 0.947.",
+    )
+    savefig_paper(fig, "issue_779/ffc_scaling_to_n1m", dir=REPO / "figures")
     plt.close(fig)
 
 
