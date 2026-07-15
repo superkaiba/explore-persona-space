@@ -1,0 +1,291 @@
+{
+  "commit": "95609fdb41",
+  "created": "2026-07-15T05:51:10Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "Singular-value index": 1.0,
+      "Singular value of (A_ctx - I)": 15.293012171385682,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 2.0,
+      "Singular value of (A_ctx - I)": 14.083944339994884,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 3.0,
+      "Singular value of (A_ctx - I)": 11.513759412239194,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 4.0,
+      "Singular value of (A_ctx - I)": 10.04834826811732,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 5.0,
+      "Singular value of (A_ctx - I)": 9.519291053798833,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 6.0,
+      "Singular value of (A_ctx - I)": 9.149988232410715,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 7.0,
+      "Singular value of (A_ctx - I)": 8.545398930306703,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 8.0,
+      "Singular value of (A_ctx - I)": 8.344563861263046,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 9.0,
+      "Singular value of (A_ctx - I)": 7.844908376543464,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 10.0,
+      "Singular value of (A_ctx - I)": 7.708385097140581,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 11.0,
+      "Singular value of (A_ctx - I)": 7.469257722703217,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 12.0,
+      "Singular value of (A_ctx - I)": 7.244109638627549,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 13.0,
+      "Singular value of (A_ctx - I)": 6.76140977359158,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 14.0,
+      "Singular value of (A_ctx - I)": 6.542654212029347,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 15.0,
+      "Singular value of (A_ctx - I)": 6.470057704126448,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 16.0,
+      "Singular value of (A_ctx - I)": 6.342230602428225,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 17.0,
+      "Singular value of (A_ctx - I)": 6.288682542848346,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 18.0,
+      "Singular value of (A_ctx - I)": 6.197729040547709,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 19.0,
+      "Singular value of (A_ctx - I)": 6.084441605176259,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Singular-value index": 20.0,
+      "Singular value of (A_ctx - I)": 6.052213073215113,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Context-variance percentile (0 = tail, 1 = dominant)": 0.9991629464285714,
+      "Answer-map overlap\n(sq-cos, top-615 predictive dirs)": 0.03964467768554802,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Context-variance percentile (0 = tail, 1 = dominant)": 0.9994419642857143,
+      "Answer-map overlap\n(sq-cos, top-615 predictive dirs)": 0.04422741798054455,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Context-variance percentile (0 = tail, 1 = dominant)": 0.9986049107142857,
+      "Answer-map overlap\n(sq-cos, top-615 predictive dirs)": 0.05681433205996679,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Context-variance percentile (0 = tail, 1 = dominant)": 0.9986049107142857,
+      "Answer-map overlap\n(sq-cos, top-615 predictive dirs)": 0.0634585176896511,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Context-variance percentile (0 = tail, 1 = dominant)": 0.9988839285714286,
+      "Answer-map overlap\n(sq-cos, top-615 predictive dirs)": 0.05098630893374829,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Context-variance percentile (0 = tail, 1 = dominant)": 0.9986049107142857,
+      "Answer-map overlap\n(sq-cos, top-615 predictive dirs)": 0.09005495912157505,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Context-variance percentile (0 = tail, 1 = dominant)": 0.9972098214285714,
+      "Answer-map overlap\n(sq-cos, top-615 predictive dirs)": 0.07498280034795922,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Context-variance percentile (0 = tail, 1 = dominant)": 0.9972098214285714,
+      "Answer-map overlap\n(sq-cos, top-615 predictive dirs)": 0.08883376175333142,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Context-variance percentile (0 = tail, 1 = dominant)": 0.998046875,
+      "Answer-map overlap\n(sq-cos, top-615 predictive dirs)": 0.08113077727805522,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Context-variance percentile (0 = tail, 1 = dominant)": 0.9969308035714286,
+      "Answer-map overlap\n(sq-cos, top-615 predictive dirs)": 0.0921376266789001,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Context-variance percentile (0 = tail, 1 = dominant)": 0.9938616071428571,
+      "Answer-map overlap\n(sq-cos, top-615 predictive dirs)": 0.08970502509350348,
+      "series": "mean shift",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 31,
+  "text": {
+    "suptitle": "#825: which base->instruct reparameterization directions changed most",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Layer 19: most-changed-direction spectrum",
+        "xlabel": "Singular-value index",
+        "ylabel": "Singular value of (A_ctx - I)",
+        "xticklabels": [
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0",
+          "22.5"
+        ],
+        "yticklabels": [
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16"
+        ]
+      },
+      {
+        "title_left": "Layer 19: are the most-changed directions answer-driving?",
+        "xlabel": "Context-variance percentile (0 = tail, 1 = dominant)",
+        "ylabel": "Answer-map overlap\n(sq-cos, top-615 predictive dirs)",
+        "legend_labels": [
+          "mean shift"
+        ],
+        "annotations": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10"
+        ],
+        "xticklabels": [
+          "0.993",
+          "0.994",
+          "0.995",
+          "0.996",
+          "0.997",
+          "0.998",
+          "0.999",
+          "1.000"
+        ],
+        "yticklabels": [
+          "0.03",
+          "0.04",
+          "0.05",
+          "0.06",
+          "0.07",
+          "0.08",
+          "0.09",
+          "0.10"
+        ]
+      },
+      {
+        "ylabel": "singular value of (A_ctx - I)",
+        "yticklabels": [
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16"
+        ]
+      }
+    ],
+    "series": [
+      "mean shift"
+    ]
+  },
+  "caption": "Which directions the base->instruct context reparameterization A_ctx changed most, layer 19 (n=5000). Left: singular-value spectrum of (A_ctx - I) -- a few directions carry most of the reshaping. Right: the top 10 most-changed directions (labeled by rank, colored by singular value) placed by instruct-context variance percentile (x) and squared-cosine overlap with the answer map's top-615 predictive input directions (y); the star is the mean shift dmu. Right singular vectors of (A_ctx - I) are the directions the representation moves toward. Descriptive geometry, single pinned store; logit-lens tokens are in results.json (approximate lens).",
+  "source": "eval_results/issue_825/reparam_directions/results.json"
+}

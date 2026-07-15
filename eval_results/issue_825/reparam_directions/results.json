@@ -1,0 +1,2378 @@
+{
+  "metadata": {
+    "git_commit": "7a4b26e2dd7a79cb42b199f115fa3a6618cdf685",
+    "timestamp": "2026-07-15T05:49:17Z",
+    "reused_from": "scripts/issue825_map_alignment.py",
+    "hf_repo": "superkaiba1/explore-persona-space-data",
+    "hf_prefix": "issue825_userbase_map/analysis_tensors",
+    "hf_revision_pinned": "deb7a4523b5233393e4fbd2497622527b3622d35",
+    "hf_revision_resolved": "deb7a4523b5233393e4fbd2497622527b3622d35",
+    "stems": [
+      "instruct_chat_s",
+      "pretrained_chat_s"
+    ],
+    "role": "assistant",
+    "headline_layer": 19,
+    "n_common": 5000,
+    "hidden_dim": 3584,
+    "lambda_a_ctx": 316.22776601683796,
+    "lambda_w_inst": 1000.0,
+    "map_rank_e90": 615,
+    "fixed_rank": 200,
+    "frob_a_ctx_minus_I": 91.39158856526542,
+    "context_total_variance": 3100.5473436447583,
+    "device": "cpu",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "model_shard_loaded": "model-00004-of-00004.safetensors",
+    "tie_word_embeddings": false,
+    "script": "scripts/issue825_reparam_directions.py",
+    "caveats": [
+      "Descriptive geometry on a SINGLE seed / one pinned store; no mechanism claims.",
+      "A_ctx is a right-multiply ridge operator (dXi ~ dXb @ A_ctx) in the SHARED neuron basis (instruct fine-tuned from base), so A_ctx - I is a valid measure of how the context ENCODING differs in the same coordinates.",
+      "Right singular vectors of (A_ctx - I) = directions the representation moves toward (instruct-context space); left singular vectors = base-context input features that drive the change.",
+      "APPROXIMATE logit lens: a layer-19 direction pushed through the FINAL unembed with the final-norm gain applied but WITHOUT the input-dependent RMSNorm scale and WITHOUT layers 20-27; token lists are indicative, not exact next-token predictions. Sign is arbitrary per SVD, so BOTH orientations (top/bottom) are reported.",
+      "Per-layer ||A_ctx-I|| profile lives in the sibling eval_results/issue_825/reparam_characterization/results.json (headline L19 only here)."
+    ],
+    "wall_seconds": 294.1
+  },
+  "deviation_spectrum": {
+    "top_singular_values": [
+      15.293012171385682,
+      14.083944339994884,
+      11.513759412239194,
+      10.04834826811732,
+      9.519291053798833,
+      9.149988232410715,
+      8.545398930306703,
+      8.344563861263046,
+      7.844908376543464,
+      7.708385097140581,
+      7.469257722703217,
+      7.244109638627549,
+      6.76140977359158,
+      6.542654212029347,
+      6.470057704126448,
+      6.342230602428225,
+      6.288682542848346,
+      6.197729040547709,
+      6.084441605176259,
+      6.052213073215113
+    ],
+    "participation_ratio": 2119.224907193279,
+    "n_dims": 3584
+  },
+  "top_directions": [
+    {
+      "rank": 1,
+      "singular_value": 15.293012171385682,
+      "right_singular_vector": {
+        "variance_percentile": 0.9991629464285714,
+        "proj_variance": 138.21250001226318,
+        "centroid_pc_index": 15.52514811586429,
+        "sqcos_top10_context_pcs": 0.9092126453863882,
+        "sqcos_top50_context_pcs": 0.9824420025729149,
+        "map_sqcos_top1": 0.0011017125125038678,
+        "map_sqcos_r90": 0.03964467768554802,
+        "map_sqcos_r200": 0.0267079607691548
+      },
+      "left_singular_vector": {
+        "variance_percentile": 0.8200334821428571,
+        "proj_variance": 0.318582105376144,
+        "centroid_pc_index": 1918.8746174266767,
+        "sqcos_top10_context_pcs": 0.0004931970956124279,
+        "sqcos_top50_context_pcs": 0.0056973369011531225,
+        "map_sqcos_top1": 0.0017380413985232164,
+        "map_sqcos_r90": 0.17279643258089544,
+        "map_sqcos_r200": 0.06458804610230394
+      }
+    },
+    {
+      "rank": 2,
+      "singular_value": 14.083944339994884,
+      "right_singular_vector": {
+        "variance_percentile": 0.9994419642857143,
+        "proj_variance": 269.35487318419206,
+        "centroid_pc_index": 16.217387457627023,
+        "sqcos_top10_context_pcs": 0.9139588708955206,
+        "sqcos_top50_context_pcs": 0.9752191048198152,
+        "map_sqcos_top1": 0.009047342493914675,
+        "map_sqcos_r90": 0.04422741798054455,
+        "map_sqcos_r200": 0.028594180624163155
+      },
+      "left_singular_vector": {
+        "variance_percentile": 0.8772321428571429,
+        "proj_variance": 0.5283686660502357,
+        "centroid_pc_index": 1948.372643410095,
+        "sqcos_top10_context_pcs": 0.0009536100945945181,
+        "sqcos_top50_context_pcs": 0.009012415110262267,
+        "map_sqcos_top1": 1.2606233953408452e-05,
+        "map_sqcos_r90": 0.18092417509481265,
+        "map_sqcos_r200": 0.057284548310141695
+      }
+    },
+    {
+      "rank": 3,
+      "singular_value": 11.513759412239194,
+      "right_singular_vector": {
+        "variance_percentile": 0.9986049107142857,
+        "proj_variance": 107.46777701910756,
+        "centroid_pc_index": 25.92251574770592,
+        "sqcos_top10_context_pcs": 0.7722906958365341,
+        "sqcos_top50_context_pcs": 0.9637219781029935,
+        "map_sqcos_top1": 0.00024503585765281124,
+        "map_sqcos_r90": 0.05681433205996679,
+        "map_sqcos_r200": 0.037529951950039185
+      },
+      "left_singular_vector": {
+        "variance_percentile": 0.8967633928571429,
+        "proj_variance": 0.6654513565169874,
+        "centroid_pc_index": 1874.6531723928572,
+        "sqcos_top10_context_pcs": 0.002003089864188375,
+        "sqcos_top50_context_pcs": 0.007888798551144962,
+        "map_sqcos_top1": 5.471537078222644e-06,
+        "map_sqcos_r90": 0.19046733006831418,
+        "map_sqcos_r200": 0.06698159725570231
+      }
+    },
+    {
+      "rank": 4,
+      "singular_value": 10.04834826811732,
+      "right_singular_vector": {
+        "variance_percentile": 0.9986049107142857,
+        "proj_variance": 104.35484793532139,
+        "centroid_pc_index": 35.17744473032187,
+        "sqcos_top10_context_pcs": 0.7050935259096985,
+        "sqcos_top50_context_pcs": 0.9465264669005684,
+        "map_sqcos_top1": 0.004012533786191378,
+        "map_sqcos_r90": 0.0634585176896511,
+        "map_sqcos_r200": 0.04088744890188442
+      },
+      "left_singular_vector": {
+        "variance_percentile": 0.8325892857142857,
+        "proj_variance": 0.35207919045272307,
+        "centroid_pc_index": 1965.8076406242371,
+        "sqcos_top10_context_pcs": 0.0006951711835276245,
+        "sqcos_top50_context_pcs": 0.00658955591273306,
+        "map_sqcos_top1": 5.226907680403094e-05,
+        "map_sqcos_r90": 0.17751717501076755,
+        "map_sqcos_r200": 0.05367000130969059
+      }
+    },
+    {
+      "rank": 5,
+      "singular_value": 9.519291053798833,
+      "right_singular_vector": {
+        "variance_percentile": 0.9988839285714286,
+        "proj_variance": 127.95586979608889,
+        "centroid_pc_index": 37.796642601115586,
+        "sqcos_top10_context_pcs": 0.5214044921177421,
+        "sqcos_top50_context_pcs": 0.9433901086805833,
+        "map_sqcos_top1": 0.0005401912830777615,
+        "map_sqcos_r90": 0.05098630893374829,
+        "map_sqcos_r200": 0.028888025263222865
+      },
+      "left_singular_vector": {
+        "variance_percentile": 0.83984375,
+        "proj_variance": 0.3747327277997984,
+        "centroid_pc_index": 1921.8144451342368,
+        "sqcos_top10_context_pcs": 0.0010760437827749326,
+        "sqcos_top50_context_pcs": 0.0055225110526240595,
+        "map_sqcos_top1": 0.0007564728589223133,
+        "map_sqcos_r90": 0.1693565262822462,
+        "map_sqcos_r200": 0.06029985008372422
+      }
+    },
+    {
+      "rank": 6,
+      "singular_value": 9.149988232410715,
+      "right_singular_vector": {
+        "variance_percentile": 0.9986049107142857,
+        "proj_variance": 117.03869685314018,
+        "centroid_pc_index": 38.42131867409466,
+        "sqcos_top10_context_pcs": 0.7561150912257955,
+        "sqcos_top50_context_pcs": 0.9389707200544075,
+        "map_sqcos_top1": 0.0018194332956816776,
+        "map_sqcos_r90": 0.09005495912157505,
+        "map_sqcos_r200": 0.06024291302626203
+      },
+      "left_singular_vector": {
+        "variance_percentile": 0.89453125,
+        "proj_variance": 0.6439166960198284,
+        "centroid_pc_index": 1927.2847309029946,
+        "sqcos_top10_context_pcs": 0.001705022336122704,
+        "sqcos_top50_context_pcs": 0.00875094961160336,
+        "map_sqcos_top1": 0.0001839876890582471,
+        "map_sqcos_r90": 0.173104688534966,
+        "map_sqcos_r200": 0.05288487333572776
+      }
+    },
+    {
+      "rank": 7,
+      "singular_value": 8.545398930306703,
+      "right_singular_vector": {
+        "variance_percentile": 0.9972098214285714,
+        "proj_variance": 55.09879600420396,
+        "centroid_pc_index": 46.71428332189022,
+        "sqcos_top10_context_pcs": 0.6052637232232542,
+        "sqcos_top50_context_pcs": 0.9359557179921276,
+        "map_sqcos_top1": 4.066631283325133e-05,
+        "map_sqcos_r90": 0.07498280034795922,
+        "map_sqcos_r200": 0.04470297247208697
+      },
+      "left_singular_vector": {
+        "variance_percentile": 0.8325892857142857,
+        "proj_variance": 0.35241444371863306,
+        "centroid_pc_index": 1925.9455643588337,
+        "sqcos_top10_context_pcs": 0.0008169901919691211,
+        "sqcos_top50_context_pcs": 0.0054337145862384095,
+        "map_sqcos_top1": 1.5217101007724413e-05,
+        "map_sqcos_r90": 0.1743672891525288,
+        "map_sqcos_r200": 0.053404702535390536
+      }
+    },
+    {
+      "rank": 8,
+      "singular_value": 8.344563861263046,
+      "right_singular_vector": {
+        "variance_percentile": 0.9972098214285714,
+        "proj_variance": 54.12728155972119,
+        "centroid_pc_index": 51.473718335119834,
+        "sqcos_top10_context_pcs": 0.22720976595893044,
+        "sqcos_top50_context_pcs": 0.9365621045876027,
+        "map_sqcos_top1": 0.00015781950678987934,
+        "map_sqcos_r90": 0.08883376175333142,
+        "map_sqcos_r200": 0.04851692268105723
+      },
+      "left_singular_vector": {
+        "variance_percentile": 0.8571428571428571,
+        "proj_variance": 0.43480369786849526,
+        "centroid_pc_index": 1895.969060278594,
+        "sqcos_top10_context_pcs": 0.0011328393284152334,
+        "sqcos_top50_context_pcs": 0.00512309306943537,
+        "map_sqcos_top1": 0.00228786610319489,
+        "map_sqcos_r90": 0.18990895775725758,
+        "map_sqcos_r200": 0.06152777347721733
+      }
+    },
+    {
+      "rank": 9,
+      "singular_value": 7.844908376543464,
+      "right_singular_vector": {
+        "variance_percentile": 0.998046875,
+        "proj_variance": 67.2111964095078,
+        "centroid_pc_index": 55.183786956274524,
+        "sqcos_top10_context_pcs": 0.3229453628572756,
+        "sqcos_top50_context_pcs": 0.9280026038777482,
+        "map_sqcos_top1": 6.876034622710036e-05,
+        "map_sqcos_r90": 0.08113077727805522,
+        "map_sqcos_r200": 0.04697314907534632
+      },
+      "left_singular_vector": {
+        "variance_percentile": 0.8272879464285714,
+        "proj_variance": 0.3371272250035482,
+        "centroid_pc_index": 1936.5533654478543,
+        "sqcos_top10_context_pcs": 0.0006960902531648807,
+        "sqcos_top50_context_pcs": 0.004648234200672123,
+        "map_sqcos_top1": 1.5037009674473006e-05,
+        "map_sqcos_r90": 0.19729059989377606,
+        "map_sqcos_r200": 0.05956516515684632
+      }
+    },
+    {
+      "rank": 10,
+      "singular_value": 7.708385097140581,
+      "right_singular_vector": {
+        "variance_percentile": 0.9969308035714286,
+        "proj_variance": 50.46029990005525,
+        "centroid_pc_index": 59.26033540274832,
+        "sqcos_top10_context_pcs": 0.353702372714804,
+        "sqcos_top50_context_pcs": 0.9032986706988295,
+        "map_sqcos_top1": 0.0005764907975660113,
+        "map_sqcos_r90": 0.0921376266789001,
+        "map_sqcos_r200": 0.05661610051628961
+      },
+      "left_singular_vector": {
+        "variance_percentile": 0.8618861607142857,
+        "proj_variance": 0.45505011620548713,
+        "centroid_pc_index": 1940.7433212711044,
+        "sqcos_top10_context_pcs": 0.002041748598595426,
+        "sqcos_top50_context_pcs": 0.007510027969196685,
+        "map_sqcos_top1": 0.00013693547711169401,
+        "map_sqcos_r90": 0.16914547488419085,
+        "map_sqcos_r200": 0.04542282689790457
+      }
+    }
+  ],
+  "mean_shift_dmu": {
+    "norm": 59.32401085735607,
+    "typical_norm_instruct": 95.49670053412034,
+    "typical_norm_base": 92.64366182323928,
+    "norm_rel_to_typical_instruct": 0.6212152935709019,
+    "variance_percentile": 0.9938616071428571,
+    "sqcos_top_context_pc": 0.01700726283239602,
+    "sqcos_top10_context_pcs": 0.09384826590684825,
+    "map_sqcos_top1": 0.0001899774989538478,
+    "map_sqcos_r90": 0.08970502509350348,
+    "map_sqcos_r200": 0.03133548265497413,
+    "sqcos_top_deviation_right_sv": 0.0024101945400691223,
+    "sqcos_top10_deviation_right_sv": 0.1445494522523592
+  },
+  "logit_lens": {
+    "right_singular_vectors": [
+      {
+        "top_tokens": [
+          {
+            "token_id": 57931,
+            "token": " {{--<",
+            "logit": 0.35289353132247925
+          },
+          {
+            "token_id": 59999,
+            "token": ",},\n",
+            "logit": 0.34822118282318115
+          },
+          {
+            "token_id": 85568,
+            "token": ":';\n",
+            "logit": 0.31372320652008057
+          },
+          {
+            "token_id": 45550,
+            "token": ",www",
+            "logit": 0.30484285950660706
+          },
+          {
+            "token_id": 75960,
+            "token": "/\n\n\n\n",
+            "logit": 0.3018379807472229
+          },
+          {
+            "token_id": 85474,
+            "token": "crast",
+            "logit": 0.29972073435783386
+          },
+          {
+            "token_id": 116186,
+            "token": "\u6709\u7684\u73a9\u5bb6",
+            "logit": 0.29833924770355225
+          },
+          {
+            "token_id": 79364,
+            "token": " __________________\n\n",
+            "logit": 0.2968980073928833
+          },
+          {
+            "token_id": 63519,
+            "token": "/MPL",
+            "logit": 0.2938254773616791
+          },
+          {
+            "token_id": 52192,
+            "token": ":[[",
+            "logit": 0.29082757234573364
+          },
+          {
+            "token_id": 25736,
+            "token": "+-+-",
+            "logit": 0.2848319113254547
+          },
+          {
+            "token_id": 39202,
+            "token": " nors",
+            "logit": 0.28278812766075134
+          },
+          {
+            "token_id": 57156,
+            "token": " \u2714",
+            "logit": 0.28265753388404846
+          },
+          {
+            "token_id": 27692,
+            "token": "-ln",
+            "logit": 0.2825821042060852
+          },
+          {
+            "token_id": 132501,
+            "token": "\u0431\u043b\u0430\u0433\u043e",
+            "logit": 0.2821224331855774
+          }
+        ],
+        "bottom_tokens": [
+          {
+            "token_id": 4152,
+            "token": " due",
+            "logit": -0.20132121443748474
+          },
+          {
+            "token_id": 106915,
+            "token": "\u9057\u61be",
+            "logit": -0.19741690158843994
+          },
+          {
+            "token_id": 3880,
+            "token": " needs",
+            "logit": -0.19557806849479675
+          },
+          {
+            "token_id": 109194,
+            "token": "\u8bf7\u95ee",
+            "logit": -0.19148467481136322
+          },
+          {
+            "token_id": 25822,
+            "token": " unfortunately",
+            "logit": -0.18698358535766602
+          },
+          {
+            "token_id": 101887,
+            "token": "\u7531\u4e8e",
+            "logit": -0.18630580604076385
+          },
+          {
+            "token_id": 72402,
+            "token": "xFFFFFF",
+            "logit": -0.18098312616348267
+          },
+          {
+            "token_id": 3118,
+            "token": " based",
+            "logit": -0.18074963986873627
+          },
+          {
+            "token_id": 4486,
+            "token": " please",
+            "logit": -0.1805000901222229
+          },
+          {
+            "token_id": 2661,
+            "token": " given",
+            "logit": -0.1725388765335083
+          },
+          {
+            "token_id": 68247,
+            "token": "xffffff",
+            "logit": -0.16950026154518127
+          },
+          {
+            "token_id": 23662,
+            "token": " Due",
+            "logit": -0.16611774265766144
+          },
+          {
+            "token_id": 2266,
+            "token": " context",
+            "logit": -0.16584889590740204
+          },
+          {
+            "token_id": 358,
+            "token": " I",
+            "logit": -0.16426019370555878
+          },
+          {
+            "token_id": 1995,
+            "token": " information",
+            "logit": -0.16355666518211365
+          }
+        ],
+        "rank": 1,
+        "singular_value": 15.293012171385682
+      },
+      {
+        "top_tokens": [
+          {
+            "token_id": 84891,
+            "token": "=findViewById",
+            "logit": 0.32666999101638794
+          },
+          {
+            "token_id": 40760,
+            "token": " bbw",
+            "logit": 0.27463412284851074
+          },
+          {
+            "token_id": 72446,
+            "token": ");$",
+            "logit": 0.27225548028945923
+          },
+          {
+            "token_id": 116186,
+            "token": "\u6709\u7684\u73a9\u5bb6",
+            "logit": 0.2712213695049286
+          },
+          {
+            "token_id": 60798,
+            "token": " fkk",
+            "logit": 0.2633563280105591
+          },
+          {
+            "token_id": 116906,
+            "token": "\u6e38\u620f\u6280\u5de7",
+            "logit": 0.2615596055984497
+          },
+          {
+            "token_id": 115881,
+            "token": "\u6e38\u620f\u4ee3",
+            "logit": 0.2565551698207855
+          },
+          {
+            "token_id": 126798,
+            "token": "\u0142at",
+            "logit": 0.25113075971603394
+          },
+          {
+            "token_id": 130497,
+            "token": "c\u00ed",
+            "logit": 0.2502741515636444
+          },
+          {
+            "token_id": 84558,
+            "token": "++;\r\n\r\n",
+            "logit": 0.2478652447462082
+          },
+          {
+            "token_id": 30171,
+            "token": " practition",
+            "logit": 0.24574926495552063
+          },
+          {
+            "token_id": 89212,
+            "token": "=?\";\n",
+            "logit": 0.24537499248981476
+          },
+          {
+            "token_id": 115529,
+            "token": "\u6e38\u620f\u526f\u672c",
+            "logit": 0.24531278014183044
+          },
+          {
+            "token_id": 80461,
+            "token": " *</",
+            "logit": 0.24488882720470428
+          },
+          {
+            "token_id": 96815,
+            "token": " konk",
+            "logit": 0.23966531455516815
+          }
+        ],
+        "bottom_tokens": [
+          {
+            "token_id": 11925,
+            "token": " pregn",
+            "logit": -0.1879579722881317
+          },
+          {
+            "token_id": 70125,
+            "token": " walmart",
+            "logit": -0.1767198145389557
+          },
+          {
+            "token_id": 44095,
+            "token": " pestic",
+            "logit": -0.17598992586135864
+          },
+          {
+            "token_id": 114259,
+            "token": "\u9600\u95e8",
+            "logit": -0.16629913449287415
+          },
+          {
+            "token_id": 151240,
+            "token": "\ufe62",
+            "logit": -0.1574772149324417
+          },
+          {
+            "token_id": 4102,
+            "token": "\u00a0",
+            "logit": -0.15642642974853516
+          },
+          {
+            "token_id": 102068,
+            "token": "\u786e\u5b9e",
+            "logit": -0.15601085126399994
+          },
+          {
+            "token_id": 249,
+            "token": "\ufffd",
+            "logit": -0.15512892603874207
+          },
+          {
+            "token_id": 758,
+            "token": " In",
+            "logit": -0.15405163168907166
+          },
+          {
+            "token_id": 80295,
+            "token": " Costco",
+            "logit": -0.15348762273788452
+          },
+          {
+            "token_id": 97598,
+            "token": " homers",
+            "logit": -0.1531236320734024
+          },
+          {
+            "token_id": 113924,
+            "token": "\u7f51\u7ea6",
+            "logit": -0.15227684378623962
+          },
+          {
+            "token_id": 2014,
+            "token": " To",
+            "logit": -0.15127776563167572
+          },
+          {
+            "token_id": 80450,
+            "token": " esports",
+            "logit": -0.14828935265541077
+          },
+          {
+            "token_id": 83924,
+            "token": " pacientes",
+            "logit": -0.14782287180423737
+          }
+        ],
+        "rank": 2,
+        "singular_value": 14.083944339994884
+      },
+      {
+        "top_tokens": [
+          {
+            "token_id": 104134,
+            "token": "\u5c31\u8981",
+            "logit": 0.2090759426355362
+          },
+          {
+            "token_id": 74338,
+            "token": "icable",
+            "logit": 0.2070431262254715
+          },
+          {
+            "token_id": 79212,
+            "token": "figcaption",
+            "logit": 0.20682162046432495
+          },
+          {
+            "token_id": 144360,
+            "token": "\u30f5",
+            "logit": 0.20065030455589294
+          },
+          {
+            "token_id": 58761,
+            "token": "YSTEM",
+            "logit": 0.20040155947208405
+          },
+          {
+            "token_id": 85474,
+            "token": "crast",
+            "logit": 0.1990339457988739
+          },
+          {
+            "token_id": 117723,
+            "token": "\u51ed\u4ec0\u4e48",
+            "logit": 0.19383537769317627
+          },
+          {
+            "token_id": 118675,
+            "token": "\u5229\u7528\u60a8\u7684",
+            "logit": 0.19182106852531433
+          },
+          {
+            "token_id": 102238,
+            "token": "\u5373\u5c06",
+            "logit": 0.18846532702445984
+          },
+          {
+            "token_id": 116883,
+            "token": "\u65b0\u9648\u4ee3\u8c22",
+            "logit": 0.18846069276332855
+          },
+          {
+            "token_id": 83107,
+            "token": ")const",
+            "logit": 0.1868084967136383
+          },
+          {
+            "token_id": 117122,
+            "token": "\u54ea\u5bb6\u597d",
+            "logit": 0.18576501309871674
+          },
+          {
+            "token_id": 3591,
+            "token": "ien",
+            "logit": 0.18514776229858398
+          },
+          {
+            "token_id": 67563,
+            "token": " standings",
+            "logit": 0.18512098491191864
+          },
+          {
+            "token_id": 95929,
+            "token": "alles",
+            "logit": 0.18445435166358948
+          }
+        ],
+        "bottom_tokens": [
+          {
+            "token_id": 88892,
+            "token": "'=>['",
+            "logit": -0.21858152747154236
+          },
+          {
+            "token_id": 99925,
+            "token": "\u4e0d\u5f97",
+            "logit": -0.21691831946372986
+          },
+          {
+            "token_id": 109248,
+            "token": "\u90fd\u4e0d\u80fd",
+            "logit": -0.21470360457897186
+          },
+          {
+            "token_id": 121975,
+            "token": "\u8e5a",
+            "logit": -0.21443310379981995
+          },
+          {
+            "token_id": 109706,
+            "token": "\u4e0d\u5e94",
+            "logit": -0.21427655220031738
+          },
+          {
+            "token_id": 6329,
+            "token": " nor",
+            "logit": -0.2104516178369522
+          },
+          {
+            "token_id": 109756,
+            "token": "\u4e25\u7981",
+            "logit": -0.20742064714431763
+          },
+          {
+            "token_id": 39477,
+            "token": "RICT",
+            "logit": -0.2058001011610031
+          },
+          {
+            "token_id": 24887,
+            "token": "-none",
+            "logit": -0.2027963399887085
+          },
+          {
+            "token_id": 13743,
+            "token": "ctrine",
+            "logit": -0.20186924934387207
+          },
+          {
+            "token_id": 39740,
+            "token": "-invalid",
+            "logit": -0.2017141431570053
+          },
+          {
+            "token_id": 1520,
+            "token": "gram",
+            "logit": -0.1993510127067566
+          },
+          {
+            "token_id": 90531,
+            "token": ".userInteractionEnabled",
+            "logit": -0.19893327355384827
+          },
+          {
+            "token_id": 81371,
+            "token": ".readAs",
+            "logit": -0.1959557831287384
+          },
+          {
+            "token_id": 108710,
+            "token": "\u52ff",
+            "logit": -0.19515109062194824
+          }
+        ],
+        "rank": 3,
+        "singular_value": 11.513759412239194
+      },
+      {
+        "top_tokens": [
+          {
+            "token_id": 145088,
+            "token": "\ud83e\udd47",
+            "logit": 0.24444371461868286
+          },
+          {
+            "token_id": 117429,
+            "token": "\u5e74\u4e4b\u4e45",
+            "logit": 0.239144966006279
+          },
+          {
+            "token_id": 118675,
+            "token": "\u5229\u7528\u60a8\u7684",
+            "logit": 0.2142050564289093
+          },
+          {
+            "token_id": 148053,
+            "token": "\u2105",
+            "logit": 0.21337176859378815
+          },
+          {
+            "token_id": 78137,
+            "token": "});\n\n\n\n",
+            "logit": 0.21157601475715637
+          },
+          {
+            "token_id": 121072,
+            "token": "\u8c21",
+            "logit": 0.1948997676372528
+          },
+          {
+            "token_id": 77170,
+            "token": " WTF",
+            "logit": 0.1919608861207962
+          },
+          {
+            "token_id": 94915,
+            "token": " queryInterface",
+            "logit": 0.19095581769943237
+          },
+          {
+            "token_id": 20890,
+            "token": "/Getty",
+            "logit": 0.18845276534557343
+          },
+          {
+            "token_id": 114461,
+            "token": "\u4f3c\u4e4e\u662f",
+            "logit": 0.18776623904705048
+          },
+          {
+            "token_id": 68908,
+            "token": "*/)",
+            "logit": 0.187480628490448
+          },
+          {
+            "token_id": 142517,
+            "token": " \u043f\u043e\u0442\u0440\u0435\u0431\u0438\u0442\u0435\u043b",
+            "logit": 0.1856270581483841
+          },
+          {
+            "token_id": 130652,
+            "token": " \uc774\ub807",
+            "logit": 0.18429669737815857
+          },
+          {
+            "token_id": 70567,
+            "token": "MMdd",
+            "logit": 0.18367725610733032
+          },
+          {
+            "token_id": 64608,
+            "token": " Rigidbody",
+            "logit": 0.18354803323745728
+          }
+        ],
+        "bottom_tokens": [
+          {
+            "token_id": 33835,
+            "token": " consect",
+            "logit": -0.2314160168170929
+          },
+          {
+            "token_id": 121839,
+            "token": "\u7ab8",
+            "logit": -0.2251937985420227
+          },
+          {
+            "token_id": 118228,
+            "token": "\u6362\u53e5\u8bdd",
+            "logit": -0.2188088446855545
+          },
+          {
+            "token_id": 7414,
+            "token": " Yes",
+            "logit": -0.2138693779706955
+          },
+          {
+            "token_id": 9834,
+            "token": " yes",
+            "logit": -0.213390052318573
+          },
+          {
+            "token_id": 25695,
+            "token": ".TabStop",
+            "logit": -0.2019735425710678
+          },
+          {
+            "token_id": 86018,
+            "token": " pathMatch",
+            "logit": -0.19912216067314148
+          },
+          {
+            "token_id": 9454,
+            "token": "Yes",
+            "logit": -0.19699528813362122
+          },
+          {
+            "token_id": 63236,
+            "token": "iben",
+            "logit": -0.18960201740264893
+          },
+          {
+            "token_id": 9693,
+            "token": "yes",
+            "logit": -0.18948984146118164
+          },
+          {
+            "token_id": 96407,
+            "token": " oui",
+            "logit": -0.18877013027668
+          },
+          {
+            "token_id": 75216,
+            "token": "_MetaData",
+            "logit": -0.1876683235168457
+          },
+          {
+            "token_id": 81862,
+            "token": " Mariners",
+            "logit": -0.18591879308223724
+          },
+          {
+            "token_id": 108292,
+            "token": "\u836f\u4e1a",
+            "logit": -0.18494170904159546
+          },
+          {
+            "token_id": 128860,
+            "token": "st\u0119p",
+            "logit": -0.1840088814496994
+          }
+        ],
+        "rank": 4,
+        "singular_value": 10.04834826811732
+      },
+      {
+        "top_tokens": [
+          {
+            "token_id": 76894,
+            "token": ".YesNo",
+            "logit": 0.2620919942855835
+          },
+          {
+            "token_id": 74534,
+            "token": "ilmington",
+            "logit": 0.24470099806785583
+          },
+          {
+            "token_id": 49396,
+            "token": ".ToUpper",
+            "logit": 0.23776492476463318
+          },
+          {
+            "token_id": 150362,
+            "token": "\u03fe",
+            "logit": 0.23502737283706665
+          },
+          {
+            "token_id": 84231,
+            "token": "@update",
+            "logit": 0.23337969183921814
+          },
+          {
+            "token_id": 94453,
+            "token": "#${",
+            "logit": 0.23326271772384644
+          },
+          {
+            "token_id": 78941,
+            "token": "nEnter",
+            "logit": 0.23186767101287842
+          },
+          {
+            "token_id": 75150,
+            "token": "[url",
+            "logit": 0.23053817451000214
+          },
+          {
+            "token_id": 81964,
+            "token": ".getClassName",
+            "logit": 0.22854898869991302
+          },
+          {
+            "token_id": 56820,
+            "token": "CHOOL",
+            "logit": 0.22797992825508118
+          },
+          {
+            "token_id": 94660,
+            "token": "[\"$",
+            "logit": 0.2262226939201355
+          },
+          {
+            "token_id": 92157,
+            "token": "+='<",
+            "logit": 0.22424790263175964
+          },
+          {
+            "token_id": 119657,
+            "token": "\u6294",
+            "logit": 0.2239069640636444
+          },
+          {
+            "token_id": 100607,
+            "token": "\u9614",
+            "logit": 0.22343797981739044
+          },
+          {
+            "token_id": 23178,
+            "token": ".Tables",
+            "logit": 0.2221655398607254
+          }
+        ],
+        "bottom_tokens": [
+          {
+            "token_id": 47602,
+            "token": " embargo",
+            "logit": -0.2164352536201477
+          },
+          {
+            "token_id": 87752,
+            "token": "\u4ee5\u4e0b",
+            "logit": -0.19743943214416504
+          },
+          {
+            "token_id": 114566,
+            "token": "\u4ee5\u4e0b\u662f",
+            "logit": -0.194614976644516
+          },
+          {
+            "token_id": 104506,
+            "token": "\u5982\u4e0b",
+            "logit": -0.19259946048259735
+          },
+          {
+            "token_id": 18201,
+            "token": " ['./",
+            "logit": -0.1902269423007965
+          },
+          {
+            "token_id": 67573,
+            "token": " plagiar",
+            "logit": -0.18873505294322968
+          },
+          {
+            "token_id": 21193,
+            "token": " Below",
+            "logit": -0.18783186376094818
+          },
+          {
+            "token_id": 51482,
+            "token": "_increment",
+            "logit": -0.1807689666748047
+          },
+          {
+            "token_id": 89000,
+            "token": "nivel",
+            "logit": -0.17879116535186768
+          },
+          {
+            "token_id": 53620,
+            "token": "ispens",
+            "logit": -0.17875437438488007
+          },
+          {
+            "token_id": 56773,
+            "token": " \u2588\u2588",
+            "logit": -0.17613942921161652
+          },
+          {
+            "token_id": 109230,
+            "token": "\u6211\u8fd8\u662f",
+            "logit": -0.17399394512176514
+          },
+          {
+            "token_id": 138442,
+            "token": "\u4ee5\u4e0b\u306e",
+            "logit": -0.16832958161830902
+          },
+          {
+            "token_id": 95228,
+            "token": " uranus",
+            "logit": -0.16723762452602386
+          },
+          {
+            "token_id": 91661,
+            "token": "rede",
+            "logit": -0.16637253761291504
+          }
+        ],
+        "rank": 5,
+        "singular_value": 9.519291053798833
+      },
+      {
+        "top_tokens": [
+          {
+            "token_id": 139265,
+            "token": " be\u011fen",
+            "logit": 0.2559480667114258
+          },
+          {
+            "token_id": 47210,
+            "token": " showc",
+            "logit": 0.24816352128982544
+          },
+          {
+            "token_id": 75368,
+            "token": "lijah",
+            "logit": 0.22689318656921387
+          },
+          {
+            "token_id": 37286,
+            "token": " safeg",
+            "logit": 0.22634188830852509
+          },
+          {
+            "token_id": 121622,
+            "token": "\u564c",
+            "logit": 0.22475665807724
+          },
+          {
+            "token_id": 70688,
+            "token": "\"path",
+            "logit": 0.2147013247013092
+          },
+          {
+            "token_id": 67822,
+            "token": "eated",
+            "logit": 0.20745453238487244
+          },
+          {
+            "token_id": 58399,
+            "token": "olicitud",
+            "logit": 0.2051045298576355
+          },
+          {
+            "token_id": 69637,
+            "token": "athed",
+            "logit": 0.20393013954162598
+          },
+          {
+            "token_id": 55803,
+            "token": "=-=-=-=-",
+            "logit": 0.20387113094329834
+          },
+          {
+            "token_id": 65763,
+            "token": "},{\n",
+            "logit": 0.20232237875461578
+          },
+          {
+            "token_id": 117606,
+            "token": "\u603b\u800c\u8a00",
+            "logit": 0.20017461478710175
+          },
+          {
+            "token_id": 91019,
+            "token": "ErrorException",
+            "logit": 0.1984986960887909
+          },
+          {
+            "token_id": 44095,
+            "token": " pestic",
+            "logit": 0.19566002488136292
+          },
+          {
+            "token_id": 143388,
+            "token": "\u00fcnc",
+            "logit": 0.1955644190311432
+          }
+        ],
+        "bottom_tokens": [
+          {
+            "token_id": 116894,
+            "token": "\u4e3a\u4e86\u66f4\u597d",
+            "logit": -0.25623011589050293
+          },
+          {
+            "token_id": 118228,
+            "token": "\u6362\u53e5\u8bdd",
+            "logit": -0.22893968224525452
+          },
+          {
+            "token_id": 109073,
+            "token": "\u8fd4\u56de\u641c\u72d0",
+            "logit": -0.22283171117305756
+          },
+          {
+            "token_id": 103713,
+            "token": "\u74a8",
+            "logit": -0.2122899740934372
+          },
+          {
+            "token_id": 83302,
+            "token": " darm",
+            "logit": -0.20109152793884277
+          },
+          {
+            "token_id": 85763,
+            "token": "bellion",
+            "logit": -0.197330504655838
+          },
+          {
+            "token_id": 113306,
+            "token": "\u6beb\u65e0\u7591",
+            "logit": -0.19488149881362915
+          },
+          {
+            "token_id": 69149,
+            "token": " libertine",
+            "logit": -0.1902633011341095
+          },
+          {
+            "token_id": 108137,
+            "token": "\u503c\u5f97\u4e00",
+            "logit": -0.19004762172698975
+          },
+          {
+            "token_id": 67482,
+            "token": " maxX",
+            "logit": -0.18986108899116516
+          },
+          {
+            "token_id": 67573,
+            "token": " plagiar",
+            "logit": -0.18711818754673004
+          },
+          {
+            "token_id": 81257,
+            "token": " gode",
+            "logit": -0.18547910451889038
+          },
+          {
+            "token_id": 113421,
+            "token": "\u4e00\u4e2a\u804c\u4e1a",
+            "logit": -0.18526284396648407
+          },
+          {
+            "token_id": 109252,
+            "token": "\u8fd9\u4e2a\u804c\u4e1a",
+            "logit": -0.1845533847808838
+          },
+          {
+            "token_id": 73325,
+            "token": "Anywhere",
+            "logit": -0.1834545135498047
+          }
+        ],
+        "rank": 6,
+        "singular_value": 9.149988232410715
+      },
+      {
+        "top_tokens": [
+          {
+            "token_id": 70193,
+            "token": " ?>\n\n\n",
+            "logit": 0.34597259759902954
+          },
+          {
+            "token_id": 111753,
+            "token": "\u4ece\u6839\u672c",
+            "logit": 0.310286283493042
+          },
+          {
+            "token_id": 82922,
+            "token": "-caret",
+            "logit": 0.29959172010421753
+          },
+          {
+            "token_id": 88134,
+            "token": "vably",
+            "logit": 0.291959673166275
+          },
+          {
+            "token_id": 114025,
+            "token": "\u7684\u5e26\u9886",
+            "logit": 0.29139602184295654
+          },
+          {
+            "token_id": 146618,
+            "token": "\u2571",
+            "logit": 0.2889566421508789
+          },
+          {
+            "token_id": 115380,
+            "token": "\u7f51\u9996\u9875",
+            "logit": 0.28438615798950195
+          },
+          {
+            "token_id": 109073,
+            "token": "\u8fd4\u56de\u641c\u72d0",
+            "logit": 0.2814684808254242
+          },
+          {
+            "token_id": 142528,
+            "token": "clus\u00e3o",
+            "logit": 0.28033196926116943
+          },
+          {
+            "token_id": 54637,
+            "token": "__;",
+            "logit": 0.2801074981689453
+          },
+          {
+            "token_id": 144417,
+            "token": "\u309c",
+            "logit": 0.270807683467865
+          },
+          {
+            "token_id": 64277,
+            "token": "__);\n\n",
+            "logit": 0.2703574597835541
+          },
+          {
+            "token_id": 146271,
+            "token": "\u1f04",
+            "logit": 0.26837265491485596
+          },
+          {
+            "token_id": 10289,
+            "token": "gnore",
+            "logit": 0.26614540815353394
+          },
+          {
+            "token_id": 52902,
+            "token": " SelectList",
+            "logit": 0.2643117904663086
+          }
+        ],
+        "bottom_tokens": [
+          {
+            "token_id": 220,
+            "token": " ",
+            "logit": -0.2342069149017334
+          },
+          {
+            "token_id": 20,
+            "token": "5",
+            "logit": -0.22797676920890808
+          },
+          {
+            "token_id": 15,
+            "token": "0",
+            "logit": -0.22767426073551178
+          },
+          {
+            "token_id": 16,
+            "token": "1",
+            "logit": -0.22177402675151825
+          },
+          {
+            "token_id": 198,
+            "token": "\n",
+            "logit": -0.22050729393959045
+          },
+          {
+            "token_id": 18,
+            "token": "3",
+            "logit": -0.2063014805316925
+          },
+          {
+            "token_id": 17,
+            "token": "2",
+            "logit": -0.1969681829214096
+          },
+          {
+            "token_id": 22,
+            "token": "7",
+            "logit": -0.1956898719072342
+          },
+          {
+            "token_id": 19,
+            "token": "4",
+            "logit": -0.19533750414848328
+          },
+          {
+            "token_id": 23,
+            "token": "8",
+            "logit": -0.18169914186000824
+          },
+          {
+            "token_id": 21,
+            "token": "6",
+            "logit": -0.1810533106327057
+          },
+          {
+            "token_id": 56336,
+            "token": "StateChanged",
+            "logit": -0.17545516788959503
+          },
+          {
+            "token_id": 24,
+            "token": "9",
+            "logit": -0.1719437837600708
+          },
+          {
+            "token_id": 109100,
+            "token": "\u5404\u6709",
+            "logit": -0.170320063829422
+          },
+          {
+            "token_id": 5257,
+            "token": " various",
+            "logit": -0.16484124958515167
+          }
+        ],
+        "rank": 7,
+        "singular_value": 8.545398930306703
+      },
+      {
+        "top_tokens": [
+          {
+            "token_id": 83970,
+            "token": "();++",
+            "logit": 0.3207804262638092
+          },
+          {
+            "token_id": 79955,
+            "token": "grily",
+            "logit": 0.27152854204177856
+          },
+          {
+            "token_id": 121136,
+            "token": "\u84a1",
+            "logit": 0.262006938457489
+          },
+          {
+            "token_id": 142590,
+            "token": " uda",
+            "logit": 0.261529803276062
+          },
+          {
+            "token_id": 76981,
+            "token": "/Branch",
+            "logit": 0.25969165563583374
+          },
+          {
+            "token_id": 77496,
+            "token": " \"\"},\n",
+            "logit": 0.25750961899757385
+          },
+          {
+            "token_id": 144924,
+            "token": "\u339e",
+            "logit": 0.23922474682331085
+          },
+          {
+            "token_id": 118687,
+            "token": "\u54c8\u54c8\u54c8\u54c8",
+            "logit": 0.234745591878891
+          },
+          {
+            "token_id": 86180,
+            "token": " FAG",
+            "logit": 0.22985903918743134
+          },
+          {
+            "token_id": 86891,
+            "token": ".datatables",
+            "logit": 0.22696474194526672
+          },
+          {
+            "token_id": 73900,
+            "token": " ...\n\n\n\n",
+            "logit": 0.22664685547351837
+          },
+          {
+            "token_id": 131917,
+            "token": " \u05e2\u05d1\u05e8",
+            "logit": 0.2252255231142044
+          },
+          {
+            "token_id": 118632,
+            "token": "\u5185\u9a6c",
+            "logit": 0.22490061819553375
+          },
+          {
+            "token_id": 59999,
+            "token": ",},\n",
+            "logit": 0.22479040920734406
+          },
+          {
+            "token_id": 108746,
+            "token": "\u53d6\u51b3",
+            "logit": 0.22353702783584595
+          }
+        ],
+        "bottom_tokens": [
+          {
+            "token_id": 135972,
+            "token": " Gl\u00fcck",
+            "logit": -0.19078034162521362
+          },
+          {
+            "token_id": 108612,
+            "token": "\u672c\u7740",
+            "logit": -0.18626555800437927
+          },
+          {
+            "token_id": 84351,
+            "token": " pixmap",
+            "logit": -0.18079940974712372
+          },
+          {
+            "token_id": 24921,
+            "token": " typings",
+            "logit": -0.1692238748073578
+          },
+          {
+            "token_id": 31732,
+            "token": "(\"(",
+            "logit": -0.16599492728710175
+          },
+          {
+            "token_id": 99835,
+            "token": "\u504f",
+            "logit": -0.16225451231002808
+          },
+          {
+            "token_id": 41646,
+            "token": "IRTUAL",
+            "logit": -0.1620832085609436
+          },
+          {
+            "token_id": 46218,
+            "token": "\ufffd\ufffd\uc774",
+            "logit": -0.1605498194694519
+          },
+          {
+            "token_id": 83773,
+            "token": " createdBy",
+            "logit": -0.1593082845211029
+          },
+          {
+            "token_id": 4658,
+            "token": " probably",
+            "logit": -0.15834446251392365
+          },
+          {
+            "token_id": 65348,
+            "token": "pecting",
+            "logit": -0.15772724151611328
+          },
+          {
+            "token_id": 320,
+            "token": " (",
+            "logit": -0.15685686469078064
+          },
+          {
+            "token_id": 98513,
+            "token": " inds",
+            "logit": -0.1530734896659851
+          },
+          {
+            "token_id": 102410,
+            "token": "\u6709\u53ef\u80fd",
+            "logit": -0.15241923928260803
+          },
+          {
+            "token_id": 113795,
+            "token": "\u76f4\u64ad\u95f4",
+            "logit": -0.15198980271816254
+          }
+        ],
+        "rank": 8,
+        "singular_value": 8.344563861263046
+      }
+    ],
+    "left_singular_vectors": [
+      {
+        "top_tokens": [
+          {
+            "token_id": 89724,
+            "token": "/Peak",
+            "logit": 0.21938300132751465
+          },
+          {
+            "token_id": 15631,
+            "token": "whel",
+            "logit": 0.21134544909000397
+          },
+          {
+            "token_id": 77931,
+            "token": "apesh",
+            "logit": 0.20660339295864105
+          },
+          {
+            "token_id": 4721,
+            "token": "wner",
+            "logit": 0.20518705248832703
+          },
+          {
+            "token_id": 73011,
+            "token": "asley",
+            "logit": 0.20376454293727875
+          },
+          {
+            "token_id": 87934,
+            "token": "cline",
+            "logit": 0.20206204056739807
+          },
+          {
+            "token_id": 121785,
+            "token": "\u7bdd",
+            "logit": 0.20163622498512268
+          },
+          {
+            "token_id": 40926,
+            "token": "mlin",
+            "logit": 0.19696751236915588
+          },
+          {
+            "token_id": 15579,
+            "token": "ussian",
+            "logit": 0.19417056441307068
+          },
+          {
+            "token_id": 74310,
+            "token": "iselect",
+            "logit": 0.19137901067733765
+          },
+          {
+            "token_id": 41864,
+            "token": "(EIF",
+            "logit": 0.19125941395759583
+          },
+          {
+            "token_id": 79851,
+            "token": "IllegalAccessException",
+            "logit": 0.18884292244911194
+          },
+          {
+            "token_id": 94336,
+            "token": " c\u00e9lib",
+            "logit": 0.18575450778007507
+          },
+          {
+            "token_id": 115458,
+            "token": "\u6253\u65ad",
+            "logit": 0.18400529026985168
+          },
+          {
+            "token_id": 96291,
+            "token": ".Formatter",
+            "logit": 0.18315058946609497
+          }
+        ],
+        "bottom_tokens": [
+          {
+            "token_id": 57543,
+            "token": " jadx",
+            "logit": -0.21075299382209778
+          },
+          {
+            "token_id": 64161,
+            "token": ".RightToLeft",
+            "logit": -0.18890801072120667
+          },
+          {
+            "token_id": 99046,
+            "token": "/ts",
+            "logit": -0.18621239066123962
+          },
+          {
+            "token_id": 120471,
+            "token": "\u75bd",
+            "logit": -0.1848042607307434
+          },
+          {
+            "token_id": 115418,
+            "token": "\u5efa\u6863\u7acb",
+            "logit": -0.18424570560455322
+          },
+          {
+            "token_id": 116969,
+            "token": "\u8fde\u80dc",
+            "logit": -0.17025938630104065
+          },
+          {
+            "token_id": 8027,
+            "token": "urr",
+            "logit": -0.16933386027812958
+          },
+          {
+            "token_id": 30647,
+            "token": " cath",
+            "logit": -0.1692550778388977
+          },
+          {
+            "token_id": 16927,
+            "token": "alc",
+            "logit": -0.16761979460716248
+          },
+          {
+            "token_id": 137120,
+            "token": "\u0627\u0644\u062a\u0632",
+            "logit": -0.16745421290397644
+          },
+          {
+            "token_id": 100145,
+            "token": "\u5173\u7cfb",
+            "logit": -0.16553393006324768
+          },
+          {
+            "token_id": 80021,
+            "token": "-IN",
+            "logit": -0.16425763070583344
+          },
+          {
+            "token_id": 77805,
+            "token": "Votre",
+            "logit": -0.1637229323387146
+          },
+          {
+            "token_id": 11687,
+            "token": "zt",
+            "logit": -0.1636458784341812
+          },
+          {
+            "token_id": 142104,
+            "token": " \uadf8\ub9ac\uc2a4\ub3c4",
+            "logit": -0.16214250028133392
+          }
+        ],
+        "rank": 1,
+        "singular_value": 15.293012171385682
+      },
+      {
+        "top_tokens": [
+          {
+            "token_id": 118713,
+            "token": "\u4e00\u81f4\u597d\u8bc4",
+            "logit": 0.23250122368335724
+          },
+          {
+            "token_id": 42820,
+            "token": "Traits",
+            "logit": 0.20075908303260803
+          },
+          {
+            "token_id": 39425,
+            "token": " \"','",
+            "logit": 0.19849365949630737
+          },
+          {
+            "token_id": 83126,
+            "token": " Zwe",
+            "logit": 0.19324654340744019
+          },
+          {
+            "token_id": 41219,
+            "token": " Synd",
+            "logit": 0.192790687084198
+          },
+          {
+            "token_id": 66835,
+            "token": ".Clamp",
+            "logit": 0.19172754883766174
+          },
+          {
+            "token_id": 137890,
+            "token": " olmad\u0131\u011f\u0131",
+            "logit": 0.19156983494758606
+          },
+          {
+            "token_id": 76891,
+            "token": "SUMER",
+            "logit": 0.19081151485443115
+          },
+          {
+            "token_id": 67712,
+            "token": "@ResponseBody",
+            "logit": 0.1889123022556305
+          },
+          {
+            "token_id": 101465,
+            "token": "\u6d66",
+            "logit": 0.18852609395980835
+          },
+          {
+            "token_id": 106942,
+            "token": "\u4e2a\u767e\u5206",
+            "logit": 0.18802881240844727
+          },
+          {
+            "token_id": 59954,
+            "token": "UCKET",
+            "logit": 0.18157364428043365
+          },
+          {
+            "token_id": 84466,
+            "token": "'icon",
+            "logit": 0.18144971132278442
+          },
+          {
+            "token_id": 67107,
+            "token": ".Atoi",
+            "logit": 0.18138477206230164
+          },
+          {
+            "token_id": 59637,
+            "token": "UILT",
+            "logit": 0.17949742078781128
+          }
+        ],
+        "bottom_tokens": [
+          {
+            "token_id": 41266,
+            "token": "ystone",
+            "logit": -0.19519782066345215
+          },
+          {
+            "token_id": 79120,
+            "token": " generously",
+            "logit": -0.18328900635242462
+          },
+          {
+            "token_id": 120471,
+            "token": "\u75bd",
+            "logit": -0.1820770502090454
+          },
+          {
+            "token_id": 40169,
+            "token": "_rt",
+            "logit": -0.17434275150299072
+          },
+          {
+            "token_id": 140385,
+            "token": " hei\u00dft",
+            "logit": -0.17220935225486755
+          },
+          {
+            "token_id": 61673,
+            "token": "\u00e4nger",
+            "logit": -0.16743123531341553
+          },
+          {
+            "token_id": 139041,
+            "token": "ill\u00e9",
+            "logit": -0.1673964560031891
+          },
+          {
+            "token_id": 120455,
+            "token": "\u9e31",
+            "logit": -0.1661517471075058
+          },
+          {
+            "token_id": 102264,
+            "token": "\u5316\u5b66",
+            "logit": -0.16573914885520935
+          },
+          {
+            "token_id": 60032,
+            "token": "ensely",
+            "logit": -0.16402654349803925
+          },
+          {
+            "token_id": 66011,
+            "token": "\u00edculos",
+            "logit": -0.1639491617679596
+          },
+          {
+            "token_id": 74539,
+            "token": " gr\u00f6\u00df",
+            "logit": -0.1617850661277771
+          },
+          {
+            "token_id": 36504,
+            "token": " parade",
+            "logit": -0.1615287810564041
+          },
+          {
+            "token_id": 86003,
+            "token": "ierge",
+            "logit": -0.16042950749397278
+          },
+          {
+            "token_id": 81252,
+            "token": " cuckold",
+            "logit": -0.16013020277023315
+          }
+        ],
+        "rank": 2,
+        "singular_value": 14.083944339994884
+      },
+      {
+        "top_tokens": [
+          {
+            "token_id": 120940,
+            "token": "\u5599",
+            "logit": 0.1918170154094696
+          },
+          {
+            "token_id": 116652,
+            "token": "\u904d\u53ca",
+            "logit": 0.1714811474084854
+          },
+          {
+            "token_id": 4102,
+            "token": "\u00a0",
+            "logit": 0.1661566197872162
+          },
+          {
+            "token_id": 103358,
+            "token": "\u4f8b\u5b50",
+            "logit": 0.16411831974983215
+          },
+          {
+            "token_id": 26349,
+            "token": " Kle",
+            "logit": 0.16367405652999878
+          },
+          {
+            "token_id": 22441,
+            "token": "\u3000",
+            "logit": 0.1590256541967392
+          },
+          {
+            "token_id": 5935,
+            "token": "ECT",
+            "logit": 0.15880796313285828
+          },
+          {
+            "token_id": 58364,
+            "token": "\u590d",
+            "logit": 0.15747785568237305
+          },
+          {
+            "token_id": 109154,
+            "token": "\u6f9c",
+            "logit": 0.15308409929275513
+          },
+          {
+            "token_id": 64673,
+            "token": "_chk",
+            "logit": 0.15092572569847107
+          },
+          {
+            "token_id": 103187,
+            "token": "\u84c9",
+            "logit": 0.1494748294353485
+          },
+          {
+            "token_id": 82696,
+            "token": "StringValue",
+            "logit": 0.14856912195682526
+          },
+          {
+            "token_id": 7990,
+            "token": " depth",
+            "logit": 0.1476651132106781
+          },
+          {
+            "token_id": 1683,
+            "token": " \ufffd",
+            "logit": 0.14754769206047058
+          },
+          {
+            "token_id": 35199,
+            "token": "(display",
+            "logit": 0.14702370762825012
+          }
+        ],
+        "bottom_tokens": [
+          {
+            "token_id": 67376,
+            "token": " eql",
+            "logit": -0.245183527469635
+          },
+          {
+            "token_id": 64277,
+            "token": "__);\n\n",
+            "logit": -0.23829615116119385
+          },
+          {
+            "token_id": 49807,
+            "token": " =>'",
+            "logit": -0.23769617080688477
+          },
+          {
+            "token_id": 75769,
+            "token": "?>>",
+            "logit": -0.23216122388839722
+          },
+          {
+            "token_id": 25782,
+            "token": "findViewById",
+            "logit": -0.22976234555244446
+          },
+          {
+            "token_id": 81860,
+            "token": ";base",
+            "logit": -0.22616419196128845
+          },
+          {
+            "token_id": 80621,
+            "token": "mdat",
+            "logit": -0.2247699499130249
+          },
+          {
+            "token_id": 118088,
+            "token": "\u7f8e\u5a92",
+            "logit": -0.2226826548576355
+          },
+          {
+            "token_id": 46809,
+            "token": "AMILY",
+            "logit": -0.22115537524223328
+          },
+          {
+            "token_id": 19347,
+            "token": "@\n\n",
+            "logit": -0.22101743519306183
+          },
+          {
+            "token_id": 42917,
+            "token": "CRYPT",
+            "logit": -0.2210041731595993
+          },
+          {
+            "token_id": 41646,
+            "token": "IRTUAL",
+            "logit": -0.22081874310970306
+          },
+          {
+            "token_id": 120838,
+            "token": "\u9a96",
+            "logit": -0.21898877620697021
+          },
+          {
+            "token_id": 10026,
+            "token": "alty",
+            "logit": -0.2155073881149292
+          },
+          {
+            "token_id": 77376,
+            "token": "(Android",
+            "logit": -0.2154523730278015
+          }
+        ],
+        "rank": 3,
+        "singular_value": 11.513759412239194
+      },
+      {
+        "top_tokens": [
+          {
+            "token_id": 75091,
+            "token": "\";}",
+            "logit": 0.23595619201660156
+          },
+          {
+            "token_id": 117174,
+            "token": "\u53ef\u60f3\u800c",
+            "logit": 0.23583461344242096
+          },
+          {
+            "token_id": 95753,
+            "token": ">({",
+            "logit": 0.21833795309066772
+          },
+          {
+            "token_id": 75922,
+            "token": "%\"><",
+            "logit": 0.21609070897102356
+          },
+          {
+            "token_id": 3532,
+            "token": "ULT",
+            "logit": 0.21546582877635956
+          },
+          {
+            "token_id": 143824,
+            "token": "\u041f\u043e\u0434\u0440\u043e\u0431\u043d\u0435\u0435",
+            "logit": 0.21277770400047302
+          },
+          {
+            "token_id": 98582,
+            "token": "TU",
+            "logit": 0.1985214352607727
+          },
+          {
+            "token_id": 39504,
+            "token": "ERTICAL",
+            "logit": 0.1972094476222992
+          },
+          {
+            "token_id": 70337,
+            "token": "\u00edg",
+            "logit": 0.19548243284225464
+          },
+          {
+            "token_id": 92321,
+            "token": "arkin",
+            "logit": 0.19409506022930145
+          },
+          {
+            "token_id": 63458,
+            "token": "///\r\n",
+            "logit": 0.19401389360427856
+          },
+          {
+            "token_id": 14655,
+            "token": "anes",
+            "logit": 0.19308103621006012
+          },
+          {
+            "token_id": 77794,
+            "token": "][/",
+            "logit": 0.19240964949131012
+          },
+          {
+            "token_id": 99075,
+            "token": "Bush",
+            "logit": 0.19096937775611877
+          },
+          {
+            "token_id": 98085,
+            "token": ".setPrototypeOf",
+            "logit": 0.18939119577407837
+          }
+        ],
+        "bottom_tokens": [
+          {
+            "token_id": 21923,
+            "token": " SqlParameter",
+            "logit": -0.20200681686401367
+          },
+          {
+            "token_id": 120046,
+            "token": "\u8365",
+            "logit": -0.20017124712467194
+          },
+          {
+            "token_id": 61882,
+            "token": " Hoffman",
+            "logit": -0.19599026441574097
+          },
+          {
+            "token_id": 57502,
+            "token": ".onDestroy",
+            "logit": -0.18578478693962097
+          },
+          {
+            "token_id": 90174,
+            "token": " Samp",
+            "logit": -0.1814536154270172
+          },
+          {
+            "token_id": 118472,
+            "token": "\u64c2",
+            "logit": -0.18134820461273193
+          },
+          {
+            "token_id": 86459,
+            "token": ")throws",
+            "logit": -0.18060413002967834
+          },
+          {
+            "token_id": 79401,
+            "token": ".EndsWith",
+            "logit": -0.17869293689727783
+          },
+          {
+            "token_id": 28476,
+            "token": " Nap",
+            "logit": -0.17819733917713165
+          },
+          {
+            "token_id": 27750,
+            "token": " GetComponent",
+            "logit": -0.1778940111398697
+          },
+          {
+            "token_id": 59073,
+            "token": " Swal",
+            "logit": -0.1777653992176056
+          },
+          {
+            "token_id": 121501,
+            "token": "\u6f62",
+            "logit": -0.1761787235736847
+          },
+          {
+            "token_id": 94342,
+            "token": "requete",
+            "logit": -0.17562049627304077
+          },
+          {
+            "token_id": 78747,
+            "token": "WithMany",
+            "logit": -0.17456009984016418
+          },
+          {
+            "token_id": 143477,
+            "token": " \u00e1mb",
+            "logit": -0.17086592316627502
+          }
+        ],
+        "rank": 4,
+        "singular_value": 10.04834826811732
+      }
+    ],
+    "mean_shift_dmu": {
+      "top_tokens": [
+        {
+          "token_id": 118228,
+          "token": "\u6362\u53e5\u8bdd",
+          "logit": 0.27935248613357544
+        },
+        {
+          "token_id": 53877,
+          "token": "FINE",
+          "logit": 0.22507429122924805
+        },
+        {
+          "token_id": 74403,
+          "token": " helf",
+          "logit": 0.22489330172538757
+        },
+        {
+          "token_id": 91927,
+          "token": "(strpos",
+          "logit": 0.22376978397369385
+        },
+        {
+          "token_id": 74200,
+          "token": " suce",
+          "logit": 0.21880120038986206
+        },
+        {
+          "token_id": 96697,
+          "token": " RectTransform",
+          "logit": 0.20240119099617004
+        },
+        {
+          "token_id": 57595,
+          "token": " sluts",
+          "logit": 0.19760634005069733
+        },
+        {
+          "token_id": 131889,
+          "token": "\uacfc\uc815",
+          "logit": 0.19099803268909454
+        },
+        {
+          "token_id": 117616,
+          "token": "\u65e5\u62a5\u793e",
+          "logit": 0.18954989314079285
+        },
+        {
+          "token_id": 55033,
+          "token": "ADED",
+          "logit": 0.18763497471809387
+        },
+        {
+          "token_id": 84616,
+          "token": " fullfile",
+          "logit": 0.18761004507541656
+        },
+        {
+          "token_id": 114612,
+          "token": "\u6297\u8861",
+          "logit": 0.18539664149284363
+        },
+        {
+          "token_id": 113190,
+          "token": "\u8fc8\u8fdb",
+          "logit": 0.18487799167633057
+        },
+        {
+          "token_id": 146256,
+          "token": "\u272c",
+          "logit": 0.18414032459259033
+        },
+        {
+          "token_id": 117607,
+          "token": "\u603b\u800c\u8a00\u4e4b",
+          "logit": 0.18409428000450134
+        }
+      ],
+      "bottom_tokens": [
+        {
+          "token_id": 116186,
+          "token": "\u6709\u7684\u73a9\u5bb6",
+          "logit": -0.2892714738845825
+        },
+        {
+          "token_id": 86531,
+          "token": "'url",
+          "logit": -0.25429150462150574
+        },
+        {
+          "token_id": 97314,
+          "token": "\t\t\t\t\t\t\t\t\r\n",
+          "logit": -0.2521604299545288
+        },
+        {
+          "token_id": 72353,
+          "token": "\t\t\t\t\t\t\t\r\n",
+          "logit": -0.25050729513168335
+        },
+        {
+          "token_id": 107873,
+          "token": "\u5728\u4f20\u5947",
+          "logit": -0.24693067371845245
+        },
+        {
+          "token_id": 52035,
+          "token": "\";//",
+          "logit": -0.24189114570617676
+        },
+        {
+          "token_id": 92918,
+          "token": "bote",
+          "logit": -0.24117648601531982
+        },
+        {
+          "token_id": 60798,
+          "token": " fkk",
+          "logit": -0.23882830142974854
+        },
+        {
+          "token_id": 139033,
+          "token": "nqu",
+          "logit": -0.2382165491580963
+        },
+        {
+          "token_id": 91920,
+          "token": ":\".$",
+          "logit": -0.23819637298583984
+        },
+        {
+          "token_id": 66055,
+          "token": ".Sin",
+          "logit": -0.23596662282943726
+        },
+        {
+          "token_id": 117897,
+          "token": "\u5728\u73a9\u5bb6\u4e2d",
+          "logit": -0.2346169501543045
+        },
+        {
+          "token_id": 97624,
+          "token": ".googlecode",
+          "logit": -0.2346058338880539
+        },
+        {
+          "token_id": 75660,
+          "token": "dealloc",
+          "logit": -0.2344040423631668
+        },
+        {
+          "token_id": 91514,
+          "token": "').\"",
+          "logit": -0.232827290892601
+        }
+      ]
+    }
+  }
+}
