@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1359,
+  "highest_id": 1360,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2808,6 +2808,13 @@
       "path": "tasks/archived/136",
       "status": "archived",
       "title": "See if you have a persona prompt with another response from another persona-> does that elicit the marker (do both directions)"
+    },
+    "1360": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1360",
+      "status": "proposed",
+      "title": "hub.py::_upload: bounded transport-class retry (429/Xet queue-full) before no-path return"
     },
     "137": {
       "has_clean_result": false,
