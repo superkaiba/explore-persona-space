@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1316,
+  "highest_id": 1317,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2467,6 +2467,13 @@
       "path": "tasks/proposed/1316",
       "status": "proposed",
       "title": "daily-fix: widen lazy-import pin scan set (from #1304)"
+    },
+    "1317": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1317",
+      "status": "proposed",
+      "title": "daily-fix: code-reviewer Gate-scope line check (#1305)"
     },
     "132": {
       "has_clean_result": false,
