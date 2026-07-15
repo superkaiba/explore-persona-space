@@ -1646,6 +1646,50 @@ def build_kl_aux_corpus(*, n: int = 100) -> Path:
     return out_path
 
 
+def demo_pool_from_corpus_rows(rows: list[dict], k: int = 8) -> tuple[list[dict] | None, int]:
+    """Frozen K=8 demo-set protocol (v1 rule, plan 4.4) over a row corpus.
+
+    Parses (question, answer) pairs from corpus JSONL records
+    (``prompt``/``completion`` or ``messages`` shape; unparseable records
+    skipped), stratifies over answer-length terciles, and samples ``k``
+    demos with ``random.Random(545)``. Returns ``(demos, n_parsable)`` —
+    ``demos`` is ``None`` when fewer than ``k`` parsable rows exist.
+
+    Extracted verbatim from ``build_demo_sets`` so external regen callers
+    (the #1332 OOD arm's missing-pool regeneration) share the EXACT recipe
+    by construction rather than by mirror.
+    """
+    scored = []
+    for r in rows:
+        if "completion" in r:
+            q = r["prompt"][-1]["content"]
+            a = r["completion"][0]["content"]
+        elif "messages" in r:
+            msgs = r["messages"]
+            q = next(m["content"] for m in msgs if m["role"] == "user")
+            a = next(m["content"] for m in reversed(msgs) if m["role"] == "assistant")
+        else:
+            continue
+        scored.append((len(a.split()), q, a))
+    if len(scored) < k:
+        return None, len(scored)
+    scored.sort()
+    terciles = [
+        scored[: len(scored) // 3],
+        scored[len(scored) // 3 : 2 * len(scored) // 3],
+        scored[2 * len(scored) // 3 :],
+    ]
+    rng = random.Random(545)
+    demos: list[dict] = []
+    ti = 0
+    while len(demos) < k:
+        t = terciles[ti % 3]
+        _, q, a = t[rng.randrange(len(t))]
+        demos.append({"question": q, "answer": a})
+        ti += 1
+    return demos, len(scored)
+
+
 def build_demo_sets(k: int = 8) -> Path:
     """K=8 demonstration sets per row for demo-flavored predictors (plan 4.4).
 
@@ -1674,35 +1718,10 @@ def build_demo_sets(k: int = 8) -> Path:
             index[row.row_id] = f"pending ({src.name} not built yet)"
             continue
         rows = [json.loads(line) for line in src.read_text().split("\n") if line.strip()]
-        scored = []
-        for r in rows:
-            if "completion" in r:
-                q = r["prompt"][-1]["content"]
-                a = r["completion"][0]["content"]
-            elif "messages" in r:
-                msgs = r["messages"]
-                q = next(m["content"] for m in msgs if m["role"] == "user")
-                a = next(m["content"] for m in reversed(msgs) if m["role"] == "assistant")
-            else:
-                continue
-            scored.append((len(a.split()), q, a))
-        if len(scored) < k:
-            index[row.row_id] = f"pending (only {len(scored)} rows)"
+        demos, n_parsable = demo_pool_from_corpus_rows(rows, k=k)
+        if demos is None:
+            index[row.row_id] = f"pending (only {n_parsable} rows)"
             continue
-        scored.sort()
-        terciles = [
-            scored[: len(scored) // 3],
-            scored[len(scored) // 3 : 2 * len(scored) // 3],
-            scored[2 * len(scored) // 3 :],
-        ]
-        rng = random.Random(545)
-        demos = []
-        ti = 0
-        while len(demos) < k:
-            t = terciles[ti % 3]
-            _, q, a = t[rng.randrange(len(t))]
-            demos.append({"question": q, "answer": a})
-            ti += 1
         (out / f"{row.row_id}.json").write_text(
             json.dumps({"demos": demos, "metadata": reproducibility_metadata()}, indent=1)
         )

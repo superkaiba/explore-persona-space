@@ -156,7 +156,9 @@ def main() -> int:
         "n_powered_rows": len(powered_rows),
         "coverage_note": (
             "rows limited to train_lora corpora resolvable on HF; columns to "
-            "diagonal demo pools (plan assumption 5 descope path)"
+            "diagonal demo pools incl. frozen-protocol regens (r3 add-on, plan "
+            "assumption 5 primary leg); Turner-gated + pending-p1 pools stay "
+            "descoped (reasons logged at staging)"
         ),
         "reproducibility_metadata": C.reproducibility_metadata({"smoke": args.smoke}),
     }

@@ -20,6 +20,9 @@ real vocab — the tiny-real CPU e2e standard). Stages:
 - ``capture545`` same rig over the #545 behavior corpora (19 rows) + eval-column
                  realization pools (corpora/demos), rendered no-system-prompt
                  (the #545 training regime; off-policy targets — stated caveat).
+                 Missing demo pools whose source corpus resolves on HF are
+                 regenerated per the frozen #545 protocol at staging time
+                 (r3 regen add-on; non-regenerable pools stay descoped, logged).
 - ``upload``     idempotent exact-set Hub verification sweep.
 
 ``--stage all`` (production) runs gen / capture / capture545 as SUBPROCESSES
@@ -332,7 +335,7 @@ def stage_inputs(args) -> dict:
         C.sha256_file(bank_path)[:12],
     )
 
-    staged_545 = {"rows": [], "cols": []}
+    staged_545 = {"rows": [], "cols": [], "regen_cols": []}
     if args.behaviors != "none":
         staged_545 = stage_545_inputs(root, args)
     return {
@@ -348,10 +351,11 @@ def stage_inputs(args) -> dict:
 def stage_545_inputs(root: Path, args) -> dict:
     """Stage the #545 corpora + demo realization pools from HF (scoped, per-file).
 
-    Returns {"rows": [(row_id, corpus_rel)], "cols": [(column_id, demo_rel)]}
-    limited to rows whose train_lora corpus resolves and columns whose diagonal
-    demo file exists (coverage reported; absent pools are the plan's stated
-    descope path — assumption 5).
+    Returns {"rows": [(row_id, corpus_rel)], "cols": [(column_id, demo_rel)],
+    "regen_cols": [...]} limited to rows whose train_lora corpus resolves and
+    columns whose diagonal demo file exists OR is regenerable per the frozen
+    #545 protocol (r3 regen add-on, plan assumption 5 primary leg); genuinely
+    non-regenerable pools stay on the descope path with the reason logged.
     """
     from huggingface_hub import hf_hub_download, list_repo_tree
 
@@ -421,10 +425,158 @@ def stage_545_inputs(root: Path, args) -> dict:
         local = _fetch(demo_rel, dest / "demos" / f"{row.row_id}.json")
         cols_sel.append((col, str(local)))
         seen_cols.add(col)
-    logger.info(
-        "[545] staged %d behavior corpora + %d eval-column demo pools", len(rows_sel), len(cols_sel)
+
+    regen_cols = _regen_missing_545_pools(
+        args,
+        dest=dest,
+        prefix=prefix,
+        hub_paths=hub_paths,
+        fetch=_fetch,
+        cols_sel=cols_sel,
+        seen_cols=seen_cols,
+        want_cols=want_cols,
     )
-    return {"rows": rows_sel, "cols": cols_sel}
+
+    logger.info(
+        "[545] staged %d behavior corpora + %d eval-column demo pools (%d regenerated: %s)",
+        len(rows_sel),
+        len(cols_sel),
+        len(regen_cols),
+        ",".join(regen_cols) or "-",
+    )
+    return {"rows": rows_sel, "cols": cols_sel, "regen_cols": regen_cols}
+
+
+def _regen_missing_545_pools(
+    args,
+    *,
+    dest: Path,
+    prefix: str,
+    hub_paths: set[str],
+    fetch,
+    cols_sel: list[tuple[str, str]],
+    seen_cols: set[str],
+    want_cols: set[str] | None,
+) -> list[str]:
+    """Regen add-on (r3, concern ood545-coverage-partial): missing demo pools.
+
+    Plan assumption 5 primary leg + the allowed-deviations "OOD-arm
+    regeneration of missing realization pools": a missing diagonal demo pool
+    is regenerated per the FROZEN #545 protocol
+    (``behavior_testbed_545.corpora.demo_pool_from_corpus_rows`` — K=8,
+    answer-length terciles, ``random.Random(545)``) over the row's REALIZED
+    training corpus, ONLY when that source resolves under the #545 corpora
+    prefix. Non-regenerable classes keep the descope leg, reason logged:
+
+    - hydra_turner rows: the #545 demo source is the Turner EDS JSONL
+      (TURNER_EDS_PASSWORD-gated, not on HF) — not a small add-on;
+    - reuse_adapter rows: #545 itself never built these pools (INDEX.json
+      "pending-p1"; predictors_zoo skips their demos flavor) — regenerating
+      would be a NEW variant, not the frozen recipe.
+
+    Regenerated pools persist to the ISSUE prefix (never the frozen #545
+    prefix — upload-policy version-bump rule) and are reused idempotently.
+    Appends covered columns to ``cols_sel``/``seen_cols``; returns the list
+    of regenerated column ids.
+    """
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.experiments.behavior_testbed_545.corpora import (
+        demo_pool_from_corpus_rows,
+    )
+    from explore_persona_space.experiments.behavior_testbed_545.rows import active_rows
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    api = HfApi()
+    regen_cols: list[str] = []
+    for row in active_rows().values():
+        col = row.diagonal_column
+        if not col or col in seen_cols:
+            continue
+        if want_cols is not None and col not in want_cols:
+            continue
+        if row.recipe_kind == "hydra_turner":
+            logger.info(
+                "[545-regen] col %s (row %s): demo source is the password-gated Turner "
+                "EDS JSONL (not on HF) — descope stands",
+                col,
+                row.row_id,
+            )
+            continue
+        if not row.corpus:
+            logger.info(
+                "[545-regen] col %s (row %s, %s): #545 never built this pool "
+                "(pending-p1) — no frozen recipe; descope stands",
+                col,
+                row.row_id,
+                row.recipe_kind,
+            )
+            continue
+        corpus_rel = f"{prefix}/{row.corpus}"
+        if corpus_rel not in hub_paths:
+            logger.warning(
+                "[545-regen] col %s (row %s): source corpus %s unresolved on HF — descoped",
+                col,
+                row.row_id,
+                corpus_rel,
+            )
+            continue
+        local = dest / "demos" / f"{row.row_id}.json"
+        regen_rel = f"{C.HF_PREFIX}/i545_regen/demos/{row.row_id}.json"
+        prior = retry_transient(
+            lambda rr=regen_rel: api.file_exists(C.HF_DATA_REPO, rr, repo_type="dataset"),
+            what=f"file_exists {regen_rel}",
+        )
+        if prior:
+            fetch(regen_rel, local)
+            logger.info("[545-regen] col %s: reusing prior regen pool %s", col, regen_rel)
+        else:
+            corpus_local = fetch(corpus_rel, dest / "corpora" / row.corpus)
+            corpus_rows = []
+            with open(corpus_local, encoding="utf-8") as f:  # text-mode iter (#950 rule)
+                for line in f:
+                    if line.strip():
+                        corpus_rows.append(json.loads(line))
+            demos, n_parsable = demo_pool_from_corpus_rows(corpus_rows)
+            if demos is None:
+                logger.warning(
+                    "[545-regen] col %s (row %s): only %d parsable corpus rows (<8) — descoped",
+                    col,
+                    row.row_id,
+                    n_parsable,
+                )
+                continue
+            local.parent.mkdir(parents=True, exist_ok=True)
+            C.write_json_atomic(
+                local,
+                {
+                    "demos": demos,
+                    "metadata": C.reproducibility_metadata(
+                        {
+                            "regen": "issue1332 — frozen #545 build_demo_sets protocol "
+                            "(K=8 answer-length terciles, seed 545)",
+                            "source_corpus": corpus_rel,
+                            "source_sha256": C.sha256_file(corpus_local),
+                        }
+                    ),
+                },
+            )
+            if not args.skip_upload:
+                upload_files(
+                    [(local, regen_rel)],
+                    f"issue 1332: #545 regen demo pool {row.row_id} ({col})",
+                )
+            logger.info(
+                "[545-regen] col %s: regenerated pool from %s (%d parsable rows) -> %s",
+                col,
+                corpus_rel,
+                n_parsable,
+                regen_rel,
+            )
+        cols_sel.append((col, str(local)))
+        seen_cols.add(col)
+        regen_cols.append(col)
+    return regen_cols
 
 
 # ── stage: gen ────────────────────────────────────────────────────────────────
