@@ -25,7 +25,8 @@ Phases (linear, checkpoint-per-phase, resume-keyed; plan §4/§9):
 
 ``--smoke`` is the SAME dispatcher at tiny knobs (plan § Dry-run smoke item 2):
 cells (mk1_lora_con, mk4_fullft_pos, mk3_fullft_con), 2-step LoRA train + FT
-consolidation canary (1 rung, num_processes=1), BOTH HALT gates live (the
+consolidation canary (1 rung; launch width smoke-INVARIANT at num_processes=4
+whole-pod-exclusive, crash-fix r4/r5), BOTH HALT gates live (the
 same-surface parity gate AND the reused-arm apply-and-read gate at
 eval_question_limit with a doubled bound) + the PEFT-swap-vs-merged parity
 read, 1 ladder read at 2 questions, 2-context x 2-question capture, tf-shared
@@ -254,10 +255,12 @@ def _run_subprocess(cmd: list[str], log_path: Path, env: dict[str, str] | None =
 
 def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
     """Work-conserving CVD-pinned subprocess pool over self-invocation units
-    (1-GPU units only; the FT train is whole-pod and never routes here)."""
+    (1-GPU units only; the FT TRAIN is whole-pod exclusive and never routes
+    here — pinned by ``_train_schedule`` + the ``run_train_unit`` guard; FT
+    LADDER reads legitimately ride 1-GPU units per plan §9 P3, TP=1 vLLM)."""
     ids = _physical_gpu_ids()
     pending = list(units)
-    running: dict[int, tuple[subprocess.Popen, list[str]]] = {}
+    running: dict[int, tuple[subprocess.Popen, list[str], Path]] = {}
     logs = cfg.out_root / "unit_logs"
     logs.mkdir(parents=True, exist_ok=True)
     while pending or running:
@@ -274,23 +277,41 @@ def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
                     ids[g],
                 ]
                 env = {**os.environ, "CUDA_VISIBLE_DEVICES": ids[g]}
-                log = logs / f"unit_{'_'.join(extra[1:3]).replace('/', '_')}_g{g}.log"
+                # Name from KIND+ARG (extra[2:4]) — crash-fix r5: extra[1:3]
+                # was ['--unit', kind], so every same-kind unit landing on a
+                # gpu slot appended to ONE shared log, mis-attributing tails.
+                log = logs / f"unit_{'_'.join(extra[2:4]).replace('/', '_')}_g{g}.log"
                 f = open(log, "a")  # noqa: SIM115 — held open for the Popen's lifetime
                 running[g] = (
                     subprocess.Popen(
                         cmd, stdout=f, stderr=subprocess.STDOUT, env=env, start_new_session=True
                     ),
                     extra,
+                    log,
                 )
                 logger.info("[fanout] gpu %d <- %s (log %s)", g, extra, log)
         time.sleep(10)
-        for g, (proc, extra) in list(running.items()):
+        for g, (proc, extra, log) in list(running.items()):
             rc = proc.poll()
             if rc is None:
                 continue
             del running[g]
             if rc != 0:
-                d1112._reap_unit_groups([p2 for p2, _ in running.values()])
+                d1112._reap_unit_groups([p for p, _, _ in running.values()])
+                # Diagnosability (crash-fix r5): unit logs live under out_root
+                # (smoke: /tmp) — OUTSIDE the GCE crash trap's persist globs —
+                # so a failing unit's traceback must be echoed into the MAIN
+                # workload log or it dies with the instance (attempt-2
+                # epm:failure v2: unit rc=1, root cause unrecoverable from
+                # workload.log alone; same class as the r4 ft_mk4.log gap).
+                logger.error(
+                    "[fanout-unit-tail] unit %s rc=%d — last %d lines of %s:\n%s",
+                    extra,
+                    rc,
+                    SUBPROCESS_TAIL_LINES,
+                    log,
+                    _tail_lines(log, SUBPROCESS_TAIL_LINES),
+                )
                 raise RuntimeError(f"fanout unit {extra} failed rc={rc} (see {logs})")
 
 
@@ -895,6 +916,16 @@ def phase_mixes(cfg: Cfg) -> dict:
 def run_train_unit(cfg: Cfg, cell: str) -> dict:
     """One LoRA ladder train (single GPU; launcher CVD pin authoritative via
     _apply_cvd_pin — gpu_id stays 0 under a single-GPU pin)."""
+    if cell not in C.NEW_LORA_CELLS:
+        # Structural pin (crash-fix r5, epm:failure v2 class): the FT cell
+        # trains ONLY via phase_train's top-level whole-pod-exclusive
+        # accelerate launch (plan §9 P2a) — a CVD-pinned 1-GPU train unit
+        # must refuse it loudly BEFORE any GPU work, never mis-train it.
+        raise RuntimeError(
+            f"train unit got non-LoRA cell {cell!r}: the FT cell trains via the "
+            f"top-level 4-GPU-exclusive launch in phase_train, never inside a "
+            f"CVD-pinned fanout unit (want one of {C.NEW_LORA_CELLS})"
+        )
     from explore_persona_space.train.sft import train_lora
 
     cell_root = cfg.out_root / cell
@@ -1068,10 +1099,44 @@ def _ft_num_processes(cfg: Cfg) -> int:
     return FT_NUM_PROCESSES
 
 
+def _train_schedule(cfg: Cfg) -> tuple[list[str], list[str]]:
+    """Plan §9 P2 split, as ONE testable decision (crash-fix r5): returns
+    ``(lora_fanout_cells, ft_exclusive_cells)``. Invariants (fail-loud):
+    the P2b LoRA cells ride work-conserving 1-GPU fanout units; the P2a FT
+    cell trains ONLY as the top-level whole-pod-exclusive ZeRO-3 launch
+    (never inside a CVD-pinned unit — its 4-GPU world size needs the full
+    pod CVD, which only the top-level process holds); the reused cell
+    trains nowhere; any OTHER trained-cell class is unroutable and raises
+    (never silently skipped — the #1090 fu5 per-arm-class lesson)."""
+    lora = [c for c in cfg.cells if c in C.NEW_LORA_CELLS]
+    ft = [c for c in cfg.cells if c == C.CELL_FT_POS]
+    unroutable = [
+        c
+        for c in cfg.cells
+        if c not in C.NEW_LORA_CELLS and c not in (C.CELL_FT_POS, C.REUSED_CELL)
+    ]
+    if unroutable:
+        raise RuntimeError(
+            f"unroutable train cells {unroutable!r}: every trained cell must be a "
+            f"LoRA-fanout cell ({C.NEW_LORA_CELLS}), the FT-exclusive cell "
+            f"({C.CELL_FT_POS!r}), or the untrained reused arm ({C.REUSED_CELL!r})"
+        )
+    if set(lora) & set(ft):
+        raise RuntimeError(f"cells in BOTH schedules: {sorted(set(lora) & set(ft))!r}")
+    return lora, ft
+
+
 def phase_train(cfg: Cfg) -> dict:
     _phase("p2_train")
     out: dict[str, dict] = {}
-    lora_cells = [c for c in cfg.cells if c in C.NEW_LORA_CELLS]
+    # Sequencing: P2b LoRA fanout FIRST (work-conserving over all GPUs), then
+    # the P2a FT whole-pod-exclusive launch. Makespan is order-invariant here
+    # (5 cells / 4 GPUs leaves the same 1-cell tail either way); LoRA-first
+    # surfaces the 5 independent single-GPU cells' failures before the long
+    # exclusive phase and keeps the FT stale-partial clearing adjacent to its
+    # launch. Neither phase idles GPUs behind the other's barrier beyond that
+    # unavoidable tail (plan §9 item i).
+    lora_cells, ft_cells = _train_schedule(cfg)
     pending = [c for c in lora_cells if not (cfg.out_root / c / "build_result.json").exists()]
     if pending:
         # Work-conserving fanout, 1 GPU per LoRA cell (plan §9 item i). The
@@ -1080,17 +1145,26 @@ def phase_train(cfg: Cfg) -> dict:
     for c in lora_cells:
         out[c] = _read_json(cfg.out_root / c / "build_result.json")
 
-    if C.CELL_FT_POS in cfg.cells:
-        ft_root = cfg.out_root / C.CELL_FT_POS / "train"
-        done = cfg.out_root / C.CELL_FT_POS / "build_result.json"
+    for ft_cell in ft_cells:
+        ft_root = cfg.out_root / ft_cell / "train"
+        done = cfg.out_root / ft_cell / "build_result.json"
         if not done.exists():
             grid = (1,) if cfg.smoke else C.FT_GRID
             if ft_root.exists():
                 logger.warning("[ft] clearing stale partial FT out_dir %s", ft_root)
                 shutil.rmtree(ft_root)
             npr = _ft_num_processes(cfg)
+            ids = _physical_gpu_ids()
+            # Fix-engaged observable (crash-fix r5): the exclusive launch is
+            # top-level, MAIN-log-visible, full-CVD — never a fanout unit.
+            logger.info(
+                "[ft-exclusive] launching %s num_processes=%d CVD=%s",
+                ft_cell,
+                npr,
+                ",".join(ids[:npr]),
+            )
             cmd = C.marker_ft_cmd(
-                mix_path=_mix_path(cfg, C.CELL_FT_POS),
+                mix_path=_mix_path(cfg, ft_cell),
                 out_dir=ft_root,
                 num_processes=npr,
                 seed=cfg.seed,
@@ -1099,7 +1173,6 @@ def phase_train(cfg: Cfg) -> dict:
                 trainer=MARKER_FT_TRAINER,
                 accel_config=MARKER_ACCEL_CONFIG,
             )
-            ids = _physical_gpu_ids()
             env = {**os.environ, "CUDA_VISIBLE_DEVICES": ",".join(ids[:npr])}
             logger.info(
                 "[ft-launch] num_processes=%d CUDA_VISIBLE_DEVICES=%s smoke=%s grid=%s",
@@ -1110,7 +1183,7 @@ def phase_train(cfg: Cfg) -> dict:
             )
             _run_subprocess(cmd, cfg.out_root / "logs" / "ft_mk4.log", env=env)
             _atomic_json(done, {"adapter_root": str(ft_root), "grid": list(grid)})
-        out[C.CELL_FT_POS] = _read_json(done)
+        out[ft_cell] = _read_json(done)
     return out
 
 
