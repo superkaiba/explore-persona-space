@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1329,
+  "highest_id": 1330,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2572,6 +2572,13 @@
       "path": "tasks/completed/133",
       "status": "completed",
       "title": "Question: how important is the system prompt used in frontier models = I'm not sure exactly how it's consolidated."
+    },
+    "1330": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1330",
+      "status": "proposed",
+      "title": "daily-fix: codify marker-text extraction from output file"
     },
     "134": {
       "has_clean_result": false,
