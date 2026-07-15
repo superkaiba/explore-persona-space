@@ -94,8 +94,80 @@ def test_fu5_run_matrix_plan_d1(fu5_round):
     )
     assert R.k3_parity_run_id == "imp-bare-lr1e5"
     assert R.max_lora_rank == 256
-    # smoke = the K5 rank-threading run through the SAME resolver
-    assert fu4.resolve_fu4_runs(None, smoke=True)[0].run_id == "fmt-pers-r256"
+    # smoke = one run per ARM CLASS through the SAME resolver: the bare-context
+    # Arm-A seam (the att-20260715-081917 ladder-organism crash was never
+    # smoke-covered) + the K5 rank-threading Arm-B run.
+    assert [r.run_id for r in fu4.resolve_fu4_runs(None, smoke=True)] == [
+        "imp-bare-lr1e5",
+        "fmt-pers-r256",
+    ]
+
+
+@pytest.fixture
+def registry_hygiene():
+    """`ensure_context` -> `register_fu3_contexts()` and `panel_name_for` both
+    mutate GLOBAL registries (CONTEXTS / NEGATIVE_PANELS) at runtime — correct
+    in production, but test-order-poisoning for the registry-purity pins
+    (test_conv_context_is_wildchat_family asserts the conv prefix is NOT
+    pre-registered). Snapshot the key sets and remove anything a test added."""
+    from explore_persona_space.artifacts.context import CONTEXTS
+    from explore_persona_space.artifacts.negatives import NEGATIVE_PANELS
+
+    ctx_before, panel_before = set(CONTEXTS), set(NEGATIVE_PANELS)
+    try:
+        yield
+    finally:
+        for k in set(CONTEXTS) - ctx_before:
+            CONTEXTS.pop(k, None)
+        for k in set(NEGATIVE_PANELS) - panel_before:
+            NEGATIVE_PANELS.pop(k, None)
+
+
+def test_ladder_organism_imp_bare_threads_filtered_panel(fu5_round, registry_hygiene):
+    """Crash pin (att-20260715-081917, all 3 imp-bare arms rc=2): the ladder's
+    organism at the BARE ``default`` source must thread fu3's source-filtered
+    panel — the default panel carries member(s) content-identical to the
+    ``default`` source, so the pre-fix bare construction
+    ``ModelOrganism(behavior, context_id="default", seed)`` raises the
+    #527/#538 disjointness AssertionError before any rung is read."""
+    import issue1090_fu3_worker as fu3w
+
+    from explore_persona_space.artifacts.negatives import DEFAULT_PANEL_NAME
+
+    run = {r.run_id: r for r in fu4.FU5_RUNS}["imp-bare-lr1e5"]
+    assert run.context_id == "default"
+    ctx = fu3w.ensure_context(run.context_id, run.behavior)
+    org = fu4._ladder_organism(run, ctx, seed=42)  # pre-fix path: AssertionError
+    assert org.negatives != DEFAULT_PANEL_NAME
+    member_ids = {m.to_context().context_id for m in org.panel}
+    assert "default" not in member_ids
+
+
+def test_ladder_organism_persona_source_keeps_default_panel(fu5_round, registry_hygiene):
+    """The panel threading is byte-identical for every non-bare arm:
+    ``panel_name_for`` returns the DEFAULT panel for a persona source."""
+    import issue1090_fu3_worker as fu3w
+
+    from explore_persona_space.artifacts.negatives import DEFAULT_PANEL_NAME
+
+    run = {r.run_id: r for r in fu4.FU5_RUNS}["fmt-pers-r256"]
+    ctx = fu3w.ensure_context(run.context_id, run.behavior)
+    org = fu4._ladder_organism(run, ctx, seed=42)
+    assert org.negatives == DEFAULT_PANEL_NAME
+
+
+def test_bare_source_default_panel_still_refused(fu5_round, registry_hygiene):
+    """The library invariant the fix routes around must STAY load-bearing: a
+    bare ``default`` source under the DEFAULT panel is refused at construction
+    (if this ever passes, the ``_ladder_organism`` panel threading is no longer
+    necessary — re-evaluate, don't delete silently)."""
+    import issue1090_fu3_worker as fu3w
+
+    from explore_persona_space.artifacts.organisms import ModelOrganism
+
+    fu3w.ensure_context("default", "impolite")  # registry parity with the worker
+    with pytest.raises(AssertionError, match="no-default panel"):
+        ModelOrganism(behavior="impolite", context_id="default", seed=42)
 
 
 def test_fu4_round_default_unchanged():

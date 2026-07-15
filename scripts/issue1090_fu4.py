@@ -31,8 +31,10 @@ dispatch), ``--phase judge-aggregate`` (VM P3, post pod release: Tier-2
 impolite judging via the Batch-API judge path, transport/content drop split,
 K4 check, verdict-lattice inputs -> fu4_ladders.json).
 
-``--smoke`` is the SAME dispatch path with tiny knobs (PASS_UNIFIED): 1 run
-subset, fixture mix in the production on-disk shape with a PINNED sha,
+``--smoke`` is the SAME dispatch path with tiny knobs (PASS_UNIFIED): a small
+run subset (fu4: 1 run; fu5: one run per arm class — the bare-context Arm-A
+seam + the rank-threading Arm-B run), fixture mix in the production on-disk
+shape with a PINNED sha,
 ``max_steps=5`` (exactly ONE rung at save_steps=5), tiny tier1/tier2 knobs,
 tiny-real trainer (real tokenizer/collator/SFTTrainer/PEFT on the from-config
 tiny Qwen2), recording upload seam; the judge stays LIVE.
@@ -310,7 +312,7 @@ class RoundSpec:
     manifest_name: str
     ladders_name: str
     runs: tuple[Fu4Run, ...]
-    smoke_default_run: str
+    smoke_default_run: str  # comma list OK — every id resolves through resolve_fu4_runs
     k3_parity_run_id: str
     k3_parity_degraded_floor: float | None  # aggregate `parity-degraded` flag floor (fu5 0.35)
     reread_rate_floor: float | None  # None -> legacy delta>=+0.30 trigger (fu4)
@@ -346,7 +348,10 @@ ROUNDS: dict[str, RoundSpec] = {
         manifest_name="cell_manifest_fu5.json",
         ladders_name="fu5_ladders.json",
         runs=FU5_RUNS,
-        smoke_default_run="fmt-pers-r256",  # K5: the rank-threading + 256-slot smoke run
+        # BOTH arm classes: the bare-context Arm-A seam (imp-bare — the
+        # att-20260715-081917 ladder-organism crash was never smoke-covered)
+        # + the K5 rank-threading / 256-slot Arm-B run.
+        smoke_default_run="imp-bare-lr1e5,fmt-pers-r256",
         k3_parity_run_id="imp-bare-lr1e5",
         k3_parity_degraded_floor=FU5_PARITY_DEGRADED_FLOOR,
         reread_rate_floor=FU5_REREAD_RATE_FLOOR,
@@ -399,7 +404,10 @@ def resolve_fu4_runs(runs_arg: str | None, smoke: bool) -> tuple[Fu4Run, ...]:
             raise ValueError(f"bad {ROUND.name} runs {bad!r}: known {sorted(by_id)}")
         return tuple(by_id[i] for i in ids)
     if smoke:
-        return (by_id[ROUND.smoke_default_run],)
+        # Comma list: the fu5 smoke covers BOTH arm classes (the bare-context
+        # Arm-A ladder seam that crashed production att-20260715-081917 AND the
+        # rank-threading Arm-B run) through the SAME dispatch path.
+        return tuple(by_id[t.strip()] for t in ROUND.smoke_default_run.split(",") if t.strip())
     return ROUND.runs
 
 
@@ -695,6 +703,28 @@ def _ladder_regime(cfg: i1090.RunConfig, run: Fu4Run) -> dict:
     }
 
 
+def _ladder_organism(run: Fu4Run, ctx: Any, seed: int) -> ModelOrganism:
+    """The Tier-1 ladder's organism at the run's OWN training context, with the
+    negative panel threaded through fu3's source-filtered ``panel_name_for``
+    (issue1090_fu3_worker). Load-bearing for the fu5 Arm-A bare-context runs:
+    their source IS the ``default`` context, which is content-identical to the
+    default panel's default-assistant member, so ``ModelOrganism``'s #527/#538
+    disjointness invariant refuses the default-panel construction at
+    ``__post_init__`` (the att-20260715-081917 production crash — all three
+    imp-bare arms rc=2 right after training, on attempt 1 AND the requeue).
+    For persona/conv sources ``panel_name_for`` returns ``DEFAULT_PANEL_NAME``,
+    so every other arm is byte-identical. The panel is design metadata here —
+    ``make_source_rate_fn`` reads behavior/context only — and matches the panel
+    the frozen fu3 bare mix was actually built under (fu3's own worker threads
+    the same ``panel_name_for``)."""
+    return ModelOrganism(
+        behavior=run.behavior,
+        context_id=run.context_id,
+        negatives=fu3w.panel_name_for(ctx),
+        seed=seed,
+    )
+
+
 def ladder_fu4_run(
     cfg: i1090.RunConfig, seams: i1090.Seams1090, run: Fu4Run, ckpts: dict[int, Path]
 ) -> dict:
@@ -738,7 +768,14 @@ def ladder_fu4_run(
     pending = [s for s in sorted(ckpts) if s not in rates]
     if pending:
         i1090._phase(f"{ROUND.name}_tier1_ladder")
-        organism = ModelOrganism(behavior=run.behavior, context_id=run.context_id, seed=cfg.seed)
+        organism = _ladder_organism(run, ctx, cfg.seed)
+        logger.info(
+            "[%s-ladder] %s organism panel=%s (source ctx %s)",
+            ROUND.name,
+            run.run_id,
+            organism.negatives,
+            run.context_id,
+        )
         # The generation engine is ALWAYS injected here (never None) so the
         # round's LoRA slot width reaches the SOURCE-parametrized factory
         # (organisms.py D2 item 2): fu5's r128/r256 rungs need a 256-slot
