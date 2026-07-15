@@ -2721,8 +2721,8 @@
     "1349": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1349",
-      "status": "proposed",
+      "path": "tasks/planning/1349",
+      "status": "planning",
       "title": "workflow-fix: PASS_UNIFIED must cover non-cell smoke-axis min-N floors"
     },
     "135": {
