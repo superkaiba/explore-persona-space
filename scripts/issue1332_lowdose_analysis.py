@@ -265,6 +265,49 @@ def forest_figure(fig_dir: Path, rows, title: str, fname: str) -> str:
     return str(p)
 
 
+def trajectories_figure(fig_dir: Path, traj_dir: Path) -> str | None:
+    """Band-stop trajectory figure with plain-English source-family legend.
+
+    Reads per-source ``band_trajectories/*.json`` (skipping ``*_bracket.json``),
+    labels each line with the condition's plain-English ``name`` from
+    ``i406_conditions.CONDITIONS`` (per the no-opaque-condition-codes rule),
+    and returns the PNG path (None when the dir holds no trajectories).
+    """
+    _paper_style()
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.experiments.i406_conditions import CONDITIONS
+
+    name_by_cid = {c.cid: c.name for c in CONDITIONS}
+    paths = sorted(traj_dir.glob("*.json"))
+    paths = [p for p in paths if not p.name.endswith("_bracket.json")]
+    if not paths:
+        return None
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(6.5, 4), layout="constrained")
+    cmap = plt.get_cmap("tab20")
+    for k, tp in enumerate(paths):
+        d = json.loads(tp.read_text())
+        if "steps" in d and "delta_nats" in d:
+            ax.plot(
+                d["steps"],
+                d["delta_nats"],
+                lw=0.9,
+                alpha=0.85,
+                color=cmap(k % 20),
+                label=name_by_cid.get(tp.stem, tp.stem),
+            )
+    ax.axhspan(5.0, 12.0, color="0.85", zorder=0)
+    ax.set_xlabel("optimizer step")
+    ax.set_ylabel("delta log P(marker) (nats)")
+    ax.set_title("band-stop trajectories, 16 source families (band [5, 12] shaded)")
+    ax.legend(fontsize=5.5, ncols=2, frameon=False, loc="upper left")
+    p = fig_dir / "lowdose_band_trajectories.png"
+    fig.savefig(p, dpi=200)
+    plt.close(fig)
+    return str(p)
+
+
 def make_lowdose_figures(fig_dir: Path, ctx: dict) -> list[str]:
     """Hero forest + scatters (raw beside residualized) + heatmap + parent-vs-
     lowdose per-cell scatter + band trajectories + LOFO fold bars."""
@@ -342,23 +385,9 @@ def make_lowdose_figures(fig_dir: Path, ctx: dict) -> list[str]:
     # band-entry trajectories (present only after the production run)
     traj_dir = ctx.get("traj_dir")
     if traj_dir is not None and Path(traj_dir).is_dir():
-        paths = sorted(Path(traj_dir).glob("*.json"))
-        paths = [p for p in paths if not p.name.endswith("_bracket.json")]
-        if paths:
-            fig, ax = plt.subplots(figsize=(6.5, 4), layout="constrained")
-            for tp in paths:
-                d = json.loads(tp.read_text())
-                if "steps" in d and "delta_nats" in d:
-                    ax.plot(d["steps"], d["delta_nats"], lw=0.9, alpha=0.8, label=tp.stem)
-            ax.axhspan(5.0, 12.0, color="0.85", zorder=0)
-            ax.set_xlabel("optimizer step")
-            ax.set_ylabel("delta log P(marker) (nats)")
-            ax.set_title("band-stop trajectories (band [5, 12] shaded)")
-            ax.legend(fontsize=5, ncols=4, frameon=False)
-            p = fig_dir / "lowdose_band_trajectories.png"
-            fig.savefig(p, dpi=200)
-            plt.close(fig)
-            figs.append(str(p))
+        p_traj = trajectories_figure(fig_dir, Path(traj_dir))
+        if p_traj is not None:
+            figs.append(p_traj)
 
     # LOFO per-fold bars (registered target-axis full stack)
     per_fold = ctx["lofo"]["target_full"]["per_fold_spearman"]

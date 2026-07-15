@@ -319,6 +319,19 @@
       "0.1x": 0.1492665807943474,
       "1x": 0.14837501109213438,
       "10x": 0.14467223118060926
+    },
+    "margin_band": {
+      "dv": "trained - base mean_marker_eos_margin (secondary margin DV)",
+      "null": "target-family-label permutation of S (source-preserving), same machinery as the registered log-prob null (shuffled_pairing_null)",
+      "n_draws": 10000,
+      "seed": 1,
+      "rho_dir_margin_dv": 0.47022762642266513,
+      "dir_p975_abs_rho": 0.4849252526578291,
+      "dir_p_two_sided": 0.0381,
+      "dir_clears_band": false,
+      "rho_sym_margin_dv": 0.4571619288051371,
+      "sym_p975_abs_rho": 0.4870530945183338,
+      "sym_p_two_sided": 0.049
     }
   },
   "install_record": {
@@ -539,7 +552,8 @@
     "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1332/figures/issue_1332/lowdose/lowdose_vs_parent_scatter.png",
     "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1332/figures/issue_1332/lowdose/lowdose_heatmap.png",
     "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1332/figures/issue_1332/lowdose/lowdose_band_trajectories.png",
-    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1332/figures/issue_1332/lowdose/lowdose_lofo_folds.png"
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1332/figures/issue_1332/lowdose/lowdose_lofo_folds.png",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1332/figures/issue_1332/lowdose/lowdose_margin_scatter.png"
   ],
   "reproducibility_metadata": {
     "issue": 1332,
