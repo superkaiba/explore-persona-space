@@ -236,6 +236,27 @@ three rely on the Python Hub API for the same reason — the `hf` CLI's false "0
 would corrupt their checks identically. Keep the snippet (repo, `repo_type`,
 `revision`) consistent across these surfaces when editing.
 
+**Verify-path Hub calls ride `retry_transient` + ONE prefix-scoped listing per
+destination repo (#1335 r5).** A post-upload verify is still part of the run:
+a transport error there (429 / 5xx / timeout / connection) is retried, never
+fatal — in #1335 r5 an UN-retried per-shard `api.file_exists` HEAD probe (the
+exact-file fallback inside `hub.list_hf_files_under_path`) let one transient
+HF 429 ("maximum queue size reached") crash a healthy GCP run 2.8 h in, AFTER
+every upload had succeeded (attempt att-20260715-134136). Two rules for any
+upload/verify path in workload code: (a) wrap every FRESH Hub call in
+`hub.retry_transient` (`orchestrate/hub.py` — the public alias of
+`_retry_upload`: Retry-After-aware, wall-clock-budgeted via
+`EPM_HF_RETRY_BUDGET_S`; storage-quota-403 and other non-transient errors
+still re-raise immediately); (b) verify a SHARDED upload with ONE
+prefix-scoped listing per destination repo — collect the shard paths and
+check the SET via `hub.verify_repo_paths_uploaded(...)` — never a per-shard
+`file_exists` / exact-file probe loop (N per-file probes multiply transport
+exposure N-fold and duplicate the listing cost). The canonical sharded
+implementation is `upload_sharded._batched_verify` (#1335), superseding the
+per-shard `_verify_present` probe loop — the documented anti-pattern. Pin new
+verify code with a 429-then-success retry test and a ≤2-listings batching
+test (`tests/test_upload_sharded.py`, #1335).
+
 **Fail-loud uploads.** `upload_dataset_directory` (`orchestrate/hub.py`) exits
 non-zero on failure (`--no-upload` only for dry-runs).
 
