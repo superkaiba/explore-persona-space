@@ -595,6 +595,74 @@ def test_fetch_track_s_falls_back_to_restream(tmp_path, monkeypatch):
         r1335._fetch_track_s(tmp_path / "track_s_fail.jsonl")
 
 
+def test_hf_seed_store_consume_rule(tmp_path, monkeypatch):
+    """#1335 r5 relaunch economy: hf_seed_store stages prior-attempt Hub shards
+    under the c24 CONSUME rule — REAL body; fakes only at the Hub boundary
+    (hub.list_hf_files_under_path + hf_hub_download, signature-conformant). A
+    code-SHA drift is staged (warned); a render-config mismatch and a pairless
+    sidecar are skipped; a second seed is idempotent."""
+    import huggingface_hub
+    import issue1335_extract_store as e1335
+
+    from explore_persona_space.orchestrate import hub
+
+    slug = "r7_endpoint"
+    fp_now = r1335.fingerprint(slug)
+    prefix = f"{r1335.HF_PREFIX}/analysis_tensors/store_{slug}_base"
+    sidecars = {
+        "base_shard000.json": {**fp_now, "shard_index": 0, "row_ids": ["a"]},
+        "base_shard001.json": {
+            **fp_now,
+            "code_sha": "deadbeef",
+            "shard_index": 1,
+            "row_ids": ["b"],
+        },
+        "base_shard002.json": {
+            **fp_now,
+            "render_config_hash": "0" * 8,
+            "shard_index": 2,
+            "row_ids": ["c"],
+        },
+        "base_shard003.json": {**fp_now, "shard_index": 3, "row_ids": ["d"]},  # pairless
+    }
+    hf_files = [f"{prefix}/{n}" for n in sidecars] + [
+        f"{prefix}/base_shard00{i}.pt"
+        for i in (0, 1, 2)  # deliberately no 003 .pt
+    ]
+
+    def _list(api, repo_id, path, *, repo_type="model", revision=None):
+        assert repo_id == r1335.HF_DATA_REPO and path == prefix and repo_type == "dataset"
+        return sorted(hf_files)
+
+    def _download(repo_id, filename, *, repo_type=None, local_dir=None, **kw):
+        out = Path(local_dir) / filename
+        out.parent.mkdir(parents=True, exist_ok=True)
+        name = Path(filename).name
+        if name.endswith(".json"):
+            out.write_text(json.dumps(sidecars[name]))
+        else:
+            out.write_bytes(b"pt-bytes")
+        return str(out)
+
+    monkeypatch.setattr(hub, "list_hf_files_under_path", _list)
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _download)
+
+    store_dir = tmp_path / "store" / slug / "base"
+    staged = e1335.hf_seed_store(store_dir, slug, "base")
+    assert staged == 2
+    assert (store_dir / "base_shard000.pt").exists()
+    assert (store_dir / "base_shard000.json").exists()
+    assert (store_dir / "base_shard001.pt").exists()  # code-SHA drift: CONSUMED
+    assert not (store_dir / "base_shard002.json").exists()  # stale render: NOT seeded
+    assert not (store_dir / "base_shard003.json").exists()  # pairless: skipped
+    # The staged drifted sidecar passes the CONSUME predicate but not the full
+    # match — exactly the pair the r5 three-way resume scan warns-and-skips on.
+    side = json.loads((store_dir / "base_shard001.json").read_text())
+    assert r1335.fingerprint_matches(side, slug, require_sha=False)
+    assert not r1335.fingerprint_matches(side, slug)
+    assert e1335.hf_seed_store(store_dir, slug, "base") == 0  # idempotent re-seed
+
+
 def test_swap_resume_payload_predicate(tmp_path):
     """run_swap resumes ONLY on a fingerprint-matching swap payload; a missing
     or stale payload returns None so the component cells refit LIVE (the

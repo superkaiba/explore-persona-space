@@ -638,8 +638,10 @@ def list_hf_files_under_path(
     ``path`` naming a DIRECTORY returns every file under it (full repo-root-
     relative paths); an exact FILE returns ``[path]`` (the tree endpoint 404s
     on file paths — verified on hub 0.36.2, #939 — so an
-    ``EntryNotFoundError`` falls back to one ``HfApi.file_exists`` HEAD
-    probe); an absent path returns ``[]``. Repository/Revision-not-found and
+    ``EntryNotFoundError`` falls back to one RETRIED ``HfApi.file_exists``
+    HEAD probe; #1335: un-retried, a transient 429 on that fresh Hub call
+    crashed a production run AFTER its upload succeeded — the #920 class
+    through the fallback); an absent path returns ``[]``. Repository/Revision-not-found and
     transport/auth errors PROPAGATE (the file_exists fallback only fires
     after the tree call proved repo+revision resolve, so its swallowing of
     RepositoryNotFoundError is unreachable here). Empty ``path`` raises
@@ -656,7 +658,14 @@ def list_hf_files_under_path(
             api, repo_id, repo_type=repo_type, revision=revision, path_in_repo=normalized
         )
     except EntryNotFoundError:
-        if api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision):
+        # Retried like the sibling verify_repo_paths_uploaded fallback: the
+        # HEAD probe is a fresh Hub call on the verify path, and un-retried a
+        # transient 429/5xx here fails a SUCCEEDED upload (#1335
+        # att-20260715-134136: 429 "maximum queue size reached").
+        if _retry_upload(
+            lambda: api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision),
+            what=f"file_exists({repo_id}/{normalized})",
+        ):
             return [normalized]
         return []
     prefix = normalized + "/"

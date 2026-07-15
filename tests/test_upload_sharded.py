@@ -13,11 +13,23 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from explore_persona_space.orchestrate import hub as hub_mod
 from explore_persona_space.orchestrate import upload_sharded
 from explore_persona_space.orchestrate.hub import ProjectedUploadHeadroom
 from explore_persona_space.orchestrate.upload_sharded import DEFAULT_OVERFLOW_REPO
 
 QUOTA_403 = "403 Forbidden: You have exceeded your public storage space"
+
+
+@pytest.fixture(autouse=True)
+def _fast_retries(monkeypatch):
+    """#1335: upload + verify Hub calls now ride hub's transient retry
+    (retry_transient/_retry_upload). Keep failure-path tests fast: the budget
+    kill switch bounds retries to the 6-attempt floor and backoff sleeps are
+    no-ops (a transient '500 Internal Server Error' fake would otherwise burn
+    ~310 s of real sleep per test)."""
+    monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "0")
+    monkeypatch.setattr(hub_mod.time, "sleep", lambda s: None)
 
 
 class FakeApi:
@@ -432,3 +444,101 @@ def test_reactive_dedup_one_pointer_one_event_per_prefix(tmp_path, offline, fake
     events = _read_events(tmp_path)
     assert len(events) == 1
     assert events[0]["reason"] == "quota-403-reactive"
+
+
+# ---------------------------------------------------------------------------
+# #1335 r5 — transport-retried verify fallback + prefix-batched listing
+# (crash att-20260715-134136: _verify_present -> list_hf_files_under_path ->
+#  per-file api.file_exists, UN-retried, died on a transient HF 429 ~2.8h in)
+# ---------------------------------------------------------------------------
+
+
+def _tree_404_api(file_exists_fn):
+    """Stub HfApi: tree endpoint 404s on file paths (the live hub 0.36.2
+    behavior, #939) so list_hf_files_under_path takes its file_exists
+    fallback — the exact production crash shape."""
+    from huggingface_hub.utils import EntryNotFoundError
+
+    class _Api:
+        def list_repo_tree(
+            self, *, repo_id, repo_type=None, revision=None, recursive=False, path_in_repo=None
+        ):
+            raise EntryNotFoundError("entry not found")
+
+        def file_exists(self, repo_id, filename, *, repo_type=None, revision=None):
+            return file_exists_fn()
+
+        def list_repo_files(self, *a, **k):  # pragma: no cover - must never run
+            raise AssertionError("bare full-repo listing must never be called (#920)")
+
+    return _Api()
+
+
+def test_verify_fallback_429_then_success_retries():
+    """#1335 pin 1a: a transient 429 on the exact-file HEAD probe is RETRIED —
+    the verify completes instead of crashing the run. Real hub bodies run
+    (list_hf_files_under_path -> _retry_upload); the fake sits at the HfApi
+    boundary. Pre-fix this propagated the HfHubHTTPError on attempt 1."""
+    from huggingface_hub.errors import HfHubHTTPError
+
+    calls = {"n": 0}
+
+    def _flaky():
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise HfHubHTTPError("429 Too Many Requests ('maximum queue size reached')")
+        return True
+
+    out = hub_mod.list_hf_files_under_path(
+        _tree_404_api(_flaky), "org/data", "issue1335_x/store/a.pt", repo_type="dataset"
+    )
+    assert out == ["issue1335_x/store/a.pt"]
+    assert calls["n"] == 2
+
+
+def test_verify_fallback_429_exhaustion_reraises():
+    """#1335 pin 1b: a PERSISTENT 429 storm hard-fails only after the bounded
+    retry budget exhausts (6-attempt floor under the budget kill switch) —
+    never an unbounded loop, never a swallowed error."""
+    from huggingface_hub.errors import HfHubHTTPError
+
+    calls = {"n": 0}
+
+    def _always_429():
+        calls["n"] += 1
+        raise HfHubHTTPError("429 Too Many Requests ('maximum queue size reached')")
+
+    with pytest.raises(HfHubHTTPError, match="maximum queue size"):
+        hub_mod.list_hf_files_under_path(
+            _tree_404_api(_always_429), "org/data", "issue1335_x/store/a.pt", repo_type="dataset"
+        )
+    assert calls["n"] == 6  # the #735 attempt floor
+
+
+def test_batched_verify_one_listing_no_per_file_probes(tmp_path, offline, monkeypatch):
+    """#1335 pin 2: N shard files verify via ONE prefix-scoped DIRECTORY
+    listing (<=2 listings per call in general — one per destination repo),
+    with ZERO per-file file_exists probes. Pre-fix: one exact-file listing
+    (tree 404 + HEAD probe) PER shard."""
+    local = tmp_path / "store"
+    _make_shards(local, [f"shard_000{i}.pt" for i in range(4)])
+
+    listing_calls: list[tuple[str, str, str]] = []
+
+    def _list(api_, repo_id, path, *, repo_type="model", revision=None):
+        listing_calls.append((repo_id, path, repo_type))
+        return sorted(api_.uploaded.get((repo_id, repo_type), set()))
+
+    monkeypatch.setattr(upload_sharded, "list_hf_files_under_path", _list)
+
+    class _NoFileExistsApi(FakeApi):
+        def file_exists(self, *a, **k):  # pragma: no cover - the pinned ban
+            raise AssertionError("per-file file_exists probe must not run (#1335)")
+
+    api = _NoFileExistsApi()
+    res = upload_sharded.upload_dir_sharded(local, CANONICAL, "issue1335_x/store", api=api)
+
+    assert len(res.deleted) == 4
+    assert 1 <= len(listing_calls) <= 2
+    # The listing scopes on the DIRECTORY prefix — never a per-shard file path.
+    assert {c[1] for c in listing_calls} == {"issue1335_x/store"}

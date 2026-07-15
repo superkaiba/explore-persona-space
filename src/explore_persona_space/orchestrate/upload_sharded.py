@@ -44,6 +44,7 @@ from explore_persona_space.orchestrate.hub import (
     _repo_is_private,
     check_projected_upload_headroom,
     list_hf_files_under_path,
+    retry_transient,
 )
 
 logger = logging.getLogger(__name__)
@@ -97,11 +98,16 @@ def _write_overflow_pointer(
         "ts": time.time(),
     }
     try:
-        api.upload_file(
-            path_or_fileobj=io.BytesIO(json.dumps(payload, indent=2).encode("utf-8")),
-            repo_id=canonical_repo,
-            path_in_repo=dest,
-            repo_type=canonical_repo_type,
+        # BytesIO built INSIDE the thunk: a retried attempt must re-read the
+        # payload from position 0, not an exhausted stream (#1335).
+        retry_transient(
+            lambda: api.upload_file(
+                path_or_fileobj=io.BytesIO(json.dumps(payload, indent=2).encode("utf-8")),
+                repo_id=canonical_repo,
+                path_in_repo=dest,
+                repo_type=canonical_repo_type,
+            ),
+            what=f"upload_file({canonical_repo}/{dest})",
         )
         logger.info("Wrote overflow pointer %s/%s -> %s", canonical_repo, dest, overflow_repo)
     except Exception as e:
@@ -121,11 +127,14 @@ def _ensure_overflow_repo(api) -> None:
     reactive quota-403 branch and the #1034 proactive projected-headroom
     branch.
     """
-    api.create_repo(
-        repo_id=DEFAULT_OVERFLOW_REPO,
-        repo_type="model",
-        private=True,
-        exist_ok=True,
+    retry_transient(
+        lambda: api.create_repo(
+            repo_id=DEFAULT_OVERFLOW_REPO,
+            repo_type="model",
+            private=True,
+            exist_ok=True,
+        ),
+        what=f"create_repo({DEFAULT_OVERFLOW_REPO})",
     )
 
 
@@ -156,11 +165,14 @@ def _reroute_to_overflow(
         DEFAULT_OVERFLOW_REPO,
     )
     _ensure_overflow_repo(api)
-    api.upload_file(
-        path_or_fileobj=str(shard),
-        repo_id=DEFAULT_OVERFLOW_REPO,
-        path_in_repo=dest,
-        repo_type="model",
+    retry_transient(
+        lambda: api.upload_file(
+            path_or_fileobj=str(shard),
+            repo_id=DEFAULT_OVERFLOW_REPO,
+            path_in_repo=dest,
+            repo_type="model",
+        ),
+        what=f"upload_file({DEFAULT_OVERFLOW_REPO}/{dest})",
     )
     prefix = os.path.dirname(dest)
     if emitted_prefixes is None or prefix not in emitted_prefixes:
@@ -187,12 +199,51 @@ def _verify_present(api, *, repo_id: str, repo_type: str, dest: str) -> bool:
     Exact-file probe (#920/#988): never full-list the repo per shard — the
     per-shard full listing was the worst repeat offender in the sharded
     upload loop (>600 s per shard on the ~1M-file data repo). A file path
-    resolves via the helper's EntryNotFoundError -> file_exists fallback;
-    the pathological case where ``dest`` names a DIRECTORY returns files
-    UNDER it (none equal to ``dest``), so the membership test still returns
-    False — same as the old full-listing check.
+    resolves via the helper's EntryNotFoundError -> file_exists fallback
+    (RETRIED inside hub as of #1335); the pathological case where ``dest``
+    names a DIRECTORY returns files UNDER it (none equal to ``dest``), so the
+    membership test still returns False — same as the old full-listing check.
+
+    #1335: this per-file probe is now the ROOT-LEVEL FALLBACK only
+    (``path_in_repo=""`` — no directory to scope a listing on).
+    ``upload_dir_sharded`` verifies via ONE prefix-scoped directory listing
+    per destination repo per call (the batched verify), never a per-shard
+    probe loop: att-20260715-134136 crashed on a transient 429 raised by the
+    per-shard probe's fresh Hub call during a production store upload.
     """
     return dest in set(list_hf_files_under_path(api, repo_id, dest, repo_type=repo_type))
+
+
+def _batched_verify(api, pending: list[tuple[Path, str, str, str]], *, prefix: str) -> None:
+    """Raise unless every uploaded dest lists at its destination repo.
+
+    Batched post-upload verify (#1335): ONE prefix-scoped directory listing
+    per destination repo per ``upload_dir_sharded`` call — never a per-shard
+    exact-file probe loop (att-20260715-134136: the per-file fallback's fresh
+    Hub call 429'd ~2.8h into production, one probe per shard). The listing
+    rides hub's transient retry internally (``list_repo_files_complete`` ->
+    ``_retry_upload``). Root-level dests (``path_in_repo=""``) have no
+    directory to scope on and fall back to per-dest exact-file probes
+    (retried inside hub as of #1335).
+    """
+    missing: list[str] = []
+    for eff_repo, eff_type in sorted({(r, t) for _, _, r, t in pending}):
+        group = [d for _, d, r, t in pending if (r, t) == (eff_repo, eff_type)]
+        if prefix:
+            present = set(list_hf_files_under_path(api, eff_repo, prefix, repo_type=eff_type))
+            found = {d for d in group if d in present}
+        else:
+            found = {
+                d
+                for d in group
+                if _verify_present(api, repo_id=eff_repo, repo_type=eff_type, dest=d)
+            }
+        missing.extend(f"{eff_repo}:{d}" for d in group if d not in found)
+    if missing:
+        raise RuntimeError(
+            f"{len(missing)} shard(s) not found at their destination after upload "
+            f"(first: {missing[:5]}); not deleting local copies."
+        )
 
 
 def upload_dir_sharded(
@@ -318,33 +369,48 @@ def upload_dir_sharded(
     # Hub cap.
     emitted_prefixes: set[str] = set()
 
+    # (shard, dest, effective_repo, effective_repo_type) for the batched
+    # post-upload verify + the deferred delete_local pass below.
+    pending: list[tuple[Path, str, str, str]] = []
+
     for shard in shards:
         dest = f"{prefix}/{shard.name}" if prefix else shard.name
         if route_all_to_overflow:
             # Proactive branch: straight to overflow (repo_type "model",
             # matching the reactive reroute); zero canonical attempts.
-            api.upload_file(
-                path_or_fileobj=str(shard),
-                repo_id=DEFAULT_OVERFLOW_REPO,
-                path_in_repo=dest,
-                repo_type="model",
+            retry_transient(
+                lambda s=shard, d=dest: api.upload_file(
+                    path_or_fileobj=str(s),
+                    repo_id=DEFAULT_OVERFLOW_REPO,
+                    path_in_repo=d,
+                    repo_type="model",
+                ),
+                what=f"upload_file({DEFAULT_OVERFLOW_REPO}/{dest})",
             )
             effective_repo = DEFAULT_OVERFLOW_REPO
             effective_repo_type = "model"
             result.rerouted.append(dest)
         else:
             try:
-                api.upload_file(
-                    path_or_fileobj=str(shard),
-                    repo_id=repo_id,
-                    path_in_repo=dest,
-                    repo_type=repo_type,
+                # Transient 429/5xx/timeout retried with backoff (#1335: a
+                # transport error is never fatal to the run); the persistent
+                # quota-403 is NON-transient inside retry_transient and
+                # re-raises immediately into the reroute branch below.
+                retry_transient(
+                    lambda s=shard, d=dest: api.upload_file(
+                        path_or_fileobj=str(s),
+                        repo_id=repo_id,
+                        path_in_repo=d,
+                        repo_type=repo_type,
+                    ),
+                    what=f"upload_file({repo_id}/{dest})",
                 )
                 effective_repo = repo_id
                 effective_repo_type = repo_type
             except Exception as exc:
                 if not _is_storage_quota_403(exc):
-                    # Non-quota failure: fail loud, do not reroute or delete.
+                    # Non-quota failure (transient retries exhausted or a hard
+                    # 4xx): fail loud, do not reroute or delete.
                     raise
                 try:
                     effective_repo = _reroute_to_overflow(
@@ -367,19 +433,13 @@ def upload_dir_sharded(
         # Parity with the reactive path: consumers reading the full dest list
         # must see rerouted shards too (rerouted dests appear in BOTH lists).
         result.uploaded.append(dest)
+        pending.append((shard, dest, effective_repo, effective_repo_type))
 
-        verified = True
-        if verify:
-            verified = _verify_present(
-                api, repo_id=effective_repo, repo_type=effective_repo_type, dest=dest
-            )
-            if not verified:
-                raise RuntimeError(
-                    f"shard {shard.name!r} not found at {effective_repo}:{dest} after upload; "
-                    f"not deleting local copy."
-                )
+    if verify and pending:
+        _batched_verify(api, pending, prefix=prefix)
 
-        if delete_local and verified:
+    if delete_local:
+        for shard, _dest, _repo, _type in pending:
             shard.unlink()
             result.deleted.append(shard.name)
 

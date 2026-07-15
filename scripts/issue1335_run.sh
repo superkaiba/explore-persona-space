@@ -197,6 +197,13 @@ run_model_lane() {  # run_model_lane <model> <data_dir> <out_dir> <mode>
   if [ "$REQUIRE_CUDA_FITS" = "1" ]; then
     cuda_fit_args=(--assert-cuda)
   fi
+  # r5 relaunch economy: seed the c24 resume store from the issue's Hub prefix
+  # (prior-attempt shards; CONSUME rule). Full lanes only — smoke/STUB lanes
+  # stay hermetic (no network), mirroring the upload_store gate.
+  local seed_args=()
+  if [ "$SKIP_UPLOAD" != "1" ] && [ "$mode" != "smoke" ]; then
+    seed_args=(--hf-resume-seed)
+  fi
   local wiring_n=200
   if [ "$mode" = "smoke" ]; then wiring_n=8; fi
 
@@ -215,7 +222,8 @@ run_model_lane() {  # run_model_lane <model> <data_dir> <out_dir> <mode>
       extra+=(--wiring-check "$wiring_n")
     fi
     uv run python scripts/issue1335_extract_store.py --rung "$rung" --model "$model" \
-      --data-dir "$data_dir" --out-dir "$out_dir" --resume "${tiny_args[@]}" "${extra[@]}"
+      --data-dir "$data_dir" --out-dir "$out_dir" --resume "${seed_args[@]}" \
+      "${tiny_args[@]}" "${extra[@]}"
     first_capture=0
     uv run python scripts/issue1335_fit.py --rung "$rung" --model "$model" \
       --data-dir "$data_dir" --out-dir "$out_dir" --resume "${fit_args[@]}" "${cuda_fit_args[@]}"

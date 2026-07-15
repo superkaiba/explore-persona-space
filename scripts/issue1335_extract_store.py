@@ -21,9 +21,15 @@ Row filters (#825/#1310): completion >= 4 tokens, context >= 8 tokens, total
 row <= 2048 tokens — drops COUNTED in the sidecar, never padded.
 
 Shard sidecars carry the c24 fingerprint {rung_slug, render_config_hash,
-code_sha}; --resume skips a row ONLY when its shard sidecar fingerprint
-matches the CURRENT config + SHA (issue1310's row-id-presence-only resume is
-deliberately extended per plan §8).
+code_sha}; --resume skips a row when its sidecar matches the CURRENT render
+config (render_config_hash pins the store's DATA identity — the plan round-3
+CONSUME rule; a code-SHA drift, which every crash-fix round produces, is
+tolerated with a warning, while a render-config mismatch still fails loud).
+--hf-resume-seed (r5 relaunch economy: the GCE instance is deleted on crash,
+so local resume state is gone while ~hours of verified shards sit on the Hub)
+first stages prior-attempt shard pairs from the issue's Hub store prefix
+under the same CONSUME rule, so extract skips their rows and fit consumes
+them instead of recapturing.
 
 --equivalence-check: the two-bar batched-vs-batch-1 gate (#779 calibration:
 early-layer per-layer cosine >= 0.999, flattened >= 0.995).
@@ -82,6 +88,12 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--tiny-model-dir", type=str, default=None, help="CPU smoke model dir")
     ap.add_argument("--resume", action="store_true")
+    ap.add_argument(
+        "--hf-resume-seed",
+        action="store_true",
+        help="stage prior-attempt shards from the Hub store prefix before the "
+        "resume scan (c24 CONSUME rule; requires --resume)",
+    )
     ap.add_argument("--equivalence-check", action="store_true")
     ap.add_argument("--wiring-check", type=int, default=0, help="N rows for the NLL wiring gate")
     ap.add_argument("--max-items", type=int, default=0, help="0 = all (smoke slicing)")
@@ -353,12 +365,93 @@ def wiring_check(model, items: list[dict], pad_id: int, n_rows: int, batch_size:
     return result
 
 
+def hf_seed_store(store_dir: Path, slug: str, model_kind: str) -> int:
+    """#1335 r5 relaunch economy: stage prior-attempt shards from the Hub.
+
+    ONE prefix-scoped listing of the issue's store prefix (hub-retried,
+    #1335); each sidecar is fetched and admitted under the c24 CONSUME rule —
+    render-config identity pins the store's DATA identity, and a code-SHA
+    drift (every crash-fix round bumps the SHA) is tolerated with a warning
+    (the plan round-3 resume-skip/CONSUME split). Admitted pairs (.pt shard +
+    sidecar) stage into ``store_dir`` so the resume scan skips their rows and
+    the fit consumes them. Absent prefix => no-op. Transient Hub errors ride
+    ``hub.retry_transient``; an exhausted budget fails LOUD (never a silent
+    partial seed). Returns the number of shard pairs staged.
+    """
+    import os
+    import tempfile
+
+    from huggingface_hub import HfApi, hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    prefix = f"{r1335.HF_PREFIX}/analysis_tensors/store_{slug}_{model_kind}"
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    files = hub.list_hf_files_under_path(api, r1335.HF_DATA_REPO, prefix, repo_type="dataset")
+    hf_files = set(files)
+    sidecars = sorted(
+        f for f in files if Path(f).name.startswith(f"{model_kind}_shard") and f.endswith(".json")
+    )
+    fp_now = r1335.fingerprint(slug)
+    staged = 0
+    store_dir.mkdir(parents=True, exist_ok=True)
+    # Staging dir INSIDE store_dir: os.replace stays same-filesystem, and the
+    # non-recursive resume glob cannot see the nested half-downloaded tree.
+    with tempfile.TemporaryDirectory(dir=store_dir, prefix=".hfseed_") as td:
+        for sc_path in sidecars:
+            pt_path = sc_path[: -len(".json")] + ".pt"
+            sc_local = store_dir / Path(sc_path).name
+            pt_local = store_dir / Path(pt_path).name
+            if sc_local.exists() and pt_local.exists():
+                continue  # already local (same-instance capture / earlier seed)
+            if pt_path not in hf_files:
+                print(
+                    f"[i1335-p2] hf-seed: {Path(sc_path).name} has no paired .pt "
+                    "on the Hub; skipped"
+                )
+                continue
+            got_sc = hub.retry_transient(
+                lambda p=sc_path: hf_hub_download(
+                    r1335.HF_DATA_REPO, p, repo_type="dataset", local_dir=td
+                ),
+                what=f"hf_hub_download({sc_path})",
+            )
+            side = json.loads(Path(got_sc).read_text())
+            if not r1335.fingerprint_matches(side, slug, require_sha=False):
+                print(
+                    f"[i1335-p2] hf-seed: {Path(sc_path).name} render-config mismatch "
+                    "(stale prior-attempt render) — NOT seeded; rows will be recaptured"
+                )
+                continue
+            if side.get("code_sha") != fp_now["code_sha"]:
+                print(
+                    f"[i1335-p2] hf-seed: {Path(sc_path).name} code_sha drift "
+                    f"({side.get('code_sha')} -> {fp_now['code_sha']}) tolerated "
+                    "(c24 CONSUME rule: render-config identity pins data identity)"
+                )
+            got_pt = hub.retry_transient(
+                lambda p=pt_path: hf_hub_download(
+                    r1335.HF_DATA_REPO, p, repo_type="dataset", local_dir=td
+                ),
+                what=f"hf_hub_download({pt_path})",
+            )
+            os.replace(got_pt, pt_local)
+            os.replace(got_sc, sc_local)  # sidecar LAST: its presence marks the pair complete
+            staged += 1
+    print(f"[i1335-p2] hf-seed: staged {staged} prior-attempt shard(s) from {prefix}")
+    return staged
+
+
 def main() -> int:
     args = parse_args()
     if args.make_tiny_model:
         ext931.make_tiny_model(Path(args.make_tiny_model))
         return 0
     assert args.rung and args.model, "--rung and --model are required"
+    assert args.resume or not args.hf_resume_seed, (
+        "--hf-resume-seed requires --resume (a seeded store with no resume scan "
+        "would be silently overwritten from shard index 0)"
+    )
     slug, model_kind = args.rung, args.model
     model_id = r1335.MODEL_IDS[model_kind]
     fp = r1335.fingerprint(slug)
@@ -374,19 +467,28 @@ def main() -> int:
         items = items[: args.max_items]
     print(f"[i1335-p2] {len(items)} items (rung={slug}, model={model_kind}, drops={drops})")
 
-    # c24 resume: skip rows already in shards whose sidecar fingerprint matches
-    # the CURRENT render config + code SHA; a mismatched sidecar fails loud
-    # (stale store for a changed render — wipe or re-key before resuming).
+    # c24 resume: skip rows already in shards whose sidecar matches the CURRENT
+    # render config (data identity); a code-SHA drift is tolerated with a
+    # warning (the round-3 CONSUME rule — r5: HF-seeded prior-attempt shards
+    # always carry an older SHA); a render-config mismatch fails loud (stale
+    # store for a changed render — wipe or re-key before resuming).
     done: set[str] = set()
     shard_idx = 0
     if args.resume:
+        if args.hf_resume_seed:
+            hf_seed_store(store_dir, slug, model_kind)
         for sc in sorted(store_dir.glob(f"{model_kind}_shard*.json")):
             side = json.loads(sc.read_text())
-            assert r1335.fingerprint_matches(side, slug), (
+            assert r1335.fingerprint_matches(side, slug, require_sha=False), (
                 f"resume fingerprint mismatch for {sc} — the persisted shard was "
-                "captured under a different render config / code SHA; quarantine "
-                "the stale store before resuming (c24 guard)"
+                "captured under a different render config; quarantine the stale "
+                "store before resuming (c24 guard)"
             )
+            if not r1335.fingerprint_matches(side, slug):
+                print(
+                    f"[i1335-p2] resume: {sc.name} code_sha drift tolerated "
+                    "(c24 CONSUME rule — render-config identity pins data identity)"
+                )
             done.update(side["row_ids"])
             shard_idx = max(shard_idx, side["shard_index"] + 1)
         if done:
