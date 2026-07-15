@@ -253,6 +253,7 @@ def _dual_perm_null(
     lambda_indices: list[int],
     n_draws: int,
     seed: int,
+    device: str = "cpu",
 ) -> np.ndarray:
     """Batched dual-space shuffled-answer permutation null.
 
@@ -260,7 +261,15 @@ def _dual_perm_null(
     turn cell; folds + per-fold lambda IDENTICAL to the real fit. Per fold, the
     dual operator A is factored ONCE; draws are batched as one einsum over the
     shared A. ss_tot is permutation-invariant (sum of squares about the mean).
+
+    ``device`` (source-module threading, #825 turn-dynamics / artifact-reuse
+    item (i)): ``device != "cpu"`` routes the identical math through torch on
+    that device (fp32 draws, fp64 accumulation — same precision contract);
+    the default numpy path is byte-identical to the original. Same rng, same
+    perms, same fold operators either way (equivalence-smoked cpu-vs-torch).
     """
+    if device != "cpu":
+        return _dual_perm_null_torch(X, Y, folds, lambda_indices, n_draws, seed, device)
     rng = np.random.default_rng(seed)
     n = X.shape[0]
     p = Y.shape[1]
@@ -294,6 +303,68 @@ def _dual_perm_null(
             yte = yf[pte]
             ss_res[start:stop] += ((yte - pred) ** 2).sum(axis=(1, 2), dtype=np.float64)
     return 1.0 - ss_res / ss_tot
+
+
+def _dual_perm_null_torch(
+    X: np.ndarray,
+    Y: np.ndarray,
+    folds: list[np.ndarray],
+    lambda_indices: list[int],
+    n_draws: int,
+    seed: int,
+    device: str,
+) -> np.ndarray:
+    """Torch-device twin of the numpy `_dual_perm_null` (same rng/perms/math).
+
+    Fold operators A are solved on ``device`` in fp64 then cast fp32; the draw
+    gather + batched matmul run on ``device`` in fp32 with fp64 ss_res
+    accumulation — mirroring the numpy path's precision contract. Returns the
+    (n_draws,) R2 array on CPU numpy.
+    """
+    import torch
+
+    dev = torch.device(device)
+    rng = np.random.default_rng(seed)
+    n = X.shape[0]
+    p = Y.shape[1]
+    yf = torch.from_numpy(np.ascontiguousarray(Y, dtype=np.float32)).to(dev)
+    ss_tot = float(((yf - yf.mean(0, keepdim=True)) ** 2).sum(dtype=torch.float64).item())
+    if ss_tot == 0.0 or n_draws <= 0:
+        return np.full(n_draws, np.nan)
+    perms_np = np.argsort(rng.random((n_draws, n)), axis=1).astype(np.int64)
+    perms = torch.from_numpy(perms_np).to(dev)
+    ss_res = torch.zeros(n_draws, dtype=torch.float64, device=dev)
+    Xt = torch.from_numpy(np.ascontiguousarray(X, dtype=np.float64)).to(dev)
+    for fi, test_idx in enumerate(folds):
+        mask = np.ones(n, dtype=bool)
+        mask[test_idx] = False
+        mask_t = torch.from_numpy(mask).to(dev)
+        te_t = torch.from_numpy(np.ascontiguousarray(test_idx)).to(dev)
+        # fold operator (fp64 solve, matches _dual_fold_op's standardization)
+        Xtr = Xt[mask_t]
+        Xte = Xt[te_t]
+        mu = Xtr.mean(0)
+        sd = Xtr.std(0, correction=0) + 1e-9
+        keep = sd > (sd.max() * 1e-6 + 1e-12)
+        Xtr_n = ((Xtr - mu) / sd)[:, keep]
+        Xte_n = ((Xte - mu) / sd)[:, keep]
+        lam = float(RIDGE_LAMBDAS[int(lambda_indices[fi])])
+        ktr = Xtr_n @ Xtr_n.T
+        kte = Xte_n @ Xtr_n.T
+        eye = torch.eye(ktr.shape[0], dtype=torch.float64, device=dev)
+        af = torch.linalg.solve(ktr + lam * eye, kte.T).T.to(torch.float32)  # (n_te, n_tr)
+        ntr = int(mask.sum())
+        nte = int(test_idx.size)
+        bytes_per = (ntr + nte) * p * 4
+        for start, stop in _k_chunks(n_draws, max(1, bytes_per)):
+            ptr = perms[start:stop][:, mask_t]  # (k, n_tr)
+            pte = perms[start:stop][:, te_t]  # (k, n_te)
+            ytr = yf[ptr]  # (k, n_tr, P)
+            ymu = ytr.mean(dim=1, keepdim=True)
+            pred = torch.matmul(af, ytr - ymu) + ymu  # (k, n_te, P)
+            yte = yf[pte]
+            ss_res[start:stop] += ((yte - pred) ** 2).sum(dim=(1, 2), dtype=torch.float64)
+    return (1.0 - ss_res / ss_tot).cpu().numpy()
 
 
 def main() -> None:

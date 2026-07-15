@@ -221,19 +221,36 @@ def _identity_floors(X: np.ndarray, Y: np.ndarray, folds: list[np.ndarray]) -> d
 
 
 def _fit_cv(
-    X: np.ndarray, Y: np.ndarray, folds: list[np.ndarray], *, return_pred: bool = False
+    X: np.ndarray,
+    Y: np.ndarray,
+    folds: list[np.ndarray],
+    *,
+    return_pred: bool = False,
+    device: str = "cpu",
 ) -> dict | tuple[dict, np.ndarray]:
+    """Grouped-fold PRESS-ridge CV fit (per-fold lambda; pooled held-out R2).
+
+    ``device`` (source-module threading, #825 turn-dynamics / artifact-reuse
+    item (i)): the n^2 Gram work inside ``press_fit_predict`` runs on this
+    torch device; default ``"cpu"`` is byte-path-identical to the original
+    (tensors were always CPU fp64 before). Inputs/outputs stay numpy.
+    """
     n = X.shape[0]
     pred = np.zeros_like(Y, dtype=np.float64)
     lambdas: list[int] = []
     fold_r2: list[float] = []
+    dev = torch.device(device)
+    Xt = torch.from_numpy(np.ascontiguousarray(X)).double().to(dev)
+    Yt = torch.from_numpy(np.ascontiguousarray(Y)).double().to(dev)
     for test_idx in folds:
         mask = np.ones(n, dtype=bool)
         mask[test_idx] = False
+        mask_t = torch.from_numpy(mask).to(dev)
+        te_t = torch.from_numpy(np.ascontiguousarray(test_idx)).to(dev)
         res = press_fit_predict(
-            torch.from_numpy(X[mask]).double(),
-            torch.from_numpy(Y[mask]).double(),
-            torch.from_numpy(X[test_idx]).double(),
+            Xt[mask_t],
+            Yt[mask_t],
+            Xt[te_t],
             standardize=True,
         )
         pred[test_idx] = res["pred"].detach().cpu().numpy()
