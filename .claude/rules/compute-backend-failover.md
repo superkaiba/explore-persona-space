@@ -61,7 +61,15 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    (default 5 MiB — the traceback is at the END of a log, so an oversized
    file is TAILED at stage time, never skipped wholesale), file-count bound
    `EPS_PERSIST_LOG_MAX_FILES` (default 40; `< 1` is a loud-SKIP disable),
-   canonical-log dedup skip, staged into `/tmp/eps-worker-logs` and uploaded
+   canonical-log dedup skip, git-TRACKED files under `logs/` excluded
+   (#1351: the repo is cloned at `$WORKLOAD_ROOT`, so committed
+   logs/daily+weekly retrospectives — 48 tracked files vs the 40-file
+   bound — would otherwise clutter the prefix and consume the budget;
+   already durable in git; the exclusion is at WALK time so tracked files
+   never consume `LOG_MAX_FILES` slots, and a git failure of any kind
+   FAILS OPEN to sweeping everything with a loud grep-stable
+   `git-tracked exclude unavailable` WARN), staged into
+   `/tmp/eps-worker-logs` and uploaded
    as ONE `upload_folder` commit — per-file `upload_file` loops are banned
    on this large repo (the #664 504-storm gotcha). Uploaded AFTER the
    canonical `workload.log`, BEFORE the partial dirs (small-first);
@@ -160,7 +168,12 @@ only when they land under `$WORKLOAD_ROOT/logs/` (relative `logs/…` or
 `$REPO_ROOT/logs/…` on the workload-cmd branch, where the startup script
 exports `REPO_ROOT="$WORKLOAD_ROOT"` — #641); absolute
 `<vm_scratch_dir>/logs` paths are not swept — place dispatcher worker logs
-under the workload-root `logs/` convention. A workload writing partials
+under the workload-root `logs/` convention. Within the worker-log tree,
+git-TRACKED files (per `git ls-files -z -- logs` against the cloned repo)
+are excluded at walk time (#1351) — a run-generated forensic log at a
+git-tracked path is NOT swept, so never append crash forensics to a
+committed file; the exclusion fails OPEN (sweep everything) on any git
+failure. A workload writing partials
 elsewhere must place them under a swept dir or upload them itself.
 
 Discipline (all load-bearing — the trap must never delay the poweroff that
