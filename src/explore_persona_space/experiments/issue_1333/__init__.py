@@ -580,6 +580,44 @@ def select_rung(
     }
 
 
+def dose_curve_rung_plan(
+    ladder: dict[int, dict],
+    candidate_steps: list[int] | tuple[int, ...] | set[int],
+    *,
+    window: tuple[float, float] = ACCEPT_WINDOW,
+) -> list[dict]:
+    """Bystander-read rung plan for the leakage-vs-install dose curves
+    (plan §6 install-strength read (3); concern ladder-bystander-dose-curves).
+
+    Full per-rung bystander reads are compute-infeasible (~100 rungs x ~12
+    min), so the registered read set is: every CANDIDATE rung the selection
+    loop read (including the selected / closest-approach rung) PLUS one
+    sub-window flank (the read rung with ``delta_logp_mean`` closest BELOW
+    the acceptance window) and one above-window flank (closest ABOVE), where
+    they exist — so each cell's curve spans below/in/above the window.
+    Returns ``[{step, role, delta_logp_mean}]`` sorted by step; the candidate
+    role wins on overlap. Ties on distance break to the EARLIEST step.
+    Raises KeyError on a candidate step absent from the ladder (writer bug,
+    fail loud)."""
+    lo, hi = window
+    plan: dict[int, str] = {}
+    below = [(s, r["delta_logp_mean"]) for s, r in ladder.items() if r["delta_logp_mean"] < lo]
+    above = [(s, r["delta_logp_mean"]) for s, r in ladder.items() if r["delta_logp_mean"] > hi]
+    if below:
+        plan[max(below, key=lambda t: (t[1], -t[0]))[0]] = "sub_window"
+    if above:
+        plan[min(above, key=lambda t: (t[1], t[0]))[0]] = "above_window"
+    for s in candidate_steps:
+        step = int(s)
+        if step not in ladder:
+            raise KeyError(f"candidate step {step} not in ladder (writer bug)")
+        plan[step] = "candidate"
+    return [
+        {"step": s, "role": role, "delta_logp_mean": float(ladder[s]["delta_logp_mean"])}
+        for s, role in sorted(plan.items())
+    ]
+
+
 def coarse_read_steps(cell: str, rungs: list[int]) -> list[int]:
     """Coarse-pass read schedule (plan §4.3): every-20 steps, plus {5, 10, 15}
     for mk2_lora_pos; always includes the final rung. FT cells read the WHOLE

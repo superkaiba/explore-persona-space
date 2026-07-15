@@ -1306,11 +1306,42 @@ def phase_ladder(cfg: Cfg) -> dict:
 # ── p4: selection + bystander de-saturation confirm ──────────────────────────
 
 
+def _bystander_record(meta: list[dict], trained: list[dict], base_stats: list[dict]) -> dict:
+    """Full bystander-battery record (pure; unit-tested): per-probe four-float
+    trained+base stats via ``_delta_record`` PLUS per-context Δlog-prob /
+    EOS-margin ``Δ(z_marker − z_eos)`` / emission aggregates — the leakage
+    reads the plan-§6 (2)/(3) transfer fractions + dose curves consume — and
+    the de-saturation gate fields the selection loop reads (plan §4.3)."""
+    rec = _delta_record(meta, trained, base_stats)
+    by_ctx: dict[str, dict[str, list[float]]] = {}
+    for m, t, b in zip(meta, trained, base_stats, strict=True):
+        d = by_ctx.setdefault(m["context_id"], {"deltas": [], "margins": [], "emit": []})
+        d["deltas"].append(t["logp"] - b["logp"])
+        d["margins"].append((t["z_marker"] - t["z_eos"]) - (b["z_marker"] - b["z_eos"]))
+        d["emit"].append(1.0 if t.get("argmax_id") == C.MARKER_TOKEN_ID else 0.0)
+    rec["per_context"] = {
+        k: {
+            "delta_logp_mean": float(sum(v["deltas"]) / len(v["deltas"])),
+            "delta_margin_mean": float(sum(v["margins"]) / len(v["margins"])),
+            "emission_rate": float(sum(v["emit"]) / len(v["emit"])),
+        }
+        for k, v in by_ctx.items()
+    }
+    rates = {k: v["emission_rate"] for k, v in rec["per_context"].items()}
+    rec["bystander_argmax_rates"] = rates
+    rec["saturated"] = any(r >= 0.92 for r in rates.values())
+    return rec
+
+
 def _bystander_battery(
-    cfg: Cfg, cell: str, step: int, model_path: str, *, lora_rung: Path | None
+    cfg: Cfg, cell: str, step: int, model_path: str, *, lora_rung: Path | None, llm=None
 ) -> dict:
-    """On-policy bystander reads at one candidate rung (de-saturation gate:
-    every panel bystander below the argmax ceiling — plan §4.3)."""
+    """On-policy bystander reads at one rung: the de-saturation gate at
+    candidate rungs (plan §4.3) AND the four-float leakage read the
+    leakage-vs-install dose curves consume (plan §6 read (3); concern
+    ladder-bystander-dose-curves). ``llm`` optionally carries a SHARED
+    enable_lora engine (LoRA rungs only — the #1090 shared-engine pattern);
+    FT rungs always build their own per-checkpoint engine."""
     from vllm.lora.request import LoRARequest
 
     tok = _tokenizer()
@@ -1322,16 +1353,20 @@ def _bystander_battery(
         for q_idx, q in enumerate(questions):
             prompts.append(ctx.render(tok, q))
             meta.append({"context_id": name, "q": q_idx})
+    own_engine = llm is None
     if lora_rung is not None:
-        llm = _vllm_engine(DEFAULT_BASE_MODEL, enable_lora=True)
+        if llm is None:
+            llm = _vllm_engine(DEFAULT_BASE_MODEL, enable_lora=True)
         req = LoRARequest(f"{cell}_sel{step}", (step % 100000) + 1, str(lora_rung))
     else:
+        assert llm is None, "shared engines are LoRA-only (FT rungs are per-checkpoint)"
         llm = _vllm_engine(model_path)
         req = None
     try:
         responses = _greedy(llm, prompts, C.MARKER_MAX_NEW_TOKENS, lora_request=req)
     finally:
-        _reap_engine(llm)
+        if own_engine:
+            _reap_engine(llm)
     _persist_rollouts(
         cfg, "selection", f"{cell}_bystanders_rung{step}", {"meta": meta, "responses": responses}
     )
@@ -1343,7 +1378,8 @@ def _bystander_battery(
         try:
             peft_model = PeftModel.from_pretrained(base, str(lora_rung))
             trained = _slot_read(peft_model, tok, contexts)
-            peft_model.unload()
+            base_model = peft_model.unload()
+            base_stats = _slot_read(base_model, tok, contexts)
         finally:
             _free_hf(base)
     else:
@@ -1352,51 +1388,122 @@ def _bystander_battery(
             trained = _slot_read(model, tok, contexts)
         finally:
             _free_hf(model)
-    by_ctx: dict[str, list[float]] = {}
-    for m, t in zip(meta, trained, strict=True):
-        by_ctx.setdefault(m["context_id"], []).append(
-            1.0 if t.get("argmax_id") == C.MARKER_TOKEN_ID else 0.0
-        )
-    rates = {k: float(sum(v) / len(v)) for k, v in by_ctx.items()}
-    return {"bystander_argmax_rates": rates, "saturated": any(r >= 0.92 for r in rates.values())}
+        base = _load_hf(DEFAULT_BASE_MODEL)
+        try:
+            base_stats = _slot_read(base, tok, contexts)
+        finally:
+            _free_hf(base)
+    rec = _bystander_record(meta, trained, base_stats)
+    rec["cell"] = cell
+    rec["step"] = step
+    return rec
+
+
+def _read_battery_steps(cell_root: Path) -> set[int]:
+    """Rungs already carrying a persisted bystander battery (on-disk truth —
+    identical on the fresh path and the selection-exists resume path)."""
+    return {
+        int(p.parent.name.removeprefix("rung_"))
+        for p in (cell_root / "ladder").glob("rung_*/bystanders.json")
+    }
+
+
+def _run_dose_curve_batteries(
+    cfg: Cfg, cell: str, rungs: dict[int, Path], ladder: dict[int, dict], candidates: set[int]
+) -> list[dict]:
+    """Flanking bystander batteries for the plan-§6 read (3) dose curves
+    (concern ladder-bystander-dose-curves): candidate rungs + one sub-window
+    + one above-window flank per cell (``C.dose_curve_rung_plan``), skipping
+    rungs already read. An FT flank whose checkpoint was reaped by the plan
+    §9 c33 retention is documented as ``checkpoint_reaped`` — a named
+    resolution limit, never a crash. Returns the selection record's
+    ``dose_curve_rungs`` schema field ({step, role, delta_logp_mean,
+    status})."""
+    plan = C.dose_curve_rung_plan(ladder, sorted(candidates))
+    is_lora = cell in C.NEW_LORA_CELLS
+    out: list[dict] = []
+    shared = None
+    try:
+        for item in plan:
+            step = item["step"]
+            bys_path = cfg.out_root / cell / "ladder" / f"rung_{step}" / "bystanders.json"
+            entry = dict(item)
+            if bys_path.exists():
+                entry["status"] = "read"
+            elif step not in rungs or not rungs[step].exists():
+                entry["status"] = "checkpoint_reaped"
+                logger.warning(
+                    "[dose-curve] %s rung %s: checkpoint reaped (plan §9 c33 retention) — "
+                    "bystander read unavailable; documented resolution limit",
+                    cell,
+                    step,
+                )
+            else:
+                if is_lora and shared is None:
+                    shared = _vllm_engine(DEFAULT_BASE_MODEL, enable_lora=True)
+                bys = _bystander_battery(
+                    cfg,
+                    cell,
+                    step,
+                    str(rungs[step]),
+                    lora_rung=rungs[step] if is_lora else None,
+                    llm=shared,
+                )
+                _atomic_json(bys_path, bys)
+                entry["status"] = "read"
+            out.append(entry)
+    finally:
+        if shared is not None:
+            _reap_engine(shared)
+    return out
 
 
 def run_select_unit(cfg: Cfg, cell: str) -> dict:
     cell_root = cfg.out_root / cell
     sel_path = cell_root / "selection.json"
+    sel: dict | None = None
     if sel_path.exists():
-        return _read_json(sel_path)
+        sel = _read_json(sel_path)
+        if "dose_curve_rungs" in sel:
+            return sel
     ladder = {int(k): v for k, v in _read_json(cell_root / "ladder.json")["reads_by_step"].items()}
     rungs = _cell_rungs(cfg, cell)
     is_lora = cell in C.NEW_LORA_CELLS
-    tried: set[int] = set()
-    while True:
-        sel = C.select_rung(ladder)
-        step = sel["step"]
-        if not sel["in_window"] or step in tried:
-            break
-        tried.add(step)
-        bys = _bystander_battery(
-            cfg,
-            cell,
-            step,
-            str(rungs[step]),
-            lora_rung=rungs[step] if is_lora else None,
-        )
-        _atomic_json(cell_root / "ladder" / f"rung_{step}" / "bystanders.json", bys)
-        if not bys["saturated"]:
-            sel["bystanders"] = bys
-            break
-        ladder[step]["bystander_saturated"] = True
-        _atomic_json(
-            cell_root / "ladder.json",
-            {
-                "cell": cell,
-                "regime": cfg.regime_key(),
-                "reads_by_step": {str(k): v for k, v in sorted(ladder.items())},
-            },
-        )
-    sel["cell"] = cell
+    if sel is None:
+        tried: set[int] = set()
+        while True:
+            sel = C.select_rung(ladder)
+            step = sel["step"]
+            if not sel["in_window"] or step in tried:
+                break
+            tried.add(step)
+            bys = _bystander_battery(
+                cfg,
+                cell,
+                step,
+                str(rungs[step]),
+                lora_rung=rungs[step] if is_lora else None,
+            )
+            _atomic_json(cell_root / "ladder" / f"rung_{step}" / "bystanders.json", bys)
+            if not bys["saturated"]:
+                sel["bystanders"] = bys
+                break
+            ladder[step]["bystander_saturated"] = True
+            _atomic_json(
+                cell_root / "ladder.json",
+                {
+                    "cell": cell,
+                    "regime": cfg.regime_key(),
+                    "reads_by_step": {str(k): v for k, v in sorted(ladder.items())},
+                },
+            )
+        sel["cell"] = cell
+    # Dose-curve flank batteries + the self-describing rung-resolution field
+    # (plan §6 read (3); concern ladder-bystander-dose-curves). Candidates =
+    # on-disk batteries (the loop above just wrote them) + the selected rung
+    # (covers the closest-approach fallback, which the loop never reads).
+    candidates = _read_battery_steps(cell_root) | {int(sel["step"])}
+    sel["dose_curve_rungs"] = _run_dose_curve_batteries(cfg, cell, rungs, ladder, candidates)
     _atomic_json(sel_path, sel)
     return sel
 
