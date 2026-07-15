@@ -2555,8 +2555,8 @@
     "1328": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1328",
-      "status": "proposed",
+      "path": "tasks/planning/1328",
+      "status": "planning",
       "title": "daily-fix: verify chat claims against artifacts first"
     },
     "1329": {
