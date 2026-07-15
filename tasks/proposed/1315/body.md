@@ -7,10 +7,16 @@ has_clean_result: false
 parent_id: 1112
 origin_prompt: run the downstream analysis on impolite too
 workflow: v1
+goal: 'Measure residual-stream activation-shift geometry (trained-base, per-layer
+  rank/participation-ratio, read-out direction alignment, magnitude) of the on-policy-working
+  #1090 impolite organisms (fu4 lr-3e-5 persona 0.805 + WildChat 0.737; fu3 ICL 0.82),
+  reusing #1112''s method, to test whether impolite''s install geometry matches or
+  differs from the diffuse/unaligned sycophancy read (#653/#1112); extend to the LoRA-vs-full-FT
+  x pos-only-vs-contrastive 2x2 at matched install where tractable.'
 ---
 ## Goal
 
-Measure the residual-stream activation-shift geometry (trained−base, per layer: rank / participation-ratio, direction alignment to the behavior read-out direction, magnitude) of the #1090 impolite organisms that install AND express on-policy — the fu4 lr-3e-5 unlocks (persona-trained 0.805, WildChat-trained 0.737 over base 0.000) and the fu3 ICL organism (0.82) — reusing #1112's geometry method, and test whether impolite's install geometry matches or differs from the sycophancy read (#653/#1112: strongly-installed sycophancy LoRA shift was diffuse, rank-k@90 ~39/45, unaligned with the read-out direction). Where the plan stays tractable, extend to #1112's LoRA-vs-full-FT × positive-only-vs-contrastive 2×2 at matched install by training full-FT impolite twins on #1090's frozen impolite mix; otherwise prioritize the LoRA-side activation-geometry read on the existing organisms.
+Measure residual-stream activation-shift geometry (trained-base, per-layer rank/participation-ratio, read-out direction alignment, magnitude) of the on-policy-working #1090 impolite organisms (fu4 lr-3e-5 persona 0.805 + WildChat 0.737; fu3 ICL 0.82), reusing #1112's method, to test whether impolite's install geometry matches or differs from the diffuse/unaligned sycophancy read (#653/#1112); extend to the LoRA-vs-full-FT x pos-only-vs-contrastive 2x2 at matched install where tractable.
 
 ## Provenance
 
