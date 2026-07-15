@@ -1643,6 +1643,65 @@ def stage_dispatch_should_skip(
     )
 
 
+# Marker kinds only an actively-orchestrating driver posts (compute launches).
+LIVE_DRIVER_EVIDENCE_KINDS = frozenset({"epm:run-launched", "epm:cluster-launched"})
+
+
+def live_driver_evidence(
+    events: list[dict],
+    window_minutes: float = 30.0,
+    *,
+    now: datetime | None = None,
+) -> str | None:
+    """One-line description of fresh live-driver marker evidence, else None.
+
+    The /issue Step 0 single-orchestrator guard's registry-blind second leg
+    (#1326): a sanctioned inline-chat follow-up driver (the CLAUDE.md
+    user-chat carve-out) never appears in the spawn-session registry, so the
+    guard ALSO treats the newest event within ``window_minutes`` that is
+    EITHER a compute-launch marker (``LIVE_DRIVER_EVIDENCE_KINDS``) OR an
+    ``epm:progress`` whose lstripped note starts with ``"stage-dispatch "``
+    as evidence another session is driving this issue. Anti-liveness parity
+    with :func:`stage_dispatch_should_skip` (#810): a ``deliberate-stop ``
+    note, ``by == "spawn_session-stop"``, and bracketed watcher /
+    spawn-session telemetry (``STAGE_ANTILIVENESS_NOTE_SUBSTRINGS``) never
+    count — a predecessor's death record must not hold the guard. A
+    malformed or FUTURE-dated ``ts`` on a candidate row is skipped (fails
+    toward dispatch). Attribution (self vs another writer) is deliberately
+    NOT decided here — ``by`` is unreliable (#779: self and PM-chat posts
+    both carried ``by: unknown``); the SKILL.md investigate step owns it.
+    """
+    if now is None:
+        now = datetime.now(UTC)
+    best: tuple[datetime, dict] | None = None
+    for event in events:
+        kind = event.get("kind", "")
+        note = (event.get("note", "") or "").lstrip()
+        is_launch = kind in LIVE_DRIVER_EVIDENCE_KINDS
+        is_breadcrumb = kind == "epm:progress" and note.startswith("stage-dispatch ")
+        if not (is_launch or is_breadcrumb):
+            continue
+        if note.startswith("deliberate-stop ") or event.get("by") == "spawn_session-stop":
+            continue
+        if any(s in note for s in STAGE_ANTILIVENESS_NOTE_SUBSTRINGS):
+            continue
+        ts = _stage_event_ts(event)
+        if ts is None or ts > now:
+            continue  # malformed / future-dated: fail toward dispatch
+        if best is None or ts > best[0]:
+            best = (ts, event)
+    if best is None:
+        return None
+    age_minutes = (now - best[0]).total_seconds() / 60.0
+    if age_minutes >= window_minutes:
+        return None
+    head = ((best[1].get("note", "") or "").splitlines() or [""])[0][:140]
+    return (
+        f"{best[1].get('kind', '')} at {best[1].get('ts', '')} "
+        f"(age {age_minutes:.1f}m < window {window_minutes:g}m): {head}"
+    )
+
+
 # --- Ensemble verdict presence (#1149; mechanizes SKILL.md Step 5b ---
 # --- durable-verdict-first rule items 1 + 3)                        ---
 
