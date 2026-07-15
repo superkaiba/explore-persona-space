@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1362,
+  "highest_id": 1363,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2829,6 +2829,13 @@
       "path": "tasks/reviewing/1362",
       "status": "reviewing",
       "title": "workflow-fix: gotchas.md \u2014 bf16 determinism re-capture bar variant (#1005)"
+    },
+    "1363": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1363",
+      "status": "proposed",
+      "title": "workflow-fix: MALLOC_ARENA_MAX=2 in the canonical VM-launch env prefix"
     },
     "137": {
       "has_clean_result": false,
