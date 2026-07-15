@@ -270,7 +270,30 @@ a single bulk commit in 43s). Rules: (a) sweeps producing >~200 per-cell
 commits/hr batch their uploads into ONE bulk `upload_folder` commit per sweep
 (or chunked commits well under the cap); (b) "upload returned no path" is a
 TRACKED GAP recorded in the sweep's failure list and reconciled before the next
-phase — never a warning-and-continue.
+phase — never a warning-and-continue; (c) the FAIL-FAST direction needs a
+bounded OUTER retry (#1315): a dispatcher seam that RAISES on `hub._upload`'s
+no-path return (correct — (b) bans warning-and-continue) must first RETRY the
+no-path return with bounded jittered backoff, then raise the SAME fail-loud
+`upload returned no path` error on exhaustion. Layering: `_upload` already
+wraps each upload call in the inner `_retry_upload` envelope (6 attempts /
+~1800 s budget, Retry-After-aware, 429/408/5xx — the `retry_transient` entry
+above), catches what survives, logs "Upload failed: …", and returns `""`
+(`orchestrate/hub.py:1295`) — so a no-path return means the inner budget
+EXHAUSTED or the failure classed non-transient: the demonstrated #1315 case is
+the response-less Xet "maximum queue size reached" text, which
+`_is_transient_upload_error` never matches (quota-403 and the 0-files-verify
+path land here too). The seam retry is the cheap OUTER envelope — each attempt
+re-enters the full inner envelope after a 30-120 s pause; for the Xet queue
+class it is the ONLY retry. A persistent content-class failure (e.g. 403)
+costs one bounded outer cycle (~3.5-4.5 min) before the same raise; errors the
+seam's own guards RAISE propagate un-retried. Retries are free: uploads are
+idempotent (already-landed files verify + skip Hub-side). Validated constants:
+3 retries, (30, 60, 120) s backoff + 0-25% jitter, one log line per retry as
+the fix-engaged signal — worked example `_upload_with_transport_retry()` in
+`scripts/issue1315_dispatch.py` @ `c3c600541f` (#1315 r8: two p11 kills
+~35 min apart). IN-PROCESS complement of the #931 wedge ladder above, never a
+substitute: the seam retry fires when the upload RETURNS failed; the ladder
+fires when it HANGS (~0 TX, never returns).
 
 **Multi-cell pod sweeps upload per-cell, never one terminal batch (#664).** A
 dispatcher that produces per-cell artifacts (eval JSONs, store tensors, raw
