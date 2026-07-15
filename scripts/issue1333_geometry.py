@@ -212,6 +212,218 @@ def _paired_diff_draws(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return a - b
 
 
+# ── §6 registered re-reductions (concern analyzer-rereductions-deferred) ──────
+
+TRAIN_HALF_Q = tuple(range(10))  # EVAL_QUESTIONS_20[:10] == TRAIN_QUESTIONS (#508 q_train)
+HALF_SPLIT_MATERIAL_NATS = 1.0  # plan §6: |Δ| > 1 nat on source install -> clean-result caveat
+SELECT_CELLS = (*C.NEW_LORA_CELLS, C.CELL_FT_POS)  # cells with a ladder + selection record
+
+
+def matched_80_reads(
+    cloud: np.ndarray, *, n_sub: int = 80, n_draws: int = 100, seed: int = C.BOOT_SEED
+) -> dict:
+    """Matched-80-row subsample read (plan §6 exploratory dump: cross-issue
+    spectrum comparison vs #1112's marker matched-80): mean/sd spectral DVs +
+    ‖μ‖ over ``n_draws`` random WITHOUT-replacement ``n_sub``-row subsamples
+    of the persisted cloud, via the batched Gram-eigh path."""
+    n = cloud.shape[0]
+    if n <= n_sub:
+        return {"skipped": f"n_rows {n} <= n_sub {n_sub} (stub-scale store)"}
+    rng = np.random.default_rng(seed)
+    idx = np.stack([rng.permutation(n)[:n_sub] for _ in range(n_draws)])
+    draws = _batched_draw_stats(cloud, idx)
+    return {
+        "n_sub": n_sub,
+        "n_draws": n_draws,
+        **{k: {"mean": float(v.mean()), "sd": float(v.std(ddof=1))} for k, v in draws.items()},
+    }
+
+
+def eval_bank_half_split(slot_record: dict) -> dict:
+    """Plan §6 eval-bank overlap mitigation: source-install ΔG split by
+    eval-bank half — train-overlapping q_idx 0-9 (the frozen-mix positives'
+    questions) vs held-out q_idx 10-19 — from one persisted per-question slot
+    record (a ladder ``slot_read.json`` / the reused arm's
+    ``apply_gate.json``). A material |Δ| > 1 nat is flagged (carried as a
+    clean-result caveat, incl. onto the matched-install calibration)."""
+    halves: dict[str, list[float]] = {"train_overlap": [], "held_out": []}
+    for row in slot_record["per_probe"]:
+        q = int(row["row"]["q"])
+        delta = float(row["trained"]["logp"]) - float(row["base"]["logp"])
+        halves["train_overlap" if q in TRAIN_HALF_Q else "held_out"].append(delta)
+    if not halves["train_overlap"] or not halves["held_out"]:
+        return {"skipped": "slot record does not cover both eval-bank halves"}
+    m_tr = float(np.mean(halves["train_overlap"]))
+    m_ho = float(np.mean(halves["held_out"]))
+    return {
+        "train_overlap_mean": m_tr,
+        "held_out_mean": m_ho,
+        "n_train_overlap": len(halves["train_overlap"]),
+        "n_held_out": len(halves["held_out"]),
+        "delta_train_minus_heldout": m_tr - m_ho,
+        "material": bool(abs(m_tr - m_ho) > HALF_SPLIT_MATERIAL_NATS),
+    }
+
+
+def cross_surface_gap_curve(traj: dict, ladder_reads: dict[int, dict]) -> list[dict]:
+    """Plan §4.3/§6 cross-surface gap curve: the in-loop (teacher-forced
+    frozen-R) trajectory vs the off-line on-policy ladder per step — the free
+    registered descriptive whose rising-in-loop-vs-flat-off-line signature is
+    the adapter-apply no-op discriminator on the flat-ladder branch."""
+    in_loop = {int(s): float(d) for s, d in zip(traj["steps"], traj["delta_nats"], strict=True)}
+    off_line = {int(s): float(r["delta_logp_mean"]) for s, r in ladder_reads.items()}
+    out = []
+    for step in sorted(set(in_loop) | set(off_line)):
+        il, ol = in_loop.get(step), off_line.get(step)
+        out.append(
+            {
+                "step": step,
+                "in_loop_delta": il,
+                "off_line_delta": ol,
+                "gap": (il - ol) if il is not None and ol is not None else None,
+            }
+        )
+    return out
+
+
+def eos_margin_transfer_fractions(slot_reads: dict, *, source_label: str = "__source__") -> dict:
+    """Plan §6 read (2): per-context transfer fraction = bystander gain ÷
+    source gain in the EOS-margin logit space ``Δ(z_marker − z_eos)`` trained
+    − base — NEVER raw log P (softmax compression shrinks a saturated
+    source's denominator and inflates the fraction exactly on the strongest
+    implants). Numerator + denominator ride alongside; the fraction is null
+    when the source margin gain is degenerate (<1e-9). The fraction is never
+    correlated back against install (#383 X-vs-(X−Y) family)."""
+    by_label: dict[str, list[float]] = {}
+    for row in slot_reads["per_probe"]:
+        t, b = row["trained"], row["base"]
+        margin = (t["z_marker"] - t["z_eos"]) - (b["z_marker"] - b["z_eos"])
+        by_label.setdefault(row["row"]["label"], []).append(float(margin))
+    if source_label not in by_label:
+        return {"skipped": f"source label {source_label!r} absent from slot reads"}
+    src = float(np.mean(by_label[source_label]))
+    per_ctx = {}
+    for label, vals in by_label.items():
+        if label == source_label:
+            continue
+        gain = float(np.mean(vals))
+        per_ctx[label] = {
+            "margin_gain": gain,
+            "transfer_fraction": (gain / src) if abs(src) > 1e-9 else None,
+        }
+    return {"source_margin_gain": src, "per_context": per_ctx}
+
+
+def _half_split_for_cell(run_root: Path, cell: str) -> dict:
+    """Half-split driver: the selected rung's slot_read.json per select cell;
+    the reused arm reads its apply-and-read gate record (same per_probe
+    shape, same 20-question bank)."""
+    if cell == C.CELL_FT_CON_REUSED:
+        p = run_root / "gates" / "reused_apply" / "apply_gate.json"
+    else:
+        sel_p = run_root / cell / "selection.json"
+        if not sel_p.exists():
+            return {"skipped": f"{sel_p} missing"}
+        step = int(json.loads(sel_p.read_text())["step"])
+        p = run_root / cell / "ladder" / f"rung_{step}" / "slot_read.json"
+    if not p.exists():
+        return {"skipped": f"{p} missing"}
+    rec = eval_bank_half_split(json.loads(p.read_text()))
+    rec["source_record"] = str(p)
+    return rec
+
+
+def _gap_curve_for_cell(run_root: Path, cell: str) -> dict:
+    traj_p = run_root / cell / "band_trajectory.json"
+    ladder_p = run_root / cell / "ladder.json"
+    missing = [str(p) for p in (traj_p, ladder_p) if not p.exists()]
+    if missing:
+        return {"skipped": f"missing {missing}"}
+    traj = json.loads(traj_p.read_text())
+    reads = {int(k): v for k, v in json.loads(ladder_p.read_text())["reads_by_step"].items()}
+    return {"points": cross_surface_gap_curve(traj, reads)}
+
+
+def _dose_curve_for_cell(run_root: Path, cell: str) -> dict:
+    """Plan §6 read (3) assembly: per read rung, the ladder's SOURCE install
+    (delta_logp_mean, riding the ``dose_curve_rungs`` entries) + the flanking
+    bystander battery's per-context Δlog-prob / Δmargin leakage. The
+    ``dose_curve_rungs`` field makes the realized rung-resolution
+    self-describing (concern ladder-bystander-dose-curves)."""
+    sel_p = run_root / cell / "selection.json"
+    if not sel_p.exists():
+        return {"skipped": f"{sel_p} missing"}
+    sel = json.loads(sel_p.read_text())
+    rungs = sel.get("dose_curve_rungs")
+    if not rungs:
+        return {"skipped": "selection record carries no dose_curve_rungs field"}
+    points = []
+    for item in rungs:
+        step = int(item["step"])
+        row = dict(item)
+        bys_p = run_root / cell / "ladder" / f"rung_{step}" / "bystanders.json"
+        if bys_p.exists():
+            row["bystanders_per_context"] = json.loads(bys_p.read_text()).get("per_context")
+        points.append(row)
+    return {
+        "selected_step": sel.get("step"),
+        "in_window": sel.get("in_window"),
+        "dose_curve_rungs": rungs,
+        "points": points,
+    }
+
+
+def run_re_reductions(
+    run_root: Path | None,
+    stores: dict[str, dict[str, dict]],
+    base: dict,
+    primary: int,
+) -> dict:
+    """The four registered §6 re-reductions of persisted artifacts (concern
+    analyzer-rereductions-deferred) + the dose-curve assembly. Missing inputs
+    record an explicit ``skipped`` reason — visible in the JSON, never
+    silent."""
+    rr: dict = {
+        "matched_80": {
+            cell: {
+                kind: matched_80_reads(_aligned_delta(store, base, "response", primary))
+                for kind, store in kinds.items()
+            }
+            for cell, kinds in stores.items()
+        }
+    }
+    if run_root is None:
+        for key in (
+            "eval_bank_half_split",
+            "cross_surface_gap",
+            "eos_margin_transfer",
+            "dose_curves",
+        ):
+            rr[key] = {"skipped": "run_root not provided"}
+        return rr
+    rr["eval_bank_half_split"] = {
+        cell: _half_split_for_cell(run_root, cell) for cell in (*SELECT_CELLS, C.CELL_FT_CON_REUSED)
+    }
+    rr["cross_surface_gap"] = {
+        cell: _gap_curve_for_cell(run_root, cell) for cell in C.NEW_LORA_CELLS
+    }
+    transfer = {}
+    for cell in C.BREADTH_CELLS:
+        p = run_root / "breadth" / cell / "slot_reads.json"
+        transfer[cell] = (
+            eos_margin_transfer_fractions(json.loads(p.read_text()))
+            if p.exists()
+            else {"skipped": f"{p} missing"}
+        )
+    rr["eos_margin_transfer"] = transfer
+    rr["dose_curves"] = {cell: _dose_curve_for_cell(run_root, cell) for cell in SELECT_CELLS}
+    for key, per_cell in rr.items():
+        for cell, rec in per_cell.items() if isinstance(per_cell, dict) else ():
+            if isinstance(rec, dict) and "skipped" in rec:
+                logger.warning("[re-reductions] %s/%s skipped: %s", key, cell, rec["skipped"])
+    return rr
+
+
 def _lattice_call(diff_draws: np.ndarray, point: float, *, labels: tuple[str, str, str]) -> dict:
     """DISJOINT+exhaustive lattice (plan §3): positive/negative/indistinguishable."""
     ci = _ci(diff_draws)
@@ -233,8 +445,14 @@ def run_geometry(  # noqa: C901 — linear read + lattice chain
     n_boot: int | None = None,
     wu_path: Path | None = None,
     cells: tuple[str, ...] = C.GEOMETRY_CELLS,
+    run_root: Path | None = None,
 ) -> dict:
-    """Full 2x2 geometry read; returns (and persists) the results record."""
+    """Full 2x2 geometry read; returns (and persists) the results record.
+
+    ``run_root`` (the dispatcher's out_root tree — ladders, selections,
+    trajectories, breadth slot reads) feeds the §6 re-reductions
+    (``run_re_reductions``); when None those file-based reads record explicit
+    ``skipped`` reasons."""
     n_boot = n_boot if n_boot is not None else (16 if smoke else C.N_BOOT)
     n_boot_mu = 16 if smoke else C.N_BOOT_MU
     base = _load_store(capture_root / BASE_STORE)
@@ -391,6 +609,11 @@ def run_geometry(  # noqa: C901 — linear read + lattice chain
         lat["H4_D_shc"] = {"per_cell": shc, "verdict": "INCOMPLETE — missing cells"}
     results["lattices"] = lat
 
+    # §6 re-reductions of persisted artifacts (concern
+    # analyzer-rereductions-deferred): matched-80, eval-bank half-split,
+    # cross-surface gap curves, EOS-margin transfer fractions + dose curves.
+    results["re_reductions"] = run_re_reductions(run_root, stores, base, int(primary))
+
     out_json.parent.mkdir(parents=True, exist_ok=True)
     tmp = out_json.with_suffix(".tmp")
     tmp.write_text(json.dumps(results, indent=2, ensure_ascii=False, default=float) + "\n")
@@ -406,6 +629,12 @@ def main(argv: list[str] | None = None) -> int:
     torch.set_num_threads(int(os.environ.get("EPS_VM_THREAD_CAP", "8") or 8))
     p = argparse.ArgumentParser(description="#1333 geometry aggregator (VM-side)")
     p.add_argument("--capture-root", default=f"data/issue_{C.ISSUE}/run/capture")
+    p.add_argument(
+        "--run-root",
+        default=f"data/issue_{C.ISSUE}/run",
+        help="dispatcher out_root (ladders/selections/trajectories/breadth) feeding the "
+        "§6 re-reductions; pass an empty string to skip the file-based reads",
+    )
     p.add_argument(
         "--out-json", default=f"eval_results/issue_{C.ISSUE}/geometry/geometry_marker_2x2.json"
     )
@@ -431,6 +660,7 @@ def main(argv: list[str] | None = None) -> int:
         n_boot=args.n_boot,
         wu_path=Path(args.wu_row) if args.wu_row else None,
         cells=cells,
+        run_root=Path(args.run_root) if args.run_root else None,
     )
     # VM-side upload duty (plan §10; review r1 m9): the per-draw x per-layer
     # bootstrap matrices are produced post-teardown, so the pod's p8 cannot
