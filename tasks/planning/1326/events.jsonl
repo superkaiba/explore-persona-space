@@ -4,3 +4,4 @@
 {"ts": "2026-07-15T12:17:12Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-15T12:18:50Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "stage-dispatch stage=planning round=1 subagent=planner worktree=repo-root — adversarial-planner Phase 1 spawned (bg); goal snapshot captured at /tmp/issue-1326-goal-snap.txt"}
 {"ts": "2026-07-15T12:30:59Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py PASS on plans/v1.md — n_fail=0 n_warn=0, no overrides. Goal-currency: current (snapshot match)."}
+{"ts": "2026-07-15T12:42:16Z", "kind": "epm:progress", "version": 3, "by": "unknown", "note": "codex composers skipped for plan-critique round 1 — quota sentinel live until 2026-08-06T13:26:00Z (#1204 pre-spawn check); single-Claude per lens per no-show fallback. Spawning 3 Claude lens critics + consistency-checker on plans/v2.md."}
