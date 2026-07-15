@@ -311,9 +311,16 @@ if should_run fit; then
       --cells S1,S2,S1N,S2N --mlp-cells "" \
       --folds 3 --null-draws 3 --n-boot 20 --no-internal-gates
   else
+    # RIDGE-ONLY (2026-07-15): --mlp-cells "" drops the MLP secondary. The prior
+    # run hung ~84 min at [phase=fit] because run_mlp_secondary runs the PCA-64
+    # mlp_fit_predict on CPU, serially — per cell 4 layers x (1 obs + 5 nulls) x
+    # 5 folds = 120 SGD fits at a 30-min-per-cell budget (MLP_TIME_BUDGET_S), 2xA100
+    # idle. The linear ridge headline is the naturalistic Track-S question; the MLP
+    # nonlinear-baseline is deferred pending a vectorized run_mlp_secondary
+    # (.claude/rules/vectorize-many-cell-fits.md).
     uv run python scripts/issue825_fit_cells.py \
       --turnstore-dir "$TS_DIR" --out-dir "$EVAL_DIR" \
-      --cells S1,S2,S1N,S2N --mlp-cells S1N,S2N
+      --cells S1,S2,S1N,S2N --mlp-cells ""
   fi
 
   # Anchor gate (production only): the refit S1/S2 layer-19 held-out R^2 MUST
