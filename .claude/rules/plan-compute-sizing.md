@@ -227,7 +227,14 @@ pilot as the phase's FIRST step with an abort threshold — pilot ×
 n_calls / parallelism re-projected against the row; >2× the row ⇒ the
 vectorize signature check fires before the loop proceeds — and marks the
 row's basis `pilot-gated`. This is the fit-phase twin of the store-heavy
-block's measured one-item rule below.
+block's measured one-item rule below. Sizing precedent (#1092 offvm
+battery refit, 2026-07-15): a permutation-null battery at ambient
+10,752-dim output, pilot-gated because its inputs didn't exist at plan
+time, measured 71.9 GB RSS against a 64 GB planned cap and projected
+12.8 h/box against 5 h planned (~2.6×) — the pre-registered abort
+threshold + checkpoint-restore recovered it, but ambient-dimension
+permutation/null batteries should be presumed ≥2× the naive RSS/wall
+projection until pilot-measured.
 
 
 **Store-heavy / IO-heavy phase sizing — measure one item's serialization +
