@@ -547,34 +547,88 @@ def _upload_manifest(manifest_dir: Path, hf_prefix: str) -> None:
     logger.info("[manifest] uploaded %s -> %s/%s", manifest_dir, hf_prefix, MANIFEST_SUBDIR)
 
 
+def _manifest_complete_locally(dest: Path) -> bool:
+    """True iff ``dest`` holds meta.json + all ``n_parts`` part files it names.
+
+    The completeness predicate for the fleet-safe download short-circuit: a dir
+    is complete only when meta.json parses AND the ``part_*.jsonl`` count matches
+    meta's ``n_parts`` (so a half-written dir never reads as complete)."""
+    meta_path = dest / "meta.json"
+    if not meta_path.exists():
+        return False
+    try:
+        meta = json.loads(meta_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return False
+    n_parts = meta.get("n_parts")
+    if not isinstance(n_parts, int) or n_parts < 0:
+        return False
+    return len(list(dest.glob("part_*.jsonl"))) == n_parts
+
+
 def _download_manifest(hf_prefix: str, dest: Path) -> Path:
-    """Download the HF-hosted manifest folder (parts + meta) to ``dest``."""
+    """Download the HF-hosted manifest folder (parts + meta) to ``dest``.
+
+    Fleet-safe: N shards per pod may call this concurrently against the SAME
+    local dir (8 shards raced the same 88 files at fleet launch — the winner's
+    os.replace moved each source into place, the losers' os.replace then hit
+    FileNotFoundError and 21/32 shards died). Three guards: (1) short-circuit
+    if the manifest is already complete locally (no lock, no network); (2)
+    serialize download+move behind an exclusive flock on ``<dest>/.download.lock``
+    with a post-acquire re-check (the shard that blocked on the lock returns the
+    winner's materialized dir instead of re-downloading); (3) tolerate a missing
+    ``got`` when ``target`` already exists (another process moved it)."""
+    import fcntl
+
     from huggingface_hub import HfApi, hf_hub_download
 
-    prefix = f"{hf_prefix}/{MANIFEST_SUBDIR}"
-    names = [
-        f.path
-        for f in HfApi().list_repo_tree(
-            C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
-        )
-        if getattr(f, "size", None) is not None
-    ]
-    if not names:
-        raise SystemExit(f"no manifest files under HF {prefix} — build + upload the manifest first")
     dest.mkdir(parents=True, exist_ok=True)
-    for name in names:
-        base = name.rsplit("/", 1)[-1]
-        got = Path(
-            hf_hub_download(
-                C.HF_DATA_REPO, filename=name, repo_type="dataset", local_dir=dest.parent
+
+    # (1) fast path: already complete locally — no lock, no network.
+    if _manifest_complete_locally(dest):
+        logger.info("[manifest] already complete locally at %s; skipping download", dest)
+        return dest
+
+    prefix = f"{hf_prefix}/{MANIFEST_SUBDIR}"
+    lock_path = dest / ".download.lock"
+    with open(lock_path, "w") as lock_f:
+        fcntl.flock(lock_f, fcntl.LOCK_EX)
+        # (2) re-check under the lock — a concurrent shard we blocked on may have
+        #     finished the full download while we waited.
+        if _manifest_complete_locally(dest):
+            logger.info("[manifest] completed by a concurrent shard; using %s", dest)
+            return dest
+
+        names = [
+            f.path
+            for f in HfApi().list_repo_tree(
+                C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
             )
-        )
-        target = dest / base
-        if got != target:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            os.replace(got, target)
-    logger.info("[manifest] downloaded %d files from HF %s -> %s", len(names), prefix, dest)
-    return dest
+            if getattr(f, "size", None) is not None
+        ]
+        if not names:
+            raise SystemExit(
+                f"no manifest files under HF {prefix} — build + upload the manifest first"
+            )
+        for name in names:
+            base = name.rsplit("/", 1)[-1]
+            got = Path(
+                hf_hub_download(
+                    C.HF_DATA_REPO, filename=name, repo_type="dataset", local_dir=dest.parent
+                )
+            )
+            target = dest / base
+            if got != target:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                # (3) tolerate a missing source when the target already landed
+                #     (another process moved it before we ran).
+                try:
+                    os.replace(got, target)
+                except FileNotFoundError:
+                    if not target.exists():
+                        raise
+        logger.info("[manifest] downloaded %d files from HF %s -> %s", len(names), prefix, dest)
+        return dest
 
 
 def build_manifest(args) -> dict:
@@ -911,10 +965,74 @@ def _smoke(args) -> int:
     gen_params = list(inspect.signature(N10._generate).parameters)
     assert gen_params[:3] == ["llm", "tok", "prompts"], gen_params
 
+    # (7) fleet-safe manifest download: two concurrent shards (threads) against a
+    #     monkeypatched hf_hub_download serialize via the flock — ONE downloads,
+    #     both return the complete dir (no os.replace FileNotFoundError race).
+    import threading
+    from unittest import mock
+
+    dl_prefix = "smoke_prefix"
+    dl_dest = args.out_dir / "_smoke_dl" / MANIFEST_SUBDIR
+    remote_prefix = f"{dl_prefix}/{MANIFEST_SUBDIR}"
+    remote_files = {
+        f"{remote_prefix}/meta.json": json.dumps({"n_new": 2, "n_parts": 2}),
+        f"{remote_prefix}/part_0000.jsonl": '{"i": 0}\n',
+        f"{remote_prefix}/part_0001.jsonl": '{"i": 1}\n',
+    }
+    dl_calls: list[str] = []
+    dl_calls_lock = threading.Lock()
+
+    class _FakeTreeEntry:
+        def __init__(self, path):
+            self.path = path
+            self.size = 1
+
+    class _FakeHfApi:
+        def list_repo_tree(self, repo_id, path_in_repo=None, repo_type=None, recursive=False):
+            return [_FakeTreeEntry(p) for p in remote_files]
+
+    def _fake_hf_hub_download(repo_id, filename=None, repo_type=None, local_dir=None):
+        with dl_calls_lock:
+            dl_calls.append(filename)
+        time.sleep(0.02)  # widen the race window so both threads reach the flock
+        out = Path(local_dir) / filename
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(remote_files[filename])
+        return str(out)
+
+    dl_results: list[Path] = []
+    dl_errors: list[BaseException] = []
+
+    def _dl_worker():
+        try:
+            dl_results.append(_download_manifest(dl_prefix, dl_dest))
+        except BaseException as e:
+            dl_errors.append(e)
+
+    # ONE patch context spans both threads (per-thread mock.patch would race the
+    # module-attr restore); both threads see the fakes for their whole lifetime.
+    with (
+        mock.patch("huggingface_hub.HfApi", _FakeHfApi),
+        mock.patch("huggingface_hub.hf_hub_download", _fake_hf_hub_download),
+    ):
+        dl_threads = [threading.Thread(target=_dl_worker) for _ in range(2)]
+        for t in dl_threads:
+            t.start()
+        for t in dl_threads:
+            t.join()
+    assert not dl_errors, f"concurrent _download_manifest raised: {dl_errors}"
+    assert len(dl_results) == 2 and all(r == dl_dest for r in dl_results), dl_results
+    assert _manifest_complete_locally(dl_dest), "manifest incomplete after concurrent download"
+    # exactly ONE thread ran the full 3-file download; the other short-circuited under the lock.
+    assert len(dl_calls) == len(remote_files), (
+        f"expected one full download ({len(remote_files)} files), got {len(dl_calls)}: {dl_calls}"
+    )
+
     logger.info(
         "[smoke] PASS: near-dupe (1 exact + 1 near drop); valtest-from-round1 (1400 targets + "
         "ctx0 guard); lmsys-exhaust=6 + wildchat-topup=6 = 12; manifest deterministic (sha match) "
-        "+ roundtrip + global-index; shard-range k in {2,3,4}; capture signatures match"
+        "+ roundtrip + global-index; shard-range k in {2,3,4}; capture signatures match; "
+        "concurrent manifest download serialized (1 download, both complete)"
     )
     return 0
 
