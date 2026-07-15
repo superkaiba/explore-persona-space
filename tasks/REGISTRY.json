@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1319,
+  "highest_id": 1320,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2495,6 +2495,13 @@
       "path": "tasks/archived/132",
       "status": "archived",
       "title": "Can we make the assistant persona more robust in post training or midtraining to prevent against jailbreaks -- look at existing literature"
+    },
+    "1320": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1320",
+      "status": "proposed",
+      "title": "daily-fix: vectorize issue825 MLP secondary; upload first"
     },
     "133": {
       "has_clean_result": false,
