@@ -32,12 +32,12 @@ relates_to:
 - The redundancy is operationalization-specific: the predictor survives partialling on a same-bank, same-layer cosine (partial ρ = 0.416, interval above zero) and on Jensen–Shannon alone (0.419).
 - No feature set beats plain additive source/target effects on held-out targets: additive-only cross-validated R² 0.691 vs 0.568 similarity-only and 0.126 baselines; adding similarity drops the stack to −0.144.
 - The behavior-to-behavior transfer test came back underpowered rather than negative: 27 of 119 scoreable development cells, 7 of 10 eval-column units below the feasibility gate, 3 planned columns descoped.
-- Scope is narrow: one high-dose leakage grid, read in log-probability space; the end-of-sequence-margin variant gives ρ = 0.144 and agrees with the headline leakage measure at only 0.258.
+- All of this is one high-dose leakage grid read in log-probability space; the end-of-sequence-margin variant gives ρ = 0.144 and agrees with the headline leakage measure at only 0.258.
 
 ## Goal
 
 - **This experiment in context:** The off-policy mapping line ([#779](https://eps.superkaiba.com/tasks/779), [#823](https://eps.superkaiba.com/tasks/823), [#952](https://eps.superkaiba.com/tasks/952)) established that per-context linear context→answer maps fit on the frozen base model are stable and transfer across contexts, and its conclusion proposed map similarity as a leakage predictor. This experiment tests that proposal against the measured marker-leakage matrix from [#532](https://eps.superkaiba.com/tasks/532) (built on the implant adapters of [#474](https://eps.superkaiba.com/tasks/474)), with the incumbent point-representation predictors as kill covariates on identical cells: the activation cosine (the [#404](https://eps.superkaiba.com/tasks/404) recipe via [#532](https://eps.superkaiba.com/tasks/532)), the canonical sequence-level Jensen–Shannon divergence ([#458](https://eps.superkaiba.com/tasks/458)/[#540](https://eps.superkaiba.com/tasks/540)), the base-rate prior (the [#500](https://eps.superkaiba.com/tasks/500)/[#541](https://eps.superkaiba.com/tasks/541) champion), and the whitened gate ([#667](https://eps.superkaiba.com/tasks/667)). The [#545](https://eps.superkaiba.com/tasks/545) behavior testbed is the out-of-distribution transfer test. It positions against two prior negatives: output divergence anti-predicts transfer ([#406](https://eps.superkaiba.com/tasks/406)), and context-geometry predictors failed to transfer behavior-to-behavior ([#545](https://eps.superkaiba.com/tasks/545)).
-- **Broader narrative:** the leakage-predictor question (`docs/open_questions.md` § 3.1): can any pre-fine-tuning, base-model-only measurement predict where a fine-tuned behavior will land before training? This is the first function-space candidate on that line — comparing the fitted context→content transformations two contexts imply, rather than comparing the contexts' representations as points.
+- **Broader narrative:** the leakage-predictor question (`docs/open_questions.md` § 3.1): can any pre-fine-tuning, base-model-only measurement predict where a fine-tuned behavior will land before training? This is the first function-space candidate on that line: it compares the fitted context→content transformations two contexts imply, where every earlier predictor compared the contexts' representations as points.
 
 ## Methodology
 
@@ -141,7 +141,7 @@ Similarity plotted against the incumbent activation cosine, one point per cell (
 
 > **Figure.** *The two predictors are near-duplicates.* Map-transfer similarity vs the incumbent activation cosine, one point per source→target cell, n = 400, Pearson r = 0.815 — past the 0.6 collinearity threshold set in the plan.
 
-Because the collinearity gate fired, the plan's follow-up reads ran: within cosine terciles the similarity–leakage correlation holds at 0.371 / 0.176 / 0.376, and degree-2 residualization leaves 0.138 (point estimates without registered intervals). Two readings fit these numbers: a small residual association the partial correlation cannot resolve at this sample size, or no residual effect at all, with the tercile and residual reads reflecting shared-bank measurement overlap between the two predictors.
+Because the collinearity gate fired, the plan's follow-up reads ran: the similarity–leakage correlation reads 0.371 / 0.176 / 0.376 within cosine terciles, and degree-2 residualization leaves 0.138 (point estimates without registered intervals). These could be a residual association too small for the partial correlation to resolve at this sample size, or shared-bank measurement overlap between the two predictors and nothing more.
 
 ### Held-out prediction: nothing beats plain additive main effects
 
@@ -151,7 +151,7 @@ Per-fold rank skill across the 26 leave-one-target-family-out folds, baseline st
 
 > **Figure.** *Adding similarity hurts held-out prediction.* Baseline stack CV-R² 0.126 (pooled ρ 0.670); baselines + similarity −0.144; similarity-only 0.568 (0.760); additive source/target effects alone 0.691 (0.776). Weakest target fold: the second soft marker instruction (ρ ≈ 0.47–0.50 under every model).
 
-The incremental-validity hypothesis fails: adding similarity — or any pair feature — lowers held-out-target CV-R², and additive main effects beat every feature set. On the 16-fold source axis, per-fold skill collapses on 4 of 5 persona-class sources (software engineer 0.16, villain 0.18, comedian 0.20, pirate −0.04; helpful assistant 0.84) — the predict-leakage-for-a-new-persona read is near zero, hidden by the pooled 0.69.
+The incremental-validity hypothesis fails: adding similarity — or any pair feature — lowers held-out-target CV-R², and additive main effects beat every feature set. On the 16-fold source axis (not in the figure, which plots the 26 target folds), per-fold rank correlation collapses on 4 of 5 persona-class sources (software engineer 0.16, villain 0.18, comedian 0.20, pirate −0.04; helpful assistant 0.84) — the predict-leakage-for-a-new-persona read is near zero, hidden by the pooled 0.69.
 
 ### The correlation rises monotonically with depth, and the null test is informative
 
@@ -171,7 +171,7 @@ The same 400 cells, with the y-axis swapped to the sensitivity leakage variant: 
 
 > **Figure.** *The margin variant barely correlates.* Similarity vs the trained − base marker-vs-end-of-sequence logit margin, n = 400, ρ = 0.144; the margin agrees with log-prob leakage itself at only ρ = 0.258.
 
-The headline is specific to log-probability space. On the primary space, swapping the predictor for its registered variants stays in range: agreement between two families' map predictions (distinct from the leakage-measure agreement in the Takeaways) reads 0.573, transfer beyond the mean-target map 0.665, and normalized distance between map outputs 0.665. Among baselines, Jensen–Shannon anti-predicts leakage (−0.495), which repeats the earlier output-divergence negative; the base-rate prior reads −0.382 here (partly its mechanical coupling inside the trained − base outcome) and is not the champion it is on other grids.
+The headline is specific to log-probability space. On the primary space, swapping the predictor for its registered variants stays in range (unplotted registered sensitivity values, not shown in this figure): agreement between two families' map predictions (distinct from the leakage-measure agreement in the Takeaways) reads 0.573, transfer beyond the mean-target map 0.665, and normalized distance between map outputs 0.665. Among baselines, Jensen–Shannon anti-predicts leakage (−0.495), which repeats the earlier output-divergence negative; the base-rate prior reads −0.382 here (partly its mechanical coupling inside the trained − base outcome) and is not the champion it is on other grids.
 
 ### The prefix arm degenerates to mean-answer similarity, which under-predicts
 
@@ -181,7 +181,7 @@ The prefix-arm read (how well family i's mean answer state predicts family j's a
 
 > **Figure.** *Mean-answer similarity alone under-predicts.* Mean-target transfer vs leakage, n = 400, ρ = 0.522, vs 0.613 for the full map predictor; the prefix-end cosine reads 0.247.
 
-Within a family the prefix-end state is constant, a prefix-input ridge therefore degenerates to predicting the family's mean answer. This is the dual-arm deviation the plan states; 15 of 26 families carry real prefix content. Excess transfer (transfer beyond the mean-target map) reaches 0.665; shared mean answers do not explain the headline. Absolute transfer is poor: similarity is negative for 43% of pairs (median 0.18 vs the 0.496 same-family split-half benchmark). What predicts leakage is the ranking of transfer quality; literal map interchangeability does not hold for the typical pair.
+Within a family the prefix-end state is constant, a prefix-input ridge therefore degenerates to predicting the family's mean answer. This is the dual-arm deviation the plan states; 15 of 26 families carry real prefix content. Excess transfer (transfer beyond the mean-target map) reaches 0.665; shared mean answers do not explain the headline. Similarity is negative for 43% of pairs (median 0.18 vs the 0.496 same-family split-half benchmark) — absolute transfer is poor. What predicts leakage is the ranking of transfer quality; literal map interchangeability does not hold for the typical pair.
 
 ### The behavior-to-behavior transfer test is underpowered at corpus size
 
