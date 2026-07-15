@@ -25,7 +25,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - data-realism.md — a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - diff-size-budget.md — reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
 - experiment-guidelines.md — you plan/implement a `workflow: v2` experiment (guideline index → full rules + v2 critic owners).
-- gotchas.md — you write/debug training/eval/orchestration/analysis code or an Anthropic request-builder seam; launch GPU workers / multi-GPU/vLLM fan-outs, incl. via train_lora/merge_lora (CVD clobber, EDQUOT/wedge, teardown, handshake timeout); diagnose silent deaths (exit-137, rc=134); parse JSONL; feed real corpora to vLLM; write real-corpus streaming filters / a corpus builder; or build a teacher-forced capture rig (BPE seams).
+- gotchas.md — you write/debug training/eval/orchestration/analysis code or an Anthropic request-builder seam; launch GPU workers / multi-GPU/vLLM fan-outs, incl. via train_lora/merge_lora (CVD clobber, smoke width, EDQUOT/wedge, teardown, handshake timeout); diagnose silent deaths (exit-137, rc=134); parse JSONL; feed real corpora to vLLM; write real-corpus streaming filters / a corpus builder; or build a teacher-forced capture rig (BPE seams).
 - lens-coverage-map.md — you split, retire, or add a review lens (v2 lens→owner ledger; `--check-lens-coverage`).
 - llm-judging.md — a plan/code designs/writes an LLM-judged behavior DV (graded 0-100 primary; one Sonnet judge; drop-never-coerce; retry transport errors; rubric-keyed caches; rationale-sized max_tokens).
 - marker-leakage-measurement.md — a plan/code MEASURES marker leakage (on-policy, marker-at-end, three-space DV).
