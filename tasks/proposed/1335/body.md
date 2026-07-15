@@ -16,6 +16,8 @@ goal: 'Identify which factor(s) — role identity/frequency, genre, answer struc
   map (#1310: base 0.11–0.15 / instruct 0.19–0.25, same plain-text regime), via a
   one-factor-at-a-time ablation ladder measuring held-out R² at each rung in Qwen2.5-7B
   base and instruct.'
+relates_to:
+- identity-contextual-vs-base
 ---
 # Ablations: why is the assistant context→answer map so much stronger than the fiction-character map?
 
