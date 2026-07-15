@@ -1,6 +1,6 @@
 ---
-title: Function-space similarity between per-context fitted context→answer maps as
-  a leakage predictor
+title: Function-space map similarity predicts marker leakage but is statistically
+  redundant with the activation-cosine baseline (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-15T07:06:20Z'
