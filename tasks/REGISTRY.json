@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1321,
+  "highest_id": 1322,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2509,6 +2509,13 @@
       "path": "tasks/proposed/1321",
       "status": "proposed",
       "title": "daily-fix: follow-up defer/teardown must re-park parent"
+    },
+    "1322": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1322",
+      "status": "proposed",
+      "title": "daily-fix: ownership check before resume; no double-bg"
     },
     "133": {
       "has_clean_result": false,
