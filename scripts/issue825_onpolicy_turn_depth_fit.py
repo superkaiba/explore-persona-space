@@ -135,8 +135,10 @@ G2_ROW_MIN = 0.99
 G2_ROW_FRAC = 0.99
 
 
-def _fetch_one(path_in_repo: str, dest_root: Path, max_attempts: int = 4) -> Path:
-    """hf_hub_download one file at the pinned revision, bounded transient retry."""
+def _fetch_one(
+    path_in_repo: str, dest_root: Path, max_attempts: int = 4, revision: str = DATA_REPO_REV
+) -> Path:
+    """hf_hub_download one file at the given revision, bounded transient retry."""
     from huggingface_hub import hf_hub_download
 
     last: Exception | None = None
@@ -146,7 +148,7 @@ def _fetch_one(path_in_repo: str, dest_root: Path, max_attempts: int = 4) -> Pat
                 HF_DATA_REPO,
                 path_in_repo,
                 repo_type="dataset",
-                revision=DATA_REPO_REV,
+                revision=revision,
                 local_dir=str(dest_root),
             )
             return Path(got)
@@ -196,7 +198,11 @@ def _download_capture(local_root: Path) -> Path:
     if not paths:
         raise RuntimeError(f"no capture files under {HF_CAPTURE_PREFIX}")
     for p in sorted(paths):
-        _fetch_one(p, local_root)
+        # The round's OWN capture uploads postdate the plan-pinned INPUT rev
+        # (DATA_REPO_REV pins the reused #1092 inputs only); fetch at main,
+        # matching the list_repo_tree enumeration above. Pinning them to
+        # DATA_REPO_REV 404'd the first fit run.
+        _fetch_one(p, local_root, revision="main")
     return local_root / HF_CAPTURE_PREFIX
 
 
