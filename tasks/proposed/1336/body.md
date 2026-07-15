@@ -10,12 +10,20 @@ origin_prompt: 'Help me to run an issue to test the RLVR part of next steps here
   [#825 report — Next Steps: could check if doing RLVR changes the base -> instruct
   mapping more (the model I''m using is too old to have done RLVR)]'
 workflow: v1
+goal: 'Determine whether RLVR-style RL post-training changes the linear context→answer-profile
+  map more than SFT/DPO post-training, using a released separated-stage ladder (primary
+  candidate: Llama-3.1-8B base → Tulu-3-8B-SFT → Tulu-3-8B-DPO → Tulu-3-8B post-RLVR)
+  — per stage, measure (a) within-stage held-out R² of the per-example ridge map c_x
+  → v(x) (#779/#825 recipe, prefix AND context arms) and (b) the #825 Result-2 reparameterization
+  gap (within-stage R² minus reparameterized-base-map R² on identical text), testing
+  whether the gap grows specifically at the RLVR stage (teaching) vs stays ≈0 at all
+  stages (elicitation) vs grows uniformly with post-training depth.'
 ---
 # Does RLVR post-training change the context→answer map more than SFT/DPO?
 
 ## Goal
 
-Determine whether RLVR-style RL post-training changes the linear context→answer-profile map more than SFT/DPO post-training, using a released post-training stage ladder with separated checkpoints (primary candidate: Llama-3.1-8B base → Tulu-3-8B-SFT → Tulu-3-8B-DPO → Tulu-3-8B final, where the final stage is RLVR; arXiv 2411.15124 coined RLVR and released all stages). Two dependent reads per stage, both computed with the #779/#825 recipe: (a) within-stage held-out R² of the per-example ridge map c_x → v(x); (b) the reparameterization test (#825 Result 2): fit a general linear change of coordinates between the base model and stage-k on identical text and test whether the base map, reparameterized, matches the stage-k map's predictive power. The question "does RLVR teach or elicit?" is operationalized as: does the reparameterization gap (within-stage R² minus reparameterized-base R²) grow specifically at the RLVR stage, relative to the SFT and DPO stages?
+Determine whether RLVR-style RL post-training changes the linear context→answer-profile map more than SFT/DPO post-training, using a released separated-stage ladder (primary candidate: Llama-3.1-8B base → Tulu-3-8B-SFT → Tulu-3-8B-DPO → Tulu-3-8B post-RLVR) — per stage, measure (a) within-stage held-out R² of the per-example ridge map c_x → v(x) (#779/#825 recipe, prefix AND context arms) and (b) the #825 Result-2 reparameterization gap (within-stage R² minus reparameterized-base-map R² on identical text), testing whether the gap grows specifically at the RLVR stage (teaching) vs stays ≈0 at all stages (elicitation) vs grows uniformly with post-training depth.
 
 ## Background (parent line)
 
