@@ -1,0 +1,248 @@
+{
+  "commit": "d4e68df97e",
+  "created": "2026-07-15T13:18:30Z",
+  "figsize": [
+    9.2,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Structural Tier-2 rate": 0.24,
+      "label": "0.24",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Structural Tier-2 rate": 0.1333,
+      "label": "0.13",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Structural Tier-2 rate": 0.2139,
+      "label": "0.214",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Structural Tier-2 rate": 0.28,
+      "label": "0.28",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Structural Tier-2 rate": 0.1867,
+      "label": "0.19",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Structural Tier-2 rate": 0.2679,
+      "label": "0.268",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Structural Tier-2 rate": 0.2867,
+      "label": "0.29",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Structural Tier-2 rate": 0.2033,
+      "label": "0.20",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "Structural Tier-2 rate": 0.3005,
+      "label": "0.300",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "Structural Tier-2 rate": 0.1667,
+      "label": "0.17",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "Structural Tier-2 rate": 0.1633,
+      "label": "0.16",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "Structural Tier-2 rate": 0.1744,
+      "label": "0.17",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "category": "rank 32 (reused)",
+      "English-question completions (of 290)": 32.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "rank 128",
+      "English-question completions (of 290)": 28.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "rank 256",
+      "English-question completions (of 290)": 25.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "base (reused fu3)",
+      "English-question completions (of 290)": 1.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "rank 32 (reused)",
+      "English-question completions (of 290)": 81.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "rank 128",
+      "English-question completions (of 290)": 63.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "rank 256",
+      "English-question completions (of 290)": 72.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "base (reused fu3)",
+      "English-question completions (of 290)": 18.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "rank 32 (reused)",
+      "English-question completions (of 290)": 177.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "rank 128",
+      "English-question completions (of 290)": 199.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "rank 256",
+      "English-question completions (of 290)": 193.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "base (reused fu3)",
+      "English-question completions (of 290)": 271.0,
+      "_kind": "bar",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Rate under the three intrusion dispositions\n(circle raw; x zeroed;\ndiamond excluded + Wilson 95% CI; dots 0.30 cut)",
+        "ylabel": "Structural Tier-2 rate",
+        "annotations": [
+          "0.24",
+          "0.13",
+          "0.214",
+          "0.28",
+          "0.19",
+          "0.268",
+          "0.29",
+          "0.20",
+          "0.300",
+          "0.17",
+          "0.16",
+          "0.174"
+        ],
+        "xticklabels": [
+          "rank 32 (reused)",
+          "rank 128",
+          "rank 256",
+          "base (reused fu3)"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45"
+        ]
+      },
+      {
+        "title_left": "Per-arm intrusion counts (bar label: intruded rows)",
+        "ylabel": "English-question completions (of 290)",
+        "legend_labels": [
+          "intruded, predicate fires",
+          "intruded, no fire",
+          "not intruded"
+        ],
+        "annotations": [
+          "113",
+          "91",
+          "97",
+          "19"
+        ],
+        "xticklabels": [
+          "rank 32 (reused)",
+          "rank 128",
+          "rank 256",
+          "base (reused fu3)"
+        ],
+        "yticklabels": [
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250",
+          "300",
+          "350",
+          "400",
+          "450"
+        ]
+      }
+    ],
+    "series": [
+      "intruded, predicate fires",
+      "intruded, no fire",
+      "not intruded"
+    ]
+  }
+}
