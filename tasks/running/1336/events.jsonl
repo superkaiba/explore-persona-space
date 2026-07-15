@@ -46,3 +46,4 @@
 {"ts": "2026-07-15T15:37:46Z", "kind": "epm:progress", "version": 1, "by": "issue1336_dispatch", "note": "issue1336 dispatch: phase g0_gate complete (smoke=0, gpus=4)", "sentinel_fp": "56356a78500f592b", "sentinel_path": "/workspace/logs/issue-1336-epm_progress-1784129622-2334-12584.json"}
 {"ts": "2026-07-15T15:37:51Z", "kind": "epm:progress", "version": 17, "by": "poll_pipeline", "note": "phase transition: g0_gate -> gen", "phase": "gen", "pod": "pod-1336"}
 {"ts": "2026-07-15T16:06:45Z", "kind": "epm:progress", "version": 1, "by": "issue1336_dispatch", "note": "issue1336 dispatch: phase gen complete (smoke=0, gpus=4)", "sentinel_fp": "f6eecdf7839a0c96", "sentinel_path": "/workspace/logs/issue-1336-epm_progress-1784131196-2334-2508.json"}
+{"ts": "2026-07-15T16:06:50Z", "kind": "epm:progress", "version": 18, "by": "poll_pipeline", "note": "phase transition: gen -> extract", "phase": "extract", "pod": "pod-1336"}
