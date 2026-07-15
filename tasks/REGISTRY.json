@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1371,
+  "highest_id": 1372,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2899,6 +2899,13 @@
       "path": "tasks/proposed/1371",
       "status": "proposed",
       "title": "workflow-fix: WARN on linked-not-embedded committed figures in Results"
+    },
+    "1372": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1372",
+      "status": "proposed",
+      "title": "workflow-fix: opaque snake_case slug detection in body-discipline audit"
     },
     "138": {
       "has_clean_result": true,
