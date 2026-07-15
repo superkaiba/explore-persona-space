@@ -1,8 +1,11 @@
-"""#825 turn-dynamics fit unit tests (code-review v21 findings).
+"""#825 turn-dynamics fit unit tests (code-review v21 + v22 findings).
 
-- ``_general_linear_cos`` + ``_rank_truncated_cols`` (Critical 2): pins the
+- ``_general_linear_cos`` + ``_rank_truncated_cols`` (v21 Critical 2): pins the
   non-degenerate value on a synthetic rank-deficient operator pair AND the
   full-square-U artifact (identically 1.0) the truncation guards against.
+- fp16 round-trip rank recovery (v22 Critical 1): the fp16 beta persistence
+  noise tail (~1e-4*S.max) defeated rel=1e-6; pins rel=1e-3 + the row-count
+  clamp recovering the true rank and the cos staying non-degenerate.
 - ``_transfer_nulls`` (Major 3): the batched GEMM identity reproduces a
   brute-force per-draw ss_res on a tiny synthetic case, and every (i, j)
   transfer cell carries null keys.
@@ -48,6 +51,51 @@ def test_general_linear_cos_rank_truncated_pins_synthetic_value():
     # the artifact the truncation removes: full square U => identically 1.0
     artifact = _general_linear_cos(U, b_j)
     assert abs(artifact - 1.0) < 1e-9, artifact
+
+
+def test_rank_truncation_survives_fp16_beta_round_trip(tmp_path):
+    """Code-review v22 Critical 1: fp16 beta persistence lifts the SVD noise
+    tail to ~1e-4*S.max, so the old rel=1e-6 rule read rank near-FULL and the
+    cos statistic re-squashed to ~1. Pins, on a DENSE low-rank matrix through
+    the production ``np.save(.astype(np.float16))`` -> reload path:
+    (a) the defeated rule is reproduced (rank@1e-6 >> true rank),
+    (b) the new rel=1e-3 threshold alone recovers the true rank,
+    (c) the algebraic row-count clamp binds independently of the threshold,
+    (d) the cos statistic stays non-degenerate (not re-squashed to ~1).
+    """
+    d, r = 256, 8
+    torch.manual_seed(0)
+    # DENSE rank-r matrix (A @ B): fp16 quantization error is a dense
+    # full-rank perturbation, exactly the production failure shape (a
+    # zero-padded construction would quantize exactly and hide the tail).
+    b = (torch.randn(d, r) @ torch.randn(r, d)).to(torch.float32)
+    u_true = torch.linalg.svd(b, full_matrices=False).U[:, :r]  # true col space
+    p = tmp_path / "beta_fp16.npy"
+    np.save(p, b.numpy().astype(np.float16))  # the production persistence path
+    b16 = torch.from_numpy(np.load(p).astype(np.float32))  # the production reload
+    U, S, _vh = torch.linalg.svd(b16, full_matrices=False)
+    # (a) the defeated v21 rule: fp16 tail ~1e-4*S.max >> 1e-6 -> near-full rank
+    rank_old_rule = int((float(S.max()) * 1e-6 < S).sum())
+    assert rank_old_rule > 4 * r, rank_old_rule  # reads near-D today (~248)
+    # (b) threshold alone (rel=1e-3, ~10x above the measured ~1e-4 tail)
+    _, rank_thresh = _rank_truncated_cols(U, S)
+    assert rank_thresh == r, rank_thresh
+    # (c) row-count clamp binds even when the threshold would keep more
+    _, rank_clamped = _rank_truncated_cols(U, S, rel=1e-6, max_rank=r)
+    assert rank_clamped == r, rank_clamped
+    # (d) non-degenerate cos on the fp16-round-tripped truncated basis:
+    # b_j with known in-span (3.0) / out-of-span (4.0) energy vs col(b)
+    q_in = u_true[:, 0]
+    v = torch.randn(d)
+    v -= u_true @ (u_true.T @ v)
+    q_out = v / torch.linalg.norm(v)
+    b_j = torch.zeros(d, d)
+    b_j[:, 0] = 3.0 * q_in + 4.0 * q_out
+    u_r, rank = _rank_truncated_cols(U, S, max_rank=r)
+    assert rank == r
+    got = _general_linear_cos(u_r, b_j)
+    assert abs(got - 0.6) < 1e-2, got  # 3/5, within fp16-perturbation tolerance
+    assert got < 0.99, got  # NOT re-squashed to ~1 (the v22 vacuity signature)
 
 
 def test_transfer_nulls_match_bruteforce_and_carry_all_cell_keys():

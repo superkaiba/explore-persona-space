@@ -708,21 +708,39 @@ def _gcv_primal_beta(X: np.ndarray, Y: np.ndarray, device: str) -> torch.Tensor:
     return Xn.T @ (V @ (filt[:, None] * VtY))  # (D_in, D_out)
 
 
-def _rank_truncated_cols(U: torch.Tensor, S: torch.Tensor, rel: float = 1e-6) -> tuple:
+def _rank_truncated_cols(
+    U: torch.Tensor, S: torch.Tensor, rel: float = 1e-3, max_rank: int | None = None
+) -> tuple:
     """Numerical-rank column truncation of an SVD's U factor.
 
-    Rank rule: ``r = #{S > S.max() * rel}`` (relative singular-value
-    threshold, ceiling rows included; ``rel=1e-6`` — code-review v21
-    Critical 2 prescription). A per-(turn, fold) beta has rank <= its fold's
-    row count (~833) << 3584, so the FULL square U from
-    ``svd(full_matrices=False)`` on the square beta spans the whole space and
-    makes ``||U^T b|| == ||b||`` identically 1.0 — the projection must use
-    only the numerical-rank columns. Returns ``(U[:, :r], r)``.
+    Rank rule: ``r = min(#{S > S.max() * rel}, max_rank)`` — a relative
+    singular-value threshold AND the algebraic row-count bound, both
+    load-bearing (code-review v22 Critical 1):
+
+    - ``rel=1e-3`` sits ~10x above the MEASURED fp16-persistence noise tail.
+      Betas are saved ``.astype(np.float16)`` and reloaded for this SVD; an
+      fp16 round trip of a rank-r matrix lifts the trailing singular values to
+      ~1.0e-4 * S.max (v22 measurements: D=1024/true r=238 -> tail 1.03e-4;
+      D=2048/r=476 -> 1.01e-4), ~100x ABOVE the previous ``rel=1e-6``, so the
+      old rule read rank near-FULL and ``||U^T b|| / ||b||`` re-squashed to
+      ~1 for ANY pair (the v21-C2 vacuity, one dtype interaction deeper).
+      Directions with S below the fp16 noise floor are destroyed by the
+      storage regardless, so nothing recoverable is discarded at 1e-3.
+    - ``max_rank`` = the fold's training-row count: a per-(turn, fold) beta
+      ``Xn^T @ (...)`` has algebraic rank <= its fold's row count (~833 at
+      production, << 3584) INDEPENDENT of dtype — the clamp holds even if a
+      future dtype/scale change moves the noise tail past ``rel``.
+
+    With a full square U from ``svd(full_matrices=False)`` on the square beta
+    the projection ``||U^T b|| == ||b||`` is identically 1.0 (v21 Critical 2)
+    — the statistic must use only these columns. Returns ``(U[:, :r], r)``.
     """
     if S.numel() == 0:
         return U[:, :0], 0
-    r = max(1, int((float(S.max()) * rel < S).sum().item()))
-    return U[:, :r], r
+    r = int((float(S.max()) * rel < S).sum().item())
+    if max_rank is not None:
+        r = min(r, int(max_rank))
+    return U[:, : max(1, r)], max(1, r)
 
 
 def _general_linear_cos(u_r: torch.Tensor, b_j: torch.Tensor) -> float:
@@ -750,15 +768,19 @@ def run_operators(args: argparse.Namespace) -> None:  # noqa: C901 — linear ba
 
     # 1) per-(turn, fold) betas on the fold's OWN rows (fold-disjoint estimates)
     beta_paths: dict[tuple[int, int], Path] = {}
+    # fold row counts = the algebraic rank bound for each beta (v22 Critical 1);
+    # recomputed from sel/labels even on resume (beta .npy already on disk).
+    beta_rows: dict[tuple[int, int], int] = {}
     for t in turns:
         sel = by_turn[t]
         labels = np.asarray([fold_of[rows[i]["conv_id"]] for i in sel], dtype=np.int64)
         for f in range(N_FOLDS):
             p = betas_dir / f"{tag}_{args.model}_t{t:02d}_f{f}.npy"
             beta_paths[(t, f)] = p
+            rows_f = sel[labels == f]
+            beta_rows[(t, f)] = int(rows_f.size)
             if p.exists():
                 continue
-            rows_f = sel[labels == f]
             if rows_f.size < 3:
                 continue
             beta = _gcv_primal_beta(X[rows_f], Y[rows_f], args.device)
@@ -793,11 +815,14 @@ def run_operators(args: argparse.Namespace) -> None:  # noqa: C901 — linear ba
                 continue
             U, S, Vh = torch.linalg.svd(b, full_matrices=False)
             # Rank-truncate U at cache time: the full square U makes the
-            # general-linear cos identically 1.0 (review v21 Critical 2).
-            U_r, rank = _rank_truncated_cols(U, S)
+            # general-linear cos identically 1.0 (review v21 Critical 2);
+            # clamp to the fold's row count so the fp16 storage noise tail
+            # cannot re-inflate the rank (review v22 Critical 1).
+            U_r, rank = _rank_truncated_cols(U, S, max_rank=beta_rows.get((t, f)))
             svd_cache[(t, f)] = {
                 "U": U_r,
                 "rank": rank,
+                "n_rows": beta_rows.get((t, f)),
                 "Vh": Vh,
                 "norm": float(torch.linalg.norm(b)),
             }
@@ -847,6 +872,9 @@ def run_operators(args: argparse.Namespace) -> None:  # noqa: C901 — linear ba
                 # projected onto the RANK-TRUNCATED column space of b_i.
                 rec["general_linear_cos"] = _general_linear_cos(svd_cache[(i, f_a)]["U"], bj)
                 rec["general_linear_rank"] = int(svd_cache[(i, f_a)]["rank"])
+                # the algebraic bound the rank is clamped to (fold row count) —
+                # rank <= rows is the v22 mechanizable invariant
+                rec["general_linear_rows"] = svd_cache[(i, f_a)]["n_rows"]
                 # principal angles from the CACHED per-(turn, fold) SVD factors
                 # (same math as issue825_crossmodel_map_transfer.principal_angles,
                 # without re-running two full 3584^2 SVDs per pair).
