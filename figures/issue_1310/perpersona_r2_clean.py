@@ -1,16 +1,19 @@
 #!/usr/bin/env python
-"""#1310 per-character context->dialogue map — clean base-vs-instruct figure.
+"""#1310 per-character context->dialogue map — CORRECTED v3 figure.
 
-Fixes the silent-null problem of perpersona_r2.png: the base arm produced no
-attributable dialogue (0-1 usable scenes/character), so its R^2 is null and the
-original figure just drew nothing. Here the base absence is drawn EXPLICITLY
-("no data") so the figure reads correctly instead of looking like a plotting bug.
+Reads the v3 (prefill) per-persona cells DIRECTLY (not the stale v2 summary.json,
+which still aggregates the pre-prefill free-generation run). The v3 prefill run
+FLIPPED the v2 null: the v2 negative R^2 was a power artifact (n~118-161 << d=3584);
+prefill gives n in the thousands and the per-character map is positive AND
+character-specific in both models.
 
-Per character: instruct held-out R^2 @ layer 19 (real, all negative), a marker at
-the shuffle-null 97.5th percentile it "clears", and an explicit base "no data"
-placeholder. Assistant-map ceiling (#825 instruct 0.673) drawn for reference.
+A cell is treated as v3 iff its metadata.git_commit starts with V3_COMMIT; any cell
+still on the stale v2 commit is drawn as an explicit "incomplete (crashed)" bar
+(the v3 run crashed on the instruct arm before instruct-Vex + the instruct swap
+control, so those remain stale v2).
 
-All values read from eval_results/issue_1310/summary.json (no hardcoding).
+Source: eval_results/issue_1310/cells_{base,instruct}_{persona}.json (v3 cells are
+UNTRACKED on the VM + in the HF crash-persist issue1310_partial/att-20260715-052017).
 """
 
 from __future__ import annotations
@@ -22,7 +25,11 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
-SUMMARY = REPO / "eval_results/issue_1310/summary.json"
+CELLS = REPO / "eval_results/issue_1310"
+V3_COMMIT = "942df1bb2a"  # prefill (v3) fit commit
+ORDER = ["Wren", "HELIOS", "Dana", "Vex"]
+# #825 assistant-map ceiling (single-turn chat)
+CEIL_INST, CEIL_BASE = 0.673, 0.588
 
 
 def _git_head() -> str:
@@ -34,12 +41,25 @@ def _git_head() -> str:
         return f"unresolved: {e}"
 
 
+def _read_cell(model: str, persona: str):
+    """Return (r2_L19, n, is_v3) or None if missing."""
+    f = CELLS / f"cells_{model}_{persona}.json"
+    if not f.exists():
+        return None
+    d = json.loads(f.read_text())
+    r2 = d["r2_per_layer_obs"][19]
+    n = d.get("n")
+    is_v3 = str(d.get("metadata", {}).get("git_commit", "")).startswith(V3_COMMIT)
+    return (r2, n, is_v3)
+
+
 def main() -> None:
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib import font_manager
+    from matplotlib.lines import Line2D
     from matplotlib.patches import Patch
 
     for fp in font_manager.findSystemFonts(fontpaths=None):
@@ -49,94 +69,80 @@ def main() -> None:
     with contextlib.suppress(Exception):
         plt.rcParams["font.family"] = "Inter"
 
-    s = json.loads(SUMMARY.read_text())
-    order = ["Wren", "HELIOS", "Dana", "Vex"]
-    pp = s["per_persona"]
-    inst_r2 = [pp[k]["instruct"]["r2_headline"] for k in order]
-    inst_null = [pp[k]["instruct"]["null_p975_headline"] for k in order]
-    base_present = [pp[k]["base"] is not None for k in order]
-    ceil_inst = s["assistant_ceiling"]["S1"]["r2_headline"]  # 0.673
-
-    C_BASE, C_INST = "#0072B2", "#E69F00"  # colorblind-safe
+    C_BASE, C_INST = "#0072B2", "#E69F00"
     w = 0.38
-    xs = list(range(len(order)))
+    xs = list(range(len(ORDER)))
+    got = {(m, p): _read_cell(m, p) for m in ("base", "instruct") for p in ORDER}
 
-    fig, ax = plt.subplots(figsize=(8.5, 5.2))
-    for i, k in enumerate(order):
-        # base: explicit "no data" placeholder (no measured value exists)
-        if base_present[i]:
-            ax.bar(i - w / 2, pp[k]["base"]["r2_headline"], w, color=C_BASE, edgecolor="black")
-        else:
-            ax.bar(i - w / 2, 0.0, w, color="none", edgecolor="grey", linewidth=1.2, hatch="xx")
-            ax.text(
-                i - w / 2,
-                0.03,
-                "base\nno data",
-                ha="center",
-                va="bottom",
-                fontsize=7.5,
-                color="grey",
-            )
-        # instruct: real (negative) bar
-        r = inst_r2[i]
-        ax.bar(i + w / 2, r, w, color=C_INST, edgecolor="black")
-        ax.text(i + w / 2, r - 0.02, f"{r:.2f}", ha="center", va="top", fontsize=8.5)
-        # null p97.5 marker the instruct bar clears
-        ax.plot(
-            [i + w / 2 - w / 2, i + w / 2 + w / 2],
-            [inst_null[i], inst_null[i]],
-            color="black",
-            lw=1.3,
-            ls=":",
-        )
+    fig, ax = plt.subplots(figsize=(9.0, 5.4))
+    for i, p in enumerate(ORDER):
+        for side, model, color in ((-1, "base", C_BASE), (1, "instruct", C_INST)):
+            x = i + side * w / 2
+            cell = got[(model, p)]
+            if cell is not None and cell[2]:  # v3, real
+                r2, n, _ = cell
+                ax.bar(x, r2, w, color=color, edgecolor="black")
+                ax.text(x, r2 + 0.012, f"{r2:.2f}", ha="center", va="bottom", fontsize=8.3)
+            else:  # missing or stale-v2 => incomplete
+                ax.bar(x, 0.0, w, color="none", edgecolor="grey", linewidth=1.2, hatch="xx")
+                ax.text(
+                    x,
+                    0.02,
+                    "incomplete\n(crashed)",
+                    ha="center",
+                    va="bottom",
+                    fontsize=6.8,
+                    color="grey",
+                )
 
     ax.axhline(0.0, color="black", lw=0.8)
-    ax.axhline(
-        ceil_inst,
-        color="green",
-        ls="--",
-        lw=1.2,
-        label=f"assistant-map ceiling (instruct, #825 = {ceil_inst:.2f})",
+    ax.axhline(CEIL_INST, color=C_INST, ls="--", lw=1.0, alpha=0.7)
+    ax.axhline(CEIL_BASE, color=C_BASE, ls="--", lw=1.0, alpha=0.7)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(ORDER, fontsize=10)
+    ax.set_ylabel("held-out $R^2$ (layer 19)")
+    ax.set_ylim(0, 0.78)
+    ax.set_title(
+        "Per-character context→dialogue map in stories (v3 prefill)\n"
+        "positive and character-specific in both models — v2 null was a power artifact (n≪p)"
     )
-    # legend proxy for the null marker
-    from matplotlib.lines import Line2D
-
     handles = [
+        Patch(color=C_BASE, label="base (prefill, v3)"),
+        Patch(color=C_INST, label="instruct (prefill, v3)"),
         Patch(
             facecolor="none",
             edgecolor="grey",
             hatch="xx",
-            label="base: no data (attribution failed)",
+            label="incomplete (instruct arm crashed)",
         ),
-        Patch(color=C_INST, label="instruct (measured)"),
-        Line2D([0], [0], color="black", ls=":", lw=1.3, label="shuffle null (97.5th pct)"),
         Line2D(
             [0],
             [0],
-            color="green",
+            color=C_INST,
             ls="--",
-            lw=1.2,
-            label=f"assistant-map ceiling ({ceil_inst:.2f})",
+            lw=1.0,
+            label=f"assistant ceiling instruct ({CEIL_INST:.2f})",
+        ),
+        Line2D(
+            [0],
+            [0],
+            color=C_BASE,
+            ls="--",
+            lw=1.0,
+            label=f"assistant ceiling base ({CEIL_BASE:.2f})",
         ),
     ]
-    ax.set_xticks(xs)
-    ax.set_xticklabels(order, fontsize=10)
-    ax.set_ylabel("held-out $R^2$ (layer 19)")
-    ax.set_ylim(-0.62, 0.78)
-    ax.set_title(
-        "Per-character context→dialogue map in stories (base vs instruct)\n"
-        "instruct is at/below the null; base could not be measured"
-    )
-    ax.legend(handles=handles, fontsize=8, loc="lower left")
+    ax.legend(handles=handles, fontsize=7.8, loc="upper right", ncol=1)
     ax.text(
         0.5,
         -0.15,
-        "Instruct maps are all negative (−0.12 to −0.29) — a null; they sit just above the "
-        "shuffle null (dotted) only because the null is ~−0.53. Base produced 0–1 usable "
-        "scenes/character (99.8% of quotes unattributable), so no base map exists.",
+        "Base COMPLETE & character-specific (correct-pairing 0.23 vs cross-character swap −0.00). "
+        "Instruct 3/4 positive (0.19–0.25, stronger than base); instruct Vex + instruct swap "
+        "incomplete (v3 crashed on the instruct arm). Story map is well below the chat assistant "
+        "ceiling but clearly non-zero.",
         ha="center",
         va="top",
-        fontsize=7.2,
+        fontsize=7.0,
         color="#444444",
         transform=ax.transAxes,
         wrap=True,
@@ -149,21 +155,32 @@ def main() -> None:
 
     meta = {
         "commit": _git_head(),
-        "source": "eval_results/issue_1310/summary.json",
-        "instruct_r2": dict(zip(order, inst_r2)),
-        "instruct_null_p975": dict(zip(order, inst_null)),
-        "base": "no data (attribution failed; 0-1 usable scenes/character)",
-        "assistant_ceiling_instruct": ceil_inst,
+        "source": "eval_results/issue_1310/cells_{base,instruct}_{persona}.json (v3 prefill; UNTRACKED + HF crash-persist)",
+        "v3_commit": V3_COMMIT,
+        "values": {
+            f"{m}_{p}": (
+                None
+                if got[(m, p)] is None
+                else {
+                    "r2_L19": round(got[(m, p)][0], 4),
+                    "n": got[(m, p)][1],
+                    "is_v3": got[(m, p)][2],
+                }
+            )
+            for m in ("base", "instruct")
+            for p in ORDER
+        },
+        "assistant_ceiling": {"instruct": CEIL_INST, "base": CEIL_BASE},
         "caption": (
-            "Per-character context->dialogue held-out R2 (layer 19), base vs instruct. "
-            "Instruct is a null (-0.12 to -0.29); base could not be measured (attribution "
-            "collapsed). Character identity is still specific (swap deltaR2=0.39, separate figure)."
+            "Per-character context->dialogue held-out R2 (layer 19), v3 prefill run. Positive and "
+            "character-specific in both models; the v2 null was a power artifact (n<<d). Instruct "
+            "Vex + instruct swap incomplete (v3 crashed on the instruct arm)."
         ),
+        "note": "SUPERSEDES the stale v2 perpersona_r2.png and the earlier v2-based version of this file.",
     }
     (HERE / "perpersona_r2_clean.meta.json").write_text(json.dumps(meta, indent=2))
     print(f"[fig] wrote {png}")
-    print("instruct_r2:", dict(zip(order, [round(v, 3) for v in inst_r2])))
-    print("base_present:", dict(zip(order, base_present)))
+    print("values:", json.dumps(meta["values"], indent=2))
 
 
 if __name__ == "__main__":

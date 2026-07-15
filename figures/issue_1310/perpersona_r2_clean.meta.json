@@ -1,19 +1,53 @@
 {
-  "commit": "69eb59c7a4e7d241c8bd54ff501bc25f0e8c7d64",
-  "source": "eval_results/issue_1310/summary.json",
-  "instruct_r2": {
-    "Wren": -0.11793837599374579,
-    "HELIOS": -0.14937530440941682,
-    "Dana": -0.18659031878571386,
-    "Vex": -0.29052736974686133
+  "commit": "c0b9f8404c3f6df97c74876accf41721157f4056",
+  "source": "eval_results/issue_1310/cells_{base,instruct}_{persona}.json (v3 prefill; UNTRACKED + HF crash-persist)",
+  "v3_commit": "942df1bb2a",
+  "values": {
+    "base_Wren": {
+      "r2_L19": 0.1369,
+      "n": 2329,
+      "is_v3": true
+    },
+    "base_HELIOS": {
+      "r2_L19": 0.1483,
+      "n": 2466,
+      "is_v3": true
+    },
+    "base_Dana": {
+      "r2_L19": 0.1468,
+      "n": 1325,
+      "is_v3": true
+    },
+    "base_Vex": {
+      "r2_L19": 0.1059,
+      "n": 2060,
+      "is_v3": true
+    },
+    "instruct_Wren": {
+      "r2_L19": 0.2345,
+      "n": 3094,
+      "is_v3": true
+    },
+    "instruct_HELIOS": {
+      "r2_L19": 0.2527,
+      "n": 3123,
+      "is_v3": true
+    },
+    "instruct_Dana": {
+      "r2_L19": 0.1882,
+      "n": 2700,
+      "is_v3": true
+    },
+    "instruct_Vex": {
+      "r2_L19": -0.2905,
+      "n": 149,
+      "is_v3": false
+    }
   },
-  "instruct_null_p975": {
-    "Wren": -0.48162177739515505,
-    "HELIOS": -0.46324853862010307,
-    "Dana": -0.5097214603803223,
-    "Vex": -0.5060139767821711
+  "assistant_ceiling": {
+    "instruct": 0.673,
+    "base": 0.588
   },
-  "base": "no data (attribution failed; 0-1 usable scenes/character)",
-  "assistant_ceiling_instruct": 0.6730940896676356,
-  "caption": "Per-character context->dialogue held-out R2 (layer 19), base vs instruct. Instruct is a null (-0.12 to -0.29); base could not be measured (attribution collapsed). Character identity is still specific (swap deltaR2=0.39, separate figure)."
+  "caption": "Per-character context->dialogue held-out R2 (layer 19), v3 prefill run. Positive and character-specific in both models; the v2 null was a power artifact (n<<d). Instruct Vex + instruct swap incomplete (v3 crashed on the instruct arm).",
+  "note": "SUPERSEDES the stale v2 perpersona_r2.png and the earlier v2-based version of this file."
 }
