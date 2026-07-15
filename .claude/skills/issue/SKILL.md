@@ -965,6 +965,59 @@ re-plan directive; one auto-approved a plan whose GPU budget the other's
 fact-checker had just shown to be a 2x underestimate, forcing a
 `running -> plan_pending` rollback and wasted implementer work.
 
+**Registry-blind live-driver probe (#1326 — the guard's second leg; run in
+the SAME Step 0 pass, immediately after the registry check).** The registry
+check above is blind to a sanctioned INLINE-CHAT driver (the CLAUDE.md
+"User-chat inline free analysis" carve-out, explicit-override clause): the
+carve-out now mandates `register-current` at dispatch (#1326), but a
+registration can fail (non-Happy terminal, daemon down) and pre-#1326
+rounds never registered — so ALSO probe the task's own marker trail:
+
+```bash
+uv run python - <<'PY'
+from explore_persona_space.task_workflow import list_events, live_driver_evidence
+print(live_driver_evidence(list_events(<N>), window_minutes=30) or "NO-LIVE-DRIVER-EVIDENCE")
+PY
+```
+
+Evidence = the newest event within 30 min that is a compute-launch marker
+(`epm:run-launched` / `epm:cluster-launched`) or a `stage-dispatch `
+breadcrumb — the two marker shapes only an actively-orchestrating driver
+posts. `deliberate-stop ` records, `by == "spawn_session-stop"` rows, and
+bracketed watcher/spawn-session telemetry never count (the
+`stage_dispatch_should_skip` anti-liveness exclusions, #810), so a
+predecessor's death record cannot hold this probe, and the evidence
+self-decays in 30 min — a dead driver blocks a re-drive for at most one
+window, never the #845 12h-registration shape. On any output other than
+`NO-LIVE-DRIVER-EVIDENCE`: INVESTIGATE, then yield or proceed. Read the
+evidence marker's full note (`task.py view <N> --json`, jq by `ts`) and
+re-read `spawn_session.py list`. PROCEED only when (i) the evidence is
+this session's OWN earlier post (e.g. a same-session follow-up-loop
+re-entry — the `by` field is unreliable, #779; you know what you posted),
+(ii) this session is the evidence-writer's explicit replacement (the same
+replacement carve-out as the registry leg: a watcher crash-recovery
+respawn, or the user said to take over), or (iii) the investigation
+positively ties EVERY in-window evidence marker — enumerate them ALL from
+the full trail via `task.py view <N> --json`; the probe returns only the
+NEWEST — to a dead or finished writer: sid absent from `spawn_session.py
+list` AND its trail ends in a deliberate-stop / crash record, OR a
+round-completion / done-transition record (`epm:same-issue-followup-run`,
+`epm:promoted`, a terminal `epm:status-changed`) posted AFTER the evidence
+— state the finding in one line. Otherwise treat it as a live
+driver and EXIT via the SAME collision-exit breadcrumb block above
+(`reason=step0-session-collision`, `owner=<the evidence line>`; that
+block's exit-marker contract applies verbatim — the single breadcrumb,
+do NOT run `scripts/post_step_completed.py` here), mutating
+nothing — fail toward YIELD: a wrong yield costs ≤30 min before the
+watcher re-drives; a wrong proceed opens the #952 double-writer window.
+Incident 2026-07-14/15 (#952 → #1326): a fresh `/issue 952` session
+passed the registry-only guard while a live inline-chat session
+(registered nowhere) drove the `china-politics-topup` round — at the
+duplicate's Step 0 the inline driver's `epm:run-launched` (04:56:03Z) was
+~20 min old, inside this window — and the duplicate dispatched the pod
+upload phase; the collision surfaced only ~7 min later via concurrent
+marker posts, the yield luck-of-ordering.
+
 **Stale-wake ownership re-check (applies on RESUME, not just invocation).**
 The guard above fires at `/issue` invocation — but a session that RESUMES
 in-flight work after a long mid-flight stall must re-establish ownership
