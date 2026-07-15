@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1348,
+  "highest_id": 1349,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2717,6 +2717,13 @@
       "path": "tasks/proposed/1348",
       "status": "proposed",
       "title": "workflow-fix: gotchas.md \u2014 matplotlib errorbar offsets non-negative (clamp CI bounds)"
+    },
+    "1349": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1349",
+      "status": "proposed",
+      "title": "workflow-fix: PASS_UNIFIED must cover non-cell smoke-axis min-N floors"
     },
     "135": {
       "has_clean_result": false,
